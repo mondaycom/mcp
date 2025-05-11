@@ -66,4 +66,8 @@ export class MondayAgentToolkit extends McpServer {
       }
     });
   }
+
+  getServer(): McpServer {
+    return this;
+  }
 }
