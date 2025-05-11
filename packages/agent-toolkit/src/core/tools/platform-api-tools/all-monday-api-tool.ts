@@ -1,8 +1,9 @@
-import { ApiClient } from '@mondaydotcomorg/api';
-import { buildClientSchema, GraphQLSchema, parse, validate } from 'graphql';
 import { z } from 'zod';
-import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, MondayApiToolContext } from './base-monday-api-tool';
+import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
+import { buildClientSchema, GraphQLSchema, parse, validate } from 'graphql';
+import { ApiClient } from '@mondaydotcomorg/api';
+import fetch from 'node-fetch';
 
 let cachedSchema: GraphQLSchema | null = null;
 

@@ -137,7 +137,5 @@ dist
 
 # turbo
 .turbo
-
-.mappsrc
-
 .idea/
+.qodo
