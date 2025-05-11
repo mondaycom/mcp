@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { ToolInputType, ToolOutputType, ToolType } from '../tool';
+import { GetBoardItemsByNameQuery, GetBoardItemsByNameQueryVariables } from '../../../monday-graphql/generated/graphql';
+import { getBoardItemsByName } from '../../../monday-graphql/queries.graphql';
+import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool } from './base-monday-api-tool';
-import { getBoardItemsByName } from '../../monday-graphql/queries.graphql';
-import { GetBoardItemsByNameQuery, GetBoardItemsByNameQueryVariables } from '../../monday-graphql/generated/graphql';
 
 export const getItemsToolSchema = {
   term: z.string(),
@@ -17,7 +17,7 @@ export type GetItemsToolInput = typeof getItemsToolSchema | typeof getItemsInBoa
 
 export class GetBoardItemsTool extends BaseMondayApiTool<GetItemsToolInput> {
   name = 'get_board_items_by_name';
-  type = ToolType.QUERY;
+  type = ToolType.READ;
 
   getDescription(): string {
     return 'Get items by board id and term';

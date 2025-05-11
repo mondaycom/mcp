@@ -1,15 +1,13 @@
-import { ToolOutputType } from '../tool';
-import { ToolInputType } from '../tool';
+import { FetchCustomActivityQuery } from '../../../monday-graphql/generated/graphql';
+import { fetchCustomActivity } from '../../../monday-graphql/queries.graphql';
+import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool } from './base-monday-api-tool';
-import { ToolType } from '../tool';
-import { FetchCustomActivityQuery } from 'src/monday-graphql/generated/graphql';
-import { fetchCustomActivity } from 'src/monday-graphql/queries.graphql';
 
 export const fetchCustomActivityToolSchema = {};
 
 export class FetchCustomActivityTool extends BaseMondayApiTool<typeof fetchCustomActivityToolSchema> {
   name = 'fetch_custom_activity';
-  type = ToolType.QUERY;
+  type = ToolType.READ;
 
   getDescription(): string {
     return 'Get custom activities from the E&A app';

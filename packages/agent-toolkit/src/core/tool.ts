@@ -11,8 +11,8 @@ export type ToolOutputType<T extends Record<string, unknown>> = {
 };
 
 export enum ToolType {
-  QUERY = 'query',
-  MUTATION = 'mutation',
+  READ = 'read',
+  WRITE = 'write',
   ALL_API = 'all_api',
 }
 

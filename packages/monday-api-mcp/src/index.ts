@@ -23,6 +23,7 @@ async function runServer() {
     toolsConfiguration: {
       readOnlyMode: validatedArgs.readOnlyMode,
       enableDynamicApiTools: validatedArgs.enableDynamicApiTools,
+      enableMondayAppsTools: validatedArgs.enableMondayAppsTools,
     },
   });
 
