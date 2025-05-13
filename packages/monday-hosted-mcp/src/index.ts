@@ -29,7 +29,7 @@ export class MyMCP extends McpAgent<Props, Env> {
 }
 
 export default new OAuthProvider({
-  apiRoute: '/sse',
+  apiRoute: ['/sse', '/mcp'],
   apiHandlers: {
     '/sse': MyMCP.serveSSE('/sse'),
     '/mcp': MyMCP.serve('/mcp'),

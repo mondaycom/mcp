@@ -1519,7 +1519,7 @@
   dependencies:
     lodash "^4.17.21"
 
-"@modelcontextprotocol/sdk@^1.0.3", "@modelcontextprotocol/sdk@^1.11.2":
+"@modelcontextprotocol/sdk@^1.11.2":
   version "1.11.2"
   resolved "https://registry.npmjs.org/@modelcontextprotocol/sdk/-/sdk-1.11.2.tgz#d81784c140d1a9cc937f61af9f071d8b78befe30"
   integrity sha512-H9vwztj5OAqHg9GockCQC06k1natgcxWQSRpQcPJf6i5+MWBzfKkRtxGbjQf0X2ihii0ffLZCRGbYV2f2bjNCQ==
@@ -6406,16 +6406,17 @@ workerd@1.20250508.0:
     "@cloudflare/workerd-linux-arm64" "1.20250508.0"
     "@cloudflare/workerd-windows-64" "1.20250508.0"
 
-workers-mcp@^0.0.13:
-  version "0.0.13"
-  resolved "https://registry.npmjs.org/workers-mcp/-/workers-mcp-0.0.13.tgz#b30fd0eca641ff2cb451d9ea6fce8022c367f88e"
-  integrity sha512-JoFASGioyaVAI1Rn+a4PJcV66cWthL7wnwZZYl1u3pwUz014Ym76sBPvGLuODWXjOkE7D3z+6CM4nH8pW4tlcA==
+workers-mcp@0.1.0-3:
+  version "0.1.0-3"
+  resolved "https://registry.npmjs.org/workers-mcp/-/workers-mcp-0.1.0-3.tgz#020f39c8ae3fe29daa78e7cd6a215a0da7c5c757"
+  integrity sha512-PCgcGZnFvtk0WkbUsA9nDd5qqwv310L7on0/hlJZ9hQZkJMntGf5v3L2X3mLSDs9WSDF6jSedxlvWCtIXrKbEg==
   dependencies:
     "@clack/prompts" "^0.8.2"
-    "@modelcontextprotocol/sdk" "^1.0.3"
+    "@modelcontextprotocol/sdk" "^1.7.0"
     "@silvia-odwyer/photon-node" "^0.3.3"
     chalk "^5.3.0"
     fs-extra "^11.2.0"
+    hono "^4.7.4"
     jsdoc-api "^9.3.4"
     just-filter-object "^3.2.0"
     just-map-values "^3.2.0"
