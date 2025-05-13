@@ -4,8 +4,7 @@ export type ToolsConfiguration = {
   include?: string[];
   exclude?: string[];
   readOnlyMode?: boolean;
-  enableDynamicApiTools?: boolean;
-  enableMondayAppsTools?: boolean;
+  mode?: 'api' | 'apps' | 'all';
 };
 
 export type MondayAgentToolkitConfig = {

@@ -14,6 +14,7 @@ export enum ToolType {
   READ = 'read',
   WRITE = 'write',
   ALL_API = 'all_api',
+  APPS = 'apps',
 }
 
 export interface Tool<Input extends ZodRawShape | undefined, Output extends Record<string, unknown> = never>

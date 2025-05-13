@@ -7,10 +7,18 @@ export const getFilteredToolInstances = (
   instanceOptions: { apiClient: ApiClient; apiToken: string },
   config?: ToolsConfiguration,
 ): Tool<any, any>[] => {
-  const allToolConstructors: Array<new (...args: any[]) => Tool<any, any>> = [...allGraphqlApiTools];
-  if (config?.enableMondayAppsTools) {
-    allToolConstructors.push(...allMondayAppsTools);
+  let allToolConstructors: Array<new (...args: any[]) => Tool<any, any>> = [];
+
+  if (config?.mode === 'api') {
+    allToolConstructors = [...allGraphqlApiTools];
+  } else if (config?.mode === 'apps') {
+    allToolConstructors = [...allMondayAppsTools];
+  } else if (config?.mode === 'all') {
+    allToolConstructors = [...allGraphqlApiTools, ...allMondayAppsTools];
+  } else {
+    allToolConstructors = [...allGraphqlApiTools];
   }
+
   const allToolInstances = allToolConstructors.map((ctor) => toolFactory(ctor, instanceOptions));
 
   return allToolInstances.filter((toolInstance) => {
@@ -18,9 +26,6 @@ export const getFilteredToolInstances = (
       return toolInstance.type !== ToolType.ALL_API;
     }
     let shouldFilter = false;
-    if (!config.enableDynamicApiTools) {
-      shouldFilter = shouldFilter || toolInstance.type === ToolType.ALL_API;
-    }
     if (config.readOnlyMode) {
       shouldFilter = shouldFilter || toolInstance.type !== ToolType.READ;
     }
