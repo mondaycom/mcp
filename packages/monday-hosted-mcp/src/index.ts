@@ -30,7 +30,10 @@ export class MyMCP extends McpAgent<Props, Env> {
 
 export default new OAuthProvider({
   apiRoute: '/sse',
-  apiHandler: MyMCP.mount('/sse'),
+  apiHandlers: {
+    '/sse': MyMCP.serveSSE('/sse'),
+    '/mcp': MyMCP.serve('/mcp'),
+  },
   defaultHandler: MondayHandler,
   authorizeEndpoint: '/authorize',
   tokenEndpoint: '/token',
