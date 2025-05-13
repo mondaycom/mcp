@@ -1,0 +1,31 @@
+{
+  "name": "monday-remote-mcp",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "start": "wrangler dev",
+    "cf-typegen": "wrangler types"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-oauth-provider": "^0.0.2",
+    "@cloudflare/workers-types": "^4.20250507.0",
+    "@modelcontextprotocol/sdk": "^1.7.0",
+    "@types/node-fetch": "^2.6.12",
+    "@types/simple-oauth2": "^5.0.7",
+    "agents": "^0.0.53",
+    "hono": "^4.7.4",
+    "just-pick": "^4.2.0",
+    "prettier": "^3.5.3",
+    "typescript": "^5.5.2",
+    "workers-mcp": "0.1.0-3",
+    "wrangler": "^4.14.3",
+    "zod": "^3.24.2"
+  },
+  "dependencies": {
+    "@mondaydotcomorg/agent-toolkit": "^2.0.3",
+    "monday-sdk-js": "^0.5.4",
+    "simple-oauth2": "^5.1.0"
+  }
+}
