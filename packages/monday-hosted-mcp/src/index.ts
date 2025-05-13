@@ -1,19 +1,18 @@
 import OAuthProvider from '@cloudflare/workers-oauth-provider'
 import { McpAgent } from 'agents/mcp'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
-import { z } from 'zod'
 import { MondayHandler } from './monday-handler'
 import { Props } from './utils'
-// Import from the npm package
 import { MondayAgentToolkit } from '@mondaydotcomorg/agent-toolkit/mcp'
 
 export class MyMCP extends McpAgent<Props, Env> {
-  server: McpServer
+  server: McpServer | undefined
+  props: Props | undefined
 
   async init() {
     // Initialize the MondayAgentToolkit with your access token from props
     const toolkit = new MondayAgentToolkit({
-      mondayApiToken: this.props.accessToken,
+      mondayApiToken: this.props?.accessToken,
       toolsConfiguration: {
         enableDynamicApiTools: true,
       },
