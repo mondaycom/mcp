@@ -779,7 +779,7 @@ export enum ColumnType {
   Subtasks = 'subtasks',
   /** Add tags to categorize items across multiple boards */
   Tags = 'tags',
-  /** Assign a full team to an item */
+  /** Assign a full team to an item  */
   Team = 'team',
   /** Add textual information e.g. addresses, names or keywords */
   Text = 'text',
@@ -821,6 +821,18 @@ export type Complexity = {
   query: Scalars['Int']['output'];
   /** How long in seconds before the complexity budget is reset */
   reset_in_x_seconds: Scalars['Int']['output'];
+};
+
+export type ConnectProjectResult = {
+  __typename?: 'ConnectProjectResult';
+  /** A message describing the result of the operation. */
+  message?: Maybe<Scalars['String']['output']>;
+  /** The ID of the created portfolio item, if successful. */
+  portfolio_item_id?: Maybe<Scalars['String']['output']>;
+  /** The unique identifier of the operation. */
+  request_id?: Maybe<Scalars['ID']['output']>;
+  /** Indicates if the operation was successful. */
+  success?: Maybe<Scalars['Boolean']['output']>;
 };
 
 export type Country = {
@@ -1904,7 +1916,7 @@ export enum ItemsQueryRuleOperator {
   StartsWith = 'starts_with',
   /** Within the last */
   WithinTheLast = 'within_the_last',
-  /** Within the next */
+  /** Within the next  */
   WithinTheNext = 'within_the_next'
 }
 
@@ -2159,6 +2171,8 @@ export type Mutation = {
   clear_item_updates?: Maybe<Item>;
   /** Get the complexity data of your mutations. */
   complexity?: Maybe<Complexity>;
+  /** Connect project to portfolio */
+  connect_project_to_portfolio?: Maybe<ConnectProjectResult>;
   /** Create a new board. */
   create_board?: Maybe<Board>;
   /** Create a new column in board. */
@@ -2448,6 +2462,13 @@ export type MutationClear_Item_UpdatesArgs = {
 
 
 /** Update your monday.com data. */
+export type MutationConnect_Project_To_PortfolioArgs = {
+  portfolioBoardId: Scalars['ID']['input'];
+  projectBoardId: Scalars['ID']['input'];
+};
+
+
+/** Update your monday.com data. */
 export type MutationCreate_BoardArgs = {
   board_kind: BoardKind;
   board_name: Scalars['String']['input'];
@@ -2616,6 +2637,7 @@ export type MutationCreate_WebhookArgs = {
 
 /** Update your monday.com data. */
 export type MutationCreate_WorkspaceArgs = {
+  account_product_id?: InputMaybe<Scalars['ID']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
   kind: WorkspaceKind;
   name: Scalars['String']['input'];
@@ -4125,6 +4147,7 @@ export type User = {
   enabled: Scalars['Boolean']['output'];
   /** The token of the user for email to board. */
   encrypt_api_token?: Maybe<Scalars['String']['output']>;
+  greeting?: Maybe<Scalars['String']['output']>;
   /** The user's unique identifier. */
   id: Scalars['ID']['output'];
   /** Is the user an account admin. */
@@ -4816,3 +4839,18 @@ export type FetchCustomActivityQueryVariables = Exact<{ [key: string]: never; }>
 
 
 export type FetchCustomActivityQuery = { __typename?: 'Query', custom_activity?: Array<{ __typename?: 'CustomActivity', color?: CustomActivityColor | null, icon_id?: CustomActivityIcon | null, id?: string | null, name?: string | null, type?: string | null }> | null };
+
+export type FetchItemUpdatesQueryVariables = Exact<{
+  itemId: Scalars['ID']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type FetchItemUpdatesQuery = { __typename?: 'Query', items?: Array<{ __typename?: 'Item', updates?: Array<{ __typename?: 'Update', id: string, body: string, created_at?: any | null, text_body?: string | null, creator?: { __typename?: 'User', id: string, name: string } | null }> | null } | null> | null };
+
+export type DeleteUpdateMutationVariables = Exact<{
+  updateId: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteUpdateMutation = { __typename?: 'Mutation', delete_update?: { __typename?: 'Update', id: string } | null };

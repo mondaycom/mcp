@@ -120,6 +120,7 @@ Our MCP server provides a rich set of tools that give AI assistants the ability 
 | | delete_item | Delete an item from a board permanently |
 | | get_board_items_by_name | Search for items by board ID and term/name |
 | | create_update | Add an update/comment to a specific item |
+| | manage_item_updates | Fetches updates for an item or creates a new update on an item. |
 | | change_item_column_values | Modify the column values of an existing item |
 | | move_item_to_group | Move an item to a different group within the same board |
 | **Board Operations** | create_board | Create a new monday.com board with specified columns |

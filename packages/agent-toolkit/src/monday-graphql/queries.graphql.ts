@@ -428,3 +428,29 @@ export const fetchCustomActivity = gql`
     }
   }
 `;
+
+export const fetchItemUpdates = gql`
+  query FetchItemUpdates($itemId: ID!, $limit: Int) {
+    items(ids: [$itemId]) {
+      updates(limit: $limit) {
+        id
+        body
+        created_at
+        text_body # Added for plain text content of the update
+        creator {
+          id
+          name
+        }
+        # Consider adding other relevant fields like replies, reactions if needed
+      }
+    }
+  }
+`;
+
+export const deleteUpdate = gql`
+  mutation DeleteUpdate($updateId: ID!) {
+    delete_update(id: $updateId) {
+      id
+    }
+  }
+`;

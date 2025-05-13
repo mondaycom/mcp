@@ -1,7 +1,6 @@
 import { DeleteItemTool } from './delete-item-tool';
 import { GetBoardItemsTool } from './get-board-items-tool';
 import { CreateItemTool } from './create-item-tool';
-import { CreateUpdateTool } from './create-update-tool';
 import { GetBoardSchemaTool } from './get-board-schema-tool';
 import { GetUsersTool } from './get-users-tool';
 import { ChangeItemColumnValuesTool } from './change-item-column-values-tool';
@@ -15,12 +14,12 @@ import { GetTypeDetailsTool } from './get-type-details-tool';
 import { CreateCustomActivityTool } from './create-custom-activity-tool';
 import { CreateTimelineItemTool } from './create-timeline-item-tool';
 import { FetchCustomActivityTool } from './fetch-custom-activity-tool';
+import { ManageItemUpdatesTool } from './manage-item-updates-tool';
 
 export const allTools = [
   DeleteItemTool,
   GetBoardItemsTool,
   CreateItemTool,
-  CreateUpdateTool,
   GetBoardSchemaTool,
   GetUsersTool,
   ChangeItemColumnValuesTool,
@@ -34,12 +33,12 @@ export const allTools = [
   CreateCustomActivityTool,
   CreateTimelineItemTool,
   FetchCustomActivityTool,
+  ManageItemUpdatesTool,
 ];
 
 export * from './delete-item-tool';
 export * from './get-board-items-tool';
 export * from './create-item-tool';
-export * from './create-update-tool';
 export * from './get-board-schema-tool';
 export * from './get-users-tool';
 export * from './change-item-column-values-tool';
@@ -53,3 +52,4 @@ export * from './get-type-details-tool';
 export * from './create-custom-activity-tool';
 export * from './create-timeline-item-tool';
 export * from './fetch-custom-activity-tool';
+export * from './manage-item-updates-tool';

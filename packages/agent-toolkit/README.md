@@ -24,7 +24,7 @@ The toolkit includes several pre-built tools for common Monday.com operations, o
 - `CreateItemTool` - Create a new item in a monday.com board
 - `DeleteItemTool` - Delete an item from a board
 - `GetBoardItemsTool` - Get items by board id and term
-- `CreateUpdateTool` - Create a new update on a specific item
+- `ManageItemUpdatesTool` - Fetches updates for an item or creates a new update on an item.
 - `ChangeItemColumnValuesTool` - Change the column values of an item in a monday.com board
 - `MoveItemToGroupTool` - Move an item to a group in a monday.com board
 
