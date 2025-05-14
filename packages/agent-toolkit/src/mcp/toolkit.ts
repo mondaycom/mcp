@@ -52,10 +52,6 @@ export class MondayAgentToolkit extends McpServer {
   private registerTools(config: MondayAgentToolkitConfig): void {
     try {
       const toolInstances = this.initializeTools(config);
-      console.log(
-        '[MondayAgentToolkit] Registering tools:',
-        toolInstances.map((t) => t.name),
-      );
       toolInstances.forEach((tool) => this.registerTool(tool));
     } catch (error) {
       console.error('Failed to register tools:', error instanceof Error ? error.message : String(error));
