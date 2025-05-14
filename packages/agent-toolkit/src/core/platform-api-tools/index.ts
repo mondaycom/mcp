@@ -15,6 +15,7 @@ import { CreateCustomActivityTool } from './create-custom-activity-tool';
 import { CreateTimelineItemTool } from './create-timeline-item-tool';
 import { FetchCustomActivityTool } from './fetch-custom-activity-tool';
 import { ManageItemUpdatesTool } from './manage-item-updates-tool';
+import { ListBoardItemsTool } from './list-board-items-tool';
 
 export const allTools = [
   DeleteItemTool,
@@ -34,6 +35,7 @@ export const allTools = [
   CreateTimelineItemTool,
   FetchCustomActivityTool,
   ManageItemUpdatesTool,
+  ListBoardItemsTool,
 ];
 
 export * from './delete-item-tool';
@@ -53,3 +55,4 @@ export * from './create-custom-activity-tool';
 export * from './create-timeline-item-tool';
 export * from './fetch-custom-activity-tool';
 export * from './manage-item-updates-tool';
+export * from './list-board-items-tool';

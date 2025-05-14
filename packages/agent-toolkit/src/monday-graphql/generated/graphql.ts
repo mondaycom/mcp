@@ -4724,6 +4724,7 @@ export type CreateItemMutation = { __typename?: 'Mutation', create_item?: { __ty
 export type CreateUpdateMutationVariables = Exact<{
   itemId: Scalars['ID']['input'];
   body: Scalars['String']['input'];
+  parentId?: InputMaybe<Scalars['ID']['input']>;
 }>;
 
 
@@ -4841,12 +4842,12 @@ export type FetchCustomActivityQueryVariables = Exact<{ [key: string]: never; }>
 export type FetchCustomActivityQuery = { __typename?: 'Query', custom_activity?: Array<{ __typename?: 'CustomActivity', color?: CustomActivityColor | null, icon_id?: CustomActivityIcon | null, id?: string | null, name?: string | null, type?: string | null }> | null };
 
 export type FetchItemUpdatesQueryVariables = Exact<{
-  itemId: Scalars['ID']['input'];
+  itemIds: Array<Scalars['ID']['input']> | Scalars['ID']['input'];
   limit?: InputMaybe<Scalars['Int']['input']>;
 }>;
 
 
-export type FetchItemUpdatesQuery = { __typename?: 'Query', items?: Array<{ __typename?: 'Item', updates?: Array<{ __typename?: 'Update', id: string, body: string, created_at?: any | null, text_body?: string | null, creator?: { __typename?: 'User', id: string, name: string } | null }> | null } | null> | null };
+export type FetchItemUpdatesQuery = { __typename?: 'Query', items?: Array<{ __typename?: 'Item', id: string, name: string, updates?: Array<{ __typename?: 'Update', id: string, body: string, created_at?: any | null, text_body?: string | null, creator?: { __typename?: 'User', id: string, name: string } | null }> | null } | null> | null };
 
 export type DeleteUpdateMutationVariables = Exact<{
   updateId: Scalars['ID']['input'];
@@ -4854,3 +4855,21 @@ export type DeleteUpdateMutationVariables = Exact<{
 
 
 export type DeleteUpdateMutation = { __typename?: 'Mutation', delete_update?: { __typename?: 'Update', id: string } | null };
+
+export type ListBoardItemsQueryVariables = Exact<{
+  boardId: Scalars['ID']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  queryParams?: InputMaybe<ItemsQuery>;
+}>;
+
+
+export type ListBoardItemsQuery = { __typename?: 'Query', boards?: Array<{ __typename?: 'Board', name: string, items_page: { __typename?: 'ItemsResponse', cursor?: string | null, items: Array<{ __typename?: 'Item', id: string, name: string, group?: { __typename?: 'Group', id: string, title: string } | null }> } } | null> | null };
+
+export type FetchBoardUpdatesQueryVariables = Exact<{
+  boardIds: Array<Scalars['ID']['input']> | Scalars['ID']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type FetchBoardUpdatesQuery = { __typename?: 'Query', boards?: Array<{ __typename?: 'Board', id: string, name: string, updates?: Array<{ __typename?: 'Update', id: string, body: string, text_body?: string | null, created_at?: any | null, updated_at?: any | null, creator_id?: string | null, item_id?: string | null, creator?: { __typename?: 'User', id: string, name: string } | null, replies?: Array<{ __typename?: 'Reply', id: string, body: string }> | null }> | null } | null> | null };

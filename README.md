@@ -12,7 +12,7 @@
   <img src="https://img.shields.io/badge/TypeScript-Powered-blue" alt="TypeScript">
 </p>
 
-**Enable AI agents to operate reliably within real workflows. This MCP is monday.com’s open framework for connecting agents into your work OS - giving them secure access to structured data, tools to take action, and the context needed to make smart decisions.**
+**Enable AI agents to operate reliably within real workflows. This MCP is monday.com's open framework for connecting agents into your work OS - giving them secure access to structured data, tools to take action, and the context needed to make smart decisions.**
 
 </div>
 
@@ -119,6 +119,7 @@ Our MCP server provides a rich set of tools that give AI assistants the ability 
 | **Item Operations** | create_item | Create a new item in a monday.com board with specified column values |
 | | delete_item | Delete an item from a board permanently |
 | | get_board_items_by_name | Search for items by board ID and term/name |
+| | list_board_items | Lists items from a board with pagination, and optional filtering by group ID and item name. |
 | | manage_item_updates | Fetches updates for an item or creates a new update on an item. |
 | | change_item_column_values | Modify the column values of an existing item |
 | | move_item_to_group | Move an item to a different group within the same board |

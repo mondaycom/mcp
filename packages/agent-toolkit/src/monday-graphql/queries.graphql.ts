@@ -31,8 +31,8 @@ export const createItem = gql`
 `;
 
 export const createUpdate = gql`
-  mutation createUpdate($itemId: ID!, $body: String!) {
-    create_update(item_id: $itemId, body: $body) {
+  mutation createUpdate($itemId: ID!, $body: String!, $parentId: ID) {
+    create_update(item_id: $itemId, body: $body, parent_id: $parentId) {
       id
     }
   }
@@ -430,8 +430,8 @@ export const fetchCustomActivity = gql`
 `;
 
 export const fetchItemUpdates = gql`
-  query FetchItemUpdates($itemId: ID!, $limit: Int) {
-    items(ids: [$itemId]) {
+  query FetchItemUpdates($itemIds: [ID!]!, $limit: Int) {
+    items(ids: $itemIds) {
       updates(limit: $limit) {
         id
         body
@@ -443,6 +443,8 @@ export const fetchItemUpdates = gql`
         }
         # Consider adding other relevant fields like replies, reactions if needed
       }
+      id # Include item ID to associate updates with items in the response
+      name # Optionally include item name for context
     }
   }
 `;
@@ -451,6 +453,59 @@ export const deleteUpdate = gql`
   mutation DeleteUpdate($updateId: ID!) {
     delete_update(id: $updateId) {
       id
+    }
+  }
+`;
+
+export const listBoardItems = gql`
+  query ListBoardItems(
+    $boardId: ID!
+    $limit: Int
+    $cursor: String
+    $queryParams: ItemsQuery # Placeholder type, verify from schema/codegen
+  ) {
+    boards(ids: [$boardId]) {
+      name # Board name for context
+      items_page(limit: $limit, cursor: $cursor, query_params: $queryParams) {
+        cursor # For next page
+        items {
+          id
+          name
+          group {
+            id
+            title
+          }
+          # Add other commonly useful, lightweight fields if desired
+        }
+      }
+    }
+  }
+`;
+
+export const fetchBoardUpdates = gql`
+  query FetchBoardUpdates($boardIds: [ID!]!, $limit: Int) {
+    boards(ids: $boardIds) {
+      id
+      name
+      updates(limit: $limit) {
+        id
+        body
+        text_body
+        created_at
+        updated_at
+        creator_id
+        item_id
+        creator {
+          id
+          name
+        }
+        replies {
+          id
+          body
+          # Add other reply fields if needed in the future, e.g., creator, created_at
+        }
+        # Add other update fields if needed in the future
+      }
     }
   }
 `;
