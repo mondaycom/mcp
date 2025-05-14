@@ -2,8 +2,13 @@ import { ToolOutputType, ToolType } from '../tool';
 import { BaseMondayApiTool } from './base-monday-api-tool';
 import { getGraphQLSchema } from '../../monday-graphql/queries.graphql';
 import { GetGraphQlSchemaQuery } from '../../monday-graphql/generated/graphql';
+import { z } from 'zod';
 
-export class GetGraphQLSchemaTool extends BaseMondayApiTool<undefined> {
+export const getGraphQLSchemaToolSchema = {
+  random_string: z.string().describe('Dummy parameter for no-parameter tools').optional(),
+};
+
+export class GetGraphQLSchemaTool extends BaseMondayApiTool<typeof getGraphQLSchemaToolSchema> {
   name = 'get_graphql_schema';
   type = ToolType.ALL_API;
 
@@ -11,8 +16,8 @@ export class GetGraphQLSchemaTool extends BaseMondayApiTool<undefined> {
     return 'Fetch the Monday.com GraphQL schema structure including query and mutation definitions';
   }
 
-  getInputSchema(): undefined {
-    return undefined;
+  getInputSchema(): typeof getGraphQLSchemaToolSchema {
+    return getGraphQLSchemaToolSchema;
   }
 
   async execute(): Promise<ToolOutputType<never>> {
