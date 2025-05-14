@@ -4,6 +4,7 @@ import { CallToolResult } from '@modelcontextprotocol/sdk/types';
 import { ApiClient, ApiClientConfig } from '@mondaydotcomorg/api';
 import { Tool, allTools } from '../core';
 import { filterTools, ToolsConfiguration } from '../core/utils';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 
 export type MondayAgentToolkitConfig = {
   mondayApiToken: ApiClientConfig['token'];
@@ -16,6 +17,7 @@ export class MondayAgentToolkit extends McpServer {
   private readonly mondayApiClient: ApiClient;
 
   constructor(config: MondayAgentToolkitConfig) {
+    // console.info(JSON.stringify({ level: 'info', event: 'constructor', message: 'MondayAgentToolkit constructor called. Initializing toolkit...' }));
     super({
       name: 'monday.com',
       version: '1.0.0',
@@ -38,6 +40,15 @@ export class MondayAgentToolkit extends McpServer {
 
     tools.forEach((tool) => {
       const inputSchema = tool.getInputSchema();
+      // console.info(JSON.stringify({ level: 'info', event: 'register_tool', tool: tool.name, message: `Registering tool: ${tool.name}` }));
+      if (inputSchema) {
+        try {
+          const jsonSchema = zodToJsonSchema(z.object(inputSchema));
+          // console.info(JSON.stringify({ level: 'info', event: 'tool_schema', tool: tool.name, schema: jsonSchema }));
+        } catch (err) {
+          // console.info(JSON.stringify({ level: 'error', event: 'tool_schema', tool: tool.name, error: String(err) }));
+        }
+      }
       if (!inputSchema) {
         this.tool(tool.name, tool.getDescription(), async (_extra: any) => {
           const res = await tool.execute();
