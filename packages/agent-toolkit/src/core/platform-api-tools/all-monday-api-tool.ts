@@ -9,11 +9,13 @@ let cachedSchema: GraphQLSchema | null = null;
 
 let mondayApiClient: ApiClient | null = null;
 
+const SCHEMA_API_URL = process.env.SCHEMA_API_URL ?? 'https://api.monday.com/v2/get_schema';
+
 async function loadSchema(): Promise<GraphQLSchema> {
   if (cachedSchema) return cachedSchema;
 
   try {
-    const response = await fetch('https://api.monday.com/v2/get_schema');
+    const response = await fetch(SCHEMA_API_URL);
     const { data } = await response.json();
     cachedSchema = buildClientSchema(data);
     return cachedSchema;
