@@ -6168,7 +6168,17 @@ type Query {
     """
     A list of items unique identifiers.
     """
-    ids: [ID!]
+    ids: [ID]
+
+    """
+    The start date of the updates to retrieve (inclusive). ISO 8601 format (e.g., YYYY-MM-DD or YYYY-MM-DDTHH:mm).
+    """
+    from_date: Date
+
+    """
+    Filter updates created up to this date (inclusive). ISO 8601 format (e.g., YYYY-MM-DD or YYYY-MM-DDTHH:mm).
+    """
+    to_date: Date
   ): [Update!]
   custom_activity(
     """
@@ -7566,6 +7576,11 @@ type Update {
   The update's text body.
   """
   text_body: String
+
+  """
+  The update's parent ID.
+  """
+  parent_id: String
 }
 
 input UpdateDropdownColumnSettingsInput {

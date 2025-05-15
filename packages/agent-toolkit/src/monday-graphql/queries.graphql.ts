@@ -31,8 +31,8 @@ export const createItem = gql`
 `;
 
 export const createUpdate = gql`
-  mutation createUpdate($itemId: ID!, $body: String!) {
-    create_update(item_id: $itemId, body: $body) {
+  mutation createUpdate($itemId: ID!, $body: String!, $parentId: ID) {
+    create_update(item_id: $itemId, body: $body, parent_id: $parentId) {
       id
     }
   }
@@ -425,6 +425,21 @@ export const fetchCustomActivity = gql`
       id
       name
       type
+    }
+  }
+`;
+
+export const getUpdates = gql`
+  query GetUpdates($ids: [ID!], $limit: Int, $page: Int, $from_date: String, $to_date: String) {
+    updates(ids: $ids, limit: $limit, page: $page, from_date: $from_date, to_date: $to_date) {
+      id
+      text_body
+      created_at
+      item_id
+      creator {
+        id
+        name
+      }
     }
   }
 `;
