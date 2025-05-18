@@ -53,7 +53,7 @@ export class GetUpdatesTool extends BaseMondayApiTool<GetUpdatesToolInput, never
   type = ToolType.QUERY;
 
   getDescription(): string {
-    return 'Get a collection of updates for specific items, optionally filtered by date range, with pagination.';
+    return 'Get a collection of updates, optionally filtered by date range or updates ids, with pagination.';
   }
 
   getInputSchema(): GetUpdatesToolInput {
