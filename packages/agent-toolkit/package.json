@@ -48,7 +48,7 @@
     "url": "https://github.com/mondaycom/monday-ai/tree/master/packages/agent-toolkit"
   },
   "dependencies": {
-    "@mondaydotcomorg/api": "^9.0.1",
+    "@mondaydotcomorg/api": "^10.0.5",
     "zod": "^3.24.2",
     "zod-to-json-schema": "^3.24.5"
   },

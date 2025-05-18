@@ -1,6 +1,7 @@
 <div align="center">
 
 # 🚀 monday.com MCP
+
 <p>
   <a href="https://npmjs.com/package/@mondaydotcomorg/monday-api-mcp"><img src="https://img.shields.io/npm/v/@mondaydotcomorg/monday-api-mcp.svg?style=flat" alt="npm version"></a>
   <a href="https://github.com/mondaycom/mcp/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License"></a>
@@ -12,7 +13,7 @@
   <img src="https://img.shields.io/badge/TypeScript-Powered-blue" alt="TypeScript">
 </p>
 
-**Enable AI agents to operate reliably within real workflows. This MCP is monday.com’s open framework for connecting agents into your work OS - giving them secure access to structured data, tools to take action, and the context needed to make smart decisions.**
+**Enable AI agents to operate reliably within real workflows. This MCP is monday.com's open framework for connecting agents into your work OS - giving them secure access to structured data, tools to take action, and the context needed to make smart decisions.**
 
 </div>
 
@@ -20,7 +21,7 @@
 
 This repository, maintained by the monday.com AI team, provides a comprehensive set of tools for AI agent developers who want to integrate with monday.com. Whether you're building AI assistants, automations, or custom integrations, our tools make it easy to connect to the monday.com platform.
 
-https://github.com/user-attachments/assets/ed8d24e1-256b-4f6b-9d84-38e54a8703fd
+<https://github.com/user-attachments/assets/ed8d24e1-256b-4f6b-9d84-38e54a8703fd>
 
 ## 🔑 What is monday.com?
 
@@ -35,9 +36,11 @@ https://github.com/user-attachments/assets/ed8d24e1-256b-4f6b-9d84-38e54a8703fd
 ## 📦 What's Inside
 
 ### 💻 monday API MCP Server
+
 The `@mondaydotcomorg/monday-api-mcp` package provides a plug-and-play server implementation for the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/). It allows AI agents to interact with the monday.com API without needing to build complex integrations.
 
 ### 🤖 Agent Toolkit
+
 The `@mondaydotcomorg/agent-toolkit` package provides a powerful set of tools and utilities for building AI agents that interact with the monday.com API, supporting both OpenAI and Model Context Protocol (MCP) implementations.
 
 ## 🏁 Complete Installation Guide
@@ -194,16 +197,19 @@ The server requires a monday.com API token to authenticate with the monday.com A
 Here are some examples of what you can build with our tools:
 
 ### 1. AI Assistant for Project Management
+
 - Create and manage tasks in monday.com boards
 - Get updates on project status
 - Move items between groups as they progress
 
 ### 2. Data Analysis & Reporting
+
 - Extract data from monday.com boards
 - Generate reports and insights
 - Create new boards for reporting
 
 ### 3. Automated Workflows
+
 - Create items based on external triggers
 - Update item statuses based on conditions
 - Link related items across boards
@@ -227,6 +233,30 @@ Before using these tools, make sure you have:
 1. Node.js v20 or higher installed
 2. NPM v5.2.0 or higher installed
 3. A [monday.com API token](https://developer.monday.com/api-reference/docs/authentication)
+
+## 🛠️ Working Locally
+
+To work with this repository locally:
+
+1. Clone the repository
+2. Install dependencies: `yarn install`
+3. Build the project: `yarn build`
+4. Copy the path of the dist/index.js file in the mcp package.
+5. Change the config to work locally
+
+```bash
+    "monday-api-mcp": {
+      "command": "node",
+      "args": [
+        "<your_full_path_to_the_package>/dist/index.js",
+        "-t",
+        "123",
+        "--enable-dynamic-api-tools",
+        "true"
+      ],
+      "env": {}
+    }
+```
 
 ## 🤝 Contributing
 
