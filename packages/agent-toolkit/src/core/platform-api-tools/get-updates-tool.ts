@@ -38,8 +38,8 @@ interface GetUpdatesQueryVariables {
 }
 
 export const getUpdatesToolSchema = {
-  ids: z.array(z.preprocess(val => String(val), z.string())).optional().describe("A list of items unique identifiers (numbers will be automatically converted to strings)."),
-  limit: z.number().int().optional().default(25).describe("Number of items to get, the default is 25."),
+  ids: z.array(z.preprocess(val => String(val), z.string())).optional().describe("A list of updates unique identifiers (numbers will be automatically converted to strings)."),
+  limit: z.number().int().optional().default(25).describe("Number of updates to get, the default is 25."),
   page: z.number().int().optional().default(1).describe("Page number to get, starting at 1."),
   from_date: z.string().optional().describe("Optional. The start date for filtering updates (YYYY-MM-DD or YYYY-MM-DDTHH:mm). Leave empty if not filtering by start date."),
   to_date: z.string().optional().describe("Optional. The end date for filtering updates (YYYY-MM-DD or YYYY-MM-DDTHH:mm). Leave empty if not filtering by end date."),
