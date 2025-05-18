@@ -5,13 +5,11 @@ import { buildClientSchema, GraphQLSchema, parse, validate } from 'graphql';
 import { ApiClient } from '@mondaydotcomorg/api';
 import fetch from 'node-fetch';
 
-// Cache schemas by version
 const schemaCache: Record<string, GraphQLSchema> = {};
 
 let mondayApiClient: ApiClient | null = null;
 
 async function loadSchema(version: string): Promise<GraphQLSchema> {
-  // Return cached schema if available
   if (schemaCache[version]) {
     return schemaCache[version];
   }
