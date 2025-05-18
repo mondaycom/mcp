@@ -1097,6 +1097,24 @@ enum BoardSubscriberKind {
   subscriber
 }
 
+"""The available board view types."""
+enum BoardViewTypeValues {
+  """Calendar board view."""
+  CalendarBoardView
+
+  """Doc board view."""
+  DocBoardView
+
+  """Empty board view."""
+  EmptyBoardView
+
+  """Form board view."""
+  FormBoardView
+
+  """Table board view."""
+  TableBoardView
+}
+
 """
 A board's view.
 """
@@ -4775,6 +4793,19 @@ type Mutation {
     """
     workspace_id: ID
   ): Board
+
+
+  """Create a new board view."""
+  create_board_view(
+    """The board's unique identifier."""
+    board_id: ID!
+
+    """The name of the board view."""
+    name: String!
+
+    """The type of the board view."""
+    type: BoardViewTypeValues!
+  ): BoardView
 
   """
   Create a new column in board.
