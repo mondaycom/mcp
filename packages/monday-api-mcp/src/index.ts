@@ -23,6 +23,7 @@ async function runServer() {
     toolsConfiguration: {
       readOnlyMode: validatedArgs.readOnlyMode,
       mode: validatedArgs.mode,
+      enableDynamicApiTools: validatedArgs.enableDynamicApiTools,
     },
   });
 

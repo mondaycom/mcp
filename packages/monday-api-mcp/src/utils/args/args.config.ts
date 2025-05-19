@@ -29,4 +29,11 @@ export const ARG_CONFIGS: ArgConfig[] = [
     required: false,
     defaultValue: 'api',
   },
+  {
+    name: 'enableDynamicApiTools',
+    flags: ['--enable-dynamic-api-tools', '-edat'],
+    description: 'Enable dynamic API tools',
+    required: false,
+    defaultValue: false,
+  },
 ];

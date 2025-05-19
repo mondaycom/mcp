@@ -26,6 +26,9 @@ export const getFilteredToolInstances = (
       return toolInstance.type !== ToolType.ALL_API;
     }
     let shouldFilter = false;
+    if (config.enableDynamicApiTools !== true) {
+      shouldFilter = shouldFilter || toolInstance.type === ToolType.ALL_API;
+    }
     if (config.readOnlyMode) {
       shouldFilter = shouldFilter || toolInstance.type !== ToolType.READ;
     }
