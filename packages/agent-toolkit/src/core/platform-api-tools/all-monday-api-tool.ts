@@ -3,7 +3,7 @@ import { BaseMondayApiTool, MondayApiToolContext } from './base-monday-api-tool'
 import { ToolInputType, ToolOutputType, ToolType } from '../tool';
 import { buildClientSchema, GraphQLSchema, parse, validate } from 'graphql';
 import { ApiClient } from '@mondaydotcomorg/api';
-import fetch from 'node-fetch';
+import fetch from 'cross-fetch';
 
 const schemaCache: Record<string, GraphQLSchema> = {};
 
