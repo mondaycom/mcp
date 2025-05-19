@@ -1,8 +1,9 @@
 import { z } from 'zod';
 import { BaseMondayApiTool, MondayApiToolContext } from './base-monday-api-tool';
 import { ToolInputType, ToolOutputType, ToolType } from '../tool';
-import { buildClientSchema, GraphQLSchema, parse, validate } from 'graphql';
+import { buildClientSchema, GraphQLSchema, IntrospectionQuery, parse, validate } from 'graphql';
 import { ApiClient } from '@mondaydotcomorg/api';
+import { introspectionQuery } from 'src/monday-graphql';
 
 const schemaCache: Record<string, GraphQLSchema> = {};
 
@@ -14,15 +15,16 @@ async function loadSchema(version: string): Promise<GraphQLSchema> {
   }
 
   try {
-    const url = `https://api.monday.com/v2/get_schema?version=${version}`;
+    if (mondayApiClient) {
+      const response = await mondayApiClient.rawRequest<IntrospectionQuery>(introspectionQuery);
+      const { data } = response;
 
-    const response = await fetch(url);
-    const { data } = await response.json();
+      const schema = buildClientSchema(data);
+      schemaCache[version] = schema;
 
-    const schema = buildClientSchema(data);
-    schemaCache[version] = schema;
-
-    return schema;
+      return schema;
+    }
+    throw new Error('Monday API client is not available');
   } catch (error) {
     throw new Error(`Failed to load GraphQL schema: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
@@ -58,7 +60,7 @@ export class AllMondayApiTool extends BaseMondayApiTool<typeof allMondayApiToolS
 
   constructor(mondayApi: ApiClient, context?: MondayApiToolContext) {
     super(mondayApi, context);
-    mondayApiClient = this.mondayApi;
+    mondayApiClient = mondayApi;
   }
 
   getDescription(): string {
