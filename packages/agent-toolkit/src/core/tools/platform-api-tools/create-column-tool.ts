@@ -1,12 +1,12 @@
 import { z } from 'zod';
-import { ToolInputType, ToolOutputType, ToolType } from '../tool';
-import { BaseMondayApiTool } from './base-monday-api-tool';
-import { createColumn } from '../../monday-graphql/queries.graphql';
 import {
   ColumnType,
   CreateColumnMutation,
   CreateColumnMutationVariables,
-} from '../../monday-graphql/generated/graphql';
+} from '../../../monday-graphql/generated/graphql';
+import { createColumn } from '../../../monday-graphql/queries.graphql';
+import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
+import { BaseMondayApiTool } from './base-monday-api-tool';
 
 export const createColumnToolSchema = {
   columnType: z.nativeEnum(ColumnType).describe('The type of the column to be created'),
@@ -29,7 +29,7 @@ export type CreateColumnToolInput = typeof createColumnToolSchema | typeof creat
 
 export class CreateColumnTool extends BaseMondayApiTool<CreateColumnToolInput> {
   name = 'create_column';
-  type = ToolType.MUTATION;
+  type = ToolType.WRITE;
 
   getDescription(): string {
     return 'Create a new column in a monday.com board';
@@ -45,7 +45,7 @@ export class CreateColumnTool extends BaseMondayApiTool<CreateColumnToolInput> {
 
   async execute(input: ToolInputType<CreateColumnToolInput>): Promise<ToolOutputType<never>> {
     const boardId = this.context?.boardId ?? (input as ToolInputType<typeof createColumnInBoardToolSchema>).boardId;
-    
+
     let columnSettings: string | undefined;
     if (input.columnSettings && input.columnType === ColumnType.Status) {
       columnSettings = JSON.stringify({
@@ -54,7 +54,7 @@ export class CreateColumnTool extends BaseMondayApiTool<CreateColumnToolInput> {
     } else if (input.columnSettings && input.columnType === ColumnType.Dropdown) {
       columnSettings = JSON.stringify({
         settings: {
-          labels: input.columnSettings.map((label: string, i: number) => ({id: i + 1, name: label})),
+          labels: input.columnSettings.map((label: string, i: number) => ({ id: i + 1, name: label })),
         },
       });
     }

@@ -1,23 +1,18 @@
-import { ApiClient, ApiClientConfig } from '@mondaydotcomorg/api';
-import { zodToJsonSchema } from 'zod-to-json-schema';
+import { ApiClient } from '@mondaydotcomorg/api';
 import type {
-  ChatCompletionTool,
   ChatCompletionMessageToolCall,
+  ChatCompletionTool,
   ChatCompletionToolMessageParam,
 } from 'openai/resources';
+import { getFilteredToolInstances } from '../utils/tools/tools-filtering.utils';
 import { z } from 'zod';
-import { Tool, allTools } from '../core';
-import { filterTools, ToolsConfiguration } from '../core/utils';
-
-export type MondayAgentToolkitConfig = {
-  mondayApiToken: ApiClientConfig['token'];
-  mondayApiVersion?: ApiClientConfig['apiVersion'];
-  mondayApiRequestConfig?: ApiClientConfig['requestConfig'];
-  toolsConfiguration?: ToolsConfiguration;
-};
+import { zodToJsonSchema } from 'zod-to-json-schema';
+import { Tool } from '../core/tool';
+import { MondayAgentToolkitConfig } from '../core/monday-agent-toolkit';
 
 export class MondayAgentToolkit {
   private readonly mondayApi: ApiClient;
+  private readonly mondayApiToken: string;
   tools: Tool<any, any>[];
 
   constructor(config: MondayAgentToolkitConfig) {
@@ -26,9 +21,24 @@ export class MondayAgentToolkit {
       apiVersion: config.mondayApiVersion,
       requestConfig: config.mondayApiRequestConfig,
     });
+    this.mondayApiToken = config.mondayApiToken;
 
-    const toolsToRegister = filterTools(allTools, this.mondayApi, config.toolsConfiguration);
-    this.tools = toolsToRegister.map((tool) => new tool(this.mondayApi)) as Tool<any, any>[];
+    this.tools = this.initializeTools(config);
+  }
+
+  /**
+   * Initialize both API and CLI tools
+   */
+  private initializeTools(config: MondayAgentToolkitConfig): Tool<any, any>[] {
+    const tools: Tool<any, any>[] = [];
+    const instanceOptions = {
+      apiClient: this.mondayApi,
+      apiToken: this.mondayApiToken,
+    };
+
+    const filteredToolInstances = getFilteredToolInstances(instanceOptions, config.toolsConfiguration);
+
+    return filteredToolInstances;
   }
 
   /**
@@ -67,18 +77,27 @@ export class MondayAgentToolkit {
       throw new Error(`Unknown tool: ${name}`);
     }
 
-    const parsedResult = z.object(tool.getInputSchema()).safeParse(args);
-    if (!parsedResult.success) {
-      // TODO: log error?
-      throw new Error(`Invalid arguments: ${parsedResult.error.message}`);
+    const inputSchema = tool.getInputSchema();
+    if (inputSchema) {
+      const parsedResult = z.object(inputSchema).safeParse(args);
+      if (!parsedResult.success) {
+        throw new Error(`Invalid arguments: ${parsedResult.error.message}`);
+      }
+
+      const result = await tool.execute(parsedResult.data);
+      return {
+        role: 'tool',
+        tool_call_id: toolCall.id,
+        content: result.content,
+      } as ChatCompletionToolMessageParam;
+    } else {
+      // Handle tools without input schema
+      const result = await tool.execute();
+      return {
+        role: 'tool',
+        tool_call_id: toolCall.id,
+        content: result.content,
+      } as ChatCompletionToolMessageParam;
     }
-
-    const result = await tool.execute(parsedResult.data);
-
-    return {
-      role: 'tool',
-      tool_call_id: toolCall.id,
-      content: result.content,
-    } as ChatCompletionToolMessageParam;
   }
 }

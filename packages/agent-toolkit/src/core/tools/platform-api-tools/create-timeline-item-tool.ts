@@ -1,10 +1,11 @@
 import { z } from 'zod';
-import { ToolOutputType } from '../tool';
-import { ToolInputType } from '../tool';
+import {
+  CreateTimelineItemMutation,
+  CreateTimelineItemMutationVariables,
+} from '../../../monday-graphql/generated/graphql';
+import { createTimelineItem } from '../../../monday-graphql/queries.graphql';
+import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool } from './base-monday-api-tool';
-import { ToolType } from '../tool';
-import { CreateTimelineItemMutation, CreateTimelineItemMutationVariables } from 'src/monday-graphql/generated/graphql';
-import { createTimelineItem } from 'src/monday-graphql/queries.graphql';
 
 export const createTimelineItemToolSchema = {
   item_id: z.number().describe('The ID of the item to create the new timeline item on'),
@@ -24,7 +25,7 @@ export const createTimelineItemToolSchema = {
 
 export class CreateTimelineItemTool extends BaseMondayApiTool<typeof createTimelineItemToolSchema> {
   name = 'create_timeline_item';
-  type = ToolType.MUTATION;
+  type = ToolType.WRITE;
 
   getDescription(): string {
     return 'Create a new timeline item in the E&A app';

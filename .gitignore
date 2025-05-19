@@ -137,4 +137,5 @@ dist
 
 # turbo
 .turbo
+.idea/
 .qodo

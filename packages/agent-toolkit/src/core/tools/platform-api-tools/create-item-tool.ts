@@ -1,8 +1,8 @@
 import { z } from 'zod';
+import { CreateItemMutation, CreateItemMutationVariables } from '../../../monday-graphql/generated/graphql';
+import { createItem } from '../../../monday-graphql/queries.graphql';
+import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool } from './base-monday-api-tool';
-import { ToolInputType, ToolOutputType, ToolType } from '../tool';
-import { createItem } from '../../monday-graphql/queries.graphql';
-import { CreateItemMutation, CreateItemMutationVariables } from '../../monday-graphql/generated/graphql';
 
 export const createItemToolSchema = {
   name: z.string().describe("The name of the new item to be created, must be relevant to the user's request"),
@@ -26,7 +26,7 @@ export type CreateItemToolInput = typeof createItemToolSchema | typeof createIte
 
 export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
   name = 'create_item';
-  type = ToolType.MUTATION;
+  type = ToolType.WRITE;
 
   getDescription(): string {
     return 'Create a new item in a monday.com board';

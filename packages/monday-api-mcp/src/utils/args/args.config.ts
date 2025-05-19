@@ -22,10 +22,17 @@ export const ARG_CONFIGS: ArgConfig[] = [
     defaultValue: false,
   },
   {
+    name: 'mode',
+    flags: ['--mode', '-m'],
+    description:
+      'Set the mode for tool selection: "api" (API tools only), "apps" (Monday Apps tools only), or "all" (all tools)',
+    required: false,
+    defaultValue: 'api',
+  },
+  {
     name: 'enableDynamicApiTools',
     flags: ['--enable-dynamic-api-tools', '-edat'],
-    description:
-      '(Beta) Enable dynamic API tools (Mode that includes the whole API schema, not supported when using read-only mode)',
+    description: 'Enable dynamic API tools',
     required: false,
     defaultValue: false,
   },

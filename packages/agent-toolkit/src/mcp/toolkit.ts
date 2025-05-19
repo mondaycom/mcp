@@ -1,27 +1,39 @@
-import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { CallToolResult } from '@modelcontextprotocol/sdk/types';
-import { ApiClient, ApiClientConfig } from '@mondaydotcomorg/api';
-import { Tool, allTools } from '../core';
-import { filterTools, ToolsConfiguration } from '../core/utils';
+import { ApiClient } from '@mondaydotcomorg/api';
+import { getFilteredToolInstances } from '../utils/tools/tools-filtering.utils';
+import { z } from 'zod';
+import { Tool } from '../core/tool';
+import { MondayAgentToolkitConfig } from '../core/monday-agent-toolkit';
 
-export type MondayAgentToolkitConfig = {
-  mondayApiToken: ApiClientConfig['token'];
-  mondayApiVersion?: ApiClientConfig['apiVersion'];
-  mondayApiRequestConfig?: ApiClientConfig['requestConfig'];
-  toolsConfiguration?: ToolsConfiguration;
-};
-
+/**
+ * Monday Agent Toolkit providing an MCP server with Monday.com tools
+ */
 export class MondayAgentToolkit extends McpServer {
   private readonly mondayApiClient: ApiClient;
+  private readonly mondayApiToken: string;
 
+  /**
+   * Creates a new instance of the Monday Agent Toolkit
+   * @param config Configuration for the toolkit
+   */
   constructor(config: MondayAgentToolkitConfig) {
     super({
       name: 'monday.com',
       version: '1.0.0',
     });
 
-    this.mondayApiClient = new ApiClient({
+    this.mondayApiClient = this.createApiClient(config);
+    this.mondayApiToken = config.mondayApiToken;
+
+    this.registerTools(config);
+  }
+
+  /**
+   * Create and configure the Monday API client
+   */
+  private createApiClient(config: MondayAgentToolkitConfig): ApiClient {
+    return new ApiClient({
       token: config.mondayApiToken,
       apiVersion: config.mondayApiVersion,
       requestConfig: {
@@ -32,42 +44,110 @@ export class MondayAgentToolkit extends McpServer {
         },
       },
     });
+  }
 
-    const toolsToRegister = filterTools(allTools, this.mondayApiClient, config.toolsConfiguration);
-    const tools = toolsToRegister.map((tool) => new tool(this.mondayApiClient)) as Tool<any, any>[];
+  /**
+   * Register all tools with the MCP server
+   */
+  private registerTools(config: MondayAgentToolkitConfig): void {
+    try {
+      const toolInstances = this.initializeTools(config);
+      toolInstances.forEach((tool) => this.registerTool(tool));
+    } catch (error) {
+      console.error('Failed to register tools:', error instanceof Error ? error.message : String(error));
+      throw new Error(
+        `Failed to initialize Monday Agent Toolkit: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
 
-    tools.forEach((tool) => {
-      const inputSchema = tool.getInputSchema();
-      if (!inputSchema) {
-        this.tool(tool.name, tool.getDescription(), async (_extra: any) => {
-          const res = await tool.execute();
+  /**
+   * Initialize both API and CLI tools
+   */
+  private initializeTools(config: MondayAgentToolkitConfig): Tool<any, any>[] {
+    const instanceOptions = {
+      apiClient: this.mondayApiClient,
+      apiToken: this.mondayApiToken,
+    };
 
-          const result: CallToolResult = {
-            content: [{ type: 'text', text: res.content }],
-          };
+    const filteredTools = getFilteredToolInstances(instanceOptions, config.toolsConfiguration);
 
-          return result;
-        });
-      } else {
-        this.tool(tool.name, tool.getDescription(), inputSchema, async (args: any, _extra: any) => {
-          const parsedArgs = z.object(inputSchema).safeParse(args);
-          if (!parsedArgs.success) {
-            throw new Error(`Invalid arguments: ${parsedArgs.error.message}`);
-          }
+    return filteredTools;
+  }
 
-          const res = await tool.execute(parsedArgs.data);
+  /**
+   * Register a single tool with the MCP server
+   */
+  private registerTool(tool: Tool<any, any>): void {
+    const inputSchema = tool.getInputSchema();
 
-          const result: CallToolResult = {
-            content: [{ type: 'text', text: res.content }],
-          };
+    if (!inputSchema) {
+      this.registerNoInputTool(tool);
+    } else {
+      this.registerInputTool(tool, inputSchema);
+    }
+  }
 
-          return result;
-        });
+  /**
+   * Register a tool that doesn't require input
+   */
+  private registerNoInputTool(tool: Tool<any, any>): void {
+    this.tool(tool.name, tool.getDescription(), async (_extra: any) => {
+      try {
+        const res = await tool.execute();
+        return this.formatToolResult(res.content);
+      } catch (error) {
+        return this.handleToolError(error, tool.name);
+      }
+    });
+  }
+
+  /**
+   * Register a tool that requires input
+   */
+  private registerInputTool(tool: Tool<any, any>, inputSchema: any): void {
+    this.tool(tool.name, tool.getDescription(), inputSchema, async (args: any, _extra: any) => {
+      try {
+        const parsedArgs = z.object(inputSchema).safeParse(args);
+        if (!parsedArgs.success) {
+          throw new Error(`Invalid arguments: ${parsedArgs.error.message}`);
+        }
+
+        const res = await tool.execute(parsedArgs.data);
+        return this.formatToolResult(res.content);
+      } catch (error) {
+        return this.handleToolError(error, tool.name);
       }
     });
   }
 
   getServer(): McpServer {
     return this;
+  }
+
+  /**
+   * Format the tool result into the expected MCP format
+   */
+  private formatToolResult(content: string): CallToolResult {
+    return {
+      content: [{ type: 'text', text: content }],
+    };
+  }
+
+  /**
+   * Handle tool execution errors
+   */
+  private handleToolError(error: unknown, toolName: string): CallToolResult {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`Error executing tool ${toolName}:`, errorMessage);
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Failed to execute tool ${toolName}: ${errorMessage}`,
+        },
+      ],
+    };
   }
 }

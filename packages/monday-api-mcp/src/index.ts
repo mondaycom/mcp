@@ -22,6 +22,7 @@ async function runServer() {
     mondayApiRequestConfig: {},
     toolsConfiguration: {
       readOnlyMode: validatedArgs.readOnlyMode,
+      mode: validatedArgs.mode,
       enableDynamicApiTools: validatedArgs.enableDynamicApiTools,
     },
   });
