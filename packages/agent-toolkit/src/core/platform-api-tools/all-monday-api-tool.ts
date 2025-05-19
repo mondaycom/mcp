@@ -5,38 +5,6 @@ import { buildClientSchema, GraphQLSchema, IntrospectionQuery, parse, validate }
 import { ApiClient } from '@mondaydotcomorg/api';
 import { introspectionQuery } from 'src/monday-graphql';
 
-const schemaCache: Record<string, GraphQLSchema> = {};
-
-let mondayApiClient: ApiClient | null = null;
-
-async function loadSchema(version: string): Promise<GraphQLSchema> {
-  if (schemaCache[version]) {
-    return schemaCache[version];
-  }
-
-  try {
-    if (mondayApiClient) {
-      const response = await mondayApiClient.rawRequest<IntrospectionQuery>(introspectionQuery);
-      const { data } = response;
-
-      const schema = buildClientSchema(data);
-      schemaCache[version] = schema;
-
-      return schema;
-    }
-    throw new Error('Monday API client is not available');
-  } catch (error) {
-    throw new Error(`Failed to load GraphQL schema: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-}
-
-async function validateOperation(queryString: string, version: string): Promise<string[]> {
-  const schema = await loadSchema(version);
-  const documentAST = parse(queryString);
-  const errors = validate(schema, documentAST);
-  return errors.map((error) => error.message);
-}
-
 export const allMondayApiToolSchema = {
   query: z.string().describe('Custom GraphQL query/mutation. you need to provide the full query / mutation'),
   variables: z.string().describe('JSON string containing the variables for the GraphQL operation'),
@@ -57,10 +25,10 @@ interface GraphQLResponse {
 export class AllMondayApiTool extends BaseMondayApiTool<typeof allMondayApiToolSchema> {
   name = 'all_monday_api';
   type = ToolType.ALL_API;
+  private static schemaCache: Record<string, GraphQLSchema> = {};
 
   constructor(mondayApi: ApiClient, context?: MondayApiToolContext) {
     super(mondayApi, context);
-    mondayApiClient = mondayApi;
   }
 
   getDescription(): string {
@@ -69,6 +37,31 @@ export class AllMondayApiTool extends BaseMondayApiTool<typeof allMondayApiToolS
 
   getInputSchema(): typeof allMondayApiToolSchema {
     return allMondayApiToolSchema;
+  }
+
+  private async loadSchema(version: string): Promise<GraphQLSchema> {
+    if (AllMondayApiTool.schemaCache[version]) {
+      return AllMondayApiTool.schemaCache[version];
+    }
+
+    try {
+      const response = await this.mondayApi.rawRequest<IntrospectionQuery>(introspectionQuery);
+      const { data } = response;
+
+      const schema = buildClientSchema(data);
+      AllMondayApiTool.schemaCache[version] = schema;
+
+      return schema;
+    } catch (error) {
+      throw new Error(`Failed to load GraphQL schema: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  private async validateOperation(queryString: string, version: string): Promise<string[]> {
+    const schema = await this.loadSchema(version);
+    const documentAST = parse(queryString);
+    const errors = validate(schema, documentAST);
+    return errors.map((error) => error.message);
   }
 
   async execute(input: ToolInputType<typeof allMondayApiToolSchema>): Promise<ToolOutputType<never>> {
@@ -86,7 +79,7 @@ export class AllMondayApiTool extends BaseMondayApiTool<typeof allMondayApiToolS
 
       const apiVersion = this.mondayApi.apiVersion;
 
-      const validationErrors = await validateOperation(query, apiVersion);
+      const validationErrors = await this.validateOperation(query, apiVersion);
       if (validationErrors.length > 0) {
         return {
           content: validationErrors.join(', '),
