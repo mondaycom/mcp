@@ -5,25 +5,32 @@ import { buildClientSchema, GraphQLSchema, parse, validate } from 'graphql';
 import { ApiClient } from '@mondaydotcomorg/api';
 import fetch from 'node-fetch';
 
-let cachedSchema: GraphQLSchema | null = null;
+const schemaCache: Record<string, GraphQLSchema> = {};
 
 let mondayApiClient: ApiClient | null = null;
 
-async function loadSchema(): Promise<GraphQLSchema> {
-  if (cachedSchema) return cachedSchema;
+async function loadSchema(version: string): Promise<GraphQLSchema> {
+  if (schemaCache[version]) {
+    return schemaCache[version];
+  }
 
   try {
-    const response = await fetch('https://api.monday.com/v2/get_schema');
+    const url = `https://api.monday.com/v2/get_schema?version=${version}`;
+
+    const response = await fetch(url);
     const { data } = await response.json();
-    cachedSchema = buildClientSchema(data);
-    return cachedSchema;
+
+    const schema = buildClientSchema(data);
+    schemaCache[version] = schema;
+
+    return schema;
   } catch (error) {
     throw new Error(`Failed to load GraphQL schema: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
-async function validateOperation(queryString: string): Promise<string[]> {
-  const schema = await loadSchema();
+async function validateOperation(queryString: string, version: string): Promise<string[]> {
+  const schema = await loadSchema(version);
   const documentAST = parse(queryString);
   const errors = validate(schema, documentAST);
   return errors.map((error) => error.message);
@@ -76,7 +83,9 @@ export class AllMondayApiTool extends BaseMondayApiTool<typeof allMondayApiToolS
         };
       }
 
-      const validationErrors = await validateOperation(query);
+      const apiVersion = this.mondayApi.apiVersion;
+
+      const validationErrors = await validateOperation(query, apiVersion);
       if (validationErrors.length > 0) {
         return {
           content: validationErrors.join(', '),
@@ -84,6 +93,7 @@ export class AllMondayApiTool extends BaseMondayApiTool<typeof allMondayApiToolS
       }
 
       const data = await this.mondayApi.request<GraphQLResponse>(query, parsedVariables);
+
       return {
         content: JSON.stringify(data),
       };

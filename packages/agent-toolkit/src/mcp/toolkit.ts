@@ -121,6 +121,10 @@ export class MondayAgentToolkit extends McpServer {
     });
   }
 
+  getServer(): McpServer {
+    return this;
+  }
+
   /**
    * Format the tool result into the expected MCP format
    */
