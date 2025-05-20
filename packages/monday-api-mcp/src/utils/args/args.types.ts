@@ -14,5 +14,5 @@ export interface ValidatedArgs {
   token: string;
   version: string;
   readOnlyMode: boolean;
-  enableDynamicApiTools: boolean;
+  enableDynamicApiTools: boolean | 'only';
 }
