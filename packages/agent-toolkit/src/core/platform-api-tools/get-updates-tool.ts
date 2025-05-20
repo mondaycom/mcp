@@ -99,4 +99,4 @@ export class GetUpdatesTool extends BaseMondayApiTool<GetUpdatesToolInput, never
       };
     }
   }
-} 
+}

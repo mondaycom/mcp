@@ -4,10 +4,18 @@ import { ToolInputType, ToolOutputType, ToolType } from '../tool';
 import { createUpdate } from '../../monday-graphql/queries.graphql';
 import { CreateUpdateMutation, CreateUpdateMutationVariables } from '../../monday-graphql/generated/graphql';
 
+export const MentionTypeEnum = z.enum(['User']);
+
+export const UpdateMentionInputSchema = z.object({
+  id: z.string().describe('The user id.'),
+  type: MentionTypeEnum.describe('The type of the mention, always "User".'),
+});
+ 
 export const createUpdateToolShape = {
-  itemId: z.number().optional().describe('The id of the item to which the update will be added. Required if parentId is not provided.'),
+  item_id: z.number().optional().describe('The id of the item to which the update will be added. Required if parent_id is not provided. You can get the item id from the fetch-updates tool.'),
   body: z.string().describe("The update to be created, must be relevant to the user's request"),
-  parentId: z.string().optional().describe('The id of the parent post to reply to. If provided, the update will be a reply to this post. Required if itemId is not provided.'),
+  parent_id: z.string().optional().describe('The id of the parent post to reply to. If provided, the update will be a reply to this post. Required if item_id is not provided.'),
+  mentions: z.array(UpdateMentionInputSchema).optional().describe('Mentions in the update. E.g., [{type: "User", id: "123"}]'),
 };
 
 export const createUpdateToolSchema = z.object(createUpdateToolShape);
@@ -25,27 +33,32 @@ export class CreateUpdateTool extends BaseMondayApiTool<typeof createUpdateToolS
   }
 
   async execute(input: ToolInputType<typeof createUpdateToolShape>): Promise<ToolOutputType<never>> {
-    if (input.itemId === undefined && input.parentId === undefined) {
+    if (input.item_id === undefined && input.parent_id === undefined) {
       throw new Error("Validation Error: Either itemId or parentId must be provided.");
     }
-
+    
     const variables: CreateUpdateMutationVariables = {
       body: input.body,
     };
 
-    if (input.itemId !== undefined) {
-      variables.itemId = input.itemId.toString();
+    if (input.item_id !== undefined) {
+      variables.itemId = input.item_id.toString();
     }
 
-    if (input.parentId !== undefined) {
-      variables.parentId = input.parentId;
+    if (input.parent_id !== undefined) {
+      variables.parentId = input.parent_id;
+    }
+
+    if (input.mentions !== undefined && input.mentions.length > 0) {
+      variables.mentions = input.mentions;
+      variables.embed_mentions_in_body = true;
     }
 
     const res = await this.mondayApi.request<CreateUpdateMutation>(createUpdate, variables);
 
     let message = `Update ${res.create_update?.id} successfully created.`;
-    if (input.itemId !== undefined) {
-      message += ` On item ${input.itemId}`;
+    if (input.item_id !== undefined) {
+      message += ` On item ${input.item_id}`;
     }
 
     return {

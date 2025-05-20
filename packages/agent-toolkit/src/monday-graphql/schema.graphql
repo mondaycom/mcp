@@ -4065,6 +4065,11 @@ type MirrorValue implements ColumnValue {
   value: JSON
 }
 
+input UpdateMentionInput {
+  id: ID!
+  type: String!
+}
+
 """
 Update your monday.com data.
 """
@@ -4146,6 +4151,16 @@ type Mutation {
     The parent post identifier.
     """
     parent_id: ID
+  
+    """
+    The mentions in the update.
+    """
+    mentions: [UpdateMentionInput]
+
+    """
+    Whether to embed mentions in the body.
+    """
+    embed_mentions_in_body: Boolean
   ): Update
   create_timeline_item(
     """

@@ -31,8 +31,8 @@ export const createItem = gql`
 `;
 
 export const createUpdate = gql`
-  mutation createUpdate($itemId: ID!, $body: String!, $parentId: ID) {
-    create_update(item_id: $itemId, body: $body, parent_id: $parentId) {
+  mutation createUpdate($itemId: ID, $body: String!, $parentId: ID, $mentions: [UpdateMention], $embed_mentions_in_body: Boolean) {
+    create_update(item_id: $itemId, body: $body, parent_id: $parentId, mentions: $mentions, embed_mentions_in_body: $embed_mentions_in_body) {
       id
     }
   }
