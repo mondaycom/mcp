@@ -168,6 +168,14 @@ Dynamic API Tools are in beta and disabled by default. Enable them with:
 npx @mondaydotcomorg/monday-api-mcp -t your_token --enable-dynamic-api-tools true
 ```
 
+You can also use the 'only' mode to exclusively enable Dynamic API Tools:
+
+```bash
+npx @mondaydotcomorg/monday-api-mcp -t your_token --enable-dynamic-api-tools only
+```
+
+When 'only' mode is enabled, the server will provide just the Dynamic API Tools, filtering out all other standard tools. This is useful for advanced users who want to work directly with the GraphQL API.
+
 > ⚠️ **Note**: Dynamic API Tools require full API access and are not compatible with read-only mode.
 
 ## 🖥️ MCP Server Configuration
