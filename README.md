@@ -113,6 +113,43 @@ Add to your settings:
 
 2. Your assistant should now be able to interact with your monday.com account!
 
+## 🌩️ Using the Hosted MCP Service
+
+Instead of running the MCP server locally, you can use monday.com's hosted MCP service for a simpler setup.
+
+### Step 1: Install the Monday MCP App
+
+Before using the hosted service, you need to install the Monday MCP app from the marketplace:
+
+1. Visit [monday MCP app in the marketplace](https://monday.com/marketplace/listing/10000806/monday-mcp)
+2. Click "Install" and follow the instructions to add it to your account
+
+### Step 2: Configure Your MCP Client for the Hosted Service
+
+Add this configuration to your MCP client settings:
+
+```json
+{
+  "mcpServers": {
+    "monday-api-mcp-hosted": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://mcp.monday.com/sse"
+      ]
+    }
+  }
+}
+```
+
+### Benefits of the Hosted Service
+
+- No need to manage your own server
+- Automatic updates with the latest features
+- Improved reliability and performance
+- Instead of adding the token yourself, our OAuth mechanism takes control of it
+- You can limit the mcp to work on specific workspaces
+
 ## 🧰 Available Tools
 
 Our MCP server provides a rich set of tools that give AI assistants the ability to interact with monday.com:
