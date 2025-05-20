@@ -4847,4 +4847,4 @@ export type GetNotificationsQueryVariables = Exact<{
   since?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
 }>;
 
-export type GetNotificationsQuery = { __typename?: 'Query', notifications?: Array<{ __typename?: 'Notification', id: string, text?: string | null, title?: string | null, read: boolean, creators: Array<{ __typename?: 'User', id: string, name: string }>, update?: { __typename?: 'Update', id: string, text_body?: string | null } | null, item?: { __typename?: 'Item', id: string, name: string, created_at?: any | null, creator?: { __typename?: 'User', id: string } | null } | null, board?: { __typename?: 'Board', id: string, name: string, workspace?: { __typename?: 'Workspace', id?: string | null, name: string } | null } | null }> | null };
+export type GetNotificationsQuery = { __typename?: 'Query', notifications?: Array<{ __typename?: 'Notification', id: string, text?: string | null, title?: string | null, read: boolean, creators: Array<User>, update?: Update | null, item?: Item | null, board?: Board | null }> | null };

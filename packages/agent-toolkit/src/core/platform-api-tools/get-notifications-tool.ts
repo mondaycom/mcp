@@ -24,7 +24,6 @@ export class GetNotificationsTool extends BaseMondayApiTool<typeof getNotificati
   }
 
   async execute(input: ToolInputType<typeof getNotificationsToolSchema>): Promise<ToolOutputType<never>> {
-    // TODO: replace any with GetNotificationsQueryVariables
     const variables: GetNotificationsQueryVariables = {
       cursor: input.cursor,
       limit: input.limit,
@@ -32,12 +31,11 @@ export class GetNotificationsTool extends BaseMondayApiTool<typeof getNotificati
       since: input.since,
     };
 
-    // TODO: replace any with GetNotificationsQuery
     const res = await this.mondayApi.request<GetNotificationsQuery>(getNotifications, variables);
 
     if (!res.notifications || res.notifications.length === 0) {
       return {
-        content: 'No notifications found.',
+        content: 'No notifications were found.',
       }
     }
 
@@ -51,27 +49,47 @@ export class GetNotificationsTool extends BaseMondayApiTool<typeof getNotificati
   private getContent(notification: Notification): string {
     const { creators, read, created_at, title, text, update, item, board } = notification;
 
-    const formattedCreators = creators.length === 1 ? creators[0].name : `${creators.slice(0, -1).map((creator) => creator.name).join(', ')} and ${creators[creators.length - 1].name}`;
+    const formattedCreators = creators.length === 1
+      ? creators[0].name
+      : `${creators.slice(0, -1).map((creator) => creator.name).join(', ')} and ${creators[creators.length - 1].name}`;
 
-    let content = `A ${read ? '' : 'unread'} notification from ${formattedCreators} sent on ${created_at} titled ${title} with content ${text}.`
+    const lines = [];
 
-    if (update) {
-      content = `${content} originated in the following update: ${update.text_body}.`
+    lines.push(
+      read
+        ? `You have a notification from ${formattedCreators}.`
+        : `You have a new unread notification from ${formattedCreators}.`
+    );
+
+    if (created_at) {
+      lines.push(`It was sent on ${new Date(created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}.`);
+    }
+
+    if (title) {
+      lines.push(`Title: "${title}".`);
+    }
+
+    if (text) {
+      lines.push(`Message: "${text}".`);
+    }
+
+    if (update && update.text_body) {
+      lines.push(`This notification is related to the update: "${update.text_body}".`);
     }
 
     if (item) {
-      content = `${content} in item ${item.name} (Item ID: ${item.id}`
+      lines.push(`It concerns the item "${item.name}" (ID: ${item.id}).`);
     }
 
     if (board) {
-      content = `${content} in the board ${board.name} (Board ID: ${board.id})`;
-
+      let boardLine = `This is on the board "${board.name}" (ID: ${board.id})`;
       if (board.workspace) {
-        content = `${content} in the workspace ${board.workspace.name} (Workspace ID: ${board.workspace.id}).`
+        boardLine += `, in the workspace "${board.workspace.name}" (ID: ${board.workspace.id})`;
       }
+      boardLine += '.';
+      lines.push(boardLine);
     }
 
-
-    return content;
+    return lines.join('\n');
   }
 }
