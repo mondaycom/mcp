@@ -7,7 +7,7 @@ import { GetNotificationsQuery, GetNotificationsQueryVariables, Notification } f
 export const getNotificationsToolSchema = {
     cursor: z.string().optional().describe('The last notification id to get.'),
     limit: z.number().optional().describe(`Number of items to get, the default is 25.`),
-    read: z.boolean().optional().describe('Whether to get read notifications.'),
+    filter_read: z.boolean().optional().describe('Whether to get only unread notifications.'),
     since: z.string().optional().describe('Get notifications since this date.'),
 };
 
@@ -27,7 +27,7 @@ export class GetNotificationsTool extends BaseMondayApiTool<typeof getNotificati
     const variables: GetNotificationsQueryVariables = {
       cursor: input.cursor,
       limit: input.limit,
-      read: input.read,
+      filter_read: input.filter_read,
       since: input.since,
     };
 

@@ -4843,7 +4843,7 @@ export type FetchCustomActivityQuery = { __typename?: 'Query', custom_activity?:
 export type GetNotificationsQueryVariables = Exact<{
   cursor?: InputMaybe<Scalars['ID']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
-  read?: InputMaybe<Scalars['Boolean']['input']>;
+  filter_read?: InputMaybe<Scalars['Boolean']['input']>;
   since?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
 }>;
 
