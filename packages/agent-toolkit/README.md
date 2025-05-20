@@ -37,6 +37,9 @@ The toolkit includes several pre-built tools for common Monday.com operations, o
 ### Account Operations
 - `GetUsersTool` - Get users, can be filtered by name or partial name
 
+### Notification Operations
+- `GetNotificationsTool` - Get notifications, can be filtered unread status, and since date
+
 ### Dynamic API Tools
 - `AllMondayApiTool` - Execute any Monday.com API operation by generating GraphQL queries and mutations dynamically
 - `GetGraphQLSchemaTool` - Fetch the Monday.com GraphQL schema structure including query and mutation definitions

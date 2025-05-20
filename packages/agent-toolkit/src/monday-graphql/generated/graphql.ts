@@ -2996,10 +2996,24 @@ export type MutationUse_TemplateArgs = {
 /** A notification. */
 export type Notification = {
   __typename?: 'Notification';
+  /** The board that is associated with the notification. */
+  board?: Maybe<Board>;
+  /** The date and time the notification was created. */
+  created_at?: Maybe<Scalars['Date']['output']>;
+  /** The users who created the notification. */
+  creators: Array<User>;
   /** The notification's unique identifier. */
   id: Scalars['ID']['output'];
+  /** The item that is associated with the notification. */
+  item?: Maybe<Item>;
+  /** Whether the notification has been read. */
+  read: Scalars['Boolean']['output'];
   /** The notification text. */
   text?: Maybe<Scalars['String']['output']>;
+  /** The title of the notification. */
+  title?: Maybe<Scalars['String']['output']>;
+  /** The update that triggered the notification. */
+  update?: Maybe<Update>;
 };
 
 /** The notification's target type. */
@@ -3240,6 +3254,7 @@ export type Query = {
   me?: Maybe<User>;
   /** Get next pages of board's items (rows) by cursor. */
   next_items_page: ItemsResponse;
+  notifications?: Maybe<Array<Notification>>;
   /** Platform API data. */
   platform_api?: Maybe<PlatformApi>;
   /** Get a collection of tags. */
@@ -3381,6 +3396,14 @@ export type QueryNext_Items_PageArgs = {
   limit?: Scalars['Int']['input'];
 };
 
+
+/** Get your data from monday.com */
+export type QueryNotificationsArgs = {
+  cursor?: InputMaybe<Scalars['ID']['input']>;
+  filterRead?: InputMaybe<Scalars['Boolean']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  since?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
+};
 
 /** Get your data from monday.com */
 export type QueryTagsArgs = {
@@ -4816,3 +4839,12 @@ export type FetchCustomActivityQueryVariables = Exact<{ [key: string]: never; }>
 
 
 export type FetchCustomActivityQuery = { __typename?: 'Query', custom_activity?: Array<{ __typename?: 'CustomActivity', color?: CustomActivityColor | null, icon_id?: CustomActivityIcon | null, id?: string | null, name?: string | null, type?: string | null }> | null };
+
+export type GetNotificationsQueryVariables = Exact<{
+  cursor?: InputMaybe<Scalars['ID']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  read?: InputMaybe<Scalars['Boolean']['input']>;
+  since?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
+}>;
+
+export type GetNotificationsQuery = { __typename?: 'Query', notifications?: Array<{ __typename?: 'Notification', id: string, text?: string | null, title?: string | null, read: boolean, creators: Array<{ __typename?: 'User', id: string, name: string }>, update?: { __typename?: 'Update', id: string, text_body?: string | null } | null, item?: { __typename?: 'Item', id: string, name: string, created_at?: any | null, creator?: { __typename?: 'User', id: string } | null } | null, board?: { __typename?: 'Board', id: string, name: string, workspace?: { __typename?: 'Workspace', id?: string | null, name: string } | null } | null }> | null };

@@ -428,3 +428,42 @@ export const fetchCustomActivity = gql`
     }
   }
 `;
+
+export const getNotifications = gql`
+  query getNotifications($cursor: ID, $limit: Int, $filterRead: Boolean, $since: ISO8601DateTime) {
+    notifications(cursor: $cursor, limit: $limit, filterRead: $filterRead, since: $since) {
+      id
+      text
+      title
+      read
+
+      creators {
+        id
+        name
+      }
+
+      update {
+        id
+        text_body
+      }
+
+      item {
+        id
+        name
+        created_at
+        creator {
+          id
+        }
+      }
+
+      board {
+        id
+        name
+        workspace {
+          id
+          name
+        }
+      }
+    }
+  }
+`;

@@ -5772,19 +5772,34 @@ type Mutation {
   ): InviteUsersResult
 }
 
-"""
-A notification.
-"""
+"""A notification."""
 type Notification {
-  """
-  The notification's unique identifier.
-  """
+  """The notification's unique identifier."""
   id: ID!
 
-  """
-  The notification text.
-  """
+  """The notification text."""
   text: String
+
+  """The date and time the notification was created."""
+  created_at: Date
+
+  """The title of the notification."""
+  title: String
+
+  """The users who created the notification."""
+  creators: [User!]!
+
+  """Whether the notification has been read."""
+  read: Boolean!
+
+  """The update that triggered the notification."""
+  update: Update
+
+  """The item that is associated with the notification."""
+  item: Item
+
+  """The board that is associated with the notification."""
+  board: Board
 }
 
 """
@@ -6629,6 +6644,21 @@ type Query {
     """
     state: State = active
   ): [Workspace]
+  notifications(
+    """The last notification id to get."""
+    cursor: ID
+
+    """Number of items to get, the default is 25."""
+    limit: Int = 25
+
+    """Whether to get only unread notifications."""
+    filterRead: Boolean
+
+    """
+    Filter notifications created from this date (inclusive). ISO 8601 format (e.g., YYYY-MM-DD or YYYY-MM-DDTHH:mm).
+    """
+    since: ISO8601DateTime
+  ): [Notification!]
 
   """
   Get the API version in use
