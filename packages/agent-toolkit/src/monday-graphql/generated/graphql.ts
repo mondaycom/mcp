@@ -4699,8 +4699,11 @@ export type CreateItemMutationVariables = Exact<{
 export type CreateItemMutation = { __typename?: 'Mutation', create_item?: { __typename?: 'Item', id: string, name: string } | null };
 
 export type CreateUpdateMutationVariables = Exact<{
-  itemId: Scalars['ID']['input'];
+  itemId?: Scalars['ID']['input'];
   body: Scalars['String']['input'];
+  parentId?: InputMaybe<Scalars['ID']['input']>;
+  mentions?: InputMaybe<Array<{ id: Scalars['ID']['input'], type: Scalars['String']['input'] }>>;
+  embed_mentions_in_body?: InputMaybe<Scalars['Boolean']['input']>;
 }>;
 
 

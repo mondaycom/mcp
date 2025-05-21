@@ -4065,6 +4065,11 @@ type MirrorValue implements ColumnValue {
   value: JSON
 }
 
+input UpdateMentionInput {
+  id: ID!
+  type: String!
+}
+
 """
 Update your monday.com data.
 """
@@ -4146,6 +4151,16 @@ type Mutation {
     The parent post identifier.
     """
     parent_id: ID
+  
+    """
+    The mentions in the update.
+    """
+    mentions: [UpdateMentionInput]
+
+    """
+    Whether to embed mentions in the body.
+    """
+    embed_mentions_in_body: Boolean
   ): Update
   create_timeline_item(
     """
@@ -6168,7 +6183,17 @@ type Query {
     """
     A list of items unique identifiers.
     """
-    ids: [ID!]
+    ids: [ID]
+
+    """
+    The start date of the updates to retrieve (inclusive). ISO 8601 format (e.g., YYYY-MM-DD or YYYY-MM-DDTHH:mm).
+    """
+    from_date: Date
+
+    """
+    Filter updates created up to this date (inclusive). ISO 8601 format (e.g., YYYY-MM-DD or YYYY-MM-DDTHH:mm).
+    """
+    to_date: Date
   ): [Update!]
   custom_activity(
     """
@@ -7566,6 +7591,11 @@ type Update {
   The update's text body.
   """
   text_body: String
+
+  """
+  The update's parent ID.
+  """
+  parent_id: String
 }
 
 input UpdateDropdownColumnSettingsInput {
