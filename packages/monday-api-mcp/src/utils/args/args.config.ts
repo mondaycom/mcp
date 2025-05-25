@@ -32,7 +32,8 @@ export const ARG_CONFIGS: ArgConfig[] = [
   {
     name: 'enableDynamicApiTools',
     flags: ['--enable-dynamic-api-tools', '-edat'],
-    description: 'Enable dynamic API tools',
+    description:
+      '(Beta) Enable dynamic API tools. Options: "true" (enables along with other tools), "only" (only dynamic API tools), "false" (disabled). Not supported when using read-only mode.',
     required: false,
     defaultValue: false,
   },

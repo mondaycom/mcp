@@ -5,7 +5,7 @@ export type ToolsConfiguration = {
   exclude?: string[];
   readOnlyMode?: boolean;
   mode?: 'api' | 'apps' | 'all';
-  enableDynamicApiTools?: boolean;
+  enableDynamicApiTools?: boolean | 'only';
 };
 
 export type MondayAgentToolkitConfig = {
