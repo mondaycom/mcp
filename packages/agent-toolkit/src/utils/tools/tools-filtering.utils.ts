@@ -12,8 +12,6 @@ export const getFilteredToolInstances = (
     allToolConstructors = [...allMondayAppsTools];
   } else if (config?.mode === 'api' || !config?.mode) {
     allToolConstructors = [...allGraphqlApiTools];
-  } else if (config?.mode === 'all') {
-    allToolConstructors = [...allGraphqlApiTools, ...allMondayAppsTools];
   }
 
   const allToolInstances = allToolConstructors.map((ctor) => toolFactory(ctor, instanceOptions));
@@ -23,14 +21,14 @@ export const getFilteredToolInstances = (
       return toolInstance.type !== ToolType.ALL_API;
     }
 
-    if (config.mode === 'api' || config.mode === 'all') {
+    if (config.mode === 'api') {
       if (config.enableDynamicApiTools === 'only') {
         return toolInstance.type === ToolType.ALL_API;
       }
     }
 
     let shouldFilter = false;
-    if ((config.mode === 'api' || config.mode === 'all') && config.enableDynamicApiTools === false) {
+    if (config.mode === 'api' && config.enableDynamicApiTools === false) {
       shouldFilter = shouldFilter || toolInstance.type === ToolType.ALL_API;
     }
     if (config.readOnlyMode) {

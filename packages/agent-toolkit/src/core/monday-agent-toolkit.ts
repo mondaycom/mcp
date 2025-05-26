@@ -4,7 +4,7 @@ export type ToolsConfiguration = {
   include?: string[];
   exclude?: string[];
   readOnlyMode?: boolean;
-  mode?: 'api' | 'apps' | 'all';
+  mode?: 'api' | 'apps';
   enableDynamicApiTools?: boolean | 'only';
 };
 
