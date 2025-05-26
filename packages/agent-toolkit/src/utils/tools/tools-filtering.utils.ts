@@ -8,15 +8,12 @@ export const getFilteredToolInstances = (
   config?: ToolsConfiguration,
 ): Tool<any, any>[] => {
   let allToolConstructors: Array<new (...args: any[]) => Tool<any, any>> = [];
-
-  if (config?.mode === 'api') {
-    allToolConstructors = [...allGraphqlApiTools];
-  } else if (config?.mode === 'apps') {
+  if (config?.mode === 'apps') {
     allToolConstructors = [...allMondayAppsTools];
+  } else if (config?.mode === 'api' || !config?.mode) {
+    allToolConstructors = [...allGraphqlApiTools];
   } else if (config?.mode === 'all') {
     allToolConstructors = [...allGraphqlApiTools, ...allMondayAppsTools];
-  } else {
-    allToolConstructors = [...allGraphqlApiTools];
   }
 
   const allToolInstances = allToolConstructors.map((ctor) => toolFactory(ctor, instanceOptions));
@@ -26,12 +23,14 @@ export const getFilteredToolInstances = (
       return toolInstance.type !== ToolType.ALL_API;
     }
 
-    if (config.enableDynamicApiTools === 'only') {
-      return toolInstance.type === ToolType.ALL_API;
+    if (config.mode === 'api' || config.mode === 'all') {
+      if (config.enableDynamicApiTools === 'only') {
+        return toolInstance.type === ToolType.ALL_API;
+      }
     }
 
     let shouldFilter = false;
-    if (config.enableDynamicApiTools !== true) {
+    if ((config.mode === 'api' || config.mode === 'all') && config.enableDynamicApiTools === false) {
       shouldFilter = shouldFilter || toolInstance.type === ToolType.ALL_API;
     }
     if (config.readOnlyMode) {

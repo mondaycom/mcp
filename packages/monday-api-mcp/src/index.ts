@@ -22,13 +22,12 @@ async function runServer() {
     mondayApiRequestConfig: {},
     toolsConfiguration: {
       readOnlyMode: validatedArgs.readOnlyMode,
-      mode: validatedArgs.mode,
       enableDynamicApiTools: validatedArgs.enableDynamicApiTools,
+      mode: validatedArgs.mode,
     },
   });
 
   const transport = new StdioServerTransport();
-
   await toolkit.connect(transport);
 }
 
