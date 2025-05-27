@@ -1,10 +1,15 @@
 import { ApiClientConfig } from '@mondaydotcomorg/api';
 
+export enum ToolMode {
+  API = 'api',
+  APPS = 'apps',
+}
+
 export type ToolsConfiguration = {
   include?: string[];
   exclude?: string[];
   readOnlyMode?: boolean;
-  mode?: 'api' | 'apps';
+  mode?: ToolMode;
   enableDynamicApiTools?: boolean | 'only';
 };
 

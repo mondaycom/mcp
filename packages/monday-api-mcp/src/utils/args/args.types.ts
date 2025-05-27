@@ -1,3 +1,4 @@
+import { ToolMode } from '../../../../agent-toolkit/src/core/monday-agent-toolkit';
 export interface ArgConfig {
   name: string;
   flags: string[];
@@ -14,6 +15,6 @@ export interface ValidatedArgs {
   token: string;
   version: string;
   readOnlyMode: boolean;
-  mode: 'api' | 'apps';
+  mode: ToolMode;
   enableDynamicApiTools: boolean | 'only';
 }
