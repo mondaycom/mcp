@@ -122,6 +122,14 @@ export const deleteColumn = gql`
   }
 `;
 
+export const createWorkspace = gql`
+  mutation createWorkspace($name: String!, $kind: WorkspaceKind!, $description: String) {
+    create_workspace(name: $name, kind: $kind, description: $description) {
+      id
+    }
+  }
+`;
+
 export const getGraphQLSchema = gql`
   query getGraphQLSchema {
     __schema {
@@ -281,13 +289,12 @@ export const introspectionQuery = gql`
   }
 `;
 
-// it cant be a variable due to a bug in the API so must be generated string.
 export const generateTypeDetailsQuery = (typeName: string) => gql`
   query getTypeDetails {
     __type(name: "${typeName}") {
       name
-      description
       kind
+      description
       fields {
         name
         description
@@ -300,38 +307,13 @@ export const generateTypeDetailsQuery = (typeName: string) => gql`
             ofType {
               name
               kind
-              ofType {
-                name
-                kind
-                ofType {
-                  name
-                  kind
-                }
-              }
             }
           }
         }
-        args {
-          name
-          description
-          type {
-            name
-            kind
-            ofType {
-              name
-              kind
-              ofType {
-                name
-                kind
-                ofType {
-                  name
-                  kind
-                }
-              }
-            }
-          }
-          defaultValue
-        }
+      }
+      enumValues {
+        name
+        description
       }
       inputFields {
         name
@@ -345,28 +327,9 @@ export const generateTypeDetailsQuery = (typeName: string) => gql`
             ofType {
               name
               kind
-              ofType {
-                name
-                kind
-                ofType {
-                  name
-                  kind
-                }
-              }
             }
           }
         }
-        defaultValue
-      }
-      interfaces {
-        name
-      }
-      enumValues {
-        name
-        description
-      }
-      possibleTypes {
-        name
       }
     }
   }
@@ -422,6 +385,24 @@ export const fetchCustomActivity = gql`
     custom_activity {
       color
       icon_id
+      id
+      name
+      type
+    }
+  }
+`;
+
+export const createBoardView = gql`
+  mutation createBoardView(
+    $boardId: ID!
+    $name: String!
+    $type: BoardViewTypeValues!
+  ) {
+    create_board_view(
+      board_id: $boardId
+      name: $name
+      type: $type
+    ) {
       id
       name
       type

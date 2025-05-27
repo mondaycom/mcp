@@ -15,6 +15,8 @@ import { GetTypeDetailsTool } from './get-type-details-tool';
 import { CreateCustomActivityTool } from './create-custom-activity-tool';
 import { CreateTimelineItemTool } from './create-timeline-item-tool';
 import { FetchCustomActivityTool } from './fetch-custom-activity-tool';
+import { CreateBoardViewTool } from './create-board-view-tool';
+import { CreateWorkspaceTool } from './create-workspace-tool';
 
 export const allTools = [
   DeleteItemTool,
@@ -34,6 +36,8 @@ export const allTools = [
   CreateCustomActivityTool,
   CreateTimelineItemTool,
   FetchCustomActivityTool,
+  CreateBoardViewTool,
+  CreateWorkspaceTool,
 ];
 
 export * from './delete-item-tool';
@@ -53,3 +57,5 @@ export * from './get-type-details-tool';
 export * from './create-custom-activity-tool';
 export * from './create-timeline-item-tool';
 export * from './fetch-custom-activity-tool';
+export * from './create-board-view-tool';
+export * from './create-workspace-tool';

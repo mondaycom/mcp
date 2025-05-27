@@ -13,7 +13,32 @@ export const createItemToolSchema = {
   columnValues: z
     .string()
     .describe(
-      `A string containing the new column values for the item following this structure: {\\"column_id\\": \\"value\\",... you can change multiple columns at once, note that for status column you must use nested value with 'label' as a key and for date column use 'date' as key} - example: "{\\"text_column_id\\":\\"New text\\", \\"status_column_id\\":{\\"label\\":\\"Done\\"}, \\"date_column_id\\":{\\"date\\":\\"2023-05-25\\"},\\"dropdown_id\\":\\"value\\", \\"phone_id\\":\\"123-456-7890\\", \\"email_id\\":\\"test@example.com\\"}"`,
+      `A string containing the new column values for the item following this structure: 
+      {
+        "column_id": "value",
+        // You can change multiple columns at once
+        // For status columns, use nested value with 'label' as key
+        // For date columns, use 'date' as key
+      }
+      
+      Example:
+      {
+        "text_column_id": "New text",
+        "status_column_id": {
+          "label": "Done"
+        },
+        "date_column_id": {
+          "date": "2023-05-25"
+        },
+        "phone_id": {
+          "phone": "12025550172",
+          "countryShortName": "US"
+        },
+        "email_id": {
+          "email": "example@example.com",
+          "text": "This is an example email"
+        }
+      }`
     ),
 };
 

@@ -605,6 +605,20 @@ export type BoardView = {
   view_specific_data_str: Scalars['String']['output'];
 };
 
+/** The available board view types. */
+export enum BoardViewTypeValues {
+  /** Calendar board view. */
+  CalendarBoardView = 'CalendarBoardView',
+  /** Doc board view. */
+  DocBoardView = 'DocBoardView',
+  /** Empty board view. */
+  EmptyBoardView = 'EmptyBoardView',
+  /** Form board view. */
+  FormBoardView = 'FormBoardView',
+  /** Table board view. */
+  TableBoardView = 'TableBoardView'
+}
+
 /** Options to order by. */
 export enum BoardsOrderBy {
   /** The rank order of the board creation time (desc). */
@@ -2161,6 +2175,8 @@ export type Mutation = {
   complexity?: Maybe<Complexity>;
   /** Create a new board. */
   create_board?: Maybe<Board>;
+  /** Create a new board view. */
+  create_board_view?: Maybe<BoardView>;
   /** Create a new column in board. */
   create_column?: Maybe<Column>;
   create_custom_activity?: Maybe<CustomActivity>;
@@ -2460,6 +2476,14 @@ export type MutationCreate_BoardArgs = {
   folder_id?: InputMaybe<Scalars['ID']['input']>;
   template_id?: InputMaybe<Scalars['ID']['input']>;
   workspace_id?: InputMaybe<Scalars['ID']['input']>;
+};
+
+
+/** Update your monday.com data. */
+export type MutationCreate_Board_ViewArgs = {
+  board_id: Scalars['ID']['input'];
+  name: Scalars['String']['input'];
+  type: BoardViewTypeValues;
 };
 
 
@@ -4766,6 +4790,15 @@ export type DeleteColumnMutationVariables = Exact<{
 
 export type DeleteColumnMutation = { __typename?: 'Mutation', delete_column?: { __typename?: 'Column', id: string } | null };
 
+export type CreateWorkspaceMutationVariables = Exact<{
+  name: Scalars['String']['input'];
+  kind: WorkspaceKind;
+  description?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type CreateWorkspaceMutation = { __typename?: 'Mutation', create_workspace?: { __typename?: 'Workspace', id?: string | null } | null };
+
 export type GetGraphQlSchemaQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -4785,7 +4818,7 @@ export type TypeRefFragment = { __typename?: '__Type', kind: __TypeKind, name?: 
 export type GetTypeDetailsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetTypeDetailsQuery = { __typename?: 'Query', __type?: { __typename?: '__Type', name?: string | null, description?: string | null, kind: __TypeKind, fields?: Array<{ __typename?: '__Field', name: string, description?: string | null, type: { __typename?: '__Type', name?: string | null, kind: __TypeKind, ofType?: { __typename?: '__Type', name?: string | null, kind: __TypeKind, ofType?: { __typename?: '__Type', name?: string | null, kind: __TypeKind, ofType?: { __typename?: '__Type', name?: string | null, kind: __TypeKind, ofType?: { __typename?: '__Type', name?: string | null, kind: __TypeKind } | null } | null } | null } | null }, args: Array<{ __typename?: '__InputValue', name: string, description?: string | null, defaultValue?: string | null, type: { __typename?: '__Type', name?: string | null, kind: __TypeKind, ofType?: { __typename?: '__Type', name?: string | null, kind: __TypeKind, ofType?: { __typename?: '__Type', name?: string | null, kind: __TypeKind, ofType?: { __typename?: '__Type', name?: string | null, kind: __TypeKind } | null } | null } | null } }> }> | null, inputFields?: Array<{ __typename?: '__InputValue', name: string, description?: string | null, defaultValue?: string | null, type: { __typename?: '__Type', name?: string | null, kind: __TypeKind, ofType?: { __typename?: '__Type', name?: string | null, kind: __TypeKind, ofType?: { __typename?: '__Type', name?: string | null, kind: __TypeKind, ofType?: { __typename?: '__Type', name?: string | null, kind: __TypeKind, ofType?: { __typename?: '__Type', name?: string | null, kind: __TypeKind } | null } | null } | null } | null } }> | null, interfaces?: Array<{ __typename?: '__Type', name?: string | null }> | null, enumValues?: Array<{ __typename?: '__EnumValue', name: string, description?: string | null }> | null, possibleTypes?: Array<{ __typename?: '__Type', name?: string | null }> | null } | null };
+export type GetTypeDetailsQuery = { __typename?: 'Query', __type?: { __typename?: '__Type', name?: string | null, kind: __TypeKind, description?: string | null, fields?: Array<{ __typename?: '__Field', name: string, description?: string | null, type: { __typename?: '__Type', name?: string | null, kind: __TypeKind, ofType?: { __typename?: '__Type', name?: string | null, kind: __TypeKind, ofType?: { __typename?: '__Type', name?: string | null, kind: __TypeKind } | null } | null } }> | null, enumValues?: Array<{ __typename?: '__EnumValue', name: string, description?: string | null }> | null, inputFields?: Array<{ __typename?: '__InputValue', name: string, description?: string | null, type: { __typename?: '__Type', name?: string | null, kind: __TypeKind, ofType?: { __typename?: '__Type', name?: string | null, kind: __TypeKind, ofType?: { __typename?: '__Type', name?: string | null, kind: __TypeKind } | null } | null } }> | null } | null };
 
 export type CreateCustomActivityMutationVariables = Exact<{
   color: CustomActivityColor;
@@ -4816,3 +4849,12 @@ export type FetchCustomActivityQueryVariables = Exact<{ [key: string]: never; }>
 
 
 export type FetchCustomActivityQuery = { __typename?: 'Query', custom_activity?: Array<{ __typename?: 'CustomActivity', color?: CustomActivityColor | null, icon_id?: CustomActivityIcon | null, id?: string | null, name?: string | null, type?: string | null }> | null };
+
+export type CreateBoardViewMutationVariables = Exact<{
+  boardId: Scalars['ID']['input'];
+  name: Scalars['String']['input'];
+  type: BoardViewTypeValues;
+}>;
+
+
+export type CreateBoardViewMutation = { __typename?: 'Mutation', create_board_view?: { __typename?: 'BoardView', id: string, name: string, type: string } | null };
