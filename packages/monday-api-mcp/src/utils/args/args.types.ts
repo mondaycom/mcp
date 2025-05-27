@@ -1,4 +1,5 @@
-import { ToolMode } from '../../../../agent-toolkit/src/core/monday-agent-toolkit';
+import { ToolMode } from '@mondaydotcomorg/agent-toolkit/core';
+
 export interface ArgConfig {
   name: string;
   flags: string[];
