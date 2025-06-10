@@ -13,6 +13,7 @@ import { FetchCustomActivityTool } from './fetch-custom-activity-tool';
 import { GetBoardItemsTool } from './get-board-items-tool';
 import { GetBoardSchemaTool } from './get-board-schema-tool';
 import { GetGraphQLSchemaTool } from './get-graphql-schema-tool';
+import { GetInstructionsToCreateLiveWorkflowTool } from './get-instructions-to-create-live-workflow-tool';
 import { GetTypeDetailsTool } from './get-type-details-tool';
 import { GetUsersTool } from './get-users-tool';
 import { MoveItemToGroupTool } from './move-item-to-group-tool';
@@ -35,6 +36,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   CreateCustomActivityTool,
   CreateTimelineItemTool,
   FetchCustomActivityTool,
+  GetInstructionsToCreateLiveWorkflowTool,
 ];
 
 export * from './all-monday-api-tool';
@@ -54,3 +56,4 @@ export * from './get-graphql-schema-tool';
 export * from './get-type-details-tool';
 export * from './get-users-tool';
 export * from './move-item-to-group-tool';
+export * from './get-instructions-to-create-live-workflow-tool';
