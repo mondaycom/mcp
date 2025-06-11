@@ -21,25 +21,27 @@ export class GetInstructionsToCreateLiveWorkflowTool extends BaseMondayApiTool<R
 # Instructions to Create a Live Workflow
 
 ## General Explanation:
-- A workflow is a set of blocks that are connected to each other (trigger → action → action → ...).
-- A block is a step in the workflow; it can be a trigger or an action. It has input fields and output fields.
-- A workflow block is a configuration of a block. It has a block reference ID, input fields, and output fields.
-- A workflow variable is a variable that is used in the workflow. It has a unique key, a value, and dependencies.
-- To fill the value of a variable, you need to use the remote options query.
-- Workflow host data contains the data of the workflow's host. It has an ID and a type.
+- A workflow is a structured sequence of actions and conditions and triggers (blocks) designed to automate a processes (for example, trigger -> action -> action -> ...).
+- A block is a reusable logic unit; it can be a trigger, condition or action. It has input fields and output fields.
+- A workflow block wraps a block (the underlying logic unit), providing the configuration for its input fields and defining how it connects to other blocks in the workflow graph.
+- A workflow variable presents a value that is used in the workflow block. It has a unique key, a value, and dependencies.
+It can be a result of a previous block, a user config, a reference, or a host metadata.
+If it is a user config, you have to get the possible values for the value from remote options query.
 
 To create a live workflow in monday.com, follow these steps:
 
-1. **Fetch the blocks including the input fields config:**
-   Each block represents an action or a trigger. Some blocks have input fields and some have output fields.
-   In general, you can understand what a block does by its description or name.
-   The "kind" field in the block represents the type of the block (trigger or action).
+1. **Fetch the blocks including the input fields config using monday api:**
+    Each block represents a trigger, condition or action. Blocks can have input fields and output fields.
+    In general, you can understand what a block does by its description or name.
+    The "kind" field in the block represents the type of the block (trigger, condition or action).
+    There are some types of input fields: In the case of CustomInputField, it refers to a field type feature. 
+    It has special functionality — for example, remote options. These are all the possible values for this type. 
+    For example, if the field type is 'board', then the options will include a list of all boardIds 
+    Their identifier is the 'fieldTypeReferenceId' (or 'id' in the fieldTypeData).
+    There are dependencies that tell us what values we need to know to fetch the options for the custom input field's value.
+    For example, if the custom input field is a status column, the dependency is the board ID.
 
-   'Custom input fields' represent parameters that are declared as field type app features. Their identifier is the 'fieldTypeReferenceId' (or 'id' in the fieldTypeData).
-   There are dependencies that tell us what values we need to know to fetch the options for the custom input field's value.
-   For example, if the custom input field is a status column, the dependency is the board ID.
-
-   **Example query:**
+**Example query to fetch the blocks:**
 query {
   blocks {
     blocks {
@@ -88,13 +90,13 @@ query {
 2. **Choose the trigger block and action blocks** that you want to use.
 
 3. **Build the workflow schema.** Get the input schema of the 'create_live_workflow' mutation.
-   Pay attention that sometimes you need to run queries to fetch some schemas. Please read the description and follow the instructions if there are any.
+    Pay attention that sometimes you need to run queries to fetch some schemas. Read the description of each field in the schema and follow the instructions if there are any.
 
 4. **For each block you choose to use, build the workflow block schema** (start from the trigger block):
    - **4.a.** For each input field, build the workflow variable schema and use it in the workflow block.
    - **4.b.** For each output field, build the workflow variable schema and use it in the workflow block.
 
-5. **To build workflow variables,** use the 'remote_options' query when the input field is a custom input field type with remote options.
+5. **To configure workflow variables,** use the 'remote_options' query when the input field is a custom input field type with remote options.
    Fetch the remote options query schema and the remote options query input schema, then run the query.
 
    **Example:**
