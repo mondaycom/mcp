@@ -65,22 +65,11 @@ query {
                 sourceFieldTypeReferenceId
                 targetFieldKey
               }
-              
             }
           }
         }
         ... on PrimitiveInputFieldConfig {
           primitiveType
-        }
-        ... on InterfaceInputFieldConfig{
-          type
-          subfieldName
-          constraints{
-            remoteOptionsDependencies
-            dependencies
-            subFieldsDependencies
-            credentials
-          }
         }
       }
     }
