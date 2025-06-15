@@ -115,16 +115,18 @@ Add to your settings:
 
 ## 🌩️ Using the Hosted MCP Service
 
+### Option 1: Using OAuth
+
 Instead of running the MCP server locally, you can use monday.com's hosted MCP service for a simpler setup.
 
-### Step 1: Install the Monday MCP App
+#### Step 1: Install the Monday MCP App
 
 Before using the hosted service, you need to install the Monday MCP app from the marketplace:
 
 1. Visit [monday MCP app in the marketplace](https://monday.com/marketplace/listing/10000806/monday-mcp)
 2. Click "Install" and follow the instructions to add it to your account
 
-### Step 2: Configure Your MCP Client for the Hosted Service
+#### Step 2: Configure Your MCP Client for the Hosted Service
 
 Add this configuration to your MCP client settings:
 
@@ -135,8 +137,56 @@ Add this configuration to your MCP client settings:
       "command": "npx",
       "args": [
         "mcp-remote",
-        "https://mcp.monday.com/sse"
-      ]
+        "https://mcp.monday.com/sse",
+      ],
+    }
+  }
+}
+```
+
+### Option 2: Using Authorization header
+
+To specify an authorization header and API version:
+
+```json
+{
+  "mcpServers": {
+    "monday-api-mcp-hosted-dev": {
+      "command": "npx",
+      "args": [
+        "-p",
+        "node@20",
+        "mcp-remote",
+        "https://monday-mcp-server-staging.staging-7c7.workers.dev/sse",
+        "--header",
+        "Authorization:${AUTH_HEADER}",
+      ],
+      "env": {
+        "AUTH_HEADER": "Bearer <your_token>",
+      }
+    }
+  }
+}
+```
+
+### Additional Configuration for Hosted MCP
+
+You can specify the Api version you want to use using the **--header** param:
+
+```json
+{
+  "mcpServers": {
+    "monday-api-mcp-hosted": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://mcp.monday.com/sse",
+        "--header",
+        "Api-Version:${API_VERSION}"
+      ],
+      "env": {
+        "API_VERSION": "2025-07"
+      }
     }
   }
 }
