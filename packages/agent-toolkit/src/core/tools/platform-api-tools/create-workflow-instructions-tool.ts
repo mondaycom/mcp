@@ -1,16 +1,16 @@
 import { ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool } from './base-monday-api-tool';
 
-export class GetInstructionsToCreateLiveWorkflowTool extends BaseMondayApiTool<Record<string, never>> {
-  name = 'get_instructions_to_create_live_workflow';
+export class CreateWorkflowInstructionsTool extends BaseMondayApiTool<Record<string, never>> {
+  name = 'create_workflow_instructions';
   type = ToolType.READ;
 
   getDescription(): string {
-    return `When the user asks to create a workflow, you must use this tool, which provides instructions on how to create a workflow.
-    This tool is very important and should be used only when the user asks to create a workflow.
-    In general, create live workflows when the user asks you to do something automatically on monday.com items or boards.
+    return `When the user asks to create a workflow (including phrases like "create a new monday workflow"), you must use this tool, which provides instructions on how to create a workflow.
+    This tool is very important and should be used only when the user explicitly requests workflow creation.
+    In general, create live workflows when the user asks you to automate something on monday.com items, boards, or the new Workflows feature.
     For example: when an item is created, set the status to done`;
-  } 
+  }
 
   getInputSchema(): Record<string, never> {
     return {};
@@ -29,6 +29,16 @@ It can be a result of a previous block, a user config, a reference, or a host me
 If it is a user config, you have to get the possible values for the value from remote options query.
 
 To create a live workflow in monday.com, follow these steps:
+
+**Prerequisite – ensure the host instance exists (workflowHostData)**
+
+Every workflow must be attached to an existing host entity, referenced through the 'workflowHostData' object when you call the 'create_live_workflow' mutation.
+
+- If the request is to create a **new monday workflow** (the standalone Workflows product), the host is an app_feature_object. Create that object first (for example, via a \`create_workflows_object\` mutation) and pass its returned \`id\` in \`workflowHostData\`.
+- If the host 'type' is 'BOARD', make sure the board already exists. If it does not, create it first with the 'create_board' mutation and use its returned 'id'.
+- If the host is an app-feature object (for example: dashboard, doc, or any custom app entity), call the dedicated mutation to create that object first, and then reference its 'id' in 'workflowHostData'.
+
+Only after the host instance exists should you proceed with the steps below.
 
 1. **Fetch the blocks including the input fields config using monday api:**
     Each block represents a trigger, condition or action. Blocks can have input fields and output fields.
