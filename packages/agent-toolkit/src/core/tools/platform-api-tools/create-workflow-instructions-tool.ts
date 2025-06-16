@@ -6,10 +6,11 @@ export class CreateWorkflowInstructionsTool extends BaseMondayApiTool<Record<str
   type = ToolType.READ;
 
   getDescription(): string {
-    return `When the user asks to create a workflow (including phrases like "create a new monday workflow"), you must use this tool, which provides instructions on how to create a workflow.
-    This tool is very important and should be used only when the user explicitly requests workflow creation.
-    In general, create live workflows when the user asks you to automate something on monday.com items, boards, or the new Workflows feature.
-    For example: when an item is created, set the status to done`;
+    return `When the user asks to create a workflow or automation, you must use this tool, which provides instructions on how to create a workflow.
+    This tool is very important and should be used when the user explicitly requests:
+    - Workflow creation (e.g., "create a monday workflow")
+    - Automation (e.g., "automate this process", "when item is created, set status to done")
+    Use this tool to understand the correct host type and creation process.`;
   }
 
   getInputSchema(): Record<string, never> {
@@ -21,7 +22,7 @@ export class CreateWorkflowInstructionsTool extends BaseMondayApiTool<Record<str
 # Instructions to Create a Live Workflow
 
 ## General Explanation:
-- A workflow is a structured sequence of actions and conditions and triggers (blocks) designed to automate a processes (for example, trigger -> action -> action -> ...).
+- A workflow is a structured sequence of actions and conditions and triggers (blocks) designed to automate processes (for example, trigger -> action -> action -> ...).
 - A block is a reusable logic unit; it can be a trigger, condition or action. It has input fields and output fields.
 - A workflow block wraps a block (the underlying logic unit), providing the configuration for its input fields and defining how it connects to other blocks in the workflow graph.
 - A workflow variable presents a value that is used in the workflow block. It has a unique key, a value, and dependencies.
@@ -30,28 +31,103 @@ If it is a user config, you have to get the possible values for the value from r
 
 To create a live workflow in monday.com, follow these steps:
 
-**Prerequisite – ensure the host instance exists (workflowHostData)**
+## Step 0: Determine and Ensure Host Exists (CRITICAL FIRST STEP)
 
-Every workflow must be attached to an existing host entity, referenced through the 'workflowHostData' object when you call the 'create_live_workflow' mutation.
+**Every workflow MUST be attached to an existing host entity.** Before creating any workflow, you must:
 
-- If the request is to create a **new monday workflow** (the standalone Workflows product), the host is an app_feature_object. Create that object first (for example, via a \`create_workflows_object\` mutation) and pass its returned \`id\` in \`workflowHostData\`.
-- If the host 'type' is 'BOARD', make sure the board already exists. If it does not, create it first with the 'create_board' mutation and use its returned 'id'.
-- If the host is an app-feature object (for example: dashboard, doc, or any custom app entity), call the dedicated mutation to create that object first, and then reference its 'id' in 'workflowHostData'.
+### 0.1 Identify the Host Type Based on User Request
 
-Only after the host instance exists should you proceed with the steps below.
+**IMPORTANT: The host type depends on what the user is asking for:**
 
-1. **Fetch the blocks including the input fields config using monday api:**
-    Each block represents a trigger, condition or action. Blocks can have input fields and output fields.
-    In general, you can understand what a block does by its description or name.
-    The "kind" field in the block represents the type of the block (trigger, condition or action).
-    There are some types of input fields: In the case of CustomInputField, it refers to a field type feature. 
-    It has special functionality — for example, remote options. These are all the possible values for this type. 
-    For example, if the field type is 'board', then the options will include a list of all boardIds 
-    Their identifier is the 'fieldTypeReferenceId' (or 'id' in the fieldTypeData).
-    There are dependencies that tell us what values we need to know to fetch the options for the custom input field's value.
-    For example, if the custom input field is a status column, the dependency is the board ID.
+- **If user wants "automation"** (e.g., "automate when item is created", "set status automatically"):
+  - Host type: **BOARD**
+  - The automation will run on a specific board
+  - User typically mentions board-related triggers/actions
+
+- **If user wants "monday workflows"** (e.g., "create a monday workflow", "new workflow"):
+  - Host type: **APP_FEATURE_OBJECT** 
+  - This is the standalone Workflows product
+  - User explicitly mentions "monday workflow" or "workflow" without board context
+
+### 0.2 Check if Host Exists
+**Always check first before creating:**
+
+**For BOARD hosts (automations):**
+\`\`\`
+query {
+  boards(ids: [BOARD_ID]) {
+    id
+    name
+  }
+}
+\`\`\`
+If user didn't specify a board, you may need to ask which board or list available boards.
+
+**For APP_FEATURE_OBJECT hosts (monday workflows):**
+Check if a workflows object exists for the user/workspace. The exact query depends on the API structure for workflows objects.
+
+### 0.3 Create Host if Missing
+**Only if the host doesn't exist, create it first:**
+
+**For BOARD hosts:**
+\`\`\`
+mutation {
+  create_board(
+    board_name: "Board Name",
+    board_kind: public
+  ) {
+    id
+  }
+}
+\`\`\`
+
+**For APP_FEATURE_OBJECT hosts:**
+\`\`\`
+mutation {
+  create_workflows_object(
+    name: "Workflow Name"
+  ) {
+    id
+  }
+}
+\`\`\`
+
+### 0.4 Prepare workflowHostData
+Once you have confirmed the host exists (or created it), prepare the \`workflowHostData\` object:
+
+**For automations (board host):**
+\`\`\`
+workflowHostData: {
+  id: "BOARD_ID_HERE",
+  type: BOARD
+}
+\`\`\`
+
+**For monday workflows (app feature host):**
+\`\`\`
+workflowHostData: {
+  id: "WORKFLOWS_OBJECT_ID_HERE",
+  type: APP_FEATURE_OBJECT
+}
+\`\`\`
+
+**⚠️ IMPORTANT: Do not proceed to the next steps until the host is confirmed to exist and you have its ID.**
+
+## Step 1: Fetch Available Blocks
+
+Fetch the blocks including the input fields config using monday api:
+Each block represents a trigger, condition or action. Blocks can have input fields and output fields.
+In general, you can understand what a block does by its description or name.
+The "kind" field in the block represents the type of the block (trigger, condition or action).
+There are some types of input fields: In the case of CustomInputField, it refers to a field type feature. 
+It has special functionality — for example, remote options. These are all the possible values for this type. 
+For example, if the field type is 'board', then the options will include a list of all boardIds 
+Their identifier is the 'fieldTypeReferenceId' (or 'id' in the fieldTypeData).
+There are dependencies that tell us what values we need to know to fetch the options for the custom input field's value.
+For example, if the custom input field is a status column, the dependency is the board ID.
 
 **Example query to fetch the blocks:**
+\`\`\`
 query {
   blocks {
     blocks {
@@ -85,20 +161,30 @@ query {
     }
   }
 }
+\`\`\`
 
-2. **Choose the trigger block and action blocks** that you want to use.
+## Step 2: Choose Blocks
 
-3. **Build the workflow schema.** Get the input schema of the 'create_live_workflow' mutation.
-    Pay attention that sometimes you need to run queries to fetch some schemas. Read the description of each field in the schema and follow the instructions if there are any.
+Choose the trigger block and action blocks that you want to use based on the user's automation requirements.
 
-4. **For each block you choose to use, build the workflow block schema** (start from the trigger block):
-   - **4.a.** For each input field, build the workflow variable schema and use it in the workflow block.
-   - **4.b.** For each output field, build the workflow variable schema and use it in the workflow block.
+## Step 3: Build Workflow Schema
 
-5. **To configure workflow variables,** use the 'remote_options' query when the input field is a custom input field type with remote options.
-   Fetch the remote options query schema and the remote options query input schema, then run the query.
+Get the input schema of the 'create_live_workflow' mutation.
+Pay attention that sometimes you need to run queries to fetch some schemas. Read the description of each field in the schema and follow the instructions if there are any.
 
-   **Example:**
+## Step 4: Build Workflow Block Schemas
+
+For each block you choose to use, build the workflow block schema (start from the trigger block):
+- **4.a.** For each input field, build the workflow variable schema and use it in the workflow block.
+- **4.b.** For each output field, build the workflow variable schema and use it in the workflow block.
+
+## Step 5: Configure Workflow Variables
+
+To configure workflow variables, use the 'remote_options' query when the input field is a custom input field type with remote options.
+Fetch the remote options query schema and the remote options query input schema, then run the query.
+
+**Example:**
+\`\`\`
 query remote_options {
   remote_options( input: {
     fieldTypeReferenceId: 10380084,
@@ -114,11 +200,16 @@ query remote_options {
     }
   }
 }
-6. **Fetch the complete workflow variables schemas** with the query 'get_workflow_variable_schemas'. In general, there are 4 types of workflow variables:
-   Each workflow variable has a workflowVariableKey (unique) that is used to identify the variable in the workflow block and a sourceKind (NODE_RESULT, USER_CONFIG, REFERENCE, HOST_METADATA).
+\`\`\`
 
-   - **6.a. Node result:** A variable that has a value fetched from output fields of the previous block.
-     **Example:**
+## Step 6: Fetch Complete Workflow Variable Schemas
+
+Fetch the complete workflow variables schemas with the query 'get_workflow_variable_schemas'. In general, there are 4 types of workflow variables:
+Each workflow variable has a workflowVariableKey (unique) that is used to identify the variable in the workflow block and a sourceKind (NODE_RESULT, USER_CONFIG, REFERENCE, HOST_METADATA).
+
+- **6.a. Node result:** A variable that has a value fetched from output fields of the previous block.
+  **Example:**
+\`\`\`
 {
   workflowVariableKey: 2,
   sourceKind: "node_results",
@@ -126,10 +217,13 @@ query remote_options {
     workflowNodeId: 1,
     outboundFieldKey: "itemId"
   }
-},
-   - **6.b. User config:** A variable that has a value fetched from the user config (if the user config is a remote option, you need to use the remote options query).
-     **Very important:** You need to make sure that all the dependencies of the field type (dependenciesValues) are filled in the sourceMetadata (see the schema).
-     **Example:**
+}
+\`\`\`
+
+- **6.b. User config:** A variable that has a value fetched from the user config (if the user config is a remote option, you need to use the remote options query).
+  **Very important:** You need to make sure that all the dependencies of the field type (dependenciesValues) are filled in the sourceMetadata (see the schema).
+  **Example:**
+\`\`\`
 {
     workflowVariableKey: 4,
     sourceKind: "user_config",
@@ -148,10 +242,13 @@ query remote_options {
       title: "Done"
     }
   }
-   - **6.c. Reference:** A variable that has a value fetched from a reference (if the reference is a remote option, you need to use the remote options query).
+\`\`\`
 
-   - **6.d. Host metadata:** A variable that has a value fetched from the host metadata. For example: board ID when the host is a board.
-     **Example:**
+- **6.c. Reference:** A variable that has a value fetched from a reference (if the reference is a remote option, you need to use the remote options query).
+
+- **6.d. Host metadata:** A variable that has a value fetched from the host metadata. For example: board ID when the host is a board.
+  **Example:**
+\`\`\`
 {
   workflowVariableKey: 1,
   sourceKind: "host_metadata",
@@ -159,9 +256,14 @@ query remote_options {
     hostMetadataKey: "hostInstanceId"
   }
 }
-7. **Create the live workflow** with the query 'create_live_workflow', using the workflow variables and workflow blocks in the input.
+\`\`\`
 
-   **Example:**
+## Step 7: Create the Live Workflow
+
+Create the live workflow with the query 'create_live_workflow', using the workflow variables and workflow blocks in the input.
+
+**Example for board automation:**
+\`\`\`
 mutation {
   create_live_workflow(
    
@@ -233,14 +335,15 @@ mutation {
       {
         workflowVariableKey: 3,
         sourceKind: "user_config",
- sourceMetadata: {
+        sourceMetadata: {
           configurationMetadata:{
             dependencyConfigValues:{
               boardId: {workflowVariableKey: 1},
               itemId: {workflowVariableKey: 2}
             }
           }
-        },        primitiveType: "string",
+        },
+        primitiveType: "string",
         config: {
           value: "status",
           title: "Status"
@@ -255,7 +358,7 @@ mutation {
               boardId: {workflowVariableKey: 1},
               statusColumnId:{workflowVariableKey: 3},
               itemId:{workflowVariableKey: 2}
-						}
+            }
           }
         },
         primitiveType: "number",
@@ -276,6 +379,22 @@ mutation {
     id
   }
 }
+\`\`\`
+
+## Summary Checklist:
+1. ✅ Determine if user wants automation (BOARD host) or monday workflows (APP_FEATURE_OBJECT host)
+2. ✅ Check if the appropriate host exists  
+3. ✅ Create host if missing
+4. ✅ Prepare workflowHostData with correct host type and ID
+5. ✅ Fetch available blocks
+6. ✅ Choose appropriate blocks
+7. ✅ Build workflow schema
+8. ✅ Configure workflow variables
+9. ✅ Create the live workflow
+
+## Quick Reference:
+- **"Automate X"** → BOARD host
+- **"Create monday workflow"** → APP_FEATURE_OBJECT host
 `;
 
     return {
