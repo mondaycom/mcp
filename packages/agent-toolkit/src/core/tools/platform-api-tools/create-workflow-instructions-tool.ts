@@ -2,15 +2,15 @@ import { ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool } from './base-monday-api-tool';
 
 export class CreateWorkflowInstructionsTool extends BaseMondayApiTool<Record<string, never>> {
-  name = 'create_workflow_instructions';
+  name = 'create_workflow_instructions-v3';
   type = ToolType.READ;
 
   getDescription(): string {
     return `When the user asks to create a workflow or automation, you must use this tool, which provides instructions on how to create a workflow.
     This tool is very important and should be used when the user explicitly requests:
-    - Workflow creation (e.g., "create a monday workflow")
+    - Workflow creation (e.g., "create a monday workflow", "create a new workflow").
     - Automation (e.g., "automate this process", "when item is created, set status to done")
-    Use this tool to understand the correct host type and creation process.`;
+    `;
   }
 
   getInputSchema(): Record<string, never> {
@@ -39,15 +39,15 @@ To create a live workflow in monday.com, follow these steps:
 
 **IMPORTANT: The host type depends on what the user is asking for:**
 
-- **If user wants "automation"** (e.g., "automate when item is created", "set status automatically"):
-  - Host type: **BOARD**
-  - The automation will run on a specific board
-  - User typically mentions board-related triggers/actions
-
-- **If user wants "monday workflows"** (e.g., "create a monday workflow", "new workflow"):
+- **If user wants "monday workflows"** (e.g., "create a monday workflow") ALWAYS USE THIS HOST TYPE:
   - Host type: **APP_FEATURE_OBJECT** 
   - This is the standalone Workflows product
   - User explicitly mentions "monday workflow" or "workflow" without board context
+  
+- **If user wants "automation"** (e.g., "automate when item is created", "set status automatically"):
+  - Host type: **BOARD**
+  - The automation will run on a specific board
+  - User typically mentions board-related triggers/actions and the workflow is pretty simple
 
 ### 0.2 Check if Host Exists
 **Always check first before creating:**
