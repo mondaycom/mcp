@@ -22,7 +22,7 @@
     "url": "https://github.com/mondaycom/monday-ai/tree/master/packages/monday-api-mcp"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.7.0",
+    "@modelcontextprotocol/sdk": "^1.13.1",
     "@mondaydotcomorg/agent-toolkit": "*",
     "dotenv": "^16.4.7"
   },

@@ -27,6 +27,13 @@ export type CreateItemToolInput = typeof createItemToolSchema | typeof createIte
 export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
   name = 'create_item';
   type = ToolType.WRITE;
+  annotations = {
+    title: 'Create Item',
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+    openWorldHint: false,
+  };
 
   getDescription(): string {
     return 'Create a new item in a monday.com board';

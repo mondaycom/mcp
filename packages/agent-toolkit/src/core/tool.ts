@@ -16,10 +16,19 @@ export enum ToolType {
   ALL_API = 'all_api',
 }
 
+export type ToolAnnotations = {
+  title?: string;
+  readOnlyHint?: boolean;
+  destructiveHint?: boolean;
+  idempotentHint?: boolean;
+  openWorldHint?: boolean;
+};
+
 export interface Tool<Input extends ZodRawShape | undefined, Output extends Record<string, unknown> = never>
   extends Executable<ToolInputType<Input>, ToolOutputType<Output>> {
   name: string;
   type: ToolType;
+  annotations?: ToolAnnotations;
 
   getDescription(): string;
   getInputSchema(): Input;

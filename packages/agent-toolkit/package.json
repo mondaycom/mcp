@@ -73,7 +73,7 @@
     "typescript": "^4.9.5"
   },
   "peerDependencies": {
-    "@modelcontextprotocol/sdk": "^1.8.0",
+    "@modelcontextprotocol/sdk": "^1.13.1",
     "openai": "^4.93.0"
   }
 }

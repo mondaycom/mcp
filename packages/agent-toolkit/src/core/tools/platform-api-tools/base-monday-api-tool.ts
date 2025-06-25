@@ -1,6 +1,6 @@
 import { ApiClient } from '@mondaydotcomorg/api';
 import { ZodRawShape } from 'zod';
-import { Tool, ToolInputType, ToolOutputType, ToolType } from '../../tool';
+import { Tool, ToolAnnotations, ToolInputType, ToolOutputType, ToolType } from '../../tool';
 
 export type MondayApiToolContext = {
   boardId?: number;
@@ -15,11 +15,17 @@ export abstract class BaseMondayApiTool<
 {
   abstract name: string;
   abstract type: ToolType;
+  annotations?: ToolAnnotations;
 
   constructor(
     protected readonly mondayApi: ApiClient,
     protected readonly context?: MondayApiToolContext,
-  ) {}
+    annotations?: ToolAnnotations,
+  ) {
+    if (annotations) {
+      this.annotations = annotations;
+    }
+  }
 
   abstract getDescription(): string;
   abstract getInputSchema(): Input;
