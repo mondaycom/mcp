@@ -22,7 +22,6 @@ export interface Tool<Input extends ZodRawShape | undefined, Output extends Reco
   name: string;
   type: ToolType;
   annotations: ToolAnnotations;
-  enabledByDefault?: boolean;
 
   getDescription(): string;
   getInputSchema(): Input;

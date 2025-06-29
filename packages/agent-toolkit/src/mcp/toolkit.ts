@@ -5,8 +5,6 @@ import { getFilteredToolInstances } from '../utils/tools/tools-filtering.utils';
 import { z } from 'zod';
 import { Tool } from '../core/tool';
 import { MondayAgentToolkitConfig } from '../core/monday-agent-toolkit';
-import { ManageToolsTool } from '../core/tools/platform-api-tools/manage-tools-tool';
-import { DynamicToolManager } from './dynamic-tool-manager';
 
 /**
  * Monday Agent Toolkit providing an MCP server with Monday.com tools
@@ -14,7 +12,6 @@ import { DynamicToolManager } from './dynamic-tool-manager';
 export class MondayAgentToolkit extends McpServer {
   private readonly mondayApiClient: ApiClient;
   private readonly mondayApiToken: string;
-  private readonly dynamicToolManager: DynamicToolManager = new DynamicToolManager();
 
   /**
    * Creates a new instance of the Monday Agent Toolkit
@@ -56,23 +53,12 @@ export class MondayAgentToolkit extends McpServer {
     try {
       const toolInstances = this.initializeTools(config);
       toolInstances.forEach((tool) => this.registerSingleTool(tool));
-
-      // Register the ManageToolsTool separately since it needs toolkit reference
-      this.registerManagementTool();
     } catch (error) {
+      console.error('Failed to register tools:', error instanceof Error ? error.message : String(error));
       throw new Error(
         `Failed to initialize Monday Agent Toolkit: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
-  }
-
-  /**
-   * Register the management tool with toolkit reference
-   */
-  private registerManagementTool(): void {
-    const manageTool = new ManageToolsTool();
-    manageTool.setToolkitManager(this.dynamicToolManager);
-    this.registerSingleTool(manageTool as Tool<any, any>);
   }
 
   /**
@@ -94,7 +80,7 @@ export class MondayAgentToolkit extends McpServer {
    */
   private registerSingleTool(tool: Tool<any, any>): void {
     const inputSchema = tool.getInputSchema();
-    const mcpTool = this.registerTool(
+    this.registerTool(
       tool.name,
       {
         title: tool.annotations?.title,
@@ -114,51 +100,12 @@ export class MondayAgentToolkit extends McpServer {
           } else {
             result = await tool.execute();
           }
-
           return this.formatToolResult(result.content);
         } catch (error) {
           return this.handleToolError(error, tool.name);
         }
       },
     );
-
-    // Register the tool with the dynamic tool manager
-    this.dynamicToolManager.registerTool(tool, mcpTool);
-  }
-
-  /**
-   * Dynamically enable a tool
-   */
-  public enableTool(toolName: string): boolean {
-    return this.dynamicToolManager.enableTool(toolName);
-  }
-
-  /**
-   * Dynamically disable a tool
-   */
-  public disableTool(toolName: string): boolean {
-    return this.dynamicToolManager.disableTool(toolName);
-  }
-
-  /**
-   * Check if a tool is enabled
-   */
-  public isToolEnabled(toolName: string): boolean {
-    return this.dynamicToolManager.isToolEnabled(toolName);
-  }
-
-  /**
-   * Get list of all available tools and their status
-   */
-  public getToolsStatus(): Record<string, boolean> {
-    return this.dynamicToolManager.getToolsStatus();
-  }
-
-  /**
-   * Get list of all dynamic tool names
-   */
-  public getDynamicToolNames(): string[] {
-    return this.dynamicToolManager.getDynamicToolNames();
   }
 
   getServer(): McpServer {
@@ -179,6 +126,7 @@ export class MondayAgentToolkit extends McpServer {
    */
   private handleToolError(error: unknown, toolName: string): CallToolResult {
     const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`Error executing tool ${toolName}:`, errorMessage);
 
     return {
       content: [
