@@ -1,5 +1,5 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { CallToolResult } from '@modelcontextprotocol/sdk/types';
+import { CallToolResult, ServerCapabilities } from '@modelcontextprotocol/sdk/types';
 import { ApiClient } from '@mondaydotcomorg/api';
 import { getFilteredToolInstances } from '../utils/tools/tools-filtering.utils';
 import { z } from 'zod';
@@ -21,10 +21,19 @@ export class MondayAgentToolkit extends McpServer {
    * @param config Configuration for the toolkit
    */
   constructor(config: MondayAgentToolkitConfig) {
-    super({
-      name: 'monday.com',
-      version: '1.0.0',
-    });
+    super(
+      {
+        name: 'monday.com',
+        version: '1.0.0',
+      },
+      {
+        capabilities: {
+          tools: {
+            listChanged: true,
+          },
+        } satisfies ServerCapabilities,
+      },
+    );
 
     this.mondayApiClient = this.createApiClient(config);
     this.mondayApiToken = config.mondayApiToken;
