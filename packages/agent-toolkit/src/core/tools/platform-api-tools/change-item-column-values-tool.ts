@@ -5,7 +5,7 @@ import {
 } from '../../../monday-graphql/generated/graphql';
 import { changeItemColumnValues } from '../../../monday-graphql/queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
-import { BaseMondayApiTool } from './base-monday-api-tool';
+import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
 
 export const changeItemColumnValuesToolSchema = {
   itemId: z.number().describe('The ID of the item to be updated'),
@@ -28,13 +28,12 @@ export type ChangeItemColumnValuesToolInput =
 export class ChangeItemColumnValuesTool extends BaseMondayApiTool<ChangeItemColumnValuesToolInput> {
   name = 'change_item_column_values';
   type = ToolType.WRITE;
-  annotations = {
+  annotations = createMondayApiAnnotations({
     title: 'Change Item Column Values',
     readOnlyHint: false,
     destructiveHint: false,
     idempotentHint: true,
-    openWorldHint: true,
-  };
+  });
 
   getDescription(): string {
     return 'Change the column values of an item in a monday.com board';

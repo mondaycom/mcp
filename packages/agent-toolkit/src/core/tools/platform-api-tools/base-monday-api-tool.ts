@@ -9,6 +9,14 @@ export type MondayApiToolContext = {
 
 export type BaseMondayApiToolConstructor = new (api: ApiClient) => BaseMondayApiTool<any>;
 
+// Helper function to merge annotations with default openWorldHint
+export function createMondayApiAnnotations(annotations: ToolAnnotations): ToolAnnotations {
+  return {
+    openWorldHint: true,
+    ...annotations,
+  };
+}
+
 export abstract class BaseMondayApiTool<
   Input extends ZodRawShape | undefined,
   Output extends Record<string, unknown> = never,
