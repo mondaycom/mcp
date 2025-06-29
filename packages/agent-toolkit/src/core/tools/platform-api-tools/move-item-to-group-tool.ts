@@ -12,6 +12,13 @@ export const moveItemToGroupToolSchema = {
 export class MoveItemToGroupTool extends BaseMondayApiTool<typeof moveItemToGroupToolSchema> {
   name = 'move_item_to_group';
   type = ToolType.WRITE;
+  annotations = {
+    title: 'Move Item to Group',
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: true,
+  };
 
   getDescription(): string {
     return 'Move an item to a group in a monday.com board';

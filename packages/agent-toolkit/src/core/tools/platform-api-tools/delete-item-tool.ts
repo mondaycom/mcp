@@ -11,6 +11,13 @@ export const deleteItemToolSchema = {
 export class DeleteItemTool extends BaseMondayApiTool<typeof deleteItemToolSchema, never> {
   name = 'delete_item';
   type = ToolType.WRITE;
+  annotations = {
+    title: 'Delete Item',
+    readOnlyHint: false,
+    destructiveHint: true,
+    idempotentHint: false,
+    openWorldHint: true,
+  };
 
   getDescription(): string {
     return 'Delete an item';

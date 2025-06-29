@@ -26,11 +26,11 @@ export class AllMondayApiTool extends BaseMondayApiTool<typeof allMondayApiToolS
   name = 'all_monday_api';
   type = ToolType.ALL_API;
   annotations = {
-    title: 'All Monday API',
+    title: 'Run Query or Mutation on any monday.com API',
     readOnlyHint: false,
     destructiveHint: true,
     idempotentHint: false,
-    openWorldHint: false,
+    openWorldHint: true,
   };
   private static schemaCache: Record<string, GraphQLSchema> = {};
 

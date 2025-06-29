@@ -18,6 +18,13 @@ export const createBoardToolSchema = {
 export class CreateBoardTool extends BaseMondayApiTool<typeof createBoardToolSchema, never> {
   name = 'create_board';
   type = ToolType.WRITE;
+  annotations = {
+    title: 'Create Board',
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+    openWorldHint: true,
+  };
 
   getDescription(): string {
     return 'Create a monday.com board';

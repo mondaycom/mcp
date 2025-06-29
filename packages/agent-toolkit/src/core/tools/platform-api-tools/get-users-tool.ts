@@ -11,6 +11,13 @@ export const getUsersToolSchema = {
 export class GetUsersTool extends BaseMondayApiTool<typeof getUsersToolSchema> {
   name = 'get_users_by_name';
   type = ToolType.READ;
+  annotations = {
+    title: 'Get Users',
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: true,
+  };
 
   getDescription(): string {
     return 'Get users, can be filtered by name or partial name';

@@ -18,6 +18,13 @@ export type DeleteColumnToolInput = typeof deleteColumnToolSchema | typeof delet
 export class DeleteColumnTool extends BaseMondayApiTool<DeleteColumnToolInput> {
   name = 'delete_column';
   type = ToolType.WRITE;
+  annotations = {
+    title: 'Delete Column',
+    readOnlyHint: false,
+    destructiveHint: true,
+    idempotentHint: false,
+    openWorldHint: true,
+  };
 
   getDescription(): string {
     return 'Delete a column from a monday.com board';

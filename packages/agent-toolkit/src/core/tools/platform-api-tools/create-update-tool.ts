@@ -12,6 +12,13 @@ export const createUpdateToolSchema = {
 export class CreateUpdateTool extends BaseMondayApiTool<typeof createUpdateToolSchema> {
   name = 'create_update';
   type = ToolType.WRITE;
+  annotations = {
+    title: 'Create Update',
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+    openWorldHint: true,
+  };
 
   getDescription(): string {
     return 'Create a new update in a monday.com board';

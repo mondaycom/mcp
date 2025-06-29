@@ -18,6 +18,13 @@ export type GetItemsToolInput = typeof getItemsToolSchema | typeof getItemsInBoa
 export class GetBoardItemsTool extends BaseMondayApiTool<GetItemsToolInput> {
   name = 'get_board_items_by_name';
   type = ToolType.READ;
+  annotations = {
+    title: 'Get Board Items',
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: true,
+  };
 
   getDescription(): string {
     return 'Get items by board id and term';

@@ -32,7 +32,7 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
     readOnlyHint: false,
     destructiveHint: false,
     idempotentHint: false,
-    openWorldHint: false,
+    openWorldHint: true,
   };
 
   getDescription(): string {

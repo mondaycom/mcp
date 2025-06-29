@@ -8,6 +8,13 @@ export const fetchCustomActivityToolSchema = {};
 export class FetchCustomActivityTool extends BaseMondayApiTool<typeof fetchCustomActivityToolSchema> {
   name = 'fetch_custom_activity';
   type = ToolType.READ;
+  annotations = {
+    title: 'Fetch Custom Activities',
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: true,
+  };
 
   getDescription(): string {
     return 'Get custom activities from the E&A app';

@@ -18,6 +18,13 @@ export const createCustomActivityToolSchema = {
 export class CreateCustomActivityTool extends BaseMondayApiTool<typeof createCustomActivityToolSchema> {
   name = 'create_custom_activity';
   type = ToolType.WRITE;
+  annotations = {
+    title: 'Create Custom Activity',
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+    openWorldHint: true,
+  };
 
   getDescription(): string {
     return 'Create a new custom activity in the E&A app';

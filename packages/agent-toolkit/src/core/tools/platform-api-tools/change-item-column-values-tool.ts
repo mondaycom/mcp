@@ -28,6 +28,13 @@ export type ChangeItemColumnValuesToolInput =
 export class ChangeItemColumnValuesTool extends BaseMondayApiTool<ChangeItemColumnValuesToolInput> {
   name = 'change_item_column_values';
   type = ToolType.WRITE;
+  annotations = {
+    title: 'Change Item Column Values',
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: true,
+  };
 
   getDescription(): string {
     return 'Change the column values of an item in a monday.com board';

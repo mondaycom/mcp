@@ -30,6 +30,13 @@ export type CreateColumnToolInput = typeof createColumnToolSchema | typeof creat
 export class CreateColumnTool extends BaseMondayApiTool<CreateColumnToolInput> {
   name = 'create_column';
   type = ToolType.WRITE;
+  annotations = {
+    title: 'Create Column',
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+    openWorldHint: true,
+  };
 
   getDescription(): string {
     return 'Create a new column in a monday.com board';

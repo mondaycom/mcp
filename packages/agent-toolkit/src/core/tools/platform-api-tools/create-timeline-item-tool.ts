@@ -26,6 +26,13 @@ export const createTimelineItemToolSchema = {
 export class CreateTimelineItemTool extends BaseMondayApiTool<typeof createTimelineItemToolSchema> {
   name = 'create_timeline_item';
   type = ToolType.WRITE;
+  annotations = {
+    title: 'Create Timeline Item',
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+    openWorldHint: true,
+  };
 
   getDescription(): string {
     return 'Create a new timeline item in the E&A app';

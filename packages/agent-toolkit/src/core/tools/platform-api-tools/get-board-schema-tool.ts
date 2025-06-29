@@ -11,6 +11,13 @@ export const getBoardSchemaToolSchema = {
 export class GetBoardSchemaTool extends BaseMondayApiTool<typeof getBoardSchemaToolSchema | undefined> {
   name = 'get_board_schema';
   type = ToolType.READ;
+  annotations = {
+    title: 'Get Board Schema',
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: true,
+  };
 
   getDescription(): string {
     return 'Get board schema (columns and groups) by board id';

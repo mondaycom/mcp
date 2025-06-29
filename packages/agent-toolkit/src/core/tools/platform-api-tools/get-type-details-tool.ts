@@ -11,6 +11,13 @@ export const getTypeDetailsToolSchema = {
 export class GetTypeDetailsTool extends BaseMondayApiTool<typeof getTypeDetailsToolSchema> {
   name = 'get_type_details';
   type = ToolType.ALL_API;
+  annotations = {
+    title: 'Get Type Details',
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: true,
+  };
 
   getDescription(): string {
     return 'Get detailed information about a specific GraphQL type from the Monday.com API schema';
