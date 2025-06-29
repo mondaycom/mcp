@@ -6,10 +6,9 @@ export const manageToolsSchema = {
   action: z
     .enum(['enable', 'disable', 'status', 'list', 'detailed', 'reset'])
     .describe(
-      'Action to perform: "list" or "detailed" to discover available tools, "status" to check current states, "enable" to activate needed tools (requires confirmation), "disable" to deactivate tools, "reset" to restore defaults',
+      'Action to perform: "list" or "detailed" to discover available tools, "status" to check current states, "enable" to activate needed tools, "disable" to deactivate tools, "reset" to restore defaults',
     ),
   toolName: z.string().optional().describe('Name of the tool to manage (required for enable/disable/status/reset)'),
-  confirm: z.boolean().optional().describe('Set to true to confirm enabling a tool (required for enable action)'),
 };
 
 // Interface for the toolkit methods needed by this tool
@@ -62,7 +61,7 @@ export class ManageToolsTool implements Tool<typeof manageToolsSchema> {
       throw new Error('Input parameters are required');
     }
 
-    const { action, toolName, confirm } = input;
+    const { action, toolName } = input;
 
     switch (action) {
       case 'enable': {
@@ -74,13 +73,6 @@ export class ManageToolsTool implements Tool<typeof manageToolsSchema> {
         if (this.toolkitManager.isToolEnabled(toolName)) {
           return {
             content: `Tool '${toolName}' is already enabled`,
-          };
-        }
-
-        // Require confirmation before enabling
-        if (!confirm) {
-          return {
-            content: `⚠️  You are about to enable the tool '${toolName}'. This will make it available for use.\n\nTo confirm, please call this tool again with: {"action": "enable", "toolName": "${toolName}", "confirm": true}`,
           };
         }
 
