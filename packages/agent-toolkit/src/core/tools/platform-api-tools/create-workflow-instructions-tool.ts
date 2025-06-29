@@ -2,7 +2,7 @@ import { ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool } from './base-monday-api-tool';
 
 export class CreateWorkflowInstructionsTool extends BaseMondayApiTool<Record<string, never>> {
-  name = 'create_workflow_instructions-v3';
+  name = 'create_workflow_instructions';
   type = ToolType.READ;
 
   getDescription(): string {
@@ -216,6 +216,8 @@ query remote_options {
 Fetch the complete workflow variables schemas with the query 'get_workflow_variable_schemas'. In general, there are 4 types of workflow variables:
 Each workflow variable has a workflowVariableKey (unique) that is used to identify the variable in the workflow block and a sourceKind (NODE_RESULT, USER_CONFIG, REFERENCE, HOST_METADATA).
 
+**Critical:** When the variable is of **USER_CONFIG** kind and its value was selected via the **remote_options** query (see Step 5), the **exact same dependency key-value pairs** you passed to remote_options **must be placed in** \`sourceMetadata.configurationMetadata.dependencyConfigValues\`. This guarantees the workflow engine can resolve the value at runtime.
+
 - **6.a. Node result:** A variable that has a value fetched from output fields of the previous block.
   **Example:**
 \`\`\`
@@ -266,6 +268,17 @@ Each workflow variable has a workflowVariableKey (unique) that is used to identi
   }
 }
 \`\`\`
+
+### 6.5: Validation Checklist for Workflow Variables
+
+**MANDATORY: Before proceeding to Step 7, validate each workflow variable:**
+
+For every **user_config** workflow variable:
+- [ ] Does \`fieldTypeReferenceId\` exist?
+- [ ] If yes → Is this a CustomInputField with \`dependencyConfig\`?
+- [ ] If yes → Did you call \`remote_options\` query with ALL required dependencies?
+- [ ] Did you use an actual \`value\` from the \`remote_options\` response (not a hardcoded string)?
+- [ ] Are all \`dependencyConfigValues\` properly referenced by \`workflowVariableKey\`?
 
 ## Step 7: Create the Live Workflow
 
