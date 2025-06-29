@@ -55,5 +55,6 @@ export * from './get-board-schema-tool';
 export * from './get-graphql-schema-tool';
 export * from './get-type-details-tool';
 export * from './get-users-tool';
+export * from './manage-tools-tool';
 export * from './move-item-to-group-tool';
 export * from './get-instructions-to-create-live-workflow-tool';
