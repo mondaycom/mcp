@@ -2,11 +2,19 @@ import { Tool } from '../core/tool';
 import { ToolkitManager } from '../core/tools/platform-api-tools/manage-tools-tool';
 
 /**
+ * Interface representing an MCP server tool registration handle
+ */
+interface MCPToolHandle {
+  enable(): void;
+  disable(): void;
+}
+
+/**
  * Interface for dynamic tool control
  */
 interface DynamicTool {
   instance: Tool<any, any>;
-  mcpTool: any; // Reference to the MCP server tool
+  mcpTool: MCPToolHandle; // Reference to the MCP server tool
   enabled: boolean;
   enabledByDefault: boolean; // Track the original default state
 }
@@ -20,7 +28,7 @@ export class DynamicToolManager implements ToolkitManager {
   /**
    * Register a tool for dynamic management
    */
-  registerTool(tool: Tool<any, any>, mcpTool: any): void {
+  registerTool(tool: Tool<any, any>, mcpTool: MCPToolHandle): void {
     // Store the tool reference for dynamic control
     const enabledByDefault = tool.enabledByDefault ?? true; // Default to true if not specified
     const initialEnabled = enabledByDefault;
