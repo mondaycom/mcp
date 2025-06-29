@@ -178,23 +178,32 @@ For each block you choose to use, build the workflow block schema (start from th
 - **4.a.** For each input field, build the workflow variable schema and use it in the workflow block.
 - **4.b.** For each output field, build the workflow variable schema and use it in the workflow block.
 
-## Step 5: Configure Workflow Variables
+## Step 5: Retrieve allowed constant values for input fields (remote_options)
 
-To configure workflow variables, use the 'remote_options' query when the input field is a custom input field type with remote options.
-Fetch the remote options query schema and the remote options query input schema, then run the query.
+Sometimes you need to configure an input field with a fixed (constant) value.
+
+1. Examine the block's inputFieldsConfig.
+   • If the field type is PrimitiveInputFieldConfig – you can pass any literal that matches its primitiveType.
+   • If the field type is CustomInputFieldConfig – its allowed values are dynamic. You **MUST** fetch them using the remote_options query.
+
+2. Build the remote_options query for every CustomInputFieldConfig you want to set as a constant:
+   • Provide the fieldTypeReferenceId of the field.
+   • Fill the dependenciesValues object with **all mandatory dependencies** listed in fieldTypeData.dependencyConfig.orderedMandatoryFields. You can supply each dependency as a literal value (value) or as a reference to an existing workflow variable (workflowVariableKey).
+
+3. Select the desired option from the query response (options.value / options.title) and store it in a USER_CONFIG workflow variable that will be referenced by the input field.
 
 **Example:**
-\`\`\`
+\`\`\`graphql
 query remote_options {
-  remote_options( input: {
-    fieldTypeReferenceId: 10380084,
-    dependenciesValues: {
-        boardId:{
-        value: 118607562
+  remote_options(
+    input: {
+      fieldTypeReferenceId: 10380084
+      dependenciesValues: {
+        boardId: { value: 118607562 }
       }
-  }
-  }) {
-    options{
+    }
+  ) {
+    options {
       value
       title
     }
@@ -221,7 +230,7 @@ Each workflow variable has a workflowVariableKey (unique) that is used to identi
 \`\`\`
 
 - **6.b. User config:** A variable that has a value fetched from the user config (if the user config is a remote option, you need to use the remote options query).
-  **Very important:** You need to make sure that all the dependencies of the field type (dependenciesValues) are filled in the sourceMetadata (see the schema).
+  **Very important:** You need to make sure that all the dependencies of the field type (dependencyConfigValues) are filled in the sourceMetadata (see the schema).
   **Example:**
 \`\`\`
 {
