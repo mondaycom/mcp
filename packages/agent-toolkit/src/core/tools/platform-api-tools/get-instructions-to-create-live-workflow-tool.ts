@@ -2,7 +2,7 @@ import { ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool } from './base-monday-api-tool';
 
 export class GetInstructionsToCreateLiveWorkflowTool extends BaseMondayApiTool<Record<string, never>> {
-  name = 'get_instructions_to_create_live_workflow';
+  name = 'create_live_workflow_instructions';
   type = ToolType.READ;
   annotations = {
     title: 'Get Workflow Creation Instructions',
