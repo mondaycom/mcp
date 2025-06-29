@@ -123,7 +123,6 @@ export class MondayAgentToolkit extends McpServer {
           } else {
             result = await tool.execute();
           }
-
           return this.formatToolResult(result.content);
         } catch (error) {
           return this.handleToolError(error, tool.name);
