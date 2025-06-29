@@ -25,6 +25,13 @@ interface GraphQLResponse {
 export class AllMondayApiTool extends BaseMondayApiTool<typeof allMondayApiToolSchema> {
   name = 'all_monday_api';
   type = ToolType.ALL_API;
+  annotations = {
+    title: 'All Monday API',
+    readOnlyHint: false,
+    destructiveHint: true,
+    idempotentHint: false,
+    openWorldHint: false,
+  };
   private static schemaCache: Record<string, GraphQLSchema> = {};
 
   constructor(mondayApi: ApiClient, context?: MondayApiToolContext) {
