@@ -1,10 +1,12 @@
 import { ToolOutputType, ToolType } from '../../tool';
-import { BaseMondayApiTool } from './base-monday-api-tool';
+import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
 
 export class CreateWorkflowInstructionsTool extends BaseMondayApiTool<Record<string, never>> {
   name = 'create_workflow_instructions';
   type = ToolType.READ;
-
+  annotations = createMondayApiAnnotations({
+    title: 'Create Workflow Instructions',
+  });
   getDescription(): string {
     return `When the user asks to create a workflow or automation, you must use this tool, which provides instructions on how to create a workflow.
     This tool is very important and should be used when the user explicitly requests:
