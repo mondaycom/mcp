@@ -1098,14 +1098,15 @@
     "@jridgewell/resolve-uri" "^3.1.0"
     "@jridgewell/sourcemap-codec" "^1.4.14"
 
-"@modelcontextprotocol/sdk@^1.7.0":
-  version "1.9.0"
-  resolved "https://registry.yarnpkg.com/@modelcontextprotocol/sdk/-/sdk-1.9.0.tgz#1bf7a4843870b81da26983b8e69bf398d87055f1"
-  integrity sha512-Jq2EUCQpe0iyO5FGpzVYDNFR6oR53AIrwph9yWl7uSc7IWUMsrmpmSaTGra5hQNunXpM+9oit85p924jWuHzUA==
+"@modelcontextprotocol/sdk@^1.13.2":
+  version "1.13.2"
+  resolved "https://registry.npmjs.org/@modelcontextprotocol/sdk/-/sdk-1.13.2.tgz#cb33fb668a03573cc4d3df9d194dc5c73239861f"
+  integrity sha512-Vx7qOcmoKkR3qhaQ9qf3GxiVKCEu+zfJddHv6x3dY/9P6+uIwJnmuAur5aB+4FDXf41rRrDnOEGkviX5oYZ67w==
   dependencies:
+    ajv "^6.12.6"
     content-type "^1.0.5"
     cors "^2.8.5"
-    cross-spawn "^7.0.3"
+    cross-spawn "^7.0.5"
     eventsource "^3.0.2"
     express "^5.0.1"
     express-rate-limit "^7.5.0"
@@ -1550,7 +1551,7 @@ aggregate-error@^3.0.0:
     clean-stack "^2.0.0"
     indent-string "^4.0.0"
 
-ajv@^6.12.4:
+ajv@^6.12.4, ajv@^6.12.6:
   version "6.12.6"
   resolved "https://registry.yarnpkg.com/ajv/-/ajv-6.12.6.tgz#baf5a62e802b07d977034586f8c3baf5adf26df4"
   integrity sha512-j3fVLgvTo527anyYyJOGTYJbG+vnnQYvE0m5mmkc1TK+nxAppkCLMIL0aZ4dblVCNoGShhm+kzE4ZUykBoMg4g==
@@ -2106,7 +2107,7 @@ cross-inspect@1.0.1:
   dependencies:
     tslib "^2.4.0"
 
-cross-spawn@^7.0.2, cross-spawn@^7.0.3:
+cross-spawn@^7.0.2, cross-spawn@^7.0.3, cross-spawn@^7.0.5:
   version "7.0.6"
   resolved "https://registry.yarnpkg.com/cross-spawn/-/cross-spawn-7.0.6.tgz#8a58fe78f00dcd70c370451759dfbfaf03e8ee9f"
   integrity sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==

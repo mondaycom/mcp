@@ -1,5 +1,5 @@
 import { ToolOutputType, ToolType, ToolInputType } from '../../tool';
-import { BaseMondayApiTool } from './base-monday-api-tool';
+import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
 import { getGraphQLSchema } from '../../../monday-graphql/queries.graphql';
 import { GetGraphQlSchemaQuery } from '../../../monday-graphql/generated/graphql';
 import { z } from 'zod';
@@ -15,6 +15,12 @@ export const getGraphQLSchemaToolSchema = {
 export class GetGraphQLSchemaTool extends BaseMondayApiTool<typeof getGraphQLSchemaToolSchema> {
   name = 'get_graphql_schema';
   type = ToolType.ALL_API;
+  annotations = createMondayApiAnnotations({
+    title: 'Get GraphQL Schema',
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+  });
 
   getDescription(): string {
     return 'Fetch the Monday.com GraphQL schema structure including query and mutation definitions. This tool returns available query fields, mutation fields, and a list of GraphQL types in the schema. You can filter results by operation type (read/write) to focus on either queries or mutations.';

@@ -7,7 +7,7 @@ import {
 } from '../../../monday-graphql/generated/graphql';
 import { createCustomActivity } from '../../../monday-graphql/queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
-import { BaseMondayApiTool } from './base-monday-api-tool';
+import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
 
 export const createCustomActivityToolSchema = {
   color: z.nativeEnum(CustomActivityColor).describe('The color of the custom activity'),
@@ -18,6 +18,12 @@ export const createCustomActivityToolSchema = {
 export class CreateCustomActivityTool extends BaseMondayApiTool<typeof createCustomActivityToolSchema> {
   name = 'create_custom_activity';
   type = ToolType.WRITE;
+  annotations = createMondayApiAnnotations({
+    title: 'Create Custom Activity',
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+  });
 
   getDescription(): string {
     return 'Create a new custom activity in the E&A app';

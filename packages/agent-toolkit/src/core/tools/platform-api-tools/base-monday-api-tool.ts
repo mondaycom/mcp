@@ -1,5 +1,6 @@
 import { ApiClient } from '@mondaydotcomorg/api';
 import { ZodRawShape } from 'zod';
+import { ToolAnnotations } from '@modelcontextprotocol/sdk/types';
 import { Tool, ToolInputType, ToolOutputType, ToolType } from '../../tool';
 
 export type MondayApiToolContext = {
@@ -8,6 +9,14 @@ export type MondayApiToolContext = {
 
 export type BaseMondayApiToolConstructor = new (api: ApiClient) => BaseMondayApiTool<any>;
 
+// Helper function to merge annotations with default openWorldHint
+export function createMondayApiAnnotations(annotations: ToolAnnotations): ToolAnnotations {
+  return {
+    openWorldHint: true,
+    ...annotations,
+  };
+}
+
 export abstract class BaseMondayApiTool<
   Input extends ZodRawShape | undefined,
   Output extends Record<string, unknown> = never,
@@ -15,6 +24,7 @@ export abstract class BaseMondayApiTool<
 {
   abstract name: string;
   abstract type: ToolType;
+  abstract annotations: ToolAnnotations;
 
   constructor(
     protected readonly mondayApi: ApiClient,

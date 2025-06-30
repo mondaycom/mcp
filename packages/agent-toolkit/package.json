@@ -1,6 +1,6 @@
 {
   "name": "@mondaydotcomorg/agent-toolkit",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "monday.com agent toolkit",
   "exports": {
     "./mcp": {
@@ -73,7 +73,7 @@
     "typescript": "^4.9.5"
   },
   "peerDependencies": {
-    "@modelcontextprotocol/sdk": "^1.8.0",
+    "@modelcontextprotocol/sdk": "^1.13.2",
     "openai": "^4.93.0"
   }
 }

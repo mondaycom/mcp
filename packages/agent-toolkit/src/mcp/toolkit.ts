@@ -52,7 +52,7 @@ export class MondayAgentToolkit extends McpServer {
   private registerTools(config: MondayAgentToolkitConfig): void {
     try {
       const toolInstances = this.initializeTools(config);
-      toolInstances.forEach((tool) => this.registerTool(tool));
+      toolInstances.forEach((tool) => this.registerSingleTool(tool));
     } catch (error) {
       console.error('Failed to register tools:', error instanceof Error ? error.message : String(error));
       throw new Error(
@@ -78,47 +78,34 @@ export class MondayAgentToolkit extends McpServer {
   /**
    * Register a single tool with the MCP server
    */
-  private registerTool(tool: Tool<any, any>): void {
+  private registerSingleTool(tool: Tool<any, any>): void {
     const inputSchema = tool.getInputSchema();
-
-    if (!inputSchema) {
-      this.registerNoInputTool(tool);
-    } else {
-      this.registerInputTool(tool, inputSchema);
-    }
-  }
-
-  /**
-   * Register a tool that doesn't require input
-   */
-  private registerNoInputTool(tool: Tool<any, any>): void {
-    this.tool(tool.name, tool.getDescription(), async (_extra: any) => {
-      try {
-        const res = await tool.execute();
-        return this.formatToolResult(res.content);
-      } catch (error) {
-        return this.handleToolError(error, tool.name);
-      }
-    });
-  }
-
-  /**
-   * Register a tool that requires input
-   */
-  private registerInputTool(tool: Tool<any, any>, inputSchema: any): void {
-    this.tool(tool.name, tool.getDescription(), inputSchema, async (args: any, _extra: any) => {
-      try {
-        const parsedArgs = z.object(inputSchema).safeParse(args);
-        if (!parsedArgs.success) {
-          throw new Error(`Invalid arguments: ${parsedArgs.error.message}`);
+    this.registerTool(
+      tool.name,
+      {
+        title: tool.annotations?.title,
+        description: tool.getDescription(),
+        inputSchema,
+        annotations: tool.annotations,
+      },
+      async (args: any, _extra: any) => {
+        try {
+          let result;
+          if (inputSchema) {
+            const parsedArgs = z.object(inputSchema).safeParse(args);
+            if (!parsedArgs.success) {
+              throw new Error(`Invalid arguments: ${parsedArgs.error.message}`);
+            }
+            result = await tool.execute(parsedArgs.data);
+          } else {
+            result = await tool.execute();
+          }
+          return this.formatToolResult(result.content);
+        } catch (error) {
+          return this.handleToolError(error, tool.name);
         }
-
-        const res = await tool.execute(parsedArgs.data);
-        return this.formatToolResult(res.content);
-      } catch (error) {
-        return this.handleToolError(error, tool.name);
-      }
-    });
+      },
+    );
   }
 
   getServer(): McpServer {

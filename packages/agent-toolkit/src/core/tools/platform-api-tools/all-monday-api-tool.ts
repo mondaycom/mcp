@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { BaseMondayApiTool, MondayApiToolContext } from './base-monday-api-tool';
+import { BaseMondayApiTool, MondayApiToolContext, createMondayApiAnnotations } from './base-monday-api-tool';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { buildClientSchema, GraphQLSchema, IntrospectionQuery, parse, validate } from 'graphql';
 import { ApiClient } from '@mondaydotcomorg/api';
@@ -25,6 +25,12 @@ interface GraphQLResponse {
 export class AllMondayApiTool extends BaseMondayApiTool<typeof allMondayApiToolSchema> {
   name = 'all_monday_api';
   type = ToolType.ALL_API;
+  annotations = createMondayApiAnnotations({
+    title: 'Run Query or Mutation on any monday.com API',
+    readOnlyHint: false,
+    destructiveHint: true,
+    idempotentHint: false,
+  });
   private static schemaCache: Record<string, GraphQLSchema> = {};
 
   constructor(mondayApi: ApiClient, context?: MondayApiToolContext) {

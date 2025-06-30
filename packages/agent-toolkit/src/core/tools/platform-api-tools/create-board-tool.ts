@@ -6,7 +6,7 @@ import {
 } from '../../../monday-graphql/generated/graphql';
 import { createBoard } from '../../../monday-graphql/queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
-import { BaseMondayApiTool } from './base-monday-api-tool';
+import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
 
 export const createBoardToolSchema = {
   boardName: z.string().describe('The name of the board to create'),
@@ -18,6 +18,12 @@ export const createBoardToolSchema = {
 export class CreateBoardTool extends BaseMondayApiTool<typeof createBoardToolSchema, never> {
   name = 'create_board';
   type = ToolType.WRITE;
+  annotations = createMondayApiAnnotations({
+    title: 'Create Board',
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+  });
 
   getDescription(): string {
     return 'Create a monday.com board';
