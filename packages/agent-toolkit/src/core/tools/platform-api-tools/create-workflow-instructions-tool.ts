@@ -2,7 +2,7 @@ import { ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool } from './base-monday-api-tool';
 
 export class CreateWorkflowInstructionsTool extends BaseMondayApiTool<Record<string, never>> {
-  name = 'create_workflow_instructions';
+  name = 'create_workflow_instructions-v2';
   type = ToolType.READ;
 
   getDescription(): string {
@@ -210,6 +210,32 @@ query remote_options {
   }
 }
 \`\`\`
+
+## ⚠️ Common Pitfalls
+
+### Pitfall #1: Skipping remote_options for Custom Fields
+- **Problem:** Using hardcoded values for groups, status columns, people columns
+- **Impact:** Workflow fails silently or uses wrong entities
+- **Solution:** Always call \`remote_options\` for CustomInputField types
+
+### Pitfall #2: Missing Dependency Values  
+- **Problem:** Not providing all required \`dependencyConfigValues\`
+- **Impact:** API returns empty options or errors
+- **Solution:** Check \`dependencyConfig.orderedMandatoryFields\` and supply all
+
+### Pitfall #3: Wrong Host Type
+- **Problem:** Using BOARD host for "monday workflows" or APP_FEATURE_OBJECT for "automations"
+- **Impact:** Workflow created in wrong context
+- **Solution:** Follow Step 0.1 decision tree strictly
+
+### Pitfall #4: Hardcoded Field Type IDs
+**Common field types that REQUIRE remote_options:**
+- \`10380085\` → Groups (depends on boardId)
+- \`10380084\` → Status columns (depends on boardId)  
+- \`10380073\` → People columns (depends on boardId)
+- \`10380094\` → Status values (depends on boardId + statusColumnId)
+
+**Never hardcode values for these field types!**
 
 ## Step 6: Fetch Complete Workflow Variable Schemas
 
