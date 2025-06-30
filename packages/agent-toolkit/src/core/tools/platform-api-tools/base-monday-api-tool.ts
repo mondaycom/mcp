@@ -25,6 +25,7 @@ export abstract class BaseMondayApiTool<
   abstract name: string;
   abstract type: ToolType;
   abstract annotations: ToolAnnotations;
+  enabledByDefault?: boolean;
 
   constructor(
     protected readonly mondayApi: ApiClient,
