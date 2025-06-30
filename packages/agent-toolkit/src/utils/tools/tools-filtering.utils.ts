@@ -1,5 +1,5 @@
 import { ApiClient } from '@mondaydotcomorg/api';
-import { allGraphqlApiTools, allMondayAppsTools, Tool, ToolType } from 'src/core';
+import { allGraphqlApiTools, allMondayAppsTools, Tool, ToolType } from '../../core';
 import { ToolMode, ToolsConfiguration } from '../../core/monday-agent-toolkit';
 import { toolFactory } from './initializing.utils';
 
