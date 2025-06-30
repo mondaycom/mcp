@@ -2,7 +2,7 @@ import { ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool } from './base-monday-api-tool';
 
 export class CreateWorkflowInstructionsTool extends BaseMondayApiTool<Record<string, never>> {
-  name = 'create_workflow_instructions-v2';
+  name = 'create_workflow_instructions';
   type = ToolType.READ;
 
   getDescription(): string {
@@ -237,6 +237,11 @@ query remote_options {
 
 **Never hardcode values for these field types!**
 
+### Pitfall #5: Missing appFeatureReferenceId in Workflow Variables
+- **Problem:** When a workflow variable references an app feature (e.g. a field type), forgetting to include \`appFeatureReferenceId\`
+- **Impact:** Can cause issues serializing the workflow variable
+- **Solution:** Always populate \`appFeatureReferenceId\` in \`sourceMetadata\` when the variable references app features
+
 ## Step 6: Fetch Complete Workflow Variable Schemas
 
 Fetch the complete workflow variables schemas with the query 'get_workflow_variable_schemas'. In general, there are 4 types of workflow variables:
@@ -265,6 +270,7 @@ Each workflow variable has a workflowVariableKey (unique) that is used to identi
     workflowVariableKey: 4,
     sourceKind: "user_config",
     sourceMetadata: {
+      appFeatureReferenceId: <appFeatureReferenceId>,
       configurationMetadata:{
         dependencyConfigValues:{
           boardId: {workflowVariableKey: 1},
