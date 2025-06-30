@@ -238,9 +238,9 @@ query remote_options {
 **Never hardcode values for these field types!**
 
 ### Pitfall #5: Missing appFeatureReferenceId in Workflow Variables
-- **Problem:** When a workflow variable references an app feature (e.g. a field type), forgetting to include \`appFeatureReferenceId\`
+- **Problem:** When a workflow variable references an app feature (e.g. a custom inbound field), forgetting to include \`appFeatureReferenceId\`
 - **Impact:** Can cause issues serializing the workflow variable
-- **Solution:** Always populate \`appFeatureReferenceId\` in \`sourceMetadata\` when the variable references app features
+- **Solution:** Always populate \`appFeatureReferenceId\` when the variable references app features
 
 ## Step 6: Fetch Complete Workflow Variable Schemas
 
@@ -255,6 +255,7 @@ Each workflow variable has a workflowVariableKey (unique) that is used to identi
 {
   workflowVariableKey: 2,
   sourceKind: "node_results",
+  appFeatureReferenceId: <item_field_type_appFeatureReferenceId>,
   sourceMetadata: {
     workflowNodeId: 1,
     outboundFieldKey: "itemId"
@@ -269,8 +270,8 @@ Each workflow variable has a workflowVariableKey (unique) that is used to identi
 {
     workflowVariableKey: 4,
     sourceKind: "user_config",
+    appFeatureReferenceId: <appFeatureReferenceId>,
     sourceMetadata: {
-      appFeatureReferenceId: <appFeatureReferenceId>,
       configurationMetadata:{
         dependencyConfigValues:{
           boardId: {workflowVariableKey: 1},
@@ -381,6 +382,7 @@ mutation {
       {
         workflowVariableKey: 2,
         sourceKind: "node_results",
+        appFeatureReferenceId: <item_field_type_appFeatureReferenceId>,
         sourceMetadata: {
           workflowNodeId: 1,
           outboundFieldKey: "itemId"
@@ -389,6 +391,7 @@ mutation {
       {
         workflowVariableKey: 3,
         sourceKind: "user_config",
+        appFeatureReferenceId: <appFeatureReferenceId>,
         sourceMetadata: {
           configurationMetadata:{
             dependencyConfigValues:{
@@ -406,6 +409,7 @@ mutation {
       {
         workflowVariableKey: 4,
         sourceKind: "user_config",
+        appFeatureReferenceId: <appFeatureReferenceId>,
         sourceMetadata: {
           configurationMetadata:{
             dependencyConfigValues:{
