@@ -192,8 +192,8 @@ Sometimes you need to configure an input field with a fixed (constant) value.
    • If the field type is CustomInputFieldConfig – its allowed values are dynamic. You **MUST** fetch them using the remote_options query.
 
 2. Build the remote_options query for every CustomInputFieldConfig you want to set as a constant:
-   • Provide the fieldTypeUniqueKey of the field.
-   • Fill the dependenciesValues object with **all mandatory dependencies** listed in fieldTypeData.dependencyConfig.orderedMandatoryFields. You can supply each dependency as a literal value (value) or as a reference to an existing workflow variable (workflowVariableKey).
+   • Provide the field_type_unique_key of the field.
+   • Fill the dependencies_values object with **all mandatory dependencies** listed in fieldTypeData.dependencyConfig.orderedMandatoryFields. You can supply each dependency as a literal value (value) or as a reference to an existing workflow variable (workflowVariableKey).
 
 3. Select the desired option from the query response (options.value / options.title) and store it in a USER_CONFIG workflow variable that will be referenced by the input field.
 
@@ -202,8 +202,8 @@ Sometimes you need to configure an input field with a fixed (constant) value.
 query remote_options {
   remote_options(
     input: {
-      fieldTypeUniqueKey: 'monday:status_column'
-      dependenciesValues: {
+      field_type_unique_key: 'monday:status_column'
+      dependencies_values: {
         boardId: { value: 118607562 }
       }
     }
