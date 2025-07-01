@@ -11,6 +11,7 @@ export type ToolsConfiguration = {
   readOnlyMode?: boolean;
   mode?: ToolMode;
   enableDynamicApiTools?: boolean | 'only';
+  enableToolManager?: boolean;
 };
 
 export type MondayAgentToolkitConfig = {

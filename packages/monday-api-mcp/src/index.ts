@@ -24,6 +24,7 @@ async function runServer() {
       readOnlyMode: validatedArgs.readOnlyMode,
       enableDynamicApiTools: validatedArgs.enableDynamicApiTools,
       mode: validatedArgs.mode,
+      enableToolManager: false,
     },
   });
 

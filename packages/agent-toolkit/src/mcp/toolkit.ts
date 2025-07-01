@@ -66,8 +66,10 @@ export class MondayAgentToolkit extends McpServer {
       const toolInstances = this.initializeTools(config);
       toolInstances.forEach((tool) => this.registerSingleTool(tool));
 
-      // Register the ManageToolsTool separately since it needs toolkit reference
-      this.registerManagementTool();
+      // Register the ManageToolsTool only if explicitly enabled
+      if (config.toolsConfiguration?.enableToolManager === true) {
+        this.registerManagementTool();
+      }
     } catch (error) {
       throw new Error(
         `Failed to initialize Monday Agent Toolkit: ${error instanceof Error ? error.message : String(error)}`,

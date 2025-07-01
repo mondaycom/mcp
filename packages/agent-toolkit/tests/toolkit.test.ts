@@ -147,13 +147,16 @@ describe('MondayAgentToolkit', () => {
       mockGetFilteredToolInstances.mockReturnValue([mockTool1, mockTool2]);
       toolkit = new MondayAgentToolkit({
         mondayApiToken: 'test-token',
+        toolsConfiguration: {
+          enableToolManager: true, // Enable manage-tools tool for these tests
+        },
       });
     });
 
     it('should register tools with dynamic tool manager', () => {
       const toolNames = toolkit.getDynamicToolNames();
 
-      // Should include the 2 mock tools plus the manage-tools tool
+      // Should include the 2 mock tools plus the manage-tools tool (since we enabled it in beforeEach)
       expect(toolNames).toHaveLength(3);
       expect(toolNames).toContain('test-tool-1');
       expect(toolNames).toContain('test-tool-2');
@@ -194,6 +197,41 @@ describe('MondayAgentToolkit', () => {
       expect(typeof status['test-tool-1']).toBe('boolean');
       expect(typeof status['test-tool-2']).toBe('boolean');
       expect(typeof status['manage-tools']).toBe('boolean');
+    });
+  });
+
+  describe('Tool Manager Configuration', () => {
+    it('should not register manage-tools tool by default', () => {
+      const toolkit = new MondayAgentToolkit({
+        mondayApiToken: 'test-token',
+      });
+
+      const toolNames = toolkit.getDynamicToolNames();
+      expect(toolNames).not.toContain('manage-tools');
+    });
+
+    it('should register manage-tools tool when explicitly enabled', () => {
+      const toolkit = new MondayAgentToolkit({
+        mondayApiToken: 'test-token',
+        toolsConfiguration: {
+          enableToolManager: true,
+        },
+      });
+
+      const toolNames = toolkit.getDynamicToolNames();
+      expect(toolNames).toContain('manage-tools');
+    });
+
+    it('should not register manage-tools tool when explicitly disabled', () => {
+      const toolkit = new MondayAgentToolkit({
+        mondayApiToken: 'test-token',
+        toolsConfiguration: {
+          enableToolManager: false,
+        },
+      });
+
+      const toolNames = toolkit.getDynamicToolNames();
+      expect(toolNames).not.toContain('manage-tools');
     });
   });
 
@@ -355,6 +393,9 @@ describe('MondayAgentToolkit', () => {
 
       new MondayAgentToolkit({
         mondayApiToken: 'test-token',
+        toolsConfiguration: {
+          enableToolManager: true,
+        },
       });
 
       // Verify that setToolkitManager was called
