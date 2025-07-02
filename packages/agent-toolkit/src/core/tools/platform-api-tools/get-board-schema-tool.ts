@@ -30,7 +30,9 @@ export class GetBoardSchemaTool extends BaseMondayApiTool<typeof getBoardSchemaT
     return getBoardSchemaToolSchema;
   }
 
-  async execute(input: ToolInputType<typeof getBoardSchemaToolSchema | undefined>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(
+    input: ToolInputType<typeof getBoardSchemaToolSchema | undefined>,
+  ): Promise<ToolOutputType<never>> {
     const boardId = this.context?.boardId ?? (input as ToolInputType<typeof getBoardSchemaToolSchema>).boardId;
     const variables: GetBoardSchemaQueryVariables = {
       boardId: boardId.toString(),

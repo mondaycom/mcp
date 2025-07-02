@@ -33,7 +33,7 @@ export class CreateBoardTool extends BaseMondayApiTool<typeof createBoardToolSch
     return createBoardToolSchema;
   }
 
-  async execute(input: ToolInputType<typeof createBoardToolSchema>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(input: ToolInputType<typeof createBoardToolSchema>): Promise<ToolOutputType<never>> {
     const variables: CreateBoardMutationVariables = {
       boardName: input.boardName,
       boardKind: input.boardKind,

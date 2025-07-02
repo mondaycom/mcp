@@ -22,7 +22,7 @@ export class GetInstructionsToCreateLiveWorkflowTool extends BaseMondayApiTool<R
     return {};
   }
 
-  async execute(): Promise<ToolOutputType<never>> {
+  protected async executeInternal(): Promise<ToolOutputType<never>> {
     const instructions = `
 # Instructions to Create a Live Workflow
 

@@ -7,7 +7,7 @@ export const toolFactory = (
   instanceOptions: { apiClient: ApiClient; apiToken: string },
 ) => {
   if (tool.prototype instanceof BaseMondayApiTool) {
-    return new tool(instanceOptions.apiClient);
+    return new tool(instanceOptions.apiClient, instanceOptions.apiToken);
   }
   return new tool();
 };
