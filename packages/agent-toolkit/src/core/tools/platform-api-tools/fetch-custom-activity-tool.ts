@@ -23,7 +23,9 @@ export class FetchCustomActivityTool extends BaseMondayApiTool<typeof fetchCusto
     return fetchCustomActivityToolSchema;
   }
 
-  async execute(input: ToolInputType<typeof fetchCustomActivityToolSchema>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(
+    input: ToolInputType<typeof fetchCustomActivityToolSchema>,
+  ): Promise<ToolOutputType<never>> {
     const res = await this.mondayApi.request<FetchCustomActivityQuery>(fetchCustomActivity);
 
     if (!res.custom_activity || res.custom_activity.length === 0) {

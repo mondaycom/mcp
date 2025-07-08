@@ -26,7 +26,7 @@ export class GetUsersTool extends BaseMondayApiTool<typeof getUsersToolSchema> {
     return getUsersToolSchema;
   }
 
-  async execute(input: ToolInputType<typeof getUsersToolSchema>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(input: ToolInputType<typeof getUsersToolSchema>): Promise<ToolOutputType<never>> {
     const variables: GetUsersByNameQueryVariables = {
       name: input.name,
     };

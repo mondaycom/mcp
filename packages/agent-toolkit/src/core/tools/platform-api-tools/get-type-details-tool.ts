@@ -26,7 +26,9 @@ export class GetTypeDetailsTool extends BaseMondayApiTool<typeof getTypeDetailsT
     return getTypeDetailsToolSchema;
   }
 
-  async execute(input: ToolInputType<typeof getTypeDetailsToolSchema>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(
+    input: ToolInputType<typeof getTypeDetailsToolSchema>,
+  ): Promise<ToolOutputType<never>> {
     try {
       if (!input.typeName) {
         return {

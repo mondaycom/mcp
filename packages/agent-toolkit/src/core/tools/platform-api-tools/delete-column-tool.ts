@@ -37,7 +37,7 @@ export class DeleteColumnTool extends BaseMondayApiTool<DeleteColumnToolInput> {
     return deleteColumnInBoardToolSchema;
   }
 
-  async execute(input: ToolInputType<DeleteColumnToolInput>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(input: ToolInputType<DeleteColumnToolInput>): Promise<ToolOutputType<never>> {
     const boardId = this.context?.boardId ?? (input as ToolInputType<typeof deleteColumnInBoardToolSchema>).boardId;
 
     const variables: DeleteColumnMutationVariables = {

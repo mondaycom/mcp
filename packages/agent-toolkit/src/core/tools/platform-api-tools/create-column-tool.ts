@@ -49,7 +49,7 @@ export class CreateColumnTool extends BaseMondayApiTool<CreateColumnToolInput> {
     return createColumnInBoardToolSchema;
   }
 
-  async execute(input: ToolInputType<CreateColumnToolInput>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(input: ToolInputType<CreateColumnToolInput>): Promise<ToolOutputType<never>> {
     const boardId = this.context?.boardId ?? (input as ToolInputType<typeof createColumnInBoardToolSchema>).boardId;
 
     let columnSettings: string | undefined;
