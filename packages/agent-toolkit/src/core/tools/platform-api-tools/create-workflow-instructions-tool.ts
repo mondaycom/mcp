@@ -19,7 +19,7 @@ export class CreateWorkflowInstructionsTool extends BaseMondayApiTool<Record<str
     return {};
   }
 
-  async execute(): Promise<ToolOutputType<never>> {
+  protected async executeInternal(): Promise<ToolOutputType<never>> {
     const instructions = `
 # Instructions to Create a Live Workflow
 
