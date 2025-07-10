@@ -4702,6 +4702,36 @@ type Mutation {
   ): Item
 
   """
+  Change the position of an item in a board.
+  """
+  change_item_position(
+    """
+    The item's unique identifier.
+    """
+    item_id: ID!
+
+    """
+    The ID of the item to position relative to.
+    """
+    relative_to: ID
+
+    """
+    The position relative method to another item (before_at / after_at).
+    """
+    position_relative_method: PositionRelative
+
+    """
+    The group's unique identifier to move the item to.
+    """
+    group_id: String
+
+    """
+    Whether to position the item at the top of the group.
+    """
+    group_top: Boolean
+  ): Item
+
+  """
   Clear an item's updates.
   """
   clear_item_updates(

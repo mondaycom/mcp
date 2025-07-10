@@ -2151,6 +2151,8 @@ export type Mutation = {
   change_column_title?: Maybe<Column>;
   /** Change an item's column value. */
   change_column_value?: Maybe<Item>;
+  /** Change the position of an item in a board. */
+  change_item_position?: Maybe<Item>;
   /** Changes the column values of a specific item. */
   change_multiple_column_values?: Maybe<Item>;
   /** Change an item's column with simple value. */
@@ -2419,6 +2421,16 @@ export type MutationChange_Column_ValueArgs = {
   create_labels_if_missing?: InputMaybe<Scalars['Boolean']['input']>;
   item_id?: InputMaybe<Scalars['ID']['input']>;
   value: Scalars['JSON']['input'];
+};
+
+
+/** Update your monday.com data. */
+export type MutationChange_Item_PositionArgs = {
+  group_id?: InputMaybe<Scalars['String']['input']>;
+  group_top?: InputMaybe<Scalars['Boolean']['input']>;
+  item_id: Scalars['ID']['input'];
+  position_relative_method?: InputMaybe<PositionRelative>;
+  relative_to?: InputMaybe<Scalars['ID']['input']>;
 };
 
 
@@ -4811,6 +4823,17 @@ export type CreateTimelineItemMutationVariables = Exact<{
 
 
 export type CreateTimelineItemMutation = { __typename?: 'Mutation', create_timeline_item?: { __typename?: 'TimelineItem', id?: string | null, title?: string | null, content?: string | null, created_at: any, custom_activity_id?: string | null, type?: string | null } | null };
+
+export type ChangeItemPositionMutationVariables = Exact<{
+  item_id: Scalars['ID']['input'];
+  relative_to?: InputMaybe<Scalars['ID']['input']>;
+  position_relative_method?: InputMaybe<PositionRelative>;
+  group_id?: InputMaybe<Scalars['String']['input']>;
+  group_top?: InputMaybe<Scalars['Boolean']['input']>;
+}>;
+
+
+export type ChangeItemPositionMutation = { __typename?: 'Mutation', change_item_position?: { __typename?: 'Item', id: string, group?: { __typename?: 'Group', id: string } | null } | null };
 
 export type FetchCustomActivityQueryVariables = Exact<{ [key: string]: never; }>;
 

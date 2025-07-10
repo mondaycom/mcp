@@ -1,6 +1,7 @@
 import { AllMondayApiTool } from './all-monday-api-tool';
 import { BaseMondayApiToolConstructor } from './base-monday-api-tool';
 import { ChangeItemColumnValuesTool } from './change-item-column-values-tool';
+import { ChangeItemPositionTool } from './change-item-position-tool';
 import { CreateBoardTool } from './create-board-tool';
 import { CreateColumnTool } from './create-column-tool';
 import { CreateCustomActivityTool } from './create-custom-activity-tool';
@@ -26,6 +27,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   GetBoardSchemaTool,
   GetUsersTool,
   ChangeItemColumnValuesTool,
+  ChangeItemPositionTool,
   MoveItemToGroupTool,
   CreateBoardTool,
   CreateColumnTool,

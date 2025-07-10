@@ -417,6 +417,29 @@ export const createTimelineItem = gql`
   }
 `;
 
+export const changeItemPosition = gql`
+  mutation changeItemPosition(
+    $item_id: ID!
+    $relative_to: ID
+    $position_relative_method: PositionRelative
+    $group_id: String
+    $group_top: Boolean
+  ) {
+    change_item_position(
+      item_id: $item_id
+      relative_to: $relative_to
+      position_relative_method: $position_relative_method
+      group_id: $group_id
+      group_top: $group_top
+    ) {
+      id
+      group {
+        id
+      }
+    }
+  }
+`;
+
 export const fetchCustomActivity = gql`
   query fetchCustomActivity {
     custom_activity {
