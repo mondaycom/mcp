@@ -18,10 +18,7 @@ export const changeItemPositionToolSchema = {
     .enum(['after_at', 'before_at'])
     .optional()
     .describe('The position relative method to another item (after_at / before_at)'),
-  groupId: z
-    .string()
-    .optional()
-    .describe('The group ID to move the item to (required when using group_top)'),
+  groupId: z.string().optional().describe('The group ID to move the item to (required when using group_top)'),
   groupTop: z
     .boolean()
     .optional()
@@ -59,9 +56,7 @@ export class ChangeItemPositionTool extends BaseMondayApiTool<ChangeItemPosition
     return changeItemPositionInBoardToolSchema;
   }
 
-  protected async executeInternal(
-    input: ToolInputType<ChangeItemPositionToolInput>,
-  ): Promise<ToolOutputType<never>> {
+  protected async executeInternal(input: ToolInputType<ChangeItemPositionToolInput>): Promise<ToolOutputType<never>> {
     const boardId =
       this.context?.boardId ?? (input as ToolInputType<typeof changeItemPositionInBoardToolSchema>).boardId;
 
@@ -98,4 +93,4 @@ export class ChangeItemPositionTool extends BaseMondayApiTool<ChangeItemPosition
       }`,
     };
   }
-} 
+}
