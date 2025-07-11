@@ -12,7 +12,7 @@ export const ARG_CONFIGS: ArgConfig[] = [
     flags: ['--version', '-v'],
     description: 'Monday API version',
     required: false,
-    defaultValue: undefined,
+    defaultValue: "dev",
   },
   {
     name: 'readOnlyMode',
