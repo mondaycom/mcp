@@ -422,7 +422,7 @@ export const changeItemPosition = gql`
     $item_id: ID!
     $relative_to: ID
     $position_relative_method: PositionRelative
-    $group_id: String
+    $group_id: ID
     $group_top: Boolean
   ) {
     change_item_position(
