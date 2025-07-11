@@ -24,16 +24,9 @@ export const changeItemPositionToolSchema = {
     .optional()
     .describe('Whether to position the item at the top of the group (true) or bottom (false)'),
 };
+export type ChangeItemPositionToolInput = typeof changeItemPositionToolSchema;
 
-export const changeItemPositionInBoardToolSchema = {
-  boardId: z.number().describe('The ID of the board that contains the item to be moved'),
-  ...changeItemPositionToolSchema,
-};
-
-export type ChangeItemPositionToolInput =
-  | typeof changeItemPositionToolSchema
-  | typeof changeItemPositionInBoardToolSchema;
-
+const MIN_API_VERSION = '2025-10';
 export class ChangeItemPositionTool extends BaseMondayApiTool<ChangeItemPositionToolInput> {
   name = 'change_item_position';
   type = ToolType.WRITE;
@@ -49,28 +42,14 @@ export class ChangeItemPositionTool extends BaseMondayApiTool<ChangeItemPosition
   }
 
   getInputSchema(): ChangeItemPositionToolInput {
-    if (this.context?.boardId) {
-      return changeItemPositionToolSchema;
-    }
-
-    return changeItemPositionInBoardToolSchema;
+    return changeItemPositionToolSchema;
   }
 
   protected async executeInternal(input: ToolInputType<ChangeItemPositionToolInput>): Promise<ToolOutputType<never>> {
-    const boardId =
-      this.context?.boardId ?? (input as ToolInputType<typeof changeItemPositionInBoardToolSchema>).boardId;
-
     // Validate the input based on the positioning method
-    if (input.positionRelativeMethod && !input.relativeTo) {
-      throw new Error('relativeTo is required when using positionRelativeMethod');
-    }
-
-    if (input.groupTop !== undefined && !input.groupId) {
-      throw new Error('groupId is required when using groupTop');
-    }
-
-    if (!input.positionRelativeMethod && !input.groupId) {
-      throw new Error('Either positionRelativeMethod with relativeTo or groupId with groupTop must be provided');
+    const apiVersion = this.mondayApi.apiVersion;
+    if (apiVersion != 'dev' || apiVersion < MIN_API_VERSION) {
+      throw new Error(`This tool is not supported in the ${apiVersion} API version`);
     }
 
     const variables: ChangeItemPositionMutationVariables = {
