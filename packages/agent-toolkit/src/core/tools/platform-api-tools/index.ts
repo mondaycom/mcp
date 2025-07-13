@@ -17,6 +17,7 @@ import { CreateWorkflowInstructionsTool } from './create-workflow-instructions-t
 import { GetTypeDetailsTool } from './get-type-details-tool';
 import { GetUsersTool } from './get-users-tool';
 import { MoveItemToGroupTool } from './move-item-to-group-tool';
+import { ReadDocTool } from './read-doc-tool';
 
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteItemTool,
@@ -37,6 +38,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   CreateTimelineItemTool,
   FetchCustomActivityTool,
   CreateWorkflowInstructionsTool,
+  ReadDocTool,
 ];
 
 export * from './all-monday-api-tool';
@@ -58,3 +60,4 @@ export * from './get-users-tool';
 export * from './manage-tools-tool';
 export * from './move-item-to-group-tool';
 export * from './create-workflow-instructions-tool';
+export * from './read-doc-tool';

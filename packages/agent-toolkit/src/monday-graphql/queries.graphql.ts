@@ -428,3 +428,83 @@ export const fetchCustomActivity = gql`
     }
   }
 `;
+
+export const readDocs = gql`
+  query readDocs(
+    $ids: [ID!]
+    $object_ids: [ID!]
+    $limit: Int
+    $order_by: DocsOrderBy
+    $page: Int
+    $workspace_ids: [ID]
+  ) {
+    docs(
+      ids: $ids
+      object_ids: $object_ids
+      limit: $limit
+      order_by: $order_by
+      page: $page
+      workspace_ids: $workspace_ids
+    ) {
+      id
+      object_id
+      name
+      doc_kind
+      created_at
+      created_by {
+        id
+        name
+      }
+      settings
+      url
+      relative_url
+      workspace {
+        id
+        name
+      }
+      workspace_id
+      doc_folder_id
+      blocks {
+        id
+        type
+        content
+        position
+        created_at
+        created_by {
+          id
+          name
+        }
+        doc_id
+      }
+    }
+  }
+`;
+
+export const exportMarkdownFromDoc = gql`
+  mutation exportMarkdownFromDoc($docId: ID!, $blockIds: [String!]) {
+    export_markdown_from_doc(docId: $docId, blockIds: $blockIds) {
+      success
+      markdown
+      error
+    }
+  }
+`;
+
+export const getItemColumnValue = gql`
+  query getItemColumnValue($itemId: ID!, $columnId: String!) {
+    items(ids: [$itemId]) {
+      column_values(ids: [$columnId]) {
+        column {
+          title
+        }
+        ... on DocValue {
+          id
+          type
+          file {
+            object_id
+          }
+        }
+      }
+    }
+  }
+`;
