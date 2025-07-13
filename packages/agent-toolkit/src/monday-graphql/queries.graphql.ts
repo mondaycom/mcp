@@ -477,22 +477,3 @@ export const exportMarkdownFromDoc = gql`
     }
   }
 `;
-
-export const getItemColumnValue = gql`
-  query getItemColumnValue($itemId: ID!, $columnId: String!) {
-    items(ids: [$itemId]) {
-      column_values(ids: [$columnId]) {
-        column {
-          title
-        }
-        ... on DocValue {
-          id
-          type
-          file {
-            object_id
-          }
-        }
-      }
-    }
-  }
-`;
