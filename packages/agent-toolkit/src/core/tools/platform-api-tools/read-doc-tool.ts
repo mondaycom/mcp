@@ -81,7 +81,21 @@ export class ReadDocTool extends BaseMondayApiTool<typeof readDocToolSchema> {
         workspace_ids: input.workspace_ids,
       };
 
-      const res = await this.mondayApi.request<ReadDocsQuery>(readDocs, variables);
+      let res = await this.mondayApi.request<ReadDocsQuery>(readDocs, variables);
+
+      // If no results found and ids were provided, try treating the ids as object_ids - sometimes the user inputs ids are actually object_ids
+      if ((!res.docs || res.docs.length === 0) && input.ids) {
+        const fallbackVariables: ReadDocsQueryVariables = {
+          ids: undefined,
+          object_ids: input.ids, // Try the provided ids as object_ids
+          limit: input.limit || 25,
+          order_by: input.order_by,
+          page: input.page,
+          workspace_ids: input.workspace_ids,
+        };
+
+        res = await this.mondayApi.request<ReadDocsQuery>(readDocs, fallbackVariables);
+      }
 
       if (!res.docs || res.docs.length === 0) {
         return {
