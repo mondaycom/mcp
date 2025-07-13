@@ -29,7 +29,7 @@ export const readDocToolSchema = {
     .array(z.string())
     .optional()
     .describe(
-      'The unique identifiers of associated boards or objects. In the UI, this is the ID that appears in the URL and the doc column values.',
+      'The unique object identifiers for documents. This is the ID that appears in the document URL and is what users typically see and copy.',
     ),
   order_by: z
     .nativeEnum(DocsOrderBy)
@@ -103,7 +103,7 @@ export class ReadDocTool extends BaseMondayApiTool<typeof readDocToolSchema> {
         };
       }
 
-      return await this.formatDocResponse(res.docs);
+      return await this.enrichDocsWithMarkdown(res.docs);
     } catch (error) {
       return {
         content: `Error reading documents: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
@@ -111,16 +111,15 @@ export class ReadDocTool extends BaseMondayApiTool<typeof readDocToolSchema> {
     }
   }
 
-  private async formatDocResponse(docs: NonNullable<ReadDocsQuery['docs']>): Promise<ToolOutputType<never>> {
+  // Convert docs content to markdown string
+  private async enrichDocsWithMarkdown(docs: NonNullable<ReadDocsQuery['docs']>): Promise<ToolOutputType<never>> {
     const docsInfo = await Promise.all(
       docs.map(async (doc) => {
-        if (!doc) return null;
-
         // Get markdown content for this doc
         let blocks_as_markdown = '';
         try {
           const markdownVariables: ExportMarkdownFromDocMutationVariables = {
-            docId: doc.id,
+            docId: doc!.id,
           };
 
           const markdownRes = await this.mondayApi.request<ExportMarkdownFromDocMutation>(
@@ -138,27 +137,25 @@ export class ReadDocTool extends BaseMondayApiTool<typeof readDocToolSchema> {
         }
 
         return {
-          id: doc.id,
-          object_id: doc.object_id,
-          name: doc.name,
-          doc_kind: doc.doc_kind,
-          created_at: doc.created_at,
-          created_by: doc.created_by?.name || 'Unknown',
-          url: doc.url,
-          relative_url: doc.relative_url,
-          workspace: doc.workspace?.name || 'Main workspace',
-          workspace_id: doc.workspace_id,
-          doc_folder_id: doc.doc_folder_id,
-          settings: doc.settings,
+          id: doc!.id,
+          object_id: doc!.object_id,
+          name: doc!.name,
+          doc_kind: doc!.doc_kind,
+          created_at: doc!.created_at,
+          created_by: doc!.created_by?.name || 'Unknown',
+          url: doc!.url,
+          relative_url: doc!.relative_url,
+          workspace: doc!.workspace?.name || 'Unknown',
+          workspace_id: doc!.workspace_id,
+          doc_folder_id: doc!.doc_folder_id,
+          settings: doc!.settings,
           blocks_as_markdown,
         };
       }),
     );
 
-    const filteredDocsInfo = docsInfo.filter(Boolean);
-
     return {
-      content: `Successfully retrieved ${filteredDocsInfo.length} document(s):\n\n${JSON.stringify(filteredDocsInfo, null, 2)}`,
+      content: `Successfully retrieved ${docsInfo.length} document(s):\n\n${JSON.stringify(docsInfo, null, 2)}`,
     };
   }
 }

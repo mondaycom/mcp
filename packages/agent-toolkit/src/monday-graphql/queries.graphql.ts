@@ -464,18 +464,6 @@ export const readDocs = gql`
       }
       workspace_id
       doc_folder_id
-      blocks {
-        id
-        type
-        content
-        position
-        created_at
-        created_by {
-          id
-          name
-        }
-        doc_id
-      }
     }
   }
 `;
