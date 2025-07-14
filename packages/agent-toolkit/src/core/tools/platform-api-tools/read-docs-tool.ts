@@ -4,20 +4,7 @@ import { readDocs, exportMarkdownFromDoc } from '../../../monday-graphql/queries
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
 
-export type ExportMarkdownFromDocMutationVariables = {
-  docId: string;
-  blockIds?: string[];
-};
-
-export type ExportMarkdownFromDocMutation = {
-  export_markdown_from_doc: {
-    success: boolean;
-    markdown?: string;
-    error?: string;
-  };
-};
-
-export const readDocToolSchema = {
+export const readDocsToolSchema = {
   ids: z
     .array(z.string())
     .optional()
@@ -44,8 +31,8 @@ export const readDocToolSchema = {
     .describe('The unique identifiers of the specific workspaces to return.'),
 };
 
-export class ReadDocTool extends BaseMondayApiTool<typeof readDocToolSchema> {
-  name = 'read_doc';
+export class ReadDocsTool extends BaseMondayApiTool<typeof readDocsToolSchema> {
+  name = 'read_docs';
   type = ToolType.READ;
   annotations = createMondayApiAnnotations({
     title: 'Read Documents',
@@ -58,11 +45,11 @@ export class ReadDocTool extends BaseMondayApiTool<typeof readDocToolSchema> {
     return 'Get a collection of monday.com documents. Returns an array containing metadata about docs including their content as markdown. Can filter by doc IDs, object IDs, workspace IDs, and supports pagination and ordering.';
   }
 
-  getInputSchema(): typeof readDocToolSchema {
-    return readDocToolSchema;
+  getInputSchema(): typeof readDocsToolSchema {
+    return readDocsToolSchema;
   }
 
-  protected async executeInternal(input: ToolInputType<typeof readDocToolSchema>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(input: ToolInputType<typeof readDocsToolSchema>): Promise<ToolOutputType<never>> {
     // Validate that at least one filter is provided
     if (!input.ids && !input.object_ids && !input.workspace_ids) {
       return {
@@ -113,6 +100,19 @@ export class ReadDocTool extends BaseMondayApiTool<typeof readDocToolSchema> {
 
   // Convert docs content to markdown string
   private async enrichDocsWithMarkdown(docs: NonNullable<ReadDocsQuery['docs']>): Promise<ToolOutputType<never>> {
+    type ExportMarkdownFromDocMutationVariables = {
+      docId: string;
+      blockIds?: string[];
+    };
+
+    type ExportMarkdownFromDocMutation = {
+      export_markdown_from_doc: {
+        success: boolean;
+        markdown?: string;
+        error?: string;
+      };
+    };
+
     const docsInfo = await Promise.all(
       docs.map(async (doc) => {
         // Get markdown content for this doc
