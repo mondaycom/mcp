@@ -4,24 +4,27 @@ import { readDocs, exportMarkdownFromDoc } from '../../../monday-graphql/queries
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
 
+// Filter type enum
+const FilterTypeEnum = z.enum(['ids', 'object_ids', 'workspace_ids']);
+
+// Single filter object schema
+const FilterSchema = z.object({
+  type: FilterTypeEnum.describe('Type of filter: ids, object_ids, or workspace_ids'),
+  values: z.array(z.string()).min(1).describe('Array of ID values for this filter type (at least 1 required)'),
+});
+
 export const readDocsToolSchema = {
   ids: z
-    .array(z.string())
-    .optional()
+    .array(FilterSchema)
+    .length(1)
     .describe(
-      'The specific docs to return. In the UI, this is the ID that appears in the top-left corner of the doc when developer mode is activated.',
+      'Array with exactly 1 ID object. The object specifies a type (ids/object_ids/workspace_ids) and an array of values.',
     ),
   limit: z
     .number()
     .optional()
     .describe(
       'Number of docs per page (default: 25). Affects pagination - if you get exactly this many results, there may be more pages.',
-    ),
-  object_ids: z
-    .array(z.string())
-    .optional()
-    .describe(
-      'The unique object identifiers for documents. This is the ID that appears in the document URL and is what users typically see and copy.',
     ),
   order_by: z
     .nativeEnum(DocsOrderBy)
@@ -35,10 +38,6 @@ export const readDocsToolSchema = {
     .describe(
       'The page number to return (starts at 1). Use this to paginate through large result sets. Check response for has_more_pages indicator.',
     ),
-  workspace_ids: z
-    .array(z.string())
-    .optional()
-    .describe('The unique identifiers of the specific workspaces to return.'),
 };
 
 export class ReadDocsTool extends BaseMondayApiTool<typeof readDocsToolSchema> {
@@ -60,11 +59,16 @@ PAGINATION:
 - Check response for 'has_more_pages' to know if you should continue paginating
 - If user asks for "all documents" and you get exactly 25 results, continue with page 2, 3, etc.
 
-FILTERING: Must provide at least one of: ids, object_ids, or workspace_ids
+FILTERING: Must provide exactly 1 ID object in the ids array:
+- { type: 'ids', values: ['id1', 'id2', 'id3'] }
+- { type: 'object_ids', values: ['objId1', 'objId2'] }
+- { type: 'workspace_ids', values: ['wsId1'] }
+
+The ID object must have at least 1 value but can have multiple values of the same type.
 
 USAGE PATTERNS:
-- For specific documents: use ids or object_ids (A monday doc has two unique identifiers, one is the id and the other is the object_id)
-- For workspace exploration: use workspace_ids with pagination
+- For specific documents: use type 'ids' or 'object_ids' (A monday doc has two unique identifiers)
+- For workspace exploration: use type 'workspace_ids' with pagination
 - For large searches: start with page 1, then paginate if has_more_pages=true`;
   }
 
@@ -73,35 +77,45 @@ USAGE PATTERNS:
   }
 
   protected async executeInternal(input: ToolInputType<typeof readDocsToolSchema>): Promise<ToolOutputType<never>> {
-    // Validate that at least one filter is provided
-    if (!input.ids && !input.object_ids && !input.workspace_ids) {
-      return {
-        content:
-          'Error: You must provide at least one filter: ids, object_ids, or workspace_ids to search for documents.',
-      };
-    }
-
     try {
+      // Extract ID values by type (there's exactly 1 ID object)
+      const idObj = input.ids[0]; // Get the single ID object
+      let ids: string[] | undefined;
+      let object_ids: string[] | undefined;
+      let workspace_ids: string[] | undefined;
+
+      switch (idObj.type) {
+        case 'ids':
+          ids = idObj.values;
+          break;
+        case 'object_ids':
+          object_ids = idObj.values;
+          break;
+        case 'workspace_ids':
+          workspace_ids = idObj.values;
+          break;
+      }
+
       const variables: ReadDocsQueryVariables = {
-        ids: input.ids,
-        object_ids: input.object_ids,
+        ids,
+        object_ids,
         limit: input.limit || 25,
         order_by: input.order_by,
         page: input.page,
-        workspace_ids: input.workspace_ids,
+        workspace_ids,
       };
 
       let res = await this.mondayApi.request<ReadDocsQuery>(readDocs, variables);
 
       // If no results found and ids were provided, try treating the ids as object_ids - sometimes the user inputs ids are actually object_ids
-      if ((!res.docs || res.docs.length === 0) && input.ids) {
+      if ((!res.docs || res.docs.length === 0) && ids) {
         const fallbackVariables: ReadDocsQueryVariables = {
           ids: undefined,
-          object_ids: input.ids, // Try the provided ids as object_ids
+          object_ids: ids, // Try the provided ids as object_ids
           limit: input.limit || 25,
           order_by: input.order_by,
           page: input.page,
-          workspace_ids: input.workspace_ids,
+          workspace_ids,
         };
 
         res = await this.mondayApi.request<ReadDocsQuery>(readDocs, fallbackVariables);
