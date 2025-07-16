@@ -37,7 +37,7 @@ export class GetBoardItemsTool extends BaseMondayApiTool<GetItemsToolInput> {
     return getItemsInBoardToolSchema;
   }
 
-  async execute(input: ToolInputType<GetItemsToolInput>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(input: ToolInputType<GetItemsToolInput>): Promise<ToolOutputType<never>> {
     const boardId = this.context?.boardId ?? (input as ToolInputType<typeof getItemsInBoardToolSchema>).boardId;
     const variables: GetBoardItemsByNameQueryVariables = {
       boardId: boardId.toString(),

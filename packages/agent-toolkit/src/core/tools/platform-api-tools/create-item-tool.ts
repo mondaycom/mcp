@@ -46,7 +46,7 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
     return createItemInBoardToolSchema;
   }
 
-  async execute(input: ToolInputType<CreateItemToolInput>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(input: ToolInputType<CreateItemToolInput>): Promise<ToolOutputType<never>> {
     const boardId = this.context?.boardId ?? (input as ToolInputType<typeof createItemInBoardToolSchema>).boardId;
     const variables: CreateItemMutationVariables = {
       boardId: boardId.toString(),

@@ -3,7 +3,7 @@ import { BaseMondayApiTool, MondayApiToolContext, createMondayApiAnnotations } f
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { buildClientSchema, GraphQLSchema, IntrospectionQuery, parse, validate } from 'graphql';
 import { ApiClient } from '@mondaydotcomorg/api';
-import { introspectionQuery } from 'src/monday-graphql';
+import { introspectionQuery } from '../../../monday-graphql';
 
 export const allMondayApiToolSchema = {
   query: z.string().describe('Custom GraphQL query/mutation. you need to provide the full query / mutation'),
@@ -33,8 +33,8 @@ export class AllMondayApiTool extends BaseMondayApiTool<typeof allMondayApiToolS
   });
   private static schemaCache: Record<string, GraphQLSchema> = {};
 
-  constructor(mondayApi: ApiClient, context?: MondayApiToolContext) {
-    super(mondayApi, context);
+  constructor(mondayApi: ApiClient, apiToken?: string, context?: MondayApiToolContext) {
+    super(mondayApi, apiToken, context);
   }
 
   getDescription(): string {
@@ -70,7 +70,7 @@ export class AllMondayApiTool extends BaseMondayApiTool<typeof allMondayApiToolS
     return errors.map((error) => error.message);
   }
 
-  async execute(input: ToolInputType<typeof allMondayApiToolSchema>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(input: ToolInputType<typeof allMondayApiToolSchema>): Promise<ToolOutputType<never>> {
     const { query, variables } = input;
 
     try {

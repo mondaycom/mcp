@@ -4816,3 +4816,15 @@ export type FetchCustomActivityQueryVariables = Exact<{ [key: string]: never; }>
 
 
 export type FetchCustomActivityQuery = { __typename?: 'Query', custom_activity?: Array<{ __typename?: 'CustomActivity', color?: CustomActivityColor | null, icon_id?: CustomActivityIcon | null, id?: string | null, name?: string | null, type?: string | null }> | null };
+
+export type ReadDocsQueryVariables = Exact<{
+  ids?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+  object_ids?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<DocsOrderBy>;
+  page?: InputMaybe<Scalars['Int']['input']>;
+  workspace_ids?: InputMaybe<Array<InputMaybe<Scalars['ID']['input']>> | InputMaybe<Scalars['ID']['input']>>;
+}>;
+
+
+export type ReadDocsQuery = { __typename?: 'Query', docs?: Array<{ __typename?: 'Document', id: string, object_id: string, name: string, doc_kind: BoardKind, created_at?: any | null, settings?: any | null, url?: string | null, relative_url?: string | null, workspace_id?: string | null, doc_folder_id?: string | null, created_by?: { __typename?: 'User', id: string, name: string } | null, workspace?: { __typename?: 'Workspace', id?: string | null, name: string } | null, blocks?: Array<{ __typename?: 'DocumentBlock', id: string, type?: string | null, content?: any | null, position?: number | null, created_at?: any | null, doc_id?: string | null, created_by?: { __typename?: 'User', id: string, name: string } | null } | null> | null } | null> | null };

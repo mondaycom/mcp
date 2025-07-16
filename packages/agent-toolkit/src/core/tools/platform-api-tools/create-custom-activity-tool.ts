@@ -33,7 +33,9 @@ export class CreateCustomActivityTool extends BaseMondayApiTool<typeof createCus
     return createCustomActivityToolSchema;
   }
 
-  async execute(input: ToolInputType<typeof createCustomActivityToolSchema>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(
+    input: ToolInputType<typeof createCustomActivityToolSchema>,
+  ): Promise<ToolOutputType<never>> {
     const variables: CreateCustomActivityMutationVariables = {
       color: input.color as CustomActivityColor,
       icon_id: input.icon_id as CustomActivityIcon,

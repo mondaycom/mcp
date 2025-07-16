@@ -30,7 +30,9 @@ export class GetGraphQLSchemaTool extends BaseMondayApiTool<typeof getGraphQLSch
     return getGraphQLSchemaToolSchema;
   }
 
-  async execute(input?: ToolInputType<typeof getGraphQLSchemaToolSchema>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(
+    input?: ToolInputType<typeof getGraphQLSchemaToolSchema>,
+  ): Promise<ToolOutputType<never>> {
     try {
       const res = await this.mondayApi.request<GetGraphQlSchemaQuery>(getGraphQLSchema);
       const operationType = input?.operationType;

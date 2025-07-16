@@ -26,7 +26,7 @@ export class DeleteItemTool extends BaseMondayApiTool<typeof deleteItemToolSchem
     return deleteItemToolSchema;
   }
 
-  async execute(input: ToolInputType<typeof deleteItemToolSchema>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(input: ToolInputType<typeof deleteItemToolSchema>): Promise<ToolOutputType<never>> {
     const variables: DeleteItemMutationVariables = {
       id: input.itemId.toString(),
     };
