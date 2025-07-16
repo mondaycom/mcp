@@ -17,6 +17,7 @@ import { GetInstructionsToCreateLiveWorkflowTool } from './get-instructions-to-c
 import { GetTypeDetailsTool } from './get-type-details-tool';
 import { GetUsersTool } from './get-users-tool';
 import { MoveItemToGroupTool } from './move-item-to-group-tool';
+import { WorkspaceInfoTool } from './workspace-info-tool';
 
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteItemTool,
@@ -37,6 +38,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   CreateTimelineItemTool,
   FetchCustomActivityTool,
   GetInstructionsToCreateLiveWorkflowTool,
+  WorkspaceInfoTool,
 ];
 
 export * from './all-monday-api-tool';
@@ -57,3 +59,4 @@ export * from './get-type-details-tool';
 export * from './get-users-tool';
 export * from './move-item-to-group-tool';
 export * from './get-instructions-to-create-live-workflow-tool';
+export * from './workspace-info-tool';
