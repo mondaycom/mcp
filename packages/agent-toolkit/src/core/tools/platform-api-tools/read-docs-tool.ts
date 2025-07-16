@@ -5,21 +5,18 @@ import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
 
 // Filter type enum
-const FilterTypeEnum = z.enum(['ids', 'object_ids', 'workspace_ids']);
+const QueryByIdEnum = z.enum(['ids', 'object_ids', 'workspace_ids']);
 
 // Single filter object schema
-const FilterSchema = z.object({
-  type: FilterTypeEnum.describe('Type of filter: ids, object_ids, or workspace_ids'),
-  values: z.array(z.string()).min(1).describe('Array of ID values for this filter type (at least 1 required)'),
+const QueryByIdSchema = z.object({
+  type: QueryByIdEnum.describe('Type of id to query by: ids, object_ids, or workspace_ids'),
+  values: z.array(z.string()).min(1).describe('Array of ID values for this query type (at least 1 required)'),
 });
 
 export const readDocsToolSchema = {
-  ids: z
-    .array(FilterSchema)
-    .length(1)
-    .describe(
-      'Array with exactly 1 ID object. The object specifies a type (ids/object_ids/workspace_ids) and an array of values.',
-    ),
+  ids: QueryByIdSchema.describe(
+    'ID query object that specifies a type (ids/object_ids/workspace_ids) and an array of values.',
+  ),
   limit: z
     .number()
     .optional()
@@ -59,12 +56,16 @@ PAGINATION:
 - Check response for 'has_more_pages' to know if you should continue paginating
 - If user asks for "all documents" and you get exactly 25 results, continue with page 2, 3, etc.
 
-FILTERING: Must provide exactly 1 ID object in the ids array:
-- { type: 'ids', values: ['id1', 'id2', 'id3'] }
-- { type: 'object_ids', values: ['objId1', 'objId2'] }
-- { type: 'workspace_ids', values: ['wsId1'] }
+FILTERING: Provide an ID filter object with:
+- type: 'ids' for specific document IDs
+- type: 'object_ids' for specific document object IDs  
+- type: 'workspace_ids' for all docs in specific workspaces
+- values: array of ID strings (at least 1 required)
 
-The ID object must have at least 1 value but can have multiple values of the same type.
+Examples:
+- { type: 'ids', values: ['123', '456'] }
+- { type: 'object_ids', values: ['123'] }
+- { type: 'workspace_ids', values: ['ws_101'] }
 
 USAGE PATTERNS:
 - For specific documents: use type 'ids' or 'object_ids' (A monday doc has two unique identifiers)
@@ -78,8 +79,8 @@ USAGE PATTERNS:
 
   protected async executeInternal(input: ToolInputType<typeof readDocsToolSchema>): Promise<ToolOutputType<never>> {
     try {
-      // Extract ID values by type (there's exactly 1 ID object)
-      const idObj = input.ids[0]; // Get the single ID object
+      // Extract ID values by type (now it's a single object, not an array)
+      const idObj = input.ids; // Get the ID object directly
       let ids: string[] | undefined;
       let object_ids: string[] | undefined;
       let workspace_ids: string[] | undefined;
