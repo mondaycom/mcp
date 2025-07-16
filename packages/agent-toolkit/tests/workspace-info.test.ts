@@ -1,4 +1,4 @@
-import { organizeWorkspaceInfoHierarchy } from 'src/core/tools/platform-api-tools';
+import { organizeWorkspaceInfoHierarchy } from '../src/core/tools/platform-api-tools';
 
 
 describe('WorkspaceInfoTool', () => {
