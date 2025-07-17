@@ -2,8 +2,8 @@ import { z } from 'zod';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { getWorkspaceInfo } from '../../../../monday-graphql/queries.graphql';
-import { WorkspaceInfoQueryResponse } from './types';
 import { organizeWorkspaceInfoHierarchy } from './helpers';
+import { GetWorkspaceInfoQuery } from 'src/monday-graphql/generated/graphql';
 
 export const workspaceInfoToolSchema = {
   workspace_id: z.number().describe('The ID of the workspace to get information for'),
@@ -34,7 +34,7 @@ export class WorkspaceInfoTool extends BaseMondayApiTool<typeof workspaceInfoToo
       workspace_id: input.workspace_id,
     };
 
-    const res = await this.mondayApi.request<WorkspaceInfoQueryResponse>(getWorkspaceInfo, variables);
+    const res = await this.mondayApi.request<GetWorkspaceInfoQuery>(getWorkspaceInfo, variables);
 
     if (!res.workspaces || res.workspaces.length === 0) {
       return {

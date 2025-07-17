@@ -1,4 +1,5 @@
 import { organizeWorkspaceInfoHierarchy } from './helpers';
+import { WorkspaceKind, State } from '../../../../monday-graphql/generated/graphql';
 
 describe('WorkspaceInfoTool', () => {
   describe('organizeWorkspaceInfoHierarchy', () => {
@@ -9,9 +10,9 @@ describe('WorkspaceInfoTool', () => {
             id: "45354",
             name: "Builders",
             description: "",
-            kind: "open",
+            kind: WorkspaceKind.Open,
             created_at: "2019-12-15T09:16:04Z",
-            state: "active",
+            state: State.Active,
             is_default_workspace: false,
             owners_subscribers: [
               {
@@ -125,9 +126,9 @@ describe('WorkspaceInfoTool', () => {
             id: "138",
             name: "Test Workspace",
             description: "Test",
-            kind: "open",
+            kind: WorkspaceKind.Open,
             created_at: "2019-12-15T09:16:04Z",
-            state: "active",
+            state: State.Active,
             is_default_workspace: false,
             owners_subscribers: []
           }
