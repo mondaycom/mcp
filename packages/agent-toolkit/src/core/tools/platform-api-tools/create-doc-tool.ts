@@ -12,33 +12,30 @@ import { BoardKind, ColumnType } from '../../../monday-graphql/generated/graphql
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
 
+// Create discriminated union for document location
+const CreateDocLocationSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('workspace').describe('Create document in workspace'),
+    workspace_id: z.number().describe('Workspace ID under which to create the new document'),
+    doc_kind: z.nativeEnum(BoardKind).optional().describe('Document kind (public/private/share). Defaults to private.'),
+  }),
+  z.object({
+    type: z.literal('item').describe('Create document attached to item'),
+    item_id: z.number().describe('Item ID to attach the new document to'),
+    column_id: z
+      .string()
+      .optional()
+      .describe(
+        "ID of an existing 'doc' column on the board which contains the item. If not provided, the tool will create a new doc column automatically when creating a doc on an item.",
+      ),
+  }),
+]);
+
 export const createDocToolSchema = {
-  workspace_id: z
-    .number()
-    .optional()
-    .describe(
-      'Workspace ID under which to create the new document. Provide either workspace_id (for workspace docs) or item_id (for item-attached docs).',
-    ),
-  item_id: z
-    .number()
-    .optional()
-    .describe('Item ID to attach the new document to. If provided, a doc will be created on the item.'),
-  column_id: z
-    .string()
-    .optional()
-    .describe(
-      'ID of a specific doc column to use. If not provided, the tool will automatically find the first existing doc column or create a new one. Useful when the board has multiple doc columns and you want to specify which one to use.',
-    ),
-  doc_name: z
-    .string()
-    .optional()
-    .describe(
-      'Name for the new document. For workspace docs, this is set during creation. For item docs, this is applied after creation via update_doc_name mutation.',
-    ),
-  doc_kind: z
-    .nativeEnum(BoardKind)
-    .optional()
-    .describe('Document kind for workspace docs (public / private / share). Defaults to private.'),
+  location: CreateDocLocationSchema.describe(
+    'Location where the document should be created - either in a workspace or attached to an item',
+  ),
+  doc_name: z.string().optional().describe('Name for the new document. Defaults to "New Document" if not provided.'),
   markdown: z.string().describe('Markdown content that will be imported into the newly created document as blocks.'),
 };
 
@@ -53,7 +50,15 @@ export class CreateDocTool extends BaseMondayApiTool<typeof createDocToolSchema>
   });
 
   getDescription(): string {
-    return `Create a new monday.com doc either inside a workspace or attached to an item (via a doc column). After creation, the provided markdown will be appended to the document.`;
+    return `Create a new monday.com doc either inside a workspace or attached to an item (via a doc column). After creation, the provided markdown will be appended to the document.
+
+LOCATION TYPES:
+- workspace: Creates a document in a workspace (requires workspace_id, optional doc_kind)
+- item: Creates a document attached to an item (requires item_id, optional column_id)
+
+USAGE EXAMPLES:
+- Workspace doc: { location: { type: "workspace", workspace_id: 123, doc_kind: "private" }, markdown: "..." }
+- Item doc: { location: { type: "item", item_id: 456, column_id: "doc_col_1" }, markdown: "..." }`;
   }
 
   getInputSchema(): typeof createDocToolSchema {
@@ -61,52 +66,40 @@ export class CreateDocTool extends BaseMondayApiTool<typeof createDocToolSchema>
   }
 
   protected async executeInternal(input: ToolInputType<typeof createDocToolSchema>): Promise<ToolOutputType<never>> {
-    // Validate mutually exclusive parameters
-    if (!input.workspace_id && !input.item_id) {
-      return {
-        content: 'Error: You must provide either workspace_id for a workspace doc or item_id for an item doc.',
-      };
-    }
-
-    if (input.workspace_id && input.item_id) {
-      return {
-        content: 'Error: Provide only one of workspace_id or item_id, not both.',
-      };
-    }
-
+    // No need for validation - schema enforces exactly one location type
     try {
       let docId: string | undefined;
       let docUrl: string | undefined;
 
-      if (input.workspace_id) {
+      if (input.location.type === 'workspace') {
         // Workspace document creation
         const locationInput = {
           workspace: {
-            workspace_id: input.workspace_id.toString(),
+            workspace_id: input.location.workspace_id.toString(),
             name: input.doc_name || 'New Document',
-            kind: input.doc_kind || BoardKind.Private,
+            kind: input.location.doc_kind || BoardKind.Private,
           },
         };
 
         const res: any = await this.mondayApi.request(createDocMutation, { location: locationInput });
         docId = res?.create_doc?.id;
         docUrl = res?.create_doc?.url;
-      } else if (input.item_id) {
+      } else if (input.location.type === 'item') {
         // Item-attached document creation
         // Step 1: Resolve the board id and existing doc columns
         const itemRes: any = await this.mondayApi.request(getItemBoard, {
-          itemId: input.item_id.toString(),
+          itemId: input.location.item_id.toString(),
         });
 
         const item = itemRes?.items?.[0];
         if (!item) {
-          return { content: `Error: Item with id ${input.item_id} not found.` };
+          return { content: `Error: Item with id ${input.location.item_id} not found.` };
         }
 
         const boardId = item.board.id;
         const existingDocColumn = item.board.columns.find((c: any) => ['doc'].includes(c.type));
 
-        let columnId = input.column_id;
+        let columnId = input.location.column_id;
 
         if (!columnId) {
           if (existingDocColumn) {
@@ -131,7 +124,7 @@ export class CreateDocTool extends BaseMondayApiTool<typeof createDocToolSchema>
         // Step 2: Create the doc attached to the item and column
         const locationInput = {
           board: {
-            item_id: input.item_id.toString(),
+            item_id: input.location.item_id.toString(),
             column_id: columnId,
           },
         };
@@ -176,9 +169,7 @@ export class CreateDocTool extends BaseMondayApiTool<typeof createDocToolSchema>
       const blockIds = contentRes?.add_content_to_doc_from_markdown?.block_ids || [];
 
       return {
-        content: `✅ Document successfully created (id: ${docId}). Markdown imported (${blockIds.length} blocks).${
-          docUrl ? `\n\nURL: ${docUrl}` : ''
-        }`,
+        content: `✅ Document successfully created (id: ${docId}). ${docUrl ? `\n\nURL: ${docUrl}` : ''}`,
       };
     } catch (error) {
       return {
