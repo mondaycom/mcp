@@ -1,5 +1,4 @@
 import { z } from 'zod';
-// GraphQL operations are defined centrally in queries.graphql.ts
 
 import {
   createDoc as createDocMutation,
@@ -66,7 +65,6 @@ USAGE EXAMPLES:
   }
 
   protected async executeInternal(input: ToolInputType<typeof createDocToolSchema>): Promise<ToolOutputType<never>> {
-    // No need for validation - schema enforces exactly one location type
     try {
       let docId: string | undefined;
       let docUrl: string | undefined;
@@ -133,7 +131,7 @@ USAGE EXAMPLES:
         docId = res?.create_doc?.id;
         docUrl = res?.create_doc?.url;
 
-        // Step 2.5: Update doc name if provided (item-attached docs don't support name in creation)
+        // Step 3: Update doc name if provided (item-attached docs don't support name in creation)
         if (input.doc_name && docId) {
           try {
             await this.mondayApi.request(updateDocName, {
@@ -151,7 +149,7 @@ USAGE EXAMPLES:
         return { content: 'Error: Failed to create document.' };
       }
 
-      // Step 3: Add markdown content to the doc
+      // Add markdown content to the doc
       const contentRes: any = await this.mondayApi.request(addContentToDocFromMarkdown, {
         docId,
         markdown: input.markdown,
