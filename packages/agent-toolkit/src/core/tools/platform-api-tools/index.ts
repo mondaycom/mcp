@@ -18,6 +18,7 @@ import { GetTypeDetailsTool } from './get-type-details-tool';
 import { GetUsersTool } from './get-users-tool';
 import { MoveItemToGroupTool } from './move-item-to-group-tool';
 import { ReadDocsTool } from './read-docs-tool';
+import { WorkspaceInfoTool } from './workspace-info-tool/workspace-info-tool';
 import { CreateDocTool } from './create-doc-tool';
 
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
@@ -40,6 +41,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   FetchCustomActivityTool,
   CreateWorkflowInstructionsTool,
   ReadDocsTool,
+  WorkspaceInfoTool,
   CreateDocTool,
 ];
 
@@ -63,4 +65,5 @@ export * from './manage-tools-tool';
 export * from './move-item-to-group-tool';
 export * from './create-workflow-instructions-tool';
 export * from './read-docs-tool';
+export * from './workspace-info-tool/workspace-info-tool';
 export * from './create-doc-tool';

@@ -526,3 +526,36 @@ export const exportMarkdownFromDoc = gql`
     }
   }
 `;
+
+export const getWorkspaceInfo = gql`
+  query getWorkspaceInfo($workspace_id: ID!) {
+    workspaces(ids: [$workspace_id]) {
+      id
+      name
+      description
+      kind
+      created_at
+      state
+      is_default_workspace
+      owners_subscribers {
+        id
+        name
+        email
+      }
+    }
+    boards(workspace_ids: [$workspace_id], limit: 100, order_by: used_at, state: active) {
+      id
+      name
+      board_folder_id
+    }
+    docs(workspace_ids: [$workspace_id], limit: 100, order_by: used_at) {
+      id
+      name
+      doc_folder_id
+    }
+    folders(workspace_ids: [$workspace_id], limit: 100) {
+      id
+      name
+    }
+  }
+`;
