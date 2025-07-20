@@ -11,7 +11,7 @@ import {
 import { BoardKind, ColumnType } from '../../../monday-graphql/generated/graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
-// TODO - to create a doc title i should use the update title mutation
+
 export const createDocToolSchema = {
   workspace_id: z
     .number()
@@ -27,7 +27,7 @@ export const createDocToolSchema = {
     .string()
     .optional()
     .describe(
-      "ID of an existing 'doc' column on the board which contains the item. If not provided, the tool will create a new doc column automatically when creating a doc on an item.",
+      'ID of a specific doc column to use. If not provided, the tool will automatically find the first existing doc column or create a new one. Useful when the board has multiple doc columns and you want to specify which one to use.',
     ),
   doc_name: z
     .string()
