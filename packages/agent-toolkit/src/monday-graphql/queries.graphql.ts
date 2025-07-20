@@ -471,6 +471,13 @@ export const addContentToDocFromMarkdown = gql`
   }
 `;
 
+// Update the name/title of an existing monday doc (API version 2025-10)
+export const updateDocName = gql`
+  mutation updateDocName($docId: ID!, $name: String!) {
+    update_doc_name(docId: $docId, name: $name)
+  }
+`;
+
 export const readDocs = gql`
   query readDocs(
     $ids: [ID!]

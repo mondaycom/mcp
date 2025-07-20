@@ -6,6 +6,7 @@ import {
   addContentToDocFromMarkdown,
   getItemBoard,
   createColumn as createColumnMutation,
+  updateDocName,
 } from '../../../monday-graphql/queries.graphql';
 import { BoardKind, ColumnType } from '../../../monday-graphql/generated/graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
@@ -31,7 +32,9 @@ export const createDocToolSchema = {
   doc_name: z
     .string()
     .optional()
-    .describe('Name for the new document (relevant for workspace docs). Defaults to "New Document" if not provided.'),
+    .describe(
+      'Name for the new document. For workspace docs, this is set during creation. For item docs, this is applied after creation via update_doc_name mutation.',
+    ),
   doc_kind: z
     .nativeEnum(BoardKind)
     .optional()
@@ -46,7 +49,7 @@ export class CreateDocTool extends BaseMondayApiTool<typeof createDocToolSchema>
     title: 'Create Document',
     readOnlyHint: false,
     destructiveHint: false,
-    idempotentHint: true,
+    idempotentHint: false,
   });
 
   getDescription(): string {
@@ -136,6 +139,19 @@ export class CreateDocTool extends BaseMondayApiTool<typeof createDocToolSchema>
         const res: any = await this.mondayApi.request(createDocMutation, { location: locationInput });
         docId = res?.create_doc?.id;
         docUrl = res?.create_doc?.url;
+
+        // Step 2.5: Update doc name if provided (item-attached docs don't support name in creation)
+        if (input.doc_name && docId) {
+          try {
+            await this.mondayApi.request(updateDocName, {
+              docId: parseInt(docId),
+              name: input.doc_name,
+            });
+          } catch (updateError) {
+            // Non-fatal error - doc was created but naming failed
+            console.warn('Failed to update doc name:', updateError);
+          }
+        }
       }
 
       if (!docId) {
