@@ -6381,6 +6381,37 @@ export type FetchCustomActivityQueryVariables = Exact<{ [key: string]: never; }>
 
 export type FetchCustomActivityQuery = { __typename?: 'Query', custom_activity?: Array<{ __typename?: 'CustomActivity', color?: CustomActivityColor | null, icon_id?: CustomActivityIcon | null, id?: string | null, name?: string | null, type?: string | null }> | null };
 
+export type GetItemBoardQueryVariables = Exact<{
+  itemId: Scalars['ID']['input'];
+}>;
+
+
+export type GetItemBoardQuery = { __typename?: 'Query', items?: Array<{ __typename?: 'Item', id: string, board?: { __typename?: 'Board', id: string, columns?: Array<{ __typename?: 'Column', id: string, type: ColumnType } | null> | null } | null } | null> | null };
+
+export type CreateDocMutationVariables = Exact<{
+  location: CreateDocInput;
+}>;
+
+
+export type CreateDocMutation = { __typename?: 'Mutation', create_doc?: { __typename?: 'Document', id: string, url?: string | null, name: string } | null };
+
+export type AddContentToDocFromMarkdownMutationVariables = Exact<{
+  docId: Scalars['ID']['input'];
+  markdown: Scalars['String']['input'];
+  afterBlockId?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type AddContentToDocFromMarkdownMutation = { __typename?: 'Mutation', add_content_to_doc_from_markdown?: { __typename?: 'DocBlocksFromMarkdownResult', success: boolean, block_ids?: Array<string> | null, error?: string | null } | null };
+
+export type UpdateDocNameMutationVariables = Exact<{
+  docId: Scalars['ID']['input'];
+  name: Scalars['String']['input'];
+}>;
+
+
+export type UpdateDocNameMutation = { __typename?: 'Mutation', update_doc_name?: any | null };
+
 export type ReadDocsQueryVariables = Exact<{
   ids?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
   object_ids?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;

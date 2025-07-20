@@ -7,7 +7,20 @@ import {
   createColumn as createColumnMutation,
   updateDocName,
 } from '../../../monday-graphql/queries.graphql';
-import { BoardKind, ColumnType } from '../../../monday-graphql/generated/graphql';
+import {
+  BoardKind,
+  ColumnType,
+  CreateColumnMutation,
+  CreateColumnMutationVariables,
+  CreateDocMutation,
+  CreateDocMutationVariables,
+  GetItemBoardQuery,
+  GetItemBoardQueryVariables,
+  UpdateDocNameMutation,
+  UpdateDocNameMutationVariables,
+  AddContentToDocFromMarkdownMutation,
+  AddContentToDocFromMarkdownMutationVariables,
+} from '../../../monday-graphql/generated/graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
 
@@ -71,31 +84,34 @@ USAGE EXAMPLES:
 
       if (input.location.type === 'workspace') {
         // Workspace document creation
-        const locationInput = {
-          workspace: {
-            workspace_id: input.location.workspace_id.toString(),
-            name: input.doc_name || 'New Document',
-            kind: input.location.doc_kind || BoardKind.Private,
+        const variables: CreateDocMutationVariables = {
+          location: {
+            workspace: {
+              workspace_id: input.location.workspace_id.toString(),
+              name: input.doc_name || 'New Document',
+              kind: input.location.doc_kind || BoardKind.Private,
+            },
           },
         };
 
-        const res: any = await this.mondayApi.request(createDocMutation, { location: locationInput });
-        docId = res?.create_doc?.id;
-        docUrl = res?.create_doc?.url;
+        const res: CreateDocMutation = await this.mondayApi.request(createDocMutation, variables);
+        docId = res?.create_doc?.id ?? undefined;
+        docUrl = res?.create_doc?.url ?? undefined;
       } else if (input.location.type === 'item') {
         // Item-attached document creation
         // Step 1: Resolve the board id and existing doc columns
-        const itemRes: any = await this.mondayApi.request(getItemBoard, {
+        const variables: GetItemBoardQueryVariables = {
           itemId: input.location.item_id.toString(),
-        });
+        };
+        const itemRes: GetItemBoardQuery = await this.mondayApi.request(getItemBoard, variables);
 
-        const item = itemRes?.items?.[0];
+        const item = itemRes.items?.[0];
         if (!item) {
           return { content: `Error: Item with id ${input.location.item_id} not found.` };
         }
 
-        const boardId = item.board.id;
-        const existingDocColumn = item.board.columns.find((c: any) => ['doc'].includes(c.type));
+        const boardId = item.board?.id;
+        const existingDocColumn = item.board?.columns?.find((c) => c && c.type === ColumnType.Doc);
 
         let columnId = input.location.column_id;
 
@@ -104,13 +120,12 @@ USAGE EXAMPLES:
             columnId = existingDocColumn.id;
           } else {
             // Create new doc column on the board
-            const columnRes: any = await this.mondayApi.request(createColumnMutation, {
-              boardId: boardId.toString(),
+            const columnVariables: CreateColumnMutationVariables = {
+              boardId: boardId!.toString(),
               columnType: ColumnType.Doc,
               columnTitle: 'Doc',
-              columnDescription: undefined,
-              columnSettings: undefined,
-            });
+            };
+            const columnRes: CreateColumnMutation = await this.mondayApi.request(createColumnMutation, columnVariables);
 
             columnId = columnRes?.create_column?.id;
             if (!columnId) {
@@ -120,24 +135,27 @@ USAGE EXAMPLES:
         }
 
         // Step 2: Create the doc attached to the item and column
-        const locationInput = {
-          board: {
-            item_id: input.location.item_id.toString(),
-            column_id: columnId,
+        const itemVariables: CreateDocMutationVariables = {
+          location: {
+            board: {
+              item_id: input.location.item_id.toString(),
+              column_id: columnId,
+            },
           },
         };
 
-        const res: any = await this.mondayApi.request(createDocMutation, { location: locationInput });
-        docId = res?.create_doc?.id;
-        docUrl = res?.create_doc?.url;
+        const res: CreateDocMutation = await this.mondayApi.request(createDocMutation, itemVariables);
+        docId = res.create_doc?.id ?? undefined;
+        docUrl = res.create_doc?.url ?? undefined;
 
         // Step 3: Update doc name if provided (item-attached docs don't support name in creation)
         if (input.doc_name && docId) {
           try {
-            await this.mondayApi.request(updateDocName, {
-              docId: parseInt(docId),
+            const updateVariables: UpdateDocNameMutationVariables = {
+              docId: docId,
               name: input.doc_name,
-            });
+            };
+            const updateRes: UpdateDocNameMutation = await this.mondayApi.request(updateDocName, updateVariables);
           } catch (updateError) {
             // Non-fatal error - doc was created but naming failed
             console.warn('Failed to update doc name:', updateError);
@@ -150,10 +168,14 @@ USAGE EXAMPLES:
       }
 
       // Add markdown content to the doc
-      const contentRes: any = await this.mondayApi.request(addContentToDocFromMarkdown, {
+      const contentVariables: AddContentToDocFromMarkdownMutationVariables = {
         docId,
         markdown: input.markdown,
-      });
+      };
+      const contentRes: AddContentToDocFromMarkdownMutation = await this.mondayApi.request(
+        addContentToDocFromMarkdown,
+        contentVariables,
+      );
 
       const success = contentRes?.add_content_to_doc_from_markdown?.success;
       const errorMsg = contentRes?.add_content_to_doc_from_markdown?.error;
