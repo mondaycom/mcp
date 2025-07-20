@@ -18,6 +18,7 @@ import { GetTypeDetailsTool } from './get-type-details-tool';
 import { GetUsersTool } from './get-users-tool';
 import { MoveItemToGroupTool } from './move-item-to-group-tool';
 import { ReadDocsTool } from './read-docs-tool';
+import { CreateDocTool } from './create-doc-tool';
 
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteItemTool,
@@ -39,6 +40,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   FetchCustomActivityTool,
   CreateWorkflowInstructionsTool,
   ReadDocsTool,
+  CreateDocTool,
 ];
 
 export * from './all-monday-api-tool';
@@ -61,3 +63,4 @@ export * from './manage-tools-tool';
 export * from './move-item-to-group-tool';
 export * from './create-workflow-instructions-tool';
 export * from './read-docs-tool';
+export * from './create-doc-tool';
