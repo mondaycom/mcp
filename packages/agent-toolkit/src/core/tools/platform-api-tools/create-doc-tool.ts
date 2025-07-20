@@ -31,7 +31,7 @@ const CreateDocLocationSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal(DocType.enum.workspace).describe('Create document in workspace'),
     workspace_id: z.number().describe('Workspace ID under which to create the new document'),
-    doc_kind: z.nativeEnum(BoardKind).optional().describe('Document kind (public/private/share). Defaults to private.'),
+    doc_kind: z.nativeEnum(BoardKind).optional().describe('Document kind (public/private/share). Defaults to public.'),
   }),
   z.object({
     type: z.literal(DocType.enum.item).describe('Create document attached to item'),
@@ -91,7 +91,7 @@ USAGE EXAMPLES:
             workspace: {
               workspace_id: input.location.workspace_id.toString(),
               name: input.doc_name || 'New Document',
-              kind: input.location.doc_kind || BoardKind.Private,
+              kind: input.location.doc_kind || BoardKind.Public,
             },
           },
         };
