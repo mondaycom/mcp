@@ -24,15 +24,17 @@ import {
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
 
+const DocType = z.enum(['workspace', 'item']);
+
 // Create discriminated union for document location
 const CreateDocLocationSchema = z.discriminatedUnion('type', [
   z.object({
-    type: z.literal('workspace').describe('Create document in workspace'),
+    type: z.literal(DocType.enum.workspace).describe('Create document in workspace'),
     workspace_id: z.number().describe('Workspace ID under which to create the new document'),
     doc_kind: z.nativeEnum(BoardKind).optional().describe('Document kind (public/private/share). Defaults to private.'),
   }),
   z.object({
-    type: z.literal('item').describe('Create document attached to item'),
+    type: z.literal(DocType.enum.item).describe('Create document attached to item'),
     item_id: z.number().describe('Item ID to attach the new document to'),
     column_id: z
       .string()
