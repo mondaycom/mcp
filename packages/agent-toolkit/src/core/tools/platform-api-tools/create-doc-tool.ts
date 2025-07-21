@@ -49,7 +49,7 @@ export const createDocToolSchema = {
   location: CreateDocLocationSchema.describe(
     'Location where the document should be created - either in a workspace or attached to an item',
   ),
-  doc_name: z.string().optional().describe('Name for the new document. Defaults to "New Document" if not provided.'),
+  doc_name: z.string().describe('Name for the new document.'),
   markdown: z.string().describe('Markdown content that will be imported into the newly created document as blocks.'),
 };
 
@@ -187,8 +187,6 @@ USAGE EXAMPLES:
           content: `Document ${docId} created, but failed to add markdown content: ${errorMsg || 'Unknown error'}`,
         };
       }
-
-      const blockIds = contentRes?.add_content_to_doc_from_markdown?.block_ids || [];
 
       return {
         content: `✅ Document successfully created (id: ${docId}). ${docUrl ? `\n\nURL: ${docUrl}` : ''}`,
