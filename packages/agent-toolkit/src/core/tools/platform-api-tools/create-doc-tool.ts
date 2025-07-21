@@ -84,13 +84,13 @@ USAGE EXAMPLES:
       let docId: string | undefined;
       let docUrl: string | undefined;
 
-      if (input.location.type === 'workspace') {
+      if (input.location.type === DocType.enum.workspace) {
         // Workspace document creation
         const variables: CreateDocMutationVariables = {
           location: {
             workspace: {
               workspace_id: input.location.workspace_id.toString(),
-              name: input.doc_name || 'New Document',
+              name: input.doc_name,
               kind: input.location.doc_kind || BoardKind.Public,
             },
           },
@@ -99,7 +99,7 @@ USAGE EXAMPLES:
         const res: CreateDocMutation = await this.mondayApi.request(createDocMutation, variables);
         docId = res?.create_doc?.id ?? undefined;
         docUrl = res?.create_doc?.url ?? undefined;
-      } else if (input.location.type === 'item') {
+      } else if (input.location.type === DocType.enum.item) {
         // Item-attached document creation
         // Step 1: Resolve the board id and existing doc columns
         const variables: GetItemBoardQueryVariables = {
