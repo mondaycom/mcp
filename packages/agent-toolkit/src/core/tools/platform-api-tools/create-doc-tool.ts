@@ -32,6 +32,7 @@ const CreateDocLocationSchema = z.discriminatedUnion('type', [
     type: z.literal(DocType.enum.workspace).describe('Create document in workspace'),
     workspace_id: z.number().describe('Workspace ID under which to create the new document'),
     doc_kind: z.nativeEnum(BoardKind).optional().describe('Document kind (public/private/share). Defaults to public.'),
+    folder_id: z.number().optional().describe('Optional folder ID to place the document inside a specific folder'),
   }),
   z.object({
     type: z.literal(DocType.enum.item).describe('Create document attached to item'),
@@ -67,11 +68,12 @@ export class CreateDocTool extends BaseMondayApiTool<typeof createDocToolSchema>
     return `Create a new monday.com doc either inside a workspace or attached to an item (via a doc column). After creation, the provided markdown will be appended to the document.
 
 LOCATION TYPES:
-- workspace: Creates a document in a workspace (requires workspace_id, optional doc_kind)
+- workspace: Creates a document in a workspace (requires workspace_id, optional doc_kind, optional folder_id)
 - item: Creates a document attached to an item (requires item_id, optional column_id)
 
 USAGE EXAMPLES:
 - Workspace doc: { location: { type: "workspace", workspace_id: 123, doc_kind: "private" }, markdown: "..." }
+- Workspace doc in folder: { location: { type: "workspace", workspace_id: 123, folder_id: 17264196 }, markdown: "..." }
 - Item doc: { location: { type: "item", item_id: 456, column_id: "doc_col_1" }, markdown: "..." }`;
   }
 
@@ -92,6 +94,7 @@ USAGE EXAMPLES:
               workspace_id: input.location.workspace_id.toString(),
               name: input.doc_name,
               kind: input.location.doc_kind || BoardKind.Public,
+              folder_id: input.location.folder_id?.toString(),
             },
           },
         };
