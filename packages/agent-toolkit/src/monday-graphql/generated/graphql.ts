@@ -6277,6 +6277,17 @@ export type GetBoardSchemaQueryVariables = Exact<{
 
 export type GetBoardSchemaQuery = { __typename?: 'Query', boards?: Array<{ __typename?: 'Board', groups?: Array<{ __typename?: 'Group', id: string, title: string } | null> | null, columns?: Array<{ __typename?: 'Column', id: string, type: ColumnType, title: string } | null> | null } | null> | null };
 
+export type GetBoardAllActivityQueryVariables = Exact<{
+  boardId: Scalars['ID']['input'];
+  fromDate: Scalars['ISO8601DateTime']['input'];
+  toDate: Scalars['ISO8601DateTime']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  page?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type GetBoardAllActivityQuery = { __typename?: 'Query', boards?: Array<{ __typename?: 'Board', activity_logs?: Array<{ __typename?: 'ActivityLogType', user_id: string, entity: string, event: string, data: string, created_at: string } | null> | null } | null> | null };
+
 export type GetUsersByNameQueryVariables = Exact<{
   name?: InputMaybe<Scalars['String']['input']>;
 }>;
