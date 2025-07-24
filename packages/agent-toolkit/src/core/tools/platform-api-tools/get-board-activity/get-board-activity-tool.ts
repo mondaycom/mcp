@@ -3,7 +3,7 @@ import {
   GetBoardAllActivityQuery,
   GetBoardAllActivityQueryVariables,
 } from '../../../../monday-graphql/generated/graphql';
-import { getBoardAllActivity } from './graphql';
+import { getBoardAllActivity } from './get-board-activity.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './../base-monday-api-tool';
 import { TIME_IN_MILLISECONDS } from '../../../../utils';
