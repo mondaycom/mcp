@@ -11,7 +11,9 @@ export function organizeWorkspaceInfoHierarchy(response: GetWorkspaceInfoQuery):
   // Create folder map
   const folderMap = new Map(
     (folders || [])
-      .filter((folder): folder is NonNullable<typeof folder> => folder != null && folder.id != null && folder.name != null)
+      .filter(
+        (folder): folder is NonNullable<typeof folder> => folder != null && folder.id != null && folder.name != null,
+      )
       .map((folder) => [
         folder.id!,
         {
@@ -59,7 +61,10 @@ export function organizeWorkspaceInfoHierarchy(response: GetWorkspaceInfoQuery):
       state: workspace.state || '',
       is_default_workspace: workspace.is_default_workspace || false,
       owners_subscribers: (workspace.owners_subscribers || [])
-        .filter((owner): owner is NonNullable<typeof owner> => owner != null && owner.id != null && owner.name != null && owner.email != null)
+        .filter(
+          (owner): owner is NonNullable<typeof owner> =>
+            owner != null && owner.id != null && owner.name != null && owner.email != null,
+        )
         .map((owner) => ({
           id: owner.id!,
           name: owner.name!,
