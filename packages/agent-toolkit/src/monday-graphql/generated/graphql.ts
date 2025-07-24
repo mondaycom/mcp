@@ -6237,6 +6237,13 @@ export enum __TypeKind {
   NonNull = 'NON_NULL'
 }
 
+export type ListWorkspacesQueryVariables = Exact<{
+  limit: Scalars['Int']['input'];
+}>;
+
+
+export type ListWorkspacesQuery = { __typename?: 'Query', workspaces?: Array<{ __typename?: 'Workspace', id?: string | null, name: string, description?: string | null } | null> | null };
+
 export type DeleteItemMutationVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
