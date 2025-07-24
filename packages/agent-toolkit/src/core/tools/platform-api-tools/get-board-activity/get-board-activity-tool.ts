@@ -1,15 +1,14 @@
 import { z } from 'zod';
-import { GetBoardAllActivityQuery, GetBoardAllActivityQueryVariables } from '../../../monday-graphql/generated/graphql';
-import { getBoardAllActivity } from '../../../monday-graphql/queries.graphql';
-import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
-import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
+import { GetBoardAllActivityQuery, GetBoardAllActivityQueryVariables } from '../../../../monday-graphql/generated/graphql';
+import { getBoardAllActivity } from './graphql';
+import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
+import { BaseMondayApiTool, createMondayApiAnnotations } from './../base-monday-api-tool';
+import { TIME_IN_MILLISECONDS } from '../../../../utils';
 
 export const getBoardActivityToolSchema = {
   boardId: z.number().describe('The id of the board to get activity for'),
   fromDate: z.string().optional().describe('Start date for activity range (ISO8601DateTime format). Defaults to 30 days ago'),
-  toDate: z.string().optional().describe('End date for activity range (ISO8601DateTime format). Defaults to now'),
-  limit: z.number().optional().describe('Maximum number of activity logs to return. Defaults to 1000'),
-  page: z.number().optional().describe('Page number for pagination. Defaults to 1'),
+  toDate: z.string().optional().describe('End date for activity range (ISO8601DateTime format). Defaults to now')
 };
 
 export class GetBoardActivityTool extends BaseMondayApiTool<typeof getBoardActivityToolSchema | undefined> {
@@ -22,38 +21,32 @@ export class GetBoardActivityTool extends BaseMondayApiTool<typeof getBoardActiv
     idempotentHint: true,
   });
 
+  private defaultLimit = 1000;
+
   getDescription(): string {
     return 'Get board activity logs for a specified time range (defaults to last 30 days)';
   }
 
-  getInputSchema(): typeof getBoardActivityToolSchema | undefined {
-    if (this.context?.boardId) {
-      return undefined;
-    }
-
+  getInputSchema(): typeof getBoardActivityToolSchema {
     return getBoardActivityToolSchema;
   }
 
   protected async executeInternal(
-    input: ToolInputType<typeof getBoardActivityToolSchema | undefined>,
+    input: ToolInputType<typeof getBoardActivityToolSchema>,
   ): Promise<ToolOutputType<never>> {
-    const boardId = this.context?.boardId ?? (input as ToolInputType<typeof getBoardActivityToolSchema>).boardId;
-    
     // Calculate default date range (last 30 days)
     const now = new Date();
-    const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+    const thirtyDaysAgo = new Date(now.getTime() - TIME_IN_MILLISECONDS.MONTH30Days);
     
-    const fromDate = (input as any)?.fromDate || thirtyDaysAgo.toISOString();
-    const toDate = (input as any)?.toDate || now.toISOString();
-    const limit = (input as any)?.limit || 1000;
-    const page = (input as any)?.page || 1;
+    const fromDate = input?.fromDate || thirtyDaysAgo.toISOString();
+    const toDate = input?.toDate || now.toISOString();
 
     const variables: GetBoardAllActivityQueryVariables = {
-      boardId: boardId.toString(),
+      boardId: input.boardId.toString(),
       fromDate,
       toDate,
-      limit,
-      page,
+      limit: this.defaultLimit,
+      page: 1,
     };
 
     const res = await this.mondayApi.request<GetBoardAllActivityQuery>(getBoardAllActivity, variables);
@@ -62,7 +55,7 @@ export class GetBoardActivityTool extends BaseMondayApiTool<typeof getBoardActiv
     
     if (!activityLogs || activityLogs.length === 0) {
       return {
-        content: `No activity found for board ${boardId} in the specified time range (${fromDate} to ${toDate}).`,
+        content: `No activity found for board ${input.boardId} in the specified time range (${fromDate} to ${toDate}).`,
       };
     }
 
@@ -74,7 +67,7 @@ export class GetBoardActivityTool extends BaseMondayApiTool<typeof getBoardActiv
       .join('\n');
 
     return {
-      content: `Activity logs for board ${boardId} from ${fromDate} to ${toDate} (${activityLogs.length} entries):
+      content: `Activity logs for board ${input.boardId} from ${fromDate} to ${toDate} (${activityLogs.length} entries):
 
 ${formattedActivity}`,
     };
