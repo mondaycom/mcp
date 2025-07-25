@@ -11,6 +11,7 @@ import { DeleteColumnTool } from './delete-column-tool';
 import { DeleteItemTool } from './delete-item-tool';
 import { FetchCustomActivityTool } from './fetch-custom-activity-tool';
 import { GetBoardActivityTool } from './get-board-activity/get-board-activity-tool';
+import { GetBoardInfoTool } from './get-board-info/get-board-info-tool';
 import { GetBoardItemsTool } from './get-board-items-tool';
 import { GetBoardSchemaTool } from './get-board-schema-tool';
 import { GetGraphQLSchemaTool } from './get-graphql-schema-tool';
@@ -30,6 +31,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   CreateUpdateTool,
   GetBoardSchemaTool,
   GetBoardActivityTool,
+  GetBoardInfoTool,
   GetUsersTool,
   ChangeItemColumnValuesTool,
   MoveItemToGroupTool,
@@ -73,3 +75,4 @@ export * from './workspace-info-tool/workspace-info-tool';
 export * from './list-workspace-tool/list-workspace-tool';
 export * from './create-doc-tool';
 export * from './get-board-activity/get-board-activity-tool';
+export * from './get-board-info/get-board-info-tool';
