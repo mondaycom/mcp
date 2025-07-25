@@ -6237,6 +6237,24 @@ export enum __TypeKind {
   NonNull = 'NON_NULL'
 }
 
+export type GetBoardAllActivityQueryVariables = Exact<{
+  boardId: Scalars['ID']['input'];
+  fromDate: Scalars['ISO8601DateTime']['input'];
+  toDate: Scalars['ISO8601DateTime']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  page?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type GetBoardAllActivityQuery = { __typename?: 'Query', boards?: Array<{ __typename?: 'Board', activity_logs?: Array<{ __typename?: 'ActivityLogType', user_id: string, entity: string, event: string, data: string, created_at: string } | null> | null } | null> | null };
+
+export type GetBoardInfoQueryVariables = Exact<{
+  boardId: Scalars['ID']['input'];
+}>;
+
+
+export type GetBoardInfoQuery = { __typename?: 'Query', boards?: Array<{ __typename?: 'Board', id: string, name: string, description?: string | null, state: State, board_kind: BoardKind, permissions: string, url: string, updated_at?: any | null, item_terminology?: string | null, items_count?: number | null, items_limit?: number | null, board_folder_id?: string | null, creator: { __typename?: 'User', id: string, name: string, email: string }, workspace?: { __typename?: 'Workspace', id?: string | null, name: string, kind?: WorkspaceKind | null, description?: string | null } | null, columns?: Array<{ __typename?: 'Column', id: string, title: string, description?: string | null, type: ColumnType, settings_str: string } | null> | null, groups?: Array<{ __typename?: 'Group', id: string, title: string } | null> | null, owners: Array<{ __typename?: 'User', id: string, name: string } | null>, team_owners?: Array<{ __typename?: 'Team', id: string, name: string, picture_url?: string | null }> | null, tags?: Array<{ __typename?: 'Tag', id: string, name: string } | null> | null, top_group: { __typename?: 'Group', id: string } } | null> | null };
+
 export type ListWorkspacesQueryVariables = Exact<{
   limit: Scalars['Int']['input'];
 }>;
@@ -6283,17 +6301,6 @@ export type GetBoardSchemaQueryVariables = Exact<{
 
 
 export type GetBoardSchemaQuery = { __typename?: 'Query', boards?: Array<{ __typename?: 'Board', groups?: Array<{ __typename?: 'Group', id: string, title: string } | null> | null, columns?: Array<{ __typename?: 'Column', id: string, type: ColumnType, title: string } | null> | null } | null> | null };
-
-export type GetBoardAllActivityQueryVariables = Exact<{
-  boardId: Scalars['ID']['input'];
-  fromDate: Scalars['ISO8601DateTime']['input'];
-  toDate: Scalars['ISO8601DateTime']['input'];
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  page?: InputMaybe<Scalars['Int']['input']>;
-}>;
-
-
-export type GetBoardAllActivityQuery = { __typename?: 'Query', boards?: Array<{ __typename?: 'Board', activity_logs?: Array<{ __typename?: 'ActivityLogType', user_id: string, entity: string, event: string, data: string, created_at: string } | null> | null } | null> | null };
 
 export type GetUsersByNameQueryVariables = Exact<{
   name?: InputMaybe<Scalars['String']['input']>;
