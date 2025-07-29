@@ -1,1 +1,1 @@
-export const DEFAULT_WORKSPACE_LIMIT = 500;
+export const DEFAULT_WORKSPACE_LIMIT = 5000;

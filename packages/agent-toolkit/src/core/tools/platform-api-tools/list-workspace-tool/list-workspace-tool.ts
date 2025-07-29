@@ -7,7 +7,7 @@ import { DEFAULT_WORKSPACE_LIMIT } from './list-workspace.consts';
 export const listWorkspaceToolSchema = {};
 
 export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToolSchema> {
-  name = 'list_workspace';
+  name = 'list_workspaces';
   type = ToolType.READ;
   annotations = createMondayApiAnnotations({
     title: 'List Workspaces',
