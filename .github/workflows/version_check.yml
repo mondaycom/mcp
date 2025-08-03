@@ -1,0 +1,45 @@
+name: Version Check
+
+on:
+  pull_request:
+    types:
+      - labeled
+
+jobs:
+  version-preview:
+    if: github.event.action == 'labeled'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Preview version bump
+        id: preview
+        uses: haya14busa/action-bumpr@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          dry_run: true
+
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = context.payload.pull_request.labels.map(label => label.name);
+            const versionLabels = labels.filter(label => label.startsWith('bump:'));
+
+            if (versionLabels.length > 0) {
+              const versionType = versionLabels[0].replace('bump:', '');
+              const currentVersion = '${{ steps.preview.outputs.current_version }}' || 'current';
+              const nextVersion = '${{ steps.preview.outputs.next_version }}' || 'unknown';
+              
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `🏷️ **Version Bump Preview**\n\n**Type:** ${versionType}\n**Current:** ${currentVersion}\n**Next:** ${nextVersion}\n\n✅ This is just a preview! The actual version bump will happen when this PR is merged.`
+              });
+            }
