@@ -329,14 +329,14 @@ Before using these tools, make sure you have:
 2. NPM v5.2.0 or higher installed
 3. A [monday.com API token](https://developer.monday.com/api-reference/docs/authentication)
 
-## 🛠️ Working Locally
+## 🛠️ How to develop in the repo
 
-To work with this repository locally:
+To develop for the repo:
 
 1. Clone the repository
 2. Install dependencies: `yarn install`
 3. Build the project: `yarn build`
-4. Copy the path of the dist/index.js file in the mcp package.
+4. Copy the path of the dist/index.js file in the of the `monday-api-mcp` package.
 5. Change the config to work locally
 
 ```bash
