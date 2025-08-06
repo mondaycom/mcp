@@ -286,5 +286,46 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
       expect(result).toContain('Development Team');
       expect(result).toContain('Management Team');
     });
+
+    it('should handle enterprise-safe scenarios with limits', () => {
+      const mockData: UsersAndTeamsData = {
+        users: [
+          {
+            id: '1',
+            name: 'Enterprise User',
+            title: 'Manager',
+            email: 'enterprise@example.com',
+            enabled: true,
+            is_admin: true,
+            is_guest: false,
+            is_pending: false,
+            is_verified: true,
+            is_view_only: false,
+            join_date: '2023-01-01',
+            last_activity: '2023-12-01',
+            location: 'HQ',
+            mobile_phone: null,
+            phone: null,
+            photo_thumb: null,
+            time_zone_identifier: 'UTC',
+            utc_hours_diff: 0,
+            teams: [
+              {
+                id: '1',
+                name: 'Enterprise Team',
+                is_guest: false,
+              },
+            ],
+          },
+        ],
+        teams: null,
+      };
+
+      const result = formatUsersAndTeams(mockData);
+
+      expect(result).toContain('Enterprise User');
+      expect(result).toContain('Admin: true');
+      expect(result).toContain('Enterprise Team');
+    });
   });
 });

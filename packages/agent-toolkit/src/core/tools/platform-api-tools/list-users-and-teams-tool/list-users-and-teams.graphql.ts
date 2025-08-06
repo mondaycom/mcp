@@ -2,8 +2,8 @@ import { gql } from 'graphql-request';
 
 // Query for fetching users with their team memberships
 export const listUsersWithTeams = gql`
-  query listUsersWithTeams($userIds: [ID!]) {
-    users(ids: $userIds) {
+  query listUsersWithTeams($userIds: [ID!], $limit: Int) {
+    users(ids: $userIds, limit: $limit) {
       # Basic User Information
       id
       name
@@ -84,8 +84,8 @@ export const listTeamsWithMembers = gql`
 
 // Query for fetching both users and teams (when both IDs are provided or no IDs)
 export const listUsersAndTeams = gql`
-  query listUsersAndTeams($userIds: [ID!], $teamIds: [ID!]) {
-    users(ids: $userIds) {
+  query listUsersAndTeams($userIds: [ID!], $teamIds: [ID!], $userLimit: Int, $teamLimit: Int) {
+    users(ids: $userIds, limit: $userLimit) {
       # Basic User Information
       id
       name

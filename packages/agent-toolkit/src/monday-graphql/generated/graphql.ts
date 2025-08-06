@@ -6257,6 +6257,7 @@ export type GetBoardInfoQuery = { __typename?: 'Query', boards?: Array<{ __typen
 
 export type ListUsersWithTeamsQueryVariables = Exact<{
   userIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
 }>;
 
 
@@ -6272,6 +6273,8 @@ export type ListTeamsWithMembersQuery = { __typename?: 'Query', teams?: Array<{ 
 export type ListUsersAndTeamsQueryVariables = Exact<{
   userIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
   teamIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+  userLimit?: InputMaybe<Scalars['Int']['input']>;
+  teamLimit?: InputMaybe<Scalars['Int']['input']>;
 }>;
 
 
