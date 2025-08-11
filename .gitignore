@@ -139,3 +139,7 @@ dist
 .turbo
 .idea/
 .qodo
+
+#claude
+.claude
+claude.md

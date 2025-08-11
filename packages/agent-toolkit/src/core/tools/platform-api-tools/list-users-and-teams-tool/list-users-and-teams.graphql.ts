@@ -10,18 +10,18 @@ export const listUsersWithTeams = gql`
       title
       email
       enabled
-      
+
       # User Status & Permissions
       is_admin
       is_guest
       is_pending
       is_verified
       is_view_only
-      
+      x
       # Timestamps
       join_date
       last_activity
-      
+
       # Contact Information
       location
       mobile_phone
@@ -29,7 +29,7 @@ export const listUsersWithTeams = gql`
       photo_thumb
       time_zone_identifier
       utc_hours_diff
-      
+
       # Team Memberships
       teams {
         id
