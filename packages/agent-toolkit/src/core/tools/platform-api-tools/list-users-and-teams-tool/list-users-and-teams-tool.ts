@@ -51,6 +51,11 @@ export const listUsersAndTeamsToolSchema = {
     .max(MAX_FETCH_LIMIT)
     .optional()
     .describe(`Maximum number of teams to return (max ${MAX_FETCH_LIMIT}). Only applies when no teamIds are specified`),
+  includeTeams: z
+    .boolean()
+    .optional()
+    .describe('Include teams in the response along with users. Default is false (users only)'),
+  teamsOnly: z.boolean().optional().describe('Fetch only teams (no users). When true, only teams will be returned'),
 };
 
 export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAndTeamsToolSchema> {
@@ -64,7 +69,7 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
   });
 
   getDescription(): string {
-    return `Get users and teams with enterprise-safe limits. Supports filtering by user/team IDs with automatic query optimization. Max limits: ${MAX_USER_IDS} user IDs, ${MAX_TEAM_IDS} team IDs, ${MAX_FETCH_LIMIT} users, ${MAX_FETCH_LIMIT} teams. When filtering by specific IDs, returns detailed information including memberships.`;
+    return `Get users with enterprise-safe limits. By default returns only users. Use includeTeams=true to also fetch teams, or teamsOnly=true to fetch only teams. Supports filtering by user/team IDs with automatic query optimization. Max limits: ${MAX_USER_IDS} user IDs, ${MAX_TEAM_IDS} team IDs, ${MAX_FETCH_LIMIT} users, ${MAX_FETCH_LIMIT} teams. When filtering by specific IDs, returns detailed information including memberships.`;
   }
 
   getInputSchema(): typeof listUsersAndTeamsToolSchema {
@@ -76,6 +81,15 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
   ): Promise<ToolOutputType<never>> {
     const hasUserIds = input.userIds && input.userIds.length > 0;
     const hasTeamIds = input.teamIds && input.teamIds.length > 0;
+    const includeTeams = input.includeTeams || false;
+    const teamsOnly = input.teamsOnly || false;
+
+    // Validate conflicting flags
+    if (teamsOnly && includeTeams) {
+      return {
+        content: 'Error: Cannot specify both teamsOnly and includeTeams flags. Choose one.',
+      };
+    }
 
     // Calculate safe limits
     const userLimit = input.userLimit || DEFAULT_USER_LIMIT;
@@ -100,26 +114,33 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
 
     let res: ListUsersAndTeamsQuery | ListUsersWithTeamsQuery | ListTeamsWithMembersQuery;
 
-    if (hasUserIds && !hasTeamIds) {
-      // Only user IDs provided - fetch users with their teams
+    // Determine what to fetch based on flags and IDs
+    if (teamsOnly || (!hasUserIds && hasTeamIds && !includeTeams)) {
+      // Fetch only teams
+      const variables: ListTeamsWithMembersQueryVariables = {
+        teamIds: input.teamIds,
+      };
+      res = await this.mondayApi.request<ListTeamsWithMembersQuery>(listTeamsWithMembers, variables);
+    } else if (hasUserIds && !hasTeamIds && !includeTeams) {
+      // Fetch specific users only (with their team memberships)
       const variables: ListUsersWithTeamsQueryVariables = {
         userIds: input.userIds,
         limit: safeUserLimit,
       };
       res = await this.mondayApi.request<ListUsersWithTeamsQuery>(listUsersWithTeams, variables);
-    } else if (!hasUserIds && hasTeamIds) {
-      // Only team IDs provided - fetch teams with their members
-      const variables: ListTeamsWithMembersQueryVariables = {
-        teamIds: input.teamIds,
+    } else if (!hasUserIds && !hasTeamIds && !includeTeams && !teamsOnly) {
+      // Default: fetch users only
+      const variables: ListUsersWithTeamsQueryVariables = {
+        userIds: undefined,
+        limit: safeUserLimit,
       };
-      res = await this.mondayApi.request<ListTeamsWithMembersQuery>(listTeamsWithMembers, variables);
+      res = await this.mondayApi.request<ListUsersWithTeamsQuery>(listUsersWithTeams, variables);
     } else {
-      // Both provided or neither provided - use the combined query
+      // Fetch both users and teams (includeTeams=true or both IDs provided)
       const variables: ListUsersAndTeamsQueryVariables = {
         userIds: input.userIds,
         teamIds: input.teamIds,
         userLimit: safeUserLimit,
-        teamLimit: safeTeamLimit,
       };
       res = await this.mondayApi.request<ListUsersAndTeamsQuery>(listUsersAndTeams, variables);
     }

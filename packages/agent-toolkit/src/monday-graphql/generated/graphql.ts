@@ -6274,7 +6274,6 @@ export type ListUsersAndTeamsQueryVariables = Exact<{
   userIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
   teamIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
   userLimit?: InputMaybe<Scalars['Int']['input']>;
-  teamLimit?: InputMaybe<Scalars['Int']['input']>;
 }>;
 
 

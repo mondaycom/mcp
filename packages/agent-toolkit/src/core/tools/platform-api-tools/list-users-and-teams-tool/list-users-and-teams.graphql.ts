@@ -17,7 +17,7 @@ export const listUsersWithTeams = gql`
       is_pending
       is_verified
       is_view_only
-      x
+
       # Timestamps
       join_date
       last_activity
@@ -50,14 +50,14 @@ export const listTeamsWithMembers = gql`
       name
       is_guest
       picture_url
-      
+
       # Team Owners
       owners {
         id
         name
         email
       }
-      
+
       # Team Members
       users {
         id
@@ -84,7 +84,7 @@ export const listTeamsWithMembers = gql`
 
 // Query for fetching both users and teams (when both IDs are provided or no IDs)
 export const listUsersAndTeams = gql`
-  query listUsersAndTeams($userIds: [ID!], $teamIds: [ID!], $userLimit: Int, $teamLimit: Int) {
+  query listUsersAndTeams($userIds: [ID!], $teamIds: [ID!], $userLimit: Int) {
     users(ids: $userIds, limit: $userLimit) {
       # Basic User Information
       id
@@ -92,18 +92,18 @@ export const listUsersAndTeams = gql`
       title
       email
       enabled
-      
+
       # User Status & Permissions
       is_admin
       is_guest
       is_pending
       is_verified
       is_view_only
-      
+
       # Timestamps
       join_date
       last_activity
-      
+
       # Contact Information
       location
       mobile_phone
@@ -111,7 +111,7 @@ export const listUsersAndTeams = gql`
       photo_thumb
       time_zone_identifier
       utc_hours_diff
-      
+
       # Team Memberships
       teams {
         id
@@ -119,21 +119,21 @@ export const listUsersAndTeams = gql`
         is_guest
       }
     }
-    
+
     teams(ids: $teamIds) {
       # Basic Team Information
       id
       name
       is_guest
       picture_url
-      
+
       # Team Owners
       owners {
         id
         name
         email
       }
-      
+
       # Team Members
       users {
         id

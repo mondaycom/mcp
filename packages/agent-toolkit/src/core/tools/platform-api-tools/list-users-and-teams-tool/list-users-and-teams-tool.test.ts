@@ -327,5 +327,90 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
       expect(result).toContain('Admin: true');
       expect(result).toContain('Enterprise Team');
     });
+
+    it('should handle users-only response (default behavior)', () => {
+      const mockData: UsersAndTeamsData = {
+        users: [
+          {
+            id: '1',
+            name: 'Default User',
+            title: 'Developer',
+            email: 'user@example.com',
+            enabled: true,
+            is_admin: false,
+            is_guest: false,
+            is_pending: false,
+            is_verified: true,
+            is_view_only: false,
+            join_date: '2023-01-01',
+            last_activity: '2023-12-01',
+            location: 'Office',
+            mobile_phone: null,
+            phone: null,
+            photo_thumb: null,
+            time_zone_identifier: 'America/New_York',
+            utc_hours_diff: -5,
+            teams: [
+              {
+                id: '1',
+                name: 'Dev Team',
+                is_guest: false,
+              },
+            ],
+          },
+        ],
+      };
+
+      const result = formatUsersAndTeams(mockData);
+
+      expect(result).toContain('Users:');
+      expect(result).toContain('Default User');
+      expect(result).toContain('Developer');
+      expect(result).toContain('user@example.com');
+      expect(result).toContain('Teams:');
+      expect(result).toContain('Dev Team');
+      // Should not contain a separate Teams section
+      expect(result.split('Teams:').length).toBe(2); // Only one "Teams:" for user's teams
+    });
+
+    it('should handle teams-only response', () => {
+      const mockData: UsersAndTeamsData = {
+        teams: [
+          {
+            id: '1',
+            name: 'Standalone Team',
+            is_guest: false,
+            picture_url: 'https://example.com/team.jpg',
+            owners: [
+              {
+                id: '1',
+                name: 'Team Owner',
+                email: 'owner@example.com',
+              },
+            ],
+            users: [
+              {
+                id: '2',
+                name: 'Team Member',
+                email: 'member@example.com',
+                title: 'Developer',
+                is_admin: false,
+                is_guest: false,
+              },
+            ],
+          },
+        ],
+      };
+
+      const result = formatUsersAndTeams(mockData);
+
+      expect(result).toContain('Teams:');
+      expect(result).toContain('Standalone Team');
+      expect(result).toContain('Owners:');
+      expect(result).toContain('Team Owner');
+      expect(result).toContain('Members:');
+      expect(result).toContain('Team Member');
+      expect(result).not.toContain('Users:'); // No separate Users section
+    });
   });
 });
