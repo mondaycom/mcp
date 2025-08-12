@@ -1,23 +1,29 @@
 import { z } from 'zod';
-import { 
-  ListUsersAndTeamsQuery, 
+import {
+  ListUsersAndTeamsQuery,
   ListUsersAndTeamsQueryVariables,
   ListUsersWithTeamsQuery,
   ListUsersWithTeamsQueryVariables,
   ListTeamsWithMembersQuery,
-  ListTeamsWithMembersQueryVariables
+  ListTeamsWithMembersQueryVariables,
+  ListUsersOnlyQuery,
+  ListUsersOnlyQueryVariables,
 } from '../../../../monday-graphql/generated/graphql';
-import { listUsersAndTeams, listUsersWithTeams, listTeamsWithMembers } from './list-users-and-teams.graphql';
+import {
+  listUsersAndTeams,
+  listUsersWithTeams,
+  listTeamsWithMembers,
+  listUsersOnly,
+} from './list-users-and-teams.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { formatUsersAndTeams } from './helpers';
 
 // Constants for safe query limits
-const MAX_FETCH_LIMIT = 500;
+const MAX_USER_LIMIT = 500;
 const MAX_USER_IDS = 500; // Maximum user IDs allowed in a single query
 const MAX_TEAM_IDS = 500; // Maximum team IDs allowed in a single query
 const DEFAULT_USER_LIMIT = 500; // Default limit when no IDs provided
-const DEFAULT_TEAM_LIMIT = 200; // Default limit when no IDs provided
 
 export const listUsersAndTeamsToolSchema = {
   userIds: z
@@ -42,15 +48,9 @@ export const listUsersAndTeamsToolSchema = {
   userLimit: z
     .number()
     .min(1)
-    .max(MAX_FETCH_LIMIT)
+    .max(MAX_USER_LIMIT)
     .optional()
-    .describe(`Maximum number of users to return (max ${MAX_FETCH_LIMIT}). Only applies when no userIds are specified`),
-  teamLimit: z
-    .number()
-    .min(1)
-    .max(MAX_FETCH_LIMIT)
-    .optional()
-    .describe(`Maximum number of teams to return (max ${MAX_FETCH_LIMIT}). Only applies when no teamIds are specified`),
+    .describe(`Maximum number of users to return (max ${MAX_USER_LIMIT}). Only applies when no userIds are specified`),
   includeTeams: z
     .boolean()
     .optional()
@@ -69,7 +69,7 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
   });
 
   getDescription(): string {
-    return `Get users with enterprise-safe limits. By default returns only users. Use includeTeams=true to also fetch teams, or teamsOnly=true to fetch only teams. Supports filtering by user/team IDs with automatic query optimization. Max limits: ${MAX_USER_IDS} user IDs, ${MAX_TEAM_IDS} team IDs, ${MAX_FETCH_LIMIT} users, ${MAX_FETCH_LIMIT} teams. When filtering by specific IDs, returns detailed information including memberships.`;
+    return `Get users with enterprise-safe limits. By default returns only users. Use includeTeams=true to also fetch teams, or teamsOnly=true to fetch only teams. Supports filtering by user/team IDs with automatic query optimization. Max limits: ${MAX_USER_IDS} user IDs, ${MAX_TEAM_IDS} team IDs, ${MAX_USER_LIMIT} users. When filtering by specific IDs, returns detailed information including memberships.`;
   }
 
   getInputSchema(): typeof listUsersAndTeamsToolSchema {
@@ -91,28 +91,24 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
       };
     }
 
-    // Calculate safe limits
+    // Calculate safe user limit
     const userLimit = input.userLimit || DEFAULT_USER_LIMIT;
-    const teamLimit = input.teamLimit || DEFAULT_TEAM_LIMIT;
-
-    // Validate limits don't exceed maximums
-    const safeUserLimit = Math.min(userLimit, MAX_FETCH_LIMIT);
-    const safeTeamLimit = Math.min(teamLimit, MAX_FETCH_LIMIT);
+    const safeUserLimit = Math.min(userLimit, MAX_USER_LIMIT);
 
     // Early validation for enterprise safety
     if (hasUserIds && input.userIds!.length > MAX_USER_IDS) {
       return {
-        content: `Error: Too many user IDs provided. Maximum allowed: ${MAX_USER_IDS}, provided: ${input.userIds!.length}. Please reduce the number of user IDs or use pagination.`,
+        content: `Error: Too many user IDs provided. Maximum allowed: ${MAX_USER_IDS}, provided: ${input.userIds!.length}. Please reduce the number of user IDs, break up the ids and batch them in multiple calls`,
       };
     }
 
     if (hasTeamIds && input.teamIds!.length > MAX_TEAM_IDS) {
       return {
-        content: `Error: Too many team IDs provided. Maximum allowed: ${MAX_TEAM_IDS}, provided: ${input.teamIds!.length}. Please reduce the number of team IDs or use pagination.`,
+        content: `Error: Too many team IDs provided. Maximum allowed: ${MAX_TEAM_IDS}, provided: ${input.teamIds!.length}. Please reduce the number of team IDs, break up the ids and batch them in multiple calls`,
       };
     }
 
-    let res: ListUsersAndTeamsQuery | ListUsersWithTeamsQuery | ListTeamsWithMembersQuery;
+    let res: ListUsersAndTeamsQuery | ListUsersWithTeamsQuery | ListTeamsWithMembersQuery | ListUsersOnlyQuery;
 
     // Determine what to fetch based on flags and IDs
     if (teamsOnly || (!hasUserIds && hasTeamIds && !includeTeams)) {
@@ -121,22 +117,25 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
         teamIds: input.teamIds,
       };
       res = await this.mondayApi.request<ListTeamsWithMembersQuery>(listTeamsWithMembers, variables);
-    } else if (hasUserIds && !hasTeamIds && !includeTeams) {
-      // Fetch specific users only (with their team memberships)
-      const variables: ListUsersWithTeamsQueryVariables = {
-        userIds: input.userIds,
-        limit: safeUserLimit,
-      };
-      res = await this.mondayApi.request<ListUsersWithTeamsQuery>(listUsersWithTeams, variables);
-    } else if (!hasUserIds && !hasTeamIds && !includeTeams && !teamsOnly) {
-      // Default: fetch users only
-      const variables: ListUsersWithTeamsQueryVariables = {
-        userIds: undefined,
-        limit: safeUserLimit,
-      };
-      res = await this.mondayApi.request<ListUsersWithTeamsQuery>(listUsersWithTeams, variables);
+    } else if (!includeTeams) {
+      // Fetch users only (default behavior) - no separate teams section in response
+      if (hasUserIds) {
+        // Specific users with their team memberships (but no separate teams section)
+        const variables: ListUsersWithTeamsQueryVariables = {
+          userIds: input.userIds,
+          limit: safeUserLimit,
+        };
+        res = await this.mondayApi.request<ListUsersWithTeamsQuery>(listUsersWithTeams, variables);
+      } else {
+        // All users (but no separate teams section)
+        const variables: ListUsersOnlyQueryVariables = {
+          userIds: undefined,
+          userLimit: safeUserLimit,
+        };
+        res = await this.mondayApi.request<ListUsersOnlyQuery>(listUsersOnly, variables);
+      }
     } else {
-      // Fetch both users and teams (includeTeams=true or both IDs provided)
+      // includeTeams=true: Fetch both users and teams sections
       const variables: ListUsersAndTeamsQueryVariables = {
         userIds: input.userIds,
         teamIds: input.teamIds,

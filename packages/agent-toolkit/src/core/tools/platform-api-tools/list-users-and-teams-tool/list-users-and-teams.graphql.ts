@@ -82,7 +82,48 @@ export const listTeamsWithMembers = gql`
   }
 `;
 
-// Query for fetching both users and teams (when both IDs are provided or no IDs)
+// Query for fetching users only (when we don't want teams in response)
+export const listUsersOnly = gql`
+  query listUsersOnly($userIds: [ID!], $userLimit: Int) {
+    users(ids: $userIds, limit: $userLimit) {
+      # Basic User Information
+      id
+      name
+      title
+      email
+      enabled
+
+      # User Status & Permissions
+      is_admin
+      is_guest
+      is_pending
+      is_verified
+      is_view_only
+
+      # Timestamps
+      join_date
+      last_activity
+
+      # Contact Information
+      location
+      mobile_phone
+      phone
+      photo_thumb
+      time_zone_identifier
+      utc_hours_diff
+
+      # Team Memberships
+      teams {
+        id
+        name
+        is_guest
+        picture_url
+      }
+    }
+  }
+`;
+
+// Query for fetching both users and teams (when both are explicitly requested)
 export const listUsersAndTeams = gql`
   query listUsersAndTeams($userIds: [ID!], $teamIds: [ID!], $userLimit: Int) {
     users(ids: $userIds, limit: $userLimit) {
