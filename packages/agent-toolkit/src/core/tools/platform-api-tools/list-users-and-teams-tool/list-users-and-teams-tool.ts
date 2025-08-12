@@ -18,12 +18,7 @@ import {
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { formatUsersAndTeams } from './helpers';
-
-// Constants for safe query limits
-const MAX_USER_LIMIT = 500;
-const MAX_USER_IDS = 500; // Maximum user IDs allowed in a single query
-const MAX_TEAM_IDS = 500; // Maximum team IDs allowed in a single query
-const DEFAULT_USER_LIMIT = 500; // Default limit when no IDs provided
+import { MAX_USER_LIMIT, MAX_USER_IDS, MAX_TEAM_IDS, DEFAULT_USER_LIMIT } from './constants';
 
 export const listUsersAndTeamsToolSchema = {
   userIds: z
@@ -69,7 +64,11 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
   });
 
   getDescription(): string {
-    return `Get users with enterprise-safe limits. By default returns only users. Use includeTeams=true to also fetch teams, or teamsOnly=true to fetch only teams. Supports filtering by user/team IDs with automatic query optimization. Max limits: ${MAX_USER_IDS} user IDs, ${MAX_TEAM_IDS} team IDs, ${MAX_USER_LIMIT} users. When filtering by specific IDs, returns detailed information including memberships.`;
+    return `Get users or teams data, either by id or by fetching all users from the account. 
+    By default returns only users. Use includeTeams=true to also fetch teams, or teamsOnly=true to fetch only teams. 
+    Supports filtering by user/team IDs with automatic query optimization. 
+    Max limits: ${MAX_USER_IDS} user IDs, ${MAX_TEAM_IDS} team IDs, ${MAX_USER_LIMIT} users. 
+    When filtering by specific IDs, returns detailed information including memberships.`;
   }
 
   getInputSchema(): typeof listUsersAndTeamsToolSchema {

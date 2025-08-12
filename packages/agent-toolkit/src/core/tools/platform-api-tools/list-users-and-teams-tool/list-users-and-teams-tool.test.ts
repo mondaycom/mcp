@@ -7,27 +7,27 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
         users: [
           {
             id: '1',
-            name: 'John Doe',
-            title: 'Developer',
-            email: 'john@example.com',
+            name: 'Luke Skywalker',
+            title: 'Jedi Knight',
+            email: 'luke@rebelalliance.com',
             enabled: true,
             is_admin: false,
             is_guest: false,
             is_pending: false,
             is_verified: true,
             is_view_only: false,
-            join_date: '2023-01-01',
-            last_activity: '2023-12-01',
-            location: 'New York',
+            join_date: '1977-05-25',
+            last_activity: '1983-05-25',
+            location: 'Tatooine',
             mobile_phone: '+1234567890',
             phone: '+1234567890',
-            photo_thumb: 'https://example.com/photo.jpg',
-            time_zone_identifier: 'America/New_York',
+            photo_thumb: 'https://starwars.com/luke.jpg',
+            time_zone_identifier: 'Tatooine/Binary_Sunset',
             utc_hours_diff: -5,
             teams: [
               {
                 id: '1',
-                name: 'Development Team',
+                name: 'Rebel Alliance',
                 is_guest: false,
               },
             ],
@@ -36,22 +36,22 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
         teams: [
           {
             id: '1',
-            name: 'Development Team',
+            name: 'Rebel Alliance',
             is_guest: false,
-            picture_url: 'https://example.com/team.jpg',
+            picture_url: 'https://starwars.com/rebellion.jpg',
             owners: [
               {
                 id: '2',
-                name: 'Jane Smith',
-                email: 'jane@example.com',
+                name: 'Princess Leia',
+                email: 'leia@rebelalliance.com',
               },
             ],
             users: [
               {
                 id: '1',
-                name: 'John Doe',
-                email: 'john@example.com',
-                title: 'Developer',
+                name: 'Luke Skywalker',
+                email: 'luke@rebelalliance.com',
+                title: 'Jedi Knight',
                 is_admin: false,
                 is_guest: false,
               },
@@ -65,32 +65,34 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
       // Test users section
       expect(result).toContain('Users:');
       expect(result).toContain('ID: 1');
-      expect(result).toContain('Name: John Doe');
-      expect(result).toContain('Email: john@example.com');
-      expect(result).toContain('Title: Developer');
+      expect(result).toContain('Name: Luke Skywalker');
+      expect(result).toContain('Email: luke@rebelalliance.com');
+      expect(result).toContain('Title: Jedi Knight');
       expect(result).toContain('Enabled: true');
       expect(result).toContain('Admin: false');
       expect(result).toContain('Guest: false');
       expect(result).toContain('Pending: false');
       expect(result).toContain('Verified: true');
       expect(result).toContain('View Only: false');
-      expect(result).toContain('Join Date: 2023-01-01');
-      expect(result).toContain('Last Activity: 2023-12-01');
-      expect(result).toContain('Location: New York');
+      expect(result).toContain('Join Date: 1977-05-25');
+      expect(result).toContain('Last Activity: 1983-05-25');
+      expect(result).toContain('Location: Tatooine');
       expect(result).toContain('Mobile Phone: +1234567890');
       expect(result).toContain('Phone: +1234567890');
-      expect(result).toContain('Timezone: America/New_York');
+      expect(result).toContain('Timezone: Tatooine/Binary_Sunset');
       expect(result).toContain('UTC Hours Diff: -5');
       expect(result).toContain('Teams:');
-      expect(result).toContain('- ID: 1, Name: Development Team, Guest Team: false');
+      expect(result).toContain('- ID: 1, Name: Rebel Alliance, Guest Team: false');
 
       // Test teams section
       expect(result).toContain('Teams:');
-      expect(result).toContain('Picture URL: https://example.com/team.jpg');
+      expect(result).toContain('Picture URL: https://starwars.com/rebellion.jpg');
       expect(result).toContain('Owners:');
-      expect(result).toContain('- ID: 2, Name: Jane Smith, Email: jane@example.com');
+      expect(result).toContain('- ID: 2, Name: Princess Leia, Email: leia@rebelalliance.com');
       expect(result).toContain('Members:');
-      expect(result).toContain('- ID: 1, Name: John Doe, Email: john@example.com, Title: Developer, Admin: false, Guest: false');
+      expect(result).toContain(
+        '- ID: 1, Name: Luke Skywalker, Email: luke@rebelalliance.com, Title: Jedi Knight, Admin: false, Guest: false',
+      );
     });
 
     it('should handle users without teams', () => {
@@ -98,22 +100,22 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
         users: [
           {
             id: '1',
-            name: 'John Doe',
-            title: 'Developer',
-            email: 'john@example.com',
+            name: 'Obi-Wan Kenobi',
+            title: 'Hermit',
+            email: 'obiwan@exile.com',
             enabled: true,
             is_admin: false,
             is_guest: false,
             is_pending: false,
             is_verified: true,
             is_view_only: false,
-            join_date: '2023-01-01',
-            last_activity: '2023-12-01',
-            location: 'New York',
-            mobile_phone: '+1234567890',
-            phone: '+1234567890',
-            photo_thumb: 'https://example.com/photo.jpg',
-            time_zone_identifier: 'America/New_York',
+            join_date: '1977-05-25',
+            last_activity: '1983-05-25',
+            location: 'Tatooine Desert',
+            mobile_phone: '+9876543210',
+            phone: '+9876543210',
+            photo_thumb: 'https://starwars.com/obiwan.jpg',
+            time_zone_identifier: 'Tatooine/Binary_Sunset',
             utc_hours_diff: -5,
             teams: null,
           },
@@ -123,7 +125,7 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
 
       const result = formatUsersAndTeams(mockData);
 
-      expect(result).toContain('John Doe');
+      expect(result).toContain('Obi-Wan Kenobi');
       expect(result).not.toContain('Teams:');
     });
 
@@ -133,7 +135,7 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
         teams: [
           {
             id: '1',
-            name: 'Empty Team',
+            name: 'Abandoned Jedi Temple',
             is_guest: false,
             picture_url: null,
             owners: [],
@@ -145,7 +147,7 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
       const result = formatUsersAndTeams(mockData);
 
       expect(result).toContain('Teams:');
-      expect(result).toContain('Empty Team');
+      expect(result).toContain('Abandoned Jedi Temple');
       expect(result).toContain('Picture URL: N/A');
       expect(result).not.toContain('Owners:');
       expect(result).not.toContain('Members:');
@@ -156,9 +158,9 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
         users: [
           {
             id: '1',
-            name: 'John Doe',
+            name: 'Han Solo',
             title: null,
-            email: 'john@example.com',
+            email: 'han@smuggler.com',
             enabled: true,
             is_admin: null,
             is_guest: null,
@@ -181,7 +183,7 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
 
       const result = formatUsersAndTeams(mockData);
 
-      expect(result).toContain('John Doe');
+      expect(result).toContain('Han Solo');
       expect(result).toContain('Title: N/A');
       expect(result).toContain('Admin: false');
       expect(result).toContain('Join Date: N/A');
@@ -218,9 +220,9 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
         users: [
           {
             id: '1',
-            name: 'John Doe',
-            title: 'Developer',
-            email: 'john@example.com',
+            name: 'Anakin Skywalker',
+            title: 'Padawan',
+            email: 'anakin@jediorder.com',
             enabled: true,
             is_admin: false,
             is_guest: false,
@@ -239,9 +241,9 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
           },
           {
             id: '2',
-            name: 'Jane Smith',
-            title: 'Manager',
-            email: 'jane@example.com',
+            name: 'Yoda',
+            title: 'Grand Master',
+            email: 'yoda@jedicouncil.com',
             enabled: true,
             is_admin: true,
             is_guest: false,
@@ -262,7 +264,7 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
         teams: [
           {
             id: '1',
-            name: 'Development Team',
+            name: 'Jedi Order',
             is_guest: false,
             picture_url: null,
             owners: [],
@@ -270,7 +272,7 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
           },
           {
             id: '2',
-            name: 'Management Team',
+            name: 'Jedi Council',
             is_guest: false,
             picture_url: null,
             owners: [],
@@ -281,10 +283,10 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
 
       const result = formatUsersAndTeams(mockData);
 
-      expect(result).toContain('John Doe');
-      expect(result).toContain('Jane Smith');
-      expect(result).toContain('Development Team');
-      expect(result).toContain('Management Team');
+      expect(result).toContain('Anakin Skywalker');
+      expect(result).toContain('Yoda');
+      expect(result).toContain('Jedi Order');
+      expect(result).toContain('Jedi Council');
     });
 
     it('should handle enterprise-safe scenarios with limits', () => {
@@ -292,27 +294,27 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
         users: [
           {
             id: '1',
-            name: 'Enterprise User',
-            title: 'Manager',
-            email: 'enterprise@example.com',
+            name: 'Emperor Palpatine',
+            title: 'Sith Lord',
+            email: 'emperor@empire.gov',
             enabled: true,
             is_admin: true,
             is_guest: false,
             is_pending: false,
             is_verified: true,
             is_view_only: false,
-            join_date: '2023-01-01',
-            last_activity: '2023-12-01',
-            location: 'HQ',
+            join_date: '1977-05-25',
+            last_activity: '1983-05-25',
+            location: 'Death Star',
             mobile_phone: null,
             phone: null,
             photo_thumb: null,
-            time_zone_identifier: 'UTC',
+            time_zone_identifier: 'Imperial/Standard_Time',
             utc_hours_diff: 0,
             teams: [
               {
                 id: '1',
-                name: 'Enterprise Team',
+                name: 'Galactic Empire',
                 is_guest: false,
               },
             ],
@@ -323,9 +325,9 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
 
       const result = formatUsersAndTeams(mockData);
 
-      expect(result).toContain('Enterprise User');
+      expect(result).toContain('Emperor Palpatine');
       expect(result).toContain('Admin: true');
-      expect(result).toContain('Enterprise Team');
+      expect(result).toContain('Galactic Empire');
     });
 
     it('should handle users-only response (default behavior)', () => {
@@ -333,27 +335,27 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
         users: [
           {
             id: '1',
-            name: 'Default User',
-            title: 'Developer',
-            email: 'user@example.com',
+            name: 'C-3PO',
+            title: 'Protocol Droid',
+            email: 'c3po@droids.com',
             enabled: true,
             is_admin: false,
             is_guest: false,
             is_pending: false,
             is_verified: true,
             is_view_only: false,
-            join_date: '2023-01-01',
-            last_activity: '2023-12-01',
-            location: 'Office',
+            join_date: '1977-05-25',
+            last_activity: '1983-05-25',
+            location: 'Echo Base',
             mobile_phone: null,
             phone: null,
             photo_thumb: null,
-            time_zone_identifier: 'America/New_York',
+            time_zone_identifier: 'Hoth/Ice_Planet',
             utc_hours_diff: -5,
             teams: [
               {
                 id: '1',
-                name: 'Dev Team',
+                name: 'Droids Division',
                 is_guest: false,
               },
             ],
@@ -364,11 +366,11 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
       const result = formatUsersAndTeams(mockData);
 
       expect(result).toContain('Users:');
-      expect(result).toContain('Default User');
-      expect(result).toContain('Developer');
-      expect(result).toContain('user@example.com');
+      expect(result).toContain('C-3PO');
+      expect(result).toContain('Protocol Droid');
+      expect(result).toContain('c3po@droids.com');
       expect(result).toContain('Teams:');
-      expect(result).toContain('Dev Team');
+      expect(result).toContain('Droids Division');
       // Should not contain a separate Teams section
       expect(result.split('Teams:').length).toBe(2); // Only one "Teams:" for user's teams
     });
@@ -378,22 +380,22 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
         teams: [
           {
             id: '1',
-            name: 'Standalone Team',
+            name: 'Rogue Squadron',
             is_guest: false,
-            picture_url: 'https://example.com/team.jpg',
+            picture_url: 'https://starwars.com/rogue-squadron.jpg',
             owners: [
               {
                 id: '1',
-                name: 'Team Owner',
-                email: 'owner@example.com',
+                name: 'Wedge Antilles',
+                email: 'wedge@rebelalliance.com',
               },
             ],
             users: [
               {
                 id: '2',
-                name: 'Team Member',
-                email: 'member@example.com',
-                title: 'Developer',
+                name: 'Biggs Darklighter',
+                email: 'biggs@rebelalliance.com',
+                title: 'X-wing Pilot',
                 is_admin: false,
                 is_guest: false,
               },
@@ -405,11 +407,11 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
       const result = formatUsersAndTeams(mockData);
 
       expect(result).toContain('Teams:');
-      expect(result).toContain('Standalone Team');
+      expect(result).toContain('Rogue Squadron');
       expect(result).toContain('Owners:');
-      expect(result).toContain('Team Owner');
+      expect(result).toContain('Wedge Antilles');
       expect(result).toContain('Members:');
-      expect(result).toContain('Team Member');
+      expect(result).toContain('Biggs Darklighter');
       expect(result).not.toContain('Users:'); // No separate Users section
     });
   });
