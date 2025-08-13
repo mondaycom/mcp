@@ -16,7 +16,7 @@ export const createColumnToolSchema = {
     .any()
     .optional()
     .describe(
-      "Column-specific configuration settings. For API version 2025-10+: Use the get_column_type_info tool first to get the JSON schema for the specific column type, then structure this field according to that schema as an object. For older API versions: Provide default values as an array of strings (relevant only for 'status' or 'dropdown' column types).",
+      'Column-specific configuration settings. Use the get_column_type_info tool to fetch the JSON schema for the given column type, then structure this field accordingly as an object.',
     ),
 };
 
@@ -52,41 +52,13 @@ export class CreateColumnTool extends BaseMondayApiTool<CreateColumnToolInput> {
   protected async executeInternal(input: ToolInputType<CreateColumnToolInput>): Promise<ToolOutputType<never>> {
     const boardId = this.context?.boardId ?? (input as ToolInputType<typeof createColumnInBoardToolSchema>).boardId;
 
-    const apiVersion = this.mondayApi.apiVersion;
-    const useNewApiFormat = (apiVersion && apiVersion >= '2025-10') || apiVersion === 'dev';
-
-    let variables: CreateColumnMutationVariables;
-
-    if (useNewApiFormat) {
-      variables = {
-        boardId: boardId.toString(),
-        columnType: input.columnType,
-        columnTitle: input.columnTitle,
-        columnDescription: input.columnDescription,
-        columnSettings: typeof input.columnSettings === 'string' ? JSON.parse(input.columnSettings) : input.columnSettings,
-      };
-    } else {
-      let columnSettings: string | undefined;
-      if (input.columnSettings && input.columnType === ColumnType.Status) {
-        columnSettings = JSON.stringify({
-          labels: Object.fromEntries(input.columnSettings.map((label: string, i: number) => [String(i + 1), label])),
-        });
-      } else if (input.columnSettings && input.columnType === ColumnType.Dropdown) {
-        columnSettings = JSON.stringify({
-          settings: {
-            labels: input.columnSettings.map((label: string, i: number) => ({ id: i + 1, name: label })),
-          },
-        });
-      }
-  
-      variables = {
-        boardId: boardId.toString(),
-        columnType: input.columnType,
-        columnTitle: input.columnTitle,
-        columnDescription: input.columnDescription,
-        columnSettings,
-      };
-    }
+    const variables: CreateColumnMutationVariables = {
+      boardId: boardId.toString(),
+      columnType: input.columnType,
+      columnTitle: input.columnTitle,
+      columnDescription: input.columnDescription,
+      columnSettings: typeof input.columnSettings === 'string' ? JSON.parse(input.columnSettings) : input.columnSettings,
+    };
 
     const res = await this.mondayApi.request<CreateColumnMutation>(createColumn, variables);
 

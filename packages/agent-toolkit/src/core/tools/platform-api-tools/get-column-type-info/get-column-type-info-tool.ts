@@ -19,7 +19,7 @@ export class GetColumnTypeInfoTool extends BaseMondayApiTool<typeof getColumnTyp
   });
 
   getDescription(): string {
-    return 'Retrieves comprehensive information about a specific column type, including JSON schema definition and other metadata. Use this before creating columns with the create_column tool (API version 2025-10+) to understand the structure, validation rules, and available properties for column settings.';
+    return 'Retrieves comprehensive information about a specific column type, including JSON schema definition and other metadata. Use this before creating columns with the create_column tool to understand the structure, validation rules, and available properties for column settings.';
   }
 
   getInputSchema(): typeof getColumnTypeInfoToolSchema {
