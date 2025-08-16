@@ -1,17 +1,6 @@
-import {
-  ListUsersAndTeamsQuery,
-  ListUsersWithTeamsQuery,
-  ListTeamsWithMembersQuery,
-  ListUsersOnlyQuery,
-} from '../../../../monday-graphql/generated/graphql';
+import { FormattedResponse, isExtendedTeam } from './types';
 
-export type UsersAndTeamsData =
-  | ListUsersAndTeamsQuery
-  | ListUsersWithTeamsQuery
-  | ListTeamsWithMembersQuery
-  | ListUsersOnlyQuery;
-
-export const formatUsersAndTeams = (data: UsersAndTeamsData): string => {
+export const formatUsersAndTeams = (data: FormattedResponse): string => {
   const sections: string[] = [];
 
   // Format Users
@@ -57,25 +46,29 @@ export const formatUsersAndTeams = (data: UsersAndTeamsData): string => {
       if (team) {
         sections.push(`  ID: ${team.id}`);
         sections.push(`  Name: ${team.name}`);
-        sections.push(`  Guest Team: ${team.is_guest || false}`);
-        sections.push(`  Picture URL: ${team.picture_url || 'N/A'}`);
 
-        if (team.owners && team.owners.length > 0) {
-          sections.push(`  Owners:`);
-          team.owners.forEach((owner) => {
-            sections.push(`    - ID: ${owner.id}, Name: ${owner.name}, Email: ${owner.email}`);
-          });
-        }
+        // Check if this is an extended team with additional properties and member details
+        if (isExtendedTeam(team)) {
+          sections.push(`  Guest Team: ${team.is_guest || false}`);
+          sections.push(`  Picture URL: ${team.picture_url || 'N/A'}`);
 
-        if (team.users && team.users.length > 0) {
-          sections.push(`  Members:`);
-          team.users.forEach((user) => {
-            if (user) {
-              sections.push(
-                `    - ID: ${user.id}, Name: ${user.name}, Email: ${user.email}, Title: ${user.title || 'N/A'}, Admin: ${user.is_admin || false}, Guest: ${user.is_guest || false}`,
-              );
-            }
-          });
+          if (team.owners && team.owners.length > 0) {
+            sections.push(`  Owners:`);
+            team.owners.forEach((owner) => {
+              sections.push(`    - ID: ${owner.id}, Name: ${owner.name}, Email: ${owner.email}`);
+            });
+          }
+
+          if (team.users && team.users.length > 0) {
+            sections.push(`  Members:`);
+            team.users.forEach((user) => {
+              if (user) {
+                sections.push(
+                  `    - ID: ${user.id}, Name: ${user.name}, Email: ${user.email}, Title: ${user.title || 'N/A'}, Admin: ${user.is_admin || false}, Guest: ${user.is_guest || false}`,
+                );
+              }
+            });
+          }
         }
         sections.push('');
       }

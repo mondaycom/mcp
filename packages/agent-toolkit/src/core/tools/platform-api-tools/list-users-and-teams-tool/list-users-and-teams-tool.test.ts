@@ -1,9 +1,10 @@
-import { formatUsersAndTeams, UsersAndTeamsData } from './helpers';
+import { formatUsersAndTeams } from './helpers';
+import { FormattedResponse } from './types';
 
 describe('ListUsersAndTeamsTool - Helper Functions', () => {
   describe('formatUsersAndTeams', () => {
     it('should format users and teams data correctly', () => {
-      const mockData: UsersAndTeamsData = {
+      const mockData: FormattedResponse = {
         users: [
           {
             id: '1',
@@ -96,7 +97,7 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
     });
 
     it('should handle users without teams', () => {
-      const mockData: UsersAndTeamsData = {
+      const mockData: FormattedResponse = {
         users: [
           {
             id: '1',
@@ -130,7 +131,7 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
     });
 
     it('should handle teams without members or owners', () => {
-      const mockData: UsersAndTeamsData = {
+      const mockData: FormattedResponse = {
         users: null,
         teams: [
           {
@@ -154,7 +155,7 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
     });
 
     it('should handle null values gracefully', () => {
-      const mockData: UsersAndTeamsData = {
+      const mockData: FormattedResponse = {
         users: [
           {
             id: '1',
@@ -194,7 +195,7 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
     });
 
     it('should return appropriate message for empty data', () => {
-      const mockData: UsersAndTeamsData = {
+      const mockData: FormattedResponse = {
         users: null,
         teams: null,
       };
@@ -205,7 +206,7 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
     });
 
     it('should handle empty arrays', () => {
-      const mockData: UsersAndTeamsData = {
+      const mockData: FormattedResponse = {
         users: [],
         teams: [],
       };
@@ -216,7 +217,7 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
     });
 
     it('should handle multiple users and teams', () => {
-      const mockData: UsersAndTeamsData = {
+      const mockData: FormattedResponse = {
         users: [
           {
             id: '1',
@@ -290,7 +291,7 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
     });
 
     it('should handle enterprise-safe scenarios with limits', () => {
-      const mockData: UsersAndTeamsData = {
+      const mockData: FormattedResponse = {
         users: [
           {
             id: '1',
@@ -331,7 +332,7 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
     });
 
     it('should handle users-only response (default behavior)', () => {
-      const mockData: UsersAndTeamsData = {
+      const mockData: FormattedResponse = {
         users: [
           {
             id: '1',
@@ -376,7 +377,7 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
     });
 
     it('should handle teams-only response', () => {
-      const mockData: UsersAndTeamsData = {
+      const mockData: FormattedResponse = {
         teams: [
           {
             id: '1',
@@ -412,6 +413,30 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
       expect(result).toContain('Wedge Antilles');
       expect(result).toContain('Members:');
       expect(result).toContain('Biggs Darklighter');
+      expect(result).not.toContain('Users:'); // No separate Users section
+    });
+
+    it('should handle efficient teams-only response (no member details)', () => {
+      const mockData: FormattedResponse = {
+        teams: [
+          {
+            id: '1',
+            name: 'Death Star Command',
+            // Only id and name - minimal BaseTeam structure for efficient queries
+          },
+        ],
+      };
+
+      const result = formatUsersAndTeams(mockData);
+
+      expect(result).toContain('Teams:');
+      expect(result).toContain('Death Star Command');
+      expect(result).toContain('ID: 1');
+      expect(result).toContain('Name: Death Star Command');
+      expect(result).not.toContain('Guest Team:'); // No guest info in minimal structure
+      expect(result).not.toContain('Picture URL:'); // No picture in minimal structure
+      expect(result).not.toContain('Owners:'); // No owners section
+      expect(result).not.toContain('Members:'); // No members section
       expect(result).not.toContain('Users:'); // No separate Users section
     });
   });

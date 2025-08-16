@@ -13,11 +13,13 @@ import {
   listUsersAndTeams,
   listUsersWithTeams,
   listTeamsWithMembers,
+  listTeamsOnly,
   listUsersOnly,
 } from './list-users-and-teams.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { formatUsersAndTeams } from './helpers';
+import { FormattedResponse } from './types';
 import { MAX_USER_LIMIT, MAX_USER_IDS, MAX_TEAM_IDS, DEFAULT_USER_LIMIT } from './constants';
 
 export const listUsersAndTeamsToolSchema = {
@@ -51,6 +53,10 @@ export const listUsersAndTeamsToolSchema = {
     .optional()
     .describe('Include teams in the response along with users. Default is false (users only)'),
   teamsOnly: z.boolean().optional().describe('Fetch only teams (no users). When true, only teams will be returned'),
+  includeTeamMembers: z
+    .boolean()
+    .optional()
+    .describe('Include detailed team member information when fetching teams. Default is false for better performance'),
 };
 
 export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAndTeamsToolSchema> {
@@ -82,6 +88,7 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
     const hasTeamIds = input.teamIds && input.teamIds.length > 0;
     const includeTeams = input.includeTeams || false;
     const teamsOnly = input.teamsOnly || false;
+    const includeTeamMembers = input.includeTeamMembers || false;
 
     // Validate conflicting flags
     if (teamsOnly && includeTeams) {
@@ -107,15 +114,24 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
       };
     }
 
-    let res: ListUsersAndTeamsQuery | ListUsersWithTeamsQuery | ListTeamsWithMembersQuery | ListUsersOnlyQuery;
+    let res: FormattedResponse;
 
     // Determine what to fetch based on flags and IDs
     if (teamsOnly || (!hasUserIds && hasTeamIds && !includeTeams)) {
-      // Fetch only teams
-      const variables: ListTeamsWithMembersQueryVariables = {
-        teamIds: input.teamIds,
-      };
-      res = await this.mondayApi.request<ListTeamsWithMembersQuery>(listTeamsWithMembers, variables);
+      // Fetch only teams - use efficient query unless detailed member info is requested
+      if (includeTeamMembers) {
+        // Fetch teams with detailed member information
+        const variables: ListTeamsWithMembersQueryVariables = {
+          teamIds: input.teamIds,
+        };
+        res = await this.mondayApi.request<ListTeamsWithMembersQuery>(listTeamsWithMembers, variables);
+      } else {
+        // Fetch teams only (efficient - no detailed member data)
+        const variables: ListTeamsWithMembersQueryVariables = {
+          teamIds: input.teamIds,
+        };
+        res = await this.mondayApi.request<FormattedResponse>(listTeamsOnly, variables);
+      }
     } else if (!includeTeams) {
       // Fetch users only (default behavior) - no separate teams section in response
       if (hasUserIds) {

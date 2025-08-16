@@ -41,7 +41,18 @@ export const listUsersWithTeams = gql`
   }
 `;
 
-// Query for fetching teams with their members
+// Query for fetching teams only (efficient - no detailed user data)
+export const listTeamsOnly = gql`
+  query listTeamsOnly($teamIds: [ID!]) {
+    teams(ids: $teamIds) {
+      # Basic Team Information
+      id
+      name
+    }
+  }
+`;
+
+// Query for fetching teams with their members (includes detailed user data)
 export const listTeamsWithMembers = gql`
   query listTeamsWithMembers($teamIds: [ID!]) {
     teams(ids: $teamIds) {
