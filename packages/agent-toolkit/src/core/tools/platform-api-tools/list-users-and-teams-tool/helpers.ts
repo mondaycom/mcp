@@ -1,4 +1,4 @@
-import { FormattedResponse, isExtendedTeam } from './types';
+import { FormattedResponse, isExtendedTeam, UserTeamType } from './types';
 
 export const formatUsersAndTeams = (data: FormattedResponse): string => {
   const sections: string[] = [];

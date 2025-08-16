@@ -42,7 +42,7 @@ export interface ExtendedTeam extends BaseTeam {
 }
 
 // User structure (for team memberships)
-export interface UserTeam {
+export interface UserTeamType {
   __typename?: 'Team';
   id: string;
   name: string;
@@ -71,7 +71,7 @@ export interface User {
   photo_thumb?: string | null;
   time_zone_identifier?: string | null;
   utc_hours_diff?: number | null;
-  teams?: Array<UserTeam | null> | null;
+  teams?: Array<UserTeamType | null> | null;
 }
 
 // Response types for different query scenarios
