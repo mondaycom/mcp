@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 
 /**
- * JWT token payload structure from Monday.com API
+ * JWT token payload structure from monday.com API
  */
 export interface MondayTokenPayload {
   tid: number; // team/account ID
@@ -31,7 +31,7 @@ export const decodeJwtToken = (token: string): MondayTokenPayload | null => {
 
 /**
  * Extracts token information for tracking
- * @param token - The Monday.com API token
+ * @param token - The monday.com API token
  * @returns Token information object or empty object if extraction fails
  */
 export const extractTokenInfo = (token: string): Partial<MondayTokenPayload> => {
