@@ -1,5 +1,7 @@
 import { gql } from 'graphql-request';
-import { DEFAULT_USER_LIMIT } from './constants';
+
+// ===== LIST USERS AND TEAMS TOOL QUERIES =====
+
 // GraphQL Fragments for reusable field sets
 
 // Fragment for basic user information (full user details)
@@ -113,13 +115,16 @@ const userTeamMembershipSimplifiedFragment = gql`
   }
 `;
 
+// Queries with user limit using GraphQL variables
+// Note: DEFAULT_USER_LIMIT constant is defined in constants.ts and should be used when calling these queries
+
 // Query for fetching users with their team memberships
 export const listUsersWithTeams = gql`
   ${userDetailsFragment}
   ${userTeamMembershipFragment}
 
-  query listUsersWithTeams($userIds: [ID!]) {
-    users(ids: $userIds, limit: ${DEFAULT_USER_LIMIT}) {
+  query listUsersWithTeams($userIds: [ID!], $limit: Int = 1000) {
+    users(ids: $userIds, limit: $limit) {
       ...UserDetails
 
       # Team Memberships
@@ -130,7 +135,60 @@ export const listUsersWithTeams = gql`
   }
 `;
 
+// Query for fetching users only (when we don't want teams in response)
+export const listUsersOnly = gql`
+  ${userDetailsFragment}
+  ${userTeamMembershipFragment}
+
+  query listUsersOnly($userIds: [ID!], $limit: Int = 1000) {
+    users(ids: $userIds, limit: $limit) {
+      ...UserDetails
+
+      # Team Memberships
+      teams {
+        ...UserTeamMembership
+      }
+    }
+  }
+`;
+
+// Query for fetching both users and teams (when both are explicitly requested)
+export const listUsersAndTeams = gql`
+  ${userDetailsFragment}
+  ${userTeamMembershipSimplifiedFragment}
+  ${teamExtendedInfoFragment}
+  ${teamBasicInfoFragment}
+  ${teamOwnerFragment}
+  ${teamMemberSimplifiedFragment}
+
+  query listUsersAndTeams($userIds: [ID!], $teamIds: [ID!], $limit: Int = 1000) {
+    users(ids: $userIds, limit: $limit) {
+      ...UserDetails
+
+      # Team Memberships (simplified for this context)
+      teams {
+        ...UserTeamMembershipSimplified
+      }
+    }
+
+    teams(ids: $teamIds) {
+      ...TeamExtendedInfo
+
+      # Team Owners
+      owners {
+        ...TeamOwner
+      }
+
+      # Team Members (simplified for this context)
+      users {
+        ...TeamMemberSimplified
+      }
+    }
+  }
+`;
+
 // Query for fetching teams only (efficient - no detailed user data)
+// This one doesn't use user limits so can be static
 export const listTeamsOnly = gql`
   ${teamBasicInfoFragment}
 
@@ -142,6 +200,7 @@ export const listTeamsOnly = gql`
 `;
 
 // Query for fetching teams with their members (includes detailed user data)
+// This one doesn't use user limits so can be static
 export const listTeamsWithMembers = gql`
   ${teamExtendedInfoFragment}
   ${teamBasicInfoFragment}
@@ -165,53 +224,19 @@ export const listTeamsWithMembers = gql`
   }
 `;
 
-// Query for fetching users only (when we don't want teams in response)
-export const listUsersOnly = gql`
+// Query for fetching user by name (avoiding conflict with existing getUsersByName)
+// This one doesn't use user limits so can be static
+export const getUserByName = gql`
   ${userDetailsFragment}
   ${userTeamMembershipFragment}
 
-  query listUsersOnly($userIds: [ID!]) {
-    users(ids: $userIds, limit: ${DEFAULT_USER_LIMIT}) {
+  query getUserByName($name: String) {
+    users(name: $name) {
       ...UserDetails
 
       # Team Memberships
       teams {
         ...UserTeamMembership
-      }
-    }
-  }
-`;
-
-// Query for fetching both users and teams (when both are explicitly requested)
-export const listUsersAndTeams = gql`
-  ${userDetailsFragment}
-  ${userTeamMembershipSimplifiedFragment}
-  ${teamExtendedInfoFragment}
-  ${teamBasicInfoFragment}
-  ${teamOwnerFragment}
-  ${teamMemberSimplifiedFragment}
-
-  query listUsersAndTeams($userIds: [ID!], $teamIds: [ID!]) {
-    users(ids: $userIds, limit: ${DEFAULT_USER_LIMIT}) {
-      ...UserDetails
-
-      # Team Memberships (simplified for this context)
-      teams {
-        ...UserTeamMembershipSimplified
-      }
-    }
-
-    teams(ids: $teamIds) {
-      ...TeamExtendedInfo
-
-      # Team Owners
-      owners {
-        ...TeamOwner
-      }
-
-      # Team Members (simplified for this context)
-      users {
-        ...TeamMemberSimplified
       }
     }
   }

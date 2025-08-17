@@ -439,5 +439,50 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
       expect(result).not.toContain('Members:'); // No members section
       expect(result).not.toContain('Users:'); // No separate Users section
     });
+
+    it('should handle single user response for getMe functionality', () => {
+      const mockData: FormattedResponse = {
+        users: [
+          {
+            id: '1',
+            name: 'Master Yoda',
+            title: 'Grand Master',
+            email: 'yoda@jedicouncil.com',
+            enabled: true,
+            is_admin: true,
+            is_guest: false,
+            is_pending: false,
+            is_verified: true,
+            is_view_only: false,
+            join_date: '0001-01-01',
+            last_activity: '2024-01-01',
+            location: 'Dagobah',
+            mobile_phone: null,
+            phone: null,
+            photo_thumb: 'https://starwars.com/yoda.jpg',
+            time_zone_identifier: 'Dagobah/Swamp_Time',
+            utc_hours_diff: 0,
+            teams: [
+              {
+                id: '1',
+                name: 'Jedi Council',
+                is_guest: false,
+              },
+            ],
+          },
+        ],
+      };
+
+      const result = formatUsersAndTeams(mockData);
+
+      expect(result).toContain('Users:');
+      expect(result).toContain('Master Yoda');
+      expect(result).toContain('Grand Master');
+      expect(result).toContain('yoda@jedicouncil.com');
+      expect(result).toContain('Admin: true');
+      expect(result).toContain('Jedi Council');
+      // Should contain Teams: for user's team memberships, but only one instance (not a separate Teams section)
+      expect(result.split('Teams:').length).toBe(2); // Only one "Teams:" for user's teams
+    });
   });
 });

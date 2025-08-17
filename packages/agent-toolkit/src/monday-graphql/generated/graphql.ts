@@ -6273,10 +6273,28 @@ export type UserTeamMembershipSimplifiedFragment = { __typename?: 'Team', id: st
 
 export type ListUsersWithTeamsQueryVariables = Exact<{
   userIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
 }>;
 
 
 export type ListUsersWithTeamsQuery = { __typename?: 'Query', users?: Array<{ __typename?: 'User', id: string, name: string, title?: string | null, email: string, enabled: boolean, is_admin?: boolean | null, is_guest?: boolean | null, is_pending?: boolean | null, is_verified?: boolean | null, is_view_only?: boolean | null, join_date?: any | null, last_activity?: any | null, location?: string | null, mobile_phone?: string | null, phone?: string | null, photo_thumb?: string | null, time_zone_identifier?: string | null, utc_hours_diff?: number | null, teams?: Array<{ __typename?: 'Team', id: string, name: string, is_guest?: boolean | null, picture_url?: string | null } | null> | null } | null> | null };
+
+export type ListUsersOnlyQueryVariables = Exact<{
+  userIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type ListUsersOnlyQuery = { __typename?: 'Query', users?: Array<{ __typename?: 'User', id: string, name: string, title?: string | null, email: string, enabled: boolean, is_admin?: boolean | null, is_guest?: boolean | null, is_pending?: boolean | null, is_verified?: boolean | null, is_view_only?: boolean | null, join_date?: any | null, last_activity?: any | null, location?: string | null, mobile_phone?: string | null, phone?: string | null, photo_thumb?: string | null, time_zone_identifier?: string | null, utc_hours_diff?: number | null, teams?: Array<{ __typename?: 'Team', id: string, name: string, is_guest?: boolean | null, picture_url?: string | null } | null> | null } | null> | null };
+
+export type ListUsersAndTeamsQueryVariables = Exact<{
+  userIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+  teamIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type ListUsersAndTeamsQuery = { __typename?: 'Query', users?: Array<{ __typename?: 'User', id: string, name: string, title?: string | null, email: string, enabled: boolean, is_admin?: boolean | null, is_guest?: boolean | null, is_pending?: boolean | null, is_verified?: boolean | null, is_view_only?: boolean | null, join_date?: any | null, last_activity?: any | null, location?: string | null, mobile_phone?: string | null, phone?: string | null, photo_thumb?: string | null, time_zone_identifier?: string | null, utc_hours_diff?: number | null, teams?: Array<{ __typename?: 'Team', id: string, name: string, is_guest?: boolean | null } | null> | null } | null> | null, teams?: Array<{ __typename?: 'Team', is_guest?: boolean | null, picture_url?: string | null, id: string, name: string, owners: Array<{ __typename?: 'User', id: string, name: string, email: string }>, users?: Array<{ __typename?: 'User', id: string, name: string, email: string, title?: string | null, is_admin?: boolean | null, is_guest?: boolean | null } | null> | null } | null> | null };
 
 export type ListTeamsOnlyQueryVariables = Exact<{
   teamIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
@@ -6292,20 +6310,12 @@ export type ListTeamsWithMembersQueryVariables = Exact<{
 
 export type ListTeamsWithMembersQuery = { __typename?: 'Query', teams?: Array<{ __typename?: 'Team', is_guest?: boolean | null, picture_url?: string | null, id: string, name: string, owners: Array<{ __typename?: 'User', id: string, name: string, email: string }>, users?: Array<{ __typename?: 'User', id: string, name: string, email: string, title?: string | null, is_admin?: boolean | null, is_guest?: boolean | null, is_pending?: boolean | null, is_verified?: boolean | null, is_view_only?: boolean | null, join_date?: any | null, last_activity?: any | null, location?: string | null, mobile_phone?: string | null, phone?: string | null, photo_thumb?: string | null, time_zone_identifier?: string | null, utc_hours_diff?: number | null } | null> | null } | null> | null };
 
-export type ListUsersOnlyQueryVariables = Exact<{
-  userIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+export type GetUserByNameQueryVariables = Exact<{
+  name?: InputMaybe<Scalars['String']['input']>;
 }>;
 
 
-export type ListUsersOnlyQuery = { __typename?: 'Query', users?: Array<{ __typename?: 'User', id: string, name: string, title?: string | null, email: string, enabled: boolean, is_admin?: boolean | null, is_guest?: boolean | null, is_pending?: boolean | null, is_verified?: boolean | null, is_view_only?: boolean | null, join_date?: any | null, last_activity?: any | null, location?: string | null, mobile_phone?: string | null, phone?: string | null, photo_thumb?: string | null, time_zone_identifier?: string | null, utc_hours_diff?: number | null, teams?: Array<{ __typename?: 'Team', id: string, name: string, is_guest?: boolean | null, picture_url?: string | null } | null> | null } | null> | null };
-
-export type ListUsersAndTeamsQueryVariables = Exact<{
-  userIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
-  teamIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
-}>;
-
-
-export type ListUsersAndTeamsQuery = { __typename?: 'Query', users?: Array<{ __typename?: 'User', id: string, name: string, title?: string | null, email: string, enabled: boolean, is_admin?: boolean | null, is_guest?: boolean | null, is_pending?: boolean | null, is_verified?: boolean | null, is_view_only?: boolean | null, join_date?: any | null, last_activity?: any | null, location?: string | null, mobile_phone?: string | null, phone?: string | null, photo_thumb?: string | null, time_zone_identifier?: string | null, utc_hours_diff?: number | null, teams?: Array<{ __typename?: 'Team', id: string, name: string, is_guest?: boolean | null } | null> | null } | null> | null, teams?: Array<{ __typename?: 'Team', is_guest?: boolean | null, picture_url?: string | null, id: string, name: string, owners: Array<{ __typename?: 'User', id: string, name: string, email: string }>, users?: Array<{ __typename?: 'User', id: string, name: string, email: string, title?: string | null, is_admin?: boolean | null, is_guest?: boolean | null } | null> | null } | null> | null };
+export type GetUserByNameQuery = { __typename?: 'Query', users?: Array<{ __typename?: 'User', id: string, name: string, title?: string | null, email: string, enabled: boolean, is_admin?: boolean | null, is_guest?: boolean | null, is_pending?: boolean | null, is_verified?: boolean | null, is_view_only?: boolean | null, join_date?: any | null, last_activity?: any | null, location?: string | null, mobile_phone?: string | null, phone?: string | null, photo_thumb?: string | null, time_zone_identifier?: string | null, utc_hours_diff?: number | null, teams?: Array<{ __typename?: 'Team', id: string, name: string, is_guest?: boolean | null, picture_url?: string | null } | null> | null } | null> | null };
 
 export type ListWorkspacesQueryVariables = Exact<{
   limit: Scalars['Int']['input'];
