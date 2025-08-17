@@ -36,76 +36,72 @@ export const listUsersAndTeamsToolSchema = {
     .max(MAX_USER_IDS)
     .optional()
     .describe(
-      `Specific user IDs to fetch (max ${MAX_USER_IDS}). Returns comprehensive user profiles including: name, email, title, permissions (admin/guest/view-only), contact info (phone, location), timezone, join date, last activity, and team memberships. 
+      `[HIGH PRIORITY] Specific user IDs to fetch (max ${MAX_USER_IDS}). ALWAYS use this when you have user IDs from board assignments, mentions, previous queries, or any context where user IDs are available.
       
-      WHEN TO USE: When you have specific user IDs from board items, mentions, assignments, or previous queries. More efficient than searching all users.
+      AI AGENT DIRECTIVE: This is the MOST EFFICIENT parameter. Use whenever you have specific user IDs - never use broad searches when IDs are available.
       
-      EXAMPLES: ["12345678", "87654321"] for specific users, or omit to get all users in account.`,
+      RETURNS: Complete user profiles with team memberships. EXAMPLES: ["12345678", "87654321"]`,
     ),
   teamIds: z
     .array(z.string())
     .max(MAX_TEAM_IDS)
     .optional()
     .describe(
-      `Specific team IDs to fetch (max ${MAX_TEAM_IDS}). Returns team details including: name, picture, owners, and members (when includeTeamMembers=true).
+      `[HIGH PRIORITY] Specific team IDs to fetch (max ${MAX_TEAM_IDS}). ALWAYS use this when you have team IDs from board permissions, assignments, team context or elsewhere.
       
-      WHEN TO USE: When you have team IDs from board permissions, assignments, or need to analyze team composition. Use with includeTeamMembers=true for member details.
+      AI AGENT DIRECTIVE: Use with teamsOnly=true for teams without user data, or includeTeamMembers=true for detailed member analysis. NEVER fetch all teams when specific IDs are available.
       
-      EXAMPLES: ["98765432", "11223344"] for specific teams, or omit to get all teams when teamsOnly=true.`,
+      RETURNS: Team details with owners and optional member data. EXAMPLES: ["98765432", "11223344"]`,
     ),
   name: z
     .string()
     .optional()
     .describe(
-      `Search for users by name or partial name. Returns users whose names contain this string (case-insensitive fuzzy search).
+      `[SECOND PRIORITY] Name-based user search. STANDALONE parameter - cannot be combined with others.
       
-      WHEN TO USE: When you need to find specific users but only know their name/partial name. Great for discovering user IDs when you know names.
+      AI AGENT DIRECTIVE: Use ONLY when you have user names but no IDs. This is your PREFERRED method for finding users when you know names. Performs fuzzy matching.
       
-      EXAMPLES: "John Smith", "john", "smith" - all will find users with those name patterns.
-      
-      CONFLICTS: Cannot be used with userIds, teamIds, teamsOnly, or includeTeams - this parameter provides a focused name-based search.`,
+      CRITICAL: This parameter CONFLICTS with all others. EXAMPLES: "John Smith", "john", "smith"`,
     ),
   getMe: z
     .boolean()
     .optional()
     .describe(
-      `Fetch the current authenticated user's profile information. Returns detailed profile of the user making the API request.
+      `[TOP PRIORITY] Current authenticated user lookup. STANDALONE parameter - cannot be combined with others.
       
-      WHEN TO USE: When you need current user's details for personalization, permissions checking, or user context operations.
+      AI AGENT DIRECTIVE: Use ALWAYS when requesting current user information. Returns basic profile: id, name, title, enabled, is_admin, is_guest.
       
-      EXAMPLES: User profile display, checking current user's admin status, getting user's team memberships for context.
-      
-      CONFLICTS: Cannot be used with any other parameters - this is a standalone operation for the authenticated user only.`,
+      CRITICAL: This parameter CONFLICTS with all others. Use getMe=true for authenticated user context.`,
     ),
   includeTeams: z
     .boolean()
     .optional()
     .describe(
-      `Include teams data alongside users in response. When true, returns both users AND teams sections.
+      `[AVOID UNLESS NECESSARY] Include teams data alongside users. Creates dual query overhead.
       
-      WHEN TO USE: When you need comprehensive workspace overview, analyzing user-team relationships, or setting up permissions. 
+      AI AGENT DIRECTIVE: AVOID this parameter unless you specifically need both users AND teams in one response. Use teamsOnly=true for teams-only queries instead.
       
-      PERFORMANCE: Adds teams query overhead. Use teamsOnly=true if you only need teams.`,
+      PERFORMANCE WARNING: Adds significant query overhead. Use sparingly.`,
     ),
   teamsOnly: z
     .boolean()
     .optional()
     .describe(
-      `Fetch only teams (no users returned). Optimized for team-focused operations.
+      `[RECOMMENDED FOR TEAMS] Fetch only teams, no users returned. Optimized single-purpose query.
       
-      WHEN TO USE: Analyzing team structure, setting team permissions, or when users data is not needed. More efficient than includeTeams=true when users aren't required.
+      AI AGENT DIRECTIVE: Use teamsOnly=true when you only need team information. More efficient than includeTeams=true. Combine with includeTeamMembers for member details.
       
-      COMBINE WITH: includeTeamMembers=true to get team member details, or false for just team names/IDs.`,
+      USAGE: teamsOnly=true for team lists, add includeTeamMembers=true for member analysis.`,
     ),
   includeTeamMembers: z
     .boolean()
     .optional()
     .describe(
-      `Include detailed member information in team responses. When false, teams show only basic info (name, picture) for better performance.
+      `[CONDITIONAL] Control team member data inclusion. Use strategically for performance.
       
-      WHEN TO USE: When analyzing team composition, member roles, or need member contact details. 
+      AI AGENT DIRECTIVE: Set to false for simple team lists (faster), true only when you need member composition analysis. Default is false for better performance.
       
-      PERFORMANCE: Significantly increases response size. Use false for team lists/overviews, true for detailed team analysis.`,
+      DECISION LOGIC: false=team names/IDs only, true=full member details with roles and permissions.`,
     ),
 };
 
@@ -120,42 +116,39 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
   });
 
   getDescription(): string {
-    return `Comprehensive user and team management tool for monday.com workspaces. Supports multiple query patterns including name search and current user lookup.
+    return `PRECISION-FIRST user and team retrieval tool. AI agents MUST prioritize specific queries over broad searches.
 
-      CORE FUNCTIONALITY:
-      • Can fetch user profiles: name, email, title, permissions, contact info, timezone, activity, team memberships
-      • Can fetch team details: name, picture, owners, member composition and roles
-      • Name-based user search: fuzzy search by full/partial names
-      • Current user details: get authenticated user's basic details
+      MANDATORY BEST PRACTICES FOR AI AGENTS:
+      1. ALWAYS use specific IDs when available (userIds, teamIds) - highest precision and performance
+      2. ALWAYS use name search when you have user names but no IDs  
+      3. ALWAYS use getMe=true when requesting current user information
+      4. AVOID broad queries (no parameters) - use only as absolute last resort
+      5. COMBINE parameters strategically to minimize API calls
 
-      COMMON USE CASES:
-      1. GET SPECIFIC USERS: Use userIds=["123", "456"] when you have IDs from board items, assignments, or mentions
-      2. EXPLORE ALL USERS: Omit all parameters for complete account overview (up to 1000 users)
-      3. SEARCH USER BY NAME: Use name="John Smith" to find users by name/partial name (fuzzy search)
-      4. GET CURRENT USER: Use getMe=true to fetch authenticated user's profile and teams
-      5. GET TEAMS: Use teamsOnly=true + includeTeamMembers=true for teams with their members
-      6. USERS AND TEAMS OVERVIEW: Use includeTeams=true to get both users and teams in one call, should not be used unless you do not have any other parameters to use and want to fetch all users and teams of account which should be avoided if possible
+      REQUIRED PARAMETER PRIORITY (use in this order):
+      1. getMe=true (when requesting current user) - STANDALONE ONLY
+      2. name="exact_name" (when searching by name) - STANDALONE ONLY  
+      3. userIds=["id1","id2"] (when you have specific user IDs)
+      4. teamIds=["id1","id2"] + teamsOnly=true (when you have specific team IDs)
+      5. No parameters (LAST RESORT - fetches up to 1000 users, avoid unless absolutely necessary)
 
-      STANDALONE OPERATIONS (cannot be combined):
-      • NAME SEARCH: name parameter - finds users by name pattern, returns with team memberships
-      • CURRENT USER: getMe=true - returns authenticated user's complete profile
-      • These parameters conflict with all others for focused, optimized queries
+      CRITICAL USAGE RULES:
+      • getMe and name parameters CANNOT be combined with any other parameters
+      • userIds + teamIds requires explicit includeTeams=true flag
+      • teamsOnly=true prevents user data fetching (teams-only queries)
+      • includeTeamMembers=true adds detailed member data to teams
 
-      OPTIMIZATION TIPS:
-       • Default behavior (no params): Returns up to 1000 users with team memberships
-       • Name search: Fast fuzzy search, ideal when you know names but not IDs
-       • Current user: Instant authenticated user lookup for personalization
-       • Specific IDs: Always faster and more detailed than searching all users
-       • Team members: Set includeTeamMembers=false for team lists, true for detailed analysis
-       • If Possible use name search or specific IDs for targeted queries
+      OPTIMIZATION DIRECTIVES:
+      • NEVER fetch all users when specific IDs are available
+      • NEVER use broad queries for single user/team lookups  
+      • ALWAYS prefer name search over ID-less queries for individual users
+      • SET includeTeamMembers=false for team lists, true only for member analysis
+      • AVOID includeTeams=true unless you specifically need both users AND teams
 
-      QUERY PATTERNS:
-      • Users only (default): Fast user directory with team memberships
-      • Name search: name="partial" for fuzzy user discovery
-      • Current user: getMe=true for authenticated user context
-      • Teams only: teamsOnly=true for team-focused operations  
-      • Combined: includeTeams=true for full workspace analysis
-      • Targeted: Specific IDs for detailed individual/team profiles`;
+      RESPONSE CONTENT:
+      • Users: id, name, email, title, permissions, contact details, team memberships
+      • Teams: id, name, owners, members (when includeTeamMembers=true)
+      • Current user: id, name, title, enabled, is_admin, is_guest (basic profile only)`;
   }
 
   getInputSchema(): typeof listUsersAndTeamsToolSchema {
@@ -178,7 +171,7 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
       if (hasUserIds || hasTeamIds || includeTeams || teamsOnly || includeTeamMembers || hasName) {
         return {
           content:
-            'Error: getMe parameter cannot be used with any other parameters. Use getMe alone to fetch current user.',
+            'PARAMETER_CONFLICT: getMe is STANDALONE only. Remove all other parameters when using getMe=true for current user lookup.',
         };
       }
 
@@ -186,7 +179,7 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
 
       if (!res.me) {
         return {
-          content: 'Error: Unable to fetch current user information. Please check your authentication.',
+          content: 'AUTHENTICATION_ERROR: Current user fetch failed. Verify API token and user permissions.',
         };
       }
 
@@ -204,7 +197,7 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
       if (hasUserIds || hasTeamIds || includeTeams || teamsOnly || includeTeamMembers) {
         return {
           content:
-            'Error: name parameter cannot be used with userIds, teamIds, includeTeams, teamsOnly, or includeTeamMembers. Use name alone for user search.',
+            'PARAMETER_CONFLICT: name is STANDALONE only. Remove userIds, teamIds, includeTeams, teamsOnly, and includeTeamMembers when using name search.',
         };
       }
 
@@ -216,7 +209,7 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
 
       if (!res.users || res.users.length === 0) {
         return {
-          content: `No users found with name containing "${input.name}".`,
+          content: `NAME_SEARCH_EMPTY: No users found matching "${input.name}". Try broader search terms or verify user exists in account.`,
         };
       }
 
@@ -233,20 +226,21 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
     // Validate conflicting flags for regular operations
     if (teamsOnly && includeTeams) {
       return {
-        content: 'Error: Cannot specify both teamsOnly and includeTeams flags. Choose one.',
+        content:
+          'PARAMETER_CONFLICT: Cannot use teamsOnly=true with includeTeams=true. Use teamsOnly for teams-only queries or includeTeams for combined data.',
       };
     }
 
     // Early validation
     if (hasUserIds && input.userIds && input.userIds.length > MAX_USER_IDS) {
       return {
-        content: `Error: Too many user IDs provided. Maximum allowed: ${MAX_USER_IDS}, provided: ${input.userIds.length}. Please reduce the number of user IDs, break up the ids and batch them in multiple calls`,
+        content: `LIMIT_EXCEEDED: userIds array too large (${input.userIds.length}/${MAX_USER_IDS}). Split into batches of max ${MAX_USER_IDS} IDs and make multiple calls.`,
       };
     }
 
     if (hasTeamIds && input.teamIds && input.teamIds.length > MAX_TEAM_IDS) {
       return {
-        content: `Error: Too many team IDs provided. Maximum allowed: ${MAX_TEAM_IDS}, provided: ${input.teamIds.length}. Please reduce the number of team IDs, break up the ids and batch them in multiple calls`,
+        content: `LIMIT_EXCEEDED: teamIds array too large (${input.teamIds.length}/${MAX_TEAM_IDS}). Split into batches of max ${MAX_TEAM_IDS} IDs and make multiple calls.`,
       };
     }
 
