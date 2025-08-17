@@ -123,20 +123,18 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
     return `Comprehensive user and team management tool for monday.com workspaces. Supports multiple query patterns including name search and current user lookup.
 
       CORE FUNCTIONALITY:
-      • User profiles: name, email, title, permissions, contact info, timezone, activity, team memberships
-      • Team details: name, picture, owners, member composition and roles
+      • Can fetch user profiles: name, email, title, permissions, contact info, timezone, activity, team memberships
+      • Can fetch team details: name, picture, owners, member composition and roles
       • Name-based user search: fuzzy search by full/partial names
-      • Current user authentication: get authenticated user's profile
-      • Automatic query optimization based on parameters
-      • Enterprise-safe limits: max ${MAX_USER_IDS} user IDs, ${MAX_TEAM_IDS} team IDs
+      • Current user details: get authenticated user's basic details
 
       COMMON USE CASES:
       1. GET SPECIFIC USERS: Use userIds=["123", "456"] when you have IDs from board items, assignments, or mentions
       2. EXPLORE ALL USERS: Omit all parameters for complete account overview (up to 1000 users)
-      3. SEARCH BY NAME: Use name="John Smith" to find users by name/partial name (fuzzy search)
+      3. SEARCH USER BY NAME: Use name="John Smith" to find users by name/partial name (fuzzy search)
       4. GET CURRENT USER: Use getMe=true to fetch authenticated user's profile and teams
-      5. ANALYZE TEAMS: Use teamsOnly=true + includeTeamMembers=true for team composition analysis
-      6. WORKSPACE OVERVIEW: Use includeTeams=true for comprehensive user-team relationships
+      5. GET TEAMS: Use teamsOnly=true + includeTeamMembers=true for teams with their members
+      6. USERS AND TEAMS OVERVIEW: Use includeTeams=true to get both users and teams in one call, should not be used unless you do not have any other parameters to use and want to fetch all users and teams of account which should be avoided if possible
 
       STANDALONE OPERATIONS (cannot be combined):
       • NAME SEARCH: name parameter - finds users by name pattern, returns with team memberships
@@ -149,7 +147,7 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
        • Current user: Instant authenticated user lookup for personalization
        • Specific IDs: Always faster and more detailed than searching all users
        • Team members: Set includeTeamMembers=false for team lists, true for detailed analysis
-       • Large accounts: Use name search or specific IDs for targeted queries
+       • If Possible use name search or specific IDs for targeted queries
 
       QUERY PATTERNS:
       • Users only (default): Fast user directory with team memberships
@@ -239,7 +237,7 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
       };
     }
 
-    // Early validation for enterprise safety
+    // Early validation
     if (hasUserIds && input.userIds && input.userIds.length > MAX_USER_IDS) {
       return {
         content: `Error: Too many user IDs provided. Maximum allowed: ${MAX_USER_IDS}, provided: ${input.userIds.length}. Please reduce the number of user IDs, break up the ids and batch them in multiple calls`,
