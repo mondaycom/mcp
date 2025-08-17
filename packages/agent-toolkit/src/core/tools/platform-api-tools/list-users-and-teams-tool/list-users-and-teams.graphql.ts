@@ -241,3 +241,17 @@ export const getUserByName = gql`
     }
   }
 `;
+
+// Query for getting current authenticated user (simplified - basic fields only)
+export const getCurrentUser = gql`
+  query getCurrentUser {
+    me {
+      id
+      name
+      title
+      enabled
+      is_admin
+      is_guest
+    }
+  }
+`;

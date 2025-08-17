@@ -290,7 +290,7 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
       expect(result).toContain('Jedi Council');
     });
 
-    it('should handle enterprise-safe scenarios with limits', () => {
+    it('should handle large account scenarios with limits', () => {
       const mockData: FormattedResponse = {
         users: [
           {

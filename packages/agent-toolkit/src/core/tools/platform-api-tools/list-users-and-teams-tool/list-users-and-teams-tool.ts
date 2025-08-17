@@ -2,6 +2,7 @@ import { z } from 'zod';
 import {
   GetUserByNameQuery,
   GetUserByNameQueryVariables,
+  GetCurrentUserQuery,
   ListUsersAndTeamsQuery,
   ListUsersAndTeamsQueryVariables,
   ListUsersWithTeamsQuery,
@@ -20,6 +21,7 @@ import {
   listTeamsOnly,
   listUsersOnly,
   getUserByName,
+  getCurrentUser,
 } from './list-users-and-teams.graphql';
 import { gql } from 'graphql-request';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
@@ -27,68 +29,6 @@ import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-ap
 import { formatUsersAndTeams } from './helpers';
 import { FormattedResponse } from './types';
 import { MAX_USER_IDS, MAX_TEAM_IDS, DEFAULT_USER_LIMIT } from './constants';
-
-// Simple query for getting current user
-const getCurrentUserQuery = gql`
-  query getCurrentUser {
-    me {
-      id
-      name
-      title
-      email
-      enabled
-      is_admin
-      is_guest
-      is_pending
-      is_verified
-      is_view_only
-      join_date
-      last_activity
-      location
-      mobile_phone
-      phone
-      photo_thumb
-      time_zone_identifier
-      utc_hours_diff
-      teams {
-        id
-        name
-        is_guest
-        picture_url
-      }
-    }
-  }
-`;
-
-// Type for the getCurrentUser query response
-type GetCurrentUserQuery = {
-  me?: {
-    id: string;
-    name: string;
-    title?: string | null;
-    email: string;
-    enabled: boolean;
-    is_admin?: boolean | null;
-    is_guest?: boolean | null;
-    is_pending?: boolean | null;
-    is_verified?: boolean | null;
-    is_view_only?: boolean | null;
-    join_date?: string | null;
-    last_activity?: string | null;
-    location?: string | null;
-    mobile_phone?: string | null;
-    phone?: string | null;
-    photo_thumb?: string | null;
-    time_zone_identifier?: string | null;
-    utc_hours_diff?: number | null;
-    teams?: Array<{
-      id: string;
-      name: string;
-      is_guest?: boolean | null;
-      picture_url?: string | null;
-    }> | null;
-  } | null;
-};
 
 export const listUsersAndTeamsToolSchema = {
   userIds: z
@@ -209,7 +149,7 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
        • Current user: Instant authenticated user lookup for personalization
        • Specific IDs: Always faster and more detailed than searching all users
        • Team members: Set includeTeamMembers=false for team lists, true for detailed analysis
-       • Large enterprise accounts: Use name search or specific IDs for targeted queries
+       • Large accounts: Use name search or specific IDs for targeted queries
 
       QUERY PATTERNS:
       • Users only (default): Fast user directory with team memberships
@@ -244,7 +184,7 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
         };
       }
 
-      const res = await this.mondayApi.request<GetCurrentUserQuery>(getCurrentUserQuery);
+      const res = await this.mondayApi.request<GetCurrentUserQuery>(getCurrentUser);
 
       if (!res.me) {
         return {
