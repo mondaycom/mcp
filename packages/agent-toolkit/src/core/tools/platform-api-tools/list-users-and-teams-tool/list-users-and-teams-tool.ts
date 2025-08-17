@@ -49,7 +49,7 @@ export const listUsersAndTeamsToolSchema = {
     .describe(
       `[HIGH PRIORITY] Specific team IDs to fetch (max ${MAX_TEAM_IDS}). ALWAYS use this when you have team IDs from board permissions, assignments, team context or elsewhere.
       
-      AI AGENT DIRECTIVE: Use with teamsOnly=true for teams without user data, or includeTeamMembers=true for detailed member analysis. NEVER fetch all teams when specific IDs are available.
+      AI AGENT DIRECTIVE: Use with teamsOnly: true for teams without user data, or includeTeamMembers: true for detailed member analysis. NEVER fetch all teams when specific IDs are available.
       
       RETURNS: Team details with owners and optional member data. EXAMPLES: ["98765432", "11223344"]`,
     ),
@@ -69,9 +69,9 @@ export const listUsersAndTeamsToolSchema = {
     .describe(
       `[TOP PRIORITY] Current authenticated user lookup. STANDALONE parameter - cannot be combined with others.
       
-      AI AGENT DIRECTIVE: Use ALWAYS when requesting current user information. Returns basic profile: id, name, title, enabled, is_admin, is_guest.
+      AI AGENT DIRECTIVE: Use ALWAYS when requesting current user information. Returns basic profile: id, name, title, enabled, is_admin, is_guest. Should be used when a user asks to get "my user" or "me".
       
-      CRITICAL: This parameter CONFLICTS with all others. Use getMe=true for authenticated user context.`,
+      CRITICAL: This parameter CONFLICTS with all others. Pass boolean value true (not string "true") for authenticated user's basic details.`,
     ),
   includeTeams: z
     .boolean()
@@ -79,7 +79,7 @@ export const listUsersAndTeamsToolSchema = {
     .describe(
       `[AVOID UNLESS NECESSARY] Include teams data alongside users. Creates dual query overhead.
       
-      AI AGENT DIRECTIVE: AVOID this parameter unless you specifically need both users AND teams in one response. Use teamsOnly=true for teams-only queries instead.
+      AI AGENT DIRECTIVE: AVOID this parameter unless you specifically need both users AND teams in one response. Use teamsOnly: true for teams-only queries instead.
       
       PERFORMANCE WARNING: Adds significant query overhead. Use sparingly.`,
     ),
@@ -89,9 +89,9 @@ export const listUsersAndTeamsToolSchema = {
     .describe(
       `[RECOMMENDED FOR TEAMS] Fetch only teams, no users returned. Optimized single-purpose query.
       
-      AI AGENT DIRECTIVE: Use teamsOnly=true when you only need team information. More efficient than includeTeams=true. Combine with includeTeamMembers for member details.
+      AI AGENT DIRECTIVE: Use teamsOnly: true when you only need team information. More efficient than includeTeams: true. Combine with includeTeamMembers for member details.
       
-      USAGE: teamsOnly=true for team lists, add includeTeamMembers=true for member analysis.`,
+      USAGE: teamsOnly: true for team lists, add includeTeamMembers: true for member analysis.`,
     ),
   includeTeamMembers: z
     .boolean()
@@ -118,36 +118,36 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
   getDescription(): string {
     return `PRECISION-FIRST user and team retrieval tool. AI agents MUST prioritize specific queries over broad searches.
 
-      MANDATORY BEST PRACTICES FOR AI AGENTS:
+      MANDATORY BEST PRACTICES:
       1. ALWAYS use specific IDs when available (userIds, teamIds) - highest precision and performance
       2. ALWAYS use name search when you have user names but no IDs  
-      3. ALWAYS use getMe=true when requesting current user information
+      3. ALWAYS use boolean getMe: true when requesting current user information
       4. AVOID broad queries (no parameters) - use only as absolute last resort
       5. COMBINE parameters strategically to minimize API calls
 
       REQUIRED PARAMETER PRIORITY (use in this order):
-      1. getMe=true (when requesting current user) - STANDALONE ONLY
+      1. getMe: true (when requesting current user) - STANDALONE ONLY
       2. name="exact_name" (when searching by name) - STANDALONE ONLY  
       3. userIds=["id1","id2"] (when you have specific user IDs)
-      4. teamIds=["id1","id2"] + teamsOnly=true (when you have specific team IDs)
+      4. teamIds=["id1","id2"] + teamsOnly: true (when you have specific team IDs)
       5. No parameters (LAST RESORT - fetches up to 1000 users, avoid unless absolutely necessary)
 
       CRITICAL USAGE RULES:
       • getMe and name parameters CANNOT be combined with any other parameters
-      • userIds + teamIds requires explicit includeTeams=true flag
-      • teamsOnly=true prevents user data fetching (teams-only queries)
-      • includeTeamMembers=true adds detailed member data to teams
+      • userIds + teamIds requires explicit includeTeams: true flag
+      • teamsOnly: true prevents user data fetching (teams-only queries)
+      • includeTeamMembers: true adds detailed member data to teams
 
       OPTIMIZATION DIRECTIVES:
       • NEVER fetch all users when specific IDs are available
       • NEVER use broad queries for single user/team lookups  
       • ALWAYS prefer name search over ID-less queries for individual users
-      • SET includeTeamMembers=false for team lists, true only for member analysis
-      • AVOID includeTeams=true unless you specifically need both users AND teams
+      • SET includeTeamMembers: false for team lists, true only for member analysis  
+      • AVOID includeTeams: true unless you specifically need both users AND teams
 
       RESPONSE CONTENT:
       • Users: id, name, email, title, permissions, contact details, team memberships
-      • Teams: id, name, owners, members (when includeTeamMembers=true)
+      • Teams: id, name, owners, members (when includeTeamMembers: true)
       • Current user: id, name, title, enabled, is_admin, is_guest (basic profile only)`;
   }
 
@@ -171,7 +171,7 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
       if (hasUserIds || hasTeamIds || includeTeams || teamsOnly || includeTeamMembers || hasName) {
         return {
           content:
-            'PARAMETER_CONFLICT: getMe is STANDALONE only. Remove all other parameters when using getMe=true for current user lookup.',
+            'PARAMETER_CONFLICT: getMe is STANDALONE only. Remove all other parameters when using getMe: true for current user lookup.',
         };
       }
 
@@ -227,7 +227,7 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
     if (teamsOnly && includeTeams) {
       return {
         content:
-          'PARAMETER_CONFLICT: Cannot use teamsOnly=true with includeTeams=true. Use teamsOnly for teams-only queries or includeTeams for combined data.',
+          'PARAMETER_CONFLICT: Cannot use teamsOnly: true with includeTeams: true. Use teamsOnly for teams-only queries or includeTeams for combined data.',
       };
     }
 
