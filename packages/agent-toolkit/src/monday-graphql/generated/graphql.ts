@@ -6273,7 +6273,6 @@ export type UserTeamMembershipSimplifiedFragment = { __typename?: 'Team', id: st
 
 export type ListUsersWithTeamsQueryVariables = Exact<{
   userIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
 }>;
 
 
@@ -6295,7 +6294,6 @@ export type ListTeamsWithMembersQuery = { __typename?: 'Query', teams?: Array<{ 
 
 export type ListUsersOnlyQueryVariables = Exact<{
   userIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
-  userLimit?: InputMaybe<Scalars['Int']['input']>;
 }>;
 
 
@@ -6304,7 +6302,6 @@ export type ListUsersOnlyQuery = { __typename?: 'Query', users?: Array<{ __typen
 export type ListUsersAndTeamsQueryVariables = Exact<{
   userIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
   teamIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
-  userLimit?: InputMaybe<Scalars['Int']['input']>;
 }>;
 
 

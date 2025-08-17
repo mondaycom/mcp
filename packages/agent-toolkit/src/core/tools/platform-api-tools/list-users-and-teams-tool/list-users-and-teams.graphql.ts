@@ -1,5 +1,5 @@
 import { gql } from 'graphql-request';
-
+import { DEFAULT_USER_LIMIT } from './constants';
 // GraphQL Fragments for reusable field sets
 
 // Fragment for basic user information (full user details)
@@ -118,8 +118,8 @@ export const listUsersWithTeams = gql`
   ${userDetailsFragment}
   ${userTeamMembershipFragment}
 
-  query listUsersWithTeams($userIds: [ID!], $limit: Int) {
-    users(ids: $userIds, limit: $limit) {
+  query listUsersWithTeams($userIds: [ID!]) {
+    users(ids: $userIds, limit: ${DEFAULT_USER_LIMIT}) {
       ...UserDetails
 
       # Team Memberships
@@ -170,8 +170,8 @@ export const listUsersOnly = gql`
   ${userDetailsFragment}
   ${userTeamMembershipFragment}
 
-  query listUsersOnly($userIds: [ID!], $userLimit: Int) {
-    users(ids: $userIds, limit: $userLimit) {
+  query listUsersOnly($userIds: [ID!]) {
+    users(ids: $userIds, limit: ${DEFAULT_USER_LIMIT}) {
       ...UserDetails
 
       # Team Memberships
@@ -191,8 +191,8 @@ export const listUsersAndTeams = gql`
   ${teamOwnerFragment}
   ${teamMemberSimplifiedFragment}
 
-  query listUsersAndTeams($userIds: [ID!], $teamIds: [ID!], $userLimit: Int) {
-    users(ids: $userIds, limit: $userLimit) {
+  query listUsersAndTeams($userIds: [ID!], $teamIds: [ID!]) {
+    users(ids: $userIds, limit: ${DEFAULT_USER_LIMIT}) {
       ...UserDetails
 
       # Team Memberships (simplified for this context)

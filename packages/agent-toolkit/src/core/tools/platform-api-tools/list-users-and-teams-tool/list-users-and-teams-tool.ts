@@ -20,7 +20,7 @@ import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { formatUsersAndTeams } from './helpers';
 import { FormattedResponse } from './types';
-import { MAX_USER_LIMIT, MAX_USER_IDS, MAX_TEAM_IDS, DEFAULT_USER_LIMIT } from './constants';
+import { MAX_USER_IDS, MAX_TEAM_IDS } from './constants';
 
 export const listUsersAndTeamsToolSchema = {
   userIds: z
@@ -45,19 +45,29 @@ export const listUsersAndTeamsToolSchema = {
       
       EXAMPLES: ["98765432", "11223344"] for specific teams, or omit to get all teams when teamsOnly=true.`,
     ),
-  userLimit: z
-    .number()
-    .min(1)
-    .max(MAX_USER_LIMIT)
+  name: z
+    .string()
     .optional()
     .describe(
-      `Maximum users to return when fetching all users (max ${MAX_USER_LIMIT}). Only applies when userIds is not specified.
+      `Search for users by name or partial name. Returns users whose names contain this string (case-insensitive fuzzy search).
       
-      WHEN TO USE: Essential for large enterprise accounts (1000+ users) to prevent timeouts and optimize response times. Start with 50-100 for exploration, increase as needed.
+      WHEN TO USE: When you need to find specific users but only know their name/partial name. Great for discovering user IDs when you know names.
       
-      PERFORMANCE: Smaller limits = faster responses, better for initial discovery. Large accounts should start small then increase.
+      EXAMPLES: "John Smith", "john", "smith" - all will find users with those name patterns.
       
-      DEFAULT: ${DEFAULT_USER_LIMIT} users (covers 95% of monday.com accounts).`,
+      CONFLICTS: Cannot be used with userIds, teamIds, teamsOnly, or includeTeams - this parameter provides a focused name-based search.`,
+    ),
+  getMe: z
+    .boolean()
+    .optional()
+    .describe(
+      `Fetch the current authenticated user's profile information. Returns detailed profile of the user making the API request.
+      
+      WHEN TO USE: When you need current user's details for personalization, permissions checking, or user context operations.
+      
+      EXAMPLES: User profile display, checking current user's admin status, getting user's team memberships for context.
+      
+      CONFLICTS: Cannot be used with any other parameters - this is a standalone operation for the authenticated user only.`,
     ),
   includeTeams: z
     .boolean()
@@ -108,11 +118,11 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
       • User profiles: name, email, title, permissions, contact info, timezone, activity, team memberships
       • Team details: name, picture, owners, member composition and roles
       • Automatic query optimization based on parameters
-      • Enterprise-safe limits: max ${MAX_USER_IDS} user IDs, ${MAX_TEAM_IDS} team IDs, ${MAX_USER_LIMIT} users
+      • Enterprise-safe limits: max ${MAX_USER_IDS} user IDs, ${MAX_TEAM_IDS} team IDs
 
       COMMON USE CASES:
       1. GET SPECIFIC USERS: Use userIds=["123", "456"] when you have IDs from board items, assignments, or mentions
-      2. EXPLORE ALL USERS: Omit userIds, set userLimit=50-100 for account overview or user discovery
+      2. EXPLORE ALL USERS: Omit userIds for complete account overview or user discovery
       3. ANALYZE TEAMS: Use teamsOnly=true + includeTeamMembers=true for team composition analysis
       4. WORKSPACE OVERVIEW: Use includeTeams=true for comprehensive user-team relationships
       5. PERFORMANCE QUERIES: Use targeted parameters - specific IDs are faster than full scans
@@ -121,8 +131,8 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
        • Default behavior (no params): Returns up to 1000 users with team memberships
        • Specific IDs: Always faster and more detailed than searching all users
        • Team members: Set includeTeamMembers=false for team lists, true for detailed analysis
-       • Large enterprise accounts: Use userLimit=50-100 for initial exploration, then increase
-       • Response size: Lower limits = faster responses and reduced token usage
+       • Large enterprise accounts: All users fetched by default, use specific IDs for targeted queries
+       • Response efficiency: Use teamsOnly or specific IDs to reduce response size
 
       QUERY PATTERNS:
       • Users only (default): Fast user directory with team memberships
@@ -138,8 +148,8 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
   protected async executeInternal(
     input: ToolInputType<typeof listUsersAndTeamsToolSchema>,
   ): Promise<ToolOutputType<never>> {
-    const hasUserIds = input.userIds?.length > 0;
-    const hasTeamIds = input.teamIds?.length > 0;
+    const hasUserIds = input.userIds ? input.userIds.length > 0 : false;
+    const hasTeamIds = input.teamIds ? input.teamIds.length > 0 : false;
     const includeTeams = input.includeTeams || false;
     const teamsOnly = input.teamsOnly || false;
     const includeTeamMembers = input.includeTeamMembers || false;
@@ -150,10 +160,6 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
         content: 'Error: Cannot specify both teamsOnly and includeTeams flags. Choose one.',
       };
     }
-
-    // Calculate safe user limit
-    const userLimit = input.userLimit || DEFAULT_USER_LIMIT;
-    const safeUserLimit = Math.min(userLimit, MAX_USER_LIMIT);
 
     // Early validation for enterprise safety
     if (hasUserIds && input.userIds && input.userIds.length > MAX_USER_IDS) {
@@ -192,14 +198,12 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
         // Specific users with their team memberships (but no separate teams section)
         const variables: ListUsersWithTeamsQueryVariables = {
           userIds: input.userIds,
-          limit: safeUserLimit,
         };
         res = await this.mondayApi.request<ListUsersWithTeamsQuery>(listUsersWithTeams, variables);
       } else {
         // All users (but no separate teams section)
         const variables: ListUsersOnlyQueryVariables = {
           userIds: undefined,
-          userLimit: safeUserLimit,
         };
         res = await this.mondayApi.request<ListUsersOnlyQuery>(listUsersOnly, variables);
       }
@@ -208,7 +212,6 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
       const variables: ListUsersAndTeamsQueryVariables = {
         userIds: input.userIds,
         teamIds: input.teamIds,
-        userLimit: safeUserLimit,
       };
       res = await this.mondayApi.request<ListUsersAndTeamsQuery>(listUsersAndTeams, variables);
     }
