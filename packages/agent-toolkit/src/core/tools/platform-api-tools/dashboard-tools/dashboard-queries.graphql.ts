@@ -38,18 +38,8 @@ export const getAllWidgetsSchema = gql`
 `;
 
 export const createWidget = gql`
-  mutation CreateWidget(
-    $parent: WidgetParentInput!
-    $kind: ExternalWidget!
-    $name: String!
-    $settings: JSON!
-  ) {
-    create_widget(
-      parent: $parent
-      kind: $kind
-      name: $name
-      settings: $settings
-    ) {
+  mutation CreateWidget($parent: WidgetParentInput!, $kind: ExternalWidget!, $name: String!, $settings: JSON!) {
+    create_widget(parent: $parent, kind: $kind, name: $name, settings: $settings) {
       id
       name
       kind

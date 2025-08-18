@@ -78,7 +78,7 @@ i.e
 
 #### 3.1 Retrieve Complete Widget Schemas
 The tool returns JSON Schema 7 definitions for all widget types:
-i.e
+i.e:
 - **CHART Widgets**: Visual data representation
   - Pie charts, bar charts, line charts, column charts
   - Perfect for status distributions, category breakdowns
@@ -153,13 +153,11 @@ i.e
 1. ✅ Understand board structure and columns
 2. ✅ Analyze data patterns and volume
 3. ✅ Create dashboard with proper configuration
-4. ✅ Fetch and study widget schemas
+4. ✅ Fetch and understand widget schemas
 5. ✅ Plan widgets based on data analysis
 6. ✅ Ensure 100% schema compliance
 7. ✅ Create widgets with proper settings
-8. ✅ Verify dashboard functionality
-9. ✅ Test widget performance
-10. ✅ Document dashboard purpose and usage
+8. ✅ Document dashboard purpose and usage
 
 Remember: Success depends on understanding your data first, then creating widgets that provide genuine business value and insights.
 `;

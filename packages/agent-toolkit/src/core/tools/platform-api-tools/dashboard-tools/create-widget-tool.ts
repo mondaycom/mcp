@@ -10,20 +10,23 @@ import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 
 export const createWidgetToolSchema = {
-  parent_container_id: z.number()
+  parent_container_id: z
+    .number()
     .int('Parent container ID must be an integer')
     .positive('Parent container ID must be positive')
     .describe('ID of the parent container (dashboard ID or board view ID)'),
-  parent_container_type: z.nativeEnum(WidgetParentKind)
-    .describe('Type of parent container: DASHBOARD or BOARD_VIEW'),
-  widget_kind: z.nativeEnum(ExternalWidget)
-    .describe('Type of widget to create: i.e CHART, NUMBER, BATTERY'),
-  widget_name: z.string()
+  parent_container_type: z.nativeEnum(WidgetParentKind).describe('Type of parent container: DASHBOARD or BOARD_VIEW'),
+  widget_kind: z.nativeEnum(ExternalWidget).describe('Type of widget to create: i.e CHART, NUMBER, BATTERY'),
+  widget_name: z
+    .string()
     .min(1, 'Widget name is required')
     .max(255, 'Widget name must be 255 characters or less')
     .describe('Widget display name (1-255 UTF-8 chars)'),
-  settings: z.record(z.unknown())
-    .describe('Widget-specific settings as JSON object conforming to widget schema. Use all_widgets_schema to get the required schema for each widget type.')
+  settings: z
+    .record(z.unknown())
+    .describe(
+      'Widget-specific settings as JSON object conforming to widget schema. Use all_widgets_schema to get the required schema for each widget type.',
+    ),
 };
 
 export class CreateWidgetTool extends BaseMondayApiTool<typeof createWidgetToolSchema, never> {
@@ -40,12 +43,6 @@ export class CreateWidgetTool extends BaseMondayApiTool<typeof createWidgetToolS
     return `Create a new widget in a dashboard or board view with specific configuration settings.
     
     This tool creates data visualization widgets that display information from monday.com boards:
-    
-    **Widget Types:**
-    - **CHART**: Visual data representation (pie, bar, line, column charts) for trends and comparisons
-    - **NUMBER**: Numeric metrics display (sums, averages, counts, KPIs) for single-value metrics  
-    - **BATTERY**: Progress tracking visualization (completion bars, status indicators) for goal tracking
-    
     **Parent Containers:**
     - **DASHBOARD**: Place widget in a dashboard (most common use case)
     - **BOARD_VIEW**: Place widget in a specific board view
@@ -54,13 +51,11 @@ export class CreateWidgetTool extends BaseMondayApiTool<typeof createWidgetToolS
     1. **Schema Compliance**: Widget settings MUST conform to the JSON schema for the specific widget type
     2. **Use all_widgets_schema first**: Always fetch widget schemas before creating widgets
     3. **Validate settings**: Ensure all required fields are provided and data types match
-    4. **Parent validation**: Verify the parent container exists and is accessible
     
     **Workflow:**
     1. Use 'all_widgets_schema' to get schema definitions
     2. Prepare widget settings according to the schema
-    3. Use this tool to create the widget
-    4. Verify the widget appears correctly in the container`;
+    3. Use this tool to create the widget`;
   }
 
   getInputSchema(): typeof createWidgetToolSchema {
@@ -89,55 +84,33 @@ export class CreateWidgetTool extends BaseMondayApiTool<typeof createWidgetToolS
       }
 
       const widget = res.create_widget;
-      
-      // Format success response with widget details
-      const parentInfo = widget.parent?.kind === WidgetParentKind.Dashboard 
-        ? `dashboard ${widget.parent.id}` 
-        : `board view ${widget.parent?.id}`;
 
-      const widgetTypeInfo = this.getWidgetTypeDescription(widget.kind);
+      // Format success response with widget details
+      const parentInfo =
+        widget.parent?.kind === WidgetParentKind.Dashboard
+          ? `dashboard ${widget.parent.id}`
+          : `board view ${widget.parent?.id}`;
 
       return {
         content: `✅ Widget "${widget.name}" successfully created!
 
-🎨 **Widget Details:**
+**Widget Details:**
 • **ID**: ${widget.id}
 • **Name**: ${widget.name}
-• **Type**: ${widget.kind} ${widgetTypeInfo}
+• **Type**: ${widget.kind}
 • **Location**: Placed in ${parentInfo}
 
-📊 **Widget Configuration:**
+**Widget Configuration:**
 • **Settings Applied**: ${JSON.stringify(input.settings, null, 2)}
 
-🎯 **Next Steps:**
+**Next Steps:**
 1. **Verify Display**: Check that the widget appears correctly in the ${input.parent_container_type.toLowerCase()}
 2. **Test Data**: Ensure the widget displays the expected data visualization
-3. **Adjust Settings**: Use 'create_widget' again with different settings if needed
-4. **Add More Widgets**: Create additional widgets to complete your dashboard
-
-Your ${widget.kind?.toLowerCase()} widget is now live and displaying data!`
+3. **Add More Widgets**: Create additional widgets to complete your dashboard`,
       };
-
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       throw new Error(`Failed to create ${input.widget_kind} widget: ${errorMessage}`);
     }
   }
-
-  /**
-   * Get description for widget type
-   */
-  private getWidgetTypeDescription(widgetKind?: ExternalWidget | null): string {
-    switch (widgetKind) {
-      case ExternalWidget.Chart:
-        return '(visual data representation)';
-      case ExternalWidget.Number:
-        return '(numeric metrics display)';
-      case ExternalWidget.Battery:
-        return '(progress tracking visualization)';
-      default:
-        return '(data visualization)';
-    }
-  }
-
 }
