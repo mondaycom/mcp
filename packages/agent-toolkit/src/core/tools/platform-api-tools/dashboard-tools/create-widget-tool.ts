@@ -105,8 +105,7 @@ export class CreateWidgetTool extends BaseMondayApiTool<typeof createWidgetToolS
 
 **Next Steps:**
 1. **Verify Display**: Check that the widget appears correctly in the ${input.parent_container_type.toLowerCase()}
-2. **Test Data**: Ensure the widget displays the expected data visualization
-3. **Add More Widgets**: Create additional widgets to complete your dashboard`,
+2. **Add More Widgets**: Create additional widgets to complete your dashboard`,
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);

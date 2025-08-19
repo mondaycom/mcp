@@ -43,7 +43,7 @@ export class CreateDashboardTool extends BaseMondayApiTool<typeof createDashboar
   });
 
   getDescription(): string {
-    return `Run \`dashboard_instructions\` first to get the instructions on how to create a dashboard, then use this tool to create a new monday.com dashboard that aggregates data from one or more boards. 
+    return `Use this tool to create a new monday.com dashboard that aggregates data from one or more boards. 
     Dashboards provide visual representations of board data through widgets and charts.
     
     Use this tool when users want to:
@@ -99,7 +99,9 @@ Dashboard Details:
 
 Next Steps:
 1. Use 'all_widgets_schema' to understand available widget types
-2. Use 'create_widget' to add visualizations to your dashboard`,
+2. Understand the connected boards structure, columns, and metadata. Map board id to column ids
+3. Plan Domain-Beneficial Widgets - Strategic widget planning based on real data analysis
+4. Use 'create_widget' to add widgets to the dashboard`,
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);

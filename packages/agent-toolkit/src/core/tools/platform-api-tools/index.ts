@@ -26,7 +26,6 @@ import { CreateDocTool } from './create-doc-tool';
 import { CreateDashboardTool } from './dashboard-tools/create-dashboard-tool';
 import { AllWidgetsSchemaTool } from './dashboard-tools/all-widgets-schema-tool';
 import { CreateWidgetTool } from './dashboard-tools/create-widget-tool';
-import { DashboardWorkflowTool } from './dashboard-tools/dashboard-instruction-tool';
 
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteItemTool,
@@ -57,7 +56,6 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   CreateDashboardTool,
   AllWidgetsSchemaTool,
   CreateWidgetTool,
-  DashboardWorkflowTool,
 ];
 
 export * from './all-monday-api-tool';
