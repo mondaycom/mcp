@@ -25,7 +25,7 @@ export const createWidgetToolSchema = {
   settings: z
     .record(z.unknown())
     .describe(
-      'Widget-specific settings as JSON object conforming to widget schema. Use all_widgets_schema to get the required schema for each widget type.',
+      'Widget-specific settings as JSON object conforming to widget schema. Use the MCP resource config://schemas/widgets/all to get the required schema for each widget type.',
     ),
 };
 
@@ -49,11 +49,11 @@ export class CreateWidgetTool extends BaseMondayApiTool<typeof createWidgetToolS
     
     **Critical Requirements:**
     1. **Schema Compliance**: Widget settings MUST conform to the JSON schema for the specific widget type
-    2. **Use all_widgets_schema first**: Always fetch widget schemas before creating widgets
+    2. **Get schemas first**: Fetch widget schemas via MCP resource 'config://schemas/widgets/all'
     3. **Validate settings**: Ensure all required fields are provided and data types match
     
     **Workflow:**
-    1. Use 'all_widgets_schema' to get schema definitions
+    1. Access 'config://schemas/widgets/all' resource to get schema definitions
     2. Prepare widget settings according to the schema
     3. Use this tool to create the widget`;
   }

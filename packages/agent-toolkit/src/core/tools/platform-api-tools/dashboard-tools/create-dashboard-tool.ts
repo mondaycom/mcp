@@ -98,7 +98,7 @@ Dashboard Details:
 • Connected Boards: ${input.board_ids.length} board(s)
 
 Next Steps:
-1. Use 'all_widgets_schema' to understand available widget types
+1. Access 'config://schemas/widgets/all' resource to understand available widget types
 2. Understand the connected boards structure, columns, and metadata. Map board id to column ids
 3. Plan Domain-Beneficial Widgets - Strategic widget planning based on real data analysis
 4. Use 'create_widget' to add widgets to the dashboard`,
