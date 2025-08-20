@@ -13,10 +13,10 @@ export const createColumnToolSchema = {
   columnTitle: z.string().describe('The title of the column to be created'),
   columnDescription: z.string().optional().describe('The description of the column to be created'),
   columnSettings: z
-    .any()
+    .string()
     .optional()
     .describe(
-      'Column-specific configuration settings. Use the get_column_type_info tool to fetch the JSON schema for the given column type, then structure this field accordingly as an object.',
+      'Column-specific configuration settings as a JSON string. Use the get_column_type_info tool to fetch the JSON schema for the given column type.',
     ),
 };
 
