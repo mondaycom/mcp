@@ -120,6 +120,175 @@ export type ActivityLogType = {
   user_id: Scalars['String']['output'];
 };
 
+export type AggregateBasicAggregationResult = {
+  __typename?: 'AggregateBasicAggregationResult';
+  result?: Maybe<Scalars['Float']['output']>;
+};
+
+export enum AggregateFromElementType {
+  /** A single table to select from */
+  Table = 'TABLE'
+}
+
+export type AggregateFromTableInput = {
+  id: Scalars['ID']['input'];
+  /** Always TABLE */
+  type: AggregateFromElementType;
+};
+
+export type AggregateGroupByElementInput = {
+  column_id: Scalars['String']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type AggregateGroupByResult = {
+  __typename?: 'AggregateGroupByResult';
+  value_boolean?: Maybe<Scalars['Boolean']['output']>;
+  value_float?: Maybe<Scalars['Float']['output']>;
+  value_int?: Maybe<Scalars['Int']['output']>;
+  value_string?: Maybe<Scalars['String']['output']>;
+};
+
+export type AggregateQueryInput = {
+  from: AggregateFromTableInput;
+  group_by?: InputMaybe<Array<AggregateGroupByElementInput>>;
+  /** Max number of results to return */
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  /** ItemsQuery filter and sort. If not provided, all items will be returned. */
+  query?: InputMaybe<ItemsQuery>;
+  select: Array<AggregateSelectElementInput>;
+};
+
+export type AggregateQueryResult = {
+  __typename?: 'AggregateQueryResult';
+  results?: Maybe<Array<AggregateResultSet>>;
+};
+
+export type AggregateResult = AggregateBasicAggregationResult | AggregateGroupByResult;
+
+export type AggregateResultEntry = {
+  __typename?: 'AggregateResultEntry';
+  alias?: Maybe<Scalars['String']['output']>;
+  value?: Maybe<AggregateResult>;
+};
+
+export type AggregateResultSet = {
+  __typename?: 'AggregateResultSet';
+  entries?: Maybe<Array<AggregateResultEntry>>;
+};
+
+export type AggregateSelectColumnInput = {
+  column_id: Scalars['String']['input'];
+};
+
+export type AggregateSelectElementInput = {
+  /** Alias for the selected element */
+  as: Scalars['String']['input'];
+  /** Column to select. Required if type is COLUMN */
+  column?: InputMaybe<AggregateSelectColumnInput>;
+  /** Function to select. Required if type is FUNCTION */
+  function?: InputMaybe<AggregateSelectFunctionInput>;
+  /** Type of the selected element */
+  type: AggregateSelectElementType;
+};
+
+export enum AggregateSelectElementType {
+  /** A column to select */
+  Column = 'COLUMN',
+  /** A function to select */
+  Function = 'FUNCTION'
+}
+
+export type AggregateSelectFunctionInput = {
+  /** Function to select. Required if type is FUNCTION */
+  function: AggregateSelectFunctionName;
+  params?: InputMaybe<Array<AggregateSelectElementInput>>;
+};
+
+/** Function to select. Required if type is FUNCTION */
+export enum AggregateSelectFunctionName {
+  /** Average the values of the items */
+  Average = 'AVERAGE',
+  /** Check if the value is between two values */
+  Between = 'BETWEEN',
+  /** Conditional case statement */
+  Case = 'CASE',
+  /** Extract color value */
+  Color = 'COLOR',
+  /** Count the number of values */
+  Count = 'COUNT',
+  /** Count the number of distinct values of the items */
+  CountDistinct = 'COUNT_DISTINCT',
+  /** Count the number of items */
+  CountItems = 'COUNT_ITEMS',
+  /** Count the number of keys in the object */
+  CountKeys = 'COUNT_KEYS',
+  /** Count the number of subitems */
+  CountSubitems = 'COUNT_SUBITEMS',
+  /** Extract date component */
+  Date = 'DATE',
+  /** Truncate date to day precision */
+  DateTruncDay = 'DATE_TRUNC_DAY',
+  /** Truncate date to month precision */
+  DateTruncMonth = 'DATE_TRUNC_MONTH',
+  /** Truncate date to quarter precision */
+  DateTruncQuarter = 'DATE_TRUNC_QUARTER',
+  /** Truncate date to week precision */
+  DateTruncWeek = 'DATE_TRUNC_WEEK',
+  /** Truncate date to year precision */
+  DateTruncYear = 'DATE_TRUNC_YEAR',
+  /** Get the running duration of the items */
+  DurationRunning = 'DURATION_RUNNING',
+  /** Get end date from date range */
+  EndDate = 'END_DATE',
+  /** Check if values are equal */
+  Equals = 'EQUALS',
+  /** Get the first value */
+  First = 'FIRST',
+  /** Flatten nested values */
+  Flatten = 'FLATTEN',
+  /** Extract hour from datetime */
+  Hour = 'HOUR',
+  /** Extract ID value */
+  Id = 'ID',
+  /** Check if status is done */
+  IsDone = 'IS_DONE',
+  /** Extract label text */
+  Label = 'LABEL',
+  /** Get the leftmost characters */
+  Left = 'LEFT',
+  /** Get the length of the value */
+  Length = 'LENGTH',
+  /** Convert text to lowercase */
+  Lower = 'LOWER',
+  /** Get the maximum value of the items */
+  Max = 'MAX',
+  /** Get the median of the values of the items */
+  Median = 'MEDIAN',
+  /** Get the minimum value of the items */
+  Min = 'MIN',
+  /** Get the minimum and maximum values of the items */
+  MinMax = 'MIN_MAX',
+  /** No function applied */
+  None = 'NONE',
+  /** Extract order value */
+  Order = 'ORDER',
+  /** Extract person information */
+  Person = 'PERSON',
+  /** Extract phone country short name */
+  PhoneCountryShortName = 'PHONE_COUNTRY_SHORT_NAME',
+  /** Get raw value without formatting */
+  Raw = 'RAW',
+  /** Get start date from date range */
+  StartDate = 'START_DATE',
+  /** Sum the values of the items */
+  Sum = 'SUM',
+  /** Remove whitespace from text */
+  Trim = 'TRIM',
+  /** Convert text to uppercase */
+  Upper = 'UPPER'
+}
+
 /** Input for app feature release data. */
 export type AppFeatureReleaseDataInput = {
   /** The URL for the release. */
@@ -539,6 +708,54 @@ export enum BlockDirection {
   Rtl = 'RTL'
 }
 
+/** Automation block execution event */
+export type BlockEvent = {
+  __typename?: 'BlockEvent';
+  /** Account identifier */
+  accountId?: Maybe<Scalars['Int']['output']>;
+  /** Atomic action identifier */
+  atomicActionId?: Maybe<Scalars['String']['output']>;
+  /** Number of billing actions counted in this block */
+  billingActionCountForBlock?: Maybe<Scalars['Int']['output']>;
+  /** Timestamp (epoch) when block finished */
+  blockFinishTimestamp?: Maybe<Scalars['Float']['output']>;
+  /** Timestamp (epoch) when block started */
+  blockStartTimestamp?: Maybe<Scalars['Float']['output']>;
+  /** Board identifier */
+  boardId?: Maybe<Scalars['Int']['output']>;
+  /** Whether block condition was satisfied */
+  conditionSatisfied?: Maybe<Scalars['Boolean']['output']>;
+  /** Entity kind for the block */
+  entityKind?: Maybe<Scalars['String']['output']>;
+  /** Error reason if block failed */
+  errorReason?: Maybe<Scalars['String']['output']>;
+  /** Kind of the block event */
+  eventKind?: Maybe<Scalars['String']['output']>;
+  /** Current state of the block event */
+  eventState?: Maybe<Scalars['String']['output']>;
+  /** Document identifier */
+  id?: Maybe<Scalars['String']['output']>;
+  /** Block title */
+  title?: Maybe<Scalars['String']['output']>;
+  /** Timestamp (epoch) when parent trigger started */
+  triggerStarted?: Maybe<Scalars['Float']['output']>;
+  /** Date when parent trigger started */
+  triggerStartedAt?: Maybe<Scalars['ISO8601DateTime']['output']>;
+  /** UUID of the parent trigger event */
+  triggerUuid?: Maybe<Scalars['String']['output']>;
+  /** User identifier who triggered the automation */
+  userId?: Maybe<Scalars['Int']['output']>;
+  /** Workflow node identifier */
+  workflowNodeId?: Maybe<Scalars['Int']['output']>;
+};
+
+/** A page of block events */
+export type BlockEventsPage = {
+  __typename?: 'BlockEventsPage';
+  /** List of block events in the current page */
+  blockEvents?: Maybe<Array<BlockEvent>>;
+};
+
 /** Object representing structured data within a text block */
 export type BlotContent = DocsColumnValue | Mention;
 
@@ -575,6 +792,8 @@ export type Board = {
   description?: Maybe<Scalars['String']['output']>;
   /** The board's visible groups. */
   groups?: Maybe<Array<Maybe<Group>>>;
+  /** The hierarchy type of the board */
+  hierarchy_type?: Maybe<BoardHierarchy>;
   /** The unique identifier of the board. */
   id: Scalars['ID']['output'];
   /** The Board's item nickname, one of a predefined set of values, or a custom user value */
@@ -677,6 +896,7 @@ export type BoardTeam_SubscribersArgs = {
 
 /** A monday.com board. */
 export type BoardUpdatesArgs = {
+  board_updates_only?: InputMaybe<Scalars['Boolean']['input']>;
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
@@ -744,6 +964,29 @@ export enum BoardEditPermissions {
   Owners = 'owners'
 }
 
+/** The complete graph export for a board */
+export type BoardGraphExport = {
+  __typename?: 'BoardGraphExport';
+  /** The ID of the board */
+  boardId?: Maybe<Scalars['String']['output']>;
+  /** The total number of edges in the graph */
+  edgeCount?: Maybe<Scalars['Int']['output']>;
+  /** The timestamp when the graph was exported */
+  exportedAt?: Maybe<Scalars['String']['output']>;
+  /** The graph data structure */
+  graphData?: Maybe<Scalars['JSON']['output']>;
+  /** The total number of nodes in the graph */
+  nodeCount?: Maybe<Scalars['Int']['output']>;
+};
+
+/** The board hierarchy type */
+export enum BoardHierarchy {
+  /** classic */
+  Classic = 'classic',
+  /** multilevel of items */
+  MultiLevel = 'multi_level'
+}
+
 /** The board kinds available. */
 export enum BoardKind {
   /** Private boards. */
@@ -752,6 +995,33 @@ export enum BoardKind {
   Public = 'public',
   /** Shareable boards. */
   Share = 'share'
+}
+
+export type BoardMuteSettings = {
+  __typename?: 'BoardMuteSettings';
+  /** Board ID */
+  board_id?: Maybe<Scalars['ID']['output']>;
+  /** Human-friendly mute state for the board and current user */
+  mute_state?: Maybe<BoardMuteState>;
+};
+
+/**
+ * Represents the mute state of a board for the current user.
+ *
+ *   - NOT_MUTED: The board is not muted at all (default state). This state, as well as MUTE_ALL, is set by the board owner(s) and only they can change it.
+ *   - MUTE_ALL: All notifications for all users are muted on this board. This state, as well as NOT_MUTED, is set by the board owner(s) and only they can change it.
+ *   - MENTIONS_AND_ASSIGNS_ONLY: The current user will only be notified if mentioned or assigned on the board.
+ *   - CURRENT_USER_MUTE_ALL: Only the current user has all notifications muted from this board.
+ */
+export enum BoardMuteState {
+  /** Only the current user has all notifications muted from this board */
+  CurrentUserMuteAll = 'CURRENT_USER_MUTE_ALL',
+  /** The current user will only be notified if mentioned or assigned on the board */
+  MentionsAndAssignsOnly = 'MENTIONS_AND_ASSIGNS_ONLY',
+  /** All notifications for all users are muted on this board. This state is set by the board owner(s) and only they can change it. */
+  MuteAll = 'MUTE_ALL',
+  /** The board is not muted at all (default state). This state is set by the board owner(s) and only they can change it. */
+  NotMuted = 'NOT_MUTED'
 }
 
 /** The board object types. */
@@ -794,6 +1064,14 @@ export enum BoardSubscriberKind {
   Owner = 'owner',
   /** Board subscriber. */
   Subscriber = 'subscriber'
+}
+
+/** Enum representing different usage types for board operations */
+export enum BoardUsage {
+  /** Board can be connected to a portfolio */
+  ConnectToPortfolio = 'CONNECT_TO_PORTFOLIO',
+  /** Board can be converted to a project */
+  ConvertToProject = 'CONVERT_TO_PROJECT'
 }
 
 /** A board's view. */
@@ -860,6 +1138,15 @@ export type ButtonValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
+/** Calculated capability settings for a column */
+export type CalculatedCapability = {
+  __typename?: 'CalculatedCapability';
+  /** Type of the calculated value */
+  calculated_type?: Maybe<ColumnType>;
+  /** Function to calculate the parent values */
+  function: Scalars['String']['output'];
+};
+
 /** A cell containing a reference to a block */
 export type Cell = {
   __typename?: 'Cell';
@@ -875,6 +1162,20 @@ export type ChangeTeamMembershipsResult = {
   /** The users that team membership update succeeded for */
   successful_users?: Maybe<Array<User>>;
 };
+
+/** Whether this channel is editable, always enabled, or not relevant to the notification */
+export enum ChannelEditableStatus {
+  AllRelatedNotificationsDontHaveChannel = 'AllRelatedNotificationsDontHaveChannel',
+  AlwaysEnabled = 'AlwaysEnabled',
+  Editable = 'Editable'
+}
+
+/** Available notification channel types: Monday, Email, Slack */
+export enum ChannelType {
+  Email = 'Email',
+  Monday = 'Monday',
+  Slack = 'Slack'
+}
 
 export type CheckboxValue = ColumnValue & {
   __typename?: 'CheckboxValue';
@@ -913,11 +1214,20 @@ export type Column = {
   __typename?: 'Column';
   /** Is the column archived or not. */
   archived: Scalars['Boolean']['output'];
+  /** Capabilities available for this column */
+  capabilities: ColumnCapabilities;
   /** The column's description. */
   description?: Maybe<Scalars['String']['output']>;
   /** The column's unique identifier. */
   id: Scalars['ID']['output'];
-  /** The column's settings in a string form. */
+  /** The revision of the column (fetch to get latest revision). Used for optimistic concurrency control. */
+  revision: Scalars['String']['output'];
+  /** The column's settings in a JSON form. */
+  settings?: Maybe<Scalars['JSON']['output']>;
+  /**
+   * The column's settings in a string form.
+   * @deprecated From version 2025-10, use settings instead. Will be removed in a future version.
+   */
   settings_str: Scalars['String']['output'];
   /** The column's title. */
   title: Scalars['String']['output'];
@@ -925,6 +1235,13 @@ export type Column = {
   type: ColumnType;
   /** The column's width. */
   width?: Maybe<Scalars['Int']['output']>;
+};
+
+/** Capabilities available for a column */
+export type ColumnCapabilities = {
+  __typename?: 'ColumnCapabilities';
+  /** Calculated capability settings */
+  calculated?: Maybe<CalculatedCapability>;
 };
 
 /** An object defining a mapping of column between source board and destination board */
@@ -1206,11 +1523,66 @@ export type CreateDocWorkspaceInput = {
 };
 
 export type CreateDropdownColumnSettingsInput = {
+  /** Maximum number of labels that can be selected when limit_select is enabled */
+  label_limit_count?: InputMaybe<Scalars['Int']['input']>;
   labels: Array<CreateDropdownLabelInput>;
+  /** Whether to limit the number of labels that can be selected */
+  limit_select?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export type CreateDropdownLabelInput = {
   label: Scalars['String']['input'];
+};
+
+/** Input type for adding an object to a hierarchy list */
+export type CreateFavoriteInput = {
+  /** The name of the object */
+  name?: InputMaybe<Scalars['String']['input']>;
+  /** The position where to add the object */
+  newPosition?: InputMaybe<ObjectDynamicPositionInput>;
+  /** The object to add to the list */
+  object: HierarchyObjectIdInputType;
+};
+
+/** Result type for adding an object to a personal list */
+export type CreateFavoriteResultType = {
+  __typename?: 'CreateFavoriteResultType';
+  /** The added object hierarchy item */
+  favorites?: Maybe<HierarchyObjectItem>;
+};
+
+export type CreateFormTagInput = {
+  /** The name of the tag. Must be unique within the form and not reserved. */
+  name: Scalars['String']['input'];
+  /** The value of the tag */
+  value?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type CreatePortfolioResult = {
+  __typename?: 'CreatePortfolioResult';
+  /** A message describing the result of the operation. */
+  message?: Maybe<Scalars['String']['output']>;
+  /** The ID of the solution that was created */
+  solution_live_version_id?: Maybe<Scalars['String']['output']>;
+  /** Indicates if the operation was successful. */
+  success?: Maybe<Scalars['Boolean']['output']>;
+};
+
+export type CreateQuestionInput = {
+  /** Optional explanatory text providing additional context, instructions, or examples for the question. */
+  description?: InputMaybe<Scalars['String']['input']>;
+  /** Array of option objects for choice-based questions (single_select, multi_select). Required for select types. */
+  options?: InputMaybe<Array<QuestionOptionInput>>;
+  /** Boolean indicating if the question must be answered before form submission. */
+  required?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Question-specific configuration object that varies by question type. */
+  settings?: InputMaybe<FormQuestionSettingsInput>;
+  /** The question text displayed to respondents. Must be at least 1 character long and clearly indicate the expected response. */
+  title: Scalars['String']['input'];
+  /** The question type determining input behavior and validation (e.g., "text", "email", "single_select", "multi_select"). */
+  type: FormQuestionType;
+  /** Boolean controlling question visibility to respondents. Hidden questions remain in form structure but are not displayed. */
+  visible?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export type CreateStatusColumnSettingsInput = {
@@ -1362,6 +1734,35 @@ export type DailyLimit = {
   total?: Maybe<Scalars['Int']['output']>;
 };
 
+/** Aggregates data from one or more boards. */
+export type Dashboard = {
+  __typename?: 'Dashboard';
+  /** Folder ID that groups the dashboard inside its workspace (null = workspace root). */
+  board_folder_id?: Maybe<Scalars['Int']['output']>;
+  /** Stable unique identifier of the dashboard. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Visibility level: `PUBLIC` (default) or `PRIVATE`. */
+  kind?: Maybe<DashboardKind>;
+  /** Dashboard title (1–255 UTF-8 chars). */
+  name?: Maybe<Scalars['String']['output']>;
+  /** ID of the workspace that owns this dashboard. */
+  workspace_id?: Maybe<Scalars['Int']['output']>;
+};
+
+/** Dashboard visibility. `PUBLIC` dashboards are visible to all workspace members; `PRIVATE` dashboards are only visible to invited users. */
+export enum DashboardKind {
+  Private = 'PRIVATE',
+  Public = 'PUBLIC'
+}
+
+/** Date range filter (inclusive) */
+export type DateRangeInput = {
+  /** End date (ISO 8601) */
+  endDate: Scalars['String']['input'];
+  /** Start date (ISO 8601) */
+  startDate: Scalars['String']['input'];
+};
+
 export type DateValue = ColumnValue & {
   __typename?: 'DateValue';
   /** The column that this value belongs to. */
@@ -1413,6 +1814,32 @@ export type DeactivateUsersResult = {
   errors?: Maybe<Array<DeactivateUsersError>>;
 };
 
+export type DehydratedFormResponse = {
+  __typename?: 'DehydratedFormResponse';
+  /** The board ID connected to the form. Used to store form responses as items. */
+  boardId: Scalars['ID']['output'];
+  /** The unique identifier token for the form. Required for all form-specific operations. */
+  token: Scalars['String']['output'];
+};
+
+/** Input type for removing an object from favorites */
+export type DeleteFavoriteInput = {
+  /** The object to remove from favorites */
+  object: HierarchyObjectIdInputType;
+};
+
+/** Result type for removing an object from favorites */
+export type DeleteFavoriteInputResultType = {
+  __typename?: 'DeleteFavoriteInputResultType';
+  /** Whether the object was successfully removed */
+  success?: Maybe<Scalars['Boolean']['output']>;
+};
+
+export type DeleteFormTagInput = {
+  /** Options for deleting the tag */
+  deleteAssociatedColumn?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
 export type DeleteMarketplaceAppDiscount = {
   __typename?: 'DeleteMarketplaceAppDiscount';
   /** Slug of an account */
@@ -1425,6 +1852,18 @@ export type DeleteMarketplaceAppDiscountResult = {
   __typename?: 'DeleteMarketplaceAppDiscountResult';
   deleted_discount: DeleteMarketplaceAppDiscount;
 };
+
+/** Type of dependency relationship between items */
+export enum DependencyRelation {
+  /** Finish to Finish - The dependent item can finish only after the predecessor finishes */
+  Ff = 'FF',
+  /** Finish to Start - The dependent item can start only after the predecessor finishes */
+  Fs = 'FS',
+  /** Start to Start - The dependent item can start only after the predecessor starts */
+  Sf = 'SF',
+  /** Start to Finish - The dependent item can finish only after the predecessor starts */
+  Ss = 'SS'
+}
 
 export type DependencyValue = ColumnValue & {
   __typename?: 'DependencyValue';
@@ -1446,6 +1885,14 @@ export type DependencyValue = ColumnValue & {
   updated_at?: Maybe<Scalars['Date']['output']>;
   /** The column's raw value in JSON format. */
   value?: Maybe<Scalars['JSON']['output']>;
+};
+
+/** Input type for updating dependency column value, supporting both adding and removing dependencies */
+export type DependencyValueInput = {
+  /** List of pulses to add as dependencies with their configuration */
+  added_pulse?: InputMaybe<Array<UpdateDependencyColumnInput>>;
+  /** List of pulses to remove from dependencies */
+  removed_pulse?: InputMaybe<Array<UpdateDependencyColumnInput>>;
 };
 
 export type DirectDocValue = ColumnValue & {
@@ -1831,6 +2278,16 @@ export type ExtendTrialPeriod = {
   success: Scalars['Boolean']['output'];
 };
 
+/** Widget types available for creating data visualizations and displays */
+export enum ExternalWidget {
+  /** Battery widgets for progress tracking and completion status visualization. Displays progress bars, completion percentages, status indicators, and goal achievement metrics. Perfect for showing project completion, task progress, capacity utilization, and milestone tracking. */
+  Battery = 'BATTERY',
+  /** Chart widgets for visual data representation including pie charts, bar charts, line graphs, and column charts. Used to display trends, comparisons, distributions, and relationships between data points over time or categories. */
+  Chart = 'CHART',
+  /** Number widgets for displaying numeric metrics such as accumulated sums, averages, counts, totals, percentages. Ideal for showing single-value metrics, counters, calculated aggregations, and key performance indicators in a prominent numeric format. */
+  Number = 'NUMBER'
+}
+
 export type FileAssetValue = {
   __typename?: 'FileAssetValue';
   /** The asset associated with the file. */
@@ -2047,6 +2504,584 @@ export enum FolderFontWeight {
   Null = 'NULL'
 }
 
+/** Object containing accessibility options such as language, alt text, etc. */
+export type FormAccessibility = {
+  __typename?: 'FormAccessibility';
+  /** Language code for form localization and interface text (e.g., "en", "es", "fr"). */
+  language?: Maybe<Scalars['String']['output']>;
+  /** Alternative text description for the logo image for accessibility. */
+  logoAltText?: Maybe<Scalars['String']['output']>;
+};
+
+/** Accessibility configuration including language and reading direction. */
+export type FormAccessibilityInput = {
+  /** Language code for form localization and interface text (e.g., "en", "es", "fr"). */
+  language?: InputMaybe<Scalars['String']['input']>;
+  /** Alternative text description for the logo image for accessibility. */
+  logoAltText?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FormAfterSubmissionView = {
+  __typename?: 'FormAfterSubmissionView';
+  /** Boolean allowing users to modify their submitted responses after submission. */
+  allowEditSubmission: Scalars['Boolean']['output'];
+  /** Boolean allowing users to submit multiple responses to the same form. */
+  allowResubmit: Scalars['Boolean']['output'];
+  /** Boolean allowing users to view their submitted responses. */
+  allowViewSubmission: Scalars['Boolean']['output'];
+  /** Text shown to users after they complete the form. */
+  description?: Maybe<Scalars['String']['output']>;
+  /** Object containing redirect configuration after form submission. */
+  redirectAfterSubmission?: Maybe<FormRedirectAfterSubmission>;
+  /** Boolean displaying a success image after form completion. */
+  showSuccessImage: Scalars['Boolean']['output'];
+  /** Text displayed as the title after successful form submission. */
+  title?: Maybe<Scalars['String']['output']>;
+};
+
+/** Object containing settings for the post-submission user experience. */
+export type FormAfterSubmissionViewInput = {
+  /** Boolean allowing users to modify their submitted responses after submission. */
+  allowEditSubmission?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Boolean allowing users to submit multiple responses to the same form. */
+  allowResubmit?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Boolean allowing users to view their submitted responses. */
+  allowViewSubmission?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Text shown to users after they complete the form. */
+  description?: InputMaybe<Scalars['String']['input']>;
+  /** Object containing redirect configuration after form submission. */
+  redirectAfterSubmission?: InputMaybe<FormRedirectAfterSubmissionInput>;
+  /** Boolean displaying a success image after form completion. */
+  showSuccessImage?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Text displayed as the title after successful form submission. */
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export enum FormAlignment {
+  Center = 'Center',
+  FullLeft = 'FullLeft',
+  FullRight = 'FullRight',
+  Left = 'Left',
+  Right = 'Right'
+}
+
+/** Object containing visual styling including colors, layout, fonts, and branding elements. */
+export type FormAppearance = {
+  __typename?: 'FormAppearance';
+  /** Object containing background appearance configuration for the form. */
+  background?: Maybe<FormBackground>;
+  /** Boolean hiding monday branding from the form display. */
+  hideBranding: Scalars['Boolean']['output'];
+  /** Object containing form structure and presentation settings. */
+  layout?: Maybe<FormLayout>;
+  /** Object containing logo display configuration for form branding. */
+  logo?: Maybe<FormLogo>;
+  /** Hex color code for the primary theme color used throughout the form. */
+  primaryColor?: Maybe<Scalars['String']['output']>;
+  /** Boolean displaying a progress indicator showing form completion progress bar. */
+  showProgressBar: Scalars['Boolean']['output'];
+  /** Object containing submit button styling and text configuration. */
+  submitButton?: Maybe<FormSubmitButton>;
+  /** Object containing typography and text styling configuration. */
+  text?: Maybe<FormText>;
+};
+
+/** Visual styling configuration including colors, layout, and branding. */
+export type FormAppearanceInput = {
+  /** Object containing background appearance configuration for the form. */
+  background?: InputMaybe<FormBackgroundInput>;
+  /** Boolean hiding monday branding from the form display. */
+  hideBranding?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Object containing form structure and presentation settings. */
+  layout?: InputMaybe<FormLayoutInput>;
+  /** Object containing logo display configuration for form branding. */
+  logo?: InputMaybe<FormLogoInput>;
+  /** Hex color code for the primary theme color used throughout the form. */
+  primaryColor?: InputMaybe<Scalars['String']['input']>;
+  /** Boolean displaying a progress indicator showing form completion progress bar. */
+  showProgressBar?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Object containing submit button styling and text configuration. */
+  submitButton?: InputMaybe<FormSubmitButtonInput>;
+  /** Object containing typography and text styling configuration. */
+  text?: InputMaybe<FormTextInput>;
+};
+
+/** Object containing background appearance configuration for the form. */
+export type FormBackground = {
+  __typename?: 'FormBackground';
+  /** String specifying background style. */
+  type?: Maybe<FormBackgrounds>;
+  /** String containing the background value. The value will depend on the background type. If the background type is color, the value will be a hex color code. If the background type is image, the value will be an image URL. */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** Object containing background appearance configuration for the form. */
+export type FormBackgroundInput = {
+  /** String specifying background style. */
+  type: FormBackgrounds;
+  /** String containing the background value. The value will depend on the background type. If the background type is color, the value will be a hex color code. If the background type is image, the value will be an image URL. */
+  value?: InputMaybe<Scalars['String']['input']>;
+};
+
+export enum FormBackgrounds {
+  Color = 'Color',
+  Image = 'Image',
+  None = 'None'
+}
+
+export type FormCloseDate = {
+  __typename?: 'FormCloseDate';
+  /** ISO timestamp when the form will automatically stop accepting responses. */
+  date?: Maybe<Scalars['String']['output']>;
+  /** Boolean enabling automatic form closure at a specified date and time. */
+  enabled: Scalars['Boolean']['output'];
+};
+
+/** Object containing automatic form closure configuration. */
+export type FormCloseDateInput = {
+  /** ISO timestamp when the form will automatically stop accepting responses. */
+  date?: InputMaybe<Scalars['String']['input']>;
+  /** Boolean enabling automatic form closure at a specified date and time. */
+  enabled?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+export enum FormDirection {
+  LtR = 'LtR',
+  Rtl = 'Rtl'
+}
+
+export type FormDraftSubmission = {
+  __typename?: 'FormDraftSubmission';
+  /** Boolean allowing users to save incomplete responses as drafts. */
+  enabled: Scalars['Boolean']['output'];
+};
+
+/** Object containing draft saving configuration allowing users to save progress. */
+export type FormDraftSubmissionInput = {
+  /** Boolean allowing users to save incomplete responses as drafts. */
+  enabled?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+/** Object containing form features including but not limited to password protection, response limits, login requirements, etc. */
+export type FormFeatures = {
+  __typename?: 'FormFeatures';
+  /** Object containing settings for the post-submission user experience. */
+  afterSubmissionView?: Maybe<FormAfterSubmissionView>;
+  /** Object containing automatic form closure configuration. */
+  closeDate?: Maybe<FormCloseDate>;
+  /** Object containing draft saving configuration allowing users to save progress. */
+  draftSubmission?: Maybe<FormDraftSubmission>;
+  /** Boolean indicating if the form is restricted to internal users only. */
+  isInternal: Scalars['Boolean']['output'];
+  /** Object containing board settings for response handling. */
+  monday?: Maybe<FormMonday>;
+  /** Object containing password protection configuration for the form. */
+  password?: Maybe<FormPassword>;
+  /** Object containing welcome screen configuration displayed before the form. */
+  preSubmissionView?: Maybe<FormPreSubmissionView>;
+  /** Boolean enabling reCAPTCHA verification to prevent spam submissions. */
+  reCaptchaChallenge: Scalars['Boolean']['output'];
+  /** Object containing login requirement settings for form access. */
+  requireLogin?: Maybe<FormRequireLogin>;
+  /** Object containing response limitation settings to control submission volume. */
+  responseLimit?: Maybe<FormResponseLimit>;
+  /** Object containing shortened URL configuration for easy form sharing. */
+  shortenedLink?: Maybe<FormShortenedLink>;
+};
+
+/** Form features configuration including security, limits, and access controls. */
+export type FormFeaturesInput = {
+  /** Object containing settings for the post-submission user experience. */
+  afterSubmissionView?: InputMaybe<FormAfterSubmissionViewInput>;
+  /** Object containing automatic form closure configuration. */
+  closeDate?: InputMaybe<FormCloseDateInput>;
+  /** Object containing draft saving configuration allowing users to save progress. */
+  draftSubmission?: InputMaybe<FormDraftSubmissionInput>;
+  /** Object containing board settings for response handling. */
+  monday?: InputMaybe<FormMondayInput>;
+  /** Object containing password protection configuration for the form. */
+  password?: InputMaybe<FormPasswordInput>;
+  /** Object containing welcome screen configuration displayed before the form. */
+  preSubmissionView?: InputMaybe<FormPreSubmissionViewInput>;
+  /** Boolean enabling reCAPTCHA verification to prevent spam submissions. */
+  reCaptchaChallenge?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Object containing login requirement settings for form access. */
+  requireLogin?: InputMaybe<FormRequireLoginInput>;
+  /** Object containing response limitation settings to control submission volume. */
+  responseLimit?: InputMaybe<FormResponseLimitInput>;
+};
+
+export enum FormFontSize {
+  Large = 'Large',
+  Medium = 'Medium',
+  Small = 'Small'
+}
+
+export enum FormFormat {
+  Classic = 'Classic',
+  OneByOne = 'OneByOne'
+}
+
+/** Object containing form structure and presentation settings. */
+export type FormLayout = {
+  __typename?: 'FormLayout';
+  /** String controlling text and content alignment. */
+  alignment?: Maybe<FormAlignment>;
+  /** String setting reading direction. */
+  direction?: Maybe<FormDirection>;
+  /** String specifying the form display format. Can be a step by step form or a classic one page form. */
+  format?: Maybe<FormFormat>;
+};
+
+/** Object containing form structure and presentation settings. */
+export type FormLayoutInput = {
+  /** String controlling text and content alignment. */
+  alignment?: InputMaybe<FormAlignment>;
+  /** String setting reading direction. */
+  direction?: InputMaybe<FormDirection>;
+  /** String specifying the form display format. Can be a step by step form or a classic one page form. */
+  format?: InputMaybe<FormFormat>;
+};
+
+/** Object containing logo display configuration for form branding. */
+export type FormLogo = {
+  __typename?: 'FormLogo';
+  /** String specifying logo placement ("top", "bottom", "header"). */
+  position?: Maybe<FormLogoPosition>;
+  /** String specifying logo size ("small", "medium", "large") for the logo that appears on the header of the form. */
+  size?: Maybe<FormLogoSize>;
+  /** URL pointing to the logo image file for display on the form. */
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+/** Object containing logo display configuration for form branding. */
+export type FormLogoInput = {
+  /** String specifying logo placement ("top", "bottom", "header"). */
+  position?: InputMaybe<FormLogoPosition>;
+  /** String specifying logo size ("small", "medium", "large") for the logo that appears on the header of the form. */
+  size?: InputMaybe<FormLogoSize>;
+  /** URL pointing to the logo image file for display on the form. */
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export enum FormLogoPosition {
+  Auto = 'Auto',
+  Center = 'Center',
+  Left = 'Left',
+  Right = 'Right'
+}
+
+/** Available logo sizes for form branding */
+export enum FormLogoSize {
+  /** Extra large logo size for maximum form branding impact, height of 96px, width will be scaled to maintain aspect ratio */
+  ExtraLarge = 'ExtraLarge',
+  /** Large logo size for prominent form branding, height of 72px, width will be scaled to maintain aspect ratio */
+  Large = 'Large',
+  /** Medium logo size for standard form branding, height of 40px, width will be scaled to maintain aspect ratio */
+  Medium = 'Medium',
+  /** Small logo size for compact form branding, height of 32px, width will be scaled to maintain aspect ratio */
+  Small = 'Small'
+}
+
+export type FormMonday = {
+  __typename?: 'FormMonday';
+  /** Boolean adding a name question to the form. This is a special question type that represents the name column from the associated monday board */
+  includeNameQuestion: Scalars['Boolean']['output'];
+  /** Boolean adding an update/comment field to the form. This is a special question type that represents the updates from the associated item of the submission on the monday board.  */
+  includeUpdateQuestion: Scalars['Boolean']['output'];
+  /** The board group ID where new items from form responses will be created. */
+  itemGroupId?: Maybe<Scalars['String']['output']>;
+  /** Boolean synchronizing form question titles with board column names. When true, the form question titles will be synchronized with the board column names. */
+  syncQuestionAndColumnsTitles: Scalars['Boolean']['output'];
+};
+
+/** Object containing board settings for response handling. */
+export type FormMondayInput = {
+  /** Boolean adding a name question to the form. This is a special question type that represents the name column from the associated monday board */
+  includeNameQuestion?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Boolean adding an update/comment field to the form. This is a special question type that represents the updates from the associated item of the submission on the monday board.  */
+  includeUpdateQuestion?: InputMaybe<Scalars['Boolean']['input']>;
+  /** The board group ID where new items from form responses will be created. */
+  itemGroupId?: InputMaybe<Scalars['String']['input']>;
+  /** Boolean synchronizing form question titles with board column names. When true, the form question titles will be synchronized with the board column names. */
+  syncQuestionAndColumnsTitles?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+export type FormPassword = {
+  __typename?: 'FormPassword';
+  /** Boolean enabling password protection. When true, users must enter a password to access the form. */
+  enabled: Scalars['Boolean']['output'];
+};
+
+/** Password configuration for the form. Only setting enabled to false is supported. To enable a form to be password protected, please use the set_form_password mutation instead. */
+export type FormPasswordInput = {
+  /** Boolean enabling password protection. When true, users must enter a password to access the form. */
+  enabled?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+export type FormPreSubmissionView = {
+  __typename?: 'FormPreSubmissionView';
+  /** Text providing context or instructions on the welcome screen. */
+  description?: Maybe<Scalars['String']['output']>;
+  /** Boolean showing a welcome/introduction screen before the form begins. */
+  enabled: Scalars['Boolean']['output'];
+  /** Object containing start button configuration for the welcome screen. */
+  startButton?: Maybe<FormStartButton>;
+  /** Text displayed as the title on the welcome screen. */
+  title?: Maybe<Scalars['String']['output']>;
+};
+
+/** Object containing welcome screen configuration displayed before the form. */
+export type FormPreSubmissionViewInput = {
+  /** Text providing context or instructions on the welcome screen. */
+  description?: InputMaybe<Scalars['String']['input']>;
+  /** Boolean showing a welcome/introduction screen before the form begins. */
+  enabled?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Object containing start button configuration for the welcome screen. */
+  startButton?: InputMaybe<FormStartButtonInput>;
+  /** Text displayed as the title on the welcome screen. */
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FormQuestion = {
+  __typename?: 'FormQuestion';
+  /** Optional explanatory text providing additional context, instructions, or examples for the question. */
+  description?: Maybe<Scalars['String']['output']>;
+  /** The unique identifier for the question. Used to target specific questions within a form. */
+  id: Scalars['String']['output'];
+  options?: Maybe<Array<FormQuestionOption>>;
+  /** Boolean indicating if the question must be answered before form submission. */
+  required: Scalars['Boolean']['output'];
+  settings?: Maybe<FormQuestionSettings>;
+  showIfRules?: Maybe<Scalars['JSON']['output']>;
+  /** The question text displayed to respondents. Must be at least 1 character long and clearly indicate the expected response. */
+  title: Scalars['String']['output'];
+  /** The question type determining input behavior and validation (e.g., "text", "email", "single_select", "multi_select"). */
+  type?: Maybe<FormQuestionType>;
+  /** Boolean controlling question visibility to respondents. Hidden questions remain in form structure but are not displayed. */
+  visible: Scalars['Boolean']['output'];
+};
+
+export type FormQuestionOption = {
+  __typename?: 'FormQuestionOption';
+  /** The display text for individual option choices in select-type questions. */
+  label: Scalars['String']['output'];
+};
+
+/** Sources for prefilling question values */
+export enum FormQuestionPrefillSources {
+  Account = 'Account',
+  QueryParam = 'QueryParam'
+}
+
+/** Display options for select-type questions */
+export enum FormQuestionSelectDisplay {
+  Dropdown = 'Dropdown',
+  Horizontal = 'Horizontal',
+  Vertical = 'Vertical'
+}
+
+/** Ordering options for select question options */
+export enum FormQuestionSelectOrderByOptions {
+  Alphabetical = 'Alphabetical',
+  Custom = 'Custom',
+  Random = 'Random'
+}
+
+/** Question-specific configuration object that varies by question type. */
+export type FormQuestionSettings = {
+  __typename?: 'FormQuestionSettings';
+  /** Boolean/checkbox questions only: Whether the checkbox should be checked by default when the form loads. */
+  checkedByDefault?: Maybe<Scalars['Boolean']['output']>;
+  /** Date based questions only: Automatically set the current date as the default value when the form loads. */
+  defaultCurrentDate?: Maybe<Scalars['Boolean']['output']>;
+  /** Single/Multi Select questions only: Controls how the selection options are visually presented to users. */
+  display?: Maybe<FormQuestionSelectDisplay>;
+  /** Date questions only: Whether to include time selection (hours and minutes) in addition to the date picker. When false, only date selection is available. */
+  includeTime?: Maybe<Scalars['Boolean']['output']>;
+  /** Multi Select questions only: Limits the number of options a user can select. */
+  labelLimitCount?: Maybe<Scalars['Int']['output']>;
+  /** Rating questions only: Maximum rating value that users can select. */
+  limit?: Maybe<Scalars['Int']['output']>;
+  /** Location questions only: Automatically detect and fill the user's current location using browser geolocation services, requiring user permission. */
+  locationAutofilled?: Maybe<Scalars['Boolean']['output']>;
+  /** Single/Multi Select questions only: Determines the ordering of selection options. */
+  optionsOrder?: Maybe<FormQuestionSelectOrderByOptions>;
+  /** Configuration for automatically populating question values from various data sources such as user account information or URL query parameters. */
+  prefill?: Maybe<PrefillSettings>;
+  /** Phone questions only: Automatically detect and fill the phone country prefix based on the user's geographic location or browser settings. */
+  prefixAutofilled?: Maybe<Scalars['Boolean']['output']>;
+  /** Phone questions only: Configuration for setting a specific predefined phone country prefix that will be pre-selected for users. */
+  prefixPredefined?: Maybe<PhonePrefixPredefined>;
+  /** Link/URL questions only: Whether to skip URL format validation, allowing any text input. */
+  skipValidation?: Maybe<Scalars['Boolean']['output']>;
+};
+
+/** Question-specific configuration object that varies by question type. */
+export type FormQuestionSettingsInput = {
+  /** Boolean/checkbox questions only: Whether the checkbox should be checked by default when the form loads. */
+  checkedByDefault?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Date based questions only: Automatically set the current date as the default value when the form loads. */
+  defaultCurrentDate?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Single/Multi Select questions only: Controls how the selection options are visually presented to users. */
+  display?: InputMaybe<FormQuestionSelectDisplay>;
+  /** Date questions only: Whether to include time selection (hours and minutes) in addition to the date picker. When false, only date selection is available. */
+  includeTime?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Multi Select questions only: Limits the number of options a user can select. */
+  labelLimitCount?: InputMaybe<Scalars['Int']['input']>;
+  /** Location questions only: Automatically detect and fill the user's current location using browser geolocation services, requiring user permission. */
+  locationAutofilled?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Single/Multi Select questions only: Determines the ordering of selection options. */
+  optionsOrder?: InputMaybe<FormQuestionSelectOrderByOptions>;
+  /** Configuration for automatically populating question values from various data sources such as user account information or URL query parameters. */
+  prefill?: InputMaybe<PrefillSettingsInput>;
+  /** Phone questions only: Automatically detect and fill the phone country prefix based on the user's geographic location or browser settings. */
+  prefixAutofilled?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Phone questions only: Configuration for setting a specific predefined phone country prefix that will be pre-selected for users. */
+  prefixPredefined?: InputMaybe<PhonePrefixPredefinedInput>;
+  /** Link/URL questions only: Whether to skip URL format validation, allowing any text input. */
+  skipValidation?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+/** The type of the question (ex. text, number, MultiSelect etc.) */
+export enum FormQuestionType {
+  Boolean = 'Boolean',
+  ConnectedBoards = 'ConnectedBoards',
+  Country = 'Country',
+  Date = 'Date',
+  DateRange = 'DateRange',
+  Email = 'Email',
+  File = 'File',
+  Link = 'Link',
+  Location = 'Location',
+  LongText = 'LongText',
+  MultiSelect = 'MultiSelect',
+  Name = 'Name',
+  Number = 'Number',
+  People = 'People',
+  Phone = 'Phone',
+  Rating = 'Rating',
+  ShortText = 'ShortText',
+  Signature = 'Signature',
+  SingleSelect = 'SingleSelect',
+  Subitems = 'Subitems',
+  Updates = 'Updates'
+}
+
+export type FormRedirectAfterSubmission = {
+  __typename?: 'FormRedirectAfterSubmission';
+  /** Boolean enabling automatic redirect after form completion to a specified URL. */
+  enabled: Scalars['Boolean']['output'];
+  /** The URL where users will be redirected after successfully submitting the form. */
+  redirectUrl?: Maybe<Scalars['String']['output']>;
+};
+
+/** Object containing redirect configuration after form submission. */
+export type FormRedirectAfterSubmissionInput = {
+  /** Boolean enabling automatic redirect after form completion to a specified URL. */
+  enabled?: InputMaybe<Scalars['Boolean']['input']>;
+  /** The URL where users will be redirected after successfully submitting the form. */
+  redirectUrl?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FormRequireLogin = {
+  __typename?: 'FormRequireLogin';
+  /** Boolean requiring users to be logged in before submitting responses. */
+  enabled: Scalars['Boolean']['output'];
+  /** Boolean automatically redirecting unauthenticated users to the login page. */
+  redirectToLogin: Scalars['Boolean']['output'];
+};
+
+/** Object containing login requirement settings for form access. */
+export type FormRequireLoginInput = {
+  /** Boolean requiring users to be logged in before submitting responses. */
+  enabled?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Boolean automatically redirecting unauthenticated users to the login page. */
+  redirectToLogin?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+export type FormResponseLimit = {
+  __typename?: 'FormResponseLimit';
+  /** Boolean enabling response count limits for the form. */
+  enabled: Scalars['Boolean']['output'];
+  /** Integer specifying the maximum number of responses allowed. */
+  limit?: Maybe<Scalars['Int']['output']>;
+};
+
+/** Object containing response limitation settings to control submission volume. */
+export type FormResponseLimitInput = {
+  /** Boolean enabling response count limits for the form. */
+  enabled?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Integer specifying the maximum number of responses allowed. */
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type FormShortenedLink = {
+  __typename?: 'FormShortenedLink';
+  /** Boolean enabling generation of shortened URLs for the form. */
+  enabled: Scalars['Boolean']['output'];
+  /** The generated shortened URL for form access. Only available when shortened links are enabled. */
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type FormStartButton = {
+  __typename?: 'FormStartButton';
+  /** Custom text for the button that begins the form experience. */
+  text?: Maybe<Scalars['String']['output']>;
+};
+
+/** Object containing start button configuration for the welcome screen. */
+export type FormStartButtonInput = {
+  /** Custom text for the button that begins the form experience. */
+  text?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** Object containing submit button styling and text configuration. */
+export type FormSubmitButton = {
+  __typename?: 'FormSubmitButton';
+  /** Custom text displayed on the form submission button. */
+  text?: Maybe<Scalars['String']['output']>;
+};
+
+/** Object containing submit button styling and text configuration. */
+export type FormSubmitButtonInput = {
+  /** Custom text displayed on the form submission button. */
+  text?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FormTag = {
+  __typename?: 'FormTag';
+  /** The ID of the column this tag is associated with */
+  columnId: Scalars['String']['output'];
+  /** The unique identifier for the tag */
+  id: Scalars['String']['output'];
+  /** The name of the tag */
+  name: Scalars['String']['output'];
+  /** The value of the tag */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** Object containing typography and text styling configuration. */
+export type FormText = {
+  __typename?: 'FormText';
+  /** Hex color code for the text color in the form. */
+  color?: Maybe<Scalars['String']['output']>;
+  /** String specifying the font family used throughout the form. */
+  font?: Maybe<Scalars['String']['output']>;
+  /** String or number specifying the base font size for form text. */
+  size?: Maybe<FormFontSize>;
+};
+
+/** Object containing typography and text styling configuration. */
+export type FormTextInput = {
+  /** Hex color code for the text color in the form. */
+  color?: InputMaybe<Scalars['String']['input']>;
+  /** String specifying the font family used throughout the form. */
+  font?: InputMaybe<Scalars['String']['input']>;
+  /** String or number specifying the base font size for form text. */
+  size?: InputMaybe<FormFontSize>;
+};
+
 export type FormulaValue = ColumnValue & {
   __typename?: 'FormulaValue';
   /** The column that this value belongs to. */
@@ -2183,6 +3218,44 @@ export type GroupValue = ColumnValue & {
   type: ColumnType;
   /** The column's raw value in JSON format. */
   value?: Maybe<Scalars['JSON']['output']>;
+};
+
+/** Represents a monday object identifier with its type */
+export type HierarchyObjectId = {
+  __typename?: 'HierarchyObjectID';
+  /** The unique identifier of the object */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** The type of the object */
+  type?: Maybe<ObjectType>;
+};
+
+/** Input type for identifying a favorites object by its ID and type */
+export type HierarchyObjectIdInputType = {
+  /** The ID of the object */
+  id: Scalars['ID']['input'];
+  /** The type of the object */
+  type: ObjectType;
+};
+
+/** Represents an item in the object hierarchy */
+export type HierarchyObjectItem = {
+  __typename?: 'HierarchyObjectItem';
+  /** The account identifier this item belongs to */
+  accountId?: Maybe<Scalars['Int']['output']>;
+  /** The timestamp when this item was created */
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  /** The folder identifier if the item is contained within a folder */
+  folderId?: Maybe<Scalars['ID']['output']>;
+  /** The list identifier and type */
+  hierarchyListData?: Maybe<ListId>;
+  /** The unique identifier of the hierarchy item */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** The object identifier and type */
+  object?: Maybe<HierarchyObjectId>;
+  /** The position of the item within its list or folder */
+  position?: Maybe<Scalars['Float']['output']>;
+  /** The timestamp when this item was last updated */
+  updatedAt?: Maybe<Scalars['Date']['output']>;
 };
 
 export enum HostType {
@@ -2650,6 +3723,25 @@ export type ListBlockInput = {
   parent_block_id?: InputMaybe<Scalars['String']['input']>;
 };
 
+/** Represents a list identifier with its type in the hierarchy */
+export type ListId = {
+  __typename?: 'ListID';
+  /** The unique identifier of the list */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** The type of the list */
+  type?: Maybe<ListType>;
+};
+
+/** Types of lists in hierarchyMS */
+export enum ListType {
+  /** A customized list with specific settings */
+  CustomizedList = 'CustomizedList',
+  /** A personal list owned by a user */
+  PersonalList = 'PersonalList',
+  /** A workspace-level list */
+  Workspace = 'Workspace'
+}
+
 export type LocationValue = ColumnValue & {
   __typename?: 'LocationValue';
   /** Address */
@@ -2850,6 +3942,12 @@ export enum MentionType {
   User = 'User'
 }
 
+/** Metadata wrapper containing payload information for dependency configuration */
+export type MetadataInput = {
+  /** The dependency configuration payload containing type and lag settings */
+  payload?: InputMaybe<PayloadInput>;
+};
+
 export type MirrorValue = ColumnValue & {
   __typename?: 'MirrorValue';
   /** The column that this value belongs to. */
@@ -2883,9 +3981,11 @@ export type MirroredItem = {
 /** Represents a mirrored value (column value, group, or board). */
 export type MirroredValue = BatteryValue | Board | BoardRelationValue | ButtonValue | CheckboxValue | ColorPickerValue | CountryValue | CreationLogValue | DateValue | DependencyValue | DirectDocValue | DocValue | DropdownValue | EmailValue | FileValue | FormulaValue | Group | GroupValue | HourValue | IntegrationValue | ItemIdValue | LastUpdatedValue | LinkValue | LocationValue | LongTextValue | MirrorValue | NumbersValue | PeopleValue | PersonValue | PhoneValue | ProgressValue | RatingValue | StatusValue | SubtasksValue | TagsValue | TeamValue | TextValue | TimeTrackingValue | TimelineValue | UnsupportedValue | VoteValue | WeekValue | WorldClockValue;
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type Mutation = {
   __typename?: 'Mutation';
+  /** Activate a form to make it visible to users and accept new submissions. */
+  activate_form?: Maybe<Scalars['Boolean']['output']>;
   /** Activate managed column mutation. */
   activate_managed_column?: Maybe<ManagedColumn>;
   /** Activates the specified users. */
@@ -2943,19 +4043,31 @@ export type Mutation = {
   connect_project_to_portfolio?: Maybe<ConnectProjectResult>;
   /** Create a new board. */
   create_board?: Maybe<Board>;
-  /** Create a new column in board. */
+  /** Generic mutation for creating any column type with validation. Supports creating column with properties like title, description, and type-specific defaults/settings. The mutation validates input against the column type's schema before applying changes. Use get_column_type_schema query to understand available properties for each column type. */
   create_column?: Maybe<Column>;
   create_custom_activity?: Maybe<CustomActivity>;
+  /** Create a new dashboard and return the complete Dashboard object. */
+  create_dashboard?: Maybe<Dashboard>;
   /** Create a new doc. */
   create_doc?: Maybe<Document>;
   /** Create new document block */
   create_doc_block?: Maybe<DocumentBlock>;
   /** Creates multiple document blocks in a single operation for efficient content creation. Use this when adding substantial content like importing documents, creating structured content (articles, reports, guides), or building complex document sections. Supports all block types including text paragraphs, headers, bullet/numbered lists, images, tables, code blocks, and more. Much faster than creating blocks individually. Perfect for content migration, template creation, or generating documents from external data. Maximum 25 blocks per request. */
   create_doc_blocks?: Maybe<Array<DocumentBlockV2>>;
+  /** Creates a new dropdown column with strongly typed settings. Dropdown columns allow users to select from a predefined list of options. This mutation is specifically for dropdown columns and provides type-safe creation with dropdown options configuration. */
+  create_dropdown_column?: Maybe<Column>;
   /** Create managed column of type dropdown mutation. */
   create_dropdown_managed_column?: Maybe<DropdownManagedColumn>;
+  /** Add workspace object to favorites */
+  create_favorite?: Maybe<CreateFavoriteResultType>;
   /** Creates a folder in a specific workspace. */
   create_folder?: Maybe<Folder>;
+  /** Create a new form with specified configuration. Returns the created form with its unique token. */
+  create_form?: Maybe<DehydratedFormResponse>;
+  /** Create a new question within a form. Returns the created question with auto-generated ID. */
+  create_form_question?: Maybe<FormQuestion>;
+  /** Create a new tag for a form. Tags are used to categorize and track responses. (e.g. UTM tags) */
+  create_form_tag?: Maybe<FormTag>;
   /** Creates a new group in a specific board. */
   create_group?: Maybe<Group>;
   /** Create a new item. */
@@ -2964,6 +4076,10 @@ export type Mutation = {
   create_notification?: Maybe<Notification>;
   /** Create a new tag or get it if it already exists. */
   create_or_get_tag?: Maybe<Tag>;
+  /** Create a new portfolio */
+  create_portfolio?: Maybe<CreatePortfolioResult>;
+  /** Creates a new status column with strongly typed settings. Status columns allow users to track item progress through customizable labels (e.g., "Working on it", "Done", "Stuck"). This mutation is specifically for status/color columns and provides type-safe creation with label configuration. */
+  create_status_column?: Maybe<Column>;
   /** Create managed column of type status mutation. */
   create_status_managed_column?: Maybe<StatusManagedColumn>;
   /** Create subitem. */
@@ -2978,12 +4094,18 @@ export type Mutation = {
   create_view_table?: Maybe<BoardView>;
   /** Create a new webhook. */
   create_webhook?: Maybe<Webhook>;
+  /** Create a new widget based on the provided widget configuration. */
+  create_widget?: Maybe<WidgetModel>;
   /** Create a new workspace. */
   create_workspace?: Maybe<Workspace>;
+  /** Deactivate a form to hide it from users and stop accepting submissions. Form data is preserved. */
+  deactivate_form?: Maybe<Scalars['Boolean']['output']>;
   /** Deactivate managed column mutation. */
   deactivate_managed_column?: Maybe<ManagedColumn>;
   /** Deactivates the specified users. */
   deactivate_users?: Maybe<DeactivateUsersResult>;
+  /** Delete an app feature. */
+  delete_app_feature?: Maybe<AppFeatureType>;
   /** Delete a board. */
   delete_board?: Maybe<Board>;
   /** Delete a column. */
@@ -2993,8 +4115,12 @@ export type Mutation = {
   delete_doc?: Maybe<Scalars['JSON']['output']>;
   /** Delete a document block */
   delete_doc_block?: Maybe<DocumentBlockIdOnly>;
+  /** Remove an object from favorites */
+  delete_favorite?: Maybe<DeleteFavoriteInputResultType>;
   /** Deletes a folder in a specific workspace. */
   delete_folder?: Maybe<Folder>;
+  /** Delete a tag from a form */
+  delete_form_tag?: Maybe<Scalars['Boolean']['output']>;
   /** Deletes a group in a specific board. */
   delete_group?: Maybe<Group>;
   /** Delete an item. */
@@ -3002,6 +4128,8 @@ export type Mutation = {
   /** Delete managed column mutation. */
   delete_managed_column?: Maybe<ManagedColumn>;
   delete_marketplace_app_discount: DeleteMarketplaceAppDiscountResult;
+  /** Permanently remove a question from a form. This action cannot be undone. */
+  delete_question?: Maybe<Scalars['Boolean']['output']>;
   /** Remove subscribers from the board. */
   delete_subscribers_from_board?: Maybe<Array<Maybe<User>>>;
   /** Deletes the specified team. */
@@ -3055,8 +4183,12 @@ export type Mutation = {
    * known as default board role, general access or board permission set.
    */
   set_board_permission?: Maybe<SetBoardPermissionResponse>;
+  /** Set a password on a form to restrict access. This will enable password protection for the form. */
+  set_form_password?: Maybe<ResponseForm>;
   /** Set mock app subscription for the current account */
   set_mock_app_subscription?: Maybe<AppSubscription>;
+  /** Shorten a URL for a form and store it in the form settings. Returns the shortened link object. */
+  shorten_form_url?: Maybe<FormShortenedLink>;
   unlike_update: Update;
   unpin_from_top: Update;
   /** Update an app feature. */
@@ -3067,20 +4199,42 @@ export type Mutation = {
   update_board?: Maybe<Scalars['JSON']['output']>;
   /** Update a board's position, workspace, or account product. */
   update_board_hierarchy?: Maybe<UpdateBoardHierarchyResult>;
+  /** Generic mutation for updating any column type with validation. Supports updating column properties like title, description, and type-specific defaults/settings. The mutation validates input against the column type's schema before applying changes. Use get_column_type_schema query to understand available properties for each column type. */
+  update_column?: Maybe<Column>;
+  /** Update the dependency column for a specific pulse */
+  update_dependency_column: Scalars['JSON']['output'];
   /** Update a document block */
   update_doc_block?: Maybe<DocumentBlock>;
   /** Update a document's name/title. Changes are applied immediately and visible to all users with access to the document. */
   update_doc_name?: Maybe<Scalars['JSON']['output']>;
+  /** Updates a dropdown column's properties including title, description, and dropdown label settings. Dropdown columns allow users to select from a predefined list of options. This mutation is specifically for dropdown columns and provides type-safe updates. */
+  update_dropdown_column?: Maybe<Column>;
   /** Update managed column of type dropdown mutation. */
   update_dropdown_managed_column?: Maybe<DropdownManagedColumn>;
   /** Updates the email domain for the specified users. */
   update_email_domain?: Maybe<UpdateEmailDomainResult>;
+  /** Update the position of an object in favorites */
+  update_favorite_position?: Maybe<UpdateFavoriteResultType>;
   /** Updates a folder. */
   update_folder?: Maybe<Folder>;
+  /** Update form properties including title, description, or question order. */
+  update_form?: Maybe<ResponseForm>;
+  /** Update an existing question properties including title, type, or settings. Requires question ID. */
+  update_form_question?: Maybe<FormQuestion>;
+  /** Update form configuration including features, appearance, and accessibility options. */
+  update_form_settings?: Maybe<ResponseForm>;
+  /** Update an existing tag in a form */
+  update_form_tag?: Maybe<Scalars['Boolean']['output']>;
   /** Update an existing group. */
   update_group?: Maybe<Group>;
   /** Updates attributes for users. */
   update_multiple_users?: Maybe<UpdateUserAttributesResult>;
+  /** Update mute notification settings for a board. Allows muting all notifications for all users, only for the current user, or setting mentions/assigns-only. Returns the updated mute state for the board. Requires appropriate permissions for muting all users. */
+  update_mute_board_settings?: Maybe<Array<BoardMuteSettings>>;
+  /** Updates a notification setting's enabled status. */
+  update_notification_setting?: Maybe<Array<NotificationSetting>>;
+  /** Updates a status column's properties including title, description, and status label settings. Status columns allow users to track item progress through customizable labels (e.g., "Working on it", "Done", "Stuck"). This mutation is specifically for status/color columns and provides type-safe updates. */
+  update_status_column?: Maybe<Column>;
   /** Update managed column of type status mutation. */
   update_status_managed_column?: Maybe<StatusManagedColumn>;
   /** Updates the role of the specified users. */
@@ -3096,19 +4250,25 @@ export type Mutation = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
+export type MutationActivate_FormArgs = {
+  formToken: Scalars['String']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationActivate_Managed_ColumnArgs = {
   id: Scalars['String']['input'];
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationActivate_UsersArgs = {
   user_ids: Array<Scalars['ID']['input']>;
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationAdd_Content_To_Doc_From_MarkdownArgs = {
   afterBlockId?: InputMaybe<Scalars['String']['input']>;
   docId: Scalars['ID']['input'];
@@ -3116,7 +4276,7 @@ export type MutationAdd_Content_To_Doc_From_MarkdownArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationAdd_File_To_ColumnArgs = {
   column_id: Scalars['String']['input'];
   file: Scalars['File']['input'];
@@ -3124,14 +4284,14 @@ export type MutationAdd_File_To_ColumnArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationAdd_File_To_UpdateArgs = {
   file: Scalars['File']['input'];
   update_id: Scalars['ID']['input'];
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationAdd_Required_ColumnArgs = {
   column_id: Scalars['String']['input'];
   id: Scalars['ID']['input'];
@@ -3139,7 +4299,7 @@ export type MutationAdd_Required_ColumnArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationAdd_Subscribers_To_BoardArgs = {
   board_id: Scalars['ID']['input'];
   kind?: InputMaybe<BoardSubscriberKind>;
@@ -3147,7 +4307,7 @@ export type MutationAdd_Subscribers_To_BoardArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationAdd_Teams_To_BoardArgs = {
   board_id: Scalars['ID']['input'];
   kind?: InputMaybe<BoardSubscriberKind>;
@@ -3155,7 +4315,7 @@ export type MutationAdd_Teams_To_BoardArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationAdd_Teams_To_WorkspaceArgs = {
   kind?: InputMaybe<WorkspaceSubscriberKind>;
   team_ids: Array<Scalars['ID']['input']>;
@@ -3163,7 +4323,7 @@ export type MutationAdd_Teams_To_WorkspaceArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationAdd_Users_To_BoardArgs = {
   board_id: Scalars['ID']['input'];
   kind?: InputMaybe<BoardSubscriberKind>;
@@ -3171,14 +4331,14 @@ export type MutationAdd_Users_To_BoardArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationAdd_Users_To_TeamArgs = {
   team_id: Scalars['ID']['input'];
   user_ids: Array<Scalars['ID']['input']>;
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationAdd_Users_To_WorkspaceArgs = {
   kind?: InputMaybe<WorkspaceSubscriberKind>;
   user_ids: Array<Scalars['ID']['input']>;
@@ -3186,33 +4346,33 @@ export type MutationAdd_Users_To_WorkspaceArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationArchive_BoardArgs = {
   board_id: Scalars['ID']['input'];
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationArchive_GroupArgs = {
   board_id: Scalars['ID']['input'];
   group_id: Scalars['String']['input'];
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationArchive_ItemArgs = {
   item_id?: InputMaybe<Scalars['ID']['input']>;
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationAssign_Team_OwnersArgs = {
   team_id: Scalars['ID']['input'];
   user_ids: Array<Scalars['ID']['input']>;
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationBatch_Extend_Trial_PeriodArgs = {
   account_slugs: Array<Scalars['String']['input']>;
   app_id: Scalars['ID']['input'];
@@ -3221,7 +4381,7 @@ export type MutationBatch_Extend_Trial_PeriodArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationChange_Column_MetadataArgs = {
   board_id: Scalars['ID']['input'];
   column_id: Scalars['String']['input'];
@@ -3230,7 +4390,7 @@ export type MutationChange_Column_MetadataArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationChange_Column_TitleArgs = {
   board_id: Scalars['ID']['input'];
   column_id: Scalars['String']['input'];
@@ -3238,7 +4398,7 @@ export type MutationChange_Column_TitleArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationChange_Column_ValueArgs = {
   board_id: Scalars['ID']['input'];
   column_id: Scalars['String']['input'];
@@ -3248,7 +4408,7 @@ export type MutationChange_Column_ValueArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationChange_Item_PositionArgs = {
   group_id?: InputMaybe<Scalars['ID']['input']>;
   group_top?: InputMaybe<Scalars['Boolean']['input']>;
@@ -3258,7 +4418,7 @@ export type MutationChange_Item_PositionArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationChange_Multiple_Column_ValuesArgs = {
   board_id: Scalars['ID']['input'];
   column_values: Scalars['JSON']['input'];
@@ -3267,7 +4427,7 @@ export type MutationChange_Multiple_Column_ValuesArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationChange_Simple_Column_ValueArgs = {
   board_id: Scalars['ID']['input'];
   column_id: Scalars['String']['input'];
@@ -3277,20 +4437,20 @@ export type MutationChange_Simple_Column_ValueArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationClear_Item_UpdatesArgs = {
   item_id: Scalars['ID']['input'];
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationConnect_Project_To_PortfolioArgs = {
   portfolioBoardId: Scalars['ID']['input'];
   projectBoardId: Scalars['ID']['input'];
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_BoardArgs = {
   board_kind: BoardKind;
   board_name: Scalars['String']['input'];
@@ -3306,7 +4466,7 @@ export type MutationCreate_BoardArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_ColumnArgs = {
   after_column_id?: InputMaybe<Scalars['ID']['input']>;
   board_id: Scalars['ID']['input'];
@@ -3318,7 +4478,7 @@ export type MutationCreate_ColumnArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_Custom_ActivityArgs = {
   color: CustomActivityColor;
   icon_id: CustomActivityIcon;
@@ -3326,13 +4486,23 @@ export type MutationCreate_Custom_ActivityArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
+export type MutationCreate_DashboardArgs = {
+  board_folder_id?: InputMaybe<Scalars['Int']['input']>;
+  board_ids: Array<Scalars['String']['input']>;
+  kind?: InputMaybe<DashboardKind>;
+  name: Scalars['String']['input'];
+  workspace_id: Scalars['Int']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_DocArgs = {
   location: CreateDocInput;
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_Doc_BlockArgs = {
   after_block_id?: InputMaybe<Scalars['String']['input']>;
   content: Scalars['JSON']['input'];
@@ -3342,7 +4512,7 @@ export type MutationCreate_Doc_BlockArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_Doc_BlocksArgs = {
   afterBlockId?: InputMaybe<Scalars['String']['input']>;
   blocksInput: Array<CreateBlockInput>;
@@ -3350,7 +4520,18 @@ export type MutationCreate_Doc_BlocksArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
+export type MutationCreate_Dropdown_ColumnArgs = {
+  after_column_id?: InputMaybe<Scalars['ID']['input']>;
+  board_id: Scalars['ID']['input'];
+  defaults?: InputMaybe<CreateDropdownColumnSettingsInput>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  id?: InputMaybe<Scalars['String']['input']>;
+  title: Scalars['String']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_Dropdown_Managed_ColumnArgs = {
   description?: InputMaybe<Scalars['String']['input']>;
   settings?: InputMaybe<CreateDropdownColumnSettingsInput>;
@@ -3358,7 +4539,13 @@ export type MutationCreate_Dropdown_Managed_ColumnArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
+export type MutationCreate_FavoriteArgs = {
+  input: CreateFavoriteInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_FolderArgs = {
   color?: InputMaybe<FolderColor>;
   custom_icon?: InputMaybe<FolderCustomIcon>;
@@ -3369,7 +4556,37 @@ export type MutationCreate_FolderArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
+export type MutationCreate_FormArgs = {
+  board_kind?: InputMaybe<BoardKind>;
+  board_owner_ids?: InputMaybe<Array<Scalars['Float']['input']>>;
+  board_owner_team_ids?: InputMaybe<Array<Scalars['Float']['input']>>;
+  board_subscriber_ids?: InputMaybe<Array<Scalars['Float']['input']>>;
+  board_subscriber_teams_ids?: InputMaybe<Array<Scalars['Float']['input']>>;
+  destination_folder_id?: InputMaybe<Scalars['Float']['input']>;
+  destination_folder_name?: InputMaybe<Scalars['String']['input']>;
+  destination_name?: InputMaybe<Scalars['String']['input']>;
+  destination_workspace_id?: InputMaybe<Scalars['Float']['input']>;
+  entity_names_mapping?: InputMaybe<Scalars['String']['input']>;
+  skip_target_folder_creation?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationCreate_Form_QuestionArgs = {
+  formToken: Scalars['String']['input'];
+  question: CreateQuestionInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationCreate_Form_TagArgs = {
+  formToken: Scalars['String']['input'];
+  tag: CreateFormTagInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_GroupArgs = {
   board_id: Scalars['ID']['input'];
   group_color?: InputMaybe<Scalars['String']['input']>;
@@ -3380,7 +4597,7 @@ export type MutationCreate_GroupArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_ItemArgs = {
   board_id: Scalars['ID']['input'];
   column_values?: InputMaybe<Scalars['JSON']['input']>;
@@ -3392,7 +4609,7 @@ export type MutationCreate_ItemArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_NotificationArgs = {
   target_id: Scalars['ID']['input'];
   target_type: NotificationTargetType;
@@ -3401,14 +4618,33 @@ export type MutationCreate_NotificationArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_Or_Get_TagArgs = {
   board_id?: InputMaybe<Scalars['ID']['input']>;
   tag_name?: InputMaybe<Scalars['String']['input']>;
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
+export type MutationCreate_PortfolioArgs = {
+  boardName: Scalars['String']['input'];
+  boardPrivacy: Scalars['String']['input'];
+  destinationWorkspaceId?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationCreate_Status_ColumnArgs = {
+  after_column_id?: InputMaybe<Scalars['ID']['input']>;
+  board_id: Scalars['ID']['input'];
+  defaults?: InputMaybe<CreateStatusColumnSettingsInput>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  id?: InputMaybe<Scalars['String']['input']>;
+  title: Scalars['String']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_Status_Managed_ColumnArgs = {
   description?: InputMaybe<Scalars['String']['input']>;
   settings?: InputMaybe<CreateStatusColumnSettingsInput>;
@@ -3416,7 +4652,7 @@ export type MutationCreate_Status_Managed_ColumnArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_SubitemArgs = {
   column_values?: InputMaybe<Scalars['JSON']['input']>;
   create_labels_if_missing?: InputMaybe<Scalars['Boolean']['input']>;
@@ -3425,14 +4661,14 @@ export type MutationCreate_SubitemArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_TeamArgs = {
   input: CreateTeamAttributesInput;
   options?: InputMaybe<CreateTeamOptionsInput>;
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_Timeline_ItemArgs = {
   content?: InputMaybe<Scalars['String']['input']>;
   custom_activity_id: Scalars['String']['input'];
@@ -3448,16 +4684,18 @@ export type MutationCreate_Timeline_ItemArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_UpdateArgs = {
   body: Scalars['String']['input'];
   item_id?: InputMaybe<Scalars['ID']['input']>;
   mentions_list?: InputMaybe<Array<InputMaybe<UpdateMention>>>;
+  original_creation_date?: InputMaybe<Scalars['String']['input']>;
   parent_id?: InputMaybe<Scalars['ID']['input']>;
+  use_app_info?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_ViewArgs = {
   board_id: Scalars['ID']['input'];
   filter_team_id?: InputMaybe<Scalars['Int']['input']>;
@@ -3471,7 +4709,7 @@ export type MutationCreate_ViewArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_View_TableArgs = {
   board_id: Scalars['ID']['input'];
   filter_team_id?: InputMaybe<Scalars['Int']['input']>;
@@ -3484,7 +4722,7 @@ export type MutationCreate_View_TableArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_WebhookArgs = {
   board_id: Scalars['ID']['input'];
   config?: InputMaybe<Scalars['JSON']['input']>;
@@ -3493,7 +4731,16 @@ export type MutationCreate_WebhookArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
+export type MutationCreate_WidgetArgs = {
+  kind: ExternalWidget;
+  name: Scalars['String']['input'];
+  parent: WidgetParentInput;
+  settings: Scalars['JSON']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_WorkspaceArgs = {
   account_product_id?: InputMaybe<Scalars['ID']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
@@ -3502,147 +4749,180 @@ export type MutationCreate_WorkspaceArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
+export type MutationDeactivate_FormArgs = {
+  formToken: Scalars['String']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationDeactivate_Managed_ColumnArgs = {
   id: Scalars['String']['input'];
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationDeactivate_UsersArgs = {
   user_ids: Array<Scalars['ID']['input']>;
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
+export type MutationDelete_App_FeatureArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationDelete_BoardArgs = {
   board_id: Scalars['ID']['input'];
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationDelete_ColumnArgs = {
   board_id: Scalars['ID']['input'];
   column_id: Scalars['String']['input'];
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationDelete_Custom_ActivityArgs = {
   id: Scalars['String']['input'];
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationDelete_DocArgs = {
   docId: Scalars['ID']['input'];
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationDelete_Doc_BlockArgs = {
   block_id: Scalars['String']['input'];
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
+export type MutationDelete_FavoriteArgs = {
+  input: DeleteFavoriteInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationDelete_FolderArgs = {
   folder_id: Scalars['ID']['input'];
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
+export type MutationDelete_Form_TagArgs = {
+  formToken: Scalars['String']['input'];
+  options?: InputMaybe<DeleteFormTagInput>;
+  tagId: Scalars['String']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationDelete_GroupArgs = {
   board_id: Scalars['ID']['input'];
   group_id: Scalars['String']['input'];
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationDelete_ItemArgs = {
   item_id?: InputMaybe<Scalars['ID']['input']>;
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationDelete_Managed_ColumnArgs = {
   id: Scalars['String']['input'];
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationDelete_Marketplace_App_DiscountArgs = {
   account_slug: Scalars['String']['input'];
   app_id: Scalars['ID']['input'];
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
+export type MutationDelete_QuestionArgs = {
+  formToken: Scalars['String']['input'];
+  questionId: Scalars['String']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationDelete_Subscribers_From_BoardArgs = {
   board_id: Scalars['ID']['input'];
   user_ids: Array<Scalars['ID']['input']>;
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationDelete_TeamArgs = {
   team_id: Scalars['ID']['input'];
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationDelete_Teams_From_BoardArgs = {
   board_id: Scalars['ID']['input'];
   team_ids: Array<Scalars['ID']['input']>;
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationDelete_Teams_From_WorkspaceArgs = {
   team_ids: Array<Scalars['ID']['input']>;
   workspace_id: Scalars['ID']['input'];
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationDelete_Timeline_ItemArgs = {
   id: Scalars['String']['input'];
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationDelete_UpdateArgs = {
   id: Scalars['ID']['input'];
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationDelete_Users_From_WorkspaceArgs = {
   user_ids: Array<Scalars['ID']['input']>;
   workspace_id: Scalars['ID']['input'];
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationDelete_ViewArgs = {
   board_id: Scalars['ID']['input'];
   view_id: Scalars['ID']['input'];
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationDelete_WebhookArgs = {
   id: Scalars['ID']['input'];
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationDelete_WorkspaceArgs = {
   workspace_id: Scalars['ID']['input'];
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationDuplicate_BoardArgs = {
   board_id: Scalars['ID']['input'];
   board_name?: InputMaybe<Scalars['String']['input']>;
@@ -3653,14 +4933,14 @@ export type MutationDuplicate_BoardArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationDuplicate_DocArgs = {
   docId: Scalars['ID']['input'];
   duplicateType?: InputMaybe<DuplicateType>;
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationDuplicate_GroupArgs = {
   add_to_top?: InputMaybe<Scalars['Boolean']['input']>;
   board_id: Scalars['ID']['input'];
@@ -3669,7 +4949,7 @@ export type MutationDuplicate_GroupArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationDuplicate_ItemArgs = {
   board_id: Scalars['ID']['input'];
   item_id?: InputMaybe<Scalars['ID']['input']>;
@@ -3677,21 +4957,21 @@ export type MutationDuplicate_ItemArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationEdit_UpdateArgs = {
   body: Scalars['String']['input'];
   id: Scalars['ID']['input'];
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationExport_Markdown_From_DocArgs = {
   blockIds?: InputMaybe<Array<Scalars['String']['input']>>;
   docId: Scalars['ID']['input'];
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationGrant_Marketplace_App_DiscountArgs = {
   account_slug: Scalars['String']['input'];
   app_id: Scalars['ID']['input'];
@@ -3699,14 +4979,14 @@ export type MutationGrant_Marketplace_App_DiscountArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationIncrease_App_Subscription_OperationsArgs = {
   increment_by?: InputMaybe<Scalars['Int']['input']>;
   kind?: InputMaybe<Scalars['String']['input']>;
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationInvite_UsersArgs = {
   emails: Array<Scalars['String']['input']>;
   product?: InputMaybe<Product>;
@@ -3714,14 +4994,14 @@ export type MutationInvite_UsersArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationLike_UpdateArgs = {
   reaction_type?: InputMaybe<Scalars['String']['input']>;
   update_id: Scalars['ID']['input'];
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationMove_Item_To_BoardArgs = {
   board_id: Scalars['ID']['input'];
   columns_mapping?: InputMaybe<Array<ColumnMappingInput>>;
@@ -3731,28 +5011,28 @@ export type MutationMove_Item_To_BoardArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationMove_Item_To_GroupArgs = {
   group_id: Scalars['String']['input'];
   item_id?: InputMaybe<Scalars['ID']['input']>;
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationPin_To_TopArgs = {
   id: Scalars['ID']['input'];
   item_id?: InputMaybe<Scalars['ID']['input']>;
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationRemove_Mock_App_SubscriptionArgs = {
   app_id: Scalars['ID']['input'];
   partial_signing_secret: Scalars['String']['input'];
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationRemove_Required_ColumnArgs = {
   column_id: Scalars['String']['input'];
   id: Scalars['ID']['input'];
@@ -3760,28 +5040,35 @@ export type MutationRemove_Required_ColumnArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationRemove_Team_OwnersArgs = {
   team_id: Scalars['ID']['input'];
   user_ids: Array<Scalars['ID']['input']>;
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationRemove_Users_From_TeamArgs = {
   team_id: Scalars['ID']['input'];
   user_ids: Array<Scalars['ID']['input']>;
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationSet_Board_PermissionArgs = {
   basic_role_name: BoardBasicRoleName;
   board_id: Scalars['ID']['input'];
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
+export type MutationSet_Form_PasswordArgs = {
+  formToken: Scalars['String']['input'];
+  input: SetFormPasswordInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationSet_Mock_App_SubscriptionArgs = {
   app_id: Scalars['ID']['input'];
   billing_period?: InputMaybe<Scalars['String']['input']>;
@@ -3794,27 +5081,33 @@ export type MutationSet_Mock_App_SubscriptionArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
+export type MutationShorten_Form_UrlArgs = {
+  formToken: Scalars['String']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationUnlike_UpdateArgs = {
   update_id: Scalars['ID']['input'];
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationUnpin_From_TopArgs = {
   id: Scalars['ID']['input'];
   item_id?: InputMaybe<Scalars['ID']['input']>;
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationUpdateAppFeatureArgs = {
   id: Scalars['ID']['input'];
   input: UpdateAppFeatureInput;
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Assets_On_ItemArgs = {
   board_id: Scalars['ID']['input'];
   column_id: Scalars['String']['input'];
@@ -3823,7 +5116,7 @@ export type MutationUpdate_Assets_On_ItemArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationUpdate_BoardArgs = {
   board_attribute: BoardAttributes;
   board_id: Scalars['ID']['input'];
@@ -3831,28 +5124,60 @@ export type MutationUpdate_BoardArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Board_HierarchyArgs = {
   attributes: UpdateBoardHierarchyAttributesInput;
   board_id: Scalars['ID']['input'];
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
+export type MutationUpdate_ColumnArgs = {
+  board_id: Scalars['ID']['input'];
+  column_type: ColumnType;
+  description?: InputMaybe<Scalars['String']['input']>;
+  id: Scalars['String']['input'];
+  revision: Scalars['String']['input'];
+  settings?: InputMaybe<Scalars['JSON']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUpdate_Dependency_ColumnArgs = {
+  boardId: Scalars['String']['input'];
+  columnId: Scalars['String']['input'];
+  pulseId: Scalars['String']['input'];
+  value: DependencyValueInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Doc_BlockArgs = {
   block_id: Scalars['String']['input'];
   content: Scalars['JSON']['input'];
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Doc_NameArgs = {
   docId: Scalars['ID']['input'];
   name: Scalars['String']['input'];
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
+export type MutationUpdate_Dropdown_ColumnArgs = {
+  board_id: Scalars['ID']['input'];
+  description?: InputMaybe<Scalars['String']['input']>;
+  id: Scalars['String']['input'];
+  revision: Scalars['String']['input'];
+  settings?: InputMaybe<UpdateDropdownColumnSettingsInput>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Dropdown_Managed_ColumnArgs = {
   description?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['String']['input'];
@@ -3862,13 +5187,19 @@ export type MutationUpdate_Dropdown_Managed_ColumnArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Email_DomainArgs = {
   input: UpdateEmailDomainAttributesInput;
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
+export type MutationUpdate_Favorite_PositionArgs = {
+  input: UpdateObjectHierarchyPositionInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationUpdate_FolderArgs = {
   account_product_id?: InputMaybe<Scalars['ID']['input']>;
   color?: InputMaybe<FolderColor>;
@@ -3882,7 +5213,37 @@ export type MutationUpdate_FolderArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
+export type MutationUpdate_FormArgs = {
+  formToken: Scalars['String']['input'];
+  input: UpdateFormInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUpdate_Form_QuestionArgs = {
+  formToken: Scalars['String']['input'];
+  question: UpdateQuestionInput;
+  questionId: Scalars['String']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUpdate_Form_SettingsArgs = {
+  formToken: Scalars['String']['input'];
+  settings: UpdateFormSettingsInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUpdate_Form_TagArgs = {
+  formToken: Scalars['String']['input'];
+  tag: UpdateFormTagInput;
+  tagId: Scalars['String']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationUpdate_GroupArgs = {
   board_id: Scalars['ID']['input'];
   group_attribute: GroupAttributes;
@@ -3891,7 +5252,7 @@ export type MutationUpdate_GroupArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Multiple_UsersArgs = {
   bypass_confirmation_for_claimed_domains?: InputMaybe<Scalars['Boolean']['input']>;
   use_async_mode?: InputMaybe<Scalars['Boolean']['input']>;
@@ -3899,7 +5260,35 @@ export type MutationUpdate_Multiple_UsersArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
+export type MutationUpdate_Mute_Board_SettingsArgs = {
+  board_id: Scalars['String']['input'];
+  mute_state: BoardMuteState;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUpdate_Notification_SettingArgs = {
+  channel: ChannelType;
+  enabled: Scalars['Boolean']['input'];
+  scope_id?: InputMaybe<Scalars['Int']['input']>;
+  scope_type: ScopeType;
+  setting_kind: Scalars['String']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUpdate_Status_ColumnArgs = {
+  board_id: Scalars['ID']['input'];
+  description?: InputMaybe<Scalars['String']['input']>;
+  id: Scalars['String']['input'];
+  revision: Scalars['String']['input'];
+  settings?: InputMaybe<UpdateStatusColumnSettingsInput>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Status_Managed_ColumnArgs = {
   description?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['String']['input'];
@@ -3909,7 +5298,7 @@ export type MutationUpdate_Status_Managed_ColumnArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Users_RoleArgs = {
   new_role?: InputMaybe<BaseRoleName>;
   role_id?: InputMaybe<Scalars['ID']['input']>;
@@ -3917,7 +5306,7 @@ export type MutationUpdate_Users_RoleArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationUpdate_ViewArgs = {
   board_id: Scalars['ID']['input'];
   filter_team_id?: InputMaybe<Scalars['Int']['input']>;
@@ -3932,7 +5321,7 @@ export type MutationUpdate_ViewArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationUpdate_View_TableArgs = {
   board_id: Scalars['ID']['input'];
   filter_team_id?: InputMaybe<Scalars['Int']['input']>;
@@ -3946,14 +5335,14 @@ export type MutationUpdate_View_TableArgs = {
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationUpdate_WorkspaceArgs = {
   attributes: UpdateWorkspaceAttributesInput;
   id?: InputMaybe<Scalars['ID']['input']>;
 };
 
 
-/** Update your monday.com data. */
+/** Root mutation type for the Dependencies service */
 export type MutationUse_TemplateArgs = {
   board_kind?: InputMaybe<BoardKind>;
   board_owner_ids?: InputMaybe<Array<InputMaybe<Scalars['Int']['input']>>>;
@@ -4001,12 +5390,50 @@ export enum NoticeBoxTheme {
 /** A notification. */
 export type Notification = {
   __typename?: 'Notification';
+  /** The board that is associated with the notification. */
+  board?: Maybe<Board>;
+  /** The date and time the notification was created. */
+  created_at?: Maybe<Scalars['Date']['output']>;
+  /** The users who created the notification. */
+  creators: Array<User>;
   /** The notification's unique identifier. */
   id: Scalars['ID']['output'];
+  /** The item that is associated with the notification. */
+  item?: Maybe<Item>;
   /** Whether the notification has been read. */
   read: Scalars['Boolean']['output'];
   /** The notification text. */
   text?: Maybe<Scalars['String']['output']>;
+  /** The title of the notification. */
+  title?: Maybe<Scalars['String']['output']>;
+  /** The update that triggered the notification. */
+  update?: Maybe<Update>;
+};
+
+/** Represents notification settings configuration */
+export type NotificationSetting = {
+  __typename?: 'NotificationSetting';
+  /** Available notification channels for this setting */
+  channels: Array<NotificationSettingChannel>;
+  /** Description of the notification setting */
+  description?: Maybe<Scalars['String']['output']>;
+  /** Whether this setting is only configurable by admins */
+  is_for_admins_only?: Maybe<Scalars['Boolean']['output']>;
+  /** Whether this setting is not applicable for guest users */
+  is_for_non_guests_only?: Maybe<Scalars['Boolean']['output']>;
+  /** Notification setting kind */
+  kind?: Maybe<Scalars['String']['output']>;
+};
+
+/** Represents a notification channel configuration */
+export type NotificationSettingChannel = {
+  __typename?: 'NotificationSettingChannel';
+  /** Whether or not this channel settings is editable */
+  editable_status?: Maybe<ChannelEditableStatus>;
+  /** Whether notifications are enabled for this channel */
+  enabled?: Maybe<Scalars['Boolean']['output']>;
+  /** Notification channel destination: Monday, Email, Slack */
+  name?: Maybe<ChannelType>;
 };
 
 /** The notification's target type. */
@@ -4042,6 +5469,13 @@ export type NumbersValue = ColumnValue & {
   type: ColumnType;
   /** The column's raw value in JSON format. */
   value?: Maybe<Scalars['JSON']['output']>;
+};
+
+export type ObjectDynamicPositionInput = {
+  /** The next object in the list */
+  nextObject?: InputMaybe<HierarchyObjectIdInputType>;
+  /** The previous object in the list */
+  prevObject?: InputMaybe<HierarchyObjectIdInputType>;
 };
 
 /** Represents a monday object. */
@@ -4128,6 +5562,14 @@ export type PaginationInput = {
   limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
+/** Input type for dependency metadata payload containing dependency type and lag configuration */
+export type PayloadInput = {
+  /** Type of dependency relationship between the items */
+  dependency_type?: InputMaybe<DependencyRelation>;
+  /** Number of days offset between the dependent items (can be negative) */
+  lag?: InputMaybe<Scalars['Int']['input']>;
+};
+
 export type PeopleEntity = {
   __typename?: 'PeopleEntity';
   /** Id of the entity: a person or a team */
@@ -4168,6 +5610,23 @@ export type PersonValue = ColumnValue & {
   updated_at?: Maybe<Scalars['Date']['output']>;
   /** The column's raw value in JSON format. */
   value?: Maybe<Scalars['JSON']['output']>;
+};
+
+/** Phone questions only: Configuration for setting a specific predefined phone country prefix that will be pre-selected for users. */
+export type PhonePrefixPredefined = {
+  __typename?: 'PhonePrefixPredefined';
+  /** Whether a predefined phone prefix is enabled for phone number questions. When true, the specified prefix will be pre-selected. */
+  enabled: Scalars['Boolean']['output'];
+  /** The predefined phone country prefix to use as country code in capital letters (e.g., "US", "UK", "IL"). Only used when enabled is true. */
+  prefix?: Maybe<Scalars['String']['output']>;
+};
+
+/** Phone questions only: Configuration for setting a specific predefined phone country prefix that will be pre-selected for users. */
+export type PhonePrefixPredefinedInput = {
+  /** Whether a predefined phone prefix is enabled for phone number questions. When true, the specified prefix will be pre-selected. */
+  enabled: Scalars['Boolean']['input'];
+  /** The predefined phone country prefix to use as country code in capital letters (e.g., "US", "UK", "IL"). Only used when enabled is true. */
+  prefix?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type PhoneValue = ColumnValue & {
@@ -4248,6 +5707,27 @@ export enum PositionRelative {
   BeforeAt = 'before_at'
 }
 
+/** Configuration for automatically populating question values from various data sources such as user account information or URL query parameters. */
+export type PrefillSettings = {
+  __typename?: 'PrefillSettings';
+  /** Whether prefill functionality is enabled for this question. When true, the question will attempt to auto-populate values from the specified source. */
+  enabled: Scalars['Boolean']['output'];
+  /** The specific field or parameter name to lookup from the prefill source. For account sources, this would be a user property like "name" or "email". For query parameters, this would be the parameter name that would be set in the URL. */
+  lookup: Scalars['String']['output'];
+  /** The data source to use for prefilling the question value. Check the PrefillSources for available options. */
+  source?: Maybe<FormQuestionPrefillSources>;
+};
+
+/** Configuration for automatically populating question values from various data sources such as user account information or URL query parameters. */
+export type PrefillSettingsInput = {
+  /** Whether prefill functionality is enabled for this question. When true, the question will attempt to auto-populate values from the specified source. */
+  enabled: Scalars['Boolean']['input'];
+  /** The specific field or parameter name to lookup from the prefill source. For account sources, this would be a user property like "name" or "email". For query parameters, this would be the parameter name that would be set in the URL. */
+  lookup?: InputMaybe<Scalars['String']['input']>;
+  /** The data source to use for prefilling the question value. Check the PrefillSources for available options. */
+  source?: InputMaybe<FormQuestionPrefillSources>;
+};
+
 /** The product to invite the users to. */
 export enum Product {
   Crm = 'crm',
@@ -4274,7 +5754,7 @@ export type ProgressValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
 export type Query = {
   __typename?: 'Query';
   /** Get the connected account's information. */
@@ -4283,6 +5763,10 @@ export type Query = {
   account_connections?: Maybe<Array<Connection>>;
   /** Get all roles for the account */
   account_roles?: Maybe<Array<AccountRole>>;
+  /** Performs aggregation operations on board data */
+  aggregate?: Maybe<AggregateQueryResult>;
+  /** Returns all available widget schemas for documentation and validation purposes */
+  all_widgets_schema?: Maybe<Array<WidgetSchemaInfo>>;
   /** Get an app by ID. */
   app?: Maybe<AppType>;
   /** Get a collection of installs of an app. */
@@ -4359,6 +5843,10 @@ export type Query = {
    *     }
    */
   audit_logs?: Maybe<AuditLogPage>;
+  /** List block events for a given trigger UUID */
+  block_events?: Maybe<BlockEventsPage>;
+  /** Get board candidates based on workspace and usage type */
+  board_candidates?: Maybe<Array<Board>>;
   /** Get a collection of boards. */
   boards?: Maybe<Array<Maybe<Board>>>;
   /** Get the complexity data of your queries. */
@@ -4372,8 +5860,16 @@ export type Query = {
   custom_activity?: Maybe<Array<CustomActivity>>;
   /** Get a collection of docs. */
   docs?: Maybe<Array<Maybe<Document>>>;
+  /** Export the dependency graph for a specific board */
+  export_graph?: Maybe<BoardGraphExport>;
+  /** Get all personal list items by list ID */
+  favorites?: Maybe<Array<HierarchyObjectItem>>;
   /** Get a collection of folders. Note: This query won't return folders from closed workspaces to which you are not subscribed */
   folders?: Maybe<Array<Maybe<Folder>>>;
+  /** Fetch a form by its token. The returned form includes all the details of the form such as its settings, questions, title, etc. Use this endpoint when you need to retrieve complete form data for display or processing. Requires that the requesting user has read access to the associated board. */
+  form?: Maybe<ResponseForm>;
+  /** Retrieves the JSON schema definition for a specific column type. Use this query before calling update_column mutation to understand the structure and validation rules for the defaults parameter. The schema defines what properties are available when updating columns of a specific type. */
+  get_column_type_schema?: Maybe<Scalars['JSON']['output']>;
   /** Get list of live workflows with pagination */
   get_live_workflows?: Maybe<Array<Workflow>>;
   /**
@@ -4399,10 +5895,19 @@ export type Query = {
   marketplace_vector_search: MarketplaceSearchResults;
   /** Get the connected user's information. */
   me?: Maybe<User>;
+  /** Get mute board notification settings for the current user */
+  mute_board_settings?: Maybe<Array<BoardMuteSettings>>;
   /** Get next pages of board's items (rows) by cursor. */
   next_items_page: ItemsResponse;
+  notifications?: Maybe<Array<Notification>>;
+  /** Retrieves the current user's notification settings across all available channels. */
+  notifications_settings?: Maybe<Array<NotificationSetting>>;
   /** Platform API data. */
   platform_api?: Maybe<PlatformApi>;
+  /** Get a collection of replies filtered by board IDs and date range. */
+  replies?: Maybe<Array<Reply>>;
+  /** Get a collection of monday dev sprints */
+  sprints?: Maybe<Array<Sprint>>;
   /** Get a collection of tags. */
   tags?: Maybe<Array<Maybe<Tag>>>;
   /** Get a collection of teams. */
@@ -4410,6 +5915,10 @@ export type Query = {
   /** Fetches timeline items for a given item */
   timeline?: Maybe<TimelineResponse>;
   timeline_item?: Maybe<TimelineItem>;
+  /** Fetch a single trigger event by UUID */
+  trigger_event?: Maybe<TriggerEvent>;
+  /** List trigger events with optional filters */
+  trigger_events?: Maybe<TriggerEventsPage>;
   updates?: Maybe<Array<Update>>;
   /** Returns connections that belong to the authenticated user. */
   user_connections?: Maybe<Array<Connection>>;
@@ -4428,7 +5937,7 @@ export type Query = {
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
 export type QueryAccount_ConnectionsArgs = {
   order?: InputMaybe<Scalars['String']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
@@ -4439,13 +5948,19 @@ export type QueryAccount_ConnectionsArgs = {
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
+export type QueryAggregateArgs = {
+  query: AggregateQueryInput;
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryAppArgs = {
   id: Scalars['ID']['input'];
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
 export type QueryApp_InstallsArgs = {
   account_id?: InputMaybe<Scalars['ID']['input']>;
   app_id: Scalars['ID']['input'];
@@ -4454,13 +5969,13 @@ export type QueryApp_InstallsArgs = {
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
 export type QueryApp_Subscription_OperationsArgs = {
   kind?: InputMaybe<Scalars['String']['input']>;
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
 export type QueryApp_SubscriptionsArgs = {
   account_id?: InputMaybe<Scalars['Int']['input']>;
   app_id: Scalars['ID']['input'];
@@ -4470,13 +5985,13 @@ export type QueryApp_SubscriptionsArgs = {
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
 export type QueryAssetsArgs = {
   ids: Array<Scalars['ID']['input']>;
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
 export type QueryAudit_LogsArgs = {
   end_time?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
   events?: InputMaybe<Array<Scalars['String']['input']>>;
@@ -4488,9 +6003,24 @@ export type QueryAudit_LogsArgs = {
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
+export type QueryBlock_EventsArgs = {
+  nextPageOffset?: InputMaybe<Scalars['Int']['input']>;
+  triggerUuid: Scalars['String']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryBoard_CandidatesArgs = {
+  usageType: BoardUsage;
+  workspaceId: Scalars['String']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryBoardsArgs = {
   board_kind?: InputMaybe<BoardKind>;
+  hierarchy_types?: InputMaybe<Array<BoardHierarchy>>;
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   latest?: InputMaybe<Scalars['Boolean']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -4501,19 +6031,19 @@ export type QueryBoardsArgs = {
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
 export type QueryConnectionArgs = {
   id: Scalars['Int']['input'];
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
 export type QueryConnection_Board_IdsArgs = {
   connectionId: Scalars['Int']['input'];
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
 export type QueryConnectionsArgs = {
   connectionState?: InputMaybe<Scalars['String']['input']>;
   order?: InputMaybe<Scalars['String']['input']>;
@@ -4526,7 +6056,7 @@ export type QueryConnectionsArgs = {
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
 export type QueryCustom_ActivityArgs = {
   color?: InputMaybe<CustomActivityColor>;
   icon_id?: InputMaybe<CustomActivityIcon>;
@@ -4535,7 +6065,7 @@ export type QueryCustom_ActivityArgs = {
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
 export type QueryDocsArgs = {
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -4546,7 +6076,13 @@ export type QueryDocsArgs = {
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
+export type QueryExport_GraphArgs = {
+  boardId: Scalars['String']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryFoldersArgs = {
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -4555,7 +6091,19 @@ export type QueryFoldersArgs = {
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
+export type QueryFormArgs = {
+  formToken: Scalars['String']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryGet_Column_Type_SchemaArgs = {
+  type: ColumnType;
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryGet_Live_WorkflowsArgs = {
   hostInstanceId: Scalars['String']['input'];
   hostType: HostType;
@@ -4563,14 +6111,14 @@ export type QueryGet_Live_WorkflowsArgs = {
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
 export type QueryGet_View_Schema_By_TypeArgs = {
   mutationType: ViewMutationKind;
   type: ViewKind;
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
 export type QueryItemsArgs = {
   exclude_nonactive?: InputMaybe<Scalars['Boolean']['input']>;
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
@@ -4580,7 +6128,7 @@ export type QueryItemsArgs = {
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
 export type QueryItems_Page_By_Column_ValuesArgs = {
   board_id: Scalars['ID']['input'];
   columns?: InputMaybe<Array<ItemsPageByColumnValuesQuery>>;
@@ -4589,75 +6137,128 @@ export type QueryItems_Page_By_Column_ValuesArgs = {
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
 export type QueryManaged_ColumnArgs = {
   id?: InputMaybe<Array<Scalars['String']['input']>>;
   state?: InputMaybe<Array<ManagedColumnState>>;
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
 export type QueryMarketplace_Ai_SearchArgs = {
   input: MarketplaceAiSearchInput;
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
 export type QueryMarketplace_App_DiscountsArgs = {
   app_id: Scalars['ID']['input'];
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
 export type QueryMarketplace_Fulltext_SearchArgs = {
   input: MarketplaceSearchInput;
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
 export type QueryMarketplace_Hybrid_SearchArgs = {
   input: MarketplaceSearchInput;
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
 export type QueryMarketplace_Vector_SearchArgs = {
   input: MarketplaceSearchInput;
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
+export type QueryMute_Board_SettingsArgs = {
+  board_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryNext_Items_PageArgs = {
   cursor: Scalars['String']['input'];
   limit?: Scalars['Int']['input'];
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
+export type QueryNotificationsArgs = {
+  cursor?: InputMaybe<Scalars['ID']['input']>;
+  filter_read?: InputMaybe<Scalars['Boolean']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  since?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryNotifications_SettingsArgs = {
+  channels?: InputMaybe<Array<ChannelType>>;
+  scope_id?: InputMaybe<Scalars['Int']['input']>;
+  scope_type: ScopeType;
+  setting_kinds?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryRepliesArgs = {
+  board_ids: Array<Scalars['ID']['input']>;
+  created_at_from?: InputMaybe<Scalars['String']['input']>;
+  created_at_to?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  page?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QuerySprintsArgs = {
+  ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryTagsArgs = {
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
 export type QueryTeamsArgs = {
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
 export type QueryTimelineArgs = {
   id: Scalars['ID']['input'];
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
 export type QueryTimeline_ItemArgs = {
   id: Scalars['ID']['input'];
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
+export type QueryTrigger_EventArgs = {
+  triggerUuid: Scalars['String']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryTrigger_EventsArgs = {
+  filters?: InputMaybe<TriggerEventsFiltersInput>;
+  nextPageOffset?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryUpdatesArgs = {
   from_date?: InputMaybe<Scalars['String']['input']>;
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
@@ -4667,7 +6268,7 @@ export type QueryUpdatesArgs = {
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
 export type QueryUser_ConnectionsArgs = {
   order?: InputMaybe<Scalars['String']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
@@ -4678,7 +6279,7 @@ export type QueryUser_ConnectionsArgs = {
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
 export type QueryUsersArgs = {
   emails?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
@@ -4691,21 +6292,21 @@ export type QueryUsersArgs = {
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
 export type QueryValidationsArgs = {
   id: Scalars['ID']['input'];
   type?: InputMaybe<ValidationsEntityType>;
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
 export type QueryWebhooksArgs = {
   app_webhooks_only?: InputMaybe<Scalars['Boolean']['input']>;
   board_id: Scalars['ID']['input'];
 };
 
 
-/** Get your data from monday.com */
+/** Root query type for the Dependencies service */
 export type QueryWorkspacesArgs = {
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   kind?: InputMaybe<WorkspaceKind>;
@@ -4713,6 +6314,16 @@ export type QueryWorkspacesArgs = {
   order_by?: InputMaybe<WorkspacesOrderBy>;
   page?: InputMaybe<Scalars['Int']['input']>;
   state?: InputMaybe<State>;
+};
+
+export type QuestionOptionInput = {
+  /** The label to display for the option */
+  label: Scalars['String']['input'];
+};
+
+export type QuestionOrderInput = {
+  /** The unique identifier for the question. Used to target specific questions within a form. */
+  id: Scalars['String']['input'];
 };
 
 export type RatingValue = ColumnValue & {
@@ -4803,6 +6414,48 @@ export type RequiredColumns = {
   required_column_ids: Array<Scalars['String']['output']>;
 };
 
+export type ResponseForm = {
+  __typename?: 'ResponseForm';
+  /** Object containing accessibility settings such as language, alt text, and reading direction. */
+  accessibility?: Maybe<FormAccessibility>;
+  /** Boolean indicating if the form is currently accepting responses and visible to users. */
+  active: Scalars['Boolean']['output'];
+  /** Object containing visual styling settings including colors, fonts, layout, and branding. */
+  appearance?: Maybe<FormAppearance>;
+  /** Boolean indicating if this form was built or modified using AI functionality. */
+  builtWithAI: Scalars['Boolean']['output'];
+  /** Boolean indicating if this form was initially created using AI assistance. */
+  createWithAI: Scalars['Boolean']['output'];
+  /** Optional detailed description explaining the form purpose, displayed below the title. */
+  description?: Maybe<Scalars['String']['output']>;
+  /** Object containing feature toggles and settings like password protection, response limits, etc. */
+  features?: Maybe<FormFeatures>;
+  /** The unique identifier for the form. Auto-generated upon creation. */
+  id: Scalars['Int']['output'];
+  /** Boolean indicating if responses are collected without identifying the submitter. */
+  isAnonymous: Scalars['Boolean']['output'];
+  /** Boolean flag indicating if the form has been flagged for review due to suspicious content or activity. */
+  isSuspicious: Scalars['Boolean']['output'];
+  /** The ID of the user who created and owns this form. Determines permissions. */
+  ownerId?: Maybe<Scalars['Int']['output']>;
+  /** Array of question objects that make up the form content, in display order. */
+  questions?: Maybe<Array<FormQuestion>>;
+  /** Array of tracking tags for categorization and analytics (e.g., UTM parameters for marketing tracking). */
+  tags?: Maybe<Array<FormTag>>;
+  /** The display title shown to users at the top of the form. */
+  title: Scalars['String']['output'];
+  /** The unique identifier token for the form. Required for all form-specific operations. */
+  token: Scalars['String']['output'];
+  /** The category or classification of the form for organizational purposes. */
+  type?: Maybe<Scalars['String']['output']>;
+};
+
+/** notification settings scope types, the options are account user defaults or user private settings */
+export enum ScopeType {
+  AccountNewUserDefaults = 'AccountNewUserDefaults',
+  User = 'User'
+}
+
 /** Response type for detailed board permissions. Contains information about the permissions that were set. */
 export type SetBoardPermissionResponse = {
   __typename?: 'SetBoardPermissionResponse';
@@ -4812,6 +6465,12 @@ export type SetBoardPermissionResponse = {
   failed_actions?: Maybe<Array<Scalars['String']['output']>>;
 };
 
+/** Input type for setting a form password */
+export type SetFormPasswordInput = {
+  /** The password to set for the form. Must be at least 1 character long. */
+  password: Scalars['String']['input'];
+};
+
 /** Direction for sorting items */
 export enum SortDirection {
   /** Ascending order */
@@ -4819,6 +6478,108 @@ export enum SortDirection {
   /** Descending order */
   Desc = 'DESC'
 }
+
+/** A monday dev sprint. */
+export type Sprint = {
+  __typename?: 'Sprint';
+  /** date at which the monday dev sprint complete action was performed, null if the sprint was never completed */
+  end_date?: Maybe<Scalars['Date']['output']>;
+  /** monday dev sprint unique identifier */
+  id: Scalars['ID']['output'];
+  /** items associated with the monday dev sprint */
+  items?: Maybe<Array<Item>>;
+  /** monday dev sprint name */
+  name?: Maybe<Scalars['String']['output']>;
+  /** snapshots of the monday dev sprint */
+  snapshots?: Maybe<Array<SprintSnapshot>>;
+  /** date at which the monday dev sprint start action was performed, null if the sprint was never started */
+  start_date?: Maybe<Scalars['Date']['output']>;
+  /** current state of the monday dev sprint */
+  state?: Maybe<SprintState>;
+  /** user-editable planned timeline for the monday dev sprint, which may differ from its start and complete dates */
+  timeline?: Maybe<SprintTimeline>;
+};
+
+
+/** A monday dev sprint. */
+export type SprintSnapshotsArgs = {
+  type?: InputMaybe<Array<SprintSnapshotKind>>;
+};
+
+/** A monday dev sprint snapshot. */
+export type SprintSnapshot = {
+  __typename?: 'SprintSnapshot';
+  /** monday dev sprint snapshot columns metadata */
+  columns_metadata?: Maybe<Array<SprintSnapshotColumnMetadata>>;
+  /** date and time when the object was created */
+  created_at?: Maybe<Scalars['Date']['output']>;
+  /** monday dev sprint snapshot unique identifier */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** monday dev sprint snapshot items */
+  items?: Maybe<Array<SprintSnapshotItem>>;
+  /** monday dev sprint unique identifier */
+  sprint_id?: Maybe<Scalars['ID']['output']>;
+  /** monday dev sprint snapshot kind */
+  type?: Maybe<SprintSnapshotKind>;
+  /** date and time when the object was last updated */
+  updated_at?: Maybe<Scalars['Date']['output']>;
+};
+
+/** A monday dev sprint snapshot column metadata. */
+export type SprintSnapshotColumnMetadata = {
+  __typename?: 'SprintSnapshotColumnMetadata';
+  /** monday dev sprint snapshot status column done status indexes */
+  done_status_indexes: Array<Scalars['Int']['output']>;
+  /** monday dev sprint snapshot column id */
+  id: Scalars['String']['output'];
+};
+
+/** A monday dev sprint snapshot item. */
+export type SprintSnapshotItem = {
+  __typename?: 'SprintSnapshotItem';
+  /** monday dev sprint item column values */
+  column_values?: Maybe<Array<SprintSnapshotItemColumnValue>>;
+  /** monday dev sprint item unique identifier */
+  id: Scalars['ID']['output'];
+};
+
+/** A monday dev sprint snapshot item column value. */
+export type SprintSnapshotItemColumnValue = {
+  __typename?: 'SprintSnapshotItemColumnValue';
+  /** monday dev sprint snapshot item column id */
+  id: Scalars['String']['output'];
+  /** monday dev sprint snapshot item column type */
+  type: Scalars['String']['output'];
+  /** monday dev sprint snapshot item column value */
+  value?: Maybe<Scalars['JSON']['output']>;
+};
+
+/** The kind of sprint snapshot. */
+export enum SprintSnapshotKind {
+  /** Sprint complete snapshot kind. */
+  Complete = 'COMPLETE',
+  /** Sprint start snapshot kind. */
+  Start = 'START'
+}
+
+/** current state of the monday dev sprint. */
+export enum SprintState {
+  /** sprint is active and in progress. */
+  Active = 'ACTIVE',
+  /** sprint is completed. */
+  Completed = 'COMPLETED',
+  /** sprint is planned and not yet started. */
+  Planned = 'PLANNED'
+}
+
+/** user-editable planned timeline for the monday dev sprint, which may differ from its start and complete dates */
+export type SprintTimeline = {
+  __typename?: 'SprintTimeline';
+  /** user-editable start date of the monday dev sprint timeline, may be different than the sprint start date */
+  from?: Maybe<Scalars['Date']['output']>;
+  /** user-editable complete date of the monday dev sprint timeline, may be different than the sprint complete date */
+  to?: Maybe<Scalars['Date']['output']>;
+};
 
 /** The possible states for a board or item. */
 export enum State {
@@ -5318,6 +7079,86 @@ export type TimelineValue = ColumnValue & {
   visualization_type?: Maybe<Scalars['String']['output']>;
 };
 
+/** Represents a single automation trigger event */
+export type TriggerEvent = {
+  __typename?: 'TriggerEvent';
+  /** Account identifier */
+  accountId?: Maybe<Scalars['Int']['output']>;
+  /** Number of billing actions counted for this trigger */
+  billingActionsCount?: Maybe<Scalars['Int']['output']>;
+  /** Creation time of the record */
+  createdAt?: Maybe<Scalars['ISO8601DateTime']['output']>;
+  /** Original creator feature reference ID */
+  creatorAppFeatureReferenceId?: Maybe<Scalars['String']['output']>;
+  /** Entity kind for the trigger (item / subitem / etc.) */
+  entityKind?: Maybe<Scalars['String']['output']>;
+  /** Error reason if the event failed */
+  errorReason?: Maybe<Scalars['String']['output']>;
+  /** Kind of the event */
+  eventKind?: Maybe<Scalars['String']['output']>;
+  /** Current state of the event */
+  eventState?: Maybe<Scalars['String']['output']>;
+  /** Host instance ID */
+  hostInstanceId?: Maybe<Scalars['String']['output']>;
+  /** Host type on which the automation is executed */
+  hostType?: Maybe<Scalars['String']['output']>;
+  /** Reignition subscription ID if trigger was reignited */
+  reignitionSubscriptionId?: Maybe<Scalars['String']['output']>;
+  /** Duration of the trigger in milliseconds */
+  triggerDuration?: Maybe<Scalars['Float']['output']>;
+  /** Timestamp (epoch) when trigger started */
+  triggerStarted?: Maybe<Scalars['Float']['output']>;
+  /** Date when trigger started */
+  triggerStartedAt?: Maybe<Scalars['ISO8601DateTime']['output']>;
+  /** Trigger UUID */
+  triggerUuid?: Maybe<Scalars['String']['output']>;
+  /** Waiting trigger name, when applicable */
+  waitingForTriggerName?: Maybe<Scalars['String']['output']>;
+};
+
+/** Filters for querying trigger events */
+export type TriggerEventsFiltersInput = {
+  /** Filter by app names */
+  appFilter?: InputMaybe<Array<Scalars['String']['input']>>;
+  /** Filter by automation IDs */
+  automationIds?: InputMaybe<Array<Scalars['Int']['input']>>;
+  /** Billing action count field to filter by */
+  billingActionCountField?: InputMaybe<Scalars['String']['input']>;
+  /** Filter by board identifier */
+  boardId?: InputMaybe<Scalars['String']['input']>;
+  /** Filter by creator app feature reference ID */
+  creatorAppFeatureReferenceId?: InputMaybe<Scalars['Int']['input']>;
+  /** Date range filter */
+  dateRange?: InputMaybe<DateRangeInput>;
+  /** Filter by entity kind */
+  entityKind?: InputMaybe<Scalars['String']['input']>;
+  /** Whether to filter only monday automations */
+  filterByEntity?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Filter by host instance identifier */
+  hostInstanceId?: InputMaybe<Scalars['String']['input']>;
+  /** Filter by host type */
+  hostType?: InputMaybe<Scalars['String']['input']>;
+  /** True if entity is automation */
+  isAutomationsEntity?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Whether workflow filter is applied */
+  isWorkflowFilter?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Filter by item identifier */
+  itemId?: InputMaybe<Scalars['String']['input']>;
+  /** Filter by event state */
+  stateFilter?: InputMaybe<Array<Scalars['String']['input']>>;
+  /** Filter by status */
+  statusFilter?: InputMaybe<Array<Scalars['String']['input']>>;
+  /** Filter by workflow entity IDs */
+  workflowEntityIds?: InputMaybe<Array<Scalars['Int']['input']>>;
+};
+
+/** A page of trigger events and pagination data */
+export type TriggerEventsPage = {
+  __typename?: 'TriggerEventsPage';
+  /** List of trigger events in the current page */
+  triggerEvents?: Maybe<Array<TriggerEvent>>;
+};
+
 export type UnsupportedValue = ColumnValue & {
   __typename?: 'UnsupportedValue';
   /** The column that this value belongs to. */
@@ -5352,6 +7193,8 @@ export type Update = {
   /** The update's item ID. */
   item_id?: Maybe<Scalars['String']['output']>;
   likes: Array<Like>;
+  /** The original creation time of the update. */
+  original_creation_date?: Maybe<Scalars['String']['output']>;
   pinned_to_top: Array<UpdatePin>;
   /** The update's replies. */
   replies?: Maybe<Array<Reply>>;
@@ -5400,8 +7243,20 @@ export type UpdateBoardHierarchyResult = {
   success: Scalars['Boolean']['output'];
 };
 
+/** Input type for updating a single dependency relationship between pulses */
+export type UpdateDependencyColumnInput = {
+  /** The ID of the pulse to create or remove a dependency relationship with */
+  linkedPulseId: Scalars['Int']['input'];
+  /** Optional metadata containing dependency configuration (type and lag) */
+  metadata?: InputMaybe<MetadataInput>;
+};
+
 export type UpdateDropdownColumnSettingsInput = {
+  /** Maximum number of labels that can be selected when limit_select is enabled */
+  label_limit_count?: InputMaybe<Scalars['Int']['input']>;
   labels: Array<UpdateDropdownLabelInput>;
+  /** Whether to limit the number of labels that can be selected */
+  limit_select?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export type UpdateDropdownLabelInput = {
@@ -5448,16 +7303,69 @@ export type UpdateEmailDomainResult = {
   updated_users?: Maybe<Array<User>>;
 };
 
+export type UpdateFavoriteResultType = {
+  __typename?: 'UpdateFavoriteResultType';
+  /** The updated favorite's object */
+  favorites?: Maybe<HierarchyObjectItem>;
+};
+
+export type UpdateFormInput = {
+  /** Optional description text providing context about the form purpose. */
+  description?: InputMaybe<Scalars['String']['input']>;
+  /** Ordered array of question IDs for reordering. Must include all existing question IDs. */
+  questions?: InputMaybe<Array<QuestionOrderInput>>;
+  /** The title text for the form. Must be at least 1 character long. */
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateFormSettingsInput = {
+  /** Object containing accessibility options such as language, alt text, etc. */
+  accessibility?: InputMaybe<FormAccessibilityInput>;
+  /** Object containing visual styling including colors, layout, fonts, and branding elements. */
+  appearance?: InputMaybe<FormAppearanceInput>;
+  /** Object containing form features including but not limited to password protection, response limits, login requirements, etc. */
+  features?: InputMaybe<FormFeaturesInput>;
+};
+
+export type UpdateFormTagInput = {
+  /** The value of the tag */
+  value?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type UpdateMention = {
   /** The object id. */
   id: Scalars['ID']['input'];
   type: MentionType;
 };
 
+export type UpdateObjectHierarchyPositionInput = {
+  /** The new folder ID to move the object to */
+  newFolder?: InputMaybe<Scalars['ID']['input']>;
+  /** The new position for the object */
+  newPosition?: InputMaybe<ObjectDynamicPositionInput>;
+  /** The favorite's object to update */
+  object: HierarchyObjectIdInputType;
+};
+
 /** The pin to top data of the update. */
 export type UpdatePin = {
   __typename?: 'UpdatePin';
   item_id: Scalars['ID']['output'];
+};
+
+export type UpdateQuestionInput = {
+  /** Optional explanatory text providing additional context, instructions, or examples for the question. */
+  description?: InputMaybe<Scalars['String']['input']>;
+  /** Boolean indicating if the question must be answered before form submission. */
+  required?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Question-specific configuration object that varies by question type. */
+  settings?: InputMaybe<FormQuestionSettingsInput>;
+  /** The question text displayed to respondents. Must be at least 1 character long and clearly indicate the expected response. */
+  title?: InputMaybe<Scalars['String']['input']>;
+  /** The question type determining input behavior and validation (e.g., "text", "email", "single_select", "multi_select"). */
+  type: FormQuestionType;
+  /** Boolean controlling question visibility to respondents. Hidden questions remain in form structure but are not displayed. */
+  visible?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export type UpdateStatusColumnSettingsInput = {
@@ -5862,6 +7770,53 @@ export type WeekValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
+/** UI widget placed on a dashboard, board, or doc. */
+export type WidgetModel = {
+  __typename?: 'WidgetModel';
+  /** Stable unique identifier of this widget. */
+  id?: Maybe<Scalars['Int']['output']>;
+  /** The type of widget (CHART, NUMBER, BATTERY). */
+  kind?: Maybe<ExternalWidget>;
+  /** Widget label shown in the UI (1–255 UTF-8 chars). */
+  name?: Maybe<Scalars['String']['output']>;
+  /** Parent container where the widget is placed (dashboard or board view). */
+  parent?: Maybe<WidgetParentOutput>;
+};
+
+/** Parent container input where the widget will be placed. */
+export type WidgetParentInput = {
+  /** The ID of the parent container (dashboard ID or board view ID) */
+  id: Scalars['Int']['input'];
+  /** The type of parent container (DASHBOARD or BOARD_VIEW) */
+  kind: WidgetParentKind;
+};
+
+/** The kind of parent container where the widget will be placed. */
+export enum WidgetParentKind {
+  /** Widget placed in a specific board view */
+  BoardView = 'BOARD_VIEW',
+  /** Widget placed in a dashboard */
+  Dashboard = 'DASHBOARD'
+}
+
+/** Parent container information in widget responses. Indicates where the widget is placed. */
+export type WidgetParentOutput = {
+  __typename?: 'WidgetParentOutput';
+  /** The ID of the parent container (dashboard ID or board view ID) */
+  id?: Maybe<Scalars['Int']['output']>;
+  /** The type of parent container (DASHBOARD or BOARD_VIEW) */
+  kind?: Maybe<WidgetParentKind>;
+};
+
+/** Information about a widget type and its JSON schema */
+export type WidgetSchemaInfo = {
+  __typename?: 'WidgetSchemaInfo';
+  /** The JSON schema (draft 7) for this widget type */
+  schema?: Maybe<Scalars['JSON']['output']>;
+  /** The widget kind (e.g., Chart, Number, Battery) */
+  widget_type?: Maybe<ExternalWidget>;
+};
+
 export type Workflow = {
   __typename?: 'Workflow';
   /** Reference ID of the creator app feature */
@@ -6236,6 +8191,32 @@ export enum __TypeKind {
   /** Indicates this type is a non-null. `ofType` is a valid field. */
   NonNull = 'NON_NULL'
 }
+
+export type CreateDashboardMutationVariables = Exact<{
+  name: Scalars['String']['input'];
+  workspace_id: Scalars['Int']['input'];
+  board_ids: Array<Scalars['String']['input']> | Scalars['String']['input'];
+  kind?: InputMaybe<DashboardKind>;
+  board_folder_id?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type CreateDashboardMutation = { __typename?: 'Mutation', create_dashboard?: { __typename?: 'Dashboard', id?: string | null, name?: string | null, workspace_id?: number | null, kind?: DashboardKind | null, board_folder_id?: number | null } | null };
+
+export type GetAllWidgetsSchemaQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetAllWidgetsSchemaQuery = { __typename?: 'Query', all_widgets_schema?: Array<{ __typename?: 'WidgetSchemaInfo', widget_type?: ExternalWidget | null, schema?: any | null }> | null };
+
+export type CreateWidgetMutationVariables = Exact<{
+  parent: WidgetParentInput;
+  kind: ExternalWidget;
+  name: Scalars['String']['input'];
+  settings: Scalars['JSON']['input'];
+}>;
+
+
+export type CreateWidgetMutation = { __typename?: 'Mutation', create_widget?: { __typename?: 'WidgetModel', id?: number | null, name?: string | null, kind?: ExternalWidget | null, parent?: { __typename?: 'WidgetParentOutput', kind?: WidgetParentKind | null, id?: number | null } | null } | null };
 
 export type GetBoardAllActivityQueryVariables = Exact<{
   boardId: Scalars['ID']['input'];

@@ -7,6 +7,8 @@ import { Tool } from '../core/tool';
 import { MondayAgentToolkitConfig } from '../core/monday-agent-toolkit';
 import { ManageToolsTool } from '../core/tools/platform-api-tools/manage-tools-tool';
 import { DynamicToolManager } from './dynamic-tool-manager';
+import { GetAllWidgetsSchemaQuery, GetAllWidgetsSchemaQueryVariables } from '../monday-graphql/generated/graphql';
+import { getAllWidgetsSchema } from '../core/tools/platform-api-tools/dashboard-tools/dashboard-queries.graphql';
 
 /**
  * Monday Agent Toolkit providing an MCP server with Monday.com tools
@@ -31,6 +33,10 @@ export class MondayAgentToolkit extends McpServer {
           tools: {
             listChanged: true,
           },
+          resources: {
+            subscribe: false,
+            listChanged: false,
+          },
         } satisfies ServerCapabilities,
       },
     );
@@ -39,6 +45,7 @@ export class MondayAgentToolkit extends McpServer {
     this.mondayApiToken = config.mondayApiToken;
 
     this.registerTools(config);
+    this.registerWidgetSchemaResource();
   }
 
   /**
@@ -84,6 +91,40 @@ export class MondayAgentToolkit extends McpServer {
     const manageTool = new ManageToolsTool();
     manageTool.setToolkitManager(this.dynamicToolManager);
     this.registerSingleTool(manageTool as Tool<any, any>);
+  }
+
+  /**
+   * Register widget schemas as a resource
+   */
+  private registerWidgetSchemaResource(): void {
+    this.registerResource(
+      'widget-schemas-all',
+      'config://schemas/widgets/all',
+      {
+        title: 'All Widget Schemas',
+        description: 'JSON Schema 7 definitions for all monday.com widget types',
+        mimeType: 'application/json'
+      },
+      async () => {
+        try {
+          const variables: GetAllWidgetsSchemaQueryVariables = {};
+          const res = await this.mondayApiClient.request<GetAllWidgetsSchemaQuery>(
+            getAllWidgetsSchema, 
+            variables
+          );
+          
+          return {
+            contents: [{
+              uri: 'config://schemas/widgets/all',
+              mimeType: 'application/json',
+              text: JSON.stringify(res.all_widgets_schema, null, 2)
+            }]
+          };
+        } catch (error) {
+          throw new Error(`Failed to fetch widget schemas: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      }
+    );
   }
 
   /**
