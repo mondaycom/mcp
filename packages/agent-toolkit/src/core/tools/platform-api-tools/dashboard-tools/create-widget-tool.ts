@@ -25,7 +25,7 @@ export const createWidgetToolSchema = {
   settings: z
     .record(z.unknown())
     .describe(
-      'Widget-specific settings as JSON object conforming to widget schema. Use all_widgets_schema to get the required schema for each widget type.',
+      'Widget-specific settings as JSON object conforming to widget schema. Use all_widgets_schema tool to get the required schema for each widget type.',
     ),
 };
 
@@ -80,7 +80,7 @@ export class CreateWidgetTool extends BaseMondayApiTool<typeof createWidgetToolS
 
       // Check if the widget was created successfully
       if (!res.create_widget) {
-        throw new Error('Failed to create widget - no response data received');
+        throw new Error('Failed to create widget');
       }
 
       const widget = res.create_widget;
@@ -101,11 +101,7 @@ export class CreateWidgetTool extends BaseMondayApiTool<typeof createWidgetToolS
 • **Location**: Placed in ${parentInfo}
 
 **Widget Configuration:**
-• **Settings Applied**: ${JSON.stringify(input.settings, null, 2)}
-
-**Next Steps:**
-1. **Verify Display**: Check that the widget appears correctly in the ${input.parent_container_type.toLowerCase()}
-2. **Add More Widgets**: Create additional widgets to complete your dashboard`,
+• **Settings Applied**: ${JSON.stringify(input.settings, null, 2)}`,
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);

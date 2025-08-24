@@ -12,8 +12,7 @@ export const createDashboardToolSchema = {
   name: z
     .string()
     .min(1, 'Dashboard name is required')
-    .max(255, 'Dashboard name must be 255 characters or less')
-    .describe('Human-readable dashboard title (1–255 UTF-8 chars)'),
+    .describe('Human-readable dashboard title (UTF-8 chars)'),
   workspace_id: z
     .number()
     .int('Workspace ID must be an integer')
@@ -22,14 +21,15 @@ export const createDashboardToolSchema = {
   board_ids: z
     .array(z.string())
     .min(1, 'At least one board ID is required')
+    .max(50, 'A maximum of 50 board IDs are allowed')
     .describe('List of board IDs as strings (min 1 element)'),
-  kind: z.nativeEnum(DashboardKind).default(DashboardKind.Private).describe('Visibility level: PUBLIC or PRIVATE'),
+  kind: z.nativeEnum(DashboardKind).default(DashboardKind.Public).describe('Visibility level: PUBLIC or PRIVATE'),
   board_folder_id: z
     .number()
     .int('Board folder ID must be an integer')
     .positive('Board folder ID must be positive')
     .optional()
-    .describe('Optional folder ID within workspace to place dashboard'),
+    .describe('Optional folder ID within workspace to place this dashboard (if not provided, dashboard will be placed in workspace root)'),
 };
 
 export class CreateDashboardTool extends BaseMondayApiTool<typeof createDashboardToolSchema, never> {
@@ -74,7 +74,7 @@ export class CreateDashboardTool extends BaseMondayApiTool<typeof createDashboar
 
       // Check if the dashboard was created successfully
       if (!res.create_dashboard) {
-        throw new Error('Failed to create dashboard - no response data received');
+        throw new Error('Failed to create dashboard');
       }
 
       const dashboard = res.create_dashboard;
@@ -99,7 +99,7 @@ Dashboard Details:
 
 Next Steps:
 1. Use 'all_widgets_schema' to understand available widget types
-2. Understand the connected boards structure, columns, and metadata. Map board id to column ids
+2. Understand the connected boards structure, columns, and metadata. Map board ids to column ids
 3. Plan Domain-Beneficial Widgets - Strategic widget planning based on real data analysis
 4. Use 'create_widget' to add widgets to the dashboard`,
       };
