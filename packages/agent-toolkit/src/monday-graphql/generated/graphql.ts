@@ -1,3 +1,5 @@
+import { Form } from "@mondaydotcomorg/workforms-contracts"
+
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
@@ -8445,7 +8447,9 @@ export type GetWorkspaceInfoQueryVariables = Exact<{
 
 export type GetWorkspaceInfoQuery = { __typename?: 'Query', workspaces?: Array<{ __typename?: 'Workspace', id?: string | null, name: string, description?: string | null, kind?: WorkspaceKind | null, created_at?: any | null, state?: State | null, is_default_workspace?: boolean | null, owners_subscribers?: Array<{ __typename?: 'User', id: string, name: string, email: string } | null> | null } | null> | null, boards?: Array<{ __typename?: 'Board', id: string, name: string, board_folder_id?: string | null } | null> | null, docs?: Array<{ __typename?: 'Document', id: string, name: string, doc_folder_id?: string | null } | null> | null, folders?: Array<{ __typename?: 'Folder', id: string, name: string } | null> | null };
 
-
+// -----------------------------
+// WorkForms (Forms) Types
+// -----------------------------
 
 export type CreateFormMutationVariables = Exact<{
   destination_workspace_id: Scalars['Float']['input'];
@@ -8459,4 +8463,10 @@ export type CreateFormMutationVariables = Exact<{
   board_subscriber_teams_ids?: InputMaybe<Array<Scalars['Float']['input']>>;
 }>;
 
-export type CreateFormMutation = { __typename?: 'Mutation', create_form?: { __typename?: 'CreateFormResult', boardId: string, token: string }};
+export type CreateFormMutation = { __typename?: 'Mutation', create_form?: { __typename?: 'CreateFormResult', boardId: string, token: string } | null };
+
+export type GetFormQueryVariables = Exact<{
+  formToken: Scalars['String']['input'];
+}>;
+
+export type GetFormQuery = { __typename?: 'Query', form?: Form & { __typename?: 'Form' } | null };

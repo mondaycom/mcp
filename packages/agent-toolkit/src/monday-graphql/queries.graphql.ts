@@ -593,3 +593,135 @@ export const createForm = gql`
     }
   }
 `;
+
+// Fetch a form by its token
+export const getForm = gql`
+  query getForm($formToken: String!) {
+    form(formToken: $formToken) {
+      token
+      type
+      questions {
+        id
+        type
+        visible
+        title
+        description
+        required
+        showIfRules
+        options {
+          label
+        }
+        settings {
+          prefill {
+            enabled
+            source
+            lookup
+          }
+          prefixAutofilled
+          prefixPredefined {
+            enabled
+            prefix
+          }
+          checkedByDefault
+          defaultCurrentDate
+          includeTime
+          display
+          optionsOrder
+          labelLimitCount
+          locationAutofilled
+          limit
+          skipValidation
+        }
+      }
+      features {
+        isInternal
+        reCaptchaChallenge
+        shortenedLink {
+          enabled
+          url
+        }
+        password {
+          enabled
+        }
+        draftSubmission {
+        enabled 
+        }
+        requireLogin {
+          enabled
+          redirectToLogin
+        }
+        responseLimit {
+          enabled
+          limit
+        }
+        closeDate {
+          enabled
+          date
+        }
+        preSubmissionView {
+          enabled
+          title
+          description
+          startButton {
+            text
+          }
+        }
+        afterSubmissionView {
+          title
+          description
+          redirectAfterSubmission {
+            enabled
+            redirectUrl
+          }
+          allowResubmit
+          showSuccessImage
+          allowEditSubmission
+          allowViewSubmission
+        }
+        monday {
+          itemGroupId
+          includeNameQuestion
+          includeUpdateQuestion
+          syncQuestionAndColumnsTitles
+        }
+      }
+      appearance {
+        hideBranding
+        showProgressBar
+        primaryColor
+        layout {
+          format
+          alignment
+          direction
+        }
+        background {
+          type
+          value
+        }
+        text {
+          font
+          color
+          size
+        }
+        logo {
+          position
+          url
+          size
+        }
+        submitButton {
+          text
+        }
+      }
+      accessibility {
+        language
+        logoAltText
+      }
+      tags {
+      id
+        name
+        value
+        columnId
+      }
+    }
+  }
+`;
