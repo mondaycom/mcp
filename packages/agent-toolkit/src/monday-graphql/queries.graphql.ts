@@ -559,3 +559,32 @@ export const getWorkspaceInfo = gql`
     }
   }
 `;
+
+export const createForm = gql`
+  mutation createForm(
+    $destination_workspace_id: Float!
+    $destination_folder_id: Float
+    $destination_folder_name: String
+    $board_kind: BoardKind
+    $destination_name: String
+    $board_owner_ids: [Float!]
+    $board_owner_team_ids: [Float!]
+    $board_subscriber_ids: [Float!]
+    $board_subscriber_teams_ids: [Float!]
+  ) {
+    create_form(
+      destination_workspace_id: $destination_workspace_id
+      destination_folder_id: $destination_folder_id
+      destination_folder_name: $destination_folder_name
+      board_kind: $board_kind
+      destination_name: $destination_name
+      board_owner_ids: $board_owner_ids
+      board_owner_team_ids: $board_owner_team_ids
+      board_subscriber_ids: $board_subscriber_ids
+      board_subscriber_teams_ids: $board_subscriber_teams_ids
+    ) {
+      boardId
+      token
+    }
+  }
+`;

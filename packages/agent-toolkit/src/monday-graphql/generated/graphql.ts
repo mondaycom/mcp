@@ -8444,3 +8444,19 @@ export type GetWorkspaceInfoQueryVariables = Exact<{
 
 
 export type GetWorkspaceInfoQuery = { __typename?: 'Query', workspaces?: Array<{ __typename?: 'Workspace', id?: string | null, name: string, description?: string | null, kind?: WorkspaceKind | null, created_at?: any | null, state?: State | null, is_default_workspace?: boolean | null, owners_subscribers?: Array<{ __typename?: 'User', id: string, name: string, email: string } | null> | null } | null> | null, boards?: Array<{ __typename?: 'Board', id: string, name: string, board_folder_id?: string | null } | null> | null, docs?: Array<{ __typename?: 'Document', id: string, name: string, doc_folder_id?: string | null } | null> | null, folders?: Array<{ __typename?: 'Folder', id: string, name: string } | null> | null };
+
+
+
+export type CreateFormMutationVariables = Exact<{
+  destination_workspace_id: Scalars['Float']['input'];
+  destination_folder_id?: InputMaybe<Scalars['Float']['input']>;
+  destination_folder_name?: InputMaybe<Scalars['String']['input']>;
+  board_kind?: InputMaybe<BoardKind>;
+  destination_name?: InputMaybe<Scalars['String']['input']>;
+  board_owner_ids?: InputMaybe<Array<Scalars['Float']['input']>>;
+  board_owner_team_ids?: InputMaybe<Array<Scalars['Float']['input']>>;
+  board_subscriber_ids?: InputMaybe<Array<Scalars['Float']['input']>>;
+  board_subscriber_teams_ids?: InputMaybe<Array<Scalars['Float']['input']>>;
+}>;
+
+export type CreateFormMutation = { __typename?: 'Mutation', create_form?: { __typename?: 'CreateFormResult', boardId: string, token: string }};

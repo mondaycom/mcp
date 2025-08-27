@@ -49,6 +49,7 @@
   },
   "dependencies": {
     "@mondaydotcomorg/api": "^10.0.5",
+    "@mondaydotcomorg/workforms-contracts": "^1.26.4",
     "axios": "^1.10.0",
     "jsonwebtoken": "^9.0.2",
     "zod": "^3.24.2",
