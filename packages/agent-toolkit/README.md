@@ -36,6 +36,7 @@ The toolkit includes several pre-built tools for common monday.com operations, o
 
 ### Account Operations
 - `GetUsersTool` - Get users, can be filtered by name or partial name
+- `ListUsersAndTeams` - Get users or teams, either by ids, names or searching through the account
 
 ### Dynamic API Tools
 - `AllMondayApiTool` - Execute any monday.com API operation by generating GraphQL queries and mutations dynamically
