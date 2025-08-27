@@ -157,7 +157,7 @@ To specify an authorization header and API version:
         "-p",
         "node@20",
         "mcp-remote",
-        "https://monday-mcp-server-staging.staging-7c7.workers.dev/sse",
+        "https://mcp.monday.com/sse",
         "--header",
         "Authorization:${AUTH_HEADER}",
       ],
