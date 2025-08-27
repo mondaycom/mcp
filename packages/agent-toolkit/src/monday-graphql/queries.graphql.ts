@@ -560,6 +560,11 @@ export const getWorkspaceInfo = gql`
   }
 `;
 
+// -----------------------------
+// WorkForms (Forms) Operations
+// -----------------------------
+
+// Create a new monday form (API version 2025-10)
 export const createForm = gql`
   mutation createForm(
     $destination_workspace_id: Float!
