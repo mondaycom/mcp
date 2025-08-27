@@ -31,6 +31,7 @@ The toolkit includes several pre-built tools for common monday.com operations, o
 ### Board Operations
 - `CreateBoardTool` - Create a monday.com board
 - `GetBoardSchemaTool` - Get board schema (columns and groups) by board id
+- `CreateGroupTool` - Create a new group in a monday.com board
 - `CreateColumnTool` - Create a new column in a monday.com board
 - `DeleteColumnTool` - Delete a column from a monday.com board
 
