@@ -67,7 +67,8 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
 export * from './all-monday-api-tool';
 export * from './change-item-column-values-tool';
 export * from './create-board-tool';
-export * from './create-form-tool';
+export * from './workforms-tools/create-form-tool';
+export * from './workforms-tools/get-form-tool';
 export * from './create-column-tool';
 export * from './create-custom-activity-tool';
 export * from './create-item-tool';
