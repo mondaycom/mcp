@@ -168,7 +168,7 @@ export const GraphQLDescriptions = {
       updatedAt: 'ISO timestamp when the question was last modified.',
       selectOptions:
         'Array of option objects for choice-based questions (single_select, multi_select). Required for select types.',
-      selectLabel: 'The display text for individual option choices in select-type questions.',
+      selectOptionsLabel: 'The display text for individual option choices in select-type questions.',
     },
     inputs: {
       question: 'Complete question object containing all properties for creation or update.',

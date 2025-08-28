@@ -57,7 +57,7 @@ enum FontSize {
   Large = 'large',
 }
 
-enum WorkformsQuestionType {
+export enum WorkformsQuestionType {
   Boolean = 'Boolean',
   ConnectedBoards = 'ConnectedBoards',
   Country = 'Country',
@@ -81,7 +81,7 @@ enum WorkformsQuestionType {
   Updates = 'Updates',
 }
 
-enum PrefillSources {
+export enum PrefillSources {
   Account = 'account',
   QueryParam = 'queryParam',
 }
@@ -135,13 +135,13 @@ type DateQuestionSettings = {
   includeTime: boolean;
 };
 
-enum SelectDisplay {
+export enum SelectDisplay {
   Horizontal = 'horizontal',
   Vertical = 'vertical',
   Dropdown = 'dropdown',
 }
 
-enum SelectOrderByOptions {
+export enum SelectOrderByOptions {
   Alphabetical = 'alphabetical',
   Random = 'random',
   Custom = 'custom',

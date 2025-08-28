@@ -1,19 +1,12 @@
 import { z } from 'zod';
-
-import { createForm, createFormQuestion, deleteFormQuestion, updateFormQuestion } from './workforms.graphql';
-import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
+import { createFormQuestion, deleteFormQuestion, updateFormQuestion } from './workforms.graphql';
+import { ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { GraphQLDescriptions } from './workforms.consts';
 import { CreateFormQuestionMutation, DeleteFormQuestionMutation, UpdateFormQuestionMutation } from 'src/monday-graphql';
 import { FormQuestionsOperation } from './workforms.types';
+import { formQuestionsEditorToolSchema } from './workforms.schemas';
 
-export const formQuestionsEditorToolSchema = {
-  formToken: z.string().describe(GraphQLDescriptions.commonArgs.formToken),
-  questionId: z.string().describe(GraphQLDescriptions.commonArgs.questionId),
-  operation: z.nativeEnum(FormQuestionsOperation).describe(GraphQLDescriptions.question.operations.type),
-};
-
-export class FormQuestionsEditorTool extends BaseMondayApiTool<typeof formQuestionsEditorToolSchema, never> {
+export class FormQuestionsEditorTool extends BaseMondayApiTool<any, never> {
   name = 'form_questions_editor';
   type = ToolType.WRITE;
   annotations = createMondayApiAnnotations({
@@ -27,37 +20,52 @@ export class FormQuestionsEditorTool extends BaseMondayApiTool<typeof formQuesti
     return 'Create, update, or delete a question in a monday.com form';
   }
 
-  getInputSchema(): typeof formQuestionsEditorToolSchema {
+  getInputSchema() {
     return formQuestionsEditorToolSchema;
   }
 
   protected async executeInternal(
-    input: ToolInputType<typeof formQuestionsEditorToolSchema>,
+    input: z.infer<typeof formQuestionsEditorToolSchema>,
   ): Promise<ToolOutputType<never>> {
-    const variables = {
+    const baseVariables = {
       formToken: input.formToken,
-      questionId: input.questionId,
     };
 
     switch (input.operation) {
-      case FormQuestionsOperation.Delete:
-        await this.mondayApi.request<DeleteFormQuestionMutation>(deleteFormQuestion, variables);
+      case FormQuestionsOperation.Delete: {
+        const deleteVariables = {
+          ...baseVariables,
+          questionId: input.questionId,
+        };
+        await this.mondayApi.request<DeleteFormQuestionMutation>(deleteFormQuestion, deleteVariables);
 
         return {
           content: `Form question with id ${input.questionId} deleted successfully.`,
         };
-      case FormQuestionsOperation.Update:
-        await this.mondayApi.request<UpdateFormQuestionMutation>(updateFormQuestion, variables);
+      }
+      case FormQuestionsOperation.Update: {
+        const updateVariables = {
+          ...baseVariables,
+          questionId: input.questionId,
+          question: input.question,
+        };
+        await this.mondayApi.request<UpdateFormQuestionMutation>(updateFormQuestion, updateVariables);
 
         return {
           content: `Form question with id ${input.questionId} updated successfully.`,
         };
-      case FormQuestionsOperation.Create:
-        await this.mondayApi.request<CreateFormQuestionMutation>(createFormQuestion, variables);
+      }
+      case FormQuestionsOperation.Create: {
+        const createVariables = {
+          ...baseVariables,
+          question: input.question,
+        };
+        await this.mondayApi.request<CreateFormQuestionMutation>(createFormQuestion, createVariables);
 
         return {
-          content: `Form question with id ${input.questionId} created successfully.`,
+          content: `Form question created successfully.`,
         };
+      }
     }
   }
 }
