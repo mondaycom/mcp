@@ -1,13 +1,12 @@
 import { z } from 'zod';
 import { GetFormQuery, GetFormQueryVariables } from '../../../../monday-graphql/generated/graphql';
-import { getForm, getMinimalForm } from './workforms.graphql';
+import { getForm } from './workforms.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { GraphQLDescriptions } from './workforms.consts';
 
 export const getFormToolSchema = {
   formToken: z.string().describe(GraphQLDescriptions.commonArgs.formToken),
-  includeFullFormDetails: z.boolean().optional().describe(GraphQLDescriptions.form.args.includeFullFormDetails),
 };
 
 export class GetFormTool extends BaseMondayApiTool<typeof getFormToolSchema, never> {
@@ -30,11 +29,9 @@ export class GetFormTool extends BaseMondayApiTool<typeof getFormToolSchema, nev
   protected async executeInternal(input: ToolInputType<typeof getFormToolSchema>): Promise<ToolOutputType<never>> {
     const variables: GetFormQueryVariables = {
       formToken: input.formToken,
-      includeFullFormDetails: input.includeFullFormDetails ?? false,
     };
 
-    const queryToUse = input.includeFullFormDetails ? getForm : getMinimalForm;
-    const res = await this.mondayApi.request<GetFormQuery>(queryToUse, variables);
+    const res = await this.mondayApi.request<GetFormQuery>(getForm, variables);
 
     if (!res.form) {
       return {

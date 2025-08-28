@@ -30,31 +30,6 @@ export const createForm = gql`
   }
 `;
 
-// Fetch a minimal form with only the core properties by its token
-export const getMinimalForm = gql`
-  query getMinimalForm($formToken: String!) {
-    form(formToken: $formToken) {
-      id
-      token
-      ownerId
-      active
-      title
-      description
-      questions {
-        id
-        title
-        type
-        visible
-        required
-        showIfRules
-        options {
-          label
-        }
-      }
-    }
-  }
-`;
-
 // Fetch a full form with all its details by its token
 export const getForm = gql`
   query getForm($formToken: String!) {
