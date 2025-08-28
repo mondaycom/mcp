@@ -137,6 +137,7 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
       • userIds + teamIds requires explicit includeTeams: true flag
       • teamsOnly: true prevents user data fetching (teams-only queries)
       • includeTeamMembers: true adds detailed member data to teams
+      • includeTeams: true fetches both users and teams, can be used to get a user's teams if their user id is known
 
       OPTIMIZATION DIRECTIVES:
       • NEVER fetch all users when specific IDs are available
@@ -144,6 +145,7 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
       • ALWAYS prefer name search over ID-less queries for individual users
       • SET includeTeamMembers: false for team lists, true only for member analysis  
       • AVOID includeTeams: true unless you specifically need both users AND teams
+      • AVOID broad queries for single user/team, if you have specific IDs, use them. For example getting a user's teams, use that user's ID and fetch their team using the includeTeams flag.
 
       RESPONSE CONTENT:
       • Users: id, name, email, title, permissions, contact details, team memberships
