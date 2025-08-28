@@ -18,7 +18,7 @@ The package provides several modular components that can be imported separately:
 
 ## Available Tools
 
-The toolkit includes several pre-built tools for common Monday.com operations, organized by functionality:
+The toolkit includes several pre-built tools for common monday.com operations, organized by functionality:
 
 ### Item Operations
 - `CreateItemTool` - Create a new item in a monday.com board
@@ -40,10 +40,11 @@ The toolkit includes several pre-built tools for common Monday.com operations, o
 
 ### Account Operations
 - `GetUsersTool` - Get users, can be filtered by name or partial name
+- `ListUsersAndTeams` - Get users or teams, either by ids, names or by searching the account
 
 ### Dynamic API Tools
-- `AllMondayApiTool` - Execute any Monday.com API operation by generating GraphQL queries and mutations dynamically
-- `GetGraphQLSchemaTool` - Fetch the Monday.com GraphQL schema structure including query and mutation definitions
-- `GetTypeDetailsTool` - Get detailed information about a specific GraphQL type from the Monday.com API schema
+- `AllMondayApiTool` - Execute any monday.com API operation by generating GraphQL queries and mutations dynamically
+- `GetGraphQLSchemaTool` - Fetch the monday.com GraphQL schema structure including query and mutation definitions
+- `GetTypeDetailsTool` - Get detailed information about a specific GraphQL type from the monday.com API schema
 
 ## Usage

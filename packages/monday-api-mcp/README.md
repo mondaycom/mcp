@@ -1,10 +1,10 @@
 <div align="center" id="top">
 
-# Monday.com API MCP Server
+# monday.com API MCP Server
 
 </div>
 
-A server implementation for the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) that provides an interface to interact with Monday.com API.
+A server implementation for the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) that provides an interface to interact with monday.com API.
 
 ## 💻 Claude Desktop Demo
 
@@ -24,14 +24,14 @@ Before running the MCP server, make sure you have:
 npx @mondaydotcomorg/monday-api-mcp -t abcd123
 ```
 
-The Monday API token can also be provided via the `monday_token` environment variable.
+The monday.com API token can also be provided via the `monday_token` environment variable.
 
 ### Command Line Arguments
 
 | Argument | Flags | Description | Required | Default |
 |----------|-------|-------------|----------|---------|
-| Monday API Token | `--token`, `-t` | Monday.com API token (can also be provided via `monday_token` environment variable) | Yes | - |
-| API Version | `--version`, `-v` | Monday.com API version | No | `current` |
+| monday.com API Token | `--token`, `-t` | monday.com API token (can also be provided via `monday_token` environment variable) | Yes | - |
+| API Version | `--version`, `-v` | monday.com API version | No | `current` |
 | Read Only Mode | `--read-only`, `-ro` | Enable read-only mode | No | `false` |
 | Dynamic API Tools | `--enable-dynamic-api-tools`, `-edat` | (Beta) Enable dynamic API tools (Mode that includes the whole API schema, not supported when using read-only mode) | No | `false` |
 

@@ -19,7 +19,7 @@ export class GetTypeDetailsTool extends BaseMondayApiTool<typeof getTypeDetailsT
   });
 
   getDescription(): string {
-    return 'Get detailed information about a specific GraphQL type from the Monday.com API schema';
+    return 'Get detailed information about a specific GraphQL type from the monday.com API schema';
   }
 
   getInputSchema(): typeof getTypeDetailsToolSchema {
