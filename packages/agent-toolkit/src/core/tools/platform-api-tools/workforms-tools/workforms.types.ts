@@ -354,7 +354,6 @@ export interface Form {
   active: boolean;
   title: string;
   ownerId?: number;
-  createWithAI: boolean;
   builtWithAI: boolean;
   description: string | null;
   closeDate: string | null;
@@ -362,7 +361,6 @@ export interface Form {
   conditions: {
     [id: string]: Condition;
   };
-  isSuspicious: boolean;
   isAnonymous: boolean;
   type: FormType;
   features: {
@@ -452,4 +450,10 @@ export interface Form {
     logoAltText: string | null;
   };
   tags: Tag[];
+}
+
+export enum FormQuestionsOperation {
+  Delete = 'delete',
+  Update = 'update',
+  Create = 'create',
 }

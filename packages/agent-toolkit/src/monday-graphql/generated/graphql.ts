@@ -8451,6 +8451,7 @@ export type GetWorkspaceInfoQuery = { __typename?: 'Query', workspaces?: Array<{
 // WorkForms (Forms) Types
 // -----------------------------
 
+// Create Form
 export type CreateFormMutationVariables = Exact<{
   destination_workspace_id: Scalars['Float']['input'];
   destination_folder_id?: InputMaybe<Scalars['Float']['input']>;
@@ -8462,11 +8463,31 @@ export type CreateFormMutationVariables = Exact<{
   board_subscriber_ids?: InputMaybe<Array<Scalars['Float']['input']>>;
   board_subscriber_teams_ids?: InputMaybe<Array<Scalars['Float']['input']>>;
 }>;
-
 export type CreateFormMutation = { __typename?: 'Mutation', create_form?: { __typename?: 'CreateFormResult', boardId: string, token: string } | null };
+
 
 export type GetFormQueryVariables = Exact<{
   formToken: Scalars['String']['input'];
 }>;
-
 export type GetFormQuery = { __typename?: 'Query', form?: Form & { __typename?: 'Form' } | null };
+
+// Delete Form Question
+export type DeleteFormQuestionMutationVariables = Exact<{
+  formToken: Scalars['String']['input'];
+  questionId: Scalars['String']['input'];
+}>;
+export type DeleteFormQuestionMutation = { __typename?: 'Mutation', delete_form_question?: { __typename?: 'DeleteFormQuestionResult', success: boolean } | null };
+
+// Create Form Question
+export type CreateFormQuestionMutationVariables = Exact<{
+  formToken: Scalars['String']['input'];
+  questionId: Scalars['String']['input'];
+}>;
+export type CreateFormQuestionMutation = { __typename?: 'Mutation', create_form_question?: { __typename?: 'CreateFormQuestionResult', success: boolean } | null };
+
+// Update Form Question
+export type UpdateFormQuestionMutationVariables = Exact<{
+  formToken: Scalars['String']['input'];
+  questionId: Scalars['String']['input'];
+}>;
+export type UpdateFormQuestionMutation = { __typename?: 'Mutation', update_form_question?: { __typename?: 'UpdateFormQuestionResult', success: boolean } | null };

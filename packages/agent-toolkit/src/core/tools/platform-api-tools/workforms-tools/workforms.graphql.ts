@@ -161,3 +161,25 @@ export const getForm = gql`
     }
   }
 `;
+
+export const deleteFormQuestion = gql`
+  mutation deleteFormQuestion($formToken: String!, $questionId: String!) {
+    delete_question(formToken: $formToken, questionId: $questionId)
+  }
+`;
+
+export const updateFormQuestion = gql`
+  mutation updateFormQuestion($formToken: String!, $questionId: String!) {
+    update_question(formToken: $formToken, questionId: $questionId) {
+      update_question
+    }
+  }
+`;
+
+export const createFormQuestion = gql`
+  mutation createFormQuestion($formToken: String!, $questionId: String!) {
+    create_question(formToken: $formToken, questionId: $questionId) {
+      create_question
+    }
+  }
+`;

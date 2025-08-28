@@ -147,6 +147,7 @@ export const GraphQLDescriptions = {
   },
   question: {
     operations: {
+      type: 'The type of operation to perform on the question. Can delete, update, or create.',
       createQuestion: 'Create a new question within a form. Returns the created question with auto-generated ID.',
       updateQuestion:
         'Update an existing question properties including title, type, or settings. Requires question ID.',
