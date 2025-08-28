@@ -35,7 +35,7 @@ export class CreateFormTool extends BaseMondayApiTool<typeof createFormToolSchem
   });
 
   getDescription(): string {
-    return 'Create a monday.com form';
+    return 'Create a monday.com form. This will create a new form as well as a new board for which the form’s responses will be stored. The returned board_id is the ID of the board that was created while the returned formToken can be used for all future queries and mutations to continue editing the form.';
   }
 
   getInputSchema(): typeof createFormToolSchema {
