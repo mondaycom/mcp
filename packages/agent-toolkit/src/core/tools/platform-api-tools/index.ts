@@ -2,7 +2,8 @@ import { AllMondayApiTool } from './all-monday-api-tool';
 import { BaseMondayApiToolConstructor } from './base-monday-api-tool';
 import { ChangeItemColumnValuesTool } from './change-item-column-values-tool';
 import { CreateBoardTool } from './create-board-tool';
-import { CreateFormTool } from './create-form-tool';
+import { CreateFormTool } from './workforms-tools/create-form-tool';
+import { GetFormTool } from './workforms-tools/get-form-tool';
 import { CreateColumnTool } from './create-column-tool';
 import { CreateCustomActivityTool } from './create-custom-activity-tool';
 import { CreateItemTool } from './create-item-tool';
@@ -28,7 +29,6 @@ import { CreateDocTool } from './create-doc-tool';
 import { CreateDashboardTool } from './dashboard-tools/create-dashboard-tool';
 import { AllWidgetsSchemaTool } from './dashboard-tools/all-widgets-schema-tool';
 import { CreateWidgetTool } from './dashboard-tools/create-widget-tool';
-import { GetFormTool } from './workforms-tools/get-form-tool';
 
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteItemTool,
