@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import { GetFormQuery, GetFormQueryVariables } from '../../../monday-graphql/generated/graphql';
-import { getForm } from '../../../monday-graphql/queries.graphql';
-import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
-import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
-import { GraphQLDescriptions, Form } from '@mondaydotcomorg/workforms-contracts';
+import { GetFormQuery, GetFormQueryVariables } from '../../../../monday-graphql/generated/graphql';
+import { getForm } from '../../../../monday-graphql/queries.graphql';
+import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
+import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+import { GraphQLDescriptions } from './workforms.consts';
 
 export const getFormToolSchema = {
   formToken: z.string().describe(GraphQLDescriptions.commonArgs.formToken),

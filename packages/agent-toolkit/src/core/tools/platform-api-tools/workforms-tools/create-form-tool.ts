@@ -1,9 +1,13 @@
 import { z } from 'zod';
-import { BoardKind, CreateFormMutation, CreateFormMutationVariables } from '../../../monday-graphql/generated/graphql';
-import { createForm } from '../../../monday-graphql/queries.graphql';
-import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
-import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
-import { GraphQLDescriptions } from '@mondaydotcomorg/workforms-contracts';
+import {
+  BoardKind,
+  CreateFormMutation,
+  CreateFormMutationVariables,
+} from '../../../../monday-graphql/generated/graphql';
+import { createForm } from '../../../../monday-graphql/queries.graphql';
+import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
+import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+import { GraphQLDescriptions } from './workforms.consts';
 
 export const createFormToolSchema = {
   destination_workspace_id: z.number().describe(GraphQLDescriptions.form.args.destinationWorkspaceId),

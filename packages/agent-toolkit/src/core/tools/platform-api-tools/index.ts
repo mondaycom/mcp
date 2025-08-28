@@ -28,7 +28,7 @@ import { CreateDocTool } from './create-doc-tool';
 import { CreateDashboardTool } from './dashboard-tools/create-dashboard-tool';
 import { AllWidgetsSchemaTool } from './dashboard-tools/all-widgets-schema-tool';
 import { CreateWidgetTool } from './dashboard-tools/create-widget-tool';
-import { GetFormTool } from './get-form-tool';
+import { GetFormTool } from './workforms-tools/get-form-tool';
 
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteItemTool,

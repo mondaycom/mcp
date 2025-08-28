@@ -1,4 +1,4 @@
-import { Form } from "@mondaydotcomorg/workforms-contracts"
+import { Form } from "src/core/tools/platform-api-tools/workforms-tools/workforms.types"
 
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
