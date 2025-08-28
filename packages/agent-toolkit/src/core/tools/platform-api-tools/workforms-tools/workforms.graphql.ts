@@ -66,7 +66,7 @@ export const getForm = gql`
       active
       ownerId
       type
-      builtWitAI
+      builtWithAI
       isAnonymous
       questions {
         id
