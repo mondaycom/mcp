@@ -270,7 +270,7 @@ When 'only' mode is enabled, the server will provide just the Dynamic API Tools,
 
 | Argument | Flags | Description | Required | Default |
 |----------|-------|-------------|----------|---------|
-| monday API Token | `--token`, `-t` | monday.com API token | Yes | - |
+| monday.com API Token | `--token`, `-t` | monday.com API token | Yes | - |
 | API Version | `--version`, `-v` | monday.com API version | No | `current` |
 | Read Only Mode | `--read-only`, `-ro` | Enable read-only mode | No | `false` |
 | Dynamic API Tools | `--enable-dynamic-api-tools`, `-edat` | Enable dynamic API tools | No | `false` |

@@ -24,13 +24,13 @@ Before running the MCP server, make sure you have:
 npx @mondaydotcomorg/monday-api-mcp -t abcd123
 ```
 
-The Monday API token can also be provided via the `monday_token` environment variable.
+The monday.com API token can also be provided via the `monday_token` environment variable.
 
 ### Command Line Arguments
 
 | Argument | Flags | Description | Required | Default |
 |----------|-------|-------------|----------|---------|
-| Monday API Token | `--token`, `-t` | monday.com API token (can also be provided via `monday_token` environment variable) | Yes | - |
+| monday.com API Token | `--token`, `-t` | monday.com API token (can also be provided via `monday_token` environment variable) | Yes | - |
 | API Version | `--version`, `-v` | monday.com API version | No | `current` |
 | Read Only Mode | `--read-only`, `-ro` | Enable read-only mode | No | `false` |
 | Dynamic API Tools | `--enable-dynamic-api-tools`, `-edat` | (Beta) Enable dynamic API tools (Mode that includes the whole API schema, not supported when using read-only mode) | No | `false` |
