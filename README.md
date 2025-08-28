@@ -217,6 +217,8 @@ Our MCP server provides a rich set of tools that give AI assistants the ability 
 | | create_column | Add a new column to an existing board |
 | | delete_column | Remove a column from a board |
 | **Account Operations** | get_users_by_name | Retrieve user information by name or partial name |
+| **WorkForms Operations** | create_form | Create a new monday.com form |
+| | get_form | Get a form by its token |
 
 ## 🔮 Dynamic API Tools (Beta)
 
