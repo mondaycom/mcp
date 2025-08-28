@@ -34,6 +34,10 @@ The toolkit includes several pre-built tools for common monday.com operations, o
 - `CreateColumnTool` - Create a new column in a monday.com board
 - `DeleteColumnTool` - Delete a column from a monday.com board
 
+### WorkForms Operations
+- `CreateFormTool` - Create a monday.com form
+- `GetFormTool` - Get a form by its token, found in the form's URL
+
 ### Account Operations
 - `GetUsersTool` - Get users, can be filtered by name or partial name
 - `ListUsersAndTeams` - Get users or teams, either by ids, names or by searching the account
