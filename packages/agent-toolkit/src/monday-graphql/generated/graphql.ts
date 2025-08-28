@@ -8467,6 +8467,7 @@ export type CreateFormMutation = { __typename?: 'Mutation', create_form?: { __ty
 
 export type GetFormQueryVariables = Exact<{
   formToken: Scalars['String']['input'];
+  includeFullFormDetails?: InputMaybe<Scalars['Boolean']['input']>;
 }>;
 
 export type GetFormQuery = { __typename?: 'Query', form?: Form & { __typename?: 'Form' } | null };

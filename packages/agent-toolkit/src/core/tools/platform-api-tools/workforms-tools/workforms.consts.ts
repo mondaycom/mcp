@@ -38,6 +38,8 @@ export const GraphQLDescriptions = {
     },
     args: {
       formToken: 'The unique form token identifying which form to operate on.',
+      includeFullFormDetails:
+        'Boolean indicating if the full form details should be included in the response. Default will be to only return the core properties of the form and its questions',
       destinationWorkspaceId: 'The workspace in which the form will be created in.',
       destinationFolderId: 'The folder in which the form will be created under.',
       destinationFolderName: 'The name of the folder in which the form will be created in.',
