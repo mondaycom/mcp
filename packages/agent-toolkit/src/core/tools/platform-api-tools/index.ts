@@ -14,6 +14,7 @@ import { GetBoardActivityTool } from './get-board-activity/get-board-activity-to
 import { GetBoardInfoTool } from './get-board-info/get-board-info-tool';
 import { GetBoardItemsTool } from './get-board-items-tool';
 import { GetBoardSchemaTool } from './get-board-schema-tool';
+import { GetColumnTypeInfoTool } from './get-column-type-info/get-column-type-info-tool';
 import { GetGraphQLSchemaTool } from './get-graphql-schema-tool';
 import { CreateWorkflowInstructionsTool } from './create-workflow-instructions-tool';
 import { GetTypeDetailsTool } from './get-type-details-tool';
@@ -24,6 +25,9 @@ import { ReadDocsTool } from './read-docs-tool';
 import { WorkspaceInfoTool } from './workspace-info-tool/workspace-info-tool';
 import { ListWorkspaceTool } from './list-workspace-tool/list-workspace-tool';
 import { CreateDocTool } from './create-doc-tool';
+import { CreateDashboardTool } from './dashboard-tools/create-dashboard-tool';
+import { AllWidgetsSchemaTool } from './dashboard-tools/all-widgets-schema-tool';
+import { CreateWidgetTool } from './dashboard-tools/create-widget-tool';
 
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteItemTool,
@@ -42,6 +46,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteColumnTool,
   AllMondayApiTool,
   GetGraphQLSchemaTool,
+  GetColumnTypeInfoTool,
   GetTypeDetailsTool,
   CreateCustomActivityTool,
   CreateTimelineItemTool,
@@ -51,6 +56,10 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   WorkspaceInfoTool,
   ListWorkspaceTool,
   CreateDocTool,
+  // Dashboard Tools
+  CreateDashboardTool,
+  AllWidgetsSchemaTool,
+  CreateWidgetTool,
 ];
 
 export * from './all-monday-api-tool';
@@ -66,6 +75,7 @@ export * from './delete-item-tool';
 export * from './fetch-custom-activity-tool';
 export * from './get-board-items-tool';
 export * from './get-board-schema-tool';
+export * from './get-column-type-info/get-column-type-info-tool';
 export * from './get-graphql-schema-tool';
 export * from './get-type-details-tool';
 export * from './get-users-tool';
@@ -79,3 +89,5 @@ export * from './list-workspace-tool/list-workspace-tool';
 export * from './create-doc-tool';
 export * from './get-board-activity/get-board-activity-tool';
 export * from './get-board-info/get-board-info-tool';
+// Dashboard Tools
+export * from './dashboard-tools';

@@ -13,10 +13,10 @@ export const createColumnToolSchema = {
   columnTitle: z.string().describe('The title of the column to be created'),
   columnDescription: z.string().optional().describe('The description of the column to be created'),
   columnSettings: z
-    .array(z.string())
+    .string()
     .optional()
     .describe(
-      "The default values for the new column (relevant only for column type 'status' or 'dropdown') when possible make the values relevant to the user's request",
+      'Column-specific configuration settings as a JSON string. Use the get_column_type_info tool to fetch the JSON schema for the given column type.',
     ),
 };
 
@@ -52,25 +52,12 @@ export class CreateColumnTool extends BaseMondayApiTool<CreateColumnToolInput> {
   protected async executeInternal(input: ToolInputType<CreateColumnToolInput>): Promise<ToolOutputType<never>> {
     const boardId = this.context?.boardId ?? (input as ToolInputType<typeof createColumnInBoardToolSchema>).boardId;
 
-    let columnSettings: string | undefined;
-    if (input.columnSettings && input.columnType === ColumnType.Status) {
-      columnSettings = JSON.stringify({
-        labels: Object.fromEntries(input.columnSettings.map((label: string, i: number) => [String(i + 1), label])),
-      });
-    } else if (input.columnSettings && input.columnType === ColumnType.Dropdown) {
-      columnSettings = JSON.stringify({
-        settings: {
-          labels: input.columnSettings.map((label: string, i: number) => ({ id: i + 1, name: label })),
-        },
-      });
-    }
-
     const variables: CreateColumnMutationVariables = {
       boardId: boardId.toString(),
       columnType: input.columnType,
       columnTitle: input.columnTitle,
       columnDescription: input.columnDescription,
-      columnSettings,
+      columnSettings: typeof input.columnSettings === 'string' ? JSON.parse(input.columnSettings) : input.columnSettings,
     };
 
     const res = await this.mondayApi.request<CreateColumnMutation>(createColumn, variables);

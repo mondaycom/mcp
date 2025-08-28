@@ -1,6 +1,10 @@
+directive @cost(weight: Int!) on ARGUMENT_DEFINITION | ENUM | FIELD_DEFINITION | INPUT_FIELD_DEFINITION | OBJECT | SCALAR
+
+directive @cost__listSize(assumedSize: Int, slicingArguments: [String!], sizedFields: [String!], requireOneSlicingArgument: Boolean = true) on FIELD_DEFINITION
+
 directive @policy(policies: [[policy__Policy!]!]!) on FIELD_DEFINITION | OBJECT | INTERFACE | SCALAR | ENUM
 
-"""Get your data from monday.com"""
+"""Root query type for the Dependencies service"""
 type Query {
   """
   Retrieve audit logs for your Monday account. You can
@@ -206,6 +210,15 @@ type Query {
     connectionId: Int!
   ): [Int!]
 
+  """List trigger events with optional filters"""
+  trigger_events(nextPageOffset: Int = 0, filters: TriggerEventsFiltersInput): TriggerEventsPage
+
+  """Fetch a single trigger event by UUID"""
+  trigger_event(triggerUuid: String!): TriggerEvent
+
+  """List block events for a given trigger UUID"""
+  block_events(triggerUuid: String!, nextPageOffset: Int = 0): BlockEventsPage
+
   """
   Retrieves the JSON schema definition for a specific create view type. 
         Use this query before calling create_view mutation to understand the structure and validation rules for the settings parameter. 
@@ -244,6 +257,28 @@ type Query {
     """
     to_date: String
   ): [Update!]
+
+  """Get a collection of replies filtered by board IDs and date range."""
+  replies(
+    """Number of items to get, the default is 25."""
+    limit: Int = 25
+
+    """Page number to get, starting at 1."""
+    page: Int = 1
+
+    """A list of board IDs to filter replies by."""
+    board_ids: [ID!]!
+
+    """
+    Filter replies created from this date (inclusive). ISO 8601 format (e.g., YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss).
+    """
+    created_at_from: String
+
+    """
+    Filter replies created up to this date (inclusive). ISO 8601 format (e.g., YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss).
+    """
+    created_at_to: String
+  ): [Reply!]
   custom_activity(
     """The ids of the custom activities to fetch"""
     ids: [String!]
@@ -277,6 +312,16 @@ type Query {
     state: [ManagedColumnState!]
   ): [ManagedColumn!]
 
+  """
+  Retrieves the JSON schema definition for a specific column type. Use this query before calling update_column mutation to understand the structure and validation rules for the defaults parameter. The schema defines what properties are available when updating columns of a specific type.
+  """
+  get_column_type_schema(
+    """
+    Specifies which column type to retrieve the schema for. Valid values include "text", "status", "date", "numbers", etc. Each type has different available properties and validation rules.
+    """
+    type: ColumnType!
+  ): JSON
+
   """Get the required column IDs for a board"""
   validations(
     id: ID!
@@ -284,6 +329,15 @@ type Query {
     """The type of entity for validations the default is board"""
     type: ValidationsEntityType = board
   ): Validations
+
+  """Export the dependency graph for a specific board"""
+  export_graph(
+    """The ID of the board to export the graph for"""
+    boardId: String!
+  ): BoardGraphExport
+
+  """Get all personal list items by list ID"""
+  favorites: [HierarchyObjectItem!]
   marketplace_app_discounts(
     """The id of an app"""
     app_id: ID!
@@ -392,6 +446,9 @@ type Query {
   boards(
     """The board's kind (public / private / share)"""
     board_kind: BoardKind
+
+    """A list of hierarchy types"""
+    hierarchy_types: [BoardHierarchy!]
 
     """A list of boards unique identifiers."""
     ids: [ID!]
@@ -588,6 +645,59 @@ type Query {
     state: State = active
   ): [Workspace]
 
+  """Get board candidates based on workspace and usage type"""
+  board_candidates(
+    """The workspace ID to get boards from"""
+    workspaceId: String!
+
+    """The usage type for filtering boards"""
+    usageType: BoardUsage!
+  ): [Board!]
+  notifications(
+    """The last notification id to get."""
+    cursor: ID
+
+    """Number of items to get, the default is 25."""
+    limit: Int = 25
+
+    """Whether to get only unread notifications."""
+    filter_read: Boolean
+
+    """
+    Filter notifications created from this date (inclusive). ISO 8601 format (e.g., YYYY-MM-DD or YYYY-MM-DDTHH:mm).
+    """
+    since: ISO8601DateTime
+  ): [Notification!]
+
+  """
+  Retrieves the current user's notification settings across all available channels.
+  """
+  notifications_settings(
+    """
+    notification settings scope types. Options: account user defaults or user private settings.
+    """
+    scope_type: ScopeType!
+
+    """
+    Relevant when using scopeType: user. The userId of the user whose notification settings you want to retrieve. By default, the current user is used.
+    """
+    scope_id: Int
+
+    """
+    Filter results to specific notification setting types by their names. Leave empty to retrieve all settings.
+    """
+    setting_kinds: [String!]
+
+    """Return results for a specific notification channel type"""
+    channels: [ChannelType!]
+  ): [NotificationSetting!]
+
+  """Get mute board notification settings for the current user"""
+  mute_board_settings(
+    """The IDs of the boards to get mute settings for"""
+    board_ids: [ID!]!
+  ): [BoardMuteSettings!]
+
   """Get the API version in use"""
   version: Version!
 
@@ -597,11 +707,38 @@ type Query {
   """Platform API data."""
   platform_api: PlatformApi
 
+  """Performs aggregation operations on board data"""
+  aggregate(
+    """The aggregation query to execute"""
+    query: AggregateQueryInput!
+  ): AggregateQueryResult
+
+  """Get a collection of monday dev sprints"""
+  sprints(
+    """A list of monday dev sprints unique identifiers"""
+    ids: [ID!]!
+  ): [Sprint!]
+
   """Get all roles for the account"""
   account_roles: [AccountRole!]
+
+  """
+  Returns all available widget schemas for documentation and validation purposes
+  """
+  all_widgets_schema: [WidgetSchemaInfo!]
+
+  """
+  Fetch a form by its token. The returned form includes all the details of the form such as its settings, questions, title, etc. Use this endpoint when you need to retrieve complete form data for display or processing. Requires that the requesting user has read access to the associated board.
+  """
+  form(
+    """
+    The unique identifier token for the form. This token is used to securely access the form and can be found in the form URL.
+    """
+    formToken: String!
+  ): ResponseForm
 }
 
-"""Update your monday.com data."""
+"""Root mutation type for the Dependencies service"""
 type Mutation {
   """Create a new table view"""
   create_view_table(
@@ -783,6 +920,9 @@ type Mutation {
     """
     body: String!
 
+    """Original creation date of the update."""
+    original_creation_date: String
+
     """
     Mention users, teams, or boards in this update. Example: [{"id": "123", "type": "User"}, {"id": "456", "type": "Board"}]
     """
@@ -795,6 +935,9 @@ type Mutation {
 
     """The parent post identifier. Use this to reply to a post."""
     parent_id: ID
+
+    """Use app info for the post creator."""
+    use_app_info: Boolean
   ): Update
   create_timeline_item(
     """The item the timeline item will be created in."""
@@ -915,6 +1058,196 @@ type Mutation {
     id: String!
   ): ManagedColumn
 
+  """
+  Updates a status column's properties including title, description, and status label settings. Status columns allow users to track item progress through customizable labels (e.g., "Working on it", "Done", "Stuck"). This mutation is specifically for status/color columns and provides type-safe updates.
+  """
+  update_status_column(
+    """The unique identifier of the board containing the column to update."""
+    board_id: ID!
+
+    """The unique identifier of the status column to update."""
+    id: String!
+
+    """
+    The new display title for the column. If not provided, the current title remains unchanged.
+    """
+    title: String
+
+    """
+    The new description text for the column. If not provided, the current description remains unchanged.
+    """
+    description: String
+
+    """
+    The revision of the column, as returned by the column query. Used for optimistic concurrency control.
+    """
+    revision: String!
+
+    """
+    Configuration object for status column settings including available status labels, their colors, positions, and other display properties.
+    """
+    settings: UpdateStatusColumnSettingsInput
+  ): Column
+
+  """
+  Updates a dropdown column's properties including title, description, and dropdown label settings. Dropdown columns allow users to select from a predefined list of options. This mutation is specifically for dropdown columns and provides type-safe updates.
+  """
+  update_dropdown_column(
+    """The unique identifier of the board containing the column to update."""
+    board_id: ID!
+
+    """The unique identifier of the status column to update."""
+    id: String!
+
+    """
+    The new display title for the column. If not provided, the current title remains unchanged.
+    """
+    title: String
+
+    """
+    The new description text for the column. If not provided, the current description remains unchanged.
+    """
+    description: String
+
+    """
+    The revision of the column, as returned by the column query. Used for optimistic concurrency control.
+    """
+    revision: String!
+
+    """
+    Configuration object for dropdown column settings including available dropdown labels, their positions, and other display properties.
+    """
+    settings: UpdateDropdownColumnSettingsInput
+  ): Column
+
+  """
+  Generic mutation for updating any column type with validation. Supports updating column properties like title, description, and type-specific defaults/settings. The mutation validates input against the column type's schema before applying changes. Use get_column_type_schema query to understand available properties for each column type.
+  """
+  update_column(
+    """The unique identifier of the board containing the column to update."""
+    board_id: ID!
+
+    """The unique identifier of the status column to update."""
+    id: String!
+
+    """
+    The new display title for the column. If not provided, the current title remains unchanged.
+    """
+    title: String
+
+    """
+    The new description text for the column. If not provided, the current description remains unchanged.
+    """
+    description: String
+
+    """
+    The revision of the column, as returned by the column query. Used for optimistic concurrency control.
+    """
+    revision: String!
+
+    """
+    Type-specific configuration object containing column settings. The structure varies by column type - use get_column_type_schema query to see available properties. Examples: status column labels, dropdown options, number formatting rules, date display preferences.
+    """
+    settings: JSON
+
+    """
+    The column type being updated (e.g., "text", "status", "date", "numbers"). Must match the existing column type. Determines which properties are valid in the defaults object.
+    """
+    column_type: ColumnType!
+  ): Column
+
+  """
+  Creates a new status column with strongly typed settings. Status columns allow users to track item progress through customizable labels (e.g., "Working on it", "Done", "Stuck"). This mutation is specifically for status/color columns and provides type-safe creation with label configuration.
+  """
+  create_status_column(
+    """The unique identifier of the board where the column will be created."""
+    board_id: ID!
+
+    """
+    The unique identifier of the column. If not provided, a new id will be generated.
+    """
+    id: String
+
+    """The display title for the column."""
+    title: String!
+
+    """The description text for the column."""
+    description: String
+
+    """
+    The column's unique identifier after which the new column will be inserted.
+    """
+    after_column_id: ID
+
+    """
+    Configuration object for status column settings including available status labels, their colors, positions, and other display properties.
+    """
+    defaults: CreateStatusColumnSettingsInput
+  ): Column
+
+  """
+  Creates a new dropdown column with strongly typed settings. Dropdown columns allow users to select from a predefined list of options. This mutation is specifically for dropdown columns and provides type-safe creation with dropdown options configuration.
+  """
+  create_dropdown_column(
+    """The unique identifier of the board where the column will be created."""
+    board_id: ID!
+
+    """
+    The unique identifier of the column. If not provided, a new id will be generated.
+    """
+    id: String
+
+    """The display title for the column."""
+    title: String!
+
+    """The description text for the column."""
+    description: String
+
+    """
+    The column's unique identifier after which the new column will be inserted.
+    """
+    after_column_id: ID
+
+    """
+    Configuration object for dropdown column settings including available dropdown options and their properties.
+    """
+    defaults: CreateDropdownColumnSettingsInput
+  ): Column
+
+  """
+  Generic mutation for creating any column type with validation. Supports creating column with properties like title, description, and type-specific defaults/settings. The mutation validates input against the column type's schema before applying changes. Use get_column_type_schema query to understand available properties for each column type.
+  """
+  create_column(
+    """The unique identifier of the board where the column will be created."""
+    board_id: ID!
+
+    """
+    The unique identifier of the column. If not provided, a new id will be generated.
+    """
+    id: String
+
+    """The display title for the column."""
+    title: String!
+
+    """The description text for the column."""
+    description: String
+
+    """
+    The column's unique identifier after which the new column will be inserted.
+    """
+    after_column_id: ID
+
+    """
+    Type-specific configuration object containing column defaults and settings. Accepts both JSON objects (recommended) and JSON strings (for backward compatibility). For JSON objects, use get_column_type_schema query to see available properties and validation rules. Examples: status column labels, dropdown options, number formatting rules, date display preferences.
+    """
+    defaults: JSON
+
+    """
+    The column type being updated (e.g., "text", "status", "date", "numbers"). Must match the existing column type. Determines which properties are valid in the defaults object.
+    """
+    column_type: ColumnType!
+  ): Column
+
   """Add a required column to a board"""
   add_required_column(
     id: ID!
@@ -932,6 +1265,9 @@ type Mutation {
     """The type of entity for validations the default is board"""
     type: ValidationsEntityType = board
   ): RequiredColumns
+
+  """Update the dependency column for a specific pulse"""
+  update_dependency_column(boardId: String!, pulseId: String!, value: DependencyValueInput!, columnId: String!): JSON!
 
   """
   Creates multiple document blocks in a single operation for efficient content creation. Use this when adding substantial content like importing documents, creating structured content (articles, reports, guides), or building complex document sections. Supports all block types including text paragraphs, headers, bullet/numbered lists, images, tables, code blocks, and more. Much faster than creating blocks individually. Perfect for content migration, template creation, or generating documents from external data. Maximum 25 blocks per request.
@@ -1019,6 +1355,24 @@ type Mutation {
     """
     blockIds: [String!]
   ): ExportMarkdownResult
+
+  """Add workspace object to favorites"""
+  create_favorite(
+    """The input for adding an object to the favorites"""
+    input: CreateFavoriteInput!
+  ): CreateFavoriteResultType
+
+  """Remove an object from favorites"""
+  delete_favorite(
+    """The input for removing an object from favorites"""
+    input: DeleteFavoriteInput!
+  ): DeleteFavoriteInputResultType
+
+  """Update the position of an object in favorites"""
+  update_favorite_position(
+    """The input for updating the favorite object position"""
+    input: UpdateObjectHierarchyPositionInput!
+  ): UpdateFavoriteResultType
   grant_marketplace_app_discount(
     """The id of an app"""
     app_id: ID!
@@ -1042,6 +1396,14 @@ type Mutation {
 
     """The input data for updating the app feature."""
     input: UpdateAppFeatureInput!
+  ): AppFeatureType
+
+  """Delete an app feature."""
+  delete_app_feature(
+    """
+    The ID of the app feature to delete. Can be either a numeric ID or a composite slug in format {app_slug}::{feature_slug}.
+    """
+    id: ID!
   ): AppFeatureType
 
   """Add a file to a column value."""
@@ -1326,32 +1688,6 @@ type Mutation {
     """Optional workspace id"""
     workspace_id: ID
   ): Board
-
-  """Create a new column in board."""
-  create_column(
-    """
-    The column's unique identifier after which the new column will be inserted.
-    """
-    after_column_id: ID
-
-    """The board's unique identifier."""
-    board_id: ID!
-
-    """The type of column to create."""
-    column_type: ColumnType!
-
-    """The new column's defaults."""
-    defaults: JSON
-
-    """The new column's description."""
-    description: String
-
-    """The column's user-specified unique identifier."""
-    id: String
-
-    """The new column's title."""
-    title: String!
-  ): Column
 
   """Create a new doc."""
   create_doc(
@@ -1912,6 +2248,49 @@ type Mutation {
     template_id: Int!
   ): Template
 
+  """Updates a notification setting's enabled status."""
+  update_notification_setting(
+    """
+    Notification settings scope types, the options are account user defaults or user private settings
+    """
+    scope_type: ScopeType!
+
+    """
+    Relevant when using scopeType: user, the user id of the user whose notification settings you want to update, by default the current user is used
+    """
+    scope_id: Int
+
+    """
+    The notification setting type to update. Must be one of the allowed notification setting kinds.
+    """
+    setting_kind: String!
+
+    """The channel type to update (Monday, Email, Slack, etc.)"""
+    channel: ChannelType!
+
+    """Whether the notification setting should be enabled or disabled"""
+    enabled: Boolean!
+  ): [NotificationSetting!]
+
+  """
+  Update mute notification settings for a board. Allows muting all notifications for all users, only for the current user, or setting mentions/assigns-only. Returns the updated mute state for the board. Requires appropriate permissions for muting all users.
+  """
+  update_mute_board_settings(
+    """
+    The ID of the board to update mute settings for. Must be a valid board ID.
+    """
+    board_id: String!
+
+    """
+    The desired mute state for the board.
+    - MUTE_ALL: Mute all notifications for all users (admin only).
+    - CURRENT_USER_MUTE_ALL: Mute all notifications for the current user only.
+    - MENTIONS_AND_ASSIGNS_ONLY: Only notify the current user on mentions or assigns.
+    - NOT_MUTED: Unmute notifications.
+    """
+    mute_state: BoardMuteState!
+  ): [BoardMuteSettings!]
+
   """Connect project to portfolio"""
   connect_project_to_portfolio(
     """The ID of the project to connect"""
@@ -1920,6 +2299,9 @@ type Mutation {
     """The ID of the portfolio to connect to"""
     portfolioBoardId: ID!
   ): ConnectProjectResult
+
+  """Create a new portfolio"""
+  create_portfolio(boardName: String!, boardPrivacy: String!, destinationWorkspaceId: Int): CreatePortfolioResult
 
   """Creates a new team."""
   create_team(input: CreateTeamAttributesInput!, options: CreateTeamOptionsInput): Team
@@ -2000,6 +2382,208 @@ type Mutation {
     """The product to invite the users to"""
     product: Product
   ): InviteUsersResult
+
+  """Create a new widget based on the provided widget configuration."""
+  create_widget(
+    """Parent container for the widget (dashboard or board view)."""
+    parent: WidgetParentInput!
+
+    """The kind of widget to create (CHART, NUMBER, BATTERY)."""
+    kind: ExternalWidget!
+
+    """The name of the widget as it will appear in the UI."""
+    name: String!
+
+    """
+    Widget-specific settings as JSON. Each widget type has its own JSON schema that defines the required and optional fields. The settings object must conform to the JSON schema for the specific widget type being created. To discover available widget types and their schemas, use the all_widgets_schema query which returns the complete JSON schema for each supported widget type.
+    """
+    settings: JSON!
+  ): WidgetModel
+
+  """Create a new dashboard and return the complete Dashboard object."""
+  create_dashboard(
+    """Human-readable dashboard title (1–255 UTF-8 chars)."""
+    name: String!
+
+    """ID of the workspace that will own the dashboard."""
+    workspace_id: Int!
+
+    """List of board IDs as strings (min 1 element)."""
+    board_ids: [String!]!
+
+    """Visibility level: `PUBLIC` or `PRIVATE` (default `PRIVATE`)."""
+    kind: DashboardKind
+
+    """Folder ID within the workspace in which to place the dashboard."""
+    board_folder_id: Int
+  ): Dashboard
+
+  """
+  Update form properties including title, description, or question order.
+  """
+  update_form(
+    """
+    The unique identifier token for the form. Required for all form-specific operations.
+    """
+    formToken: String!
+
+    """
+    Complete form configuration object containing properties to create or update.
+    """
+    input: UpdateFormInput!
+  ): ResponseForm
+
+  """
+  Update form configuration including features, appearance, and accessibility options.
+  """
+  update_form_settings(
+    """
+    The unique identifier token for the form. Required for all form-specific operations.
+    """
+    formToken: String!
+
+    """Complete form settings object containing all configuration options."""
+    settings: UpdateFormSettingsInput!
+  ): ResponseForm
+
+  """
+  Create a new question within a form. Returns the created question with auto-generated ID.
+  """
+  create_form_question(
+    """
+    The unique identifier token for the form. Required for all form-specific operations.
+    """
+    formToken: String!
+
+    """
+    Complete question object containing all properties for creation or update.
+    """
+    question: CreateQuestionInput!
+  ): FormQuestion
+
+  """
+  Update an existing question properties including title, type, or settings. Requires question ID.
+  """
+  update_form_question(
+    """
+    The unique identifier token for the form. Required for all form-specific operations.
+    """
+    formToken: String!
+
+    """
+    The unique identifier for the question. Used to target specific questions within a form.
+    """
+    questionId: String!
+
+    """
+    Complete question object containing all properties for creation or update.
+    """
+    question: UpdateQuestionInput!
+  ): FormQuestion
+
+  """
+  Permanently remove a question from a form. This action cannot be undone.
+  """
+  delete_question(
+    """
+    The unique identifier token for the form. Required for all form-specific operations.
+    """
+    formToken: String!
+
+    """
+    The unique identifier for the question. Used to target specific questions within a form.
+    """
+    questionId: String!
+  ): Boolean
+
+  """
+  Activate a form to make it visible to users and accept new submissions.
+  """
+  activate_form(
+    """
+    The unique identifier token for the form. Required for all form-specific operations.
+    """
+    formToken: String!
+  ): Boolean
+
+  """
+  Deactivate a form to hide it from users and stop accepting submissions. Form data is preserved.
+  """
+  deactivate_form(
+    """
+    The unique identifier token for the form. Required for all form-specific operations.
+    """
+    formToken: String!
+  ): Boolean
+
+  """
+  Shorten a URL for a form and store it in the form settings. Returns the shortened link object.
+  """
+  shorten_form_url(
+    """
+    The unique identifier token for the form. Required for all form-specific operations.
+    """
+    formToken: String!
+  ): FormShortenedLink
+
+  """
+  Create a new tag for a form. Tags are used to categorize and track responses. (e.g. UTM tags)
+  """
+  create_form_tag(
+    """
+    The unique identifier token for the form. Required for all form-specific operations.
+    """
+    formToken: String!
+
+    """The tag data to create"""
+    tag: CreateFormTagInput!
+  ): FormTag
+
+  """Update an existing tag in a form"""
+  update_form_tag(
+    """
+    The unique identifier token for the form. Required for all form-specific operations.
+    """
+    formToken: String!
+
+    """The unique identifier for the tag"""
+    tagId: String!
+
+    """The tag data to create"""
+    tag: UpdateFormTagInput!
+  ): Boolean
+
+  """Delete a tag from a form"""
+  delete_form_tag(
+    """
+    The unique identifier token for the form. Required for all form-specific operations.
+    """
+    formToken: String!
+
+    """The unique identifier for the tag"""
+    tagId: String!
+
+    """Options for deleting the tag"""
+    options: DeleteFormTagInput
+  ): Boolean
+
+  """
+  Create a new form with specified configuration. Returns the created form with its unique token.
+  """
+  create_form(destination_workspace_id: Float, destination_folder_id: Float, destination_folder_name: String, board_kind: BoardKind, destination_name: String, skip_target_folder_creation: Boolean, entity_names_mapping: String, board_owner_ids: [Float!], board_owner_team_ids: [Float!], board_subscriber_ids: [Float!], board_subscriber_teams_ids: [Float!]): DehydratedFormResponse
+
+  """
+  Set a password on a form to restrict access. This will enable password protection for the form.
+  """
+  set_form_password(
+    """
+    The unique identifier token for the form. Required for all form-specific operations.
+    """
+    formToken: String!
+
+    """The password to set for the form. Must be at least 1 character long."""
+    input: SetFormPasswordInput!
+  ): ResponseForm
 }
 
 """A date."""
@@ -2326,6 +2910,186 @@ type WorkflowHostData {
   id: Int
 }
 
+"""Automation block execution event"""
+type BlockEvent {
+  """Document identifier"""
+  id: String
+
+  """Account identifier"""
+  accountId: Int
+
+  """User identifier who triggered the automation"""
+  userId: Int
+
+  """Board identifier"""
+  boardId: Int
+
+  """Kind of the block event"""
+  eventKind: String
+
+  """Current state of the block event"""
+  eventState: String
+
+  """UUID of the parent trigger event"""
+  triggerUuid: String
+
+  """Timestamp (epoch) when parent trigger started"""
+  triggerStarted: Float
+
+  """Date when parent trigger started"""
+  triggerStartedAt: ISO8601DateTime
+
+  """Timestamp (epoch) when block started"""
+  blockStartTimestamp: Float
+
+  """Timestamp (epoch) when block finished"""
+  blockFinishTimestamp: Float
+
+  """Atomic action identifier"""
+  atomicActionId: String
+
+  """Block title"""
+  title: String
+
+  """Whether block condition was satisfied"""
+  conditionSatisfied: Boolean
+
+  """Workflow node identifier"""
+  workflowNodeId: Int
+
+  """Entity kind for the block"""
+  entityKind: String
+
+  """Number of billing actions counted in this block"""
+  billingActionCountForBlock: Int
+
+  """Error reason if block failed"""
+  errorReason: String
+}
+
+"""A page of block events"""
+type BlockEventsPage {
+  """List of block events in the current page"""
+  blockEvents: [BlockEvent!]
+}
+
+"""Date range filter (inclusive)"""
+input DateRangeInput {
+  """Start date (ISO 8601)"""
+  startDate: String!
+
+  """End date (ISO 8601)"""
+  endDate: String!
+}
+
+"""Represents a single automation trigger event"""
+type TriggerEvent {
+  """Account identifier"""
+  accountId: Int
+
+  """Trigger UUID"""
+  triggerUuid: String
+
+  """Kind of the event"""
+  eventKind: String
+
+  """Current state of the event"""
+  eventState: String
+
+  """Timestamp (epoch) when trigger started"""
+  triggerStarted: Float
+
+  """Date when trigger started"""
+  triggerStartedAt: ISO8601DateTime
+
+  """Creation time of the record"""
+  createdAt: ISO8601DateTime
+
+  """Error reason if the event failed"""
+  errorReason: String
+
+  """Number of billing actions counted for this trigger"""
+  billingActionsCount: Int
+
+  """Waiting trigger name, when applicable"""
+  waitingForTriggerName: String
+
+  """Duration of the trigger in milliseconds"""
+  triggerDuration: Float
+
+  """Entity kind for the trigger (item / subitem / etc.)"""
+  entityKind: String
+
+  """Reignition subscription ID if trigger was reignited"""
+  reignitionSubscriptionId: String
+
+  """Host type on which the automation is executed"""
+  hostType: String
+
+  """Host instance ID"""
+  hostInstanceId: String
+
+  """Original creator feature reference ID"""
+  creatorAppFeatureReferenceId: String
+}
+
+"""Filters for querying trigger events"""
+input TriggerEventsFiltersInput {
+  """Date range filter"""
+  dateRange: DateRangeInput
+
+  """Filter by entity kind"""
+  entityKind: String
+
+  """Filter by automation IDs"""
+  automationIds: [Int!]
+
+  """Filter by workflow entity IDs"""
+  workflowEntityIds: [Int!]
+
+  """Filter by event state"""
+  stateFilter: [String!]
+
+  """Filter by item identifier"""
+  itemId: String
+
+  """Whether to filter only monday automations"""
+  filterByEntity: Boolean
+
+  """True if entity is automation"""
+  isAutomationsEntity: Boolean
+
+  """Filter by app names"""
+  appFilter: [String!]
+
+  """Filter by host type"""
+  hostType: String
+
+  """Filter by host instance identifier"""
+  hostInstanceId: String
+
+  """Filter by creator app feature reference ID"""
+  creatorAppFeatureReferenceId: Int
+
+  """Billing action count field to filter by"""
+  billingActionCountField: String
+
+  """Whether workflow filter is applied"""
+  isWorkflowFilter: Boolean
+
+  """Filter by board identifier"""
+  boardId: String
+
+  """Filter by status"""
+  statusFilter: [String!]
+}
+
+"""A page of trigger events and pagination data"""
+type TriggerEventsPage {
+  """List of trigger events in the current page"""
+  triggerEvents: [TriggerEvent!]
+}
+
 """A monday.com board."""
 type Board {
   """The unique identifier of the board."""
@@ -2350,6 +3114,9 @@ type Board {
 
     """A list of items unique identifiers."""
     ids: [ID!]
+
+    """Should include only board-level updates."""
+    board_updates_only: Boolean
   ): [Update!]
 
   """The board's visible columns."""
@@ -2417,6 +3184,9 @@ type Board {
     """A list of group unique identifiers."""
     ids: [String]
   ): [Group]
+
+  """The hierarchy type of the board"""
+  hierarchy_type: BoardHierarchy
 
   """
   The Board's item nickname, one of a predefined set of values, or a custom user value
@@ -2934,6 +3704,9 @@ type Update {
 
   """The update's item ID."""
   item_id: String
+
+  """The original creation time of the update."""
+  original_creation_date: String
   item: Item
 
   """The update's replies."""
@@ -3064,6 +3837,15 @@ type TimelineResponse {
   ): TimelineItemsPage!
 }
 
+"""Calculated capability settings for a column"""
+type CalculatedCapability {
+  """Function to calculate the parent values"""
+  function: String!
+
+  """Type of the calculated value"""
+  calculated_type: ColumnType
+}
+
 type Column {
   """The column's unique identifier."""
   id: ID!
@@ -3083,8 +3865,25 @@ type Column {
   """Is the column archived or not."""
   archived: Boolean!
 
+  """The column's settings in a JSON form."""
+  settings: JSON
+
   """The column's settings in a string form."""
-  settings_str: String!
+  settings_str: String! @deprecated(reason: "From version 2025-10, use settings instead. Will be removed in a future version.")
+
+  """
+  The revision of the column (fetch to get latest revision). Used for optimistic concurrency control.
+  """
+  revision: String!
+
+  """Capabilities available for this column"""
+  capabilities: ColumnCapabilities!
+}
+
+"""Capabilities available for a column"""
+type ColumnCapabilities {
+  """Calculated capability settings"""
+  calculated: CalculatedCapability
 }
 
 union ColumnSettings = StatusColumnSettings | DropdownColumnSettings
@@ -3221,6 +4020,14 @@ enum ColumnType {
 
 input CreateDropdownColumnSettingsInput {
   labels: [CreateDropdownLabelInput!]!
+
+  """Whether to limit the number of labels that can be selected"""
+  limit_select: Boolean
+
+  """
+  Maximum number of labels that can be selected when limit_select is enabled
+  """
+  label_limit_count: Int
 }
 
 input CreateDropdownLabelInput {
@@ -3363,6 +4170,14 @@ type StatusManagedColumn {
 
 input UpdateDropdownColumnSettingsInput {
   labels: [UpdateDropdownLabelInput!]!
+
+  """Whether to limit the number of labels that can be selected"""
+  limit_select: Boolean
+
+  """
+  Maximum number of labels that can be selected when limit_select is enabled
+  """
+  label_limit_count: Int
 }
 
 input UpdateDropdownLabelInput {
@@ -3401,6 +4216,88 @@ type Validations {
 
 enum ValidationsEntityType {
   board
+}
+
+"""The complete graph export for a board"""
+type BoardGraphExport {
+  """The ID of the board"""
+  boardId: String
+
+  """The graph data structure"""
+  graphData: JSON
+
+  """The timestamp when the graph was exported"""
+  exportedAt: String
+
+  """The total number of nodes in the graph"""
+  nodeCount: Int
+
+  """The total number of edges in the graph"""
+  edgeCount: Int
+}
+
+"""Type of dependency relationship between items"""
+enum DependencyRelation {
+  """
+  Finish to Start - The dependent item can start only after the predecessor finishes
+  """
+  FS
+
+  """
+  Start to Finish - The dependent item can finish only after the predecessor starts
+  """
+  SS
+
+  """
+  Finish to Finish - The dependent item can finish only after the predecessor finishes
+  """
+  FF
+
+  """
+  Start to Start - The dependent item can start only after the predecessor starts
+  """
+  SF
+}
+
+"""
+Input type for updating dependency column value, supporting both adding and removing dependencies
+"""
+input DependencyValueInput {
+  """List of pulses to add as dependencies with their configuration"""
+  added_pulse: [UpdateDependencyColumnInput!]
+
+  """List of pulses to remove from dependencies"""
+  removed_pulse: [UpdateDependencyColumnInput!]
+}
+
+"""
+Metadata wrapper containing payload information for dependency configuration
+"""
+input MetadataInput {
+  """The dependency configuration payload containing type and lag settings"""
+  payload: PayloadInput
+}
+
+"""
+Input type for dependency metadata payload containing dependency type and lag configuration
+"""
+input PayloadInput {
+  """Type of dependency relationship between the items"""
+  dependency_type: DependencyRelation
+
+  """Number of days offset between the dependent items (can be negative)"""
+  lag: Int
+}
+
+"""
+Input type for updating a single dependency relationship between pulses
+"""
+input UpdateDependencyColumnInput {
+  """The ID of the pulse to create or remove a dependency relationship with"""
+  linkedPulseId: Int!
+
+  """Optional metadata containing dependency configuration (type and lag)"""
+  metadata: MetadataInput
 }
 
 """Text formatting attributes (bold, italic, links, colors, etc.)"""
@@ -4076,6 +4973,110 @@ type VideoContent implements DocBaseBlockContent {
   width: Int
 }
 
+"""Input type for adding an object to a hierarchy list"""
+input CreateFavoriteInput {
+  """The object to add to the list"""
+  object: HierarchyObjectIDInputType!
+
+  """The name of the object"""
+  name: String
+
+  """The position where to add the object"""
+  newPosition: ObjectDynamicPositionInput
+}
+
+"""Result type for adding an object to a personal list"""
+type CreateFavoriteResultType {
+  """The added object hierarchy item"""
+  favorites: HierarchyObjectItem
+}
+
+"""Input type for removing an object from favorites"""
+input DeleteFavoriteInput {
+  """The object to remove from favorites"""
+  object: HierarchyObjectIDInputType!
+}
+
+"""Result type for removing an object from favorites"""
+type DeleteFavoriteInputResultType {
+  """Whether the object was successfully removed"""
+  success: Boolean
+}
+
+"""Represents a monday object identifier with its type"""
+type HierarchyObjectID {
+  """The unique identifier of the object"""
+  id: ID
+
+  """The type of the object"""
+  type: ObjectType
+}
+
+"""Input type for identifying a favorites object by its ID and type"""
+input HierarchyObjectIDInputType {
+  """The ID of the object"""
+  id: ID!
+
+  """The type of the object"""
+  type: ObjectType!
+}
+
+"""Represents an item in the object hierarchy"""
+type HierarchyObjectItem {
+  """The unique identifier of the hierarchy item"""
+  id: ID
+
+  """The account identifier this item belongs to"""
+  accountId: Int
+
+  """The object identifier and type"""
+  object: HierarchyObjectID
+
+  """The list identifier and type"""
+  hierarchyListData: ListID
+
+  """The folder identifier if the item is contained within a folder"""
+  folderId: ID
+
+  """The position of the item within its list or folder"""
+  position: Float
+
+  """The timestamp when this item was created"""
+  createdAt: Date
+
+  """The timestamp when this item was last updated"""
+  updatedAt: Date
+}
+
+"""Represents a list identifier with its type in the hierarchy"""
+type ListID {
+  """The unique identifier of the list"""
+  id: ID
+
+  """The type of the list"""
+  type: ListType
+}
+
+"""Types of lists in hierarchyMS"""
+enum ListType {
+  """A personal list owned by a user"""
+  PersonalList
+
+  """A workspace-level list"""
+  Workspace
+
+  """A customized list with specific settings"""
+  CustomizedList
+}
+
+input ObjectDynamicPositionInput {
+  """The previous object in the list"""
+  prevObject: HierarchyObjectIDInputType
+
+  """The next object in the list"""
+  nextObject: HierarchyObjectIDInputType
+}
+
 """Represents a monday object."""
 enum ObjectType {
   """Represents a board object type."""
@@ -4086,6 +5087,22 @@ enum ObjectType {
 
   """Represents a folder object type."""
   Folder
+}
+
+type UpdateFavoriteResultType {
+  """The updated favorite's object"""
+  favorites: HierarchyObjectItem
+}
+
+input UpdateObjectHierarchyPositionInput {
+  """The favorite's object to update"""
+  object: HierarchyObjectIDInputType!
+
+  """The new folder ID to move the object to"""
+  newFolder: ID
+
+  """The new position for the object"""
+  newPosition: ObjectDynamicPositionInput
 }
 
 """Subscription object"""
@@ -4798,6 +5815,15 @@ enum BoardEditPermissions {
 
   """Owners"""
   owners
+}
+
+"""The board hierarchy type"""
+enum BoardHierarchy {
+  """classic"""
+  classic
+
+  """multilevel of items"""
+  multi_level
 }
 
 """The board kinds available."""
@@ -6192,8 +7218,26 @@ type Notification {
   """The notification text."""
   text: String
 
+  """The date and time the notification was created."""
+  created_at: Date
+
+  """The title of the notification."""
+  title: String
+
+  """The users who created the notification."""
+  creators: [User!]!
+
   """Whether the notification has been read."""
   read: Boolean!
+
+  """The update that triggered the notification."""
+  update: Update
+
+  """The item that is associated with the notification."""
+  item: Item
+
+  """The board that is associated with the notification."""
+  board: Board
 }
 
 """The notification's target type."""
@@ -7103,6 +8147,105 @@ type WorldClockValue implements ColumnValue {
   value: JSON
 }
 
+"""Enum representing different usage types for board operations"""
+enum BoardUsage {
+  """Board can be converted to a project"""
+  CONVERT_TO_PROJECT
+
+  """Board can be connected to a portfolio"""
+  CONNECT_TO_PORTFOLIO
+}
+
+type BoardMuteSettings {
+  """Board ID"""
+  board_id: ID
+
+  """Human-friendly mute state for the board and current user"""
+  mute_state: BoardMuteState
+}
+
+"""
+Represents the mute state of a board for the current user.
+
+  - NOT_MUTED: The board is not muted at all (default state). This state, as well as MUTE_ALL, is set by the board owner(s) and only they can change it.
+  - MUTE_ALL: All notifications for all users are muted on this board. This state, as well as NOT_MUTED, is set by the board owner(s) and only they can change it.
+  - MENTIONS_AND_ASSIGNS_ONLY: The current user will only be notified if mentioned or assigned on the board.
+  - CURRENT_USER_MUTE_ALL: Only the current user has all notifications muted from this board.
+"""
+enum BoardMuteState {
+  """
+  The board is not muted at all (default state). This state is set by the board owner(s) and only they can change it.
+  """
+  NOT_MUTED
+
+  """
+  All notifications for all users are muted on this board. This state is set by the board owner(s) and only they can change it.
+  """
+  MUTE_ALL
+
+  """
+  The current user will only be notified if mentioned or assigned on the board
+  """
+  MENTIONS_AND_ASSIGNS_ONLY
+
+  """Only the current user has all notifications muted from this board"""
+  CURRENT_USER_MUTE_ALL
+}
+
+"""
+Whether this channel is editable, always enabled, or not relevant to the notification
+"""
+enum ChannelEditableStatus {
+  AllRelatedNotificationsDontHaveChannel
+  AlwaysEnabled
+  Editable
+}
+
+"""Available notification channel types: Monday, Email, Slack"""
+enum ChannelType {
+  Monday
+  Email
+  Slack
+}
+
+"""Represents notification settings configuration"""
+type NotificationSetting {
+  """Notification setting kind"""
+  kind: String
+
+  """Description of the notification setting"""
+  description: String
+
+  """Whether this setting is only configurable by admins"""
+  is_for_admins_only: Boolean
+
+  """Whether this setting is not applicable for guest users"""
+  is_for_non_guests_only: Boolean
+
+  """Available notification channels for this setting"""
+  channels: [NotificationSettingChannel!]!
+}
+
+"""Represents a notification channel configuration"""
+type NotificationSettingChannel {
+  """Notification channel destination: Monday, Email, Slack"""
+  name: ChannelType
+
+  """Whether notifications are enabled for this channel"""
+  enabled: Boolean
+
+  """Whether or not this channel settings is editable"""
+  editable_status: ChannelEditableStatus
+}
+
+"""
+notification settings scope types, the options are account user defaults or user private settings
+"""
+enum ScopeType {
+  User
+  AccountNewUserDefaults
+}
+
 """API usage data."""
 type DailyAnalytics {
   """Last time the API usage data was updated."""
@@ -7178,6 +8321,354 @@ type ConnectProjectResult {
 
   """The ID of the created portfolio item, if successful."""
   portfolio_item_id: String
+}
+
+type CreatePortfolioResult {
+  """The ID of the solution that was created"""
+  solution_live_version_id: String
+
+  """Indicates if the operation was successful."""
+  success: Boolean
+
+  """A message describing the result of the operation."""
+  message: String
+}
+
+type AggregateBasicAggregationResult {
+  result: Float
+}
+
+enum AggregateFromElementType {
+  """A single table to select from"""
+  TABLE
+}
+
+input AggregateFromTableInput {
+  """Always TABLE"""
+  type: AggregateFromElementType!
+  id: ID!
+}
+
+input AggregateGroupByElementInput {
+  column_id: String!
+  limit: Int
+}
+
+type AggregateGroupByResult {
+  value_string: String
+  value_int: Int
+  value_float: Float
+  value_boolean: Boolean
+}
+
+input AggregateQueryInput {
+  select: [AggregateSelectElementInput!]!
+  from: AggregateFromTableInput!
+  group_by: [AggregateGroupByElementInput!]
+
+  """
+  ItemsQuery filter and sort. If not provided, all items will be returned.
+  """
+  query: ItemsQuery
+
+  """Max number of results to return"""
+  limit: Int
+}
+
+type AggregateQueryResult {
+  results: [AggregateResultSet!]
+}
+
+union AggregateResult = AggregateBasicAggregationResult | AggregateGroupByResult
+
+type AggregateResultEntry {
+  alias: String
+  value: AggregateResult
+}
+
+type AggregateResultSet {
+  entries: [AggregateResultEntry!]
+}
+
+input AggregateSelectColumnInput {
+  column_id: String!
+}
+
+input AggregateSelectElementInput {
+  """Type of the selected element"""
+  type: AggregateSelectElementType!
+
+  """Column to select. Required if type is COLUMN"""
+  column: AggregateSelectColumnInput
+
+  """Function to select. Required if type is FUNCTION"""
+  function: AggregateSelectFunctionInput
+
+  """Alias for the selected element"""
+  as: String!
+}
+
+enum AggregateSelectElementType {
+  """A column to select"""
+  COLUMN
+
+  """A function to select"""
+  FUNCTION
+}
+
+input AggregateSelectFunctionInput {
+  """Function to select. Required if type is FUNCTION"""
+  function: AggregateSelectFunctionName!
+  params: [AggregateSelectElementInput!]
+}
+
+"""Function to select. Required if type is FUNCTION"""
+enum AggregateSelectFunctionName {
+  """No function applied"""
+  NONE
+
+  """Count the number of items"""
+  COUNT_ITEMS
+
+  """Count the number of subitems"""
+  COUNT_SUBITEMS
+
+  """Count the number of values"""
+  COUNT
+
+  """Count the number of distinct values of the items"""
+  COUNT_DISTINCT
+
+  """Count the number of keys in the object"""
+  COUNT_KEYS
+
+  """Sum the values of the items"""
+  SUM
+
+  """Average the values of the items"""
+  AVERAGE
+
+  """Get the median of the values of the items"""
+  MEDIAN
+
+  """Get the minimum value of the items"""
+  MIN
+
+  """Get the maximum value of the items"""
+  MAX
+
+  """Get the minimum and maximum values of the items"""
+  MIN_MAX
+
+  """Check if the value is between two values"""
+  BETWEEN
+
+  """Get the running duration of the items"""
+  DURATION_RUNNING
+
+  """Convert text to uppercase"""
+  UPPER
+
+  """Convert text to lowercase"""
+  LOWER
+
+  """Remove whitespace from text"""
+  TRIM
+
+  """Get the length of the value"""
+  LENGTH
+
+  """Get the first value"""
+  FIRST
+
+  """Get the leftmost characters"""
+  LEFT
+
+  """Flatten nested values"""
+  FLATTEN
+
+  """Conditional case statement"""
+  CASE
+
+  """Check if values are equal"""
+  EQUALS
+
+  """Truncate date to day precision"""
+  DATE_TRUNC_DAY
+
+  """Truncate date to week precision"""
+  DATE_TRUNC_WEEK
+
+  """Truncate date to month precision"""
+  DATE_TRUNC_MONTH
+
+  """Truncate date to quarter precision"""
+  DATE_TRUNC_QUARTER
+
+  """Truncate date to year precision"""
+  DATE_TRUNC_YEAR
+
+  """Extract date component"""
+  DATE
+
+  """Get start date from date range"""
+  START_DATE
+
+  """Get end date from date range"""
+  END_DATE
+
+  """Extract hour from datetime"""
+  HOUR
+
+  """Extract person information"""
+  PERSON
+
+  """Extract ID value"""
+  ID
+
+  """Extract label text"""
+  LABEL
+
+  """Extract color value"""
+  COLOR
+
+  """Extract order value"""
+  ORDER
+
+  """Get raw value without formatting"""
+  RAW
+
+  """Check if status is done"""
+  IS_DONE
+
+  """Extract phone country short name"""
+  PHONE_COUNTRY_SHORT_NAME
+}
+
+"""A monday dev sprint."""
+type Sprint {
+  """monday dev sprint unique identifier"""
+  id: ID!
+
+  """monday dev sprint name"""
+  name: String
+
+  """items associated with the monday dev sprint"""
+  items: [Item!]
+
+  """
+  date at which the monday dev sprint start action was performed, null if the sprint was never started
+  """
+  start_date: Date
+
+  """
+  date at which the monday dev sprint complete action was performed, null if the sprint was never completed
+  """
+  end_date: Date
+
+  """
+  user-editable planned timeline for the monday dev sprint, which may differ from its start and complete dates
+  """
+  timeline: SprintTimeline
+
+  """current state of the monday dev sprint"""
+  state: SprintState
+
+  """snapshots of the monday dev sprint"""
+  snapshots(
+    """type of the monday dev sprint snapshot"""
+    type: [SprintSnapshotKind!]
+  ): [SprintSnapshot!]
+}
+
+"""A monday dev sprint snapshot."""
+type SprintSnapshot {
+  """monday dev sprint snapshot unique identifier"""
+  id: ID
+
+  """monday dev sprint snapshot kind"""
+  type: SprintSnapshotKind
+
+  """monday dev sprint snapshot items"""
+  items: [SprintSnapshotItem!]
+
+  """monday dev sprint snapshot columns metadata"""
+  columns_metadata: [SprintSnapshotColumnMetadata!]
+
+  """monday dev sprint unique identifier"""
+  sprint_id: ID
+
+  """date and time when the object was created"""
+  created_at: Date
+
+  """date and time when the object was last updated"""
+  updated_at: Date
+}
+
+"""A monday dev sprint snapshot column metadata."""
+type SprintSnapshotColumnMetadata {
+  """monday dev sprint snapshot column id"""
+  id: String!
+
+  """monday dev sprint snapshot status column done status indexes"""
+  done_status_indexes: [Int!]!
+}
+
+"""A monday dev sprint snapshot item."""
+type SprintSnapshotItem {
+  """monday dev sprint item unique identifier"""
+  id: ID!
+
+  """monday dev sprint item column values"""
+  column_values: [SprintSnapshotItemColumnValue!]
+}
+
+"""A monday dev sprint snapshot item column value."""
+type SprintSnapshotItemColumnValue {
+  """monday dev sprint snapshot item column id"""
+  id: String!
+
+  """monday dev sprint snapshot item column type"""
+  type: String!
+
+  """monday dev sprint snapshot item column value"""
+  value: JSON
+}
+
+"""The kind of sprint snapshot."""
+enum SprintSnapshotKind {
+  """Sprint start snapshot kind."""
+  START
+
+  """Sprint complete snapshot kind."""
+  COMPLETE
+}
+
+"""current state of the monday dev sprint."""
+enum SprintState {
+  """sprint is planned and not yet started."""
+  PLANNED
+
+  """sprint is active and in progress."""
+  ACTIVE
+
+  """sprint is completed."""
+  COMPLETED
+}
+
+"""
+user-editable planned timeline for the monday dev sprint, which may differ from its start and complete dates
+"""
+type SprintTimeline {
+  """
+  user-editable start date of the monday dev sprint timeline, may be different than the sprint start date
+  """
+  from: Date
+
+  """
+  user-editable complete date of the monday dev sprint timeline, may be different than the sprint complete date
+  """
+  to: Date
 }
 
 """A role in the account"""
@@ -7520,6 +9011,1220 @@ enum UserRole {
 input UserUpdateInput {
   user_id: ID!
   user_attribute_updates: UserAttributesInput!
+}
+
+"""Aggregates data from one or more boards."""
+type Dashboard {
+  """Stable unique identifier of the dashboard."""
+  id: ID
+
+  """Dashboard title (1–255 UTF-8 chars)."""
+  name: String
+
+  """ID of the workspace that owns this dashboard."""
+  workspace_id: Int
+
+  """Visibility level: `PUBLIC` (default) or `PRIVATE`."""
+  kind: DashboardKind
+
+  """
+  Folder ID that groups the dashboard inside its workspace (null = workspace root).
+  """
+  board_folder_id: Int
+}
+
+"""
+Dashboard visibility. `PUBLIC` dashboards are visible to all workspace members; `PRIVATE` dashboards are only visible to invited users.
+"""
+enum DashboardKind {
+  PUBLIC
+  PRIVATE
+}
+
+"""Widget types available for creating data visualizations and displays"""
+enum ExternalWidget {
+  """
+  Chart widgets for visual data representation including pie charts, bar charts, line graphs, and column charts. Used to display trends, comparisons, distributions, and relationships between data points over time or categories.
+  """
+  CHART
+
+  """
+  Number widgets for displaying numeric metrics such as accumulated sums, averages, counts, totals, percentages. Ideal for showing single-value metrics, counters, calculated aggregations, and key performance indicators in a prominent numeric format.
+  """
+  NUMBER
+
+  """
+  Battery widgets for progress tracking and completion status visualization. Displays progress bars, completion percentages, status indicators, and goal achievement metrics. Perfect for showing project completion, task progress, capacity utilization, and milestone tracking.
+  """
+  BATTERY
+}
+
+"""UI widget placed on a dashboard, board, or doc."""
+type WidgetModel {
+  """Stable unique identifier of this widget."""
+  id: Int
+
+  """Parent container where the widget is placed (dashboard or board view)."""
+  parent: WidgetParentOutput
+
+  """The type of widget (CHART, NUMBER, BATTERY)."""
+  kind: ExternalWidget
+
+  """Widget label shown in the UI (1–255 UTF-8 chars)."""
+  name: String
+}
+
+"""Parent container input where the widget will be placed."""
+input WidgetParentInput {
+  """The type of parent container (DASHBOARD or BOARD_VIEW)"""
+  kind: WidgetParentKind!
+
+  """The ID of the parent container (dashboard ID or board view ID)"""
+  id: Int!
+}
+
+"""The kind of parent container where the widget will be placed."""
+enum WidgetParentKind {
+  """Widget placed in a dashboard"""
+  DASHBOARD
+
+  """Widget placed in a specific board view"""
+  BOARD_VIEW
+}
+
+"""
+Parent container information in widget responses. Indicates where the widget is placed.
+"""
+type WidgetParentOutput {
+  """The type of parent container (DASHBOARD or BOARD_VIEW)"""
+  kind: WidgetParentKind
+
+  """The ID of the parent container (dashboard ID or board view ID)"""
+  id: Int
+}
+
+"""Information about a widget type and its JSON schema"""
+type WidgetSchemaInfo {
+  """The widget kind (e.g., Chart, Number, Battery)"""
+  widget_type: ExternalWidget
+
+  """The JSON schema (draft 7) for this widget type"""
+  schema: JSON
+}
+
+input CreateFormTagInput {
+  """The name of the tag. Must be unique within the form and not reserved."""
+  name: String!
+
+  """The value of the tag"""
+  value: String
+}
+
+input CreateQuestionInput {
+  """
+  The question type determining input behavior and validation (e.g., "text", "email", "single_select", "multi_select").
+  """
+  type: FormQuestionType!
+
+  """
+  Optional explanatory text providing additional context, instructions, or examples for the question.
+  """
+  description: String
+
+  """
+  Boolean controlling question visibility to respondents. Hidden questions remain in form structure but are not displayed.
+  """
+  visible: Boolean = true
+
+  """
+  Boolean indicating if the question must be answered before form submission.
+  """
+  required: Boolean
+
+  """Question-specific configuration object that varies by question type."""
+  settings: FormQuestionSettingsInput
+
+  """
+  The question text displayed to respondents. Must be at least 1 character long and clearly indicate the expected response.
+  """
+  title: String!
+
+  """
+  Array of option objects for choice-based questions (single_select, multi_select). Required for select types.
+  """
+  options: [QuestionOptionInput!]
+}
+
+type DehydratedFormResponse {
+  """
+  The board ID connected to the form. Used to store form responses as items.
+  """
+  boardId: ID!
+
+  """
+  The unique identifier token for the form. Required for all form-specific operations.
+  """
+  token: String!
+}
+
+input DeleteFormTagInput {
+  """Options for deleting the tag"""
+  deleteAssociatedColumn: Boolean
+}
+
+"""
+Object containing accessibility options such as language, alt text, etc.
+"""
+type FormAccessibility {
+  """
+  Language code for form localization and interface text (e.g., "en", "es", "fr").
+  """
+  language: String
+
+  """Alternative text description for the logo image for accessibility."""
+  logoAltText: String
+}
+
+"""Accessibility configuration including language and reading direction."""
+input FormAccessibilityInput {
+  """
+  Language code for form localization and interface text (e.g., "en", "es", "fr").
+  """
+  language: String
+
+  """Alternative text description for the logo image for accessibility."""
+  logoAltText: String
+}
+
+type FormAfterSubmissionView {
+  """Text displayed as the title after successful form submission."""
+  title: String
+
+  """Text shown to users after they complete the form."""
+  description: String
+
+  """Object containing redirect configuration after form submission."""
+  redirectAfterSubmission: FormRedirectAfterSubmission
+
+  """Boolean allowing users to submit multiple responses to the same form."""
+  allowResubmit: Boolean!
+
+  """Boolean displaying a success image after form completion."""
+  showSuccessImage: Boolean!
+
+  """
+  Boolean allowing users to modify their submitted responses after submission.
+  """
+  allowEditSubmission: Boolean!
+
+  """Boolean allowing users to view their submitted responses."""
+  allowViewSubmission: Boolean!
+}
+
+"""Object containing settings for the post-submission user experience."""
+input FormAfterSubmissionViewInput {
+  """Text displayed as the title after successful form submission."""
+  title: String
+
+  """Text shown to users after they complete the form."""
+  description: String
+
+  """Object containing redirect configuration after form submission."""
+  redirectAfterSubmission: FormRedirectAfterSubmissionInput
+
+  """Boolean allowing users to submit multiple responses to the same form."""
+  allowResubmit: Boolean
+
+  """Boolean displaying a success image after form completion."""
+  showSuccessImage: Boolean
+
+  """
+  Boolean allowing users to modify their submitted responses after submission.
+  """
+  allowEditSubmission: Boolean
+
+  """Boolean allowing users to view their submitted responses."""
+  allowViewSubmission: Boolean
+}
+
+enum FormAlignment {
+  FullLeft
+  Left
+  Center
+  Right
+  FullRight
+}
+
+"""
+Object containing visual styling including colors, layout, fonts, and branding elements.
+"""
+type FormAppearance {
+  """Boolean hiding monday branding from the form display."""
+  hideBranding: Boolean!
+
+  """
+  Boolean displaying a progress indicator showing form completion progress bar.
+  """
+  showProgressBar: Boolean!
+
+  """Hex color code for the primary theme color used throughout the form."""
+  primaryColor: String
+
+  """Object containing form structure and presentation settings."""
+  layout: FormLayout
+
+  """Object containing background appearance configuration for the form."""
+  background: FormBackground
+
+  """Object containing typography and text styling configuration."""
+  text: FormText
+
+  """Object containing logo display configuration for form branding."""
+  logo: FormLogo
+
+  """Object containing submit button styling and text configuration."""
+  submitButton: FormSubmitButton
+}
+
+"""Visual styling configuration including colors, layout, and branding."""
+input FormAppearanceInput {
+  """Boolean hiding monday branding from the form display."""
+  hideBranding: Boolean
+
+  """
+  Boolean displaying a progress indicator showing form completion progress bar.
+  """
+  showProgressBar: Boolean
+
+  """Hex color code for the primary theme color used throughout the form."""
+  primaryColor: String
+
+  """Object containing form structure and presentation settings."""
+  layout: FormLayoutInput
+
+  """Object containing background appearance configuration for the form."""
+  background: FormBackgroundInput
+
+  """Object containing typography and text styling configuration."""
+  text: FormTextInput
+
+  """Object containing logo display configuration for form branding."""
+  logo: FormLogoInput
+
+  """Object containing submit button styling and text configuration."""
+  submitButton: FormSubmitButtonInput
+}
+
+"""Object containing background appearance configuration for the form."""
+type FormBackground {
+  """String specifying background style."""
+  type: FormBackgrounds
+
+  """
+  String containing the background value. The value will depend on the background type. If the background type is color, the value will be a hex color code. If the background type is image, the value will be an image URL.
+  """
+  value: String
+}
+
+"""Object containing background appearance configuration for the form."""
+input FormBackgroundInput {
+  """String specifying background style."""
+  type: FormBackgrounds!
+
+  """
+  String containing the background value. The value will depend on the background type. If the background type is color, the value will be a hex color code. If the background type is image, the value will be an image URL.
+  """
+  value: String
+}
+
+enum FormBackgrounds {
+  Image
+  Color
+  None
+}
+
+type FormCloseDate {
+  """Boolean enabling automatic form closure at a specified date and time."""
+  enabled: Boolean!
+
+  """
+  ISO timestamp when the form will automatically stop accepting responses.
+  """
+  date: String
+}
+
+"""Object containing automatic form closure configuration."""
+input FormCloseDateInput {
+  """Boolean enabling automatic form closure at a specified date and time."""
+  enabled: Boolean
+
+  """
+  ISO timestamp when the form will automatically stop accepting responses.
+  """
+  date: String
+}
+
+enum FormDirection {
+  LtR
+  Rtl
+}
+
+type FormDraftSubmission {
+  """Boolean allowing users to save incomplete responses as drafts."""
+  enabled: Boolean!
+}
+
+"""
+Object containing draft saving configuration allowing users to save progress.
+"""
+input FormDraftSubmissionInput {
+  """Boolean allowing users to save incomplete responses as drafts."""
+  enabled: Boolean
+}
+
+"""
+Object containing form features including but not limited to password protection, response limits, login requirements, etc.
+"""
+type FormFeatures {
+  """Boolean indicating if the form is restricted to internal users only."""
+  isInternal: Boolean!
+
+  """Boolean enabling reCAPTCHA verification to prevent spam submissions."""
+  reCaptchaChallenge: Boolean!
+
+  """Object containing shortened URL configuration for easy form sharing."""
+  shortenedLink: FormShortenedLink
+
+  """Object containing password protection configuration for the form."""
+  password: FormPassword
+
+  """
+  Object containing draft saving configuration allowing users to save progress.
+  """
+  draftSubmission: FormDraftSubmission
+
+  """Object containing login requirement settings for form access."""
+  requireLogin: FormRequireLogin
+
+  """
+  Object containing response limitation settings to control submission volume.
+  """
+  responseLimit: FormResponseLimit
+
+  """Object containing automatic form closure configuration."""
+  closeDate: FormCloseDate
+
+  """
+  Object containing welcome screen configuration displayed before the form.
+  """
+  preSubmissionView: FormPreSubmissionView
+
+  """Object containing settings for the post-submission user experience."""
+  afterSubmissionView: FormAfterSubmissionView
+
+  """Object containing board settings for response handling."""
+  monday: FormMonday
+}
+
+"""
+Form features configuration including security, limits, and access controls.
+"""
+input FormFeaturesInput {
+  """Boolean enabling reCAPTCHA verification to prevent spam submissions."""
+  reCaptchaChallenge: Boolean
+
+  """
+  Object containing draft saving configuration allowing users to save progress.
+  """
+  draftSubmission: FormDraftSubmissionInput
+
+  """Object containing login requirement settings for form access."""
+  requireLogin: FormRequireLoginInput
+
+  """
+  Object containing response limitation settings to control submission volume.
+  """
+  responseLimit: FormResponseLimitInput
+
+  """Object containing automatic form closure configuration."""
+  closeDate: FormCloseDateInput
+
+  """
+  Object containing welcome screen configuration displayed before the form.
+  """
+  preSubmissionView: FormPreSubmissionViewInput
+
+  """Object containing settings for the post-submission user experience."""
+  afterSubmissionView: FormAfterSubmissionViewInput
+
+  """Object containing board settings for response handling."""
+  monday: FormMondayInput
+
+  """Object containing password protection configuration for the form."""
+  password: FormPasswordInput
+}
+
+enum FormFontSize {
+  Small
+  Medium
+  Large
+}
+
+enum FormFormat {
+  OneByOne
+  Classic
+}
+
+"""Object containing form structure and presentation settings."""
+type FormLayout {
+  """
+  String specifying the form display format. Can be a step by step form or a classic one page form.
+  """
+  format: FormFormat
+
+  """String controlling text and content alignment."""
+  alignment: FormAlignment
+
+  """String setting reading direction."""
+  direction: FormDirection
+}
+
+"""Object containing form structure and presentation settings."""
+input FormLayoutInput {
+  """
+  String specifying the form display format. Can be a step by step form or a classic one page form.
+  """
+  format: FormFormat
+
+  """String controlling text and content alignment."""
+  alignment: FormAlignment
+
+  """String setting reading direction."""
+  direction: FormDirection
+}
+
+"""Object containing logo display configuration for form branding."""
+type FormLogo {
+  """String specifying logo placement ("top", "bottom", "header")."""
+  position: FormLogoPosition
+
+  """URL pointing to the logo image file for display on the form."""
+  url: String
+
+  """
+  String specifying logo size ("small", "medium", "large") for the logo that appears on the header of the form.
+  """
+  size: FormLogoSize
+}
+
+"""Object containing logo display configuration for form branding."""
+input FormLogoInput {
+  """String specifying logo placement ("top", "bottom", "header")."""
+  position: FormLogoPosition
+
+  """URL pointing to the logo image file for display on the form."""
+  url: String
+
+  """
+  String specifying logo size ("small", "medium", "large") for the logo that appears on the header of the form.
+  """
+  size: FormLogoSize
+}
+
+enum FormLogoPosition {
+  Auto
+  Left
+  Center
+  Right
+}
+
+"""Available logo sizes for form branding"""
+enum FormLogoSize {
+  """
+  Small logo size for compact form branding, height of 32px, width will be scaled to maintain aspect ratio
+  """
+  Small
+
+  """
+  Medium logo size for standard form branding, height of 40px, width will be scaled to maintain aspect ratio
+  """
+  Medium
+
+  """
+  Large logo size for prominent form branding, height of 72px, width will be scaled to maintain aspect ratio
+  """
+  Large
+
+  """
+  Extra large logo size for maximum form branding impact, height of 96px, width will be scaled to maintain aspect ratio
+  """
+  ExtraLarge
+}
+
+type FormMonday {
+  """
+  The board group ID where new items from form responses will be created.
+  """
+  itemGroupId: String
+
+  """
+  Boolean adding a name question to the form. This is a special question type that represents the name column from the associated monday board
+  """
+  includeNameQuestion: Boolean!
+
+  """
+  Boolean adding an update/comment field to the form. This is a special question type that represents the updates from the associated item of the submission on the monday board. 
+  """
+  includeUpdateQuestion: Boolean!
+
+  """
+  Boolean synchronizing form question titles with board column names. When true, the form question titles will be synchronized with the board column names.
+  """
+  syncQuestionAndColumnsTitles: Boolean!
+}
+
+"""Object containing board settings for response handling."""
+input FormMondayInput {
+  """
+  The board group ID where new items from form responses will be created.
+  """
+  itemGroupId: String
+
+  """
+  Boolean adding a name question to the form. This is a special question type that represents the name column from the associated monday board
+  """
+  includeNameQuestion: Boolean
+
+  """
+  Boolean adding an update/comment field to the form. This is a special question type that represents the updates from the associated item of the submission on the monday board. 
+  """
+  includeUpdateQuestion: Boolean
+
+  """
+  Boolean synchronizing form question titles with board column names. When true, the form question titles will be synchronized with the board column names.
+  """
+  syncQuestionAndColumnsTitles: Boolean
+}
+
+type FormPassword {
+  """
+  Boolean enabling password protection. When true, users must enter a password to access the form.
+  """
+  enabled: Boolean!
+}
+
+"""
+Password configuration for the form. Only setting enabled to false is supported. To enable a form to be password protected, please use the set_form_password mutation instead.
+"""
+input FormPasswordInput {
+  """
+  Boolean enabling password protection. When true, users must enter a password to access the form.
+  """
+  enabled: Boolean
+}
+
+type FormPreSubmissionView {
+  """Boolean showing a welcome/introduction screen before the form begins."""
+  enabled: Boolean!
+
+  """Text displayed as the title on the welcome screen."""
+  title: String
+
+  """Text providing context or instructions on the welcome screen."""
+  description: String
+
+  """Object containing start button configuration for the welcome screen."""
+  startButton: FormStartButton
+}
+
+"""
+Object containing welcome screen configuration displayed before the form.
+"""
+input FormPreSubmissionViewInput {
+  """Boolean showing a welcome/introduction screen before the form begins."""
+  enabled: Boolean
+
+  """Text displayed as the title on the welcome screen."""
+  title: String
+
+  """Text providing context or instructions on the welcome screen."""
+  description: String
+
+  """Object containing start button configuration for the welcome screen."""
+  startButton: FormStartButtonInput
+}
+
+type FormQuestion {
+  """
+  The unique identifier for the question. Used to target specific questions within a form.
+  """
+  id: String!
+
+  """
+  The question type determining input behavior and validation (e.g., "text", "email", "single_select", "multi_select").
+  """
+  type: FormQuestionType
+
+  """
+  Boolean controlling question visibility to respondents. Hidden questions remain in form structure but are not displayed.
+  """
+  visible: Boolean!
+
+  """
+  The question text displayed to respondents. Must be at least 1 character long and clearly indicate the expected response.
+  """
+  title: String!
+
+  """
+  Optional explanatory text providing additional context, instructions, or examples for the question.
+  """
+  description: String
+
+  """
+  Boolean indicating if the question must be answered before form submission.
+  """
+  required: Boolean!
+  settings: FormQuestionSettings
+  options: [FormQuestionOption!]
+  showIfRules: JSON
+}
+
+type FormQuestionOption {
+  """
+  The display text for individual option choices in select-type questions.
+  """
+  label: String!
+}
+
+"""Sources for prefilling question values"""
+enum FormQuestionPrefillSources {
+  Account
+  QueryParam
+}
+
+"""Display options for select-type questions"""
+enum FormQuestionSelectDisplay {
+  Horizontal
+  Vertical
+  Dropdown
+}
+
+"""Ordering options for select question options"""
+enum FormQuestionSelectOrderByOptions {
+  Alphabetical
+  Random
+  Custom
+}
+
+"""Question-specific configuration object that varies by question type."""
+type FormQuestionSettings {
+  """
+  Configuration for automatically populating question values from various data sources such as user account information or URL query parameters.
+  """
+  prefill: PrefillSettings
+
+  """
+  Phone questions only: Automatically detect and fill the phone country prefix based on the user's geographic location or browser settings.
+  """
+  prefixAutofilled: Boolean
+
+  """
+  Phone questions only: Configuration for setting a specific predefined phone country prefix that will be pre-selected for users.
+  """
+  prefixPredefined: PhonePrefixPredefined
+
+  """
+  Boolean/checkbox questions only: Whether the checkbox should be checked by default when the form loads.
+  """
+  checkedByDefault: Boolean
+
+  """
+  Date based questions only: Automatically set the current date as the default value when the form loads.
+  """
+  defaultCurrentDate: Boolean
+
+  """
+  Date questions only: Whether to include time selection (hours and minutes) in addition to the date picker. When false, only date selection is available.
+  """
+  includeTime: Boolean
+
+  """
+  Single/Multi Select questions only: Controls how the selection options are visually presented to users.
+  """
+  display: FormQuestionSelectDisplay
+
+  """
+  Single/Multi Select questions only: Determines the ordering of selection options.
+  """
+  optionsOrder: FormQuestionSelectOrderByOptions
+
+  """
+  Multi Select questions only: Limits the number of options a user can select.
+  """
+  labelLimitCount: Int
+
+  """
+  Location questions only: Automatically detect and fill the user's current location using browser geolocation services, requiring user permission.
+  """
+  locationAutofilled: Boolean
+
+  """Rating questions only: Maximum rating value that users can select."""
+  limit: Int
+
+  """
+  Link/URL questions only: Whether to skip URL format validation, allowing any text input.
+  """
+  skipValidation: Boolean
+}
+
+"""Question-specific configuration object that varies by question type."""
+input FormQuestionSettingsInput {
+  """
+  Configuration for automatically populating question values from various data sources such as user account information or URL query parameters.
+  """
+  prefill: PrefillSettingsInput
+
+  """
+  Phone questions only: Automatically detect and fill the phone country prefix based on the user's geographic location or browser settings.
+  """
+  prefixAutofilled: Boolean
+
+  """
+  Phone questions only: Configuration for setting a specific predefined phone country prefix that will be pre-selected for users.
+  """
+  prefixPredefined: PhonePrefixPredefinedInput
+
+  """
+  Boolean/checkbox questions only: Whether the checkbox should be checked by default when the form loads.
+  """
+  checkedByDefault: Boolean
+
+  """
+  Date based questions only: Automatically set the current date as the default value when the form loads.
+  """
+  defaultCurrentDate: Boolean
+
+  """
+  Date questions only: Whether to include time selection (hours and minutes) in addition to the date picker. When false, only date selection is available.
+  """
+  includeTime: Boolean
+
+  """
+  Single/Multi Select questions only: Controls how the selection options are visually presented to users.
+  """
+  display: FormQuestionSelectDisplay
+
+  """
+  Single/Multi Select questions only: Determines the ordering of selection options.
+  """
+  optionsOrder: FormQuestionSelectOrderByOptions
+
+  """
+  Multi Select questions only: Limits the number of options a user can select.
+  """
+  labelLimitCount: Int
+
+  """
+  Location questions only: Automatically detect and fill the user's current location using browser geolocation services, requiring user permission.
+  """
+  locationAutofilled: Boolean
+
+  """
+  Link/URL questions only: Whether to skip URL format validation, allowing any text input.
+  """
+  skipValidation: Boolean
+}
+
+"""The type of the question (ex. text, number, MultiSelect etc.)"""
+enum FormQuestionType {
+  Boolean
+  ConnectedBoards
+  Country
+  Date
+  DateRange
+  Email
+  File
+  Link
+  Location
+  LongText
+  MultiSelect
+  Name
+  Number
+  People
+  Phone
+  Rating
+  ShortText
+  Signature
+  SingleSelect
+  Subitems
+  Updates
+}
+
+type FormRedirectAfterSubmission {
+  """
+  Boolean enabling automatic redirect after form completion to a specified URL.
+  """
+  enabled: Boolean!
+
+  """
+  The URL where users will be redirected after successfully submitting the form.
+  """
+  redirectUrl: String
+}
+
+"""Object containing redirect configuration after form submission."""
+input FormRedirectAfterSubmissionInput {
+  """
+  Boolean enabling automatic redirect after form completion to a specified URL.
+  """
+  enabled: Boolean
+
+  """
+  The URL where users will be redirected after successfully submitting the form.
+  """
+  redirectUrl: String
+}
+
+type FormRequireLogin {
+  """Boolean requiring users to be logged in before submitting responses."""
+  enabled: Boolean!
+
+  """
+  Boolean automatically redirecting unauthenticated users to the login page.
+  """
+  redirectToLogin: Boolean!
+}
+
+"""Object containing login requirement settings for form access."""
+input FormRequireLoginInput {
+  """Boolean requiring users to be logged in before submitting responses."""
+  enabled: Boolean
+
+  """
+  Boolean automatically redirecting unauthenticated users to the login page.
+  """
+  redirectToLogin: Boolean
+}
+
+type FormResponseLimit {
+  """Boolean enabling response count limits for the form."""
+  enabled: Boolean!
+
+  """Integer specifying the maximum number of responses allowed."""
+  limit: Int
+}
+
+"""
+Object containing response limitation settings to control submission volume.
+"""
+input FormResponseLimitInput {
+  """Boolean enabling response count limits for the form."""
+  enabled: Boolean
+
+  """Integer specifying the maximum number of responses allowed."""
+  limit: Int
+}
+
+type FormShortenedLink {
+  """Boolean enabling generation of shortened URLs for the form."""
+  enabled: Boolean!
+
+  """
+  The generated shortened URL for form access. Only available when shortened links are enabled.
+  """
+  url: String
+}
+
+type FormStartButton {
+  """Custom text for the button that begins the form experience."""
+  text: String
+}
+
+"""Object containing start button configuration for the welcome screen."""
+input FormStartButtonInput {
+  """Custom text for the button that begins the form experience."""
+  text: String
+}
+
+"""Object containing submit button styling and text configuration."""
+type FormSubmitButton {
+  """Custom text displayed on the form submission button."""
+  text: String
+}
+
+"""Object containing submit button styling and text configuration."""
+input FormSubmitButtonInput {
+  """Custom text displayed on the form submission button."""
+  text: String
+}
+
+type FormTag {
+  """The unique identifier for the tag"""
+  id: String!
+
+  """The name of the tag"""
+  name: String!
+
+  """The value of the tag"""
+  value: String
+
+  """The ID of the column this tag is associated with"""
+  columnId: String!
+}
+
+"""Object containing typography and text styling configuration."""
+type FormText {
+  """String specifying the font family used throughout the form."""
+  font: String
+
+  """Hex color code for the text color in the form."""
+  color: String
+
+  """String or number specifying the base font size for form text."""
+  size: FormFontSize
+}
+
+"""Object containing typography and text styling configuration."""
+input FormTextInput {
+  """String specifying the font family used throughout the form."""
+  font: String
+
+  """Hex color code for the text color in the form."""
+  color: String
+
+  """String or number specifying the base font size for form text."""
+  size: FormFontSize
+}
+
+"""
+Phone questions only: Configuration for setting a specific predefined phone country prefix that will be pre-selected for users.
+"""
+type PhonePrefixPredefined {
+  """
+  Whether a predefined phone prefix is enabled for phone number questions. When true, the specified prefix will be pre-selected.
+  """
+  enabled: Boolean!
+
+  """
+  The predefined phone country prefix to use as country code in capital letters (e.g., "US", "UK", "IL"). Only used when enabled is true.
+  """
+  prefix: String
+}
+
+"""
+Phone questions only: Configuration for setting a specific predefined phone country prefix that will be pre-selected for users.
+"""
+input PhonePrefixPredefinedInput {
+  """
+  Whether a predefined phone prefix is enabled for phone number questions. When true, the specified prefix will be pre-selected.
+  """
+  enabled: Boolean!
+
+  """
+  The predefined phone country prefix to use as country code in capital letters (e.g., "US", "UK", "IL"). Only used when enabled is true.
+  """
+  prefix: String
+}
+
+"""
+Configuration for automatically populating question values from various data sources such as user account information or URL query parameters.
+"""
+type PrefillSettings {
+  """
+  Whether prefill functionality is enabled for this question. When true, the question will attempt to auto-populate values from the specified source.
+  """
+  enabled: Boolean!
+
+  """
+  The data source to use for prefilling the question value. Check the PrefillSources for available options.
+  """
+  source: FormQuestionPrefillSources
+
+  """
+  The specific field or parameter name to lookup from the prefill source. For account sources, this would be a user property like "name" or "email". For query parameters, this would be the parameter name that would be set in the URL.
+  """
+  lookup: String!
+}
+
+"""
+Configuration for automatically populating question values from various data sources such as user account information or URL query parameters.
+"""
+input PrefillSettingsInput {
+  """
+  Whether prefill functionality is enabled for this question. When true, the question will attempt to auto-populate values from the specified source.
+  """
+  enabled: Boolean!
+
+  """
+  The data source to use for prefilling the question value. Check the PrefillSources for available options.
+  """
+  source: FormQuestionPrefillSources
+
+  """
+  The specific field or parameter name to lookup from the prefill source. For account sources, this would be a user property like "name" or "email". For query parameters, this would be the parameter name that would be set in the URL.
+  """
+  lookup: String
+}
+
+input QuestionOptionInput {
+  """The label to display for the option"""
+  label: String!
+}
+
+input QuestionOrderInput {
+  """
+  The unique identifier for the question. Used to target specific questions within a form.
+  """
+  id: String!
+}
+
+type ResponseForm {
+  """The unique identifier for the form. Auto-generated upon creation."""
+  id: Int!
+
+  """
+  The unique identifier token for the form. Required for all form-specific operations.
+  """
+  token: String!
+
+  """
+  Boolean indicating if the form is currently accepting responses and visible to users.
+  """
+  active: Boolean!
+
+  """The display title shown to users at the top of the form."""
+  title: String!
+
+  """
+  The ID of the user who created and owns this form. Determines permissions.
+  """
+  ownerId: Int
+
+  """
+  Boolean indicating if this form was initially created using AI assistance.
+  """
+  createWithAI: Boolean!
+
+  """
+  Boolean indicating if this form was built or modified using AI functionality.
+  """
+  builtWithAI: Boolean!
+
+  """
+  Optional detailed description explaining the form purpose, displayed below the title.
+  """
+  description: String
+
+  """
+  Array of question objects that make up the form content, in display order.
+  """
+  questions: [FormQuestion!]
+
+  """
+  Boolean flag indicating if the form has been flagged for review due to suspicious content or activity.
+  """
+  isSuspicious: Boolean!
+
+  """
+  Boolean indicating if responses are collected without identifying the submitter.
+  """
+  isAnonymous: Boolean!
+
+  """
+  The category or classification of the form for organizational purposes.
+  """
+  type: String
+
+  """
+  Object containing feature toggles and settings like password protection, response limits, etc.
+  """
+  features: FormFeatures
+
+  """
+  Object containing visual styling settings including colors, fonts, layout, and branding.
+  """
+  appearance: FormAppearance
+
+  """
+  Object containing accessibility settings such as language, alt text, and reading direction.
+  """
+  accessibility: FormAccessibility
+
+  """
+  Array of tracking tags for categorization and analytics (e.g., UTM parameters for marketing tracking).
+  """
+  tags: [FormTag!]
+}
+
+"""Input type for setting a form password"""
+input SetFormPasswordInput {
+  """The password to set for the form. Must be at least 1 character long."""
+  password: String!
+}
+
+input UpdateFormInput {
+  """The title text for the form. Must be at least 1 character long."""
+  title: String
+
+  """Optional description text providing context about the form purpose."""
+  description: String
+
+  """
+  Ordered array of question IDs for reordering. Must include all existing question IDs.
+  """
+  questions: [QuestionOrderInput!]
+}
+
+input UpdateFormSettingsInput {
+  """
+  Object containing form features including but not limited to password protection, response limits, login requirements, etc.
+  """
+  features: FormFeaturesInput
+
+  """
+  Object containing visual styling including colors, layout, fonts, and branding elements.
+  """
+  appearance: FormAppearanceInput
+
+  """
+  Object containing accessibility options such as language, alt text, etc.
+  """
+  accessibility: FormAccessibilityInput
+}
+
+input UpdateFormTagInput {
+  """The value of the tag"""
+  value: String
+}
+
+input UpdateQuestionInput {
+  """
+  The question type determining input behavior and validation (e.g., "text", "email", "single_select", "multi_select").
+  """
+  type: FormQuestionType!
+
+  """
+  Optional explanatory text providing additional context, instructions, or examples for the question.
+  """
+  description: String
+
+  """
+  Boolean controlling question visibility to respondents. Hidden questions remain in form structure but are not displayed.
+  """
+  visible: Boolean
+
+  """
+  Boolean indicating if the question must be answered before form submission.
+  """
+  required: Boolean
+
+  """Question-specific configuration object that varies by question type."""
+  settings: FormQuestionSettingsInput
+
+  """
+  The question text displayed to respondents. Must be at least 1 character long and clearly indicate the expected response.
+  """
+  title: String
 }
 
 scalar policy__Policy
