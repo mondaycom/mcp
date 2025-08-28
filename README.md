@@ -217,7 +217,7 @@ Our MCP server provides a rich set of tools that give AI assistants the ability 
 | | create_column | Add a new column to an existing board |
 | | delete_column | Remove a column from a board |
 | **Account Operations** | get_users_by_name | Retrieve user information by name or partial name |
-| | list_users_and_teams | Retrieve user or teams details by id, name or search through the account |
+| | list_users_and_teams | Retrieve user or team's details by id, name or by searching the account |
 
 ## 🔮 Dynamic API Tools (Beta)
 
