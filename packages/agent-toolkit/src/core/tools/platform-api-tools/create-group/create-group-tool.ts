@@ -7,11 +7,12 @@ import {
 import { createGroup } from './create-group.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+import { GROUP_COLORS } from './create-group.consts';
 
 export const createGroupToolSchema = {
   boardId: z.string().describe('The ID of the board to create the group in'),
   groupName: z.string().max(255).describe('The name of the new group (maximum 255 characters)'),
-  groupColor: z.string().optional().describe('The HEX code color for the group (e.g., #ff642e)'),
+  groupColor: z.enum(GROUP_COLORS).optional().describe(`The color for the group. Must be one of the predefined Monday.com group colors: ${GROUP_COLORS.join(', ')}`),
   relativeTo: z.string().optional().describe('The ID of the group to position this new group relative to'),
   positionRelativeMethod: z.nativeEnum(PositionRelative).optional().describe('Whether to position the new group before or after the relativeTo group'),
 };
