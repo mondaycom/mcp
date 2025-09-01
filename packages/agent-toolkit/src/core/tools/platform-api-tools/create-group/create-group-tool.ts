@@ -28,7 +28,7 @@ export class CreateGroupTool extends BaseMondayApiTool<typeof createGroupToolSch
   });
 
   getDescription(): string {
-    return 'Create a new group in a Monday.com board. Groups are sections that organize related items (e.g., "To Do", "In Progress", "Done"). Use when users want to add structure, categorize items, or create workflow phases. Groups can be positioned relative to existing groups and assigned predefined colors.';
+    return 'Create a new group in a monday.com board. Groups are sections that organize related items. Use when users want to add structure, categorize items, or create workflow phases. Groups can be positioned relative to existing groups and assigned predefined colors. Items will always be created in the top group and so the top group should be the most relevant one for new item creation';
   }
 
   getInputSchema(): typeof createGroupToolSchema {
