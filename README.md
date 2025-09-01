@@ -217,6 +217,9 @@ Our MCP server provides a rich set of tools that give AI assistants the ability 
 | | create_column | Add a new column to an existing board |
 | | delete_column | Remove a column from a board |
 | **Account Operations** | get_users_by_name | Retrieve user information by name or partial name |
+| | list_users_and_teams | Retrieve user or team's details by id, name or by searching the account |
+| **WorkForms Operations** | create_form | Create a new monday.com form |
+| | get_form | Get a form by its token |
 
 ## 🔮 Dynamic API Tools (Beta)
 
@@ -269,7 +272,7 @@ When 'only' mode is enabled, the server will provide just the Dynamic API Tools,
 
 | Argument | Flags | Description | Required | Default |
 |----------|-------|-------------|----------|---------|
-| monday API Token | `--token`, `-t` | monday.com API token | Yes | - |
+| monday.com API Token | `--token`, `-t` | monday.com API token | Yes | - |
 | API Version | `--version`, `-v` | monday.com API version | No | `current` |
 | Read Only Mode | `--read-only`, `-ro` | Enable read-only mode | No | `false` |
 | Dynamic API Tools | `--enable-dynamic-api-tools`, `-edat` | Enable dynamic API tools | No | `false` |

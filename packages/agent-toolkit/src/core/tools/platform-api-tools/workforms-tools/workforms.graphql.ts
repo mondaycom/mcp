@@ -30,12 +30,19 @@ export const createForm = gql`
   }
 `;
 
-// Fetch a form by its token
+// Fetch a full form with all its details by its token
 export const getForm = gql`
   query getForm($formToken: String!) {
     form(formToken: $formToken) {
+      id
       token
+      title
+      description
+      active
+      ownerId
       type
+      builtWithAI
+      isAnonymous
       questions {
         id
         type

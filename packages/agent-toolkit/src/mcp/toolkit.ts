@@ -9,7 +9,7 @@ import { ManageToolsTool } from '../core/tools/platform-api-tools/manage-tools-t
 import { DynamicToolManager } from './dynamic-tool-manager';
 
 /**
- * Monday Agent Toolkit providing an MCP server with Monday.com tools
+ * Monday Agent Toolkit providing an MCP server with monday.com tools
  */
 export class MondayAgentToolkit extends McpServer {
   private readonly mondayApiClient: ApiClient;

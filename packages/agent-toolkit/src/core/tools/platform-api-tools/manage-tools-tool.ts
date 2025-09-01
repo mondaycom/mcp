@@ -28,7 +28,7 @@ export class ManageToolsTool implements Tool<typeof manageToolsSchema> {
   type = ToolType.READ;
   enabledByDefault = true;
   annotations: ToolAnnotations = {
-    title: 'Discover & Manage Monday.com Tools',
+    title: 'Discover & Manage monday.com Tools',
     readOnlyHint: false, // This tool can modify tool states
     destructiveHint: false,
     idempotentHint: false,
@@ -118,7 +118,7 @@ export class ManageToolsTool implements Tool<typeof manageToolsSchema> {
         const enabledTools = Object.entries(detailedStatus).filter(([, status]) => status.enabled);
         const disabledTools = Object.entries(detailedStatus).filter(([, status]) => !status.enabled);
 
-        let content = `Monday.com Tools Discovery:\n\n`;
+        let content = `monday.com Tools Discovery:\n\n`;
 
         if (enabledTools.length > 0) {
           content += `✅ ACTIVE TOOLS (ready to use):\n`;
