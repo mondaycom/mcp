@@ -30,6 +30,7 @@ export const createFormToolSchema = {
 
 const baseQuestionSchema = z.object({
   type: z.nativeEnum(WorkformsQuestionType).describe(GraphQLDescriptions.question.properties.type),
+  title: z.string().describe(GraphQLDescriptions.question.properties.title).optional(),
   description: z.string().describe(GraphQLDescriptions.question.properties.description).optional(),
   visible: z.boolean().describe(GraphQLDescriptions.question.properties.visible).optional(),
   required: z.boolean().describe(GraphQLDescriptions.question.properties.required).optional(),
@@ -95,31 +96,9 @@ const baseQuestionSchema = z.object({
     .optional(),
 });
 
-// Common validation function to avoid duplication
-const validateOptions = (data: any, ctx: z.RefinementCtx) => {
-  const isSelectType =
-    data.type === WorkformsQuestionType.SingleSelect || data.type === WorkformsQuestionType.MultiSelect;
-
-  if (!isSelectType && data.options) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'Options can only be provided for SingleSelect or MultiSelect question types',
-      path: ['options'],
-    });
-  }
-};
-
-const createQuestionSchema = baseQuestionSchema
-  .extend({
-    title: z.string().describe(GraphQLDescriptions.question.properties.title),
-  })
-  .superRefine(validateOptions);
-
-const updateQuestionSchema = baseQuestionSchema
-  .extend({
-    title: z.string().describe(GraphQLDescriptions.question.properties.title).optional(),
-  })
-  .superRefine(validateOptions);
+const createQuestionSchema = baseQuestionSchema.extend({
+  title: z.string().describe(GraphQLDescriptions.question.properties.title),
+});
 
 export const formQuestionsEditorToolSchema = z.discriminatedUnion('operation', [
   // CREATE
@@ -133,7 +112,7 @@ export const formQuestionsEditorToolSchema = z.discriminatedUnion('operation', [
     formToken: z.string().describe(GraphQLDescriptions.commonArgs.formToken),
     operation: z.literal(FormQuestionsOperation.Update).describe(GraphQLDescriptions.question.operations.type),
     questionId: z.string().describe(GraphQLDescriptions.commonArgs.questionId),
-    question: updateQuestionSchema,
+    question: baseQuestionSchema,
   }),
   // DELETE
   z.object({
