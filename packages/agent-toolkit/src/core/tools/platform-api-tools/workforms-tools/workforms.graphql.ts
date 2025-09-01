@@ -175,18 +175,74 @@ export const deleteFormQuestion = gql`
   }
 `;
 
-export const updateFormQuestion = gql`
-  mutation updateFormQuestion($formToken: String!, $questionId: String!) {
-    update_question(formToken: $formToken, questionId: $questionId) {
-      update_question
+export const createFormQuestion = gql`
+  mutation createFormQuestion($formToken: String!, $question: CreateQuestionInput!) {
+    create_question(formToken: $formToken, question: $question) {
+      id
+      type
+      title
+      description
+      visible
+      required
+      options {
+        label
+      }
+      settings {
+        checkedByDefault
+        defaultCurrentDate
+        display
+        includeTime
+        labelLimitCount
+        locationAutofilled
+        optionsOrder
+        prefixAutofilled
+        prefixPredefined {
+          enabled
+          prefix
+        }
+        skipValidation
+        prefill {
+          enabled
+          source
+          lookup
+        }
+      }
     }
   }
 `;
 
-export const createFormQuestion = gql`
-  mutation createFormQuestion($formToken: String!, $questionId: String!) {
-    create_question(formToken: $formToken, questionId: $questionId) {
-      create_question
+export const updateFormQuestion = gql`
+  mutation updateFormQuestion($formToken: String!, $questionId: String!, $question: UpdateQuestionInput!) {
+    update_question(formToken: $formToken, questionId: $questionId, question: $question) {
+      id
+      type
+      title
+      description
+      visible
+      required
+      options {
+        label
+      }
+      settings {
+        checkedByDefault
+        defaultCurrentDate
+        display
+        includeTime
+        labelLimitCount
+        locationAutofilled
+        optionsOrder
+        prefixAutofilled
+        prefixPredefined {
+          enabled
+          prefix
+        }
+        skipValidation
+        prefill {
+          enabled
+          source
+          lookup
+        }
+      }
     }
   }
 `;

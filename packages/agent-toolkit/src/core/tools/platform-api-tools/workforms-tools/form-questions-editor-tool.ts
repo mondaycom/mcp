@@ -2,7 +2,14 @@ import { z } from 'zod';
 import { createFormQuestion, deleteFormQuestion, updateFormQuestion } from './workforms.graphql';
 import { ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { CreateFormQuestionMutation, DeleteFormQuestionMutation, UpdateFormQuestionMutation } from 'src/monday-graphql';
+import {
+  CreateFormQuestionMutation,
+  DeleteFormQuestionMutation,
+  UpdateFormQuestionMutation,
+  DeleteFormQuestionMutationVariables,
+  UpdateFormQuestionMutationVariables,
+  CreateFormQuestionMutationVariables,
+} from 'src/monday-graphql';
 import { FormQuestionsOperation } from './workforms.types';
 import { formQuestionsEditorToolSchema } from './workforms.schemas';
 
@@ -33,7 +40,7 @@ export class FormQuestionsEditorTool extends BaseMondayApiTool<any, never> {
 
     switch (input.operation) {
       case FormQuestionsOperation.Delete: {
-        const deleteVariables = {
+        const deleteVariables: DeleteFormQuestionMutationVariables = {
           ...baseVariables,
           questionId: input.questionId,
         };
@@ -44,7 +51,7 @@ export class FormQuestionsEditorTool extends BaseMondayApiTool<any, never> {
         };
       }
       case FormQuestionsOperation.Update: {
-        const updateVariables = {
+        const updateVariables: UpdateFormQuestionMutationVariables = {
           ...baseVariables,
           questionId: input.questionId,
           question: input.question,
@@ -56,14 +63,14 @@ export class FormQuestionsEditorTool extends BaseMondayApiTool<any, never> {
         };
       }
       case FormQuestionsOperation.Create: {
-        const createVariables = {
+        const createVariables: CreateFormQuestionMutationVariables = {
           ...baseVariables,
           question: input.question,
         };
-        await this.mondayApi.request<CreateFormQuestionMutation>(createFormQuestion, createVariables);
+        const result = await this.mondayApi.request<CreateFormQuestionMutation>(createFormQuestion, createVariables);
 
         return {
-          content: `Form question created successfully.`,
+          content: `Form question created successfully. ID: ${result.create_form_question?.id}`,
         };
       }
     }

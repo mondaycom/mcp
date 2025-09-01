@@ -8548,13 +8548,14 @@ export type DeleteFormQuestionMutation = { __typename?: 'Mutation', delete_form_
 // Create Form Question
 export type CreateFormQuestionMutationVariables = Exact<{
   formToken: Scalars['String']['input'];
-  questionId: Scalars['String']['input'];
+  question: CreateQuestionInput;
 }>;
-export type CreateFormQuestionMutation = { __typename?: 'Mutation', create_form_question?: { __typename?: 'CreateFormQuestionResult', success: boolean } | null };
+export type CreateFormQuestionMutation = { __typename?: 'Mutation', create_form_question?: { __typename?: 'CreateFormQuestionResult',  id: string } | null };
 
 // Update Form Question
 export type UpdateFormQuestionMutationVariables = Exact<{
   formToken: Scalars['String']['input'];
   questionId: Scalars['String']['input'];
+  question: UpdateQuestionInput;
 }>;
-export type UpdateFormQuestionMutation = { __typename?: 'Mutation', update_form_question?: { __typename?: 'UpdateFormQuestionResult', success: boolean } | null };
+export type UpdateFormQuestionMutation = { __typename?: 'Mutation', update_form_question?: { __typename?: 'UpdateFormQuestionResult', id: string } | null };

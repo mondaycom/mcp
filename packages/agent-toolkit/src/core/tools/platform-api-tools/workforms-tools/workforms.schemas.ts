@@ -1,12 +1,12 @@
 import { z } from 'zod';
 import { GraphQLDescriptions } from './workforms.consts';
+import { FormQuestionsOperation } from './workforms.types';
 import {
-  FormQuestionsOperation,
-  PrefillSources,
-  SelectDisplay,
-  SelectOrderByOptions,
-  WorkformsQuestionType,
-} from './workforms.types';
+  FormQuestionSelectDisplay,
+  FormQuestionSelectOrderByOptions,
+  FormQuestionType,
+  FormQuestionPrefillSources,
+} from 'src/monday-graphql/generated/graphql';
 import { BoardKind } from 'src/monday-graphql/generated/graphql';
 
 export const getFormToolSchema = {
@@ -29,7 +29,7 @@ export const createFormToolSchema = {
 };
 
 const baseQuestionSchema = z.object({
-  type: z.nativeEnum(WorkformsQuestionType).describe(GraphQLDescriptions.question.properties.type),
+  type: z.nativeEnum(FormQuestionType).describe(GraphQLDescriptions.question.properties.type),
   title: z.string().describe(GraphQLDescriptions.question.properties.title).optional(),
   description: z.string().describe(GraphQLDescriptions.question.properties.description).optional(),
   visible: z.boolean().describe(GraphQLDescriptions.question.properties.visible).optional(),
@@ -52,7 +52,10 @@ const baseQuestionSchema = z.object({
         .boolean()
         .describe(GraphQLDescriptions.questionSettings.properties.defaultCurrentDate)
         .optional(),
-      display: z.nativeEnum(SelectDisplay).describe(GraphQLDescriptions.questionSettings.properties.display).optional(),
+      display: z
+        .nativeEnum(FormQuestionSelectDisplay)
+        .describe(GraphQLDescriptions.questionSettings.properties.display)
+        .optional(),
       includeTime: z.boolean().describe(GraphQLDescriptions.questionSettings.properties.includeTime).optional(),
       labelLimitCount: z.number().describe(GraphQLDescriptions.questionSettings.properties.labelLimitCount).optional(),
       locationAutofilled: z
@@ -60,7 +63,7 @@ const baseQuestionSchema = z.object({
         .describe(GraphQLDescriptions.questionSettings.properties.locationAutofilled)
         .optional(),
       optionsOrder: z
-        .array(z.nativeEnum(SelectOrderByOptions))
+        .nativeEnum(FormQuestionSelectOrderByOptions)
         .describe(GraphQLDescriptions.questionSettings.properties.optionsOrder)
         .optional(),
       prefixAutofilled: z
@@ -69,10 +72,7 @@ const baseQuestionSchema = z.object({
         .optional(),
       prefixPredefined: z
         .object({
-          enabled: z
-            .boolean()
-            .describe(GraphQLDescriptions.questionSettings.properties.prefixPredefinedEnabled)
-            .optional(),
+          enabled: z.boolean().describe(GraphQLDescriptions.questionSettings.properties.prefixPredefinedEnabled),
           prefix: z
             .string()
             .describe(GraphQLDescriptions.questionSettings.properties.prefixPredefinedPrefix)
@@ -83,10 +83,10 @@ const baseQuestionSchema = z.object({
       skipValidation: z.boolean().describe(GraphQLDescriptions.questionSettings.properties.skipValidation).optional(),
       prefill: z
         .object({
-          enabled: z.boolean().describe(GraphQLDescriptions.questionSettings.properties.prefillEnabled).optional(),
+          enabled: z.boolean().describe(GraphQLDescriptions.questionSettings.properties.prefillEnabled),
           lookup: z.string().describe(GraphQLDescriptions.questionSettings.properties.prefillLookup).optional(),
           source: z
-            .nativeEnum(PrefillSources)
+            .nativeEnum(FormQuestionPrefillSources)
             .describe(GraphQLDescriptions.questionSettings.properties.prefillSource)
             .optional(),
         })
