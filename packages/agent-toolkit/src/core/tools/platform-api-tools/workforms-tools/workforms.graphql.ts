@@ -177,7 +177,7 @@ export const deleteFormQuestion = gql`
 
 export const createFormQuestion = gql`
   mutation createFormQuestion($formToken: String!, $question: CreateQuestionInput!) {
-    create_question(formToken: $formToken, question: $question) {
+    create_form_question(formToken: $formToken, question: $question) {
       id
       type
       title
@@ -213,7 +213,7 @@ export const createFormQuestion = gql`
 
 export const updateFormQuestion = gql`
   mutation updateFormQuestion($formToken: String!, $questionId: String!, $question: UpdateQuestionInput!) {
-    update_question(formToken: $formToken, questionId: $questionId, question: $question) {
+    update_form_question(formToken: $formToken, questionId: $questionId, question: $question) {
       id
       type
       title
