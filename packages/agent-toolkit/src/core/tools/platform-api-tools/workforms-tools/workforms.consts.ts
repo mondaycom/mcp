@@ -147,11 +147,9 @@ export const GraphQLDescriptions = {
   },
   question: {
     operations: {
-      type: 'The type of operation to perform on the question. Can delete, update, or create.',
-      createQuestion: 'Create a new question within a form. Returns the created question with auto-generated ID.',
-      updateQuestion:
-        'Update an existing question properties including title, type, or settings. Requires question ID.',
-      deleteQuestion: 'Permanently remove a question from a form. This action cannot be undone.',
+      type: 'The type of operation to perform on the question. Can delete, update, or create. When updating or deleting a question, the questionId is required. When creating or updating a question, the question object is required. When updating, the question is a patch object, meaning that only the fields that are provided will be updated.',
+      question:
+        'The question object containing all properties for creation or update. When creating a question, the title is required.',
     },
     properties: {
       title:

@@ -9,6 +9,8 @@ import {
   DeleteFormQuestionMutationVariables,
   UpdateFormQuestionMutationVariables,
   CreateFormQuestionMutationVariables,
+  CreateQuestionInput,
+  UpdateQuestionInput,
 } from 'src/monday-graphql';
 import { FormQuestionsOperation } from './workforms.types';
 import { formQuestionsEditorToolSchema } from './workforms.schemas';
@@ -28,11 +30,11 @@ export class FormQuestionsEditorTool extends BaseMondayApiTool<any, never> {
   }
 
   getInputSchema() {
-    return formQuestionsEditorToolSchema;
+    return z.object(formQuestionsEditorToolSchema);
   }
 
   protected async executeInternal(
-    input: z.infer<typeof formQuestionsEditorToolSchema>,
+    input: z.infer<z.ZodObject<typeof formQuestionsEditorToolSchema>>,
   ): Promise<ToolOutputType<never>> {
     const baseVariables = {
       formToken: input.formToken,
@@ -40,32 +42,64 @@ export class FormQuestionsEditorTool extends BaseMondayApiTool<any, never> {
 
     switch (input.operation) {
       case FormQuestionsOperation.Delete: {
+        const questionId = input.questionId;
+        if (!questionId) {
+          return {
+            content: `Question ID is required when deleting a question.`,
+          };
+        }
+
         const deleteVariables: DeleteFormQuestionMutationVariables = {
           ...baseVariables,
-          questionId: input.questionId,
+          questionId,
         };
         await this.mondayApi.request<DeleteFormQuestionMutation>(deleteFormQuestion, deleteVariables);
 
         return {
-          content: `Form question with id ${input.questionId} deleted successfully.`,
+          content: `Form question with id ${questionId} deleted successfully.`,
         };
       }
       case FormQuestionsOperation.Update: {
+        const questionId = input.questionId;
+        if (!questionId) {
+          return {
+            content: `Question ID is required when updating a question.`,
+          };
+        }
+        const question = input.question;
+        if (!question) {
+          return {
+            content: `Must provide updated patch props for the question when updating.`,
+          };
+        }
         const updateVariables: UpdateFormQuestionMutationVariables = {
           ...baseVariables,
-          questionId: input.questionId,
-          question: input.question,
+          questionId,
+          question,
         };
         await this.mondayApi.request<UpdateFormQuestionMutation>(updateFormQuestion, updateVariables);
 
         return {
-          content: `Form question with id ${input.questionId} updated successfully.`,
+          content: `Form question with id ${questionId} updated successfully.`,
         };
       }
       case FormQuestionsOperation.Create: {
+        const question = input.question;
+        if (!question) {
+          return {
+            content: `Must provide a full question payload when creating a question.`,
+          };
+        }
+
+        if (!question.title) {
+          return {
+            content: `Must provide a title for the question when creating a question.`,
+          };
+        }
+
         const createVariables: CreateFormQuestionMutationVariables = {
           ...baseVariables,
-          question: input.question,
+          question: question as CreateQuestionInput,
         };
         const result = await this.mondayApi.request<CreateFormQuestionMutation>(createFormQuestion, createVariables);
 

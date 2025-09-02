@@ -28,7 +28,7 @@ export const createFormToolSchema = {
     .describe(GraphQLDescriptions.form.args.boardSubscriberTeamsIds),
 };
 
-const baseQuestionSchema = z.object({
+const questionSchema = z.object({
   type: z.nativeEnum(FormQuestionType).describe(GraphQLDescriptions.question.properties.type),
   title: z.string().describe(GraphQLDescriptions.question.properties.title).optional(),
   description: z.string().describe(GraphQLDescriptions.question.properties.description).optional(),
@@ -96,28 +96,9 @@ const baseQuestionSchema = z.object({
     .optional(),
 });
 
-const createQuestionSchema = baseQuestionSchema.extend({
-  title: z.string().describe(GraphQLDescriptions.question.properties.title),
-});
-
-export const formQuestionsEditorToolSchema = z.discriminatedUnion('operation', [
-  // CREATE
-  z.object({
-    formToken: z.string().describe(GraphQLDescriptions.commonArgs.formToken),
-    operation: z.literal(FormQuestionsOperation.Create).describe(GraphQLDescriptions.question.operations.type),
-    question: createQuestionSchema,
-  }),
-  // UPDATE
-  z.object({
-    formToken: z.string().describe(GraphQLDescriptions.commonArgs.formToken),
-    operation: z.literal(FormQuestionsOperation.Update).describe(GraphQLDescriptions.question.operations.type),
-    questionId: z.string().describe(GraphQLDescriptions.commonArgs.questionId),
-    question: baseQuestionSchema,
-  }),
-  // DELETE
-  z.object({
-    formToken: z.string().describe(GraphQLDescriptions.commonArgs.formToken),
-    operation: z.literal(FormQuestionsOperation.Delete).describe(GraphQLDescriptions.question.operations.type),
-    questionId: z.string().describe(GraphQLDescriptions.commonArgs.questionId),
-  }),
-]);
+export const formQuestionsEditorToolSchema = {
+  operation: z.nativeEnum(FormQuestionsOperation).describe(GraphQLDescriptions.question.operations.type),
+  formToken: z.string().describe(GraphQLDescriptions.commonArgs.formToken),
+  questionId: z.string().describe(GraphQLDescriptions.commonArgs.questionId).optional(),
+  question: questionSchema.describe(GraphQLDescriptions.question.operations.question).optional(),
+};
