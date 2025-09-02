@@ -1,6 +1,5 @@
-import { z } from 'zod';
 import { createFormQuestion, deleteFormQuestion, updateFormQuestion } from './workforms.graphql';
-import { ToolOutputType, ToolType } from '../../../tool';
+import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import {
   CreateFormQuestionMutation,
@@ -10,12 +9,11 @@ import {
   UpdateFormQuestionMutationVariables,
   CreateFormQuestionMutationVariables,
   CreateQuestionInput,
-  UpdateQuestionInput,
-} from 'src/monday-graphql';
+} from '../../../../monday-graphql/generated/graphql';
 import { FormQuestionsOperation } from './workforms.types';
 import { formQuestionsEditorToolSchema } from './workforms.schemas';
 
-export class FormQuestionsEditorTool extends BaseMondayApiTool<any, never> {
+export class FormQuestionsEditorTool extends BaseMondayApiTool<typeof formQuestionsEditorToolSchema, never> {
   name = 'form_questions_editor';
   type = ToolType.WRITE;
   annotations = createMondayApiAnnotations({
@@ -29,12 +27,12 @@ export class FormQuestionsEditorTool extends BaseMondayApiTool<any, never> {
     return 'Create, update, or delete a question in a monday.com form';
   }
 
-  getInputSchema() {
-    return z.object(formQuestionsEditorToolSchema);
+  getInputSchema(): typeof formQuestionsEditorToolSchema {
+    return formQuestionsEditorToolSchema;
   }
 
   protected async executeInternal(
-    input: z.infer<z.ZodObject<typeof formQuestionsEditorToolSchema>>,
+    input: ToolInputType<typeof formQuestionsEditorToolSchema>,
   ): Promise<ToolOutputType<never>> {
     const baseVariables = {
       formToken: input.formToken,

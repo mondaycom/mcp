@@ -6,8 +6,8 @@ import {
   FormQuestionSelectOrderByOptions,
   FormQuestionType,
   FormQuestionPrefillSources,
-} from 'src/monday-graphql/generated/graphql';
-import { BoardKind } from 'src/monday-graphql/generated/graphql';
+  BoardKind,
+} from '../../../../monday-graphql/generated/graphql';
 
 export const getFormToolSchema = {
   formToken: z.string().describe(GraphQLDescriptions.commonArgs.formToken),
