@@ -23,7 +23,6 @@ import {
   getUserByName,
   getCurrentUser,
 } from './list-users-and-teams.graphql';
-import { gql } from 'graphql-request';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { formatUsersAndTeams } from './helpers';
@@ -77,7 +76,7 @@ export const listUsersAndTeamsToolSchema = {
     .boolean()
     .optional()
     .describe(
-      `[AVOID UNLESS NECESSARY] Include teams data alongside users. Creates dual query overhead.
+      `[AVOID UNLESS NECESSARY] Include general teams data alongside users. Creates dual query overhead. This does not fetch a specific user's teams rather all teams in the account. To fetch a specific user's teams just fetch that user by id and you will get the team memberships.
       
       AI AGENT DIRECTIVE: AVOID this parameter unless you specifically need both users AND teams in one response. Use teamsOnly: true for teams-only queries instead.
       
@@ -137,7 +136,7 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
       • userIds + teamIds requires explicit includeTeams: true flag
       • teamsOnly: true prevents user data fetching (teams-only queries)
       • includeTeamMembers: true adds detailed member data to teams
-      • includeTeams: true fetches both users and teams, can be used to get a user's teams if their user id is known
+      • includeTeams: true fetches both users and teams, do not use this to fetch a specific user's teams rather fetch that user by id and you will get their team memberships.
 
       OPTIMIZATION DIRECTIVES:
       • NEVER fetch all users when specific IDs are available
