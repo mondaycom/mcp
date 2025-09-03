@@ -165,7 +165,7 @@ export const GraphQLDescriptions = {
       createdAt: 'ISO timestamp when the question was created.',
       updatedAt: 'ISO timestamp when the question was last modified.',
       selectOptions:
-        'Array of option objects for choice-based questions (single_select, multi_select). Required for select types. Can only be provided when creating a question, not yet supported for updating a question. Please delete and recreate the question to update options.',
+        'Array of option objects for choice-based questions (single_select, multi_select). Required when creating select type questions. Can only be provided when creating a question, not yet supported for updating a question.',
       selectOptionsLabel: 'The display text for individual option choices in select-type questions.',
     },
     inputs: {
