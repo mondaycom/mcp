@@ -57,7 +57,6 @@ const questionSchema = z.object({
         .describe(GraphQLDescriptions.questionSettings.properties.display)
         .optional(),
       includeTime: z.boolean().describe(GraphQLDescriptions.questionSettings.properties.includeTime).optional(),
-      labelLimitCount: z.number().describe(GraphQLDescriptions.questionSettings.properties.labelLimitCount).optional(),
       locationAutofilled: z
         .boolean()
         .describe(GraphQLDescriptions.questionSettings.properties.locationAutofilled)

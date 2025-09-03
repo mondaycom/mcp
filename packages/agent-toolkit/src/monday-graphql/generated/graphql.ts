@@ -2929,8 +2929,6 @@ export type FormQuestionSettingsInput = {
   display?: InputMaybe<FormQuestionSelectDisplay>;
   /** Date questions only: Whether to include time selection (hours and minutes) in addition to the date picker. When false, only date selection is available. */
   includeTime?: InputMaybe<Scalars['Boolean']['input']>;
-  /** Multi Select questions only: Limits the number of options a user can select. */
-  labelLimitCount?: InputMaybe<Scalars['Int']['input']>;
   /** Location questions only: Automatically detect and fill the user's current location using browser geolocation services, requiring user permission. */
   locationAutofilled?: InputMaybe<Scalars['Boolean']['input']>;
   /** Single/Multi Select questions only: Determines the ordering of selection options. */

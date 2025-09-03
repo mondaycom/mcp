@@ -165,7 +165,7 @@ export const GraphQLDescriptions = {
       createdAt: 'ISO timestamp when the question was created.',
       updatedAt: 'ISO timestamp when the question was last modified.',
       selectOptions:
-        'Array of option objects for choice-based questions (single_select, multi_select). Required for select types.',
+        'Array of option objects for choice-based questions (single_select, multi_select). Required for select types. Can only be provided when creating a question, not yet supported for updating a question. Please delete and recreate the question to update options.',
       selectOptionsLabel: 'The display text for individual option choices in select-type questions.',
     },
     inputs: {
@@ -202,7 +202,6 @@ export const GraphQLDescriptions = {
       display:
         'Single/Multi Select questions only: Controls how the selection options are visually presented to users.',
       optionsOrder: 'Single/Multi Select questions only: Determines the ordering of selection options.',
-      labelLimitCount: 'Multi Select questions only: Limits the number of options a user can select.',
       locationAutofilled:
         "Location questions only: Automatically detect and fill the user's current location using browser geolocation services, requiring user permission.",
       limit: 'Rating questions only: Maximum rating value that users can select.',

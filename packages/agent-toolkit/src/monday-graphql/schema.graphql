@@ -9820,11 +9820,6 @@ input FormQuestionSettingsInput {
   optionsOrder: FormQuestionSelectOrderByOptions
 
   """
-  Multi Select questions only: Limits the number of options a user can select.
-  """
-  labelLimitCount: Int
-
-  """
   Location questions only: Automatically detect and fill the user's current location using browser geolocation services, requiring user permission.
   """
   locationAutofilled: Boolean

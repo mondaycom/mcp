@@ -192,7 +192,6 @@ export const createFormQuestion = gql`
         defaultCurrentDate
         display
         includeTime
-        labelLimitCount
         locationAutofilled
         optionsOrder
         prefixAutofilled
@@ -228,7 +227,6 @@ export const updateFormQuestion = gql`
         defaultCurrentDate
         display
         includeTime
-        labelLimitCount
         locationAutofilled
         optionsOrder
         prefixAutofilled
