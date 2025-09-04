@@ -3064,8 +3064,6 @@ export type FormQuestionSettings = {
   display?: Maybe<FormQuestionSelectDisplay>;
   /** Date questions only: Whether to include time selection (hours and minutes) in addition to the date picker. When false, only date selection is available. */
   includeTime?: Maybe<Scalars['Boolean']['output']>;
-  /** Multi Select questions only: Limits the number of options a user can select. */
-  labelLimitCount?: Maybe<Scalars['Int']['output']>;
   /** Rating questions only: Maximum rating value that users can select. */
   limit?: Maybe<Scalars['Int']['output']>;
   /** Location questions only: Automatically detect and fill the user's current location using browser geolocation services, requiring user permission. */
