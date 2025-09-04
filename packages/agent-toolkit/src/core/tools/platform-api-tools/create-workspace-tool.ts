@@ -1,14 +1,18 @@
 import { z } from 'zod';
-import { CreateWorkspaceMutation, CreateWorkspaceMutationVariables } from '../../../monday-graphql/generated/graphql';
+import {
+  CreateWorkspaceMutation,
+  CreateWorkspaceMutationVariables,
+  WorkspaceKind,
+} from '../../../monday-graphql/generated/graphql';
 import { createWorkspace } from '../../../monday-graphql/queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
 
 export const createWorkspaceToolSchema = {
-  accountProductId: z.string().optional().describe('The account product ID associated with the workspace'),
-  description: z.string().optional().describe('The description of the new workspace'),
-  workspaceKind: z.string().describe('The kind of workspace to create'),
   name: z.string().describe('The name of the new workspace to be created'),
+  workspaceKind: z.nativeEnum(WorkspaceKind).describe('The kind of workspace to create'),
+  description: z.string().optional().describe('The description of the new workspace'),
+  accountProductId: z.number().optional().describe('The account product ID associated with the workspace'),
 };
 
 export type CreateWorkspaceToolInput = typeof createWorkspaceToolSchema;
@@ -33,10 +37,10 @@ export class CreateWorkspaceTool extends BaseMondayApiTool<CreateWorkspaceToolIn
 
   protected async executeInternal(input: ToolInputType<CreateWorkspaceToolInput>): Promise<ToolOutputType<never>> {
     const variables: CreateWorkspaceMutationVariables = {
-      accountProductId: input.accountProductId,
-      description: input.description,
-      workspaceKind: input.workspaceKind,
       name: input.name,
+      workspaceKind: input.workspaceKind,
+      description: input.description,
+      accountProductId: input.accountProductId?.toString(),
     };
 
     const res = await this.mondayApi.request<CreateWorkspaceMutation>(createWorkspace, variables);

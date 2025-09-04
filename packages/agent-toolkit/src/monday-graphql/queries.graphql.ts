@@ -562,16 +562,16 @@ export const getWorkspaceInfo = gql`
 
 export const createWorkspace = gql`
   mutation createWorkspace(
-    $accountProductId: ID
-    $description: String
-    $workspaceKind: WorkspaceKind!
     $name: String!
+    $workspaceKind: WorkspaceKind!
+    $description: String
+    $accountProductId: ID
   ) {
     create_workspace(
-      account_product_id: $accountProductId
-      description: $description
-      kind: $workspaceKind
       name: $name
+      kind: $workspaceKind
+      description: $description
+      account_product_id: $accountProductId
     ) {
       id
     }
