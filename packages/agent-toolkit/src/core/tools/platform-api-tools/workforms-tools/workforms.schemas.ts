@@ -101,3 +101,27 @@ export const formQuestionsEditorToolSchema = {
   questionId: z.string().describe(GraphQLDescriptions.commonArgs.questionId).optional(),
   question: questionSchema.describe(GraphQLDescriptions.question.operations.question).optional(),
 };
+
+export enum FormActions {
+  activate = 'activate',
+  deactivate = 'deactivate',
+  shortenFormUrl = 'shortenFormUrl',
+  setFormPassword = 'setFormPassword',
+  update = 'update',
+}
+
+const tagSchema = z.object({
+  id: z.string().describe(GraphQLDescriptions.form.properties.tags.id).optional(),
+  name: z.string().describe(GraphQLDescriptions.form.properties.tags.name).optional(),
+  value: z.string().describe(GraphQLDescriptions.form.properties.tags.value),
+  columnId: z.string().describe(GraphQLDescriptions.form.properties.tags.columnId).optional(),
+});
+
+export const updateFormToolSchema = {
+  formToken: z.string().describe(GraphQLDescriptions.commonArgs.formToken),
+  action: z.nativeEnum(FormActions).describe(GraphQLDescriptions.form.operations.updateForm.action),
+  formPassword: z.string().describe(GraphQLDescriptions.formSettings.operations.setFormPassword).optional(),
+  form: z.object({
+    tags: z.array(tagSchema).describe(GraphQLDescriptions.form.properties.tags.description).optional(),
+  }),
+};

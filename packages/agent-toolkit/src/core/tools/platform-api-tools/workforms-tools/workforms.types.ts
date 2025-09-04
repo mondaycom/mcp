@@ -20,11 +20,18 @@ enum LogoPosition {
   Right = 'right',
 }
 
-interface Tag {
+export interface Tag {
   id: string;
   name: string;
   columnId: string;
   value?: string;
+}
+
+export interface TagPayload {
+  id?: string;
+  name?: string;
+  columnId?: string;
+  value: string;
 }
 
 enum BackgroundType {
@@ -155,7 +162,6 @@ type SingleSelectQuestionSettings = {
 
 type MultiSelectQuestionSettings = {
   display: SelectDisplay;
-  labelLimitCount: number | null;
   optionsOrder: SelectOrderByOptions;
   optionsPositions?: Record<string, number>;
 };

@@ -6,7 +6,10 @@ export const GraphQLDescriptions = {
   form: {
     operations: {
       createForm: 'Create a new form with specified configuration. Returns the created form with its unique token.',
-      updateForm: 'Update form properties including title, description, or question order.',
+      updateForm: {
+        action:
+          'The type of update action to perform on the form. Can be one of the following: activate, deactivate, shortenFormUrl, setFormPassword, update.',
+      },
       activateForm: 'Activate a form to make it visible to users and accept new submissions.',
       deactivateForm: 'Deactivate a form to hide it from users and stop accepting submissions. Form data is preserved.',
     },
@@ -28,7 +31,15 @@ export const GraphQLDescriptions = {
       features: 'Object containing feature toggles and settings like password protection, response limits, etc.',
       appearance: 'Object containing visual styling settings including colors, fonts, layout, and branding.',
       accessibility: 'Object containing accessibility settings such as language, alt text, and reading direction.',
-      tags: 'Array of tracking tags for categorization and analytics (e.g., UTM parameters for marketing tracking).',
+      tags: {
+        description:
+          'Array of tracking tags for categorization and analytics (e.g., UTM parameters for marketing tracking). When updating a form, pass the desired array of tags. If a tag already exists, provide its id, otherwise if creating a tag provide it’s name. And if a tag is intended to be deleted, don’t include it in the tags array.',
+        id: 'The unique identifier for the tag. This will get auto generated when creating a tag and can’t be updated.',
+        name: 'The name of the tag. This can only be created, not updated.',
+        value: 'The value of the tag. This can be created and updated.',
+        columnId:
+          'The ID of the column this tag is associated with. This will get auto generated when creating a tag and can’t be updated.',
+      },
     },
     inputs: {
       title: 'The title text for the form. Must be at least 1 character long.',
@@ -57,7 +68,7 @@ export const GraphQLDescriptions = {
     operations: {
       updateFormSettings: 'Update form configuration including features, appearance, and accessibility options.',
       setFormPassword:
-        'Set a password on a form to restrict access. This will enable password protection for the form.',
+        'Set a password on a form to restrict access. This will enable password protection for the form. Required for the action "setFormPassword" in the update form tool.',
       shortenUrl: 'Shorten a URL for a form and store it in the form settings. Returns the shortened link object.',
     },
     properties: {

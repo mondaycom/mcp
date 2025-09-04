@@ -4,6 +4,7 @@ import { ChangeItemColumnValuesTool } from './change-item-column-values-tool';
 import { CreateBoardTool } from './create-board-tool';
 import { CreateFormTool } from './workforms-tools/create-form-tool';
 import { FormQuestionsEditorTool } from './workforms-tools/form-questions-editor-tool';
+import { UpdateFormTool } from './workforms-tools/update-form-tool';
 import { GetFormTool } from './workforms-tools/get-form-tool';
 import { CreateColumnTool } from './create-column-tool';
 import { CreateCustomActivityTool } from './create-custom-activity-tool';
@@ -46,6 +47,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   MoveItemToGroupTool,
   CreateBoardTool,
   CreateFormTool,
+  UpdateFormTool,
   GetFormTool,
   FormQuestionsEditorTool,
   CreateColumnTool,
@@ -72,6 +74,7 @@ export * from './all-monday-api-tool';
 export * from './change-item-column-values-tool';
 export * from './create-board-tool';
 export * from './workforms-tools/create-form-tool';
+export * from './workforms-tools/update-form-tool';
 export * from './workforms-tools/get-form-tool';
 export * from './workforms-tools/form-questions-editor-tool';
 export * from './create-column-tool';

@@ -70,7 +70,6 @@ export const getForm = gql`
           includeTime
           display
           optionsOrder
-          labelLimitCount
           locationAutofilled
           limit
           skipValidation
@@ -242,5 +241,159 @@ export const updateFormQuestion = gql`
         }
       }
     }
+  }
+`;
+
+export const updateForm = gql`
+  mutation updateForm($formToken: String!, $input: UpdateFormInput!) {
+    update_form(formToken: $formToken, input: $input) {
+      title
+      description
+      questions {
+        id
+      }
+    }
+  }
+`;
+
+export const updateFormSettings = gql`
+  mutation updateFormSettings($formToken: String!, $settings: UpdateFormSettingsInput!) {
+    update_form_settings(formToken: $formToken, settings: $settings) {
+      features {
+        isInternal
+        reCaptchaChallenge
+        shortenedLink {
+          enabled
+          url
+        }
+        password {
+          enabled
+        }
+        draftSubmission {
+          enabled
+        }
+        requireLogin {
+          enabled
+          redirectToLogin
+        }
+        responseLimit {
+          enabled
+          limit
+        }
+        closeDate {
+          enabled
+          date
+        }
+        preSubmissionView {
+          enabled
+          title
+          description
+          startButton {
+            text
+          }
+        }
+        afterSubmissionView {
+          title
+          description
+          redirectAfterSubmission {
+            enabled
+            redirectUrl
+          }
+          allowResubmit
+          showSuccessImage
+          allowEditSubmission
+          allowViewSubmission
+        }
+        monday {
+          itemGroupId
+          includeNameQuestion
+          includeUpdateQuestion
+          syncQuestionAndColumnsTitles
+        }
+      }
+      appearance {
+        hideBranding
+        showProgressBar
+        primaryColor
+        layout {
+          format
+          alignment
+          direction
+        }
+        background {
+          type
+          value
+        }
+        text {
+          font
+          color
+          size
+        }
+        logo {
+          position
+          url
+          size
+        }
+        submitButton {
+          text
+        }
+      }
+      accessibility {
+        language
+        logoAltText
+      }
+    }
+  }
+`;
+
+export const setFormPassword = gql`
+  mutation setFormPassword($formToken: String!, $input: SetFormPasswordInput!) {
+    set_form_password(formToken: $formToken, input: $input) {
+      id
+    }
+  }
+`;
+
+export const shortenFormUrl = gql`
+  mutation shortenFormUrl($formToken: String!) {
+    shorten_form_url(formToken: $formToken) {
+      enabled
+      url
+    }
+  }
+`;
+
+export const deactivateForm = gql`
+  mutation deactivateForm($formToken: String!) {
+    deactivate_form(formToken: $formToken)
+  }
+`;
+
+export const activateForm = gql`
+  mutation activateForm($formToken: String!) {
+    activate_form(formToken: $formToken)
+  }
+`;
+
+export const deleteFormTag = gql`
+  mutation deleteFormTag($formToken: String!, $tagId: String!) {
+    delete_form_tag(formToken: $formToken, tagId: $tagId)
+  }
+`;
+
+export const createFormTag = gql`
+  mutation createFormTag($formToken: String!, $tag: CreateFormTagInput!) {
+    create_form_tag(formToken: $formToken, tag: $tag) {
+      id
+      name
+      value
+      columnId
+    }
+  }
+`;
+
+export const updateFormTag = gql`
+  mutation updateFormTag($formToken: String!, $tagId: String!, $tag: UpdateFormTagInput!) {
+    update_form_tag(formToken: $formToken, tagId: $tagId, tag: $tag)
   }
 `;
