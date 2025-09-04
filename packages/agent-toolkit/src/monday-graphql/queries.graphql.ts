@@ -559,3 +559,21 @@ export const getWorkspaceInfo = gql`
     }
   }
 `;
+
+export const createWorkspace = gql`
+  mutation createWorkspace(
+    $accountProductId: ID
+    $description: String
+    $workspaceKind: WorkspaceKind!
+    $name: String!
+  ) {
+    create_workspace(
+      account_product_id: $accountProductId
+      description: $description
+      kind: $workspaceKind
+      name: $name
+    ) {
+      id
+    }
+  }
+`;
