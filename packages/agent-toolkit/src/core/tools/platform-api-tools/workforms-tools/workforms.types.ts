@@ -458,7 +458,7 @@ export interface Form {
   tags: Tag[];
 }
 
-export enum FormQuestionsOperation {
+export enum FormQuestionActions {
   Delete = 'delete',
   Update = 'update',
   Create = 'create',

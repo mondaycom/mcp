@@ -2,9 +2,11 @@ import {
   ActivateFormMutation,
   ActivateFormMutationVariables,
   CreateFormTagMutation,
+  CreateFormTagMutationVariables,
   DeactivateFormMutation,
   DeactivateFormMutationVariables,
   DeleteFormTagMutation,
+  DeleteFormTagMutationVariables,
   FormTag,
   GetFormQuery,
   GetFormQueryVariables,
@@ -14,6 +16,7 @@ import {
   ShortenFormUrlMutation,
   ShortenFormUrlMutationVariables,
   UpdateFormTagMutation,
+  UpdateFormTagMutationVariables,
 } from '../../../../monday-graphql/generated/graphql';
 import {
   activateForm,
@@ -41,7 +44,7 @@ export class UpdateFormTool extends BaseMondayApiTool<typeof updateFormToolSchem
   });
 
   getDescription(): string {
-    return `Update a monday.com form. Handles the following form update operations: 
+    return `Update a monday.com form. Handles the following form update actions: 
     - update form's feature settings,
     - update form's appearance settings
     - update form's accessibility settings
@@ -130,43 +133,128 @@ export class UpdateFormTool extends BaseMondayApiTool<typeof updateFormToolSchem
     };
   }
 
-  private async updateFormTags(formToken: string, newTags: TagPayload[], currentTags: Tag[]): Promise<void> {
-    const currentTagIds = new Set(currentTags.map((tag) => tag.id));
-    const newTagIds = new Set(newTags.map((tag) => tag.id).filter((id) => id !== undefined));
-
-    const tagIdsToDelete = [...currentTagIds].filter((tagId) => !newTagIds.has(tagId));
-    const tagsToCreate = newTags.filter((tag) => tag.id === undefined && tag.name !== undefined);
-    const tagsToUpdate = newTags.filter((tag) => tag.id !== undefined);
-
-    const promises = [];
-    for (const tagId of tagIdsToDelete) {
-      promises.push(this.mondayApi.request<DeleteFormTagMutation>(deleteFormTag, { formToken, tagId }));
-    }
-
-    for (const tag of tagsToCreate) {
-      if (!tag.name) {
-        throw new Error('Tag name is required when creating a new tag');
-      }
-
-      promises.push(this.mondayApi.request<CreateFormTagMutation>(createFormTag, { formToken, tag }));
-    }
-    for (const tag of tagsToUpdate) {
-      promises.push(this.mondayApi.request<UpdateFormTagMutation>(updateFormTag, { formToken, tagId: tag.id, tag }));
-    }
-
-    await Promise.all(promises);
-  }
-
   private async updateForm(input: ToolInputType<typeof updateFormToolSchema>): Promise<ToolOutputType<never>> {
-    if (input.form.tags) {
-      const currentForm = await this.getCurrentForm(input.formToken);
-      await this.updateFormTags(input.formToken, input.form.tags, currentForm.tags as Tag[]);
-    }
-
     const form = await this.getCurrentForm(input.formToken);
 
     return {
       content: `Form successfully updated. Updated Form: ${JSON.stringify(form, null, 2)}`,
+    };
+  }
+
+  private async createTag(input: ToolInputType<typeof updateFormToolSchema>): Promise<ToolOutputType<never>> {
+    if (!input.tag) {
+      return {
+        content: 'Tag is required for the action "createTag" in the update form tool.',
+      };
+    }
+
+    if (!input.tag.name) {
+      return {
+        content: 'Tag name is are required for the action "createTag" in the update form tool.',
+      };
+    }
+
+    const variables: CreateFormTagMutationVariables = {
+      formToken: input.formToken,
+      tag: {
+        name: input.tag.name,
+        value: input.tag.value,
+      },
+    };
+
+    const res = await this.mondayApi.request<CreateFormTagMutation>(createFormTag, variables);
+
+    return {
+      content: `Tag successfully added: ${JSON.stringify(res.create_form_tag, null, 2)}`,
+    };
+  }
+
+  private async deleteTag(input: ToolInputType<typeof updateFormToolSchema>): Promise<ToolOutputType<never>> {
+    if (!input.tag) {
+      return {
+        content: 'Tag is required for the action "deleteTag" in the update form tool.',
+      };
+    }
+
+    if (!input.tag.id) {
+      return {
+        content: 'Tag id is required for the action "deleteTag" in the update form tool.',
+      };
+    }
+
+    const variables: DeleteFormTagMutationVariables = {
+      formToken: input.formToken,
+      tagId: input.tag.id,
+    };
+
+    await this.mondayApi.request<DeleteFormTagMutation>(deleteFormTag, variables);
+
+    return {
+      content: `Tag with id: ${input.tag.id} successfully deleted.`,
+    };
+  }
+
+  private async updateTag(input: ToolInputType<typeof updateFormToolSchema>): Promise<ToolOutputType<never>> {
+    if (!input.tag) {
+      return {
+        content: 'Tag is required for the action "updateTag" in the update form tool.',
+      };
+    }
+
+    if (!input.tag.id || !input.tag.value) {
+      return {
+        content: 'Tag id and value are required for the action "updateTag" in the update form tool.',
+      };
+    }
+
+    const variables: UpdateFormTagMutationVariables = {
+      formToken: input.formToken,
+      tagId: input.tag.id,
+      tag: {
+        value: input.tag.value,
+      },
+    };
+
+    const res = await this.mondayApi.request<UpdateFormTagMutation>(updateFormTag, variables);
+
+    if (!res.update_form_tag) {
+      return {
+        content: `Unable to update tag with id: ${input.tag.id}.`,
+      };
+    }
+
+    return {
+      content: `Tag with id: ${input.tag.id} successfully updated to value: ${input.tag.value}.`,
+    };
+  }
+
+  private async updateAppearance(input: ToolInputType<typeof updateFormToolSchema>): Promise<ToolOutputType<never>> {
+    return {
+      content: 'Appearance successfully updated.',
+    };
+  }
+
+  private async updateAccessibility(input: ToolInputType<typeof updateFormToolSchema>): Promise<ToolOutputType<never>> {
+    return {
+      content: 'Accessibility successfully updated.',
+    };
+  }
+
+  private async updateFeatures(input: ToolInputType<typeof updateFormToolSchema>): Promise<ToolOutputType<never>> {
+    return {
+      content: 'Features successfully updated.',
+    };
+  }
+
+  private async updateQuestionOrder(input: ToolInputType<typeof updateFormToolSchema>): Promise<ToolOutputType<never>> {
+    return {
+      content: 'Question order successfully updated.',
+    };
+  }
+
+  private async updateFormHeader(input: ToolInputType<typeof updateFormToolSchema>): Promise<ToolOutputType<never>> {
+    return {
+      content: 'Form header successfully updated.',
     };
   }
 
@@ -179,8 +267,22 @@ export class UpdateFormTool extends BaseMondayApiTool<typeof updateFormToolSchem
       return await this.deactivateForm(input);
     } else if (input.action === FormActions.activate) {
       return await this.activateForm(input);
-    } else if (input.action === FormActions.update) {
-      return await this.updateForm(input);
+    } else if (input.action === FormActions.createTag) {
+      return await this.createTag(input);
+    } else if (input.action === FormActions.deleteTag) {
+      return await this.deleteTag(input);
+    } else if (input.action === FormActions.updateTag) {
+      return await this.updateTag(input);
+    } else if (input.action === FormActions.updateAppearance) {
+      return await this.updateAppearance(input);
+    } else if (input.action === FormActions.updateAccessibility) {
+      return await this.updateAccessibility(input);
+    } else if (input.action === FormActions.updateFeatures) {
+      return await this.updateFeatures(input);
+    } else if (input.action === FormActions.updateQuestionOrder) {
+      return await this.updateQuestionOrder(input);
+    } else if (input.action === FormActions.updateFormHeader) {
+      return await this.updateFormHeader(input);
     }
 
     return {

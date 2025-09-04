@@ -8,7 +8,7 @@ export const GraphQLDescriptions = {
       createForm: 'Create a new form with specified configuration. Returns the created form with its unique token.',
       updateForm: {
         action:
-          'The type of update action to perform on the form. Can be one of the following: activate, deactivate, shortenFormUrl, setFormPassword, update.',
+          'The type of update action to perform on the form. Can be one of the following: activate, deactivate, shortenFormUrl, setFormPassword, createTag, deleteTag, updateTag, updateForm, updateAppearance, updateAccessibility, updateFeatures, updateQuestionOrder, updateFormHeader.',
       },
       activateForm: 'Activate a form to make it visible to users and accept new submissions.',
       deactivateForm: 'Deactivate a form to hide it from users and stop accepting submissions. Form data is preserved.',
@@ -33,10 +33,10 @@ export const GraphQLDescriptions = {
       accessibility: 'Object containing accessibility settings such as language, alt text, and reading direction.',
       tags: {
         description:
-          'Array of tracking tags for categorization and analytics (e.g., UTM parameters for marketing tracking). When updating a form, pass the desired array of tags. If a tag already exists, provide its id, otherwise if creating a tag provide it’s name. And if a tag is intended to be deleted, don’t include it in the tags array.',
-        id: 'The unique identifier for the tag. This will get auto generated when creating a tag and can’t be updated.',
-        name: 'The name of the tag. This can only be created, not updated.',
-        value: 'The value of the tag. This can be created and updated.',
+          'Array of tracking tags for categorization and analytics (e.g., UTM parameters for marketing tracking).',
+        id: 'The unique identifier for the tag. This will get auto generated when creating a tag and can’t be updated. This is required when updating or deleting a tag.',
+        name: 'The name of the tag. This can only be created, not updated. This is required when creating a tag.',
+        value: 'The value of the tag. This value is required when creating or updating a tag.',
         columnId:
           'The ID of the column this tag is associated with. This will get auto generated when creating a tag and can’t be updated.',
       },
@@ -46,6 +46,7 @@ export const GraphQLDescriptions = {
       description: 'Optional description text providing context about the form purpose.',
       input: 'Complete form configuration object containing properties to create or update.',
       questions: 'Ordered array of question IDs for reordering. Must include all existing question IDs.',
+      tag: 'The tag data to create, update or delete. If deleting a tag, only provide the id of the tag to delete. If creating a tag, provide the name and value, the id and columnId are auto generated. If updating a tag, provide the id and new value, name and columnId are not chaneable.',
     },
     args: {
       formToken: 'The unique form token identifying which form to operate on.',
@@ -157,7 +158,7 @@ export const GraphQLDescriptions = {
     },
   },
   question: {
-    operations: {
+    actions: {
       type: 'The type of operation to perform on the question. Can delete, update, or create. When updating or deleting a question, the questionId is required. When creating or updating a question, the question object is required. When updating, the question is a patch object, meaning that only the fields that are provided will be updated.',
       question:
         'The question object containing all properties for creation or update. When creating a question, the title is required.',

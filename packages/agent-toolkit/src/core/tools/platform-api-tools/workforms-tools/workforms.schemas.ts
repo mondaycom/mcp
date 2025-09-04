@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { GraphQLDescriptions } from './workforms.consts';
-import { FormQuestionsOperation } from './workforms.types';
+import { FormQuestionActions } from './workforms.types';
 import {
   FormQuestionSelectDisplay,
   FormQuestionSelectOrderByOptions,
@@ -96,10 +96,10 @@ const questionSchema = z.object({
 });
 
 export const formQuestionsEditorToolSchema = {
-  operation: z.nativeEnum(FormQuestionsOperation).describe(GraphQLDescriptions.question.operations.type),
+  action: z.nativeEnum(FormQuestionActions).describe(GraphQLDescriptions.question.actions.type),
   formToken: z.string().describe(GraphQLDescriptions.commonArgs.formToken),
   questionId: z.string().describe(GraphQLDescriptions.commonArgs.questionId).optional(),
-  question: questionSchema.describe(GraphQLDescriptions.question.operations.question).optional(),
+  question: questionSchema.describe(GraphQLDescriptions.question.actions.question).optional(),
 };
 
 export enum FormActions {
@@ -107,13 +107,20 @@ export enum FormActions {
   deactivate = 'deactivate',
   shortenFormUrl = 'shortenFormUrl',
   setFormPassword = 'setFormPassword',
-  update = 'update',
+  createTag = 'createTag',
+  deleteTag = 'deleteTag',
+  updateTag = 'updateTag',
+  updateAppearance = 'updateAppearance',
+  updateAccessibility = 'updateAccessibility',
+  updateFeatures = 'updateFeatures',
+  updateQuestionOrder = 'updateQuestionOrder',
+  updateFormHeader = 'updateFormHeader',
 }
 
 const tagSchema = z.object({
   id: z.string().describe(GraphQLDescriptions.form.properties.tags.id).optional(),
   name: z.string().describe(GraphQLDescriptions.form.properties.tags.name).optional(),
-  value: z.string().describe(GraphQLDescriptions.form.properties.tags.value),
+  value: z.string().describe(GraphQLDescriptions.form.properties.tags.value).optional(),
   columnId: z.string().describe(GraphQLDescriptions.form.properties.tags.columnId).optional(),
 });
 
@@ -121,7 +128,5 @@ export const updateFormToolSchema = {
   formToken: z.string().describe(GraphQLDescriptions.commonArgs.formToken),
   action: z.nativeEnum(FormActions).describe(GraphQLDescriptions.form.operations.updateForm.action),
   formPassword: z.string().describe(GraphQLDescriptions.formSettings.operations.setFormPassword).optional(),
-  form: z.object({
-    tags: z.array(tagSchema).describe(GraphQLDescriptions.form.properties.tags.description).optional(),
-  }),
+  tag: tagSchema.describe(GraphQLDescriptions.form.inputs.tag).optional(),
 };

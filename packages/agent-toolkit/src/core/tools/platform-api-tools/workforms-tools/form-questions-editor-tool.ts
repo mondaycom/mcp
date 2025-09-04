@@ -10,7 +10,7 @@ import {
   CreateFormQuestionMutationVariables,
   CreateQuestionInput,
 } from '../../../../monday-graphql/generated/graphql';
-import { FormQuestionsOperation } from './workforms.types';
+import { FormQuestionActions } from './workforms.types';
 import { formQuestionsEditorToolSchema } from './workforms.schemas';
 
 export class FormQuestionsEditorTool extends BaseMondayApiTool<typeof formQuestionsEditorToolSchema, never> {
@@ -34,12 +34,12 @@ export class FormQuestionsEditorTool extends BaseMondayApiTool<typeof formQuesti
   protected async executeInternal(
     input: ToolInputType<typeof formQuestionsEditorToolSchema>,
   ): Promise<ToolOutputType<never>> {
-    const baseVariables = {
+    const baseVariables: { formToken: string } = {
       formToken: input.formToken,
     };
 
-    switch (input.operation) {
-      case FormQuestionsOperation.Delete: {
+    switch (input.action) {
+      case FormQuestionActions.Delete: {
         const questionId = input.questionId;
         if (!questionId) {
           return {
@@ -57,7 +57,7 @@ export class FormQuestionsEditorTool extends BaseMondayApiTool<typeof formQuesti
           content: `Form question with id ${questionId} deleted successfully.`,
         };
       }
-      case FormQuestionsOperation.Update: {
+      case FormQuestionActions.Update: {
         const questionId = input.questionId;
         if (!questionId) {
           return {
@@ -81,7 +81,7 @@ export class FormQuestionsEditorTool extends BaseMondayApiTool<typeof formQuesti
           content: `Form question with id ${questionId} updated successfully.`,
         };
       }
-      case FormQuestionsOperation.Create: {
+      case FormQuestionActions.Create: {
         const question = input.question;
         if (!question) {
           return {
@@ -97,7 +97,10 @@ export class FormQuestionsEditorTool extends BaseMondayApiTool<typeof formQuesti
 
         const createVariables: CreateFormQuestionMutationVariables = {
           ...baseVariables,
-          question: question as CreateQuestionInput,
+          question: {
+            ...question,
+            title: question.title,
+          },
         };
         const result = await this.mondayApi.request<CreateFormQuestionMutation>(createFormQuestion, createVariables);
 
@@ -105,6 +108,10 @@ export class FormQuestionsEditorTool extends BaseMondayApiTool<typeof formQuesti
           content: `Form question created successfully. ID: ${result.create_form_question?.id}`,
         };
       }
+      default:
+        return {
+          content: `Unknown action: ${input.action}`,
+        };
     }
   }
 }
