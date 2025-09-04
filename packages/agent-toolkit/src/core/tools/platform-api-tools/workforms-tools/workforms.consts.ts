@@ -6,7 +6,10 @@ export const GraphQLDescriptions = {
   form: {
     operations: {
       createForm: 'Create a new form with specified configuration. Returns the created form with its unique token.',
-      updateForm: 'Update form properties including title, description, or question order.',
+      updateForm: {
+        action:
+          'The type of update action to perform on the form. Can be one of the following: activate, deactivate, shortenFormUrl, setFormPassword, createTag, deleteTag, updateTag, updateForm, updateAppearance, updateAccessibility, updateFeatures, updateQuestionOrder, updateFormHeader.',
+      },
       activateForm: 'Activate a form to make it visible to users and accept new submissions.',
       deactivateForm: 'Deactivate a form to hide it from users and stop accepting submissions. Form data is preserved.',
     },
@@ -28,18 +31,25 @@ export const GraphQLDescriptions = {
       features: 'Object containing feature toggles and settings like password protection, response limits, etc.',
       appearance: 'Object containing visual styling settings including colors, fonts, layout, and branding.',
       accessibility: 'Object containing accessibility settings such as language, alt text, and reading direction.',
-      tags: 'Array of tracking tags for categorization and analytics (e.g., UTM parameters for marketing tracking).',
+      tags: {
+        description:
+          'Array of tracking tags for categorization and analytics (e.g., UTM parameters for marketing tracking).',
+        id: 'The unique identifier for the tag. This will get auto generated when creating a tag and can’t be updated. This is required when updating or deleting a tag.',
+        name: 'The name of the tag. This can only be created, not updated. This is required when creating a tag.',
+        value: 'The value of the tag. This value is required when creating or updating a tag.',
+        columnId:
+          'The ID of the column this tag is associated with. This will get auto generated when creating a tag and can’t be updated.',
+      },
     },
     inputs: {
       title: 'The title text for the form. Must be at least 1 character long.',
       description: 'Optional description text providing context about the form purpose.',
       input: 'Complete form configuration object containing properties to create or update.',
       questions: 'Ordered array of question IDs for reordering. Must include all existing question IDs.',
+      tag: 'The tag data to create, update or delete. If deleting a tag, only provide the id of the tag to delete. If creating a tag, provide the name and value, the id and columnId are auto generated. If updating a tag, provide the id and new value, name and columnId are not chaneable.',
     },
     args: {
       formToken: 'The unique form token identifying which form to operate on.',
-      includeFullFormDetails:
-        'Boolean indicating if the full form details should be included in the response. Default will be to only return the core properties of the form and its questions',
       destinationWorkspaceId: 'The workspace in which the form will be created in.',
       destinationFolderId: 'The folder in which the form will be created under.',
       destinationFolderName: 'The name of the folder in which the form will be created in.',
@@ -59,7 +69,7 @@ export const GraphQLDescriptions = {
     operations: {
       updateFormSettings: 'Update form configuration including features, appearance, and accessibility options.',
       setFormPassword:
-        'Set a password on a form to restrict access. This will enable password protection for the form.',
+        'Set a password on a form to restrict access. This will enable password protection for the form. Required for the action "setFormPassword" in the update form tool.',
       shortenUrl: 'Shorten a URL for a form and store it in the form settings. Returns the shortened link object.',
     },
     properties: {
@@ -148,11 +158,10 @@ export const GraphQLDescriptions = {
     },
   },
   question: {
-    operations: {
-      createQuestion: 'Create a new question within a form. Returns the created question with auto-generated ID.',
-      updateQuestion:
-        'Update an existing question properties including title, type, or settings. Requires question ID.',
-      deleteQuestion: 'Permanently remove a question from a form. This action cannot be undone.',
+    actions: {
+      type: 'The type of operation to perform on the question. Can delete, update, or create. When updating or deleting a question, the questionId is required. When creating or updating a question, the question object is required. When updating, the question is a patch object, meaning that only the fields that are provided will be updated.',
+      question:
+        'The question object containing all properties for creation or update. When creating a question, the title is required.',
     },
     properties: {
       title:
@@ -168,8 +177,8 @@ export const GraphQLDescriptions = {
       createdAt: 'ISO timestamp when the question was created.',
       updatedAt: 'ISO timestamp when the question was last modified.',
       selectOptions:
-        'Array of option objects for choice-based questions (single_select, multi_select). Required for select types.',
-      selectLabel: 'The display text for individual option choices in select-type questions.',
+        'Array of option objects for choice-based questions (single_select, multi_select). Required when creating select type questions. Can only be provided when creating a question, not yet supported for updating a question.',
+      selectOptionsLabel: 'The display text for individual option choices in select-type questions.',
     },
     inputs: {
       question: 'Complete question object containing all properties for creation or update.',
@@ -205,7 +214,6 @@ export const GraphQLDescriptions = {
       display:
         'Single/Multi Select questions only: Controls how the selection options are visually presented to users.',
       optionsOrder: 'Single/Multi Select questions only: Determines the ordering of selection options.',
-      labelLimitCount: 'Multi Select questions only: Limits the number of options a user can select.',
       locationAutofilled:
         "Location questions only: Automatically detect and fill the user's current location using browser geolocation services, requiring user permission.",
       limit: 'Rating questions only: Maximum rating value that users can select.',

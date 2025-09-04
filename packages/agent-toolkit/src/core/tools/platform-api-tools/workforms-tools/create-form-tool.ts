@@ -1,28 +1,8 @@
-import { z } from 'zod';
-import {
-  BoardKind,
-  CreateFormMutation,
-  CreateFormMutationVariables,
-} from '../../../../monday-graphql/generated/graphql';
+import { CreateFormMutation, CreateFormMutationVariables } from '../../../../monday-graphql/generated/graphql';
 import { createForm } from './workforms.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { GraphQLDescriptions } from './workforms.consts';
-
-export const createFormToolSchema = {
-  destination_workspace_id: z.number().describe(GraphQLDescriptions.form.args.destinationWorkspaceId),
-  destination_folder_id: z.number().optional().describe(GraphQLDescriptions.form.args.destinationFolderId),
-  destination_folder_name: z.string().optional().describe(GraphQLDescriptions.form.args.destinationFolderName),
-  board_kind: z.nativeEnum(BoardKind).optional().describe(GraphQLDescriptions.form.args.boardKind),
-  destination_name: z.string().optional().describe(GraphQLDescriptions.form.args.destinationName),
-  board_owner_ids: z.array(z.number()).optional().describe(GraphQLDescriptions.form.args.boardOwnerIds),
-  board_owner_team_ids: z.array(z.number()).optional().describe(GraphQLDescriptions.form.args.boardOwnerTeamIds),
-  board_subscriber_ids: z.array(z.number()).optional().describe(GraphQLDescriptions.form.args.boardSubscriberIds),
-  board_subscriber_teams_ids: z
-    .array(z.number())
-    .optional()
-    .describe(GraphQLDescriptions.form.args.boardSubscriberTeamsIds),
-};
+import { createFormToolSchema } from './workforms.schemas';
 
 export class CreateFormTool extends BaseMondayApiTool<typeof createFormToolSchema, never> {
   name = 'create_form';

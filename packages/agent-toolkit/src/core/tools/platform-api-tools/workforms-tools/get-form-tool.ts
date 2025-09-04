@@ -3,11 +3,7 @@ import { GetFormQuery, GetFormQueryVariables } from '../../../../monday-graphql/
 import { getForm } from './workforms.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { GraphQLDescriptions } from './workforms.consts';
-
-export const getFormToolSchema = {
-  formToken: z.string().describe(GraphQLDescriptions.commonArgs.formToken),
-};
+import { getFormToolSchema } from './workforms.schemas';
 
 export class GetFormTool extends BaseMondayApiTool<typeof getFormToolSchema, never> {
   name = 'get_form';
