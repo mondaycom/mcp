@@ -486,6 +486,10 @@ export const updateFormFeatures = gql`
             enabled
             redirectUrl
           }
+          allowResubmit
+          showSuccessImage
+          allowEditSubmission
+          allowViewSubmission
         }
       }
     }
