@@ -397,3 +397,116 @@ export const updateFormTag = gql`
     update_form_tag(formToken: $formToken, tagId: $tagId, tag: $tag)
   }
 `;
+
+export const updateFormAppearance = gql`
+  mutation updateFormAppearance($formToken: String!, $appearance: FormAppearanceInput!) {
+    update_form_settings(formToken: $formToken, settings: { appearance: $appearance }) {
+      appearance {
+        background {
+          type
+          value
+        }
+        hideBranding
+        layout {
+          format
+          alignment
+          direction
+        }
+        logo {
+          position
+          url
+          size
+        }
+        primaryColor
+        showProgressBar
+        submitButton {
+          text
+        }
+        text {
+          font
+          color
+          size
+        }
+      }
+    }
+  }
+`;
+
+export const updateFormAccessibility = gql`
+  mutation updateFormAccessibility($formToken: String!, $accessibility: FormAccessibilityInput!) {
+    update_form_settings(formToken: $formToken, settings: { accessibility: $accessibility }) {
+      accessibility {
+        language
+        logoAltText
+      }
+    }
+  }
+`;
+
+export const updateFormFeatures = gql`
+  mutation updateFormFeatures($formToken: String!, $features: FormFeaturesInput!) {
+    update_form_settings(formToken: $formToken, settings: { features: $features }) {
+      features {
+        isInternal
+        reCaptchaChallenge
+        password {
+          enabled
+        }
+        shortenedLink {
+          enabled
+          url
+        }
+        draftSubmission {
+          enabled
+        }
+        requireLogin {
+          enabled
+          redirectToLogin
+        }
+        responseLimit {
+          enabled
+          limit
+        }
+        closeDate {
+          enabled
+          date
+        }
+        preSubmissionView {
+          enabled
+          title
+          description
+          startButton {
+            text
+          }
+        }
+        afterSubmissionView {
+          title
+          description
+          redirectAfterSubmission {
+            enabled
+            redirectUrl
+          }
+        }
+      }
+    }
+  }
+`;
+
+export const updateFormQuestionOrder = gql`
+  mutation updateFormQuestionOrder($formToken: String!, $questions: [QuestionOrderInput!]!) {
+    update_form(formToken: $formToken, input: { questions: $questions }) {
+      questions {
+        id
+      }
+    }
+  }
+`;
+
+export const updateFormHeader = gql`
+  mutation updateFormHeader($formToken: String!, $title: String, $description: String) {
+    update_form(formToken: $formToken, input: { title: $title, description: $description }) {
+      title
+      description
+    }
+  }
+`;

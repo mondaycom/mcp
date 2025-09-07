@@ -6,14 +6,14 @@ enum FormType {
   EnforcedItemCreationForm = 'enforced_item_creation_form',
 }
 
-enum LogoSize {
+export enum LogoSize {
   Small = 'small',
   Medium = 'medium',
   Large = 'large',
   ExtraLarge = 'extraLarge',
 }
 
-enum LogoPosition {
+export enum LogoPosition {
   Auto = 'auto',
   Left = 'left',
   Center = 'center',
@@ -34,23 +34,23 @@ export interface TagPayload {
   value: string;
 }
 
-enum BackgroundType {
+export enum BackgroundType {
   Image = 'image',
   Color = 'color',
   None = 'none',
 }
 
-enum Direction {
+export enum Direction {
   LtR = 'ltr',
   Rtl = 'rtl',
 }
 
-enum Format {
+export enum Format {
   OneByOne = 'one-by-one',
   Classic = 'classic',
 }
 
-enum Alignment {
+export enum Alignment {
   FullLeft = 'full-left',
   Left = 'left',
   Center = 'center',
@@ -58,7 +58,7 @@ enum Alignment {
   FullRight = 'full-right',
 }
 
-enum FontSize {
+export enum FontSize {
   Small = 'small',
   Medium = 'medium',
   Large = 'large',

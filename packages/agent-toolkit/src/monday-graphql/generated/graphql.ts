@@ -3090,8 +3090,6 @@ export type FormQuestionSettingsInput = {
   display?: InputMaybe<FormQuestionSelectDisplay>;
   /** Date questions only: Whether to include time selection (hours and minutes) in addition to the date picker. When false, only date selection is available. */
   includeTime?: InputMaybe<Scalars['Boolean']['input']>;
-  /** Multi Select questions only: Limits the number of options a user can select. */
-  labelLimitCount?: InputMaybe<Scalars['Int']['input']>;
   /** Location questions only: Automatically detect and fill the user's current location using browser geolocation services, requiring user permission. */
   locationAutofilled?: InputMaybe<Scalars['Boolean']['input']>;
   /** Single/Multi Select questions only: Determines the ordering of selection options. */
@@ -8721,6 +8719,47 @@ export type UpdateFormTagMutationVariables = Exact<{
 
 
 export type UpdateFormTagMutation = { __typename?: 'Mutation', update_form_tag?: boolean | null };
+
+export type UpdateFormAppearanceMutationVariables = Exact<{
+  formToken: Scalars['String']['input'];
+  appearance: FormAppearanceInput;
+}>;
+
+
+export type UpdateFormAppearanceMutation = { __typename?: 'Mutation', update_form_settings?: { __typename?: 'ResponseForm', appearance?: { __typename?: 'FormAppearance', hideBranding: boolean, primaryColor?: string | null, showProgressBar: boolean, background?: { __typename?: 'FormBackground', type?: FormBackgrounds | null, value?: string | null } | null, layout?: { __typename?: 'FormLayout', format?: FormFormat | null, alignment?: FormAlignment | null, direction?: FormDirection | null } | null, logo?: { __typename?: 'FormLogo', position?: FormLogoPosition | null, url?: string | null, size?: FormLogoSize | null } | null, submitButton?: { __typename?: 'FormSubmitButton', text?: string | null } | null, text?: { __typename?: 'FormText', font?: string | null, color?: string | null, size?: FormFontSize | null } | null } | null } | null };
+
+export type UpdateFormAccessibilityMutationVariables = Exact<{
+  formToken: Scalars['String']['input'];
+  accessibility: FormAccessibilityInput;
+}>;
+
+
+export type UpdateFormAccessibilityMutation = { __typename?: 'Mutation', update_form_settings?: { __typename?: 'ResponseForm', accessibility?: { __typename?: 'FormAccessibility', language?: string | null, logoAltText?: string | null } | null } | null };
+
+export type UpdateFormFeaturesMutationVariables = Exact<{
+  formToken: Scalars['String']['input'];
+  features: FormFeaturesInput;
+}>;
+
+
+export type UpdateFormFeaturesMutation = { __typename?: 'Mutation', update_form_settings?: { __typename?: 'ResponseForm', features?: { __typename?: 'FormFeatures', isInternal: boolean, reCaptchaChallenge: boolean, password?: { __typename?: 'FormPassword', enabled: boolean } | null, shortenedLink?: { __typename?: 'FormShortenedLink', enabled: boolean, url?: string | null } | null, draftSubmission?: { __typename?: 'FormDraftSubmission', enabled: boolean } | null, requireLogin?: { __typename?: 'FormRequireLogin', enabled: boolean, redirectToLogin: boolean } | null, responseLimit?: { __typename?: 'FormResponseLimit', enabled: boolean, limit?: number | null } | null, closeDate?: { __typename?: 'FormCloseDate', enabled: boolean, date?: string | null } | null, preSubmissionView?: { __typename?: 'FormPreSubmissionView', enabled: boolean, title?: string | null, description?: string | null, startButton?: { __typename?: 'FormStartButton', text?: string | null } | null } | null, afterSubmissionView?: { __typename?: 'FormAfterSubmissionView', title?: string | null, description?: string | null, redirectAfterSubmission?: { __typename?: 'FormRedirectAfterSubmission', enabled: boolean, redirectUrl?: string | null } | null } | null } | null } | null };
+
+export type UpdateFormQuestionOrderMutationVariables = Exact<{
+  formToken: Scalars['String']['input'];
+  questions: Array<QuestionOrderInput> | QuestionOrderInput;
+}>;
+
+
+export type UpdateFormQuestionOrderMutation = { __typename?: 'Mutation', update_form?: { __typename?: 'ResponseForm', questions?: Array<{ __typename?: 'FormQuestion', id: string }> | null } | null };
+
+export type UpdateFormHeaderMutationVariables = Exact<{
+  formToken: Scalars['String']['input'];
+  title?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type UpdateFormHeaderMutation = { __typename?: 'Mutation', update_form?: { __typename?: 'ResponseForm', title: string, description?: string | null } | null };
 
 export type DeleteItemMutationVariables = Exact<{
   id: Scalars['ID']['input'];

@@ -42,11 +42,29 @@ export const GraphQLDescriptions = {
       },
     },
     inputs: {
-      title: 'The title text for the form. Must be at least 1 character long.',
-      description: 'Optional description text providing context about the form purpose.',
+      title:
+        'The title text for the form. Must be at least 1 character long. Can only be updated if the update action is updateFormHeader.',
+      description:
+        'Optional description text providing context about the form purpose. Can only be updated if the update action is updateFormHeader.',
       input: 'Complete form configuration object containing properties to create or update.',
-      questions: 'Ordered array of question IDs for reordering. Must include all existing question IDs.',
+      questions:
+        'Ordered array of dehydrated questions, object only including each question ID, for reordering. Must include all existing question IDs. Required if the update action is updateQuestionOrder.',
+      questionId: 'The unique identifier for the question. Used to target specific questions within a form.',
       tag: 'The tag data to create, update or delete. If deleting a tag, only provide the id of the tag to delete. If creating a tag, provide the name and value, the id and columnId are auto generated. If updating a tag, provide the id and new value, name and columnId are not chaneable.',
+      form: {
+        describe:
+          'The form data to update. Required if updating the appearance, accessibility, features, question order, or form header.',
+        appearance:
+          'The appearance data to update. Acts as a patch object, meaning that only the fields that are provided will be updated. Required if the update action is updateAppearance.',
+        accessibility:
+          'The accessibility data to update. Acts as a patch object, meaning that only the fields that are provided will be updated. Required if the update action is updateAccessibility.',
+        features:
+          'The features data to update. Acts as a patch object, meaning that only the fields that are provided will be updated. Required if the update action is updateFeatures.',
+        questionOrder:
+          'The question order data to update. Acts as a patch object, meaning that only the fields that are provided will be updated. Required if the update action is updateQuestionOrder.',
+        formHeader:
+          'The form header data to update. Acts as a patch object, meaning that only the fields that are provided will be updated. Required if the update action is updateFormHeader.',
+      },
     },
     args: {
       formToken: 'The unique form token identifying which form to operate on.',
@@ -81,7 +99,7 @@ export const GraphQLDescriptions = {
       reCaptchaChallenge: 'Boolean enabling reCAPTCHA verification to prevent spam submissions.',
       password: 'Object containing password protection configuration for the form.',
       passwordEnabled:
-        'Boolean enabling password protection. When true, users must enter a password to access the form.',
+        'Boolean disabling password protection. Can only be updated to false, to enable password protection, use the setFormPassword action instead.',
       requireLogin: 'Object containing login requirement settings for form access.',
       requireLoginEnabled: 'Boolean requiring users to be logged in before submitting responses.',
       redirectToLogin: 'Boolean automatically redirecting unauthenticated users to the login page.',
