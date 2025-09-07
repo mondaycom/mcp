@@ -146,7 +146,6 @@ const layoutSchema = z.object({
 
 const logoSchema = z.object({
   position: z.nativeEnum(LogoPosition).describe(GraphQLDescriptions.formSettings.properties.logoPosition).optional(),
-  url: z.string().describe(GraphQLDescriptions.formSettings.properties.logoUrl).optional(),
   size: z.nativeEnum(LogoSize).describe(GraphQLDescriptions.formSettings.properties.logoSize).optional(),
 });
 

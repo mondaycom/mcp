@@ -7,17 +7,17 @@ enum FormType {
 }
 
 export enum LogoSize {
-  Small = 'small',
-  Medium = 'medium',
-  Large = 'large',
-  ExtraLarge = 'extraLarge',
+  Small = 'Small',
+  Medium = 'Medium',
+  Large = 'Large',
+  ExtraLarge = 'ExtraLarge',
 }
 
 export enum LogoPosition {
-  Auto = 'auto',
-  Left = 'left',
-  Center = 'center',
-  Right = 'right',
+  Auto = 'Auto',
+  Left = 'Left',
+  Center = 'Center',
+  Right = 'Right',
 }
 
 export interface Tag {
@@ -35,33 +35,33 @@ export interface TagPayload {
 }
 
 export enum BackgroundType {
-  Image = 'image',
-  Color = 'color',
-  None = 'none',
+  Image = 'Image',
+  Color = 'Color',
+  None = 'None',
 }
 
 export enum Direction {
-  LtR = 'ltr',
-  Rtl = 'rtl',
+  LtR = 'LtR',
+  Rtl = 'Rtl',
 }
 
 export enum Format {
-  OneByOne = 'one-by-one',
-  Classic = 'classic',
+  OneByOne = 'OneByOne',
+  Classic = 'Classic',
 }
 
 export enum Alignment {
-  FullLeft = 'full-left',
-  Left = 'left',
-  Center = 'center',
-  Right = 'right',
-  FullRight = 'full-right',
+  FullLeft = 'FullLeft',
+  Left = 'Left',
+  Center = 'Center',
+  Right = 'Right',
+  FullRight = 'FullRight',
 }
 
 export enum FontSize {
-  Small = 'small',
-  Medium = 'medium',
-  Large = 'large',
+  Small = 'Small',
+  Medium = 'Medium',
+  Large = 'Large',
 }
 
 export enum WorkformsQuestionType {
