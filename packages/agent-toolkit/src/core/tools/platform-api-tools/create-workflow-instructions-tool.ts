@@ -86,8 +86,11 @@ mutation {
 **For APP_FEATURE_OBJECT hosts:**
 \`\`\`
 mutation {
-  create_workflows_object(
-    name: "Workflow Name"
+  create_object(
+    name: "Workflow Name",
+    privacy_kind: PUBLIC,
+    workspace_id: <WORKSPACE_ID_HERE>,
+    object_type_unique_key: "monday_workflows::workflow"
   ) {
     id
   }
