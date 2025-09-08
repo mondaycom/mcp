@@ -8,6 +8,7 @@ import { UpdateFormTool } from './workforms-tools/update-form-tool';
 import { GetFormTool } from './workforms-tools/get-form-tool';
 import { CreateColumnTool } from './create-column-tool';
 import { CreateCustomActivityTool } from './create-custom-activity-tool';
+import { CreateGroupTool } from './create-group/create-group-tool';
 import { CreateItemTool } from './create-item-tool';
 import { CreateTimelineItemTool } from './create-timeline-item-tool';
 import { CreateUpdateTool } from './create-update-tool';
@@ -51,6 +52,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   GetFormTool,
   FormQuestionsEditorTool,
   CreateColumnTool,
+  CreateGroupTool,
   DeleteColumnTool,
   AllMondayApiTool,
   GetGraphQLSchemaTool,
@@ -78,6 +80,7 @@ export * from './workforms-tools/update-form-tool';
 export * from './workforms-tools/get-form-tool';
 export * from './workforms-tools/form-questions-editor-tool';
 export * from './create-column-tool';
+export * from './create-group/create-group-tool';
 export * from './create-custom-activity-tool';
 export * from './create-item-tool';
 export * from './create-timeline-item-tool';

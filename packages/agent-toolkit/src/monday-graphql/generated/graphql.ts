@@ -8478,6 +8478,17 @@ export enum __TypeKind {
   NonNull = 'NON_NULL'
 }
 
+export type CreateGroupMutationVariables = Exact<{
+  boardId: Scalars['ID']['input'];
+  groupName: Scalars['String']['input'];
+  groupColor?: InputMaybe<Scalars['String']['input']>;
+  relativeTo?: InputMaybe<Scalars['String']['input']>;
+  positionRelativeMethod?: InputMaybe<PositionRelative>;
+}>;
+
+
+export type CreateGroupMutation = { __typename?: 'Mutation', create_group?: { __typename?: 'Group', id: string, title: string } | null };
+
 export type CreateDashboardMutationVariables = Exact<{
   name: Scalars['String']['input'];
   workspace_id: Scalars['Int']['input'];

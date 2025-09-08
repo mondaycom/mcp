@@ -157,7 +157,7 @@ To specify an authorization header and API version:
         "-p",
         "node@20",
         "mcp-remote",
-        "https://monday-mcp-server-staging.staging-7c7.workers.dev/sse",
+        "https://mcp.monday.com/sse",
         "--header",
         "Authorization:${AUTH_HEADER}",
       ],
@@ -214,6 +214,7 @@ Our MCP server provides a rich set of tools that give AI assistants the ability 
 | | move_item_to_group | Move an item to a different group within the same board |
 | **Board Operations** | create_board | Create a new monday.com board with specified columns |
 | | get_board_schema | Retrieve the structure of columns and groups for a board |
+| | create_group | Create a new group in a monday.com board |
 | | create_column | Add a new column to an existing board |
 | | delete_column | Remove a column from a board |
 | **Account Operations** | get_users_by_name | Retrieve user information by name or partial name |
