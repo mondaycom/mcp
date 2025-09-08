@@ -1,6 +1,6 @@
-import { createFormQuestion, deleteFormQuestion, updateFormQuestion } from './workforms.graphql';
-import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
-import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+import { createFormQuestion, deleteFormQuestion, updateFormQuestion } from '../workforms.graphql';
+import { ToolInputType, ToolOutputType, ToolType } from '../../../../tool';
+import { BaseMondayApiTool, createMondayApiAnnotations } from '../../base-monday-api-tool';
 import {
   CreateFormQuestionMutation,
   DeleteFormQuestionMutation,
@@ -9,9 +9,9 @@ import {
   UpdateFormQuestionMutationVariables,
   CreateFormQuestionMutationVariables,
   CreateQuestionInput,
-} from '../../../../monday-graphql/generated/graphql';
-import { FormQuestionActions } from './workforms.types';
-import { formQuestionsEditorToolSchema } from './workforms.schemas';
+} from '../../../../../monday-graphql/generated/graphql';
+import { FormQuestionActions } from '../workforms.types';
+import { formQuestionsEditorToolSchema } from './schema';
 
 export class FormQuestionsEditorTool extends BaseMondayApiTool<typeof formQuestionsEditorToolSchema, never> {
   name = 'form_questions_editor';

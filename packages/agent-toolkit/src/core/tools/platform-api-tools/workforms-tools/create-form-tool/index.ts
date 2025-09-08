@@ -1,8 +1,8 @@
-import { CreateFormMutation, CreateFormMutationVariables } from '../../../../monday-graphql/generated/graphql';
-import { createForm } from './workforms.graphql';
-import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
-import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { createFormToolSchema } from './workforms.schemas';
+import { CreateFormMutation, CreateFormMutationVariables } from '../../../../../monday-graphql/generated/graphql';
+import { createForm } from '../workforms.graphql';
+import { ToolInputType, ToolOutputType, ToolType } from '../../../../tool';
+import { BaseMondayApiTool, createMondayApiAnnotations } from '../../base-monday-api-tool';
+import { createFormToolSchema } from './schema';
 
 export class CreateFormTool extends BaseMondayApiTool<typeof createFormToolSchema, never> {
   name = 'create_form';

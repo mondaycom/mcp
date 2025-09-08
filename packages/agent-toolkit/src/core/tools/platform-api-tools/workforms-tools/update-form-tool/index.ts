@@ -24,13 +24,14 @@ import {
   UpdateFormAppearanceMutation,
   UpdateFormAppearanceMutationVariables,
   UpdateFormFeaturesMutation,
+  UpdateFormFeaturesMutationVariables,
   UpdateFormHeaderMutation,
   UpdateFormHeaderMutationVariables,
   UpdateFormQuestionOrderMutation,
   UpdateFormQuestionOrderMutationVariables,
   UpdateFormTagMutation,
   UpdateFormTagMutationVariables,
-} from '../../../../monday-graphql/generated/graphql';
+} from '../../../../../monday-graphql/generated/graphql';
 import {
   activateForm,
   createFormTag,
@@ -45,12 +46,11 @@ import {
   updateFormHeader,
   updateFormQuestionOrder,
   updateFormTag,
-} from './workforms.graphql';
-import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
-import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { FormActions, updateFormToolSchema } from './workforms.schemas';
-import { Tag, TagPayload } from './workforms.types';
-import { UpdateFormFeaturesMutationVariables } from '../../../../monday-graphql/generated/graphql';
+} from '../workforms.graphql';
+import { ToolInputType, ToolOutputType, ToolType } from '../../../../tool';
+import { BaseMondayApiTool, createMondayApiAnnotations } from '../../base-monday-api-tool';
+import { FormActions, updateFormToolSchema } from './schema';
+import { Tag, TagPayload } from '../workforms.types';
 
 export class UpdateFormTool extends BaseMondayApiTool<typeof updateFormToolSchema, never> {
   name = 'update_form';

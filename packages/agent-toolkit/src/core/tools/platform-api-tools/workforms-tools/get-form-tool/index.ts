@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import { GetFormQuery, GetFormQueryVariables } from '../../../../monday-graphql/generated/graphql';
-import { getForm } from './workforms.graphql';
-import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
-import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { getFormToolSchema } from './workforms.schemas';
+import { GetFormQuery, GetFormQueryVariables } from '../../../../../monday-graphql/generated/graphql';
+import { getForm } from '../workforms.graphql';
+import { ToolInputType, ToolOutputType, ToolType } from '../../../../tool';
+import { BaseMondayApiTool, createMondayApiAnnotations } from '../../base-monday-api-tool';
+import { getFormToolSchema } from './schema';
 
 export class GetFormTool extends BaseMondayApiTool<typeof getFormToolSchema, never> {
   name = 'get_form';
