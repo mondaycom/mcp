@@ -2505,16 +2505,16 @@ type Mutation {
     name: String!
 
     """ID of the workspace that will own the dashboard."""
-    workspace_id: Int!
+    workspace_id: ID!
 
     """List of board IDs as strings (min 1 element)."""
-    board_ids: [String!]!
+    board_ids: [ID!]!
 
     """Visibility level: `PUBLIC` or `PRIVATE`, default value is `PRIVATE`."""
     kind: DashboardKind
 
     """Folder ID within the workspace in which to place the dashboard."""
-    board_folder_id: Int
+    board_folder_id: ID
   ): Dashboard
 
   """Update an existing dashboard."""

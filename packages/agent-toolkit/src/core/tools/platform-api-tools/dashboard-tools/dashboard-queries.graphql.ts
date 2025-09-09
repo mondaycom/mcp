@@ -7,10 +7,10 @@ import { gql } from 'graphql-request';
 export const createDashboard = gql`
   mutation CreateDashboard(
     $name: String!
-    $workspace_id: Int!
-    $board_ids: [String!]!
+    $workspace_id: ID!
+    $board_ids: [ID!]!
     $kind: DashboardKind
-    $board_folder_id: Int
+    $board_folder_id: ID
   ) {
     create_dashboard(
       name: $name
