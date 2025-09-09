@@ -9,10 +9,7 @@ import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 
 export const createDashboardToolSchema = {
-  name: z
-    .string()
-    .min(1, 'Dashboard name is required')
-    .describe('Human-readable dashboard title (UTF-8 chars)'),
+  name: z.string().min(1, 'Dashboard name is required').describe('Human-readable dashboard title (UTF-8 chars)'),
   workspace_id: z
     .number()
     .int('Workspace ID must be an integer')
@@ -29,7 +26,9 @@ export const createDashboardToolSchema = {
     .int('Board folder ID must be an integer')
     .positive('Board folder ID must be positive')
     .optional()
-    .describe('Optional folder ID within workspace to place this dashboard (if not provided, dashboard will be placed in workspace root)'),
+    .describe(
+      'Optional folder ID within workspace to place this dashboard (if not provided, dashboard will be placed in workspace root)',
+    ),
 };
 
 export class CreateDashboardTool extends BaseMondayApiTool<typeof createDashboardToolSchema, never> {
