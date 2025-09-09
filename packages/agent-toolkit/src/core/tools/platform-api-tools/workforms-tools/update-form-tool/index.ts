@@ -63,7 +63,7 @@ export class UpdateFormTool extends BaseMondayApiTool<typeof updateFormToolSchem
   });
 
   getDescription(): string {
-    return `Update a monday.com form. Handles the following form update actions: 
+    return `Update a monday.com form. Handles the following form update actions that can only be done one at a time using the correct "action" input: 
     - update form's feature settings,
     - update form's appearance settings
     - update form's accessibility settings
@@ -149,14 +149,6 @@ export class UpdateFormTool extends BaseMondayApiTool<typeof updateFormToolSchem
 
     return {
       content: 'Form successfully activated.',
-    };
-  }
-
-  private async updateForm(input: ToolInputType<typeof updateFormToolSchema>): Promise<ToolOutputType<never>> {
-    const form = await this.getCurrentForm(input.formToken);
-
-    return {
-      content: `Form successfully updated. Updated Form: ${JSON.stringify(form, null, 2)}`,
     };
   }
 
@@ -344,35 +336,33 @@ export class UpdateFormTool extends BaseMondayApiTool<typeof updateFormToolSchem
     };
   }
 
+  private readonly actionHandlers = new Map<
+    FormActions,
+    (input: ToolInputType<typeof updateFormToolSchema>) => Promise<ToolOutputType<never>>
+  >([
+    [FormActions.setFormPassword, this.setFormPassword.bind(this)],
+    [FormActions.shortenFormUrl, this.shortenFormUrl.bind(this)],
+    [FormActions.deactivate, this.deactivateForm.bind(this)],
+    [FormActions.activate, this.activateForm.bind(this)],
+    [FormActions.createTag, this.createTag.bind(this)],
+    [FormActions.deleteTag, this.deleteTag.bind(this)],
+    [FormActions.updateTag, this.updateTag.bind(this)],
+    [FormActions.updateAppearance, this.updateAppearance.bind(this)],
+    [FormActions.updateAccessibility, this.updateAccessibility.bind(this)],
+    [FormActions.updateFeatures, this.updateFeatures.bind(this)],
+    [FormActions.updateQuestionOrder, this.updateQuestionOrder.bind(this)],
+    [FormActions.updateFormHeader, this.updateFormHeader.bind(this)],
+  ]);
+
   protected async executeInternal(input: ToolInputType<typeof updateFormToolSchema>): Promise<ToolOutputType<never>> {
-    if (input.action === FormActions.setFormPassword) {
-      return await this.setFormPassword(input);
-    } else if (input.action === FormActions.shortenFormUrl) {
-      return await this.shortenFormUrl(input);
-    } else if (input.action === FormActions.deactivate) {
-      return await this.deactivateForm(input);
-    } else if (input.action === FormActions.activate) {
-      return await this.activateForm(input);
-    } else if (input.action === FormActions.createTag) {
-      return await this.createTag(input);
-    } else if (input.action === FormActions.deleteTag) {
-      return await this.deleteTag(input);
-    } else if (input.action === FormActions.updateTag) {
-      return await this.updateTag(input);
-    } else if (input.action === FormActions.updateAppearance) {
-      return await this.updateAppearance(input);
-    } else if (input.action === FormActions.updateAccessibility) {
-      return await this.updateAccessibility(input);
-    } else if (input.action === FormActions.updateFeatures) {
-      return await this.updateFeatures(input);
-    } else if (input.action === FormActions.updateQuestionOrder) {
-      return await this.updateQuestionOrder(input);
-    } else if (input.action === FormActions.updateFormHeader) {
-      return await this.updateFormHeader(input);
+    const handler = this.actionHandlers.get(input.action);
+
+    if (!handler) {
+      return {
+        content: 'Received an invalid action for the update form tool.',
+      };
     }
 
-    return {
-      content: 'Received an invalid action for the update form tool.',
-    };
+    return await handler(input);
   }
 }
