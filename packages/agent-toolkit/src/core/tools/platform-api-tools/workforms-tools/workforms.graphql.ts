@@ -1,5 +1,178 @@
 import { gql } from 'graphql-request';
 
+// ============================================================================
+// FRAGMENTS - Reusable field selections to reduce duplication
+// ============================================================================
+
+// Basic question fields
+const QuestionBasicFragment = gql`
+  fragment QuestionBasic on FormQuestion {
+    id
+    type
+    title
+    description
+    visible
+    required
+  }
+`;
+
+// Question options
+const QuestionOptionsFragment = gql`
+  fragment QuestionOptions on FormQuestion {
+    options {
+      label
+    }
+  }
+`;
+
+// Question settings with all nested fields
+const QuestionSettingsFragment = gql`
+  fragment QuestionSettings on FormQuestion {
+    settings {
+      prefill {
+        enabled
+        source
+        lookup
+      }
+      prefixAutofilled
+      prefixPredefined {
+        enabled
+        prefix
+      }
+      checkedByDefault
+      defaultCurrentDate
+      includeTime
+      display
+      optionsOrder
+      locationAutofilled
+      limit
+      skipValidation
+    }
+  }
+`;
+
+// Complete question with all fields
+const QuestionCompleteFragment = gql`
+  fragment QuestionComplete on FormQuestion {
+    ...QuestionBasic
+    ...QuestionOptions
+    ...QuestionSettings
+    showIfRules
+  }
+  ${QuestionBasicFragment}
+  ${QuestionOptionsFragment}
+  ${QuestionSettingsFragment}
+`;
+
+// Form features with all nested objects
+const FormFeaturesFragment = gql`
+  fragment FormFeatures on FormFeatures {
+    isInternal
+    reCaptchaChallenge
+    shortenedLink {
+      enabled
+      url
+    }
+    password {
+      enabled
+    }
+    draftSubmission {
+      enabled
+    }
+    requireLogin {
+      enabled
+      redirectToLogin
+    }
+    responseLimit {
+      enabled
+      limit
+    }
+    closeDate {
+      enabled
+      date
+    }
+    preSubmissionView {
+      enabled
+      title
+      description
+      startButton {
+        text
+      }
+    }
+    afterSubmissionView {
+      title
+      description
+      redirectAfterSubmission {
+        enabled
+        redirectUrl
+      }
+      allowResubmit
+      showSuccessImage
+      allowEditSubmission
+      allowViewSubmission
+    }
+    monday {
+      itemGroupId
+      includeNameQuestion
+      includeUpdateQuestion
+      syncQuestionAndColumnsTitles
+    }
+  }
+`;
+
+// Form appearance with all styling options
+const FormAppearanceFragment = gql`
+  fragment FormAppearance on FormAppearance {
+    hideBranding
+    showProgressBar
+    primaryColor
+    layout {
+      format
+      alignment
+      direction
+    }
+    background {
+      type
+      value
+    }
+    text {
+      font
+      color
+      size
+    }
+    logo {
+      position
+      url
+      size
+    }
+    submitButton {
+      text
+    }
+  }
+`;
+
+// Form accessibility settings
+const FormAccessibilityFragment = gql`
+  fragment FormAccessibility on FormAccessibility {
+    language
+    logoAltText
+  }
+`;
+
+// Form tag fields
+const FormTagFragment = gql`
+  fragment FormTag on FormTag {
+    id
+    name
+    value
+    columnId
+  }
+`;
+
+// ============================================================================
+// QUERIES AND MUTATIONS
+// ============================================================================
+
 // Create a new monday form (API version 2025-10)
 export const createForm = gql`
   mutation createForm(
@@ -44,128 +217,27 @@ export const getForm = gql`
       builtWithAI
       isAnonymous
       questions {
-        id
-        type
-        visible
-        title
-        description
-        required
-        showIfRules
-        options {
-          label
-        }
-        settings {
-          prefill {
-            enabled
-            source
-            lookup
-          }
-          prefixAutofilled
-          prefixPredefined {
-            enabled
-            prefix
-          }
-          checkedByDefault
-          defaultCurrentDate
-          includeTime
-          display
-          optionsOrder
-          locationAutofilled
-          limit
-          skipValidation
-        }
+        ...QuestionComplete
       }
       features {
-        isInternal
-        reCaptchaChallenge
-        shortenedLink {
-          enabled
-          url
-        }
-        password {
-          enabled
-        }
-        draftSubmission {
-          enabled
-        }
-        requireLogin {
-          enabled
-          redirectToLogin
-        }
-        responseLimit {
-          enabled
-          limit
-        }
-        closeDate {
-          enabled
-          date
-        }
-        preSubmissionView {
-          enabled
-          title
-          description
-          startButton {
-            text
-          }
-        }
-        afterSubmissionView {
-          title
-          description
-          redirectAfterSubmission {
-            enabled
-            redirectUrl
-          }
-          allowResubmit
-          showSuccessImage
-          allowEditSubmission
-          allowViewSubmission
-        }
-        monday {
-          itemGroupId
-          includeNameQuestion
-          includeUpdateQuestion
-          syncQuestionAndColumnsTitles
-        }
+        ...FormFeatures
       }
       appearance {
-        hideBranding
-        showProgressBar
-        primaryColor
-        layout {
-          format
-          alignment
-          direction
-        }
-        background {
-          type
-          value
-        }
-        text {
-          font
-          color
-          size
-        }
-        logo {
-          position
-          url
-          size
-        }
-        submitButton {
-          text
-        }
+        ...FormAppearance
       }
       accessibility {
-        language
-        logoAltText
+        ...FormAccessibility
       }
       tags {
-        id
-        name
-        value
-        columnId
+        ...FormTag
       }
     }
   }
+  ${QuestionCompleteFragment}
+  ${FormFeaturesFragment}
+  ${FormAppearanceFragment}
+  ${FormAccessibilityFragment}
+  ${FormTagFragment}
 `;
 
 export const deleteFormQuestion = gql`
@@ -177,71 +249,27 @@ export const deleteFormQuestion = gql`
 export const createFormQuestion = gql`
   mutation createFormQuestion($formToken: String!, $question: CreateQuestionInput!) {
     create_form_question(formToken: $formToken, question: $question) {
-      id
-      type
-      title
-      description
-      visible
-      required
-      options {
-        label
-      }
-      settings {
-        checkedByDefault
-        defaultCurrentDate
-        display
-        includeTime
-        locationAutofilled
-        optionsOrder
-        prefixAutofilled
-        prefixPredefined {
-          enabled
-          prefix
-        }
-        skipValidation
-        prefill {
-          enabled
-          source
-          lookup
-        }
-      }
+      ...QuestionBasic
+      ...QuestionOptions
+      ...QuestionSettings
     }
   }
+  ${QuestionBasicFragment}
+  ${QuestionOptionsFragment}
+  ${QuestionSettingsFragment}
 `;
 
 export const updateFormQuestion = gql`
   mutation updateFormQuestion($formToken: String!, $questionId: String!, $question: UpdateQuestionInput!) {
     update_form_question(formToken: $formToken, questionId: $questionId, question: $question) {
-      id
-      type
-      title
-      description
-      visible
-      required
-      options {
-        label
-      }
-      settings {
-        checkedByDefault
-        defaultCurrentDate
-        display
-        includeTime
-        locationAutofilled
-        optionsOrder
-        prefixAutofilled
-        prefixPredefined {
-          enabled
-          prefix
-        }
-        skipValidation
-        prefill {
-          enabled
-          source
-          lookup
-        }
-      }
+      ...QuestionBasic
+      ...QuestionOptions
+      ...QuestionSettings
     }
   }
+  ${QuestionBasicFragment}
+  ${QuestionOptionsFragment}
+  ${QuestionSettingsFragment}
 `;
 
 export const updateForm = gql`
@@ -260,89 +288,19 @@ export const updateFormSettings = gql`
   mutation updateFormSettings($formToken: String!, $settings: UpdateFormSettingsInput!) {
     update_form_settings(formToken: $formToken, settings: $settings) {
       features {
-        reCaptchaChallenge
-        shortenedLink {
-          enabled
-          url
-        }
-        password {
-          enabled
-        }
-        draftSubmission {
-          enabled
-        }
-        requireLogin {
-          enabled
-          redirectToLogin
-        }
-        responseLimit {
-          enabled
-          limit
-        }
-        closeDate {
-          enabled
-          date
-        }
-        preSubmissionView {
-          enabled
-          title
-          description
-          startButton {
-            text
-          }
-        }
-        afterSubmissionView {
-          title
-          description
-          redirectAfterSubmission {
-            enabled
-            redirectUrl
-          }
-          allowResubmit
-          showSuccessImage
-          allowEditSubmission
-          allowViewSubmission
-        }
-        monday {
-          itemGroupId
-          includeNameQuestion
-          includeUpdateQuestion
-          syncQuestionAndColumnsTitles
-        }
+        ...FormFeatures
       }
       appearance {
-        hideBranding
-        showProgressBar
-        primaryColor
-        layout {
-          format
-          alignment
-          direction
-        }
-        background {
-          type
-          value
-        }
-        text {
-          font
-          color
-          size
-        }
-        logo {
-          position
-          url
-          size
-        }
-        submitButton {
-          text
-        }
+        ...FormAppearance
       }
       accessibility {
-        language
-        logoAltText
+        ...FormAccessibility
       }
     }
   }
+  ${FormFeaturesFragment}
+  ${FormAppearanceFragment}
+  ${FormAccessibilityFragment}
 `;
 
 export const setFormPassword = gql`
@@ -383,12 +341,10 @@ export const deleteFormTag = gql`
 export const createFormTag = gql`
   mutation createFormTag($formToken: String!, $tag: CreateFormTagInput!) {
     create_form_tag(formToken: $formToken, tag: $tag) {
-      id
-      name
-      value
-      columnId
+      ...FormTag
     }
   }
+  ${FormTagFragment}
 `;
 
 export const updateFormTag = gql`
@@ -401,98 +357,33 @@ export const updateFormAppearance = gql`
   mutation updateFormAppearance($formToken: String!, $appearance: FormAppearanceInput!) {
     update_form_settings(formToken: $formToken, settings: { appearance: $appearance }) {
       appearance {
-        background {
-          type
-          value
-        }
-        hideBranding
-        layout {
-          format
-          alignment
-          direction
-        }
-        logo {
-          position
-          url
-          size
-        }
-        primaryColor
-        showProgressBar
-        submitButton {
-          text
-        }
-        text {
-          font
-          color
-          size
-        }
+        ...FormAppearance
       }
     }
   }
+  ${FormAppearanceFragment}
 `;
 
 export const updateFormAccessibility = gql`
   mutation updateFormAccessibility($formToken: String!, $accessibility: FormAccessibilityInput!) {
     update_form_settings(formToken: $formToken, settings: { accessibility: $accessibility }) {
       accessibility {
-        language
-        logoAltText
+        ...FormAccessibility
       }
     }
   }
+  ${FormAccessibilityFragment}
 `;
 
 export const updateFormFeatures = gql`
   mutation updateFormFeatures($formToken: String!, $features: FormFeaturesInput!) {
     update_form_settings(formToken: $formToken, settings: { features: $features }) {
       features {
-        isInternal
-        reCaptchaChallenge
-        password {
-          enabled
-        }
-        shortenedLink {
-          enabled
-          url
-        }
-        draftSubmission {
-          enabled
-        }
-        requireLogin {
-          enabled
-          redirectToLogin
-        }
-        responseLimit {
-          enabled
-          limit
-        }
-        closeDate {
-          enabled
-          date
-        }
-        preSubmissionView {
-          enabled
-          title
-          description
-          startButton {
-            text
-          }
-        }
-        afterSubmissionView {
-          title
-          description
-          redirectAfterSubmission {
-            enabled
-            redirectUrl
-          }
-          allowResubmit
-          showSuccessImage
-          allowEditSubmission
-          allowViewSubmission
-        }
+        ...FormFeatures
       }
     }
   }
+  ${FormFeaturesFragment}
 `;
 
 export const updateFormQuestionOrder = gql`
