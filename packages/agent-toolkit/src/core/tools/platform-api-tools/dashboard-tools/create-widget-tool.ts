@@ -68,7 +68,7 @@ export class CreateWidgetTool extends BaseMondayApiTool<typeof createWidgetToolS
       const variables: CreateWidgetMutationVariables = {
         parent: {
           kind: input.parent_container_type,
-          id: input.parent_container_id,
+          id: input.parent_container_id.toString(),
         },
         kind: input.widget_kind,
         name: input.widget_name,

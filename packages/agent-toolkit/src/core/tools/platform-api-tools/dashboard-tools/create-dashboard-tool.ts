@@ -63,10 +63,10 @@ export class CreateDashboardTool extends BaseMondayApiTool<typeof createDashboar
       // Prepare GraphQL variables
       const variables: CreateDashboardMutationVariables = {
         name: input.name,
-        workspace_id: input.workspace_id,
+        workspace_id: input.workspace_id.toString(),
         board_ids: input.board_ids,
         kind: input.kind,
-        board_folder_id: input.board_folder_id,
+        board_folder_id: input.board_folder_id?.toString(),
       };
 
       // Execute the GraphQL mutation
