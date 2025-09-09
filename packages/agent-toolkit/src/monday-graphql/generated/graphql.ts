@@ -4728,11 +4728,11 @@ export type MutationCreate_Custom_ActivityArgs = {
 
 /** Root mutation type for the Dependencies service */
 export type MutationCreate_DashboardArgs = {
-  board_folder_id?: InputMaybe<Scalars['ID']['input']>;
-  board_ids: Array<Scalars['ID']['input']>;
+  board_folder_id?: InputMaybe<Scalars['Int']['input']>;
+  board_ids: Array<Scalars['String']['input']>;
   kind?: InputMaybe<DashboardKind>;
   name: Scalars['String']['input'];
-  workspace_id: Scalars['ID']['input'];
+  workspace_id: Scalars['Int']['input'];
 };
 
 
@@ -8547,10 +8547,10 @@ export type CreateGroupMutation = { __typename?: 'Mutation', create_group?: { __
 
 export type CreateDashboardMutationVariables = Exact<{
   name: Scalars['String']['input'];
-  workspace_id: Scalars['ID']['input'];
-  board_ids: Array<Scalars['ID']['input']> | Scalars['ID']['input'];
+  workspace_id: Scalars['Int']['input'];
+  board_ids: Array<Scalars['String']['input']> | Scalars['String']['input'];
   kind?: InputMaybe<DashboardKind>;
-  board_folder_id?: InputMaybe<Scalars['ID']['input']>;
+  board_folder_id?: InputMaybe<Scalars['Int']['input']>;
 }>;
 
 
