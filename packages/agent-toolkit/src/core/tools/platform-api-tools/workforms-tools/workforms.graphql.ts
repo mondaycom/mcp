@@ -260,7 +260,6 @@ export const updateFormSettings = gql`
   mutation updateFormSettings($formToken: String!, $settings: UpdateFormSettingsInput!) {
     update_form_settings(formToken: $formToken, settings: $settings) {
       features {
-        isInternal
         reCaptchaChallenge
         shortenedLink {
           enabled
