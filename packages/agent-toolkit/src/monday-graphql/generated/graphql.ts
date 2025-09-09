@@ -1,5 +1,3 @@
-import { Form } from "src/core/tools/platform-api-tools/workforms-tools/workforms.types"
-
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
@@ -8194,6 +8192,18 @@ export enum __TypeKind {
   NonNull = 'NON_NULL'
 }
 
+export type CreateFolderMutationVariables = Exact<{
+  workspaceId: Scalars['ID']['input'];
+  name: Scalars['String']['input'];
+  color?: InputMaybe<FolderColor>;
+  fontWeight?: InputMaybe<FolderFontWeight>;
+  customIcon?: InputMaybe<FolderCustomIcon>;
+  parentFolderId?: InputMaybe<Scalars['ID']['input']>;
+}>;
+
+
+export type CreateFolderMutation = { __typename?: 'Mutation', create_folder?: { __typename?: 'Folder', id: string } | null };
+
 export type CreateGroupMutationVariables = Exact<{
   boardId: Scalars['ID']['input'];
   groupName: Scalars['String']['input'];
@@ -8204,6 +8214,16 @@ export type CreateGroupMutationVariables = Exact<{
 
 
 export type CreateGroupMutation = { __typename?: 'Mutation', create_group?: { __typename?: 'Group', id: string, title: string } | null };
+
+export type CreateWorkspaceMutationVariables = Exact<{
+  name: Scalars['String']['input'];
+  workspaceKind: WorkspaceKind;
+  description?: InputMaybe<Scalars['String']['input']>;
+  accountProductId?: InputMaybe<Scalars['ID']['input']>;
+}>;
+
+
+export type CreateWorkspaceMutation = { __typename?: 'Mutation', create_workspace?: { __typename?: 'Workspace', id?: string | null } | null };
 
 export type CreateDashboardMutationVariables = Exact<{
   name: Scalars['String']['input'];
@@ -8329,6 +8349,28 @@ export type ListWorkspacesQueryVariables = Exact<{
 
 
 export type ListWorkspacesQuery = { __typename?: 'Query', workspaces?: Array<{ __typename?: 'Workspace', id?: string | null, name: string, description?: string | null } | null> | null };
+
+export type CreateFormMutationVariables = Exact<{
+  destination_workspace_id: Scalars['Float']['input'];
+  destination_folder_id?: InputMaybe<Scalars['Float']['input']>;
+  destination_folder_name?: InputMaybe<Scalars['String']['input']>;
+  board_kind?: InputMaybe<BoardKind>;
+  destination_name?: InputMaybe<Scalars['String']['input']>;
+  board_owner_ids?: InputMaybe<Array<Scalars['Float']['input']> | Scalars['Float']['input']>;
+  board_owner_team_ids?: InputMaybe<Array<Scalars['Float']['input']> | Scalars['Float']['input']>;
+  board_subscriber_ids?: InputMaybe<Array<Scalars['Float']['input']> | Scalars['Float']['input']>;
+  board_subscriber_teams_ids?: InputMaybe<Array<Scalars['Float']['input']> | Scalars['Float']['input']>;
+}>;
+
+
+export type CreateFormMutation = { __typename?: 'Mutation', create_form?: { __typename?: 'DehydratedFormResponse', boardId: string, token: string } | null };
+
+export type GetFormQueryVariables = Exact<{
+  formToken: Scalars['String']['input'];
+}>;
+
+
+export type GetFormQuery = { __typename?: 'Query', form?: { __typename?: 'ResponseForm', id: number, token: string, title: string, description?: string | null, active: boolean, ownerId?: number | null, type?: string | null, builtWithAI: boolean, isAnonymous: boolean, questions?: Array<{ __typename?: 'FormQuestion', id: string, type?: FormQuestionType | null, visible: boolean, title: string, description?: string | null, required: boolean, showIfRules?: any | null, options?: Array<{ __typename?: 'FormQuestionOption', label: string }> | null, settings?: { __typename?: 'FormQuestionSettings', prefixAutofilled?: boolean | null, checkedByDefault?: boolean | null, defaultCurrentDate?: boolean | null, includeTime?: boolean | null, display?: FormQuestionSelectDisplay | null, optionsOrder?: FormQuestionSelectOrderByOptions | null, labelLimitCount?: number | null, locationAutofilled?: boolean | null, limit?: number | null, skipValidation?: boolean | null, prefill?: { __typename?: 'PrefillSettings', enabled: boolean, source?: FormQuestionPrefillSources | null, lookup: string } | null, prefixPredefined?: { __typename?: 'PhonePrefixPredefined', enabled: boolean, prefix?: string | null } | null } | null }> | null, features?: { __typename?: 'FormFeatures', isInternal: boolean, reCaptchaChallenge: boolean, shortenedLink?: { __typename?: 'FormShortenedLink', enabled: boolean, url?: string | null } | null, password?: { __typename?: 'FormPassword', enabled: boolean } | null, draftSubmission?: { __typename?: 'FormDraftSubmission', enabled: boolean } | null, requireLogin?: { __typename?: 'FormRequireLogin', enabled: boolean, redirectToLogin: boolean } | null, responseLimit?: { __typename?: 'FormResponseLimit', enabled: boolean, limit?: number | null } | null, closeDate?: { __typename?: 'FormCloseDate', enabled: boolean, date?: string | null } | null, preSubmissionView?: { __typename?: 'FormPreSubmissionView', enabled: boolean, title?: string | null, description?: string | null, startButton?: { __typename?: 'FormStartButton', text?: string | null } | null } | null, afterSubmissionView?: { __typename?: 'FormAfterSubmissionView', title?: string | null, description?: string | null, allowResubmit: boolean, showSuccessImage: boolean, allowEditSubmission: boolean, allowViewSubmission: boolean, redirectAfterSubmission?: { __typename?: 'FormRedirectAfterSubmission', enabled: boolean, redirectUrl?: string | null } | null } | null, monday?: { __typename?: 'FormMonday', itemGroupId?: string | null, includeNameQuestion: boolean, includeUpdateQuestion: boolean, syncQuestionAndColumnsTitles: boolean } | null } | null, appearance?: { __typename?: 'FormAppearance', hideBranding: boolean, showProgressBar: boolean, primaryColor?: string | null, layout?: { __typename?: 'FormLayout', format?: FormFormat | null, alignment?: FormAlignment | null, direction?: FormDirection | null } | null, background?: { __typename?: 'FormBackground', type?: FormBackgrounds | null, value?: string | null } | null, text?: { __typename?: 'FormText', font?: string | null, color?: string | null, size?: FormFontSize | null } | null, logo?: { __typename?: 'FormLogo', position?: FormLogoPosition | null, url?: string | null, size?: FormLogoSize | null } | null, submitButton?: { __typename?: 'FormSubmitButton', text?: string | null } | null } | null, accessibility?: { __typename?: 'FormAccessibility', language?: string | null, logoAltText?: string | null } | null, tags?: Array<{ __typename?: 'FormTag', id: string, name: string, value?: string | null, columnId: string }> | null } | null };
 
 export type DeleteItemMutationVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -8531,27 +8573,3 @@ export type GetWorkspaceInfoQueryVariables = Exact<{
 
 
 export type GetWorkspaceInfoQuery = { __typename?: 'Query', workspaces?: Array<{ __typename?: 'Workspace', id?: string | null, name: string, description?: string | null, kind?: WorkspaceKind | null, created_at?: any | null, state?: State | null, is_default_workspace?: boolean | null, owners_subscribers?: Array<{ __typename?: 'User', id: string, name: string, email: string } | null> | null } | null> | null, boards?: Array<{ __typename?: 'Board', id: string, name: string, board_folder_id?: string | null } | null> | null, docs?: Array<{ __typename?: 'Document', id: string, name: string, doc_folder_id?: string | null } | null> | null, folders?: Array<{ __typename?: 'Folder', id: string, name: string } | null> | null };
-
-// -----------------------------
-// WorkForms (Forms) Types
-// -----------------------------
-
-export type CreateFormMutationVariables = Exact<{
-  destination_workspace_id: Scalars['Float']['input'];
-  destination_folder_id?: InputMaybe<Scalars['Float']['input']>;
-  destination_folder_name?: InputMaybe<Scalars['String']['input']>;
-  board_kind?: InputMaybe<BoardKind>;
-  destination_name?: InputMaybe<Scalars['String']['input']>;
-  board_owner_ids?: InputMaybe<Array<Scalars['Float']['input']>>;
-  board_owner_team_ids?: InputMaybe<Array<Scalars['Float']['input']>>;
-  board_subscriber_ids?: InputMaybe<Array<Scalars['Float']['input']>>;
-  board_subscriber_teams_ids?: InputMaybe<Array<Scalars['Float']['input']>>;
-}>;
-
-export type CreateFormMutation = { __typename?: 'Mutation', create_form?: { __typename?: 'CreateFormResult', boardId: string, token: string } | null };
-
-export type GetFormQueryVariables = Exact<{
-  formToken: Scalars['String']['input'];
-}>;
-
-export type GetFormQuery = { __typename?: 'Query', form?: Form & { __typename?: 'Form' } | null };
