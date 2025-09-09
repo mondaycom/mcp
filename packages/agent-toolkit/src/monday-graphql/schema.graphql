@@ -1370,6 +1370,17 @@ type Mutation {
   ): ExportMarkdownResult
 
   """
+  Updates the content of a specific article block. The block must belong to a draft article that the user has permission to edit. Cannot update blocks of published articles.
+  """
+  update_article_block(
+    """The ID of the block to update"""
+    block_id: String!
+
+    """The new content for the block"""
+    content: JSON!
+  ): ArticleBlock
+
+  """
   Update a document's name/title. Changes are applied immediately and visible to all users with access to the document.
   """
   update_doc_name(
@@ -2361,6 +2372,11 @@ type Mutation {
     - NOT_MUTED: Unmute notifications.
     """
     mute_state: BoardMuteState!
+
+    """
+    When mute_state is CUSTOM_SETTINGS, this array specifies which custom settings are enabled. Accepts IM_MENTIONED, IM_ASSIGNED, AUTOMATION_NOTIFY.
+    """
+    enabled: [CustomizableBoardSettings!]
   ): [BoardMuteSettings!]
 
   """Connect project to portfolio"""
@@ -2455,15 +2471,15 @@ type Mutation {
     product: Product
   ): InviteUsersResult
 
-  """Create a new widget based on the provided widget configuration."""
+  """Create a new widget."""
   create_widget(
     """Parent container for the widget (dashboard or board view)."""
     parent: WidgetParentInput!
 
-    """The kind of widget to create (CHART, NUMBER, BATTERY)."""
+    """The kind of widget to create (i.e CHART, NUMBER, BATTERY)."""
     kind: ExternalWidget!
 
-    """The name of the widget as it will appear in the UI."""
+    """The name of the widget."""
     name: String!
 
     """
@@ -2475,48 +2491,54 @@ type Mutation {
     WORKS ONLY IN BOARD VIEWS. Optional filter to apply to the widget data using GraphQL query syntax. Supports filtering by board columns (status, numbers, date, person, etc.) with operators like any_of, greater_than, equals, contains. Structure: { rules: [{ column_id: "status", compare_value: [1, 2], operator: "any_of" }], operator: "and" }. IMPORTANT: Person/People columns require "person-{id}" format (e.g., ["person-3"] not [3]). Status columns use raw indices [0,1,2]. Numbers use raw values [2,43]. Example - Filter by person: { operator: "and", rules: [{ column_id: "project_owner", operator: "any_of", compare_value: ["person-3"] }] }
     """
     filter: ItemsQueryGroup
-  ): WidgetModel
+  ): Widget
 
-  """Create a new dashboard and return the complete Dashboard object."""
+  """Delete an existing widget."""
+  delete_widget(
+    """The ID of the widget to delete."""
+    id: ID!
+  ): Boolean
+
+  """Create a new dashboard."""
   create_dashboard(
-    """Human-readable dashboard title (1–255 UTF-8 chars)."""
+    """Human-readable dashboard title (UTF-8 chars)."""
     name: String!
 
     """ID of the workspace that will own the dashboard."""
-    workspace_id: Int!
+    workspace_id: ID!
 
     """List of board IDs as strings (min 1 element)."""
-    board_ids: [String!]!
+    board_ids: [ID!]!
 
-    """Visibility level: `PUBLIC` or `PRIVATE` (default `PRIVATE`)."""
+    """Visibility level: `PUBLIC` or `PRIVATE`, default value is `PRIVATE`."""
     kind: DashboardKind
 
     """Folder ID within the workspace in which to place the dashboard."""
-    board_folder_id: Int
+    board_folder_id: ID
   ): Dashboard
 
-  """Update an existing dashboard and return the updated Dashboard object."""
+  """Update an existing dashboard."""
   update_dashboard(
     """The ID of the dashboard to update."""
-    id: Int!
+    id: ID!
 
     """Human-readable dashboard title (UTF-8 chars)."""
     name: String
 
     """The ID of the workspace to update the dashboard in."""
-    workspace_id: Int
+    workspace_id: ID
 
     """Visibility level: `PUBLIC` or `PRIVATE`."""
     kind: DashboardKind
 
     """Folder ID within the workspace in which to place the dashboard."""
-    board_folder_id: Int
+    board_folder_id: ID
   ): Dashboard
 
-  """Delete an existing dashboard and return true if successful."""
+  """Delete an existing dashboard."""
   delete_dashboard(
     """The ID of the dashboard to delete."""
-    id: Int!
+    id: ID!
   ): Boolean
 
   """
@@ -2673,10 +2695,10 @@ type Mutation {
   """
   create_form(
     """The workspace in which the form will be created in."""
-    destination_workspace_id: Float!
+    destination_workspace_id: ID!
 
     """The folder in which the form will be created under."""
-    destination_folder_id: Float
+    destination_folder_id: ID
 
     """The name of the folder in which the form will be created in."""
     destination_folder_name: String
@@ -2694,22 +2716,22 @@ type Mutation {
     """
     Array of user IDs who will have owner permissions on the board in which the form will create items in.
     """
-    board_owner_ids: [Float!]
+    board_owner_ids: [ID!]
 
     """
     Array of team IDs whose members will have owner permissions on the board in which the form will create items in.
     """
-    board_owner_team_ids: [Float!]
+    board_owner_team_ids: [ID!]
 
     """
     Array of user IDs who will receive notifications about board activity for the board in which the form will create items in.
     """
-    board_subscriber_ids: [Float!]
+    board_subscriber_ids: [ID!]
 
     """
     Array of team IDs whose members will receive notifications about board activity for the board in which the form will create items in.
     """
-    board_subscriber_teams_ids: [Float!]
+    board_subscriber_teams_ids: [ID!]
   ): DehydratedFormResponse
 
   """
@@ -4518,6 +4540,40 @@ input UpdateDependencyColumnInput {
 
   """Optional metadata containing dependency configuration (type and lag)"""
   metadata: MetadataInput
+}
+
+"""The content blocks that make up the article."""
+type ArticleBlock {
+  """The block's unique identifier."""
+  id: ID
+
+  """The block's content."""
+  content: JSON
+
+  """The block's creation date."""
+  created_at: String
+
+  """The block's creator"""
+  created_by: User
+
+  """
+  The unique identifier of the published article that contains this block.
+  """
+  published_article_id: ID
+
+  """
+  The block's parent block unique identifier. Will be null if the block is at the top level of the article.
+  """
+  parent_block_id: ID
+
+  """The block's position on the article."""
+  position: Float
+
+  """The block content type."""
+  type: String
+
+  """The block's last updated date."""
+  updated_at: String
 }
 
 """Text formatting attributes (bold, italic, links, colors, etc.)"""
@@ -8632,6 +8688,11 @@ type BoardMuteSettings {
 
   """Human-friendly mute state for the board and current user"""
   mute_state: BoardMuteState
+
+  """
+  List of enabled customizable settings when the board is in CUSTOM_SETTINGS mute state. Null otherwise.
+  """
+  enabled: [CustomizableBoardSettings!]
 }
 
 """
@@ -8639,7 +8700,8 @@ Represents the mute state of a board for the current user.
 
   - NOT_MUTED: The board is not muted at all (default state). This state, as well as MUTE_ALL, is set by the board owner(s) and only they can change it.
   - MUTE_ALL: All notifications for all users are muted on this board. This state, as well as NOT_MUTED, is set by the board owner(s) and only they can change it.
-  - MENTIONS_AND_ASSIGNS_ONLY: The current user will only be notified if mentioned or assigned on the board.
+  - MENTIONS_AND_ASSIGNS_ONLY: The current user will only be notified if mentioned or assigned on the board. 
+  - CUSTOM_SETTINGS: The current user will only be notified for the enabled custom settings. configurable settings: IM_MENTIONED, IM_ASSIGNED, AUTOMATION_NOTIFY 
   - CURRENT_USER_MUTE_ALL: Only the current user has all notifications muted from this board.
 """
 enum BoardMuteState {
@@ -8657,6 +8719,11 @@ enum BoardMuteState {
   The current user will only be notified if mentioned or assigned on the board
   """
   MENTIONS_AND_ASSIGNS_ONLY
+
+  """
+  The current user will only be notified for the enabled custom settings. configurable settings: IM_MENTIONED, IM_ASSIGNED, AUTOMATION_NOTIFY
+  """
+  CUSTOM_SETTINGS
 
   """Only the current user has all notifications muted from this board"""
   CURRENT_USER_MUTE_ALL
@@ -8676,6 +8743,20 @@ enum ChannelType {
   Monday
   Email
   Slack
+}
+
+"""
+These settings can be customized when the board is in CUSTOM_SETTINGS mute state. Configurable settings: IM_MENTIONED, IM_ASSIGNED, AUTOMATION_NOTIFY
+"""
+enum CustomizableBoardSettings {
+  """Notify me when I am mentioned on this board"""
+  IM_MENTIONED
+
+  """Notify me when I am assigned on this board"""
+  IM_ASSIGNED
+
+  """Notify me on automation notify step on this board"""
+  AUTOMATION_NOTIFY
 }
 
 """Represents notification settings configuration"""
@@ -8872,10 +8953,14 @@ input AggregateSelectElementInput {
   """Type of the selected element"""
   type: AggregateSelectElementType!
 
-  """Column to select. Required if type is COLUMN"""
+  """
+  Column to select. Required if type is COLUMN. If selecting a column, the element must have a matching group by element with the same column_id or alias, if present.
+  """
   column: AggregateSelectColumnInput
 
-  """Function to select. Required if type is FUNCTION"""
+  """
+  Function to select. Required if type is FUNCTION. If selecting a transformative function, the element must have a matching group by element with the same alias. If selecting an aggregative function, the select element must not have a matching group by element.
+  """
   function: AggregateSelectFunctionInput
 
   """Alias for the selected element"""
@@ -9489,22 +9574,22 @@ input UserUpdateInput {
 
 """Aggregates data from one or more boards."""
 type Dashboard {
-  """Stable unique identifier of the dashboard."""
+  """Unique identifier of the dashboard."""
   id: ID
 
-  """Dashboard title (1–255 UTF-8 chars)."""
+  """Dashboard title (UTF-8 chars)."""
   name: String
 
   """ID of the workspace that owns this dashboard."""
-  workspace_id: Int
+  workspace_id: ID
 
   """Visibility level: `PUBLIC` (default) or `PRIVATE`."""
   kind: DashboardKind
 
   """
-  Folder ID that groups the dashboard inside its workspace (null = workspace root).
+  Folder ID that groups elements inside the workspace (null = workspace root).
   """
-  board_folder_id: Int
+  board_folder_id: ID
 }
 
 """
@@ -9533,18 +9618,18 @@ enum ExternalWidget {
   BATTERY
 }
 
-"""UI widget placed on a dashboard, board, or doc."""
-type WidgetModel {
-  """Stable unique identifier of this widget."""
-  id: Int
+"""Data visualization object."""
+type Widget {
+  """Unique identifier of this widget."""
+  id: ID
 
-  """Parent container where the widget is placed (dashboard or board view)."""
+  """Parent container where the widget is placed."""
   parent: WidgetParentOutput
 
   """The type of widget (CHART, NUMBER, BATTERY)."""
   kind: ExternalWidget
 
-  """Widget label shown in the UI (1–255 UTF-8 chars)."""
+  """Widget label (UTF-8 chars)."""
   name: String
 }
 
@@ -9553,8 +9638,8 @@ input WidgetParentInput {
   """The type of parent container (DASHBOARD or BOARD_VIEW)"""
   kind: WidgetParentKind!
 
-  """The ID of the parent container (dashboard ID or board view ID)"""
-  id: Int!
+  """The ID of the parent container."""
+  id: ID!
 }
 
 """The kind of parent container where the widget will be placed."""
@@ -9573,8 +9658,8 @@ type WidgetParentOutput {
   """The type of parent container (DASHBOARD or BOARD_VIEW)"""
   kind: WidgetParentKind
 
-  """The ID of the parent container (dashboard ID or board view ID)"""
-  id: Int
+  """The ID of the parent container."""
+  id: ID
 }
 
 """Information about a widget type and its JSON schema"""
@@ -9996,9 +10081,6 @@ input FormLogoInput {
   """String specifying logo placement ("top", "bottom", "header")."""
   position: FormLogoPosition
 
-  """URL pointing to the logo image file for display on the form."""
-  url: String
-
   """
   String specifying logo size ("small", "medium", "large") for the logo that appears on the header of the form.
   """
@@ -10082,7 +10164,7 @@ input FormMondayInput {
 
 type FormPassword {
   """
-  Boolean enabling password protection. When true, users must enter a password to access the form.
+  Boolean disabling password protection. Can only be updated to false, to enable password protection, use the set_form_password mutation instead.
   """
   enabled: Boolean!
 }
@@ -10092,7 +10174,7 @@ Password configuration for the form. Only setting enabled to false is supported.
 """
 input FormPasswordInput {
   """
-  Boolean enabling password protection. When true, users must enter a password to access the form.
+  Boolean disabling password protection. Can only be updated to false, to enable password protection, use the set_form_password mutation instead.
   """
   enabled: Boolean
 }
@@ -10287,6 +10369,11 @@ input FormQuestionSettingsInput {
   Single/Multi Select questions only: Determines the ordering of selection options.
   """
   optionsOrder: FormQuestionSelectOrderByOptions
+
+  """
+  Multi Select questions only: Limits the number of options a user can select.
+  """
+  labelLimitCount: Int
 
   """
   Location questions only: Automatically detect and fill the user's current location using browser geolocation services, requiring user permission.
@@ -10624,7 +10711,7 @@ input UpdateFormInput {
   description: String
 
   """
-  Ordered array of question IDs for reordering. Must include all existing question IDs.
+  Ordered array of dehydrated questions, object only including each question ID, for reordering. Must include all existing question IDs.
   """
   questions: [QuestionOrderInput!]
 }

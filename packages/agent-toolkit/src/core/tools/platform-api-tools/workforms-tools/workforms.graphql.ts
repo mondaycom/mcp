@@ -176,15 +176,15 @@ const FormTagFragment = gql`
 // Create a new monday form (API version 2025-10)
 export const createForm = gql`
   mutation createForm(
-    $destination_workspace_id: Float!
-    $destination_folder_id: Float
+    $destination_workspace_id: ID!
+    $destination_folder_id: ID
     $destination_folder_name: String
     $board_kind: BoardKind
     $destination_name: String
-    $board_owner_ids: [Float!]
-    $board_owner_team_ids: [Float!]
-    $board_subscriber_ids: [Float!]
-    $board_subscriber_teams_ids: [Float!]
+    $board_owner_ids: [ID!]
+    $board_owner_team_ids: [ID!]
+    $board_subscriber_ids: [ID!]
+    $board_subscriber_teams_ids: [ID!]
   ) {
     create_form(
       destination_workspace_id: $destination_workspace_id
