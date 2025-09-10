@@ -115,7 +115,7 @@ export class UpdateFormToolHelpers {
 
     if (!input.tag.name) {
       return {
-        content: 'Tag name is are required for the action "createTag" in the update form tool.',
+        content: 'Tag name is required for the action "createTag" in the update form tool.',
       };
     }
 
