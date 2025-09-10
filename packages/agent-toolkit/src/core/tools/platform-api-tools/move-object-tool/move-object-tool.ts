@@ -46,7 +46,7 @@ export class MoveObjectTool extends BaseMondayApiTool<MoveObjectToolInput> {
   });
 
   getDescription(): string {
-    return 'Move a folder, board, or overview in monday.com. Use `position` for relative placement, `parentFolderId` for folder changes, `workspaceId` for workspace moves, and `accountProductId` for account product changes.';
+    return 'Move a folder, board, or overview in monday.com. Use `position` for relative placement based on another object, `parentFolderId` for folder changes, `workspaceId` for workspace moves, and `accountProductId` for account product changes.';
   }
 
   getInputSchema(): MoveObjectToolInput {
