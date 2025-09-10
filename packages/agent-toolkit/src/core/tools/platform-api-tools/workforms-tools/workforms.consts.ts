@@ -49,8 +49,9 @@ export const GraphQLDescriptions = {
       input: 'Complete form configuration object containing properties to create or update.',
       questions:
         'Ordered array of dehydrated questions, object only including each question ID, for reordering. Must include all existing question IDs. Required if the update action is updateQuestionOrder.',
-      questionId: 'The unique identifier for the question. Used to target specific questions within a form.',
-      tag: 'The tag data to create, update or delete. If deleting a tag, only provide the id of the tag to delete. If creating a tag, provide the name and value, the id and columnId are auto generated. If updating a tag, provide the id and new value, name and columnId are not chaneable.',
+      questionId:
+        'The unique identifier for the question. Used to target specific questions within a form. Required when deleting or updating a question.',
+      tag: 'The tag data to create, update or delete. If deleting a tag, only provide the id of the tag to delete. If creating a tag, provide the name and value, the id and columnId are auto generated. If updating a tag, provide the id and new value, name and columnId are not changeable.',
       form: {
         describe:
           'The form data to update. Required if updating the appearance, accessibility, features, question order, or form header.',
@@ -92,9 +93,11 @@ export const GraphQLDescriptions = {
     },
     properties: {
       features:
-        'Object containing form features including but not limited to password protection, response limits, login requirements, etc.',
-      appearance: 'Object containing visual styling including colors, layout, fonts, and branding elements.',
-      accessibility: 'Object containing accessibility options such as language, alt text, etc.',
+        'Object containing form features including but not limited to password protection, response limits, login requirements, etc. Required when updating the features of the form.',
+      appearance:
+        'Object containing visual styling including colors, layout, fonts, and branding elements. Required when updating the appearance of the form.',
+      accessibility:
+        'Object containing accessibility options such as language, alt text, etc. Required when updating the accessibility of the form.',
       isInternal: 'Boolean indicating if the form is restricted to internal users only.',
       reCaptchaChallenge: 'Boolean enabling reCAPTCHA verification to prevent spam submissions.',
       password: 'Object containing password protection configuration for the form.',
