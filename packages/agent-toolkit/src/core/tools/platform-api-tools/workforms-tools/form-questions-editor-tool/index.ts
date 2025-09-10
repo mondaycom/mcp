@@ -1,4 +1,3 @@
-// GraphQL imports are now handled by FormQuestionsEditorToolHelpers
 import { ToolInputType, ToolOutputType, ToolType } from '../../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../../base-monday-api-tool';
 import { FormQuestionActions } from '../workforms.types';
