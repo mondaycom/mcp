@@ -11,3 +11,15 @@ export const updateBoardHierarchy = gql`
     }
   }
 `;
+
+export const updateOverviewHierarchy = gql`
+  mutation updateOverviewHierarchy($overviewId: ID!, $attributes: UpdateOverviewHierarchyAttributesInput!) {
+    update_overview_hierarchy(overview_id: $overviewId, attributes: $attributes) {
+      success
+      message
+      overview {
+        id
+      }
+    }
+  }
+`;

@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { updateFolder } from '../update-folder-tool/update-folder-tool.graphql';
-import { updateBoardHierarchy } from './update-board-hierarchy.graphql';
-import { updateOverviewHierarchy } from './update-overview-hierarchy.graphql';
+import { updateBoardHierarchy, updateOverviewHierarchy } from './move-object-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { ObjectType, UpdateOverviewHierarchyMutation } from 'src/monday-graphql/generated/graphql';
@@ -17,10 +16,21 @@ export const moveObjectToolSchema = {
       is_after: z.boolean().optional().describe('Whether to position the object after the object'),
     })
     .optional()
-    .describe('The new position of the object'),
-  parentFolderId: z.string().optional().describe('The ID of the new parent folder'),
-  workspaceId: z.string().optional().describe('The ID of the workspace containing the object'),
-  accountProductId: z.string().optional().describe('The ID of the account product containing the object'),
+    .describe('The new position of the object. Required if changing the position based on another object.'),
+  parentFolderId: z
+    .string()
+    .optional()
+    .describe('The ID of the new parent folder. Required if moving to a different folder.'),
+  workspaceId: z
+    .string()
+    .optional()
+    .describe('The ID of the workspace containing the object. Required if moving to a different workspace.'),
+  accountProductId: z
+    .string()
+    .optional()
+    .describe(
+      'The ID of the account product containing the object. Required if moving to a different account product.',
+    ),
 };
 
 export type MoveObjectToolInput = typeof moveObjectToolSchema;
@@ -36,7 +46,7 @@ export class MoveObjectTool extends BaseMondayApiTool<MoveObjectToolInput> {
   });
 
   getDescription(): string {
-    return 'Move an object (folder, board, overview) in monday.com';
+    return 'Move a folder, board, or overview in monday.com. Use `position` for relative placement, `parentFolderId` for folder changes, `workspaceId` for workspace moves, and `accountProductId` for account product changes.';
   }
 
   getInputSchema(): MoveObjectToolInput {
