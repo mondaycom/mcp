@@ -12,7 +12,7 @@ export const createWorkspaceToolSchema = {
   name: z.string().describe('The name of the new workspace to be created'),
   workspaceKind: z.nativeEnum(WorkspaceKind).describe('The kind of workspace to create'),
   description: z.string().optional().describe('The description of the new workspace'),
-  accountProductId: z.number().optional().describe('The account product ID associated with the workspace'),
+  accountProductId: z.string().optional().describe('The account product ID associated with the workspace'),
 };
 
 export type CreateWorkspaceToolInput = typeof createWorkspaceToolSchema;
@@ -40,7 +40,7 @@ export class CreateWorkspaceTool extends BaseMondayApiTool<CreateWorkspaceToolIn
       name: input.name,
       workspaceKind: input.workspaceKind,
       description: input.description,
-      accountProductId: input.accountProductId?.toString(),
+      accountProductId: input.accountProductId,
     };
 
     const res = await this.mondayApi.request<CreateWorkspaceMutation>(createWorkspace, variables);
