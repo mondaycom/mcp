@@ -18,13 +18,15 @@ export class UpdateFormTool extends BaseMondayApiTool<typeof updateFormToolSchem
 
   getDescription(): string {
     return `Update a monday.com form. Handles the following form update actions that can only be done one at a time using the correct "action" input: 
-    - update form's feature settings,
-    - update form's appearance settings
-    - update form's accessibility settings
-    - update form's title
-    - update form's description
-    - update form's question order
-    - update form's list of form tags
+    - update form's feature settings with the action "updateFeatures",
+    - update form's appearance settings with the action "updateAppearance",
+    - update form's accessibility settings with the action "updateAccessibility",
+    - update form's title with the action "updateFormHeader",
+    - update form's description with the action "updateFormHeader",
+    - update form's question order with the action "updateQuestionOrder",
+    - create a new form tag with the action "createTag",
+    - delete a form tag with the action "deleteTag",
+    - update a form tag with the action "updateTag",
     - set or update the form's password with the action "setFormPassword"
     - shorten form's url with the action "shortenFormUrl"
     - deactivate form with the action "deactivateForm"
