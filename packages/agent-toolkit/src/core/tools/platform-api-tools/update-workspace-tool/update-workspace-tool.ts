@@ -5,7 +5,7 @@ import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-ap
 import { WorkspaceKind } from 'src/monday-graphql/generated/graphql';
 
 export const updateWorkspaceToolSchema = {
-  id: z.number().describe('The ID of the workspace to update'),
+  id: z.string().describe('The ID of the workspace to update'),
   attributes: z
     .object({
       accountProductId: z.number().optional(),
@@ -25,7 +25,7 @@ export class UpdateWorkspaceTool extends BaseMondayApiTool<UpdateWorkspaceToolIn
     title: 'Update Workspace',
     readOnlyHint: false,
     destructiveHint: false,
-    idempotentHint: false,
+    idempotentHint: true,
   });
 
   getDescription(): string {
@@ -38,7 +38,7 @@ export class UpdateWorkspaceTool extends BaseMondayApiTool<UpdateWorkspaceToolIn
 
   protected async executeInternal(input: ToolInputType<UpdateWorkspaceToolInput>): Promise<ToolOutputType<never>> {
     const variables = {
-      id: input.id.toString(),
+      id: input.id,
       attributes: input.attributes,
     };
 

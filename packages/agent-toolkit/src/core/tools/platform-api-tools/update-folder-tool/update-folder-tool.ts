@@ -5,14 +5,14 @@ import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-ap
 import { FolderColor, FolderFontWeight, FolderCustomIcon, ObjectType } from 'src/monday-graphql/generated/graphql';
 
 export const updateFolderToolSchema = {
-  folderId: z.number().describe('The ID of the folder to update'),
+  folderId: z.string().describe('The ID of the folder to update'),
   name: z.string().optional().describe('The new name of the folder'),
   color: z.nativeEnum(FolderColor).optional().describe('The new color of the folder'),
   fontWeight: z.nativeEnum(FolderFontWeight).optional().describe('The new font weight of the folder'),
   customIcon: z.nativeEnum(FolderCustomIcon).optional().describe('The new custom icon of the folder'),
-  parentFolderId: z.number().optional().describe('The ID of the new parent folder'),
-  workspaceId: z.number().optional().describe('The ID of the workspace containing the folder'),
-  accountProductId: z.number().optional().describe('The account product ID associated with the folder'),
+  parentFolderId: z.string().optional().describe('The ID of the new parent folder'),
+  workspaceId: z.string().optional().describe('The ID of the workspace containing the folder'),
+  accountProductId: z.string().optional().describe('The account product ID associated with the folder'),
   position: z
     .object({
       object_id: z.string().describe('The ID of the object to position the folder relative to'),
@@ -32,7 +32,7 @@ export class UpdateFolderTool extends BaseMondayApiTool<UpdateFolderToolInput> {
     title: 'Update Folder',
     readOnlyHint: false,
     destructiveHint: false,
-    idempotentHint: false,
+    idempotentHint: true,
   });
 
   getDescription(): string {
@@ -45,14 +45,14 @@ export class UpdateFolderTool extends BaseMondayApiTool<UpdateFolderToolInput> {
 
   protected async executeInternal(input: ToolInputType<UpdateFolderToolInput>): Promise<ToolOutputType<never>> {
     const variables = {
-      folderId: input.folderId.toString(),
+      folderId: input.folderId,
       name: input.name,
       color: input.color,
       fontWeight: input.fontWeight,
       customIcon: input.customIcon,
-      parentFolderId: input.parentFolderId?.toString(),
-      workspaceId: input.workspaceId?.toString(),
-      accountProductId: input.accountProductId?.toString(),
+      parentFolderId: input.parentFolderId,
+      workspaceId: input.workspaceId,
+      accountProductId: input.accountProductId,
       position: input.position,
     };
 
