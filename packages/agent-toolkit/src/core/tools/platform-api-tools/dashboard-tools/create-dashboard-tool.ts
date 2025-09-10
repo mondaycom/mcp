@@ -14,9 +14,7 @@ export const createDashboardToolSchema = {
     .min(1, 'Dashboard name is required')
     .describe('Human-readable dashboard title (UTF-8 chars)'),
   workspace_id: z
-    .number()
-    .int('Workspace ID must be an integer')
-    .positive('Workspace ID must be positive')
+    .string()
     .describe('ID of the workspace that will own the dashboard'),
   board_ids: z
     .array(z.string())
@@ -25,9 +23,7 @@ export const createDashboardToolSchema = {
     .describe('List of board IDs as strings (min 1 element)'),
   kind: z.nativeEnum(DashboardKind).default(DashboardKind.Public).describe('Visibility level: PUBLIC or PRIVATE'),
   board_folder_id: z
-    .number()
-    .int('Board folder ID must be an integer')
-    .positive('Board folder ID must be positive')
+    .string()
     .optional()
     .describe('Optional folder ID within workspace to place this dashboard (if not provided, dashboard will be placed in workspace root)'),
 };

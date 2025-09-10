@@ -227,7 +227,7 @@ type Query {
   get_view_schema_by_type(
     """
     Specifies which view type to retrieve the schema for. Valid values include
-               "DashboardBoardView", "TableBoardView", "FormBoardView", "AppBoardView", etc. Each type has different available properties and validation rules.
+               "DASHBOARD", "TABLE", "FORM", "APP", etc. Each type has different available properties and validation rules.
     """
     type: ViewKind!
 
@@ -301,6 +301,9 @@ type Query {
   timeline(
     """The id of the item"""
     id: ID!
+
+    """Whether to skip connected items"""
+    skipConnectedItems: Boolean
   ): TimelineResponse
 
   """Get managed column data."""
@@ -337,7 +340,7 @@ type Query {
   ): BoardGraphExport
 
   """Get all personal list items by list ID"""
-  favorites: [HierarchyObjectItem!]
+  favorites: [GraphqlHierarchyObjectItem!]
   marketplace_app_discounts(
     """The id of an app"""
     app_id: ID!
@@ -549,6 +552,9 @@ type Query {
     """
     cursor: String
 
+    """The hierarchy config to use for the query filters."""
+    hierarchy_scope_config: String
+
     """
     The maximum number of items to fetch in a single request. Use this to
     control the size of the result set and manage pagination. Maximum: 500.
@@ -749,13 +755,13 @@ type Mutation {
     name: String
 
     """User ID to filter by"""
-    filter_user_id: Int
+    filter_user_id: ID
 
     """Team ID to filter by"""
-    filter_team_id: Int
+    filter_team_id: ID
 
     """The rule filters to apply to the board view"""
-    filters: ItemsQueryGroup
+    filter: ItemsQueryGroup
 
     """The sort order to apply to the board view"""
     sort: [ItemsQueryOrderBy!]
@@ -779,13 +785,13 @@ type Mutation {
     name: String
 
     """User ID to filter by"""
-    filter_user_id: Int
+    filter_user_id: ID
 
     """Team ID to filter by"""
-    filter_team_id: Int
+    filter_team_id: ID
 
     """The rule filters to apply to the board view"""
-    filters: ItemsQueryGroup
+    filter: ItemsQueryGroup
 
     """The sort order to apply to the board view"""
     sort: [ItemsQueryOrderBy!]
@@ -814,13 +820,13 @@ type Mutation {
     name: String
 
     """User ID to filter by"""
-    filter_user_id: Int
+    filter_user_id: ID
 
     """Team ID to filter by"""
-    filter_team_id: Int
+    filter_team_id: ID
 
     """The rule filters to apply to the board view"""
-    filters: ItemsQueryGroup
+    filter: ItemsQueryGroup
 
     """The sort order to apply to the board view"""
     sort: [ItemsQueryOrderBy!]
@@ -838,13 +844,13 @@ type Mutation {
     name: String
 
     """User ID to filter by"""
-    filter_user_id: Int
+    filter_user_id: ID
 
     """Team ID to filter by"""
-    filter_team_id: Int
+    filter_team_id: ID
 
     """The rule filters to apply to the board view"""
-    filters: ItemsQueryGroup
+    filter: ItemsQueryGroup
 
     """The sort order to apply to the board view"""
     sort: [ItemsQueryOrderBy!]
@@ -1065,7 +1071,7 @@ type Mutation {
     """The unique identifier of the board containing the column to update."""
     board_id: ID!
 
-    """The unique identifier of the status column to update."""
+    """The unique identifier of the column to update."""
     id: String!
 
     """
@@ -1084,6 +1090,11 @@ type Mutation {
     revision: String!
 
     """
+    Status column capabilities configuration. If not provided, existing capabilities remain unchanged.
+    """
+    capabilities: StatusColumnCapabilitiesInput
+
+    """
     Configuration object for status column settings including available status labels, their colors, positions, and other display properties.
     """
     settings: UpdateStatusColumnSettingsInput
@@ -1096,7 +1107,7 @@ type Mutation {
     """The unique identifier of the board containing the column to update."""
     board_id: ID!
 
-    """The unique identifier of the status column to update."""
+    """The unique identifier of the column to update."""
     id: String!
 
     """
@@ -1127,7 +1138,7 @@ type Mutation {
     """The unique identifier of the board containing the column to update."""
     board_id: ID!
 
-    """The unique identifier of the status column to update."""
+    """The unique identifier of the column to update."""
     id: String!
 
     """
@@ -1144,6 +1155,11 @@ type Mutation {
     The revision of the column, as returned by the column query. Used for optimistic concurrency control.
     """
     revision: String!
+
+    """
+    Column capabilities configuration. If not provided, existing capabilities remain unchanged.
+    """
+    capabilities: ColumnCapabilitiesInput
 
     """
     Type-specific configuration object containing column settings. The structure varies by column type - use get_column_type_schema query to see available properties. Examples: status column labels, dropdown options, number formatting rules, date display preferences.
@@ -1178,6 +1194,11 @@ type Mutation {
     The column's unique identifier after which the new column will be inserted.
     """
     after_column_id: ID
+
+    """
+    Status column capabilities configuration. If not provided, default capabilities will be created.
+    """
+    capabilities: StatusColumnCapabilitiesInput
 
     """
     Configuration object for status column settings including available status labels, their colors, positions, and other display properties.
@@ -1238,6 +1259,11 @@ type Mutation {
     after_column_id: ID
 
     """
+    Column capabilities configuration. If not provided, default capabilities will be created.
+    """
+    capabilities: ColumnCapabilitiesInput
+
+    """
     Type-specific configuration object containing column defaults and settings. Accepts both JSON objects (recommended) and JSON strings (for backward compatibility). For JSON objects, use get_column_type_schema query to see available properties and validation rules. Examples: status column labels, dropdown options, number formatting rules, date display preferences.
     """
     defaults: JSON
@@ -1268,6 +1294,20 @@ type Mutation {
 
   """Update the dependency column for a specific pulse"""
   update_dependency_column(boardId: String!, pulseId: String!, value: DependencyValueInput!, columnId: String!): JSON!
+
+  """
+  Adds markdown content to an existing document by converting it into document blocks. Use this to append content to the end of a document or insert content after a specific block. The markdown will be parsed and converted into the appropriate document block types (text, headers, lists, etc.). Returns the IDs of the newly created blocks on success.
+  """
+  add_content_to_doc_from_markdown(
+    """The document's unique identifier."""
+    docId: ID!
+
+    """The markdown content to convert into document blocks."""
+    markdown: String!
+
+    """Optional block ID to insert the markdown content after."""
+    afterBlockId: String
+  ): DocBlocksFromMarkdownResult
 
   """
   Creates multiple document blocks in a single operation for efficient content creation. Use this when adding substantial content like importing documents, creating structured content (articles, reports, guides), or building complex document sections. Supports all block types including text paragraphs, headers, bullet/numbered lists, images, tables, code blocks, and more. Much faster than creating blocks individually. Perfect for content migration, template creation, or generating documents from external data. Maximum 25 blocks per request.
@@ -1315,33 +1355,6 @@ type Mutation {
   ): JSON
 
   """
-  Update a document's name/title. Changes are applied immediately and visible to all users with access to the document.
-  """
-  update_doc_name(
-    """The document's unique identifier. Use document ID from API responses"""
-    docId: ID!
-
-    """
-    The new name/title for the document. Should be descriptive and help users identify the document purpose.
-    """
-    name: String!
-  ): JSON
-
-  """
-  Adds markdown content to an existing document by converting it into document blocks. Use this to append content to the end of a document or insert content after a specific block. The markdown will be parsed and converted into the appropriate document block types (text, headers, lists, etc.). Returns the IDs of the newly created blocks on success.
-  """
-  add_content_to_doc_from_markdown(
-    """The document's unique identifier."""
-    docId: ID!
-
-    """The markdown content to convert into document blocks."""
-    markdown: String!
-
-    """Optional block ID to insert the markdown content after."""
-    afterBlockId: String
-  ): DocBlocksFromMarkdownResult
-
-  """
   Converts document content into standard markdown format for external use, backup, or processing. Exports the entire document by default, or specific blocks if block IDs are provided. Use this to extract content for integration with other systems, create backups, generate reports, or process document content with external tools. The output is clean, portable markdown that preserves formatting and structure.
   """
   export_markdown_from_doc(
@@ -1355,6 +1368,30 @@ type Mutation {
     """
     blockIds: [String!]
   ): ExportMarkdownResult
+
+  """
+  Updates the content of a specific article block. The block must belong to a draft article that the user has permission to edit. Cannot update blocks of published articles.
+  """
+  update_article_block(
+    """The ID of the block to update"""
+    block_id: String!
+
+    """The new content for the block"""
+    content: JSON!
+  ): ArticleBlock
+
+  """
+  Update a document's name/title. Changes are applied immediately and visible to all users with access to the document.
+  """
+  update_doc_name(
+    """The document's unique identifier. Use document ID from API responses"""
+    docId: ID!
+
+    """
+    The new name/title for the document. Should be descriptive and help users identify the document purpose.
+    """
+    name: String!
+  ): JSON
 
   """Add workspace object to favorites"""
   create_favorite(
@@ -1404,6 +1441,38 @@ type Mutation {
     The ID of the app feature to delete. Can be either a numeric ID or a composite slug in format {app_slug}::{feature_slug}.
     """
     id: ID!
+  ): AppFeatureType
+
+  """Create a new app feature."""
+  create_app_feature(
+    """
+    The name of the app feature. If not provided, a default name will be used.
+    """
+    name: String
+
+    """The unique slug identifier for the app feature."""
+    slug: String!
+
+    """The ID of the app to create the app feature for."""
+    app_id: ID!
+
+    """
+    The ID of the app version to create the app feature for. If not provided, the latest draft version will be used.
+    """
+    app_version_id: ID
+
+    """The type of the app feature to create."""
+    type: AppFeatureTypeE!
+
+    """
+    The app feature data to update. This structure is dynamic and depends on the different app feature types.
+    """
+    data: JSON
+
+    """
+    The deployment data for the app feature. https://developer.monday.com/apps/docs/deploy-your-app
+    """
+    deployment: AppFeatureReleaseInput
   ): AppFeatureType
 
   """Add a file to a column value."""
@@ -2191,6 +2260,15 @@ type Mutation {
     new_value: String!
   ): Group
 
+  """Update the position of a dashboard."""
+  update_overview_hierarchy(
+    """The position and location attributes to update"""
+    attributes: UpdateOverviewHierarchyAttributesInput!
+
+    """The overview's unique identifier"""
+    overview_id: ID!
+  ): UpdateOverviewHierarchy
+
   """Update an existing workspace."""
   update_workspace(
     """The attributes of the workspace to update"""
@@ -2248,6 +2326,11 @@ type Mutation {
     template_id: Int!
   ): Template
 
+  """
+  Convert an existing monday.com board into a project with enhanced project management capabilities. This mutation transforms a regular board by applying project-specific features and configurations through column mappings that define how existing board columns should be interpreted in the project context. The conversion process is asynchronous and returns a process_id for tracking completion. Optionally accepts a callback URL for notification when the conversion completes. Use this when you have an existing board with data that needs to be upgraded to a full project with advanced project management features like Resource Planner integration.
+  """
+  convert_board_to_project(input: ConvertBoardToProjectInput!): ConvertBoardToProjectResult
+
   """Updates a notification setting's enabled status."""
   update_notification_setting(
     """
@@ -2289,6 +2372,11 @@ type Mutation {
     - NOT_MUTED: Unmute notifications.
     """
     mute_state: BoardMuteState!
+
+    """
+    When mute_state is CUSTOM_SETTINGS, this array specifies which custom settings are enabled. Accepts IM_MENTIONED, IM_ASSIGNED, AUTOMATION_NOTIFY.
+    """
+    enabled: [CustomizableBoardSettings!]
   ): [BoardMuteSettings!]
 
   """Connect project to portfolio"""
@@ -2383,40 +2471,75 @@ type Mutation {
     product: Product
   ): InviteUsersResult
 
-  """Create a new widget based on the provided widget configuration."""
+  """Create a new widget."""
   create_widget(
     """Parent container for the widget (dashboard or board view)."""
     parent: WidgetParentInput!
 
-    """The kind of widget to create (CHART, NUMBER, BATTERY)."""
+    """The kind of widget to create (i.e CHART, NUMBER, BATTERY)."""
     kind: ExternalWidget!
 
-    """The name of the widget as it will appear in the UI."""
+    """The name of the widget."""
     name: String!
 
     """
     Widget-specific settings as JSON. Each widget type has its own JSON schema that defines the required and optional fields. The settings object must conform to the JSON schema for the specific widget type being created. To discover available widget types and their schemas, use the all_widgets_schema query which returns the complete JSON schema for each supported widget type.
     """
     settings: JSON!
-  ): WidgetModel
 
-  """Create a new dashboard and return the complete Dashboard object."""
+    """
+    WORKS ONLY IN BOARD VIEWS. Optional filter to apply to the widget data using GraphQL query syntax. Supports filtering by board columns (status, numbers, date, person, etc.) with operators like any_of, greater_than, equals, contains. Structure: { rules: [{ column_id: "status", compare_value: [1, 2], operator: "any_of" }], operator: "and" }. IMPORTANT: Person/People columns require "person-{id}" format (e.g., ["person-3"] not [3]). Status columns use raw indices [0,1,2]. Numbers use raw values [2,43]. Example - Filter by person: { operator: "and", rules: [{ column_id: "project_owner", operator: "any_of", compare_value: ["person-3"] }] }
+    """
+    filter: ItemsQueryGroup
+  ): Widget
+
+  """Delete an existing widget."""
+  delete_widget(
+    """The ID of the widget to delete."""
+    id: ID!
+  ): Boolean
+
+  """Create a new dashboard."""
   create_dashboard(
-    """Human-readable dashboard title (1–255 UTF-8 chars)."""
+    """Human-readable dashboard title (UTF-8 chars)."""
     name: String!
 
     """ID of the workspace that will own the dashboard."""
-    workspace_id: Int!
+    workspace_id: ID!
 
     """List of board IDs as strings (min 1 element)."""
-    board_ids: [String!]!
+    board_ids: [ID!]!
 
-    """Visibility level: `PUBLIC` or `PRIVATE` (default `PRIVATE`)."""
+    """Visibility level: `PUBLIC` or `PRIVATE`, default value is `PRIVATE`."""
     kind: DashboardKind
 
     """Folder ID within the workspace in which to place the dashboard."""
-    board_folder_id: Int
+    board_folder_id: ID
   ): Dashboard
+
+  """Update an existing dashboard."""
+  update_dashboard(
+    """The ID of the dashboard to update."""
+    id: ID!
+
+    """Human-readable dashboard title (UTF-8 chars)."""
+    name: String
+
+    """The ID of the workspace to update the dashboard in."""
+    workspace_id: ID
+
+    """Visibility level: `PUBLIC` or `PRIVATE`."""
+    kind: DashboardKind
+
+    """Folder ID within the workspace in which to place the dashboard."""
+    board_folder_id: ID
+  ): Dashboard
+
+  """Delete an existing dashboard."""
+  delete_dashboard(
+    """The ID of the dashboard to delete."""
+    id: ID!
+  ): Boolean
 
   """
   Update form properties including title, description, or question order.
@@ -2570,7 +2693,46 @@ type Mutation {
   """
   Create a new form with specified configuration. Returns the created form with its unique token.
   """
-  create_form(destination_workspace_id: Float, destination_folder_id: Float, destination_folder_name: String, board_kind: BoardKind, destination_name: String, skip_target_folder_creation: Boolean, entity_names_mapping: String, board_owner_ids: [Float!], board_owner_team_ids: [Float!], board_subscriber_ids: [Float!], board_subscriber_teams_ids: [Float!]): DehydratedFormResponse
+  create_form(
+    """The workspace in which the form will be created in."""
+    destination_workspace_id: ID!
+
+    """The folder in which the form will be created under."""
+    destination_folder_id: ID
+
+    """The name of the folder in which the form will be created in."""
+    destination_folder_name: String
+
+    """
+    The board kind to create for the board in which the form will create items in.
+    """
+    board_kind: BoardKind
+
+    """
+    The name of the board that will be created to store the form responses in.
+    """
+    destination_name: String
+
+    """
+    Array of user IDs who will have owner permissions on the board in which the form will create items in.
+    """
+    board_owner_ids: [ID!]
+
+    """
+    Array of team IDs whose members will have owner permissions on the board in which the form will create items in.
+    """
+    board_owner_team_ids: [ID!]
+
+    """
+    Array of user IDs who will receive notifications about board activity for the board in which the form will create items in.
+    """
+    board_subscriber_ids: [ID!]
+
+    """
+    Array of team IDs whose members will receive notifications about board activity for the board in which the form will create items in.
+    """
+    board_subscriber_teams_ids: [ID!]
+  ): DehydratedFormResponse
 
   """
   Set a password on a form to restrict access. This will enable password protection for the form.
@@ -3126,6 +3288,11 @@ type Board {
 
     """A list of column types."""
     types: [ColumnType!]
+
+    """
+    A list of column capabilities to filter by. If unspecified, only columns with no capabilities will be returned.
+    """
+    capabilities: [ColumnCapability!]
   ): [Column]
 
   """The user's permission level for this board (view / edit)."""
@@ -3206,6 +3373,9 @@ type Board {
     resume fetching items. Use this to paginate through large result sets.
     """
     cursor: String
+
+    """The hierarchy config to use for the query filters."""
+    hierarchy_scope_config: String
 
     """
     The maximum number of items to fetch in a single request. Use this to
@@ -3389,7 +3559,7 @@ input GroupBySortSettingsInput {
   type: String
 }
 
-"""The direction to order the items by"""
+"""Sort direction"""
 enum ItemsOrderByDirection {
   """Ascending order"""
   asc
@@ -3406,11 +3576,11 @@ input ItemsQueryGroup {
   """A list of rule groups"""
   groups: [ItemsQueryGroup!]
 
-  """The operator to use for the query rules or rule groups"""
+  """The operator to use for the query rules or rule groups. Default: AND"""
   operator: ItemsQueryOperator = and
 }
 
-"""The condition between the query rules"""
+"""Logical operator"""
 enum ItemsQueryOperator {
   """Logical OR"""
   or
@@ -3435,7 +3605,7 @@ input ItemsQueryRule {
   operator: ItemsQueryRuleOperator = any_of
 }
 
-"""The operator to use for the value comparison"""
+"""Rule operator"""
 enum ItemsQueryRuleOperator {
   """Any of the values"""
   any_of
@@ -3479,7 +3649,7 @@ enum ItemsQueryRuleOperator {
   """Ends with the value"""
   ends_with
 
-  """Within the next """
+  """Within the next"""
   within_the_next
 
   """Within the last"""
@@ -3559,6 +3729,9 @@ type Item {
 
   """The item's column values."""
   column_values(
+    """Capabilities supported by the API."""
+    capabilities: [ColumnCapability!]
+
     """A list of column ids to return"""
     ids: [String!]
 
@@ -3840,10 +4013,39 @@ type TimelineResponse {
 """Calculated capability settings for a column"""
 type CalculatedCapability {
   """Function to calculate the parent values"""
-  function: String!
+  function: CalculatedFunction!
 
   """Type of the calculated value"""
   calculated_type: ColumnType
+}
+
+"""Input for configuring calculated capability settings on a column"""
+input CalculatedCapabilityInput {
+  """
+  Function to calculate the values. If not provided, will use the default function for the column type.
+  """
+  function: CalculatedFunction!
+}
+
+"""Available functions for calculating values in column capabilities"""
+enum CalculatedFunction {
+  """Calculate the minimum value"""
+  MIN
+
+  """Calculate the maximum value"""
+  MAX
+
+  """Calculate the sum of all values"""
+  SUM
+
+  """Calculate both minimum and maximum values for time ranges"""
+  MIN_MAX
+
+  """No calculation"""
+  NONE
+
+  """Count the number of labels"""
+  COUNT_KEYS
 }
 
 type Column {
@@ -3884,6 +4086,20 @@ type Column {
 type ColumnCapabilities {
   """Calculated capability settings"""
   calculated: CalculatedCapability
+}
+
+"""Input for configuring column capabilities during creation"""
+input ColumnCapabilitiesInput {
+  """
+  Calculated capability settings. If provided, enables calculated functionality for the column.
+  """
+  calculated: CalculatedCapabilityInput
+}
+
+"""Capabilities supported by the API"""
+enum ColumnCapability {
+  """Capability to show column's calculated value"""
+  CALCULATED
 }
 
 union ColumnSettings = StatusColumnSettings | DropdownColumnSettings
@@ -4096,6 +4312,32 @@ enum ManagedColumnTypes {
   dropdown
 }
 
+"""
+Input for configuring calculated capability settings on a status column
+"""
+input StatusCalculatedCapabilityInput {
+  """
+  Function to calculate the values. For status columns, only COUNT_KEYS function is supported.
+  """
+  function: StatusCalculatedFunction!
+}
+
+"""
+Available functions for calculating values in status column capabilities
+"""
+enum StatusCalculatedFunction {
+  """Count the number of labels"""
+  COUNT_KEYS
+}
+
+"""Input for configuring status column capabilities during creation"""
+input StatusColumnCapabilitiesInput {
+  """
+  Calculated capability settings. If provided, enables calculated functionality for the status column.
+  """
+  calculated: StatusCalculatedCapabilityInput
+}
+
 enum StatusColumnColors {
   working_orange
   done_green
@@ -4298,6 +4540,40 @@ input UpdateDependencyColumnInput {
 
   """Optional metadata containing dependency configuration (type and lag)"""
   metadata: MetadataInput
+}
+
+"""The content blocks that make up the article."""
+type ArticleBlock {
+  """The block's unique identifier."""
+  id: ID
+
+  """The block's content."""
+  content: JSON
+
+  """The block's creation date."""
+  created_at: String
+
+  """The block's creator"""
+  created_by: User
+
+  """
+  The unique identifier of the published article that contains this block.
+  """
+  published_article_id: ID
+
+  """
+  The block's parent block unique identifier. Will be null if the block is at the top level of the article.
+  """
+  parent_block_id: ID
+
+  """The block's position on the article."""
+  position: Float
+
+  """The block content type."""
+  type: String
+
+  """The block's last updated date."""
+  updated_at: String
 }
 
 """Text formatting attributes (bold, italic, links, colors, etc.)"""
@@ -4985,10 +5261,15 @@ input CreateFavoriteInput {
   newPosition: ObjectDynamicPositionInput
 }
 
-"""Result type for adding an object to a personal list"""
+"""Represents the response when adding an object to a list"""
 type CreateFavoriteResultType {
-  """The added object hierarchy item"""
-  favorites: HierarchyObjectItem
+  """The favorite item that was created"""
+  favorite: GraphqlHierarchyObjectItem
+
+  """
+  If the object that was created is a folder, this is extra data about the folder
+  """
+  folder: GraphqlFolder
 }
 
 """Input type for removing an object from favorites"""
@@ -5003,37 +5284,37 @@ type DeleteFavoriteInputResultType {
   success: Boolean
 }
 
-"""Represents a monday object identifier with its type"""
-type HierarchyObjectID {
-  """The unique identifier of the object"""
+"""Represents a folder in the hierarchy"""
+type GraphqlFolder {
+  """The unique identifier of the folder"""
   id: ID
 
-  """The type of the object"""
-  type: ObjectType
+  """The account identifier this folder belongs to"""
+  accountId: ID
+
+  """The name of the folder"""
+  name: String
+
+  """The timestamp when this folder was created"""
+  createdAt: Date
+
+  """The timestamp when this folder was last updated"""
+  updatedAt: Date
+
+  """The user who created this folder"""
+  createdBy: ID
 }
 
-"""Input type for identifying a favorites object by its ID and type"""
-input HierarchyObjectIDInputType {
-  """The ID of the object"""
-  id: ID!
-
-  """The type of the object"""
-  type: ObjectType!
-}
-
-"""Represents an item in the object hierarchy"""
-type HierarchyObjectItem {
+"""Represents an item in favorites"""
+type GraphqlHierarchyObjectItem {
   """The unique identifier of the hierarchy item"""
   id: ID
 
   """The account identifier this item belongs to"""
-  accountId: Int
+  accountId: ID
 
   """The object identifier and type"""
   object: HierarchyObjectID
-
-  """The list identifier and type"""
-  hierarchyListData: ListID
 
   """The folder identifier if the item is contained within a folder"""
   folderId: ID
@@ -5048,25 +5329,34 @@ type HierarchyObjectItem {
   updatedAt: Date
 }
 
-"""Represents a list identifier with its type in the hierarchy"""
-type ListID {
-  """The unique identifier of the list"""
-  id: ID
+"""Represents a monday object."""
+enum GraphqlMondayObject {
+  """A monday.com board"""
+  Board
 
-  """The type of the list"""
-  type: ListType
+  """A monday.com folder"""
+  Folder
+
+  """Aggregates data from one or more boards."""
+  Dashboard
 }
 
-"""Types of lists in hierarchyMS"""
-enum ListType {
-  """A personal list owned by a user"""
-  PersonalList
+"""Represents a monday object identifier with its type"""
+type HierarchyObjectID {
+  """The unique identifier of the object"""
+  id: ID
 
-  """A workspace-level list"""
-  Workspace
+  """The type of the object"""
+  type: GraphqlMondayObject
+}
 
-  """A customized list with specific settings"""
-  CustomizedList
+"""Input type for identifying a favorites object by its ID and type"""
+input HierarchyObjectIDInputType {
+  """The ID of the object"""
+  id: ID!
+
+  """The type of the object"""
+  type: GraphqlMondayObject!
 }
 
 input ObjectDynamicPositionInput {
@@ -5077,28 +5367,17 @@ input ObjectDynamicPositionInput {
   nextObject: HierarchyObjectIDInputType
 }
 
-"""Represents a monday object."""
-enum ObjectType {
-  """Represents a board object type."""
-  Board
-
-  """Represents an overview object type."""
-  Overview
-
-  """Represents a folder object type."""
-  Folder
-}
-
+"""Represents the response when adding an object to a list"""
 type UpdateFavoriteResultType {
-  """The updated favorite's object"""
-  favorites: HierarchyObjectItem
+  """The favorite item that its position was updated"""
+  favorite: GraphqlHierarchyObjectItem
 }
 
 input UpdateObjectHierarchyPositionInput {
   """The favorite's object to update"""
   object: HierarchyObjectIDInputType!
 
-  """The new folder ID to move the object to"""
+  """The new folder ID to move the object to, if necessary"""
   newFolder: ID
 
   """The new position for the object"""
@@ -5405,6 +5684,162 @@ type AppFeatureType {
 
   """The deployment information for the app feature"""
   deployment: JSON
+}
+
+"""The type of the app feature."""
+enum AppFeatureTypeE {
+  """OAUTH"""
+  OAUTH
+
+  """BOARD_VIEW"""
+  BOARD_VIEW
+
+  """INTEGRATION"""
+  INTEGRATION
+
+  """SOLUTION"""
+  SOLUTION
+
+  """ITEM_VIEW"""
+  ITEM_VIEW
+
+  """DASHBOARD_WIDGET"""
+  DASHBOARD_WIDGET
+
+  """ACCOUNT_SETTINGS_VIEW"""
+  ACCOUNT_SETTINGS_VIEW
+
+  """DOC_ACTIONS"""
+  DOC_ACTIONS
+
+  """OBJECT"""
+  OBJECT
+
+  """WORKSPACE_VIEW"""
+  WORKSPACE_VIEW
+
+  """AI"""
+  AI
+
+  """AI_BOARD_MAIN_MENU_HEADER"""
+  AI_BOARD_MAIN_MENU_HEADER
+
+  """AI_ITEM_UPDATE_ACTIONS"""
+  AI_ITEM_UPDATE_ACTIONS
+
+  """AI_DOC_SLASH_COMMAND"""
+  AI_DOC_SLASH_COMMAND
+
+  """AI_DOC_CONTEXTUAL_MENU"""
+  AI_DOC_CONTEXTUAL_MENU
+
+  """AI_DOC_QUICK_START"""
+  AI_DOC_QUICK_START
+
+  """AI_DOC_TOP_BAR"""
+  AI_DOC_TOP_BAR
+
+  """COLUMN_TEMPLATE"""
+  COLUMN_TEMPLATE
+
+  """AI_IC_ASSISTANT_HELP_CENTER"""
+  AI_IC_ASSISTANT_HELP_CENTER
+
+  """APP_WIZARD"""
+  APP_WIZARD
+
+  """GROUP_MENU_ACTION"""
+  GROUP_MENU_ACTION
+
+  """ITEM_MENU_ACTION"""
+  ITEM_MENU_ACTION
+
+  """NOTIFICATION_KIND"""
+  NOTIFICATION_KIND
+
+  """NOTIFICATION_SETTING_KIND"""
+  NOTIFICATION_SETTING_KIND
+
+  """BLOCK"""
+  BLOCK
+
+  """ITEM_BATCH_ACTION"""
+  ITEM_BATCH_ACTION
+
+  """AI_FORMULA"""
+  AI_FORMULA
+
+  """AI_ITEM_EMAILS_AND_ACTIVITIES_ACTIONS"""
+  AI_ITEM_EMAILS_AND_ACTIVITIES_ACTIONS
+
+  """AI_EMAILS_AND_ACTIVITIES_HEADER_ACTIONS"""
+  AI_EMAILS_AND_ACTIVITIES_HEADER_ACTIONS
+
+  """FIELD_TYPE"""
+  FIELD_TYPE
+
+  """PRODUCT"""
+  PRODUCT
+
+  """PRODUCT_VIEW"""
+  PRODUCT_VIEW
+
+  """BOARD_COLUMN_ACTION"""
+  BOARD_COLUMN_ACTION
+
+  """BOARD_COLUMN_EXTENSION"""
+  BOARD_COLUMN_EXTENSION
+
+  """PACKAGED_BLOCK"""
+  PACKAGED_BLOCK
+
+  """CREDENTIALS"""
+  CREDENTIALS
+
+  """TOPBAR"""
+  TOPBAR
+
+  """WORKFLOW_TEMPLATE"""
+  WORKFLOW_TEMPLATE
+
+  """COLUMN"""
+  COLUMN
+
+  """SUB_WORKFLOW"""
+  SUB_WORKFLOW
+
+  """BOARD_HEADER_ACTION"""
+  BOARD_HEADER_ACTION
+
+  """DIALOG"""
+  DIALOG
+
+  """DATA_ENTITY"""
+  DATA_ENTITY
+
+  """SYNCABLE_RESOURCE"""
+  SYNCABLE_RESOURCE
+
+  """AI_AGENT"""
+  AI_AGENT
+
+  """SURFACE_VIEW"""
+  SURFACE_VIEW
+
+  """GROWTH_CONFIG"""
+  GROWTH_CONFIG
+
+  """MODAL"""
+  MODAL
+
+  """ADMIN_VIEW"""
+  ADMIN_VIEW
+
+  """DIGITAL_WORKER"""
+  DIGITAL_WORKER
+
+  """AI_AGENT_SKILL"""
+  AI_AGENT_SKILL
 }
 
 type AppType {
@@ -6842,6 +7277,9 @@ type Group {
     """
     cursor: String
 
+    """The hierarchy config to use for the query filters."""
+    hierarchy_scope_config: String
+
     """
     The maximum number of items to fetch in a single request. Use this to
     control the size of the result set and manage pagination. Maximum: 500.
@@ -7007,11 +7445,11 @@ input ItemsQuery {
   groups: [ItemsQueryGroup!]
 
   """
-  A list of item IDs to fetch. Use this to fetch a specific set of items by their IDs. Max: 100 IDs
+  A list of item IDs to fetch. Use this to fetch a specific set of items by their IDs. Limited to 100 IDs in ItemsQuery
   """
   ids: [ID!]
 
-  """The operator to use for the query rules or rule groups"""
+  """The operator to use for the query rules or rule groups. Default: AND"""
   operator: ItemsQueryOperator = and
 
   """Sort the results by specified columns"""
@@ -7284,6 +7722,18 @@ enum NumberValueUnitDirection {
   right
 }
 
+"""Represents a monday object."""
+enum ObjectType {
+  """Represents a board object type."""
+  Board
+
+  """Represents a folder object type."""
+  Folder
+
+  """Represents an overview object type."""
+  Overview
+}
+
 """The working status of a user."""
 type OutOfOffice {
   """Is the status active?"""
@@ -7300,6 +7750,36 @@ type OutOfOffice {
 
   """Out of office type."""
   type: String
+}
+
+"""A monday.com overview."""
+type Overview {
+  """The time the overview was created at."""
+  created_at: ISO8601DateTime
+
+  """The creator of the overview."""
+  creator: User!
+
+  """The overview's folder unique identifier."""
+  folder_id: ID
+
+  """The unique identifier of the overview."""
+  id: ID!
+
+  """The overview's kind (public/private)."""
+  kind: String
+
+  """The overview's name."""
+  name: String!
+
+  """The overview's state."""
+  state: String!
+
+  """The last time the overview was updated at."""
+  updated_at: ISO8601DateTime
+
+  """The overview's workspace unique identifier."""
+  workspace_id: ID
 }
 
 type PeopleEntity {
@@ -7806,6 +8286,33 @@ type UpdateBoardHierarchyResult {
   success: Boolean!
 }
 
+"""Result type for updating an overview's hierarchy"""
+type UpdateOverviewHierarchy {
+  """Message about the operation result"""
+  message: String!
+
+  """The updated overview"""
+  overview: Overview
+
+  """Whether the operation was successful"""
+  success: Boolean!
+}
+
+"""Attributes for updating an overview's hierarchy and location"""
+input UpdateOverviewHierarchyAttributesInput {
+  """The ID of the account product where the overview should be placed"""
+  account_product_id: ID
+
+  """The ID of the folder where the overview should be placed"""
+  folder_id: ID
+
+  """The position of the overview in the left pane"""
+  position: DynamicPosition
+
+  """The ID of the workspace where the overview should be placed"""
+  workspace_id: ID
+}
+
 """Attributes of a workspace to update"""
 input UpdateWorkspaceAttributesInput {
   """The target account product's ID to move the workspace to"""
@@ -8156,12 +8663,36 @@ enum BoardUsage {
   CONNECT_TO_PORTFOLIO
 }
 
+input ColumnsMappingInput {
+  project_status: ID!
+  project_timeline: ID!
+  project_owner: ID!
+}
+
+input ConvertBoardToProjectInput {
+  board_id: ID!
+  column_mappings: ColumnsMappingInput!
+  callback_url: String
+}
+
+type ConvertBoardToProjectResult {
+  success: Boolean
+  message: String
+  projectId: ID
+  process_id: String
+}
+
 type BoardMuteSettings {
   """Board ID"""
   board_id: ID
 
   """Human-friendly mute state for the board and current user"""
   mute_state: BoardMuteState
+
+  """
+  List of enabled customizable settings when the board is in CUSTOM_SETTINGS mute state. Null otherwise.
+  """
+  enabled: [CustomizableBoardSettings!]
 }
 
 """
@@ -8169,7 +8700,8 @@ Represents the mute state of a board for the current user.
 
   - NOT_MUTED: The board is not muted at all (default state). This state, as well as MUTE_ALL, is set by the board owner(s) and only they can change it.
   - MUTE_ALL: All notifications for all users are muted on this board. This state, as well as NOT_MUTED, is set by the board owner(s) and only they can change it.
-  - MENTIONS_AND_ASSIGNS_ONLY: The current user will only be notified if mentioned or assigned on the board.
+  - MENTIONS_AND_ASSIGNS_ONLY: The current user will only be notified if mentioned or assigned on the board. 
+  - CUSTOM_SETTINGS: The current user will only be notified for the enabled custom settings. configurable settings: IM_MENTIONED, IM_ASSIGNED, AUTOMATION_NOTIFY 
   - CURRENT_USER_MUTE_ALL: Only the current user has all notifications muted from this board.
 """
 enum BoardMuteState {
@@ -8187,6 +8719,11 @@ enum BoardMuteState {
   The current user will only be notified if mentioned or assigned on the board
   """
   MENTIONS_AND_ASSIGNS_ONLY
+
+  """
+  The current user will only be notified for the enabled custom settings. configurable settings: IM_MENTIONED, IM_ASSIGNED, AUTOMATION_NOTIFY
+  """
+  CUSTOM_SETTINGS
 
   """Only the current user has all notifications muted from this board"""
   CURRENT_USER_MUTE_ALL
@@ -8206,6 +8743,20 @@ enum ChannelType {
   Monday
   Email
   Slack
+}
+
+"""
+These settings can be customized when the board is in CUSTOM_SETTINGS mute state. Configurable settings: IM_MENTIONED, IM_ASSIGNED, AUTOMATION_NOTIFY
+"""
+enum CustomizableBoardSettings {
+  """Notify me when I am mentioned on this board"""
+  IM_MENTIONED
+
+  """Notify me when I am assigned on this board"""
+  IM_ASSIGNED
+
+  """Notify me on automation notify step on this board"""
+  AUTOMATION_NOTIFY
 }
 
 """Represents notification settings configuration"""
@@ -8310,9 +8861,6 @@ type PlatformApiDailyAnalyticsByUser {
 }
 
 type ConnectProjectResult {
-  """The unique identifier of the operation."""
-  request_id: ID
-
   """Indicates if the operation was successful."""
   success: Boolean
 
@@ -8362,8 +8910,15 @@ type AggregateGroupByResult {
 }
 
 input AggregateQueryInput {
+  """
+  Select elements to return. Each element must have either a function or column property. If selecting a column or transformative function, the element must appear in group by.
+  """
   select: [AggregateSelectElementInput!]!
+
+  """Table to select from"""
   from: AggregateFromTableInput!
+
+  """Group by elements"""
   group_by: [AggregateGroupByElementInput!]
 
   """
@@ -8398,10 +8953,14 @@ input AggregateSelectElementInput {
   """Type of the selected element"""
   type: AggregateSelectElementType!
 
-  """Column to select. Required if type is COLUMN"""
+  """
+  Column to select. Required if type is COLUMN. If selecting a column, the element must have a matching group by element with the same column_id or alias, if present.
+  """
   column: AggregateSelectColumnInput
 
-  """Function to select. Required if type is FUNCTION"""
+  """
+  Function to select. Required if type is FUNCTION. If selecting a transformative function, the element must have a matching group by element with the same alias. If selecting an aggregative function, the select element must not have a matching group by element.
+  """
   function: AggregateSelectFunctionInput
 
   """Alias for the selected element"""
@@ -9015,22 +9574,22 @@ input UserUpdateInput {
 
 """Aggregates data from one or more boards."""
 type Dashboard {
-  """Stable unique identifier of the dashboard."""
+  """Unique identifier of the dashboard."""
   id: ID
 
-  """Dashboard title (1–255 UTF-8 chars)."""
+  """Dashboard title (UTF-8 chars)."""
   name: String
 
   """ID of the workspace that owns this dashboard."""
-  workspace_id: Int
+  workspace_id: ID
 
   """Visibility level: `PUBLIC` (default) or `PRIVATE`."""
   kind: DashboardKind
 
   """
-  Folder ID that groups the dashboard inside its workspace (null = workspace root).
+  Folder ID that groups elements inside the workspace (null = workspace root).
   """
-  board_folder_id: Int
+  board_folder_id: ID
 }
 
 """
@@ -9059,18 +9618,18 @@ enum ExternalWidget {
   BATTERY
 }
 
-"""UI widget placed on a dashboard, board, or doc."""
-type WidgetModel {
-  """Stable unique identifier of this widget."""
-  id: Int
+"""Data visualization object."""
+type Widget {
+  """Unique identifier of this widget."""
+  id: ID
 
-  """Parent container where the widget is placed (dashboard or board view)."""
+  """Parent container where the widget is placed."""
   parent: WidgetParentOutput
 
   """The type of widget (CHART, NUMBER, BATTERY)."""
   kind: ExternalWidget
 
-  """Widget label shown in the UI (1–255 UTF-8 chars)."""
+  """Widget label (UTF-8 chars)."""
   name: String
 }
 
@@ -9079,8 +9638,8 @@ input WidgetParentInput {
   """The type of parent container (DASHBOARD or BOARD_VIEW)"""
   kind: WidgetParentKind!
 
-  """The ID of the parent container (dashboard ID or board view ID)"""
-  id: Int!
+  """The ID of the parent container."""
+  id: ID!
 }
 
 """The kind of parent container where the widget will be placed."""
@@ -9099,8 +9658,8 @@ type WidgetParentOutput {
   """The type of parent container (DASHBOARD or BOARD_VIEW)"""
   kind: WidgetParentKind
 
-  """The ID of the parent container (dashboard ID or board view ID)"""
-  id: Int
+  """The ID of the parent container."""
+  id: ID
 }
 
 """Information about a widget type and its JSON schema"""
@@ -9522,9 +10081,6 @@ input FormLogoInput {
   """String specifying logo placement ("top", "bottom", "header")."""
   position: FormLogoPosition
 
-  """URL pointing to the logo image file for display on the form."""
-  url: String
-
   """
   String specifying logo size ("small", "medium", "large") for the logo that appears on the header of the form.
   """
@@ -9608,7 +10164,7 @@ input FormMondayInput {
 
 type FormPassword {
   """
-  Boolean enabling password protection. When true, users must enter a password to access the form.
+  Boolean disabling password protection. Can only be updated to false, to enable password protection, use the set_form_password mutation instead.
   """
   enabled: Boolean!
 }
@@ -9618,7 +10174,7 @@ Password configuration for the form. Only setting enabled to false is supported.
 """
 input FormPasswordInput {
   """
-  Boolean enabling password protection. When true, users must enter a password to access the form.
+  Boolean disabling password protection. Can only be updated to false, to enable password protection, use the set_form_password mutation instead.
   """
   enabled: Boolean
 }
@@ -9757,11 +10313,6 @@ type FormQuestionSettings {
   Single/Multi Select questions only: Determines the ordering of selection options.
   """
   optionsOrder: FormQuestionSelectOrderByOptions
-
-  """
-  Multi Select questions only: Limits the number of options a user can select.
-  """
-  labelLimitCount: Int
 
   """
   Location questions only: Automatically detect and fill the user's current location using browser geolocation services, requiring user permission.
@@ -10101,12 +10652,7 @@ type ResponseForm {
   ownerId: Int
 
   """
-  Boolean indicating if this form was initially created using AI assistance.
-  """
-  createWithAI: Boolean!
-
-  """
-  Boolean indicating if this form was built or modified using AI functionality.
+  Boolean indicating if this form was built using monday’s AI form builder agent.
   """
   builtWithAI: Boolean!
 
@@ -10119,11 +10665,6 @@ type ResponseForm {
   Array of question objects that make up the form content, in display order.
   """
   questions: [FormQuestion!]
-
-  """
-  Boolean flag indicating if the form has been flagged for review due to suspicious content or activity.
-  """
-  isSuspicious: Boolean!
 
   """
   Boolean indicating if responses are collected without identifying the submitter.
@@ -10170,7 +10711,7 @@ input UpdateFormInput {
   description: String
 
   """
-  Ordered array of question IDs for reordering. Must include all existing question IDs.
+  Ordered array of dehydrated questions, object only including each question ID, for reordering. Must include all existing question IDs.
   """
   questions: [QuestionOrderInput!]
 }

@@ -11,9 +11,7 @@ import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-ap
 
 export const createWidgetToolSchema = {
   parent_container_id: z
-    .number()
-    .int('Parent container ID must be an integer')
-    .positive('Parent container ID must be positive')
+    .string()
     .describe('ID of the parent container (dashboard ID or board view ID)'),
   parent_container_type: z.nativeEnum(WidgetParentKind).describe('Type of parent container: DASHBOARD or BOARD_VIEW'),
   widget_kind: z.nativeEnum(ExternalWidget).describe('Type of widget to create: i.e CHART, NUMBER, BATTERY'),
