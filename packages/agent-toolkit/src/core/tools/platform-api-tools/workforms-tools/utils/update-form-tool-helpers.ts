@@ -52,7 +52,7 @@ export class UpdateFormToolHelpers {
   async setFormPassword(input: ToolInputType<typeof updateFormToolSchema>): Promise<ToolOutputType<never>> {
     if (!input.formPassword) {
       return {
-        content: `formPassword is required for the action "setFormPassword" in the update form tool.`,
+        content: 'formPassword is required for the action "setFormPassword" in the update form tool.',
       };
     }
 
