@@ -56,7 +56,15 @@ export class MoveObjectTool extends BaseMondayApiTool<MoveObjectToolInput> {
 
   private async executeUpdateBoardHierarchy(input: ToolInputType<MoveObjectToolInput>): Promise<ToolOutputType<never>> {
     const { id, position, parentFolderId, workspaceId, accountProductId } = input;
-    const variables = { boardId: id, attributes: { position, parentFolderId, workspaceId, accountProductId } };
+    const variables = {
+      boardId: id,
+      attributes: {
+        position,
+        folder_id: parentFolderId,
+        workspace_id: workspaceId,
+        account_product_id: accountProductId,
+      },
+    };
 
     const res = await this.mondayApi.request<UpdateBoardHierarchyMutation>(updateBoardHierarchy, variables);
 
@@ -73,7 +81,15 @@ export class MoveObjectTool extends BaseMondayApiTool<MoveObjectToolInput> {
     input: ToolInputType<MoveObjectToolInput>,
   ): Promise<ToolOutputType<never>> {
     const { id, position, parentFolderId, workspaceId, accountProductId } = input;
-    const variables = { overviewId: id, attributes: { position, parentFolderId, workspaceId, accountProductId } };
+    const variables = {
+      overviewId: id,
+      attributes: {
+        position,
+        folder_id: parentFolderId,
+        workspace_id: workspaceId,
+        account_product_id: accountProductId,
+      },
+    };
 
     const res = await this.mondayApi.request<UpdateOverviewHierarchyMutation>(updateOverviewHierarchy, variables);
 
