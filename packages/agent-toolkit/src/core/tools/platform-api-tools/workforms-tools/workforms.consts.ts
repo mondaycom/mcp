@@ -102,7 +102,7 @@ export const GraphQLDescriptions = {
       reCaptchaChallenge: 'Boolean enabling reCAPTCHA verification to prevent spam submissions.',
       password: 'Object containing password protection configuration for the form.',
       passwordEnabled:
-        'Boolean disabling password protection. Can only be updated to false, to enable password protection, use the setFormPassword action instead.',
+        'Boolean disabling password protection. Can only be updated to false. In order to enable password protection use the setFormPassword action instead.',
       requireLogin: 'Object containing login requirement settings for form access.',
       requireLoginEnabled: 'Boolean requiring users to be logged in before submitting responses.',
       redirectToLogin: 'Boolean automatically redirecting unauthenticated users to the login page.',
