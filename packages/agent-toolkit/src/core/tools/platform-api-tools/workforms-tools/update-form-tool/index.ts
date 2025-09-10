@@ -35,7 +35,6 @@ export class UpdateFormTool extends BaseMondayApiTool<typeof updateFormToolSchem
     return updateFormToolSchema;
   }
 
-  // All action handler methods have been moved to UpdateFormToolHelpers
 
   private readonly actionHandlers = new Map<
     FormActions,
