@@ -35,6 +35,7 @@ import { UpdateWorkspaceTool } from './update-workspace-tool/update-workspace-to
 import { UpdateFolderTool } from './update-folder-tool/update-folder-tool';
 import { CreateWorkspaceTool } from './create-workspace-tool/create-workspace-tool';
 import { CreateFolderTool } from './create-folder-tool/create-folder-tool';
+import { MoveEntityTool } from './move-entity-tool/move-entity-tool';
 
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteItemTool,
@@ -70,6 +71,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   UpdateFolderTool,
   CreateWorkspaceTool,
   CreateFolderTool,
+  MoveEntityTool,
   // Dashboard Tools
   CreateDashboardTool,
   AllWidgetsSchemaTool,
@@ -110,5 +112,6 @@ export * from './update-workspace-tool/update-workspace-tool';
 export * from './update-folder-tool/update-folder-tool';
 export * from './create-workspace-tool/create-workspace-tool';
 export * from './create-folder-tool/create-folder-tool';
+export * from './move-entity-tool/move-entity-tool';
 // Dashboard Tools
 export * from './dashboard-tools';
