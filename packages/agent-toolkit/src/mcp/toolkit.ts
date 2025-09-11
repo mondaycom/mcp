@@ -197,6 +197,7 @@ export class MondayAgentToolkit extends McpServer {
           text: `Failed to execute tool ${toolName}: ${errorMessage}`,
         },
       ],
+      isError: true
     };
   }
 }
