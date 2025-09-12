@@ -234,5 +234,77 @@ describe('Create Item Tool Behaviour', () => {
       });
     });
 
+    describe('Create Subitem Path', () => {
+      const successfulCreateSubitemResponse = {
+        create_subitem: {
+          id: '111222333',
+          name: 'New Subitem',
+          parent_item: {
+            id: '123'
+          }
+        }
+      };
+
+      it('Successfully creates a subitem', async () => {
+        mocks.setResponse(successfulCreateSubitemResponse);
+
+        const tool = new CreateItemTool(mocks.mockApiClient, 'fake_token', { boardId: 456 });
+
+        const result = await tool.execute({
+          name: 'New Subitem',
+          columnValues: '{"text_column": "Subitem Value"}',
+          parentItemId: 123
+        });
+
+        expect(result.content).toBe('Subitem 111222333 successfully created under parent item 123');
+        
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('mutation createSubitem'),
+          {
+            parentItemId: '123',
+            itemName: 'New Subitem',
+            columnValues: '{"text_column": "Subitem Value"}'
+          }
+        );
+      });
+
+      it('Throws error when create subitem fails', async () => {
+        mocks.setResponse({ create_subitem: null });
+
+        const tool = new CreateItemTool(mocks.mockApiClient, 'fake_token', { boardId: 456 });
+
+        await expect(tool.execute({
+          name: 'New Subitem',
+          columnValues: '{"text_column": "Subitem Value"}',
+          parentItemId: 123
+        })).rejects.toThrow('Failed to create subitem');
+      });
+
+      it('Throws error when create subitem returns no item', async () => {
+        mocks.setResponse({ create_subitem: { id: null, name: 'New Subitem' } });
+
+        const tool = new CreateItemTool(mocks.mockApiClient, 'fake_token', { boardId: 456 });
+
+        await expect(tool.execute({
+          name: 'New Subitem',
+          columnValues: '{"text_column": "Subitem Value"}',
+          parentItemId: 123
+        })).rejects.toThrow('Failed to create subitem');
+      });
+    });
+
+    describe('Parameter Conflict Validation', () => {
+      it('Throws error when both parentItemId and duplicateFromItemId are provided', async () => {
+        const tool = new CreateItemTool(mocks.mockApiClient, 'fake_token', { boardId: 456 });
+
+        await expect(tool.execute({
+          name: 'Conflicting Item',
+          columnValues: '{"text_column": "Value"}',
+          parentItemId: 123,
+          duplicateFromItemId: 456
+        })).rejects.toThrow('Cannot specify both parentItemId and duplicateFromItemId. Please provide only one of these parameters.');
+      });
+    });
+
   });
 });
