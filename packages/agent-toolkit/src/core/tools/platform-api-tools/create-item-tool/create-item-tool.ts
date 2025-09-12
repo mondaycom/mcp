@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { CreateItemMutation, CreateItemMutationVariables, DuplicateItemMutation } from '../../../../monday-graphql/generated/graphql';
-import { createItem, duplicateItem } from '../../../../monday-graphql/queries.graphql';
+import { CreateItemMutation, CreateItemMutationVariables, DuplicateItemMutation, CreateSubitemMutation } from '../../../../monday-graphql/generated/graphql';
+import { createItem, duplicateItem, createSubitem } from '../../../../monday-graphql/queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { ChangeItemColumnValuesTool } from '../change-item-column-values-tool';
@@ -16,6 +16,9 @@ export const createItemToolSchema = {
     .describe(
       `A string containing the new column values for the item following this structure: {\\"column_id\\": \\"value\\",... you can change multiple columns at once, note that for status column you must use nested value with 'label' as a key and for date column use 'date' as key} - example: "{\\"text_column_id\\":\\"New text\\", \\"status_column_id\\":{\\"label\\":\\"Done\\"}, \\"date_column_id\\":{\\"date\\":\\"2023-05-25\\"},\\"dropdown_id\\":\\"value\\", \\"phone_id\\":\\"123-456-7890\\", \\"email_id\\":\\"test@example.com\\"}"`,
     ),
+    parentItemId: z.number()
+    .optional()
+    .describe('The id of the parent item under which the new subitem will be created'),
     duplicateFromItemId: z.number()
     .optional()
     .describe('The id of existing item to duplicate and update with new values (only provide when duplicating)'),
@@ -39,7 +42,7 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
   });
 
   getDescription(): string {
-    return 'Create a new item with provided values, or duplicate an existing item and update it with new values';
+    return 'Create a new item with provided values, create a subitem under a parent item, or duplicate an existing item and update it with new values';
   }
 
   getInputSchema(): CreateItemToolInput {
@@ -53,9 +56,16 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
   protected async executeInternal(input: ToolInputType<CreateItemToolInput>): Promise<ToolOutputType<never>> {
     const boardId = this.context?.boardId ?? (input as ToolInputType<typeof createItemInBoardToolSchema>).boardId;
 
-    //two paths, one for duplicate item, one for create item
+    // Check for conflicting parameters
+    if (input.duplicateFromItemId && input.parentItemId) {
+      throw new Error('Cannot specify both parentItemId and duplicateFromItemId. Please provide only one of these parameters.');
+    }
+
+    //three paths: duplicate item, create subitem, or create regular item
     if (input.duplicateFromItemId) {
       return await this.duplicateAndUpdateItem(input, boardId);
+    } else if (input.parentItemId) {
+      return await this.createSubitem(input);
     } else {
       return await this.createNewItem(input, boardId);
     }
@@ -99,6 +109,25 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
 
     return {
       content: `Item ${duplicateRes.duplicate_item.id} successfully duplicated from ${input.duplicateFromItemId} and updated`,
+    };
+  }
+
+  private async createSubitem(input: ToolInputType<CreateItemToolInput>): Promise<ToolOutputType<never>> {
+    // Create subitem using the create_subitem mutation
+    const variables = {
+      parentItemId: input.parentItemId!.toString(),
+      itemName: input.name,
+      columnValues: input.columnValues,
+    };
+
+    const res = await this.mondayApi.request<CreateSubitemMutation>(createSubitem, variables);
+
+    if (!res.create_subitem?.id) {
+      throw new Error('Failed to create subitem');
+    }
+
+    return {
+      content: `Subitem ${res.create_subitem.id} successfully created under parent item ${input.parentItemId}`,
     };
   }
 
