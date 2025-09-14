@@ -307,12 +307,6 @@ Here are some examples of what you can build with our tools:
 - Generate reports and insights
 - Create new boards for reporting
 
-### 3. Automated Workflows
-
-- Create items based on external triggers
-- Update item statuses based on conditions
-- Link related items across boards
-
 ## 🌐 Community & Support
 
 - **GitHub Issues**: For bug reports and feature requests

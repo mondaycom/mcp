@@ -19,7 +19,6 @@ import { GetBoardItemsTool } from './get-board-items-tool';
 import { GetBoardSchemaTool } from './get-board-schema-tool';
 import { GetColumnTypeInfoTool } from './get-column-type-info/get-column-type-info-tool';
 import { GetGraphQLSchemaTool } from './get-graphql-schema-tool';
-import { CreateWorkflowInstructionsTool } from './create-workflow-instructions-tool';
 import { GetTypeDetailsTool } from './get-type-details-tool';
 import { GetUsersTool } from './get-users-tool';
 import { ListUsersAndTeamsTool } from './list-users-and-teams-tool/list-users-and-teams-tool';
@@ -57,7 +56,6 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   CreateCustomActivityTool,
   CreateTimelineItemTool,
   FetchCustomActivityTool,
-  CreateWorkflowInstructionsTool,
   ReadDocsTool,
   WorkspaceInfoTool,
   ListWorkspaceTool,
