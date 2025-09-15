@@ -105,7 +105,6 @@ export * from './get-users-tool';
 export * from './list-users-and-teams-tool/list-users-and-teams-tool';
 export * from './manage-tools-tool';
 export * from './move-item-to-group-tool';
-export * from './create-workflow-instructions-tool';
 export * from './read-docs-tool';
 export * from './workspace-info-tool/workspace-info-tool';
 export * from './list-workspace-tool/list-workspace-tool';
