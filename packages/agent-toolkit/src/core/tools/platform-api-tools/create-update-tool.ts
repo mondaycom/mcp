@@ -42,7 +42,7 @@ export class CreateUpdateTool extends BaseMondayApiTool<typeof createUpdateToolS
       body: input.body,
       mentionsList: input.mentionsList?.map(mention => ({
         id: mention.id.toString(),
-        type: mention.type as MentionType,
+        type: mention.type,
       })),
     };
 
