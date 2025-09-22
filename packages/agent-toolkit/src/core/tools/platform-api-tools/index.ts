@@ -18,6 +18,7 @@ import { FetchCustomActivityTool } from './fetch-custom-activity-tool';
 import { GetBoardActivityTool } from './get-board-activity/get-board-activity-tool';
 import { GetBoardInfoTool } from './get-board-info/get-board-info-tool';
 import { GetBoardItemsTool } from './get-board-items-tool';
+import { GetBoardItemsPageTool } from './get-board-items-page-tool/get-board-items-page-tool';
 import { GetBoardSchemaTool } from './get-board-schema-tool';
 import { GetColumnTypeInfoTool } from './get-column-type-info/get-column-type-info-tool';
 import { GetGraphQLSchemaTool } from './get-graphql-schema-tool';
@@ -41,6 +42,7 @@ import { MoveObjectTool } from './move-object-tool/move-object-tool';
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteItemTool,
   GetBoardItemsTool,
+  GetBoardItemsPageTool,
   CreateItemTool,
   CreateUpdateTool,
   GetBoardSchemaTool,
@@ -97,6 +99,7 @@ export * from './delete-column-tool';
 export * from './delete-item-tool';
 export * from './fetch-custom-activity-tool';
 export * from './get-board-items-tool';
+export * from './get-board-items-page-tool/get-board-items-page-tool';
 export * from './get-board-schema-tool';
 export * from './get-column-type-info/get-column-type-info-tool';
 export * from './get-graphql-schema-tool';
