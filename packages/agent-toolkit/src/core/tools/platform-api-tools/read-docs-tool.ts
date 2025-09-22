@@ -73,20 +73,19 @@ USAGE PATTERNS:
   protected async executeInternal(input: ToolInputType<typeof readDocsToolSchema>): Promise<ToolOutputType<never>> {
     try {
       // Extract ID values by type (now it's a single object, not an array)
-      const idObj = input.ids; // Get the ID object directly
       let ids: string[] | undefined;
       let object_ids: string[] | undefined;
       let workspace_ids: string[] | undefined;
 
-      switch (idObj.type) {
+      switch (input.type) {
         case 'ids':
-          ids = idObj.values;
+          ids = input.ids;
           break;
         case 'object_ids':
-          object_ids = idObj.values;
+          object_ids = input.ids;
           break;
         case 'workspace_ids':
-          workspace_ids = idObj.values;
+          workspace_ids = input.ids;
           break;
       }
 
