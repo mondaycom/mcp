@@ -53,12 +53,12 @@ FILTERING: Provide an ID filter object with:
 - type: 'ids' for specific document IDs
 - type: 'object_ids' for specific document object IDs  
 - type: 'workspace_ids' for all docs in specific workspaces
-- values: array of ID strings (at least 1 required)
+- ids: array of ID strings (at least 1 required)
 
 Examples:
-- { type: 'ids', values: ['123', '456'] }
-- { type: 'object_ids', values: ['123'] }
-- { type: 'workspace_ids', values: ['ws_101'] }
+- { type: 'ids', ids: ['123', '456'] }
+- { type: 'object_ids', ids: ['123'] }
+- { type: 'workspace_ids', ids: ['ws_101'] }
 
 USAGE PATTERNS:
 - For specific documents: use type 'ids' or 'object_ids' (A monday doc has two unique identifiers)
