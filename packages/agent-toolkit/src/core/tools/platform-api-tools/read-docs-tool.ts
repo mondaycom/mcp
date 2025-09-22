@@ -35,6 +35,12 @@ export const readDocsToolSchema = {
     .describe(
       'The page number to return (starts at 1). Use this to paginate through large result sets. Check response for has_more_pages indicator.',
     ),
+  another_param: z
+    .number()
+    .optional()
+    .describe(
+      'Thats another param that is going to be used to test things',
+    ),
 };
 
 export class ReadDocsTool extends BaseMondayApiTool<typeof readDocsToolSchema> {
