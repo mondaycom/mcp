@@ -49,7 +49,7 @@ PAGINATION:
 - Check response for 'has_more_pages' to know if you should continue paginating
 - If user asks for "all documents" and you get exactly 25 results, continue with page 2, 3, etc.
 
-FILTERING: Provide an ID filter object with:
+FILTERING: Provide a type value and array of ids:
 - type: 'ids' for specific document IDs
 - type: 'object_ids' for specific document object IDs  
 - type: 'workspace_ids' for all docs in specific workspaces
