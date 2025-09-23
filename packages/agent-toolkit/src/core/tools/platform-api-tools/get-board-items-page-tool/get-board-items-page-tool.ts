@@ -6,7 +6,7 @@ import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-ap
 
 export const getBoardItemsPageToolSchema = {
   boardId: z.number(),
-  limit: z.number().min(1).max(1000).optional(),
+  limit: z.number().min(1).max(500).optional(),
   cursor: z.string().optional(),
   includeColumns: z.boolean().optional(),
 };
