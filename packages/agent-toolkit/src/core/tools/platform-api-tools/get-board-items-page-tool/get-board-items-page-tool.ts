@@ -4,13 +4,11 @@ import { getBoardItemsPage } from './queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 
-const DEFAULT_LIMIT = 25;
-
 export const getBoardItemsPageToolSchema = {
   boardId: z.number(),
-  limit: z.number().min(1).max(1000).default(DEFAULT_LIMIT).optional(),
+  limit: z.number().min(1).max(1000).optional(),
   cursor: z.string().optional(),
-  includeColumns: z.boolean().default(false).optional(),
+  includeColumns: z.boolean().optional(),
 };
 
 export type GetBoardItemsPageToolInput = typeof getBoardItemsPageToolSchema;
@@ -39,7 +37,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
   protected async executeInternal(input: ToolInputType<GetBoardItemsPageToolInput>): Promise<ToolOutputType<never>> {
     const variables: GetBoardItemsPageQueryVariables = {
       boardId: input.boardId.toString(),
-      limit: input.limit ?? DEFAULT_LIMIT,
+      limit: input.limit ?? 25,
       cursor: input.cursor,
       includeColumns: input.includeColumns ?? false,
     };
