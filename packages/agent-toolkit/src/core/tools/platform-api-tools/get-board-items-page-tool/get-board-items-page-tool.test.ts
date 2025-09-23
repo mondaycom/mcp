@@ -1,12 +1,17 @@
-import { createMockApiClient } from '../test-utils/mock-api-client';
+import { MondayAgentToolkit } from 'src/mcp/toolkit';
+import { callToolByNameAsync, callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
 import { GetBoardItemsPageTool } from './get-board-items-page-tool';
+import { MondayAgentToolkitConfig, ToolMode } from 'src/core/monday-agent-toolkit';
+
 
 describe('GetBoardItemsPageTool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
 
   beforeEach(() => {
-    mocks = createMockApiClient();
     jest.clearAllMocks();
+    mocks = createMockApiClient();
+    jest.spyOn(MondayAgentToolkit.prototype as any, 'createApiClient')
+        .mockReturnValue(mocks.mockApiClient);
   });
 
   const successfulResponseWithItems = {
@@ -86,13 +91,8 @@ describe('GetBoardItemsPageTool', () => {
     it('should successfully get board items with default parameters', async () => {
       mocks.setResponse(successfulResponseWithoutColumns);
 
-      const tool = new GetBoardItemsPageTool(mocks.mockApiClient, 'fake_token', { boardId: 123456789 });
+      const parsedResult = await callToolByNameAsync('get_board_items_page', { boardId: 123456789 });
 
-      const result = await tool.execute({
-        boardId: 123456789
-      });
-
-      const parsedResult = JSON.parse(result.content);
       expect(parsedResult.board.id).toBe('123456789');
       expect(parsedResult.board.name).toBe('Test Board');
       expect(parsedResult.items).toHaveLength(2);
@@ -109,7 +109,7 @@ describe('GetBoardItemsPageTool', () => {
         updated_at: '2024-01-15T16:45:00Z'
       });
       expect(parsedResult.pagination.has_more).toBe(false);
-      expect(parsedResult.pagination.cursor).toBeNull();
+      expect(parsedResult.pagination.nextCursor).toBeNull();
       expect(parsedResult.pagination.count).toBe(2);
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.stringContaining('query GetBoardItemsPage'),
@@ -125,14 +125,8 @@ describe('GetBoardItemsPageTool', () => {
     it('should successfully get board items with custom limit', async () => {
       mocks.setResponse(successfulResponseWithoutColumns);
 
-      const tool = new GetBoardItemsPageTool(mocks.mockApiClient, 'fake_token', { boardId: 123456789 });
+      const parsedResult = await callToolByNameAsync('get_board_items_page', { boardId: 123456789, limit: 50 });
 
-      const result = await tool.execute({
-        boardId: 123456789,
-        limit: 50
-      });
-
-      const parsedResult = JSON.parse(result.content);
       expect(parsedResult.items).toHaveLength(2);
       expect(parsedResult.pagination.count).toBe(2);
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
@@ -149,17 +143,11 @@ describe('GetBoardItemsPageTool', () => {
     it('should successfully get board items with cursor for pagination', async () => {
       mocks.setResponse(successfulResponseWithItems);
 
-      const tool = new GetBoardItemsPageTool(mocks.mockApiClient, 'fake_token', { boardId: 123456789 });
+      const parsedResult = await callToolByNameAsync('get_board_items_page', { boardId: 123456789, cursor: 'previous_cursor_456' });
 
-      const result = await tool.execute({
-        boardId: 123456789,
-        cursor: 'previous_cursor_456'
-      });
-
-      const parsedResult = JSON.parse(result.content);
       expect(parsedResult.items).toHaveLength(2);
       expect(parsedResult.pagination.has_more).toBe(true);
-      expect(parsedResult.pagination.cursor).toBe('next_page_cursor_123');
+      expect(parsedResult.pagination.nextCursor).toBe('next_page_cursor_123');
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.stringContaining('query GetBoardItemsPage'),
         {
@@ -176,14 +164,11 @@ describe('GetBoardItemsPageTool', () => {
     it('should include column values when includeColumns is true', async () => {
       mocks.setResponse(successfulResponseWithItems);
 
-      const tool = new GetBoardItemsPageTool(mocks.mockApiClient, 'fake_token', { boardId: 123456789 });
-
-      const result = await tool.execute({
+      const parsedResult = await callToolByNameAsync('get_board_items_page', {
         boardId: 123456789,
         includeColumns: true
       });
 
-      const parsedResult = JSON.parse(result.content);
       expect(parsedResult.items).toHaveLength(2);
       expect(parsedResult.items[0]).toEqual({
         id: 'item1',
@@ -244,14 +229,11 @@ describe('GetBoardItemsPageTool', () => {
 
       mocks.setResponse(responseWithNullColumns);
 
-      const tool = new GetBoardItemsPageTool(mocks.mockApiClient, 'fake_token', { boardId: 123456789 });
-
-      const result = await tool.execute({
+      const parsedResult = await callToolByNameAsync('get_board_items_page', {
         boardId: 123456789,
         includeColumns: true
       });
 
-      const parsedResult = JSON.parse(result.content);
       expect(parsedResult.items[0]).toEqual({
         id: 'item1',
         name: 'Item with null columns',
@@ -269,13 +251,10 @@ describe('GetBoardItemsPageTool', () => {
     it('should handle empty board gracefully', async () => {
       mocks.setResponse(emptyResponse);
 
-      const tool = new GetBoardItemsPageTool(mocks.mockApiClient, 'fake_token', { boardId: 123456789 });
-
-      const result = await tool.execute({
+      const parsedResult = await callToolByNameAsync('get_board_items_page', {
         boardId: 123456789
       });
 
-      const parsedResult = JSON.parse(result.content);
       expect(parsedResult.board.name).toBe('Empty Board');
       expect(parsedResult.items).toHaveLength(0);
       expect(parsedResult.pagination.count).toBe(0);
@@ -289,13 +268,11 @@ describe('GetBoardItemsPageTool', () => {
 
       mocks.setResponse(noBoardResponse);
 
-      const tool = new GetBoardItemsPageTool(mocks.mockApiClient, 'fake_token', { boardId: 123456789 });
-
-      const result = await tool.execute({
+      const parsedResult = await callToolByNameAsync('get_board_items_page', {
         boardId: 123456789
       });
 
-      const parsedResult = JSON.parse(result.content);
+
       expect(parsedResult.board.id).toBeUndefined();
       expect(parsedResult.board.name).toBeUndefined();
       expect(parsedResult.items).toHaveLength(0);
@@ -305,13 +282,15 @@ describe('GetBoardItemsPageTool', () => {
 
   describe('Error Handling', () => {
     it('should pass GraphQL errors to caller', async () => {
-      mocks.setError('GraphQL error occurred');
+      const errorMessage = 'GraphQL error occurred';
+      mocks.setError(errorMessage);
 
-      const tool = new GetBoardItemsPageTool(mocks.mockApiClient, 'fake_token', { boardId: 123456789 });
+      const result = await callToolByNameRawAsync('get_board_items_page', {
+        boardId: 123456789,
+        includeColumns: true
+      });
 
-      await expect(tool.execute({
-        boardId: 123456789
-      })).rejects.toThrow('GraphQL error occurred');
+      expect(result.content[0].text).toContain(errorMessage);
     });
 
     it('should handle malformed response gracefully', async () => {
@@ -327,62 +306,13 @@ describe('GetBoardItemsPageTool', () => {
 
       mocks.setResponse(malformedResponse);
 
-      const tool = new GetBoardItemsPageTool(mocks.mockApiClient, 'fake_token', { boardId: 123456789 });
-
-      const result = await tool.execute({
+      const parsedResult = await callToolByNameAsync('get_board_items_page', {
         boardId: 123456789
       });
 
-      const parsedResult = JSON.parse(result.content);
       expect(parsedResult.board.name).toBe('Test Board');
       expect(parsedResult.items).toHaveLength(0);
       expect(parsedResult.pagination.count).toBe(0);
-    });
-  });
-
-  describe('Context vs Input Board ID', () => {
-    it('should use context boardId when available', async () => {
-      mocks.setResponse(successfulResponseWithoutColumns);
-
-      const tool = new GetBoardItemsPageTool(mocks.mockApiClient, 'fake_token', { boardId: 999999999 });
-
-      const result = await tool.execute({
-        boardId: 123456789
-      });
-
-      // Should use the input boardId, not the context one
-      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-        expect.stringContaining('query GetBoardItemsPage'),
-        {
-          boardId: '123456789',
-          limit: 25,
-          cursor: undefined,
-          includeColumns: false
-        }
-      );
-    });
-
-    it('should work without context', async () => {
-      mocks.setResponse(successfulResponseWithoutColumns);
-
-      const tool = new GetBoardItemsPageTool(mocks.mockApiClient, 'fake_token');
-
-      const result = await tool.execute({
-        boardId: 123456789
-      });
-
-      const parsedResult = JSON.parse(result.content);
-      expect(parsedResult.items).toHaveLength(2);
-      expect(parsedResult.board.name).toBe('Test Board');
-      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-        expect.stringContaining('query GetBoardItemsPage'),
-        {
-          boardId: '123456789',
-          limit: 25,
-          cursor: undefined,
-          includeColumns: false
-        }
-      );
     });
   });
 
