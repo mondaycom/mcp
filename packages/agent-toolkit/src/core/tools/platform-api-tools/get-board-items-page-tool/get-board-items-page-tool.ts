@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { GetBoardItemsPageQuery, GetBoardItemsPageQueryVariables } from '../../../../monday-graphql/generated/graphql';
 import { getBoardItemsPage } from './get-board-items-page-tool.graphql';
-import { ToolOutputType, ToolParsedInputType, ToolType } from '../../../tool';
+import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 
 const DEFAULT_LIMIT = 25;
@@ -38,7 +38,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
     return getBoardItemsPageToolSchema;
   }
   
-  protected async executeInternal(input: ToolParsedInputType<GetBoardItemsPageToolInput>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(input: ToolInputType<GetBoardItemsPageToolInput>): Promise<ToolOutputType<never>> {
     const variables: GetBoardItemsPageQueryVariables = {
       boardId: input.boardId.toString(),
       limit: input.limit,

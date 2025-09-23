@@ -3,10 +3,6 @@ import { ToolAnnotations } from '@modelcontextprotocol/sdk/types';
 import { Executable } from './executable';
 
 export type ToolInputType<Input extends ZodRawShape | undefined> = Input extends ZodRawShape
-  ? z.objectInputType<Input, ZodTypeAny>
-  : undefined;
-
-export type ToolParsedInputType<Input extends ZodRawShape | undefined> = Input extends ZodRawShape
   ? z.objectOutputType<Input, ZodTypeAny>
   : undefined;
 

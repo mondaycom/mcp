@@ -109,7 +109,7 @@ describe('GetBoardItemsPageTool', () => {
         updated_at: '2024-01-15T16:45:00Z'
       });
       expect(parsedResult.pagination.has_more).toBe(false);
-      expect(parsedResult.pagination.nextCursor).toBeNull();
+      expect(parsedResult.pagination.cursor).toBeNull();
       expect(parsedResult.pagination.count).toBe(2);
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.stringContaining('query GetBoardItemsPage'),
@@ -159,7 +159,7 @@ describe('GetBoardItemsPageTool', () => {
       const parsedResult = JSON.parse(result.content);
       expect(parsedResult.items).toHaveLength(2);
       expect(parsedResult.pagination.has_more).toBe(true);
-      expect(parsedResult.pagination.nextCursor).toBe('next_page_cursor_123');
+      expect(parsedResult.pagination.cursor).toBe('next_page_cursor_123');
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.stringContaining('query GetBoardItemsPage'),
         {
@@ -236,7 +236,7 @@ describe('GetBoardItemsPageTool', () => {
                   ]
                 }
               ],
-              nextCursor: null
+              cursor: null
             }
           }
         ]

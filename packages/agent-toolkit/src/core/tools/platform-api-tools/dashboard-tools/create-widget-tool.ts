@@ -60,7 +60,7 @@ export class CreateWidgetTool extends BaseMondayApiTool<typeof createWidgetToolS
     return createWidgetToolSchema;
   }
 
-  protected async executeInternal(input: ToolParsedInputType<typeof createWidgetToolSchema>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(input: ToolInputType<typeof createWidgetToolSchema>): Promise<ToolOutputType<never>> {
     try {
       // Prepare GraphQL variables
       const variables: CreateWidgetMutationVariables = {

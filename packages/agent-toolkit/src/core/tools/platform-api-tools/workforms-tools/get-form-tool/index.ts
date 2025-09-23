@@ -22,7 +22,7 @@ export class GetFormTool extends BaseMondayApiTool<typeof getFormToolSchema, nev
     return getFormToolSchema;
   }
 
-  protected async executeInternal(input: ToolParsedInputType<typeof getFormToolSchema>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(input: ToolInputType<typeof getFormToolSchema>): Promise<ToolOutputType<never>> {
     const variables: GetFormQueryVariables = {
       formToken: input.formToken,
     };

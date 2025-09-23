@@ -70,7 +70,7 @@ export class AllMondayApiTool extends BaseMondayApiTool<typeof allMondayApiToolS
     return errors.map((error) => error.message);
   }
 
-  protected async executeInternal(input: ToolParsedInputType<typeof allMondayApiToolSchema>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(input: ToolInputType<typeof allMondayApiToolSchema>): Promise<ToolOutputType<never>> {
     const { query, variables } = input;
 
     try {

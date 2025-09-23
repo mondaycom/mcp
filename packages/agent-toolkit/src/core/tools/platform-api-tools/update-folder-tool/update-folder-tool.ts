@@ -43,7 +43,7 @@ export class UpdateFolderTool extends BaseMondayApiTool<UpdateFolderToolInput> {
     return updateFolderToolSchema;
   }
 
-  protected async executeInternal(input: ToolParsedInputType<UpdateFolderToolInput>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(input: ToolInputType<UpdateFolderToolInput>): Promise<ToolOutputType<never>> {
     const variables = {
       folderId: input.folderId,
       name: input.name,

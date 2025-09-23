@@ -27,7 +27,7 @@ export class CreateUpdateTool extends BaseMondayApiTool<typeof createUpdateToolS
     return createUpdateToolSchema;
   }
 
-  protected async executeInternal(input: ToolParsedInputType<typeof createUpdateToolSchema>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(input: ToolInputType<typeof createUpdateToolSchema>): Promise<ToolOutputType<never>> {
     const variables: CreateUpdateMutationVariables = {
       itemId: input.itemId.toString(),
       body: input.body,
