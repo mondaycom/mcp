@@ -1,0 +1,14 @@
+{
+    "jest.virtualFolders": [
+        {
+            "name": "agent-toolkit",
+            "files": ["packages/agent-toolkit"],
+            "jestCommandLine": "yarn run jest --config ./packages/agent-toolkit/jest.config.ts"
+        },
+        {
+            "name": "monday-api-mcp",
+            "files": ["packages/monday-api-mcp"],
+            "jestCommandLine": "yarn run jest --config ./packages/monday-api-mcp/jest.config.js"
+        },
+    ]
+}
