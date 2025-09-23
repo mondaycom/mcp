@@ -1,9 +1,10 @@
 import { ApiClient } from '@mondaydotcomorg/api';
 import { ZodRawShape } from 'zod';
 import { ToolAnnotations } from '@modelcontextprotocol/sdk/types';
-import { Tool, ToolInputType, ToolOutputType, ToolType } from '../../tool';
+import { Tool, ToolInputType, ToolOutputType, ToolParsedInputType, ToolType } from '../../tool';
 import { trackEvent } from '../../../utils/tracking.utils';
 import { extractTokenInfo } from '../../../utils/token.utils';
+import { z } from 'zod';
 
 export type MondayApiToolContext = {
   boardId?: number;
@@ -44,9 +45,10 @@ export abstract class BaseMondayApiTool<
   async execute(input?: ToolInputType<Input>): Promise<ToolOutputType<Output>> {
     const startTime = Date.now();
     let isError = false;
-
     try {
-      const result = await this.executeInternal(input);
+      const inputSchema = this.getInputSchema();
+      const parsedInput = inputSchema ? z.object(inputSchema).parse(input) : input;
+      const result = await this.executeInternal(parsedInput as any);
       return result;
     } catch (error) {
       isError = true;
@@ -60,7 +62,7 @@ export abstract class BaseMondayApiTool<
   /**
    * Abstract method that subclasses should implement for their actual logic
    */
-  protected abstract executeInternal(input?: ToolInputType<Input>): Promise<ToolOutputType<Output>>;
+  protected abstract executeInternal(input?: ToolParsedInputType<Input>): Promise<ToolOutputType<Output>>;
 
   /**
    * Tracks tool execution with timing and error information

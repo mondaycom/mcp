@@ -112,7 +112,7 @@ export class MoveObjectTool extends BaseMondayApiTool<MoveObjectToolInput> {
         };
   }
 
-  protected async executeInternal(input: ToolInputType<MoveObjectToolInput>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(input: ToolParsedInputType<MoveObjectToolInput>): Promise<ToolOutputType<never>> {
     const { objectType } = input;
 
     switch (objectType) {

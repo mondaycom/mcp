@@ -27,7 +27,7 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
     return getBoardInfoToolSchema;
   }
 
-  protected async executeInternal(input: ToolInputType<typeof getBoardInfoToolSchema>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(input: ToolParsedInputType<typeof getBoardInfoToolSchema>): Promise<ToolOutputType<never>> {
     const variables: GetBoardInfoQueryVariables = {
       boardId: input.boardId.toString(),
     };

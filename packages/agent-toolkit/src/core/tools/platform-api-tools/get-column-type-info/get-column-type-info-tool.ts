@@ -26,7 +26,7 @@ export class GetColumnTypeInfoTool extends BaseMondayApiTool<typeof getColumnTyp
     return getColumnTypeInfoToolSchema;
   }
 
-  protected async executeInternal(input: ToolInputType<typeof getColumnTypeInfoToolSchema>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(input: ToolParsedInputType<typeof getColumnTypeInfoToolSchema>): Promise<ToolOutputType<never>> {
     const variables = {
       type: input.columnType,
     };

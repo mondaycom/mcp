@@ -49,7 +49,7 @@ export class CreateColumnTool extends BaseMondayApiTool<CreateColumnToolInput> {
     return createColumnInBoardToolSchema;
   }
 
-  protected async executeInternal(input: ToolInputType<CreateColumnToolInput>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(input: ToolParsedInputType<CreateColumnToolInput>): Promise<ToolOutputType<never>> {
     const boardId = this.context?.boardId ?? (input as ToolInputType<typeof createColumnInBoardToolSchema>).boardId;
 
     const variables: CreateColumnMutationVariables = {

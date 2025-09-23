@@ -81,7 +81,7 @@ USAGE EXAMPLES:
     return createDocToolSchema;
   }
 
-  protected async executeInternal(input: ToolInputType<typeof createDocToolSchema>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(input: ToolParsedInputType<typeof createDocToolSchema>): Promise<ToolOutputType<never>> {
     try {
       let docId: string | undefined;
       let docUrl: string | undefined;

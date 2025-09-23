@@ -35,7 +35,7 @@ export class CreateWorkspaceTool extends BaseMondayApiTool<CreateWorkspaceToolIn
     return createWorkspaceToolSchema;
   }
 
-  protected async executeInternal(input: ToolInputType<CreateWorkspaceToolInput>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(input: ToolParsedInputType<CreateWorkspaceToolInput>): Promise<ToolOutputType<never>> {
     const variables: CreateWorkspaceMutationVariables = {
       name: input.name,
       workspaceKind: input.workspaceKind,

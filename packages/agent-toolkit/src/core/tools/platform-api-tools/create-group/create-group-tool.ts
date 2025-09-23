@@ -35,7 +35,7 @@ export class CreateGroupTool extends BaseMondayApiTool<typeof createGroupToolSch
     return createGroupToolSchema;
   }
 
-  protected async executeInternal(input: ToolInputType<typeof createGroupToolSchema>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(input: ToolParsedInputType<typeof createGroupToolSchema>): Promise<ToolOutputType<never>> {
     const variables: CreateGroupMutationVariables = {
       boardId: input.boardId,
       groupName: input.groupName,
