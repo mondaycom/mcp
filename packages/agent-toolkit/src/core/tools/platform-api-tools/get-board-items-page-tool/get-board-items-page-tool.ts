@@ -1,14 +1,14 @@
 import { z } from 'zod';
 import { GetBoardItemsPageQuery, GetBoardItemsPageQueryVariables } from '../../../../monday-graphql/generated/graphql';
-import { getBoardItemsPage } from '../../../../monday-graphql/queries.graphql';
+import { getBoardItemsPage } from './get-board-items-page-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 
 export const getBoardItemsPageToolSchema = {
-  boardId: z.number(),
-  limit: z.number().min(1).max(1000).optional(),
-  cursor: z.string().optional(),
-  includeColumns: z.boolean().optional(),
+  boardId: z.number().describe('The id of the board to get items from'),
+  limit: z.number().min(1).max(100).optional().default(25).describe('The number of items to get'),
+  cursor: z.string().optional().describe('The cursor to get the next page of items, use the nextCursor from the previous response. If the nextCursor was null, it means there are no more items to get'),
+  includeColumns: z.boolean().optional().default(false).describe('Whether to include column values in the response'),
 };
 
 export type GetBoardItemsPageToolInput = typeof getBoardItemsPageToolSchema;
@@ -35,9 +35,9 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
   protected async executeInternal(input: ToolInputType<GetBoardItemsPageToolInput>): Promise<ToolOutputType<never>> {
     const variables: GetBoardItemsPageQueryVariables = {
       boardId: input.boardId.toString(),
-      limit: input.limit ?? 25,
+      limit: input.limit,
       cursor: input.cursor,
-      includeColumns: input.includeColumns ?? false,
+      includeColumns: input.includeColumns,
     };
 
     const res = await this.mondayApi.request<GetBoardItemsPageQuery>(getBoardItemsPage, variables);
