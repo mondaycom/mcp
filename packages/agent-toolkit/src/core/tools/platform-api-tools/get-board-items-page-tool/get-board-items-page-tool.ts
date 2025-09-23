@@ -1,14 +1,16 @@
 import { z } from 'zod';
 import { GetBoardItemsPageQuery, GetBoardItemsPageQueryVariables } from '../../../../monday-graphql/generated/graphql';
-import { getBoardItemsPage } from '../../../../monday-graphql/queries.graphql';
+import { getBoardItemsPage } from './queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 
+const DEFAULT_LIMIT = 25;
+
 export const getBoardItemsPageToolSchema = {
   boardId: z.number(),
-  limit: z.number().min(1).max(1000).optional(),
+  limit: z.number().min(1).max(1000).default(DEFAULT_LIMIT).optional(),
   cursor: z.string().optional(),
-  includeColumns: z.boolean().optional(),
+  includeColumns: z.boolean().default(false).optional(),
 };
 
 export type GetBoardItemsPageToolInput = typeof getBoardItemsPageToolSchema;
@@ -24,18 +26,20 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
   });
 
   getDescription(): string {
-    return `Get all items from a monday.com board with pagination support and optional column values. Returns structured JSON with item details, creation/update timestamps, and pagination info.`;
+    return `Get all items from a monday.com board with pagination support and optional column values. ` +
+      `Returns structured JSON with item details, creation/update timestamps, and pagination info. ` +
+      `Use the 'cursor' parameter from the response to get the next page of results when 'has_more' is true.`;
   }
 
 
   getInputSchema(): GetBoardItemsPageToolInput {
     return getBoardItemsPageToolSchema;
   }
-
+  
   protected async executeInternal(input: ToolInputType<GetBoardItemsPageToolInput>): Promise<ToolOutputType<never>> {
     const variables: GetBoardItemsPageQueryVariables = {
       boardId: input.boardId.toString(),
-      limit: input.limit ?? 25,
+      limit: input.limit ?? DEFAULT_LIMIT,
       cursor: input.cursor,
       includeColumns: input.includeColumns ?? false,
     };
