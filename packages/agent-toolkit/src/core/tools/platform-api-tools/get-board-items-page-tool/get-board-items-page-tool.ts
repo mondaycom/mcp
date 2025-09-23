@@ -24,14 +24,16 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
   });
 
   getDescription(): string {
-    return `Get all items from a monday.com board with pagination support and optional column values. Returns structured JSON with item details, creation/update timestamps, and pagination info.`;
+    return `Get all items from a monday.com board with pagination support and optional column values. ` +
+      `Returns structured JSON with item details, creation/update timestamps, and pagination info. ` +
+      `Use the 'cursor' parameter from the response to get the next page of results when 'has_more' is true.`;
   }
 
 
   getInputSchema(): GetBoardItemsPageToolInput {
     return getBoardItemsPageToolSchema;
   }
-
+  
   protected async executeInternal(input: ToolInputType<GetBoardItemsPageToolInput>): Promise<ToolOutputType<never>> {
     const variables: GetBoardItemsPageQueryVariables = {
       boardId: input.boardId.toString(),
