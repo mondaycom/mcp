@@ -560,24 +560,4 @@ export const getWorkspaceInfo = gql`
   }
 `;
 
-export const duplicateItem = gql`
-  mutation duplicateItem($boardId: ID!, $itemId: ID!, $withUpdates: Boolean) {
-    duplicate_item(board_id: $boardId, item_id: $itemId, with_updates: $withUpdates) {
-      id
-      name
-    }
-  }
-`;
-
-export const createSubitem = gql`
-  mutation createSubitem($parentItemId: ID!, $itemName: String!, $columnValues: JSON) {
-    create_subitem(parent_item_id: $parentItemId, item_name: $itemName, column_values: $columnValues) {
-      id
-      name
-      parent_item {
-        id
-      }
-    }
-  }
-`;
 
