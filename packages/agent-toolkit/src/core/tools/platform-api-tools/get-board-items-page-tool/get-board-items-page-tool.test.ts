@@ -1,8 +1,10 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameAsync, callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
-import { GetBoardItemsPageTool } from './get-board-items-page-tool';
-import { MondayAgentToolkitConfig, ToolMode } from 'src/core/monday-agent-toolkit';
+import { GetBoardItemsPageTool, GetBoardItemsPageToolInput, getBoardItemsPageToolSchema } from './get-board-items-page-tool';
+import { z, ZodTypeAny } from 'zod';
 
+
+export type inputType = z.objectInputType<GetBoardItemsPageToolInput, ZodTypeAny>;
 
 describe('GetBoardItemsPageTool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
@@ -91,7 +93,8 @@ describe('GetBoardItemsPageTool', () => {
     it('should successfully get board items with default parameters', async () => {
       mocks.setResponse(successfulResponseWithoutColumns);
 
-      const parsedResult = await callToolByNameAsync('get_board_items_page', { boardId: 123456789 });
+      const args: inputType = { boardId: 123456789 };
+      const parsedResult = await callToolByNameAsync('get_board_items_page', args);
 
       expect(parsedResult.board.id).toBe('123456789');
       expect(parsedResult.board.name).toBe('Test Board');
@@ -125,7 +128,8 @@ describe('GetBoardItemsPageTool', () => {
     it('should successfully get board items with custom limit', async () => {
       mocks.setResponse(successfulResponseWithoutColumns);
 
-      const parsedResult = await callToolByNameAsync('get_board_items_page', { boardId: 123456789, limit: 50 });
+      const args: inputType = { boardId: 123456789, limit: 50 };
+      const parsedResult = await callToolByNameAsync('get_board_items_page', args);
 
       expect(parsedResult.items).toHaveLength(2);
       expect(parsedResult.pagination.count).toBe(2);
@@ -143,7 +147,8 @@ describe('GetBoardItemsPageTool', () => {
     it('should successfully get board items with cursor for pagination', async () => {
       mocks.setResponse(successfulResponseWithItems);
 
-      const parsedResult = await callToolByNameAsync('get_board_items_page', { boardId: 123456789, cursor: 'previous_cursor_456' });
+      const args: inputType = { boardId: 123456789, cursor: 'previous_cursor_456' };
+      const parsedResult = await callToolByNameAsync('get_board_items_page', args);
 
       expect(parsedResult.items).toHaveLength(2);
       expect(parsedResult.pagination.has_more).toBe(true);
@@ -164,10 +169,11 @@ describe('GetBoardItemsPageTool', () => {
     it('should include column values when includeColumns is true', async () => {
       mocks.setResponse(successfulResponseWithItems);
 
-      const parsedResult = await callToolByNameAsync('get_board_items_page', {
+      const args: inputType = {
         boardId: 123456789,
         includeColumns: true
-      });
+      };
+      const parsedResult = await callToolByNameAsync('get_board_items_page', args);
 
       expect(parsedResult.items).toHaveLength(2);
       expect(parsedResult.items[0]).toEqual({
@@ -229,10 +235,11 @@ describe('GetBoardItemsPageTool', () => {
 
       mocks.setResponse(responseWithNullColumns);
 
-      const parsedResult = await callToolByNameAsync('get_board_items_page', {
+      const args: inputType = {
         boardId: 123456789,
         includeColumns: true
-      });
+      };
+      const parsedResult = await callToolByNameAsync('get_board_items_page', args);
 
       expect(parsedResult.items[0]).toEqual({
         id: 'item1',
@@ -251,9 +258,8 @@ describe('GetBoardItemsPageTool', () => {
     it('should handle empty board gracefully', async () => {
       mocks.setResponse(emptyResponse);
 
-      const parsedResult = await callToolByNameAsync('get_board_items_page', {
-        boardId: 123456789
-      });
+      const args: inputType = { boardId: 123456789 };
+      const parsedResult = await callToolByNameAsync('get_board_items_page', args);
 
       expect(parsedResult.board.name).toBe('Empty Board');
       expect(parsedResult.items).toHaveLength(0);
@@ -268,9 +274,8 @@ describe('GetBoardItemsPageTool', () => {
 
       mocks.setResponse(noBoardResponse);
 
-      const parsedResult = await callToolByNameAsync('get_board_items_page', {
-        boardId: 123456789
-      });
+      const args: inputType = { boardId: 123456789 };
+      const parsedResult = await callToolByNameAsync('get_board_items_page', args);
 
 
       expect(parsedResult.board.id).toBeUndefined();
@@ -285,10 +290,11 @@ describe('GetBoardItemsPageTool', () => {
       const errorMessage = 'GraphQL error occurred';
       mocks.setError(errorMessage);
 
-      const result = await callToolByNameRawAsync('get_board_items_page', {
+      const args: inputType = {
         boardId: 123456789,
         includeColumns: true
-      });
+      };
+      const result = await callToolByNameRawAsync('get_board_items_page', args);
 
       expect(result.content[0].text).toContain(errorMessage);
     });
@@ -306,9 +312,8 @@ describe('GetBoardItemsPageTool', () => {
 
       mocks.setResponse(malformedResponse);
 
-      const parsedResult = await callToolByNameAsync('get_board_items_page', {
-        boardId: 123456789
-      });
+      const args: inputType = { boardId: 123456789 };
+      const parsedResult = await callToolByNameAsync('get_board_items_page', args);
 
       expect(parsedResult.board.name).toBe('Test Board');
       expect(parsedResult.items).toHaveLength(0);
