@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { CreateItemMutation, CreateItemMutationVariables, DuplicateItemMutation, CreateSubitemMutation } from '../../../../monday-graphql/generated/graphql';
-import { createItem, duplicateItem, createSubitem } from '../../../../monday-graphql/queries.graphql';
+import { createItem } from '../../../../monday-graphql/queries.graphql';
+import { duplicateItem } from './duplicate-item.graphql';
+import { createSubitem } from './create-subitem.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { ChangeItemColumnValuesTool } from '../change-item-column-values-tool';
@@ -42,7 +44,7 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
   });
 
   getDescription(): string {
-    return 'Create a new item with provided values, create a subitem under a parent item, or duplicate an existing item and update it with new values';
+    return 'Create a new item with provided values, create a subitem under a parent item, or duplicate an existing item and update it with new values. Use parentItemId when creating a subitem under an existing item. Use duplicateFromItemId when copying an existing item with modifications.';
   }
 
   getInputSchema(): CreateItemToolInput {
