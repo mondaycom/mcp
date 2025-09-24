@@ -124,7 +124,7 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
         const res = await this.mondayApi.request<CreateSubitemMutation>(createSubitem, variables);
 
       if (!res.create_subitem?.id) {
-        throw new Error(' No subitem created');
+        throw new Error('Failed to create subitem: no subitem created');
       }
 
       return {
