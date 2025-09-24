@@ -51,19 +51,16 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
     if (this.context?.boardId) {
       return createItemToolSchema;
     }
-
     return createItemInBoardToolSchema;
   }
 
   protected async executeInternal(input: ToolInputType<CreateItemToolInput>): Promise<ToolOutputType<never>> {
     const boardId = this.context?.boardId ?? (input as ToolInputType<typeof createItemInBoardToolSchema>).boardId;
 
-    // Check for conflicting parameters
     if (input.duplicateFromItemId && input.parentItemId) {
       throw new Error('Cannot specify both parentItemId and duplicateFromItemId. Please provide only one of these parameters.');
     }
 
-    //three paths: duplicate item, create subitem, or create regular item
     if (input.duplicateFromItemId) {
       return await this.duplicateAndUpdateItem(input, boardId);
     } else if (input.parentItemId) {
@@ -74,78 +71,100 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
   }
 
   private async duplicateAndUpdateItem(input: ToolInputType<CreateItemToolInput>, boardId: number): Promise<ToolOutputType<never>> {
-
-    const duplicateVariables = {
-      boardId: boardId.toString(),
-      itemId: input.duplicateFromItemId!.toString()
-    };
-    
-    const duplicateRes = await this.mondayApi.request<DuplicateItemMutation>(duplicateItem, duplicateVariables);
-    
-    if (!duplicateRes.duplicate_item?.id) {
-      throw new Error('Failed to duplicate item');
-    }
-
-    let columnValuesParsed;
     try {
-      columnValuesParsed = JSON.parse(input.columnValues);
+      const duplicateVariables = {
+        boardId: boardId.toString(),
+        itemId: input.duplicateFromItemId!.toString()
+      };
+      
+      const duplicateRes = await this.mondayApi.request<DuplicateItemMutation>(duplicateItem, duplicateVariables);
+      
+      if (!duplicateRes.duplicate_item?.id) {
+        throw new Error('Failed to duplicate item: no item duplicated');
+      }
+
+      let columnValuesParsed;
+      try {
+        columnValuesParsed = JSON.parse(input.columnValues);
+      } catch (error) {
+        throw new Error('Invalid JSON in columnValues');
+      }
+      
+      const columnValuesAndName = {
+        ...columnValuesParsed,
+        name: input.name,
+      };
+
+      const changeColumnValuesTool = new ChangeItemColumnValuesTool(this.mondayApi, this.apiToken, { boardId: boardId });
+      const updateRes = await changeColumnValuesTool.execute({
+        itemId: parseInt(duplicateRes.duplicate_item.id),
+        columnValues: JSON.stringify(columnValuesAndName),
+      });
+
+      if (updateRes.content.includes('Error')) {
+        throw new Error('Failed to update duplicated item: ' + updateRes.content);
+      }
+
+      return {
+        content: `Item ${duplicateRes.duplicate_item.id} successfully duplicated from ${input.duplicateFromItemId} and updated`,
+      };
     } catch (error) {
-      throw new Error('Invalid JSON in columnValues');
+      this.rethrowWrapped(error, 'duplicate item');
     }
-    
-    const columnValuesAndName = {
-      ...columnValuesParsed,
-      name: input.name,
-    };
-
-    // Now update the duplicated item with the new name and column values
-    const changeColumnValuesTool = new ChangeItemColumnValuesTool(this.mondayApi, this.apiToken, { boardId: boardId });
-    const updateRes = await changeColumnValuesTool.execute({
-      itemId: parseInt(duplicateRes.duplicate_item.id),
-      columnValues: JSON.stringify(columnValuesAndName),
-    });
-
-    if (updateRes.content.includes('Error')) {
-      throw new Error('Failed to update duplicated item: ' + updateRes.content);
-    }
-
-    return {
-      content: `Item ${duplicateRes.duplicate_item.id} successfully duplicated from ${input.duplicateFromItemId} and updated`,
-    };
   }
 
   private async createSubitem(input: ToolInputType<CreateItemToolInput>): Promise<ToolOutputType<never>> {
-    // Create subitem using the create_subitem mutation
-    const variables = {
-      parentItemId: input.parentItemId!.toString(),
-      itemName: input.name,
-      columnValues: input.columnValues,
-    };
 
-    const res = await this.mondayApi.request<CreateSubitemMutation>(createSubitem, variables);
+      const variables = {
+        parentItemId: input.parentItemId!.toString(),
+        itemName: input.name,
+        columnValues: input.columnValues,
+      };
+      try {
+        const res = await this.mondayApi.request<CreateSubitemMutation>(createSubitem, variables);
 
-    if (!res.create_subitem?.id) {
-      throw new Error('Failed to create subitem');
+      if (!res.create_subitem?.id) {
+        throw new Error(' No subitem created');
+      }
+
+      return {
+        content: `Subitem ${res.create_subitem.id} successfully created under parent item ${input.parentItemId}`,
+      };
+    } catch (error) {
+      this.rethrowWrapped(error, 'create subitem');
     }
-
-    return {
-      content: `Subitem ${res.create_subitem.id} successfully created under parent item ${input.parentItemId}`,
-    };
   }
 
   private async createNewItem(input: ToolInputType<CreateItemToolInput>, boardId: number): Promise<ToolOutputType<never>> {
-    // Create new item
-    const variables: CreateItemMutationVariables = {
-      boardId: boardId.toString(),
-      itemName: input.name,
-      groupId: input.groupId,
-      columnValues: input.columnValues,
-    };
+    try {
+      const variables: CreateItemMutationVariables = {
+        boardId: boardId.toString(),
+        itemName: input.name,
+        groupId: input.groupId,
+        columnValues: input.columnValues,
+      };
 
-    const res = await this.mondayApi.request<CreateItemMutation>(createItem, variables);
+      const res = await this.mondayApi.request<CreateItemMutation>(createItem, variables);
 
-    return {
-      content: `Item ${res.create_item?.id} successfully created`,
-    };
+      return {
+        content: `Item ${res.create_item?.id} successfully created`,
+      };
+    } catch (error) {
+      this.rethrowWrapped(error, 'create item');
+    }
+    
+  }
+
+  private rethrowWrapped(error: unknown, operation: string): never {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    if (error instanceof Error && 'response' in error) {
+      const clientError = error as any;
+      if (clientError.response?.errors) {
+        throw new Error(`Failed to ${operation}: ${clientError.response.errors.map((e: any) => e.message).join(', ')}`);
+      }
+    }
+    
+    throw new Error(`Failed to ${operation}: ${errorMessage}`);
   }
 }
