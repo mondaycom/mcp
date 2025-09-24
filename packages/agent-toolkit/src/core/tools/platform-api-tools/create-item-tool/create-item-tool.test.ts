@@ -122,6 +122,41 @@ describe('Create Item Tool Behaviour', () => {
           columnValues: '{"text_column": "Test Value"}'
         })).rejects.toThrow('Bad thing happened!');
       });
+
+      it('Handles GraphQL response errors for create path', async () => {
+        const graphqlError = new Error('GraphQL Error');
+        (graphqlError as any).response = {
+          errors: [
+            { message: 'Invalid board ID' },
+            { message: 'Insufficient permissions' }
+          ]
+        };
+        mocks.setError(graphqlError);
+
+        const tool = new CreateItemTool(mocks.mockApiClient, 'fake_token', { boardId: 456 });
+
+        await expect(tool.execute({
+          name: 'Test Item',
+          columnValues: '{"text_column": "Test Value"}'
+        })).rejects.toThrow('Failed to create item: Invalid board ID, Insufficient permissions');
+      });
+
+      it('Handles GraphQL response errors for create path with single error', async () => {
+        const graphqlError = new Error('GraphQL Error');
+        (graphqlError as any).response = {
+          errors: [
+            { message: 'Board not found' }
+          ]
+        };
+        mocks.setError(graphqlError);
+
+        const tool = new CreateItemTool(mocks.mockApiClient, 'fake_token', { boardId: 456 });
+
+        await expect(tool.execute({
+          name: 'Test Item',
+          columnValues: '{"text_column": "Test Value"}'
+        })).rejects.toThrow('Failed to create item: Board not found');
+      });
     });
 
     describe('Duplicate and Update Item Path', () => {
@@ -172,6 +207,38 @@ describe('Create Item Tool Behaviour', () => {
           columnValues: '{"text_column": "Updated Value"}',
           duplicateFromItemId: 123
         })).rejects.toThrow('Duplicate failed');
+      });
+
+      it('Handles GraphQL response errors for duplicate path', async () => {
+        const graphqlError = new Error('GraphQL Error');
+        (graphqlError as any).response = {
+          errors: [
+            { message: 'Item not found' },
+            { message: 'Cannot duplicate item' }
+          ]
+        };
+        mocks.setError(graphqlError);
+
+        const tool = new CreateItemTool(mocks.mockApiClient, 'fake_token', { boardId: 456 });
+
+        await expect(tool.execute({
+          name: 'Updated Item',
+          columnValues: '{"text_column": "Updated Value"}',
+          duplicateFromItemId: 123
+        })).rejects.toThrow('Failed to duplicate item: Item not found, Cannot duplicate item');
+      });
+
+      it('Handles invalid JSON in columnValues for duplicate path', async () => {
+        // Set up a successful duplicate response so the API call succeeds, but JSON parsing fails
+        mocks.setResponse(successfulDuplicateItemResponse);
+        
+        const tool = new CreateItemTool(mocks.mockApiClient, 'fake_token', { boardId: 456 });
+
+        await expect(tool.execute({
+          name: 'Updated Item',
+          columnValues: 'invalid json',
+          duplicateFromItemId: 123
+        })).rejects.toThrow('Invalid JSON in columnValues');
       });
 
       it('Throws error when duplicate item returns no item', async () => {
@@ -290,6 +357,25 @@ describe('Create Item Tool Behaviour', () => {
           columnValues: '{"text_column": "Subitem Value"}',
           parentItemId: 123
         })).rejects.toThrow('Failed to create subitem');
+      });
+
+      it('Handles GraphQL response errors for create subitem path', async () => {
+        const graphqlError = new Error('GraphQL Error');
+        (graphqlError as any).response = {
+          errors: [
+            { message: 'Parent item not found' },
+            { message: 'Invalid column values' }
+          ]
+        };
+        mocks.setError(graphqlError);
+
+        const tool = new CreateItemTool(mocks.mockApiClient, 'fake_token', { boardId: 456 });
+
+        await expect(tool.execute({
+          name: 'New Subitem',
+          columnValues: '{"text_column": "Subitem Value"}',
+          parentItemId: 123
+        })).rejects.toThrow('Failed to create subitem: Parent item not found, Invalid column values');
       });
     });
 
