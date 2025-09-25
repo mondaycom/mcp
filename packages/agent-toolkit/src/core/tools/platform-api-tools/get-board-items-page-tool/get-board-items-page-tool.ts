@@ -19,47 +19,9 @@ export const getBoardItemsPageToolSchema = {
     compareAttribute: z.string().optional().describe('The attribute to compare the value to'),
     compareValue: z.any().describe('The value to compare the attribute to. This can be a string or index value depending on the column type.'),
     operator: z.nativeEnum(ItemsQueryRuleOperator).optional().default(ItemsQueryRuleOperator.AnyOf).describe('The operator to use for the filter'),
-  })).optional().describe(`The configuration of filters to apply on the items. Before sending the filters, use get_board_info tool to check types of columns on a board.
-    Then depending on the column type, you will filter, check out relevant API reference from list below to understand how to filter by the column.
-    
-    `),
+  })).optional().describe('The configuration of filters to apply on the items. Before sending the filters, use get_board_info tool to check types of columns on a board.Then depending on the column type, you will filter, check out relevant API reference from list below to understand how to filter by the column.'),
   filtersOperator: z.nativeEnum(ItemsQueryOperator).optional().default(ItemsQueryOperator.And).describe('The operator to use for the filters'),
 };
-
-// *API References:*
-//     - button - https://developer.monday.com/api-reference/docs/button
-//     - checkbox - https://developer.monday.com/api-reference/docs/checkbox
-//     - color_picker - https://developer.monday.com/api-reference/docs/color-picker
-//     - board_relation - https://developer.monday.com/api-reference/docs/connect
-//     - country - https://developer.monday.com/api-reference/docs/country
-//     - creation_log - https://developer.monday.com/api-reference/docs/creation-log
-//     - date - https://developer.monday.com/api-reference/docs/date
-//     - dependency - https://developer.monday.com/api-reference/docs/dependency
-//     - dropdown - https://developer.monday.com/api-reference/docs/dropdown
-//     - email - https://developer.monday.com/api-reference/docs/email
-//     - file - https://developer.monday.com/api-reference/docs/assets
-//     - formula - https://developer.monday.com/api-reference/docs/formula
-//     - hour - https://developer.monday.com/api-reference/docs/hour
-//     - item_id - https://developer.monday.com/api-reference/docs/item-id
-//     - last_updated - https://developer.monday.com/api-reference/docs/last-updated
-//     - link - https://developer.monday.com/api-reference/docs/link
-//     - location - https://developer.monday.com/api-reference/docs/location
-//     - long_text - https://developer.monday.com/api-reference/docs/long-text-1
-//     - mirror - https://developer.monday.com/api-reference/docs/mirror
-//     - doc - https://developer.monday.com/api-reference/docs/document
-//     - name - https://developer.monday.com/api-reference/docs/item-name
-//     - numbers - https://developer.monday.com/api-reference/docs/number
-//     - people - https://developer.monday.com/api-reference/docs/people
-//     - phone - https://developer.monday.com/api-reference/docs/phone
-//     - rating - https://developer.monday.com/api-reference/docs/rating
-//     - status - https://developer.monday.com/api-reference/docs/status
-//     - tags - https://developer.monday.com/api-reference/docs/tags
-//     - text - https://developer.monday.com/api-reference/docs/text
-//     - timeline - https://developer.monday.com/api-reference/docs/timeline
-//     - time_tracking - https://developer.monday.com/api-reference/docs/time-tracking-1
-//     - vote - https://developer.monday.com/api-reference/docs/vote
-//     - week - https://developer.monday.com/api-reference/docs/week
-//     - world_clock - https://developer.monday.com/api-reference/docs/world-clock
 
 export type GetBoardItemsPageToolInput = typeof getBoardItemsPageToolSchema;
 
