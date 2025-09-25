@@ -8933,6 +8933,7 @@ export type CreateItemMutation = { __typename?: 'Mutation', create_item?: { __ty
 export type CreateUpdateMutationVariables = Exact<{
   itemId: Scalars['ID']['input'];
   body: Scalars['String']['input'];
+  mentionsList?: InputMaybe<Array<InputMaybe<UpdateMention>> | InputMaybe<UpdateMention>>;
 }>;
 
 
