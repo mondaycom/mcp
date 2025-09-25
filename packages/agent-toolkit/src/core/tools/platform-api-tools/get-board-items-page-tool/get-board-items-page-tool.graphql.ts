@@ -1,11 +1,11 @@
 import { gql } from 'graphql-request';
 
 export const getBoardItemsPage = gql`
-  query GetBoardItemsPage($boardId: ID!, $limit: Int, $cursor: String, $includeColumns: Boolean!) {
+  query GetBoardItemsPage($boardId: ID!, $limit: Int, $cursor: String, $includeColumns: Boolean!, $queryParams: ItemsQuery) {
     boards(ids: [$boardId]) {
       id
       name
-      items_page(limit: $limit, cursor: $cursor) {
+      items_page(limit: $limit, cursor: $cursor, query_params: $queryParams) {
         items {
           id
           name
