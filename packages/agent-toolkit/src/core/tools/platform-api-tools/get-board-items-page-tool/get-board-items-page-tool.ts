@@ -17,9 +17,9 @@ export const getBoardItemsPageToolSchema = {
   filters: z.array(z.object({
     columnId: z.number().describe('The id of the column to filter by'),
     compareAttribute: z.string().optional().describe('The attribute to compare the value to'),
-    compareValue: z.string().describe('The value to compare the attribute to. This can be a string or index value depending on the column type.'),
+    compareValue: z.any().describe('The value to compare the attribute to. This can be a string or index value depending on the column type.'),
     operator: z.nativeEnum(ItemsQueryRuleOperator).optional().default(ItemsQueryRuleOperator.AnyOf).describe('The operator to use for the filter'),
-  })),
+  })).optional().describe('The configuration of filters to apply on the items'),
   filtersOperator: z.nativeEnum(ItemsQueryOperator).optional().default(ItemsQueryOperator.And).describe('The operator to use for the filters'),
 };
 
