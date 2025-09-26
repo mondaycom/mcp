@@ -11,7 +11,6 @@ const MIN_LIMIT = 1;
 export const getBoardItemsPageToolSchema = {
   boardId: z.number().describe('The id of the board to get items from'),
   itemIds: z.array(z.number()).optional().describe('The ids of the items to get. The count of items should be less than 100.'),
-  queryTerm: z.string().optional().describe('Special filter for getting items that contain the queryTerm in the name column'),
   limit: z.number().min(MIN_LIMIT).max(MAX_LIMIT).optional().default(DEFAULT_LIMIT).describe('The number of items to get'),
   cursor: z.string().optional().describe('The cursor to get the next page of items, use the nextCursor from the previous response. If the nextCursor was null, it means there are no more items to get'),
   includeColumns: z.boolean().optional().default(false).describe('Whether to include column values in the response'),
@@ -91,7 +90,10 @@ export const getBoardItemsPageToolSchema = {
       ❌ Wrong: {"columnId": "numbers", "compareValue": 100, "operator": "any_of"} // not using array with any_of operator
       ❌ Wrong: {"columnId": "numbers", "compareValue": ["50"], "operator": "greater_than"} // using array with single value operator
     
-    - name - NEVER QUERY BY NAME, USE queryTerm parameter instead
+    - name - Supported operators: "contains_text", "not_contains_text". CompareValue can be full or partial text
+    EXAMPLES:
+      ✅ Correct: {"columnId": "name", "compareValue": "marketing campaign", "operator": "contains_text"} // using string with contains_text
+      ✅ Correct: {"columnId": "name", "compareValue": "marketing campaign", "operator": "not_contains_text"} // using string with not_contains_text
     
     - status - Supported operators: any_of, not_any_of, contains_terms. CompareValue should be either:
       - index of label from column settings - when used with any_of, not_any_of operators
@@ -165,15 +167,6 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
           compare_attribute: filter.compareAttribute,
         }))
       }
-    }
-
-    if(input.queryTerm) {
-      variables.queryParams ??= {operator: ItemsQueryOperator.And, rules: []};
-      variables.queryParams.rules!.push({
-        column_id: 'name',
-        compare_value: input.queryTerm,
-        operator: ItemsQueryRuleOperator.ContainsText,
-      })
     }
 
     const res = await this.mondayApi.request<GetBoardItemsPageQuery>(getBoardItemsPage, variables);
