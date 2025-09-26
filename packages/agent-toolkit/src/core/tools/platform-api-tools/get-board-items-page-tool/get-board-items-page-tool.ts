@@ -8,19 +8,13 @@ const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 500;
 const MIN_LIMIT = 1;
 
-enum SearchTermType {
-  NameContains = 'name_contains_text',
-  NameNotContains = 'name_not_contains_text',
-  GeneralSearch = 'general_search',
-}
-
 export const getBoardItemsPageToolSchema = {
   boardId: z.number().describe('The id of the board to get items from'),
   itemIds: z.array(z.number()).optional().describe('The ids of the items to get. The count of items should be less than 100.'),
   searchTerm: z.string().optional().describe(`
     The search term to use for the search.
     - Use this when: the user provides a vague, incomplete, or approximate search term (e.g., “marketing campaign”, “John’s task”, “budget-related”), and there isn’t a clear exact compare value for a specific field.
-    - Do not use this when: the user specifies an exact value that maps directly to a column comparison (e.g., status = "Done", priority = "High", owner = "Daniel"). In these cases, prefer structured compare filters.
+    - Do not use this when: the user specifies an exact value that maps directly to a column comparison (e.g., name contains "marketing campaign", status = "Done", priority = "High", owner = "Daniel"). In these cases, prefer structured compare filters.
   `),
   limit: z.number().min(MIN_LIMIT).max(MAX_LIMIT).optional().default(DEFAULT_LIMIT).describe('The number of items to get'),
   cursor: z.string().optional().describe('The cursor to get the next page of items, use the nextCursor from the previous response. If the nextCursor was null, it means there are no more items to get'),
@@ -106,7 +100,10 @@ export const getBoardItemsPageToolSchema = {
       ❌ Wrong: {"columnId": "numbers", "compareValue": 100, "operator": "any_of"} // not using array with any_of operator
       ❌ Wrong: {"columnId": "numbers", "compareValue": ["50"], "operator": "greater_than"} // using array with single value operator
     
-    - name - **CRITICAL**: NEVER QUERY BY NAME, USE searchTerm parameter instead
+    - name - Supported operators: "contains_text", "not_contains_text". CompareValue can be full or partial text
+    EXAMPLES:
+      ✅ Correct: {"columnId": "name", "compareValue": "marketing campaign", "operator": "contains_text"} // using string with contains_text
+      ✅ Correct: {"columnId": "name", "compareValue": "marketing campaign", "operator": "not_contains_text"} // using string with not_contains_text
     
     - status - Supported operators: any_of, not_any_of, contains_terms. CompareValue should be either:
       - index of label from column settings - when used with any_of, not_any_of operators
