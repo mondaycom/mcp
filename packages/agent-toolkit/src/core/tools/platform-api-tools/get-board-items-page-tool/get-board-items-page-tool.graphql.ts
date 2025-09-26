@@ -22,3 +22,15 @@ export const getBoardItemsPage = gql`
     }
   }
 `;
+
+export const smartSearchGetBoardItemIds = gql`
+  query SmartSearchBoardItemIds($searchTerm: String!, $boardId: ID!) {
+    search_items(boardId: $boardId, query: $searchTerm, searchType: HYBRID, size: 100) {
+      results {
+        data {
+          id
+        }
+      }
+    }
+  }
+`;
