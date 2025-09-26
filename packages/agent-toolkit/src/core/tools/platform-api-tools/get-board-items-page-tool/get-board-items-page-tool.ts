@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { GetBoardItemsPageQuery, GetBoardItemsPageQueryVariables, ItemsQueryOperator, ItemsQueryRuleOperator } from '../../../../monday-graphql/generated/graphql';
+import { GetBoardItemsPageQuery, GetBoardItemsPageQueryVariables, ItemsOrderByDirection, ItemsQueryOperator, ItemsQueryRuleOperator } from '../../../../monday-graphql/generated/graphql';
 import { getBoardItemsPage } from './get-board-items-page-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
@@ -15,6 +15,11 @@ export const getBoardItemsPageToolSchema = {
   limit: z.number().min(MIN_LIMIT).max(MAX_LIMIT).optional().default(DEFAULT_LIMIT).describe('The number of items to get'),
   cursor: z.string().optional().describe('The cursor to get the next page of items, use the nextCursor from the previous response. If the nextCursor was null, it means there are no more items to get'),
   includeColumns: z.boolean().optional().default(false).describe('Whether to include column values in the response'),
+  columnIds: z.array(z.string()).optional().describe('The ids of the columns to get, can be used to reduce the response size when user asks for specific columns. Works only when includeColumns is true. If not provided, all columns will be returned'),
+  orderBy: z.array(z.object({
+    columnId: z.string().describe('The id of the column to order by'),
+    direction: z.nativeEnum(ItemsOrderByDirection).optional().default(ItemsOrderByDirection.Asc).describe('The direction to order by'),
+  })).optional().describe('The columns to order by, will control the order of the items in the response'),
   filters: z.array(z.object({
     columnId: z.string().describe('The id of the column to filter by'),
     compareAttribute: z.string().optional().describe('The attribute to compare the value to'),
@@ -151,10 +156,11 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
       boardId: input.boardId.toString(),
       limit: input.limit,
       cursor: input.cursor,
-      includeColumns: input.includeColumns
+      includeColumns: input.includeColumns,
+      columnIds: input.columnIds
     };
 
-    if(input.itemIds || input.filters) { 
+    if(input.itemIds || input.filters || input.orderBy) { 
       variables.queryParams = {
         ids: input.itemIds?.map(id => id.toString()),
         operator: input.filtersOperator,
@@ -163,6 +169,10 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
           compare_value: filter.compareValue,
           operator: filter.operator,
           compare_attribute: filter.compareAttribute,
+        })),
+        order_by: input.orderBy?.map(orderBy => ({
+          column_id: orderBy.columnId,
+          direction: orderBy.direction,
         }))
       }
     }
