@@ -1,7 +1,7 @@
 import { gql } from 'graphql-request';
 
 export const getBoardItemsPage = gql`
-  query GetBoardItemsPage($boardId: ID!, $limit: Int, $cursor: String, $includeColumns: Boolean!, $queryParams: ItemsQuery) {
+  query GetBoardItemsPage($boardId: ID!, $limit: Int, $cursor: String, $includeColumns: Boolean!, $columnIds: [String!], $queryParams: ItemsQuery) {
     boards(ids: [$boardId]) {
       id
       name
@@ -11,7 +11,7 @@ export const getBoardItemsPage = gql`
           name
           created_at
           updated_at
-          column_values @include(if: $includeColumns) {
+          column_values(ids: $columnIds) @include(if: $includeColumns) {
             id
             text
             value

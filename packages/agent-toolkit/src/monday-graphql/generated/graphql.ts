@@ -8617,6 +8617,7 @@ export type GetBoardItemsPageQueryVariables = Exact<{
   cursor?: InputMaybe<Scalars['String']['input']>;
   includeColumns: Scalars['Boolean']['input'];
   queryParams?: InputMaybe<ItemsQuery>;
+  columnIds?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
 }>;
 
 
