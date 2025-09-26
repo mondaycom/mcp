@@ -79,8 +79,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   // Dashboard Tools
   CreateDashboardTool,
   AllWidgetsSchemaTool,
-  CreateWidgetTool,
-  GetBoardItemsPageTool
+  CreateWidgetTool  
 ];
 
 export * from './all-monday-api-tool';
@@ -107,7 +106,6 @@ export * from './get-graphql-schema-tool';
 export * from './get-type-details-tool';
 export * from './get-users-tool';
 export * from './list-users-and-teams-tool/list-users-and-teams-tool';
-export * from './get-board-items-page-tool/get-board-items-page-tool';
 export * from './manage-tools-tool';
 export * from './move-item-to-group-tool';
 export * from './read-docs-tool';
