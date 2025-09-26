@@ -79,7 +79,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   // Dashboard Tools
   CreateDashboardTool,
   AllWidgetsSchemaTool,
-  CreateWidgetTool,
+  CreateWidgetTool  
 ];
 
 export * from './all-monday-api-tool';
