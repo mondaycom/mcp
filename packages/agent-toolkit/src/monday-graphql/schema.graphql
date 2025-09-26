@@ -6,6 +6,9 @@ directive @policy(policies: [[policy__Policy!]!]!) on FIELD_DEFINITION | OBJECT 
 
 """Root query type for the Dependencies service"""
 type Query {
+  """Namespace for all vibe-related queries"""
+  vibe: VibeQueries
+
   """
   Retrieve audit logs for your Monday account. You can
       filter logs by event types, user ID, IP address and start and end date.
@@ -103,17 +106,32 @@ type Query {
   """
   audit_event_catalogue: [AuditEventCatalogueEntry!]
 
-  """Get list of live workflows with pagination"""
-  get_live_workflows(
-    """Host instance ID (e.g., board ID) to filter workflows"""
-    hostInstanceId: String!
+  """List of all supported workflow variable kinds with their json schemas"""
+  get_workflow_variable_schemas: [WorkflowVariableSchema!]!
 
-    """Host type for filtering workflows"""
-    hostType: HostType!
+  """
+  Get blocks for the current user.
+  
+  Engine usage when building live workflows:
+  • Always invoke this query first to retrieve the catalogue of workflow steps available to the account.
+  • Each element in `blocks.blocks` contains an `id` – this is the canonical `blockReferenceId` that must be supplied inside `WorkflowBlockInput.blockReferenceId` when calling `create_live_workflow`.
+  • The `kind` field tells you whether the block is a TRIGGER, ACTION or CONDITION, which helps decide its placement in the workflow.
+  """
+  blocks(
+    """Input parameters for getting blocks"""
+    input: GetBlocksInput
+  ): BlocksResult
 
-    """Pagination parameters"""
-    pagination: PaginationInput
-  ): [Workflow!]
+  """
+  Fetch remote options for a field type.
+  
+  Engine usage when building live workflows:
+  • Certain block fields declare that their value must be chosen from a dynamic (remote) list – for example, status labels, column identifiers, users, etc.
+  • Before constructing the corresponding `WorkflowVariableInput`, call this query with the proper context parameters (fieldTypeReferenceId, boardId, columnId, etc.).
+  • Inspect the returned array and pick the desired option's `value`; place that value in `WorkflowVariableInput.sourceMetadata.value` and mark the variable's `sourceKind` as `REMOTE`.
+  • This ensures the workflow always references an up-to-date, valid option.
+  """
+  remote_options(input: RemoteOptionsInput!): RemoteOptionsResponse
 
   """
   Returns connections for the authenticated user. Supports filtering, pagination, ordering, and partial-scope options.
@@ -306,6 +324,31 @@ type Query {
     skipConnectedItems: Boolean
   ): TimelineResponse
 
+  """Get the entity snapshots"""
+  get_entity_snapshots(
+    """The id of the migration job."""
+    migrationJobId: String!
+
+    """The statuses to filter by"""
+    snapshotStatuses: [SnapshotStatus!]
+
+    """The ids of the entities to filter by"""
+    entityIds: [String!]
+  ): [GetSnapshotsQueryResults!]
+  get_entities_for_migration(migrationJobId: String!): [GetEntitiesForMigrationResult!]
+
+  """Get the entity restores"""
+  get_restores(
+    """The id of the migration job."""
+    migrationJobId: String!
+
+    """The ids of the entities to filter by"""
+    entityIds: [String!]!
+
+    """The statuses to filter by"""
+    status: [RestoreStatus!]! = []
+  ): [GetRestoresQueryResults!]
+
   """Get managed column data."""
   managed_column(
     """The managed column ids."""
@@ -314,6 +357,24 @@ type Query {
     """The state of the managed column."""
     state: [ManagedColumnState!]
   ): [ManagedColumn!]
+
+  """Get columns and their relations data."""
+  columns_and_relations(
+    """Which fields to include"""
+    select: [ColumnField!]! = [id]
+
+    """The board ids"""
+    start_from: [Int!]!
+
+    """Should show mermaid chart url"""
+    mermaid_url: Boolean
+
+    """Should show mermaid chart code"""
+    mermaid_code: Boolean
+
+    """Linkage"""
+    joins: [Joins!]! = []
+  ): ColumnsAndRelationsResponse
 
   """
   Retrieves the JSON schema definition for a specific column type. Use this query before calling update_column mutation to understand the structure and validation rules for the defaults parameter. The schema defines what properties are available when updating columns of a specific type.
@@ -338,6 +399,58 @@ type Query {
     """The ID of the board to export the graph for"""
     boardId: String!
   ): BoardGraphExport
+
+  """
+  Calculate the impact of a dependency related column value change on the dependency graph
+  """
+  calculate_dependency_related_change_cascading_effect(
+    """The ID of the board to calculate the impact on"""
+    board_id: ID!
+
+    """The ID of the pulse which the change is on"""
+    pulse_id: ID!
+
+    """The type of the column which the change is on, can be date or timeline"""
+    column_type: DependencyRelatedColumnTypes!
+
+    """The changed column value"""
+    value_change: DependencyRelatedValueInput!
+  ): JSON
+
+  """
+  Retrieves blocks for the published version of a specific article if the requesting user has permission to access it. Returns paginated blocks in their position order. Will return an error if the user lacks the required permissions.
+  """
+  article_blocks(
+    """
+    The unique identifier of the article object. Can be used to reference this specific object in queries and mutations. This ID can be found in the article's URL.
+    """
+    object_id: ID!
+
+    """Maximum number of blocks to return per article. Defaults to 25."""
+    limit: Int = 25
+
+    """Page number for blocks pagination, starting from 1."""
+    page: Int = 1
+  ): [ArticleBlock]!
+
+  """
+  Retrieves a list of published articles with their metadata and content blocks that the requesting user has permission to access. Articles without proper permissions will be filtered out. By default, returns the first 25 blocks per article. To retrieve more blocks, use the article_blocks query.
+  """
+  articles(
+    """
+    Array of article object IDs to fetch. These IDs can be found in the articles' URLs.
+    """
+    object_ids: [ID!]!
+
+    """Optional array of workspace IDs to filter articles by."""
+    workspace_ids: [ID!]
+
+    """Maximum number of articles to return. Defaults to 25."""
+    limit: Int = 25
+
+    """Page number, starting from 1."""
+    page: Int = 1
+  ): [Article]!
 
   """Get all personal list items by list ID"""
   favorites: [GraphqlHierarchyObjectItem!]
@@ -395,6 +508,12 @@ type Query {
     """
     input: MarketplaceAiSearchInput!
   ): MarketplaceAiSearchResults!
+
+  """Get the status of a bulk import process"""
+  bulk_import_status(
+    """The ID of the import to get status for"""
+    import_id: ID!
+  ): BulkImportStatus
 
   """Get an app by ID."""
   app(
@@ -472,6 +591,26 @@ type Query {
     The state of the board (all / active / archived / deleted), the default is active.
     """
     state: State = active
+
+    """A list of workspace ids the boards are contained in."""
+    workspace_ids: [ID]
+  ): [Board]
+
+  """Search boards by their name"""
+  boards_by_name(
+    """Number of items to get"""
+    limit: Int = 100
+
+    """Page number to get, starting at 1."""
+    page: Int = 1
+
+    """
+    The state of the board (all / active / archived / deleted), the default is active.
+    """
+    state: State = active
+
+    """The term to search board names by."""
+    term: String!
 
     """A list of workspace ids the boards are contained in."""
     workspace_ids: [ID]
@@ -579,6 +718,7 @@ type Query {
     """
     limit: Int! = 25
   ): ItemsResponse!
+  public_internal_test: PublicInternalTest
 
   """Get a collection of tags."""
   tags(
@@ -704,6 +844,45 @@ type Query {
     board_ids: [ID!]!
   ): [BoardMuteSettings!]
 
+  """
+  Retrieves a list of available object types that can be created or queried. Each object type is uniquely identified by an 'object_type_unique_key'. This key is required for mutations like 'create_object' and for filtering in the 'objects' query. Use this query to discover what types of objects are available in the system (e.g., 'workflows', 'projects') and get their corresponding unique keys. The structure of unique key is 'app_slug::app_feature_slug'.
+  """
+  object_types_unique_keys: [ObjectTypeUniqueKey!]
+
+  """
+  Retrieves a list of objects from the Monday.com Objects Platform based on specified filters. This query can return any type of object (board, doc, dashboard, workflow, etc.) depending on the filter criteria. Use object_type_unique_keys to filter for specific object types.
+  """
+  objects(
+    """
+    The unique identifier for the object type, formatted as 'app_slug::app_feature_slug'
+    """
+    object_type_unique_keys: [String!]
+
+    """
+    Filter by specific object ID(s). Use this when you need to retrieve one or more specific objects by their unique identifiers.
+    """
+    ids: [ID!]
+
+    """
+    Maximum number of objects to return in the response. Default is 25, but can be increased to retrieve more objects at once.
+    """
+    limit: Int
+
+    """Specifies the order in which objects are returned."""
+    order_by: OrderBy
+
+    """Filter objects by their state."""
+    state: ObjectState
+
+    """Filter objects by their kind/visibility setting."""
+    privacy_kind: PrivacyKind
+
+    """
+    Filter objects by workspace ID(s). Returns only objects that belong to the specified workspace(s). Use null or omit for objects in the main workspace.
+    """
+    workspace_ids: [ID!]
+  ): [Object!]
+
   """Get the API version in use"""
   version: Version!
 
@@ -718,6 +897,66 @@ type Query {
     """The aggregation query to execute"""
     query: AggregateQueryInput!
   ): AggregateQueryResult
+
+  """
+  A query to search across all boards in the account. Returns raw json results.
+  """
+  search_benchmark(
+    """A query to search for."""
+    query: String!
+
+    """The board id to search in."""
+    boardId: String
+
+    """Version of the search to use."""
+    version: String!
+  ): SearchBenchmarkResults
+
+  """
+  A query to search across all boards in the account. Returns raw json results.
+  """
+  search_cross_board(
+    """A query to search for."""
+    query: String!
+  ): SearchAllResult
+
+  """Search for items using various search strategies."""
+  search_items(
+    """The search query string."""
+    query: String
+
+    """The type of search to perform."""
+    searchType: Search!
+
+    """Maximum number of results to return (max 100)."""
+    size: Int!
+
+    """Whether to perform exact match search."""
+    exactMatch: Boolean
+
+    """Date range filter for created/updated dates."""
+    dateRange: SearchDateRangeInput
+
+    """Filter results to a specific board ID."""
+    boardId: ID
+
+    """Filter results to specific workspace IDs."""
+    workspaceIds: [Int!]
+
+    """Filter by assignee (person IDs and/or team IDs)."""
+    assignee: AssigneeInput
+
+    """Filter by status."""
+    status: String
+
+    """
+    Boost configuration for search results. When not set, uses default configuration from feature flag.
+    """
+    boosts: BoostConfigurationInput
+
+    """Reranking strategy to use for results."""
+    rerankingStrategy: RerankingStrategy
+  ): SearchItemsGraphQlResultsView
 
   """Get a collection of monday dev sprints"""
   sprints(
@@ -746,6 +985,9 @@ type Query {
 
 """Root mutation type for the Dependencies service"""
 type Mutation {
+  """Namespace for all vibe-related mutations"""
+  vibe: VibeMutations
+
   """Create a new table view"""
   create_view_table(
     """The ID of the board"""
@@ -994,6 +1236,57 @@ type Mutation {
     id: String!
   ): CustomActivity
 
+  """Create a snapshot for a given entity in a migration job"""
+  create_entity_snapshot(
+    """The id of the migration job."""
+    migrationJobId: String!
+
+    """The entity to snapshot."""
+    entity: String!
+
+    """Whether to include descendants in the snapshot."""
+    includeDescendants: Boolean = true
+  ): CreateEntitySnapshotResult
+
+  """Create a new migration job"""
+  create_migration_job(
+    """The target account ID."""
+    targetAccountId: Int!
+
+    """The target user ID."""
+    targetUserId: Int!
+
+    """The API token for the target account."""
+    targetAccountApiToken: String
+  ): CreateMigrationJobResult
+
+  """Connect a migration job from a source account to the target account"""
+  connect_migration_job(
+    """The migration job ID from the source account."""
+    migrationJobId: String!
+
+    """The source account ID."""
+    sourceAccountId: Int!
+
+    """The source user ID."""
+    sourceUserId: Int!
+
+    """The source region."""
+    sourceRegion: String!
+  ): ConnectMigrationJobResult
+
+  """Restore an entity from a migration job"""
+  restore_entity(
+    """The id of the migration job."""
+    migrationJobId: String!
+
+    """The package to restore."""
+    entity: String!
+
+    """The API token for the source account."""
+    sourceAccountApiToken: String
+  ): RestoreEntityResult
+
   """Create managed column of type dropdown mutation."""
   create_dropdown_managed_column(
     """The column title."""
@@ -1173,6 +1466,17 @@ type Mutation {
   ): Column
 
   """
+  Deletes a column from a board. Cannot delete mandatory columns (e.g., name column).
+  """
+  delete_column(
+    """The unique identifier of the board containing the column to delete."""
+    board_id: ID!
+
+    """The unique identifier of the column to delete."""
+    column_id: String!
+  ): Column
+
+  """
   Creates a new status column with strongly typed settings. Status columns allow users to track item progress through customizable labels (e.g., "Working on it", "Done", "Stuck"). This mutation is specifically for status/color columns and provides type-safe creation with label configuration.
   """
   create_status_column(
@@ -1293,7 +1597,15 @@ type Mutation {
   ): RequiredColumns
 
   """Update the dependency column for a specific pulse"""
-  update_dependency_column(boardId: String!, pulseId: String!, value: DependencyValueInput!, columnId: String!): JSON!
+  update_dependency_column(
+    boardId: String!
+    pulseId: String!
+    value: DependencyValueInput!
+    columnId: String!
+
+    """Pusher socket id to exclude from receiving a pusher event"""
+    pusherSocketId: String
+  ): JSON!
 
   """
   Adds markdown content to an existing document by converting it into document blocks. Use this to append content to the end of a document or insert content after a specific block. The markdown will be parsed and converted into the appropriate document block types (text, headers, lists, etc.). Returns the IDs of the newly created blocks on success.
@@ -1308,6 +1620,24 @@ type Mutation {
     """Optional block ID to insert the markdown content after."""
     afterBlockId: String
   ): DocBlocksFromMarkdownResult
+
+  """
+  Creates a new article in the specified workspace. Optionally accepts a name and folder ID. Returns the created article metadata.
+  """
+  create_article(
+    """
+    The display name of the article. This is what appears in the monday.com interface.
+    """
+    name: String
+
+    """The ID of the workspace containing this article."""
+    workspace_id: ID!
+
+    """
+    The ID of the folder containing this article, if the article is organized in a folder structure.
+    """
+    folder_id: ID
+  ): ArticleMetadata
 
   """
   Creates multiple document blocks in a single operation for efficient content creation. Use this when adding substantial content like importing documents, creating structured content (articles, reports, guides), or building complex document sections. Supports all block types including text paragraphs, headers, bullet/numbered lists, images, tables, code blocks, and more. Much faster than creating blocks individually. Perfect for content migration, template creation, or generating documents from external data. Maximum 25 blocks per request.
@@ -1328,6 +1658,14 @@ type Mutation {
     """
     blocksInput: [CreateBlockInput!]!
   ): [DocumentBlockV2!]
+
+  """Deletes an article with the specified object ID"""
+  delete_article(
+    """
+    The unique identifier of the article object. Can be used to reference this specific object in queries and mutations. This ID can be found in the article's URL.
+    """
+    object_id: ID!
+  ): ArticleMetadata
 
   """
   Permanently deletes a document and all its content from the system. This action cannot be undone. The document will be removed from all user views and workspaces. Use with caution - ensure the document is no longer needed before deletion. Returns success status and the deleted document ID.
@@ -1368,6 +1706,72 @@ type Mutation {
     """
     blockIds: [String!]
   ): ExportMarkdownResult
+
+  """
+  Imports HTML content as a new document by converting it into document blocks. The HTML will be parsed and converted into the appropriate document block types (text, headers, lists, etc.). Returns the ID of the newly created document on success.
+  """
+  import_doc_from_html(
+    """The HTML content to convert into a new document."""
+    html: String!
+
+    """The workspace ID where the document should be created."""
+    workspaceId: ID!
+
+    """
+    The access level of the document. Defaults to "public" if not specified.
+    """
+    kind: DocKind
+
+    """
+    The folder ID where the document should be placed. If not provided, the document will be created at the root level of the workspace.
+    """
+    folderId: ID
+
+    """
+    The name/title of the document. If not provided, the title will be inferred from the HTML content.
+    """
+    title: String
+  ): ImportDocFromHtmlResult
+
+  """
+  Publishes an article with the specified object ID. Allows setting privacy level, target folder, and managing subscribers (users and teams). Returns the updated article metadata.
+  """
+  publish_article(
+    """
+    The unique identifier of the article object. Can be used to reference this specific object in queries and mutations. This ID can be found in the article's URL.
+    """
+    object_id: ID!
+
+    """
+    The kind/visibility setting of the article (private, public). Determines who can access it.
+    """
+    privacy_kind: PrivacyKind!
+
+    """
+    The ID of the folder to move the article to. If not specified, the article will remain at its current folder level
+    """
+    folder_id: ID
+
+    """
+    List of user IDs to add as subscribers to this article. Only applicable when privacy_kind is PRIVATE
+    """
+    add_subscriber_ids: [ID!]
+
+    """
+    List of team IDs to add as subscribers to this article. Only applicable when privacy_kind is PRIVATE
+    """
+    add_subscriber_team_ids: [ID!]
+
+    """
+    List of user IDs to remove from article subscribers. Only applicable when privacy_kind is PRIVATE
+    """
+    remove_subscriber_ids: [ID!]
+
+    """
+    List of team IDs to remove from article subscribers. Only applicable when privacy_kind is PRIVATE
+    """
+    remove_subscriber_team_ids: [ID!]
+  ): ArticleMetadata
 
   """
   Updates the content of a specific article block. The block must belong to a draft article that the user has permission to edit. Cannot update blocks of published articles.
@@ -1426,8 +1830,42 @@ type Mutation {
     account_slug: String!
   ): DeleteMarketplaceAppDiscountResult!
 
+  """
+  Initialize bulk import for a board and group. Returns import ID and upload URL to begin the process.
+  """
+  bulk_import_items(
+    """The ID of the board to import items into"""
+    board_id: ID!
+
+    """The ID of the group to import items into"""
+    group_id: ID!
+  ): BulkImportInit
+
+  """Creates a new app with the specified configuration."""
+  create_app(
+    """App configuration data"""
+    input: CreateAppInput!
+  ): AppType
+
+  """
+  Updates an existing app. If the app latest version is live, a new draft version is automatically created and updated.
+  """
+  update_app(
+    """The app identifier"""
+    id: ID!
+
+    """App configuration data to update"""
+    input: UpdateAppInput!
+  ): AppType
+
+  """Removes an app from the system. This operation is irreversible."""
+  delete_app(
+    """The app identifier"""
+    id: ID!
+  ): AppDeletionResponse
+
   """Update an app feature."""
-  updateAppFeature(
+  update_app_feature(
     """The ID of the app feature to update."""
     id: ID!
 
@@ -1748,6 +2186,9 @@ type Mutation {
     """Optional flag to create an empty board (without any default items)"""
     empty: Boolean = false
 
+    """Optional entity model id to extend the board with"""
+    entity_model_id: String
+
     """Optional board folder id"""
     folder_id: ID
 
@@ -1897,6 +2338,18 @@ type Mutation {
     parent_item_id: ID!
   ): Item
 
+  """Creates several new pending users in the account."""
+  create_users(
+    """The email addresses of the created users."""
+    emails: [String]!
+
+    """The kind of the invited users (member / guest / view_only)"""
+    kind: InvitedUserKind
+
+    """The product you invite the users to."""
+    product_kind: ProductKind
+  ): [CreateUserResult]
+
   """Create a new webhook."""
   create_webhook(
     """The board's unique identifier."""
@@ -1932,15 +2385,6 @@ type Mutation {
     """The board's unique identifier"""
     board_id: ID!
   ): Board
-
-  """Delete a column."""
-  delete_column(
-    """The board's unique identifier."""
-    board_id: ID!
-
-    """The column's unique identifier."""
-    column_id: String!
-  ): Column
 
   """Delete a document block"""
   delete_doc_block(
@@ -2079,6 +2523,18 @@ type Mutation {
     """
     kind: String = "global"
   ): AppSubscriptionOperationsCounter
+
+  """Invites a new user to the account."""
+  invite_user(
+    """The email address of the invited user."""
+    email: String!
+
+    """The kind of the invited user (member / guest / view_only)"""
+    kind: InvitedUserKind
+
+    """The product you invite the user to"""
+    product_kind: ProductKind
+  ): User
 
   """Move an item to a different board."""
   move_item_to_board(
@@ -2331,6 +2787,11 @@ type Mutation {
   """
   convert_board_to_project(input: ConvertBoardToProjectInput!): ConvertBoardToProjectResult
 
+  """
+  Create a new project in monday.com from scratch. This mutation creates a project (board) with comprehensive customization options including: privacy settings (private/public/share), optional companions like Resource Planner for enhanced project management capabilities, workspace assignment for organizational structure, folder placement for better organization, and template selection for predefined project structures. Use this when you need to programmatically create a brand new project with specific configuration requirements. Returns the project ID upon successful creation.
+  """
+  create_project(input: CreateProjectInput!): CreateProjectResult
+
   """Updates a notification setting's enabled status."""
   update_notification_setting(
     """
@@ -2378,6 +2839,125 @@ type Mutation {
     """
     enabled: [CustomizableBoardSettings!]
   ): [BoardMuteSettings!]
+
+  """
+  Creates a new object in the Monday.com Objects Platform. The type of object created is determined by the app_feature_reference_id parameter. This mutation can create boards, docs, dashboards, workflows, or specialized objects like CRM, capacity manager, etc. Under the hood, this creates a board with the specified app_feature_id.
+  """
+  create_object(
+    """
+    The name of the new object. This will be displayed in the Monday.com interface as the primary identifier for this object.
+    """
+    name: String!
+
+    """
+    The kind/visibility setting of the object (private, public, share). Determines who can access it.
+    """
+    privacy_kind: PrivacyKind!
+
+    """
+    The ID of the workspace containing this object. Null indicates the object is in the main workspace.
+    """
+    workspace_id: ID
+
+    """
+    Optional description of the object, providing additional context about its purpose or contents.
+    """
+    description: String
+
+    """
+    The ID of the folder to create the object in. Used for organizing objects in folders. visible in the left pane of the platform. Must be a valid and existing workspace id in monday.com.
+    """
+    folder_id: ID
+
+    """
+    List of user IDs who will be assigned as owners of this object. Owners have full control permissions.
+    """
+    owner_ids: [ID!]
+
+    """
+    List of team IDs who will be assigned as owners of this object. All members of these teams will have owner permissions.
+    """
+    owner_team_ids: [ID!]
+
+    """
+    List of user IDs who will be added as subscribers to this object. Subscribers receive notifications about changes.
+    """
+    subscriber_ids: [ID!]
+
+    """
+    List of team IDs who will be added as subscribers to this object. All members of these teams will receive notifications about changes.
+    """
+    subscriber_teams_ids: [ID!]
+
+    """
+    The unique identifier for the object type, formatted as 'app_slug::app_feature_slug. To create an object you must provide this key. You can get a list of available keys by using the 'object_types_unique_keys' query.
+    """
+    object_type_unique_key: String!
+
+    """
+    JSON of creation payload, that will include additional fields for the object creation
+    """
+    payload: JSON
+  ): Object
+
+  """
+  Permanently deletes an object from the Monday.com Objects Platform. Unlike archiving, deletion is only reversible for 30 days and removes all associated data. This operation works for any object type including boards, docs, dashboards, workflows, and specialized objects (CRM, capacity manager, etc.). WARNING: This operation cannot be undone after 30 days.
+  """
+  delete_object(
+    """
+    The unique identifier of the object to delete. Each object has a unique ID regardless of its type (board, doc, dashboard, etc.). WARNING: Deletion is only reversible for 30 days.
+    """
+    id: ID!
+  ): Object
+
+  """
+  Archives an object in the Monday.com Objects Platform, changing its state to "archived" while preserving all data. Archived objects remain in the system but are hidden from regular views. This operation works for any object type including boards, docs, dashboards, workflows, and specialized objects (CRM, capacity manager, etc.). Under the hood, this archives the board that represents this object.
+  """
+  archive_object(
+    """
+    The unique identifier of the object to archive. Each object has a unique ID regardless of its type (board, doc, dashboard, etc.).
+    """
+    id: ID!
+  ): Object
+
+  """
+  Adds users to an existing object as either subscribers or owners. Subscribers receive notifications about object changes, while owners have full control permissions. Works with any object type including boards, docs, dashboards, workflows, and specialized objects (CRM, capacity manager, etc.). Equivalent to the add_users_to_board mutation in the boards API.
+  """
+  add_subscribers_to_object(
+    """
+    The unique identifier of the object to add users to. Each object has a unique ID regardless of its type (board, doc, dashboard, etc.).
+    """
+    id: ID!
+
+    """
+    List of user IDs to add to the object. These must be valid user IDs existing in the Monday.com platform.
+    """
+    user_ids: [ID!]!
+
+    """
+    The role to assign to the users. "owner" grants full control permissions, while "subscriber" only provides notification access. If not specified, users will be added as subscribers.
+    """
+    kind: SubscriberKind = SUBSCRIBER
+  ): Object
+
+  """Updates an object."""
+  update_object(id: String!, input: UpdateObjectInput!): Object
+
+  """
+  Publishes object out of draft state. Returns {success: true} on success, {success: false} on failure.
+  """
+  publish_object(
+    """The unique identifier of the object instance."""
+    id: ID!
+  ): ObjectOperationResponse
+
+  """
+  Unpublishes object from public state back to draft state. Returns {success: true} on success, {success: false} on failure.
+  """
+  unpublish_object(
+    """The unique identifier of the object instance."""
+    id: ID!
+  ): ObjectOperationResponse
 
   """Connect project to portfolio"""
   connect_project_to_portfolio(
@@ -2748,14 +3328,538 @@ type Mutation {
   ): ResponseForm
 }
 
+"""Response from AI action request"""
+type AiActionResponse {
+  """The structured response data from the AI"""
+  data: JSON
+
+  """Whether the request was successful"""
+  success: Boolean
+
+  """Token usage information"""
+  usage: TokenUsage
+}
+
+"""Permission result for creating views on a specific board"""
+type BoardViewPermission {
+  """The board ID"""
+  board_id: ID
+
+  """Whether the user can create views on this board"""
+  can_create: Boolean
+}
+
+"""A chat message in a conversation"""
+type ChatMessage {
+  """Unique identifier for the chat message"""
+  id: Int
+
+  """ID of the Vibe app this message belongs to"""
+  vibe_app_id: Int
+
+  """ID of the account that owns this message"""
+  account_id: Int
+
+  """ID of the user who sent or received this message"""
+  user_id: Int
+
+  """Who sent this message"""
+  sender: ChatSender
+
+  """The message content"""
+  message: JSON
+
+  """The type of message"""
+  message_type: ChatMessageKind
+
+  """ID of the code version associated with this message"""
+  code_version_id: String
+
+  """The visibility state of the message"""
+  state: ChatMessageState
+
+  """ID of the version this message can rollback to"""
+  rollback_version_id: String
+
+  """The reason why this message was hidden"""
+  hide_reason: HideReason
+
+  """ID of the version this message was hidden from (for redo purposes)"""
+  redo_version_id: String
+
+  """User feedback for this chat message"""
+  feedbacks: [UserFeedback!]!
+
+  """The date and time the object was created"""
+  created_at: Date
+
+  """The date and time the object was last updated"""
+  updated_at: Date
+}
+
+"""The type of chat message"""
+enum ChatMessageKind {
+  """A processing message"""
+  PROCESSING
+
+  """A text message"""
+  TEXT
+
+  """A message containing the LLM's reasoning"""
+  REASONING
+
+  """An error message with a list of errors"""
+  ERROR
+}
+
+"""Input for paginating chat messages"""
+input ChatMessagePaginationInput {
+  """Maximum number of messages to retrieve (default: 50)"""
+  limit: Int = 50
+
+  """Fetch messages starting from this Date (inclusive)"""
+  fromDate: Date
+
+  """Fetch messages before this Date (exclusive)"""
+  beforeDate: Date
+}
+
+"""The visibility state of a chat message"""
+enum ChatMessageState {
+  """Message is visible to users"""
+  VISIBLE
+
+  """Message is hidden from users"""
+  HIDDEN
+}
+
+"""The sender of a chat message"""
+enum ChatSender {
+  """Message is from a user"""
+  USER
+
+  """Message is from a Vibe AI agent"""
+  VIBE
+}
+
 """A date."""
 scalar Date
+
+"""Result of a deployment operation"""
+type DeploymentResult {
+  """Whether the operation was successful"""
+  success: Boolean
+}
+
+"""The sentiment of user feedback"""
+enum FeedbackSentiment {
+  """Positive feedback indicating satisfaction"""
+  POSITIVE
+
+  """Negative feedback indicating dissatisfaction"""
+  NEGATIVE
+}
+
+"""The reason why a message was hidden"""
+enum HideReason {
+  """Message was hidden due to a rollback operation"""
+  ROLLBACK
+}
+
+"""Types of entities that can host an AI app instance"""
+enum HostEntityType {
+  """A Monday.com board hosting the app instance"""
+  BOARD
+
+  """A Monday.com item hosting the app instance"""
+  ITEM
+}
 
 """An ISO 8601-encoded datetime (e.g., 2024-04-09T13:45:30Z)"""
 scalar ISO8601DateTime
 
 """A JSON formatted string."""
 scalar JSON
+
+"""Message type for sending chat messages"""
+enum MessageTypeInput {
+  """A text message"""
+  TEXT
+
+  """An error message with a list of errors"""
+  ERROR
+}
+
+"""Types of Monday.com entities that can be used as data sources"""
+enum MondayDataSourceType {
+  """A Monday.com board as data source"""
+  BOARD
+}
+
+"""A prompt suggestion for a vibe"""
+type PromptSuggestion {
+  """The name of the prompt suggestion"""
+  name: String
+
+  """The prompt suggestion"""
+  prompt: String
+}
+
+"""Standard success response for mutations"""
+type SuccessResponse {
+  """Whether the operation was successful"""
+  success: Boolean
+
+  """Optional message describing the result"""
+  message: String
+}
+
+"""Token usage details from AI request"""
+type TokenUsage {
+  """Total tokens used in the request"""
+  total_tokens: Int
+
+  """Tokens used in the prompt"""
+  prompt_tokens: Int
+
+  """Tokens used in the completion"""
+  completion_tokens: Int
+}
+
+"""User feedback for AI chat messages"""
+type UserFeedback {
+  """Unique identifier for the feedback"""
+  id: ID
+
+  """The account ID associated with the feedback"""
+  accountId: Int
+
+  """The user ID who provided the feedback"""
+  userId: Int
+
+  """The sentiment of the feedback (positive or negative)"""
+  feedbackSentiment: FeedbackSentiment
+
+  """The feedback message text content"""
+  feedbackMessage: String
+
+  """The ID of the chat message this feedback relates to"""
+  messageId: ID
+
+  """When the feedback was created"""
+  createdAt: Date
+
+  """When the feedback was last updated"""
+  updatedAt: Date
+}
+
+"""A vibe app created by the AI app builder"""
+type VibeApp {
+  """The unique identifier of the vibe app"""
+  id: Int
+
+  """The current status of the vibe app"""
+  status: VibeAppStatus
+
+  """
+  Whether the current version returned to the user is preview of a draft or live version
+  """
+  is_preview_mode: Boolean!
+
+  """The URL where the vibe app is deployed"""
+  deployment_url: String
+
+  """The name of the vibe app"""
+  name: String
+
+  """Whether the current app version is published to live"""
+  is_published: Boolean
+
+  """The UI metadata of the vibe app"""
+  ui_metadata: VibeAppUIMetadata!
+
+  """The date and time the object was created"""
+  created_at: Date
+
+  """The date and time the object was last updated"""
+  updated_at: Date
+
+  """
+  Chat messages for this app. Returns messages in chronological order (oldest to newest)
+  """
+  chat_messages(
+    """Pagination options for fetching messages"""
+    pagination: ChatMessagePaginationInput
+  ): [ChatMessage!]!
+
+  """Instances of this vibe app deployed to different Monday.com entities"""
+  instances: [VibeAppInstance!]!
+
+  """
+  All code versions for this vibe app, ordered by version number descending
+  """
+  code_versions(
+    """Maximum number of versions to retrieve"""
+    limit: Int
+  ): [VibeCodeVersion!]!
+}
+
+"""An instance of a vibe app deployed to a specific Monday.com entity"""
+type VibeAppInstance {
+  """Unique identifier for the app instance"""
+  id: Int
+
+  """Type of the entity hosting this app instance"""
+  host_entity_type: HostEntityType
+
+  """ID of the specific entity hosting this app instance"""
+  host_entity_id: String
+
+  """Type of the entity used as data source"""
+  data_source_entity_type: MondayDataSourceType
+
+  """IDs of the specific entities used as data sources"""
+  data_source_entity_ids: [String!]
+
+  """External instance identifier"""
+  instance_id: String
+
+  """The date and time the object was created"""
+  created_at: Date
+
+  """The date and time the object was last updated"""
+  updated_at: Date
+}
+
+"""The status of an AI-generated app"""
+enum VibeAppStatus {
+  """App has been created but generation has not started"""
+  CREATED
+
+  """App is currently being generated"""
+  GENERATING
+
+  """App is currently processing a message"""
+  PROCESSING_MESSAGE
+
+  """App is currently being deployed"""
+  DEPLOYING
+
+  """App has been successfully generated and is ready to use"""
+  READY
+}
+
+"""The UI metadata of the vibe app"""
+type VibeAppUIMetadata {
+  """The color of the app card"""
+  app_card_color: String
+}
+
+"""The status of a code version"""
+enum VibeAppVersionStatus {
+  """Version is in draft state"""
+  DRAFT
+
+  """Version is currently live/deployed"""
+  LIVE
+
+  """Version has been retired"""
+  RETIRED
+}
+
+"""A code version of a vibe app"""
+type VibeCodeVersion {
+  """The unique identifier of the code version"""
+  id: String
+
+  """The status of this code version"""
+  status: VibeAppVersionStatus
+
+  """The sequential version number for this code version"""
+  version_number: Int
+
+  """A descriptive name for this version"""
+  version_name: String
+
+  """When this version was deployed to live (if applicable)"""
+  deployed_at: Date
+
+  """When this version was retired (if applicable)"""
+  retired_at: Date
+
+  """The full version object this was restored from (if this is a rollback)"""
+  restored_from_version: VibeCodeVersion
+
+  """ID of the version that can be redone from this rollback point"""
+  redo_version_id: String
+
+  """The date and time the object was created"""
+  created_at: Date
+
+  """The date and time the object was last updated"""
+  updated_at: Date
+}
+
+"""Namespace for all vibe-related mutations"""
+type VibeMutations {
+  """Create a new vibe app and generates an app view from a prompt"""
+  create_app(
+    """The prompt to generate the app from"""
+    prompt: String!
+
+    """The entity type (e.g. board)"""
+    entity_type: HostEntityType!
+
+    """The entity ID (e.g. board ID)"""
+    entity_id: String
+  ): VibeApp
+
+  """Create user feedback for a chat message"""
+  create_user_feedback(
+    """The sentiment of the feedback (positive or negative)"""
+    feedback_sentiment: FeedbackSentiment!
+
+    """The feedback message text"""
+    feedback_message: String!
+
+    """The ID of the chat message this feedback relates to"""
+    message_id: ID!
+  ): UserFeedback
+
+  """Deploy this vibe app"""
+  deploy(
+    """The id of the vibe app"""
+    id: ID!
+
+    """The version ID to deploy"""
+    version_id: String!
+  ): DeploymentResult
+
+  """Publish this vibe app to the current account"""
+  publish(
+    """The id of the vibe app"""
+    id: ID!
+  ): SuccessResponse
+
+  """Promote the current draft version to live for this vibe"""
+  publish_draft(
+    """The id of the vibe app"""
+    id: ID!
+  ): SuccessResponse
+
+  """Send a chat message to this vibe app"""
+  send_chat_message(
+    """The id of the vibe app"""
+    id: ID!
+
+    """The type of message to send"""
+    message_type: MessageTypeInput!
+
+    """The message content to send"""
+    message: String!
+
+    """List of errors (required for error messages)"""
+    errors: [String!]
+  ): SuccessResponse
+
+  """
+  Set the requesting user to preview the provided internal version id. Currently uses the latest draft/live on platform.
+  """
+  set_preview_version(
+    """The id of the vibe app"""
+    id: ID!
+
+    """Internal code version id (UUID)"""
+    version_id: String!
+  ): SuccessResponse
+
+  """Rollback an AI app to an older specific version """
+  rollback_to_version(
+    """The id of the vibe app"""
+    id: ID!
+
+    """The id of the version to rollback to"""
+    version_id: String!
+  ): SuccessResponse
+
+  """Execute an AI action and get a structured response"""
+  ai_actions(
+    """The prompt to send to the AI"""
+    prompt: String!
+
+    """
+    JSON Schema for structured output (optional, defaults to text response)
+    """
+    schema: JSON
+
+    """System prompt to guide the AI behavior"""
+    systemPrompt: String
+
+    """The ID of the app making the request"""
+    appId: ID
+  ): AiActionResponse!
+}
+
+"""Permissions for vibe related actions"""
+type VibePermissions {
+  """Permission to create open workspaces"""
+  create_open_workspace: Boolean
+
+  """Permission to create views on the specified boards"""
+  create_board_views(
+    """Array of board IDs to check permissions for"""
+    board_ids: [ID!]!
+  ): [BoardViewPermission!]
+}
+
+"""Provides permissions for vibe related actions"""
+type VibeQueries {
+  """
+  Generate AI-powered prompt suggestions for building applications on Monday.com entities
+  """
+  prompt_suggestions(
+    """The ID of the Monday.com entity (board, item, etc.)"""
+    entity_id: ID!
+
+    """The type of Monday.com entity"""
+    entity_type: MondayDataSourceType!
+
+    """Number of prompt suggestions to generate"""
+    number_of_prompts: Int = 6
+  ): [PromptSuggestion!]!
+
+  """Get this vibe app details"""
+  app(
+    """The id of the vibe app"""
+    id: ID
+
+    """The app feature reference id corresponding to the vibe app"""
+    appFeatureReferenceId: ID
+  ): VibeApp
+
+  """Get a list of vibe apps for the current user"""
+  apps(
+    status: VibeAppStatus
+
+    """Number of items to get, the default is 25."""
+    limit: Int = 25
+
+    """Page number to get, starting at 1."""
+    page: Int = 1
+
+    """Search term for filtering apps"""
+    searchTerm: String
+  ): [VibeApp!]
+
+  """Get all user feedback for the current user"""
+  user_feedback_by_user(
+    """Maximum number of feedback entries to return (default: 50)"""
+    limit: Int
+  ): [UserFeedback!]
+
+  """Permissions for vibe related actions"""
+  permissions: VibePermissions
+}
 
 type AuditEventCatalogueEntry {
   name: String
@@ -2926,6 +4030,70 @@ type User {
   utc_hours_diff: Int
 }
 
+"""Base field type implementation"""
+type BaseFieldType implements FieldType {
+  """Unique identifier for the field type"""
+  id: Int
+
+  """Unique key of the field type"""
+  uniqueKey: String
+
+  """Name of the field type"""
+  name: String
+
+  """Description of the field type"""
+  description: String
+
+  """Current state of the field type"""
+  state: FieldTypeState
+
+  """Unique key identifier for the field type"""
+  key: String
+
+  """Default key for fields of this type"""
+  defaultFieldKey: String
+
+  """
+  Dependency configuration specifying mandatory and optional field dependencies required to enable this field and compute its dynamic values. When fetching the permitted values for custom input fields via the remote_options query, you must provide these dependencies in the query input.
+  """
+  dependencyConfig: DependencyConfig
+
+  """List of field type implementations"""
+  implement: [FieldTypeImplementation!]
+}
+
+"""A block in the framework"""
+type Block {
+  """Unique identifier for the block"""
+  id: Int
+
+  """Unique key of the block"""
+  uniqueKey: String
+
+  """Name of the block"""
+  name: String
+
+  """Description of the block"""
+  description: String
+
+  """Type of the block"""
+  kind: String
+
+  """
+  Configuration for input fields. To fetch the available options of a specific input field, first query the block requesting the `fieldTypeData` for that field and then call the `remote_options` query using the resulting `fieldTypeReferenceId`. 
+  """
+  inputFieldsConfig: [InputFieldConfig!]
+
+  """Configuration for output fields"""
+  outputFieldsConfig: [OutputFieldConfig!]
+}
+
+"""Result of a blocks query"""
+type BlocksResult {
+  """List of blocks"""
+  blocks: [Block!]
+}
+
 """
 Represents an integration connection between a monday.com account and an external service.
 """
@@ -2963,15 +4131,341 @@ type Connection {
   updatedAt: String
 }
 
-enum HostType {
-  """Workflow hosted under an app feature object"""
-  APP_FEATURE_OBJECT
+"""Configuration for a custom input field"""
+type CustomInputFieldConfig implements InputFieldConfig {
+  """Unique identifier for the field"""
+  id: Int
 
-  """Workflow hosted in a board"""
-  BOARD
+  """Key identifier for the field"""
+  fieldKey: String
 
-  """Workflow hosted in the account"""
-  ACCOUNT
+  """Display title for the field"""
+  fieldTitle: String
+
+  """Whether the field can be null"""
+  isNullable: Boolean
+
+  """Whether the field is an array type"""
+  isArray: Boolean
+
+  """Whether the field is optional"""
+  isOptional: Boolean
+
+  """Additional information about the field"""
+  information: FieldInformation
+
+  """Detailed description of the field"""
+  description: FieldInformation
+
+  """Type of the field relation"""
+  type: FieldTypeRelationType
+
+  """Reference ID to the field type"""
+  fieldTypeReferenceId: Int
+
+  """Unique key of the field type"""
+  fieldTypeUniqueKey: String
+
+  """Constraints applied to the field"""
+  constraints: InputFieldConstraints
+
+  """
+  Data for the referenced field type. Fetch this field when you need the `fieldTypeReferenceId` to call the `remote_options` query and retrieve the available options for the input field.
+  """
+  fieldTypeData: FieldType
+}
+
+"""Configuration for a custom output field"""
+type CustomOutputFieldConfig implements OutputFieldConfig {
+  """Unique identifier for the field"""
+  id: Int
+
+  """Key identifier for the field"""
+  fieldKey: String
+
+  """Display title for the field"""
+  fieldTitle: String
+
+  """Whether the field can be null"""
+  isNullable: Boolean
+
+  """Whether the field is an array type"""
+  isArray: Boolean
+
+  """Whether the field is optional"""
+  isOptional: Boolean
+
+  """Additional information about the field"""
+  information: FieldInformation
+
+  """Detailed description of the field"""
+  description: FieldInformation
+
+  """Type of the field relation"""
+  type: FieldTypeRelationType
+
+  """Reference ID to the field type"""
+  fieldTypeReferenceId: Int
+
+  """Unique key of the field type"""
+  fieldTypeUniqueKey: String
+
+  """Constraints applied to the field"""
+  constraints: OutputFieldConstraints
+
+  """Data for the referenced field type"""
+  fieldTypeData: FieldType
+}
+
+"""
+Defines mandatory and optional dependencies that must be populated to allow resolving the field dynamic values
+"""
+type DependencyConfig {
+  """Required dependencies evaluated in order"""
+  orderedMandatoryFields: [DependencyField!]
+
+  """
+  Non-required dependencies that refine the dynamic values request but do not block enablement
+  """
+  optionalFields: [DependencyField!]
+}
+
+"""
+Maps a source field-type to the key name expected in the dynamic-values payload for this dependency
+"""
+type DependencyField {
+  """Reference ID of the field-type that supplies the dependency value"""
+  sourceFieldTypeReferenceId: Int
+
+  """Unique key of the source field type"""
+  sourceFieldTypeUniqueKey: String
+
+  """JSON key that the backend expects for this dependency value"""
+  targetFieldKey: String
+}
+
+"""Information about a field"""
+type FieldInformation {
+  """The text content of the field information"""
+  text: String
+
+  """A link to more information"""
+  link: JSON
+}
+
+"""A field type in the framework"""
+interface FieldType {
+  """Unique identifier for the field type"""
+  id: Int
+
+  """Unique key of the field type"""
+  uniqueKey: String
+
+  """Name of the field type"""
+  name: String
+
+  """Description of the field type"""
+  description: String
+
+  """Current state of the field type"""
+  state: FieldTypeState
+
+  """Unique key identifier for the field type"""
+  key: String
+
+  """Default key for fields of this type"""
+  defaultFieldKey: String
+
+  """
+  Dependency configuration specifying mandatory and optional field dependencies required to enable this field and compute its dynamic values. When fetching the permitted values for custom input fields via the remote_options query, you must provide these dependencies in the query input.
+  """
+  dependencyConfig: DependencyConfig
+
+  """List of field type implementations"""
+  implement: [FieldTypeImplementation!]
+}
+
+"""Implementation of a field type"""
+type FieldTypeImplementation {
+  """Unique identifier for the implementation"""
+  id: Int
+
+  """Unique key of the app feature"""
+  uniqueKey: String
+
+  """Name of the implementation"""
+  name: String
+}
+
+"""The type of relation between a field and its type"""
+enum FieldTypeRelationType {
+  """The field type is a primitive type (string, number, boolean, etc.)"""
+  PRIMITIVE
+
+  """The field type is an interface type"""
+  INTERFACE
+
+  """The field type is a custom type"""
+  CUSTOM
+}
+
+"""The state of a field type"""
+enum FieldTypeState {
+  """The field type is active and can be used"""
+  ACTIVE
+
+  """The field type has been deleted and cannot be used"""
+  DELETED
+}
+
+"""Input parameters for getting blocks"""
+input GetBlocksInput {
+  """Optional array of app feature unique keys to filter blocks"""
+  app_feature_unique_keys: [String!]
+
+  """Optional array of contexts to filter blocks"""
+  contexts: [String!]
+}
+
+"""Interface for input field configuration"""
+interface InputFieldConfig {
+  """Unique identifier for the field"""
+  id: Int
+
+  """Key identifier for the field"""
+  fieldKey: String
+
+  """Display title for the field"""
+  fieldTitle: String
+
+  """Whether the field can be null"""
+  isNullable: Boolean
+
+  """Whether the field is an array type"""
+  isArray: Boolean
+
+  """Whether the field is optional"""
+  isOptional: Boolean
+
+  """Additional information about the field"""
+  information: FieldInformation
+
+  """Detailed description of the field"""
+  description: FieldInformation
+
+  """Type of the field relation"""
+  type: FieldTypeRelationType
+}
+
+"""Input field constraints"""
+type InputFieldConstraints {
+  """Dependencies for remote options that affect this field"""
+  remoteOptionsDependencies: JSON
+
+  """Dependencies that affect this field's behavior or validation"""
+  dependencies: JSON
+
+  """Dependencies between this field and its subfields"""
+  subFieldsDependencies: JSON
+
+  """Credential dependencies required for this field"""
+  credentials: JSON
+}
+
+"""Configuration for an interface input field"""
+type InterfaceInputFieldConfig implements InputFieldConfig {
+  """Unique identifier for the field"""
+  id: Int
+
+  """Key identifier for the field"""
+  fieldKey: String
+
+  """Display title for the field"""
+  fieldTitle: String
+
+  """Whether the field can be null"""
+  isNullable: Boolean
+
+  """Whether the field is an array type"""
+  isArray: Boolean
+
+  """Whether the field is optional"""
+  isOptional: Boolean
+
+  """Additional information about the field"""
+  information: FieldInformation
+
+  """Detailed description of the field"""
+  description: FieldInformation
+
+  """Type of the field relation"""
+  type: FieldTypeRelationType
+
+  """Name of the subfield in the interface"""
+  subfieldName: String
+
+  """Constraints applied to the field"""
+  constraints: InputFieldConstraints
+}
+
+"""Data required to request the next page of remote options"""
+type NextPageRequestData {
+  """The page identifier to request"""
+  page: JSON!
+
+  """Optional cursor for cursor-based pagination"""
+  cursor: JSON
+}
+
+"""A single option in a remote options list"""
+type Option {
+  """The value of the option"""
+  value: JSON
+
+  """The display title of the option"""
+  title: String
+}
+
+"""Interface for output field configuration"""
+interface OutputFieldConfig {
+  """Unique identifier for the field"""
+  id: Int
+
+  """Key identifier for the field"""
+  fieldKey: String
+
+  """Display title for the field"""
+  fieldTitle: String
+
+  """Whether the field can be null"""
+  isNullable: Boolean
+
+  """Whether the field is an array type"""
+  isArray: Boolean
+
+  """Whether the field is optional"""
+  isOptional: Boolean
+
+  """Additional information about the field"""
+  information: FieldInformation
+
+  """Detailed description of the field"""
+  description: FieldInformation
+
+  """Type of the field relation"""
+  type: FieldTypeRelationType
+}
+
+"""Output field constraints"""
+type OutputFieldConstraints {
+  """Dependencies that affect this field's output behavior"""
+  dependencies: JSON
+
+  """Dependencies between this field and its subfields in the output"""
+  subFieldsDependencies: JSON
+
+  """Credential dependencies required for this field's output"""
+  credentials: JSON
 }
 
 """Pagination parameters for queries"""
@@ -2983,93 +4477,238 @@ input PaginationInput {
   lastId: Int
 }
 
-type Workflow {
-  """Workflow numeric ID (supports both integer and bigint)"""
-  id: String
+"""Primitive field type implementation"""
+type PrimitiveFieldType implements FieldType {
+  """Unique identifier for the field type"""
+  id: Int
 
-  """Title of the workflow"""
-  title: String
+  """Unique key of the field type"""
+  uniqueKey: String
 
-  """Detailed description of the workflow"""
+  """Name of the field type"""
+  name: String
+
+  """Description of the field type"""
   description: String
 
-  """Define the workflow's steps and the configuration of each step"""
-  workflowBlocks: [WorkflowBlock!]
+  """Current state of the field type"""
+  state: FieldTypeState
+
+  """Unique key identifier for the field type"""
+  key: String
+
+  """Default key for fields of this type"""
+  defaultFieldKey: String
 
   """
-  Variables used within this workflow. To get the accurate JSON schema call the GraphQL query 'get_workflow_variable_schemas'
+  Dependency configuration specifying mandatory and optional field dependencies required to enable this field and compute its dynamic values. When fetching the permitted values for custom input fields via the remote_options query, you must provide these dependencies in the query input.
   """
-  workflowVariables: JSON
+  dependencyConfig: DependencyConfig
 
-  """Hierarchy level the workflow is hosted in"""
-  workflowHostData: WorkflowHostData
+  """List of field type implementations"""
+  implement: [FieldTypeImplementation!]
 
-  """Type of host for this workflow"""
-  hostType: HostType
+  """The primitive type of the field"""
+  primitiveType: PrimitiveTypes
 
-  """Instance ID of the host"""
-  hostInstanceId: Int
-
-  """Notice/Error message for the workflow"""
-  noticeMessage: String
-
-  """Reference ID of the creator app feature"""
-  creatorAppFeatureReferenceId: Int
-
-  """ID of the creator app"""
-  creatorAppId: Int
+  """Configuration metadata for the field type"""
+  configurartionMetadata: JSON
 }
 
-type WorkflowBlock {
-  """Unique node identifier within the workflow"""
-  workflowNodeId: Int
+"""Configuration for a primitive input field"""
+type PrimitiveInputFieldConfig implements InputFieldConfig {
+  """Unique identifier for the field"""
+  id: Int
 
-  """Reference ID of the block"""
-  blockReferenceId: Int
-
-  """Title of the workflow block"""
-  title: String
-
-  """
-  Defines the input fields of the workflow block. This corresponds to the input fields defined by the block used in the Workflow Block. You must call the remote_options query to retrieve the allowed values for any custom input field before configuring it.
-  """
-  inputFields: [WorkflowBlockInputField!]
-
-  """Configuration for credential sources"""
-  credentialsSourceConfig: JSON
-
-  """
-  Configuration for the next workflow blocks. To get the accurate JSON schema call the graphQL query 'get_workflow_block_next_mapping_schemas
-  """
-  nextWorkflowBlocksConfig: JSON
-  kind: WorkflowBlockKind
-}
-
-type WorkflowBlockInputField {
-  """The block's field key"""
+  """Key identifier for the field"""
   fieldKey: String
 
-  """
-  Key of the workflow variable defining the configuration for the field key. Always a positive number
-  """
-  workflowVariableKey: Int
+  """Display title for the field"""
+  fieldTitle: String
+
+  """Whether the field can be null"""
+  isNullable: Boolean
+
+  """Whether the field is an array type"""
+  isArray: Boolean
+
+  """Whether the field is optional"""
+  isOptional: Boolean
+
+  """Additional information about the field"""
+  information: FieldInformation
+
+  """Detailed description of the field"""
+  description: FieldInformation
+
+  """Type of the field relation"""
+  type: FieldTypeRelationType
+
+  """Type of the primitive field"""
+  primitiveType: PrimitiveTypes
 }
 
-"""
-The kind of workflow block. This is the type of the block that is used in the UI
-"""
-enum WorkflowBlockKind {
-  """A wait block"""
-  WAIT
-}
-
-"""Hierarchy level the workflow is hosted in"""
-type WorkflowHostData {
-  """Type of host for this workflow"""
-  type: HostType
-
-  """Instance ID of the host"""
+"""Configuration for a primitive output field"""
+type PrimitiveOutputFieldConfig implements OutputFieldConfig {
+  """Unique identifier for the field"""
   id: Int
+
+  """Key identifier for the field"""
+  fieldKey: String
+
+  """Display title for the field"""
+  fieldTitle: String
+
+  """Whether the field can be null"""
+  isNullable: Boolean
+
+  """Whether the field is an array type"""
+  isArray: Boolean
+
+  """Whether the field is optional"""
+  isOptional: Boolean
+
+  """Additional information about the field"""
+  information: FieldInformation
+
+  """Detailed description of the field"""
+  description: FieldInformation
+
+  """Type of the field relation"""
+  type: FieldTypeRelationType
+
+  """Type of the primitive field"""
+  primitiveType: PrimitiveTypes
+}
+
+"""The primitive types supported by the system"""
+enum PrimitiveTypes {
+  """String type for text values"""
+  STRING
+
+  """Number type for integer values"""
+  NUMBER
+
+  """Float type for decimal values"""
+  FLOAT
+
+  """Boolean type for true/false values"""
+  BOOLEAN
+
+  """Date type for date values"""
+  DATE
+
+  """Hour type for hour values"""
+  HOUR
+}
+
+"""
+Input type for requesting remote options for a field type, including dependencies, credentials, pagination, and search query.
+"""
+input RemoteOptionsInput {
+  """The unique key of the field type"""
+  field_type_unique_key: String!
+
+  """
+  Map all the dependencies fieldKeys to their values. Example: { "my-field-key": { value: 123 }, "my-other-field-key": { value: 456 } } .The schema is: Record<string, { value: unknown }>
+  """
+  dependencies_values: JSON
+
+  """
+  Map a credentialsKey to the credentials data. Example: { "my-credentials-key": { userCredentialsId: 123, accessToken: "abc" } }
+  """
+  credentials_values: JSON
+
+  """
+  Pagination data matching the schema of the field's remote options pagination data
+  """
+  page_request_data: JSON
+
+  """Search query"""
+  query: String
+
+  """Request specific values to fetch their title"""
+  values_to_fetch: JSON
+}
+
+"""
+Response containing a list of remote options and pagination information
+"""
+type RemoteOptionsResponse {
+  """List of available options"""
+  options: [Option!]
+
+  """Whether the options list supports pagination"""
+  isPaginated: Boolean
+
+  """Whether this is the last page of options"""
+  isLastPage: Boolean
+
+  """Data required to fetch the next page of options"""
+  nextPageRequestData: NextPageRequestData
+
+  """Optional disclaimer text to display with the options"""
+  disclaimer: String
+}
+
+"""Object field type implementation"""
+type SubfieldsFieldType implements FieldType {
+  """Unique identifier for the field type"""
+  id: Int
+
+  """Unique key of the field type"""
+  uniqueKey: String
+
+  """Name of the field type"""
+  name: String
+
+  """Description of the field type"""
+  description: String
+
+  """Current state of the field type"""
+  state: FieldTypeState
+
+  """Unique key identifier for the field type"""
+  key: String
+
+  """Default key for fields of this type"""
+  defaultFieldKey: String
+
+  """
+  Dependency configuration specifying mandatory and optional field dependencies required to enable this field and compute its dynamic values. When fetching the permitted values for custom input fields via the remote_options query, you must provide these dependencies in the query input.
+  """
+  dependencyConfig: DependencyConfig
+
+  """List of field type implementations"""
+  implement: [FieldTypeImplementation!]
+
+  """Indicates if the object field type has remote subfields"""
+  hasRemoteSubfields: Boolean
+}
+
+"""The kind and JSON schema definition for a given workflow variable kind"""
+type WorkflowVariableSchema {
+  """The kind of workflow variable"""
+  kind: WorkflowVariableSourceKind
+
+  """JSON schema of the workflow variable"""
+  schema: JSON
+}
+
+enum WorkflowVariableSourceKind {
+  """A value defined by the user"""
+  user_config
+
+  """A value from a previous node output"""
+  node_results
+
+  """A value from a reference to another workflow variable"""
+  reference
+
+  """
+  Points to the host ID value where the workflow is hosted (board ID, object ID, account ID, etc.). It's auto calculated during when the workflow runs
+  """
+  host_metadata
 }
 
 """Automation block execution event"""
@@ -3405,8 +5044,14 @@ type Board {
   """The board's permissions."""
   permissions: String!
 
+  """The Board's source solution item mapping"""
+  source_solution_item_mapping: String
+
   """The board's state (all / active / archived / deleted)."""
   state: State!
+
+  """The subitem's board."""
+  subitem_board: Board
 
   """The board's subscribers."""
   subscribers: [User]!
@@ -4010,6 +5655,132 @@ type TimelineResponse {
   ): TimelineItemsPage!
 }
 
+"""The result of the connect_migration_job mutation."""
+type ConnectMigrationJobResult {
+  """Whether the connection was successfully created or already exists."""
+  success: Boolean
+
+  """The unique identifier of the migration job connection."""
+  migrationJobConnectionId: ID
+}
+
+type CreateEntitySnapshotResult {
+  """The unique identifier of the snapshot."""
+  snapshotId: ID!
+
+  """The date and time the snapshot was created."""
+  createdAt: String!
+
+  """The entity that was snapshot."""
+  entity: String!
+
+  """The unique identifier of the migration job."""
+  migrationJobId: String!
+}
+
+type CreateMigrationJobResult {
+  """The unique identifier of the migration job."""
+  id: ID!
+}
+
+type GetEntitiesForMigrationResult {
+  """The entities for migration."""
+  entityId: String
+}
+
+"""The result of querying entity restores."""
+type GetRestoresQueryResults {
+  """The unique identifier of the restore."""
+  id: ID!
+
+  """The date and time the restore was created."""
+  createdAt: String!
+
+  """The entity id of the restore."""
+  entityId: String!
+
+  """The unique identifier of the migration job."""
+  migrationJobId: String!
+
+  """The status of the restore."""
+  status: RestoreStatus!
+}
+
+type GetSnapshotsQueryResults {
+  """The unique identifier of the snapshot."""
+  id: ID!
+
+  """The date and time the snapshot was created."""
+  createdAt: String!
+
+  """The entity id of the snapshot."""
+  entityId: String!
+
+  """The unique identifier of the migration job."""
+  migrationJobId: String!
+
+  """The status of the snapshot."""
+  status: SnapshotStatus!
+}
+
+"""The result of the restore entity mutation."""
+type RestoreEntityResult {
+  """Confirms the restore request was accepted."""
+  accepted: Boolean
+}
+
+"""The possible statuses of a restore operation."""
+enum RestoreStatus {
+  """The restore is pending and has not started yet."""
+  pending
+
+  """The restore is currently being processed."""
+  processing
+
+  """The restore completed successfully."""
+  success
+
+  """The restore failed to complete."""
+  failed
+}
+
+enum SnapshotStatus {
+  pending
+  processing
+  success
+  failed
+}
+
+"""Column information"""
+type BoardColumn {
+  """The column ID"""
+  id: String
+
+  """The column type"""
+  type: String
+
+  """The column title"""
+  title: String
+}
+
+"""Board information"""
+type BoardInfo {
+  """The board ID"""
+  board_id: Int
+
+  """Columns of the board"""
+  columns: [BoardColumn!]
+
+  """Board metadata"""
+  metadata: BoardMetadata
+}
+
+"""Board metadata information"""
+type BoardMetadata {
+  """Origin types"""
+  origins: [String!]
+}
+
 """Calculated capability settings for a column"""
 type CalculatedCapability {
   """Function to calculate the parent values"""
@@ -4100,6 +5871,46 @@ input ColumnCapabilitiesInput {
 enum ColumnCapability {
   """Capability to show column's calculated value"""
   CALCULATED
+}
+
+"""Selectable column fields"""
+enum ColumnField {
+  id
+  type
+  title
+}
+
+"""Column relation information"""
+type ColumnRelation {
+  """Column identifier"""
+  column: RelationColumnIdentifier
+
+  """Dependent columns"""
+  dependent_columns: [DependentColumn!]
+}
+
+"""Columns and relations response"""
+type ColumnsAndRelationsResponse {
+  """List of boards"""
+  boards: [BoardInfo!]
+
+  """List of archived board IDs"""
+  archived_board_ids: [Int!]
+
+  """List of deleted board IDs"""
+  deleted_board_ids: [Int!]
+
+  """List of unauthorized board IDs"""
+  unauthorized_board_ids: [Int!]
+
+  """Column relations"""
+  column_relations: [ColumnRelation!]
+
+  """Mermaid URL for visualization"""
+  mermaid_url: String
+
+  """Mermaid code for visualization"""
+  mermaid_code: String
 }
 
 union ColumnSettings = StatusColumnSettings | DropdownColumnSettings
@@ -4262,6 +6073,21 @@ input CreateStatusLabelInput {
   is_done: Boolean
 }
 
+"""Dependent column information"""
+type DependentColumn {
+  """Column identifier"""
+  column: RelationColumnIdentifier
+
+  """Dependent column metadata"""
+  metadata: DependentColumnMetadata
+}
+
+"""Dependent column metadata"""
+type DependentColumnMetadata {
+  """Relation reason"""
+  relation_reason: String
+}
+
 type DropdownColumnSettings {
   type: ManagedColumnTypes
   labels: [DropdownLabel!]
@@ -4287,6 +6113,18 @@ type DropdownManagedColumn {
   settings: DropdownColumnSettings
 }
 
+"""Linkage"""
+enum Joins {
+  root
+  subItems
+  rootParent
+  transitiveParents
+  connectedBoards
+  mirrorToMirror
+  subItemsConnectedBoards
+  subItemsMirrorToMirror
+}
+
 type ManagedColumn {
   id: String
   title: String
@@ -4310,6 +6148,15 @@ enum ManagedColumnState {
 enum ManagedColumnTypes {
   status
   dropdown
+}
+
+"""Relation column identifier"""
+type RelationColumnIdentifier {
+  """The board ID"""
+  board_id: Int
+
+  """The column ID"""
+  column_id: String
 }
 
 """
@@ -4478,6 +6325,26 @@ type BoardGraphExport {
   edgeCount: Int
 }
 
+"""The type of the dependency related column"""
+enum DependencyRelatedColumnTypes {
+  """Date column"""
+  DATE
+
+  """Timeline column"""
+  TIMELINE
+}
+
+"""
+The value of the dependency related column. when updating a date column the from and to fields should have the same value
+"""
+input DependencyRelatedValueInput {
+  """From value"""
+  from: String
+
+  """To value"""
+  to: String
+}
+
 """Type of dependency relationship between items"""
 enum DependencyRelation {
   """
@@ -4536,10 +6403,23 @@ Input type for updating a single dependency relationship between pulses
 """
 input UpdateDependencyColumnInput {
   """The ID of the pulse to create or remove a dependency relationship with"""
-  linkedPulseId: Int!
+  linkedPulseId: ID!
 
   """Optional metadata containing dependency configuration (type and lag)"""
   metadata: MetadataInput
+}
+
+"""
+The Article is the main object type of monday.com Knowledge product. A collaborative article that can contain rich text, media, and structured content. Articles have both draft and published versions, and are organized within workspaces and folders, with configurable privacy settings and access controls. They support features like version history, real-time collaboration, and can be shared with specific users or teams. Articles are commonly used for documentation, knowledge sharing, and team collaboration.
+"""
+type Article {
+  """
+  The Article is the main object type of monday.com Knowledge product. Article Metadata is a subset of the Article object that contains only the metadata of the article, not the article itself. It is used to get the metadata of an article without having to fetch the article itself.
+  """
+  metadata: ArticleMetadata
+
+  """The content blocks that make up the article."""
+  blocks: [ArticleBlock!]
 }
 
 """The content blocks that make up the article."""
@@ -4574,6 +6454,63 @@ type ArticleBlock {
 
   """The block's last updated date."""
   updated_at: String
+}
+
+"""
+The Article is the main object type of monday.com Knowledge product. Article Metadata is a subset of the Article object that contains only the metadata of the article, not the article itself. It is used to get the metadata of an article without having to fetch the article itself.
+"""
+type ArticleMetadata {
+  """
+  The unique identifier of the article object. Can be used to reference this specific object in queries and mutations. This ID can be found in the article's URL.
+  """
+  object_id: ID
+
+  """The ID of the draft version of this article."""
+  draft_article_id: ID
+
+  """The ID of the published version of this article."""
+  published_article_id: ID
+
+  """
+  The display name of the article. This is what appears in the monday.com interface.
+  """
+  name: String
+
+  """
+  The kind/visibility setting of the article (private, public). Determines who can access it.
+  """
+  privacy_kind: String
+
+  """The ID of the workspace containing this article."""
+  workspace_id: ID
+
+  """
+  The ID of the folder containing this article, if the article is organized in a folder structure.
+  """
+  folder_id: ID
+
+  """Timestamp of when the article was last updated. Format is ISO 8601."""
+  updated_at: String
+
+  """
+  The current state of the article. Determines visibility in the interface.
+  """
+  state: String
+
+  """
+  The ID of the user who created this article. Useful for tracking article origin.
+  """
+  creator: ID
+
+  """
+  List of users who are owners of this article. Owners have full control permissions.
+  """
+  owners: [User!]
+
+  """
+  List of users who are subscribers to this article. Subscribers receive notifications about changes.
+  """
+  subscribers: [User!]
 }
 
 """Text formatting attributes (bold, italic, links, colors, etc.)"""
@@ -4765,6 +6702,18 @@ type DocBlocksFromMarkdownResult {
   error: String
 }
 
+"""The kind/type of document access level"""
+enum DocKind {
+  """Private document"""
+  private
+
+  """Public document"""
+  public
+
+  """Shareable document"""
+  share
+}
+
 """Column value reference for displaying board item column data"""
 type DocsColumnValue {
   """The ID of the board item"""
@@ -4890,6 +6839,24 @@ type ImageContent implements DocBaseBlockContent {
 
   """The width of the image"""
   width: Int
+}
+
+"""
+Response from importing an HTML document. Contains success status and the ID of the newly created document.
+"""
+type ImportDocFromHtmlResult {
+  """True if HTML was successfully converted and imported as a new document"""
+  success: Boolean!
+
+  """
+  The ID of the newly created document. Use this ID to reference or modify the imported document.
+  """
+  doc_id: String
+
+  """
+  Detailed error message if the operation failed. Check this when success is false.
+  """
+  error: String
 }
 
 """Content inserted in delta operations"""
@@ -5097,6 +7064,21 @@ type PageBreakContent implements DocBaseBlockContent {
 
   """The text direction of the block content"""
   direction: BlockDirection
+}
+
+"""
+The kind/visibility setting of the article (private, public). Determines who can access it.
+"""
+enum PrivacyKind {
+  """
+  Private objects are only visible to specific users who are members of the object.
+  """
+  PRIVATE
+
+  """
+  Public objects are visible to all users within the account, unless their access is blocked on a higher level in the hierarchy, or by specific object permission.
+  """
+  PUBLIC
 }
 
 """
@@ -5636,6 +7618,98 @@ enum SubscriptionStatus {
   inactive
 }
 
+"""Reason for failure when status is Rejected or Failed"""
+enum BulkImportFailureReason {
+  """The upload is invalid."""
+  INVALID_UPLOAD
+
+  """The authorization failed."""
+  AUTHORIZATION_FAILED
+
+  """The board was not found."""
+  BOARD_NOT_FOUND
+
+  """The capacity exceeded."""
+  CAPACITY_EXCEEDED
+
+  """An internal error occurred."""
+  INTERNAL_ERROR
+}
+
+"""
+Initialization response for bulk import containing import ID and upload URL
+"""
+type BulkImportInit {
+  """The unique identifier of the bulk import operation"""
+  import_id: ID
+
+  """The URL where the file should be uploaded for processing"""
+  upload_url: String
+}
+
+"""Current state of the import process"""
+enum BulkImportState {
+  """The upload is pending."""
+  UPLOAD_PENDING
+
+  """The import is rejected."""
+  REJECTED
+
+  """The import is processing."""
+  PROCESSING
+
+  """The import is completed."""
+  COMPLETED
+
+  """The import is failed."""
+  FAILED
+}
+
+"""Status information for a bulk import process"""
+type BulkImportStatus {
+  """Current state of the import process"""
+  status: BulkImportState
+
+  """Total number of items submitted for import"""
+  submitted_items: Int
+
+  """Number of items that have been validated"""
+  validated_items: Int
+
+  """Number of items that have been created"""
+  created_items: Int
+
+  """Number of items that have been updated"""
+  updated_items: Int
+
+  """Number of items that failed to import"""
+  failed_items: Int
+
+  """Progress percentage (0-100) of the import process"""
+  progress_percentage: Int
+
+  """Reason for failure when status is Rejected or Failed"""
+  failure_reason: BulkImportFailureReason
+
+  """Indicates if the upload is completely done"""
+  fully_imported: Boolean
+
+  """Indicates if a report file has been generated"""
+  report_created: Boolean
+
+  """URL to download the import report, valid for 10 minutes"""
+  report_url: String
+}
+
+"""Response object for app deletion operations"""
+type AppDeletionResponse {
+  """Whether the deletion was successful"""
+  success: Boolean
+
+  """Deletion result message"""
+  message: String
+}
+
 """Input for app feature release data."""
 input AppFeatureReleaseDataInput {
   """The URL for the release."""
@@ -5842,34 +7916,73 @@ enum AppFeatureTypeE {
   AI_AGENT_SKILL
 }
 
+"""The visibility type of an app"""
+enum AppKind {
+  """App is private and only visible to the account that created it"""
+  PRIVATE
+
+  """App is public and can be shared and installed by other accounts"""
+  PUBLIC
+}
+
+"""The current state of an app based on its version status"""
+enum AppStatus {
+  """App is in draft state and not yet published"""
+  DRAFT
+
+  """App has a live published version"""
+  LIVE
+}
+
 type AppType {
   id: ID!
   created_at: Date
   updated_at: Date
 
-  """the app name"""
+  """The app name"""
   name: String
 
-  """the api app id"""
+  """The API app ID"""
   api_app_id: ID
 
-  """the api app id"""
+  """The API app ID"""
   client_id: String
 
-  """the app photo url"""
+  """The app photo URL"""
   photo_url: String
 
-  """the app photo url for small size"""
+  """The app photo URL for small size"""
   photo_url_small: String
 
-  """the app kid"""
-  kind: String
+  """The app kind"""
+  kind: AppKind
 
-  """the app state"""
-  state: String
+  """The app status (i.e. is live?)"""
+  status: AppStatus
 
-  """the app user id"""
-  user_id: ID
+  """The latest version type"""
+  version_type: String
+
+  """The description of the app"""
+  description: String
+
+  """The URL-friendly identifier"""
+  slug: String
+
+  """The array of permission scopes"""
+  permissions: [String!]
+
+  """The webhook endpoint URL"""
+  webhook_url: String
+
+  """The user who created the app"""
+  created_by: ID
+
+  """The app account ID"""
+  account_id: ID
+
+  """The app collaborators"""
+  collaborators: [User!]
 
   """The apps' features"""
   features(
@@ -5882,6 +7995,30 @@ type AppType {
     """Page number to get, starting at 1."""
     page: Int = 1
   ): [AppFeatureType!]
+}
+
+"""Input for creating an app with its configuration data."""
+input CreateAppInput {
+  """The display name of the app"""
+  name: String!
+
+  """App visibility type"""
+  kind: AppKind
+
+  """Detailed description of the app"""
+  description: String
+
+  """URL-friendly identifier"""
+  slug: String
+
+  """Array of permission scopes"""
+  permissions: [String!]
+
+  """Webhook endpoint URL"""
+  webhook_url: String
+
+  """Array of user IDs with access"""
+  collaborators: [ID!]
 }
 
 """
@@ -5897,6 +8034,32 @@ input UpdateAppFeatureInput {
   The deployment data to update. https://developer.monday.com/apps/docs/deploy-your-app
   """
   deployment: AppFeatureReleaseInput
+}
+
+"""
+Input for updating an existing app. Creates draft version for live apps.
+"""
+input UpdateAppInput {
+  """The display name of the app"""
+  name: String
+
+  """App visibility type"""
+  kind: AppKind
+
+  """Detailed description of the app"""
+  description: String
+
+  """URL-friendly identifier (only settable if app has no existing slug)"""
+  slug: String
+
+  """Array of permission scopes (replaces existing permissions)"""
+  permissions: [String!]
+
+  """Webhook endpoint URL"""
+  webhook_url: String
+
+  """Array of user IDs with access (replaces existing collaborators)"""
+  collaborators: [ID!]
 }
 
 """Your monday.com account"""
@@ -6521,6 +8684,18 @@ input CreateDocWorkspaceInput {
 
   """Workspace id"""
   workspace_id: ID!
+}
+
+"""The result of a create_users mutation call for a single user."""
+type CreateUserResult {
+  """The email of the user that we attempted to create"""
+  email: String!
+
+  """An error that occurred during user creation"""
+  error: String
+
+  """The returned user object"""
+  user: User
 }
 
 type CreationLogValue implements ColumnValue {
@@ -7399,6 +9574,18 @@ type IntegrationValue implements ColumnValue {
   value: JSON
 }
 
+"""The possibilities for an invited user kind."""
+enum InvitedUserKind {
+  """A guest."""
+  guest
+
+  """A normal member."""
+  member
+
+  """A view-only user."""
+  view_only
+}
+
 """An item description."""
 type ItemDescription {
   """The item's content blocks"""
@@ -7880,6 +10067,45 @@ enum PositionRelative {
   before_at
 }
 
+"""The possibilities product kinds you can invite to"""
+enum ProductKind {
+  """Agent Builder"""
+  agent_builder
+
+  """Work Management"""
+  core
+
+  """monday CRM"""
+  crm
+
+  """WorkForms"""
+  forms
+
+  """Knowledge"""
+  knowledge
+
+  """monday marketer"""
+  marketing
+
+  """campaigns"""
+  marketing_campaigns
+
+  """monday projects"""
+  project_management
+
+  """monday service"""
+  service
+
+  """monday dev"""
+  software
+
+  """WorkCanvas"""
+  whiteboard
+
+  """Workflows"""
+  workflows
+}
+
 type ProgressValue implements ColumnValue {
   """The column that this value belongs to."""
   column: Column!
@@ -7897,6 +10123,14 @@ type ProgressValue implements ColumnValue {
 
   """The column's raw value in JSON format."""
   value: JSON
+}
+
+type PublicInternalTest {
+  """Field with explicit public_internal flag"""
+  extra_field: String
+
+  """Field that is visible to client due to public_internal"""
+  visible_to_client: String
 }
 
 type RatingValue implements ColumnValue {
@@ -8682,6 +10916,41 @@ type ConvertBoardToProjectResult {
   process_id: String
 }
 
+input CreateProjectInput {
+  """The name of the project to create"""
+  name: String!
+
+  """The project's kind (public / private / share)"""
+  board_kind: BoardKind!
+
+  """
+  Optional template id to create the project from. Currently only supported for solution templates
+  """
+  template_id: ID
+
+  """
+  Optional list of companion features to enable (currently only "resource_planner")
+  """
+  companions: [String!]
+
+  """Optional workspace ID to associate with the project"""
+  workspace_id: String
+
+  """Optional folder ID to associate with the project"""
+  folder_id: String
+}
+
+type CreateProjectResult {
+  """Indicates if the project creation was successful"""
+  success: Boolean
+
+  """Success message when project is created"""
+  message: String
+
+  """Error message if project creation failed"""
+  error: String
+}
+
 type BoardMuteSettings {
   """Board ID"""
   board_id: ID
@@ -8797,19 +11066,150 @@ enum ScopeType {
   AccountNewUserDefaults
 }
 
+"""
+The central type in the Monday.com Objects Platform, representing any entity in the system. This unified type can represent instances of boards, docs, dashboards, workflows, and specialized objects. The specific type of an object is determined by its app_feature_reference_id.
+"""
+type Object {
+  """
+  The unique identifier of the object. Can be used to reference this specific object in queries and mutations.
+  """
+  id: String
+
+  """
+  The display name of the object. This is what appears in the Monday.com interface.
+  """
+  name: String
+
+  """
+  Optional description of the object, providing additional context about its purpose or contents.
+  """
+  description: String
+
+  """
+  The kind/visibility setting of the object (private, public, share). Determines who can access it.
+  """
+  privacy_kind: String
+
+  """
+  The ID of the folder containing this object, if the object is organized in a folder structure.
+  """
+  folder_id: String
+
+  """Timestamp of when the object was last updated. Format is ISO 8601."""
+  updated_at: String
+
+  """
+  The current state of the object. Determines visibility in the interface.
+  """
+  state: String
+
+  """
+  The ID of the user who created this object. Useful for tracking object origin.
+  """
+  creator: String
+
+  """
+  The ID of the workspace containing this object. Null indicates the object is in the main workspace.
+  """
+  workspace_id: String
+
+  """
+  List of users who are owners of this object. Owners have full control permissions.
+  """
+  owners: [User!]
+
+  """
+  List of users who are subscribers to this object. Subscribers receive notifications about changes.
+  """
+  subscribers: [User!]
+}
+
+"""Response for object operations indicating success or failure"""
+type ObjectOperationResponse {
+  """Indicates whether the operation was successful"""
+  success: Boolean
+}
+
+"""The state of the object."""
+enum ObjectState {
+  """The object is active."""
+  ACTIVE
+
+  """The object is archived."""
+  ARCHIVED
+
+  """The object is deleted."""
+  DELETED
+}
+
+"""Represents object type unique key and metadata."""
+type ObjectTypeUniqueKey {
+  """The name of the app that provides this object type."""
+  app_name: String
+
+  """
+  The name of the app feature object type (e.g., 'Workflow', 'Capacity manager').
+  """
+  app_feature_name: String
+
+  """A short description of what this object type represents."""
+  description: String
+
+  """
+  The unique identifier for the object type, formatted as 'app_slug::app_feature_slug'
+  """
+  object_type_unique_key: String
+}
+
+"""Defines the sorting order for returned objects in the objects query."""
+enum OrderBy {
+  """Sort objects by their creation date, from newest to oldest."""
+  CREATED_AT
+
+  """
+  Sort objects by when they were last used, from most recent to least recent.
+  """
+  USED_AT
+}
+
+"""Defines the type of the user's role as members of the object"""
+enum SubscriberKind {
+  """
+  User will be added as an owner of the object, granting them full control permissions.
+  """
+  OWNER
+
+  """
+  User will be added as a subscriber to the object, receiving notifications about changes.
+  """
+  SUBSCRIBER
+}
+
+"""Input for updating an object"""
+input UpdateObjectInput {
+  """The new name for the object."""
+  name: String
+
+  """The new description for the object"""
+  description: String
+
+  """The new privacy kind for the object."""
+  privacy_kind: PrivacyKind
+}
+
 """API usage data."""
 type DailyAnalytics {
   """Last time the API usage data was updated."""
   last_updated: ISO8601DateTime
 
   """API usage per day."""
-  by_day: [PlatformApiDailyAnalyticsByDay!]!
+  by_day: [PlatformApiDailyAnalyticsByDay!]
 
   """API usage per app."""
-  by_app: [PlatformApiDailyAnalyticsByApp!]!
+  by_app: [PlatformApiDailyAnalyticsByApp!]
 
   """API usage per user."""
-  by_user: [PlatformApiDailyAnalyticsByUser!]!
+  by_user: [PlatformApiDailyAnalyticsByUser!]
 }
 
 """Platform API daily limit."""
@@ -8819,6 +11219,9 @@ type DailyLimit {
 
   """Total daily limit."""
   total: Int
+
+  """Test field"""
+  answer_test: Int
 }
 
 """The Platform API's data."""
@@ -8854,7 +11257,7 @@ type PlatformApiDailyAnalyticsByDay {
 """API usage per user."""
 type PlatformApiDailyAnalyticsByUser {
   """User."""
-  user: User!
+  user: User
 
   """API usage for the user."""
   usage: Int!
@@ -9102,6 +11505,95 @@ enum AggregateSelectFunctionName {
 
   """Extract phone country short name"""
   PHONE_COUNTRY_SHORT_NAME
+}
+
+"""Ranked results of a search query."""
+type BoardResult {
+  """Board matching the search query."""
+  board: Board
+
+  """Items matching the search query."""
+  items: [Item!]
+}
+
+type SearchAllResult {
+  """The results of the search."""
+  results: [BoardResult!]
+}
+
+"""The results of the search for benchmark."""
+type SearchBenchmarkResults {
+  data: String
+}
+
+"""Assignee filter for search queries"""
+input AssigneeInput {
+  """List of person IDs to filter by"""
+  personIds: [Int!]
+
+  """List of team IDs to filter by"""
+  teamIds: [Int!]
+}
+
+"""
+Boost configuration for search results. Key-value pairs where key is strategy type and value is boost weight.
+"""
+input BoostConfigurationInput {
+  """
+  Boost strategies as key-value pairs (strategy: weight). Empty object {} disables all boosts.
+  """
+  boosts: JSON
+}
+
+"""Contains the results of the query."""
+type QueryResult {
+  """The relevance score of the search result."""
+  score: Float!
+
+  """The item data from the search result."""
+  data: Item!
+}
+
+"""Algorithms for reranking results."""
+enum RerankingStrategy {
+  """Use cross-encoder model for reranking results."""
+  CROSS_ENCODER
+}
+
+"""Available search modes."""
+enum Search {
+  """Keyword-based search using text matching."""
+  LEXICAL
+
+  """Vector-based search using semantic similarity."""
+  SEMANTIC
+
+  """Combined lexical and semantic search with reranking."""
+  HYBRID
+}
+
+"""Date range filter for search queries"""
+input SearchDateRangeInput {
+  """Filter items created before this date"""
+  createdBefore: ISO8601DateTime
+
+  """Filter items created after this date"""
+  createdAfter: ISO8601DateTime
+
+  """Filter items updated before this date"""
+  updatedBefore: ISO8601DateTime
+
+  """Filter items updated after this date"""
+  updatedAfter: ISO8601DateTime
+}
+
+"""Response of the search request."""
+type SearchItemsGraphQlResultsView {
+  """The results of the items search."""
+  results: [QueryResult!]!
+
+  """Indicates if the results have been reranked"""
+  reranked: Boolean
 }
 
 """A monday dev sprint."""
