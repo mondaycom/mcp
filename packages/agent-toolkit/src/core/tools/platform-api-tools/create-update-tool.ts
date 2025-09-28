@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CreateUpdateMutation, CreateUpdateMutationVariables, MentionType } from '../../../monday-graphql/generated/graphql';
+import { CreateUpdateMutation, CreateUpdateMutationVariables, UpdateMention } from '../../../monday-graphql/generated/graphql';
 import { createUpdate } from '../../../monday-graphql/queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
@@ -8,9 +8,9 @@ export const createUpdateToolSchema = {
   itemId: z.number().describe('The id of the item to which the update will be added'),
   body: z.string().describe("The update to be created, must be relevant to the user's request"),
   mentionsList: z
-    .array(z.string())
+    .string()
     .optional()
-    .describe('Optional array of JSON strings, each representing a mention object with "id" (number) and "type" (MentionType enum value). Example: [\'{"id": 123, "type": "User"}\', \'{"id": 456, "type": "Team"}\']'),
+    .describe('Optional JSON string containing an array of mention objects with "id" (string) and "type" (MentionType enum value). Example: \'[{"id": "123", "type": "User"}, {"id": "456", "type": "Team"}]\''),
 };
 
 export class CreateUpdateTool extends BaseMondayApiTool<typeof createUpdateToolSchema> {
@@ -35,13 +35,7 @@ export class CreateUpdateTool extends BaseMondayApiTool<typeof createUpdateToolS
     let parsedMentionsList;
     if (input.mentionsList) {
       try {
-        parsedMentionsList = input.mentionsList.map((mentionJson: string) => {
-          const mention = JSON.parse(mentionJson);
-          return {
-            id: mention.id,
-            type: mention.type,
-          };
-        });
+        parsedMentionsList = JSON.parse(input.mentionsList) as Array<UpdateMention>;
       } catch (error) {
         throw new Error(`Invalid mentionsList JSON format: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
