@@ -8,14 +8,9 @@ export const createUpdateToolSchema = {
   itemId: z.number().describe('The id of the item to which the update will be added'),
   body: z.string().describe("The update to be created, must be relevant to the user's request"),
   mentionsList: z
-    .array(
-      z.object({
-        id: z.number().describe('The ID of the mentioned entity'),
-        type: z.nativeEnum(MentionType).describe('The type of entity being mentioned'),
-      })
-    )
+    .array(z.string())
     .optional()
-    .describe('Optional list of entities to mention at the end of an update'),
+    .describe('Optional array of JSON strings, each representing a mention object with "id" (number) and "type" (MentionType enum value). Example: [\'{"id": 123, "type": "User"}\', \'{"id": 456, "type": "Team"}\']'),
 };
 
 export class CreateUpdateTool extends BaseMondayApiTool<typeof createUpdateToolSchema> {
@@ -37,13 +32,25 @@ export class CreateUpdateTool extends BaseMondayApiTool<typeof createUpdateToolS
   }
 
   protected async executeInternal(input: ToolInputType<typeof createUpdateToolSchema>): Promise<ToolOutputType<never>> {
+    let parsedMentionsList;
+    if (input.mentionsList) {
+      try {
+        parsedMentionsList = input.mentionsList.map((mentionJson: string) => {
+          const mention = JSON.parse(mentionJson);
+          return {
+            id: mention.id,
+            type: mention.type,
+          };
+        });
+      } catch (error) {
+        throw new Error(`Invalid mentionsList JSON format: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }
+
     const variables: CreateUpdateMutationVariables = {
       itemId: input.itemId.toString(),
       body: input.body,
-      mentionsList: input.mentionsList?.map(mention => ({
-        id: mention.id.toString(),
-        type: mention.type,
-      })),
+      mentionsList: parsedMentionsList,
     };
 
     const res = await this.mondayApi.request<CreateUpdateMutation>(createUpdate, variables);
