@@ -260,10 +260,14 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
     const smartSearchRes = await this.mondayApi.request<SmartSearchBoardItemIdsQuery>(smartSearchGetBoardItemIds, smartSearchVariables);
     
     const itemIdsFromSmartSearch = smartSearchRes.search_items?.results?.map(result => Number(result.data.id)) ?? [];
+
+    input.itemIds ??= [];
     
-    const uniqueItemIds = new Set(itemIdsFromSmartSearch);
-    (input.itemIds ?? []).forEach(id => uniqueItemIds.add(id));
-    
-    input.itemIds = Array.from(uniqueItemIds);
+    if(input.itemIds.length === 0) {
+      input.itemIds = itemIdsFromSmartSearch;
+    } else {
+      const allowedIds = new Set<number>(input.itemIds);
+      input.itemIds = itemIdsFromSmartSearch.filter(id => allowedIds.has(id));
+    }
   }
 }
