@@ -217,8 +217,7 @@ Our MCP server provides a rich set of tools that give AI assistants the ability 
 | | create_group | Create a new group in a monday.com board |
 | | create_column | Add a new column to an existing board |
 | | delete_column | Remove a column from a board |
-| **Account Operations** | get_users_by_name | Retrieve user information by name or partial name |
-| | list_users_and_teams | Retrieve user or team's details by id, name or by searching the account |
+| **Account Operations** | list_users_and_teams | Retrieve user or team's details by id, name or by searching the account |
 | **WorkForms Operations** | create_form | Create a new monday.com form |
 | | get_form | Get a form by its token |
 

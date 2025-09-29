@@ -224,7 +224,7 @@ export const listTeamsWithMembers = gql`
   }
 `;
 
-// Query for fetching user by name (avoiding conflict with existing getUsersByName)
+// Query for fetching user by name 
 // This one doesn't use user limits so can be static
 export const getUserByName = gql`
   ${userDetailsFragment}
