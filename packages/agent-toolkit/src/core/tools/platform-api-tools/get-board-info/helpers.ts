@@ -234,7 +234,7 @@ Specific operators expect specific compareValue types:
 
 ## Column type Guidelines
 ${Object.entries(columnIdsByType).map(([type, columnIds]) => {
-  return `- ${type} (${columnIds.join(', ')}) - ${filteringGuidelinesByColumnType[type]}`;
+  return `- Column Type: ${type} (Column IDs: ${columnIds.join(', ')}) - ${filteringGuidelinesByColumnType[type]}`;
 }).join('\n\n')}
   `
 };
