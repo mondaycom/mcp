@@ -105,8 +105,8 @@ export const formatBoardInfo = (board: BoardInfoData): string => {
     sections.push(`${board.permissions}`);
   }
 
-  if(board?.columns) {
-    sections.push(getColumnFilteringGuidelines(board.columns.filter((column) => column !== null)));
+  if (board?.columns) {
+    sections.push(getColumnFilteringGuidelines(board.columns!.filter(isBaseColumnInfo) as BaseColumnInfo[]));
   }
   
   return sections.join('\n');
@@ -115,6 +115,10 @@ export const formatBoardInfo = (board: BoardInfoData): string => {
 interface BaseColumnInfo {
   id: string;
   type: string;
+}
+
+function isBaseColumnInfo(column: any): column is BaseColumnInfo {
+  return 'id' in column && 'type' in column;
 }
 
 const filteringGuidelinesByColumnType: Record<string, string> = {
@@ -207,7 +211,7 @@ EXAMPLES:
   ❌ Wrong: {"columnId": "column_id", "compareValue": ["80120403"], "operator": "any_of"} // not using person or team prefix`,
 }
 
-export const getColumnFilteringGuidelines = (columns: BaseColumnInfo[]) => {
+const getColumnFilteringGuidelines = (columns: BaseColumnInfo[]) => {
   const columnIdsByType = columns.reduce((acc, column) => {
     if(!filteringGuidelinesByColumnType[column.type]) {
       return acc;
