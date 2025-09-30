@@ -6,9 +6,6 @@ directive @policy(policies: [[policy__Policy!]!]!) on FIELD_DEFINITION | OBJECT 
 
 """Root query type for the Dependencies service"""
 type Query {
-  """Namespace for all vibe-related queries"""
-  vibe: VibeQueries
-
   """
   Retrieve audit logs for your Monday account. You can
       filter logs by event types, user ID, IP address and start and end date.
@@ -358,24 +355,6 @@ type Query {
     state: [ManagedColumnState!]
   ): [ManagedColumn!]
 
-  """Get columns and their relations data."""
-  columns_and_relations(
-    """Which fields to include"""
-    select: [ColumnField!]! = [id]
-
-    """The board ids"""
-    start_from: [Int!]!
-
-    """Should show mermaid chart url"""
-    mermaid_url: Boolean
-
-    """Should show mermaid chart code"""
-    mermaid_code: Boolean
-
-    """Linkage"""
-    joins: [Joins!]! = []
-  ): ColumnsAndRelationsResponse
-
   """
   Retrieves the JSON schema definition for a specific column type. Use this query before calling update_column mutation to understand the structure and validation rules for the defaults parameter. The schema defines what properties are available when updating columns of a specific type.
   """
@@ -399,23 +378,6 @@ type Query {
     """The ID of the board to export the graph for"""
     boardId: String!
   ): BoardGraphExport
-
-  """
-  Calculate the impact of a dependency related column value change on the dependency graph
-  """
-  calculate_dependency_related_change_cascading_effect(
-    """The ID of the board to calculate the impact on"""
-    board_id: ID!
-
-    """The ID of the pulse which the change is on"""
-    pulse_id: ID!
-
-    """The type of the column which the change is on, can be date or timeline"""
-    column_type: DependencyRelatedColumnTypes!
-
-    """The changed column value"""
-    value_change: DependencyRelatedValueInput!
-  ): JSON
 
   """
   Retrieves blocks for the published version of a specific article if the requesting user has permission to access it. Returns paginated blocks in their position order. Will return an error if the user lacks the required permissions.
@@ -451,6 +413,21 @@ type Query {
     """Page number, starting from 1."""
     page: Int = 1
   ): [Article]!
+
+  """
+  Converts document content into standard markdown format for external use, backup, or processing. Exports the entire document by default, or specific blocks if block IDs are provided. Use this to extract content for integration with other systems, create backups, generate reports, or process document content with external tools. The output is clean, portable markdown that preserves formatting and structure.
+  """
+  export_markdown_from_doc(
+    """
+    The document's unique identifier to export. Get this from document queries or creation responses.
+    """
+    docId: ID!
+
+    """
+    Optional array of specific block IDs to export. If omitted, exports the entire document. Use when you only need specific sections.
+    """
+    blockIds: [String!]
+  ): ExportMarkdownResult
 
   """Get all personal list items by list ID"""
   favorites: [GraphqlHierarchyObjectItem!]
@@ -508,12 +485,6 @@ type Query {
     """
     input: MarketplaceAiSearchInput!
   ): MarketplaceAiSearchResults!
-
-  """Get the status of a bulk import process"""
-  bulk_import_status(
-    """The ID of the import to get status for"""
-    import_id: ID!
-  ): BulkImportStatus
 
   """Get an app by ID."""
   app(
@@ -591,26 +562,6 @@ type Query {
     The state of the board (all / active / archived / deleted), the default is active.
     """
     state: State = active
-
-    """A list of workspace ids the boards are contained in."""
-    workspace_ids: [ID]
-  ): [Board]
-
-  """Search boards by their name"""
-  boards_by_name(
-    """Number of items to get"""
-    limit: Int = 100
-
-    """Page number to get, starting at 1."""
-    page: Int = 1
-
-    """
-    The state of the board (all / active / archived / deleted), the default is active.
-    """
-    state: State = active
-
-    """The term to search board names by."""
-    term: String!
 
     """A list of workspace ids the boards are contained in."""
     workspace_ids: [ID]
@@ -718,7 +669,6 @@ type Query {
     """
     limit: Int! = 25
   ): ItemsResponse!
-  public_internal_test: PublicInternalTest
 
   """Get a collection of tags."""
   tags(
@@ -1597,15 +1547,7 @@ type Mutation {
   ): RequiredColumns
 
   """Update the dependency column for a specific pulse"""
-  update_dependency_column(
-    boardId: String!
-    pulseId: String!
-    value: DependencyValueInput!
-    columnId: String!
-
-    """Pusher socket id to exclude from receiving a pusher event"""
-    pusherSocketId: String
-  ): JSON!
+  update_dependency_column(boardId: String!, pulseId: String!, value: DependencyValueInput!, columnId: String!): JSON!
 
   """
   Adds markdown content to an existing document by converting it into document blocks. Use this to append content to the end of a document or insert content after a specific block. The markdown will be parsed and converted into the appropriate document block types (text, headers, lists, etc.). Returns the IDs of the newly created blocks on success.
@@ -1691,21 +1633,6 @@ type Mutation {
     """
     duplicateType: DuplicateType
   ): JSON
-
-  """
-  Converts document content into standard markdown format for external use, backup, or processing. Exports the entire document by default, or specific blocks if block IDs are provided. Use this to extract content for integration with other systems, create backups, generate reports, or process document content with external tools. The output is clean, portable markdown that preserves formatting and structure.
-  """
-  export_markdown_from_doc(
-    """
-    The document's unique identifier to export. Get this from document queries or creation responses.
-    """
-    docId: ID!
-
-    """
-    Optional array of specific block IDs to export. If omitted, exports the entire document. Use when you only need specific sections.
-    """
-    blockIds: [String!]
-  ): ExportMarkdownResult
 
   """
   Imports HTML content as a new document by converting it into document blocks. The HTML will be parsed and converted into the appropriate document block types (text, headers, lists, etc.). Returns the ID of the newly created document on success.
@@ -1830,17 +1757,6 @@ type Mutation {
     account_slug: String!
   ): DeleteMarketplaceAppDiscountResult!
 
-  """
-  Initialize bulk import for a board and group. Returns import ID and upload URL to begin the process.
-  """
-  bulk_import_items(
-    """The ID of the board to import items into"""
-    board_id: ID!
-
-    """The ID of the group to import items into"""
-    group_id: ID!
-  ): BulkImportInit
-
   """Creates a new app with the specified configuration."""
   create_app(
     """App configuration data"""
@@ -1858,12 +1774,6 @@ type Mutation {
     input: UpdateAppInput!
   ): AppType
 
-  """Removes an app from the system. This operation is irreversible."""
-  delete_app(
-    """The app identifier"""
-    id: ID!
-  ): AppDeletionResponse
-
   """Update an app feature."""
   update_app_feature(
     """The ID of the app feature to update."""
@@ -1871,14 +1781,6 @@ type Mutation {
 
     """The input data for updating the app feature."""
     input: UpdateAppFeatureInput!
-  ): AppFeatureType
-
-  """Delete an app feature."""
-  delete_app_feature(
-    """
-    The ID of the app feature to delete. Can be either a numeric ID or a composite slug in format {app_slug}::{feature_slug}.
-    """
-    id: ID!
   ): AppFeatureType
 
   """Create a new app feature."""
@@ -2192,6 +2094,9 @@ type Mutation {
     """Optional board folder id"""
     folder_id: ID
 
+    """Optional item nickname configuration for the board"""
+    item_nickname: ItemNicknameInput
+
     """Optional board template id"""
     template_id: ID
 
@@ -2337,18 +2242,6 @@ type Mutation {
     """The parent item's unique identifier."""
     parent_item_id: ID!
   ): Item
-
-  """Creates several new pending users in the account."""
-  create_users(
-    """The email addresses of the created users."""
-    emails: [String]!
-
-    """The kind of the invited users (member / guest / view_only)"""
-    kind: InvitedUserKind
-
-    """The product you invite the users to."""
-    product_kind: ProductKind
-  ): [CreateUserResult]
 
   """Create a new webhook."""
   create_webhook(
@@ -2523,18 +2416,6 @@ type Mutation {
     """
     kind: String = "global"
   ): AppSubscriptionOperationsCounter
-
-  """Invites a new user to the account."""
-  invite_user(
-    """The email address of the invited user."""
-    email: String!
-
-    """The kind of the invited user (member / guest / view_only)"""
-    kind: InvitedUserKind
-
-    """The product you invite the user to"""
-    product_kind: ProductKind
-  ): User
 
   """Move an item to a different board."""
   move_item_to_board(
@@ -3340,170 +3221,14 @@ type AiActionResponse {
   usage: TokenUsage
 }
 
-"""Permission result for creating views on a specific board"""
-type BoardViewPermission {
-  """The board ID"""
-  board_id: ID
-
-  """Whether the user can create views on this board"""
-  can_create: Boolean
-}
-
-"""A chat message in a conversation"""
-type ChatMessage {
-  """Unique identifier for the chat message"""
-  id: Int
-
-  """ID of the Vibe app this message belongs to"""
-  vibe_app_id: Int
-
-  """ID of the account that owns this message"""
-  account_id: Int
-
-  """ID of the user who sent or received this message"""
-  user_id: Int
-
-  """Who sent this message"""
-  sender: ChatSender
-
-  """The message content"""
-  message: JSON
-
-  """The type of message"""
-  message_type: ChatMessageKind
-
-  """ID of the code version associated with this message"""
-  code_version_id: String
-
-  """The visibility state of the message"""
-  state: ChatMessageState
-
-  """ID of the version this message can rollback to"""
-  rollback_version_id: String
-
-  """The reason why this message was hidden"""
-  hide_reason: HideReason
-
-  """ID of the version this message was hidden from (for redo purposes)"""
-  redo_version_id: String
-
-  """User feedback for this chat message"""
-  feedbacks: [UserFeedback!]!
-
-  """The date and time the object was created"""
-  created_at: Date
-
-  """The date and time the object was last updated"""
-  updated_at: Date
-}
-
-"""The type of chat message"""
-enum ChatMessageKind {
-  """A processing message"""
-  PROCESSING
-
-  """A text message"""
-  TEXT
-
-  """A message containing the LLM's reasoning"""
-  REASONING
-
-  """An error message with a list of errors"""
-  ERROR
-}
-
-"""Input for paginating chat messages"""
-input ChatMessagePaginationInput {
-  """Maximum number of messages to retrieve (default: 50)"""
-  limit: Int = 50
-
-  """Fetch messages starting from this Date (inclusive)"""
-  fromDate: Date
-
-  """Fetch messages before this Date (exclusive)"""
-  beforeDate: Date
-}
-
-"""The visibility state of a chat message"""
-enum ChatMessageState {
-  """Message is visible to users"""
-  VISIBLE
-
-  """Message is hidden from users"""
-  HIDDEN
-}
-
-"""The sender of a chat message"""
-enum ChatSender {
-  """Message is from a user"""
-  USER
-
-  """Message is from a Vibe AI agent"""
-  VIBE
-}
-
 """A date."""
 scalar Date
-
-"""Result of a deployment operation"""
-type DeploymentResult {
-  """Whether the operation was successful"""
-  success: Boolean
-}
-
-"""The sentiment of user feedback"""
-enum FeedbackSentiment {
-  """Positive feedback indicating satisfaction"""
-  POSITIVE
-
-  """Negative feedback indicating dissatisfaction"""
-  NEGATIVE
-}
-
-"""The reason why a message was hidden"""
-enum HideReason {
-  """Message was hidden due to a rollback operation"""
-  ROLLBACK
-}
-
-"""Types of entities that can host an AI app instance"""
-enum HostEntityType {
-  """A Monday.com board hosting the app instance"""
-  BOARD
-
-  """A Monday.com item hosting the app instance"""
-  ITEM
-}
 
 """An ISO 8601-encoded datetime (e.g., 2024-04-09T13:45:30Z)"""
 scalar ISO8601DateTime
 
 """A JSON formatted string."""
 scalar JSON
-
-"""Message type for sending chat messages"""
-enum MessageTypeInput {
-  """A text message"""
-  TEXT
-
-  """An error message with a list of errors"""
-  ERROR
-}
-
-"""Types of Monday.com entities that can be used as data sources"""
-enum MondayDataSourceType {
-  """A Monday.com board as data source"""
-  BOARD
-}
-
-"""A prompt suggestion for a vibe"""
-type PromptSuggestion {
-  """The name of the prompt suggestion"""
-  name: String
-
-  """The prompt suggestion"""
-  prompt: String
-}
 
 """Standard success response for mutations"""
 type SuccessResponse {
@@ -3526,253 +3251,8 @@ type TokenUsage {
   completion_tokens: Int
 }
 
-"""User feedback for AI chat messages"""
-type UserFeedback {
-  """Unique identifier for the feedback"""
-  id: ID
-
-  """The account ID associated with the feedback"""
-  accountId: Int
-
-  """The user ID who provided the feedback"""
-  userId: Int
-
-  """The sentiment of the feedback (positive or negative)"""
-  feedbackSentiment: FeedbackSentiment
-
-  """The feedback message text content"""
-  feedbackMessage: String
-
-  """The ID of the chat message this feedback relates to"""
-  messageId: ID
-
-  """When the feedback was created"""
-  createdAt: Date
-
-  """When the feedback was last updated"""
-  updatedAt: Date
-}
-
-"""A vibe app created by the AI app builder"""
-type VibeApp {
-  """The unique identifier of the vibe app"""
-  id: Int
-
-  """The current status of the vibe app"""
-  status: VibeAppStatus
-
-  """
-  Whether the current version returned to the user is preview of a draft or live version
-  """
-  is_preview_mode: Boolean!
-
-  """The URL where the vibe app is deployed"""
-  deployment_url: String
-
-  """The name of the vibe app"""
-  name: String
-
-  """Whether the current app version is published to live"""
-  is_published: Boolean
-
-  """The UI metadata of the vibe app"""
-  ui_metadata: VibeAppUIMetadata!
-
-  """The date and time the object was created"""
-  created_at: Date
-
-  """The date and time the object was last updated"""
-  updated_at: Date
-
-  """
-  Chat messages for this app. Returns messages in chronological order (oldest to newest)
-  """
-  chat_messages(
-    """Pagination options for fetching messages"""
-    pagination: ChatMessagePaginationInput
-  ): [ChatMessage!]!
-
-  """Instances of this vibe app deployed to different Monday.com entities"""
-  instances: [VibeAppInstance!]!
-
-  """
-  All code versions for this vibe app, ordered by version number descending
-  """
-  code_versions(
-    """Maximum number of versions to retrieve"""
-    limit: Int
-  ): [VibeCodeVersion!]!
-}
-
-"""An instance of a vibe app deployed to a specific Monday.com entity"""
-type VibeAppInstance {
-  """Unique identifier for the app instance"""
-  id: Int
-
-  """Type of the entity hosting this app instance"""
-  host_entity_type: HostEntityType
-
-  """ID of the specific entity hosting this app instance"""
-  host_entity_id: String
-
-  """Type of the entity used as data source"""
-  data_source_entity_type: MondayDataSourceType
-
-  """IDs of the specific entities used as data sources"""
-  data_source_entity_ids: [String!]
-
-  """External instance identifier"""
-  instance_id: String
-
-  """The date and time the object was created"""
-  created_at: Date
-
-  """The date and time the object was last updated"""
-  updated_at: Date
-}
-
-"""The status of an AI-generated app"""
-enum VibeAppStatus {
-  """App has been created but generation has not started"""
-  CREATED
-
-  """App is currently being generated"""
-  GENERATING
-
-  """App is currently processing a message"""
-  PROCESSING_MESSAGE
-
-  """App is currently being deployed"""
-  DEPLOYING
-
-  """App has been successfully generated and is ready to use"""
-  READY
-}
-
-"""The UI metadata of the vibe app"""
-type VibeAppUIMetadata {
-  """The color of the app card"""
-  app_card_color: String
-}
-
-"""The status of a code version"""
-enum VibeAppVersionStatus {
-  """Version is in draft state"""
-  DRAFT
-
-  """Version is currently live/deployed"""
-  LIVE
-
-  """Version has been retired"""
-  RETIRED
-}
-
-"""A code version of a vibe app"""
-type VibeCodeVersion {
-  """The unique identifier of the code version"""
-  id: String
-
-  """The status of this code version"""
-  status: VibeAppVersionStatus
-
-  """The sequential version number for this code version"""
-  version_number: Int
-
-  """A descriptive name for this version"""
-  version_name: String
-
-  """When this version was deployed to live (if applicable)"""
-  deployed_at: Date
-
-  """When this version was retired (if applicable)"""
-  retired_at: Date
-
-  """The full version object this was restored from (if this is a rollback)"""
-  restored_from_version: VibeCodeVersion
-
-  """ID of the version that can be redone from this rollback point"""
-  redo_version_id: String
-
-  """The date and time the object was created"""
-  created_at: Date
-
-  """The date and time the object was last updated"""
-  updated_at: Date
-}
-
 """Namespace for all vibe-related mutations"""
 type VibeMutations {
-  """Create a new vibe app and generates an app view from a prompt"""
-  create_app(
-    """The prompt to generate the app from"""
-    prompt: String!
-
-    """The entity type (e.g. board)"""
-    entity_type: HostEntityType!
-
-    """The entity ID (e.g. board ID)"""
-    entity_id: String
-  ): VibeApp
-
-  """Create user feedback for a chat message"""
-  create_user_feedback(
-    """The sentiment of the feedback (positive or negative)"""
-    feedback_sentiment: FeedbackSentiment!
-
-    """The feedback message text"""
-    feedback_message: String!
-
-    """The ID of the chat message this feedback relates to"""
-    message_id: ID!
-  ): UserFeedback
-
-  """Deploy this vibe app"""
-  deploy(
-    """The id of the vibe app"""
-    id: ID!
-
-    """The version ID to deploy"""
-    version_id: String!
-  ): DeploymentResult
-
-  """Publish this vibe app to the current account"""
-  publish(
-    """The id of the vibe app"""
-    id: ID!
-  ): SuccessResponse
-
-  """Promote the current draft version to live for this vibe"""
-  publish_draft(
-    """The id of the vibe app"""
-    id: ID!
-  ): SuccessResponse
-
-  """Send a chat message to this vibe app"""
-  send_chat_message(
-    """The id of the vibe app"""
-    id: ID!
-
-    """The type of message to send"""
-    message_type: MessageTypeInput!
-
-    """The message content to send"""
-    message: String!
-
-    """List of errors (required for error messages)"""
-    errors: [String!]
-  ): SuccessResponse
-
-  """
-  Set the requesting user to preview the provided internal version id. Currently uses the latest draft/live on platform.
-  """
-  set_preview_version(
-    """The id of the vibe app"""
-    id: ID!
-
-    """Internal code version id (UUID)"""
-    version_id: String!
-  ): SuccessResponse
-
   """Rollback an AI app to an older specific version """
   rollback_to_version(
     """The id of the vibe app"""
@@ -3797,68 +3277,28 @@ type VibeMutations {
 
     """The ID of the app making the request"""
     appId: ID
+
+    """Web search configuration for context augmentation"""
+    useWebSearch: WebSearchConfigInput
   ): AiActionResponse!
 }
 
-"""Permissions for vibe related actions"""
-type VibePermissions {
-  """Permission to create open workspaces"""
-  create_open_workspace: Boolean
+"""Configuration for enabling web search in AI requests"""
+input WebSearchConfigInput {
+  """Whether web search is enabled for this request"""
+  allowed: Boolean!
 
-  """Permission to create views on the specified boards"""
-  create_board_views(
-    """Array of board IDs to check permissions for"""
-    board_ids: [ID!]!
-  ): [BoardViewPermission!]
+  """Optional configuration for web search behavior"""
+  options: WebSearchOptionsInput
 }
 
-"""Provides permissions for vibe related actions"""
-type VibeQueries {
-  """
-  Generate AI-powered prompt suggestions for building applications on Monday.com entities
-  """
-  prompt_suggestions(
-    """The ID of the Monday.com entity (board, item, etc.)"""
-    entity_id: ID!
+"""Configuration options for web search functionality"""
+input WebSearchOptionsInput {
+  """Maximum number of search results to retrieve (default: 5)"""
+  topK: Int
 
-    """The type of Monday.com entity"""
-    entity_type: MondayDataSourceType!
-
-    """Number of prompt suggestions to generate"""
-    number_of_prompts: Int = 6
-  ): [PromptSuggestion!]!
-
-  """Get this vibe app details"""
-  app(
-    """The id of the vibe app"""
-    id: ID
-
-    """The app feature reference id corresponding to the vibe app"""
-    appFeatureReferenceId: ID
-  ): VibeApp
-
-  """Get a list of vibe apps for the current user"""
-  apps(
-    status: VibeAppStatus
-
-    """Number of items to get, the default is 25."""
-    limit: Int = 25
-
-    """Page number to get, starting at 1."""
-    page: Int = 1
-
-    """Search term for filtering apps"""
-    searchTerm: String
-  ): [VibeApp!]
-
-  """Get all user feedback for the current user"""
-  user_feedback_by_user(
-    """Maximum number of feedback entries to return (default: 50)"""
-    limit: Int
-  ): [UserFeedback!]
-
-  """Permissions for vibe related actions"""
-  permissions: VibePermissions
+  """Limit search results to content from the last N days"""
+  recencyDays: Int
 }
 
 type AuditEventCatalogueEntry {
@@ -5050,9 +4490,6 @@ type Board {
   """The board's state (all / active / archived / deleted)."""
   state: State!
 
-  """The subitem's board."""
-  subitem_board: Board
-
   """The board's subscribers."""
   subscribers: [User]!
 
@@ -5751,36 +5188,6 @@ enum SnapshotStatus {
   failed
 }
 
-"""Column information"""
-type BoardColumn {
-  """The column ID"""
-  id: String
-
-  """The column type"""
-  type: String
-
-  """The column title"""
-  title: String
-}
-
-"""Board information"""
-type BoardInfo {
-  """The board ID"""
-  board_id: Int
-
-  """Columns of the board"""
-  columns: [BoardColumn!]
-
-  """Board metadata"""
-  metadata: BoardMetadata
-}
-
-"""Board metadata information"""
-type BoardMetadata {
-  """Origin types"""
-  origins: [String!]
-}
-
 """Calculated capability settings for a column"""
 type CalculatedCapability {
   """Function to calculate the parent values"""
@@ -5871,46 +5278,6 @@ input ColumnCapabilitiesInput {
 enum ColumnCapability {
   """Capability to show column's calculated value"""
   CALCULATED
-}
-
-"""Selectable column fields"""
-enum ColumnField {
-  id
-  type
-  title
-}
-
-"""Column relation information"""
-type ColumnRelation {
-  """Column identifier"""
-  column: RelationColumnIdentifier
-
-  """Dependent columns"""
-  dependent_columns: [DependentColumn!]
-}
-
-"""Columns and relations response"""
-type ColumnsAndRelationsResponse {
-  """List of boards"""
-  boards: [BoardInfo!]
-
-  """List of archived board IDs"""
-  archived_board_ids: [Int!]
-
-  """List of deleted board IDs"""
-  deleted_board_ids: [Int!]
-
-  """List of unauthorized board IDs"""
-  unauthorized_board_ids: [Int!]
-
-  """Column relations"""
-  column_relations: [ColumnRelation!]
-
-  """Mermaid URL for visualization"""
-  mermaid_url: String
-
-  """Mermaid code for visualization"""
-  mermaid_code: String
 }
 
 union ColumnSettings = StatusColumnSettings | DropdownColumnSettings
@@ -6073,21 +5440,6 @@ input CreateStatusLabelInput {
   is_done: Boolean
 }
 
-"""Dependent column information"""
-type DependentColumn {
-  """Column identifier"""
-  column: RelationColumnIdentifier
-
-  """Dependent column metadata"""
-  metadata: DependentColumnMetadata
-}
-
-"""Dependent column metadata"""
-type DependentColumnMetadata {
-  """Relation reason"""
-  relation_reason: String
-}
-
 type DropdownColumnSettings {
   type: ManagedColumnTypes
   labels: [DropdownLabel!]
@@ -6113,18 +5465,6 @@ type DropdownManagedColumn {
   settings: DropdownColumnSettings
 }
 
-"""Linkage"""
-enum Joins {
-  root
-  subItems
-  rootParent
-  transitiveParents
-  connectedBoards
-  mirrorToMirror
-  subItemsConnectedBoards
-  subItemsMirrorToMirror
-}
-
 type ManagedColumn {
   id: String
   title: String
@@ -6148,15 +5488,6 @@ enum ManagedColumnState {
 enum ManagedColumnTypes {
   status
   dropdown
-}
-
-"""Relation column identifier"""
-type RelationColumnIdentifier {
-  """The board ID"""
-  board_id: Int
-
-  """The column ID"""
-  column_id: String
 }
 
 """
@@ -6323,26 +5654,6 @@ type BoardGraphExport {
 
   """The total number of edges in the graph"""
   edgeCount: Int
-}
-
-"""The type of the dependency related column"""
-enum DependencyRelatedColumnTypes {
-  """Date column"""
-  DATE
-
-  """Timeline column"""
-  TIMELINE
-}
-
-"""
-The value of the dependency related column. when updating a date column the from and to fields should have the same value
-"""
-input DependencyRelatedValueInput {
-  """From value"""
-  from: String
-
-  """To value"""
-  to: String
 }
 
 """Type of dependency relationship between items"""
@@ -6661,9 +5972,6 @@ input CreateBlockInput {
 input DividerBlockInput {
   """The parent block id to append the created block under."""
   parent_block_id: String
-
-  """Optional UUID for the block"""
-  block_id: String
 }
 
 """Content for a divider block"""
@@ -6816,9 +6124,6 @@ input ImageBlockInput {
   """The parent block id to append the created block under."""
   parent_block_id: String
 
-  """Optional UUID for the block"""
-  block_id: String
-
   """The public URL of the image"""
   public_url: String!
 
@@ -6901,9 +6206,6 @@ input LayoutBlockInput {
   """The parent block id to append the created block under."""
   parent_block_id: String
 
-  """Optional UUID for the block"""
-  block_id: String
-
   """The number of columns in the layout"""
   column_count: Int!
 
@@ -6954,9 +6256,6 @@ type ListBlockContent implements DocBaseBlockContent {
 input ListBlockInput {
   """The parent block id to append the created block under."""
   parent_block_id: String
-
-  """Optional UUID for the block"""
-  block_id: String
   alignment: BlockAlignment
   direction: BlockDirection
 
@@ -6996,9 +6295,6 @@ The notice-box's own ID must be captured.  Every block that should appear inside
 input NoticeBoxBlockInput {
   """The parent block id to append the created block under."""
   parent_block_id: String
-
-  """Optional UUID for the block"""
-  block_id: String
   theme: NoticeBoxTheme!
 }
 
@@ -7052,9 +6348,6 @@ input OperationInput {
 input PageBreakBlockInput {
   """The parent block id to append the created block under."""
   parent_block_id: String
-
-  """Optional UUID for the block"""
-  block_id: String
 }
 
 """Content for a page break block"""
@@ -7102,9 +6395,6 @@ Recommended workflow:
 input TableBlockInput {
   """The parent block id to append the created block under."""
   parent_block_id: String
-
-  """Optional UUID for the block"""
-  block_id: String
 
   """The number of columns in the table"""
   column_count: Int!
@@ -7186,9 +6476,6 @@ type TextBlockContent implements DocBaseBlockContent {
 input TextBlockInput {
   """The parent block id to append the created block under."""
   parent_block_id: String
-
-  """Optional UUID for the block"""
-  block_id: String
   alignment: BlockAlignment
   direction: BlockDirection
 
@@ -7205,9 +6492,6 @@ input TextBlockInput {
 input VideoBlockInput {
   """The parent block id to append the created block under."""
   parent_block_id: String
-
-  """Optional UUID for the block"""
-  block_id: String
 
   """The raw URL of the video"""
   raw_url: String!
@@ -7616,98 +6900,6 @@ enum SubscriptionPeriodType {
 enum SubscriptionStatus {
   active
   inactive
-}
-
-"""Reason for failure when status is Rejected or Failed"""
-enum BulkImportFailureReason {
-  """The upload is invalid."""
-  INVALID_UPLOAD
-
-  """The authorization failed."""
-  AUTHORIZATION_FAILED
-
-  """The board was not found."""
-  BOARD_NOT_FOUND
-
-  """The capacity exceeded."""
-  CAPACITY_EXCEEDED
-
-  """An internal error occurred."""
-  INTERNAL_ERROR
-}
-
-"""
-Initialization response for bulk import containing import ID and upload URL
-"""
-type BulkImportInit {
-  """The unique identifier of the bulk import operation"""
-  import_id: ID
-
-  """The URL where the file should be uploaded for processing"""
-  upload_url: String
-}
-
-"""Current state of the import process"""
-enum BulkImportState {
-  """The upload is pending."""
-  UPLOAD_PENDING
-
-  """The import is rejected."""
-  REJECTED
-
-  """The import is processing."""
-  PROCESSING
-
-  """The import is completed."""
-  COMPLETED
-
-  """The import is failed."""
-  FAILED
-}
-
-"""Status information for a bulk import process"""
-type BulkImportStatus {
-  """Current state of the import process"""
-  status: BulkImportState
-
-  """Total number of items submitted for import"""
-  submitted_items: Int
-
-  """Number of items that have been validated"""
-  validated_items: Int
-
-  """Number of items that have been created"""
-  created_items: Int
-
-  """Number of items that have been updated"""
-  updated_items: Int
-
-  """Number of items that failed to import"""
-  failed_items: Int
-
-  """Progress percentage (0-100) of the import process"""
-  progress_percentage: Int
-
-  """Reason for failure when status is Rejected or Failed"""
-  failure_reason: BulkImportFailureReason
-
-  """Indicates if the upload is completely done"""
-  fully_imported: Boolean
-
-  """Indicates if a report file has been generated"""
-  report_created: Boolean
-
-  """URL to download the import report, valid for 10 minutes"""
-  report_url: String
-}
-
-"""Response object for app deletion operations"""
-type AppDeletionResponse {
-  """Whether the deletion was successful"""
-  success: Boolean
-
-  """Deletion result message"""
-  message: String
 }
 
 """Input for app feature release data."""
@@ -8686,18 +7878,6 @@ input CreateDocWorkspaceInput {
   workspace_id: ID!
 }
 
-"""The result of a create_users mutation call for a single user."""
-type CreateUserResult {
-  """The email of the user that we attempted to create"""
-  email: String!
-
-  """An error that occurred during user creation"""
-  error: String
-
-  """The returned user object"""
-  user: User
-}
-
 type CreationLogValue implements ColumnValue {
   """The column that this value belongs to."""
   column: Column!
@@ -9574,18 +8754,6 @@ type IntegrationValue implements ColumnValue {
   value: JSON
 }
 
-"""The possibilities for an invited user kind."""
-enum InvitedUserKind {
-  """A guest."""
-  guest
-
-  """A normal member."""
-  member
-
-  """A view-only user."""
-  view_only
-}
-
 """An item description."""
 type ItemDescription {
   """The item's content blocks"""
@@ -9617,6 +8785,18 @@ type ItemIdValue implements ColumnValue {
 
   """The column's raw value in JSON format."""
   value: JSON
+}
+
+"""Input type for item nickname configuration"""
+input ItemNicknameInput {
+  """The plural form of the item nickname"""
+  plural: String
+
+  """The preset type for item nickname"""
+  preset_type: String
+
+  """The singular form of the item nickname"""
+  singular: String
 }
 
 input ItemsPageByColumnValuesQuery {
@@ -10067,45 +9247,6 @@ enum PositionRelative {
   before_at
 }
 
-"""The possibilities product kinds you can invite to"""
-enum ProductKind {
-  """Agent Builder"""
-  agent_builder
-
-  """Work Management"""
-  core
-
-  """monday CRM"""
-  crm
-
-  """WorkForms"""
-  forms
-
-  """Knowledge"""
-  knowledge
-
-  """monday marketer"""
-  marketing
-
-  """campaigns"""
-  marketing_campaigns
-
-  """monday projects"""
-  project_management
-
-  """monday service"""
-  service
-
-  """monday dev"""
-  software
-
-  """WorkCanvas"""
-  whiteboard
-
-  """Workflows"""
-  workflows
-}
-
 type ProgressValue implements ColumnValue {
   """The column that this value belongs to."""
   column: Column!
@@ -10123,14 +9264,6 @@ type ProgressValue implements ColumnValue {
 
   """The column's raw value in JSON format."""
   value: JSON
-}
-
-type PublicInternalTest {
-  """Field with explicit public_internal flag"""
-  extra_field: String
-
-  """Field that is visible to client due to public_internal"""
-  visible_to_client: String
 }
 
 type RatingValue implements ColumnValue {
@@ -11219,9 +10352,6 @@ type DailyLimit {
 
   """Total daily limit."""
   total: Int
-
-  """Test field"""
-  answer_test: Int
 }
 
 """The Platform API's data."""

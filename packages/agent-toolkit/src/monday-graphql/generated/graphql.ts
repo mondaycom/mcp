@@ -303,15 +303,6 @@ export type AiActionResponse = {
   usage?: Maybe<TokenUsage>;
 };
 
-/** Response object for app deletion operations */
-export type AppDeletionResponse = {
-  __typename?: 'AppDeletionResponse';
-  /** Deletion result message */
-  message?: Maybe<Scalars['String']['output']>;
-  /** Whether the deletion was successful */
-  success?: Maybe<Scalars['Boolean']['output']>;
-};
-
 /** Input for app feature release data. */
 export type AppFeatureReleaseDataInput = {
   /** The URL for the release. */
@@ -1098,8 +1089,6 @@ export type Board = {
   source_solution_item_mapping?: Maybe<Scalars['String']['output']>;
   /** The board's state (all / active / archived / deleted). */
   state: State;
-  /** The subitem's board. */
-  subitem_board?: Maybe<Board>;
   /** The board's subscribers. */
   subscribers: Array<Maybe<User>>;
   /** The board's specific tags. */
@@ -1226,17 +1215,6 @@ export enum BoardBasicRoleName {
   Viewer = 'viewer'
 }
 
-/** Column information */
-export type BoardColumn = {
-  __typename?: 'BoardColumn';
-  /** The column ID */
-  id?: Maybe<Scalars['String']['output']>;
-  /** The column title */
-  title?: Maybe<Scalars['String']['output']>;
-  /** The column type */
-  type?: Maybe<Scalars['String']['output']>;
-};
-
 /** A board duplication */
 export type BoardDuplication = {
   __typename?: 'BoardDuplication';
@@ -1281,17 +1259,6 @@ export enum BoardHierarchy {
   MultiLevel = 'multi_level'
 }
 
-/** Board information */
-export type BoardInfo = {
-  __typename?: 'BoardInfo';
-  /** The board ID */
-  board_id?: Maybe<Scalars['Int']['output']>;
-  /** Columns of the board */
-  columns?: Maybe<Array<BoardColumn>>;
-  /** Board metadata */
-  metadata?: Maybe<BoardMetadata>;
-};
-
 /** The board kinds available. */
 export enum BoardKind {
   /** Private boards. */
@@ -1301,13 +1268,6 @@ export enum BoardKind {
   /** Shareable boards. */
   Share = 'share'
 }
-
-/** Board metadata information */
-export type BoardMetadata = {
-  __typename?: 'BoardMetadata';
-  /** Origin types */
-  origins?: Maybe<Array<Scalars['String']['output']>>;
-};
 
 export type BoardMuteSettings = {
   __typename?: 'BoardMuteSettings';
@@ -1439,15 +1399,6 @@ export enum BoardViewAccessLevel {
   View = 'view'
 }
 
-/** Permission result for creating views on a specific board */
-export type BoardViewPermission = {
-  __typename?: 'BoardViewPermission';
-  /** The board ID */
-  board_id?: Maybe<Scalars['ID']['output']>;
-  /** Whether the user can create views on this board */
-  can_create?: Maybe<Scalars['Boolean']['output']>;
-};
-
 /** Options to order by. */
 export enum BoardsOrderBy {
   /** The rank order of the board creation time (desc). */
@@ -1460,70 +1411,6 @@ export enum BoardsOrderBy {
 export type BoostConfigurationInput = {
   /** Boost strategies as key-value pairs (strategy: weight). Empty object {} disables all boosts. */
   boosts?: InputMaybe<Scalars['JSON']['input']>;
-};
-
-/** Reason for failure when status is Rejected or Failed */
-export enum BulkImportFailureReason {
-  /** The authorization failed. */
-  AuthorizationFailed = 'AUTHORIZATION_FAILED',
-  /** The board was not found. */
-  BoardNotFound = 'BOARD_NOT_FOUND',
-  /** The capacity exceeded. */
-  CapacityExceeded = 'CAPACITY_EXCEEDED',
-  /** An internal error occurred. */
-  InternalError = 'INTERNAL_ERROR',
-  /** The upload is invalid. */
-  InvalidUpload = 'INVALID_UPLOAD'
-}
-
-/** Initialization response for bulk import containing import ID and upload URL */
-export type BulkImportInit = {
-  __typename?: 'BulkImportInit';
-  /** The unique identifier of the bulk import operation */
-  import_id?: Maybe<Scalars['ID']['output']>;
-  /** The URL where the file should be uploaded for processing */
-  upload_url?: Maybe<Scalars['String']['output']>;
-};
-
-/** Current state of the import process */
-export enum BulkImportState {
-  /** The import is completed. */
-  Completed = 'COMPLETED',
-  /** The import is failed. */
-  Failed = 'FAILED',
-  /** The import is processing. */
-  Processing = 'PROCESSING',
-  /** The import is rejected. */
-  Rejected = 'REJECTED',
-  /** The upload is pending. */
-  UploadPending = 'UPLOAD_PENDING'
-}
-
-/** Status information for a bulk import process */
-export type BulkImportStatus = {
-  __typename?: 'BulkImportStatus';
-  /** Number of items that have been created */
-  created_items?: Maybe<Scalars['Int']['output']>;
-  /** Number of items that failed to import */
-  failed_items?: Maybe<Scalars['Int']['output']>;
-  /** Reason for failure when status is Rejected or Failed */
-  failure_reason?: Maybe<BulkImportFailureReason>;
-  /** Indicates if the upload is completely done */
-  fully_imported?: Maybe<Scalars['Boolean']['output']>;
-  /** Progress percentage (0-100) of the import process */
-  progress_percentage?: Maybe<Scalars['Int']['output']>;
-  /** Indicates if a report file has been generated */
-  report_created?: Maybe<Scalars['Boolean']['output']>;
-  /** URL to download the import report, valid for 10 minutes */
-  report_url?: Maybe<Scalars['String']['output']>;
-  /** Current state of the import process */
-  status?: Maybe<BulkImportState>;
-  /** Total number of items submitted for import */
-  submitted_items?: Maybe<Scalars['Int']['output']>;
-  /** Number of items that have been updated */
-  updated_items?: Maybe<Scalars['Int']['output']>;
-  /** Number of items that have been validated */
-  validated_items?: Maybe<Scalars['Int']['output']>;
 };
 
 export type ButtonValue = ColumnValue & {
@@ -1602,79 +1489,6 @@ export enum ChannelType {
   Email = 'Email',
   Monday = 'Monday',
   Slack = 'Slack'
-}
-
-/** A chat message in a conversation */
-export type ChatMessage = {
-  __typename?: 'ChatMessage';
-  /** ID of the account that owns this message */
-  account_id?: Maybe<Scalars['Int']['output']>;
-  /** ID of the code version associated with this message */
-  code_version_id?: Maybe<Scalars['String']['output']>;
-  /** The date and time the object was created */
-  created_at?: Maybe<Scalars['Date']['output']>;
-  /** User feedback for this chat message */
-  feedbacks: Array<UserFeedback>;
-  /** The reason why this message was hidden */
-  hide_reason?: Maybe<HideReason>;
-  /** Unique identifier for the chat message */
-  id?: Maybe<Scalars['Int']['output']>;
-  /** The message content */
-  message?: Maybe<Scalars['JSON']['output']>;
-  /** The type of message */
-  message_type?: Maybe<ChatMessageKind>;
-  /** ID of the version this message was hidden from (for redo purposes) */
-  redo_version_id?: Maybe<Scalars['String']['output']>;
-  /** ID of the version this message can rollback to */
-  rollback_version_id?: Maybe<Scalars['String']['output']>;
-  /** Who sent this message */
-  sender?: Maybe<ChatSender>;
-  /** The visibility state of the message */
-  state?: Maybe<ChatMessageState>;
-  /** The date and time the object was last updated */
-  updated_at?: Maybe<Scalars['Date']['output']>;
-  /** ID of the user who sent or received this message */
-  user_id?: Maybe<Scalars['Int']['output']>;
-  /** ID of the Vibe app this message belongs to */
-  vibe_app_id?: Maybe<Scalars['Int']['output']>;
-};
-
-/** The type of chat message */
-export enum ChatMessageKind {
-  /** An error message with a list of errors */
-  Error = 'ERROR',
-  /** A processing message */
-  Processing = 'PROCESSING',
-  /** A message containing the LLM's reasoning */
-  Reasoning = 'REASONING',
-  /** A text message */
-  Text = 'TEXT'
-}
-
-/** Input for paginating chat messages */
-export type ChatMessagePaginationInput = {
-  /** Fetch messages before this Date (exclusive) */
-  beforeDate?: InputMaybe<Scalars['Date']['input']>;
-  /** Fetch messages starting from this Date (inclusive) */
-  fromDate?: InputMaybe<Scalars['Date']['input']>;
-  /** Maximum number of messages to retrieve (default: 50) */
-  limit?: InputMaybe<Scalars['Int']['input']>;
-};
-
-/** The visibility state of a chat message */
-export enum ChatMessageState {
-  /** Message is hidden from users */
-  Hidden = 'HIDDEN',
-  /** Message is visible to users */
-  Visible = 'VISIBLE'
-}
-
-/** The sender of a chat message */
-export enum ChatSender {
-  /** Message is from a user */
-  User = 'USER',
-  /** Message is from a Vibe AI agent */
-  Vibe = 'VIBE'
 }
 
 export type CheckboxValue = ColumnValue & {
@@ -1756,13 +1570,6 @@ export enum ColumnCapability {
   Calculated = 'CALCULATED'
 }
 
-/** Selectable column fields */
-export enum ColumnField {
-  Id = 'id',
-  Title = 'title',
-  Type = 'type'
-}
-
 /** An object defining a mapping of column between source board and destination board */
 export type ColumnMappingInput = {
   /** The source column's unique identifier. */
@@ -1784,15 +1591,6 @@ export type ColumnPropertyInput = {
   column_id: Scalars['String']['input'];
   /** Whether the column is visible */
   visible: Scalars['Boolean']['input'];
-};
-
-/** Column relation information */
-export type ColumnRelation = {
-  __typename?: 'ColumnRelation';
-  /** Column identifier */
-  column?: Maybe<RelationColumnIdentifier>;
-  /** Dependent columns */
-  dependent_columns?: Maybe<Array<DependentColumn>>;
 };
 
 export type ColumnSettings = DropdownColumnSettings | StatusColumnSettings;
@@ -1910,25 +1708,6 @@ export type ColumnValue = {
   type: ColumnType;
   /** The column's raw value in JSON format. */
   value?: Maybe<Scalars['JSON']['output']>;
-};
-
-/** Columns and relations response */
-export type ColumnsAndRelationsResponse = {
-  __typename?: 'ColumnsAndRelationsResponse';
-  /** List of archived board IDs */
-  archived_board_ids?: Maybe<Array<Scalars['Int']['output']>>;
-  /** List of boards */
-  boards?: Maybe<Array<BoardInfo>>;
-  /** Column relations */
-  column_relations?: Maybe<Array<ColumnRelation>>;
-  /** List of deleted board IDs */
-  deleted_board_ids?: Maybe<Array<Scalars['Int']['output']>>;
-  /** Mermaid code for visualization */
-  mermaid_code?: Maybe<Scalars['String']['output']>;
-  /** Mermaid URL for visualization */
-  mermaid_url?: Maybe<Scalars['String']['output']>;
-  /** List of unauthorized board IDs */
-  unauthorized_board_ids?: Maybe<Array<Scalars['Int']['output']>>;
 };
 
 export type ColumnsConfigInput = {
@@ -2252,17 +2031,6 @@ export type CreateTeamOptionsInput = {
   allow_empty_team?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
-/** The result of a create_users mutation call for a single user. */
-export type CreateUserResult = {
-  __typename?: 'CreateUserResult';
-  /** The email of the user that we attempted to create */
-  email: Scalars['String']['output'];
-  /** An error that occurred during user creation */
-  error?: Maybe<Scalars['String']['output']>;
-  /** The returned user object */
-  user?: Maybe<User>;
-};
-
 export type CreationLogValue = ColumnValue & {
   __typename?: 'CreationLogValue';
   /** The column that this value belongs to. */
@@ -2448,8 +2216,6 @@ export type DailyAnalytics = {
 /** Platform API daily limit. */
 export type DailyLimit = {
   __typename?: 'DailyLimit';
-  /** Test field */
-  answer_test?: Maybe<Scalars['Int']['output']>;
   /** Base daily limit. */
   base?: Maybe<Scalars['Int']['output']>;
   /** Total daily limit. */
@@ -2595,22 +2361,6 @@ export type DependencyField = {
   targetFieldKey?: Maybe<Scalars['String']['output']>;
 };
 
-/** The type of the dependency related column */
-export enum DependencyRelatedColumnTypes {
-  /** Date column */
-  Date = 'DATE',
-  /** Timeline column */
-  Timeline = 'TIMELINE'
-}
-
-/** The value of the dependency related column. when updating a date column the from and to fields should have the same value */
-export type DependencyRelatedValueInput = {
-  /** From value */
-  from?: InputMaybe<Scalars['String']['input']>;
-  /** To value */
-  to?: InputMaybe<Scalars['String']['input']>;
-};
-
 /** Type of dependency relationship between items */
 export enum DependencyRelation {
   /** Finish to Finish - The dependent item can finish only after the predecessor finishes */
@@ -2653,29 +2403,6 @@ export type DependencyValueInput = {
   removed_pulse?: InputMaybe<Array<UpdateDependencyColumnInput>>;
 };
 
-/** Dependent column information */
-export type DependentColumn = {
-  __typename?: 'DependentColumn';
-  /** Column identifier */
-  column?: Maybe<RelationColumnIdentifier>;
-  /** Dependent column metadata */
-  metadata?: Maybe<DependentColumnMetadata>;
-};
-
-/** Dependent column metadata */
-export type DependentColumnMetadata = {
-  __typename?: 'DependentColumnMetadata';
-  /** Relation reason */
-  relation_reason?: Maybe<Scalars['String']['output']>;
-};
-
-/** Result of a deployment operation */
-export type DeploymentResult = {
-  __typename?: 'DeploymentResult';
-  /** Whether the operation was successful */
-  success?: Maybe<Scalars['Boolean']['output']>;
-};
-
 export type DirectDocValue = ColumnValue & {
   __typename?: 'DirectDocValue';
   /** The column that this value belongs to. */
@@ -2700,8 +2427,6 @@ export enum DiscountPeriod {
 
 /** Input for creating divider blocks */
 export type DividerBlockInput = {
-  /** Optional UUID for the block */
-  block_id?: InputMaybe<Scalars['String']['input']>;
   /** The parent block id to append the created block under. */
   parent_block_id?: InputMaybe<Scalars['String']['input']>;
 };
@@ -3077,14 +2802,6 @@ export enum ExternalWidget {
   Chart = 'CHART',
   /** Number widgets for displaying numeric metrics such as accumulated sums, averages, counts, totals, percentages. Ideal for showing single-value metrics, counters, calculated aggregations, and key performance indicators in a prominent numeric format. */
   Number = 'NUMBER'
-}
-
-/** The sentiment of user feedback */
-export enum FeedbackSentiment {
-  /** Negative feedback indicating dissatisfaction */
-  Negative = 'NEGATIVE',
-  /** Positive feedback indicating satisfaction */
-  Positive = 'POSITIVE'
 }
 
 /** Information about a field */
@@ -4165,12 +3882,6 @@ export type GroupValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
-/** The reason why a message was hidden */
-export enum HideReason {
-  /** Message was hidden due to a rollback operation */
-  Rollback = 'ROLLBACK'
-}
-
 /** Represents a monday object identifier with its type */
 export type HierarchyObjectId = {
   __typename?: 'HierarchyObjectID';
@@ -4187,14 +3898,6 @@ export type HierarchyObjectIdInputType = {
   /** The type of the object */
   type: GraphqlMondayObject;
 };
-
-/** Types of entities that can host an AI app instance */
-export enum HostEntityType {
-  /** A Monday.com board hosting the app instance */
-  Board = 'BOARD',
-  /** A Monday.com item hosting the app instance */
-  Item = 'ITEM'
-}
 
 export type HourValue = ColumnValue & {
   __typename?: 'HourValue';
@@ -4217,8 +3920,6 @@ export type HourValue = ColumnValue & {
 
 /** Input for creating image blocks */
 export type ImageBlockInput = {
-  /** Optional UUID for the block */
-  block_id?: InputMaybe<Scalars['String']['input']>;
   /** The parent block id to append the created block under. */
   parent_block_id?: InputMaybe<Scalars['String']['input']>;
   /** The public URL of the image */
@@ -4375,16 +4076,6 @@ export type InviteUsersResult = {
   invited_users?: Maybe<Array<User>>;
 };
 
-/** The possibilities for an invited user kind. */
-export enum InvitedUserKind {
-  /** A guest. */
-  Guest = 'guest',
-  /** A normal member. */
-  Member = 'member',
-  /** A view-only user. */
-  ViewOnly = 'view_only'
-}
-
 /** An item (table row). */
 export type Item = {
   __typename?: 'Item';
@@ -4489,6 +4180,16 @@ export type ItemIdValue = ColumnValue & {
   type: ColumnType;
   /** The column's raw value in JSON format. */
   value?: Maybe<Scalars['JSON']['output']>;
+};
+
+/** Input type for item nickname configuration */
+export type ItemNicknameInput = {
+  /** The plural form of the item nickname */
+  plural?: InputMaybe<Scalars['String']['input']>;
+  /** The preset type for item nickname */
+  preset_type?: InputMaybe<Scalars['String']['input']>;
+  /** The singular form of the item nickname */
+  singular?: InputMaybe<Scalars['String']['input']>;
 };
 
 /** Sort direction */
@@ -4600,18 +4301,6 @@ export type ItemsResponse = {
   items: Array<Item>;
 };
 
-/** Linkage */
-export enum Joins {
-  ConnectedBoards = 'connectedBoards',
-  MirrorToMirror = 'mirrorToMirror',
-  Root = 'root',
-  RootParent = 'rootParent',
-  SubItems = 'subItems',
-  SubItemsConnectedBoards = 'subItemsConnectedBoards',
-  SubItemsMirrorToMirror = 'subItemsMirrorToMirror',
-  TransitiveParents = 'transitiveParents'
-}
-
 /** Kind of assignee */
 export enum Kind {
   /** Represents a person */
@@ -4660,8 +4349,6 @@ export type LastUpdatedValue = ColumnValue & {
  * • Use afterBlockId only to order siblings *within* the same cell.
  */
 export type LayoutBlockInput = {
-  /** Optional UUID for the block */
-  block_id?: InputMaybe<Scalars['String']['input']>;
   /** The number of columns in the layout */
   column_count: Scalars['Int']['input'];
   /** The column style configuration */
@@ -4735,8 +4422,6 @@ export type ListBlockContent = DocBaseBlockContent & {
 /** Input for creating list blocks (bulleted, numbered, todo) */
 export type ListBlockInput = {
   alignment?: InputMaybe<BlockAlignment>;
-  /** Optional UUID for the block */
-  block_id?: InputMaybe<Scalars['String']['input']>;
   /** The text content in delta format - array of operations with insert content and optional attributes */
   delta_format: Array<OperationInput>;
   direction?: InputMaybe<BlockDirection>;
@@ -4948,14 +4633,6 @@ export enum MentionType {
   User = 'User'
 }
 
-/** Message type for sending chat messages */
-export enum MessageTypeInput {
-  /** An error message with a list of errors */
-  Error = 'ERROR',
-  /** A text message */
-  Text = 'TEXT'
-}
-
 /** Metadata wrapper containing payload information for dependency configuration */
 export type MetadataInput = {
   /** The dependency configuration payload containing type and lag settings */
@@ -4994,12 +4671,6 @@ export type MirroredItem = {
 
 /** Represents a mirrored value (column value, group, or board). */
 export type MirroredValue = BatteryValue | Board | BoardRelationValue | ButtonValue | CheckboxValue | ColorPickerValue | CountryValue | CreationLogValue | DateValue | DependencyValue | DirectDocValue | DocValue | DropdownValue | EmailValue | FileValue | FormulaValue | Group | GroupValue | HourValue | IntegrationValue | ItemIdValue | LastUpdatedValue | LinkValue | LocationValue | LongTextValue | MirrorValue | NumbersValue | PeopleValue | PersonValue | PhoneValue | ProgressValue | RatingValue | StatusValue | SubtasksValue | TagsValue | TeamValue | TextValue | TimeTrackingValue | TimelineValue | UnsupportedValue | VoteValue | WeekValue | WorldClockValue;
-
-/** Types of Monday.com entities that can be used as data sources */
-export enum MondayDataSourceType {
-  /** A Monday.com board as data source */
-  Board = 'BOARD'
-}
 
 /** Root mutation type for the Dependencies service */
 export type Mutation = {
@@ -5047,8 +4718,6 @@ export type Mutation = {
   assign_team_owners?: Maybe<AssignTeamOwnersResult>;
   /** Extends trial period of an application to selected accounts */
   batch_extend_trial_period?: Maybe<BatchExtendTrialPeriod>;
-  /** Initialize bulk import for a board and group. Returns import ID and upload URL to begin the process. */
-  bulk_import_items?: Maybe<BulkImportInit>;
   /** Change a column's properties */
   change_column_metadata?: Maybe<Column>;
   /** Change a column's title */
@@ -5132,8 +4801,6 @@ export type Mutation = {
   create_team?: Maybe<Team>;
   create_timeline_item?: Maybe<TimelineItem>;
   create_update?: Maybe<Update>;
-  /** Creates several new pending users in the account. */
-  create_users?: Maybe<Array<Maybe<CreateUserResult>>>;
   /** Create a view */
   create_view?: Maybe<BoardView>;
   /** Create a new table view */
@@ -5150,10 +4817,6 @@ export type Mutation = {
   deactivate_managed_column?: Maybe<ManagedColumn>;
   /** Deactivates the specified users. */
   deactivate_users?: Maybe<DeactivateUsersResult>;
-  /** Removes an app from the system. This operation is irreversible. */
-  delete_app?: Maybe<AppDeletionResponse>;
-  /** Delete an app feature. */
-  delete_app_feature?: Maybe<AppFeatureType>;
   /** Deletes an article with the specified object ID */
   delete_article?: Maybe<ArticleMetadata>;
   /** Delete a board. */
@@ -5213,15 +4876,11 @@ export type Mutation = {
   /** Duplicate an item. */
   duplicate_item?: Maybe<Item>;
   edit_update: Update;
-  /** Converts document content into standard markdown format for external use, backup, or processing. Exports the entire document by default, or specific blocks if block IDs are provided. Use this to extract content for integration with other systems, create backups, generate reports, or process document content with external tools. The output is clean, portable markdown that preserves formatting and structure. */
-  export_markdown_from_doc?: Maybe<ExportMarkdownResult>;
   grant_marketplace_app_discount: GrantMarketplaceAppDiscountResult;
   /** Imports HTML content as a new document by converting it into document blocks. The HTML will be parsed and converted into the appropriate document block types (text, headers, lists, etc.). Returns the ID of the newly created document on success. */
   import_doc_from_html?: Maybe<ImportDocFromHtmlResult>;
   /** Increase operations counter */
   increase_app_subscription_operations?: Maybe<AppSubscriptionOperationsCounter>;
-  /** Invites a new user to the account. */
-  invite_user?: Maybe<User>;
   /** Invite users to the account. */
   invite_users?: Maybe<InviteUsersResult>;
   like_update?: Maybe<Update>;
@@ -5476,13 +5135,6 @@ export type MutationBatch_Extend_Trial_PeriodArgs = {
 
 
 /** Root mutation type for the Dependencies service */
-export type MutationBulk_Import_ItemsArgs = {
-  board_id: Scalars['ID']['input'];
-  group_id: Scalars['ID']['input'];
-};
-
-
-/** Root mutation type for the Dependencies service */
 export type MutationChange_Column_MetadataArgs = {
   board_id: Scalars['ID']['input'];
   column_id: Scalars['String']['input'];
@@ -5604,6 +5256,7 @@ export type MutationCreate_BoardArgs = {
   empty?: InputMaybe<Scalars['Boolean']['input']>;
   entity_model_id?: InputMaybe<Scalars['String']['input']>;
   folder_id?: InputMaybe<Scalars['ID']['input']>;
+  item_nickname?: InputMaybe<ItemNicknameInput>;
   template_id?: InputMaybe<Scalars['ID']['input']>;
   workspace_id?: InputMaybe<Scalars['ID']['input']>;
 };
@@ -5877,14 +5530,6 @@ export type MutationCreate_UpdateArgs = {
 
 
 /** Root mutation type for the Dependencies service */
-export type MutationCreate_UsersArgs = {
-  emails: Array<InputMaybe<Scalars['String']['input']>>;
-  kind?: InputMaybe<InvitedUserKind>;
-  product_kind?: InputMaybe<ProductKind>;
-};
-
-
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_ViewArgs = {
   board_id: Scalars['ID']['input'];
   filter?: InputMaybe<ItemsQueryGroup>;
@@ -5954,18 +5599,6 @@ export type MutationDeactivate_Managed_ColumnArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationDeactivate_UsersArgs = {
   user_ids: Array<Scalars['ID']['input']>;
-};
-
-
-/** Root mutation type for the Dependencies service */
-export type MutationDelete_AppArgs = {
-  id: Scalars['ID']['input'];
-};
-
-
-/** Root mutation type for the Dependencies service */
-export type MutationDelete_App_FeatureArgs = {
-  id: Scalars['ID']['input'];
 };
 
 
@@ -6185,13 +5818,6 @@ export type MutationEdit_UpdateArgs = {
 
 
 /** Root mutation type for the Dependencies service */
-export type MutationExport_Markdown_From_DocArgs = {
-  blockIds?: InputMaybe<Array<Scalars['String']['input']>>;
-  docId: Scalars['ID']['input'];
-};
-
-
-/** Root mutation type for the Dependencies service */
 export type MutationGrant_Marketplace_App_DiscountArgs = {
   account_slug: Scalars['String']['input'];
   app_id: Scalars['ID']['input'];
@@ -6213,14 +5839,6 @@ export type MutationImport_Doc_From_HtmlArgs = {
 export type MutationIncrease_App_Subscription_OperationsArgs = {
   increment_by?: InputMaybe<Scalars['Int']['input']>;
   kind?: InputMaybe<Scalars['String']['input']>;
-};
-
-
-/** Root mutation type for the Dependencies service */
-export type MutationInvite_UserArgs = {
-  email: Scalars['String']['input'];
-  kind?: InputMaybe<InvitedUserKind>;
-  product_kind?: InputMaybe<ProductKind>;
 };
 
 
@@ -6443,7 +6061,6 @@ export type MutationUpdate_Dependency_ColumnArgs = {
   boardId: Scalars['String']['input'];
   columnId: Scalars['String']['input'];
   pulseId: Scalars['String']['input'];
-  pusherSocketId?: InputMaybe<Scalars['String']['input']>;
   value: DependencyValueInput;
 };
 
@@ -6682,8 +6299,6 @@ export type NextPageRequestData = {
 
 /** The notice-box's own ID must be captured.  Every block that should appear inside it must be created with parentBlockId = that ID (and can still use afterBlockId for ordering among siblings). */
 export type NoticeBoxBlockInput = {
-  /** Optional UUID for the block */
-  block_id?: InputMaybe<Scalars['String']['input']>;
   /** The parent block id to append the created block under. */
   parent_block_id?: InputMaybe<Scalars['String']['input']>;
   theme: NoticeBoxTheme;
@@ -6973,8 +6588,6 @@ export type Overview = {
 
 /** Input for creating page break blocks */
 export type PageBreakBlockInput = {
-  /** Optional UUID for the block */
-  block_id?: InputMaybe<Scalars['String']['input']>;
   /** The parent block id to append the created block under. */
   parent_block_id?: InputMaybe<Scalars['String']['input']>;
 };
@@ -7292,34 +6905,6 @@ export enum Product {
   Workflows = 'workflows'
 }
 
-/** The possibilities product kinds you can invite to */
-export enum ProductKind {
-  /** Agent Builder */
-  AgentBuilder = 'agent_builder',
-  /** Work Management */
-  Core = 'core',
-  /** monday CRM */
-  Crm = 'crm',
-  /** WorkForms */
-  Forms = 'forms',
-  /** Knowledge */
-  Knowledge = 'knowledge',
-  /** monday marketer */
-  Marketing = 'marketing',
-  /** campaigns */
-  MarketingCampaigns = 'marketing_campaigns',
-  /** monday projects */
-  ProjectManagement = 'project_management',
-  /** monday service */
-  Service = 'service',
-  /** monday dev */
-  Software = 'software',
-  /** WorkCanvas */
-  Whiteboard = 'whiteboard',
-  /** Workflows */
-  Workflows = 'workflows'
-}
-
 export type ProgressValue = ColumnValue & {
   __typename?: 'ProgressValue';
   /** The column that this value belongs to. */
@@ -7332,23 +6917,6 @@ export type ProgressValue = ColumnValue & {
   type: ColumnType;
   /** The column's raw value in JSON format. */
   value?: Maybe<Scalars['JSON']['output']>;
-};
-
-/** A prompt suggestion for a vibe */
-export type PromptSuggestion = {
-  __typename?: 'PromptSuggestion';
-  /** The name of the prompt suggestion */
-  name?: Maybe<Scalars['String']['output']>;
-  /** The prompt suggestion */
-  prompt?: Maybe<Scalars['String']['output']>;
-};
-
-export type PublicInternalTest = {
-  __typename?: 'PublicInternalTest';
-  /** Field with explicit public_internal flag */
-  extra_field?: Maybe<Scalars['String']['output']>;
-  /** Field that is visible to client due to public_internal */
-  visible_to_client?: Maybe<Scalars['String']['output']>;
 };
 
 /** Root query type for the Dependencies service */
@@ -7459,14 +7027,6 @@ export type Query = {
   board_candidates?: Maybe<Array<Board>>;
   /** Get a collection of boards. */
   boards?: Maybe<Array<Maybe<Board>>>;
-  /** Search boards by their name */
-  boards_by_name?: Maybe<Array<Maybe<Board>>>;
-  /** Get the status of a bulk import process */
-  bulk_import_status?: Maybe<BulkImportStatus>;
-  /** Calculate the impact of a dependency related column value change on the dependency graph */
-  calculate_dependency_related_change_cascading_effect?: Maybe<Scalars['JSON']['output']>;
-  /** Get columns and their relations data. */
-  columns_and_relations?: Maybe<ColumnsAndRelationsResponse>;
   /** Get the complexity data of your queries. */
   complexity?: Maybe<Complexity>;
   /** Fetch a single connection by its unique ID. */
@@ -7480,6 +7040,8 @@ export type Query = {
   docs?: Maybe<Array<Maybe<Document>>>;
   /** Export the dependency graph for a specific board */
   export_graph?: Maybe<BoardGraphExport>;
+  /** Converts document content into standard markdown format for external use, backup, or processing. Exports the entire document by default, or specific blocks if block IDs are provided. Use this to extract content for integration with other systems, create backups, generate reports, or process document content with external tools. The output is clean, portable markdown that preserves formatting and structure. */
+  export_markdown_from_doc?: Maybe<ExportMarkdownResult>;
   /** Get all personal list items by list ID */
   favorites?: Maybe<Array<GraphqlHierarchyObjectItem>>;
   /** Get a collection of folders. Note: This query won't return folders from closed workspaces to which you are not subscribed */
@@ -7531,7 +7093,6 @@ export type Query = {
   objects?: Maybe<Array<Object>>;
   /** Platform API data. */
   platform_api?: Maybe<PlatformApi>;
-  public_internal_test?: Maybe<PublicInternalTest>;
   /**
    * Fetch remote options for a field type.
    *
@@ -7574,8 +7135,6 @@ export type Query = {
   version: Version;
   /** Get a list containing the versions of the API */
   versions?: Maybe<Array<Version>>;
-  /** Namespace for all vibe-related queries */
-  vibe?: Maybe<VibeQueries>;
   /** Get a collection of webhooks for the board */
   webhooks?: Maybe<Array<Maybe<Webhook>>>;
   /** Get a collection of workspaces. */
@@ -7701,41 +7260,6 @@ export type QueryBoardsArgs = {
 
 
 /** Root query type for the Dependencies service */
-export type QueryBoards_By_NameArgs = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  page?: InputMaybe<Scalars['Int']['input']>;
-  state?: InputMaybe<State>;
-  term: Scalars['String']['input'];
-  workspace_ids?: InputMaybe<Array<InputMaybe<Scalars['ID']['input']>>>;
-};
-
-
-/** Root query type for the Dependencies service */
-export type QueryBulk_Import_StatusArgs = {
-  import_id: Scalars['ID']['input'];
-};
-
-
-/** Root query type for the Dependencies service */
-export type QueryCalculate_Dependency_Related_Change_Cascading_EffectArgs = {
-  board_id: Scalars['ID']['input'];
-  column_type: DependencyRelatedColumnTypes;
-  pulse_id: Scalars['ID']['input'];
-  value_change: DependencyRelatedValueInput;
-};
-
-
-/** Root query type for the Dependencies service */
-export type QueryColumns_And_RelationsArgs = {
-  joins?: Array<Joins>;
-  mermaid_code?: InputMaybe<Scalars['Boolean']['input']>;
-  mermaid_url?: InputMaybe<Scalars['Boolean']['input']>;
-  select?: Array<ColumnField>;
-  start_from: Array<Scalars['Int']['input']>;
-};
-
-
-/** Root query type for the Dependencies service */
 export type QueryConnectionArgs = {
   id: Scalars['Int']['input'];
 };
@@ -7783,6 +7307,13 @@ export type QueryDocsArgs = {
 /** Root query type for the Dependencies service */
 export type QueryExport_GraphArgs = {
   boardId: Scalars['String']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryExport_Markdown_From_DocArgs = {
+  blockIds?: InputMaybe<Array<Scalars['String']['input']>>;
+  docId: Scalars['ID']['input'];
 };
 
 
@@ -8118,15 +7649,6 @@ export type RatingValue = ColumnValue & {
   updated_at?: Maybe<Scalars['Date']['output']>;
   /** The column's raw value in JSON format. */
   value?: Maybe<Scalars['JSON']['output']>;
-};
-
-/** Relation column identifier */
-export type RelationColumnIdentifier = {
-  __typename?: 'RelationColumnIdentifier';
-  /** The board ID */
-  board_id?: Maybe<Scalars['Int']['output']>;
-  /** The column ID */
-  column_id?: Maybe<Scalars['String']['output']>;
 };
 
 /** Input type for requesting remote options for a field type, including dependencies, credentials, pagination, and search query. */
@@ -8722,8 +8244,6 @@ export type SuccessResponse = {
  *    Use `afterBlockId` only to order siblings within the same cell.
  */
 export type TableBlockInput = {
-  /** Optional UUID for the block */
-  block_id?: InputMaybe<Scalars['String']['input']>;
   /** The number of columns in the table */
   column_count: Scalars['Int']['input'];
   /** The column style configuration */
@@ -8884,8 +8404,6 @@ export type TextBlockContent = DocBaseBlockContent & {
 /** Input for creating text blocks (normal text, titles, quote, code) */
 export type TextBlockInput = {
   alignment?: InputMaybe<BlockAlignment>;
-  /** Optional UUID for the block */
-  block_id?: InputMaybe<Scalars['String']['input']>;
   /** The text content in delta format - array of operations with insert content and optional attributes */
   delta_format: Array<OperationInput>;
   direction?: InputMaybe<BlockDirection>;
@@ -9562,27 +9080,6 @@ export type UserAttributesInput = {
   title?: InputMaybe<Scalars['String']['input']>;
 };
 
-/** User feedback for AI chat messages */
-export type UserFeedback = {
-  __typename?: 'UserFeedback';
-  /** The account ID associated with the feedback */
-  accountId?: Maybe<Scalars['Int']['output']>;
-  /** When the feedback was created */
-  createdAt?: Maybe<Scalars['Date']['output']>;
-  /** The feedback message text content */
-  feedbackMessage?: Maybe<Scalars['String']['output']>;
-  /** The sentiment of the feedback (positive or negative) */
-  feedbackSentiment?: Maybe<FeedbackSentiment>;
-  /** Unique identifier for the feedback */
-  id?: Maybe<Scalars['ID']['output']>;
-  /** The ID of the chat message this feedback relates to */
-  messageId?: Maybe<Scalars['ID']['output']>;
-  /** When the feedback was last updated */
-  updatedAt?: Maybe<Scalars['Date']['output']>;
-  /** The user ID who provided the feedback */
-  userId?: Maybe<Scalars['Int']['output']>;
-};
-
 /** The possibilities for a user kind. */
 export enum UserKind {
   /** All users in account. */
@@ -9651,145 +9148,13 @@ export enum VersionKind {
   ReleaseCandidate = 'release_candidate'
 }
 
-/** A vibe app created by the AI app builder */
-export type VibeApp = {
-  __typename?: 'VibeApp';
-  /** Chat messages for this app. Returns messages in chronological order (oldest to newest) */
-  chat_messages: Array<ChatMessage>;
-  /** All code versions for this vibe app, ordered by version number descending */
-  code_versions: Array<VibeCodeVersion>;
-  /** The date and time the object was created */
-  created_at?: Maybe<Scalars['Date']['output']>;
-  /** The URL where the vibe app is deployed */
-  deployment_url?: Maybe<Scalars['String']['output']>;
-  /** The unique identifier of the vibe app */
-  id?: Maybe<Scalars['Int']['output']>;
-  /** Instances of this vibe app deployed to different Monday.com entities */
-  instances: Array<VibeAppInstance>;
-  /** Whether the current version returned to the user is preview of a draft or live version */
-  is_preview_mode: Scalars['Boolean']['output'];
-  /** Whether the current app version is published to live */
-  is_published?: Maybe<Scalars['Boolean']['output']>;
-  /** The name of the vibe app */
-  name?: Maybe<Scalars['String']['output']>;
-  /** The current status of the vibe app */
-  status?: Maybe<VibeAppStatus>;
-  /** The UI metadata of the vibe app */
-  ui_metadata: VibeAppUiMetadata;
-  /** The date and time the object was last updated */
-  updated_at?: Maybe<Scalars['Date']['output']>;
-};
-
-
-/** A vibe app created by the AI app builder */
-export type VibeAppChat_MessagesArgs = {
-  pagination?: InputMaybe<ChatMessagePaginationInput>;
-};
-
-
-/** A vibe app created by the AI app builder */
-export type VibeAppCode_VersionsArgs = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-};
-
-/** An instance of a vibe app deployed to a specific Monday.com entity */
-export type VibeAppInstance = {
-  __typename?: 'VibeAppInstance';
-  /** The date and time the object was created */
-  created_at?: Maybe<Scalars['Date']['output']>;
-  /** IDs of the specific entities used as data sources */
-  data_source_entity_ids?: Maybe<Array<Scalars['String']['output']>>;
-  /** Type of the entity used as data source */
-  data_source_entity_type?: Maybe<MondayDataSourceType>;
-  /** ID of the specific entity hosting this app instance */
-  host_entity_id?: Maybe<Scalars['String']['output']>;
-  /** Type of the entity hosting this app instance */
-  host_entity_type?: Maybe<HostEntityType>;
-  /** Unique identifier for the app instance */
-  id?: Maybe<Scalars['Int']['output']>;
-  /** External instance identifier */
-  instance_id?: Maybe<Scalars['String']['output']>;
-  /** The date and time the object was last updated */
-  updated_at?: Maybe<Scalars['Date']['output']>;
-};
-
-/** The status of an AI-generated app */
-export enum VibeAppStatus {
-  /** App has been created but generation has not started */
-  Created = 'CREATED',
-  /** App is currently being deployed */
-  Deploying = 'DEPLOYING',
-  /** App is currently being generated */
-  Generating = 'GENERATING',
-  /** App is currently processing a message */
-  ProcessingMessage = 'PROCESSING_MESSAGE',
-  /** App has been successfully generated and is ready to use */
-  Ready = 'READY'
-}
-
-/** The UI metadata of the vibe app */
-export type VibeAppUiMetadata = {
-  __typename?: 'VibeAppUIMetadata';
-  /** The color of the app card */
-  app_card_color?: Maybe<Scalars['String']['output']>;
-};
-
-/** The status of a code version */
-export enum VibeAppVersionStatus {
-  /** Version is in draft state */
-  Draft = 'DRAFT',
-  /** Version is currently live/deployed */
-  Live = 'LIVE',
-  /** Version has been retired */
-  Retired = 'RETIRED'
-}
-
-/** A code version of a vibe app */
-export type VibeCodeVersion = {
-  __typename?: 'VibeCodeVersion';
-  /** The date and time the object was created */
-  created_at?: Maybe<Scalars['Date']['output']>;
-  /** When this version was deployed to live (if applicable) */
-  deployed_at?: Maybe<Scalars['Date']['output']>;
-  /** The unique identifier of the code version */
-  id?: Maybe<Scalars['String']['output']>;
-  /** ID of the version that can be redone from this rollback point */
-  redo_version_id?: Maybe<Scalars['String']['output']>;
-  /** The full version object this was restored from (if this is a rollback) */
-  restored_from_version?: Maybe<VibeCodeVersion>;
-  /** When this version was retired (if applicable) */
-  retired_at?: Maybe<Scalars['Date']['output']>;
-  /** The status of this code version */
-  status?: Maybe<VibeAppVersionStatus>;
-  /** The date and time the object was last updated */
-  updated_at?: Maybe<Scalars['Date']['output']>;
-  /** A descriptive name for this version */
-  version_name?: Maybe<Scalars['String']['output']>;
-  /** The sequential version number for this code version */
-  version_number?: Maybe<Scalars['Int']['output']>;
-};
-
 /** Namespace for all vibe-related mutations */
 export type VibeMutations = {
   __typename?: 'VibeMutations';
   /** Execute an AI action and get a structured response */
   ai_actions: AiActionResponse;
-  /** Create a new vibe app and generates an app view from a prompt */
-  create_app?: Maybe<VibeApp>;
-  /** Create user feedback for a chat message */
-  create_user_feedback?: Maybe<UserFeedback>;
-  /** Deploy this vibe app */
-  deploy?: Maybe<DeploymentResult>;
-  /** Publish this vibe app to the current account */
-  publish?: Maybe<SuccessResponse>;
-  /** Promote the current draft version to live for this vibe */
-  publish_draft?: Maybe<SuccessResponse>;
   /** Rollback an AI app to an older specific version  */
   rollback_to_version?: Maybe<SuccessResponse>;
-  /** Send a chat message to this vibe app */
-  send_chat_message?: Maybe<SuccessResponse>;
-  /** Set the requesting user to preview the provided internal version id. Currently uses the latest draft/live on platform. */
-  set_preview_version?: Maybe<SuccessResponse>;
 };
 
 
@@ -9799,41 +9164,7 @@ export type VibeMutationsAi_ActionsArgs = {
   prompt: Scalars['String']['input'];
   schema?: InputMaybe<Scalars['JSON']['input']>;
   systemPrompt?: InputMaybe<Scalars['String']['input']>;
-};
-
-
-/** Namespace for all vibe-related mutations */
-export type VibeMutationsCreate_AppArgs = {
-  entity_id?: InputMaybe<Scalars['String']['input']>;
-  entity_type: HostEntityType;
-  prompt: Scalars['String']['input'];
-};
-
-
-/** Namespace for all vibe-related mutations */
-export type VibeMutationsCreate_User_FeedbackArgs = {
-  feedback_message: Scalars['String']['input'];
-  feedback_sentiment: FeedbackSentiment;
-  message_id: Scalars['ID']['input'];
-};
-
-
-/** Namespace for all vibe-related mutations */
-export type VibeMutationsDeployArgs = {
-  id: Scalars['ID']['input'];
-  version_id: Scalars['String']['input'];
-};
-
-
-/** Namespace for all vibe-related mutations */
-export type VibeMutationsPublishArgs = {
-  id: Scalars['ID']['input'];
-};
-
-
-/** Namespace for all vibe-related mutations */
-export type VibeMutationsPublish_DraftArgs = {
-  id: Scalars['ID']['input'];
+  useWebSearch?: InputMaybe<WebSearchConfigInput>;
 };
 
 
@@ -9843,86 +9174,8 @@ export type VibeMutationsRollback_To_VersionArgs = {
   version_id: Scalars['String']['input'];
 };
 
-
-/** Namespace for all vibe-related mutations */
-export type VibeMutationsSend_Chat_MessageArgs = {
-  errors?: InputMaybe<Array<Scalars['String']['input']>>;
-  id: Scalars['ID']['input'];
-  message: Scalars['String']['input'];
-  message_type: MessageTypeInput;
-};
-
-
-/** Namespace for all vibe-related mutations */
-export type VibeMutationsSet_Preview_VersionArgs = {
-  id: Scalars['ID']['input'];
-  version_id: Scalars['String']['input'];
-};
-
-/** Permissions for vibe related actions */
-export type VibePermissions = {
-  __typename?: 'VibePermissions';
-  /** Permission to create views on the specified boards */
-  create_board_views?: Maybe<Array<BoardViewPermission>>;
-  /** Permission to create open workspaces */
-  create_open_workspace?: Maybe<Scalars['Boolean']['output']>;
-};
-
-
-/** Permissions for vibe related actions */
-export type VibePermissionsCreate_Board_ViewsArgs = {
-  board_ids: Array<Scalars['ID']['input']>;
-};
-
-/** Provides permissions for vibe related actions */
-export type VibeQueries = {
-  __typename?: 'VibeQueries';
-  /** Get this vibe app details */
-  app?: Maybe<VibeApp>;
-  /** Get a list of vibe apps for the current user */
-  apps?: Maybe<Array<VibeApp>>;
-  /** Permissions for vibe related actions */
-  permissions?: Maybe<VibePermissions>;
-  /** Generate AI-powered prompt suggestions for building applications on Monday.com entities */
-  prompt_suggestions: Array<PromptSuggestion>;
-  /** Get all user feedback for the current user */
-  user_feedback_by_user?: Maybe<Array<UserFeedback>>;
-};
-
-
-/** Provides permissions for vibe related actions */
-export type VibeQueriesAppArgs = {
-  appFeatureReferenceId?: InputMaybe<Scalars['ID']['input']>;
-  id?: InputMaybe<Scalars['ID']['input']>;
-};
-
-
-/** Provides permissions for vibe related actions */
-export type VibeQueriesAppsArgs = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  page?: InputMaybe<Scalars['Int']['input']>;
-  searchTerm?: InputMaybe<Scalars['String']['input']>;
-  status?: InputMaybe<VibeAppStatus>;
-};
-
-
-/** Provides permissions for vibe related actions */
-export type VibeQueriesPrompt_SuggestionsArgs = {
-  entity_id: Scalars['ID']['input'];
-  entity_type: MondayDataSourceType;
-  number_of_prompts?: InputMaybe<Scalars['Int']['input']>;
-};
-
-
-/** Provides permissions for vibe related actions */
-export type VibeQueriesUser_Feedback_By_UserArgs = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-};
-
 /** Input for creating video blocks */
 export type VideoBlockInput = {
-  /** Optional UUID for the block */
-  block_id?: InputMaybe<Scalars['String']['input']>;
   /** The parent block id to append the created block under. */
   parent_block_id?: InputMaybe<Scalars['String']['input']>;
   /** The raw URL of the video */
@@ -9991,6 +9244,22 @@ export type Watcher = {
   medium: Scalars['String']['output'];
   user?: Maybe<User>;
   user_id: Scalars['ID']['output'];
+};
+
+/** Configuration for enabling web search in AI requests */
+export type WebSearchConfigInput = {
+  /** Whether web search is enabled for this request */
+  allowed: Scalars['Boolean']['input'];
+  /** Optional configuration for web search behavior */
+  options?: InputMaybe<WebSearchOptionsInput>;
+};
+
+/** Configuration options for web search functionality */
+export type WebSearchOptionsInput = {
+  /** Limit search results to content from the last N days */
+  recencyDays?: InputMaybe<Scalars['Int']['input']>;
+  /** Maximum number of search results to retrieve (default: 5) */
+  topK?: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** Monday webhooks */
@@ -11024,13 +10293,13 @@ export type ReadDocsQueryVariables = Exact<{
 
 export type ReadDocsQuery = { __typename?: 'Query', docs?: Array<{ __typename?: 'Document', id: string, object_id: string, name: string, doc_kind: BoardKind, created_at?: any | null, settings?: any | null, url?: string | null, relative_url?: string | null, workspace_id?: string | null, doc_folder_id?: string | null, created_by?: { __typename?: 'User', id: string, name: string } | null, workspace?: { __typename?: 'Workspace', id?: string | null, name: string } | null } | null> | null };
 
-export type ExportMarkdownFromDocMutationVariables = Exact<{
+export type ExportMarkdownFromDocQueryVariables = Exact<{
   docId: Scalars['ID']['input'];
   blockIds?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
 }>;
 
 
-export type ExportMarkdownFromDocMutation = { __typename?: 'Mutation', export_markdown_from_doc?: { __typename?: 'ExportMarkdownResult', success: boolean, markdown?: string | null, error?: string | null } | null };
+export type ExportMarkdownFromDocQuery = { __typename?: 'Query', export_markdown_from_doc?: { __typename?: 'ExportMarkdownResult', success: boolean, markdown?: string | null, error?: string | null } | null };
 
 export type GetWorkspaceInfoQueryVariables = Exact<{
   workspace_id: Scalars['ID']['input'];

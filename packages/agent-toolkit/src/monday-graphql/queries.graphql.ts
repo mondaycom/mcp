@@ -518,7 +518,7 @@ export const readDocs = gql`
 `;
 
 export const exportMarkdownFromDoc = gql`
-  mutation exportMarkdownFromDoc($docId: ID!, $blockIds: [String!]) {
+  query exportMarkdownFromDoc($docId: ID!, $blockIds: [String!]) {
     export_markdown_from_doc(docId: $docId, blockIds: $blockIds) {
       success
       markdown
