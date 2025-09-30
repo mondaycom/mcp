@@ -76,10 +76,13 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
       columnIds: input.columnIds
     };
 
+    // Passing filters + cursor returns an error as cursor has them encoded in it
+    const canIncludeFilters = !input.cursor;
+
     this.parseJsonStringified(input, 'filters', 'filtersStringified');
     this.parseJsonStringified(input, 'orderBy', 'orderByStringified');
 
-    if(input.itemIds || input.filters || input.orderBy) { 
+    if(canIncludeFilters && (input.itemIds || input.filters || input.orderBy)) { 
       variables.queryParams = {
         ids: input.itemIds?.map(id => id.toString()),
         operator: input.filtersOperator,
