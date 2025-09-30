@@ -373,6 +373,55 @@ describe('GetBoardItemsPageTool', () => {
         }
       );
     });
+
+    it('should not parse stringified JSONs when regular JSON is provided', async () => {
+      mocks.setResponse(successfulResponseWithItems);
+
+      const orderBy = [
+        {
+          columnId: 'priority',
+          direction: ItemsOrderByDirection.Desc
+        }
+      ];
+      const orderByStringified = JSON.stringify([
+        {
+          columnId: 'name',
+          direction: ItemsOrderByDirection.Asc
+        }
+      ]);
+      const args: inputType = { 
+        boardId: 123456789,
+        filters: [
+          {
+            columnId: 'status',
+            compareValue: 'In Progress',
+            operator: ItemsQueryRuleOperator.AnyOf
+          }
+        ],
+        orderBy,
+        orderByStringified
+      };
+      await callToolByNameAsync('get_board_items_page', args);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query GetBoardItemsPage'),
+        expect.objectContaining({
+          boardId: '123456789',
+          limit: 25,
+          cursor: undefined,
+          includeColumns: false,
+          columnIds: undefined,
+          queryParams: expect.objectContaining({
+            order_by: [
+              {
+                column_id: 'priority',
+                direction: ItemsOrderByDirection.Desc
+              }
+            ]
+          })
+        })
+      );
+    });
   });
 
   describe('Column Values Functionality', () => {

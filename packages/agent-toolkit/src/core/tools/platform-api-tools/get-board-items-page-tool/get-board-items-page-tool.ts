@@ -57,10 +57,10 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
     return getBoardItemsPageToolSchema;
   }
 
-  private parseJsonStringified(input: ToolInputType<GetBoardItemsPageToolInput>, jsonKey: keyof ToolInputType<GetBoardItemsPageToolInput>, stringifiedJsonKey: keyof ToolInputType<GetBoardItemsPageToolInput>) {
-    if(input[stringifiedJsonKey]) {
+  private parseAndAssignJsonField(input: ToolInputType<GetBoardItemsPageToolInput>, jsonKey: keyof ToolInputType<GetBoardItemsPageToolInput>, stringifiedJsonKey: keyof ToolInputType<GetBoardItemsPageToolInput>) {
+    if(input[stringifiedJsonKey] && !input[jsonKey]) {
       try {
-        (input as any)[jsonKey] = JSON.parse(input[stringifiedJsonKey] as any);
+        (input as any)[jsonKey] = JSON.parse(input[stringifiedJsonKey] as string);
       } catch {
         throw new Error(`${stringifiedJsonKey} is not a valid JSON`);
       }
@@ -79,8 +79,8 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
     // Passing filters + cursor returns an error as cursor has them encoded in it
     const canIncludeFilters = !input.cursor;
 
-    this.parseJsonStringified(input, 'filters', 'filtersStringified');
-    this.parseJsonStringified(input, 'orderBy', 'orderByStringified');
+    this.parseAndAssignJsonField(input, 'filters', 'filtersStringified');
+    this.parseAndAssignJsonField(input, 'orderBy', 'orderByStringified');
 
     if(canIncludeFilters && (input.itemIds || input.filters || input.orderBy)) { 
       variables.queryParams = {

@@ -117,9 +117,9 @@ interface BaseColumnInfo {
   type: string;
 }
 
-function isBaseColumnInfo(column: any): column is BaseColumnInfo {
+function isBaseColumnInfo(column: object | null): column is BaseColumnInfo {
   const requiredKeys: (keyof BaseColumnInfo)[] = ['id', 'type'];
-  return requiredKeys.every(key => key in column);
+  return !!column && requiredKeys.every(key => key in column);
 }
 
 const filteringGuidelinesByColumnType: Record<string, string> = {
