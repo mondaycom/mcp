@@ -74,7 +74,10 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
   }
   
   protected async executeInternal(input: ToolInputType<GetBoardItemsPageToolInput>): Promise<ToolOutputType<never>> {
-    if(input.searchTerm) {
+    // Passing filters + cursor returns an error as cursor has them encoded in it
+    const canIncludeFilters = !input.cursor;
+
+    if(canIncludeFilters && input.searchTerm) {
       await this.runSmartSearchAsync(input);
 
       if(input.itemIds!.length === 0) {
@@ -91,9 +94,6 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
       includeColumns: input.includeColumns,
       columnIds: input.columnIds
     };
-
-    // Passing filters + cursor returns an error as cursor has them encoded in it
-    const canIncludeFilters = !input.cursor;
 
     this.parseAndAssignJsonField(input, 'filters', 'filtersStringified');
     this.parseAndAssignJsonField(input, 'orderBy', 'orderByStringified');
