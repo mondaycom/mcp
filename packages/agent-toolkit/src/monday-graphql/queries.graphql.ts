@@ -560,6 +560,115 @@ export const getWorkspaceInfo = gql`
   }
 `;
 
+export const getSprintsSnapshots = gql`
+  query GetSprints($sprintIds: [ID!]!) {
+    sprints(ids: $sprintIds) {
+      id
+      name
+      start_date
+      end_date
+      state
+      timeline {
+        from
+        to
+      }
+      snapshots(type: [START, COMPLETE]) {
+        id
+        type
+        created_at
+        updated_at
+        items {
+          id
+          column_values {
+            id
+            type
+            value
+          }
+        }
+        columns_metadata {
+          id
+          done_status_indexes
+        }
+      }
+    }
+  }
+`;
+
+export const getSprintsBoardItemsWithColumns = gql`
+  query GetSprintsBoardItemsWithColumns($boardId: ID!) {
+    boards(ids: [$boardId]) {
+      items_page {
+        items {
+          id
+          name
+          column_values {
+            __typename
+            id
+            type
+            ... on TextValue {
+              value
+            }
+            ... on DocValue {
+              file {
+                doc {
+                  object_id
+                }
+              }
+            }
+            ... on TimelineValue {
+              from
+              to
+            }
+            ... on CheckboxValue {
+              checked
+            }
+            ... on DateValue {
+              date
+            }
+          } 
+        }
+      }
+    }
+  }
+`;
+
+export const getSprintsByIds = gql`
+  query getSprintsByIds($ids: [ID!]) {
+    items(ids: $ids) {
+      id
+      name
+      board {
+        id
+      }
+      column_values {
+        id
+        type
+        __typename
+        ... on TextValue {
+          value
+        }
+        ... on DateValue {
+          date
+        }
+        ... on TimelineValue {
+          from
+          to
+        }
+        ... on CheckboxValue {
+          checked
+        }
+        ... on DocValue {
+          file {
+            doc {
+              object_id
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
 export const duplicateItem = gql`
   mutation duplicateItem($boardId: ID!, $itemId: ID!, $withUpdates: Boolean) {
     duplicate_item(board_id: $boardId, item_id: $itemId, with_updates: $withUpdates) {
