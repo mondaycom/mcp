@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import { GetBoardItemsPageQuery, GetBoardItemsPageQueryVariables, ItemsOrderByDirection, ItemsQueryOperator, ItemsQueryRuleOperator, SmartSearchBoardItemIdsQuery, SmartSearchBoardItemIdsQueryVariables } from '../../../../monday-graphql/generated/graphql';
 import { getBoardItemsPage, smartSearchGetBoardItemIds } from './get-board-items-page-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
@@ -90,7 +91,6 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
       includeColumns: input.includeColumns,
       columnIds: input.columnIds
     };
-
 
     // Passing filters + cursor returns an error as cursor has them encoded in it
     const canIncludeFilters = !input.cursor;
