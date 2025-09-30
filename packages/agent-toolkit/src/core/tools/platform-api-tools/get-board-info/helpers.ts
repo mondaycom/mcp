@@ -118,7 +118,8 @@ interface BaseColumnInfo {
 }
 
 function isBaseColumnInfo(column: any): column is BaseColumnInfo {
-  return 'id' in column && 'type' in column;
+  const requiredKeys: (keyof BaseColumnInfo)[] = ['id', 'type'];
+  return requiredKeys.every(key => key in column);
 }
 
 const filteringGuidelinesByColumnType: Record<string, string> = {
