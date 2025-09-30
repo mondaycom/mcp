@@ -1,6 +1,7 @@
 import { z } from 'zod';
-import { GetBoardItemsPageQuery, GetBoardItemsPageQueryVariables, ItemsOrderByDirection, ItemsQueryOperator, ItemsQueryRuleOperator } from '../../../../monday-graphql/generated/graphql';
-import { getBoardItemsPage } from './get-board-items-page-tool.graphql';
+
+import { GetBoardItemsPageQuery, GetBoardItemsPageQueryVariables, ItemsOrderByDirection, ItemsQueryOperator, ItemsQueryRuleOperator, SmartSearchBoardItemIdsQuery, SmartSearchBoardItemIdsQueryVariables } from '../../../../monday-graphql/generated/graphql';
+import { getBoardItemsPage, smartSearchGetBoardItemIds } from './get-board-items-page-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 
@@ -11,6 +12,11 @@ const MIN_LIMIT = 1;
 export const getBoardItemsPageToolSchema = {
   boardId: z.number().describe('The id of the board to get items from'),
   itemIds: z.array(z.number()).optional().describe('The ids of the items to get. The count of items should be less than 100.'),
+  searchTerm: z.string().optional().describe(`
+    The search term to use for the search.
+    - Use this when: the user provides a vague, incomplete, or approximate search term (e.g., “marketing campaign”, “John’s task”, “budget-related”), and there isn’t a clear exact compare value for a specific field.
+    - Do not use this when: the user specifies an exact value that maps directly to a column comparison (e.g., name contains "marketing campaign", status = "Done", priority = "High", owner = "Daniel"). In these cases, prefer structured compare filters.
+  `),
   limit: z.number().min(MIN_LIMIT).max(MAX_LIMIT).optional().default(DEFAULT_LIMIT).describe('The number of items to get'),
   cursor: z.string().optional().describe('The cursor to get the next page of items, use the nextCursor from the previous response. If the nextCursor was null, it means there are no more items to get'),
   includeColumns: z.boolean().optional().default(false).describe('Whether to include column values in the response'),
@@ -67,6 +73,19 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
   }
   
   protected async executeInternal(input: ToolInputType<GetBoardItemsPageToolInput>): Promise<ToolOutputType<never>> {
+    // Passing filters + cursor returns an error as cursor has them encoded in it
+    const canIncludeFilters = !input.cursor;
+
+    if(canIncludeFilters && input.searchTerm) {
+      await this.runSmartSearchAsync(input);
+
+      if(input.itemIds!.length === 0) {
+        return {
+          content: `No items found matching the specified searchTerm`,
+        };
+      }
+    }
+
     const variables: GetBoardItemsPageQueryVariables = {
       boardId: input.boardId.toString(),
       limit: input.limit,
@@ -74,9 +93,6 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
       includeColumns: input.includeColumns,
       columnIds: input.columnIds
     };
-
-    // Passing filters + cursor returns an error as cursor has them encoded in it
-    const canIncludeFilters = !input.cursor;
 
     this.parseAndAssignJsonField(input, 'filters', 'filtersStringified');
     this.parseAndAssignJsonField(input, 'orderBy', 'orderByStringified');
@@ -99,8 +115,15 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
     }
 
     const res = await this.mondayApi.request<GetBoardItemsPageQuery>(getBoardItemsPage, variables);
+    const result = this.mapResult(res, input);
 
-    const board = res.boards?.[0];
+    return {
+      content: JSON.stringify(result, null, 2),
+    };
+  }
+
+  private mapResult(response: GetBoardItemsPageQuery, input: ToolInputType<GetBoardItemsPageToolInput>): any {
+    const board = response.boards?.[0];
     const itemsPage = board?.items_page;
     const items = itemsPage?.items || [];
 
@@ -144,8 +167,26 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
       },
     };
 
-    return {
-      content: JSON.stringify(result, null, 2),
+    return result;
+  }
+
+  private async runSmartSearchAsync(input: ToolInputType<GetBoardItemsPageToolInput>): Promise<void> {
+    const smartSearchVariables: SmartSearchBoardItemIdsQueryVariables = {
+      boardId: input.boardId.toString(),
+      searchTerm: input.searchTerm!,
     };
+
+    const smartSearchRes = await this.mondayApi.request<SmartSearchBoardItemIdsQuery>(smartSearchGetBoardItemIds, smartSearchVariables);
+    
+    const itemIdsFromSmartSearch = smartSearchRes.search_items?.results?.map(result => Number(result.data.id)) ?? [];
+
+    input.itemIds ??= [];
+    
+    if(input.itemIds.length === 0) {
+      input.itemIds = itemIdsFromSmartSearch;
+    } else {
+      const allowedIds = new Set<number>(input.itemIds);
+      input.itemIds = itemIdsFromSmartSearch.filter(id => allowedIds.has(id));
+    }
   }
 }

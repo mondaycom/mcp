@@ -292,6 +292,17 @@ export enum AggregateSelectFunctionName {
   Upper = 'UPPER'
 }
 
+/** Response from AI action request */
+export type AiActionResponse = {
+  __typename?: 'AiActionResponse';
+  /** The structured response data from the AI */
+  data?: Maybe<Scalars['JSON']['output']>;
+  /** Whether the request was successful */
+  success?: Maybe<Scalars['Boolean']['output']>;
+  /** Token usage information */
+  usage?: Maybe<TokenUsage>;
+};
+
 /** Input for app feature release data. */
 export type AppFeatureReleaseDataInput = {
   /** The URL for the release. */
@@ -479,12 +490,28 @@ export type AppInstallUser = {
   id?: Maybe<Scalars['ID']['output']>;
 };
 
+/** The visibility type of an app */
+export enum AppKind {
+  /** App is private and only visible to the account that created it */
+  Private = 'PRIVATE',
+  /** App is public and can be shared and installed by other accounts */
+  Public = 'PUBLIC'
+}
+
 /** The app monetization status for the current account */
 export type AppMonetizationStatus = {
   __typename?: 'AppMonetizationStatus';
   /** Is apps monetization is supported for the account */
   is_supported: Scalars['Boolean']['output'];
 };
+
+/** The current state of an app based on its version status */
+export enum AppStatus {
+  /** App is in draft state and not yet published */
+  Draft = 'DRAFT',
+  /** App has a live published version */
+  Live = 'LIVE'
+}
 
 /** The account subscription details for the app. */
 export type AppSubscription = {
@@ -553,27 +580,41 @@ export type AppSubscriptions = {
 
 export type AppType = {
   __typename?: 'AppType';
-  /** the api app id */
+  /** The app account ID */
+  account_id?: Maybe<Scalars['ID']['output']>;
+  /** The API app ID */
   api_app_id?: Maybe<Scalars['ID']['output']>;
-  /** the api app id */
+  /** The API app ID */
   client_id?: Maybe<Scalars['String']['output']>;
+  /** The app collaborators */
+  collaborators?: Maybe<Array<User>>;
   created_at?: Maybe<Scalars['Date']['output']>;
+  /** The user who created the app */
+  created_by?: Maybe<Scalars['ID']['output']>;
+  /** The description of the app */
+  description?: Maybe<Scalars['String']['output']>;
   /** The apps' features */
   features?: Maybe<Array<AppFeatureType>>;
   id: Scalars['ID']['output'];
-  /** the app kid */
-  kind?: Maybe<Scalars['String']['output']>;
-  /** the app name */
+  /** The app kind */
+  kind?: Maybe<AppKind>;
+  /** The app name */
   name?: Maybe<Scalars['String']['output']>;
-  /** the app photo url */
+  /** The array of permission scopes */
+  permissions?: Maybe<Array<Scalars['String']['output']>>;
+  /** The app photo URL */
   photo_url?: Maybe<Scalars['String']['output']>;
-  /** the app photo url for small size */
+  /** The app photo URL for small size */
   photo_url_small?: Maybe<Scalars['String']['output']>;
-  /** the app state */
-  state?: Maybe<Scalars['String']['output']>;
+  /** The URL-friendly identifier */
+  slug?: Maybe<Scalars['String']['output']>;
+  /** The app status (i.e. is live?) */
+  status?: Maybe<AppStatus>;
   updated_at?: Maybe<Scalars['Date']['output']>;
-  /** the app user id */
-  user_id?: Maybe<Scalars['ID']['output']>;
+  /** The latest version type */
+  version_type?: Maybe<Scalars['String']['output']>;
+  /** The webhook endpoint URL */
+  webhook_url?: Maybe<Scalars['String']['output']>;
 };
 
 
@@ -608,6 +649,15 @@ export type AppsMonetizationInfo = {
   seats_count?: Maybe<Scalars['Int']['output']>;
 };
 
+/** The Article is the main object type of monday.com Knowledge product. A collaborative article that can contain rich text, media, and structured content. Articles have both draft and published versions, and are organized within workspaces and folders, with configurable privacy settings and access controls. They support features like version history, real-time collaboration, and can be shared with specific users or teams. Articles are commonly used for documentation, knowledge sharing, and team collaboration. */
+export type Article = {
+  __typename?: 'Article';
+  /** The content blocks that make up the article. */
+  blocks?: Maybe<Array<ArticleBlock>>;
+  /** The Article is the main object type of monday.com Knowledge product. Article Metadata is a subset of the Article object that contains only the metadata of the article, not the article itself. It is used to get the metadata of an article without having to fetch the article itself. */
+  metadata?: Maybe<ArticleMetadata>;
+};
+
 /** The content blocks that make up the article. */
 export type ArticleBlock = {
   __typename?: 'ArticleBlock';
@@ -629,6 +679,35 @@ export type ArticleBlock = {
   type?: Maybe<Scalars['String']['output']>;
   /** The block's last updated date. */
   updated_at?: Maybe<Scalars['String']['output']>;
+};
+
+/** The Article is the main object type of monday.com Knowledge product. Article Metadata is a subset of the Article object that contains only the metadata of the article, not the article itself. It is used to get the metadata of an article without having to fetch the article itself. */
+export type ArticleMetadata = {
+  __typename?: 'ArticleMetadata';
+  /** The ID of the user who created this article. Useful for tracking article origin. */
+  creator?: Maybe<Scalars['ID']['output']>;
+  /** The ID of the draft version of this article. */
+  draft_article_id?: Maybe<Scalars['ID']['output']>;
+  /** The ID of the folder containing this article, if the article is organized in a folder structure. */
+  folder_id?: Maybe<Scalars['ID']['output']>;
+  /** The display name of the article. This is what appears in the monday.com interface. */
+  name?: Maybe<Scalars['String']['output']>;
+  /** The unique identifier of the article object. Can be used to reference this specific object in queries and mutations. This ID can be found in the article's URL. */
+  object_id?: Maybe<Scalars['ID']['output']>;
+  /** List of users who are owners of this article. Owners have full control permissions. */
+  owners?: Maybe<Array<User>>;
+  /** The kind/visibility setting of the article (private, public). Determines who can access it. */
+  privacy_kind?: Maybe<Scalars['String']['output']>;
+  /** The ID of the published version of this article. */
+  published_article_id?: Maybe<Scalars['ID']['output']>;
+  /** The current state of the article. Determines visibility in the interface. */
+  state?: Maybe<Scalars['String']['output']>;
+  /** List of users who are subscribers to this article. Subscribers receive notifications about changes. */
+  subscribers?: Maybe<Array<User>>;
+  /** Timestamp of when the article was last updated. Format is ISO 8601. */
+  updated_at?: Maybe<Scalars['String']['output']>;
+  /** The ID of the workspace containing this article. */
+  workspace_id?: Maybe<Scalars['ID']['output']>;
 };
 
 /** A file uploaded to monday.com */
@@ -695,6 +774,14 @@ export type AssignTeamOwnersResult = {
   errors?: Maybe<Array<AssignTeamOwnersError>>;
   /** The team for which the owners were changed. */
   team?: Maybe<Team>;
+};
+
+/** Assignee filter for search queries */
+export type AssigneeInput = {
+  /** List of person IDs to filter by */
+  personIds?: InputMaybe<Array<Scalars['Int']['input']>>;
+  /** List of team IDs to filter by */
+  teamIds?: InputMaybe<Array<Scalars['Int']['input']>>;
 };
 
 /** Text formatting attributes (bold, italic, links, colors, etc.) */
@@ -779,6 +866,29 @@ export type AuditLogPage = {
   pagination?: Maybe<Pagination>;
 };
 
+/** Base field type implementation */
+export type BaseFieldType = FieldType & {
+  __typename?: 'BaseFieldType';
+  /** Default key for fields of this type */
+  defaultFieldKey?: Maybe<Scalars['String']['output']>;
+  /** Dependency configuration specifying mandatory and optional field dependencies required to enable this field and compute its dynamic values. When fetching the permitted values for custom input fields via the remote_options query, you must provide these dependencies in the query input. */
+  dependencyConfig?: Maybe<DependencyConfig>;
+  /** Description of the field type */
+  description?: Maybe<Scalars['String']['output']>;
+  /** Unique identifier for the field type */
+  id?: Maybe<Scalars['Int']['output']>;
+  /** List of field type implementations */
+  implement?: Maybe<Array<FieldTypeImplementation>>;
+  /** Unique key identifier for the field type */
+  key?: Maybe<Scalars['String']['output']>;
+  /** Name of the field type */
+  name?: Maybe<Scalars['String']['output']>;
+  /** Current state of the field type */
+  state?: Maybe<FieldTypeState>;
+  /** Unique key of the field type */
+  uniqueKey?: Maybe<Scalars['String']['output']>;
+};
+
 /** The role of the user. */
 export enum BaseRoleName {
   Admin = 'ADMIN',
@@ -822,6 +932,25 @@ export type BatteryValueItem = {
   count: Scalars['Int']['output'];
   /** The status index key */
   key: Scalars['ID']['output'];
+};
+
+/** A block in the framework */
+export type Block = {
+  __typename?: 'Block';
+  /** Description of the block */
+  description?: Maybe<Scalars['String']['output']>;
+  /** Unique identifier for the block */
+  id?: Maybe<Scalars['Int']['output']>;
+  /** Configuration for input fields. To fetch the available options of a specific input field, first query the block requesting the `fieldTypeData` for that field and then call the `remote_options` query using the resulting `fieldTypeReferenceId`.  */
+  inputFieldsConfig?: Maybe<Array<InputFieldConfig>>;
+  /** Type of the block */
+  kind?: Maybe<Scalars['String']['output']>;
+  /** Name of the block */
+  name?: Maybe<Scalars['String']['output']>;
+  /** Configuration for output fields */
+  outputFieldsConfig?: Maybe<Array<OutputFieldConfig>>;
+  /** Unique key of the block */
+  uniqueKey?: Maybe<Scalars['String']['output']>;
 };
 
 /** Alignment options for blocks */
@@ -888,6 +1017,13 @@ export type BlockEventsPage = {
   blockEvents?: Maybe<Array<BlockEvent>>;
 };
 
+/** Result of a blocks query */
+export type BlocksResult = {
+  __typename?: 'BlocksResult';
+  /** List of blocks */
+  blocks?: Maybe<Array<Block>>;
+};
+
 /** Object representing structured data within a text block */
 export type BlotContent = DocsColumnValue | Mention;
 
@@ -949,6 +1085,8 @@ export type Board = {
   owners: Array<Maybe<User>>;
   /** The board's permissions. */
   permissions: Scalars['String']['output'];
+  /** The Board's source solution item mapping */
+  source_solution_item_mapping?: Maybe<Scalars['String']['output']>;
   /** The board's state (all / active / archived / deleted). */
   state: State;
   /** The board's subscribers. */
@@ -1197,6 +1335,15 @@ export type BoardRelationValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
+/** Ranked results of a search query. */
+export type BoardResult = {
+  __typename?: 'BoardResult';
+  /** Board matching the search query. */
+  board?: Maybe<Board>;
+  /** Items matching the search query. */
+  items?: Maybe<Array<Item>>;
+};
+
 /** The board subscriber kind. */
 export enum BoardSubscriberKind {
   /** Board owner. */
@@ -1259,6 +1406,12 @@ export enum BoardsOrderBy {
   /** The last time the user making the request used the board (desc). */
   UsedAt = 'used_at'
 }
+
+/** Boost configuration for search results. Key-value pairs where key is strategy type and value is boost weight. */
+export type BoostConfigurationInput = {
+  /** Boost strategies as key-value pairs (strategy: weight). Empty object {} disables all boosts. */
+  boosts?: InputMaybe<Scalars['JSON']['input']>;
+};
 
 export type ButtonValue = ColumnValue & {
   __typename?: 'ButtonValue';
@@ -1587,6 +1740,15 @@ export type Complexity = {
   reset_in_x_seconds: Scalars['Int']['output'];
 };
 
+/** The result of the connect_migration_job mutation. */
+export type ConnectMigrationJobResult = {
+  __typename?: 'ConnectMigrationJobResult';
+  /** The unique identifier of the migration job connection. */
+  migrationJobConnectionId?: Maybe<Scalars['ID']['output']>;
+  /** Whether the connection was successfully created or already exists. */
+  success?: Maybe<Scalars['Boolean']['output']>;
+};
+
 export type ConnectProjectResult = {
   __typename?: 'ConnectProjectResult';
   /** A message describing the result of the operation. */
@@ -1662,6 +1824,24 @@ export type CountryValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
+/** Input for creating an app with its configuration data. */
+export type CreateAppInput = {
+  /** Array of user IDs with access */
+  collaborators?: InputMaybe<Array<Scalars['ID']['input']>>;
+  /** Detailed description of the app */
+  description?: InputMaybe<Scalars['String']['input']>;
+  /** App visibility type */
+  kind?: InputMaybe<AppKind>;
+  /** The display name of the app */
+  name: Scalars['String']['input'];
+  /** Array of permission scopes */
+  permissions?: InputMaybe<Array<Scalars['String']['input']>>;
+  /** URL-friendly identifier */
+  slug?: InputMaybe<Scalars['String']['input']>;
+  /** Webhook endpoint URL */
+  webhook_url?: InputMaybe<Scalars['String']['input']>;
+};
+
 /**
  *   Choose one specific block type to create.
  *
@@ -1725,6 +1905,18 @@ export type CreateDropdownLabelInput = {
   label: Scalars['String']['input'];
 };
 
+export type CreateEntitySnapshotResult = {
+  __typename?: 'CreateEntitySnapshotResult';
+  /** The date and time the snapshot was created. */
+  createdAt: Scalars['String']['output'];
+  /** The entity that was snapshot. */
+  entity: Scalars['String']['output'];
+  /** The unique identifier of the migration job. */
+  migrationJobId: Scalars['String']['output'];
+  /** The unique identifier of the snapshot. */
+  snapshotId: Scalars['ID']['output'];
+};
+
 /** Input type for adding an object to a hierarchy list */
 export type CreateFavoriteInput = {
   /** The name of the object */
@@ -1751,6 +1943,12 @@ export type CreateFormTagInput = {
   value?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type CreateMigrationJobResult = {
+  __typename?: 'CreateMigrationJobResult';
+  /** The unique identifier of the migration job. */
+  id: Scalars['ID']['output'];
+};
+
 export type CreatePortfolioResult = {
   __typename?: 'CreatePortfolioResult';
   /** A message describing the result of the operation. */
@@ -1758,6 +1956,31 @@ export type CreatePortfolioResult = {
   /** The ID of the solution that was created */
   solution_live_version_id?: Maybe<Scalars['String']['output']>;
   /** Indicates if the operation was successful. */
+  success?: Maybe<Scalars['Boolean']['output']>;
+};
+
+export type CreateProjectInput = {
+  /** The project's kind (public / private / share) */
+  board_kind: BoardKind;
+  /** Optional list of companion features to enable (currently only "resource_planner") */
+  companions?: InputMaybe<Array<Scalars['String']['input']>>;
+  /** Optional folder ID to associate with the project */
+  folder_id?: InputMaybe<Scalars['String']['input']>;
+  /** The name of the project to create */
+  name: Scalars['String']['input'];
+  /** Optional template id to create the project from. Currently only supported for solution templates */
+  template_id?: InputMaybe<Scalars['ID']['input']>;
+  /** Optional workspace ID to associate with the project */
+  workspace_id?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type CreateProjectResult = {
+  __typename?: 'CreateProjectResult';
+  /** Error message if project creation failed */
+  error?: Maybe<Scalars['String']['output']>;
+  /** Success message when project is created */
+  message?: Maybe<Scalars['String']['output']>;
+  /** Indicates if the project creation was successful */
   success?: Maybe<Scalars['Boolean']['output']>;
 };
 
@@ -1905,6 +2128,68 @@ export type CustomFieldValue = {
   value?: Maybe<Scalars['String']['output']>;
 };
 
+/** Configuration for a custom input field */
+export type CustomInputFieldConfig = InputFieldConfig & {
+  __typename?: 'CustomInputFieldConfig';
+  /** Constraints applied to the field */
+  constraints?: Maybe<InputFieldConstraints>;
+  /** Detailed description of the field */
+  description?: Maybe<FieldInformation>;
+  /** Key identifier for the field */
+  fieldKey?: Maybe<Scalars['String']['output']>;
+  /** Display title for the field */
+  fieldTitle?: Maybe<Scalars['String']['output']>;
+  /** Data for the referenced field type. Fetch this field when you need the `fieldTypeReferenceId` to call the `remote_options` query and retrieve the available options for the input field. */
+  fieldTypeData?: Maybe<FieldType>;
+  /** Reference ID to the field type */
+  fieldTypeReferenceId?: Maybe<Scalars['Int']['output']>;
+  /** Unique key of the field type */
+  fieldTypeUniqueKey?: Maybe<Scalars['String']['output']>;
+  /** Unique identifier for the field */
+  id?: Maybe<Scalars['Int']['output']>;
+  /** Additional information about the field */
+  information?: Maybe<FieldInformation>;
+  /** Whether the field is an array type */
+  isArray?: Maybe<Scalars['Boolean']['output']>;
+  /** Whether the field can be null */
+  isNullable?: Maybe<Scalars['Boolean']['output']>;
+  /** Whether the field is optional */
+  isOptional?: Maybe<Scalars['Boolean']['output']>;
+  /** Type of the field relation */
+  type?: Maybe<FieldTypeRelationType>;
+};
+
+/** Configuration for a custom output field */
+export type CustomOutputFieldConfig = OutputFieldConfig & {
+  __typename?: 'CustomOutputFieldConfig';
+  /** Constraints applied to the field */
+  constraints?: Maybe<OutputFieldConstraints>;
+  /** Detailed description of the field */
+  description?: Maybe<FieldInformation>;
+  /** Key identifier for the field */
+  fieldKey?: Maybe<Scalars['String']['output']>;
+  /** Display title for the field */
+  fieldTitle?: Maybe<Scalars['String']['output']>;
+  /** Data for the referenced field type */
+  fieldTypeData?: Maybe<FieldType>;
+  /** Reference ID to the field type */
+  fieldTypeReferenceId?: Maybe<Scalars['Int']['output']>;
+  /** Unique key of the field type */
+  fieldTypeUniqueKey?: Maybe<Scalars['String']['output']>;
+  /** Unique identifier for the field */
+  id?: Maybe<Scalars['Int']['output']>;
+  /** Additional information about the field */
+  information?: Maybe<FieldInformation>;
+  /** Whether the field is an array type */
+  isArray?: Maybe<Scalars['Boolean']['output']>;
+  /** Whether the field can be null */
+  isNullable?: Maybe<Scalars['Boolean']['output']>;
+  /** Whether the field is optional */
+  isOptional?: Maybe<Scalars['Boolean']['output']>;
+  /** Type of the field relation */
+  type?: Maybe<FieldTypeRelationType>;
+};
+
 /** These settings can be customized when the board is in CUSTOM_SETTINGS mute state. Configurable settings: IM_MENTIONED, IM_ASSIGNED, AUTOMATION_NOTIFY */
 export enum CustomizableBoardSettings {
   /** Notify me on automation notify step on this board */
@@ -1919,11 +2204,11 @@ export enum CustomizableBoardSettings {
 export type DailyAnalytics = {
   __typename?: 'DailyAnalytics';
   /** API usage per app. */
-  by_app: Array<PlatformApiDailyAnalyticsByApp>;
+  by_app?: Maybe<Array<PlatformApiDailyAnalyticsByApp>>;
   /** API usage per day. */
-  by_day: Array<PlatformApiDailyAnalyticsByDay>;
+  by_day?: Maybe<Array<PlatformApiDailyAnalyticsByDay>>;
   /** API usage per user. */
-  by_user: Array<PlatformApiDailyAnalyticsByUser>;
+  by_user?: Maybe<Array<PlatformApiDailyAnalyticsByUser>>;
   /** Last time the API usage data was updated. */
   last_updated?: Maybe<Scalars['ISO8601DateTime']['output']>;
 };
@@ -2056,6 +2341,26 @@ export type DeleteMarketplaceAppDiscountResult = {
   deleted_discount: DeleteMarketplaceAppDiscount;
 };
 
+/** Defines mandatory and optional dependencies that must be populated to allow resolving the field dynamic values */
+export type DependencyConfig = {
+  __typename?: 'DependencyConfig';
+  /** Non-required dependencies that refine the dynamic values request but do not block enablement */
+  optionalFields?: Maybe<Array<DependencyField>>;
+  /** Required dependencies evaluated in order */
+  orderedMandatoryFields?: Maybe<Array<DependencyField>>;
+};
+
+/** Maps a source field-type to the key name expected in the dynamic-values payload for this dependency */
+export type DependencyField = {
+  __typename?: 'DependencyField';
+  /** Reference ID of the field-type that supplies the dependency value */
+  sourceFieldTypeReferenceId?: Maybe<Scalars['Int']['output']>;
+  /** Unique key of the source field type */
+  sourceFieldTypeUniqueKey?: Maybe<Scalars['String']['output']>;
+  /** JSON key that the backend expects for this dependency value */
+  targetFieldKey?: Maybe<Scalars['String']['output']>;
+};
+
 /** Type of dependency relationship between items */
 export enum DependencyRelation {
   /** Finish to Finish - The dependent item can finish only after the predecessor finishes */
@@ -2122,8 +2427,6 @@ export enum DiscountPeriod {
 
 /** Input for creating divider blocks */
 export type DividerBlockInput = {
-  /** Optional UUID for the block */
-  block_id?: InputMaybe<Scalars['String']['input']>;
   /** The parent block id to append the created block under. */
   parent_block_id?: InputMaybe<Scalars['String']['input']>;
 };
@@ -2191,6 +2494,16 @@ export type DocBlocksFromMarkdownResult = {
   /** True if markdown was successfully converted and added to the document */
   success: Scalars['Boolean']['output'];
 };
+
+/** The kind/type of document access level */
+export enum DocKind {
+  /** Private document */
+  Private = 'private',
+  /** Public document */
+  Public = 'public',
+  /** Shareable document */
+  Share = 'share'
+}
 
 export type DocValue = ColumnValue & {
   __typename?: 'DocValue';
@@ -2489,6 +2802,66 @@ export enum ExternalWidget {
   Chart = 'CHART',
   /** Number widgets for displaying numeric metrics such as accumulated sums, averages, counts, totals, percentages. Ideal for showing single-value metrics, counters, calculated aggregations, and key performance indicators in a prominent numeric format. */
   Number = 'NUMBER'
+}
+
+/** Information about a field */
+export type FieldInformation = {
+  __typename?: 'FieldInformation';
+  /** A link to more information */
+  link?: Maybe<Scalars['JSON']['output']>;
+  /** The text content of the field information */
+  text?: Maybe<Scalars['String']['output']>;
+};
+
+/** A field type in the framework */
+export type FieldType = {
+  /** Default key for fields of this type */
+  defaultFieldKey?: Maybe<Scalars['String']['output']>;
+  /** Dependency configuration specifying mandatory and optional field dependencies required to enable this field and compute its dynamic values. When fetching the permitted values for custom input fields via the remote_options query, you must provide these dependencies in the query input. */
+  dependencyConfig?: Maybe<DependencyConfig>;
+  /** Description of the field type */
+  description?: Maybe<Scalars['String']['output']>;
+  /** Unique identifier for the field type */
+  id?: Maybe<Scalars['Int']['output']>;
+  /** List of field type implementations */
+  implement?: Maybe<Array<FieldTypeImplementation>>;
+  /** Unique key identifier for the field type */
+  key?: Maybe<Scalars['String']['output']>;
+  /** Name of the field type */
+  name?: Maybe<Scalars['String']['output']>;
+  /** Current state of the field type */
+  state?: Maybe<FieldTypeState>;
+  /** Unique key of the field type */
+  uniqueKey?: Maybe<Scalars['String']['output']>;
+};
+
+/** Implementation of a field type */
+export type FieldTypeImplementation = {
+  __typename?: 'FieldTypeImplementation';
+  /** Unique identifier for the implementation */
+  id?: Maybe<Scalars['Int']['output']>;
+  /** Name of the implementation */
+  name?: Maybe<Scalars['String']['output']>;
+  /** Unique key of the app feature */
+  uniqueKey?: Maybe<Scalars['String']['output']>;
+};
+
+/** The type of relation between a field and its type */
+export enum FieldTypeRelationType {
+  /** The field type is a custom type */
+  Custom = 'CUSTOM',
+  /** The field type is an interface type */
+  Interface = 'INTERFACE',
+  /** The field type is a primitive type (string, number, boolean, etc.) */
+  Primitive = 'PRIMITIVE'
+}
+
+/** The state of a field type */
+export enum FieldTypeState {
+  /** The field type is active and can be used */
+  Active = 'ACTIVE',
+  /** The field type has been deleted and cannot be used */
+  Deleted = 'DELETED'
 }
 
 export type FileAssetValue = {
@@ -3297,6 +3670,49 @@ export type FormulaValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
+/** Input parameters for getting blocks */
+export type GetBlocksInput = {
+  /** Optional array of app feature unique keys to filter blocks */
+  app_feature_unique_keys?: InputMaybe<Array<Scalars['String']['input']>>;
+  /** Optional array of contexts to filter blocks */
+  contexts?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+export type GetEntitiesForMigrationResult = {
+  __typename?: 'GetEntitiesForMigrationResult';
+  /** The entities for migration. */
+  entityId?: Maybe<Scalars['String']['output']>;
+};
+
+/** The result of querying entity restores. */
+export type GetRestoresQueryResults = {
+  __typename?: 'GetRestoresQueryResults';
+  /** The date and time the restore was created. */
+  createdAt: Scalars['String']['output'];
+  /** The entity id of the restore. */
+  entityId: Scalars['String']['output'];
+  /** The unique identifier of the restore. */
+  id: Scalars['ID']['output'];
+  /** The unique identifier of the migration job. */
+  migrationJobId: Scalars['String']['output'];
+  /** The status of the restore. */
+  status: RestoreStatus;
+};
+
+export type GetSnapshotsQueryResults = {
+  __typename?: 'GetSnapshotsQueryResults';
+  /** The date and time the snapshot was created. */
+  createdAt: Scalars['String']['output'];
+  /** The entity id of the snapshot. */
+  entityId: Scalars['String']['output'];
+  /** The unique identifier of the snapshot. */
+  id: Scalars['ID']['output'];
+  /** The unique identifier of the migration job. */
+  migrationJobId: Scalars['String']['output'];
+  /** The status of the snapshot. */
+  status: SnapshotStatus;
+};
+
 export type GrantMarketplaceAppDiscount = {
   __typename?: 'GrantMarketplaceAppDiscount';
   /** The id of an app */
@@ -3483,15 +3899,6 @@ export type HierarchyObjectIdInputType = {
   type: GraphqlMondayObject;
 };
 
-export enum HostType {
-  /** Workflow hosted in the account */
-  Account = 'ACCOUNT',
-  /** Workflow hosted under an app feature object */
-  AppFeatureObject = 'APP_FEATURE_OBJECT',
-  /** Workflow hosted in a board */
-  Board = 'BOARD'
-}
-
 export type HourValue = ColumnValue & {
   __typename?: 'HourValue';
   /** The column that this value belongs to. */
@@ -3513,8 +3920,6 @@ export type HourValue = ColumnValue & {
 
 /** Input for creating image blocks */
 export type ImageBlockInput = {
-  /** Optional UUID for the block */
-  block_id?: InputMaybe<Scalars['String']['input']>;
   /** The parent block id to append the created block under. */
   parent_block_id?: InputMaybe<Scalars['String']['input']>;
   /** The public URL of the image */
@@ -3534,6 +3939,52 @@ export type ImageContent = DocBaseBlockContent & {
   public_url: Scalars['String']['output'];
   /** The width of the image */
   width?: Maybe<Scalars['Int']['output']>;
+};
+
+/** Response from importing an HTML document. Contains success status and the ID of the newly created document. */
+export type ImportDocFromHtmlResult = {
+  __typename?: 'ImportDocFromHtmlResult';
+  /** The ID of the newly created document. Use this ID to reference or modify the imported document. */
+  doc_id?: Maybe<Scalars['String']['output']>;
+  /** Detailed error message if the operation failed. Check this when success is false. */
+  error?: Maybe<Scalars['String']['output']>;
+  /** True if HTML was successfully converted and imported as a new document */
+  success: Scalars['Boolean']['output'];
+};
+
+/** Interface for input field configuration */
+export type InputFieldConfig = {
+  /** Detailed description of the field */
+  description?: Maybe<FieldInformation>;
+  /** Key identifier for the field */
+  fieldKey?: Maybe<Scalars['String']['output']>;
+  /** Display title for the field */
+  fieldTitle?: Maybe<Scalars['String']['output']>;
+  /** Unique identifier for the field */
+  id?: Maybe<Scalars['Int']['output']>;
+  /** Additional information about the field */
+  information?: Maybe<FieldInformation>;
+  /** Whether the field is an array type */
+  isArray?: Maybe<Scalars['Boolean']['output']>;
+  /** Whether the field can be null */
+  isNullable?: Maybe<Scalars['Boolean']['output']>;
+  /** Whether the field is optional */
+  isOptional?: Maybe<Scalars['Boolean']['output']>;
+  /** Type of the field relation */
+  type?: Maybe<FieldTypeRelationType>;
+};
+
+/** Input field constraints */
+export type InputFieldConstraints = {
+  __typename?: 'InputFieldConstraints';
+  /** Credential dependencies required for this field */
+  credentials?: Maybe<Scalars['JSON']['output']>;
+  /** Dependencies that affect this field's behavior or validation */
+  dependencies?: Maybe<Scalars['JSON']['output']>;
+  /** Dependencies for remote options that affect this field */
+  remoteOptionsDependencies?: Maybe<Scalars['JSON']['output']>;
+  /** Dependencies between this field and its subfields */
+  subFieldsDependencies?: Maybe<Scalars['JSON']['output']>;
 };
 
 /** Content inserted in delta operations */
@@ -3571,6 +4022,33 @@ export type IntegrationValue = ColumnValue & {
   type: ColumnType;
   /** The column's raw value in JSON format. */
   value?: Maybe<Scalars['JSON']['output']>;
+};
+
+/** Configuration for an interface input field */
+export type InterfaceInputFieldConfig = InputFieldConfig & {
+  __typename?: 'InterfaceInputFieldConfig';
+  /** Constraints applied to the field */
+  constraints?: Maybe<InputFieldConstraints>;
+  /** Detailed description of the field */
+  description?: Maybe<FieldInformation>;
+  /** Key identifier for the field */
+  fieldKey?: Maybe<Scalars['String']['output']>;
+  /** Display title for the field */
+  fieldTitle?: Maybe<Scalars['String']['output']>;
+  /** Unique identifier for the field */
+  id?: Maybe<Scalars['Int']['output']>;
+  /** Additional information about the field */
+  information?: Maybe<FieldInformation>;
+  /** Whether the field is an array type */
+  isArray?: Maybe<Scalars['Boolean']['output']>;
+  /** Whether the field can be null */
+  isNullable?: Maybe<Scalars['Boolean']['output']>;
+  /** Whether the field is optional */
+  isOptional?: Maybe<Scalars['Boolean']['output']>;
+  /** Name of the subfield in the interface */
+  subfieldName?: Maybe<Scalars['String']['output']>;
+  /** Type of the field relation */
+  type?: Maybe<FieldTypeRelationType>;
 };
 
 /** Error that occurred while inviting users */
@@ -3702,6 +4180,16 @@ export type ItemIdValue = ColumnValue & {
   type: ColumnType;
   /** The column's raw value in JSON format. */
   value?: Maybe<Scalars['JSON']['output']>;
+};
+
+/** Input type for item nickname configuration */
+export type ItemNicknameInput = {
+  /** The plural form of the item nickname */
+  plural?: InputMaybe<Scalars['String']['input']>;
+  /** The preset type for item nickname */
+  preset_type?: InputMaybe<Scalars['String']['input']>;
+  /** The singular form of the item nickname */
+  singular?: InputMaybe<Scalars['String']['input']>;
 };
 
 /** Sort direction */
@@ -3861,8 +4349,6 @@ export type LastUpdatedValue = ColumnValue & {
  * • Use afterBlockId only to order siblings *within* the same cell.
  */
 export type LayoutBlockInput = {
-  /** Optional UUID for the block */
-  block_id?: InputMaybe<Scalars['String']['input']>;
   /** The number of columns in the layout */
   column_count: Scalars['Int']['input'];
   /** The column style configuration */
@@ -3936,8 +4422,6 @@ export type ListBlockContent = DocBaseBlockContent & {
 /** Input for creating list blocks (bulleted, numbered, todo) */
 export type ListBlockInput = {
   alignment?: InputMaybe<BlockAlignment>;
-  /** Optional UUID for the block */
-  block_id?: InputMaybe<Scalars['String']['input']>;
   /** The text content in delta format - array of operations with insert content and optional attributes */
   delta_format: Array<OperationInput>;
   direction?: InputMaybe<BlockDirection>;
@@ -4210,6 +4694,8 @@ export type Mutation = {
    * @deprecated use add_users_to_board instead
    */
   add_subscribers_to_board?: Maybe<Array<Maybe<User>>>;
+  /** Adds users to an existing object as either subscribers or owners. Subscribers receive notifications about object changes, while owners have full control permissions. Works with any object type including boards, docs, dashboards, workflows, and specialized objects (CRM, capacity manager, etc.). Equivalent to the add_users_to_board mutation in the boards API. */
+  add_subscribers_to_object?: Maybe<Object>;
   /** Add teams subscribers to a board. */
   add_teams_to_board?: Maybe<Array<Maybe<Team>>>;
   /** Add teams to a workspace. */
@@ -4226,6 +4712,8 @@ export type Mutation = {
   archive_group?: Maybe<Group>;
   /** Archive an item. */
   archive_item?: Maybe<Item>;
+  /** Archives an object in the Monday.com Objects Platform, changing its state to "archived" while preserving all data. Archived objects remain in the system but are hidden from regular views. This operation works for any object type including boards, docs, dashboards, workflows, and specialized objects (CRM, capacity manager, etc.). Under the hood, this archives the board that represents this object. */
+  archive_object?: Maybe<Object>;
   /** Assigns the specified users as owners of the specified team. */
   assign_team_owners?: Maybe<AssignTeamOwnersResult>;
   /** Extends trial period of an application to selected accounts */
@@ -4246,12 +4734,18 @@ export type Mutation = {
   clear_item_updates?: Maybe<Item>;
   /** Get the complexity data of your mutations. */
   complexity?: Maybe<Complexity>;
+  /** Connect a migration job from a source account to the target account */
+  connect_migration_job?: Maybe<ConnectMigrationJobResult>;
   /** Connect project to portfolio */
   connect_project_to_portfolio?: Maybe<ConnectProjectResult>;
   /** Convert an existing monday.com board into a project with enhanced project management capabilities. This mutation transforms a regular board by applying project-specific features and configurations through column mappings that define how existing board columns should be interpreted in the project context. The conversion process is asynchronous and returns a process_id for tracking completion. Optionally accepts a callback URL for notification when the conversion completes. Use this when you have an existing board with data that needs to be upgraded to a full project with advanced project management features like Resource Planner integration. */
   convert_board_to_project?: Maybe<ConvertBoardToProjectResult>;
+  /** Creates a new app with the specified configuration. */
+  create_app?: Maybe<AppType>;
   /** Create a new app feature. */
   create_app_feature?: Maybe<AppFeatureType>;
+  /** Creates a new article in the specified workspace. Optionally accepts a name and folder ID. Returns the created article metadata. */
+  create_article?: Maybe<ArticleMetadata>;
   /** Create a new board. */
   create_board?: Maybe<Board>;
   /** Generic mutation for creating any column type with validation. Supports creating column with properties like title, description, and type-specific defaults/settings. The mutation validates input against the column type's schema before applying changes. Use get_column_type_schema query to understand available properties for each column type. */
@@ -4269,6 +4763,8 @@ export type Mutation = {
   create_dropdown_column?: Maybe<Column>;
   /** Create managed column of type dropdown mutation. */
   create_dropdown_managed_column?: Maybe<DropdownManagedColumn>;
+  /** Create a snapshot for a given entity in a migration job */
+  create_entity_snapshot?: Maybe<CreateEntitySnapshotResult>;
   /** Add workspace object to favorites */
   create_favorite?: Maybe<CreateFavoriteResultType>;
   /** Creates a folder in a specific workspace. */
@@ -4283,12 +4779,18 @@ export type Mutation = {
   create_group?: Maybe<Group>;
   /** Create a new item. */
   create_item?: Maybe<Item>;
+  /** Create a new migration job */
+  create_migration_job?: Maybe<CreateMigrationJobResult>;
   /** Create a new notification. */
   create_notification?: Maybe<Notification>;
+  /** Creates a new object in the Monday.com Objects Platform. The type of object created is determined by the app_feature_reference_id parameter. This mutation can create boards, docs, dashboards, workflows, or specialized objects like CRM, capacity manager, etc. Under the hood, this creates a board with the specified app_feature_id. */
+  create_object?: Maybe<Object>;
   /** Create a new tag or get it if it already exists. */
   create_or_get_tag?: Maybe<Tag>;
   /** Create a new portfolio */
   create_portfolio?: Maybe<CreatePortfolioResult>;
+  /** Create a new project in monday.com from scratch. This mutation creates a project (board) with comprehensive customization options including: privacy settings (private/public/share), optional companions like Resource Planner for enhanced project management capabilities, workspace assignment for organizational structure, folder placement for better organization, and template selection for predefined project structures. Use this when you need to programmatically create a brand new project with specific configuration requirements. Returns the project ID upon successful creation. */
+  create_project?: Maybe<CreateProjectResult>;
   /** Creates a new status column with strongly typed settings. Status columns allow users to track item progress through customizable labels (e.g., "Working on it", "Done", "Stuck"). This mutation is specifically for status/color columns and provides type-safe creation with label configuration. */
   create_status_column?: Maybe<Column>;
   /** Create managed column of type status mutation. */
@@ -4315,11 +4817,11 @@ export type Mutation = {
   deactivate_managed_column?: Maybe<ManagedColumn>;
   /** Deactivates the specified users. */
   deactivate_users?: Maybe<DeactivateUsersResult>;
-  /** Delete an app feature. */
-  delete_app_feature?: Maybe<AppFeatureType>;
+  /** Deletes an article with the specified object ID */
+  delete_article?: Maybe<ArticleMetadata>;
   /** Delete a board. */
   delete_board?: Maybe<Board>;
-  /** Delete a column. */
+  /** Deletes a column from a board. Cannot delete mandatory columns (e.g., name column). */
   delete_column?: Maybe<Column>;
   delete_custom_activity?: Maybe<CustomActivity>;
   /** Delete an existing dashboard. */
@@ -4341,6 +4843,8 @@ export type Mutation = {
   /** Delete managed column mutation. */
   delete_managed_column?: Maybe<ManagedColumn>;
   delete_marketplace_app_discount: DeleteMarketplaceAppDiscountResult;
+  /** Permanently deletes an object from the Monday.com Objects Platform. Unlike archiving, deletion is only reversible for 30 days and removes all associated data. This operation works for any object type including boards, docs, dashboards, workflows, and specialized objects (CRM, capacity manager, etc.). WARNING: This operation cannot be undone after 30 days. */
+  delete_object?: Maybe<Object>;
   /** Permanently remove a question from a form. This action cannot be undone. */
   delete_question?: Maybe<Scalars['Boolean']['output']>;
   /** Remove subscribers from the board. */
@@ -4372,9 +4876,9 @@ export type Mutation = {
   /** Duplicate an item. */
   duplicate_item?: Maybe<Item>;
   edit_update: Update;
-  /** Converts document content into standard markdown format for external use, backup, or processing. Exports the entire document by default, or specific blocks if block IDs are provided. Use this to extract content for integration with other systems, create backups, generate reports, or process document content with external tools. The output is clean, portable markdown that preserves formatting and structure. */
-  export_markdown_from_doc?: Maybe<ExportMarkdownResult>;
   grant_marketplace_app_discount: GrantMarketplaceAppDiscountResult;
+  /** Imports HTML content as a new document by converting it into document blocks. The HTML will be parsed and converted into the appropriate document block types (text, headers, lists, etc.). Returns the ID of the newly created document on success. */
+  import_doc_from_html?: Maybe<ImportDocFromHtmlResult>;
   /** Increase operations counter */
   increase_app_subscription_operations?: Maybe<AppSubscriptionOperationsCounter>;
   /** Invite users to the account. */
@@ -4385,6 +4889,10 @@ export type Mutation = {
   /** Move an item to a different group. */
   move_item_to_group?: Maybe<Item>;
   pin_to_top: Update;
+  /** Publishes an article with the specified object ID. Allows setting privacy level, target folder, and managing subscribers (users and teams). Returns the updated article metadata. */
+  publish_article?: Maybe<ArticleMetadata>;
+  /** Publishes object out of draft state. Returns {success: true} on success, {success: false} on failure. */
+  publish_object?: Maybe<ObjectOperationResponse>;
   /** Remove mock app subscription for the current account */
   remove_mock_app_subscription?: Maybe<AppSubscription>;
   /** Remove a required column from a board */
@@ -4393,6 +4901,8 @@ export type Mutation = {
   remove_team_owners?: Maybe<RemoveTeamOwnersResult>;
   /** Remove users from team. */
   remove_users_from_team?: Maybe<ChangeTeamMembershipsResult>;
+  /** Restore an entity from a migration job */
+  restore_entity?: Maybe<RestoreEntityResult>;
   /**
    * Set or update the board's permission to specified role. This concept is also
    * known as default board role, general access or board permission set.
@@ -4406,8 +4916,12 @@ export type Mutation = {
   shorten_form_url?: Maybe<FormShortenedLink>;
   unlike_update: Update;
   unpin_from_top: Update;
+  /** Unpublishes object from public state back to draft state. Returns {success: true} on success, {success: false} on failure. */
+  unpublish_object?: Maybe<ObjectOperationResponse>;
+  /** Updates an existing app. If the app latest version is live, a new draft version is automatically created and updated. */
+  update_app?: Maybe<AppType>;
   /** Update an app feature. */
-  updateAppFeature?: Maybe<AppFeatureType>;
+  update_app_feature?: Maybe<AppFeatureType>;
   /** Updates the content of a specific article block. The block must belong to a draft article that the user has permission to edit. Cannot update blocks of published articles. */
   update_article_block?: Maybe<ArticleBlock>;
   /** Update item column value by existing assets */
@@ -4452,6 +4966,8 @@ export type Mutation = {
   update_mute_board_settings?: Maybe<Array<BoardMuteSettings>>;
   /** Updates a notification setting's enabled status. */
   update_notification_setting?: Maybe<Array<NotificationSetting>>;
+  /** Updates an object. */
+  update_object?: Maybe<Object>;
   /** Update the position of a dashboard. */
   update_overview_hierarchy?: Maybe<UpdateOverviewHierarchy>;
   /** Updates a status column's properties including title, description, and status label settings. Status columns allow users to track item progress through customizable labels (e.g., "Working on it", "Done", "Stuck"). This mutation is specifically for status/color columns and provides type-safe updates. */
@@ -4468,6 +4984,8 @@ export type Mutation = {
   update_workspace?: Maybe<Workspace>;
   /** Use a template */
   use_template?: Maybe<Template>;
+  /** Namespace for all vibe-related mutations */
+  vibe?: Maybe<VibeMutations>;
 };
 
 
@@ -4529,6 +5047,14 @@ export type MutationAdd_Subscribers_To_BoardArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationAdd_Subscribers_To_ObjectArgs = {
+  id: Scalars['ID']['input'];
+  kind?: InputMaybe<SubscriberKind>;
+  user_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationAdd_Teams_To_BoardArgs = {
   board_id: Scalars['ID']['input'];
   kind?: InputMaybe<BoardSubscriberKind>;
@@ -4583,6 +5109,12 @@ export type MutationArchive_GroupArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationArchive_ItemArgs = {
   item_id?: InputMaybe<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationArchive_ObjectArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -4665,6 +5197,15 @@ export type MutationClear_Item_UpdatesArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationConnect_Migration_JobArgs = {
+  migrationJobId: Scalars['String']['input'];
+  sourceAccountId: Scalars['Int']['input'];
+  sourceRegion: Scalars['String']['input'];
+  sourceUserId: Scalars['Int']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationConnect_Project_To_PortfolioArgs = {
   portfolioBoardId: Scalars['ID']['input'];
   projectBoardId: Scalars['ID']['input'];
@@ -4674,6 +5215,12 @@ export type MutationConnect_Project_To_PortfolioArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationConvert_Board_To_ProjectArgs = {
   input: ConvertBoardToProjectInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationCreate_AppArgs = {
+  input: CreateAppInput;
 };
 
 
@@ -4690,6 +5237,14 @@ export type MutationCreate_App_FeatureArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationCreate_ArticleArgs = {
+  folder_id?: InputMaybe<Scalars['ID']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  workspace_id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_BoardArgs = {
   board_kind: BoardKind;
   board_name: Scalars['String']['input'];
@@ -4699,7 +5254,9 @@ export type MutationCreate_BoardArgs = {
   board_subscriber_teams_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   description?: InputMaybe<Scalars['String']['input']>;
   empty?: InputMaybe<Scalars['Boolean']['input']>;
+  entity_model_id?: InputMaybe<Scalars['String']['input']>;
   folder_id?: InputMaybe<Scalars['ID']['input']>;
+  item_nickname?: InputMaybe<ItemNicknameInput>;
   template_id?: InputMaybe<Scalars['ID']['input']>;
   workspace_id?: InputMaybe<Scalars['ID']['input']>;
 };
@@ -4780,6 +5337,14 @@ export type MutationCreate_Dropdown_Managed_ColumnArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationCreate_Entity_SnapshotArgs = {
+  entity: Scalars['String']['input'];
+  includeDescendants?: InputMaybe<Scalars['Boolean']['input']>;
+  migrationJobId: Scalars['String']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_FavoriteArgs = {
   input: CreateFavoriteInput;
 };
@@ -4848,11 +5413,35 @@ export type MutationCreate_ItemArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationCreate_Migration_JobArgs = {
+  targetAccountApiToken?: InputMaybe<Scalars['String']['input']>;
+  targetAccountId: Scalars['Int']['input'];
+  targetUserId: Scalars['Int']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_NotificationArgs = {
   target_id: Scalars['ID']['input'];
   target_type: NotificationTargetType;
   text: Scalars['String']['input'];
   user_id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationCreate_ObjectArgs = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  folder_id?: InputMaybe<Scalars['ID']['input']>;
+  name: Scalars['String']['input'];
+  object_type_unique_key: Scalars['String']['input'];
+  owner_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  owner_team_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  payload?: InputMaybe<Scalars['JSON']['input']>;
+  privacy_kind: PrivacyKind;
+  subscriber_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  subscriber_teams_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  workspace_id?: InputMaybe<Scalars['ID']['input']>;
 };
 
 
@@ -4868,6 +5457,12 @@ export type MutationCreate_PortfolioArgs = {
   boardName: Scalars['String']['input'];
   boardPrivacy: Scalars['String']['input'];
   destinationWorkspaceId?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationCreate_ProjectArgs = {
+  input: CreateProjectInput;
 };
 
 
@@ -5008,8 +5603,8 @@ export type MutationDeactivate_UsersArgs = {
 
 
 /** Root mutation type for the Dependencies service */
-export type MutationDelete_App_FeatureArgs = {
-  id: Scalars['ID']['input'];
+export type MutationDelete_ArticleArgs = {
+  object_id: Scalars['ID']['input'];
 };
 
 
@@ -5093,6 +5688,12 @@ export type MutationDelete_Managed_ColumnArgs = {
 export type MutationDelete_Marketplace_App_DiscountArgs = {
   account_slug: Scalars['String']['input'];
   app_id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationDelete_ObjectArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -5217,17 +5818,20 @@ export type MutationEdit_UpdateArgs = {
 
 
 /** Root mutation type for the Dependencies service */
-export type MutationExport_Markdown_From_DocArgs = {
-  blockIds?: InputMaybe<Array<Scalars['String']['input']>>;
-  docId: Scalars['ID']['input'];
-};
-
-
-/** Root mutation type for the Dependencies service */
 export type MutationGrant_Marketplace_App_DiscountArgs = {
   account_slug: Scalars['String']['input'];
   app_id: Scalars['ID']['input'];
   data: GrantMarketplaceAppDiscountData;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationImport_Doc_From_HtmlArgs = {
+  folderId?: InputMaybe<Scalars['ID']['input']>;
+  html: Scalars['String']['input'];
+  kind?: InputMaybe<DocKind>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  workspaceId: Scalars['ID']['input'];
 };
 
 
@@ -5278,6 +5882,24 @@ export type MutationPin_To_TopArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationPublish_ArticleArgs = {
+  add_subscriber_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  add_subscriber_team_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  folder_id?: InputMaybe<Scalars['ID']['input']>;
+  object_id: Scalars['ID']['input'];
+  privacy_kind: PrivacyKind;
+  remove_subscriber_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  remove_subscriber_team_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationPublish_ObjectArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationRemove_Mock_App_SubscriptionArgs = {
   app_id: Scalars['ID']['input'];
   partial_signing_secret: Scalars['String']['input'];
@@ -5303,6 +5925,14 @@ export type MutationRemove_Team_OwnersArgs = {
 export type MutationRemove_Users_From_TeamArgs = {
   team_id: Scalars['ID']['input'];
   user_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationRestore_EntityArgs = {
+  entity: Scalars['String']['input'];
+  migrationJobId: Scalars['String']['input'];
+  sourceAccountApiToken?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -5353,7 +5983,20 @@ export type MutationUnpin_From_TopArgs = {
 
 
 /** Root mutation type for the Dependencies service */
-export type MutationUpdateAppFeatureArgs = {
+export type MutationUnpublish_ObjectArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUpdate_AppArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdateAppInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUpdate_App_FeatureArgs = {
   id: Scalars['ID']['input'];
   input: UpdateAppFeatureInput;
 };
@@ -5549,6 +6192,13 @@ export type MutationUpdate_Notification_SettingArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationUpdate_ObjectArgs = {
+  id: Scalars['String']['input'];
+  input: UpdateObjectInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Overview_HierarchyArgs = {
   attributes: UpdateOverviewHierarchyAttributesInput;
   overview_id: Scalars['ID']['input'];
@@ -5638,10 +6288,17 @@ export type MutationUse_TemplateArgs = {
   template_id: Scalars['Int']['input'];
 };
 
+/** Data required to request the next page of remote options */
+export type NextPageRequestData = {
+  __typename?: 'NextPageRequestData';
+  /** Optional cursor for cursor-based pagination */
+  cursor?: Maybe<Scalars['JSON']['output']>;
+  /** The page identifier to request */
+  page: Scalars['JSON']['output'];
+};
+
 /** The notice-box's own ID must be captured.  Every block that should appear inside it must be created with parentBlockId = that ID (and can still use afterBlockId for ordering among siblings). */
 export type NoticeBoxBlockInput = {
-  /** Optional UUID for the block */
-  block_id?: InputMaybe<Scalars['String']['input']>;
   /** The parent block id to append the created block under. */
   parent_block_id?: InputMaybe<Scalars['String']['input']>;
   theme: NoticeBoxTheme;
@@ -5750,12 +6407,56 @@ export type NumbersValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
+/** The central type in the Monday.com Objects Platform, representing any entity in the system. This unified type can represent instances of boards, docs, dashboards, workflows, and specialized objects. The specific type of an object is determined by its app_feature_reference_id. */
+export type Object = {
+  __typename?: 'Object';
+  /** The ID of the user who created this object. Useful for tracking object origin. */
+  creator?: Maybe<Scalars['String']['output']>;
+  /** Optional description of the object, providing additional context about its purpose or contents. */
+  description?: Maybe<Scalars['String']['output']>;
+  /** The ID of the folder containing this object, if the object is organized in a folder structure. */
+  folder_id?: Maybe<Scalars['String']['output']>;
+  /** The unique identifier of the object. Can be used to reference this specific object in queries and mutations. */
+  id?: Maybe<Scalars['String']['output']>;
+  /** The display name of the object. This is what appears in the Monday.com interface. */
+  name?: Maybe<Scalars['String']['output']>;
+  /** List of users who are owners of this object. Owners have full control permissions. */
+  owners?: Maybe<Array<User>>;
+  /** The kind/visibility setting of the object (private, public, share). Determines who can access it. */
+  privacy_kind?: Maybe<Scalars['String']['output']>;
+  /** The current state of the object. Determines visibility in the interface. */
+  state?: Maybe<Scalars['String']['output']>;
+  /** List of users who are subscribers to this object. Subscribers receive notifications about changes. */
+  subscribers?: Maybe<Array<User>>;
+  /** Timestamp of when the object was last updated. Format is ISO 8601. */
+  updated_at?: Maybe<Scalars['String']['output']>;
+  /** The ID of the workspace containing this object. Null indicates the object is in the main workspace. */
+  workspace_id?: Maybe<Scalars['String']['output']>;
+};
+
 export type ObjectDynamicPositionInput = {
   /** The next object in the list */
   nextObject?: InputMaybe<HierarchyObjectIdInputType>;
   /** The previous object in the list */
   prevObject?: InputMaybe<HierarchyObjectIdInputType>;
 };
+
+/** Response for object operations indicating success or failure */
+export type ObjectOperationResponse = {
+  __typename?: 'ObjectOperationResponse';
+  /** Indicates whether the operation was successful */
+  success?: Maybe<Scalars['Boolean']['output']>;
+};
+
+/** The state of the object. */
+export enum ObjectState {
+  /** The object is active. */
+  Active = 'ACTIVE',
+  /** The object is archived. */
+  Archived = 'ARCHIVED',
+  /** The object is deleted. */
+  Deleted = 'DELETED'
+}
 
 /** Represents a monday object. */
 export enum ObjectType {
@@ -5766,6 +6467,19 @@ export enum ObjectType {
   /** Represents an overview object type. */
   Overview = 'Overview'
 }
+
+/** Represents object type unique key and metadata. */
+export type ObjectTypeUniqueKey = {
+  __typename?: 'ObjectTypeUniqueKey';
+  /** The name of the app feature object type (e.g., 'Workflow', 'Capacity manager'). */
+  app_feature_name?: Maybe<Scalars['String']['output']>;
+  /** The name of the app that provides this object type. */
+  app_name?: Maybe<Scalars['String']['output']>;
+  /** A short description of what this object type represents. */
+  description?: Maybe<Scalars['String']['output']>;
+  /** The unique identifier for the object type, formatted as 'app_slug::app_feature_slug' */
+  object_type_unique_key?: Maybe<Scalars['String']['output']>;
+};
 
 /** A delta operation with insert content and optional formatting attributes */
 export type Operation = {
@@ -5784,6 +6498,23 @@ export type OperationInput = {
   insert: InsertOpsInput;
 };
 
+/** A single option in a remote options list */
+export type Option = {
+  __typename?: 'Option';
+  /** The display title of the option */
+  title?: Maybe<Scalars['String']['output']>;
+  /** The value of the option */
+  value?: Maybe<Scalars['JSON']['output']>;
+};
+
+/** Defines the sorting order for returned objects in the objects query. */
+export enum OrderBy {
+  /** Sort objects by their creation date, from newest to oldest. */
+  CreatedAt = 'CREATED_AT',
+  /** Sort objects by when they were last used, from most recent to least recent. */
+  UsedAt = 'USED_AT'
+}
+
 /** The working status of a user. */
 export type OutOfOffice = {
   __typename?: 'OutOfOffice';
@@ -5797,6 +6528,39 @@ export type OutOfOffice = {
   start_date?: Maybe<Scalars['Date']['output']>;
   /** Out of office type. */
   type?: Maybe<Scalars['String']['output']>;
+};
+
+/** Interface for output field configuration */
+export type OutputFieldConfig = {
+  /** Detailed description of the field */
+  description?: Maybe<FieldInformation>;
+  /** Key identifier for the field */
+  fieldKey?: Maybe<Scalars['String']['output']>;
+  /** Display title for the field */
+  fieldTitle?: Maybe<Scalars['String']['output']>;
+  /** Unique identifier for the field */
+  id?: Maybe<Scalars['Int']['output']>;
+  /** Additional information about the field */
+  information?: Maybe<FieldInformation>;
+  /** Whether the field is an array type */
+  isArray?: Maybe<Scalars['Boolean']['output']>;
+  /** Whether the field can be null */
+  isNullable?: Maybe<Scalars['Boolean']['output']>;
+  /** Whether the field is optional */
+  isOptional?: Maybe<Scalars['Boolean']['output']>;
+  /** Type of the field relation */
+  type?: Maybe<FieldTypeRelationType>;
+};
+
+/** Output field constraints */
+export type OutputFieldConstraints = {
+  __typename?: 'OutputFieldConstraints';
+  /** Credential dependencies required for this field's output */
+  credentials?: Maybe<Scalars['JSON']['output']>;
+  /** Dependencies that affect this field's output behavior */
+  dependencies?: Maybe<Scalars['JSON']['output']>;
+  /** Dependencies between this field and its subfields in the output */
+  subFieldsDependencies?: Maybe<Scalars['JSON']['output']>;
 };
 
 /** A monday.com overview. */
@@ -5824,8 +6588,6 @@ export type Overview = {
 
 /** Input for creating page break blocks */
 export type PageBreakBlockInput = {
-  /** Optional UUID for the block */
-  block_id?: InputMaybe<Scalars['String']['input']>;
   /** The parent block id to append the created block under. */
   parent_block_id?: InputMaybe<Scalars['String']['input']>;
 };
@@ -5998,7 +6760,7 @@ export type PlatformApiDailyAnalyticsByUser = {
   /** API usage for the user. */
   usage: Scalars['Int']['output'];
   /** User. */
-  user: User;
+  user?: Maybe<User>;
 };
 
 /** The position relative method. */
@@ -6029,6 +6791,107 @@ export type PrefillSettingsInput = {
   /** The data source to use for prefilling the question value. Check the PrefillSources for available options. */
   source?: InputMaybe<FormQuestionPrefillSources>;
 };
+
+/** Primitive field type implementation */
+export type PrimitiveFieldType = FieldType & {
+  __typename?: 'PrimitiveFieldType';
+  /** Configuration metadata for the field type */
+  configurartionMetadata?: Maybe<Scalars['JSON']['output']>;
+  /** Default key for fields of this type */
+  defaultFieldKey?: Maybe<Scalars['String']['output']>;
+  /** Dependency configuration specifying mandatory and optional field dependencies required to enable this field and compute its dynamic values. When fetching the permitted values for custom input fields via the remote_options query, you must provide these dependencies in the query input. */
+  dependencyConfig?: Maybe<DependencyConfig>;
+  /** Description of the field type */
+  description?: Maybe<Scalars['String']['output']>;
+  /** Unique identifier for the field type */
+  id?: Maybe<Scalars['Int']['output']>;
+  /** List of field type implementations */
+  implement?: Maybe<Array<FieldTypeImplementation>>;
+  /** Unique key identifier for the field type */
+  key?: Maybe<Scalars['String']['output']>;
+  /** Name of the field type */
+  name?: Maybe<Scalars['String']['output']>;
+  /** The primitive type of the field */
+  primitiveType?: Maybe<PrimitiveTypes>;
+  /** Current state of the field type */
+  state?: Maybe<FieldTypeState>;
+  /** Unique key of the field type */
+  uniqueKey?: Maybe<Scalars['String']['output']>;
+};
+
+/** Configuration for a primitive input field */
+export type PrimitiveInputFieldConfig = InputFieldConfig & {
+  __typename?: 'PrimitiveInputFieldConfig';
+  /** Detailed description of the field */
+  description?: Maybe<FieldInformation>;
+  /** Key identifier for the field */
+  fieldKey?: Maybe<Scalars['String']['output']>;
+  /** Display title for the field */
+  fieldTitle?: Maybe<Scalars['String']['output']>;
+  /** Unique identifier for the field */
+  id?: Maybe<Scalars['Int']['output']>;
+  /** Additional information about the field */
+  information?: Maybe<FieldInformation>;
+  /** Whether the field is an array type */
+  isArray?: Maybe<Scalars['Boolean']['output']>;
+  /** Whether the field can be null */
+  isNullable?: Maybe<Scalars['Boolean']['output']>;
+  /** Whether the field is optional */
+  isOptional?: Maybe<Scalars['Boolean']['output']>;
+  /** Type of the primitive field */
+  primitiveType?: Maybe<PrimitiveTypes>;
+  /** Type of the field relation */
+  type?: Maybe<FieldTypeRelationType>;
+};
+
+/** Configuration for a primitive output field */
+export type PrimitiveOutputFieldConfig = OutputFieldConfig & {
+  __typename?: 'PrimitiveOutputFieldConfig';
+  /** Detailed description of the field */
+  description?: Maybe<FieldInformation>;
+  /** Key identifier for the field */
+  fieldKey?: Maybe<Scalars['String']['output']>;
+  /** Display title for the field */
+  fieldTitle?: Maybe<Scalars['String']['output']>;
+  /** Unique identifier for the field */
+  id?: Maybe<Scalars['Int']['output']>;
+  /** Additional information about the field */
+  information?: Maybe<FieldInformation>;
+  /** Whether the field is an array type */
+  isArray?: Maybe<Scalars['Boolean']['output']>;
+  /** Whether the field can be null */
+  isNullable?: Maybe<Scalars['Boolean']['output']>;
+  /** Whether the field is optional */
+  isOptional?: Maybe<Scalars['Boolean']['output']>;
+  /** Type of the primitive field */
+  primitiveType?: Maybe<PrimitiveTypes>;
+  /** Type of the field relation */
+  type?: Maybe<FieldTypeRelationType>;
+};
+
+/** The primitive types supported by the system */
+export enum PrimitiveTypes {
+  /** Boolean type for true/false values */
+  Boolean = 'BOOLEAN',
+  /** Date type for date values */
+  Date = 'DATE',
+  /** Float type for decimal values */
+  Float = 'FLOAT',
+  /** Hour type for hour values */
+  Hour = 'HOUR',
+  /** Number type for integer values */
+  Number = 'NUMBER',
+  /** String type for text values */
+  String = 'STRING'
+}
+
+/** The kind/visibility setting of the article (private, public). Determines who can access it. */
+export enum PrivacyKind {
+  /** Private objects are only visible to specific users who are members of the object. */
+  Private = 'PRIVATE',
+  /** Public objects are visible to all users within the account, unless their access is blocked on a higher level in the hierarchy, or by specific object permission. */
+  Public = 'PUBLIC'
+}
 
 /** The product to invite the users to. */
 export enum Product {
@@ -6082,6 +6945,10 @@ export type Query = {
   apps_monetization_info?: Maybe<AppsMonetizationInfo>;
   /** Get apps monetization status for an account */
   apps_monetization_status?: Maybe<AppMonetizationStatus>;
+  /** Retrieves blocks for the published version of a specific article if the requesting user has permission to access it. Returns paginated blocks in their position order. Will return an error if the user lacks the required permissions. */
+  article_blocks: Array<Maybe<ArticleBlock>>;
+  /** Retrieves a list of published articles with their metadata and content blocks that the requesting user has permission to access. Articles without proper permissions will be filtered out. By default, returns the first 25 blocks per article. To retrieve more blocks, use the article_blocks query. */
+  articles: Array<Maybe<Article>>;
   /** Get a collection of assets by ids. */
   assets?: Maybe<Array<Maybe<Asset>>>;
   /**
@@ -6147,6 +7014,15 @@ export type Query = {
   audit_logs?: Maybe<AuditLogPage>;
   /** List block events for a given trigger UUID */
   block_events?: Maybe<BlockEventsPage>;
+  /**
+   * Get blocks for the current user.
+   *
+   * Engine usage when building live workflows:
+   * • Always invoke this query first to retrieve the catalogue of workflow steps available to the account.
+   * • Each element in `blocks.blocks` contains an `id` – this is the canonical `blockReferenceId` that must be supplied inside `WorkflowBlockInput.blockReferenceId` when calling `create_live_workflow`.
+   * • The `kind` field tells you whether the block is a TRIGGER, ACTION or CONDITION, which helps decide its placement in the workflow.
+   */
+  blocks?: Maybe<BlocksResult>;
   /** Get board candidates based on workspace and usage type */
   board_candidates?: Maybe<Array<Board>>;
   /** Get a collection of boards. */
@@ -6164,6 +7040,8 @@ export type Query = {
   docs?: Maybe<Array<Maybe<Document>>>;
   /** Export the dependency graph for a specific board */
   export_graph?: Maybe<BoardGraphExport>;
+  /** Converts document content into standard markdown format for external use, backup, or processing. Exports the entire document by default, or specific blocks if block IDs are provided. Use this to extract content for integration with other systems, create backups, generate reports, or process document content with external tools. The output is clean, portable markdown that preserves formatting and structure. */
+  export_markdown_from_doc?: Maybe<ExportMarkdownResult>;
   /** Get all personal list items by list ID */
   favorites?: Maybe<Array<GraphqlHierarchyObjectItem>>;
   /** Get a collection of folders. Note: This query won't return folders from closed workspaces to which you are not subscribed */
@@ -6172,14 +7050,19 @@ export type Query = {
   form?: Maybe<ResponseForm>;
   /** Retrieves the JSON schema definition for a specific column type. Use this query before calling update_column mutation to understand the structure and validation rules for the defaults parameter. The schema defines what properties are available when updating columns of a specific type. */
   get_column_type_schema?: Maybe<Scalars['JSON']['output']>;
-  /** Get list of live workflows with pagination */
-  get_live_workflows?: Maybe<Array<Workflow>>;
+  get_entities_for_migration?: Maybe<Array<GetEntitiesForMigrationResult>>;
+  /** Get the entity snapshots */
+  get_entity_snapshots?: Maybe<Array<GetSnapshotsQueryResults>>;
+  /** Get the entity restores */
+  get_restores?: Maybe<Array<GetRestoresQueryResults>>;
   /**
    * Retrieves the JSON schema definition for a specific create view type.
    *       Use this query before calling create_view mutation to understand the structure and validation rules for the settings parameter.
    *       The schema defines what properties are available when creating views of a specific type.
    */
   get_view_schema_by_type?: Maybe<Scalars['JSON']['output']>;
+  /** List of all supported workflow variable kinds with their json schemas */
+  get_workflow_variable_schemas: Array<WorkflowVariableSchema>;
   /** Get a collection of items. */
   items?: Maybe<Array<Maybe<Item>>>;
   /** Search items by multiple columns and values. */
@@ -6204,10 +7087,30 @@ export type Query = {
   notifications?: Maybe<Array<Notification>>;
   /** Retrieves the current user's notification settings across all available channels. */
   notifications_settings?: Maybe<Array<NotificationSetting>>;
+  /** Retrieves a list of available object types that can be created or queried. Each object type is uniquely identified by an 'object_type_unique_key'. This key is required for mutations like 'create_object' and for filtering in the 'objects' query. Use this query to discover what types of objects are available in the system (e.g., 'workflows', 'projects') and get their corresponding unique keys. The structure of unique key is 'app_slug::app_feature_slug'. */
+  object_types_unique_keys?: Maybe<Array<ObjectTypeUniqueKey>>;
+  /** Retrieves a list of objects from the Monday.com Objects Platform based on specified filters. This query can return any type of object (board, doc, dashboard, workflow, etc.) depending on the filter criteria. Use object_type_unique_keys to filter for specific object types. */
+  objects?: Maybe<Array<Object>>;
   /** Platform API data. */
   platform_api?: Maybe<PlatformApi>;
+  /**
+   * Fetch remote options for a field type.
+   *
+   * Engine usage when building live workflows:
+   * • Certain block fields declare that their value must be chosen from a dynamic (remote) list – for example, status labels, column identifiers, users, etc.
+   * • Before constructing the corresponding `WorkflowVariableInput`, call this query with the proper context parameters (fieldTypeReferenceId, boardId, columnId, etc.).
+   * • Inspect the returned array and pick the desired option's `value`; place that value in `WorkflowVariableInput.sourceMetadata.value` and mark the variable's `sourceKind` as `REMOTE`.
+   * • This ensures the workflow always references an up-to-date, valid option.
+   */
+  remote_options?: Maybe<RemoteOptionsResponse>;
   /** Get a collection of replies filtered by board IDs and date range. */
   replies?: Maybe<Array<Reply>>;
+  /** A query to search across all boards in the account. Returns raw json results. */
+  search_benchmark?: Maybe<SearchBenchmarkResults>;
+  /** A query to search across all boards in the account. Returns raw json results. */
+  search_cross_board?: Maybe<SearchAllResult>;
+  /** Search for items using various search strategies. */
+  search_items?: Maybe<SearchItemsGraphQlResultsView>;
   /** Get a collection of monday dev sprints */
   sprints?: Maybe<Array<Sprint>>;
   /** Get a collection of tags. */
@@ -6288,6 +7191,23 @@ export type QueryApp_SubscriptionsArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QueryArticle_BlocksArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  object_id: Scalars['ID']['input'];
+  page?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryArticlesArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  object_ids: Array<Scalars['ID']['input']>;
+  page?: InputMaybe<Scalars['Int']['input']>;
+  workspace_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryAssetsArgs = {
   ids: Array<Scalars['ID']['input']>;
 };
@@ -6309,6 +7229,12 @@ export type QueryAudit_LogsArgs = {
 export type QueryBlock_EventsArgs = {
   nextPageOffset?: InputMaybe<Scalars['Int']['input']>;
   triggerUuid: Scalars['String']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryBlocksArgs = {
+  input?: InputMaybe<GetBlocksInput>;
 };
 
 
@@ -6385,6 +7311,13 @@ export type QueryExport_GraphArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QueryExport_Markdown_From_DocArgs = {
+  blockIds?: InputMaybe<Array<Scalars['String']['input']>>;
+  docId: Scalars['ID']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryFoldersArgs = {
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -6406,10 +7339,24 @@ export type QueryGet_Column_Type_SchemaArgs = {
 
 
 /** Root query type for the Dependencies service */
-export type QueryGet_Live_WorkflowsArgs = {
-  hostInstanceId: Scalars['String']['input'];
-  hostType: HostType;
-  pagination?: InputMaybe<PaginationInput>;
+export type QueryGet_Entities_For_MigrationArgs = {
+  migrationJobId: Scalars['String']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryGet_Entity_SnapshotsArgs = {
+  entityIds?: InputMaybe<Array<Scalars['String']['input']>>;
+  migrationJobId: Scalars['String']['input'];
+  snapshotStatuses?: InputMaybe<Array<SnapshotStatus>>;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryGet_RestoresArgs = {
+  entityIds: Array<Scalars['String']['input']>;
+  migrationJobId: Scalars['String']['input'];
+  status?: Array<RestoreStatus>;
 };
 
 
@@ -6509,12 +7456,60 @@ export type QueryNotifications_SettingsArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QueryObjectsArgs = {
+  ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  object_type_unique_keys?: InputMaybe<Array<Scalars['String']['input']>>;
+  order_by?: InputMaybe<OrderBy>;
+  privacy_kind?: InputMaybe<PrivacyKind>;
+  state?: InputMaybe<ObjectState>;
+  workspace_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryRemote_OptionsArgs = {
+  input: RemoteOptionsInput;
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryRepliesArgs = {
   board_ids: Array<Scalars['ID']['input']>;
   created_at_from?: InputMaybe<Scalars['String']['input']>;
   created_at_to?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QuerySearch_BenchmarkArgs = {
+  boardId?: InputMaybe<Scalars['String']['input']>;
+  query: Scalars['String']['input'];
+  version: Scalars['String']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QuerySearch_Cross_BoardArgs = {
+  query: Scalars['String']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QuerySearch_ItemsArgs = {
+  assignee?: InputMaybe<AssigneeInput>;
+  boardId?: InputMaybe<Scalars['ID']['input']>;
+  boosts?: InputMaybe<BoostConfigurationInput>;
+  dateRange?: InputMaybe<SearchDateRangeInput>;
+  exactMatch?: InputMaybe<Scalars['Boolean']['input']>;
+  query?: InputMaybe<Scalars['String']['input']>;
+  rerankingStrategy?: InputMaybe<RerankingStrategy>;
+  searchType: Search;
+  size: Scalars['Int']['input'];
+  status?: InputMaybe<Scalars['String']['input']>;
+  workspaceIds?: InputMaybe<Array<Scalars['Int']['input']>>;
 };
 
 
@@ -6620,6 +7615,15 @@ export type QueryWorkspacesArgs = {
   state?: InputMaybe<State>;
 };
 
+/** Contains the results of the query. */
+export type QueryResult = {
+  __typename?: 'QueryResult';
+  /** The item data from the search result. */
+  data: Item;
+  /** The relevance score of the search result. */
+  score: Scalars['Float']['output'];
+};
+
 export type QuestionOptionInput = {
   /** The label to display for the option */
   label: Scalars['String']['input'];
@@ -6645,6 +7649,37 @@ export type RatingValue = ColumnValue & {
   updated_at?: Maybe<Scalars['Date']['output']>;
   /** The column's raw value in JSON format. */
   value?: Maybe<Scalars['JSON']['output']>;
+};
+
+/** Input type for requesting remote options for a field type, including dependencies, credentials, pagination, and search query. */
+export type RemoteOptionsInput = {
+  /** Map a credentialsKey to the credentials data. Example: { "my-credentials-key": { userCredentialsId: 123, accessToken: "abc" } } */
+  credentials_values?: InputMaybe<Scalars['JSON']['input']>;
+  /** Map all the dependencies fieldKeys to their values. Example: { "my-field-key": { value: 123 }, "my-other-field-key": { value: 456 } } .The schema is: Record<string, { value: unknown }> */
+  dependencies_values?: InputMaybe<Scalars['JSON']['input']>;
+  /** The unique key of the field type */
+  field_type_unique_key: Scalars['String']['input'];
+  /** Pagination data matching the schema of the field's remote options pagination data */
+  page_request_data?: InputMaybe<Scalars['JSON']['input']>;
+  /** Search query */
+  query?: InputMaybe<Scalars['String']['input']>;
+  /** Request specific values to fetch their title */
+  values_to_fetch?: InputMaybe<Scalars['JSON']['input']>;
+};
+
+/** Response containing a list of remote options and pagination information */
+export type RemoteOptionsResponse = {
+  __typename?: 'RemoteOptionsResponse';
+  /** Optional disclaimer text to display with the options */
+  disclaimer?: Maybe<Scalars['String']['output']>;
+  /** Whether this is the last page of options */
+  isLastPage?: Maybe<Scalars['Boolean']['output']>;
+  /** Whether the options list supports pagination */
+  isPaginated?: Maybe<Scalars['Boolean']['output']>;
+  /** Data required to fetch the next page of options */
+  nextPageRequestData?: Maybe<NextPageRequestData>;
+  /** List of available options */
+  options?: Maybe<Array<Option>>;
 };
 
 /** Error that occurred while removing team owners. */
@@ -6718,6 +7753,12 @@ export type RequiredColumns = {
   required_column_ids: Array<Scalars['String']['output']>;
 };
 
+/** Algorithms for reranking results. */
+export enum RerankingStrategy {
+  /** Use cross-encoder model for reranking results. */
+  CrossEncoder = 'CROSS_ENCODER'
+}
+
 export type ResponseForm = {
   __typename?: 'ResponseForm';
   /** Object containing accessibility settings such as language, alt text, and reading direction. */
@@ -6750,11 +7791,73 @@ export type ResponseForm = {
   type?: Maybe<Scalars['String']['output']>;
 };
 
+/** The result of the restore entity mutation. */
+export type RestoreEntityResult = {
+  __typename?: 'RestoreEntityResult';
+  /** Confirms the restore request was accepted. */
+  accepted?: Maybe<Scalars['Boolean']['output']>;
+};
+
+/** The possible statuses of a restore operation. */
+export enum RestoreStatus {
+  /** The restore failed to complete. */
+  Failed = 'failed',
+  /** The restore is pending and has not started yet. */
+  Pending = 'pending',
+  /** The restore is currently being processed. */
+  Processing = 'processing',
+  /** The restore completed successfully. */
+  Success = 'success'
+}
+
 /** notification settings scope types, the options are account user defaults or user private settings */
 export enum ScopeType {
   AccountNewUserDefaults = 'AccountNewUserDefaults',
   User = 'User'
 }
+
+/** Available search modes. */
+export enum Search {
+  /** Combined lexical and semantic search with reranking. */
+  Hybrid = 'HYBRID',
+  /** Keyword-based search using text matching. */
+  Lexical = 'LEXICAL',
+  /** Vector-based search using semantic similarity. */
+  Semantic = 'SEMANTIC'
+}
+
+export type SearchAllResult = {
+  __typename?: 'SearchAllResult';
+  /** The results of the search. */
+  results?: Maybe<Array<BoardResult>>;
+};
+
+/** The results of the search for benchmark. */
+export type SearchBenchmarkResults = {
+  __typename?: 'SearchBenchmarkResults';
+  data?: Maybe<Scalars['String']['output']>;
+};
+
+/** Date range filter for search queries */
+export type SearchDateRangeInput = {
+  /** Filter items created after this date */
+  createdAfter?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
+  /** Filter items created before this date */
+  createdBefore?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
+  /** Filter items updated after this date */
+  updatedAfter?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
+  /** Filter items updated before this date */
+  updatedBefore?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
+};
+
+/** Response of the search request. */
+export type SearchItemsGraphQlResultsView = {
+  __typename?: 'SearchItemsGraphQlResultsView';
+  /** Indicates if the results have been reranked */
+  reranked?: Maybe<Scalars['Boolean']['output']>;
+  /** The results of the items search. */
+  results: Array<QueryResult>;
+};
 
 /** Response type for detailed board permissions. Contains information about the permissions that were set. */
 export type SetBoardPermissionResponse = {
@@ -6770,6 +7873,13 @@ export type SetFormPasswordInput = {
   /** The password to set for the form. Must be at least 1 character long. */
   password: Scalars['String']['input'];
 };
+
+export enum SnapshotStatus {
+  Failed = 'failed',
+  Pending = 'pending',
+  Processing = 'processing',
+  Success = 'success'
+}
 
 /** Direction for sorting items */
 export enum SortDirection {
@@ -7020,6 +8130,39 @@ export type StatusValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
+/** Object field type implementation */
+export type SubfieldsFieldType = FieldType & {
+  __typename?: 'SubfieldsFieldType';
+  /** Default key for fields of this type */
+  defaultFieldKey?: Maybe<Scalars['String']['output']>;
+  /** Dependency configuration specifying mandatory and optional field dependencies required to enable this field and compute its dynamic values. When fetching the permitted values for custom input fields via the remote_options query, you must provide these dependencies in the query input. */
+  dependencyConfig?: Maybe<DependencyConfig>;
+  /** Description of the field type */
+  description?: Maybe<Scalars['String']['output']>;
+  /** Indicates if the object field type has remote subfields */
+  hasRemoteSubfields?: Maybe<Scalars['Boolean']['output']>;
+  /** Unique identifier for the field type */
+  id?: Maybe<Scalars['Int']['output']>;
+  /** List of field type implementations */
+  implement?: Maybe<Array<FieldTypeImplementation>>;
+  /** Unique key identifier for the field type */
+  key?: Maybe<Scalars['String']['output']>;
+  /** Name of the field type */
+  name?: Maybe<Scalars['String']['output']>;
+  /** Current state of the field type */
+  state?: Maybe<FieldTypeState>;
+  /** Unique key of the field type */
+  uniqueKey?: Maybe<Scalars['String']['output']>;
+};
+
+/** Defines the type of the user's role as members of the object */
+export enum SubscriberKind {
+  /** User will be added as an owner of the object, granting them full control permissions. */
+  Owner = 'OWNER',
+  /** User will be added as a subscriber to the object, receiving notifications about changes. */
+  Subscriber = 'SUBSCRIBER'
+}
+
 /** The discounts granted to the subscription */
 export type SubscriptionDiscount = {
   __typename?: 'SubscriptionDiscount';
@@ -7073,6 +8216,15 @@ export type SubtasksValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
+/** Standard success response for mutations */
+export type SuccessResponse = {
+  __typename?: 'SuccessResponse';
+  /** Optional message describing the result */
+  message?: Maybe<Scalars['String']['output']>;
+  /** Whether the operation was successful */
+  success?: Maybe<Scalars['Boolean']['output']>;
+};
+
 /**
  * Input for creating table blocks.
  * ⚠️  RECOMMENDATION: Use add_content_to_doc_from_markdown with markdown tables instead for simpler table creation.
@@ -7092,8 +8244,6 @@ export type SubtasksValue = ColumnValue & {
  *    Use `afterBlockId` only to order siblings within the same cell.
  */
 export type TableBlockInput = {
-  /** Optional UUID for the block */
-  block_id?: InputMaybe<Scalars['String']['input']>;
   /** The number of columns in the table */
   column_count: Scalars['Int']['input'];
   /** The column style configuration */
@@ -7254,8 +8404,6 @@ export type TextBlockContent = DocBaseBlockContent & {
 /** Input for creating text blocks (normal text, titles, quote, code) */
 export type TextBlockInput = {
   alignment?: InputMaybe<BlockAlignment>;
-  /** Optional UUID for the block */
-  block_id?: InputMaybe<Scalars['String']['input']>;
   /** The text content in delta format - array of operations with insert content and optional attributes */
   delta_format: Array<OperationInput>;
   direction?: InputMaybe<BlockDirection>;
@@ -7395,6 +8543,17 @@ export type TimelineValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
   /** The visualization type for the timeline */
   visualization_type?: Maybe<Scalars['String']['output']>;
+};
+
+/** Token usage details from AI request */
+export type TokenUsage = {
+  __typename?: 'TokenUsage';
+  /** Tokens used in the completion */
+  completion_tokens?: Maybe<Scalars['Int']['output']>;
+  /** Tokens used in the prompt */
+  prompt_tokens?: Maybe<Scalars['Int']['output']>;
+  /** Total tokens used in the request */
+  total_tokens?: Maybe<Scalars['Int']['output']>;
 };
 
 /** Represents a single automation trigger event */
@@ -7538,6 +8697,24 @@ export type UpdateAppFeatureInput = {
   deployment?: InputMaybe<AppFeatureReleaseInput>;
 };
 
+/** Input for updating an existing app. Creates draft version for live apps. */
+export type UpdateAppInput = {
+  /** Array of user IDs with access (replaces existing collaborators) */
+  collaborators?: InputMaybe<Array<Scalars['ID']['input']>>;
+  /** Detailed description of the app */
+  description?: InputMaybe<Scalars['String']['input']>;
+  /** App visibility type */
+  kind?: InputMaybe<AppKind>;
+  /** The display name of the app */
+  name?: InputMaybe<Scalars['String']['input']>;
+  /** Array of permission scopes (replaces existing permissions) */
+  permissions?: InputMaybe<Array<Scalars['String']['input']>>;
+  /** URL-friendly identifier (only settable if app has no existing slug) */
+  slug?: InputMaybe<Scalars['String']['input']>;
+  /** Webhook endpoint URL */
+  webhook_url?: InputMaybe<Scalars['String']['input']>;
+};
+
 /** Attributes for updating a board's position and location */
 export type UpdateBoardHierarchyAttributesInput = {
   /** The ID of the account product where the board should be placed */
@@ -7564,7 +8741,7 @@ export type UpdateBoardHierarchyResult = {
 /** Input type for updating a single dependency relationship between pulses */
 export type UpdateDependencyColumnInput = {
   /** The ID of the pulse to create or remove a dependency relationship with */
-  linkedPulseId: Scalars['Int']['input'];
+  linkedPulseId: Scalars['ID']['input'];
   /** Optional metadata containing dependency configuration (type and lag) */
   metadata?: InputMaybe<MetadataInput>;
 };
@@ -7664,6 +8841,16 @@ export type UpdateObjectHierarchyPositionInput = {
   newPosition?: InputMaybe<ObjectDynamicPositionInput>;
   /** The favorite's object to update */
   object: HierarchyObjectIdInputType;
+};
+
+/** Input for updating an object */
+export type UpdateObjectInput = {
+  /** The new description for the object */
+  description?: InputMaybe<Scalars['String']['input']>;
+  /** The new name for the object. */
+  name?: InputMaybe<Scalars['String']['input']>;
+  /** The new privacy kind for the object. */
+  privacy_kind?: InputMaybe<PrivacyKind>;
 };
 
 /** Result type for updating an overview's hierarchy */
@@ -7961,10 +9148,34 @@ export enum VersionKind {
   ReleaseCandidate = 'release_candidate'
 }
 
+/** Namespace for all vibe-related mutations */
+export type VibeMutations = {
+  __typename?: 'VibeMutations';
+  /** Execute an AI action and get a structured response */
+  ai_actions: AiActionResponse;
+  /** Rollback an AI app to an older specific version  */
+  rollback_to_version?: Maybe<SuccessResponse>;
+};
+
+
+/** Namespace for all vibe-related mutations */
+export type VibeMutationsAi_ActionsArgs = {
+  appId?: InputMaybe<Scalars['ID']['input']>;
+  prompt: Scalars['String']['input'];
+  schema?: InputMaybe<Scalars['JSON']['input']>;
+  systemPrompt?: InputMaybe<Scalars['String']['input']>;
+  useWebSearch?: InputMaybe<WebSearchConfigInput>;
+};
+
+
+/** Namespace for all vibe-related mutations */
+export type VibeMutationsRollback_To_VersionArgs = {
+  id: Scalars['ID']['input'];
+  version_id: Scalars['String']['input'];
+};
+
 /** Input for creating video blocks */
 export type VideoBlockInput = {
-  /** Optional UUID for the block */
-  block_id?: InputMaybe<Scalars['String']['input']>;
   /** The parent block id to append the created block under. */
   parent_block_id?: InputMaybe<Scalars['String']['input']>;
   /** The raw URL of the video */
@@ -8033,6 +9244,22 @@ export type Watcher = {
   medium: Scalars['String']['output'];
   user?: Maybe<User>;
   user_id: Scalars['ID']['output'];
+};
+
+/** Configuration for enabling web search in AI requests */
+export type WebSearchConfigInput = {
+  /** Whether web search is enabled for this request */
+  allowed: Scalars['Boolean']['input'];
+  /** Optional configuration for web search behavior */
+  options?: InputMaybe<WebSearchOptionsInput>;
+};
+
+/** Configuration options for web search functionality */
+export type WebSearchOptionsInput = {
+  /** Limit search results to content from the last N days */
+  recencyDays?: InputMaybe<Scalars['Int']['input']>;
+  /** Maximum number of search results to retrieve (default: 5) */
+  topK?: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** Monday webhooks */
@@ -8159,71 +9386,25 @@ export type WidgetSchemaInfo = {
   widget_type?: Maybe<ExternalWidget>;
 };
 
-export type Workflow = {
-  __typename?: 'Workflow';
-  /** Reference ID of the creator app feature */
-  creatorAppFeatureReferenceId?: Maybe<Scalars['Int']['output']>;
-  /** ID of the creator app */
-  creatorAppId?: Maybe<Scalars['Int']['output']>;
-  /** Detailed description of the workflow */
-  description?: Maybe<Scalars['String']['output']>;
-  /** Instance ID of the host */
-  hostInstanceId?: Maybe<Scalars['Int']['output']>;
-  /** Type of host for this workflow */
-  hostType?: Maybe<HostType>;
-  /** Workflow numeric ID (supports both integer and bigint) */
-  id?: Maybe<Scalars['String']['output']>;
-  /** Notice/Error message for the workflow */
-  noticeMessage?: Maybe<Scalars['String']['output']>;
-  /** Title of the workflow */
-  title?: Maybe<Scalars['String']['output']>;
-  /** Define the workflow's steps and the configuration of each step */
-  workflowBlocks?: Maybe<Array<WorkflowBlock>>;
-  /** Hierarchy level the workflow is hosted in */
-  workflowHostData?: Maybe<WorkflowHostData>;
-  /** Variables used within this workflow. To get the accurate JSON schema call the GraphQL query 'get_workflow_variable_schemas' */
-  workflowVariables?: Maybe<Scalars['JSON']['output']>;
+/** The kind and JSON schema definition for a given workflow variable kind */
+export type WorkflowVariableSchema = {
+  __typename?: 'WorkflowVariableSchema';
+  /** The kind of workflow variable */
+  kind?: Maybe<WorkflowVariableSourceKind>;
+  /** JSON schema of the workflow variable */
+  schema?: Maybe<Scalars['JSON']['output']>;
 };
 
-export type WorkflowBlock = {
-  __typename?: 'WorkflowBlock';
-  /** Reference ID of the block */
-  blockReferenceId?: Maybe<Scalars['Int']['output']>;
-  /** Configuration for credential sources */
-  credentialsSourceConfig?: Maybe<Scalars['JSON']['output']>;
-  /** Defines the input fields of the workflow block. This corresponds to the input fields defined by the block used in the Workflow Block. You must call the remote_options query to retrieve the allowed values for any custom input field before configuring it. */
-  inputFields?: Maybe<Array<WorkflowBlockInputField>>;
-  kind?: Maybe<WorkflowBlockKind>;
-  /** Configuration for the next workflow blocks. To get the accurate JSON schema call the graphQL query 'get_workflow_block_next_mapping_schemas */
-  nextWorkflowBlocksConfig?: Maybe<Scalars['JSON']['output']>;
-  /** Title of the workflow block */
-  title?: Maybe<Scalars['String']['output']>;
-  /** Unique node identifier within the workflow */
-  workflowNodeId?: Maybe<Scalars['Int']['output']>;
-};
-
-export type WorkflowBlockInputField = {
-  __typename?: 'WorkflowBlockInputField';
-  /** The block's field key */
-  fieldKey?: Maybe<Scalars['String']['output']>;
-  /** Key of the workflow variable defining the configuration for the field key. Always a positive number */
-  workflowVariableKey?: Maybe<Scalars['Int']['output']>;
-};
-
-/** The kind of workflow block. This is the type of the block that is used in the UI */
-export enum WorkflowBlockKind {
-  /** A wait block */
-  Wait = 'WAIT'
+export enum WorkflowVariableSourceKind {
+  /** Points to the host ID value where the workflow is hosted (board ID, object ID, account ID, etc.). It's auto calculated during when the workflow runs */
+  HostMetadata = 'host_metadata',
+  /** A value from a previous node output */
+  NodeResults = 'node_results',
+  /** A value from a reference to another workflow variable */
+  Reference = 'reference',
+  /** A value defined by the user */
+  UserConfig = 'user_config'
 }
-
-/** Hierarchy level the workflow is hosted in */
-export type WorkflowHostData = {
-  __typename?: 'WorkflowHostData';
-  /** Instance ID of the host */
-  id?: Maybe<Scalars['Int']['output']>;
-  /** Type of host for this workflow */
-  type?: Maybe<HostType>;
-};
 
 /** A monday.com workspace. */
 export type Workspace = {
@@ -8616,12 +9797,20 @@ export type GetBoardItemsPageQueryVariables = Exact<{
   limit?: InputMaybe<Scalars['Int']['input']>;
   cursor?: InputMaybe<Scalars['String']['input']>;
   includeColumns: Scalars['Boolean']['input'];
-  queryParams?: InputMaybe<ItemsQuery>;
   columnIds?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
+  queryParams?: InputMaybe<ItemsQuery>;
 }>;
 
 
 export type GetBoardItemsPageQuery = { __typename?: 'Query', boards?: Array<{ __typename?: 'Board', id: string, name: string, items_page: { __typename?: 'ItemsResponse', cursor?: string | null, items: Array<{ __typename?: 'Item', id: string, name: string, created_at?: any | null, updated_at?: any | null, column_values?: Array<{ __typename?: 'BatteryValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'BoardRelationValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'ButtonValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'CheckboxValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'ColorPickerValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'CountryValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'CreationLogValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'DateValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'DependencyValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'DirectDocValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'DocValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'DropdownValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'EmailValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'FileValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'FormulaValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'GroupValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'HourValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'IntegrationValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'ItemIdValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'LastUpdatedValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'LinkValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'LocationValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'LongTextValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'MirrorValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'NumbersValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'PeopleValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'PersonValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'PhoneValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'ProgressValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'RatingValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'StatusValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'SubtasksValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'TagsValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'TeamValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'TextValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'TimeTrackingValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'TimelineValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'UnsupportedValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'VoteValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'WeekValue', id: string, text?: string | null, value?: any | null } | { __typename?: 'WorldClockValue', id: string, text?: string | null, value?: any | null }> }> } } | null> | null };
+
+export type SmartSearchBoardItemIdsQueryVariables = Exact<{
+  searchTerm: Scalars['String']['input'];
+  boardId: Scalars['ID']['input'];
+}>;
+
+
+export type SmartSearchBoardItemIdsQuery = { __typename?: 'Query', search_items?: { __typename?: 'SearchItemsGraphQlResultsView', results: Array<{ __typename?: 'QueryResult', data: { __typename?: 'Item', id: string } }> } | null };
 
 export type GetColumnTypeSchemaQueryVariables = Exact<{
   type: ColumnType;
@@ -9105,13 +10294,13 @@ export type ReadDocsQueryVariables = Exact<{
 
 export type ReadDocsQuery = { __typename?: 'Query', docs?: Array<{ __typename?: 'Document', id: string, object_id: string, name: string, doc_kind: BoardKind, created_at?: any | null, settings?: any | null, url?: string | null, relative_url?: string | null, workspace_id?: string | null, doc_folder_id?: string | null, created_by?: { __typename?: 'User', id: string, name: string } | null, workspace?: { __typename?: 'Workspace', id?: string | null, name: string } | null } | null> | null };
 
-export type ExportMarkdownFromDocMutationVariables = Exact<{
+export type ExportMarkdownFromDocQueryVariables = Exact<{
   docId: Scalars['ID']['input'];
   blockIds?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
 }>;
 
 
-export type ExportMarkdownFromDocMutation = { __typename?: 'Mutation', export_markdown_from_doc?: { __typename?: 'ExportMarkdownResult', success: boolean, markdown?: string | null, error?: string | null } | null };
+export type ExportMarkdownFromDocQuery = { __typename?: 'Query', export_markdown_from_doc?: { __typename?: 'ExportMarkdownResult', success: boolean, markdown?: string | null, error?: string | null } | null };
 
 export type GetWorkspaceInfoQueryVariables = Exact<{
   workspace_id: Scalars['ID']['input'];
