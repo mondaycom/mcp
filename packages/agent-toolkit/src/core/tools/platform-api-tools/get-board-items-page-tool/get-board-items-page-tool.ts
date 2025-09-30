@@ -14,7 +14,6 @@ export const getBoardItemsPageToolSchema = {
   limit: z.number().min(MIN_LIMIT).max(MAX_LIMIT).optional().default(DEFAULT_LIMIT).describe('The number of items to get'),
   cursor: z.string().optional().describe('The cursor to get the next page of items, use the nextCursor from the previous response. If the nextCursor was null, it means there are no more items to get'),
   includeColumns: z.boolean().optional().default(false).describe('Whether to include column values in the response'),
-  iltersOperator: z.nativeEnum(ItemsQueryOperator).optional().default(ItemsQueryOperator.And).describe('The operator to use for the filters'),
 
   filtersStringified: z.string().optional().describe('**ONLY FOR MICROSOFT COPILOT**: The filters to apply on the items. This is a stringified JSON object of "filters" field. Read "filters" field description for details how to use it.'),
   filters: z.array(z.object({
