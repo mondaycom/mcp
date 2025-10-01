@@ -9128,3 +9128,12 @@ export type DuplicateItemMutationVariables = Exact<{
 
 
 export type DuplicateItemMutation = { __typename?: 'Mutation', duplicate_item?: { __typename?: 'Item', id: string, name: string } | null };
+
+export type CreateSubitemMutationVariables = Exact<{
+  parentItemId: Scalars['ID']['input'];
+  itemName: Scalars['String']['input'];
+  columnValues?: InputMaybe<Scalars['JSON']['input']>;
+}>;
+
+
+export type CreateSubitemMutation = { __typename?: 'Mutation', create_subitem?: { __typename?: 'Item', id: string, name: string, parent_item?: { __typename?: 'Item', id: string } | null } | null };
