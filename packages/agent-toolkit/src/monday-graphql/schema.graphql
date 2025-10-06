@@ -103,33 +103,6 @@ type Query {
   """
   audit_event_catalogue: [AuditEventCatalogueEntry!]
 
-  """List of all supported workflow variable kinds with their json schemas"""
-  get_workflow_variable_schemas: [WorkflowVariableSchema!]!
-
-  """
-  Get blocks for the current user.
-  
-  Engine usage when building live workflows:
-  • Always invoke this query first to retrieve the catalogue of workflow steps available to the account.
-  • Each element in `blocks.blocks` contains an `id` – this is the canonical `blockReferenceId` that must be supplied inside `WorkflowBlockInput.blockReferenceId` when calling `create_live_workflow`.
-  • The `kind` field tells you whether the block is a TRIGGER, ACTION or CONDITION, which helps decide its placement in the workflow.
-  """
-  blocks(
-    """Input parameters for getting blocks"""
-    input: GetBlocksInput
-  ): BlocksResult
-
-  """
-  Fetch remote options for a field type.
-  
-  Engine usage when building live workflows:
-  • Certain block fields declare that their value must be chosen from a dynamic (remote) list – for example, status labels, column identifiers, users, etc.
-  • Before constructing the corresponding `WorkflowVariableInput`, call this query with the proper context parameters (fieldTypeReferenceId, boardId, columnId, etc.).
-  • Inspect the returned array and pick the desired option's `value`; place that value in `WorkflowVariableInput.sourceMetadata.value` and mark the variable's `sourceKind` as `REMOTE`.
-  • This ensures the workflow always references an up-to-date, valid option.
-  """
-  remote_options(input: RemoteOptionsInput!): RemoteOptionsResponse
-
   """
   Returns connections for the authenticated user. Supports filtering, pagination, ordering, and partial-scope options.
   """
@@ -321,31 +294,6 @@ type Query {
     skipConnectedItems: Boolean
   ): TimelineResponse
 
-  """Get the entity snapshots"""
-  get_entity_snapshots(
-    """The id of the migration job."""
-    migrationJobId: String!
-
-    """The statuses to filter by"""
-    snapshotStatuses: [SnapshotStatus!]
-
-    """The ids of the entities to filter by"""
-    entityIds: [String!]
-  ): [GetSnapshotsQueryResults!]
-  get_entities_for_migration(migrationJobId: String!): [GetEntitiesForMigrationResult!]
-
-  """Get the entity restores"""
-  get_restores(
-    """The id of the migration job."""
-    migrationJobId: String!
-
-    """The ids of the entities to filter by"""
-    entityIds: [String!]!
-
-    """The statuses to filter by"""
-    status: [RestoreStatus!]! = []
-  ): [GetRestoresQueryResults!]
-
   """Get managed column data."""
   managed_column(
     """The managed column ids."""
@@ -378,41 +326,6 @@ type Query {
     """The ID of the board to export the graph for"""
     boardId: String!
   ): BoardGraphExport
-
-  """
-  Retrieves blocks for the published version of a specific article if the requesting user has permission to access it. Returns paginated blocks in their position order. Will return an error if the user lacks the required permissions.
-  """
-  article_blocks(
-    """
-    The unique identifier of the article object. Can be used to reference this specific object in queries and mutations. This ID can be found in the article's URL.
-    """
-    object_id: ID!
-
-    """Maximum number of blocks to return per article. Defaults to 25."""
-    limit: Int = 25
-
-    """Page number for blocks pagination, starting from 1."""
-    page: Int = 1
-  ): [ArticleBlock]!
-
-  """
-  Retrieves a list of published articles with their metadata and content blocks that the requesting user has permission to access. Articles without proper permissions will be filtered out. By default, returns the first 25 blocks per article. To retrieve more blocks, use the article_blocks query.
-  """
-  articles(
-    """
-    Array of article object IDs to fetch. These IDs can be found in the articles' URLs.
-    """
-    object_ids: [ID!]!
-
-    """Optional array of workspace IDs to filter articles by."""
-    workspace_ids: [ID!]
-
-    """Maximum number of articles to return. Defaults to 25."""
-    limit: Int = 25
-
-    """Page number, starting from 1."""
-    page: Int = 1
-  ): [Article]!
 
   """
   Converts document content into standard markdown format for external use, backup, or processing. Exports the entire document by default, or specific blocks if block IDs are provided. Use this to extract content for integration with other systems, create backups, generate reports, or process document content with external tools. The output is clean, portable markdown that preserves formatting and structure.
@@ -848,28 +761,6 @@ type Query {
     query: AggregateQueryInput!
   ): AggregateQueryResult
 
-  """
-  A query to search across all boards in the account. Returns raw json results.
-  """
-  search_benchmark(
-    """A query to search for."""
-    query: String!
-
-    """The board id to search in."""
-    boardId: String
-
-    """Version of the search to use."""
-    version: String!
-  ): SearchBenchmarkResults
-
-  """
-  A query to search across all boards in the account. Returns raw json results.
-  """
-  search_cross_board(
-    """A query to search for."""
-    query: String!
-  ): SearchAllResult
-
   """Search for items using various search strategies."""
   search_items(
     """The search query string."""
@@ -891,7 +782,7 @@ type Query {
     boardId: ID
 
     """Filter results to specific workspace IDs."""
-    workspaceIds: [Int!]
+    workspaceIds: [ID!]
 
     """Filter by assignee (person IDs and/or team IDs)."""
     assignee: AssigneeInput
@@ -935,9 +826,6 @@ type Query {
 
 """Root mutation type for the Dependencies service"""
 type Mutation {
-  """Namespace for all vibe-related mutations"""
-  vibe: VibeMutations
-
   """Create a new table view"""
   create_view_table(
     """The ID of the board"""
@@ -1185,57 +1073,6 @@ type Mutation {
     """The id of the custom activity"""
     id: String!
   ): CustomActivity
-
-  """Create a snapshot for a given entity in a migration job"""
-  create_entity_snapshot(
-    """The id of the migration job."""
-    migrationJobId: String!
-
-    """The entity to snapshot."""
-    entity: String!
-
-    """Whether to include descendants in the snapshot."""
-    includeDescendants: Boolean = true
-  ): CreateEntitySnapshotResult
-
-  """Create a new migration job"""
-  create_migration_job(
-    """The target account ID."""
-    targetAccountId: Int!
-
-    """The target user ID."""
-    targetUserId: Int!
-
-    """The API token for the target account."""
-    targetAccountApiToken: String
-  ): CreateMigrationJobResult
-
-  """Connect a migration job from a source account to the target account"""
-  connect_migration_job(
-    """The migration job ID from the source account."""
-    migrationJobId: String!
-
-    """The source account ID."""
-    sourceAccountId: Int!
-
-    """The source user ID."""
-    sourceUserId: Int!
-
-    """The source region."""
-    sourceRegion: String!
-  ): ConnectMigrationJobResult
-
-  """Restore an entity from a migration job"""
-  restore_entity(
-    """The id of the migration job."""
-    migrationJobId: String!
-
-    """The package to restore."""
-    entity: String!
-
-    """The API token for the source account."""
-    sourceAccountApiToken: String
-  ): RestoreEntityResult
 
   """Create managed column of type dropdown mutation."""
   create_dropdown_managed_column(
@@ -1564,24 +1401,6 @@ type Mutation {
   ): DocBlocksFromMarkdownResult
 
   """
-  Creates a new article in the specified workspace. Optionally accepts a name and folder ID. Returns the created article metadata.
-  """
-  create_article(
-    """
-    The display name of the article. This is what appears in the monday.com interface.
-    """
-    name: String
-
-    """The ID of the workspace containing this article."""
-    workspace_id: ID!
-
-    """
-    The ID of the folder containing this article, if the article is organized in a folder structure.
-    """
-    folder_id: ID
-  ): ArticleMetadata
-
-  """
   Creates multiple document blocks in a single operation for efficient content creation. Use this when adding substantial content like importing documents, creating structured content (articles, reports, guides), or building complex document sections. Supports all block types including text paragraphs, headers, bullet/numbered lists, images, tables, code blocks, and more. Much faster than creating blocks individually. Perfect for content migration, template creation, or generating documents from external data. Maximum 25 blocks per request.
   """
   create_doc_blocks(
@@ -1600,14 +1419,6 @@ type Mutation {
     """
     blocksInput: [CreateBlockInput!]!
   ): [DocumentBlockV2!]
-
-  """Deletes an article with the specified object ID"""
-  delete_article(
-    """
-    The unique identifier of the article object. Can be used to reference this specific object in queries and mutations. This ID can be found in the article's URL.
-    """
-    object_id: ID!
-  ): ArticleMetadata
 
   """
   Permanently deletes a document and all its content from the system. This action cannot be undone. The document will be removed from all user views and workspaces. Use with caution - ensure the document is no longer needed before deletion. Returns success status and the deleted document ID.
@@ -1659,46 +1470,6 @@ type Mutation {
     """
     title: String
   ): ImportDocFromHtmlResult
-
-  """
-  Publishes an article with the specified object ID. Allows setting privacy level, target folder, and managing subscribers (users and teams). Returns the updated article metadata.
-  """
-  publish_article(
-    """
-    The unique identifier of the article object. Can be used to reference this specific object in queries and mutations. This ID can be found in the article's URL.
-    """
-    object_id: ID!
-
-    """
-    The kind/visibility setting of the article (private, public). Determines who can access it.
-    """
-    privacy_kind: PrivacyKind!
-
-    """
-    The ID of the folder to move the article to. If not specified, the article will remain at its current folder level
-    """
-    folder_id: ID
-
-    """
-    List of user IDs to add as subscribers to this article. Only applicable when privacy_kind is PRIVATE
-    """
-    add_subscriber_ids: [ID!]
-
-    """
-    List of team IDs to add as subscribers to this article. Only applicable when privacy_kind is PRIVATE
-    """
-    add_subscriber_team_ids: [ID!]
-
-    """
-    List of user IDs to remove from article subscribers. Only applicable when privacy_kind is PRIVATE
-    """
-    remove_subscriber_ids: [ID!]
-
-    """
-    List of team IDs to remove from article subscribers. Only applicable when privacy_kind is PRIVATE
-    """
-    remove_subscriber_team_ids: [ID!]
-  ): ArticleMetadata
 
   """
   Updates the content of a specific article block. The block must belong to a draft article that the user has permission to edit. Cannot update blocks of published articles.
@@ -2087,9 +1858,6 @@ type Mutation {
 
     """Optional flag to create an empty board (without any default items)"""
     empty: Boolean = false
-
-    """Optional entity model id to extend the board with"""
-    entity_model_id: String
 
     """Optional board folder id"""
     folder_id: ID
@@ -2668,11 +2436,6 @@ type Mutation {
   """
   convert_board_to_project(input: ConvertBoardToProjectInput!): ConvertBoardToProjectResult
 
-  """
-  Create a new project in monday.com from scratch. This mutation creates a project (board) with comprehensive customization options including: privacy settings (private/public/share), optional companions like Resource Planner for enhanced project management capabilities, workspace assignment for organizational structure, folder placement for better organization, and template selection for predefined project structures. Use this when you need to programmatically create a brand new project with specific configuration requirements. Returns the project ID upon successful creation.
-  """
-  create_project(input: CreateProjectInput!): CreateProjectResult
-
   """Updates a notification setting's enabled status."""
   update_notification_setting(
     """
@@ -3209,18 +2972,6 @@ type Mutation {
   ): ResponseForm
 }
 
-"""Response from AI action request"""
-type AiActionResponse {
-  """The structured response data from the AI"""
-  data: JSON
-
-  """Whether the request was successful"""
-  success: Boolean
-
-  """Token usage information"""
-  usage: TokenUsage
-}
-
 """A date."""
 scalar Date
 
@@ -3229,77 +2980,6 @@ scalar ISO8601DateTime
 
 """A JSON formatted string."""
 scalar JSON
-
-"""Standard success response for mutations"""
-type SuccessResponse {
-  """Whether the operation was successful"""
-  success: Boolean
-
-  """Optional message describing the result"""
-  message: String
-}
-
-"""Token usage details from AI request"""
-type TokenUsage {
-  """Total tokens used in the request"""
-  total_tokens: Int
-
-  """Tokens used in the prompt"""
-  prompt_tokens: Int
-
-  """Tokens used in the completion"""
-  completion_tokens: Int
-}
-
-"""Namespace for all vibe-related mutations"""
-type VibeMutations {
-  """Rollback an AI app to an older specific version """
-  rollback_to_version(
-    """The id of the vibe app"""
-    id: ID!
-
-    """The id of the version to rollback to"""
-    version_id: String!
-  ): SuccessResponse
-
-  """Execute an AI action and get a structured response"""
-  ai_actions(
-    """The prompt to send to the AI"""
-    prompt: String!
-
-    """
-    JSON Schema for structured output (optional, defaults to text response)
-    """
-    schema: JSON
-
-    """System prompt to guide the AI behavior"""
-    systemPrompt: String
-
-    """The ID of the app making the request"""
-    appId: ID
-
-    """Web search configuration for context augmentation"""
-    useWebSearch: WebSearchConfigInput
-  ): AiActionResponse!
-}
-
-"""Configuration for enabling web search in AI requests"""
-input WebSearchConfigInput {
-  """Whether web search is enabled for this request"""
-  allowed: Boolean!
-
-  """Optional configuration for web search behavior"""
-  options: WebSearchOptionsInput
-}
-
-"""Configuration options for web search functionality"""
-input WebSearchOptionsInput {
-  """Maximum number of search results to retrieve (default: 5)"""
-  topK: Int
-
-  """Limit search results to content from the last N days"""
-  recencyDays: Int
-}
 
 type AuditEventCatalogueEntry {
   name: String
@@ -3470,70 +3150,6 @@ type User {
   utc_hours_diff: Int
 }
 
-"""Base field type implementation"""
-type BaseFieldType implements FieldType {
-  """Unique identifier for the field type"""
-  id: Int
-
-  """Unique key of the field type"""
-  uniqueKey: String
-
-  """Name of the field type"""
-  name: String
-
-  """Description of the field type"""
-  description: String
-
-  """Current state of the field type"""
-  state: FieldTypeState
-
-  """Unique key identifier for the field type"""
-  key: String
-
-  """Default key for fields of this type"""
-  defaultFieldKey: String
-
-  """
-  Dependency configuration specifying mandatory and optional field dependencies required to enable this field and compute its dynamic values. When fetching the permitted values for custom input fields via the remote_options query, you must provide these dependencies in the query input.
-  """
-  dependencyConfig: DependencyConfig
-
-  """List of field type implementations"""
-  implement: [FieldTypeImplementation!]
-}
-
-"""A block in the framework"""
-type Block {
-  """Unique identifier for the block"""
-  id: Int
-
-  """Unique key of the block"""
-  uniqueKey: String
-
-  """Name of the block"""
-  name: String
-
-  """Description of the block"""
-  description: String
-
-  """Type of the block"""
-  kind: String
-
-  """
-  Configuration for input fields. To fetch the available options of a specific input field, first query the block requesting the `fieldTypeData` for that field and then call the `remote_options` query using the resulting `fieldTypeReferenceId`. 
-  """
-  inputFieldsConfig: [InputFieldConfig!]
-
-  """Configuration for output fields"""
-  outputFieldsConfig: [OutputFieldConfig!]
-}
-
-"""Result of a blocks query"""
-type BlocksResult {
-  """List of blocks"""
-  blocks: [Block!]
-}
-
 """
 Represents an integration connection between a monday.com account and an external service.
 """
@@ -3571,343 +3187,6 @@ type Connection {
   updatedAt: String
 }
 
-"""Configuration for a custom input field"""
-type CustomInputFieldConfig implements InputFieldConfig {
-  """Unique identifier for the field"""
-  id: Int
-
-  """Key identifier for the field"""
-  fieldKey: String
-
-  """Display title for the field"""
-  fieldTitle: String
-
-  """Whether the field can be null"""
-  isNullable: Boolean
-
-  """Whether the field is an array type"""
-  isArray: Boolean
-
-  """Whether the field is optional"""
-  isOptional: Boolean
-
-  """Additional information about the field"""
-  information: FieldInformation
-
-  """Detailed description of the field"""
-  description: FieldInformation
-
-  """Type of the field relation"""
-  type: FieldTypeRelationType
-
-  """Reference ID to the field type"""
-  fieldTypeReferenceId: Int
-
-  """Unique key of the field type"""
-  fieldTypeUniqueKey: String
-
-  """Constraints applied to the field"""
-  constraints: InputFieldConstraints
-
-  """
-  Data for the referenced field type. Fetch this field when you need the `fieldTypeReferenceId` to call the `remote_options` query and retrieve the available options for the input field.
-  """
-  fieldTypeData: FieldType
-}
-
-"""Configuration for a custom output field"""
-type CustomOutputFieldConfig implements OutputFieldConfig {
-  """Unique identifier for the field"""
-  id: Int
-
-  """Key identifier for the field"""
-  fieldKey: String
-
-  """Display title for the field"""
-  fieldTitle: String
-
-  """Whether the field can be null"""
-  isNullable: Boolean
-
-  """Whether the field is an array type"""
-  isArray: Boolean
-
-  """Whether the field is optional"""
-  isOptional: Boolean
-
-  """Additional information about the field"""
-  information: FieldInformation
-
-  """Detailed description of the field"""
-  description: FieldInformation
-
-  """Type of the field relation"""
-  type: FieldTypeRelationType
-
-  """Reference ID to the field type"""
-  fieldTypeReferenceId: Int
-
-  """Unique key of the field type"""
-  fieldTypeUniqueKey: String
-
-  """Constraints applied to the field"""
-  constraints: OutputFieldConstraints
-
-  """Data for the referenced field type"""
-  fieldTypeData: FieldType
-}
-
-"""
-Defines mandatory and optional dependencies that must be populated to allow resolving the field dynamic values
-"""
-type DependencyConfig {
-  """Required dependencies evaluated in order"""
-  orderedMandatoryFields: [DependencyField!]
-
-  """
-  Non-required dependencies that refine the dynamic values request but do not block enablement
-  """
-  optionalFields: [DependencyField!]
-}
-
-"""
-Maps a source field-type to the key name expected in the dynamic-values payload for this dependency
-"""
-type DependencyField {
-  """Reference ID of the field-type that supplies the dependency value"""
-  sourceFieldTypeReferenceId: Int
-
-  """Unique key of the source field type"""
-  sourceFieldTypeUniqueKey: String
-
-  """JSON key that the backend expects for this dependency value"""
-  targetFieldKey: String
-}
-
-"""Information about a field"""
-type FieldInformation {
-  """The text content of the field information"""
-  text: String
-
-  """A link to more information"""
-  link: JSON
-}
-
-"""A field type in the framework"""
-interface FieldType {
-  """Unique identifier for the field type"""
-  id: Int
-
-  """Unique key of the field type"""
-  uniqueKey: String
-
-  """Name of the field type"""
-  name: String
-
-  """Description of the field type"""
-  description: String
-
-  """Current state of the field type"""
-  state: FieldTypeState
-
-  """Unique key identifier for the field type"""
-  key: String
-
-  """Default key for fields of this type"""
-  defaultFieldKey: String
-
-  """
-  Dependency configuration specifying mandatory and optional field dependencies required to enable this field and compute its dynamic values. When fetching the permitted values for custom input fields via the remote_options query, you must provide these dependencies in the query input.
-  """
-  dependencyConfig: DependencyConfig
-
-  """List of field type implementations"""
-  implement: [FieldTypeImplementation!]
-}
-
-"""Implementation of a field type"""
-type FieldTypeImplementation {
-  """Unique identifier for the implementation"""
-  id: Int
-
-  """Unique key of the app feature"""
-  uniqueKey: String
-
-  """Name of the implementation"""
-  name: String
-}
-
-"""The type of relation between a field and its type"""
-enum FieldTypeRelationType {
-  """The field type is a primitive type (string, number, boolean, etc.)"""
-  PRIMITIVE
-
-  """The field type is an interface type"""
-  INTERFACE
-
-  """The field type is a custom type"""
-  CUSTOM
-}
-
-"""The state of a field type"""
-enum FieldTypeState {
-  """The field type is active and can be used"""
-  ACTIVE
-
-  """The field type has been deleted and cannot be used"""
-  DELETED
-}
-
-"""Input parameters for getting blocks"""
-input GetBlocksInput {
-  """Optional array of app feature unique keys to filter blocks"""
-  app_feature_unique_keys: [String!]
-
-  """Optional array of contexts to filter blocks"""
-  contexts: [String!]
-}
-
-"""Interface for input field configuration"""
-interface InputFieldConfig {
-  """Unique identifier for the field"""
-  id: Int
-
-  """Key identifier for the field"""
-  fieldKey: String
-
-  """Display title for the field"""
-  fieldTitle: String
-
-  """Whether the field can be null"""
-  isNullable: Boolean
-
-  """Whether the field is an array type"""
-  isArray: Boolean
-
-  """Whether the field is optional"""
-  isOptional: Boolean
-
-  """Additional information about the field"""
-  information: FieldInformation
-
-  """Detailed description of the field"""
-  description: FieldInformation
-
-  """Type of the field relation"""
-  type: FieldTypeRelationType
-}
-
-"""Input field constraints"""
-type InputFieldConstraints {
-  """Dependencies for remote options that affect this field"""
-  remoteOptionsDependencies: JSON
-
-  """Dependencies that affect this field's behavior or validation"""
-  dependencies: JSON
-
-  """Dependencies between this field and its subfields"""
-  subFieldsDependencies: JSON
-
-  """Credential dependencies required for this field"""
-  credentials: JSON
-}
-
-"""Configuration for an interface input field"""
-type InterfaceInputFieldConfig implements InputFieldConfig {
-  """Unique identifier for the field"""
-  id: Int
-
-  """Key identifier for the field"""
-  fieldKey: String
-
-  """Display title for the field"""
-  fieldTitle: String
-
-  """Whether the field can be null"""
-  isNullable: Boolean
-
-  """Whether the field is an array type"""
-  isArray: Boolean
-
-  """Whether the field is optional"""
-  isOptional: Boolean
-
-  """Additional information about the field"""
-  information: FieldInformation
-
-  """Detailed description of the field"""
-  description: FieldInformation
-
-  """Type of the field relation"""
-  type: FieldTypeRelationType
-
-  """Name of the subfield in the interface"""
-  subfieldName: String
-
-  """Constraints applied to the field"""
-  constraints: InputFieldConstraints
-}
-
-"""Data required to request the next page of remote options"""
-type NextPageRequestData {
-  """The page identifier to request"""
-  page: JSON!
-
-  """Optional cursor for cursor-based pagination"""
-  cursor: JSON
-}
-
-"""A single option in a remote options list"""
-type Option {
-  """The value of the option"""
-  value: JSON
-
-  """The display title of the option"""
-  title: String
-}
-
-"""Interface for output field configuration"""
-interface OutputFieldConfig {
-  """Unique identifier for the field"""
-  id: Int
-
-  """Key identifier for the field"""
-  fieldKey: String
-
-  """Display title for the field"""
-  fieldTitle: String
-
-  """Whether the field can be null"""
-  isNullable: Boolean
-
-  """Whether the field is an array type"""
-  isArray: Boolean
-
-  """Whether the field is optional"""
-  isOptional: Boolean
-
-  """Additional information about the field"""
-  information: FieldInformation
-
-  """Detailed description of the field"""
-  description: FieldInformation
-
-  """Type of the field relation"""
-  type: FieldTypeRelationType
-}
-
-"""Output field constraints"""
-type OutputFieldConstraints {
-  """Dependencies that affect this field's output behavior"""
-  dependencies: JSON
-
-  """Dependencies between this field and its subfields in the output"""
-  subFieldsDependencies: JSON
-
-  """Credential dependencies required for this field's output"""
-  credentials: JSON
-}
-
 """Pagination parameters for queries"""
 input PaginationInput {
   """Maximum number of results to return"""
@@ -3915,240 +3194,6 @@ input PaginationInput {
 
   """Last ID for cursor-based pagination"""
   lastId: Int
-}
-
-"""Primitive field type implementation"""
-type PrimitiveFieldType implements FieldType {
-  """Unique identifier for the field type"""
-  id: Int
-
-  """Unique key of the field type"""
-  uniqueKey: String
-
-  """Name of the field type"""
-  name: String
-
-  """Description of the field type"""
-  description: String
-
-  """Current state of the field type"""
-  state: FieldTypeState
-
-  """Unique key identifier for the field type"""
-  key: String
-
-  """Default key for fields of this type"""
-  defaultFieldKey: String
-
-  """
-  Dependency configuration specifying mandatory and optional field dependencies required to enable this field and compute its dynamic values. When fetching the permitted values for custom input fields via the remote_options query, you must provide these dependencies in the query input.
-  """
-  dependencyConfig: DependencyConfig
-
-  """List of field type implementations"""
-  implement: [FieldTypeImplementation!]
-
-  """The primitive type of the field"""
-  primitiveType: PrimitiveTypes
-
-  """Configuration metadata for the field type"""
-  configurartionMetadata: JSON
-}
-
-"""Configuration for a primitive input field"""
-type PrimitiveInputFieldConfig implements InputFieldConfig {
-  """Unique identifier for the field"""
-  id: Int
-
-  """Key identifier for the field"""
-  fieldKey: String
-
-  """Display title for the field"""
-  fieldTitle: String
-
-  """Whether the field can be null"""
-  isNullable: Boolean
-
-  """Whether the field is an array type"""
-  isArray: Boolean
-
-  """Whether the field is optional"""
-  isOptional: Boolean
-
-  """Additional information about the field"""
-  information: FieldInformation
-
-  """Detailed description of the field"""
-  description: FieldInformation
-
-  """Type of the field relation"""
-  type: FieldTypeRelationType
-
-  """Type of the primitive field"""
-  primitiveType: PrimitiveTypes
-}
-
-"""Configuration for a primitive output field"""
-type PrimitiveOutputFieldConfig implements OutputFieldConfig {
-  """Unique identifier for the field"""
-  id: Int
-
-  """Key identifier for the field"""
-  fieldKey: String
-
-  """Display title for the field"""
-  fieldTitle: String
-
-  """Whether the field can be null"""
-  isNullable: Boolean
-
-  """Whether the field is an array type"""
-  isArray: Boolean
-
-  """Whether the field is optional"""
-  isOptional: Boolean
-
-  """Additional information about the field"""
-  information: FieldInformation
-
-  """Detailed description of the field"""
-  description: FieldInformation
-
-  """Type of the field relation"""
-  type: FieldTypeRelationType
-
-  """Type of the primitive field"""
-  primitiveType: PrimitiveTypes
-}
-
-"""The primitive types supported by the system"""
-enum PrimitiveTypes {
-  """String type for text values"""
-  STRING
-
-  """Number type for integer values"""
-  NUMBER
-
-  """Float type for decimal values"""
-  FLOAT
-
-  """Boolean type for true/false values"""
-  BOOLEAN
-
-  """Date type for date values"""
-  DATE
-
-  """Hour type for hour values"""
-  HOUR
-}
-
-"""
-Input type for requesting remote options for a field type, including dependencies, credentials, pagination, and search query.
-"""
-input RemoteOptionsInput {
-  """The unique key of the field type"""
-  field_type_unique_key: String!
-
-  """
-  Map all the dependencies fieldKeys to their values. Example: { "my-field-key": { value: 123 }, "my-other-field-key": { value: 456 } } .The schema is: Record<string, { value: unknown }>
-  """
-  dependencies_values: JSON
-
-  """
-  Map a credentialsKey to the credentials data. Example: { "my-credentials-key": { userCredentialsId: 123, accessToken: "abc" } }
-  """
-  credentials_values: JSON
-
-  """
-  Pagination data matching the schema of the field's remote options pagination data
-  """
-  page_request_data: JSON
-
-  """Search query"""
-  query: String
-
-  """Request specific values to fetch their title"""
-  values_to_fetch: JSON
-}
-
-"""
-Response containing a list of remote options and pagination information
-"""
-type RemoteOptionsResponse {
-  """List of available options"""
-  options: [Option!]
-
-  """Whether the options list supports pagination"""
-  isPaginated: Boolean
-
-  """Whether this is the last page of options"""
-  isLastPage: Boolean
-
-  """Data required to fetch the next page of options"""
-  nextPageRequestData: NextPageRequestData
-
-  """Optional disclaimer text to display with the options"""
-  disclaimer: String
-}
-
-"""Object field type implementation"""
-type SubfieldsFieldType implements FieldType {
-  """Unique identifier for the field type"""
-  id: Int
-
-  """Unique key of the field type"""
-  uniqueKey: String
-
-  """Name of the field type"""
-  name: String
-
-  """Description of the field type"""
-  description: String
-
-  """Current state of the field type"""
-  state: FieldTypeState
-
-  """Unique key identifier for the field type"""
-  key: String
-
-  """Default key for fields of this type"""
-  defaultFieldKey: String
-
-  """
-  Dependency configuration specifying mandatory and optional field dependencies required to enable this field and compute its dynamic values. When fetching the permitted values for custom input fields via the remote_options query, you must provide these dependencies in the query input.
-  """
-  dependencyConfig: DependencyConfig
-
-  """List of field type implementations"""
-  implement: [FieldTypeImplementation!]
-
-  """Indicates if the object field type has remote subfields"""
-  hasRemoteSubfields: Boolean
-}
-
-"""The kind and JSON schema definition for a given workflow variable kind"""
-type WorkflowVariableSchema {
-  """The kind of workflow variable"""
-  kind: WorkflowVariableSourceKind
-
-  """JSON schema of the workflow variable"""
-  schema: JSON
-}
-
-enum WorkflowVariableSourceKind {
-  """A value defined by the user"""
-  user_config
-
-  """A value from a previous node output"""
-  node_results
-
-  """A value from a reference to another workflow variable"""
-  reference
-
-  """
-  Points to the host ID value where the workflow is hosted (board ID, object ID, account ID, etc.). It's auto calculated during when the workflow runs
-  """
-  host_metadata
 }
 
 """Automation block execution event"""
@@ -4483,9 +3528,6 @@ type Board {
 
   """The board's permissions."""
   permissions: String!
-
-  """The Board's source solution item mapping"""
-  source_solution_item_mapping: String
 
   """The board's state (all / active / archived / deleted)."""
   state: State!
@@ -5092,102 +4134,6 @@ type TimelineResponse {
   ): TimelineItemsPage!
 }
 
-"""The result of the connect_migration_job mutation."""
-type ConnectMigrationJobResult {
-  """Whether the connection was successfully created or already exists."""
-  success: Boolean
-
-  """The unique identifier of the migration job connection."""
-  migrationJobConnectionId: ID
-}
-
-type CreateEntitySnapshotResult {
-  """The unique identifier of the snapshot."""
-  snapshotId: ID!
-
-  """The date and time the snapshot was created."""
-  createdAt: String!
-
-  """The entity that was snapshot."""
-  entity: String!
-
-  """The unique identifier of the migration job."""
-  migrationJobId: String!
-}
-
-type CreateMigrationJobResult {
-  """The unique identifier of the migration job."""
-  id: ID!
-}
-
-type GetEntitiesForMigrationResult {
-  """The entities for migration."""
-  entityId: String
-}
-
-"""The result of querying entity restores."""
-type GetRestoresQueryResults {
-  """The unique identifier of the restore."""
-  id: ID!
-
-  """The date and time the restore was created."""
-  createdAt: String!
-
-  """The entity id of the restore."""
-  entityId: String!
-
-  """The unique identifier of the migration job."""
-  migrationJobId: String!
-
-  """The status of the restore."""
-  status: RestoreStatus!
-}
-
-type GetSnapshotsQueryResults {
-  """The unique identifier of the snapshot."""
-  id: ID!
-
-  """The date and time the snapshot was created."""
-  createdAt: String!
-
-  """The entity id of the snapshot."""
-  entityId: String!
-
-  """The unique identifier of the migration job."""
-  migrationJobId: String!
-
-  """The status of the snapshot."""
-  status: SnapshotStatus!
-}
-
-"""The result of the restore entity mutation."""
-type RestoreEntityResult {
-  """Confirms the restore request was accepted."""
-  accepted: Boolean
-}
-
-"""The possible statuses of a restore operation."""
-enum RestoreStatus {
-  """The restore is pending and has not started yet."""
-  pending
-
-  """The restore is currently being processed."""
-  processing
-
-  """The restore completed successfully."""
-  success
-
-  """The restore failed to complete."""
-  failed
-}
-
-enum SnapshotStatus {
-  pending
-  processing
-  success
-  failed
-}
-
 """Calculated capability settings for a column"""
 type CalculatedCapability {
   """Function to calculate the parent values"""
@@ -5720,19 +4666,6 @@ input UpdateDependencyColumnInput {
   metadata: MetadataInput
 }
 
-"""
-The Article is the main object type of monday.com Knowledge product. A collaborative article that can contain rich text, media, and structured content. Articles have both draft and published versions, and are organized within workspaces and folders, with configurable privacy settings and access controls. They support features like version history, real-time collaboration, and can be shared with specific users or teams. Articles are commonly used for documentation, knowledge sharing, and team collaboration.
-"""
-type Article {
-  """
-  The Article is the main object type of monday.com Knowledge product. Article Metadata is a subset of the Article object that contains only the metadata of the article, not the article itself. It is used to get the metadata of an article without having to fetch the article itself.
-  """
-  metadata: ArticleMetadata
-
-  """The content blocks that make up the article."""
-  blocks: [ArticleBlock!]
-}
-
 """The content blocks that make up the article."""
 type ArticleBlock {
   """The block's unique identifier."""
@@ -5765,63 +4698,6 @@ type ArticleBlock {
 
   """The block's last updated date."""
   updated_at: String
-}
-
-"""
-The Article is the main object type of monday.com Knowledge product. Article Metadata is a subset of the Article object that contains only the metadata of the article, not the article itself. It is used to get the metadata of an article without having to fetch the article itself.
-"""
-type ArticleMetadata {
-  """
-  The unique identifier of the article object. Can be used to reference this specific object in queries and mutations. This ID can be found in the article's URL.
-  """
-  object_id: ID
-
-  """The ID of the draft version of this article."""
-  draft_article_id: ID
-
-  """The ID of the published version of this article."""
-  published_article_id: ID
-
-  """
-  The display name of the article. This is what appears in the monday.com interface.
-  """
-  name: String
-
-  """
-  The kind/visibility setting of the article (private, public). Determines who can access it.
-  """
-  privacy_kind: String
-
-  """The ID of the workspace containing this article."""
-  workspace_id: ID
-
-  """
-  The ID of the folder containing this article, if the article is organized in a folder structure.
-  """
-  folder_id: ID
-
-  """Timestamp of when the article was last updated. Format is ISO 8601."""
-  updated_at: String
-
-  """
-  The current state of the article. Determines visibility in the interface.
-  """
-  state: String
-
-  """
-  The ID of the user who created this article. Useful for tracking article origin.
-  """
-  creator: ID
-
-  """
-  List of users who are owners of this article. Owners have full control permissions.
-  """
-  owners: [User!]
-
-  """
-  List of users who are subscribers to this article. Subscribers receive notifications about changes.
-  """
-  subscribers: [User!]
 }
 
 """Text formatting attributes (bold, italic, links, colors, etc.)"""
@@ -10049,41 +8925,6 @@ type ConvertBoardToProjectResult {
   process_id: String
 }
 
-input CreateProjectInput {
-  """The name of the project to create"""
-  name: String!
-
-  """The project's kind (public / private / share)"""
-  board_kind: BoardKind!
-
-  """
-  Optional template id to create the project from. Currently only supported for solution templates
-  """
-  template_id: ID
-
-  """
-  Optional list of companion features to enable (currently only "resource_planner")
-  """
-  companions: [String!]
-
-  """Optional workspace ID to associate with the project"""
-  workspace_id: String
-
-  """Optional folder ID to associate with the project"""
-  folder_id: String
-}
-
-type CreateProjectResult {
-  """Indicates if the project creation was successful"""
-  success: Boolean
-
-  """Success message when project is created"""
-  message: String
-
-  """Error message if project creation failed"""
-  error: String
-}
-
 type BoardMuteSettings {
   """Board ID"""
   board_id: ID
@@ -10637,32 +9478,13 @@ enum AggregateSelectFunctionName {
   PHONE_COUNTRY_SHORT_NAME
 }
 
-"""Ranked results of a search query."""
-type BoardResult {
-  """Board matching the search query."""
-  board: Board
-
-  """Items matching the search query."""
-  items: [Item!]
-}
-
-type SearchAllResult {
-  """The results of the search."""
-  results: [BoardResult!]
-}
-
-"""The results of the search for benchmark."""
-type SearchBenchmarkResults {
-  data: String
-}
-
 """Assignee filter for search queries"""
 input AssigneeInput {
   """List of person IDs to filter by"""
-  personIds: [Int!]
+  personIds: [ID!]
 
   """List of team IDs to filter by"""
-  teamIds: [Int!]
+  teamIds: [ID!]
 }
 
 """
