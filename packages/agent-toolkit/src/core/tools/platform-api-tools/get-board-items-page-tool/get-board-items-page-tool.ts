@@ -77,7 +77,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
     const canIncludeFilters = !input.cursor;
 
     if(canIncludeFilters && input.searchTerm) {
-      await this.runSmartSearchAsync(input);
+      input.itemIds = await this.getItemIdsFromSmartSearchAsync(input);
 
       if(input.itemIds!.length === 0) {
         return {
@@ -170,7 +170,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
     return result;
   }
 
-  private async runSmartSearchAsync(input: ToolInputType<GetBoardItemsPageToolInput>): Promise<void> {
+  private async getItemIdsFromSmartSearchAsync(input: ToolInputType<GetBoardItemsPageToolInput>): Promise<number[]> {
     const smartSearchVariables: SmartSearchBoardItemIdsQueryVariables = {
       boardId: input.boardId.toString(),
       searchTerm: input.searchTerm!,
@@ -180,13 +180,13 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
     
     const itemIdsFromSmartSearch = smartSearchRes.search_items?.results?.map(result => Number(result.data.id)) ?? [];
 
-    input.itemIds ??= [];
+    const initialItemIds = input.itemIds ?? [];
     
-    if(input.itemIds.length === 0) {
-      input.itemIds = itemIdsFromSmartSearch;
-    } else {
-      const allowedIds = new Set<number>(input.itemIds);
-      input.itemIds = itemIdsFromSmartSearch.filter(id => allowedIds.has(id));
+    if(initialItemIds.length === 0) {
+      return itemIdsFromSmartSearch;
     }
+
+    const allowedIds = new Set<number>(initialItemIds);
+    return itemIdsFromSmartSearch.filter(id => allowedIds.has(id));
   }
 }

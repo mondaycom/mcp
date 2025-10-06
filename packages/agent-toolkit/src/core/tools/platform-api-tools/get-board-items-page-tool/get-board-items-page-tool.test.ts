@@ -254,6 +254,106 @@ describe('GetBoardItemsPageTool', () => {
     });
   });
 
+  describe('getItemIdsFromSmartSearchAsync integration', () => {
+    it('should call mockRequest with itemIds from smart search when no initial itemIds are provided', async () => {
+      // Arrange
+      const smartSearchItemIds = [111, 222, 333];
+      const smartSearchResults = {
+        search_items: {
+          results: smartSearchItemIds.map(id => ({ data: { id: id.toString() } }))
+        }
+      };
+      
+      // Mock the smart search request
+      jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string, variables: any) => {
+        if (query.includes('query SmartSearchBoardItemIds')) {
+          return Promise.resolve(smartSearchResults);
+        }
+        // For the main getBoardItemsPage query, just return a dummy response
+        return Promise.resolve(successfulResponseWithItems);
+      });
+
+      const args: inputType = {
+        boardId: 123456789,
+        searchTerm: 'test search'
+      };
+
+      await callToolByNameAsync('get_board_items_page', args);
+
+      // The first call is to smart search, the second is to getBoardItemsPage
+      const calls = mocks.getMockRequest().mock.calls;
+      // Find the call to GetBoardItemsPage
+      const getBoardItemsPageCall = calls.find(call => call[0].includes('query GetBoardItemsPage'));
+      expect(getBoardItemsPageCall).toBeDefined();
+      expect(getBoardItemsPageCall[1].queryParams.ids).toEqual(smartSearchItemIds.map(id => id.toString()));
+    });
+
+    it('should call mockRequest with intersection of itemIds and smart search results', async () => {
+      // Arrange
+      const smartSearchItemIds = [111, 222, 333];
+      const initialItemIds = [222, 444];
+      const expectedIds = [222];
+      const smartSearchResults = {
+        search_items: {
+          results: smartSearchItemIds.map(id => ({ data: { id: id.toString() } }))
+        }
+      };
+
+      // Mock the smart search request
+      jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string, variables: any) => {
+        if (query.includes('query SmartSearchBoardItemIds')) {
+          return Promise.resolve(smartSearchResults);
+        }
+        // For the main getBoardItemsPage query, just return a dummy response
+        return Promise.resolve(successfulResponseWithItems);
+      });
+
+      const args: inputType = {
+        boardId: 123456789,
+        searchTerm: 'test search',
+        itemIds: initialItemIds
+      };
+
+      await callToolByNameAsync('get_board_items_page', args);
+
+      const calls = mocks.getMockRequest().mock.calls;
+      const getBoardItemsPageCall = calls.find(call => call[0].includes('query GetBoardItemsPage'));
+      expect(getBoardItemsPageCall).toBeDefined();
+      expect(getBoardItemsPageCall[1].queryParams.ids).toEqual(expectedIds.map(id => id.toString()));
+    });
+
+    it('should return "No items found matching the specified searchTerm" if smart search returns no itemIds', async () => {
+      // Arrange
+      const smartSearchResults = {
+        search_items: {
+          results: []
+        }
+      };
+
+      // Mock the smart search request
+      jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string, variables: any) => {
+        if (query.includes('query SmartSearchBoardItemIds')) {
+          return Promise.resolve(smartSearchResults);
+        }
+        // For the main getBoardItemsPage query, just return a dummy response
+        return Promise.resolve(successfulResponseWithItems);
+      });
+
+      const args: inputType = {
+        boardId: 123456789,
+        searchTerm: 'no results'
+      };
+
+      const result = await callToolByNameRawAsync('get_board_items_page', args);
+      expect(result.content[0].text).toContain('No items found matching the specified searchTerm');
+
+      // Should not call GetBoardItemsPage if no items found
+      const calls = mocks.getMockRequest().mock.calls;
+      const getBoardItemsPageCall = calls.find(call => call[0].includes('query GetBoardItemsPage'));
+      expect(getBoardItemsPageCall).toBeUndefined();
+    });
+  });
+
   describe('Stringified JSONs functionality', () => {
     it('should parse stringified JSONs when provided', async () => {
       mocks.setResponse(successfulResponseWithItems);
