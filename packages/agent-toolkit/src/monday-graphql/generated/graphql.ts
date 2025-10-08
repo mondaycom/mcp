@@ -8827,6 +8827,24 @@ export type CreateGroupMutationVariables = Exact<{
 
 export type CreateGroupMutation = { __typename?: 'Mutation', create_group?: { __typename?: 'Group', id: string, title: string } | null };
 
+export type CreateSubitemMutationVariables = Exact<{
+  parentItemId: Scalars['ID']['input'];
+  itemName: Scalars['String']['input'];
+  columnValues?: InputMaybe<Scalars['JSON']['input']>;
+}>;
+
+
+export type CreateSubitemMutation = { __typename?: 'Mutation', create_subitem?: { __typename?: 'Item', id: string, name: string, parent_item?: { __typename?: 'Item', id: string } | null } | null };
+
+export type DuplicateItemMutationVariables = Exact<{
+  boardId: Scalars['ID']['input'];
+  itemId: Scalars['ID']['input'];
+  withUpdates?: InputMaybe<Scalars['Boolean']['input']>;
+}>;
+
+
+export type DuplicateItemMutation = { __typename?: 'Mutation', duplicate_item?: { __typename?: 'Item', id: string, name: string } | null };
+
 export type CreateWorkspaceMutationVariables = Exact<{
   name: Scalars['String']['input'];
   workspaceKind: WorkspaceKind;
@@ -9202,14 +9220,6 @@ export type DeleteItemMutationVariables = Exact<{
 
 export type DeleteItemMutation = { __typename?: 'Mutation', delete_item?: { __typename?: 'Item', id: string } | null };
 
-export type GetBoardItemsByNameQueryVariables = Exact<{
-  boardId: Scalars['ID']['input'];
-  term: Scalars['CompareValue']['input'];
-}>;
-
-
-export type GetBoardItemsByNameQuery = { __typename?: 'Query', boards?: Array<{ __typename?: 'Board', items_page: { __typename?: 'ItemsResponse', items: Array<{ __typename?: 'Item', id: string, name: string }> } } | null> | null };
-
 export type CreateItemMutationVariables = Exact<{
   boardId: Scalars['ID']['input'];
   itemName: Scalars['String']['input'];
@@ -9397,21 +9407,3 @@ export type GetWorkspaceInfoQueryVariables = Exact<{
 
 
 export type GetWorkspaceInfoQuery = { __typename?: 'Query', workspaces?: Array<{ __typename?: 'Workspace', id?: string | null, name: string, description?: string | null, kind?: WorkspaceKind | null, created_at?: any | null, state?: State | null, is_default_workspace?: boolean | null, owners_subscribers?: Array<{ __typename?: 'User', id: string, name: string, email: string } | null> | null } | null> | null, boards?: Array<{ __typename?: 'Board', id: string, name: string, board_folder_id?: string | null } | null> | null, docs?: Array<{ __typename?: 'Document', id: string, name: string, doc_folder_id?: string | null } | null> | null, folders?: Array<{ __typename?: 'Folder', id: string, name: string } | null> | null };
-
-export type DuplicateItemMutationVariables = Exact<{
-  boardId: Scalars['ID']['input'];
-  itemId: Scalars['ID']['input'];
-  withUpdates?: InputMaybe<Scalars['Boolean']['input']>;
-}>;
-
-
-export type DuplicateItemMutation = { __typename?: 'Mutation', duplicate_item?: { __typename?: 'Item', id: string, name: string } | null };
-
-export type CreateSubitemMutationVariables = Exact<{
-  parentItemId: Scalars['ID']['input'];
-  itemName: Scalars['String']['input'];
-  columnValues?: InputMaybe<Scalars['JSON']['input']>;
-}>;
-
-
-export type CreateSubitemMutation = { __typename?: 'Mutation', create_subitem?: { __typename?: 'Item', id: string, name: string, parent_item?: { __typename?: 'Item', id: string } | null } | null };
