@@ -19,7 +19,8 @@ export const getBoardItemsPageToolSchema = {
   `),
   limit: z.number().min(MIN_LIMIT).max(MAX_LIMIT).optional().default(DEFAULT_LIMIT).describe('The number of items to get'),
   cursor: z.string().optional().describe('The cursor to get the next page of items, use the nextCursor from the previous response. If the nextCursor was null, it means there are no more items to get'),
-  includeColumns: z.boolean().optional().default(false).describe('Whether to include column values in the response'),
+  includeColumns: z.boolean().optional().default(false).describe(`Whether to include column values in the response.
+PERFORMANCE OPTIMIZATION: Only set this to true when you actually need the column data. Excluding columns significantly reduces token usage and improves response latency. If you only need to count items, get item IDs/names, or check if items exist, keep this false.`),
 
   filtersStringified: z.string().optional().describe('**ONLY FOR MICROSOFT COPILOT**: The filters to apply on the items. This is a stringified JSON object of "filters" field. Read "filters" field description for details how to use it.'),
   filters: z.array(z.object({
@@ -54,7 +55,8 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
   getDescription(): string {
     return `Get all items from a monday.com board with pagination support and optional column values. ` +
       `Returns structured JSON with item details, creation/update timestamps, and pagination info. ` +
-      `Use the 'nextCursor' parameter from the response to get the next page of results when 'has_more' is true.`;
+      `Use the 'nextCursor' parameter from the response to get the next page of results when 'has_more' is true.` +
+      `IMPORTANT: Before using this tool, if you are not familiar with the board's structure (column IDs, column types, status labels, etc.), first use get_board_info to understand the board metadata. This is essential for constructing proper filters and knowing which columns are available.`;
   }
 
 
