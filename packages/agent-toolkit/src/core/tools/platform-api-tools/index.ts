@@ -96,7 +96,6 @@ export * from './create-update-tool';
 export * from './delete-column-tool';
 export * from './delete-item-tool';
 export * from './fetch-custom-activity-tool';
-export * from './get-board-items-tool';
 export * from './get-board-items-page-tool/get-board-items-page-tool';
 export * from './get-board-schema-tool';
 export * from './get-column-type-info/get-column-type-info-tool';
