@@ -228,6 +228,7 @@ const getColumnFilteringGuidelines = (columns: BaseColumnInfo[]) => {
 
 
   return Object.keys(columnIdsByType).length  === 0 ? '' : `
+[MEMORY] Remember the filtering guidelines for subsequent requests for the same board.
 # Filtering Guidelines
 
 ## [IMPORTANT] Operator Guidelines
@@ -237,7 +238,7 @@ Specific operators expect specific compareValue types:
 - CompareValue MUST BE SENT AS EITHER SINGLE STRING OR SINGLE NUMBER WHEN USED WITH greater_than, greater_than_or_equals, lower_than, lower_than_or_equal
 - CompareValue MUST BE SENT AS SINGLE STRING WHEN USED WITH contains_terms, not_contains_text, contains_text, starts_with, ends_with operators
 
-## Column type Guidelines
+## [IMPORTANT] Column type Guidelines
 ${Object.entries(columnIdsByType).map(([type, columnIds]) => {
   return `- Column Type: ${type} (Column IDs: ${columnIds.join(', ')}) - ${filteringGuidelinesByColumnType[type]}`;
 }).join('\n\n')}
