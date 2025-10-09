@@ -2,6 +2,7 @@ import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameAsync, callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
 import { GetBoardItemsPageTool, GetBoardItemsPageToolInput, getBoardItemsPageToolSchema } from './get-board-items-page-tool';
 import { z, ZodTypeAny } from 'zod';
+import { ItemsOrderByDirection, ItemsQueryRuleOperator } from 'src/monday-graphql';
 
 
 export type inputType = z.objectInputType<GetBoardItemsPageToolInput, ZodTypeAny>;
@@ -161,6 +162,364 @@ describe('GetBoardItemsPageTool', () => {
           cursor: 'previous_cursor_456',
           includeColumns: false
         }
+      );
+    });
+  });
+
+  describe('Cursor Functionality', () => {
+    it('should not include filters when cursor is provided', async () => {
+      mocks.setResponse(successfulResponseWithItems);
+
+      const args: inputType = { 
+        boardId: 123456789, 
+        cursor: 'previous_cursor_456',
+        filters: [
+          {
+            columnId: 'status',
+            compareValue: 'In Progress',
+            operator: ItemsQueryRuleOperator.AnyOf
+          }
+        ],
+        orderBy: [
+          {
+            columnId: 'name',
+            direction: ItemsOrderByDirection.Asc
+          }
+        ]
+      };
+      await callToolByNameAsync('get_board_items_page', args);
+
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query GetBoardItemsPage'),
+        {
+          boardId: '123456789',
+          limit: 25,
+          cursor: 'previous_cursor_456',
+          includeColumns: false,
+          queryParams: undefined
+        }
+      );
+    });
+
+    it('should include filters when no cursor is provided', async () => {
+      mocks.setResponse(successfulResponseWithItems);
+
+      const args: inputType = { 
+        boardId: 123456789,
+        filters: [
+          {
+            columnId: 'status',
+            compareValue: 'In Progress',
+            operator: 'any_of' as any
+          }
+        ],
+        orderBy: [
+          {
+            columnId: 'name',
+            direction: 'asc' as any
+          }
+        ]
+      };
+      await callToolByNameAsync('get_board_items_page', args);
+      
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query GetBoardItemsPage'),
+        {
+          boardId: '123456789',
+          limit: 25,
+          cursor: undefined,
+          includeColumns: false,
+          columnIds: undefined,
+          queryParams: {
+            ids: undefined,
+            operator: 'and',
+            rules: [
+              {
+                column_id: 'status',
+                compare_value: 'In Progress',
+                operator: 'any_of',
+                compare_attribute: undefined
+              }
+            ],
+            order_by: [
+              {
+                column_id: 'name',
+                direction: 'asc'
+              }
+            ]
+          }
+        }
+      );
+    });
+  });
+
+  describe('getItemIdsFromSmartSearchAsync integration', () => {
+    it('should call mockRequest with itemIds from smart search when no initial itemIds are provided', async () => {
+      // Arrange
+      const smartSearchItemIds = [111, 222, 333];
+      const smartSearchResults = {
+        search_items: {
+          results: smartSearchItemIds.map(id => ({ data: { id: id.toString() } }))
+        }
+      };
+      
+      // Mock the smart search request
+      jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string, variables: any) => {
+        if (query.includes('query SmartSearchBoardItemIds')) {
+          return Promise.resolve(smartSearchResults);
+        }
+        // For the main getBoardItemsPage query, just return a dummy response
+        return Promise.resolve(successfulResponseWithItems);
+      });
+
+      const args: inputType = {
+        boardId: 123456789,
+        searchTerm: 'test search'
+      };
+
+      await callToolByNameAsync('get_board_items_page', args);
+
+      // The first call is to smart search, the second is to getBoardItemsPage
+      const calls = mocks.getMockRequest().mock.calls;
+      // Find the call to GetBoardItemsPage
+      const getBoardItemsPageCall = calls.find(call => call[0].includes('query GetBoardItemsPage'));
+      expect(getBoardItemsPageCall).toBeDefined();
+      expect(getBoardItemsPageCall[1].queryParams.ids).toEqual(smartSearchItemIds.map(id => id.toString()));
+    });
+
+    it('should call mockRequest with intersection of itemIds and smart search results', async () => {
+      // Arrange
+      const smartSearchItemIds = [111, 222, 333];
+      const initialItemIds = [222, 444];
+      const expectedIds = [222];
+      const smartSearchResults = {
+        search_items: {
+          results: smartSearchItemIds.map(id => ({ data: { id: id.toString() } }))
+        }
+      };
+
+      // Mock the smart search request
+      jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string, variables: any) => {
+        if (query.includes('query SmartSearchBoardItemIds')) {
+          return Promise.resolve(smartSearchResults);
+        }
+        // For the main getBoardItemsPage query, just return a dummy response
+        return Promise.resolve(successfulResponseWithItems);
+      });
+
+      const args: inputType = {
+        boardId: 123456789,
+        searchTerm: 'test search',
+        itemIds: initialItemIds
+      };
+
+      await callToolByNameAsync('get_board_items_page', args);
+
+      const calls = mocks.getMockRequest().mock.calls;
+      const getBoardItemsPageCall = calls.find(call => call[0].includes('query GetBoardItemsPage'));
+      expect(getBoardItemsPageCall).toBeDefined();
+      expect(getBoardItemsPageCall[1].queryParams.ids).toEqual(expectedIds.map(id => id.toString()));
+    });
+
+    it('should return "No items found matching the specified searchTerm" if smart search returns no itemIds', async () => {
+      // Arrange
+      const smartSearchResults = {
+        search_items: {
+          results: []
+        }
+      };
+
+      // Mock the smart search request
+      jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string, variables: any) => {
+        if (query.includes('query SmartSearchBoardItemIds')) {
+          return Promise.resolve(smartSearchResults);
+        }
+        // For the main getBoardItemsPage query, just return a dummy response
+        return Promise.resolve(successfulResponseWithItems);
+      });
+
+      const args: inputType = {
+        boardId: 123456789,
+        searchTerm: 'no results'
+      };
+
+      const result = await callToolByNameRawAsync('get_board_items_page', args);
+      expect(result.content[0].text).toContain('No items found matching the specified searchTerm');
+
+      // Should not call GetBoardItemsPage if no items found
+      const calls = mocks.getMockRequest().mock.calls;
+      const getBoardItemsPageCall = calls.find(call => call[0].includes('query GetBoardItemsPage'));
+      expect(getBoardItemsPageCall).toBeUndefined();
+    });
+  });
+
+  describe('Stringified JSONs functionality', () => {
+    it('should parse stringified JSONs when provided', async () => {
+      mocks.setResponse(successfulResponseWithItems);
+
+      const filtersStringified = JSON.stringify([
+        {
+          columnId: 'status',
+          compareValue: 'In Progress',
+          operator: ItemsQueryRuleOperator.AnyOf
+        }
+      ]);
+      
+      const orderByStringified = JSON.stringify([
+        {
+          columnId: 'name',
+          direction: ItemsOrderByDirection.Asc
+        }
+      ]);
+
+      const args: inputType = { 
+        boardId: 123456789,
+        filtersStringified,
+        orderByStringified
+      };
+      await callToolByNameAsync('get_board_items_page', args);
+
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query GetBoardItemsPage'),
+        {
+          boardId: '123456789',
+          limit: 25,
+          cursor: undefined,
+          includeColumns: false,
+          columnIds: undefined,
+          queryParams: {
+            ids: undefined,
+            operator: 'and',
+            rules: [
+              {
+                column_id: 'status',
+                compare_value: 'In Progress',
+                operator: ItemsQueryRuleOperator.AnyOf,
+                compare_attribute: undefined
+              }
+            ],
+            order_by: [
+              {
+                column_id: 'name',
+                direction: ItemsOrderByDirection.Asc
+              }
+            ]
+          }
+        }
+      );
+    });
+
+    it('should throw error for invalid stringified JSON', async () => {
+      const args: inputType = { 
+        boardId: 123456789,
+        filtersStringified: 'invalid json'
+      };
+
+      const result = await callToolByNameRawAsync('get_board_items_page', args);
+      expect(result.content[0].text).toContain('filtersStringified is not a valid JSON');
+    });
+
+    it('should handle both regular and stringified JSON parameters', async () => {
+      mocks.setResponse(successfulResponseWithItems);
+
+      const orderByStringified = JSON.stringify([
+        {
+          columnId: 'name',
+          direction: 'asc'
+        }
+      ]);
+
+      const args: inputType = { 
+        boardId: 123456789,
+        filters: [
+          {
+            columnId: 'status',
+            compareValue: 'In Progress',
+            operator: 'any_of' as any
+          }
+        ],
+        orderByStringified
+      };
+      await callToolByNameAsync('get_board_items_page', args);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query GetBoardItemsPage'),
+        {
+          boardId: '123456789',
+          limit: 25,
+          cursor: undefined,
+          includeColumns: false,
+          columnIds: undefined,
+          queryParams: {
+            ids: undefined,
+            operator: 'and',
+            rules: [
+              {
+                column_id: 'status',
+                compare_value: 'In Progress',
+                operator: ItemsQueryRuleOperator.AnyOf,
+                compare_attribute: undefined
+              }
+            ],
+            order_by: [
+              {
+                column_id: 'name',
+                direction: ItemsOrderByDirection.Asc
+              }
+            ]
+          }
+        }
+      );
+    });
+
+    it('should not parse stringified JSONs when regular JSON is provided', async () => {
+      mocks.setResponse(successfulResponseWithItems);
+
+      const orderBy = [
+        {
+          columnId: 'priority',
+          direction: ItemsOrderByDirection.Desc
+        }
+      ];
+      const orderByStringified = JSON.stringify([
+        {
+          columnId: 'name',
+          direction: ItemsOrderByDirection.Asc
+        }
+      ]);
+      const args: inputType = { 
+        boardId: 123456789,
+        filters: [
+          {
+            columnId: 'status',
+            compareValue: 'In Progress',
+            operator: ItemsQueryRuleOperator.AnyOf
+          }
+        ],
+        orderBy,
+        orderByStringified
+      };
+      await callToolByNameAsync('get_board_items_page', args);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query GetBoardItemsPage'),
+        expect.objectContaining({
+          boardId: '123456789',
+          limit: 25,
+          cursor: undefined,
+          includeColumns: false,
+          columnIds: undefined,
+          queryParams: expect.objectContaining({
+            order_by: [
+              {
+                column_id: 'priority',
+                direction: ItemsOrderByDirection.Desc
+              }
+            ]
+          })
+        })
       );
     });
   });

@@ -28,10 +28,14 @@ export function createMockApiClient() {
       mockRequest.mockResolvedValue(data);
     },
 
-    setError: (message: string, path: string[] = []) => {
-      const error = new Error(message);
-      (error as any).errors = [{ message, path }];
-      mockRequest.mockRejectedValue(error);
+    setError: (messageOrError: string | Error, path: string[] = []) => {
+      if (typeof messageOrError === 'string') {
+        const error = new Error(messageOrError);
+        (error as any).errors = [{ message: messageOrError, path }];
+        mockRequest.mockRejectedValue(error);
+      } else {
+        mockRequest.mockRejectedValue(messageOrError);
+      }
     },
  
 

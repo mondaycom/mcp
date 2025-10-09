@@ -8,19 +8,6 @@ export const deleteItem = gql`
   }
 `;
 
-export const getBoardItemsByName = gql`
-  query GetBoardItemsByName($boardId: ID!, $term: CompareValue!) {
-    boards(ids: [$boardId]) {
-      items_page(query_params: { rules: [{ column_id: "name", operator: contains_text, compare_value: $term }] }) {
-        items {
-          id
-          name
-        }
-      }
-    }
-  }
-`;
-
 export const createItem = gql`
   mutation createItem($boardId: ID!, $itemName: String!, $groupId: String, $columnValues: JSON) {
     create_item(board_id: $boardId, item_name: $itemName, group_id: $groupId, column_values: $columnValues) {
@@ -508,7 +495,7 @@ export const readDocs = gql`
 `;
 
 export const exportMarkdownFromDoc = gql`
-  mutation exportMarkdownFromDoc($docId: ID!, $blockIds: [String!]) {
+  query exportMarkdownFromDoc($docId: ID!, $blockIds: [String!]) {
     export_markdown_from_doc(docId: $docId, blockIds: $blockIds) {
       success
       markdown
@@ -550,12 +537,4 @@ export const getWorkspaceInfo = gql`
   }
 `;
 
-export const duplicateItem = gql`
-  mutation duplicateItem($boardId: ID!, $itemId: ID!, $withUpdates: Boolean) {
-    duplicate_item(board_id: $boardId, item_id: $itemId, with_updates: $withUpdates) {
-      id
-      name
-    }
-  }
-`;
 

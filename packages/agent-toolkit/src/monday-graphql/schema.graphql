@@ -103,18 +103,6 @@ type Query {
   """
   audit_event_catalogue: [AuditEventCatalogueEntry!]
 
-  """Get list of live workflows with pagination"""
-  get_live_workflows(
-    """Host instance ID (e.g., board ID) to filter workflows"""
-    hostInstanceId: String!
-
-    """Host type for filtering workflows"""
-    hostType: HostType!
-
-    """Pagination parameters"""
-    pagination: PaginationInput
-  ): [Workflow!]
-
   """
   Returns connections for the authenticated user. Supports filtering, pagination, ordering, and partial-scope options.
   """
@@ -338,6 +326,21 @@ type Query {
     """The ID of the board to export the graph for"""
     boardId: String!
   ): BoardGraphExport
+
+  """
+  Converts document content into standard markdown format for external use, backup, or processing. Exports the entire document by default, or specific blocks if block IDs are provided. Use this to extract content for integration with other systems, create backups, generate reports, or process document content with external tools. The output is clean, portable markdown that preserves formatting and structure.
+  """
+  export_markdown_from_doc(
+    """
+    The document's unique identifier to export. Get this from document queries or creation responses.
+    """
+    docId: ID!
+
+    """
+    Optional array of specific block IDs to export. If omitted, exports the entire document. Use when you only need specific sections.
+    """
+    blockIds: [String!]
+  ): ExportMarkdownResult
 
   """Get all personal list items by list ID"""
   favorites: [GraphqlHierarchyObjectItem!]
@@ -704,6 +707,45 @@ type Query {
     board_ids: [ID!]!
   ): [BoardMuteSettings!]
 
+  """
+  Retrieves a list of available object types that can be created or queried. Each object type is uniquely identified by an 'object_type_unique_key'. This key is required for mutations like 'create_object' and for filtering in the 'objects' query. Use this query to discover what types of objects are available in the system (e.g., 'workflows', 'projects') and get their corresponding unique keys. The structure of unique key is 'app_slug::app_feature_slug'.
+  """
+  object_types_unique_keys: [ObjectTypeUniqueKey!]
+
+  """
+  Retrieves a list of objects from the Monday.com Objects Platform based on specified filters. This query can return any type of object (board, doc, dashboard, workflow, etc.) depending on the filter criteria. Use object_type_unique_keys to filter for specific object types.
+  """
+  objects(
+    """
+    The unique identifier for the object type, formatted as 'app_slug::app_feature_slug'
+    """
+    object_type_unique_keys: [String!]
+
+    """
+    Filter by specific object ID(s). Use this when you need to retrieve one or more specific objects by their unique identifiers.
+    """
+    ids: [ID!]
+
+    """
+    Maximum number of objects to return in the response. Default is 25, but can be increased to retrieve more objects at once.
+    """
+    limit: Int
+
+    """Specifies the order in which objects are returned."""
+    order_by: OrderBy
+
+    """Filter objects by their state."""
+    state: ObjectState
+
+    """Filter objects by their kind/visibility setting."""
+    privacy_kind: PrivacyKind
+
+    """
+    Filter objects by workspace ID(s). Returns only objects that belong to the specified workspace(s). Use null or omit for objects in the main workspace.
+    """
+    workspace_ids: [ID!]
+  ): [Object!]
+
   """Get the API version in use"""
   version: Version!
 
@@ -718,6 +760,44 @@ type Query {
     """The aggregation query to execute"""
     query: AggregateQueryInput!
   ): AggregateQueryResult
+
+  """Search for items using various search strategies."""
+  search_items(
+    """The search query string."""
+    query: String
+
+    """The type of search to perform."""
+    searchType: Search!
+
+    """Maximum number of results to return (max 100)."""
+    size: Int!
+
+    """Whether to perform exact match search."""
+    exactMatch: Boolean
+
+    """Date range filter for created/updated dates."""
+    dateRange: SearchDateRangeInput
+
+    """Filter results to a specific board ID."""
+    boardId: ID
+
+    """Filter results to specific workspace IDs."""
+    workspaceIds: [ID!]
+
+    """Filter by assignee (person IDs and/or team IDs)."""
+    assignee: AssigneeInput
+
+    """Filter by status."""
+    status: String
+
+    """
+    Boost configuration for search results. When not set, uses default configuration from feature flag.
+    """
+    boosts: BoostConfigurationInput
+
+    """Reranking strategy to use for results."""
+    rerankingStrategy: RerankingStrategy
+  ): SearchItemsGraphQlResultsView
 
   """Get a collection of monday dev sprints"""
   sprints(
@@ -1173,6 +1253,17 @@ type Mutation {
   ): Column
 
   """
+  Deletes a column from a board. Cannot delete mandatory columns (e.g., name column).
+  """
+  delete_column(
+    """The unique identifier of the board containing the column to delete."""
+    board_id: ID!
+
+    """The unique identifier of the column to delete."""
+    column_id: String!
+  ): Column
+
+  """
   Creates a new status column with strongly typed settings. Status columns allow users to track item progress through customizable labels (e.g., "Working on it", "Done", "Stuck"). This mutation is specifically for status/color columns and provides type-safe creation with label configuration.
   """
   create_status_column(
@@ -1355,19 +1446,30 @@ type Mutation {
   ): JSON
 
   """
-  Converts document content into standard markdown format for external use, backup, or processing. Exports the entire document by default, or specific blocks if block IDs are provided. Use this to extract content for integration with other systems, create backups, generate reports, or process document content with external tools. The output is clean, portable markdown that preserves formatting and structure.
+  Imports HTML content as a new document by converting it into document blocks. The HTML will be parsed and converted into the appropriate document block types (text, headers, lists, etc.). Returns the ID of the newly created document on success.
   """
-  export_markdown_from_doc(
-    """
-    The document's unique identifier to export. Get this from document queries or creation responses.
-    """
-    docId: ID!
+  import_doc_from_html(
+    """The HTML content to convert into a new document."""
+    html: String!
+
+    """The workspace ID where the document should be created."""
+    workspaceId: ID!
 
     """
-    Optional array of specific block IDs to export. If omitted, exports the entire document. Use when you only need specific sections.
+    The access level of the document. Defaults to "public" if not specified.
     """
-    blockIds: [String!]
-  ): ExportMarkdownResult
+    kind: DocKind
+
+    """
+    The folder ID where the document should be placed. If not provided, the document will be created at the root level of the workspace.
+    """
+    folderId: ID
+
+    """
+    The name/title of the document. If not provided, the title will be inferred from the HTML content.
+    """
+    title: String
+  ): ImportDocFromHtmlResult
 
   """
   Updates the content of a specific article block. The block must belong to a draft article that the user has permission to edit. Cannot update blocks of published articles.
@@ -1426,21 +1528,30 @@ type Mutation {
     account_slug: String!
   ): DeleteMarketplaceAppDiscountResult!
 
+  """Creates a new app with the specified configuration."""
+  create_app(
+    """App configuration data"""
+    input: CreateAppInput!
+  ): AppType
+
+  """
+  Updates an existing app. If the app latest version is live, a new draft version is automatically created and updated.
+  """
+  update_app(
+    """The app identifier"""
+    id: ID!
+
+    """App configuration data to update"""
+    input: UpdateAppInput!
+  ): AppType
+
   """Update an app feature."""
-  updateAppFeature(
+  update_app_feature(
     """The ID of the app feature to update."""
     id: ID!
 
     """The input data for updating the app feature."""
     input: UpdateAppFeatureInput!
-  ): AppFeatureType
-
-  """Delete an app feature."""
-  delete_app_feature(
-    """
-    The ID of the app feature to delete. Can be either a numeric ID or a composite slug in format {app_slug}::{feature_slug}.
-    """
-    id: ID!
   ): AppFeatureType
 
   """Create a new app feature."""
@@ -1751,6 +1862,9 @@ type Mutation {
     """Optional board folder id"""
     folder_id: ID
 
+    """Optional item nickname configuration for the board"""
+    item_nickname: ItemNicknameInput
+
     """Optional board template id"""
     template_id: ID
 
@@ -1932,15 +2046,6 @@ type Mutation {
     """The board's unique identifier"""
     board_id: ID!
   ): Board
-
-  """Delete a column."""
-  delete_column(
-    """The board's unique identifier."""
-    board_id: ID!
-
-    """The column's unique identifier."""
-    column_id: String!
-  ): Column
 
   """Delete a document block"""
   delete_doc_block(
@@ -2378,6 +2483,125 @@ type Mutation {
     """
     enabled: [CustomizableBoardSettings!]
   ): [BoardMuteSettings!]
+
+  """
+  Creates a new object in the Monday.com Objects Platform. The type of object created is determined by the app_feature_reference_id parameter. This mutation can create boards, docs, dashboards, workflows, or specialized objects like CRM, capacity manager, etc. Under the hood, this creates a board with the specified app_feature_id.
+  """
+  create_object(
+    """
+    The name of the new object. This will be displayed in the Monday.com interface as the primary identifier for this object.
+    """
+    name: String!
+
+    """
+    The kind/visibility setting of the object (private, public, share). Determines who can access it.
+    """
+    privacy_kind: PrivacyKind!
+
+    """
+    The ID of the workspace containing this object. Null indicates the object is in the main workspace.
+    """
+    workspace_id: ID
+
+    """
+    Optional description of the object, providing additional context about its purpose or contents.
+    """
+    description: String
+
+    """
+    The ID of the folder to create the object in. Used for organizing objects in folders. visible in the left pane of the platform. Must be a valid and existing workspace id in monday.com.
+    """
+    folder_id: ID
+
+    """
+    List of user IDs who will be assigned as owners of this object. Owners have full control permissions.
+    """
+    owner_ids: [ID!]
+
+    """
+    List of team IDs who will be assigned as owners of this object. All members of these teams will have owner permissions.
+    """
+    owner_team_ids: [ID!]
+
+    """
+    List of user IDs who will be added as subscribers to this object. Subscribers receive notifications about changes.
+    """
+    subscriber_ids: [ID!]
+
+    """
+    List of team IDs who will be added as subscribers to this object. All members of these teams will receive notifications about changes.
+    """
+    subscriber_teams_ids: [ID!]
+
+    """
+    The unique identifier for the object type, formatted as 'app_slug::app_feature_slug. To create an object you must provide this key. You can get a list of available keys by using the 'object_types_unique_keys' query.
+    """
+    object_type_unique_key: String!
+
+    """
+    JSON of creation payload, that will include additional fields for the object creation
+    """
+    payload: JSON
+  ): Object
+
+  """
+  Permanently deletes an object from the Monday.com Objects Platform. Unlike archiving, deletion is only reversible for 30 days and removes all associated data. This operation works for any object type including boards, docs, dashboards, workflows, and specialized objects (CRM, capacity manager, etc.). WARNING: This operation cannot be undone after 30 days.
+  """
+  delete_object(
+    """
+    The unique identifier of the object to delete. Each object has a unique ID regardless of its type (board, doc, dashboard, etc.). WARNING: Deletion is only reversible for 30 days.
+    """
+    id: ID!
+  ): Object
+
+  """
+  Archives an object in the Monday.com Objects Platform, changing its state to "archived" while preserving all data. Archived objects remain in the system but are hidden from regular views. This operation works for any object type including boards, docs, dashboards, workflows, and specialized objects (CRM, capacity manager, etc.). Under the hood, this archives the board that represents this object.
+  """
+  archive_object(
+    """
+    The unique identifier of the object to archive. Each object has a unique ID regardless of its type (board, doc, dashboard, etc.).
+    """
+    id: ID!
+  ): Object
+
+  """
+  Adds users to an existing object as either subscribers or owners. Subscribers receive notifications about object changes, while owners have full control permissions. Works with any object type including boards, docs, dashboards, workflows, and specialized objects (CRM, capacity manager, etc.). Equivalent to the add_users_to_board mutation in the boards API.
+  """
+  add_subscribers_to_object(
+    """
+    The unique identifier of the object to add users to. Each object has a unique ID regardless of its type (board, doc, dashboard, etc.).
+    """
+    id: ID!
+
+    """
+    List of user IDs to add to the object. These must be valid user IDs existing in the Monday.com platform.
+    """
+    user_ids: [ID!]!
+
+    """
+    The role to assign to the users. "owner" grants full control permissions, while "subscriber" only provides notification access. If not specified, users will be added as subscribers.
+    """
+    kind: SubscriberKind = SUBSCRIBER
+  ): Object
+
+  """Updates an object."""
+  update_object(id: String!, input: UpdateObjectInput!): Object
+
+  """
+  Publishes object out of draft state. Returns {success: true} on success, {success: false} on failure.
+  """
+  publish_object(
+    """The unique identifier of the object instance."""
+    id: ID!
+  ): ObjectOperationResponse
+
+  """
+  Unpublishes object from public state back to draft state. Returns {success: true} on success, {success: false} on failure.
+  """
+  unpublish_object(
+    """The unique identifier of the object instance."""
+    id: ID!
+  ): ObjectOperationResponse
 
   """Connect project to portfolio"""
   connect_project_to_portfolio(
@@ -2963,17 +3187,6 @@ type Connection {
   updatedAt: String
 }
 
-enum HostType {
-  """Workflow hosted under an app feature object"""
-  APP_FEATURE_OBJECT
-
-  """Workflow hosted in a board"""
-  BOARD
-
-  """Workflow hosted in the account"""
-  ACCOUNT
-}
-
 """Pagination parameters for queries"""
 input PaginationInput {
   """Maximum number of results to return"""
@@ -2981,95 +3194,6 @@ input PaginationInput {
 
   """Last ID for cursor-based pagination"""
   lastId: Int
-}
-
-type Workflow {
-  """Workflow numeric ID (supports both integer and bigint)"""
-  id: String
-
-  """Title of the workflow"""
-  title: String
-
-  """Detailed description of the workflow"""
-  description: String
-
-  """Define the workflow's steps and the configuration of each step"""
-  workflowBlocks: [WorkflowBlock!]
-
-  """
-  Variables used within this workflow. To get the accurate JSON schema call the GraphQL query 'get_workflow_variable_schemas'
-  """
-  workflowVariables: JSON
-
-  """Hierarchy level the workflow is hosted in"""
-  workflowHostData: WorkflowHostData
-
-  """Type of host for this workflow"""
-  hostType: HostType
-
-  """Instance ID of the host"""
-  hostInstanceId: Int
-
-  """Notice/Error message for the workflow"""
-  noticeMessage: String
-
-  """Reference ID of the creator app feature"""
-  creatorAppFeatureReferenceId: Int
-
-  """ID of the creator app"""
-  creatorAppId: Int
-}
-
-type WorkflowBlock {
-  """Unique node identifier within the workflow"""
-  workflowNodeId: Int
-
-  """Reference ID of the block"""
-  blockReferenceId: Int
-
-  """Title of the workflow block"""
-  title: String
-
-  """
-  Defines the input fields of the workflow block. This corresponds to the input fields defined by the block used in the Workflow Block. You must call the remote_options query to retrieve the allowed values for any custom input field before configuring it.
-  """
-  inputFields: [WorkflowBlockInputField!]
-
-  """Configuration for credential sources"""
-  credentialsSourceConfig: JSON
-
-  """
-  Configuration for the next workflow blocks. To get the accurate JSON schema call the graphQL query 'get_workflow_block_next_mapping_schemas
-  """
-  nextWorkflowBlocksConfig: JSON
-  kind: WorkflowBlockKind
-}
-
-type WorkflowBlockInputField {
-  """The block's field key"""
-  fieldKey: String
-
-  """
-  Key of the workflow variable defining the configuration for the field key. Always a positive number
-  """
-  workflowVariableKey: Int
-}
-
-"""
-The kind of workflow block. This is the type of the block that is used in the UI
-"""
-enum WorkflowBlockKind {
-  """A wait block"""
-  WAIT
-}
-
-"""Hierarchy level the workflow is hosted in"""
-type WorkflowHostData {
-  """Type of host for this workflow"""
-  type: HostType
-
-  """Instance ID of the host"""
-  id: Int
 }
 
 """Automation block execution event"""
@@ -4536,7 +4660,7 @@ Input type for updating a single dependency relationship between pulses
 """
 input UpdateDependencyColumnInput {
   """The ID of the pulse to create or remove a dependency relationship with"""
-  linkedPulseId: Int!
+  linkedPulseId: ID!
 
   """Optional metadata containing dependency configuration (type and lag)"""
   metadata: MetadataInput
@@ -4724,9 +4848,6 @@ input CreateBlockInput {
 input DividerBlockInput {
   """The parent block id to append the created block under."""
   parent_block_id: String
-
-  """Optional UUID for the block"""
-  block_id: String
 }
 
 """Content for a divider block"""
@@ -4763,6 +4884,18 @@ type DocBlocksFromMarkdownResult {
   Detailed error message if the operation failed. Check this when success is false.
   """
   error: String
+}
+
+"""The kind/type of document access level"""
+enum DocKind {
+  """Private document"""
+  private
+
+  """Public document"""
+  public
+
+  """Shareable document"""
+  share
 }
 
 """Column value reference for displaying board item column data"""
@@ -4867,9 +5000,6 @@ input ImageBlockInput {
   """The parent block id to append the created block under."""
   parent_block_id: String
 
-  """Optional UUID for the block"""
-  block_id: String
-
   """The public URL of the image"""
   public_url: String!
 
@@ -4890,6 +5020,24 @@ type ImageContent implements DocBaseBlockContent {
 
   """The width of the image"""
   width: Int
+}
+
+"""
+Response from importing an HTML document. Contains success status and the ID of the newly created document.
+"""
+type ImportDocFromHtmlResult {
+  """True if HTML was successfully converted and imported as a new document"""
+  success: Boolean!
+
+  """
+  The ID of the newly created document. Use this ID to reference or modify the imported document.
+  """
+  doc_id: String
+
+  """
+  Detailed error message if the operation failed. Check this when success is false.
+  """
+  error: String
 }
 
 """Content inserted in delta operations"""
@@ -4933,9 +5081,6 @@ Behaviour:
 input LayoutBlockInput {
   """The parent block id to append the created block under."""
   parent_block_id: String
-
-  """Optional UUID for the block"""
-  block_id: String
 
   """The number of columns in the layout"""
   column_count: Int!
@@ -4987,9 +5132,6 @@ type ListBlockContent implements DocBaseBlockContent {
 input ListBlockInput {
   """The parent block id to append the created block under."""
   parent_block_id: String
-
-  """Optional UUID for the block"""
-  block_id: String
   alignment: BlockAlignment
   direction: BlockDirection
 
@@ -5029,9 +5171,6 @@ The notice-box's own ID must be captured.  Every block that should appear inside
 input NoticeBoxBlockInput {
   """The parent block id to append the created block under."""
   parent_block_id: String
-
-  """Optional UUID for the block"""
-  block_id: String
   theme: NoticeBoxTheme!
 }
 
@@ -5085,9 +5224,6 @@ input OperationInput {
 input PageBreakBlockInput {
   """The parent block id to append the created block under."""
   parent_block_id: String
-
-  """Optional UUID for the block"""
-  block_id: String
 }
 
 """Content for a page break block"""
@@ -5097,6 +5233,21 @@ type PageBreakContent implements DocBaseBlockContent {
 
   """The text direction of the block content"""
   direction: BlockDirection
+}
+
+"""
+The kind/visibility setting of the article (private, public). Determines who can access it.
+"""
+enum PrivacyKind {
+  """
+  Private objects are only visible to specific users who are members of the object.
+  """
+  PRIVATE
+
+  """
+  Public objects are visible to all users within the account, unless their access is blocked on a higher level in the hierarchy, or by specific object permission.
+  """
+  PUBLIC
 }
 
 """
@@ -5120,9 +5271,6 @@ Recommended workflow:
 input TableBlockInput {
   """The parent block id to append the created block under."""
   parent_block_id: String
-
-  """Optional UUID for the block"""
-  block_id: String
 
   """The number of columns in the table"""
   column_count: Int!
@@ -5204,9 +5352,6 @@ type TextBlockContent implements DocBaseBlockContent {
 input TextBlockInput {
   """The parent block id to append the created block under."""
   parent_block_id: String
-
-  """Optional UUID for the block"""
-  block_id: String
   alignment: BlockAlignment
   direction: BlockDirection
 
@@ -5223,9 +5368,6 @@ input TextBlockInput {
 input VideoBlockInput {
   """The parent block id to append the created block under."""
   parent_block_id: String
-
-  """Optional UUID for the block"""
-  block_id: String
 
   """The raw URL of the video"""
   raw_url: String!
@@ -5842,34 +5984,73 @@ enum AppFeatureTypeE {
   AI_AGENT_SKILL
 }
 
+"""The visibility type of an app"""
+enum AppKind {
+  """App is private and only visible to the account that created it"""
+  PRIVATE
+
+  """App is public and can be shared and installed by other accounts"""
+  PUBLIC
+}
+
+"""The current state of an app based on its version status"""
+enum AppStatus {
+  """App is in draft state and not yet published"""
+  DRAFT
+
+  """App has a live published version"""
+  LIVE
+}
+
 type AppType {
   id: ID!
   created_at: Date
   updated_at: Date
 
-  """the app name"""
+  """The app name"""
   name: String
 
-  """the api app id"""
+  """The API app ID"""
   api_app_id: ID
 
-  """the api app id"""
+  """The API app ID"""
   client_id: String
 
-  """the app photo url"""
+  """The app photo URL"""
   photo_url: String
 
-  """the app photo url for small size"""
+  """The app photo URL for small size"""
   photo_url_small: String
 
-  """the app kid"""
-  kind: String
+  """The app kind"""
+  kind: AppKind
 
-  """the app state"""
-  state: String
+  """The app status (i.e. is live?)"""
+  status: AppStatus
 
-  """the app user id"""
-  user_id: ID
+  """The latest version type"""
+  version_type: String
+
+  """The description of the app"""
+  description: String
+
+  """The URL-friendly identifier"""
+  slug: String
+
+  """The array of permission scopes"""
+  permissions: [String!]
+
+  """The webhook endpoint URL"""
+  webhook_url: String
+
+  """The user who created the app"""
+  created_by: ID
+
+  """The app account ID"""
+  account_id: ID
+
+  """The app collaborators"""
+  collaborators: [User!]
 
   """The apps' features"""
   features(
@@ -5882,6 +6063,30 @@ type AppType {
     """Page number to get, starting at 1."""
     page: Int = 1
   ): [AppFeatureType!]
+}
+
+"""Input for creating an app with its configuration data."""
+input CreateAppInput {
+  """The display name of the app"""
+  name: String!
+
+  """App visibility type"""
+  kind: AppKind
+
+  """Detailed description of the app"""
+  description: String
+
+  """URL-friendly identifier"""
+  slug: String
+
+  """Array of permission scopes"""
+  permissions: [String!]
+
+  """Webhook endpoint URL"""
+  webhook_url: String
+
+  """Array of user IDs with access"""
+  collaborators: [ID!]
 }
 
 """
@@ -5897,6 +6102,32 @@ input UpdateAppFeatureInput {
   The deployment data to update. https://developer.monday.com/apps/docs/deploy-your-app
   """
   deployment: AppFeatureReleaseInput
+}
+
+"""
+Input for updating an existing app. Creates draft version for live apps.
+"""
+input UpdateAppInput {
+  """The display name of the app"""
+  name: String
+
+  """App visibility type"""
+  kind: AppKind
+
+  """Detailed description of the app"""
+  description: String
+
+  """URL-friendly identifier (only settable if app has no existing slug)"""
+  slug: String
+
+  """Array of permission scopes (replaces existing permissions)"""
+  permissions: [String!]
+
+  """Webhook endpoint URL"""
+  webhook_url: String
+
+  """Array of user IDs with access (replaces existing collaborators)"""
+  collaborators: [ID!]
 }
 
 """Your monday.com account"""
@@ -7432,6 +7663,18 @@ type ItemIdValue implements ColumnValue {
   value: JSON
 }
 
+"""Input type for item nickname configuration"""
+input ItemNicknameInput {
+  """The plural form of the item nickname"""
+  plural: String
+
+  """The preset type for item nickname"""
+  preset_type: String
+
+  """The singular form of the item nickname"""
+  singular: String
+}
+
 input ItemsPageByColumnValuesQuery {
   """The column's unique identifier."""
   column_id: String!
@@ -8797,19 +9040,150 @@ enum ScopeType {
   AccountNewUserDefaults
 }
 
+"""
+The central type in the Monday.com Objects Platform, representing any entity in the system. This unified type can represent instances of boards, docs, dashboards, workflows, and specialized objects. The specific type of an object is determined by its app_feature_reference_id.
+"""
+type Object {
+  """
+  The unique identifier of the object. Can be used to reference this specific object in queries and mutations.
+  """
+  id: String
+
+  """
+  The display name of the object. This is what appears in the Monday.com interface.
+  """
+  name: String
+
+  """
+  Optional description of the object, providing additional context about its purpose or contents.
+  """
+  description: String
+
+  """
+  The kind/visibility setting of the object (private, public, share). Determines who can access it.
+  """
+  privacy_kind: String
+
+  """
+  The ID of the folder containing this object, if the object is organized in a folder structure.
+  """
+  folder_id: String
+
+  """Timestamp of when the object was last updated. Format is ISO 8601."""
+  updated_at: String
+
+  """
+  The current state of the object. Determines visibility in the interface.
+  """
+  state: String
+
+  """
+  The ID of the user who created this object. Useful for tracking object origin.
+  """
+  creator: String
+
+  """
+  The ID of the workspace containing this object. Null indicates the object is in the main workspace.
+  """
+  workspace_id: String
+
+  """
+  List of users who are owners of this object. Owners have full control permissions.
+  """
+  owners: [User!]
+
+  """
+  List of users who are subscribers to this object. Subscribers receive notifications about changes.
+  """
+  subscribers: [User!]
+}
+
+"""Response for object operations indicating success or failure"""
+type ObjectOperationResponse {
+  """Indicates whether the operation was successful"""
+  success: Boolean
+}
+
+"""The state of the object."""
+enum ObjectState {
+  """The object is active."""
+  ACTIVE
+
+  """The object is archived."""
+  ARCHIVED
+
+  """The object is deleted."""
+  DELETED
+}
+
+"""Represents object type unique key and metadata."""
+type ObjectTypeUniqueKey {
+  """The name of the app that provides this object type."""
+  app_name: String
+
+  """
+  The name of the app feature object type (e.g., 'Workflow', 'Capacity manager').
+  """
+  app_feature_name: String
+
+  """A short description of what this object type represents."""
+  description: String
+
+  """
+  The unique identifier for the object type, formatted as 'app_slug::app_feature_slug'
+  """
+  object_type_unique_key: String
+}
+
+"""Defines the sorting order for returned objects in the objects query."""
+enum OrderBy {
+  """Sort objects by their creation date, from newest to oldest."""
+  CREATED_AT
+
+  """
+  Sort objects by when they were last used, from most recent to least recent.
+  """
+  USED_AT
+}
+
+"""Defines the type of the user's role as members of the object"""
+enum SubscriberKind {
+  """
+  User will be added as an owner of the object, granting them full control permissions.
+  """
+  OWNER
+
+  """
+  User will be added as a subscriber to the object, receiving notifications about changes.
+  """
+  SUBSCRIBER
+}
+
+"""Input for updating an object"""
+input UpdateObjectInput {
+  """The new name for the object."""
+  name: String
+
+  """The new description for the object"""
+  description: String
+
+  """The new privacy kind for the object."""
+  privacy_kind: PrivacyKind
+}
+
 """API usage data."""
 type DailyAnalytics {
   """Last time the API usage data was updated."""
   last_updated: ISO8601DateTime
 
   """API usage per day."""
-  by_day: [PlatformApiDailyAnalyticsByDay!]!
+  by_day: [PlatformApiDailyAnalyticsByDay!]
 
   """API usage per app."""
-  by_app: [PlatformApiDailyAnalyticsByApp!]!
+  by_app: [PlatformApiDailyAnalyticsByApp!]
 
   """API usage per user."""
-  by_user: [PlatformApiDailyAnalyticsByUser!]!
+  by_user: [PlatformApiDailyAnalyticsByUser!]
 }
 
 """Platform API daily limit."""
@@ -8854,7 +9228,7 @@ type PlatformApiDailyAnalyticsByDay {
 """API usage per user."""
 type PlatformApiDailyAnalyticsByUser {
   """User."""
-  user: User!
+  user: User
 
   """API usage for the user."""
   usage: Int!
@@ -9102,6 +9476,76 @@ enum AggregateSelectFunctionName {
 
   """Extract phone country short name"""
   PHONE_COUNTRY_SHORT_NAME
+}
+
+"""Assignee filter for search queries"""
+input AssigneeInput {
+  """List of person IDs to filter by"""
+  personIds: [ID!]
+
+  """List of team IDs to filter by"""
+  teamIds: [ID!]
+}
+
+"""
+Boost configuration for search results. Key-value pairs where key is strategy type and value is boost weight.
+"""
+input BoostConfigurationInput {
+  """
+  Boost strategies as key-value pairs (strategy: weight). Empty object {} disables all boosts.
+  """
+  boosts: JSON
+}
+
+"""Contains the results of the query."""
+type QueryResult {
+  """The relevance score of the search result."""
+  score: Float!
+
+  """The item data from the search result."""
+  data: Item!
+}
+
+"""Algorithms for reranking results."""
+enum RerankingStrategy {
+  """Use cross-encoder model for reranking results."""
+  CROSS_ENCODER
+}
+
+"""Available search modes."""
+enum Search {
+  """Keyword-based search using text matching."""
+  LEXICAL
+
+  """Vector-based search using semantic similarity."""
+  SEMANTIC
+
+  """Combined lexical and semantic search with reranking."""
+  HYBRID
+}
+
+"""Date range filter for search queries"""
+input SearchDateRangeInput {
+  """Filter items created before this date"""
+  createdBefore: ISO8601DateTime
+
+  """Filter items created after this date"""
+  createdAfter: ISO8601DateTime
+
+  """Filter items updated before this date"""
+  updatedBefore: ISO8601DateTime
+
+  """Filter items updated after this date"""
+  updatedAfter: ISO8601DateTime
+}
+
+"""Response of the search request."""
+type SearchItemsGraphQlResultsView {
+  """The results of the items search."""
+  results: [QueryResult!]!
+
+  """Indicates if the results have been reranked"""
+  reranked: Boolean
 }
 
 """A monday dev sprint."""
