@@ -42,7 +42,6 @@ The toolkit includes several pre-built tools for common monday.com operations, o
 - `FormQuestionsEditorTool` - Create, update, or delete a question in a monday.com form
 
 ### Account Operations
-- `GetUsersTool` - Get users, can be filtered by name or partial name
 - `ListUsersAndTeams` - Get users or teams, either by ids, names or by searching the account
 
 ### Dynamic API Tools
