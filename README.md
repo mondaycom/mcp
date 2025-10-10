@@ -367,6 +367,9 @@ This project is licensed under the MIT License - see the [LICENSE](./LICENSE) fi
 
 It is clarified that the server uses the monday.com API, which is subject to monday.com's [Developer Terms](https://monday.com/l/marketplace-developers/developer-terms/)
 
+## 🛡️ Monday Internal
+If you would like to share your changes for testing with other colleagues or test execution of the tool in external platforms follow the instructions from this [document](https://monday.monday.com/docs/18156107036) 
+
 ---
 
 <div align="center">
