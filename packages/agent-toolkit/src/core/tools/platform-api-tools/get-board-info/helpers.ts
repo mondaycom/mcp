@@ -82,8 +82,8 @@ export const formatBoardInfo = (board: BoardInfoData): string => {
         if (column.description) {
           sections.push(`   - **Description:** ${column.description}`);
         }
-        if (column.settings_str) {
-          sections.push(`   - **Settings:** ${column.settings_str}`);
+        if (column.settings) {
+          sections.push(`   - **Settings:** ${JSON.stringify(column.settings)}`);
         }
       }
     });

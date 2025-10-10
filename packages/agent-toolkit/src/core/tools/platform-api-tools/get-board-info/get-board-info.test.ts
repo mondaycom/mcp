@@ -45,14 +45,14 @@ describe('formatBoardInfo - Simple Tests', () => {
           title: 'Task Name',
           description: 'The name of the task',
           type: ColumnType.Text,
-          settings_str: '{"width": 200}',
+          settings: { width: 200 },
         },
         {
           id: 'col_2',
           title: 'Status',
           description: undefined,
           type: ColumnType.Status,
-          settings_str: '{"labels": ["Not Started", "In Progress", "Done"]}',
+          settings: {labels: ["Not Started", "In Progress", "Done"]},
         },
       ],
       tags: [
@@ -201,7 +201,7 @@ describe('formatBoardInfo - Simple Tests', () => {
       team_owners: [{ id: '1', name: 'Team', picture_url: 'pic.jpg' }],
       groups: [{ id: '1', title: 'Group' }],
       top_group: { id: '1' },
-      columns: [{ id: '1', title: 'Column', description: 'Test', type: ColumnType.Text, settings_str: '{}' }],
+      columns: [{ id: '1', title: 'Column', description: 'Test', type: ColumnType.Text, settings: {} }],
       tags: [{ id: '1', name: 'tag' }],
     } as BoardInfoData;
 

@@ -43,7 +43,7 @@ export const getBoardInfo = gql`
         title
         description
         type
-        settings_str
+        settings
       }
 
       # All Groups with Metadata
