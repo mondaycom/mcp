@@ -3,7 +3,7 @@ import { GetBoardInfoJustColumnsQuery, GetBoardInfoQuery } from '../../../../mon
 export type BoardInfoData = NonNullable<NonNullable<GetBoardInfoQuery['boards']>[0]>;
 export type BoardInfoJustColumnsData = NonNullable<NonNullable<GetBoardInfoJustColumnsQuery['boards']>[0]>;
 
-export const formatBoardInfo = (board: BoardInfoData, subItemsBoard: BoardInfoJustColumnsData | null = null): string => {
+export const formatBoardInfo = (board: BoardInfoData, subItemsBoard: BoardInfoJustColumnsData | null): string => {
   let sections: string[] = [];
 
   // Basic Information

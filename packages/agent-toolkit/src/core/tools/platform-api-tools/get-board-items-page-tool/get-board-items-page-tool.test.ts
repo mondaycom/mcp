@@ -121,7 +121,8 @@ describe('GetBoardItemsPageTool', () => {
           boardId: '123456789',
           limit: 25,
           cursor: undefined,
-          includeColumns: false
+          includeColumns: false,
+          includeSubItems: false
         }
       );
     });
@@ -140,7 +141,8 @@ describe('GetBoardItemsPageTool', () => {
           boardId: '123456789',
           limit: 50,
           cursor: undefined,
-          includeColumns: false
+          includeColumns: false,
+          includeSubItems: false
         }
       );
     });
@@ -160,7 +162,8 @@ describe('GetBoardItemsPageTool', () => {
           boardId: '123456789',
           limit: 25,
           cursor: 'previous_cursor_456',
-          includeColumns: false
+          includeColumns: false,
+          includeSubItems: false
         }
       );
     });
@@ -197,7 +200,8 @@ describe('GetBoardItemsPageTool', () => {
           limit: 25,
           cursor: 'previous_cursor_456',
           includeColumns: false,
-          queryParams: undefined
+          queryParams: undefined,
+          includeSubItems: false
         }
       );
     });
@@ -231,6 +235,7 @@ describe('GetBoardItemsPageTool', () => {
           cursor: undefined,
           includeColumns: false,
           columnIds: undefined,
+          includeSubItems: false,
           queryParams: {
             ids: undefined,
             operator: 'and',
@@ -389,6 +394,7 @@ describe('GetBoardItemsPageTool', () => {
           cursor: undefined,
           includeColumns: false,
           columnIds: undefined,
+          includeSubItems: false,
           queryParams: {
             ids: undefined,
             operator: 'and',
@@ -451,6 +457,7 @@ describe('GetBoardItemsPageTool', () => {
           limit: 25,
           cursor: undefined,
           includeColumns: false,
+          includeSubItems: false,
           columnIds: undefined,
           queryParams: {
             ids: undefined,
@@ -562,7 +569,8 @@ describe('GetBoardItemsPageTool', () => {
           boardId: '123456789',
           limit: 25,
           cursor: undefined,
-          includeColumns: true
+          includeColumns: true,
+          includeSubItems: false
         }
       );
     });
