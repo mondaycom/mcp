@@ -1,6 +1,6 @@
 import { gql } from 'graphql-request';
 
-export const itemDataFragment = gql`
+export const getBoardItemsPage = gql`
   fragment ItemDataFragment on Item {
     id
     name
@@ -12,9 +12,7 @@ export const itemDataFragment = gql`
       value
     }
   }
-`;
-
-export const getBoardItemsPage = gql`
+  
   query GetBoardItemsPage($boardId: ID!, $limit: Int, $cursor: String, $includeColumns: Boolean!, $columnIds: [String!], $queryParams: ItemsQuery, $includeSubItems: Boolean!) {
     boards(ids: [$boardId]) {
       id
