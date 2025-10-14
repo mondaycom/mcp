@@ -9,6 +9,8 @@ const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 500;
 const MIN_LIMIT = 1;
 
+type FiltersType = ToolInputType<GetBoardItemsPageToolInput>['filters'];
+
 export const getBoardItemsPageToolSchema = {
   boardId: z.number().describe('The id of the board to get items from'),
   itemIds: z.array(z.number()).optional().describe('The ids of the items to get. The count of items should be less than 100.'),
@@ -80,13 +82,19 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
     const canIncludeFilters = !input.cursor;
 
     if(canIncludeFilters && input.searchTerm) {
-      input.itemIds = await this.getItemIdsFromSmartSearchAsync(input);
+      try {
+        input.itemIds = await this.getItemIdsFromSmartSearchAsync(input);
 
-      if(input.itemIds!.length === 0) {
-        return {
-          content: `No items found matching the specified searchTerm`,
-        };
+        if(input.itemIds!.length === 0) {
+          return {
+            content: `No items found matching the specified searchTerm`,
+          };
+        }
+      } catch {
+        this.parseAndAssignJsonField(input, 'filters', 'filtersStringified');
+        input.filters = this.rebuildFiltersWithManualSearch(input.searchTerm, input.filters);
       }
+      
     }
 
     const variables: GetBoardItemsPageQueryVariables = {
@@ -123,6 +131,16 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
     return {
       content: JSON.stringify(result, null, 2),
     };
+  }
+
+  private rebuildFiltersWithManualSearch(searchTerm: string, filters: FiltersType) {
+    filters = filters ?? [];
+
+    // In theory, this filter should not be present but we can't trust the LLM.
+    filters = filters.filter(filter => filter.columnId !== 'name');
+    
+    filters.push({columnId: 'name', operator: ItemsQueryRuleOperator.ContainsText, compareValue: searchTerm});
+    return filters;
   }
 
   private mapResult(response: GetBoardItemsPageQuery, input: ToolInputType<GetBoardItemsPageToolInput>): any {
@@ -182,6 +200,11 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
     const smartSearchRes = await this.mondayApi.request<SmartSearchBoardItemIdsQuery>(smartSearchGetBoardItemIds, smartSearchVariables);
     
     const itemIdsFromSmartSearch = smartSearchRes.search_items?.results?.map(result => Number(result.data.id)) ?? [];
+
+    if(itemIdsFromSmartSearch.length === 0) {
+      // TODO: Refactor this once search team implements exception throwing when tool is not enabled
+      throw new Error('No items found for search term or new search is not enabled for this account');
+    }
 
     const initialItemIds = input.itemIds ?? [];
     

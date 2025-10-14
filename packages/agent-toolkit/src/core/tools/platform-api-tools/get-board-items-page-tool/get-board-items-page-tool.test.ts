@@ -322,7 +322,7 @@ describe('GetBoardItemsPageTool', () => {
       expect(getBoardItemsPageCall[1].queryParams.ids).toEqual(expectedIds.map(id => id.toString()));
     });
 
-    it('should return "No items found matching the specified searchTerm" if smart search returns no itemIds', async () => {
+    it('should build manual name filter in queryParams.rules if smart search returns no itemIds', async () => {
       // Arrange
       const smartSearchResults = {
         search_items: {
@@ -344,13 +344,22 @@ describe('GetBoardItemsPageTool', () => {
         searchTerm: 'no results'
       };
 
-      const result = await callToolByNameRawAsync('get_board_items_page', args);
-      expect(result.content[0].text).toContain('No items found matching the specified searchTerm');
+      await callToolByNameAsync('get_board_items_page', args);
 
-      // Should not call GetBoardItemsPage if no items found
+      // Should call GetBoardItemsPage with manual rule on "name" containing searchTerm
       const calls = mocks.getMockRequest().mock.calls;
       const getBoardItemsPageCall = calls.find(call => call[0].includes('query GetBoardItemsPage'));
-      expect(getBoardItemsPageCall).toBeUndefined();
+      expect(getBoardItemsPageCall).toBeDefined();
+      const queryParams = getBoardItemsPageCall[1].queryParams;
+      expect(Array.isArray(queryParams.rules)).toBe(true);
+      expect(
+        queryParams.rules.some(
+          (rule: any) =>
+            rule.column_id === 'name' &&
+            rule.operator === ItemsQueryRuleOperator.ContainsText &&
+            rule.compare_value === 'no results'
+        )
+      ).toBe(true);
     });
   });
 
