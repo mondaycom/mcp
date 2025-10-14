@@ -82,7 +82,6 @@ export const getBoardInfo = gql`
 export const getBoardInfoJustColumns = gql`
   query GetBoardInfoJustColumns($boardId: ID!) {
     boards(ids: [$boardId]) {
-      # All Columns with Full Metadata
       columns {
         id
         title

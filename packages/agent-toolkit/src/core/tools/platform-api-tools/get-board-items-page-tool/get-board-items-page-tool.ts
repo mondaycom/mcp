@@ -14,6 +14,28 @@ const MAX_SUB_ITEM_LIMIT = 100;
 type Item = NonNullable<NonNullable<NonNullable<NonNullable<GetBoardItemsPageQuery['boards']>[0]>['items_page']>['items'][0]>;
 type SubItem = NonNullable<NonNullable<Item['subitems']>[0]>;
 
+type GetBoardItemsPageResult = {
+  board: {
+      id?: string;
+      name?: string;
+  };
+  items: GetBoardItemsPageResultItem[];
+  pagination: {
+      has_more: boolean;
+      nextCursor: string | null;
+      count: number;
+  };
+}
+
+type GetBoardItemsPageResultItem = {
+  id: string;
+  name: string;
+  created_at: any;
+  updated_at: any;
+  column_values?: Record<string, any>;
+  subitems?: GetBoardItemsPageResultItem[];
+}
+
 export const getBoardItemsPageToolSchema = {
   boardId: z.number().describe('The id of the board to get items from'),
   itemIds: z.array(z.number()).optional().describe('The ids of the items to get. The count of items should be less than 100.'),
@@ -99,7 +121,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
     const variables: GetBoardItemsPageQueryVariables = {
       boardId: input.boardId.toString(),
       limit: input.limit,
-      cursor: input.cursor ? input.cursor : undefined, // Prevent empty string from breaking the request
+      cursor: input.cursor || undefined, // Prevent empty string from breaking the request
       includeColumns: input.includeColumns,
       columnIds: input.columnIds,
       includeSubItems: input.includeSubItems
@@ -133,7 +155,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
     };
   }
 
-  private mapResult(response: GetBoardItemsPageQuery, input: ToolInputType<GetBoardItemsPageToolInput>): any {
+  private mapResult(response: GetBoardItemsPageQuery, input: ToolInputType<GetBoardItemsPageToolInput>): GetBoardItemsPageResult {
     const board = response.boards?.[0];
     const itemsPage = board?.items_page;
     const items = itemsPage?.items || [];
@@ -154,8 +176,8 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
     return result;
   }
 
-  private mapItem(item: Item | SubItem, input: ToolInputType<GetBoardItemsPageToolInput>) {
-    const itemResult: any = {
+  private mapItem(item: Item | SubItem, input: ToolInputType<GetBoardItemsPageToolInput>): GetBoardItemsPageResultItem {
+    const itemResult: GetBoardItemsPageResultItem = {
       id: item.id,
       name: item.name,
       created_at: item.created_at,
@@ -164,20 +186,9 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
 
     if (input.includeColumns && item.column_values) {
       itemResult.column_values = {};
-      item.column_values.forEach((cv: any) => {
-        if (cv.value) {
-          try {
-            // Try to parse the value as JSON, fallback to raw value
-            itemResult.column_values[cv.id] = JSON.parse(cv.value);
-          } catch {
-            // If not valid JSON, use the raw value
-            itemResult.column_values[cv.id] = cv.value;
-          }
-        } else {
-          // If no value, use the text or null
-          itemResult.column_values[cv.id] = cv.text || null;
-        }
-      });
+      for(const cv of item.column_values) {
+        itemResult.column_values[cv.id] = this.getColumnValueData(cv);
+      }
     }
 
     if(input.includeSubItems && 'subitems' in item && item.subitems) {
@@ -186,6 +197,18 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
 
     return itemResult;
   }
+
+  private getColumnValueData(cv: any): any {  
+    if (!cv.value) {  
+      return cv.text || null;  
+    }  
+  
+    try {  
+      return JSON.parse(cv.value);  
+    } catch {  
+      return cv.value  
+    }  
+  }  
 
   private async getItemIdsFromSmartSearchAsync(input: ToolInputType<GetBoardItemsPageToolInput>): Promise<number[]> {
     const smartSearchVariables: SmartSearchBoardItemIdsQueryVariables = {
