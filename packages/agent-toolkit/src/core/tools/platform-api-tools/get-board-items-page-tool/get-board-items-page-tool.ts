@@ -4,6 +4,9 @@ import { GetBoardItemsPageQuery, GetBoardItemsPageQueryVariables, ItemsOrderByDi
 import { getBoardItemsPage, smartSearchGetBoardItemIds } from './get-board-items-page-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+import { ClientError } from '@mondaydotcomorg/api';
+
+const ERROR_CODE_SMART_SEARCH_DISABLED = 'LIVE_INDEXING_NOT_ENABLED_FOR_ACCOUNT';
 
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 500;
@@ -119,11 +122,14 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
             content: `No items found matching the specified searchTerm`,
           };
         }
-      } catch {
-        this.parseAndAssignJsonField(input, 'filters', 'filtersStringified');
-        input.filters = this.rebuildFiltersWithManualSearch(input.searchTerm, input.filters);
+      } catch(error) {
+        if(error instanceof ClientError && error.response.errors?.some(e => e.extensions.code === ERROR_CODE_SMART_SEARCH_DISABLED)) {
+          this.parseAndAssignJsonField(input, 'filters', 'filtersStringified');
+          input.filters = this.rebuildFiltersWithManualSearch(input.searchTerm, input.filters);
+        } else {
+          throw error;
+        }  
       }
-      
     }
 
     const variables: GetBoardItemsPageQueryVariables = {
@@ -240,8 +246,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
     const itemIdsFromSmartSearch = smartSearchRes.search_items?.results?.map(result => Number(result.data.id)) ?? [];
 
     if(itemIdsFromSmartSearch.length === 0) {
-      // TODO: Refactor this once search team implements exception throwing when tool is not enabled
-      throw new Error('No items found for search term or new search is not enabled for this account');
+      return []
     }
 
     const initialItemIds = input.itemIds ?? [];

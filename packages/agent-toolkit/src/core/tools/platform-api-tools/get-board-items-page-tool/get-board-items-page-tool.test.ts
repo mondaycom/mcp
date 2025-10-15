@@ -3,6 +3,7 @@ import { callToolByNameAsync, callToolByNameRawAsync, createMockApiClient } from
 import { GetBoardItemsPageTool, GetBoardItemsPageToolInput, getBoardItemsPageToolSchema } from './get-board-items-page-tool';
 import { z, ZodTypeAny } from 'zod';
 import { GetBoardItemsPageQuery, ItemsOrderByDirection, ItemsQueryRuleOperator } from 'src/monday-graphql';
+import { ClientError } from '@mondaydotcomorg/api';
 
 
 export type inputType = z.objectInputType<GetBoardItemsPageToolInput, ZodTypeAny>;
@@ -341,26 +342,35 @@ describe('GetBoardItemsPageTool', () => {
       expect(getBoardItemsPageCall[1].queryParams.ids).toEqual(expectedIds.map(id => id.toString()));
     });
 
-    it('should build manual name filter in queryParams.rules if smart search returns no itemIds', async () => {
+    it('should build manual name filter in queryParams.rules when smart search throws LIVE_INDEXING_NOT_ENABLED_FOR_ACCOUNT error', async () => {
       // Arrange
-      const smartSearchResults = {
-        search_items: {
-          results: []
-        }
-      };
+      const smartSearchDisabledError: any = new ClientError(
+        {
+          status: 200,
+          errors: [
+            {
+              message: 'Live indexing not enabled for account',
+              extensions: {
+                code: 'LIVE_INDEXING_NOT_ENABLED_FOR_ACCOUNT'
+              }
+            }
+          ]
+        } as any,
+        { query: 'test', variables: {}, status: 200 } as any,
+      );
 
-      // Mock the smart search request
+      // Mock the smart search request to throw the specific error
       jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string, variables: any) => {
         if (query.includes('query SmartSearchBoardItemIds')) {
-          return Promise.resolve(smartSearchResults);
+          return Promise.reject(smartSearchDisabledError);
         }
-        // For the main getBoardItemsPage query, just return a dummy response
+        // For the main getBoardItemsPage query, return a successful response
         return Promise.resolve(successfulResponseWithItems);
       });
 
       const args: inputType = {
         boardId: 123456789,
-        searchTerm: 'no results'
+        searchTerm: 'test search'
       };
 
       await callToolByNameAsync('get_board_items_page', args);
@@ -376,9 +386,45 @@ describe('GetBoardItemsPageTool', () => {
           (rule: any) =>
             rule.column_id === 'name' &&
             rule.operator === ItemsQueryRuleOperator.ContainsText &&
-            rule.compare_value === 'no results'
+            rule.compare_value === 'test search'
         )
       ).toBe(true);
+    });
+
+    it('should re-throw error when smart search throws error with different code', async () => {
+      // Arrange
+      const otherError = new ClientError(
+        {
+          status: 200,
+          errors: [
+            {
+              message: 'Some other error',
+              extensions: {
+                code: 'DIFFERENT_ERROR_CODE'
+              }
+            }
+          ]
+        } as any,
+        { query: 'test', variables: {}, status: 200 } as any,
+      );
+
+      // Mock the smart search request to throw a different error
+      jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string, variables: any) => {
+        if (query.includes('query SmartSearchBoardItemIds')) {
+          return Promise.reject(otherError);
+        }
+        return Promise.resolve(successfulResponseWithItems);
+      });
+
+      const args: inputType = {
+        boardId: 123456789,
+        searchTerm: 'test search'
+      };
+
+      // Should re-throw the error (which gets caught by MCP and returned as an error response)
+      const result = await callToolByNameRawAsync('get_board_items_page', args);
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('DIFFERENT_ERROR_CODE');
     });
   });
 
