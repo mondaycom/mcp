@@ -97,21 +97,21 @@ USAGE EXAMPLES:
       return { content: `Required parameters were not provided for location parameter of ${input.location}` };
     }
     
-    const discriminatedInput = inputParsingResult.data;
+    const parsedInput = inputParsingResult.data;
 
     try {
       let docId: string | undefined;
       let docUrl: string | undefined;
 
-      if (discriminatedInput.type === DocType.enum.workspace) {
+      if (parsedInput.type === DocType.enum.workspace) {
         // Workspace document creation
         const variables: CreateDocMutationVariables = {
           location: {
             workspace: {
-              workspace_id: discriminatedInput.workspace_id.toString(),
+              workspace_id: parsedInput.workspace_id.toString(),
               name: input.doc_name,
-              kind: discriminatedInput.doc_kind || BoardKind.Public,
-              folder_id: discriminatedInput.folder_id?.toString(),
+              kind: parsedInput.doc_kind || BoardKind.Public,
+              folder_id: parsedInput.folder_id?.toString(),
             },
           },
         };
@@ -119,23 +119,23 @@ USAGE EXAMPLES:
         const res: CreateDocMutation = await this.mondayApi.request(createDocMutation, variables);
         docId = res?.create_doc?.id ?? undefined;
         docUrl = res?.create_doc?.url ?? undefined;
-      } else if (discriminatedInput.type === DocType.enum.item) {
+      } else if (parsedInput.type === DocType.enum.item) {
         // Item-attached document creation
         // Step 1: Resolve the board id and existing doc columns
         const variables: GetItemBoardQueryVariables = {
-          itemId: discriminatedInput.item_id.toString(),
+          itemId: parsedInput.item_id.toString(),
         };
         const itemRes: GetItemBoardQuery = await this.mondayApi.request(getItemBoard, variables);
 
         const item = itemRes.items?.[0];
         if (!item) {
-          return { content: `Error: Item with id ${discriminatedInput.item_id} not found.` };
+          return { content: `Error: Item with id ${parsedInput.item_id} not found.` };
         }
 
         const boardId = item.board?.id;
         const existingDocColumn = item.board?.columns?.find((c) => c && c.type === ColumnType.Doc);
 
-        let columnId = discriminatedInput.column_id;
+        let columnId = parsedInput.column_id;
 
         if (!columnId) {
           if (existingDocColumn) {
@@ -160,7 +160,7 @@ USAGE EXAMPLES:
         const itemVariables: CreateDocMutationVariables = {
           location: {
             board: {
-              item_id: discriminatedInput.item_id.toString(),
+              item_id: parsedInput.item_id.toString(),
               column_id: columnId,
             },
           },
