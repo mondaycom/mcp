@@ -1,26 +1,27 @@
-import { GetBoardInfoQuery } from '../../../../monday-graphql/generated/graphql';
+import { GetBoardInfoJustColumnsQuery, GetBoardInfoQuery } from '../../../../monday-graphql/generated/graphql';
 
 export type BoardInfoData = NonNullable<NonNullable<GetBoardInfoQuery['boards']>[0]>;
+export type BoardInfoJustColumnsData = NonNullable<NonNullable<GetBoardInfoJustColumnsQuery['boards']>[0]>;
 
-export const formatBoardInfo = (board: BoardInfoData): string => {
-  const sections: string[] = [];
+export const formatBoardInfo = (board: BoardInfoData, subItemsBoard: BoardInfoJustColumnsData | null): string => {
+  let sections: string[] = [];
 
   // Basic Information
   sections.push(`# Board Information\n`);
-  sections.push(`**Name:** ${board?.name || 'N/A'}`);
-  sections.push(`**ID:** ${board?.id || 'N/A'}`);
-  sections.push(`**Description:** ${board?.description || 'No description'}`);
-  sections.push(`**State:** ${board?.state || 'N/A'}`);
-  sections.push(`**Kind:** ${board?.board_kind || 'N/A'}`);
-  sections.push(`**URL:** ${board?.url || 'N/A'}`);
-  sections.push(`**Updated:** ${board?.updated_at || 'N/A'}`);
-  sections.push(`**Item Terminology:** ${board?.item_terminology || 'items'}`);
-  sections.push(`**Items Count:** ${board?.items_count || 0}`);
-  sections.push(`**Items Limit:** ${board?.items_limit || 'No limit'}`);
-  sections.push(`**Board Folder ID:** ${board?.board_folder_id || 'None'}`);
+  sections.push(`**Name:** ${board.name || 'N/A'}`);
+  sections.push(`**ID:** ${board.id || 'N/A'}`);
+  sections.push(`**Description:** ${board.description || 'No description'}`);
+  sections.push(`**State:** ${board.state || 'N/A'}`);
+  sections.push(`**Kind:** ${board.board_kind || 'N/A'}`);
+  sections.push(`**URL:** ${board.url || 'N/A'}`);
+  sections.push(`**Updated:** ${board.updated_at || 'N/A'}`);
+  sections.push(`**Item Terminology:** ${board.item_terminology || 'items'}`);
+  sections.push(`**Items Count:** ${board.items_count || 0}`);
+  sections.push(`**Items Limit:** ${board.items_limit || 'No limit'}`);
+  sections.push(`**Board Folder ID:** ${board.board_folder_id || 'None'}`);
 
   // Creator Information
-  if (board?.creator) {
+  if (board.creator) {
     sections.push(`\n## Creator`);
     sections.push(`**Name:** ${board.creator.name || 'N/A'}`);
     sections.push(`**ID:** ${board.creator.id || 'N/A'}`);
@@ -28,7 +29,7 @@ export const formatBoardInfo = (board: BoardInfoData): string => {
   }
 
   // Workspace Information
-  if (board?.workspace) {
+  if (board.workspace) {
     sections.push(`\n## Workspace`);
     sections.push(`**Name:** ${board.workspace.name || 'N/A'}`);
     sections.push(`**ID:** ${board.workspace.id || 'N/A'}`);
@@ -37,7 +38,7 @@ export const formatBoardInfo = (board: BoardInfoData): string => {
   }
 
   // Owners
-  if (board?.owners && board.owners.length > 0) {
+  if (board.owners && board.owners.length > 0) {
     sections.push(`\n## Board Owners`);
     board.owners.forEach((owner, index: number) => {
       if (owner) {
@@ -47,7 +48,7 @@ export const formatBoardInfo = (board: BoardInfoData): string => {
   }
 
   // Team Owners
-  if (board?.team_owners && board.team_owners.length > 0) {
+  if (board.team_owners && board.team_owners.length > 0) {
     sections.push(`\n## Team Owners`);
     board.team_owners.forEach((team, index: number) => {
       if (team) {
@@ -57,7 +58,7 @@ export const formatBoardInfo = (board: BoardInfoData): string => {
   }
 
   // Groups
-  if (board?.groups && board.groups.length > 0) {
+  if (board.groups && board.groups.length > 0) {
     sections.push(`\n## Groups`);
     board.groups.forEach((group, index: number) => {
       if (group) {
@@ -67,13 +68,18 @@ export const formatBoardInfo = (board: BoardInfoData): string => {
   }
 
   // Top Group
-  if (board?.top_group) {
+  if (board.top_group) {
     sections.push(`\n## Top Group`);
     sections.push(`**ID:** ${board.top_group.id || 'N/A'}`);
   }
 
   // Columns
-  if (board?.columns && board.columns.length > 0) {
+  sections = sections.concat(generateColumnsSection(board, false));
+  if(subItemsBoard) {
+    sections = sections.concat(generateColumnsSection(subItemsBoard, true));
+  }
+  
+  if (board.columns && board.columns.length > 0) {
     sections.push(`\n## Columns`);
     board.columns.forEach((column, index: number) => {
       if (column) {
@@ -82,15 +88,15 @@ export const formatBoardInfo = (board: BoardInfoData): string => {
         if (column.description) {
           sections.push(`   - **Description:** ${column.description}`);
         }
-        if (column.settings_str) {
-          sections.push(`   - **Settings:** ${column.settings_str}`);
+        if (column.settings) {
+          sections.push(`   - **Settings:** ${JSON.stringify(column.settings)}`);
         }
       }
     });
   }
 
   // Tags
-  if (board?.tags && board.tags.length > 0) {
+  if (board.tags && board.tags.length > 0) {
     sections.push(`\n## Tags`);
     board.tags.forEach((tag, index: number) => {
       if (tag) {
@@ -100,7 +106,7 @@ export const formatBoardInfo = (board: BoardInfoData): string => {
   }
 
   // Permissions
-  if (board?.permissions) {
+  if (board.permissions) {
     sections.push(`\n## Permissions`);
     sections.push(`${board.permissions}`);
   }
@@ -204,12 +210,34 @@ EXAMPLES:
   - "team-456" - when searching for specific team with id 456
   - empty array when using is_empty, is_not_empty operators
 EXAMPLES: 
+  ❌ Wrong: {"columnId": "column_id", "compareValue": ["person—123"], "operator": "any_of"} // Using long hyphen '—' instead of short hyphen '-'
   ✅ Correct: {"columnId": "column_id", "compareValue": [], "operator": "is_empty"} // using empty array with is_empty operator
   ✅ Correct: {"columnId": "column_id", "compareValue": ["person-80120403"], "operator": "any_of"} // using person prefix
   ✅ Correct: {"columnId": "column_id", "compareValue": ["team-9000"], "operator": "any_of"} // using team prefix
   ✅ Correct: {"columnId": "column_id", "compareValue": ["assigned_to_me"], "operator": "any_of"} // using assigned_to_me value
   ❌ Wrong: {"columnId": "column_id", "compareValue": ["80120403"], "operator": "is_empty"} // using id with is_empty operator
   ❌ Wrong: {"columnId": "column_id", "compareValue": ["80120403"], "operator": "any_of"} // not using person or team prefix`,
+}
+
+const generateColumnsSection = (board: BoardInfoData | BoardInfoJustColumnsData, isSubItemBoard: boolean) => {
+  const columnSections: string[] = [];
+  if (board.columns && board.columns.length > 0) {
+    columnSections.push(`\n## ${isSubItemBoard ? 'Sub Items Columns' : 'Columns'}`);
+    board.columns.forEach((column, index: number) => {
+      if (column) {
+        columnSections.push(`${index + 1}. **${column.title || 'Untitled'}** (${column.type || 'unknown'})`);
+        columnSections.push(`   - **ID:** ${column.id || 'N/A'}`);
+        if (column.description) {
+          columnSections.push(`   - **Description:** ${column.description}`);
+        }
+        if (column.settings) {
+          columnSections.push(`   - **Settings:** ${JSON.stringify(column.settings)}`);
+        }
+      }
+    });
+  }
+
+  return columnSections;
 }
 
 const getColumnFilteringGuidelines = (columns: BaseColumnInfo[]) => {
@@ -242,5 +270,7 @@ Specific operators expect specific compareValue types:
 ${Object.entries(columnIdsByType).map(([type, columnIds]) => {
   return `- Column Type: ${type} (Column IDs: ${columnIds.join(', ')}) - ${filteringGuidelinesByColumnType[type]}`;
 }).join('\n\n')}
+
+## [IMPORTANT] Sub Items Columns MUST NOT BE USED FOR FILTERING.
   `
 };

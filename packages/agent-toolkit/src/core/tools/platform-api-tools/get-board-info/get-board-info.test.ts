@@ -45,14 +45,14 @@ describe('formatBoardInfo - Simple Tests', () => {
           title: 'Task Name',
           description: 'The name of the task',
           type: ColumnType.Text,
-          settings_str: '{"width": 200}',
+          settings: { width: 200 },
         },
         {
           id: 'col_2',
           title: 'Status',
           description: undefined,
           type: ColumnType.Status,
-          settings_str: '{"labels": ["Not Started", "In Progress", "Done"]}',
+          settings: {labels: ["Not Started", "In Progress", "Done"]},
         },
       ],
       tags: [
@@ -61,7 +61,7 @@ describe('formatBoardInfo - Simple Tests', () => {
       ],
     } as BoardInfoData;
 
-    const result = formatBoardInfo(mockBoard);
+    const result = formatBoardInfo(mockBoard, null);
 
     // Test basic information section
     expect(result).toContain('# Board Information');
@@ -113,11 +113,13 @@ describe('formatBoardInfo - Simple Tests', () => {
     expect(result).toContain('1. **Task Name** (text)');
     expect(result).toContain('   - **ID:** col_1');
     expect(result).toContain('   - **Description:** The name of the task');
-    expect(result).toContain('   - **Settings:** {"width": 200}');
+    expect(result).toContain('   - **Settings:** {"width":200}');
+
+    expect(result).not.toContain('## Sub Items Columns');
 
     expect(result).toContain('2. **Status** (status)');
     expect(result).toContain('   - **ID:** col_2');
-    expect(result).toContain('   - **Settings:** {"labels": ["Not Started", "In Progress", "Done"]}');
+    expect(result).toContain('   - **Settings:** {"labels":["Not Started","In Progress","Done"]}');
 
     // Test tags section
     expect(result).toContain('## Tags');
@@ -153,7 +155,7 @@ describe('formatBoardInfo - Simple Tests', () => {
       tags: undefined,
     } as any;
 
-    const result = formatBoardInfo(minimalBoard);
+    const result = formatBoardInfo(minimalBoard, null);
 
     expect(result).toContain('# Board Information');
     expect(result).toContain('**Name:** Minimal Board');
@@ -201,11 +203,11 @@ describe('formatBoardInfo - Simple Tests', () => {
       team_owners: [{ id: '1', name: 'Team', picture_url: 'pic.jpg' }],
       groups: [{ id: '1', title: 'Group' }],
       top_group: { id: '1' },
-      columns: [{ id: '1', title: 'Column', description: 'Test', type: ColumnType.Text, settings_str: '{}' }],
+      columns: [{ id: '1', title: 'Column', description: 'Test', type: ColumnType.Text, settings: {} }],
       tags: [{ id: '1', name: 'tag' }],
     } as BoardInfoData;
 
-    const result = formatBoardInfo(board);
+    const result = formatBoardInfo(board, null);
 
     const sections = [
       '# Board Information',
@@ -226,5 +228,93 @@ describe('formatBoardInfo - Simple Tests', () => {
       expect(currentIndex).toBeGreaterThan(lastIndex);
       lastIndex = currentIndex;
     });
+  });
+
+  it('should include sub items columns when subItemBoard is provided', () => {
+    const mockBoard = {
+      id: '123456789',
+      name: 'Main Board',
+      description: 'Main board with items',
+      state: State.Active,
+      board_kind: BoardKind.Public,
+      permissions: 'write',
+      url: 'https://monday.com/boards/123456789',
+      updated_at: '2024-01-15T10:30:00Z',
+      item_terminology: 'tasks',
+      items_count: 25,
+      items_limit: 100,
+      board_folder_id: 'folder_123',
+      creator: undefined,
+      workspace: undefined,
+      owners: [],
+      team_owners: undefined,
+      groups: [],
+      top_group: undefined,
+      columns: [
+        {
+          id: 'main_col_1',
+          title: 'Main Task Name',
+          description: 'The name of the main task',
+          type: ColumnType.Text,
+          settings: { width: 200 },
+        },
+        {
+          id: 'main_col_2',
+          title: 'Main Status',
+          description: undefined,
+          type: ColumnType.Status,
+          settings: { labels: ['Not Started', 'In Progress', 'Done'] },
+        },
+      ],
+      tags: undefined,
+    } as any;
+
+    const mockSubItemBoard = {
+      id: '987654321',
+      name: 'Sub Items Board',
+      columns: [
+        {
+          id: 'sub_col_1',
+          title: 'Sub Task Name',
+          description: 'The name of the sub task',
+          type: ColumnType.Text,
+          settings: { width: 150 },
+        },
+        {
+          id: 'sub_col_2',
+          title: 'Sub Priority',
+          description: undefined,
+          type: ColumnType.Status,
+          settings: { labels: ['Low', 'Medium', 'High'] },
+        },
+      ],
+    } as any;
+
+    const result = formatBoardInfo(mockBoard, mockSubItemBoard);
+
+    // Test that main columns section exists
+    expect(result).toContain('## Columns');
+    expect(result).toContain('1. **Main Task Name** (text)');
+    expect(result).toContain('   - **ID:** main_col_1');
+    expect(result).toContain('   - **Description:** The name of the main task');
+    expect(result).toContain('   - **Settings:** {"width":200}');
+    expect(result).toContain('2. **Main Status** (status)');
+    expect(result).toContain('   - **ID:** main_col_2');
+    expect(result).toContain('   - **Settings:** {"labels":["Not Started","In Progress","Done"]}');
+
+    // Test that sub items columns section exists
+    expect(result).toContain('## Sub Items Columns');
+    expect(result).toContain('1. **Sub Task Name** (text)');
+    expect(result).toContain('   - **ID:** sub_col_1');
+    expect(result).toContain('   - **Description:** The name of the sub task');
+    expect(result).toContain('   - **Settings:** {"width":150}');
+    expect(result).toContain('2. **Sub Priority** (status)');
+    expect(result).toContain('   - **ID:** sub_col_2');
+    expect(result).toContain('   - **Settings:** {"labels":["Low","Medium","High"]}');
+
+    // Test that both sections appear in order (Columns before Sub Items Columns)
+    const columnsIndex = result.indexOf('## Columns');
+    const subItemsColumnsIndex = result.indexOf('## Sub Items Columns');
+    expect(columnsIndex).toBeLessThan(subItemsColumnsIndex);
   });
 });

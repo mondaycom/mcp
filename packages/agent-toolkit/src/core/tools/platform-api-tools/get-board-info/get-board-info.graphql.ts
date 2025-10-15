@@ -43,7 +43,7 @@ export const getBoardInfo = gql`
         title
         description
         type
-        settings_str
+        settings
       }
 
       # All Groups with Metadata
@@ -75,6 +75,21 @@ export const getBoardInfo = gql`
       top_group {
         id
       }
+    }
+  }
+`;
+
+export const getBoardInfoJustColumns = gql`
+  query GetBoardInfoJustColumns($boardId: ID!) {
+    boards(ids: [$boardId]) {
+      columns {
+        id
+        title
+        description
+        type
+        settings
+      }
+
     }
   }
 `;

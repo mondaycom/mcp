@@ -2,7 +2,7 @@ import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameAsync, callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
 import { GetBoardItemsPageTool, GetBoardItemsPageToolInput, getBoardItemsPageToolSchema } from './get-board-items-page-tool';
 import { z, ZodTypeAny } from 'zod';
-import { ItemsOrderByDirection, ItemsQueryRuleOperator } from 'src/monday-graphql';
+import { GetBoardItemsPageQuery, ItemsOrderByDirection, ItemsQueryRuleOperator } from 'src/monday-graphql';
 
 
 export type inputType = z.objectInputType<GetBoardItemsPageToolInput, ZodTypeAny>;
@@ -17,7 +17,7 @@ describe('GetBoardItemsPageTool', () => {
         .mockReturnValue(mocks.mockApiClient);
   });
 
-  const successfulResponseWithItems = {
+  const successfulResponseWithItems: GetBoardItemsPageQuery = {
     boards: [
       {
         id: '123456789',
@@ -32,6 +32,20 @@ describe('GetBoardItemsPageTool', () => {
               column_values: [
                 { id: 'status', text: 'In Progress', value: '{"label":{"text":"In Progress"}}' },
                 { id: 'priority', text: 'High', value: '{"label":{"text":"High"}}' }
+              ],
+              subitems: [
+                {
+                  id: 'subitem1',
+                  name: 'Subitem 1',
+                  created_at: '2024-01-15T10:30:00Z',
+                  updated_at: '2024-01-16T14:20:00Z'
+                },
+                {
+                  id: 'subitem2',
+                  name: 'Subitem 2',
+                  created_at: '2024-01-15T10:30:00Z',
+                  updated_at: '2024-01-16T14:20:00Z'
+                }
               ]
             },
             {
@@ -51,7 +65,7 @@ describe('GetBoardItemsPageTool', () => {
     ]
   };
 
-  const successfulResponseWithoutColumns = {
+  const successfulResponseWithoutColumns: GetBoardItemsPageQuery = {
     boards: [
       {
         id: '123456789',
@@ -121,7 +135,8 @@ describe('GetBoardItemsPageTool', () => {
           boardId: '123456789',
           limit: 25,
           cursor: undefined,
-          includeColumns: false
+          includeColumns: false,
+          includeSubItems: false
         }
       );
     });
@@ -140,7 +155,8 @@ describe('GetBoardItemsPageTool', () => {
           boardId: '123456789',
           limit: 50,
           cursor: undefined,
-          includeColumns: false
+          includeColumns: false,
+          includeSubItems: false
         }
       );
     });
@@ -160,7 +176,8 @@ describe('GetBoardItemsPageTool', () => {
           boardId: '123456789',
           limit: 25,
           cursor: 'previous_cursor_456',
-          includeColumns: false
+          includeColumns: false,
+          includeSubItems: false
         }
       );
     });
@@ -197,7 +214,8 @@ describe('GetBoardItemsPageTool', () => {
           limit: 25,
           cursor: 'previous_cursor_456',
           includeColumns: false,
-          queryParams: undefined
+          queryParams: undefined,
+          includeSubItems: false
         }
       );
     });
@@ -231,6 +249,7 @@ describe('GetBoardItemsPageTool', () => {
           cursor: undefined,
           includeColumns: false,
           columnIds: undefined,
+          includeSubItems: false,
           queryParams: {
             ids: undefined,
             operator: 'and',
@@ -322,7 +341,7 @@ describe('GetBoardItemsPageTool', () => {
       expect(getBoardItemsPageCall[1].queryParams.ids).toEqual(expectedIds.map(id => id.toString()));
     });
 
-    it('should return "No items found matching the specified searchTerm" if smart search returns no itemIds', async () => {
+    it('should build manual name filter in queryParams.rules if smart search returns no itemIds', async () => {
       // Arrange
       const smartSearchResults = {
         search_items: {
@@ -344,13 +363,22 @@ describe('GetBoardItemsPageTool', () => {
         searchTerm: 'no results'
       };
 
-      const result = await callToolByNameRawAsync('get_board_items_page', args);
-      expect(result.content[0].text).toContain('No items found matching the specified searchTerm');
+      await callToolByNameAsync('get_board_items_page', args);
 
-      // Should not call GetBoardItemsPage if no items found
+      // Should call GetBoardItemsPage with manual rule on "name" containing searchTerm
       const calls = mocks.getMockRequest().mock.calls;
       const getBoardItemsPageCall = calls.find(call => call[0].includes('query GetBoardItemsPage'));
-      expect(getBoardItemsPageCall).toBeUndefined();
+      expect(getBoardItemsPageCall).toBeDefined();
+      const queryParams = getBoardItemsPageCall[1].queryParams;
+      expect(Array.isArray(queryParams.rules)).toBe(true);
+      expect(
+        queryParams.rules.some(
+          (rule: any) =>
+            rule.column_id === 'name' &&
+            rule.operator === ItemsQueryRuleOperator.ContainsText &&
+            rule.compare_value === 'no results'
+        )
+      ).toBe(true);
     });
   });
 
@@ -389,6 +417,7 @@ describe('GetBoardItemsPageTool', () => {
           cursor: undefined,
           includeColumns: false,
           columnIds: undefined,
+          includeSubItems: false,
           queryParams: {
             ids: undefined,
             operator: 'and',
@@ -451,6 +480,7 @@ describe('GetBoardItemsPageTool', () => {
           limit: 25,
           cursor: undefined,
           includeColumns: false,
+          includeSubItems: false,
           columnIds: undefined,
           queryParams: {
             ids: undefined,
@@ -562,7 +592,8 @@ describe('GetBoardItemsPageTool', () => {
           boardId: '123456789',
           limit: 25,
           cursor: undefined,
-          includeColumns: true
+          includeColumns: true,
+          includeSubItems: false
         }
       );
     });
@@ -690,6 +721,93 @@ describe('GetBoardItemsPageTool', () => {
       expect(tool.annotations.readOnlyHint).toBe(true);
       expect(tool.annotations.destructiveHint).toBe(false);
       expect(tool.annotations.idempotentHint).toBe(true);
+    });
+  });
+
+  describe('SubItems Functionality', () => {
+    // Parameterized test similar to NUnit's [TestCase(true)], [TestCase(false)]
+    it.each([
+      [true],
+      [false]
+    ])('should only include subitems when includeSubItems is specified, test for includeSubItems = %s', async (includeSubItems: boolean) => {
+      mocks.setResponse(successfulResponseWithItems);
+
+      const args: inputType = {
+        boardId: 123456789,
+        includeSubItems: includeSubItems
+      };
+      const parsedResult = await callToolByNameAsync('get_board_items_page', args);
+
+      expect(parsedResult.items).toHaveLength(2);
+      
+      if (includeSubItems) {
+        // When includeSubItems is true, subitems should be present
+        expect(parsedResult.items[0].subitems).toBeDefined();
+        expect(parsedResult.items[0].subitems).toHaveLength(2);
+        expect(parsedResult.items[0].subitems[0]).toEqual({
+          id: 'subitem1',
+          name: 'Subitem 1',
+          created_at: '2024-01-15T10:30:00Z',
+          updated_at: '2024-01-16T14:20:00Z'
+        });
+        expect(parsedResult.items[0].subitems[1]).toEqual({
+          id: 'subitem2',
+          name: 'Subitem 2',
+          created_at: '2024-01-15T10:30:00Z',
+          updated_at: '2024-01-16T14:20:00Z'
+        });
+        // Item2 has no subitems in the response
+        expect(parsedResult.items[1].subitems).toBeUndefined();
+      } else {
+        // When includeSubItems is false, subitems should not be present
+        expect(parsedResult.items[0].subitems).toBeUndefined();
+        expect(parsedResult.items[1].subitems).toBeUndefined();
+      }
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query GetBoardItemsPage'),
+        {
+          boardId: '123456789',
+          limit: 25,
+          cursor: undefined,
+          includeColumns: false,
+          includeSubItems: includeSubItems
+        }
+      );
+    });
+
+    it('should only return 1 subitem when subItemLimit is 1', async () => {
+      mocks.setResponse(successfulResponseWithItems);
+
+      const args: inputType = {
+        boardId: 123456789,
+        includeSubItems: true,
+        subItemLimit: 1
+      };
+      const parsedResult = await callToolByNameAsync('get_board_items_page', args);
+
+      expect(parsedResult.items).toHaveLength(2);
+      
+      // First item has subitems - should only return 1
+      expect(parsedResult.items[0].subitems).toBeDefined();
+      expect(parsedResult.items[0].subitems).toHaveLength(1);
+      expect(parsedResult.items[0].subitems[0]).toEqual({
+        id: 'subitem1',
+        name: 'Subitem 1',
+        created_at: '2024-01-15T10:30:00Z',
+        updated_at: '2024-01-16T14:20:00Z'
+      });
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query GetBoardItemsPage'),
+        {
+          boardId: '123456789',
+          limit: 25,
+          cursor: undefined,
+          includeColumns: false,
+          includeSubItems: true
+        }
+      );
     });
   });
 });
