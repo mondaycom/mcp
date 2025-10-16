@@ -1,20 +1,34 @@
 import { ToolInputType } from "src/core/tool";
 import { ZodRawShape, ZodSchema } from "zod";
 
+export const STRINGIFIED_SUFFIX = 'Stringified' as const;
+
+/**
+ * Extract keys from an object that have a corresponding "Stringified" version.
+ * For example, if the object has both `form` and `formStringified`, then 'form' is extracted.
+ */
+type KeysWithStringifiedVersion<T> = {
+  [K in keyof T]: K extends string 
+    ? `${K}${typeof STRINGIFIED_SUFFIX}` extends keyof T 
+      ? K 
+      : never
+    : never
+}[keyof T];
+
 /**
  * Parses a stringified JSON field and assigns it to another field in the input object.
  * This is useful for handling Microsoft Copilot's stringified parameters.
  * 
  * @param input - The input object containing the fields
- * @param jsonKey - The key where the parsed JSON should be assigned (must be a valid key of input)
- * @param stringifiedJsonKey - The key containing the stringified JSON (must be a valid key of input)
+ * @param jsonKey - The key where the parsed JSON should be assigned (must have a corresponding stringified version)
+ * @param schema - The Zod schema to validate the parsed JSON against
  * 
- * Type safety: The generic parameter TInput is inferred from the input parameter,
- * ensuring that jsonKey and stringifiedJsonKey are actual keys of the input object.
+ * Type safety: Only keys that have a corresponding `${key}Stringified` property can be passed as jsonKey.
+ * For example, if input has `form` and `formStringified`, you can pass 'form' as jsonKey.
  */
 export const fallbackToStringifiedVersionIfNull = <
   TInput extends ToolInputType<ZodRawShape>,
-  K extends keyof TInput = keyof TInput
+  K extends KeysWithStringifiedVersion<TInput> = KeysWithStringifiedVersion<TInput>
 >(
   input: TInput,
   jsonKey: K,
@@ -43,5 +57,3 @@ export const fallbackToStringifiedVersionIfNull = <
 
   (input as any)[jsonKey] = parseResult.data;
 };
-
-export const STRINGIFIED_SUFFIX = 'Stringified';

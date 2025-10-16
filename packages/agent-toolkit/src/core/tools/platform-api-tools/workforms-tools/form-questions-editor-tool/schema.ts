@@ -81,5 +81,5 @@ export const formQuestionsEditorToolSchema = {
   formToken: z.string().describe(GraphQLDescriptions.commonArgs.formToken),
   questionId: z.string().describe(GraphQLDescriptions.commonArgs.questionId).optional(),
   question: questionSchema.describe(GraphQLDescriptions.question.actions.question).optional(),
-  [`question${STRINGIFIED_SUFFIX}`]: z.string().optional().describe('**ONLY FOR MICROSOFT COPILOT**: The question object. Send this as a stringified JSON of "question" field. Read "question" field description for details how to use it.'),
+  questionStringified: z.string().optional().describe('**ONLY FOR MICROSOFT COPILOT**: The question object. Send this as a stringified JSON of "question" field. Read "question" field description for details how to use it.'),
 };
