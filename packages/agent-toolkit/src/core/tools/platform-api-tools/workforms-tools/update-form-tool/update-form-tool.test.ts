@@ -357,7 +357,7 @@ describe('UpdateFormTool', () => {
           value: 'email',
         };
 
-        const args: any = {
+        const args: inputType = {
           action: FormActions.createTag,
           formToken: 'token_123',
           tagStringified: JSON.stringify(tagObject),
@@ -394,7 +394,7 @@ describe('UpdateFormTool', () => {
           tag: {
             value: 'test_value',
             // name is missing
-          } as any,
+          }
         };
 
         const result = await callToolByNameRawAsync('update_form', args);
@@ -492,7 +492,7 @@ describe('UpdateFormTool', () => {
           id: 'tag_stringified',
         };
 
-        const args: any = {
+        const args: inputType = {
           action: FormActions.deleteTag,
           formToken: 'token_123',
           tagStringified: JSON.stringify(tagObject),
@@ -528,7 +528,7 @@ describe('UpdateFormTool', () => {
           formToken: 'token_123',
           tag: {
             // id is missing
-          } as any,
+          }
         };
 
         const result = await callToolByNameRawAsync('update_form', args);
@@ -645,7 +645,7 @@ describe('UpdateFormTool', () => {
           value: 'copilot_value',
         };
 
-        const args: any = {
+        const args: inputType = {
           action: FormActions.updateTag,
           formToken: 'token_123',
           tagStringified: JSON.stringify(tagObject),
@@ -683,7 +683,7 @@ describe('UpdateFormTool', () => {
           tag: {
             value: 'test_value',
             // id is missing
-          } as any,
+          },
         };
 
         const result = await callToolByNameRawAsync('update_form', args);
@@ -701,7 +701,7 @@ describe('UpdateFormTool', () => {
           tag: {
             id: 'tag_123',
             // value is missing
-          } as any,
+          }
         };
 
         const result = await callToolByNameRawAsync('update_form', args);
@@ -922,7 +922,7 @@ describe('UpdateFormTool', () => {
           },
         };
 
-        const args: any = {
+        const args: inputType = {
           action: FormActions.updateAppearance,
           formToken: 'token_123',
           formStringified: JSON.stringify(formObject),
@@ -1085,7 +1085,7 @@ describe('UpdateFormTool', () => {
           },
         };
 
-        const args: any = {
+        const args: inputType = {
           action: FormActions.updateAccessibility,
           formToken: 'token_123',
           formStringified: JSON.stringify(formObject),
@@ -1484,7 +1484,7 @@ describe('UpdateFormTool', () => {
           },
         };
 
-        const args: any = {
+        const args: inputType = {
           action: FormActions.updateFeatures,
           formToken: 'token_123',
           formStringified: JSON.stringify(formObject),
@@ -1660,7 +1660,7 @@ describe('UpdateFormTool', () => {
           ],
         };
 
-        const args: any = {
+        const args: inputType = {
           action: FormActions.updateQuestionOrder,
           formToken: 'token_123',
           formStringified: JSON.stringify(formObject),
@@ -1847,7 +1847,7 @@ describe('UpdateFormTool', () => {
           description: 'Copilot Description',
         };
 
-        const args: any = {
+        const args: inputType = {
           action: FormActions.updateFormHeader,
           formToken: 'token_123',
           formStringified: JSON.stringify(formObject),
@@ -1921,7 +1921,7 @@ describe('UpdateFormTool', () => {
 
   describe('Unknown Action', () => {
     it('should return error for unknown action', async () => {
-      const args: any = {
+      const args: Omit<inputType, 'action'> & { action: string } = {
         action: 'unknown_action',
         formToken: 'token_123',
       };
@@ -1967,7 +1967,7 @@ describe('UpdateFormTool', () => {
     it('should handle empty string formToken', async () => {
       mocks.setError('Invalid form token');
 
-      const args: any = {
+      const args: inputType = {
         action: FormActions.activate,
         formToken: '',
       };
@@ -1999,7 +1999,7 @@ describe('UpdateFormTool', () => {
       const args: inputType = {
         action: FormActions.createTag,
         formToken: 'token_123',
-        tag: {} as any,
+        tag: {},
       };
 
       const result = await callToolByNameRawAsync('update_form', args);

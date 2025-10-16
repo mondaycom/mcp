@@ -292,7 +292,7 @@ describe('FormQuestionsEditorTool', () => {
           title: 'Test Question',
         };
 
-        const args: any = {
+        const args: inputType = {
           action: FormQuestionActions.Create,
           formToken: 'form_token_123',
           questionStringified: JSON.stringify(questionObject),
@@ -329,7 +329,7 @@ describe('FormQuestionsEditorTool', () => {
           question: {
             type: FormQuestionType.ShortText,
             // title is missing
-          } as any,
+          },
         };
 
         const result = await callToolByNameRawAsync('form_questions_editor', args);
@@ -606,7 +606,7 @@ describe('FormQuestionsEditorTool', () => {
           title: 'Stringified Update',
         };
 
-        const args: any = {
+        const args: inputType = {
           action: FormQuestionActions.Update,
           formToken: 'form_token_123',
           questionId: 'question_stringified',
@@ -823,7 +823,7 @@ describe('FormQuestionsEditorTool', () => {
 
   describe('Unknown Action', () => {
     it('should return error for unknown action', async () => {
-      const args: any = {
+      const args: Omit<inputType, 'action'> & { action: string } = {
         action: 'unknown_action',
         formToken: 'form_token_123',
       };
@@ -1089,7 +1089,7 @@ describe('FormQuestionsEditorTool', () => {
     });
 
     it('should handle empty string formToken via schema validation', async () => {
-      const args: any = {
+      const args: inputType = {
         action: FormQuestionActions.Create,
         formToken: '',
         question: {
