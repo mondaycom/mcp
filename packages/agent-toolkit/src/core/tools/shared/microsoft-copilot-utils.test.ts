@@ -23,7 +23,7 @@ describe('fallbackToStringifiedVersionIfNull', () => {
         dataStringified: '{"name":"Jane","age":25}',
       };
 
-      fallbackToStringifiedVersionIfNull(input, 'data', 'dataStringified', simpleSchema);
+      fallbackToStringifiedVersionIfNull(input, 'data', simpleSchema);
 
       // Should not override existing value
       expect(input.data).toEqual({ name: 'John', age: 30 });
@@ -35,7 +35,7 @@ describe('fallbackToStringifiedVersionIfNull', () => {
         dataStringified: null,
       };
 
-      fallbackToStringifiedVersionIfNull(input, 'data', 'dataStringified', simpleSchema);
+      fallbackToStringifiedVersionIfNull(input, 'data', simpleSchema);
 
       // Should remain null since no stringified version exists
       expect(input.data).toBeNull();
@@ -47,7 +47,7 @@ describe('fallbackToStringifiedVersionIfNull', () => {
         dataStringified: '',
       };
 
-      fallbackToStringifiedVersionIfNull(input, 'data', 'dataStringified', simpleSchema);
+      fallbackToStringifiedVersionIfNull(input, 'data', simpleSchema);
 
       // Should remain null since empty string is falsy
       expect(input.data).toBeNull();
@@ -63,7 +63,7 @@ describe('fallbackToStringifiedVersionIfNull', () => {
       };
 
       expect(() => {
-        fallbackToStringifiedVersionIfNull(input, 'data', 'dataStringified', simpleSchema);
+        fallbackToStringifiedVersionIfNull(input, 'data', simpleSchema);
       }).toThrow('dataStringified is not a valid JSON');
     });
 
@@ -74,7 +74,7 @@ describe('fallbackToStringifiedVersionIfNull', () => {
       };
 
       expect(() => {
-        fallbackToStringifiedVersionIfNull(input, 'data', 'dataStringified', simpleSchema);
+        fallbackToStringifiedVersionIfNull(input, 'data', simpleSchema);
       }).toThrow('JSON string defined as dataStringified does not match the specified schema');
     });
 
@@ -85,7 +85,7 @@ describe('fallbackToStringifiedVersionIfNull', () => {
       };
 
       expect(() => {
-        fallbackToStringifiedVersionIfNull(input, 'data', 'dataStringified', simpleSchema);
+        fallbackToStringifiedVersionIfNull(input, 'data', simpleSchema);
       }).toThrow('JSON string defined as dataStringified does not match the specified schema');
     });
     
@@ -98,7 +98,7 @@ describe('fallbackToStringifiedVersionIfNull', () => {
         dataStringified: '{"name":"John","age":30}',
       };
 
-      fallbackToStringifiedVersionIfNull(input, 'data', 'dataStringified', simpleSchema);
+      fallbackToStringifiedVersionIfNull(input, 'data', simpleSchema);
 
       expect(input.data).toEqual({ name: 'John', age: 30 });
     });
@@ -109,7 +109,7 @@ describe('fallbackToStringifiedVersionIfNull', () => {
         dataStringified: '{"user":{"id":123,"email":"test@example.com"},"tags":["tag1","tag2","tag3"]}',
       };
 
-      fallbackToStringifiedVersionIfNull(input, 'data', 'dataStringified', complexSchema);
+      fallbackToStringifiedVersionIfNull(input, 'data', complexSchema);
 
       expect(input.data).toEqual({
         user: { id: 123, email: 'test@example.com' },
@@ -128,7 +128,7 @@ describe('fallbackToStringifiedVersionIfNull', () => {
         dataStringified: '{"name":"John","age":null}',
       };
 
-      fallbackToStringifiedVersionIfNull(input, 'data', 'dataStringified', schemaWithOptional);
+      fallbackToStringifiedVersionIfNull(input, 'data', schemaWithOptional);
 
       expect(input.data).toEqual({ name: 'John', age: null });
     });
@@ -143,7 +143,7 @@ describe('fallbackToStringifiedVersionIfNull', () => {
         dataStringified: '{"items":[1,2,3,4,5]}',
       };
 
-      fallbackToStringifiedVersionIfNull(input, 'data', 'dataStringified', arraySchema);
+      fallbackToStringifiedVersionIfNull(input, 'data', arraySchema);
 
       expect(input.data).toEqual({ items: [1, 2, 3, 4, 5] });
     });
@@ -159,7 +159,7 @@ describe('fallbackToStringifiedVersionIfNull', () => {
         dataStringified: '{"isActive":true,"isVerified":false}',
       };
 
-      fallbackToStringifiedVersionIfNull(input, 'data', 'dataStringified', booleanSchema);
+      fallbackToStringifiedVersionIfNull(input, 'data', booleanSchema);
 
       expect(input.data).toEqual({ isActive: true, isVerified: false });
     });
@@ -172,7 +172,7 @@ describe('fallbackToStringifiedVersionIfNull', () => {
         dataStringified: '{"data":{"name":"Jane","age":25}}',
       };
 
-      fallbackToStringifiedVersionIfNull(input, 'data', 'dataStringified', simpleSchema);
+      fallbackToStringifiedVersionIfNull(input, 'data', simpleSchema);
 
       expect(input.data).toEqual({ name: 'Jane', age: 25 });
     });
@@ -183,7 +183,7 @@ describe('fallbackToStringifiedVersionIfNull', () => {
         userDataStringified: '{"userData":{"name":"Alice","age":35}}',
       };
 
-      fallbackToStringifiedVersionIfNull(input, 'userData', 'userDataStringified', simpleSchema);
+      fallbackToStringifiedVersionIfNull(input, 'userData', simpleSchema);
 
       expect(input.userData).toEqual({ name: 'Alice', age: 35 });
     });
@@ -194,7 +194,7 @@ describe('fallbackToStringifiedVersionIfNull', () => {
         dataStringified: '{"data":{"user":{"id":456,"email":"copilot@example.com"},"tags":["ai","assistant"]}}',
       };
 
-      fallbackToStringifiedVersionIfNull(input, 'data', 'dataStringified', complexSchema);
+      fallbackToStringifiedVersionIfNull(input, 'data', complexSchema);
 
       expect(input.data).toEqual({
         user: { id: 456, email: 'copilot@example.com' },
@@ -214,7 +214,7 @@ describe('fallbackToStringifiedVersionIfNull', () => {
         dataStringified: '{"name":"Bob","age":40}',
       };
 
-      fallbackToStringifiedVersionIfNull(input, 'data', 'dataStringified', multiKeySchema);
+      fallbackToStringifiedVersionIfNull(input, 'data', multiKeySchema);
 
       // Should assign directly without unwrapping
       expect(input.data).toEqual({ name: 'Bob', age: 40 });
@@ -228,7 +228,7 @@ describe('fallbackToStringifiedVersionIfNull', () => {
 
       // This should fail validation because the outer object doesn't match the schema
       expect(() => {
-        fallbackToStringifiedVersionIfNull(input, 'data', 'dataStringified', simpleSchema);
+        fallbackToStringifiedVersionIfNull(input, 'data', simpleSchema);
       }).toThrow('JSON string defined as dataStringified does not match the specified schema');
     });
   });
@@ -242,7 +242,7 @@ describe('fallbackToStringifiedVersionIfNull', () => {
         dataStringified: '{}',
       };
 
-      fallbackToStringifiedVersionIfNull(input, 'data', 'dataStringified', emptySchema);
+      fallbackToStringifiedVersionIfNull(input, 'data', emptySchema);
 
       expect(input.data).toEqual({});
     });
@@ -255,7 +255,7 @@ describe('fallbackToStringifiedVersionIfNull', () => {
         dataStringified: '{"data":{}}',
       };
 
-      fallbackToStringifiedVersionIfNull(input, 'data', 'dataStringified', emptySchema);
+      fallbackToStringifiedVersionIfNull(input, 'data', emptySchema);
 
       expect(input.data).toEqual({});
     });
@@ -266,7 +266,7 @@ describe('fallbackToStringifiedVersionIfNull', () => {
         dataStringified: '{"name":"O\'Neill","age":30}',
       };
 
-      fallbackToStringifiedVersionIfNull(input, 'data', 'dataStringified', simpleSchema);
+      fallbackToStringifiedVersionIfNull(input, 'data', simpleSchema);
 
       expect(input.data).toEqual({ name: "O'Neill", age: 30 });
     });
@@ -277,7 +277,7 @@ describe('fallbackToStringifiedVersionIfNull', () => {
         dataStringified: '{"name":"José García","age":30}',
       };
 
-      fallbackToStringifiedVersionIfNull(input, 'data', 'dataStringified', simpleSchema);
+      fallbackToStringifiedVersionIfNull(input, 'data', simpleSchema);
 
       expect(input.data).toEqual({ name: 'José García', age: 30 });
     });
@@ -298,7 +298,7 @@ describe('fallbackToStringifiedVersionIfNull', () => {
         dataStringified: '{"level1":{"level2":{"level3":{"value":"deep"}}}}',
       };
 
-      fallbackToStringifiedVersionIfNull(input, 'data', 'dataStringified', deepSchema);
+      fallbackToStringifiedVersionIfNull(input, 'data', deepSchema);
 
       expect(input.data).toEqual({
         level1: { level2: { level3: { value: 'deep' } } },
@@ -317,7 +317,7 @@ describe('fallbackToStringifiedVersionIfNull', () => {
         dataStringified: '{"name":"John","age":30}',
       };
 
-      fallbackToStringifiedVersionIfNull(input, 'data', 'dataStringified', schemaWithDefaults);
+      fallbackToStringifiedVersionIfNull(input, 'data', schemaWithDefaults);
 
       expect(input.data).toEqual({ name: 'John', age: 30, status: 'active' });
     });
@@ -333,7 +333,7 @@ describe('fallbackToStringifiedVersionIfNull', () => {
         dataStringified: '{"name":"john","age":30}',
       };
 
-      fallbackToStringifiedVersionIfNull(input, 'data', 'dataStringified', transformSchema);
+      fallbackToStringifiedVersionIfNull(input, 'data', transformSchema);
 
       expect(input.data).toEqual({ name: 'JOHN', age: 30 });
     });
@@ -345,7 +345,7 @@ describe('fallbackToStringifiedVersionIfNull', () => {
         dataStringified: '{"name":"John","age":30}',
       };
 
-      fallbackToStringifiedVersionIfNull(input1, 'data', 'dataStringified', simpleSchema);
+      fallbackToStringifiedVersionIfNull(input1, 'data', simpleSchema);
       expect(input1.data).toEqual({ name: 'John', age: 30 }); // Should parse stringified version
 
       const input2 = {
@@ -353,7 +353,7 @@ describe('fallbackToStringifiedVersionIfNull', () => {
         dataStringified: '{"name":"Jane","age":25}',
       };
 
-      fallbackToStringifiedVersionIfNull(input2, 'data', 'dataStringified', simpleSchema);
+      fallbackToStringifiedVersionIfNull(input2, 'data', simpleSchema);
       expect(input2.data).toEqual({ name: 'Jane', age: 25 }); // Should parse stringified version
     });
   });
@@ -365,7 +365,7 @@ describe('fallbackToStringifiedVersionIfNull', () => {
         formDataStringified: '{"name":"Test","age":25}',
       };
 
-      fallbackToStringifiedVersionIfNull(input, 'formData', 'formDataStringified', simpleSchema);
+      fallbackToStringifiedVersionIfNull(input, 'formData', simpleSchema);
 
       expect(input.formData).toEqual({ name: 'Test', age: 25 });
     });
@@ -373,13 +373,12 @@ describe('fallbackToStringifiedVersionIfNull', () => {
     it('should work with symbol-like key names', () => {
       const input = {
         'config_data': null,
-        'config_data_stringified': '{"name":"Config","age":50}',
+        'config_dataStringified': '{"name":"Config","age":50}',
       };
 
       fallbackToStringifiedVersionIfNull(
         input,
         'config_data',
-        'config_data_stringified',
         simpleSchema
       );
 
@@ -394,7 +393,7 @@ describe('fallbackToStringifiedVersionIfNull', () => {
         numericField: 42,
       };
 
-      fallbackToStringifiedVersionIfNull(input, 'data', 'dataStringified', simpleSchema);
+      fallbackToStringifiedVersionIfNull(input, 'data', simpleSchema);
 
       expect(input.data).toEqual({ name: 'Mixed', age: 30 });
       expect(input.otherField).toBe('should remain unchanged');
