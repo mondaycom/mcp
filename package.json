@@ -8,6 +8,7 @@
     "build": "turbo build",
     "test": "turbo test",
     "dev": "turbo dev",
+    "build:watch": "turbo watch build",
     "prettier": "turbo prettier",
     "lint": "turbo lint"
   },

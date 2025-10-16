@@ -536,5 +536,3 @@ export const getWorkspaceInfo = gql`
     }
   }
 `;
-
-

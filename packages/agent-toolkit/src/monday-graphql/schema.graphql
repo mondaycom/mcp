@@ -1,6 +1,6 @@
 directive @cost(weight: Int!) on ARGUMENT_DEFINITION | ENUM | FIELD_DEFINITION | INPUT_FIELD_DEFINITION | OBJECT | SCALAR
 
-directive @cost__listSize(assumedSize: Int, slicingArguments: [String!], sizedFields: [String!], requireOneSlicingArgument: Boolean = true) on FIELD_DEFINITION
+directive @listSize(assumedSize: Int, slicingArguments: [String!], sizedFields: [String!], requireOneSlicingArgument: Boolean = true) on FIELD_DEFINITION
 
 directive @policy(policies: [[policy__Policy!]!]!) on FIELD_DEFINITION | OBJECT | INTERFACE | SCALAR | ENUM
 
@@ -399,6 +399,12 @@ type Query {
     input: MarketplaceAiSearchInput!
   ): MarketplaceAiSearchResults!
 
+  """Get the status of a bulk import items process"""
+  bulk_import_items_status(
+    """The ID of the import to get status for"""
+    import_id: ID!
+  ): BulkImportStatus!
+
   """Get an app by ID."""
   app(
     """The ID of the app"""
@@ -676,7 +682,7 @@ type Query {
     Filter notifications created from this date (inclusive). ISO 8601 format (e.g., YYYY-MM-DD or YYYY-MM-DDTHH:mm).
     """
     since: ISO8601DateTime
-  ): [Notification!]
+  ): [NotificationV2!]
 
   """
   Retrieves the current user's notification settings across all available channels.
@@ -1527,6 +1533,17 @@ type Mutation {
     """Slug of an account"""
     account_slug: String!
   ): DeleteMarketplaceAppDiscountResult!
+
+  """
+  Initialize bulk import for a board and group. Returns import ID and upload URL to begin the process.
+  """
+  bulk_import_items(
+    """The ID of the board to import items into"""
+    board_id: ID!
+
+    """The ID of the group to import items into"""
+    group_id: ID!
+  ): BulkImportInit
 
   """Creates a new app with the specified configuration."""
   create_app(
@@ -5778,6 +5795,98 @@ enum SubscriptionStatus {
   inactive
 }
 
+"""Reason for failure when status is Rejected or Failed"""
+enum BulkImportFailureReason {
+  """The upload is invalid."""
+  INVALID_UPLOAD
+
+  """The authorization failed."""
+  AUTHORIZATION_FAILED
+
+  """The permission was denied."""
+  PERMISSION_DENIED
+
+  """The board capacity exceeded."""
+  BOARD_CAPACITY_EXCEEDED
+
+  """An internal error occurred."""
+  INTERNAL_ERROR
+}
+
+"""
+Initialization response for bulk import containing import ID and upload URL
+"""
+type BulkImportInit {
+  """The unique identifier of the bulk import operation"""
+  import_id: ID
+
+  """The URL where the file should be uploaded for processing"""
+  upload_url: String
+}
+
+"""Item counts for a bulk import process"""
+type BulkImportItemCounts {
+  """Total number of items submitted for import"""
+  submitted: Int
+
+  """Number of items that failed validation"""
+  invalid: Int
+
+  """Number of items that were skipped"""
+  skipped: Int
+
+  """Number of items that have been created"""
+  created: Int
+
+  """Number of items that have been updated"""
+  updated: Int
+
+  """Number of valid items that failed during import execution"""
+  failed: Int
+}
+
+"""Current state of the import process"""
+enum BulkImportState {
+  """The upload is pending."""
+  UPLOAD_PENDING
+
+  """The import is rejected."""
+  REJECTED
+
+  """The import is processing."""
+  PROCESSING
+
+  """The import is completed."""
+  COMPLETED
+
+  """The import is failed."""
+  FAILED
+}
+
+"""Status information for a bulk import process"""
+type BulkImportStatus {
+  """Current state of the import process"""
+  status: BulkImportState
+
+  """Item counts breakdown for the import process"""
+  counts: BulkImportItemCounts
+
+  """Progress percentage (0-100) of the import process"""
+  progress_percentage: Int
+
+  """Reason for failure when status is Rejected or Failed"""
+  failure_reason: BulkImportFailureReason
+
+  """Indicates if the upload is completely done"""
+  fully_imported: Boolean
+
+  """Indicates if a report file has been generated"""
+  report_created: Boolean
+
+  """URL to download the import report, valid for 10 minutes"""
+  report_url: String
+}
+
 """Input for app feature release data."""
 input AppFeatureReleaseDataInput {
   """The URL for the release."""
@@ -7898,27 +8007,6 @@ type Notification {
 
   """The notification text."""
   text: String
-
-  """The date and time the notification was created."""
-  created_at: Date
-
-  """The title of the notification."""
-  title: String
-
-  """The users who created the notification."""
-  creators: [User!]!
-
-  """Whether the notification has been read."""
-  read: Boolean!
-
-  """The update that triggered the notification."""
-  update: Update
-
-  """The item that is associated with the notification."""
-  item: Item
-
-  """The board that is associated with the notification."""
-  board: Board
 }
 
 """The notification's target type."""
@@ -9030,6 +9118,36 @@ type NotificationSettingChannel {
 
   """Whether or not this channel settings is editable"""
   editable_status: ChannelEditableStatus
+}
+
+"""A notification."""
+type NotificationV2 {
+  """The unique identifier of the notification."""
+  id: ID!
+
+  """The date and time the notification was created."""
+  created_at: Date
+
+  """The title of the notification."""
+  title: String
+
+  """The text content of the notification."""
+  text: String
+
+  """The users who created the notification."""
+  creators: [User!]!
+
+  """Whether the notification has been read."""
+  read: Boolean!
+
+  """The update that triggered the notification."""
+  update: Update
+
+  """The item that is associated with the notification."""
+  item: Item
+
+  """The board that is associated with the notification."""
+  board: Board
 }
 
 """
