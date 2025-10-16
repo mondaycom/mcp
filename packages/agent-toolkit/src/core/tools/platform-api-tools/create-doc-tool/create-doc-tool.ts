@@ -4,9 +4,11 @@ import {
   createDoc as createDocMutation,
   addContentToDocFromMarkdown,
   getItemBoard,
-  createColumn as createColumnMutation,
   updateDocName,
-} from '../../../monday-graphql/queries.graphql';
+} from './create-doc-tool.graphql';
+
+import { createColumn as createColumnMutation } from '../../../../monday-graphql/queries.graphql';
+
 import {
   BoardKind,
   ColumnType,
@@ -20,9 +22,9 @@ import {
   UpdateDocNameMutationVariables,
   AddContentToDocFromMarkdownMutation,
   AddContentToDocFromMarkdownMutationVariables,
-} from '../../../monday-graphql/generated/graphql';
-import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
-import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
+} from '../../../../monday-graphql/generated/graphql';
+import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
+import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 
 const DocType = z.enum(['workspace', 'item']);
 
