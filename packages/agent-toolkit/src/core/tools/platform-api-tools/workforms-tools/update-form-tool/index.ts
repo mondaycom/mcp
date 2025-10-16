@@ -66,8 +66,8 @@ export class UpdateFormTool extends BaseMondayApiTool<typeof updateFormToolSchem
       };
     }
 
-    fallbackToStringifiedVersionIfNull(input, 'tag', 'tagStringified', updateFormToolSchema.tag);
-    fallbackToStringifiedVersionIfNull(input, 'form', 'formStringified', updateFormToolSchema.form);
+    fallbackToStringifiedVersionIfNull(input, 'tag', updateFormToolSchema.tag);
+    fallbackToStringifiedVersionIfNull(input, 'form', updateFormToolSchema.form);
 
     return await handler(input);
   }

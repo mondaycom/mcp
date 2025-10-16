@@ -18,9 +18,9 @@ export const fallbackToStringifiedVersionIfNull = <
 >(
   input: TInput,
   jsonKey: K,
-  stringifiedJsonKey: K,
   schema: ZodSchema
 ) => {
+  const stringifiedJsonKey = `${String(jsonKey)}${STRINGIFIED_SUFFIX}`;
   if (input[jsonKey] || !input[stringifiedJsonKey]) {
     return;
   }
@@ -43,3 +43,5 @@ export const fallbackToStringifiedVersionIfNull = <
 
   (input as any)[jsonKey] = parseResult.data;
 };
+
+export const STRINGIFIED_SUFFIX = 'Stringified';

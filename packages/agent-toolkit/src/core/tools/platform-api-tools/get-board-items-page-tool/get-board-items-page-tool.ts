@@ -4,7 +4,7 @@ import { GetBoardItemsPageQuery, GetBoardItemsPageQueryVariables, ItemsOrderByDi
 import { getBoardItemsPage, smartSearchGetBoardItemIds } from './get-board-items-page-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { fallbackToStringifiedVersionIfNull } from '../../shared/microsoft-copilot-utils';
+import { fallbackToStringifiedVersionIfNull, STRINGIFIED_SUFFIX } from '../../shared/microsoft-copilot-utils';
 
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 500;
@@ -55,7 +55,7 @@ PERFORMANCE OPTIMIZATION: Only set this to true when you actually need the colum
   includeSubItems: z.boolean().optional().default(false).describe('Whether to include sub items in the response. PERFORMANCE OPTIMIZATION: Only set this to true when you actually need the sub items data.'),
   subItemLimit: z.number().min(MIN_LIMIT).max(MAX_SUB_ITEM_LIMIT).optional().default(DEFAULT_LIMIT).describe('The number of sub items to get per item. This is only used when includeSubItems is true.'),
 
-  filtersStringified: z.string().optional().describe('**ONLY FOR MICROSOFT COPILOT**: The filters to apply on the items. Send this as a stringified JSON array of "filters" field. Read "filters" field description for details how to use it.'),
+  [`filters${STRINGIFIED_SUFFIX}`]: z.string().optional().describe('**ONLY FOR MICROSOFT COPILOT**: The filters to apply on the items. Send this as a stringified JSON array of "filters" field. Read "filters" field description for details how to use it.'),
   filters: z.array(z.object({
     columnId: z.string().describe('The id of the column to filter by'),
     compareAttribute: z.string().optional().describe('The attribute to compare the value to'),
@@ -65,7 +65,7 @@ PERFORMANCE OPTIMIZATION: Only set this to true when you actually need the colum
   filtersOperator: z.nativeEnum(ItemsQueryOperator).optional().default(ItemsQueryOperator.And).describe('The operator to use for the filters'),
   
   columnIds: z.array(z.string()).optional().describe('The ids of the item columns and subitem columns to get, can be used to reduce the response size when user asks for specific columns. Works only when includeColumns is true. If not provided, all columns will be returned'),
-  orderByStringified: z.string().optional().describe('**ONLY FOR MICROSOFT COPILOT**: The order by to apply on the items. Send this as a stringified JSON array of "orderBy" field. Read "orderBy" field description for details how to use it.'),
+  [`orderBy${STRINGIFIED_SUFFIX}`]: z.string().optional().describe('**ONLY FOR MICROSOFT COPILOT**: The order by to apply on the items. Send this as a stringified JSON array of "orderBy" field. Read "orderBy" field description for details how to use it.'),
   orderBy: z.array(z.object({
     columnId: z.string().describe('The id of the column to order by'),
     direction: z.nativeEnum(ItemsOrderByDirection).optional().default(ItemsOrderByDirection.Asc).describe('The direction to order by'),
@@ -111,7 +111,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
           };
         }
       } catch {
-        fallbackToStringifiedVersionIfNull(input, 'filters', 'filtersStringified', getBoardItemsPageToolSchema.filters);
+        fallbackToStringifiedVersionIfNull(input, 'filters', getBoardItemsPageToolSchema.filters);
         input.filters = this.rebuildFiltersWithManualSearch(input.searchTerm, input.filters);
       }
       
@@ -126,8 +126,8 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
       includeSubItems: input.includeSubItems
     };
 
-    fallbackToStringifiedVersionIfNull(input, 'filters', 'filtersStringified', getBoardItemsPageToolSchema.filters);
-    fallbackToStringifiedVersionIfNull(input, 'orderBy', 'orderByStringified', getBoardItemsPageToolSchema.orderBy);
+    fallbackToStringifiedVersionIfNull(input, 'filters', getBoardItemsPageToolSchema.filters);
+    fallbackToStringifiedVersionIfNull(input, 'orderBy', getBoardItemsPageToolSchema.orderBy);
 
     if(canIncludeFilters && (input.itemIds || input.filters || input.orderBy)) { 
       variables.queryParams = {
