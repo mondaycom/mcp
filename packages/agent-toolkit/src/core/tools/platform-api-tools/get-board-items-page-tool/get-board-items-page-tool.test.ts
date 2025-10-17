@@ -440,6 +440,36 @@ describe('GetBoardItemsPageTool', () => {
       );
     });
 
+    it('should raise error when stringified JSONs does not match the schema', async () => {
+      mocks.setResponse(successfulResponseWithItems);
+
+      const filtersStringified = JSON.stringify([
+        {
+          notAcolumnId: 'status',
+          notAcompareValue: 'In Progress',
+          operator: ItemsQueryRuleOperator.AnyOf
+        }
+      ]);
+      
+      const orderByStringified = JSON.stringify([
+        {
+          columnId: 'name',
+          direction: ItemsOrderByDirection.Asc
+        }
+      ]);
+
+      const args: inputType = { 
+        boardId: 123456789,
+        filtersStringified,
+        orderByStringified
+      };
+      const result = await callToolByNameRawAsync('get_board_items_page', args);
+      expect(result.content[0].text).toContain('JSON string defined as filtersStringified does not match the specified schema');
+
+
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+
     it('should throw error for invalid stringified JSON', async () => {
       const args: inputType = { 
         boardId: 123456789,

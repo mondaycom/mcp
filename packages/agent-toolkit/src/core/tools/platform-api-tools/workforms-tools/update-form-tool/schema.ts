@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { GraphQLDescriptions } from '../workforms.consts';
 import { Alignment, BackgroundType, Direction, FontSize, Format, LogoPosition, LogoSize } from '../workforms.types';
+import { STRINGIFIED_SUFFIX } from 'src/core/tools/shared/microsoft-copilot-utils';
 
 export enum FormActions {
   activate = 'activate',
@@ -166,5 +167,7 @@ export const updateFormToolSchema = {
   action: z.nativeEnum(FormActions).describe(GraphQLDescriptions.form.operations.updateForm.action),
   formPassword: z.string().describe(GraphQLDescriptions.formSettings.operations.setFormPassword).optional(),
   tag: tagSchema.describe(GraphQLDescriptions.form.inputs.tag).optional(),
+  tagStringified: z.string().optional().describe('**ONLY FOR MICROSOFT COPILOT**: The tag data. Send this as a stringified JSON of "tag" field. Read "tag" field description for details how to use it.'),
   form: formSchema.describe(GraphQLDescriptions.form.inputs.form.describe).optional(),
+  formStringified: z.string().optional().describe('**ONLY FOR MICROSOFT COPILOT**: The form data. Send this as a stringified JSON of "form" field. Read "form" field description for details how to use it.'),
 };

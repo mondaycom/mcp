@@ -4,6 +4,7 @@ import { GetBoardItemsPageQuery, GetBoardItemsPageQueryVariables, ItemsOrderByDi
 import { getBoardItemsPage, smartSearchGetBoardItemIds } from './get-board-items-page-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+import { fallbackToStringifiedVersionIfNull, STRINGIFIED_SUFFIX } from '../../shared/microsoft-copilot-utils';
 
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 500;
@@ -95,16 +96,6 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
   getInputSchema(): GetBoardItemsPageToolInput {
     return getBoardItemsPageToolSchema;
   }
-
-  private parseAndAssignJsonField(input: ToolInputType<GetBoardItemsPageToolInput>, jsonKey: keyof ToolInputType<GetBoardItemsPageToolInput>, stringifiedJsonKey: keyof ToolInputType<GetBoardItemsPageToolInput>) {
-    if(input[stringifiedJsonKey] && !input[jsonKey]) {
-      try {
-        (input as any)[jsonKey] = JSON.parse(input[stringifiedJsonKey] as string);
-      } catch {
-        throw new Error(`${stringifiedJsonKey} is not a valid JSON`);
-      }
-    }
-  }
   
   protected async executeInternal(input: ToolInputType<GetBoardItemsPageToolInput>): Promise<ToolOutputType<never>> {
     // Passing filters + cursor returns an error as cursor has them encoded in it
@@ -120,7 +111,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
           };
         }
       } catch {
-        this.parseAndAssignJsonField(input, 'filters', 'filtersStringified');
+        fallbackToStringifiedVersionIfNull(input, 'filters', getBoardItemsPageToolSchema.filters);
         input.filters = this.rebuildFiltersWithManualSearch(input.searchTerm, input.filters);
       }
       
@@ -135,8 +126,8 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
       includeSubItems: input.includeSubItems
     };
 
-    this.parseAndAssignJsonField(input, 'filters', 'filtersStringified');
-    this.parseAndAssignJsonField(input, 'orderBy', 'orderByStringified');
+    fallbackToStringifiedVersionIfNull(input, 'filters', getBoardItemsPageToolSchema.filters);
+    fallbackToStringifiedVersionIfNull(input, 'orderBy', getBoardItemsPageToolSchema.orderBy);
 
     if(canIncludeFilters && (input.itemIds || input.filters || input.orderBy)) { 
       variables.queryParams = {
