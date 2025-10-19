@@ -1304,6 +1304,79 @@ export type BoostConfigurationInput = {
   boosts?: InputMaybe<Scalars['JSON']['input']>;
 };
 
+/** Reason for failure when status is Rejected or Failed */
+export enum BulkImportFailureReason {
+  /** The authorization failed. */
+  AuthorizationFailed = 'AUTHORIZATION_FAILED',
+  /** The board capacity exceeded. */
+  BoardCapacityExceeded = 'BOARD_CAPACITY_EXCEEDED',
+  /** An internal error occurred. */
+  InternalError = 'INTERNAL_ERROR',
+  /** The upload is invalid. */
+  InvalidUpload = 'INVALID_UPLOAD',
+  /** The permission was denied. */
+  PermissionDenied = 'PERMISSION_DENIED'
+}
+
+/** Initialization response for bulk import containing import ID and upload URL */
+export type BulkImportInit = {
+  __typename?: 'BulkImportInit';
+  /** The unique identifier of the bulk import operation */
+  import_id?: Maybe<Scalars['ID']['output']>;
+  /** The URL where the file should be uploaded for processing */
+  upload_url?: Maybe<Scalars['String']['output']>;
+};
+
+/** Item counts for a bulk import process */
+export type BulkImportItemCounts = {
+  __typename?: 'BulkImportItemCounts';
+  /** Number of items that have been created */
+  created?: Maybe<Scalars['Int']['output']>;
+  /** Number of valid items that failed during import execution */
+  failed?: Maybe<Scalars['Int']['output']>;
+  /** Number of items that failed validation */
+  invalid?: Maybe<Scalars['Int']['output']>;
+  /** Number of items that were skipped */
+  skipped?: Maybe<Scalars['Int']['output']>;
+  /** Total number of items submitted for import */
+  submitted?: Maybe<Scalars['Int']['output']>;
+  /** Number of items that have been updated */
+  updated?: Maybe<Scalars['Int']['output']>;
+};
+
+/** Current state of the import process */
+export enum BulkImportState {
+  /** The import is completed. */
+  Completed = 'COMPLETED',
+  /** The import is failed. */
+  Failed = 'FAILED',
+  /** The import is processing. */
+  Processing = 'PROCESSING',
+  /** The import is rejected. */
+  Rejected = 'REJECTED',
+  /** The upload is pending. */
+  UploadPending = 'UPLOAD_PENDING'
+}
+
+/** Status information for a bulk import process */
+export type BulkImportStatus = {
+  __typename?: 'BulkImportStatus';
+  /** Item counts breakdown for the import process */
+  counts?: Maybe<BulkImportItemCounts>;
+  /** Reason for failure when status is Rejected or Failed */
+  failure_reason?: Maybe<BulkImportFailureReason>;
+  /** Indicates if the upload is completely done */
+  fully_imported?: Maybe<Scalars['Boolean']['output']>;
+  /** Progress percentage (0-100) of the import process */
+  progress_percentage?: Maybe<Scalars['Int']['output']>;
+  /** Indicates if a report file has been generated */
+  report_created?: Maybe<Scalars['Boolean']['output']>;
+  /** URL to download the import report, valid for 10 minutes */
+  report_url?: Maybe<Scalars['String']['output']>;
+  /** Current state of the import process */
+  status?: Maybe<BulkImportState>;
+};
+
 export type ButtonValue = ColumnValue & {
   __typename?: 'ButtonValue';
   /** The button's color in hex value. */
@@ -4310,6 +4383,8 @@ export type Mutation = {
   assign_team_owners?: Maybe<AssignTeamOwnersResult>;
   /** Extends trial period of an application to selected accounts */
   batch_extend_trial_period?: Maybe<BatchExtendTrialPeriod>;
+  /** Initialize bulk import for a board and group. Returns import ID and upload URL to begin the process. */
+  bulk_import_items?: Maybe<BulkImportInit>;
   /** Change a column's properties */
   change_column_metadata?: Maybe<Column>;
   /** Change a column's title */
@@ -4705,6 +4780,13 @@ export type MutationBatch_Extend_Trial_PeriodArgs = {
   app_id: Scalars['ID']['input'];
   duration_in_days: Scalars['Int']['input'];
   plan_id: Scalars['String']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationBulk_Import_ItemsArgs = {
+  board_id: Scalars['ID']['input'];
+  group_id: Scalars['ID']['input'];
 };
 
 
@@ -5825,24 +5907,10 @@ export enum NoticeBoxTheme {
 /** A notification. */
 export type Notification = {
   __typename?: 'Notification';
-  /** The board that is associated with the notification. */
-  board?: Maybe<Board>;
-  /** The date and time the notification was created. */
-  created_at?: Maybe<Scalars['Date']['output']>;
-  /** The users who created the notification. */
-  creators: Array<User>;
   /** The notification's unique identifier. */
   id: Scalars['ID']['output'];
-  /** The item that is associated with the notification. */
-  item?: Maybe<Item>;
-  /** Whether the notification has been read. */
-  read: Scalars['Boolean']['output'];
   /** The notification text. */
   text?: Maybe<Scalars['String']['output']>;
-  /** The title of the notification. */
-  title?: Maybe<Scalars['String']['output']>;
-  /** The update that triggered the notification. */
-  update?: Maybe<Update>;
 };
 
 /** Represents notification settings configuration */
@@ -5878,6 +5946,29 @@ export enum NotificationTargetType {
   /** Item or Board. */
   Project = 'Project'
 }
+
+/** A notification. */
+export type NotificationV2 = {
+  __typename?: 'NotificationV2';
+  /** The board that is associated with the notification. */
+  board?: Maybe<Board>;
+  /** The date and time the notification was created. */
+  created_at?: Maybe<Scalars['Date']['output']>;
+  /** The users who created the notification. */
+  creators: Array<User>;
+  /** The unique identifier of the notification. */
+  id: Scalars['ID']['output'];
+  /** The item that is associated with the notification. */
+  item?: Maybe<Item>;
+  /** Whether the notification has been read. */
+  read: Scalars['Boolean']['output'];
+  /** The text content of the notification. */
+  text?: Maybe<Scalars['String']['output']>;
+  /** The title of the notification. */
+  title?: Maybe<Scalars['String']['output']>;
+  /** The update that triggered the notification. */
+  update?: Maybe<Update>;
+};
 
 /** Indicates where the unit symbol should be placed in a number value */
 export enum NumberValueUnitDirection {
@@ -6378,6 +6469,8 @@ export type Query = {
   board_candidates?: Maybe<Array<Board>>;
   /** Get a collection of boards. */
   boards?: Maybe<Array<Maybe<Board>>>;
+  /** Get the status of a bulk import items process */
+  bulk_import_items_status: BulkImportStatus;
   /** Get the complexity data of your queries. */
   complexity?: Maybe<Complexity>;
   /** Fetch a single connection by its unique ID. */
@@ -6428,7 +6521,7 @@ export type Query = {
   mute_board_settings?: Maybe<Array<BoardMuteSettings>>;
   /** Get next pages of board's items (rows) by cursor. */
   next_items_page: ItemsResponse;
-  notifications?: Maybe<Array<Notification>>;
+  notifications?: Maybe<Array<NotificationV2>>;
   /** Retrieves the current user's notification settings across all available channels. */
   notifications_settings?: Maybe<Array<NotificationSetting>>;
   /** Retrieves a list of available object types that can be created or queried. Each object type is uniquely identified by an 'object_type_unique_key'. This key is required for mutations like 'create_object' and for filtering in the 'objects' query. Use this query to discover what types of objects are available in the system (e.g., 'workflows', 'projects') and get their corresponding unique keys. The structure of unique key is 'app_slug::app_feature_slug'. */
@@ -6563,6 +6656,12 @@ export type QueryBoardsArgs = {
   page?: InputMaybe<Scalars['Int']['input']>;
   state?: InputMaybe<State>;
   workspace_ids?: InputMaybe<Array<InputMaybe<Scalars['ID']['input']>>>;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryBulk_Import_Items_StatusArgs = {
+  import_id: Scalars['ID']['input'];
 };
 
 
@@ -8804,6 +8903,13 @@ export enum __TypeKind {
   NonNull = 'NON_NULL'
 }
 
+export type AggregateBoardStatsQueryVariables = Exact<{
+  query: AggregateQueryInput;
+}>;
+
+
+export type AggregateBoardStatsQuery = { __typename?: 'Query', aggregate?: { __typename?: 'AggregateQueryResult', results?: Array<{ __typename?: 'AggregateResultSet', entries?: Array<{ __typename?: 'AggregateResultEntry', alias?: string | null, value?: { __typename?: 'AggregateBasicAggregationResult', result?: number | null } | { __typename?: 'AggregateGroupByResult', value_string?: string | null, value_int?: number | null, value_float?: number | null, value_boolean?: boolean | null } | null }> | null }> | null } | null };
+
 export type CreateFolderMutationVariables = Exact<{
   workspaceId: Scalars['ID']['input'];
   name: Scalars['String']['input'];
@@ -9255,13 +9361,6 @@ export type GetBoardSchemaQueryVariables = Exact<{
 
 
 export type GetBoardSchemaQuery = { __typename?: 'Query', boards?: Array<{ __typename?: 'Board', groups?: Array<{ __typename?: 'Group', id: string, title: string } | null> | null, columns?: Array<{ __typename?: 'Column', id: string, type: ColumnType, title: string } | null> | null } | null> | null };
-
-export type GetUsersByNameQueryVariables = Exact<{
-  name?: InputMaybe<Scalars['String']['input']>;
-}>;
-
-
-export type GetUsersByNameQuery = { __typename?: 'Query', users?: Array<{ __typename?: 'User', id: string, name: string, title?: string | null } | null> | null };
 
 export type ChangeItemColumnValuesMutationVariables = Exact<{
   boardId: Scalars['ID']['input'];
