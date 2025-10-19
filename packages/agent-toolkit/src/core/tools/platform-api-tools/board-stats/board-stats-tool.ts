@@ -66,7 +66,7 @@ export class BoardStatsTool extends BaseMondayApiTool<typeof boardStatsToolSchem
   });
 
   getDescription(): string {
-    return 'List all workspaces available to the user. Returns up to 500 workspaces with their ID, name, and description.';
+    return 'Get stats for a board. Returns the stats for the given query.';
   }
 
   getInputSchema(): typeof boardStatsToolSchema {
