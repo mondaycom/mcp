@@ -23,8 +23,13 @@ export const boardStatsToolSchema = {
         columnId: z.string().describe('The id of the column to aggregate'),
       }),
     )
-    .describe('The aggregations to get'),
-  groupBy: z.array(z.string()).describe('The columns to group by').optional(),
+    .describe('The aggregations to get. Transformative functions and plain columns (no function) must be in group by.'),
+  groupBy: z
+    .array(z.string())
+    .describe(
+      'The columns to group by. All columns in the group by must be in the aggregations as well without a function.',
+    )
+    .optional(),
   limit: z.number().describe('The limit of the results').optional(),
   filters: z
     .object({
@@ -32,7 +37,7 @@ export const boardStatsToolSchema = {
         .array(
           z.object({
             columnId: z.string().describe('The id of the column to filter by'),
-            compareAttribute: z.string().optional().describe('The attribute to compare the value to'),
+            compareAttribute: z.string().optional().describe('The attribute to compare the value to, if needed'),
             compareValue: z
               .any()
               .describe(
@@ -44,16 +49,10 @@ export const boardStatsToolSchema = {
         .describe(
           'The configuration of filters to apply on the items. Before sending the filters, use get_board_info tool to check "Filtering Guidelines" section for filtering by the column.',
         ),
-      operator: z
-        .nativeEnum(ItemsQueryOperator)
-        .describe('The operator to use for the filters')
-        .optional()
-        .default(ItemsQueryOperator.And),
+      operator: z.nativeEnum(ItemsQueryOperator).describe('The logical condition to use for the filters').optional(),
     })
     .optional()
-    .describe(
-      'The configuration of filters to apply on the items. Before sending the filters, use get_board_info tool to check "Filtering Guidelines" section for filtering by the column.',
-    ),
+    .describe('The configuration of filters to apply on the items.'),
 };
 
 export class BoardStatsTool extends BaseMondayApiTool<typeof boardStatsToolSchema> {
