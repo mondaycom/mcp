@@ -59,7 +59,7 @@ export class BoardStatsTool extends BaseMondayApiTool<typeof boardStatsToolSchem
   name = 'board_stats';
   type = ToolType.READ;
   annotations = createMondayApiAnnotations({
-    title: 'List Workspaces',
+    title: 'Get Board Stats',
     readOnlyHint: true,
     destructiveHint: false,
     idempotentHint: true,
