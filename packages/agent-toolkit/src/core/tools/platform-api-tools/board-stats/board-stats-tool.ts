@@ -37,19 +37,27 @@ export const boardStatsToolSchema = {
         .array(
           z.object({
             columnId: z.string().describe('The id of the column to filter by'),
-            compareAttribute: z.string().optional().describe('The attribute to compare the value to, if needed'),
+            compareAttribute: z.string().optional().describe('The attribute to compare the value to'),
             compareValue: z
               .any()
               .describe(
                 'The value to compare the attribute to. This can be a string or index value depending on the column type.',
               ),
-            operator: z.nativeEnum(ItemsQueryRuleOperator).describe('The operator to use for the filter'),
+            operator: z
+              .nativeEnum(ItemsQueryRuleOperator)
+              .optional()
+              .default(ItemsQueryRuleOperator.AnyOf)
+              .describe('The operator to use for the filter'),
           }),
         )
         .describe(
           'The configuration of filters to apply on the items. Before sending the filters, use get_board_info tool to check "Filtering Guidelines" section for filtering by the column.',
         ),
-      operator: z.nativeEnum(ItemsQueryOperator).describe('The logical condition to use for the filters').optional(),
+      operator: z
+        .nativeEnum(ItemsQueryOperator)
+        .describe('The logical condition to use for the filters')
+        .optional()
+        .default(ItemsQueryOperator.And),
     })
     .optional()
     .describe('The configuration of filters to apply on the items.'),
