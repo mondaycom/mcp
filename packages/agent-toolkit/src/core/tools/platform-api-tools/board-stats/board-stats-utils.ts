@@ -73,16 +73,16 @@ export function handleSelectAndGroupByElements(input: ToolInputType<typeof board
       if (aggregation.function in complexFunctions) {
         throw new Error(`Complex function ${aggregation.function} is not supported`);
       }
+      const elementKey = `${aggregation.function}_${aggregation.columnId}`;
       if (aggregation.function in transformativeFunctions) {
         // transformative functions must be in group by
-        if (!input.groupBy?.includes(aggregation.columnId)) {
+        if (!input.groupBy?.includes(elementKey)) {
           // if not in group by, add to group by
           groupByElements.push({
-            column_id: aggregation.columnId,
+            column_id: elementKey,
           });
         }
       }
-      const elementKey = `${aggregation.function}_${aggregation.columnId}`;
       const aliasKeyIndex = aliasKeyMap[elementKey] || 0;
       aliasKeyMap[elementKey] = aliasKeyIndex + 1;
       const alias = `${elementKey}_${aliasKeyIndex}`;
@@ -99,6 +99,11 @@ export function handleSelectAndGroupByElements(input: ToolInputType<typeof board
       column: handleSelectColumnElement(aggregation.columnId),
       as: aggregation.columnId,
     };
+    if (input.groupBy?.includes(aggregation.columnId)) {
+      groupByElements.push({
+        column_id: aggregation.columnId,
+      });
+    }
     return selectElement;
   });
 

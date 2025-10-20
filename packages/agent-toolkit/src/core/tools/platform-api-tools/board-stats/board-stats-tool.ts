@@ -18,7 +18,9 @@ export const boardStatsToolSchema = {
       z.object({
         function: z
           .nativeEnum(AggregateSelectFunctionName)
-          .describe('The function of the aggregation. Excludes complex functions like case, between, left.')
+          .describe(
+            'The function of the aggregation. Excludes complex functions like case, between, left. For simple column value leave undefined',
+          )
           .optional(),
         columnId: z.string().describe('The id of the column to aggregate'),
       }),
