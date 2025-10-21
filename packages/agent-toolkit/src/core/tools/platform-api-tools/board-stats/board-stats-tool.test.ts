@@ -1052,6 +1052,114 @@ describe('Board Stats Tool', () => {
       expect(mockCall[1].query.query.order_by[0].direction).toBe(ItemsOrderByDirection.Desc);
     });
 
+    it('should count items using COUNT_ITEMS function', async () => {
+      const mockResponse = {
+        aggregate: {
+          results: [
+            {
+              entries: [
+                {
+                  alias: 'COUNT_ITEMS_item_id_0',
+                  value: { result: 42 },
+                },
+              ],
+            },
+          ],
+        },
+      };
+
+      mocks.setResponse(mockResponse);
+
+      const tool = new BoardStatsTool(mocks.mockApiClient, 'fake_token');
+
+      const result = await tool.execute({
+        boardId: 123456,
+        aggregations: [
+          {
+            columnId: 'item_id',
+            function: AggregateSelectFunctionName.CountItems,
+          },
+        ],
+      });
+
+      expect(result.content).toContain('Board stats result (1 rows)');
+      expect(result.content).toContain('"COUNT_ITEMS_item_id_0": 42');
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query aggregateBoardStats'),
+        expect.objectContaining({
+          query: expect.objectContaining({
+            from: { id: '123456', type: AggregateFromElementType.Table },
+            select: expect.arrayContaining([
+              expect.objectContaining({
+                type: AggregateSelectElementType.Function,
+                function: expect.objectContaining({
+                  function: AggregateSelectFunctionName.CountItems,
+                }),
+              }),
+            ]),
+          }),
+        }),
+      );
+    });
+
+    it('should count items with filters applied', async () => {
+      const mockResponse = {
+        aggregate: {
+          results: [
+            {
+              entries: [
+                {
+                  alias: 'COUNT_ITEMS_item_id_0',
+                  value: { result: 15 },
+                },
+              ],
+            },
+          ],
+        },
+      };
+
+      mocks.setResponse(mockResponse);
+
+      const tool = new BoardStatsTool(mocks.mockApiClient, 'fake_token');
+
+      const result = await tool.execute({
+        boardId: 123456,
+        aggregations: [
+          {
+            columnId: 'item_id',
+            function: AggregateSelectFunctionName.CountItems,
+          },
+        ],
+        filters: {
+          rules: [
+            {
+              columnId: 'status',
+              compareValue: 'Done',
+              operator: ItemsQueryRuleOperator.AnyOf,
+            },
+          ],
+          operator: ItemsQueryOperator.And,
+        },
+      });
+
+      expect(result.content).toContain('Board stats result (1 rows)');
+      expect(result.content).toContain('"COUNT_ITEMS_item_id_0": 15');
+
+      const mockCall = mocks.getMockRequest().mock.calls[0];
+      expect(mockCall[1].query.query).toEqual({
+        rules: [
+          {
+            column_id: 'status',
+            compare_value: 'Done',
+            operator: ItemsQueryRuleOperator.AnyOf,
+            compare_attribute: undefined,
+          },
+        ],
+        operator: ItemsQueryOperator.And,
+      });
+    });
+
     it('should have correct metadata', () => {
       const tool = new BoardStatsTool(mocks.mockApiClient, 'fake_token');
 

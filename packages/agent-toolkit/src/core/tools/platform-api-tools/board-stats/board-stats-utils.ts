@@ -51,15 +51,19 @@ function handleSelectFunctionElement(
   functionName: AggregateSelectFunctionName,
   columnId: string,
 ): AggregateSelectFunctionInput {
+  // special case: count items has no params
   return {
     function: functionName,
-    params: [
-      {
-        type: AggregateSelectElementType.Column,
-        column: handleSelectColumnElement(columnId),
-        as: columnId,
-      },
-    ],
+    params:
+      functionName === AggregateSelectFunctionName.CountItems
+        ? []
+        : [
+            {
+              type: AggregateSelectElementType.Column,
+              column: handleSelectColumnElement(columnId),
+              as: columnId,
+            },
+          ],
   };
 }
 

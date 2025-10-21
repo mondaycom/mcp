@@ -38,6 +38,7 @@ export const aggregativeFunctions = new Set([
   AggregateSelectFunctionName.Count,
   AggregateSelectFunctionName.CountDistinct,
   AggregateSelectFunctionName.CountSubitems,
+  AggregateSelectFunctionName.CountItems,
   AggregateSelectFunctionName.First,
   AggregateSelectFunctionName.Sum,
   AggregateSelectFunctionName.Average,
