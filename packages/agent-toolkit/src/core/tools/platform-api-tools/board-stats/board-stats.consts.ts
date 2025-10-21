@@ -5,6 +5,8 @@ export const complexFunctions = new Set([
   AggregateSelectFunctionName.Case,
   AggregateSelectFunctionName.Between,
   AggregateSelectFunctionName.Left,
+  AggregateSelectFunctionName.Raw,
+  AggregateSelectFunctionName.None,
 ]);
 
 export const transformativeFunctions = new Set([
@@ -43,5 +45,4 @@ export const aggregativeFunctions = new Set([
   AggregateSelectFunctionName.Min,
   AggregateSelectFunctionName.Max,
   AggregateSelectFunctionName.MinMax,
-  AggregateSelectFunctionName.None,
 ]);

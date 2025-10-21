@@ -19,7 +19,7 @@ export const boardStatsToolSchema = {
         function: z
           .nativeEnum(AggregateSelectFunctionName)
           .describe(
-            'The function of the aggregation. Excludes complex functions like case, between, left. For simple column value leave undefined',
+            'The function of the aggregation. Excludes complex functions like case, between, left, raw, none. For simple column value leave undefined',
           )
           .optional(),
         columnId: z.string().describe('The id of the column to aggregate'),

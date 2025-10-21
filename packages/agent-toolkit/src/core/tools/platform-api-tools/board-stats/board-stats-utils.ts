@@ -70,22 +70,24 @@ export function handleSelectAndGroupByElements(input: ToolInputType<typeof board
 
   const selectElements = input.aggregations.map((aggregation) => {
     if (aggregation.function) {
-      if (aggregation.function in complexFunctions) {
+      if (complexFunctions.has(aggregation.function)) {
         throw new Error(`Complex function ${aggregation.function} is not supported`);
       }
       const elementKey = `${aggregation.function}_${aggregation.columnId}`;
-      if (aggregation.function in transformativeFunctions) {
-        // transformative functions must be in group by
-        if (!input.groupBy?.includes(elementKey)) {
-          // if not in group by, add to group by
-          groupByElements.push({
-            column_id: elementKey,
-          });
-        }
-      }
       const aliasKeyIndex = aliasKeyMap[elementKey] || 0;
       aliasKeyMap[elementKey] = aliasKeyIndex + 1;
       const alias = `${elementKey}_${aliasKeyIndex}`;
+
+      if (transformativeFunctions.has(aggregation.function)) {
+        // transformative functions must be in group by
+        if (!groupByElements.some((groupByElement) => groupByElement.column_id === alias)) {
+          // if not in group by, add to group by
+          groupByElements.push({
+            column_id: alias,
+          });
+        }
+      }
+
       const selectElement: AggregateSelectElementInput = {
         type: AggregateSelectElementType.Function,
         function: handleSelectFunctionElement(aggregation.function, aggregation.columnId),
@@ -99,7 +101,7 @@ export function handleSelectAndGroupByElements(input: ToolInputType<typeof board
       column: handleSelectColumnElement(aggregation.columnId),
       as: aggregation.columnId,
     };
-    if (input.groupBy?.includes(aggregation.columnId)) {
+    if (!groupByElements.some((groupByElement) => groupByElement.column_id === aggregation.columnId)) {
       groupByElements.push({
         column_id: aggregation.columnId,
       });
