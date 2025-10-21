@@ -88,6 +88,61 @@ describe('fallbackToStringifiedVersionIfNull', () => {
         fallbackToStringifiedVersionIfNull(input, 'data', simpleSchema);
       }).toThrow('JSON string defined as dataStringified does not match the specified schema');
     });
+
+    it('should throw error when stringified JSON is a plain string instead of object', () => {
+      const input = {
+        data: null,
+        dataStringified: '"just a string"',
+      };
+
+      expect(() => {
+        fallbackToStringifiedVersionIfNull(input, 'data', simpleSchema);
+      }).toThrow('JSON string defined as dataStringified does not match the specified schema');
+    });
+
+    it('should throw error when stringified JSON is a number instead of object', () => {
+      const input = {
+        data: null,
+        dataStringified: '42',
+      };
+
+      expect(() => {
+        fallbackToStringifiedVersionIfNull(input, 'data', simpleSchema);
+      }).toThrow('JSON string defined as dataStringified does not match the specified schema');
+    });
+
+    it('should throw error when stringified JSON is an array instead of object', () => {
+      const input = {
+        data: null,
+        dataStringified: '["item1","item2","item3"]',
+      };
+
+      expect(() => {
+        fallbackToStringifiedVersionIfNull(input, 'data', simpleSchema);
+      }).toThrow('JSON string defined as dataStringified does not match the specified schema');
+    });
+
+    it('should throw error when stringified JSON is a boolean instead of object', () => {
+      const input = {
+        data: null,
+        dataStringified: 'true',
+      };
+
+      expect(() => {
+        fallbackToStringifiedVersionIfNull(input, 'data', simpleSchema);
+      }).toThrow('JSON string defined as dataStringified does not match the specified schema');
+    });
+
+    it('should throw error when stringified JSON is null', () => {
+      const input = {
+        data: null,
+        dataStringified: 'null',
+      };
+
+      expect(() => {
+        fallbackToStringifiedVersionIfNull(input, 'data', simpleSchema);
+      }).toThrow('JSON string defined as dataStringified does not match the specified schema');
+    });
     
   });
 
@@ -162,6 +217,64 @@ describe('fallbackToStringifiedVersionIfNull', () => {
       fallbackToStringifiedVersionIfNull(input, 'data', booleanSchema);
 
       expect(input.data).toEqual({ isActive: true, isVerified: false });
+    });
+
+    it('should handle record type with unknown values', () => {
+      const recordSchema = z.object({
+        settings: z.record(z.unknown()).optional(),
+      });
+
+      const input = {
+        data: null,
+        dataStringified: '{"settings":{"color":"blue","fontSize":14,"enabled":true,"nested":{"key":"value"}}}',
+      };
+
+      fallbackToStringifiedVersionIfNull(input, 'data', recordSchema);
+
+      expect(input.data).toEqual({
+        settings: {
+          color: 'blue',
+          fontSize: 14,
+          enabled: true,
+          nested: { key: 'value' },
+        },
+      });
+    });
+
+    it('should handle record type with string values', () => {
+      const recordSchema = z.object({
+        metadata: z.record(z.string()),
+      });
+
+      const input = {
+        data: null,
+        dataStringified: '{"metadata":{"author":"John Doe","version":"1.0.0","status":"active"}}',
+      };
+
+      fallbackToStringifiedVersionIfNull(input, 'data', recordSchema);
+
+      expect(input.data).toEqual({
+        metadata: {
+          author: 'John Doe',
+          version: '1.0.0',
+          status: 'active',
+        },
+      });
+    });
+
+    it('should handle record type with empty object', () => {
+      const recordSchema = z.object({
+        settings: z.record(z.unknown()).optional(),
+      });
+
+      const input = {
+        data: null,
+        dataStringified: '{"settings":{}}',
+      };
+
+      fallbackToStringifiedVersionIfNull(input, 'data', recordSchema);
+
+      expect(input.data).toEqual({ settings: {} });
     });
   });
 

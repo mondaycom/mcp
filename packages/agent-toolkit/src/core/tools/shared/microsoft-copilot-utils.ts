@@ -47,7 +47,7 @@ export const fallbackToStringifiedVersionIfNull = <
   }
 
   // Copilot might send data object directly e.g { ... } or wrap it in anobject with jsonKey as key e.g. { jsonKey: { ... } }
-  const didCopilotWrapTheObject = jsonKey in parsedResult && Object.keys(parsedResult).length === 1;
+  const didCopilotWrapTheObject = typeof(parsedResult) === 'object' && !!parsedResult && jsonKey in parsedResult && Object.keys(parsedResult).length === 1;
   const data = didCopilotWrapTheObject ? parsedResult[jsonKey] : parsedResult;
 
   const parseResult = schema.safeParse(data);
