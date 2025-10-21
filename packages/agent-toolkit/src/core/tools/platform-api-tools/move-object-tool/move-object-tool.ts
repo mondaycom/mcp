@@ -9,8 +9,8 @@ import { UpdateBoardHierarchyMutation, UpdateFolderMutation } from 'src/monday-g
 export const moveObjectToolSchema = {
   objectType: z.nativeEnum(ObjectType).describe('The type of object to move'),
   id: z.string().describe('The ID of the object to move'),
-  position_object_id: z.string().optional().describe('The ID of the object to position the object relative to'),
-  position_object_type: z.nativeEnum(ObjectType).optional().describe('The type of object to position the object relative to'),
+  position_object_id: z.string().optional().describe('The ID of the object to position the object relative to. If this parameter is provided, position_object_type must be also provided.'),
+  position_object_type: z.nativeEnum(ObjectType).optional().describe('The type of object to position the object relative to. If this parameter is provided, position_object_id must be also provided.'),
   position_is_after: z.boolean().optional().describe('Whether to position the object after the object'),
   parentFolderId: z
     .string()

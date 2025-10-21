@@ -13,8 +13,8 @@ export const updateFolderToolSchema = {
   parentFolderId: z.string().optional().describe('The ID of the new parent folder'),
   workspaceId: z.string().optional().describe('The ID of the workspace containing the folder'),
   accountProductId: z.string().optional().describe('The account product ID associated with the folder'),
-  position_object_id: z.string().optional().describe('The ID of the object to position the folder relative to'),
-  position_object_type: z.nativeEnum(ObjectType).optional().describe('The type of object to position the folder relative to'),
+  position_object_id: z.string().optional().describe('The ID of the object to position the folder relative to. If this parameter is provided, position_object_type must be also provided.'),
+  position_object_type: z.nativeEnum(ObjectType).optional().describe('The type of object to position the folder relative to. If this parameter is provided, position_object_id must be also provided.'),
   position_is_after: z.boolean().optional().describe('Whether to position the folder after the object'),
 };
 
