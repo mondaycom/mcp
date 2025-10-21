@@ -65,6 +65,10 @@ export class CreateWidgetTool extends BaseMondayApiTool<typeof createWidgetToolS
 
   protected async executeInternal(input: ToolInputType<typeof createWidgetToolSchema>): Promise<ToolOutputType<never>> {
     fallbackToStringifiedVersionIfNull(input, 'settings', createWidgetToolSchema.settings);
+    if(!input.settings) {
+      throw new Error('You must pass either settings or settingsStringified parameter');
+    }
+    
     try {
       // Prepare GraphQL variables
       const variables: CreateWidgetMutationVariables = {
