@@ -4,9 +4,11 @@ import {
   createDoc as createDocMutation,
   addContentToDocFromMarkdown,
   getItemBoard,
-  createColumn as createColumnMutation,
   updateDocName,
-} from '../../../monday-graphql/queries.graphql';
+} from './create-doc-tool.graphql';
+
+import { createColumn as createColumnMutation } from '../../../../monday-graphql/queries.graphql';
+
 import {
   BoardKind,
   ColumnType,
@@ -20,9 +22,9 @@ import {
   UpdateDocNameMutationVariables,
   AddContentToDocFromMarkdownMutation,
   AddContentToDocFromMarkdownMutationVariables,
-} from '../../../monday-graphql/generated/graphql';
-import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
-import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
+} from '../../../../monday-graphql/generated/graphql';
+import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
+import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 
 const DocType = z.enum(['workspace', 'item']);
 
@@ -47,11 +49,17 @@ const CreateDocLocationSchema = z.discriminatedUnion('type', [
 ]);
 
 export const createDocToolSchema = {
-  location: CreateDocLocationSchema.describe(
-    'Location where the document should be created - either in a workspace or attached to an item',
-  ),
   doc_name: z.string().describe('Name for the new document.'),
   markdown: z.string().describe('Markdown content that will be imported into the newly created document as blocks.'),
+  location: z.enum(['workspace', 'item']).describe('Location where the document should be created - either in a workspace or attached to an item'),
+  
+  workspace_id: z.number().optional().describe('[REQUIRED - use only when location="workspace"] Workspace ID under which to create the new document'),
+  doc_kind: z.nativeEnum(BoardKind).optional().describe('[OPTIONAL - use only when location="workspace"] Document kind (public/private/share). Defaults to public.'),
+  folder_id: z.number().optional().describe('[OPTIONAL - use only when location="workspace"] Optional folder ID to place the document inside a specific folder'),
+
+  item_id: z.number().optional().describe('[REQUIRED - use only when location="item"] Item ID to attach the new document to'),
+  column_id: z.string().optional().describe('[OPTIONAL - use only when location="item"] ID of an existing "doc" column on the board which contains the item. If not provided, the tool will create a new doc column automatically when creating a doc on an item.',),
+
 };
 
 export class CreateDocTool extends BaseMondayApiTool<typeof createDocToolSchema> {
@@ -72,9 +80,9 @@ LOCATION TYPES:
 - item: Creates a document attached to an item (requires item_id, optional column_id)
 
 USAGE EXAMPLES:
-- Workspace doc: { location: { type: "workspace", workspace_id: 123, doc_kind: "private" }, markdown: "..." }
-- Workspace doc in folder: { location: { type: "workspace", workspace_id: 123, folder_id: 17264196 }, markdown: "..." }
-- Item doc: { location: { type: "item", item_id: 456, column_id: "doc_col_1" }, markdown: "..." }`;
+- Workspace doc: { location: "workspace", workspace_id: 123, doc_kind: "private" , markdown: "..." }
+- Workspace doc in folder: { location: "workspace", workspace_id: 123, folder_id: 17264196 , markdown: "..." }
+- Item doc: { location: "item", item_id: 456, column_id: "doc_col_1" , markdown: "..." }`;
   }
 
   getInputSchema(): typeof createDocToolSchema {
@@ -82,19 +90,30 @@ USAGE EXAMPLES:
   }
 
   protected async executeInternal(input: ToolInputType<typeof createDocToolSchema>): Promise<ToolOutputType<never>> {
+    const inputParsingResult = CreateDocLocationSchema.safeParse({
+      ...input,
+      type: input.location
+    });
+
+    if(!inputParsingResult.success) {
+      return { content: `Required parameters were not provided for location parameter of ${input.location}` };
+    }
+    
+    const parsedInput = inputParsingResult.data;
+
     try {
       let docId: string | undefined;
       let docUrl: string | undefined;
 
-      if (input.location.type === DocType.enum.workspace) {
+      if (parsedInput.type === DocType.enum.workspace) {
         // Workspace document creation
         const variables: CreateDocMutationVariables = {
           location: {
             workspace: {
-              workspace_id: input.location.workspace_id.toString(),
+              workspace_id: parsedInput.workspace_id.toString(),
               name: input.doc_name,
-              kind: input.location.doc_kind || BoardKind.Public,
-              folder_id: input.location.folder_id?.toString(),
+              kind: parsedInput.doc_kind || BoardKind.Public,
+              folder_id: parsedInput.folder_id?.toString(),
             },
           },
         };
@@ -102,23 +121,23 @@ USAGE EXAMPLES:
         const res: CreateDocMutation = await this.mondayApi.request(createDocMutation, variables);
         docId = res?.create_doc?.id ?? undefined;
         docUrl = res?.create_doc?.url ?? undefined;
-      } else if (input.location.type === DocType.enum.item) {
+      } else if (parsedInput.type === DocType.enum.item) {
         // Item-attached document creation
         // Step 1: Resolve the board id and existing doc columns
         const variables: GetItemBoardQueryVariables = {
-          itemId: input.location.item_id.toString(),
+          itemId: parsedInput.item_id.toString(),
         };
         const itemRes: GetItemBoardQuery = await this.mondayApi.request(getItemBoard, variables);
 
         const item = itemRes.items?.[0];
         if (!item) {
-          return { content: `Error: Item with id ${input.location.item_id} not found.` };
+          return { content: `Error: Item with id ${parsedInput.item_id} not found.` };
         }
 
         const boardId = item.board?.id;
         const existingDocColumn = item.board?.columns?.find((c) => c && c.type === ColumnType.Doc);
 
-        let columnId = input.location.column_id;
+        let columnId = parsedInput.column_id;
 
         if (!columnId) {
           if (existingDocColumn) {
@@ -143,7 +162,7 @@ USAGE EXAMPLES:
         const itemVariables: CreateDocMutationVariables = {
           location: {
             board: {
-              item_id: input.location.item_id.toString(),
+              item_id: parsedInput.item_id.toString(),
               column_id: columnId,
             },
           },

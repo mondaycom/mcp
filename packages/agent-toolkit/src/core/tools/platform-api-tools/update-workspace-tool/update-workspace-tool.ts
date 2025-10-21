@@ -6,14 +6,10 @@ import { WorkspaceKind } from 'src/monday-graphql/generated/graphql';
 
 export const updateWorkspaceToolSchema = {
   id: z.string().describe('The ID of the workspace to update'),
-  attributes: z
-    .object({
-      accountProductId: z.number().optional(),
-      description: z.string().optional(),
-      kind: z.nativeEnum(WorkspaceKind).optional(),
-      name: z.string().optional(),
-    })
-    .describe('Attributes to update in the workspace'),
+  attributeAccountProductId: z.number().optional().describe("The target account product's ID to move the workspace to"),
+  attributeDescription: z.string().optional().describe("The description of the workspace to update"),
+  attributeKind: z.nativeEnum(WorkspaceKind).optional().describe("The kind of the workspace to update (open / closed / template)"),
+  attributeName: z.string().optional().describe("The name of the workspace to update"),
 };
 
 export type UpdateWorkspaceToolInput = typeof updateWorkspaceToolSchema;
@@ -39,7 +35,12 @@ export class UpdateWorkspaceTool extends BaseMondayApiTool<UpdateWorkspaceToolIn
   protected async executeInternal(input: ToolInputType<UpdateWorkspaceToolInput>): Promise<ToolOutputType<never>> {
     const variables = {
       id: input.id,
-      attributes: input.attributes,
+      attributes: {
+        account_product_id:input.attributeAccountProductId,
+        description: input.attributeDescription,
+        kind: input.attributeKind,
+        name: input.attributeName,
+      },
     };
 
     const res = await this.mondayApi.request<{ update_workspace: { id: string } }>(updateWorkspace, variables);
