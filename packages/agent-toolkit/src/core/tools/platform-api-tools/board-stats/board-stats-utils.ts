@@ -82,10 +82,12 @@ export function handleSelectAndGroupByElements(input: ToolInputType<typeof board
     })) || [];
 
   const selectElements = input.aggregations.map((aggregation) => {
+    // handle a function
     if (aggregation.function) {
       if (complexFunctions.has(aggregation.function)) {
         throw new Error(`Complex function ${aggregation.function} is not supported`);
       }
+      // create a unique alias for the select element
       const elementKey = `${aggregation.function}_${aggregation.columnId}`;
       const aliasKeyIndex = aliasKeyMap[elementKey] || 0;
       aliasKeyMap[elementKey] = aliasKeyIndex + 1;
@@ -109,11 +111,13 @@ export function handleSelectAndGroupByElements(input: ToolInputType<typeof board
       return selectElement;
     }
 
+    // handle a column
     const selectElement: AggregateSelectElementInput = {
       type: AggregateSelectElementType.Column,
       column: handleSelectColumnElement(aggregation.columnId),
       as: aggregation.columnId,
     };
+    // plain columns must be in group by. add if not already in group by
     if (!groupByElements.some((groupByElement) => groupByElement.column_id === aggregation.columnId)) {
       groupByElements.push({
         column_id: aggregation.columnId,
