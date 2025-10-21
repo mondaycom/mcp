@@ -76,7 +76,7 @@ export class BoardStatsTool extends BaseMondayApiTool<typeof boardStatsToolSchem
   });
 
   getDescription(): string {
-    return 'Get stats for a board. Returns the stats for the given query.';
+    return 'Get insights and aggregations for a board. Use this tool to get insights and aggregations for a board. For example, you can get the total number of items in a board, the number of items in each status, the number of items in each column, etc.';
   }
 
   getInputSchema(): typeof boardStatsToolSchema {
@@ -97,30 +97,20 @@ export class BoardStatsTool extends BaseMondayApiTool<typeof boardStatsToolSchem
     };
 
     const res = await this.mondayApi.request<AggregateBoardStatsQuery>(boardStats, variables);
+
     const rows = (res.aggregate?.results ?? []).map((resultSet) => {
       const row: Record<string, string | number | boolean | null> = {};
       (resultSet.entries ?? []).forEach((entry) => {
         const alias = entry.alias ?? '';
         if (!alias) return;
-        const value = entry.value;
+        const value = entry.value as any;
         if (!value) {
           row[alias] = null;
           return;
         }
-        switch (value.__typename) {
-          case 'AggregateBasicAggregationResult': {
-            row[alias] = value.result ?? null;
-            break;
-          }
-          case 'AggregateGroupByResult': {
-            const v = value.value_string ?? value.value_int ?? value.value_float ?? value.value_boolean ?? null;
-            row[alias] = v;
-            break;
-          }
-          default: {
-            row[alias] = null;
-          }
-        }
+        const v =
+          value.result ?? value.value_string ?? value.value_int ?? value.value_float ?? value.value_boolean ?? null;
+        row[alias] = v;
       });
       return row;
     });

@@ -705,7 +705,9 @@ describe('Board Stats Tool', () => {
 
       expect(tool.name).toBe('board_stats');
       expect(tool.type).toBe('read');
-      expect(tool.getDescription()).toBe('Get stats for a board. Returns the stats for the given query.');
+      expect(tool.getDescription()).toBe(
+        'Get insights and aggregations for a board. Use this tool to get insights and aggregations for a board. For example, you can get the total number of items in a board, the number of items in each status, the number of items in each column, etc.',
+      );
       expect(tool.annotations.title).toBe('Get Board Stats');
       expect(tool.annotations.readOnlyHint).toBe(true);
       expect(tool.annotations.destructiveHint).toBe(false);
