@@ -8,6 +8,7 @@ import {
   ItemsQueryRuleOperator,
   AggregateBoardStatsQueryVariables,
   AggregateBoardStatsQuery,
+  ItemsOrderByDirection,
 } from 'src/monday-graphql/generated/graphql';
 import { handleFilters, handleFrom, handleSelectAndGroupByElements } from './board-stats-utils';
 
@@ -43,7 +44,7 @@ export const boardStatsToolSchema = {
             compareValue: z
               .any()
               .describe(
-                'The value to compare the attribute to. This can be a string or index value depending on the column type.',
+                'The value to compare the attribute to. This can be a string or index value depending on the column type. This is required even for is_empty, is_not_empty operators.',
               ),
             operator: z
               .nativeEnum(ItemsQueryRuleOperator)
@@ -63,6 +64,15 @@ export const boardStatsToolSchema = {
     })
     .optional()
     .describe('The configuration of filters to apply on the items.'),
+  orderBy: z
+    .array(
+      z.object({
+        columnId: z.string().describe('The id of the column to order by'),
+        direction: z.nativeEnum(ItemsOrderByDirection).describe('The direction to order by'),
+      }),
+    )
+    .optional()
+    .describe('The columns to order by, will control the order of the items in the response if needed'),
 };
 
 export class BoardStatsTool extends BaseMondayApiTool<typeof boardStatsToolSchema> {
@@ -85,11 +95,13 @@ export class BoardStatsTool extends BaseMondayApiTool<typeof boardStatsToolSchem
 
   protected async executeInternal(input: ToolInputType<typeof boardStatsToolSchema>): Promise<ToolOutputType<never>> {
     const { selectElements, groupByElements } = handleSelectAndGroupByElements(input);
+    const filters = handleFilters(input);
+    const from = handleFrom(input);
 
     const variables: AggregateBoardStatsQueryVariables = {
       query: {
-        from: handleFrom(input),
-        query: handleFilters(input),
+        from,
+        query: filters,
         select: selectElements,
         group_by: groupByElements,
         limit: input.limit,

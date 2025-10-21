@@ -1,12 +1,13 @@
 import { createMockApiClient } from '../test-utils/mock-api-client';
 import { BoardStatsTool } from './board-stats-tool';
-import { handleFrom, handleFilters, handleSelectAndGroupByElements } from './board-stats-utils';
+import { handleFrom, handleFilters, handleSelectAndGroupByElements, handleOrderBy } from './board-stats-utils';
 import {
   AggregateSelectFunctionName,
   ItemsQueryOperator,
   ItemsQueryRuleOperator,
   AggregateFromElementType,
   AggregateSelectElementType,
+  ItemsOrderByDirection,
 } from 'src/monday-graphql/generated/graphql';
 
 describe('Board Stats Tool', () => {
@@ -111,6 +112,159 @@ describe('Board Stats Tool', () => {
           ],
           operator: ItemsQueryOperator.Or,
         });
+      });
+
+      it('should include orderBy when provided', () => {
+        const input = {
+          boardId: 123,
+          orderBy: [
+            {
+              columnId: 'status',
+              direction: ItemsOrderByDirection.Asc,
+            },
+          ],
+        };
+
+        const result = handleFilters(input as any);
+
+        expect(result).toEqual({
+          order_by: [
+            {
+              column_id: 'status',
+              direction: ItemsOrderByDirection.Asc,
+            },
+          ],
+        });
+      });
+
+      it('should include both filters and orderBy when both provided', () => {
+        const input = {
+          boardId: 123,
+          filters: {
+            rules: [
+              {
+                columnId: 'status',
+                compareValue: 'Done',
+                operator: ItemsQueryRuleOperator.AnyOf,
+              },
+            ],
+            operator: ItemsQueryOperator.And,
+          },
+          orderBy: [
+            {
+              columnId: 'created_at',
+              direction: ItemsOrderByDirection.Desc,
+            },
+          ],
+        };
+
+        const result = handleFilters(input as any);
+
+        expect(result).toEqual({
+          rules: [
+            {
+              column_id: 'status',
+              compare_value: 'Done',
+              operator: ItemsQueryRuleOperator.AnyOf,
+              compare_attribute: undefined,
+            },
+          ],
+          operator: ItemsQueryOperator.And,
+          order_by: [
+            {
+              column_id: 'created_at',
+              direction: ItemsOrderByDirection.Desc,
+            },
+          ],
+        });
+      });
+    });
+
+    describe('handleOrderBy', () => {
+      it('should return undefined when no orderBy provided', () => {
+        const input = { boardId: 123 };
+        const result = handleOrderBy(input as any);
+
+        expect(result).toBeUndefined();
+      });
+
+      it('should transform single orderBy correctly with ASC direction', () => {
+        const input = {
+          boardId: 123,
+          orderBy: [
+            {
+              columnId: 'status',
+              direction: ItemsOrderByDirection.Asc,
+            },
+          ],
+        };
+
+        const result = handleOrderBy(input as any);
+
+        expect(result).toEqual([
+          {
+            column_id: 'status',
+            direction: ItemsOrderByDirection.Asc,
+          },
+        ]);
+      });
+
+      it('should transform single orderBy correctly with DESC direction', () => {
+        const input = {
+          boardId: 123,
+          orderBy: [
+            {
+              columnId: 'created_at',
+              direction: ItemsOrderByDirection.Desc,
+            },
+          ],
+        };
+
+        const result = handleOrderBy(input as any);
+
+        expect(result).toEqual([
+          {
+            column_id: 'created_at',
+            direction: ItemsOrderByDirection.Desc,
+          },
+        ]);
+      });
+
+      it('should transform multiple orderBy correctly', () => {
+        const input = {
+          boardId: 123,
+          orderBy: [
+            {
+              columnId: 'status',
+              direction: ItemsOrderByDirection.Asc,
+            },
+            {
+              columnId: 'priority',
+              direction: ItemsOrderByDirection.Desc,
+            },
+            {
+              columnId: 'created_at',
+              direction: ItemsOrderByDirection.Asc,
+            },
+          ],
+        };
+
+        const result = handleOrderBy(input as any);
+
+        expect(result).toEqual([
+          {
+            column_id: 'status',
+            direction: ItemsOrderByDirection.Asc,
+          },
+          {
+            column_id: 'priority',
+            direction: ItemsOrderByDirection.Desc,
+          },
+          {
+            column_id: 'created_at',
+            direction: ItemsOrderByDirection.Asc,
+          },
+        ]);
       });
     });
 
@@ -698,6 +852,204 @@ describe('Board Stats Tool', () => {
       expect(result.content).toContain('"priority": "Low"');
       expect(result.content).toContain('"SUM_numbers_0": 80');
       expect(result.content).toContain('"AVERAGE_numbers_0": 20');
+    });
+
+    it('should handle stats with single column orderBy', async () => {
+      const mockResponse = {
+        aggregate: {
+          results: [
+            {
+              entries: [
+                { alias: 'status', value: { value_string: 'Done' } },
+                { alias: 'COUNT_item_id_0', value: { result: 5 } },
+              ],
+            },
+            {
+              entries: [
+                { alias: 'status', value: { value_string: 'Working on it' } },
+                { alias: 'COUNT_item_id_0', value: { result: 3 } },
+              ],
+            },
+          ],
+        },
+      };
+
+      mocks.setResponse(mockResponse);
+
+      const tool = new BoardStatsTool(mocks.mockApiClient, 'fake_token');
+
+      await tool.execute({
+        boardId: 123456,
+        aggregations: [{ columnId: 'status' }, { columnId: 'item_id', function: AggregateSelectFunctionName.Count }],
+        groupBy: ['status'],
+        orderBy: [
+          {
+            columnId: 'status',
+            direction: ItemsOrderByDirection.Asc,
+          },
+        ],
+      });
+
+      const mockCall = mocks.getMockRequest().mock.calls[0];
+      expect(mockCall[1].query.query).toEqual({
+        order_by: [
+          {
+            column_id: 'status',
+            direction: ItemsOrderByDirection.Asc,
+          },
+        ],
+      });
+    });
+
+    it('should handle stats with multiple column orderBy', async () => {
+      const mockResponse = {
+        aggregate: {
+          results: [
+            {
+              entries: [
+                { alias: 'status', value: { value_string: 'Done' } },
+                { alias: 'priority', value: { value_string: 'High' } },
+                { alias: 'COUNT_item_id_0', value: { result: 2 } },
+              ],
+            },
+          ],
+        },
+      };
+
+      mocks.setResponse(mockResponse);
+
+      const tool = new BoardStatsTool(mocks.mockApiClient, 'fake_token');
+
+      await tool.execute({
+        boardId: 123456,
+        aggregations: [
+          { columnId: 'status' },
+          { columnId: 'priority' },
+          { columnId: 'item_id', function: AggregateSelectFunctionName.Count },
+        ],
+        groupBy: ['status', 'priority'],
+        orderBy: [
+          {
+            columnId: 'status',
+            direction: ItemsOrderByDirection.Asc,
+          },
+          {
+            columnId: 'priority',
+            direction: ItemsOrderByDirection.Desc,
+          },
+        ],
+      });
+
+      const mockCall = mocks.getMockRequest().mock.calls[0];
+      expect(mockCall[1].query.query).toEqual({
+        order_by: [
+          {
+            column_id: 'status',
+            direction: ItemsOrderByDirection.Asc,
+          },
+          {
+            column_id: 'priority',
+            direction: ItemsOrderByDirection.Desc,
+          },
+        ],
+      });
+    });
+
+    it('should handle stats with filters and orderBy combined', async () => {
+      const mockResponse = {
+        aggregate: {
+          results: [
+            {
+              entries: [
+                { alias: 'status', value: { value_string: 'Done' } },
+                { alias: 'COUNT_item_id_0', value: { result: 8 } },
+              ],
+            },
+          ],
+        },
+      };
+
+      mocks.setResponse(mockResponse);
+
+      const tool = new BoardStatsTool(mocks.mockApiClient, 'fake_token');
+
+      await tool.execute({
+        boardId: 123456,
+        aggregations: [{ columnId: 'status' }, { columnId: 'item_id', function: AggregateSelectFunctionName.Count }],
+        groupBy: ['status'],
+        filters: {
+          rules: [
+            {
+              columnId: 'priority',
+              compareValue: 'High',
+              operator: ItemsQueryRuleOperator.AnyOf,
+            },
+          ],
+          operator: ItemsQueryOperator.And,
+        },
+        orderBy: [
+          {
+            columnId: 'COUNT_item_id_0',
+            direction: ItemsOrderByDirection.Desc,
+          },
+        ],
+      });
+
+      const mockCall = mocks.getMockRequest().mock.calls[0];
+      expect(mockCall[1].query.query).toEqual({
+        rules: [
+          {
+            column_id: 'priority',
+            compare_value: 'High',
+            operator: ItemsQueryRuleOperator.AnyOf,
+            compare_attribute: undefined,
+          },
+        ],
+        operator: ItemsQueryOperator.And,
+        order_by: [
+          {
+            column_id: 'COUNT_item_id_0',
+            direction: ItemsOrderByDirection.Desc,
+          },
+        ],
+      });
+    });
+
+    it('should handle orderBy with DESC direction', async () => {
+      const mockResponse = {
+        aggregate: {
+          results: [
+            {
+              entries: [
+                { alias: 'created_at', value: { value_string: '2024-01-15' } },
+                { alias: 'COUNT_item_id_0', value: { result: 10 } },
+              ],
+            },
+          ],
+        },
+      };
+
+      mocks.setResponse(mockResponse);
+
+      const tool = new BoardStatsTool(mocks.mockApiClient, 'fake_token');
+
+      await tool.execute({
+        boardId: 123456,
+        aggregations: [
+          { columnId: 'created_at' },
+          { columnId: 'item_id', function: AggregateSelectFunctionName.Count },
+        ],
+        groupBy: ['created_at'],
+        orderBy: [
+          {
+            columnId: 'created_at',
+            direction: ItemsOrderByDirection.Desc,
+          },
+        ],
+      });
+
+      const mockCall = mocks.getMockRequest().mock.calls[0];
+      expect(mockCall[1].query.query.order_by[0].direction).toBe(ItemsOrderByDirection.Desc);
     });
 
     it('should have correct metadata', () => {
