@@ -10,7 +10,7 @@ import {
   ItemsOrderByDirection,
 } from 'src/monday-graphql/generated/graphql';
 import { handleFilters, handleFrom, handleSelectAndGroupByElements } from './board-insights-utils';
-import { BoardInsightsAggregationFunction } from './board-insights.consts';
+import { BoardInsightsAggregationFunction, DEFAULT_LIMIT, MAX_LIMIT } from './board-insights.consts';
 
 export const boardInsightsToolSchema = {
   boardId: z.number().describe('The id of the board to get insights for'),
@@ -31,7 +31,7 @@ export const boardInsightsToolSchema = {
       'The columns to group by. All columns in the group by must be in the aggregations as well without a function.',
     )
     .optional(),
-  limit: z.number().describe('The limit of the results').optional(),
+  limit: z.number().describe('The limit of the results').max(MAX_LIMIT).optional().default(DEFAULT_LIMIT),
   filters: z
     .array(
       z.object({

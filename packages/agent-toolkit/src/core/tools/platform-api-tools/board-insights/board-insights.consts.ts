@@ -1,5 +1,8 @@
 import { AggregateSelectFunctionName } from 'src/monday-graphql/generated/graphql';
 
+export const DEFAULT_LIMIT = 1000;
+export const MAX_LIMIT = 1000;
+
 // Functions to exclude from BoardInsightsAggregationFunction
 const excludedFunctions = new Set([
   AggregateSelectFunctionName.Case,

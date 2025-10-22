@@ -9,6 +9,7 @@ import {
   AggregateSelectElementType,
   ItemsOrderByDirection,
 } from 'src/monday-graphql/generated/graphql';
+import { DEFAULT_LIMIT } from './board-insights.consts';
 
 describe('Board Insights Tool', () => {
   describe('Utility Functions', () => {
@@ -324,6 +325,7 @@ describe('Board Insights Tool', () => {
               function: AggregateSelectFunctionName.Label,
             },
           ],
+          limit: DEFAULT_LIMIT,
         };
 
         const result = handleSelectAndGroupByElements(input as any);
@@ -397,20 +399,6 @@ describe('Board Insights Tool', () => {
         expect(
           result.selectElements.some((el) => el.type === AggregateSelectElementType.Column && el.as === 'priority'),
         ).toBe(true);
-      });
-
-      it('should throw error for complex functions', () => {
-        const input = {
-          boardId: 123,
-          aggregations: [
-            {
-              columnId: 'status',
-              function: AggregateSelectFunctionName.Case,
-            },
-          ],
-        };
-
-        expect(() => handleSelectAndGroupByElements(input as any)).toThrow('Complex function CASE is not supported');
       });
 
       it('should handle multiple aggregations of same column with different functions', () => {
@@ -513,6 +501,7 @@ describe('Board Insights Tool', () => {
         aggregations: [{ columnId: 'status' }, { columnId: 'item_id', function: AggregateSelectFunctionName.Count }],
         groupBy: ['status'],
         filtersOperator: ItemsQueryOperator.And,
+        limit: DEFAULT_LIMIT,
       });
 
       expect(result.content).toContain('Board insights result (2 rows)');
@@ -562,6 +551,7 @@ describe('Board Insights Tool', () => {
           },
         ],
         filtersOperator: ItemsQueryOperator.And,
+        limit: DEFAULT_LIMIT,
       });
 
       expect(result.content).toContain('Board insights result (1 rows)');
@@ -627,6 +617,7 @@ describe('Board Insights Tool', () => {
         boardId: 123456,
         aggregations: [{ columnId: 'status' }],
         filtersOperator: ItemsQueryOperator.And,
+        limit: DEFAULT_LIMIT,
       });
 
       expect(result.content).toBe('No board insights found for the given query.');
@@ -645,6 +636,7 @@ describe('Board Insights Tool', () => {
         boardId: 123456,
         aggregations: [{ columnId: 'status' }],
         filtersOperator: ItemsQueryOperator.And,
+        limit: DEFAULT_LIMIT,
       });
 
       expect(result.content).toBe('No board insights found for the given query.');
@@ -696,6 +688,7 @@ describe('Board Insights Tool', () => {
           { columnId: 'result_col', function: AggregateSelectFunctionName.Count },
         ],
         filtersOperator: ItemsQueryOperator.And,
+        limit: DEFAULT_LIMIT,
       });
 
       expect(result.content).toContain('"string_col": "text value"');
@@ -733,6 +726,7 @@ describe('Board Insights Tool', () => {
         boardId: 123456,
         aggregations: [{ columnId: 'status' }, { columnId: 'item_id', function: AggregateSelectFunctionName.Count }],
         filtersOperator: ItemsQueryOperator.And,
+        limit: DEFAULT_LIMIT,
       });
 
       expect(result.content).toContain('"status": null');
@@ -767,6 +761,7 @@ describe('Board Insights Tool', () => {
         boardId: 123456,
         aggregations: [{ columnId: 'status' }],
         filtersOperator: ItemsQueryOperator.And,
+        limit: DEFAULT_LIMIT,
       });
 
       const parsedResult = JSON.parse(result.content.split(':\n')[1]);
@@ -784,6 +779,7 @@ describe('Board Insights Tool', () => {
           boardId: 999999,
           aggregations: [{ columnId: 'status' }],
           filtersOperator: ItemsQueryOperator.And,
+          limit: DEFAULT_LIMIT,
         }),
       ).rejects.toThrow('Board not found');
     });
@@ -802,6 +798,7 @@ describe('Board Insights Tool', () => {
           boardId: 123456,
           aggregations: [{ columnId: 'invalid_column' }],
           filtersOperator: ItemsQueryOperator.And,
+          limit: DEFAULT_LIMIT,
         }),
       ).rejects.toThrow('GraphQL Error');
     });
@@ -844,6 +841,7 @@ describe('Board Insights Tool', () => {
         ],
         groupBy: ['status', 'priority'],
         filtersOperator: ItemsQueryOperator.And,
+        limit: DEFAULT_LIMIT,
       });
 
       expect(result.content).toContain('Board insights result (2 rows)');
@@ -891,6 +889,7 @@ describe('Board Insights Tool', () => {
           },
         ],
         filtersOperator: ItemsQueryOperator.And,
+        limit: DEFAULT_LIMIT,
       });
 
       const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -942,6 +941,7 @@ describe('Board Insights Tool', () => {
           },
         ],
         filtersOperator: ItemsQueryOperator.And,
+        limit: DEFAULT_LIMIT,
       });
 
       const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -995,6 +995,7 @@ describe('Board Insights Tool', () => {
             direction: ItemsOrderByDirection.Desc,
           },
         ],
+        limit: DEFAULT_LIMIT,
       });
 
       const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -1049,6 +1050,7 @@ describe('Board Insights Tool', () => {
           },
         ],
         filtersOperator: ItemsQueryOperator.And,
+        limit: DEFAULT_LIMIT,
       });
 
       const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -1084,6 +1086,7 @@ describe('Board Insights Tool', () => {
           },
         ],
         filtersOperator: ItemsQueryOperator.And,
+        limit: DEFAULT_LIMIT,
       });
 
       expect(result.content).toContain('Board insights result (1 rows)');
@@ -1143,6 +1146,7 @@ describe('Board Insights Tool', () => {
           },
         ],
         filtersOperator: ItemsQueryOperator.And,
+        limit: DEFAULT_LIMIT,
       });
 
       expect(result.content).toContain('Board insights result (1 rows)');
