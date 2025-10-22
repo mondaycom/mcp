@@ -1,5 +1,5 @@
 import { ToolInputType } from 'src/core/tool';
-import { boardStatsToolSchema } from './board-stats-tool';
+import { boardInsightsToolSchema } from './board-insights-tool';
 import {
   AggregateFromElementType,
   AggregateFromTableInput,
@@ -12,16 +12,16 @@ import {
   ItemsQuery,
   ItemsQueryOrderBy,
 } from 'src/monday-graphql/generated/graphql';
-import { complexFunctions, transformativeFunctions } from './board-stats.consts';
+import { complexFunctions, transformativeFunctions } from './board-insights.consts';
 
-export function handleFrom(input: ToolInputType<typeof boardStatsToolSchema>): AggregateFromTableInput {
+export function handleFrom(input: ToolInputType<typeof boardInsightsToolSchema>): AggregateFromTableInput {
   return {
     id: input.boardId.toString(),
     type: AggregateFromElementType.Table,
   };
 }
 
-export function handleFilters(input: ToolInputType<typeof boardStatsToolSchema>): ItemsQuery | undefined {
+export function handleFilters(input: ToolInputType<typeof boardInsightsToolSchema>): ItemsQuery | undefined {
   if (!input.filters && !input.orderBy) {
     return undefined;
   }
@@ -67,14 +67,14 @@ function handleSelectFunctionElement(
   };
 }
 
-export function handleOrderBy(input: ToolInputType<typeof boardStatsToolSchema>): ItemsQueryOrderBy[] | undefined {
+export function handleOrderBy(input: ToolInputType<typeof boardInsightsToolSchema>): ItemsQueryOrderBy[] | undefined {
   return input.orderBy?.map((orderBy) => ({
     column_id: orderBy.columnId,
     direction: orderBy.direction,
   }));
 }
 
-export function handleSelectAndGroupByElements(input: ToolInputType<typeof boardStatsToolSchema>): {
+export function handleSelectAndGroupByElements(input: ToolInputType<typeof boardInsightsToolSchema>): {
   selectElements: AggregateSelectElementInput[];
   groupByElements: AggregateGroupByElementInput[];
 } {

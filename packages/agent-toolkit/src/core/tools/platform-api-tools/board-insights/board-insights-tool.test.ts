@@ -1,6 +1,6 @@
 import { createMockApiClient } from '../test-utils/mock-api-client';
-import { BoardStatsTool } from './board-stats-tool';
-import { handleFrom, handleFilters, handleSelectAndGroupByElements, handleOrderBy } from './board-stats-utils';
+import { BoardInsightsTool } from './board-insights-tool';
+import { handleFrom, handleFilters, handleSelectAndGroupByElements, handleOrderBy } from './board-insights-utils';
 import {
   AggregateSelectFunctionName,
   ItemsQueryOperator,
@@ -10,7 +10,7 @@ import {
   ItemsOrderByDirection,
 } from 'src/monday-graphql/generated/graphql';
 
-describe('Board Stats Tool', () => {
+describe('Board Insights Tool', () => {
   describe('Utility Functions', () => {
     describe('handleFrom', () => {
       it('should create proper FROM clause for a board', () => {
@@ -470,7 +470,7 @@ describe('Board Stats Tool', () => {
     });
   });
 
-  describe('BoardStatsTool Execution', () => {
+  describe('BoardInsightsTool Execution', () => {
     let mocks: ReturnType<typeof createMockApiClient>;
 
     beforeEach(() => {
@@ -478,7 +478,7 @@ describe('Board Stats Tool', () => {
       jest.clearAllMocks();
     });
 
-    it('should successfully get basic board stats', async () => {
+    it('should successfully get basic board insights', async () => {
       const mockResponse = {
         aggregate: {
           results: [
@@ -512,7 +512,7 @@ describe('Board Stats Tool', () => {
 
       mocks.setResponse(mockResponse);
 
-      const tool = new BoardStatsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
       const result = await tool.execute({
         boardId: 123456,
@@ -520,14 +520,14 @@ describe('Board Stats Tool', () => {
         groupBy: ['status'],
       });
 
-      expect(result.content).toContain('Board stats result (2 rows)');
+      expect(result.content).toContain('Board insights result (2 rows)');
       expect(result.content).toContain('"status": "Done"');
       expect(result.content).toContain('"COUNT_item_id_0": 5');
       expect(result.content).toContain('"status": "Working on it"');
       expect(result.content).toContain('"COUNT_item_id_0": 3');
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-        expect.stringContaining('query aggregateBoardStats'),
+        expect.stringContaining('query aggregateBoardInsights'),
         expect.objectContaining({
           query: expect.objectContaining({
             from: { id: '123456', type: AggregateFromElementType.Table },
@@ -536,7 +536,7 @@ describe('Board Stats Tool', () => {
       );
     });
 
-    it('should handle stats with filters', async () => {
+    it('should handle insights with filters', async () => {
       const mockResponse = {
         aggregate: {
           results: [
@@ -554,7 +554,7 @@ describe('Board Stats Tool', () => {
 
       mocks.setResponse(mockResponse);
 
-      const tool = new BoardStatsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
       const result = await tool.execute({
         boardId: 123456,
@@ -571,7 +571,7 @@ describe('Board Stats Tool', () => {
         },
       });
 
-      expect(result.content).toContain('Board stats result (1 rows)');
+      expect(result.content).toContain('Board insights result (1 rows)');
       expect(result.content).toContain('"COUNT_item_id_0": 10');
 
       const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -588,7 +588,7 @@ describe('Board Stats Tool', () => {
       });
     });
 
-    it('should handle stats with limit', async () => {
+    it('should handle insights with limit', async () => {
       const mockResponse = {
         aggregate: {
           results: [
@@ -606,7 +606,7 @@ describe('Board Stats Tool', () => {
 
       mocks.setResponse(mockResponse);
 
-      const tool = new BoardStatsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
       await tool.execute({
         boardId: 123456,
@@ -627,14 +627,14 @@ describe('Board Stats Tool', () => {
 
       mocks.setResponse(mockResponse);
 
-      const tool = new BoardStatsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
       const result = await tool.execute({
         boardId: 123456,
         aggregations: [{ columnId: 'status' }],
       });
 
-      expect(result.content).toBe('No board stats found for the given query.');
+      expect(result.content).toBe('No board insights found for the given query.');
     });
 
     it('should handle null aggregate response', async () => {
@@ -644,14 +644,14 @@ describe('Board Stats Tool', () => {
 
       mocks.setResponse(mockResponse);
 
-      const tool = new BoardStatsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
       const result = await tool.execute({
         boardId: 123456,
         aggregations: [{ columnId: 'status' }],
       });
 
-      expect(result.content).toBe('No board stats found for the given query.');
+      expect(result.content).toBe('No board insights found for the given query.');
     });
 
     it('should handle different value types in results', async () => {
@@ -688,7 +688,7 @@ describe('Board Stats Tool', () => {
 
       mocks.setResponse(mockResponse);
 
-      const tool = new BoardStatsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
       const result = await tool.execute({
         boardId: 123456,
@@ -730,7 +730,7 @@ describe('Board Stats Tool', () => {
 
       mocks.setResponse(mockResponse);
 
-      const tool = new BoardStatsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
       const result = await tool.execute({
         boardId: 123456,
@@ -763,7 +763,7 @@ describe('Board Stats Tool', () => {
 
       mocks.setResponse(mockResponse);
 
-      const tool = new BoardStatsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
       const result = await tool.execute({
         boardId: 123456,
@@ -778,7 +778,7 @@ describe('Board Stats Tool', () => {
     it('should handle API errors', async () => {
       mocks.setError('Board not found');
 
-      const tool = new BoardStatsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
       await expect(
         tool.execute({
@@ -795,7 +795,7 @@ describe('Board Stats Tool', () => {
       };
       mocks.setError(graphqlError);
 
-      const tool = new BoardStatsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
       await expect(
         tool.execute({
@@ -831,7 +831,7 @@ describe('Board Stats Tool', () => {
 
       mocks.setResponse(mockResponse);
 
-      const tool = new BoardStatsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
       const result = await tool.execute({
         boardId: 123456,
@@ -844,7 +844,7 @@ describe('Board Stats Tool', () => {
         groupBy: ['status', 'priority'],
       });
 
-      expect(result.content).toContain('Board stats result (2 rows)');
+      expect(result.content).toContain('Board insights result (2 rows)');
       expect(result.content).toContain('"status": "Done"');
       expect(result.content).toContain('"priority": "High"');
       expect(result.content).toContain('"SUM_numbers_0": 150');
@@ -854,7 +854,7 @@ describe('Board Stats Tool', () => {
       expect(result.content).toContain('"AVERAGE_numbers_0": 20');
     });
 
-    it('should handle stats with single column orderBy', async () => {
+    it('should handle insights with single column orderBy', async () => {
       const mockResponse = {
         aggregate: {
           results: [
@@ -876,7 +876,7 @@ describe('Board Stats Tool', () => {
 
       mocks.setResponse(mockResponse);
 
-      const tool = new BoardStatsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
       await tool.execute({
         boardId: 123456,
@@ -901,7 +901,7 @@ describe('Board Stats Tool', () => {
       });
     });
 
-    it('should handle stats with multiple column orderBy', async () => {
+    it('should handle insights with multiple column orderBy', async () => {
       const mockResponse = {
         aggregate: {
           results: [
@@ -918,7 +918,7 @@ describe('Board Stats Tool', () => {
 
       mocks.setResponse(mockResponse);
 
-      const tool = new BoardStatsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
       await tool.execute({
         boardId: 123456,
@@ -955,7 +955,7 @@ describe('Board Stats Tool', () => {
       });
     });
 
-    it('should handle stats with filters and orderBy combined', async () => {
+    it('should handle insights with filters and orderBy combined', async () => {
       const mockResponse = {
         aggregate: {
           results: [
@@ -971,7 +971,7 @@ describe('Board Stats Tool', () => {
 
       mocks.setResponse(mockResponse);
 
-      const tool = new BoardStatsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
       await tool.execute({
         boardId: 123456,
@@ -1031,7 +1031,7 @@ describe('Board Stats Tool', () => {
 
       mocks.setResponse(mockResponse);
 
-      const tool = new BoardStatsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
       await tool.execute({
         boardId: 123456,
@@ -1070,7 +1070,7 @@ describe('Board Stats Tool', () => {
 
       mocks.setResponse(mockResponse);
 
-      const tool = new BoardStatsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
       const result = await tool.execute({
         boardId: 123456,
@@ -1082,11 +1082,11 @@ describe('Board Stats Tool', () => {
         ],
       });
 
-      expect(result.content).toContain('Board stats result (1 rows)');
+      expect(result.content).toContain('Board insights result (1 rows)');
       expect(result.content).toContain('"COUNT_ITEMS_item_id_0": 42');
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-        expect.stringContaining('query aggregateBoardStats'),
+        expect.stringContaining('query aggregateBoardInsights'),
         expect.objectContaining({
           query: expect.objectContaining({
             from: { id: '123456', type: AggregateFromElementType.Table },
@@ -1121,7 +1121,7 @@ describe('Board Stats Tool', () => {
 
       mocks.setResponse(mockResponse);
 
-      const tool = new BoardStatsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
       const result = await tool.execute({
         boardId: 123456,
@@ -1143,7 +1143,7 @@ describe('Board Stats Tool', () => {
         },
       });
 
-      expect(result.content).toContain('Board stats result (1 rows)');
+      expect(result.content).toContain('Board insights result (1 rows)');
       expect(result.content).toContain('"COUNT_ITEMS_item_id_0": 15');
 
       const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -1161,14 +1161,14 @@ describe('Board Stats Tool', () => {
     });
 
     it('should have correct metadata', () => {
-      const tool = new BoardStatsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
-      expect(tool.name).toBe('board_stats');
+      expect(tool.name).toBe('board_insights');
       expect(tool.type).toBe('read');
       expect(tool.getDescription()).toBe(
-        'Get insights and aggregations for a board. Use this tool to get insights and aggregations for a board. For example, you can get the total number of items in a board, the number of items in each status, the number of items in each column, etc.',
+        "This tool allows you to calculate insights about board's data by filtering, grouping and aggregating columns. For example, you can get the total number of items in a board, the number of items in each status, the number of items in each column, etc.",
       );
-      expect(tool.annotations.title).toBe('Get Board Stats');
+      expect(tool.annotations.title).toBe('Get Board Insights');
       expect(tool.annotations.readOnlyHint).toBe(true);
       expect(tool.annotations.destructiveHint).toBe(false);
       expect(tool.annotations.idempotentHint).toBe(true);

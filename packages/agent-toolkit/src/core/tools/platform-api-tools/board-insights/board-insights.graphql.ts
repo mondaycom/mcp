@@ -1,7 +1,7 @@
 import { gql } from 'graphql-request';
 
-export const boardStats = gql`
-  query aggregateBoardStats($query: AggregateQueryInput!) {
+export const boardInsights = gql`
+  query aggregateBoardInsights($query: AggregateQueryInput!) {
     aggregate(query: $query) {
       results {
         entries {

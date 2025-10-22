@@ -8903,12 +8903,6 @@ export enum __TypeKind {
   NonNull = 'NON_NULL'
 }
 
-export type AggregateBoardStatsQueryVariables = Exact<{
-  query: AggregateQueryInput;
-}>;
-
-
-export type AggregateBoardStatsQuery = { __typename?: 'Query', aggregate?: { __typename?: 'AggregateQueryResult', results?: Array<{ __typename?: 'AggregateResultSet', entries?: Array<{ __typename?: 'AggregateResultEntry', alias?: string | null, value?: { __typename?: 'AggregateBasicAggregationResult', result?: number | null } | { __typename?: 'AggregateGroupByResult', value_string?: string | null, value_int?: number | null, value_float?: number | null, value_boolean?: boolean | null } | null }> | null }> | null } | null };
 export type GetSprintsByIdsQueryVariables = Exact<{
   ids?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
 }>;
@@ -8923,6 +8917,44 @@ export type GetSprintsBoardItemsWithColumnsQueryVariables = Exact<{
 
 
 export type GetSprintsBoardItemsWithColumnsQuery = { __typename?: 'Query', boards?: Array<{ __typename?: 'Board', items_page: { __typename?: 'ItemsResponse', items: Array<{ __typename?: 'Item', id: string, name: string, column_values: Array<{ __typename: 'BatteryValue', id: string, type: ColumnType } | { __typename: 'BoardRelationValue', id: string, type: ColumnType } | { __typename: 'ButtonValue', id: string, type: ColumnType } | { __typename: 'CheckboxValue', checked?: boolean | null, id: string, type: ColumnType } | { __typename: 'ColorPickerValue', id: string, type: ColumnType } | { __typename: 'CountryValue', id: string, type: ColumnType } | { __typename: 'CreationLogValue', id: string, type: ColumnType } | { __typename: 'DateValue', date?: string | null, id: string, type: ColumnType } | { __typename: 'DependencyValue', id: string, type: ColumnType } | { __typename: 'DirectDocValue', id: string, type: ColumnType } | { __typename: 'DocValue', id: string, type: ColumnType, file?: { __typename?: 'FileDocValue', doc: { __typename?: 'Document', object_id: string } } | null } | { __typename: 'DropdownValue', id: string, type: ColumnType } | { __typename: 'EmailValue', id: string, type: ColumnType } | { __typename: 'FileValue', id: string, type: ColumnType } | { __typename: 'FormulaValue', id: string, type: ColumnType } | { __typename: 'GroupValue', id: string, type: ColumnType } | { __typename: 'HourValue', id: string, type: ColumnType } | { __typename: 'IntegrationValue', id: string, type: ColumnType } | { __typename: 'ItemIdValue', id: string, type: ColumnType } | { __typename: 'LastUpdatedValue', id: string, type: ColumnType } | { __typename: 'LinkValue', id: string, type: ColumnType } | { __typename: 'LocationValue', id: string, type: ColumnType } | { __typename: 'LongTextValue', id: string, type: ColumnType } | { __typename: 'MirrorValue', id: string, type: ColumnType } | { __typename: 'NumbersValue', id: string, type: ColumnType } | { __typename: 'PeopleValue', id: string, type: ColumnType } | { __typename: 'PersonValue', id: string, type: ColumnType } | { __typename: 'PhoneValue', id: string, type: ColumnType } | { __typename: 'ProgressValue', id: string, type: ColumnType } | { __typename: 'RatingValue', id: string, type: ColumnType } | { __typename: 'StatusValue', id: string, type: ColumnType } | { __typename: 'SubtasksValue', id: string, type: ColumnType } | { __typename: 'TagsValue', id: string, type: ColumnType } | { __typename: 'TeamValue', id: string, type: ColumnType } | { __typename: 'TextValue', value?: any | null, id: string, type: ColumnType } | { __typename: 'TimeTrackingValue', id: string, type: ColumnType } | { __typename: 'TimelineValue', from?: any | null, to?: any | null, id: string, type: ColumnType } | { __typename: 'UnsupportedValue', id: string, type: ColumnType } | { __typename: 'VoteValue', id: string, type: ColumnType } | { __typename: 'WeekValue', id: string, type: ColumnType } | { __typename: 'WorldClockValue', id: string, type: ColumnType }> }> } } | null> | null };
+
+export type AggregateBoardInsightsQueryVariables = Exact<{
+  query: AggregateQueryInput;
+}>;
+
+
+export type AggregateBoardInsightsQuery = { __typename?: 'Query', aggregate?: { __typename?: 'AggregateQueryResult', results?: Array<{ __typename?: 'AggregateResultSet', entries?: Array<{ __typename?: 'AggregateResultEntry', alias?: string | null, value?: { __typename?: 'AggregateBasicAggregationResult', result?: number | null } | { __typename?: 'AggregateGroupByResult', value_string?: string | null, value_int?: number | null, value_float?: number | null, value_boolean?: boolean | null } | null }> | null }> | null } | null };
+
+export type GetItemBoardQueryVariables = Exact<{
+  itemId: Scalars['ID']['input'];
+}>;
+
+
+export type GetItemBoardQuery = { __typename?: 'Query', items?: Array<{ __typename?: 'Item', id: string, board?: { __typename?: 'Board', id: string, columns?: Array<{ __typename?: 'Column', id: string, type: ColumnType } | null> | null } | null } | null> | null };
+
+export type CreateDocMutationVariables = Exact<{
+  location: CreateDocInput;
+}>;
+
+
+export type CreateDocMutation = { __typename?: 'Mutation', create_doc?: { __typename?: 'Document', id: string, url?: string | null, name: string } | null };
+
+export type AddContentToDocFromMarkdownMutationVariables = Exact<{
+  docId: Scalars['ID']['input'];
+  markdown: Scalars['String']['input'];
+  afterBlockId?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type AddContentToDocFromMarkdownMutation = { __typename?: 'Mutation', add_content_to_doc_from_markdown?: { __typename?: 'DocBlocksFromMarkdownResult', success: boolean, block_ids?: Array<string> | null, error?: string | null } | null };
+
+export type UpdateDocNameMutationVariables = Exact<{
+  docId: Scalars['ID']['input'];
+  name: Scalars['String']['input'];
+}>;
+
+
+export type UpdateDocNameMutation = { __typename?: 'Mutation', update_doc_name?: any | null };
 
 export type CreateFolderMutationVariables = Exact<{
   workspaceId: Scalars['ID']['input'];
@@ -9472,37 +9504,6 @@ export type FetchCustomActivityQueryVariables = Exact<{ [key: string]: never; }>
 
 
 export type FetchCustomActivityQuery = { __typename?: 'Query', custom_activity?: Array<{ __typename?: 'CustomActivity', color?: CustomActivityColor | null, icon_id?: CustomActivityIcon | null, id?: string | null, name?: string | null, type?: string | null }> | null };
-
-export type GetItemBoardQueryVariables = Exact<{
-  itemId: Scalars['ID']['input'];
-}>;
-
-
-export type GetItemBoardQuery = { __typename?: 'Query', items?: Array<{ __typename?: 'Item', id: string, board?: { __typename?: 'Board', id: string, columns?: Array<{ __typename?: 'Column', id: string, type: ColumnType } | null> | null } | null } | null> | null };
-
-export type CreateDocMutationVariables = Exact<{
-  location: CreateDocInput;
-}>;
-
-
-export type CreateDocMutation = { __typename?: 'Mutation', create_doc?: { __typename?: 'Document', id: string, url?: string | null, name: string } | null };
-
-export type AddContentToDocFromMarkdownMutationVariables = Exact<{
-  docId: Scalars['ID']['input'];
-  markdown: Scalars['String']['input'];
-  afterBlockId?: InputMaybe<Scalars['String']['input']>;
-}>;
-
-
-export type AddContentToDocFromMarkdownMutation = { __typename?: 'Mutation', add_content_to_doc_from_markdown?: { __typename?: 'DocBlocksFromMarkdownResult', success: boolean, block_ids?: Array<string> | null, error?: string | null } | null };
-
-export type UpdateDocNameMutationVariables = Exact<{
-  docId: Scalars['ID']['input'];
-  name: Scalars['String']['input'];
-}>;
-
-
-export type UpdateDocNameMutation = { __typename?: 'Mutation', update_doc_name?: any | null };
 
 export type ReadDocsQueryVariables = Exact<{
   ids?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;

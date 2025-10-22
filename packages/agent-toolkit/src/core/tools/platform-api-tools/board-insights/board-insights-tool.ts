@@ -1,19 +1,19 @@
 import { z } from 'zod';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { boardStats } from './board-stats.graphql';
+import { boardInsights } from './board-insights.graphql';
 import {
   AggregateSelectFunctionName,
   ItemsQueryOperator,
   ItemsQueryRuleOperator,
-  AggregateBoardStatsQueryVariables,
-  AggregateBoardStatsQuery,
+  AggregateBoardInsightsQueryVariables,
+  AggregateBoardInsightsQuery,
   ItemsOrderByDirection,
 } from 'src/monday-graphql/generated/graphql';
-import { handleFilters, handleFrom, handleSelectAndGroupByElements } from './board-stats-utils';
+import { handleFilters, handleFrom, handleSelectAndGroupByElements } from './board-insights-utils';
 
-export const boardStatsToolSchema = {
-  boardId: z.number().describe('The id of the board to get stats for'),
+export const boardInsightsToolSchema = {
+  boardId: z.number().describe('The id of the board to get insights for'),
   aggregations: z
     .array(
       z.object({
@@ -75,30 +75,32 @@ export const boardStatsToolSchema = {
     .describe('The columns to order by, will control the order of the items in the response if needed'),
 };
 
-export class BoardStatsTool extends BaseMondayApiTool<typeof boardStatsToolSchema> {
-  name = 'board_stats';
+export class BoardInsightsTool extends BaseMondayApiTool<typeof boardInsightsToolSchema> {
+  name = 'board_insights';
   type = ToolType.READ;
   annotations = createMondayApiAnnotations({
-    title: 'Get Board Stats',
+    title: 'Get Board Insights',
     readOnlyHint: true,
     destructiveHint: false,
     idempotentHint: true,
   });
 
   getDescription(): string {
-    return 'Get insights and aggregations for a board. Use this tool to get insights and aggregations for a board. For example, you can get the total number of items in a board, the number of items in each status, the number of items in each column, etc.';
+    return "This tool allows you to calculate insights about board's data by filtering, grouping and aggregating columns. For example, you can get the total number of items in a board, the number of items in each status, the number of items in each column, etc.";
   }
 
-  getInputSchema(): typeof boardStatsToolSchema {
-    return boardStatsToolSchema;
+  getInputSchema(): typeof boardInsightsToolSchema {
+    return boardInsightsToolSchema;
   }
 
-  protected async executeInternal(input: ToolInputType<typeof boardStatsToolSchema>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(
+    input: ToolInputType<typeof boardInsightsToolSchema>,
+  ): Promise<ToolOutputType<never>> {
     const { selectElements, groupByElements } = handleSelectAndGroupByElements(input);
     const filters = handleFilters(input);
     const from = handleFrom(input);
 
-    const variables: AggregateBoardStatsQueryVariables = {
+    const variables: AggregateBoardInsightsQueryVariables = {
       query: {
         from,
         query: filters,
@@ -108,7 +110,7 @@ export class BoardStatsTool extends BaseMondayApiTool<typeof boardStatsToolSchem
       },
     };
 
-    const res = await this.mondayApi.request<AggregateBoardStatsQuery>(boardStats, variables);
+    const res = await this.mondayApi.request<AggregateBoardInsightsQuery>(boardInsights, variables);
 
     const rows = (res.aggregate?.results ?? []).map((resultSet) => {
       const row: Record<string, string | number | boolean | null> = {};
@@ -128,11 +130,11 @@ export class BoardStatsTool extends BaseMondayApiTool<typeof boardStatsToolSchem
     });
 
     if (!rows.length) {
-      return { content: 'No board stats found for the given query.' };
+      return { content: 'No board insights found for the given query.' };
     }
 
     return {
-      content: `Board stats result (${rows.length} rows):\n${JSON.stringify(rows, null, 2)}`,
+      content: `Board insights result (${rows.length} rows):\n${JSON.stringify(rows, null, 2)}`,
     };
   }
 }
