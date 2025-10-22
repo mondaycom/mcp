@@ -1172,12 +1172,308 @@ describe('Board Insights Tool', () => {
       expect(tool.name).toBe('board_insights');
       expect(tool.type).toBe('read');
       expect(tool.getDescription()).toBe(
-        "This tool allows you to calculate insights about board's data by filtering, grouping and aggregating columns. For example, you can get the total number of items in a board, the number of items in each status, the number of items in each column, etc.",
+        "This tool allows you to calculate insights about board's data by filtering, grouping and aggregating columns. For example, you can get the total number of items in a board, the number of items in each status, the number of items in each column, etc. " +
+          "Use this tool when you need to get a summary of the board's data, for example, you want to know the total number of items in a board, the number of items in each status, the number of items in each column, etc." +
+          "[REQUIRED PRECONDITION]: Before using this tool, if you are not familiar with the board's structure (column IDs, column types, status labels, etc.), first use get_board_info to understand the board metadata. This is essential for constructing proper filters and knowing which columns are available.",
       );
       expect(tool.annotations.title).toBe('Get Board Insights');
       expect(tool.annotations.readOnlyHint).toBe(true);
       expect(tool.annotations.destructiveHint).toBe(false);
       expect(tool.annotations.idempotentHint).toBe(true);
+    });
+  });
+
+  describe('Stringified Fields (Microsoft Copilot compatibility)', () => {
+    let mocks: ReturnType<typeof createMockApiClient>;
+
+    beforeEach(() => {
+      mocks = createMockApiClient();
+      jest.clearAllMocks();
+    });
+
+    it('should handle aggregationsStringified field', async () => {
+      const mockResponse = {
+        aggregate: {
+          results: [
+            {
+              entries: [
+                {
+                  alias: 'status',
+                  value: { value_string: 'Done' },
+                },
+                {
+                  alias: 'COUNT_item_id_0',
+                  value: { result: 5 },
+                },
+              ],
+            },
+          ],
+        },
+      };
+
+      mocks.setResponse(mockResponse);
+
+      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+
+      const aggregations = [
+        { columnId: 'status' },
+        { columnId: 'item_id', function: AggregateSelectFunctionName.Count },
+      ];
+
+      const result = await tool.execute({
+        boardId: 123456,
+        aggregationsStringified: JSON.stringify(aggregations),
+        groupBy: ['status'],
+        filtersOperator: ItemsQueryOperator.And,
+        limit: DEFAULT_LIMIT,
+      });
+
+      expect(result.content).toContain('Board insights result (1 rows)');
+      expect(result.content).toContain('"status": "Done"');
+      expect(result.content).toContain('"COUNT_item_id_0": 5');
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query aggregateBoardInsights'),
+        expect.objectContaining({
+          query: expect.objectContaining({
+            from: { id: '123456', type: AggregateFromElementType.Table },
+          }),
+        }),
+      );
+    });
+
+    it('should handle filtersStringified field', async () => {
+      const mockResponse = {
+        aggregate: {
+          results: [
+            {
+              entries: [
+                {
+                  alias: 'COUNT_item_id_0',
+                  value: { result: 10 },
+                },
+              ],
+            },
+          ],
+        },
+      };
+
+      mocks.setResponse(mockResponse);
+
+      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+
+      const filters = [
+        {
+          columnId: 'status',
+          compareValue: 'Done',
+          operator: ItemsQueryRuleOperator.AnyOf,
+        },
+      ];
+
+      const result = await tool.execute({
+        boardId: 123456,
+        aggregations: [{ columnId: 'item_id', function: AggregateSelectFunctionName.Count }],
+        filtersStringified: JSON.stringify(filters),
+        filtersOperator: ItemsQueryOperator.And,
+        limit: DEFAULT_LIMIT,
+      });
+
+      expect(result.content).toContain('Board insights result (1 rows)');
+      expect(result.content).toContain('"COUNT_item_id_0": 10');
+
+      const mockCall = mocks.getMockRequest().mock.calls[0];
+      expect(mockCall[1].query.query).toEqual({
+        rules: [
+          {
+            column_id: 'status',
+            compare_value: 'Done',
+            operator: ItemsQueryRuleOperator.AnyOf,
+            compare_attribute: undefined,
+          },
+        ],
+        operator: ItemsQueryOperator.And,
+      });
+    });
+
+    it('should handle orderByStringified field', async () => {
+      const mockResponse = {
+        aggregate: {
+          results: [
+            {
+              entries: [
+                { alias: 'status', value: { value_string: 'Done' } },
+                { alias: 'COUNT_item_id_0', value: { result: 5 } },
+              ],
+            },
+          ],
+        },
+      };
+
+      mocks.setResponse(mockResponse);
+
+      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+
+      const orderBy = [
+        {
+          columnId: 'status',
+          direction: ItemsOrderByDirection.Asc,
+        },
+      ];
+
+      const result = await tool.execute({
+        boardId: 123456,
+        aggregations: [{ columnId: 'status' }, { columnId: 'item_id', function: AggregateSelectFunctionName.Count }],
+        groupBy: ['status'],
+        orderByStringified: JSON.stringify(orderBy),
+        filtersOperator: ItemsQueryOperator.And,
+        limit: DEFAULT_LIMIT,
+      });
+
+      expect(result.content).toContain('Board insights result (1 rows)');
+
+      const mockCall = mocks.getMockRequest().mock.calls[0];
+      expect(mockCall[1].query.query).toEqual({
+        order_by: [
+          {
+            column_id: 'status',
+            direction: ItemsOrderByDirection.Asc,
+          },
+        ],
+      });
+    });
+
+    it('should handle all stringified fields together', async () => {
+      const mockResponse = {
+        aggregate: {
+          results: [
+            {
+              entries: [
+                { alias: 'status', value: { value_string: 'Done' } },
+                { alias: 'COUNT_item_id_0', value: { result: 8 } },
+              ],
+            },
+          ],
+        },
+      };
+
+      mocks.setResponse(mockResponse);
+
+      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+
+      const aggregations = [
+        { columnId: 'status' },
+        { columnId: 'item_id', function: AggregateSelectFunctionName.Count },
+      ];
+
+      const filters = [
+        {
+          columnId: 'priority',
+          compareValue: 'High',
+          operator: ItemsQueryRuleOperator.AnyOf,
+        },
+      ];
+
+      const orderBy = [
+        {
+          columnId: 'COUNT_item_id_0',
+          direction: ItemsOrderByDirection.Desc,
+        },
+      ];
+
+      const result = await tool.execute({
+        boardId: 123456,
+        aggregationsStringified: JSON.stringify(aggregations),
+        groupBy: ['status'],
+        filtersStringified: JSON.stringify(filters),
+        filtersOperator: ItemsQueryOperator.And,
+        orderByStringified: JSON.stringify(orderBy),
+        limit: DEFAULT_LIMIT,
+      });
+
+      expect(result.content).toContain('Board insights result (1 rows)');
+      expect(result.content).toContain('"status": "Done"');
+      expect(result.content).toContain('"COUNT_item_id_0": 8');
+
+      const mockCall = mocks.getMockRequest().mock.calls[0];
+      expect(mockCall[1].query.query).toEqual({
+        rules: [
+          {
+            column_id: 'priority',
+            compare_value: 'High',
+            operator: ItemsQueryRuleOperator.AnyOf,
+            compare_attribute: undefined,
+          },
+        ],
+        operator: ItemsQueryOperator.And,
+        order_by: [
+          {
+            column_id: 'COUNT_item_id_0',
+            direction: ItemsOrderByDirection.Desc,
+          },
+        ],
+      });
+    });
+
+    it('should return error when neither aggregations nor aggregationsStringified is provided', async () => {
+      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+
+      const result = await tool.execute({
+        boardId: 123456,
+        filtersOperator: ItemsQueryOperator.And,
+        limit: DEFAULT_LIMIT,
+      });
+
+      expect(result.content).toBe(
+        'Input must contain either the "aggregations" field or the "aggregationsStringified" field.',
+      );
+    });
+
+    it('should prefer non-stringified field over stringified when both provided', async () => {
+      const mockResponse = {
+        aggregate: {
+          results: [
+            {
+              entries: [
+                {
+                  alias: 'priority',
+                  value: { value_string: 'High' },
+                },
+              ],
+            },
+          ],
+        },
+      };
+
+      mocks.setResponse(mockResponse);
+
+      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+
+      // Non-stringified has priority
+      const correctAggregations = [{ columnId: 'priority' }];
+
+      // Stringified should be ignored
+      const wrongAggregations = [{ columnId: 'status' }];
+
+      const result = await tool.execute({
+        boardId: 123456,
+        aggregations: correctAggregations,
+        aggregationsStringified: JSON.stringify(wrongAggregations),
+        filtersOperator: ItemsQueryOperator.And,
+        limit: DEFAULT_LIMIT,
+      });
+
+      expect(result.content).toContain('Board insights result (1 rows)');
+      expect(result.content).toContain('"priority": "High"');
+
+      // Should use priority, not status
+      const mockCall = mocks.getMockRequest().mock.calls[0];
+      expect(mockCall[1].query.select).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            column: { column_id: 'priority' },
+          }),
+        ]),
+      );
     });
   });
 });

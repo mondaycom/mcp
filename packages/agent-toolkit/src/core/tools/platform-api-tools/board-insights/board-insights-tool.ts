@@ -11,9 +11,16 @@ import {
 } from 'src/monday-graphql/generated/graphql';
 import { handleFilters, handleFrom, handleSelectAndGroupByElements } from './board-insights-utils';
 import { BoardInsightsAggregationFunction, DEFAULT_LIMIT, MAX_LIMIT } from './board-insights.consts';
+import { fallbackToStringifiedVersionIfNull } from '../../shared/microsoft-copilot-utils';
 
 export const boardInsightsToolSchema = {
   boardId: z.number().describe('The id of the board to get insights for'),
+  aggregationsStringified: z
+    .string()
+    .optional()
+    .describe(
+      '**ONLY FOR MICROSOFT COPILOT**: The aggregations to get. Send this as a stringified JSON array of "aggregations" field. Read "aggregations" field description for details how to use it.',
+    ),
   aggregations: z
     .array(
       z.object({
@@ -24,7 +31,10 @@ export const boardInsightsToolSchema = {
         columnId: z.string().describe('The id of the column to aggregate'),
       }),
     )
-    .describe('The aggregations to get. Transformative functions and plain columns (no function) must be in group by.'),
+    .describe(
+      'The aggregations to get. Transformative functions and plain columns (no function) must be in group by. [REQUIRED PRECONDITION]: Either send this field or the stringified version of it.',
+    )
+    .optional(),
   groupBy: z
     .array(z.string())
     .describe(
@@ -32,6 +42,12 @@ export const boardInsightsToolSchema = {
     )
     .optional(),
   limit: z.number().describe('The limit of the results').max(MAX_LIMIT).optional().default(DEFAULT_LIMIT),
+  filtersStringified: z
+    .string()
+    .optional()
+    .describe(
+      '**ONLY FOR MICROSOFT COPILOT**: The filters to apply on the items. Send this as a stringified JSON array of "filters" field. Read "filters" field description for details how to use it.',
+    ),
   filters: z
     .array(
       z.object({
@@ -59,15 +75,25 @@ export const boardInsightsToolSchema = {
     .default(ItemsQueryOperator.And)
     .describe('The logical operator to use for the filters'),
 
+  orderByStringified: z
+    .string()
+    .optional()
+    .describe(
+      '**ONLY FOR MICROSOFT COPILOT**: The order by to apply on the items. Send this as a stringified JSON array of "orderBy" field. Read "orderBy" field description for details how to use it.',
+    ),
   orderBy: z
     .array(
       z.object({
         columnId: z.string().describe('The id of the column to order by'),
-        direction: z.nativeEnum(ItemsOrderByDirection).describe('The direction to order by'),
+        direction: z
+          .nativeEnum(ItemsOrderByDirection)
+          .optional()
+          .default(ItemsOrderByDirection.Asc)
+          .describe('The direction to order by'),
       }),
     )
     .optional()
-    .describe('The columns to order by, will control the order of the items in the response if needed'),
+    .describe('The columns to order by, will control the order of the items in the response'),
 };
 
 export class BoardInsightsTool extends BaseMondayApiTool<typeof boardInsightsToolSchema> {
@@ -81,7 +107,11 @@ export class BoardInsightsTool extends BaseMondayApiTool<typeof boardInsightsToo
   });
 
   getDescription(): string {
-    return "This tool allows you to calculate insights about board's data by filtering, grouping and aggregating columns. For example, you can get the total number of items in a board, the number of items in each status, the number of items in each column, etc.";
+    return (
+      "This tool allows you to calculate insights about board's data by filtering, grouping and aggregating columns. For example, you can get the total number of items in a board, the number of items in each status, the number of items in each column, etc. " +
+      "Use this tool when you need to get a summary of the board's data, for example, you want to know the total number of items in a board, the number of items in each status, the number of items in each column, etc." +
+      "[REQUIRED PRECONDITION]: Before using this tool, if you are not familiar with the board's structure (column IDs, column types, status labels, etc.), first use get_board_info to understand the board metadata. This is essential for constructing proper filters and knowing which columns are available."
+    );
   }
 
   getInputSchema(): typeof boardInsightsToolSchema {
@@ -91,6 +121,21 @@ export class BoardInsightsTool extends BaseMondayApiTool<typeof boardInsightsToo
   protected async executeInternal(
     input: ToolInputType<typeof boardInsightsToolSchema>,
   ): Promise<ToolOutputType<never>> {
+    if (!input.aggregations && !input.aggregationsStringified) {
+      return { content: 'Input must contain either the "aggregations" field or the "aggregationsStringified" field.' };
+    }
+    if (!input.aggregations) {
+      fallbackToStringifiedVersionIfNull(input, 'aggregations', boardInsightsToolSchema.aggregations);
+    }
+
+    if (!input.filters && input.filtersStringified) {
+      fallbackToStringifiedVersionIfNull(input, 'filters', boardInsightsToolSchema.filters);
+    }
+
+    if (!input.orderBy && input.orderByStringified) {
+      fallbackToStringifiedVersionIfNull(input, 'orderBy', boardInsightsToolSchema.orderBy);
+    }
+
     const { selectElements, groupByElements } = handleSelectAndGroupByElements(input);
     const filters = handleFilters(input);
     const from = handleFrom(input);

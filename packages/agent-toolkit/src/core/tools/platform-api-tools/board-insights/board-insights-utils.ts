@@ -85,7 +85,7 @@ export function handleSelectAndGroupByElements(input: ToolInputType<typeof board
       column_id: columnId,
     })) || [];
 
-  const selectElements = input.aggregations.map((aggregation) => {
+  const selectElements = input.aggregations!.map((aggregation) => {
     // handle a function
     if (aggregation.function) {
       // create a unique alias for the select element
