@@ -3,7 +3,6 @@ import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { boardInsights } from './board-insights.graphql';
 import {
-  AggregateSelectFunctionName,
   ItemsQueryOperator,
   ItemsQueryRuleOperator,
   AggregateBoardInsightsQueryVariables,
@@ -11,6 +10,7 @@ import {
   ItemsOrderByDirection,
 } from 'src/monday-graphql/generated/graphql';
 import { handleFilters, handleFrom, handleSelectAndGroupByElements } from './board-insights-utils';
+import { BoardInsightsAggregationFunction } from './board-insights.consts';
 
 export const boardInsightsToolSchema = {
   boardId: z.number().describe('The id of the board to get insights for'),
@@ -18,10 +18,8 @@ export const boardInsightsToolSchema = {
     .array(
       z.object({
         function: z
-          .nativeEnum(AggregateSelectFunctionName)
-          .describe(
-            'The function of the aggregation. Excludes complex functions like case, between, left, raw, none. For simple column value leave undefined',
-          )
+          .enum(BoardInsightsAggregationFunction)
+          .describe('The function of the aggregation. For simple column value leave undefined')
           .optional(),
         columnId: z.string().describe('The id of the column to aggregate'),
       }),

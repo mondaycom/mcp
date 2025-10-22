@@ -1,13 +1,19 @@
 import { AggregateSelectFunctionName } from 'src/monday-graphql/generated/graphql';
 
-//omit complex functions like case, between
-export const complexFunctions = new Set([
+// Functions to exclude from BoardInsightsAggregationFunction
+const excludedFunctions = new Set([
   AggregateSelectFunctionName.Case,
   AggregateSelectFunctionName.Between,
   AggregateSelectFunctionName.Left,
   AggregateSelectFunctionName.Raw,
   AggregateSelectFunctionName.None,
+  AggregateSelectFunctionName.CountKeys,
 ]);
+
+// Programmatically create array of allowed aggregation functions
+export const BoardInsightsAggregationFunction = Object.values(AggregateSelectFunctionName).filter(
+  (fn) => !excludedFunctions.has(fn),
+) as [AggregateSelectFunctionName, ...AggregateSelectFunctionName[]];
 
 export const transformativeFunctions = new Set([
   AggregateSelectFunctionName.Left,

@@ -12,7 +12,7 @@ import {
   ItemsQuery,
   ItemsQueryOrderBy,
 } from 'src/monday-graphql/generated/graphql';
-import { complexFunctions, transformativeFunctions } from './board-insights.consts';
+import { transformativeFunctions } from './board-insights.consts';
 
 export function handleFrom(input: ToolInputType<typeof boardInsightsToolSchema>): AggregateFromTableInput {
   return {
@@ -88,9 +88,6 @@ export function handleSelectAndGroupByElements(input: ToolInputType<typeof board
   const selectElements = input.aggregations.map((aggregation) => {
     // handle a function
     if (aggregation.function) {
-      if (complexFunctions.has(aggregation.function)) {
-        throw new Error(`Complex function ${aggregation.function} is not supported`);
-      }
       // create a unique alias for the select element
       const elementKey = `${aggregation.function}_${aggregation.columnId}`;
       const aliasKeyIndex = aliasKeyMap[elementKey] || 0;
