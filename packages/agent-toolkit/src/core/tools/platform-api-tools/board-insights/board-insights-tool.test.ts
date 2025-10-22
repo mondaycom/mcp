@@ -45,16 +45,14 @@ describe('Board Insights Tool', () => {
       it('should transform single filter rule correctly', () => {
         const input = {
           boardId: 123,
-          filters: {
-            rules: [
-              {
-                columnId: 'status',
-                compareValue: 'Done',
-                operator: ItemsQueryRuleOperator.AnyOf,
-              },
-            ],
-            operator: ItemsQueryOperator.And,
-          },
+          filters: [
+            {
+              columnId: 'status',
+              compareValue: 'Done',
+              operator: ItemsQueryRuleOperator.AnyOf,
+            },
+          ],
+          filtersOperator: ItemsQueryOperator.And,
         };
 
         const result = handleFilters(input as any);
@@ -75,22 +73,20 @@ describe('Board Insights Tool', () => {
       it('should transform multiple filter rules correctly', () => {
         const input = {
           boardId: 123,
-          filters: {
-            rules: [
-              {
-                columnId: 'status',
-                compareValue: 'Done',
-                operator: ItemsQueryRuleOperator.AnyOf,
-              },
-              {
-                columnId: 'person',
-                compareValue: [1234, 5678],
-                operator: ItemsQueryRuleOperator.AnyOf,
-                compareAttribute: 'id',
-              },
-            ],
-            operator: ItemsQueryOperator.Or,
-          },
+          filters: [
+            {
+              columnId: 'status',
+              compareValue: 'Done',
+              operator: ItemsQueryRuleOperator.AnyOf,
+            },
+            {
+              columnId: 'person',
+              compareValue: [1234, 5678],
+              operator: ItemsQueryRuleOperator.AnyOf,
+              compareAttribute: 'id',
+            },
+          ],
+          filtersOperator: ItemsQueryOperator.Or,
         };
 
         const result = handleFilters(input as any);
@@ -140,16 +136,14 @@ describe('Board Insights Tool', () => {
       it('should include both filters and orderBy when both provided', () => {
         const input = {
           boardId: 123,
-          filters: {
-            rules: [
-              {
-                columnId: 'status',
-                compareValue: 'Done',
-                operator: ItemsQueryRuleOperator.AnyOf,
-              },
-            ],
-            operator: ItemsQueryOperator.And,
-          },
+          filters: [
+            {
+              columnId: 'status',
+              compareValue: 'Done',
+              operator: ItemsQueryRuleOperator.AnyOf,
+            },
+          ],
+          filtersOperator: ItemsQueryOperator.And,
           orderBy: [
             {
               columnId: 'created_at',
@@ -518,6 +512,7 @@ describe('Board Insights Tool', () => {
         boardId: 123456,
         aggregations: [{ columnId: 'status' }, { columnId: 'item_id', function: AggregateSelectFunctionName.Count }],
         groupBy: ['status'],
+        filtersOperator: ItemsQueryOperator.And,
       });
 
       expect(result.content).toContain('Board insights result (2 rows)');
@@ -559,16 +554,14 @@ describe('Board Insights Tool', () => {
       const result = await tool.execute({
         boardId: 123456,
         aggregations: [{ columnId: 'item_id', function: AggregateSelectFunctionName.Count }],
-        filters: {
-          rules: [
-            {
-              columnId: 'status',
-              compareValue: 'Done',
-              operator: ItemsQueryRuleOperator.AnyOf,
-            },
-          ],
-          operator: ItemsQueryOperator.And,
-        },
+        filters: [
+          {
+            columnId: 'status',
+            compareValue: 'Done',
+            operator: ItemsQueryRuleOperator.AnyOf,
+          },
+        ],
+        filtersOperator: ItemsQueryOperator.And,
       });
 
       expect(result.content).toContain('Board insights result (1 rows)');
@@ -612,6 +605,7 @@ describe('Board Insights Tool', () => {
         boardId: 123456,
         aggregations: [{ columnId: 'status' }],
         limit: 5,
+        filtersOperator: ItemsQueryOperator.And,
       });
 
       const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -632,6 +626,7 @@ describe('Board Insights Tool', () => {
       const result = await tool.execute({
         boardId: 123456,
         aggregations: [{ columnId: 'status' }],
+        filtersOperator: ItemsQueryOperator.And,
       });
 
       expect(result.content).toBe('No board insights found for the given query.');
@@ -649,6 +644,7 @@ describe('Board Insights Tool', () => {
       const result = await tool.execute({
         boardId: 123456,
         aggregations: [{ columnId: 'status' }],
+        filtersOperator: ItemsQueryOperator.And,
       });
 
       expect(result.content).toBe('No board insights found for the given query.');
@@ -699,6 +695,7 @@ describe('Board Insights Tool', () => {
           { columnId: 'bool_col' },
           { columnId: 'result_col', function: AggregateSelectFunctionName.Count },
         ],
+        filtersOperator: ItemsQueryOperator.And,
       });
 
       expect(result.content).toContain('"string_col": "text value"');
@@ -735,6 +732,7 @@ describe('Board Insights Tool', () => {
       const result = await tool.execute({
         boardId: 123456,
         aggregations: [{ columnId: 'status' }, { columnId: 'item_id', function: AggregateSelectFunctionName.Count }],
+        filtersOperator: ItemsQueryOperator.And,
       });
 
       expect(result.content).toContain('"status": null');
@@ -768,6 +766,7 @@ describe('Board Insights Tool', () => {
       const result = await tool.execute({
         boardId: 123456,
         aggregations: [{ columnId: 'status' }],
+        filtersOperator: ItemsQueryOperator.And,
       });
 
       const parsedResult = JSON.parse(result.content.split(':\n')[1]);
@@ -784,6 +783,7 @@ describe('Board Insights Tool', () => {
         tool.execute({
           boardId: 999999,
           aggregations: [{ columnId: 'status' }],
+          filtersOperator: ItemsQueryOperator.And,
         }),
       ).rejects.toThrow('Board not found');
     });
@@ -801,6 +801,7 @@ describe('Board Insights Tool', () => {
         tool.execute({
           boardId: 123456,
           aggregations: [{ columnId: 'invalid_column' }],
+          filtersOperator: ItemsQueryOperator.And,
         }),
       ).rejects.toThrow('GraphQL Error');
     });
@@ -842,6 +843,7 @@ describe('Board Insights Tool', () => {
           { columnId: 'numbers', function: AggregateSelectFunctionName.Average },
         ],
         groupBy: ['status', 'priority'],
+        filtersOperator: ItemsQueryOperator.And,
       });
 
       expect(result.content).toContain('Board insights result (2 rows)');
@@ -888,6 +890,7 @@ describe('Board Insights Tool', () => {
             direction: ItemsOrderByDirection.Asc,
           },
         ],
+        filtersOperator: ItemsQueryOperator.And,
       });
 
       const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -938,6 +941,7 @@ describe('Board Insights Tool', () => {
             direction: ItemsOrderByDirection.Desc,
           },
         ],
+        filtersOperator: ItemsQueryOperator.And,
       });
 
       const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -977,16 +981,14 @@ describe('Board Insights Tool', () => {
         boardId: 123456,
         aggregations: [{ columnId: 'status' }, { columnId: 'item_id', function: AggregateSelectFunctionName.Count }],
         groupBy: ['status'],
-        filters: {
-          rules: [
-            {
-              columnId: 'priority',
-              compareValue: 'High',
-              operator: ItemsQueryRuleOperator.AnyOf,
-            },
-          ],
-          operator: ItemsQueryOperator.And,
-        },
+        filters: [
+          {
+            columnId: 'priority',
+            compareValue: 'High',
+            operator: ItemsQueryRuleOperator.AnyOf,
+          },
+        ],
+        filtersOperator: ItemsQueryOperator.And,
         orderBy: [
           {
             columnId: 'COUNT_item_id_0',
@@ -1046,6 +1048,7 @@ describe('Board Insights Tool', () => {
             direction: ItemsOrderByDirection.Desc,
           },
         ],
+        filtersOperator: ItemsQueryOperator.And,
       });
 
       const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -1080,6 +1083,7 @@ describe('Board Insights Tool', () => {
             function: AggregateSelectFunctionName.CountItems,
           },
         ],
+        filtersOperator: ItemsQueryOperator.And,
       });
 
       expect(result.content).toContain('Board insights result (1 rows)');
@@ -1131,16 +1135,14 @@ describe('Board Insights Tool', () => {
             function: AggregateSelectFunctionName.CountItems,
           },
         ],
-        filters: {
-          rules: [
-            {
-              columnId: 'status',
-              compareValue: 'Done',
-              operator: ItemsQueryRuleOperator.AnyOf,
-            },
-          ],
-          operator: ItemsQueryOperator.And,
-        },
+        filters: [
+          {
+            columnId: 'status',
+            compareValue: 'Done',
+            operator: ItemsQueryRuleOperator.AnyOf,
+          },
+        ],
+        filtersOperator: ItemsQueryOperator.And,
       });
 
       expect(result.content).toContain('Board insights result (1 rows)');

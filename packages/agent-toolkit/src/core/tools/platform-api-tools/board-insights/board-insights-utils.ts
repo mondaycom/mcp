@@ -27,13 +27,13 @@ export function handleFilters(input: ToolInputType<typeof boardInsightsToolSchem
   }
   const filters: ItemsQuery = {};
   if (input.filters) {
-    filters.rules = input.filters.rules.map((rule) => ({
+    filters.rules = input.filters.map((rule) => ({
       column_id: rule.columnId,
       compare_value: rule.compareValue,
       operator: rule.operator,
       compare_attribute: rule.compareAttribute,
     }));
-    filters.operator = input.filters.operator;
+    filters.operator = input.filtersOperator;
   }
   if (input.orderBy) {
     filters.order_by = handleOrderBy(input);
