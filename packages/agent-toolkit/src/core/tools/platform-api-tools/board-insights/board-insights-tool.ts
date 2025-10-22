@@ -124,17 +124,10 @@ export class BoardInsightsTool extends BaseMondayApiTool<typeof boardInsightsToo
     if (!input.aggregations && !input.aggregationsStringified) {
       return { content: 'Input must contain either the "aggregations" field or the "aggregationsStringified" field.' };
     }
-    if (!input.aggregations) {
-      fallbackToStringifiedVersionIfNull(input, 'aggregations', boardInsightsToolSchema.aggregations);
-    }
 
-    if (!input.filters && input.filtersStringified) {
-      fallbackToStringifiedVersionIfNull(input, 'filters', boardInsightsToolSchema.filters);
-    }
-
-    if (!input.orderBy && input.orderByStringified) {
-      fallbackToStringifiedVersionIfNull(input, 'orderBy', boardInsightsToolSchema.orderBy);
-    }
+    fallbackToStringifiedVersionIfNull(input, 'aggregations', boardInsightsToolSchema.aggregations);
+    fallbackToStringifiedVersionIfNull(input, 'filters', boardInsightsToolSchema.filters);
+    fallbackToStringifiedVersionIfNull(input, 'orderBy', boardInsightsToolSchema.orderBy);
 
     const { selectElements, groupByElements } = handleSelectAndGroupByElements(input);
     const filters = handleFilters(input);
