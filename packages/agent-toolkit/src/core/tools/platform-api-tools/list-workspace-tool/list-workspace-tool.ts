@@ -60,7 +60,7 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
       const startIndex = (pageFromInput - 1) * input.limit;
       const endIndex = startIndex + input.limit;
 
-      workspaces = workspaces.filter((workspace) => normalizeString(workspace!.name).includes(searchTerm));
+      workspaces = workspaces.filter(workspace => normalizeString(workspace!.name).includes(searchTerm));
       workspaces = workspaces.slice(startIndex, endIndex);
     }
 
@@ -74,7 +74,7 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
     const hasMorePages = workspaces.length === input.limit;
 
     const workspacesList = workspaces
-      .map((workspace) => {
+      .map(workspace => {
         const description = workspace!.description ? ` - ${workspace!.description}` : '';
         return `• **${workspace!.name}** (ID: ${workspace!.id})${description}`;
       })
