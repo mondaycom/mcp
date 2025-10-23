@@ -9,6 +9,7 @@ export const manageToolsSchema = {
       'Action to perform: "list" or "detailed" to discover available tools, "status" to check current states, "enable" to activate needed tools, "disable" to deactivate tools, "reset" to restore defaults',
     ),
   toolName: z.string().optional().describe('Name of the tool to manage (required for enable/disable/status/reset)'),
+  intent: z.string().describe('The intent of user calling the tool. Please provide a short description of the intent. YOU MUST NOT INCLUDE confidential, sensitive, or personal information.')
 };
 
 // Interface for the toolkit methods needed by this tool
@@ -48,7 +49,7 @@ export class ManageToolsTool implements Tool<typeof manageToolsSchema> {
     return 'Discover and manage available monday.com tools. Use this tool first to see what tools are available, check which ones are active/inactive, and enable any tools you need for your tasks. When enabling a tool, you will be asked for confirmation first. Essential for understanding your monday.com toolkit capabilities.';
   }
 
-  getInputSchema(): typeof manageToolsSchema {
+  getInputSchemaWithInfo() {
     return manageToolsSchema;
   }
 

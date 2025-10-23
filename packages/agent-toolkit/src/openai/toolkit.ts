@@ -48,7 +48,7 @@ export class MondayAgentToolkit {
    */
   getTools(): ChatCompletionTool[] {
     return this.tools.map((tool) => {
-      const inputSchema = tool.getInputSchema();
+      const inputSchema = tool.getInputSchemaWithInfo();
       return {
         type: 'function',
         function: {
@@ -77,7 +77,7 @@ export class MondayAgentToolkit {
       throw new Error(`Unknown tool: ${name}`);
     }
 
-    const inputSchema = tool.getInputSchema();
+    const inputSchema = tool.getInputSchemaWithInfo();
     if (inputSchema) {
       const parsedResult = z.object(inputSchema).safeParse(args);
       if (!parsedResult.success) {

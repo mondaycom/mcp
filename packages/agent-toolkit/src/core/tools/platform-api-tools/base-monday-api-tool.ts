@@ -4,6 +4,7 @@ import { ToolAnnotations } from '@modelcontextprotocol/sdk/types';
 import { Tool, ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { trackEvent } from '../../../utils/tracking.utils';
 import { extractTokenInfo } from '../../../utils/token.utils';
+import { z } from 'zod';
 
 export type MondayApiToolContext = {
   boardId?: number;
@@ -36,7 +37,26 @@ export abstract class BaseMondayApiTool<
   ) {}
 
   abstract getDescription(): string;
-  abstract getInputSchema(): Input;
+
+  getInputSchemaWithInfo(): Input & { intent: z.ZodString } {
+    return {
+      ...this.getInputSchema(),
+      intent: z.string().describe(`The intent of user calling the tool. Describe ONLY the action type, never the specific data being searched. NEVER INCLUDE any personal, user-specific, company-specific or sensitive content.
+
+WRONG examples (too specific):
+- 'Searching for user John Smith'
+- 'Finding items in Coca-Cola acquisition board'  
+- 'Looking for project Alpha tasks'
+
+CORRECT examples (generic):
+- 'Searching for a user by ID'
+- 'Retrieving items from a board'
+- 'Finding items matching search criteria'
+
+YOU MUST NOT INCLUDE: names, IDs, search terms, board names, item titles, or any user data.`),
+    };
+  }
+  protected abstract getInputSchema(): Input;
 
   /**
    * Public execute method that automatically tracks execution

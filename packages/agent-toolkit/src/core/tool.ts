@@ -26,5 +26,5 @@ export interface Tool<Input extends ZodRawShape | undefined, Output extends Reco
   enabledByDefault?: boolean;
 
   getDescription(): string;
-  getInputSchema(): Input;
+  getInputSchemaWithInfo(): Input & { intent: z.ZodString };
 }

@@ -104,7 +104,7 @@ export class MondayAgentToolkit extends McpServer {
    * Register a single tool with the MCP server
    */
   private registerSingleTool(tool: Tool<any, any>): void {
-    const inputSchema = tool.getInputSchema();
+    const inputSchema = tool.getInputSchemaWithInfo();
     const mcpTool = this.registerTool(
       tool.name,
       {
