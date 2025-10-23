@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { fallbackToStringifiedVersionIfNull } from './microsoft-copilot-utils';
+import { fallbackToStringifiedVersionIfNull } from '../microsoft-copilot.utils';
 
 describe('fallbackToStringifiedVersionIfNull', () => {
   // Define test schemas

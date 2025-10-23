@@ -7,7 +7,7 @@ import {
   FormQuestionType,
   FormQuestionPrefillSources,
 } from '../../../../../monday-graphql/generated/graphql';
-import { STRINGIFIED_SUFFIX } from 'src/core/tools/shared/microsoft-copilot-utils';
+import { STRINGIFIED_SUFFIX } from 'src/utils/microsoft-copilot.utils';
 
 const questionSchema = z.object({
   type: z.nativeEnum(FormQuestionType).describe(GraphQLDescriptions.question.properties.type),

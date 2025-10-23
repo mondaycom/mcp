@@ -7,9 +7,9 @@ import { z } from 'zod';
 import { normalizeString } from 'src/utils/string.utils';
 
 export const listWorkspaceToolSchema = {
-  searchTerm: z.string().optional().describe('The search term to filter the workspaces by. If not provided, all workspaces will be returned.'),
+  searchTerm: z.string().optional().describe('The search term to filter the workspaces by. If not provided, all workspaces will be returned. [IMPORANT] Only alphanumeric characters are supported.'),
   limit: z.number().min(1).max(DEFAULT_WORKSPACE_LIMIT).default(DEFAULT_WORKSPACE_LIMIT).describe(`The number of workspaces to return. Default and maximum allowed is ${DEFAULT_WORKSPACE_LIMIT}`),
-  page: z.number().min(1).describe('The page number to return. Default is 1.')
+  page: z.number().min(1).default(1).describe('The page number to return. Default is 1.')
 };
 
 export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToolSchema> {
@@ -33,13 +33,19 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
   protected async executeInternal(
     input: ToolInputType<typeof listWorkspaceToolSchema>,
   ): Promise<ToolOutputType<never>> {
-
     // Due to lack of search capabilities in the API, we filter in memory.
     // When search term is provided, we fetch at max ${MAX_WORKSPACE_LIMIT_FOR_SEARCH} workspaces and filter in memory.
     // Paging is also done memory so in API request we always request 1st page
-    const pageFromInput = (input.page ?? 1);
     const limitOverride = input.searchTerm ? MAX_WORKSPACE_LIMIT_FOR_SEARCH : input.limit;
-    const pageOverride = input.searchTerm ? 1 : pageFromInput;
+    const pageOverride = input.searchTerm ? 1 : input.page;
+
+    let searchTermNormalized: string | null = null;
+    if(input.searchTerm) {
+      searchTermNormalized = normalizeString(input.searchTerm)
+      if (searchTermNormalized.length === 0) {
+        throw new Error('Search term did not include any alphanumeric characters. Please provide a valid search term.');
+      }
+    }
 
     const variables = {
       limit: limitOverride,
@@ -55,12 +61,11 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
       };
     }
 
-    if (input.searchTerm) {
-      const searchTerm = normalizeString(input.searchTerm)
-      const startIndex = (pageFromInput - 1) * input.limit;
+    if (searchTermNormalized) {
+      const startIndex = (input.page - 1) * input.limit;
       const endIndex = startIndex + input.limit;
 
-      workspaces = workspaces.filter(workspace => normalizeString(workspace!.name).includes(searchTerm));
+      workspaces = workspaces.filter(workspace => normalizeString(workspace!.name).includes(searchTermNormalized));
       workspaces = workspaces.slice(startIndex, endIndex);
     }
 
@@ -82,7 +87,7 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
 
     return { 
       content: `${workspacesList}
-${hasMorePages ? `PAGINATION INFO: More results available - call the tool again with page: ${pageFromInput + 1}` : ''}
+${hasMorePages ? `PAGINATION INFO: More results available - call the tool again with page: ${input.page + 1}` : ''}
       `};
   }
 }

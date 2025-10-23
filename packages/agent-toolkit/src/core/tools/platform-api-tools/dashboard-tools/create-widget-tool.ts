@@ -8,7 +8,7 @@ import {
 import { createWidget } from './dashboard-queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { fallbackToStringifiedVersionIfNull } from '../../shared/microsoft-copilot-utils';
+import { fallbackToStringifiedVersionIfNull } from '../../../../utils/microsoft-copilot.utils';
 
 export const createWidgetToolSchema = {
   parent_container_id: z
