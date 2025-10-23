@@ -2,9 +2,15 @@ import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { listWorkspaces } from './list-workspace.graphql';
 import { ListWorkspacesQuery } from '../../../../monday-graphql/generated/graphql';
-import { DEFAULT_WORKSPACE_LIMIT } from './list-workspace.consts';
+import { DEFAULT_WORKSPACE_LIMIT, MAX_WORKSPACE_LIMIT_FOR_SEARCH } from './list-workspace.consts';
+import { z } from 'zod';
+import { normalizeString } from 'src/utils/string.utils';
 
-export const listWorkspaceToolSchema = {};
+export const listWorkspaceToolSchema = {
+  searchTerm: z.string().optional().describe('The search term to filter the workspaces by. If not provided, all workspaces will be returned.'),
+  limit: z.number().min(1).max(DEFAULT_WORKSPACE_LIMIT).default(DEFAULT_WORKSPACE_LIMIT).describe(`The number of workspaces to return. Default and maximum allowed is ${DEFAULT_WORKSPACE_LIMIT}`),
+  page: z.number().min(1).describe('The page number to return. Default is 1.')
+};
 
 export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToolSchema> {
   name = 'list_workspaces';
@@ -27,35 +33,56 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
   protected async executeInternal(
     input: ToolInputType<typeof listWorkspaceToolSchema>,
   ): Promise<ToolOutputType<never>> {
+
+    // Due to lack of search capabilities in the API, we filter in memory.
+    // When search term is provided, we fetch at max ${MAX_WORKSPACE_LIMIT_FOR_SEARCH} workspaces and filter in memory.
+    // Paging is also done memory so in API request we always request 1st page
+    const pageFromInput = (input.page ?? 1);
+    const limitOverride = input.searchTerm ? MAX_WORKSPACE_LIMIT_FOR_SEARCH : input.limit;
+    const pageOverride = input.searchTerm ? 1 : pageFromInput;
+
     const variables = {
-      limit: DEFAULT_WORKSPACE_LIMIT,
+      limit: limitOverride,
+      page: pageOverride
     };
 
     const res = await this.mondayApi.request<ListWorkspacesQuery>(listWorkspaces, variables);
+    let workspaces = res.workspaces?.filter(w => w);
 
-    if (!res.workspaces || res.workspaces.length === 0) {
+    if (!workspaces || workspaces.length === 0) {
       return {
         content: 'No workspaces found.',
       };
     }
 
-    const workspacesList = res.workspaces
-      .filter((workspace) => workspace !== null)
+    if (input.searchTerm) {
+      const searchTerm = normalizeString(input.searchTerm)
+      const startIndex = (pageFromInput - 1) * input.limit;
+      const endIndex = startIndex + input.limit;
+
+      workspaces = workspaces.filter((workspace) => normalizeString(workspace!.name).includes(searchTerm));
+      workspaces = workspaces.slice(startIndex, endIndex);
+    }
+
+    if(workspaces.length === 0) {
+      return {
+        content: 'No workspaces found matching the search term. Try using the tool without a search term',
+      };
+    }
+
+    // Naive check to see if there are more pages
+    const hasMorePages = workspaces.length === input.limit;
+
+    const workspacesList = workspaces
       .map((workspace) => {
         const description = workspace!.description ? ` - ${workspace!.description}` : '';
         return `• **${workspace!.name}** (ID: ${workspace!.id})${description}`;
       })
       .join('\n');
 
-    return {
-      content: `**Available Workspaces (${res.workspaces.length}):**
-
-${workspacesList}
-
-**Summary:**
-Total workspaces found: ${res.workspaces.length}
-
-${JSON.stringify(res.workspaces, null, 2)}`,
-    };
+    return { 
+      content: `${workspacesList}
+${hasMorePages ? `PAGINATION INFO: More results available - call the tool again with page: ${pageFromInput + 1}` : ''}
+      `};
   }
 }
