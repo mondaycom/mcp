@@ -15,6 +15,7 @@ export class MondayAgentToolkit extends McpServer {
   private readonly mondayApiClient: ApiClient;
   private readonly mondayApiToken: string;
   private readonly dynamicToolManager: DynamicToolManager = new DynamicToolManager();
+  private readonly readOnlyMode: boolean;
 
   /**
    * Creates a new instance of the Monday Agent Toolkit
@@ -37,6 +38,7 @@ export class MondayAgentToolkit extends McpServer {
 
     this.mondayApiClient = this.createApiClient(config);
     this.mondayApiToken = config.mondayApiToken;
+    this.readOnlyMode = config.toolsConfiguration?.readOnlyMode ?? false;
 
     this.registerTools(config);
   }
@@ -116,6 +118,14 @@ export class MondayAgentToolkit extends McpServer {
       async (args: any, _extra: any) => {
         try {
           let result;
+          
+          // Read-only mode protection: prevent WRITE and ALL_API tools from executing
+          if (this.readOnlyMode && (tool.type === 'write' || tool.type === 'all_api')) {
+            throw new Error(
+              `Tool '${tool.name}' cannot be executed in read-only mode. This tool performs write/modification operations which are disabled in read-only mode.`
+            );
+          }
+
           if (inputSchema) {
             const parsedArgs = z.object(inputSchema).safeParse(args);
             if (!parsedArgs.success) {
