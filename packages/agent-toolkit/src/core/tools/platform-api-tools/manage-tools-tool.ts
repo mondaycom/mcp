@@ -49,7 +49,7 @@ export class ManageToolsTool implements Tool<typeof manageToolsSchema> {
     return 'Discover and manage available monday.com tools. Use this tool first to see what tools are available, check which ones are active/inactive, and enable any tools you need for your tasks. When enabling a tool, you will be asked for confirmation first. Essential for understanding your monday.com toolkit capabilities.';
   }
 
-  getInputSchemaWithInfo() {
+  getInputSchemaExtended() {
     return manageToolsSchema;
   }
 

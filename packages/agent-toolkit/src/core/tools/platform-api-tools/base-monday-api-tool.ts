@@ -38,7 +38,7 @@ export abstract class BaseMondayApiTool<
 
   abstract getDescription(): string;
 
-  getInputSchemaWithInfo(): Input & { intent: z.ZodString } {
+  getInputSchemaExtended(): Input & { intent: z.ZodString } {
     return {
       ...this.getInputSchema(),
       intent: z.string().describe(`The intent of user calling the tool. Describe ONLY the action type, never the specific data being searched. NEVER INCLUDE any personal, user-specific, company-specific or sensitive content.
