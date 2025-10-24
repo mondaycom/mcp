@@ -12,7 +12,6 @@ import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../../platform-api-tools/base-monday-api-tool';
 import {
   ALL_SPRINT_COLUMNS,
-  validateSprintsBoardSchemaFromColumns,
   getCheckboxValue,
   getDateValue,
   getTimelineValue,
@@ -20,6 +19,10 @@ import {
   SPRINT_STATUS,
   ERROR_PREFIXES,
   Sprint,
+  REQUIRED_SPRINT_COLUMNS,
+  validateItemColumns,
+  getSprintColumnDisplayName,
+  SPRINT_COLUMN_DISPLAY_NAMES,
 } from '../shared';
 
 const DEFAULT_LIMIT = 25;
@@ -130,7 +133,7 @@ Requires the Main Sprints board ID of the monday-dev containing your sprints.`;
       }
 
       const columns = board.columns || [];
-      const schemaValidation = validateSprintsBoardSchemaFromColumns(columns as Column[]);
+      const schemaValidation = this.validateSprintsBoardSchemaFromColumns(columns as Column[]);
 
       if (!schemaValidation.isValid) {
         return {
@@ -147,6 +150,28 @@ Requires the Main Sprints board ID of the monday-dev containing your sprints.`;
       };
     }
   }
+
+  private validateSprintsBoardSchemaFromColumns(boardColumns: Column[]): { isValid: boolean; errorMessage: string } {
+  const existingColumnIds = new Set(
+    boardColumns.filter((col): col is NonNullable<Column> => col !== null).map((col) => col.id),
+  );
+
+  const requiredColumns = Object.values(REQUIRED_SPRINT_COLUMNS);
+  const validation = validateItemColumns(existingColumnIds, requiredColumns);
+
+  if (!validation.isValid) {
+    let errorMessage = `BoardID provided is not a valid sprints board. Missing required columns:\n\n`;
+
+    validation.missingColumns.forEach((columnId) => {
+      const columnDisplayName = getSprintColumnDisplayName(columnId as keyof typeof SPRINT_COLUMN_DISPLAY_NAMES);
+      errorMessage += `- ${columnDisplayName}\n`;
+    });
+
+    return { isValid: false, errorMessage };
+  }
+
+  return { isValid: true, errorMessage: '' };
+}
 
   private generateSprintsMetadataReport(sprints: Sprint[]): string {
     let report = `# Sprints Metadata Report\n\n`;
