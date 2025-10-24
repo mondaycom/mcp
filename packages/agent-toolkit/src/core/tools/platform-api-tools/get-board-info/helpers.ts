@@ -1,8 +1,27 @@
-import { GetBoardInfoJustColumnsQuery, GetBoardInfoQuery } from '../../../../monday-graphql/generated/graphql';
+import { Column, GetBoardInfoJustColumnsQuery, GetBoardInfoQuery } from '../../../../monday-graphql/generated/graphql';
 
 export type BoardInfoData = NonNullable<NonNullable<GetBoardInfoQuery['boards']>[0]>;
 export type BoardInfoJustColumnsData = NonNullable<NonNullable<GetBoardInfoJustColumnsQuery['boards']>[0]>;
+export type ColumnInfo = NonNullable<BoardInfoJustColumnsData['columns']>[0];
 
+export interface BoardInfoResponse {
+  board: BoardInfoData & { subItemColumns: ColumnInfo[] | undefined };
+  filteringGuidelines: string;
+}
+
+export const formatBoardInfoAsJson = (board: BoardInfoData, subItemsBoard: BoardInfoJustColumnsData | null): BoardInfoResponse => {
+  return {
+    board: {
+      ...board,
+      subItemColumns: subItemsBoard?.columns ?? undefined, 
+    },
+    filteringGuidelines: getColumnFilteringGuidelines(board.columns!.filter(isBaseColumnInfo) as BaseColumnInfo[]),
+  }
+}
+
+/**
+ * @deprecated This method is deprecated as we want to send JSON for MCP UI.
+ */
 export const formatBoardInfo = (board: BoardInfoData, subItemsBoard: BoardInfoJustColumnsData | null): string => {
   let sections: string[] = [];
 
@@ -191,13 +210,13 @@ EXAMPLES:
   ✅ Correct: {"columnId": "name", "compareValue": "marketing campaign", "operator": "not_contains_text"} // using string with not_contains_text`,
 
     'status': `Supported operators: any_of, not_any_of, contains_terms. CompareValue should be either:
-  - index of label from column settings - when used with any_of, not_any_of operators
+  - id of label from column settings - when used with any_of, not_any_of operators
   - label's text - when use with contains_terms
 EXAMPLES:
-  ✅ Correct: {"columnId": "status", "compareValue": [0, 1], "operator": "any_of"} // Using index values
+  ✅ Correct: {"columnId": "status", "compareValue": [0, 1], "operator": "any_of"} // Using id values
   ✅ Correct: {"columnId": "status", "compareValue": "Done", "operator": "contains_terms"} // Using label text
   ❌ Wrong: {"columnId": "status", "compareValue": "Done", "operator": "any_of"} // Using label text with wrong operator
-  ❌ Wrong: {"columnId": "status", "compareValue": [0, 1], "operator": "contains_terms"} // Using index with wrong operator`,
+  ❌ Wrong: {"columnId": "status", "compareValue": [0, 1], "operator": "contains_terms"} // Using id with wrong operator`,
 
     'checkbox': `Supported operators: is_empty, is_not_empty. Compare value must be an empty array
 EXAMPLES:

@@ -44,7 +44,8 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
   });
 
   getDescription(): string {
-    return 'Create a new item with provided values, create a subitem under a parent item, or duplicate an existing item and update it with new values. Use parentItemId when creating a subitem under an existing item. Use duplicateFromItemId when copying an existing item with modifications.';
+    return 'Create a new item with provided values, create a subitem under a parent item, or duplicate an existing item and update it with new values. Use parentItemId when creating a subitem under an existing item. Use duplicateFromItemId when copying an existing item with modifications.' 
+      + `[REQUIRED PRECONDITION]: Before using this tool, if you are not familiar with the board's structure (column IDs, column types, status labels, etc.), first use get_board_info to understand the board metadata. This is essential for constructing proper column values and knowing which columns are available.`;
   }
 
   getInputSchema(): CreateItemToolInput {
