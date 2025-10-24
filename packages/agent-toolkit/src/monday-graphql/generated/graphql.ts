@@ -9157,6 +9157,7 @@ export type GetCurrentUserQuery = { __typename?: 'Query', me?: { __typename?: 'U
 
 export type ListWorkspacesQueryVariables = Exact<{
   limit: Scalars['Int']['input'];
+  page: Scalars['Int']['input'];
 }>;
 
 

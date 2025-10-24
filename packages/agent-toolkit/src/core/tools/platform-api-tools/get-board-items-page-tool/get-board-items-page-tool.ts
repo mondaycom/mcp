@@ -4,7 +4,7 @@ import { GetBoardItemsPageQuery, GetBoardItemsPageQueryVariables, ItemsOrderByDi
 import { getBoardItemsPage, smartSearchGetBoardItemIds } from './get-board-items-page-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { fallbackToStringifiedVersionIfNull, STRINGIFIED_SUFFIX } from '../../shared/microsoft-copilot-utils';
+import { fallbackToStringifiedVersionIfNull, STRINGIFIED_SUFFIX } from '../../../../utils/microsoft-copilot.utils';
 
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 500;

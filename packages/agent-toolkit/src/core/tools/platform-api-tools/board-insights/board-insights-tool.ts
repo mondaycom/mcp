@@ -11,7 +11,7 @@ import {
 } from 'src/monday-graphql/generated/graphql';
 import { handleFilters, handleFrom, handleSelectAndGroupByElements } from './board-insights-utils';
 import { BoardInsightsAggregationFunction, DEFAULT_LIMIT, MAX_LIMIT } from './board-insights.consts';
-import { fallbackToStringifiedVersionIfNull } from '../../shared/microsoft-copilot-utils';
+import { fallbackToStringifiedVersionIfNull } from '../../../../utils/microsoft-copilot.utils';
 
 export const boardInsightsToolSchema = {
   boardId: z.number().describe('The id of the board to get insights for'),
