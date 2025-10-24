@@ -31,9 +31,6 @@ export const getFilteredToolInstances = (
     if (config.mode === ToolMode.API && config.enableDynamicApiTools === false) {
       shouldFilter = shouldFilter || toolInstance.type === ToolType.ALL_API;
     }
-    if (config.readOnlyMode) {
-      shouldFilter = shouldFilter || toolInstance.type !== ToolType.READ;
-    }
     if (config.include) {
       shouldFilter = shouldFilter || !config.include?.includes(toolInstance.name);
     } else if (config.exclude) {
