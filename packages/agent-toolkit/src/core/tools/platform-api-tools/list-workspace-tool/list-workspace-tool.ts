@@ -61,11 +61,12 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
       };
     }
 
-    if (searchTermNormalized) {
+    // If there is no more than single page of results, let LLM do the filtering
+    if (searchTermNormalized && workspaces.length > DEFAULT_WORKSPACE_LIMIT) {
       const startIndex = (input.page - 1) * input.limit;
       const endIndex = startIndex + input.limit;
 
-      workspaces = workspaces.filter(workspace => normalizeString(workspace!.name).includes(searchTermNormalized));
+      workspaces = workspaces.filter(workspace => normalizeString(workspace!.name!).includes(searchTermNormalized!));
       workspaces = workspaces.slice(startIndex, endIndex);
     }
 
@@ -85,8 +86,12 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
       })
       .join('\n');
 
+    const shouldIncludeNoFilteringDisclaimer = searchTermNormalized && workspaces.length <= DEFAULT_WORKSPACE_LIMIT;
+
     return { 
-      content: `${workspacesList}
+      content: `
+${shouldIncludeNoFilteringDisclaimer ? 'IMPORTANT: Search term was not applied. Returning all workspaces. Please perform the filtering manually.' : ''}
+${workspacesList}
 ${hasMorePages ? `PAGINATION INFO: More results available - call the tool again with page: ${input.page + 1}` : ''}
       `};
   }
