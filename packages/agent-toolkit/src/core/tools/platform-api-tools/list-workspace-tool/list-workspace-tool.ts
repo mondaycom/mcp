@@ -61,6 +61,7 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
       };
     }
 
+    const shouldIncludeNoFilteringDisclaimer = searchTermNormalized && workspaces.length <= DEFAULT_WORKSPACE_LIMIT;
     // If there is no more than single page of results, let LLM do the filtering
     if (searchTermNormalized && workspaces.length > DEFAULT_WORKSPACE_LIMIT) {
       const startIndex = (input.page - 1) * input.limit;
@@ -86,7 +87,6 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
       })
       .join('\n');
 
-    const shouldIncludeNoFilteringDisclaimer = searchTermNormalized && workspaces.length <= DEFAULT_WORKSPACE_LIMIT;
 
     return { 
       content: `
