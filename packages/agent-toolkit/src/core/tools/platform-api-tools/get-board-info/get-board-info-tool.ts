@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { ColumnType, GetBoardInfoJustColumnsQuery, GetBoardInfoQuery, GetBoardInfoQueryVariables } from '../../../../monday-graphql/generated/graphql';
 import { getBoardInfo, getBoardInfoJustColumns } from './get-board-info.graphql';
-import { BoardInfoData, BoardInfoJustColumnsData, formatBoardInfo } from './helpers';
+import { BoardInfoData, BoardInfoJustColumnsData, formatBoardInfoAsJson } from './helpers';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './../base-monday-api-tool';
 
@@ -45,7 +45,7 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
     const subItemsBoard = await this.getSubItemsBoardAsync(board);
 
     return {
-      content: formatBoardInfo(board, subItemsBoard),
+      content: JSON.stringify(formatBoardInfoAsJson(board, subItemsBoard), null, 2)
     };
   }
 

@@ -67,7 +67,7 @@ export const boardInsightsToolSchema = {
     )
     .optional()
     .describe(
-      'The configuration of filters to apply on the items. Before sending the filters, use get_board_info tool to check "Filtering Guidelines" section for filtering by the column.',
+      'The configuration of filters to apply on the items. Before sending the filters, use get_board_info tool to check "filteringGuidelines" key for filtering by the column.',
     ),
   filtersOperator: z
     .nativeEnum(ItemsQueryOperator)

@@ -61,7 +61,7 @@ PERFORMANCE OPTIMIZATION: Only set this to true when you actually need the colum
     compareAttribute: z.string().optional().describe('The attribute to compare the value to'),
     compareValue: z.any().describe('The value to compare the attribute to. This can be a string or index value depending on the column type.'),
     operator: z.nativeEnum(ItemsQueryRuleOperator).optional().default(ItemsQueryRuleOperator.AnyOf).describe('The operator to use for the filter'),
-  })).optional().describe('The configuration of filters to apply on the items. Before sending the filters, use get_board_info tool to check "Filtering Guidelines" section for filtering by the column.'),
+  })).optional().describe('The configuration of filters to apply on the items. Before sending the filters, use get_board_info tool to check "filteringGuidelines" key for filtering by the column.'),
   filtersOperator: z.nativeEnum(ItemsQueryOperator).optional().default(ItemsQueryOperator.And).describe('The operator to use for the filters'),
   
   columnIds: z.array(z.string()).optional().describe('The ids of the item columns and subitem columns to get, can be used to reduce the response size when user asks for specific columns. Works only when includeColumns is true. If not provided, all columns will be returned'),
