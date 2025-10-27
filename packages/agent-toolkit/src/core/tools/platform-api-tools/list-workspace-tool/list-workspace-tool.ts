@@ -12,6 +12,8 @@ export const listWorkspaceToolSchema = {
   page: z.number().min(1).default(1).describe('The page number to return. Default is 1.')
 };
 
+type Workspace = NonNullable<ListWorkspacesQuery['workspaces']>[number];
+
 export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToolSchema> {
   name = 'list_workspaces';
   type = ToolType.READ;
@@ -53,7 +55,7 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
     };
 
     const res = await this.mondayApi.request<ListWorkspacesQuery>(listWorkspaces, variables);
-    let workspaces = res.workspaces?.filter(w => w);
+    const workspaces = res.workspaces?.filter(w => w);
 
     if (!workspaces || workspaces.length === 0) {
       return {
@@ -62,25 +64,18 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
     }
 
     const shouldIncludeNoFilteringDisclaimer = searchTermNormalized && workspaces.length <= DEFAULT_WORKSPACE_LIMIT;
-    // If there is no more than single page of results, let LLM do the filtering
-    if (searchTermNormalized && workspaces.length > DEFAULT_WORKSPACE_LIMIT) {
-      const startIndex = (input.page - 1) * input.limit;
-      const endIndex = startIndex + input.limit;
+    const filteredWorkspaces = this.filterWorkspacesIfNeeded(searchTermNormalized, workspaces, input);
 
-      workspaces = workspaces.filter(workspace => normalizeString(workspace!.name!).includes(searchTermNormalized!));
-      workspaces = workspaces.slice(startIndex, endIndex);
-    }
-
-    if(workspaces.length === 0) {
+    if(filteredWorkspaces.length === 0) {
       return {
         content: 'No workspaces found matching the search term. Try using the tool without a search term',
       };
     }
 
     // Naive check to see if there are more pages
-    const hasMorePages = workspaces.length === input.limit;
+    const hasMorePages = filteredWorkspaces.length === input.limit;
 
-    const workspacesList = workspaces
+    const workspacesList = filteredWorkspaces
       .map(workspace => {
         const description = workspace!.description ? ` - ${workspace!.description}` : '';
         return `• **${workspace!.name}** (ID: ${workspace!.id})${description}`;
@@ -94,5 +89,23 @@ ${shouldIncludeNoFilteringDisclaimer ? 'IMPORTANT: Search term was not applied. 
 ${workspacesList}
 ${hasMorePages ? `PAGINATION INFO: More results available - call the tool again with page: ${input.page + 1}` : ''}
       `};
+  }
+
+  private filterWorkspacesIfNeeded(
+    searchTermNormalized: string | null,
+    workspaces: Workspace[],
+    input: ToolInputType<typeof listWorkspaceToolSchema>
+  ) {
+    // If there is no more than single page of results, let LLM do the filtering
+    if (!searchTermNormalized || workspaces.length <= DEFAULT_WORKSPACE_LIMIT) {
+      return workspaces;
+    }
+
+    const startIndex = (input.page - 1) * input.limit;
+    const endIndex = startIndex + input.limit;
+
+    return workspaces
+      .filter(workspace => normalizeString(workspace!.name).includes(searchTermNormalized))
+      .slice(startIndex, endIndex);
   }
 }
