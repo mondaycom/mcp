@@ -4,19 +4,19 @@
   "description": "monday.com agent toolkit",
   "exports": {
     "./mcp": {
+      "types": "./dist/esm/mcp/index.d.ts",
       "import": "./dist/esm/mcp/index.js",
-      "require": "./dist/cjs/mcp/index.js",
-      "types": "./dist/esm/mcp/index.d.ts"
+      "require": "./dist/cjs/mcp/index.js"
     },
     "./core": {
+      "types": "./dist/esm/core/index.d.ts",
       "import": "./dist/esm/core/index.js",
-      "require": "./dist/cjs/core/index.js",
-      "types": "./dist/esm/core/index.d.ts"
+      "require": "./dist/cjs/core/index.js"
     },
     "./openai": {
+      "types": "./dist/esm/openai/index.d.ts",
       "import": "./dist/esm/openai/index.js",
-      "require": "./dist/cjs/openai/index.js",
-      "types": "./dist/esm/openai/index.d.ts"
+      "require": "./dist/cjs/openai/index.js"
     }
   },
   "files": [

@@ -15,6 +15,8 @@ export class MondayAgentToolkit extends McpServer {
   private readonly mondayApiClient: ApiClient;
   private readonly mondayApiToken: string;
   private readonly dynamicToolManager: DynamicToolManager = new DynamicToolManager();
+  private toolInstances: Tool<any, any>[] = [];
+  private managementTool: Tool<any, any> | null = null;
 
   /**
    * Creates a new instance of the Monday Agent Toolkit
@@ -63,8 +65,8 @@ export class MondayAgentToolkit extends McpServer {
    */
   private registerTools(config: MondayAgentToolkitConfig): void {
     try {
-      const toolInstances = this.initializeTools(config);
-      toolInstances.forEach((tool) => this.registerSingleTool(tool));
+      this.toolInstances = this.initializeTools(config);
+      this.toolInstances.forEach((tool) => this.registerSingleTool(tool));
 
       // Register the ManageToolsTool only if explicitly enabled
       if (config.toolsConfiguration?.enableToolManager === true) {
@@ -83,7 +85,8 @@ export class MondayAgentToolkit extends McpServer {
   private registerManagementTool(): void {
     const manageTool = new ManageToolsTool();
     manageTool.setToolkitManager(this.dynamicToolManager);
-    this.registerSingleTool(manageTool as Tool<any, any>);
+    this.managementTool = manageTool as Tool<any, any>;
+    this.registerSingleTool(this.managementTool);
   }
 
   /**
@@ -173,6 +176,56 @@ export class MondayAgentToolkit extends McpServer {
 
   getServer(): McpServer {
     return this;
+  }
+
+  /**
+   * Get all tools as an array of tool objects that can be registered individually
+   * Each tool includes name, description, schema, and handler for external registration
+   * @returns Array of tool objects ready for individual registration
+   */
+  public getTools(): Array<{
+    name: string;
+    description: string;
+    schema: any;
+    handler: (params: any) => Promise<any>;
+  }> {
+    const allTools = [...this.toolInstances];
+
+    // Include management tool if it exists
+    if (this.managementTool) {
+      allTools.push(this.managementTool);
+    }
+
+    return allTools.map((tool) => ({
+      name: tool.name,
+      description: tool.getDescription(),
+      schema: tool.getInputSchema(),
+      handler: this.createToolHandler(tool),
+    }));
+  }
+
+  /**
+   * Create a bound handler function for a tool that maintains access to toolkit state
+   * @param tool The tool instance to create a handler for
+   * @returns Async handler function that can be used externally
+   */
+  private createToolHandler(tool: Tool<any, any>) {
+    return async (params: any) => {
+      const inputSchema = tool.getInputSchema();
+
+      if (inputSchema) {
+        // inputSchema is already a Zod schema object definition, so we wrap it with z.object()
+        const parsedArgs = z.object(inputSchema).safeParse(params);
+        if (!parsedArgs.success) {
+          throw new Error(`Invalid arguments: ${parsedArgs.error.message}`);
+        }
+        const result = await tool.execute(parsedArgs.data);
+        return result.content;
+      } else {
+        const result = await tool.execute();
+        return result.content;
+      }
+    };
   }
 
   /**

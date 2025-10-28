@@ -1,9 +1,10 @@
-import { MondayAgentToolkit } from '../src/mcp/toolkit';
-import { ToolMode, ToolsConfiguration } from '../src/core/monday-agent-toolkit';
-import { ToolType } from '../src/core/tool';
+import { MondayAgentToolkit } from './toolkit';
+import { ToolMode, ToolsConfiguration } from '../core/monday-agent-toolkit';
+import { ToolType } from '../core/tool';
 import { ApiClient } from '@mondaydotcomorg/api';
-import { getFilteredToolInstances } from '../src/utils/tools/tools-filtering.utils';
-import { ManageToolsTool } from '../src/core/tools/platform-api-tools/manage-tools-tool';
+import { getFilteredToolInstances } from '../utils/tools/tools-filtering.utils';
+import { ManageToolsTool } from '../core/tools/platform-api-tools/manage-tools-tool';
+import { z } from 'zod';
 
 // Mock the ApiClient
 jest.mock('@mondaydotcomorg/api', () => ({
@@ -13,12 +14,12 @@ jest.mock('@mondaydotcomorg/api', () => ({
 }));
 
 // Mock the getFilteredToolInstances function to control what tools are returned
-jest.mock('../src/utils/tools/tools-filtering.utils', () => ({
+jest.mock('../utils/tools/tools-filtering.utils', () => ({
   getFilteredToolInstances: jest.fn(),
 }));
 
 // Mock the ManageToolsTool
-jest.mock('../src/core/tools/platform-api-tools/manage-tools-tool', () => ({
+jest.mock('../core/tools/platform-api-tools/manage-tools-tool', () => ({
   ManageToolsTool: jest.fn().mockImplementation(() => ({
     name: 'manage-tools',
     type: ToolType.READ,
@@ -443,7 +444,7 @@ describe('MondayAgentToolkit', () => {
         annotations: { audience: [] },
         enabledByDefault: true,
         getDescription: jest.fn().mockReturnValue('Test tool 1 description'),
-        getInputSchema: jest.fn().mockReturnValue({ param1: { type: 'string' } }),
+        getInputSchema: jest.fn().mockReturnValue({ param1: z.string() }),
         execute: jest.fn().mockResolvedValue({ content: 'Result 1' }),
       };
 
@@ -470,7 +471,8 @@ describe('MondayAgentToolkit', () => {
       // Check first tool structure
       expect(tools[0]).toHaveProperty('name', 'test-tool-1');
       expect(tools[0]).toHaveProperty('description', 'Test tool 1 description');
-      expect(tools[0]).toHaveProperty('schema', { param1: { type: 'string' } });
+      expect(tools[0]).toHaveProperty('schema');
+      expect(tools[0].schema).toHaveProperty('param1');
       expect(tools[0]).toHaveProperty('handler');
       expect(typeof tools[0].handler).toBe('function');
 
@@ -506,7 +508,7 @@ describe('MondayAgentToolkit', () => {
 
       expect(tools).toHaveLength(2); // regular tool + management tool
 
-      const toolNames = tools.map((t) => t.name);
+      const toolNames = tools.map((t: any) => t.name);
       expect(toolNames).toContain('regular-tool');
       expect(toolNames).toContain('manage-tools');
     });
@@ -518,7 +520,7 @@ describe('MondayAgentToolkit', () => {
         annotations: { audience: [] },
         enabledByDefault: true,
         getDescription: jest.fn().mockReturnValue('Handler test tool'),
-        getInputSchema: jest.fn().mockReturnValue({ input: { type: 'string' } }),
+        getInputSchema: jest.fn().mockReturnValue({ input: z.string() }),
         execute: jest.fn().mockResolvedValue({ content: 'Handler result' }),
       };
 
@@ -544,7 +546,7 @@ describe('MondayAgentToolkit', () => {
         annotations: { audience: [] },
         enabledByDefault: true,
         getDescription: jest.fn().mockReturnValue('Error tool'),
-        getInputSchema: jest.fn().mockReturnValue({ input: { type: 'string' } }),
+        getInputSchema: jest.fn().mockReturnValue({ input: z.string() }),
         execute: jest.fn().mockRejectedValue(new Error('Tool execution failed')),
       };
 
@@ -597,8 +599,8 @@ describe('MondayAgentToolkit', () => {
         enabledByDefault: true,
         getDescription: jest.fn().mockReturnValue('Validation tool'),
         getInputSchema: jest.fn().mockReturnValue({
-          requiredParam: { type: 'string' },
-          numberParam: { type: 'number' },
+          requiredParam: z.string(),
+          numberParam: z.number(),
         }),
         execute: jest.fn().mockResolvedValue({ content: 'Validation passed' }),
       };
