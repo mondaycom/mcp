@@ -4,7 +4,7 @@ Please update a monday.com item. (bug, task, epic, etc.)
 
 Input details: {{args}}
 
-To add an comment on an item use the `create_update` tool. You will need the Item ID and the text of the update. 
+To add a comment on an item use the `create_update` tool. You will need the Item ID and the text of the update. 
 If these are not clear from the input, please ask for clarification.
 
 To update a column value on an item use the `change_item_column_values` tool. You will need the Board ID, Item ID and the column key and value. 
