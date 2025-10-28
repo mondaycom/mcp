@@ -2,7 +2,7 @@
 
 ## Overview
 
-This extension connects Gemini CLI to monday.com's hosted Model Context Protocol (MCP) server at `https://mcp.monday.com/sse`.
+This extension connects Gemini CLI to monday.com's hosted Model Context Protocol (MCP) server at `https://mcp.monday.com/mcp`.
 
 Prior to using tools from the monday.com MCP server you must authenticate. This is done by running `/mcp auth monday` which will open a OAuth flow in your browser.
 

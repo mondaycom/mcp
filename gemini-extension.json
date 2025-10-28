@@ -5,7 +5,7 @@
     "contextFileName": "MONDAY.md",
     "mcpServers": {
         "monday": {
-          "url": "https://mcp.monday.com/sse"
+          "httpUrl": "https://mcp.monday.com/mcp"
         }
     }
 }

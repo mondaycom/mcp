@@ -105,7 +105,7 @@ If you prefer to use the MCP server directly without the extension, you can add
 it with this command:
 
 ```sh
-gemini mcp add -t sse monday https://mcp.monday.com/sse
+gemini mcp add -t http monday https://mcp.monday.com/mcp
 ```
 
 Once you have either the extension installed or the MCP server added, start
