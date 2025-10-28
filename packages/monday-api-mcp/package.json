@@ -1,6 +1,6 @@
 {
   "name": "@mondaydotcomorg/monday-api-mcp",
-  "version": "1.4.2",
+  "version": "1.5.0",
   "description": "MCP server for using the monday.com API",
   "mcpName": "com.monday/monday.com",
   "license": "MIT",
