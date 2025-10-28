@@ -20,5 +20,15 @@ They all are prefixed with `/monday:`:
 
 ## Troubleshooting
 
-Run `/mcp list` to confirm the `monday` server is connected.
-Run `/mcp desc monday` to see detailed overview of available tools.
+Before using the monday.com MCP server, you need to install the Monday MCP app
+from the marketplace:
+
+1. Visit [monday MCP app in the marketplace](https://monday.com/marketplace/listing/10000806/monday-mcp)
+2. Click "Install" and follow the instructions to add it to your account
+
+If you have already installed the app, below are some common troubleshooting
+steps:
+
+- Run `/mcp list` to confirm the `monday` server is connected.
+- Run `/mcp desc monday` to see detailed overview of available tools.
+- Run `/mcp auth monday` to authenticate with monday.com.
