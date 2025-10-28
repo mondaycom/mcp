@@ -112,7 +112,6 @@ export class MondayAgentToolkit extends McpServer {
         title: tool.annotations?.title,
         description: tool.getDescription(),
         inputSchema,
-        annotations: tool.annotations,
       },
       async (args: any, _extra: any) => {
         try {
