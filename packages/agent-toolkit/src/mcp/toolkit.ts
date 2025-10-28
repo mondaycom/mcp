@@ -205,6 +205,32 @@ export class MondayAgentToolkit extends McpServer {
   }
 
   /**
+   * Get all tools with MCP-formatted handlers for direct registration with MCP servers
+   * This method wraps the handlers to return the proper CallToolResult format
+   * @returns Array of tool objects with MCP-compatible handlers
+   */
+  public getToolsForMcp(): Array<{
+    name: string;
+    description: string;
+    schema: any;
+    handler: (params: any, extra?: any) => Promise<CallToolResult>;
+  }> {
+    const allTools = [...this.toolInstances];
+
+    // Include management tool if it exists
+    if (this.managementTool) {
+      allTools.push(this.managementTool);
+    }
+
+    return allTools.map((tool) => ({
+      name: tool.name,
+      description: tool.getDescription(),
+      schema: tool.getInputSchema(),
+      handler: this.createMcpToolHandler(tool),
+    }));
+  }
+
+  /**
    * Create a bound handler function for a tool that maintains access to toolkit state
    * @param tool The tool instance to create a handler for
    * @returns Async handler function that can be used externally
@@ -224,6 +250,42 @@ export class MondayAgentToolkit extends McpServer {
       } else {
         const result = await tool.execute();
         return result.content;
+      }
+    };
+  }
+
+  /**
+   * Create a bound handler function for a tool that returns MCP-formatted results
+   * @param tool The tool instance to create a handler for
+   * @returns Async handler function that returns CallToolResult format
+   */
+  private createMcpToolHandler(tool: Tool<any, any>) {
+    return async (params: any, extra?: any): Promise<CallToolResult> => {
+      try {
+        const inputSchema = tool.getInputSchema();
+
+        if (inputSchema) {
+          // inputSchema is already a Zod schema object definition, so we wrap it with z.object()
+          const parsedArgs = z.object(inputSchema).safeParse(params);
+          if (!parsedArgs.success) {
+            throw new Error(`Invalid arguments: ${parsedArgs.error.message}`);
+          }
+          const result = await tool.execute(parsedArgs.data);
+          return {
+            content: [{ type: 'text', text: String(result.content) }],
+          };
+        } else {
+          const result = await tool.execute();
+          return {
+            content: [{ type: 'text', text: String(result.content) }],
+          };
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return {
+          content: [{ type: 'text', text: `Error: ${errorMessage}` }],
+          isError: true,
+        };
       }
     };
   }
