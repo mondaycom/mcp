@@ -108,6 +108,7 @@ export class MondayAgentToolkit extends McpServer {
     const mcpTool = this.registerTool(
       tool.name,
       {
+        ...tool,
         title: tool.annotations?.title,
         description: tool.getDescription(),
         inputSchema,
@@ -197,7 +198,7 @@ export class MondayAgentToolkit extends McpServer {
           text: `Failed to execute tool ${toolName}: ${errorMessage}`,
         },
       ],
-      isError: true
+      isError: true,
     };
   }
 }
