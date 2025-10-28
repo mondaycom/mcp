@@ -20,7 +20,7 @@ They all are prefixed with `/monday:`:
 
 ## Troubleshooting
 
-Before using the monday.com MCP server, you need to install the Monday MCP app
+Before using the monday.com MCP server, you need an admin to install the Monday MCP app in your monday.com account
 from the marketplace:
 
 1. Visit [monday MCP app in the marketplace](https://monday.com/marketplace/listing/10000806/monday-mcp)
