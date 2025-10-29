@@ -92,7 +92,7 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
 
     const data = await handler(input);
     const response = {
-      disclaimer: data.wasFiltered ? '[IMPORTANT]Items were not filtered. Please perform the filtering.' : undefined,
+      disclaimer: data.wasFiltered ? undefined : '[IMPORTANT]Items were not filtered. Please perform the filtering.',
       results: data.items
     }
     

@@ -215,7 +215,7 @@ describe('SearchTool', () => {
 
         // With less than 100 items, no filtering occurs - returns all items
         expect(parsedResult.results).toHaveLength(4);
-        expect(parsedResult.disclaimer).toBeUndefined();
+        expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
 
         // When searchTerm is present, should request page 1 with high limit
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(
@@ -298,7 +298,7 @@ describe('SearchTool', () => {
 
         // With less than 100 items, no filtering occurs - returns all 10 items
         expect(parsedResult.results).toHaveLength(10);
-        expect(parsedResult.disclaimer).toBeUndefined();
+        expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
       });
 
       it('should NOT filter when less than 100 items even with different page', async () => {
@@ -323,7 +323,7 @@ describe('SearchTool', () => {
 
         // With less than 100 items, no filtering occurs - returns all 10 items
         expect(parsedResult.results).toHaveLength(10);
-        expect(parsedResult.disclaimer).toBeUndefined();
+        expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
       });
 
       it('should NOT filter when less than 100 items with mixed names', async () => {
@@ -346,7 +346,7 @@ describe('SearchTool', () => {
 
         // With less than 100 items, returns all items without filtering
         expect(parsedResult.results).toHaveLength(3);
-        expect(parsedResult.disclaimer).toBeUndefined();
+        expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
       });
 
       it('should NOT filter when less than 100 items even with non-matching search term', async () => {
@@ -372,7 +372,7 @@ describe('SearchTool', () => {
 
         // With less than 100 items, returns all 5 items (no filtering)
         expect(parsedResult.results).toHaveLength(5);
-        expect(parsedResult.disclaimer).toBeUndefined();
+        expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
       });
     });
 
@@ -401,7 +401,7 @@ describe('SearchTool', () => {
         expect(parsedResult.results).toHaveLength(10);
         expect(parsedResult.results[0].title).toBe('Board 1');
         expect(parsedResult.results[9].title).toBe('Board 10');
-        expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
+        expect(parsedResult.disclaimer).toBeUndefined();
       });
 
       it('should filter and paginate when more than 100 items - page 2', async () => {
@@ -428,7 +428,7 @@ describe('SearchTool', () => {
         expect(parsedResult.results).toHaveLength(10);
         expect(parsedResult.results[0].title).toBe('Board 11');
         expect(parsedResult.results[9].title).toBe('Board 20');
-        expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
+        expect(parsedResult.disclaimer).toBeUndefined();
       });
 
       it('should filter out non-matching items when more than 100 items', async () => {
@@ -466,7 +466,7 @@ describe('SearchTool', () => {
         parsedResult.results.forEach((result: SearchResult) => {
           expect(result.title).toContain('Project');
         });
-        expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
+        expect(parsedResult.disclaimer).toBeUndefined();
       });
 
       it('should handle case-insensitive filtering when more than 100 items', async () => {
@@ -494,7 +494,7 @@ describe('SearchTool', () => {
         parsedResult.results.forEach((result: SearchResult) => {
           expect(result.title.toLowerCase()).toContain('test board');
         });
-        expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
+        expect(parsedResult.disclaimer).toBeUndefined();
       });
 
       it('should return empty results when page exceeds filtered results', async () => {
@@ -518,7 +518,7 @@ describe('SearchTool', () => {
         const parsedResult = await callToolByNameAsync('search', args);
 
         expect(parsedResult.results).toHaveLength(0);
-        expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
+        expect(parsedResult.disclaimer).toBeUndefined();
       });
 
       it('should handle partial last page when more than 100 items', async () => {
@@ -545,7 +545,7 @@ describe('SearchTool', () => {
         expect(parsedResult.results).toHaveLength(5);
         expect(parsedResult.results[0].title).toBe('Board 121');
         expect(parsedResult.results[4].title).toBe('Board 125');
-        expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
+        expect(parsedResult.disclaimer).toBeUndefined();
       });
     });
 
@@ -679,7 +679,7 @@ describe('SearchTool', () => {
 
         // With less than 100 items, no filtering occurs - returns all items
         expect(parsedResult.results).toHaveLength(4);
-        expect(parsedResult.disclaimer).toBeUndefined();
+        expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
 
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(
           expect.stringContaining('query GetDocs'),
@@ -782,7 +782,7 @@ describe('SearchTool', () => {
         expect(parsedResult.results).toHaveLength(10);
         expect(parsedResult.results[0].title).toBe('Document 1');
         expect(parsedResult.results[9].title).toBe('Document 10');
-        expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
+        expect(parsedResult.disclaimer).toBeUndefined();
       });
 
       it('should filter out non-matching documents when more than 100 items', async () => {
@@ -816,7 +816,7 @@ describe('SearchTool', () => {
         parsedResult.results.forEach((result: SearchResult) => {
           expect(result.title).toContain('Report');
         });
-        expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
+        expect(parsedResult.disclaimer).toBeUndefined();
       });
     });
 
@@ -934,7 +934,7 @@ describe('SearchTool', () => {
 
         // With less than 100 items, no filtering occurs - returns all items
         expect(parsedResult.results).toHaveLength(4);
-        expect(parsedResult.disclaimer).toBeUndefined();
+        expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
 
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(
           expect.stringContaining('query GetFolders'),
@@ -1030,7 +1030,7 @@ describe('SearchTool', () => {
         expect(parsedResult.results).toHaveLength(10);
         expect(parsedResult.results[0].title).toBe('Folder 1');
         expect(parsedResult.results[9].title).toBe('Folder 10');
-        expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
+        expect(parsedResult.disclaimer).toBeUndefined();
       });
 
       it('should filter out non-matching folders when more than 100 items', async () => {
@@ -1062,7 +1062,7 @@ describe('SearchTool', () => {
         parsedResult.results.forEach((result: SearchResult) => {
           expect(result.title).toContain('Archive');
         });
-        expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
+        expect(parsedResult.disclaimer).toBeUndefined();
       });
     });
 
@@ -1186,7 +1186,7 @@ describe('SearchTool', () => {
 
       // Less than 100 items, returns all without filtering
       expect(parsedResult.results).toHaveLength(2);
-      expect(parsedResult.disclaimer).toBeUndefined();
+      expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
     });
 
     it('should slice results correctly for page 1 when more than 100 items', async () => {
@@ -1212,7 +1212,7 @@ describe('SearchTool', () => {
       expect(parsedResult.results).toHaveLength(5);
       expect(parsedResult.results[0].title).toBe('Board 1');
       expect(parsedResult.results[4].title).toBe('Board 5');
-      expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
+      expect(parsedResult.disclaimer).toBeUndefined();
     });
 
     it('should slice results correctly for page 2 when more than 100 items', async () => {
@@ -1238,7 +1238,7 @@ describe('SearchTool', () => {
       expect(parsedResult.results).toHaveLength(5);
       expect(parsedResult.results[0].title).toBe('Board 6');
       expect(parsedResult.results[4].title).toBe('Board 10');
-      expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
+      expect(parsedResult.disclaimer).toBeUndefined();
     });
 
     it('should slice results correctly for last partial page when more than 100 items', async () => {
@@ -1265,7 +1265,7 @@ describe('SearchTool', () => {
       expect(parsedResult.results).toHaveLength(2);
       expect(parsedResult.results[0].title).toBe('Board 111');
       expect(parsedResult.results[1].title).toBe('Board 112');
-      expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
+      expect(parsedResult.disclaimer).toBeUndefined();
     });
 
     it('should return empty array when page exceeds available results with more than 100 items', async () => {
@@ -1289,7 +1289,7 @@ describe('SearchTool', () => {
       const parsedResult = await callToolByNameAsync('search', args);
 
       expect(parsedResult.results).toHaveLength(0);
-      expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
+      expect(parsedResult.disclaimer).toBeUndefined();
     });
 
     it('should handle special characters in search term when less than 100 items', async () => {
@@ -1312,7 +1312,7 @@ describe('SearchTool', () => {
 
       // Less than 100 items, returns all
       expect(parsedResult.results).toHaveLength(3);
-      expect(parsedResult.disclaimer).toBeUndefined();
+      expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
     });
 
     it('should handle empty search term as no filter', async () => {
@@ -1486,7 +1486,7 @@ describe('SearchTool', () => {
 
       // Less than 100 items, no filtering occurs - returns all 3 items
       expect(parsedResult.results).toHaveLength(3);
-      expect(parsedResult.disclaimer).toBeUndefined();
+      expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
     });
   });
 });
