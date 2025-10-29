@@ -59,7 +59,7 @@ PERFORMANCE OPTIMIZATION: Only set this to true when you actually need the colum
   filters: z.array(z.object({
     columnId: z.string().describe('The id of the column to filter by'),
     compareAttribute: z.string().optional().describe('The attribute to compare the value to'),
-    compareValue: z.any().describe('The value to compare the attribute to. This can be a string or index value depending on the column type.'),
+    compareValue: z.union([z.string(), z.number(), z.boolean(), z.array(z.union([z.string(), z.number()]))]).describe('The value to compare the attribute to. This can be a string or index value depending on the column type.'),
     operator: z.nativeEnum(ItemsQueryRuleOperator).optional().default(ItemsQueryRuleOperator.AnyOf).describe('The operator to use for the filter'),
   })).optional().describe('The configuration of filters to apply on the items. Before sending the filters, use get_board_info tool to check "filteringGuidelines" key for filtering by the column.'),
   filtersOperator: z.nativeEnum(ItemsQueryOperator).optional().default(ItemsQueryOperator.And).describe('The operator to use for the filters'),

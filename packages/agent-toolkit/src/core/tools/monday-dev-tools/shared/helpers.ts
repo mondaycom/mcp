@@ -2,44 +2,33 @@
  * Shared helper functions for Monday Dev tools
  */
 
-import { Column } from '../../../../monday-graphql/generated/graphql';
+import { ColumnType } from '../../../../monday-graphql/generated/graphql';
 import {
   REQUIRED_SPRINT_COLUMNS,
+  REQUIRED_TASKS_COLUMNS,
   SPRINT_COLUMN_DISPLAY_NAMES,
-  Sprint,
   CHECKBOX_COLUMN_TYPENAME,
   DATE_COLUMN_TYPENAME,
   TIMELINE_COLUMN_TYPENAME,
   DOC_COLUMN_TYPENAME,
 } from './constants';
+import type { Sprint, Board } from './types';
 
-/**
- * Get typed column value from Sprint item
- */
+
 export const getSprintColumnValue = (sprint: Sprint, columnId: string) => {
   return sprint.column_values?.find((cv) => cv.id === columnId);
 };
 
-/**
- * Get checkbox value from sprint column (for activation and completion)
- */
 export const getCheckboxValue = (sprint: Sprint, columnId: string): boolean | null => {
   const column = getSprintColumnValue(sprint, columnId);
   return column?.__typename === CHECKBOX_COLUMN_TYPENAME ? (column.checked ?? false) : null;
 };
 
-/**
- * Get date value from sprint column (for start and end dates)
- */
 export const getDateValue = (sprint: Sprint, columnId: string): string | null => {
   const column = getSprintColumnValue(sprint, columnId);
   return column?.__typename === DATE_COLUMN_TYPENAME ? (column.date ?? null) : null;
 };
 
-/**
- * Get timeline value from sprint column (for sprint timeline)
- * Returns dates in yyyy-mm-dd format
- */
 export const getTimelineValue = (sprint: Sprint, columnId: string): { from: string; to: string } | null => {
   const column = getSprintColumnValue(sprint, columnId);
   if (column?.__typename === TIMELINE_COLUMN_TYPENAME && column.from && column.to) {
@@ -50,10 +39,6 @@ export const getTimelineValue = (sprint: Sprint, columnId: string): { from: stri
   return null;
 };
 
-/**
- * Get doc value from sprint column (for sprint summary document)
- * Returns the document object_id from the DocValue column
- */
 export const getDocValue = (sprint: Sprint, columnId: string): string | null => {
   const column = getSprintColumnValue(sprint, columnId);
   if (column?.__typename === DOC_COLUMN_TYPENAME && column.file?.doc?.object_id) {
@@ -62,45 +47,10 @@ export const getDocValue = (sprint: Sprint, columnId: string): string | null => 
   return null;
 };
 
-/**
- * Get display name for sprint column ID
- */
 export const getSprintColumnDisplayName = (columnId: keyof typeof SPRINT_COLUMN_DISPLAY_NAMES): string => {
   return SPRINT_COLUMN_DISPLAY_NAMES[columnId] || columnId;
 };
 
-/**
- * Validate sprint board schema using board columns from schema API
- */
-export const validateSprintsBoardSchemaFromColumns = (
-  boardColumns: Column[],
-): { isValid: boolean; errorMessage: string } => {
-  const existingColumnIds = new Set(
-    boardColumns.filter((col): col is NonNullable<Column> => col !== null).map((col) => col.id),
-  );
-
-  const missingColumns: string[] = [];
-  const requiredColumns = Object.values(REQUIRED_SPRINT_COLUMNS);
-
-  for (const columnId of requiredColumns) {
-    if (!existingColumnIds.has(columnId)) {
-      missingColumns.push(columnId);
-    }
-  }
-
-  if (missingColumns.length > 0) {
-    let errorMessage = `BoardID provided is not a valid sprints board. Missing required columns:\n\n`;
-
-    missingColumns.forEach((columnId) => {
-      const columnDisplayName = getSprintColumnDisplayName(columnId as keyof typeof SPRINT_COLUMN_DISPLAY_NAMES);
-      errorMessage += `- ${columnDisplayName}\n`;
-    });
-
-    return { isValid: false, errorMessage };
-  }
-
-  return { isValid: true, errorMessage: '' };
-};
 
 /**
  * Generic function to validate item has required columns
@@ -135,4 +85,52 @@ export const validateSprintItemColumns = (
   const requiredColumns = [...Object.values(REQUIRED_SPRINT_COLUMNS), ...additionalRequiredColumns];
 
   return validateItemColumns(columnIds, requiredColumns);
+};
+
+/**
+ * Checks if a board has all required columns
+ * @param board - Board to check
+ * @param requiredColumnIds - Array of required column IDs
+ */
+export const hasAllRequiredColumns = (board: Board, requiredColumnIds: string[]): boolean => {
+  if (!board.columns) return false;
+  const columnIds = new Set(
+    board.columns.filter((col): col is NonNullable<typeof col> => col !== null).map((col) => col.id)
+  );
+  return requiredColumnIds.every((colId) => columnIds.has(colId));
+};
+
+
+export const isSprintsBoard = (board: Board): boolean => {
+  return hasAllRequiredColumns(board, Object.values(REQUIRED_SPRINT_COLUMNS));
+};
+
+
+export const isTasksBoard = (board: Board): boolean => {
+  return hasAllRequiredColumns(board, Object.values(REQUIRED_TASKS_COLUMNS));
+};
+
+
+
+export const getRelatedBoardIdFromRelationColumn = (column: NonNullable<Board['columns']>[number]): string | null => {
+  if (!column?.settings) return null;
+
+  const settings = column.settings as any;
+  const boardId = 
+    (settings.boardIds && Array.isArray(settings.boardIds) && settings.boardIds[0]?.toString()) ||
+    settings.boardId?.toString();
+
+  return boardId || null;
+};
+
+
+export const getBoardRelationColumn = (
+  board: Board,
+  columnId: string
+): NonNullable<Board['columns']>[number] | null => {
+  if (!board.columns) return null;
+
+  return board.columns
+    .filter((col): col is NonNullable<typeof col> => col !== null)
+    .find((col) => col.id === columnId && col.type === ColumnType.BoardRelation) || null;
 };
