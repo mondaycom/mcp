@@ -37,8 +37,8 @@ export enum GlobalSearchType {
 export const searchSchema = {
   searchTerm: z.string().optional().describe('The search term to use for the search.'),
   searchType: z.nativeEnum(GlobalSearchType).describe('The type of search to perform.'),
-  limit: z.number().max(SEARCH_LIMIT).optional().default(SEARCH_LIMIT).describe('The number of items to get'),
-  page: z.number().optional().default(1).describe('The page number to get'),
+  limit: z.number().max(SEARCH_LIMIT).optional().default(SEARCH_LIMIT).describe(`The number of items to get. The max and default value is ${SEARCH_LIMIT}.`),
+  page: z.number().optional().default(1).describe('The page number to get. The default value is 1.'),
 
   // for boards and docs
   workspaceIds: z.array(z.number()).optional().describe('The ids of the workspaces to search in. Pass if you want to search only in specific workspaces.'),
