@@ -14,6 +14,11 @@ export interface SearchResult {
   url?: string;
 }
 
+export interface DataWithFilterInfo<T> {
+  items: T[];
+  wasFiltered: boolean;
+}
+
 export enum ObjectPrefixes {
   BOARD = 'board-',
   DOCUMENT = 'doc-',
@@ -85,14 +90,18 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
       throw new Error(`Unsupported search type: ${input.searchType}`);
     }
 
-    const results = await handler(input);
+    const data = await handler(input);
+    const response = {
+      disclaimer: data.wasFiltered ? '[IMPORTANT]Items were not filtered. Please perform the filtering.' : undefined,
+      results: data.items
+    }
     
     return {
-      content: JSON.stringify({results}, null, 2)
+      content: JSON.stringify(response, null, 2)
     };
   }
 
-  private async searchFoldersAsync(input: ToolInputType<SearchToolInput>): Promise<SearchResult[]> {
+  private async searchFoldersAsync(input: ToolInputType<SearchToolInput>): Promise<DataWithFilterInfo<SearchResult>> {
     const variables: GetFoldersQueryVariables = {
       ...this.getPagingParamsForSearch(input),
       workspace_ids: input.workspaceIds?.map((id) => id.toString()),
@@ -101,13 +110,18 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     const response = await this.mondayApi.request<GetFoldersQuery>(getFolders, variables);
     const data = this.searchAndVirtuallyPaginate(input, response.folders || [], folder => folder!.name);
     
-    return data.map(folder => ({
-      id: ObjectPrefixes.FOLDER + folder!.id,
-      title: folder!.name,
-    }));
+    const result = {
+      items: data.items.map(folder => ({
+        id: ObjectPrefixes.FOLDER + folder!.id,
+        title: folder!.name,
+      })),
+      wasFiltered: data.wasFiltered,
+    }
+
+    return result;
   }
 
-  private async searchDocsAsync(input: ToolInputType<SearchToolInput>): Promise<SearchResult[]> {
+  private async searchDocsAsync(input: ToolInputType<SearchToolInput>): Promise<DataWithFilterInfo<SearchResult>> {
     const variables: GetDocsQueryVariables = {
       ...this.getPagingParamsForSearch(input),
       workspace_ids: input.workspaceIds?.map((id) => id.toString()),
@@ -115,15 +129,20 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     
     const response = await this.mondayApi.request<GetDocsQuery>(getDocs, variables);
     const data = this.searchAndVirtuallyPaginate(input, response.docs || [], doc => doc!.name);
-    
-    return data.map(doc => ({
-      id: ObjectPrefixes.DOCUMENT + doc!.id,
-      title: doc!.name,
-      url: doc!.url || undefined,
-    }));
+
+    const result = {
+      items: data.items.map(doc => ({
+        id: ObjectPrefixes.DOCUMENT + doc!.id,
+        title: doc!.name,
+        url: doc!.url || undefined,
+      })),
+      wasFiltered: data.wasFiltered,
+    }
+
+    return result;
   }
 
-  private async searchBoardsAsync(input: ToolInputType<SearchToolInput>): Promise<SearchResult[]> {
+  private async searchBoardsAsync(input: ToolInputType<SearchToolInput>): Promise<DataWithFilterInfo<SearchResult>> {
     const variables: GetBoardsQueryVariables = {
       ...this.getPagingParamsForSearch(input),
       workspace_ids: input.workspaceIds?.map((id) => id.toString()),
@@ -132,11 +151,16 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     const response = await this.mondayApi.request<GetBoardsQuery>(getBoards, variables);
     const data = this.searchAndVirtuallyPaginate(input, response.boards || [], board => board!.name);
 
-    return data.map(board => ({
-      id: ObjectPrefixes.BOARD + board!.id,
-      title: board!.name,
-      url: board!.url,
-    }));
+    const result = {
+      items: data.items.map(board => ({
+        id: ObjectPrefixes.BOARD + board!.id,
+        title: board!.name,
+        url: board!.url,
+      })),
+      wasFiltered: data.wasFiltered,
+    }
+
+    return result;
   }
 
   private getPagingParamsForSearch(input: ToolInputType<SearchToolInput>): { page: number, limit: number } {
@@ -146,17 +170,19 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     };
   }
 
-  private searchAndVirtuallyPaginate<T>(input: ToolInputType<SearchToolInput>, items: T[], nameGetter: (item: T) => string): T[] {
-    if(items.length <= input.limit) {
-      return items;
+  private searchAndVirtuallyPaginate<T>(input: ToolInputType<SearchToolInput>, items: T[], nameGetter: (item: T) => string): DataWithFilterInfo<T> {
+    if(items.length <=  SEARCH_LIMIT) {
+      return {items, wasFiltered: false};
     }
 
     const normalizedSearchTerm = normalizeString(input.searchTerm ?? '');
     const startIndex = (input.page - 1) * input.limit;
     const endIndex = startIndex + input.limit;
 
-    return items
+    const filteredItems = items
       .filter(item => normalizeString(nameGetter(item)).includes(normalizedSearchTerm))
       .slice(startIndex, endIndex);
+
+    return { items: filteredItems, wasFiltered: true };
   }
 }

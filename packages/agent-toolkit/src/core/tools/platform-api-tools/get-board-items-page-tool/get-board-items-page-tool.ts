@@ -230,6 +230,11 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
     
     const itemIdsFromSmartSearch = smartSearchRes.search_items?.results?.map(result => Number(result.data.id)) ?? [];
 
+    if(itemIdsFromSmartSearch.length === 0) {
+      // TODO: Refactor this once search team implements exception throwing when tool is not enabled
+      throw new Error('No items found for search term or new search is not enabled for this account');
+    }
+
     const initialItemIds = input.itemIds ?? [];
     
     if(initialItemIds.length === 0) {
