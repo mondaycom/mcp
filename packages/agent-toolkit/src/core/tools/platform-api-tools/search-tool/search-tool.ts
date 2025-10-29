@@ -123,29 +123,6 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     }));
   }
 
-  // private async searchBoardsAsync(input: ToolInputType<SearchToolInput>): Promise<SearchResult[]> {
-  //   if(input.searchTerm) {
-  //     return this.searchBoardsByNameAsync(input);
-  //   }
-  //   return this.searchBoardsWithoutNameAsync(input);
-  // }
-
-  // private async searchBoardsByNameAsync(input: ToolInputType<SearchToolInput>): Promise<SearchResult[]> {
-  //   const variables: GetBoardsByNameQueryVariables = {
-  //     ...this.getPagingParamsForSearch(input),
-  //     workspace_ids: input.workspaceIds?.map((id) => id.toString()),
-  //     search_term: input.searchTerm!
-  //   };
-
-  //   const response = await this.mondayApi.request<GetBoardsByNameQuery>(getBoardsByName, variables);
-
-  //   return response.boards_by_name?.map(board => ({
-  //     id: ObjectPrefixes.BOARD + board!.id,
-  //     title: board!.name,
-  //     url: board!.url,
-  //   })) || [];
-  // }
-
   private async searchBoardsAsync(input: ToolInputType<SearchToolInput>): Promise<SearchResult[]> {
     const variables: GetBoardsQueryVariables = {
       ...this.getPagingParamsForSearch(input),

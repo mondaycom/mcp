@@ -10,15 +10,6 @@ export const getBoards = gql`
   }
 `;
 
-// export const getBoardsByName = gql`
-//   query GetBoardsByName($page: Int!, $limit: Int!, $search_term: String!, $workspace_ids: [ID]) {
-//     boards_by_name(page:$page, limit:$limit, term: $search_term, workspace_ids: $workspace_ids) {
-//       id
-//       name
-//       url
-//     }
-//   }
-// `;
 
 export const getDocs = gql`
   query GetDocs($page: Int!, $limit: Int!, $workspace_ids: [ID]) {
