@@ -533,6 +533,8 @@ export type AppSubscriptionDetails = {
   discounts: Array<SubscriptionDiscount>;
   /** The date the the inactive subscription ended. Equals to null for active subscriptions */
   end_date?: Maybe<Scalars['String']['output']>;
+  /** The subscribed unit quantity. Null for feature-based plans */
+  max_units?: Maybe<Scalars['Int']['output']>;
   /** The monthly price of the product purchased in the given currency, after applying discounts */
   monthly_price: Scalars['Float']['output'];
   period_type: SubscriptionPeriodType;
@@ -730,9 +732,9 @@ export type AssignTeamOwnersResult = {
 /** Assignee filter for search queries */
 export type AssigneeInput = {
   /** List of person IDs to filter by */
-  personIds?: InputMaybe<Array<Scalars['ID']['input']>>;
+  person_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   /** List of team IDs to filter by */
-  teamIds?: InputMaybe<Array<Scalars['ID']['input']>>;
+  team_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
 };
 
 /** Text formatting attributes (bold, italic, links, colors, etc.) */
@@ -989,6 +991,8 @@ export type Board = {
   permissions: Scalars['String']['output'];
   /** The board's state (all / active / archived / deleted). */
   state: State;
+  /** The subitem's board. */
+  subitem_board?: Maybe<Board>;
   /** The board's subscribers. */
   subscribers: Array<Maybe<User>>;
   /** The board's specific tags. */
@@ -1115,6 +1119,17 @@ export enum BoardBasicRoleName {
   Viewer = 'viewer'
 }
 
+/** Column information */
+export type BoardColumn = {
+  __typename?: 'BoardColumn';
+  /** The column ID */
+  id?: Maybe<Scalars['String']['output']>;
+  /** The column title */
+  title?: Maybe<Scalars['String']['output']>;
+  /** The column type */
+  type?: Maybe<Scalars['String']['output']>;
+};
+
 /** A board duplication */
 export type BoardDuplication = {
   __typename?: 'BoardDuplication';
@@ -1159,6 +1174,17 @@ export enum BoardHierarchy {
   MultiLevel = 'multi_level'
 }
 
+/** Board information */
+export type BoardInfo = {
+  __typename?: 'BoardInfo';
+  /** The board ID */
+  board_id?: Maybe<Scalars['Int']['output']>;
+  /** Columns of the board */
+  columns?: Maybe<Array<BoardColumn>>;
+  /** Board metadata */
+  metadata?: Maybe<BoardMetadata>;
+};
+
 /** The board kinds available. */
 export enum BoardKind {
   /** Private boards. */
@@ -1168,6 +1194,13 @@ export enum BoardKind {
   /** Shareable boards. */
   Share = 'share'
 }
+
+/** Board metadata information */
+export type BoardMetadata = {
+  __typename?: 'BoardMetadata';
+  /** Origin types */
+  origins?: Maybe<Array<Scalars['String']['output']>>;
+};
 
 export type BoardMuteSettings = {
   __typename?: 'BoardMuteSettings';
@@ -1534,6 +1567,13 @@ export enum ColumnCapability {
   Calculated = 'CALCULATED'
 }
 
+/** Selectable column fields */
+export enum ColumnField {
+  Id = 'id',
+  Title = 'title',
+  Type = 'type'
+}
+
 /** An object defining a mapping of column between source board and destination board */
 export type ColumnMappingInput = {
   /** The source column's unique identifier. */
@@ -1555,6 +1595,15 @@ export type ColumnPropertyInput = {
   column_id: Scalars['String']['input'];
   /** Whether the column is visible */
   visible: Scalars['Boolean']['input'];
+};
+
+/** Column relation information */
+export type ColumnRelation = {
+  __typename?: 'ColumnRelation';
+  /** Column identifier */
+  column?: Maybe<RelationColumnIdentifier>;
+  /** Dependent columns */
+  dependent_columns?: Maybe<Array<DependentColumn>>;
 };
 
 export type ColumnSettings = DropdownColumnSettings | StatusColumnSettings;
@@ -1672,6 +1721,25 @@ export type ColumnValue = {
   type: ColumnType;
   /** The column's raw value in JSON format. */
   value?: Maybe<Scalars['JSON']['output']>;
+};
+
+/** Columns and relations response */
+export type ColumnsAndRelationsResponse = {
+  __typename?: 'ColumnsAndRelationsResponse';
+  /** List of archived board IDs */
+  archived_board_ids?: Maybe<Array<Scalars['Int']['output']>>;
+  /** List of boards */
+  boards?: Maybe<Array<BoardInfo>>;
+  /** Column relations */
+  column_relations?: Maybe<Array<ColumnRelation>>;
+  /** List of deleted board IDs */
+  deleted_board_ids?: Maybe<Array<Scalars['Int']['output']>>;
+  /** Mermaid code for visualization */
+  mermaid_code?: Maybe<Scalars['String']['output']>;
+  /** Mermaid URL for visualization */
+  mermaid_url?: Maybe<Scalars['String']['output']>;
+  /** List of unauthorized board IDs */
+  unauthorized_board_ids?: Maybe<Array<Scalars['Int']['output']>>;
 };
 
 export type ColumnsConfigInput = {
@@ -1943,6 +2011,17 @@ export type CreateTeamOptionsInput = {
   allow_empty_team?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
+/** The result of a create_users mutation call for a single user. */
+export type CreateUserResult = {
+  __typename?: 'CreateUserResult';
+  /** The email of the user that we attempted to create */
+  email: Scalars['String']['output'];
+  /** An error that occurred during user creation */
+  error?: Maybe<Scalars['String']['output']>;
+  /** The returned user object */
+  user?: Maybe<User>;
+};
+
 export type CreationLogValue = ColumnValue & {
   __typename?: 'CreationLogValue';
   /** The column that this value belongs to. */
@@ -2191,6 +2270,22 @@ export type DeleteMarketplaceAppDiscountResult = {
   deleted_discount: DeleteMarketplaceAppDiscount;
 };
 
+/** The type of the dependency related column */
+export enum DependencyRelatedColumnTypes {
+  /** Date column */
+  Date = 'DATE',
+  /** Timeline column */
+  Timeline = 'TIMELINE'
+}
+
+/** The value of the dependency related column. when updating a date column the from and to fields should have the same value */
+export type DependencyRelatedValueInput = {
+  /** From value */
+  from?: InputMaybe<Scalars['String']['input']>;
+  /** To value */
+  to?: InputMaybe<Scalars['String']['input']>;
+};
+
 /** Type of dependency relationship between items */
 export enum DependencyRelation {
   /** Finish to Finish - The dependent item can finish only after the predecessor finishes */
@@ -2231,6 +2326,22 @@ export type DependencyValueInput = {
   added_pulse?: InputMaybe<Array<UpdateDependencyColumnInput>>;
   /** List of pulses to remove from dependencies */
   removed_pulse?: InputMaybe<Array<UpdateDependencyColumnInput>>;
+};
+
+/** Dependent column information */
+export type DependentColumn = {
+  __typename?: 'DependentColumn';
+  /** Column identifier */
+  column?: Maybe<RelationColumnIdentifier>;
+  /** Dependent column metadata */
+  metadata?: Maybe<DependentColumnMetadata>;
+};
+
+/** Dependent column metadata */
+export type DependentColumnMetadata = {
+  __typename?: 'DependentColumnMetadata';
+  /** Relation reason */
+  relation_reason?: Maybe<Scalars['String']['output']>;
 };
 
 export type DirectDocValue = ColumnValue & {
@@ -3741,6 +3852,16 @@ export type InviteUsersResult = {
   invited_users?: Maybe<Array<User>>;
 };
 
+/** The possibilities for an invited user kind. */
+export enum InvitedUserKind {
+  /** A guest. */
+  Guest = 'guest',
+  /** A normal member. */
+  Member = 'member',
+  /** A view-only user. */
+  ViewOnly = 'view_only'
+}
+
 /** An item (table row). */
 export type Item = {
   __typename?: 'Item';
@@ -3965,6 +4086,18 @@ export type ItemsResponse = {
   /** The items associated with the cursor. */
   items: Array<Item>;
 };
+
+/** Linkage */
+export enum Joins {
+  ConnectedBoards = 'connectedBoards',
+  MirrorToMirror = 'mirrorToMirror',
+  Root = 'root',
+  RootParent = 'rootParent',
+  SubItems = 'subItems',
+  SubItemsConnectedBoards = 'subItemsConnectedBoards',
+  SubItemsMirrorToMirror = 'subItemsMirrorToMirror',
+  TransitiveParents = 'transitiveParents'
+}
 
 /** Kind of assignee */
 export enum Kind {
@@ -4458,6 +4591,8 @@ export type Mutation = {
   create_team?: Maybe<Team>;
   create_timeline_item?: Maybe<TimelineItem>;
   create_update?: Maybe<Update>;
+  /** Creates several new pending users in the account. */
+  create_users?: Maybe<Array<Maybe<CreateUserResult>>>;
   /** Create a view */
   create_view?: Maybe<BoardView>;
   /** Create a new table view */
@@ -4536,6 +4671,8 @@ export type Mutation = {
   import_doc_from_html?: Maybe<ImportDocFromHtmlResult>;
   /** Increase operations counter */
   increase_app_subscription_operations?: Maybe<AppSubscriptionOperationsCounter>;
+  /** Invites a new user to the account. */
+  invite_user?: Maybe<User>;
   /** Invite users to the account. */
   invite_users?: Maybe<InviteUsersResult>;
   like_update?: Maybe<Update>;
@@ -5146,6 +5283,14 @@ export type MutationCreate_UpdateArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationCreate_UsersArgs = {
+  emails: Array<InputMaybe<Scalars['String']['input']>>;
+  kind?: InputMaybe<InvitedUserKind>;
+  product_kind?: InputMaybe<ProductKind>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_ViewArgs = {
   board_id: Scalars['ID']['input'];
   filter?: InputMaybe<ItemsQueryGroup>;
@@ -5453,6 +5598,14 @@ export type MutationIncrease_App_Subscription_OperationsArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationInvite_UserArgs = {
+  email: Scalars['String']['input'];
+  kind?: InputMaybe<InvitedUserKind>;
+  product_kind?: InputMaybe<ProductKind>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationInvite_UsersArgs = {
   emails: Array<Scalars['String']['input']>;
   product?: InputMaybe<Product>;
@@ -5651,6 +5804,7 @@ export type MutationUpdate_Dependency_ColumnArgs = {
   boardId: Scalars['String']['input'];
   columnId: Scalars['String']['input'];
   pulseId: Scalars['String']['input'];
+  pusherSocketId?: InputMaybe<Scalars['String']['input']>;
   value: DependencyValueInput;
 };
 
@@ -6360,6 +6514,34 @@ export enum Product {
   Workflows = 'workflows'
 }
 
+/** The possibilities product kinds you can invite to */
+export enum ProductKind {
+  /** Agent Factory */
+  AgentBuilder = 'agent_builder',
+  /** Work Management */
+  Core = 'core',
+  /** monday CRM */
+  Crm = 'crm',
+  /** WorkForms */
+  Forms = 'forms',
+  /** Knowledge */
+  Knowledge = 'knowledge',
+  /** monday marketer */
+  Marketing = 'marketing',
+  /** campaigns */
+  MarketingCampaigns = 'marketing_campaigns',
+  /** monday projects */
+  ProjectManagement = 'project_management',
+  /** monday service */
+  Service = 'service',
+  /** monday dev */
+  Software = 'software',
+  /** WorkCanvas */
+  Whiteboard = 'whiteboard',
+  /** Workflows */
+  Workflows = 'workflows'
+}
+
 export type ProgressValue = ColumnValue & {
   __typename?: 'ProgressValue';
   /** The column that this value belongs to. */
@@ -6469,8 +6651,14 @@ export type Query = {
   board_candidates?: Maybe<Array<Board>>;
   /** Get a collection of boards. */
   boards?: Maybe<Array<Maybe<Board>>>;
+  /** Search boards by their name */
+  boards_by_name?: Maybe<Array<Maybe<Board>>>;
   /** Get the status of a bulk import items process */
   bulk_import_items_status: BulkImportStatus;
+  /** Calculate the impact of a dependency related column value change on the dependency graph */
+  calculate_dependency_related_change_cascading_effect?: Maybe<Scalars['JSON']['output']>;
+  /** Get columns and their relations data. */
+  columns_and_relations?: Maybe<ColumnsAndRelationsResponse>;
   /** Get the complexity data of your queries. */
   complexity?: Maybe<Complexity>;
   /** Fetch a single connection by its unique ID. */
@@ -6660,8 +6848,37 @@ export type QueryBoardsArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QueryBoards_By_NameArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  page?: InputMaybe<Scalars['Int']['input']>;
+  state?: InputMaybe<State>;
+  term: Scalars['String']['input'];
+  workspace_ids?: InputMaybe<Array<InputMaybe<Scalars['ID']['input']>>>;
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryBulk_Import_Items_StatusArgs = {
   import_id: Scalars['ID']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryCalculate_Dependency_Related_Change_Cascading_EffectArgs = {
+  board_id: Scalars['ID']['input'];
+  column_type: DependencyRelatedColumnTypes;
+  pulse_id: Scalars['ID']['input'];
+  value_change: DependencyRelatedValueInput;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryColumns_And_RelationsArgs = {
+  joins?: Array<Joins>;
+  mermaid_code?: InputMaybe<Scalars['Boolean']['input']>;
+  mermaid_url?: InputMaybe<Scalars['Boolean']['input']>;
+  select?: Array<ColumnField>;
+  start_from: Array<Scalars['Int']['input']>;
 };
 
 
@@ -6864,16 +7081,15 @@ export type QueryRepliesArgs = {
 /** Root query type for the Dependencies service */
 export type QuerySearch_ItemsArgs = {
   assignee?: InputMaybe<AssigneeInput>;
-  boardId?: InputMaybe<Scalars['ID']['input']>;
+  board_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   boosts?: InputMaybe<BoostConfigurationInput>;
-  dateRange?: InputMaybe<SearchDateRangeInput>;
-  exactMatch?: InputMaybe<Scalars['Boolean']['input']>;
+  date_range?: InputMaybe<SearchDateRangeInput>;
+  exact_match?: InputMaybe<Scalars['Boolean']['input']>;
   query?: InputMaybe<Scalars['String']['input']>;
-  rerankingStrategy?: InputMaybe<RerankingStrategy>;
-  searchType: Search;
+  reranking_strategy?: InputMaybe<RerankingStrategy>;
   size: Scalars['Int']['input'];
   status?: InputMaybe<Scalars['String']['input']>;
-  workspaceIds?: InputMaybe<Array<Scalars['ID']['input']>>;
+  workspace_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
 };
 
 
@@ -7015,6 +7231,15 @@ export type RatingValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
+/** Relation column identifier */
+export type RelationColumnIdentifier = {
+  __typename?: 'RelationColumnIdentifier';
+  /** The board ID */
+  board_id?: Maybe<Scalars['Int']['output']>;
+  /** The column ID */
+  column_id?: Maybe<Scalars['String']['output']>;
+};
+
 /** Error that occurred while removing team owners. */
 export type RemoveTeamOwnersError = {
   __typename?: 'RemoveTeamOwnersError';
@@ -7142,6 +7367,18 @@ export enum Search {
 
 /** Date range filter for search queries */
 export type SearchDateRangeInput = {
+  /** Filter items created after this date */
+  created_after?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
+  /** Filter items created before this date */
+  created_before?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
+  /** Filter items updated after this date */
+  updated_after?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
+  /** Filter items updated before this date */
+  updated_before?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
+};
+
+/** Date range filter for search queries */
+export type SearchDateRangeLegacyInput = {
   /** Filter items created after this date */
   createdAfter?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
   /** Filter items created before this date */
@@ -9075,7 +9312,7 @@ export type GetBoardItemsPageQuery = { __typename?: 'Query', boards?: Array<{ __
 
 export type SmartSearchBoardItemIdsQueryVariables = Exact<{
   searchTerm: Scalars['String']['input'];
-  boardId: Scalars['ID']['input'];
+  board_ids?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
 }>;
 
 
@@ -9177,6 +9414,34 @@ export type UpdateOverviewHierarchyMutationVariables = Exact<{
 
 
 export type UpdateOverviewHierarchyMutation = { __typename?: 'Mutation', update_overview_hierarchy?: { __typename?: 'UpdateOverviewHierarchy', success: boolean, message: string, overview?: { __typename?: 'Overview', id: string } | null } | null };
+
+export type GetBoardsQueryVariables = Exact<{
+  page: Scalars['Int']['input'];
+  limit: Scalars['Int']['input'];
+  workspace_ids?: InputMaybe<Array<InputMaybe<Scalars['ID']['input']>> | InputMaybe<Scalars['ID']['input']>>;
+}>;
+
+
+export type GetBoardsQuery = { __typename?: 'Query', boards?: Array<{ __typename?: 'Board', id: string, name: string, url: string } | null> | null };
+
+export type GetBoardsByNameQueryVariables = Exact<{
+  page: Scalars['Int']['input'];
+  limit: Scalars['Int']['input'];
+  search_term: Scalars['String']['input'];
+  workspace_ids?: InputMaybe<Array<InputMaybe<Scalars['ID']['input']>> | InputMaybe<Scalars['ID']['input']>>;
+}>;
+
+
+export type GetBoardsByNameQuery = { __typename?: 'Query', boards_by_name?: Array<{ __typename?: 'Board', id: string, name: string, url: string } | null> | null };
+
+export type GetDocsQueryVariables = Exact<{
+  page: Scalars['Int']['input'];
+  limit: Scalars['Int']['input'];
+  workspace_ids?: InputMaybe<Array<InputMaybe<Scalars['ID']['input']>> | InputMaybe<Scalars['ID']['input']>>;
+}>;
+
+
+export type GetDocsQuery = { __typename?: 'Query', docs?: Array<{ __typename?: 'Document', id: string, name: string, url?: string | null } | null> | null };
 
 export type UpdateFolderMutationVariables = Exact<{
   folderId: Scalars['ID']['input'];

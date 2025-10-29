@@ -6,8 +6,13 @@ export type ToolInputType<Input extends ZodRawShape | undefined> = Input extends
   ? z.objectOutputType<Input, ZodTypeAny>
   : undefined;
 
+interface McpResponseContentItem {
+  type: string;
+  text: string;
+}
+
 export type ToolOutputType<T extends Record<string, unknown>> = {
-  content: string;
+  content: string | McpResponseContentItem[];
   metadata?: T;
 };
 
