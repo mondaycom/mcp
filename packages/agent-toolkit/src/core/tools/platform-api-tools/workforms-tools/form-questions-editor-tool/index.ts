@@ -3,7 +3,7 @@ import { BaseMondayApiTool, createMondayApiAnnotations } from '../../base-monday
 import { FormQuestionActions } from '../workforms.types';
 import { formQuestionsEditorToolSchema } from './schema';
 import { FormQuestionsEditorToolHelpers } from '../utils/form-questions-editor-tool-helpers';
-import { fallbackToStringifiedVersionIfNull } from 'src/core/tools/shared/microsoft-copilot-utils';
+import { fallbackToStringifiedVersionIfNull } from 'src/utils/microsoft-copilot.utils';
 
 export class FormQuestionsEditorTool extends BaseMondayApiTool<typeof formQuestionsEditorToolSchema, never> {
   name = 'form_questions_editor';

@@ -76,7 +76,7 @@ To interact with monday.com's API, you'll need an API token:
     "monday-api-mcp": {
       "command": "npx",
       "args": [
-        "@mondaydotcomorg/monday-api-mcp",
+        "@mondaydotcomorg/monday-api-mcp@latest",
         "-t",
         "your_monday_api_token"
       ]
@@ -95,7 +95,7 @@ Add to your settings:
     "monday-api-mcp": {
       "command": "npx",
       "args": [
-        "@mondaydotcomorg/monday-api-mcp",
+        "@mondaydotcomorg/monday-api-mcp@latest",
         "-t",
         "your_monday_api_token"
       ],
@@ -255,13 +255,13 @@ With Dynamic API Tools, your AI assistants can:
 Dynamic API Tools are in beta and disabled by default. Enable them with:
 
 ```bash
-npx @mondaydotcomorg/monday-api-mcp -t your_token --enable-dynamic-api-tools true
+npx @mondaydotcomorg/monday-api-mcp@latest -t your_token --enable-dynamic-api-tools true
 ```
 
 You can also use the 'only' mode to exclusively enable Dynamic API Tools:
 
 ```bash
-npx @mondaydotcomorg/monday-api-mcp -t your_token --enable-dynamic-api-tools only
+npx @mondaydotcomorg/monday-api-mcp@latest -t your_token --enable-dynamic-api-tools only
 ```
 
 When 'only' mode is enabled, the server will provide just the Dynamic API Tools, filtering out all other standard tools. This is useful for advanced users who want to work directly with the GraphQL API.
