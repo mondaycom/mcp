@@ -85,6 +85,52 @@ To interact with monday.com's API, you'll need an API token:
 }
 ```
 
+#### For Gemini CLI
+
+To get started with [Gemini CLI](https://geminicli.com), you can use the
+official [Gemini CLI extension](https://geminicli.com/extensions) for
+monday.com.
+
+The Gemini CLI extension bundles the monday.com MCP server with a context file
+and custom commands that teaches Gemini how to use the monday.com tools for
+powerful workflows.
+
+To install the extension run the following command in your terminal:
+
+```sh
+gemini extensions install https://github.com/mondaycom/mcp
+```
+
+If you prefer to use the MCP server directly without the extension, you can add
+it with this command:
+
+```sh
+gemini mcp add -t http monday https://mcp.monday.com/mcp
+```
+
+Once you have either the extension installed or the MCP server added, start
+Gemini CLI by running:
+
+```sh
+gemini
+```
+
+Then, authenticate with your monday.com account by running the following
+command inside Gemini CLI:
+
+```sh
+/mcp auth monday
+```
+
+This will open a browser window to complete the authentication process.
+After authenticating, all the monday.com tools and custom commands will
+be available.
+
+A few custom command to try out for the extension:
+
+- `/monday:create-item` create item in board 123 for "Update the UI"
+- `/monday:sprint-summary` sprint summary for sprint 853
+
 #### For Cursor or Other MCP Clients
 
 Add to your settings:
