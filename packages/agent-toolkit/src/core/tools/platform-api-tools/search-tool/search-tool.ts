@@ -1,8 +1,9 @@
 import { ToolInputType, ToolOutputType, ToolType } from 'src/core/tool';
 import { z } from 'zod';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { getBoards, getBoardsByName, getDocs } from './search-tool.graphql';
-import { GetBoardsByNameQuery, GetBoardsByNameQueryVariables, GetBoardSchemaQuery, GetBoardsQuery, GetBoardsQueryVariables, GetDocsQuery, GetDocsQueryVariables } from 'src/monday-graphql';
+import { getBoards, getDocs, getFolders } from './search-tool.graphql';
+import { GetBoardsQuery, GetBoardsQueryVariables, GetDocsQuery, GetDocsQueryVariables, GetFoldersQuery, GetFoldersQueryVariables } from 'src/monday-graphql';
+import { normalizeString } from 'src/utils/string.utils';
 
 const SEARCH_LIMIT = 100;
 const LOAD_INTO_MEMORY_LIMIT = 10_000;
@@ -10,7 +11,7 @@ const LOAD_INTO_MEMORY_LIMIT = 10_000;
 export interface SearchResult {
   id: string;
   title: string;
-  url: string | null;
+  url?: string;
 }
 
 export enum ObjectPrefixes {
@@ -62,6 +63,7 @@ For users and teams, use list_users_and_teams tool.
 For workspaces, use list_workspaces tool.
 For items and groups, use get_board_items_page tool.
 For groups, use get_board_info tool.
+IMPORTANT: ids returned by this tool are prefixed with the type of the object (e.g doc-123, board-456, folder-789). When passing the ids to other tools, you need to remove the prefix and just pass the number.
     `;
   }
 
@@ -86,12 +88,23 @@ For groups, use get_board_info tool.
     const results = await handler(input);
     
     return {
-      content: [ {type: 'text', text: JSON.stringify({results}, null, 2) }]
+      content: JSON.stringify({results}, null, 2)
     };
   }
 
   private async searchFoldersAsync(input: ToolInputType<SearchToolInput>): Promise<SearchResult[]> {
-    throw new Error('Not implemented');
+    const variables: GetFoldersQueryVariables = {
+      ...this.getPagingParamsForSearch(input),
+      workspace_ids: input.workspaceIds?.map((id) => id.toString()),
+    };
+    
+    const response = await this.mondayApi.request<GetFoldersQuery>(getFolders, variables);
+    const data = this.searchAndVirtuallyPaginate(input, response.folders || [], folder => folder!.name);
+    
+    return data.map(folder => ({
+      id: ObjectPrefixes.FOLDER + folder!.id,
+      title: folder!.name,
+    }));
   }
 
   private async searchDocsAsync(input: ToolInputType<SearchToolInput>): Promise<SearchResult[]> {
@@ -106,34 +119,34 @@ For groups, use get_board_info tool.
     return data.map(doc => ({
       id: ObjectPrefixes.DOCUMENT + doc!.id,
       title: doc!.name,
-      url: doc!.url || null,
+      url: doc!.url || undefined,
     }));
   }
 
+  // private async searchBoardsAsync(input: ToolInputType<SearchToolInput>): Promise<SearchResult[]> {
+  //   if(input.searchTerm) {
+  //     return this.searchBoardsByNameAsync(input);
+  //   }
+  //   return this.searchBoardsWithoutNameAsync(input);
+  // }
+
+  // private async searchBoardsByNameAsync(input: ToolInputType<SearchToolInput>): Promise<SearchResult[]> {
+  //   const variables: GetBoardsByNameQueryVariables = {
+  //     ...this.getPagingParamsForSearch(input),
+  //     workspace_ids: input.workspaceIds?.map((id) => id.toString()),
+  //     search_term: input.searchTerm!
+  //   };
+
+  //   const response = await this.mondayApi.request<GetBoardsByNameQuery>(getBoardsByName, variables);
+
+  //   return response.boards_by_name?.map(board => ({
+  //     id: ObjectPrefixes.BOARD + board!.id,
+  //     title: board!.name,
+  //     url: board!.url,
+  //   })) || [];
+  // }
+
   private async searchBoardsAsync(input: ToolInputType<SearchToolInput>): Promise<SearchResult[]> {
-    if(input.searchTerm) {
-      return this.searchBoardsByNameAsync(input);
-    }
-    return this.searchBoardsWithoutNameAsync(input);
-  }
-
-  private async searchBoardsByNameAsync(input: ToolInputType<SearchToolInput>): Promise<SearchResult[]> {
-    const variables: GetBoardsByNameQueryVariables = {
-      ...this.getPagingParamsForSearch(input),
-      workspace_ids: input.workspaceIds?.map((id) => id.toString()),
-      search_term: input.searchTerm!
-    };
-
-    const response = await this.mondayApi.request<GetBoardsByNameQuery>(getBoardsByName, variables);
-
-    return response.boards_by_name?.map(board => ({
-      id: ObjectPrefixes.BOARD + board!.id,
-      title: board!.name,
-      url: board!.url,
-    })) || [];
-  }
-
-  private async searchBoardsWithoutNameAsync(input: ToolInputType<SearchToolInput>): Promise<SearchResult[]> {
     const variables: GetBoardsQueryVariables = {
       ...this.getPagingParamsForSearch(input),
       workspace_ids: input.workspaceIds?.map((id) => id.toString()),
@@ -161,17 +174,12 @@ For groups, use get_board_info tool.
       return items;
     }
 
-    const normalizedSearchTerm = this.normalizeSearchTerm(input.searchTerm ?? '');
+    const normalizedSearchTerm = normalizeString(input.searchTerm ?? '');
     const startIndex = (input.page - 1) * input.limit;
     const endIndex = startIndex + input.limit;
 
     return items
-      .filter(item => this.normalizeSearchTerm(nameGetter(item)).includes(normalizedSearchTerm))
+      .filter(item => normalizeString(nameGetter(item)).includes(normalizedSearchTerm))
       .slice(startIndex, endIndex);
-  }
-
-  private normalizeSearchTerm(searchTerm: string): string {
-    // TODO: Implement later
-    return searchTerm;
   }
 }

@@ -222,18 +222,13 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
 
   private async getItemIdsFromSmartSearchAsync(input: ToolInputType<GetBoardItemsPageToolInput>): Promise<number[]> {
     const smartSearchVariables: SmartSearchBoardItemIdsQueryVariables = {
-      boardId: input.boardId.toString(),
+      board_ids: [input.boardId.toString()],
       searchTerm: input.searchTerm!,
     };
 
     const smartSearchRes = await this.mondayApi.request<SmartSearchBoardItemIdsQuery>(smartSearchGetBoardItemIds, smartSearchVariables);
     
     const itemIdsFromSmartSearch = smartSearchRes.search_items?.results?.map(result => Number(result.data.id)) ?? [];
-
-    if(itemIdsFromSmartSearch.length === 0) {
-      // TODO: Refactor this once search team implements exception throwing when tool is not enabled
-      throw new Error('No items found for search term or new search is not enabled for this account');
-    }
 
     const initialItemIds = input.itemIds ?? [];
     

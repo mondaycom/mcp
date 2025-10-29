@@ -303,24 +303,6 @@ type Query {
     state: [ManagedColumnState!]
   ): [ManagedColumn!]
 
-  """Get columns and their relations data."""
-  columns_and_relations(
-    """Which fields to include"""
-    select: [ColumnField!]! = [id]
-
-    """The board ids"""
-    start_from: [Int!]!
-
-    """Should show mermaid chart url"""
-    mermaid_url: Boolean
-
-    """Should show mermaid chart code"""
-    mermaid_code: Boolean
-
-    """Linkage"""
-    joins: [Joins!]! = []
-  ): ColumnsAndRelationsResponse
-
   """
   Retrieves the JSON schema definition for a specific column type. Use this query before calling update_column mutation to understand the structure and validation rules for the defaults parameter. The schema defines what properties are available when updating columns of a specific type.
   """
@@ -344,23 +326,6 @@ type Query {
     """The ID of the board to export the graph for"""
     boardId: String!
   ): BoardGraphExport
-
-  """
-  Calculate the impact of a dependency related column value change on the dependency graph
-  """
-  calculate_dependency_related_change_cascading_effect(
-    """The ID of the board to calculate the impact on"""
-    board_id: ID!
-
-    """The ID of the pulse which the change is on"""
-    pulse_id: ID!
-
-    """The type of the column which the change is on, can be date or timeline"""
-    column_type: DependencyRelatedColumnTypes!
-
-    """The changed column value"""
-    value_change: DependencyRelatedValueInput!
-  ): JSON
 
   """
   Converts document content into standard markdown format for external use, backup, or processing. Exports the entire document by default, or specific blocks if block IDs are provided. Use this to extract content for integration with other systems, create backups, generate reports, or process document content with external tools. The output is clean, portable markdown that preserves formatting and structure.
@@ -516,26 +481,6 @@ type Query {
     The state of the board (all / active / archived / deleted), the default is active.
     """
     state: State = active
-
-    """A list of workspace ids the boards are contained in."""
-    workspace_ids: [ID]
-  ): [Board]
-
-  """Search boards by their name"""
-  boards_by_name(
-    """Number of items to get"""
-    limit: Int = 100
-
-    """Page number to get, starting at 1."""
-    page: Int = 1
-
-    """
-    The state of the board (all / active / archived / deleted), the default is active.
-    """
-    state: State = active
-
-    """The term to search board names by."""
-    term: String!
 
     """A list of workspace ids the boards are contained in."""
     workspace_ids: [ID]
@@ -1442,15 +1387,7 @@ type Mutation {
   ): RequiredColumns
 
   """Update the dependency column for a specific pulse"""
-  update_dependency_column(
-    boardId: String!
-    pulseId: String!
-    value: DependencyValueInput!
-    columnId: String!
-
-    """Pusher socket id to exclude from receiving a pusher event"""
-    pusherSocketId: String
-  ): JSON!
+  update_dependency_column(boardId: String!, pulseId: String!, value: DependencyValueInput!, columnId: String!): JSON!
 
   """
   Adds markdown content to an existing document by converting it into document blocks. Use this to append content to the end of a document or insert content after a specific block. The markdown will be parsed and converted into the appropriate document block types (text, headers, lists, etc.). Returns the IDs of the newly created blocks on success.
@@ -2088,18 +2025,6 @@ type Mutation {
     parent_item_id: ID!
   ): Item
 
-  """Creates several new pending users in the account."""
-  create_users(
-    """The email addresses of the created users."""
-    emails: [String]!
-
-    """The kind of the invited users (member / guest / view_only)"""
-    kind: InvitedUserKind
-
-    """The product you invite the users to."""
-    product_kind: ProductKind
-  ): [CreateUserResult]
-
   """Create a new webhook."""
   create_webhook(
     """The board's unique identifier."""
@@ -2273,18 +2198,6 @@ type Mutation {
     """
     kind: String = "global"
   ): AppSubscriptionOperationsCounter
-
-  """Invites a new user to the account."""
-  invite_user(
-    """The email address of the invited user."""
-    email: String!
-
-    """The kind of the invited user (member / guest / view_only)"""
-    kind: InvitedUserKind
-
-    """The product you invite the user to"""
-    product_kind: ProductKind
-  ): User
 
   """Move an item to a different board."""
   move_item_to_board(
@@ -2801,7 +2714,7 @@ type Mutation {
     """Parent container for the widget (dashboard or board view)."""
     parent: WidgetParentInput!
 
-    """The kind of widget to create (i.e CHART, NUMBER, BATTERY)."""
+    """The kind of widget to create (i.e CHART, NUMBER, BATTERY, CALENDAR)."""
     kind: ExternalWidget!
 
     """The name of the widget."""
@@ -3633,9 +3546,6 @@ type Board {
   """The board's state (all / active / archived / deleted)."""
   state: State!
 
-  """The subitem's board."""
-  subitem_board: Board
-
   """The board's subscribers."""
   subscribers: [User]!
 
@@ -4238,36 +4148,6 @@ type TimelineResponse {
   ): TimelineItemsPage!
 }
 
-"""Column information"""
-type BoardColumn {
-  """The column ID"""
-  id: String
-
-  """The column type"""
-  type: String
-
-  """The column title"""
-  title: String
-}
-
-"""Board information"""
-type BoardInfo {
-  """The board ID"""
-  board_id: Int
-
-  """Columns of the board"""
-  columns: [BoardColumn!]
-
-  """Board metadata"""
-  metadata: BoardMetadata
-}
-
-"""Board metadata information"""
-type BoardMetadata {
-  """Origin types"""
-  origins: [String!]
-}
-
 """Calculated capability settings for a column"""
 type CalculatedCapability {
   """Function to calculate the parent values"""
@@ -4358,46 +4238,6 @@ input ColumnCapabilitiesInput {
 enum ColumnCapability {
   """Capability to show column's calculated value"""
   CALCULATED
-}
-
-"""Selectable column fields"""
-enum ColumnField {
-  id
-  type
-  title
-}
-
-"""Column relation information"""
-type ColumnRelation {
-  """Column identifier"""
-  column: RelationColumnIdentifier
-
-  """Dependent columns"""
-  dependent_columns: [DependentColumn!]
-}
-
-"""Columns and relations response"""
-type ColumnsAndRelationsResponse {
-  """List of boards"""
-  boards: [BoardInfo!]
-
-  """List of archived board IDs"""
-  archived_board_ids: [Int!]
-
-  """List of deleted board IDs"""
-  deleted_board_ids: [Int!]
-
-  """List of unauthorized board IDs"""
-  unauthorized_board_ids: [Int!]
-
-  """Column relations"""
-  column_relations: [ColumnRelation!]
-
-  """Mermaid URL for visualization"""
-  mermaid_url: String
-
-  """Mermaid code for visualization"""
-  mermaid_code: String
 }
 
 union ColumnSettings = StatusColumnSettings | DropdownColumnSettings
@@ -4560,21 +4400,6 @@ input CreateStatusLabelInput {
   is_done: Boolean
 }
 
-"""Dependent column information"""
-type DependentColumn {
-  """Column identifier"""
-  column: RelationColumnIdentifier
-
-  """Dependent column metadata"""
-  metadata: DependentColumnMetadata
-}
-
-"""Dependent column metadata"""
-type DependentColumnMetadata {
-  """Relation reason"""
-  relation_reason: String
-}
-
 type DropdownColumnSettings {
   type: ManagedColumnTypes
   labels: [DropdownLabel!]
@@ -4600,18 +4425,6 @@ type DropdownManagedColumn {
   settings: DropdownColumnSettings
 }
 
-"""Linkage"""
-enum Joins {
-  root
-  subItems
-  rootParent
-  transitiveParents
-  connectedBoards
-  mirrorToMirror
-  subItemsConnectedBoards
-  subItemsMirrorToMirror
-}
-
 type ManagedColumn {
   id: String
   title: String
@@ -4635,15 +4448,6 @@ enum ManagedColumnState {
 enum ManagedColumnTypes {
   status
   dropdown
-}
-
-"""Relation column identifier"""
-type RelationColumnIdentifier {
-  """The board ID"""
-  board_id: Int
-
-  """The column ID"""
-  column_id: String
 }
 
 """
@@ -4810,26 +4614,6 @@ type BoardGraphExport {
 
   """The total number of edges in the graph"""
   edgeCount: Int
-}
-
-"""The type of the dependency related column"""
-enum DependencyRelatedColumnTypes {
-  """Date column"""
-  DATE
-
-  """Timeline column"""
-  TIMELINE
-}
-
-"""
-The value of the dependency related column. when updating a date column the from and to fields should have the same value
-"""
-input DependencyRelatedValueInput {
-  """From value"""
-  from: String
-
-  """To value"""
-  to: String
 }
 
 """Type of dependency relationship between items"""
@@ -7079,18 +6863,6 @@ input CreateDocWorkspaceInput {
   workspace_id: ID!
 }
 
-"""The result of a create_users mutation call for a single user."""
-type CreateUserResult {
-  """The email of the user that we attempted to create"""
-  email: String!
-
-  """An error that occurred during user creation"""
-  error: String
-
-  """The returned user object"""
-  user: User
-}
-
 type CreationLogValue implements ColumnValue {
   """The column that this value belongs to."""
   column: Column!
@@ -7967,18 +7739,6 @@ type IntegrationValue implements ColumnValue {
   value: JSON
 }
 
-"""The possibilities for an invited user kind."""
-enum InvitedUserKind {
-  """A guest."""
-  guest
-
-  """A normal member."""
-  member
-
-  """A view-only user."""
-  view_only
-}
-
 """An item description."""
 type ItemDescription {
   """The item's content blocks"""
@@ -8449,45 +8209,6 @@ enum PositionRelative {
 
   """position before at the given entity."""
   before_at
-}
-
-"""The possibilities product kinds you can invite to"""
-enum ProductKind {
-  """Agent Factory"""
-  agent_builder
-
-  """Work Management"""
-  core
-
-  """monday CRM"""
-  crm
-
-  """WorkForms"""
-  forms
-
-  """Knowledge"""
-  knowledge
-
-  """monday marketer"""
-  marketing
-
-  """campaigns"""
-  marketing_campaigns
-
-  """monday projects"""
-  project_management
-
-  """monday service"""
-  service
-
-  """monday dev"""
-  software
-
-  """WorkCanvas"""
-  whiteboard
-
-  """Workflows"""
-  workflows
 }
 
 type ProgressValue implements ColumnValue {
@@ -10472,6 +10193,11 @@ enum ExternalWidget {
   Battery widgets for progress tracking and completion status visualization. Displays progress bars, completion percentages, status indicators, and goal achievement metrics. Perfect for showing project completion, task progress, capacity utilization, and milestone tracking.
   """
   BATTERY
+
+  """
+  Calendar widgets for timeline and schedule visualization. Displays date and timeline column data in a traditional calendar format, supporting time slots, color-coded events by board/group/status, and multi-board aggregation. Ideal for project scheduling, deadline tracking, event planning, and time-based workflow visualization.
+  """
+  CALENDAR
 }
 
 """Data visualization object."""
@@ -10482,7 +10208,7 @@ type Widget {
   """Parent container where the widget is placed."""
   parent: WidgetParentOutput
 
-  """The type of widget (CHART, NUMBER, BATTERY)."""
+  """The type of widget (CHART, NUMBER, BATTERY, CALENDAR)."""
   kind: ExternalWidget
 
   """Widget label (UTF-8 chars)."""

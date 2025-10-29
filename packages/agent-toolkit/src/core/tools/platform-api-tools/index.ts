@@ -37,6 +37,7 @@ import { CreateWorkspaceTool } from './create-workspace-tool/create-workspace-to
 import { CreateFolderTool } from './create-folder-tool/create-folder-tool';
 import { MoveObjectTool } from './move-object-tool/move-object-tool';
 import { BoardInsightsTool } from './board-insights/board-insights-tool';
+import { SearchTool } from './search-tool/search-tool';
 
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteItemTool,
@@ -78,6 +79,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   AllWidgetsSchemaTool,
   CreateWidgetTool,
   BoardInsightsTool,
+  SearchTool
 ];
 
 export * from './all-monday-api-tool';
@@ -116,6 +118,7 @@ export * from './create-workspace-tool/create-workspace-tool';
 export * from './create-folder-tool/create-folder-tool';
 export * from './move-object-tool/move-object-tool';
 export * from './board-insights/board-insights-tool';
+export * from './search-tool/search-tool';
 // Dashboard Tools
 export * from './dashboard-tools';
 // Monday Dev Tools
