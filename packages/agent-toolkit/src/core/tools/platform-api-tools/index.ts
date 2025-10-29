@@ -21,6 +21,7 @@ import { GetBoardItemsPageTool } from './get-board-items-page-tool/get-board-ite
 import { GetBoardSchemaTool } from './get-board-schema-tool';
 import { GetColumnTypeInfoTool } from './get-column-type-info/get-column-type-info-tool';
 import { GetGraphQLSchemaTool } from './get-graphql-schema-tool';
+import { GetMondayGraphQLSchemaTool } from './get-monday-graphql-schema-tool';
 import { GetTypeDetailsTool } from './get-type-details-tool';
 import { ListUsersAndTeamsTool } from './list-users-and-teams-tool/list-users-and-teams-tool';
 import { MoveItemToGroupTool } from './move-item-to-group-tool';
@@ -59,6 +60,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteColumnTool,
   AllMondayApiTool,
   GetGraphQLSchemaTool,
+  GetMondayGraphQLSchemaTool,
   GetColumnTypeInfoTool,
   GetTypeDetailsTool,
   CreateCustomActivityTool,
@@ -100,6 +102,7 @@ export * from './get-board-items-page-tool/get-board-items-page-tool';
 export * from './get-board-schema-tool';
 export * from './get-column-type-info/get-column-type-info-tool';
 export * from './get-graphql-schema-tool';
+export * from './get-monday-graphql-schema-tool';
 export * from './get-type-details-tool';
 export * from './list-users-and-teams-tool/list-users-and-teams-tool';
 export * from './manage-tools-tool';
