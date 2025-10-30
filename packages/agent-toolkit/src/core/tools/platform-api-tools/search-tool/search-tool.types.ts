@@ -5,7 +5,7 @@ export interface SearchResult {
 }
 
 export interface DataWithFilterInfo<T> {
-             items: T[];
+  items: T[];
   wasFiltered: boolean;
 }
 
