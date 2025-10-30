@@ -34,7 +34,7 @@ describe('GetSprintsBoardsTool', () => {
     it('should successfully find a single board pair', async () => {
       mocks.setResponse(VALID_BOARD_PAIR_RESPONSE);
 
-      const result = await callToolByNameRawAsync('get-monday-dev-sprints-boards', {});
+      const result = await callToolByNameRawAsync('get_monday_dev_sprints_boards', {});
       const content = result.content[0].text;
 
       expect(content).toBe(EXPECTED_SINGLE_PAIR_OUTPUT);
@@ -48,7 +48,7 @@ describe('GetSprintsBoardsTool', () => {
     it('should successfully find multiple board pairs', async () => {
       mocks.setResponse(MULTIPLE_BOARD_PAIRS_RESPONSE);
 
-      const result = await callToolByNameRawAsync('get-monday-dev-sprints-boards', {});
+      const result = await callToolByNameRawAsync('get_monday_dev_sprints_boards', {});
       const content = result.content[0].text;
 
       expect(content).toBe(EXPECTED_MULTIPLE_PAIRS_OUTPUT);
@@ -57,7 +57,7 @@ describe('GetSprintsBoardsTool', () => {
     it('should have correct tool metadata', () => {
       const tool = new GetSprintsBoardsTool(mocks.mockApiClient, 'fake_token');
 
-      expect(tool.name).toBe('get-monday-dev-sprints-boards');
+      expect(tool.name).toBe('get_monday_dev_sprints_boards');
       expect(tool.type).toBe('read');
       expect(tool.annotations.title).toBe('monday-dev: Get Sprints Boards');
       expect(tool.annotations.readOnlyHint).toBe(true);
@@ -70,7 +70,7 @@ describe('GetSprintsBoardsTool', () => {
     it('should find pair when only sprints board is in recent list', async () => {
       mocks.setResponse(SPRINTS_BOARD_ONLY_RESPONSE);
 
-      const result = await callToolByNameRawAsync('get-monday-dev-sprints-boards', {});
+      const result = await callToolByNameRawAsync('get_monday_dev_sprints_boards', {});
       const content = result.content[0].text;
 
       expect(content).toBe(EXPECTED_SPRINTS_BOARD_ONLY_OUTPUT);
@@ -79,7 +79,7 @@ describe('GetSprintsBoardsTool', () => {
     it('should find pair when only tasks board is in recent list', async () => {
       mocks.setResponse(TASKS_BOARD_ONLY_RESPONSE);
 
-      const result = await callToolByNameRawAsync('get-monday-dev-sprints-boards', {});
+      const result = await callToolByNameRawAsync('get_monday_dev_sprints_boards', {});
       const content = result.content[0].text;
 
       expect(content).toBe(EXPECTED_TASKS_BOARD_ONLY_OUTPUT);
@@ -88,7 +88,7 @@ describe('GetSprintsBoardsTool', () => {
     it('should handle alternative settings format (boardId instead of boardIds)', async () => {
       mocks.setResponse(ALTERNATIVE_SETTINGS_FORMAT_RESPONSE);
 
-      const result = await callToolByNameRawAsync('get-monday-dev-sprints-boards', {});
+      const result = await callToolByNameRawAsync('get_monday_dev_sprints_boards', {});
       const content = result.content[0].text;
 
       // Uses boardId instead of boardIds, but produces same output format
@@ -98,7 +98,7 @@ describe('GetSprintsBoardsTool', () => {
     it('should handle boards without workspace information', async () => {
       mocks.setResponse(BOARDS_WITHOUT_WORKSPACE_RESPONSE);
 
-      const result = await callToolByNameRawAsync('get-monday-dev-sprints-boards', {});
+      const result = await callToolByNameRawAsync('get_monday_dev_sprints_boards', {});
       const content = result.content[0].text;
 
       expect(content).toBe(EXPECTED_BOARDS_WITHOUT_WORKSPACE_OUTPUT);
@@ -109,7 +109,7 @@ describe('GetSprintsBoardsTool', () => {
     it('should return error when no boards found', async () => {
       mocks.setResponse(NO_BOARDS_RESPONSE);
 
-      const result = await callToolByNameRawAsync('get-monday-dev-sprints-boards', {});
+      const result = await callToolByNameRawAsync('get_monday_dev_sprints_boards', {});
       const content = result.content[0].text;
 
       expect(content).toBe(EXPECTED_NO_BOARDS_ERROR);
@@ -118,7 +118,7 @@ describe('GetSprintsBoardsTool', () => {
     it('should return helpful message when boards found but no valid pairs', async () => {
       mocks.setResponse(REGULAR_BOARDS_RESPONSE);
 
-      const result = await callToolByNameRawAsync('get-monday-dev-sprints-boards', {});
+      const result = await callToolByNameRawAsync('get_monday_dev_sprints_boards', {});
       const content = result.content[0].text;
 
       expect(content).toBe(EXPECTED_NO_VALID_PAIRS_MESSAGE);
@@ -127,7 +127,7 @@ describe('GetSprintsBoardsTool', () => {
     it('should handle boards with missing required columns', async () => {
       mocks.setResponse(INVALID_BOARDS_RESPONSE);
 
-      const result = await callToolByNameRawAsync('get-monday-dev-sprints-boards', {});
+      const result = await callToolByNameRawAsync('get_monday_dev_sprints_boards', {});
       const content = result.content[0].text;
 
       // Boards don't have all required columns, so no pairs should be found
@@ -142,7 +142,7 @@ describe('GetSprintsBoardsTool', () => {
       const errorMessage = 'GraphQL error occurred';
       mocks.setError(errorMessage);
 
-      const result = await callToolByNameRawAsync('get-monday-dev-sprints-boards', {});
+      const result = await callToolByNameRawAsync('get_monday_dev_sprints_boards', {});
       const content = result.content[0].text;
 
       expect(content).toBe(EXPECTED_GRAPHQL_ERROR);
