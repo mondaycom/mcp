@@ -15,6 +15,7 @@ import { API_VERSION } from 'src/utils/version.utils';
 export class MondayAgentToolkit extends McpServer {
   private readonly mondayApiClient: ApiClient;
   private readonly mondayApiToken: string;
+  private readonly context?: MondayAgentToolkitConfig['context'];
   private readonly dynamicToolManager: DynamicToolManager = new DynamicToolManager();
   private toolInstances: Tool<any, any>[] = [];
   private managementTool: Tool<any, any> | null = null;
@@ -40,6 +41,7 @@ export class MondayAgentToolkit extends McpServer {
 
     this.mondayApiClient = this.createApiClient(config);
     this.mondayApiToken = config.mondayApiToken;
+    this.context = config.context;
 
     this.registerTools(config);
   }
@@ -97,6 +99,7 @@ export class MondayAgentToolkit extends McpServer {
     const instanceOptions = {
       apiClient: this.mondayApiClient,
       apiToken: this.mondayApiToken,
+      context: this.context,
     };
 
     const filteredTools = getFilteredToolInstances(instanceOptions, config.toolsConfiguration);
