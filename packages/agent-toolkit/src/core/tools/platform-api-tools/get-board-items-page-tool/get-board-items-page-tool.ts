@@ -222,7 +222,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
 
   private async getItemIdsFromSmartSearchAsync(input: ToolInputType<GetBoardItemsPageToolInput>): Promise<number[]> {
     const smartSearchVariables: SmartSearchBoardItemIdsQueryVariables = {
-      boardId: input.boardId.toString(),
+      board_ids: [input.boardId.toString()],
       searchTerm: input.searchTerm!,
     };
 

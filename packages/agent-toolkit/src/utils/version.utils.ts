@@ -1,0 +1,2 @@
+// AUTO-GENERATED
+export const DEFAULT_API_VERSION = '2026-01';
