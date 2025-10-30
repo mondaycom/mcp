@@ -21,7 +21,7 @@ import {
 export const getSprintsBoardsToolSchema = {};
 
 export class GetSprintsBoardsTool extends BaseMondayApiTool<typeof getSprintsBoardsToolSchema> {
-  name = 'get-monday-dev-sprints-boards';
+  name = 'get_monday_dev_sprints_boards';
   type = ToolType.READ;
   annotations = createMondayApiAnnotations({
     title: 'monday-dev: Get Sprints Boards',
