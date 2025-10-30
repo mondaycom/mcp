@@ -81,7 +81,7 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     const handlers = {
       [GlobalSearchType.BOARD]: this.searchBoardsAsync.bind(this),
       [GlobalSearchType.DOCUMENTS]: this.searchDocsAsync.bind(this),
-      [GlobalSearchType.FOLDERS]: this.searchFoldersAsync.bind(this), // Not implemented yet
+      [GlobalSearchType.FOLDERS]: this.searchFoldersAsync.bind(this), 
     };
 
     const handler = handlers[input.searchType];
