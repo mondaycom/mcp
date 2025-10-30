@@ -9201,6 +9201,33 @@ export type UpdateOverviewHierarchyMutationVariables = Exact<{
 
 export type UpdateOverviewHierarchyMutation = { __typename?: 'Mutation', update_overview_hierarchy?: { __typename?: 'UpdateOverviewHierarchy', success: boolean, message: string, overview?: { __typename?: 'Overview', id: string } | null } | null };
 
+export type GetBoardsQueryVariables = Exact<{
+  page: Scalars['Int']['input'];
+  limit: Scalars['Int']['input'];
+  workspace_ids?: InputMaybe<Array<InputMaybe<Scalars['ID']['input']>> | InputMaybe<Scalars['ID']['input']>>;
+}>;
+
+
+export type GetBoardsQuery = { __typename?: 'Query', boards?: Array<{ __typename?: 'Board', id: string, name: string, url: string } | null> | null };
+
+export type GetDocsQueryVariables = Exact<{
+  page: Scalars['Int']['input'];
+  limit: Scalars['Int']['input'];
+  workspace_ids?: InputMaybe<Array<InputMaybe<Scalars['ID']['input']>> | InputMaybe<Scalars['ID']['input']>>;
+}>;
+
+
+export type GetDocsQuery = { __typename?: 'Query', docs?: Array<{ __typename?: 'Document', id: string, name: string, url?: string | null } | null> | null };
+
+export type GetFoldersQueryVariables = Exact<{
+  page: Scalars['Int']['input'];
+  limit: Scalars['Int']['input'];
+  workspace_ids?: InputMaybe<Array<InputMaybe<Scalars['ID']['input']>> | InputMaybe<Scalars['ID']['input']>>;
+}>;
+
+
+export type GetFoldersQuery = { __typename?: 'Query', folders?: Array<{ __typename?: 'Folder', id: string, name: string } | null> | null };
+
 export type UpdateFolderMutationVariables = Exact<{
   folderId: Scalars['ID']['input'];
   name?: InputMaybe<Scalars['String']['input']>;
