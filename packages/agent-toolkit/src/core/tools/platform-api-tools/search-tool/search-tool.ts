@@ -4,40 +4,9 @@ import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-ap
 import { getBoards, getDocs, getFolders } from './search-tool.graphql';
 import { GetBoardsQuery, GetBoardsQueryVariables, GetDocsQuery, GetDocsQueryVariables, GetFoldersQuery, GetFoldersQueryVariables } from 'src/monday-graphql';
 import { normalizeString } from 'src/utils/string.utils';
+import { DataWithFilterInfo, GlobalSearchType, ObjectPrefixes, SearchResult } from './search-tool.types';
+import { LOAD_INTO_MEMORY_LIMIT, SEARCH_LIMIT } from './search-tool.consts';
 
-const SEARCH_LIMIT = 100;
-const LOAD_INTO_MEMORY_LIMIT = 10_000;
-
-export interface SearchResult {
-  id: string;
-  title: string;
-  url?: string;
-}
-
-export interface DataWithFilterInfo<T> {
-  items: T[];
-  wasFiltered: boolean;
-}
-
-export enum ObjectPrefixes {
-  BOARD = 'board-',
-  DOCUMENT = 'doc-',
-  FOLDER = 'folder-',
-}
-
-export enum GlobalSearchType {
-  BOARD = 'BOARD',
-  DOCUMENTS = 'DOCUMENTS',
-  FOLDERS = 'FOLDERS',
-  
-  // Why other types are not included:
-  // FORMS = 'FORMS', - forms are not supported
-  // USERS = 'USERS', // already supported by list_users_and_teams tool
-  // TEAMS = 'TEAMS', // already supported by list_users_and_teams tool
-  // WORKSPACES = 'WORKSPACES', // already supported by list_workspaces tool
-  // ITEMS = 'ITEMS', // already supported by get_board_items_page tool
-  // GROUPS = 'GROUPS', // already supported by get_board_info tool
-}
 
 export const searchSchema = {
   searchTerm: z.string().optional().describe('The search term to use for the search.'),

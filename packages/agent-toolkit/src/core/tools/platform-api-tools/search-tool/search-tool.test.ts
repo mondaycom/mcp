@@ -1,8 +1,9 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameAsync, callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
-import { SearchTool, searchSchema, GlobalSearchType, ObjectPrefixes, SearchResult } from './search-tool';
+import { SearchTool, searchSchema } from './search-tool';
 import { z, ZodTypeAny } from 'zod';
 import { GetBoardsQuery, GetDocsQuery, GetFoldersQuery } from 'src/monday-graphql';
+import { GlobalSearchType, ObjectPrefixes, SearchResult } from './search-tool.types';
 
 export type inputType = z.objectInputType<typeof searchSchema, ZodTypeAny>;
 
