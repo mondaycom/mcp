@@ -29,10 +29,9 @@
     "lint": "eslint --fix \"src/**/*.ts\" --ignore-path \"../../.eslintignore\"",
     "test": "jest -c",
     "watch": "rollup -c -w",
-    "fetch:schema": "bash fetch-schema.sh && yarn update:schema-version",
-    "update:schema-version": "bash update-version.sh",
+    "fetch:schema": "bash fetch-schema.sh",
     "codegen": "graphql-codegen",
-    "fetch:generate": "yarn fetch:schema && yarn update:schema-version && yarn codegen"
+    "fetch:generate": "yarn fetch:schema && yarn codegen"
   },
   "engines": {
     "node": ">= 16.20.0"

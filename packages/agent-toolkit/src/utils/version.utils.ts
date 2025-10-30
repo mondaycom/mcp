@@ -1,2 +1,1 @@
-// AUTO-GENERATED
-export const DEFAULT_API_VERSION = '2026-01';
+export const API_VERSION = '2026-01';
