@@ -1,9 +1,10 @@
 import { z } from 'zod';
-import { ColumnType, GetBoardInfoJustColumnsQuery, GetBoardInfoQuery, GetBoardInfoQueryVariables } from '../../../../monday-graphql/generated/graphql';
+import { GetBoardInfoJustColumnsQuery, GetBoardInfoQuery, GetBoardInfoQueryVariables } from '../../../../monday-graphql/generated/graphql';
 import { getBoardInfo, getBoardInfoJustColumns } from './get-board-info.graphql';
 import { BoardInfoData, BoardInfoJustColumnsData, formatBoardInfoAsJson } from './helpers';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './../base-monday-api-tool';
+import { NonDeprecatedColumnType } from 'src/utils/types';
 
 export const getBoardInfoToolSchema = {
   boardId: z.number().describe('The id of the board to get information for'),
@@ -50,7 +51,7 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
   }
 
   private async getSubItemsBoardAsync(board: BoardInfoData): Promise<BoardInfoJustColumnsData | null> {
-    const subTasksColumn = board.columns?.find((column) => column?.type === ColumnType.Subtasks);
+    const subTasksColumn = board.columns?.find((column) => column?.type === NonDeprecatedColumnType.Subtasks);
     if(!subTasksColumn) {
       return null;
     }

@@ -1,8 +1,9 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
 import { createDocToolSchema } from './create-doc-tool';
-import { BoardKind, ColumnType } from 'src/monday-graphql';
+import { BoardKind } from 'src/monday-graphql';
 import { z, ZodTypeAny } from 'zod';
+import { NonDeprecatedColumnType } from 'src/utils/types';
 
 export type inputType = z.objectInputType<typeof createDocToolSchema, ZodTypeAny>;
 
@@ -325,8 +326,8 @@ describe('CreateDocTool', () => {
               board: {
                 id: 'board_456',
                 columns: [
-                  { id: 'doc_col_1', type: ColumnType.Doc },
-                  { id: 'text_col_1', type: ColumnType.Text },
+                  { id: 'doc_col_1', type: NonDeprecatedColumnType.Doc },
+                  { id: 'text_col_1', type: NonDeprecatedColumnType.Text },
                 ],
               },
             },
@@ -416,8 +417,8 @@ describe('CreateDocTool', () => {
               board: {
                 id: 'board_789',
                 columns: [
-                  { id: 'existing_doc_col', type: ColumnType.Doc },
-                  { id: 'text_col_1', type: ColumnType.Text },
+                  { id: 'existing_doc_col', type: NonDeprecatedColumnType.Doc },
+                  { id: 'text_col_1', type: NonDeprecatedColumnType.Text },
                 ],
               },
             },
@@ -487,8 +488,8 @@ describe('CreateDocTool', () => {
               board: {
                 id: 'board_111',
                 columns: [
-                  { id: 'text_col_1', type: ColumnType.Text },
-                  { id: 'status_col_1', type: ColumnType.Status },
+                  { id: 'text_col_1', type: NonDeprecatedColumnType.Text },
+                  { id: 'status_col_1', type: NonDeprecatedColumnType.Status },
                 ],
               },
             },
@@ -557,7 +558,7 @@ describe('CreateDocTool', () => {
         expect(createColumnCall).toBeDefined();
         expect(createColumnCall[1]).toEqual({
           boardId: 'board_111',
-          columnType: ColumnType.Doc,
+          columnType: NonDeprecatedColumnType.Doc,
           columnTitle: 'Doc',
         });
 
@@ -616,7 +617,7 @@ describe('CreateDocTool', () => {
               id: 'item_999',
               board: {
                 id: 'board_999',
-                columns: [{ id: 'text_col', type: ColumnType.Text }],
+                columns: [{ id: 'text_col', type: NonDeprecatedColumnType.Text }],
               },
             },
           ],
@@ -655,7 +656,7 @@ describe('CreateDocTool', () => {
               id: 'item_111',
               board: {
                 id: 'board_111',
-                columns: [{ id: 'doc_col_1', type: ColumnType.Doc }],
+                columns: [{ id: 'doc_col_1', type: NonDeprecatedColumnType.Doc }],
               },
             },
           ],
@@ -718,7 +719,7 @@ describe('CreateDocTool', () => {
               id: 'item_222',
               board: {
                 id: 'board_222',
-                columns: [{ id: 'doc_col_1', type: ColumnType.Doc }],
+                columns: [{ id: 'doc_col_1', type: NonDeprecatedColumnType.Doc }],
               },
             },
           ],
@@ -758,7 +759,7 @@ describe('CreateDocTool', () => {
               id: 'item_333',
               board: {
                 id: 'board_333',
-                columns: [{ id: 'doc_col_1', type: ColumnType.Doc }],
+                columns: [{ id: 'doc_col_1', type: NonDeprecatedColumnType.Doc }],
               },
             },
           ],
