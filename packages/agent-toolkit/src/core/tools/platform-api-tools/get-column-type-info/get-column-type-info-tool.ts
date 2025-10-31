@@ -8,7 +8,7 @@ export const getNonDeprecatedColumnTypeInfoToolSchema = {
   columnType: z.nativeEnum(NonDeprecatedColumnType).describe('The column type to retrieve information for (e.g., "text", "status", "date", "numbers")'),
 };
 
-export class GetNonDeprecatedColumnTypeInfoTool extends BaseMondayApiTool<typeof getNonDeprecatedColumnTypeInfoToolSchema> {
+export class GetColumnTypeInfoTool extends BaseMondayApiTool<typeof getNonDeprecatedColumnTypeInfoToolSchema> {
   name = 'get_column_type_info';
   type = ToolType.READ;
   annotations = createMondayApiAnnotations({
