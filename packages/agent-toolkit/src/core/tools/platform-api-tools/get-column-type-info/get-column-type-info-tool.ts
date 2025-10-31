@@ -1,14 +1,14 @@
 import { z } from 'zod';
-import { ColumnType } from '../../../../monday-graphql/generated/graphql';
 import { getColumnTypeSchema } from './get-column-type-schema.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+import { NonDeprecatedColumnType } from 'src/utils/types';
 
-export const getColumnTypeInfoToolSchema = {
-  columnType: z.nativeEnum(ColumnType).describe('The column type to retrieve information for (e.g., "text", "status", "date", "numbers")'),
+export const getNonDeprecatedColumnTypeInfoToolSchema = {
+  columnType: z.nativeEnum(NonDeprecatedColumnType).describe('The column type to retrieve information for (e.g., "text", "status", "date", "numbers")'),
 };
 
-export class GetColumnTypeInfoTool extends BaseMondayApiTool<typeof getColumnTypeInfoToolSchema> {
+export class GetColumnTypeInfoTool extends BaseMondayApiTool<typeof getNonDeprecatedColumnTypeInfoToolSchema> {
   name = 'get_column_type_info';
   type = ToolType.READ;
   annotations = createMondayApiAnnotations({
@@ -22,11 +22,11 @@ export class GetColumnTypeInfoTool extends BaseMondayApiTool<typeof getColumnTyp
     return 'Retrieves comprehensive information about a specific column type, including JSON schema definition and other metadata. Use this before creating columns with the create_column tool to understand the structure, validation rules, and available properties for column settings.';
   }
 
-  getInputSchema(): typeof getColumnTypeInfoToolSchema {
-    return getColumnTypeInfoToolSchema;
+  getInputSchema(): typeof getNonDeprecatedColumnTypeInfoToolSchema {
+    return getNonDeprecatedColumnTypeInfoToolSchema;
   }
 
-  protected async executeInternal(input: ToolInputType<typeof getColumnTypeInfoToolSchema>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(input: ToolInputType<typeof getNonDeprecatedColumnTypeInfoToolSchema>): Promise<ToolOutputType<never>> {
     const variables = {
       type: input.columnType,
     };

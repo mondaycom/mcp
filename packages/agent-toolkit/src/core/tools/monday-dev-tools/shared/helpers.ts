@@ -2,7 +2,8 @@
  * Shared helper functions for Monday Dev tools
  */
 
-import { ColumnType } from '../../../../monday-graphql/generated/graphql';
+
+import { NonDeprecatedColumnType } from 'src/utils/types';
 import {
   REQUIRED_SPRINT_COLUMNS,
   REQUIRED_TASKS_COLUMNS,
@@ -132,5 +133,5 @@ export const getBoardRelationColumn = (
 
   return board.columns
     .filter((col): col is NonNullable<typeof col> => col !== null)
-    .find((col) => col.id === columnId && col.type === ColumnType.BoardRelation) || null;
+    .find((col) => col.id === columnId && col.type === NonDeprecatedColumnType.BoardRelation) || null;
 };

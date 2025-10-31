@@ -1,15 +1,15 @@
 import { z } from 'zod';
 import {
-  ColumnType,
   CreateColumnMutation,
   CreateColumnMutationVariables,
 } from '../../../monday-graphql/generated/graphql';
 import { createColumn } from '../../../monday-graphql/queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
+import { NonDeprecatedColumnType } from 'src/utils/types';
 
 export const createColumnToolSchema = {
-  columnType: z.nativeEnum(ColumnType).describe('The type of the column to be created'),
+  columnType: z.nativeEnum(NonDeprecatedColumnType).describe('The type of the column to be created'),
   columnTitle: z.string().describe('The title of the column to be created'),
   columnDescription: z.string().optional().describe('The description of the column to be created'),
   columnSettings: z

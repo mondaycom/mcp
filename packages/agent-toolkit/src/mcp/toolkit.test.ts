@@ -5,7 +5,7 @@ import { ApiClient } from '@mondaydotcomorg/api';
 import { getFilteredToolInstances } from '../utils/tools/tools-filtering.utils';
 import { ManageToolsTool } from '../core/tools/platform-api-tools/manage-tools-tool';
 import { z } from 'zod';
-import { DEFAULT_API_VERSION } from 'src/utils';
+import { API_VERSION } from 'src/utils';
 
 // Mock the ApiClient
 jest.mock('@mondaydotcomorg/api', () => ({
@@ -51,7 +51,7 @@ describe('MondayAgentToolkit', () => {
 
       expect(mockApiClient).toHaveBeenCalledWith({
         token: 'test-token',
-        apiVersion: DEFAULT_API_VERSION,
+        apiVersion: API_VERSION,
         requestConfig: {
           headers: {
             'user-agent': 'monday-api-mcp',
@@ -368,7 +368,7 @@ describe('MondayAgentToolkit', () => {
 
       expect(mockApiClient).toHaveBeenCalledWith({
         token: 'test-token',
-        apiVersion: DEFAULT_API_VERSION,
+        apiVersion: API_VERSION,
         requestConfig: {
           headers: {
             'user-agent': 'monday-api-mcp',
@@ -873,7 +873,7 @@ describe('MondayAgentToolkit', () => {
 
       expect(mockApiClient).toHaveBeenCalledWith({
         token: 'test-token',
-        apiVersion: DEFAULT_API_VERSION,
+        apiVersion: API_VERSION,
         requestConfig: {
           headers: {
             'user-agent': 'monday-api-mcp',

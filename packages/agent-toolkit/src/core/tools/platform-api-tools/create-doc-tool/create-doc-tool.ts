@@ -11,7 +11,6 @@ import { createColumn as createColumnMutation } from '../../../../monday-graphql
 
 import {
   BoardKind,
-  ColumnType,
   CreateColumnMutation,
   CreateColumnMutationVariables,
   CreateDocMutation,
@@ -25,6 +24,7 @@ import {
 } from '../../../../monday-graphql/generated/graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+import { NonDeprecatedColumnType } from 'src/utils/types';
 
 const DocType = z.enum(['workspace', 'item']);
 
@@ -135,7 +135,7 @@ USAGE EXAMPLES:
         }
 
         const boardId = item.board?.id;
-        const existingDocColumn = item.board?.columns?.find((c) => c && c.type === ColumnType.Doc);
+        const existingDocColumn = item.board?.columns?.find((c) => c && c.type === NonDeprecatedColumnType.Doc);
 
         let columnId = parsedInput.column_id;
 
@@ -146,7 +146,7 @@ USAGE EXAMPLES:
             // Create new doc column on the board
             const columnVariables: CreateColumnMutationVariables = {
               boardId: boardId!.toString(),
-              columnType: ColumnType.Doc,
+              columnType: NonDeprecatedColumnType.Doc,
               columnTitle: 'Doc',
             };
             const columnRes: CreateColumnMutation = await this.mondayApi.request(createColumnMutation, columnVariables);

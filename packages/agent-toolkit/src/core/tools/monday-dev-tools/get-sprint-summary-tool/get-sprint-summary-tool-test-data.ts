@@ -1,8 +1,8 @@
+import { NonDeprecatedColumnType } from 'src/utils/types';
 import {
   GetSprintsByIdsQuery,
   ReadDocsQuery,
-  ExportMarkdownFromDocQuery,
-  ColumnType,
+  ExportMarkdownFromDocQuery
 } from '../../../../monday-graphql/generated/graphql';
 
 export const VALID_SPRINT_WITH_SUMMARY: GetSprintsByIdsQuery = {
@@ -14,22 +14,22 @@ export const VALID_SPRINT_WITH_SUMMARY: GetSprintsByIdsQuery = {
         id: '2001',
       },
       column_values: [
-        { __typename: 'BoardRelationValue' as const, id: 'sprint_tasks', type: ColumnType.BoardRelation },
-        { __typename: 'CheckboxValue' as const, id: 'sprint_activation', type: ColumnType.Checkbox, checked: true },
-        { __typename: 'CheckboxValue' as const, id: 'sprint_completion', type: ColumnType.Checkbox, checked: true },
-        { __typename: 'DateValue' as const, id: 'sprint_start_date', type: ColumnType.Date, date: '2025-08-18' },
-        { __typename: 'DateValue' as const, id: 'sprint_end_date', type: ColumnType.Date, date: '2025-09-08' },
+        { __typename: 'BoardRelationValue' as const, id: 'sprint_tasks', type: NonDeprecatedColumnType.BoardRelation },
+        { __typename: 'CheckboxValue' as const, id: 'sprint_activation', type: NonDeprecatedColumnType.Checkbox, checked: true },
+        { __typename: 'CheckboxValue' as const, id: 'sprint_completion', type: NonDeprecatedColumnType.Checkbox, checked: true },
+        { __typename: 'DateValue' as const, id: 'sprint_start_date', type: NonDeprecatedColumnType.Date, date: '2025-08-18' },
+        { __typename: 'DateValue' as const, id: 'sprint_end_date', type: NonDeprecatedColumnType.Date, date: '2025-09-08' },
         {
           __typename: 'TimelineValue' as const,
           id: 'sprint_timeline',
-          type: ColumnType.Timeline,
+          type: NonDeprecatedColumnType.Timeline,
           from: '2025-08-17T00:00:00Z',
           to: '2025-08-31T00:00:00Z',
         },
         {
           __typename: 'DocValue' as const,
           id: 'sprint_summary',
-          type: ColumnType.Doc,
+          type: NonDeprecatedColumnType.Doc,
           file: { doc: { object_id: 'doc_obj_summary_1004' } },
         },
       ],
@@ -46,19 +46,19 @@ export const SPRINT_WITHOUT_SUMMARY: GetSprintsByIdsQuery = {
         id: '2001',
       },
       column_values: [
-        { __typename: 'BoardRelationValue' as const, id: 'sprint_tasks', type: ColumnType.BoardRelation },
-        { __typename: 'CheckboxValue' as const, id: 'sprint_activation', type: ColumnType.Checkbox, checked: true },
-        { __typename: 'CheckboxValue' as const, id: 'sprint_completion', type: ColumnType.Checkbox, checked: false },
-        { __typename: 'DateValue' as const, id: 'sprint_start_date', type: ColumnType.Date, date: '2025-09-14' },
-        { __typename: 'DateValue' as const, id: 'sprint_end_date', type: ColumnType.Date, date: null },
+        { __typename: 'BoardRelationValue' as const, id: 'sprint_tasks', type: NonDeprecatedColumnType.BoardRelation },
+        { __typename: 'CheckboxValue' as const, id: 'sprint_activation', type: NonDeprecatedColumnType.Checkbox, checked: true },
+        { __typename: 'CheckboxValue' as const, id: 'sprint_completion', type: NonDeprecatedColumnType.Checkbox, checked: false },
+        { __typename: 'DateValue' as const, id: 'sprint_start_date', type: NonDeprecatedColumnType.Date, date: '2025-09-14' },
+        { __typename: 'DateValue' as const, id: 'sprint_end_date', type: NonDeprecatedColumnType.Date, date: null },
         {
           __typename: 'TimelineValue' as const,
           id: 'sprint_timeline',
-          type: ColumnType.Timeline,
+          type: NonDeprecatedColumnType.Timeline,
           from: '2025-09-14T00:00:00Z',
           to: '2025-09-28T00:00:00Z',
         },
-        { __typename: 'DocValue' as const, id: 'sprint_summary', type: ColumnType.Doc, file: null },
+        { __typename: 'DocValue' as const, id: 'sprint_summary', type: NonDeprecatedColumnType.Doc, file: null },
       ],
     },
   ],
@@ -318,22 +318,22 @@ export const SPRINT_WITH_NULL_DOC_OBJECT_ID: GetSprintsByIdsQuery = {
       name: 'Sprint 3',
       board: { id: '123456789' },
       column_values: [
-        { __typename: 'BoardRelationValue' as const, id: 'sprint_tasks', type: ColumnType.BoardRelation },
-        { __typename: 'CheckboxValue' as const, id: 'sprint_activation', type: ColumnType.Checkbox, checked: true },
-        { __typename: 'CheckboxValue' as const, id: 'sprint_completion', type: ColumnType.Checkbox, checked: true },
-        { __typename: 'DateValue' as const, id: 'sprint_start_date', type: ColumnType.Date, date: '2025-01-01' },
-        { __typename: 'DateValue' as const, id: 'sprint_end_date', type: ColumnType.Date, date: '2025-01-14' },
+        { __typename: 'BoardRelationValue' as const, id: 'sprint_tasks', type: NonDeprecatedColumnType.BoardRelation },
+        { __typename: 'CheckboxValue' as const, id: 'sprint_activation', type: NonDeprecatedColumnType.Checkbox, checked: true },
+        { __typename: 'CheckboxValue' as const, id: 'sprint_completion', type: NonDeprecatedColumnType.Checkbox, checked: true },
+        { __typename: 'DateValue' as const, id: 'sprint_start_date', type: NonDeprecatedColumnType.Date, date: '2025-01-01' },
+        { __typename: 'DateValue' as const, id: 'sprint_end_date', type: NonDeprecatedColumnType.Date, date: '2025-01-14' },
         {
           __typename: 'TimelineValue' as const,
           id: 'sprint_timeline',
-          type: ColumnType.Timeline,
+          type: NonDeprecatedColumnType.Timeline,
           from: '2025-01-01T00:00:00Z',
           to: '2025-01-14T00:00:00Z',
         },
         {
           __typename: 'DocValue' as const,
           id: 'sprint_summary',
-          type: ColumnType.Doc,
+          type: NonDeprecatedColumnType.Doc,
           file: { doc: { object_id: null as any } },
         },
       ],
@@ -351,7 +351,7 @@ export const SPRINT_MISSING_COLUMNS: GetSprintsByIdsQuery = {
       name: 'Invalid Sprint',
       board: { id: '123456789' },
       column_values: [
-        { __typename: 'CheckboxValue' as const, id: 'sprint_activation', type: ColumnType.Checkbox, checked: true },
+        { __typename: 'CheckboxValue' as const, id: 'sprint_activation', type: NonDeprecatedColumnType.Checkbox, checked: true },
         // Missing other required columns
       ],
     },

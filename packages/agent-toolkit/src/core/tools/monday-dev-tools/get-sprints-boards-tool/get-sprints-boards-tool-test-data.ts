@@ -1,6 +1,6 @@
+import { NonDeprecatedColumnType } from 'src/utils/types';
 import {
   GetRecentBoardsQuery,
-  ColumnType,
 } from '../../../../monday-graphql/generated/graphql';
 
 /**
@@ -18,16 +18,16 @@ export const VALID_BOARD_PAIR_RESPONSE: GetRecentBoardsQuery = {
       columns: [
         {
           id: 'sprint_tasks',
-          type: ColumnType.BoardRelation,
+          type: NonDeprecatedColumnType.BoardRelation,
           settings: { boardIds: ['2001'] },
         },
-        { id: 'sprint_timeline', type: ColumnType.Timeline, settings: {} },
-        { id: 'sprint_completion', type: ColumnType.Checkbox, settings: {} },
-        { id: 'sprint_start_date', type: ColumnType.Date, settings: {} },
-        { id: 'sprint_end_date', type: ColumnType.Date, settings: {} },
-        { id: 'sprint_activation', type: ColumnType.Checkbox, settings: {} },
-        { id: 'sprint_summary', type: ColumnType.Doc, settings: {} },
-        { id: 'sprint_capacity', type: ColumnType.Text, settings: {} },
+        { id: 'sprint_timeline', type: NonDeprecatedColumnType.Timeline, settings: {} },
+        { id: 'sprint_completion', type: NonDeprecatedColumnType.Checkbox, settings: {} },
+        { id: 'sprint_start_date', type: NonDeprecatedColumnType.Date, settings: {} },
+        { id: 'sprint_end_date', type: NonDeprecatedColumnType.Date, settings: {} },
+        { id: 'sprint_activation', type: NonDeprecatedColumnType.Checkbox, settings: {} },
+        { id: 'sprint_summary', type: NonDeprecatedColumnType.Doc, settings: {} },
+        { id: 'sprint_capacity', type: NonDeprecatedColumnType.Text, settings: {} },
       ],
     },
     {
@@ -40,12 +40,12 @@ export const VALID_BOARD_PAIR_RESPONSE: GetRecentBoardsQuery = {
       columns: [
         {
           id: 'task_sprint',
-          type: ColumnType.BoardRelation,
+          type: NonDeprecatedColumnType.BoardRelation,
           settings: { boardIds: ['1001'] },
         },
-        { id: 'task_status', type: ColumnType.Status, settings: {} },
-        { id: 'task_epic', type: ColumnType.BoardRelation, settings: {} },
-        { id: 'task_estimation', type: ColumnType.Numbers, settings: {} },
+        { id: 'task_status', type: NonDeprecatedColumnType.Status, settings: {} },
+        { id: 'task_epic', type: NonDeprecatedColumnType.BoardRelation, settings: {} },
+        { id: 'task_estimation', type: NonDeprecatedColumnType.Numbers, settings: {} },
       ],
     },
   ],
@@ -67,16 +67,16 @@ export const MULTIPLE_BOARD_PAIRS_RESPONSE: GetRecentBoardsQuery = {
       columns: [
         {
           id: 'sprint_tasks',
-          type: ColumnType.BoardRelation,
+          type: NonDeprecatedColumnType.BoardRelation,
           settings: { boardIds: ['2001'] },
         },
-        { id: 'sprint_timeline', type: ColumnType.Timeline, settings: {} },
-        { id: 'sprint_completion', type: ColumnType.Checkbox, settings: {} },
-        { id: 'sprint_start_date', type: ColumnType.Date, settings: {} },
-        { id: 'sprint_end_date', type: ColumnType.Date, settings: {} },
-        { id: 'sprint_activation', type: ColumnType.Checkbox, settings: {} },
-        { id: 'sprint_summary', type: ColumnType.Doc, settings: {} },
-        { id: 'sprint_capacity', type: ColumnType.Text, settings: {} },
+        { id: 'sprint_timeline', type: NonDeprecatedColumnType.Timeline, settings: {} },
+        { id: 'sprint_completion', type: NonDeprecatedColumnType.Checkbox, settings: {} },
+        { id: 'sprint_start_date', type: NonDeprecatedColumnType.Date, settings: {} },
+        { id: 'sprint_end_date', type: NonDeprecatedColumnType.Date, settings: {} },
+        { id: 'sprint_activation', type: NonDeprecatedColumnType.Checkbox, settings: {} },
+        { id: 'sprint_summary', type: NonDeprecatedColumnType.Doc, settings: {} },
+        { id: 'sprint_capacity', type: NonDeprecatedColumnType.Text, settings: {} },
       ],
     },
     {
@@ -89,12 +89,12 @@ export const MULTIPLE_BOARD_PAIRS_RESPONSE: GetRecentBoardsQuery = {
       columns: [
         {
           id: 'task_sprint',
-          type: ColumnType.BoardRelation,
+          type: NonDeprecatedColumnType.BoardRelation,
           settings: { boardIds: ['1001'] },
         },
-        { id: 'task_status', type: ColumnType.Status, settings: {} },
-        { id: 'task_epic', type: ColumnType.BoardRelation, settings: {} },
-        { id: 'task_estimation', type: ColumnType.Numbers, settings: {} },
+        { id: 'task_status', type: NonDeprecatedColumnType.Status, settings: {} },
+        { id: 'task_epic', type: NonDeprecatedColumnType.BoardRelation, settings: {} },
+        { id: 'task_estimation', type: NonDeprecatedColumnType.Numbers, settings: {} },
       ],
     },
     // Second pair
@@ -108,16 +108,16 @@ export const MULTIPLE_BOARD_PAIRS_RESPONSE: GetRecentBoardsQuery = {
       columns: [
         {
           id: 'sprint_tasks',
-          type: ColumnType.BoardRelation,
+          type: NonDeprecatedColumnType.BoardRelation,
           settings: { boardIds: ['2002'] },
         },
-        { id: 'sprint_timeline', type: ColumnType.Timeline, settings: {} },
-        { id: 'sprint_completion', type: ColumnType.Checkbox, settings: {} },
-        { id: 'sprint_start_date', type: ColumnType.Date, settings: {} },
-        { id: 'sprint_end_date', type: ColumnType.Date, settings: {} },
-        { id: 'sprint_activation', type: ColumnType.Checkbox, settings: {} },
-        { id: 'sprint_summary', type: ColumnType.Doc, settings: {} },
-        { id: 'sprint_capacity', type: ColumnType.Text, settings: {} },
+        { id: 'sprint_timeline', type: NonDeprecatedColumnType.Timeline, settings: {} },
+        { id: 'sprint_completion', type: NonDeprecatedColumnType.Checkbox, settings: {} },
+        { id: 'sprint_start_date', type: NonDeprecatedColumnType.Date, settings: {} },
+        { id: 'sprint_end_date', type: NonDeprecatedColumnType.Date, settings: {} },
+        { id: 'sprint_activation', type: NonDeprecatedColumnType.Checkbox, settings: {} },
+        { id: 'sprint_summary', type: NonDeprecatedColumnType.Doc, settings: {} },
+        { id: 'sprint_capacity', type: NonDeprecatedColumnType.Text, settings: {} },
       ],
     },
     {
@@ -130,12 +130,12 @@ export const MULTIPLE_BOARD_PAIRS_RESPONSE: GetRecentBoardsQuery = {
       columns: [
         {
           id: 'task_sprint',
-          type: ColumnType.BoardRelation,
+          type: NonDeprecatedColumnType.BoardRelation,
           settings: { boardIds: ['1002'] },
         },
-        { id: 'task_status', type: ColumnType.Status, settings: {} },
-        { id: 'task_epic', type: ColumnType.BoardRelation, settings: {} },
-        { id: 'task_estimation', type: ColumnType.Numbers, settings: {} },
+        { id: 'task_status', type: NonDeprecatedColumnType.Status, settings: {} },
+        { id: 'task_epic', type: NonDeprecatedColumnType.BoardRelation, settings: {} },
+        { id: 'task_estimation', type: NonDeprecatedColumnType.Numbers, settings: {} },
       ],
     },
   ],
@@ -156,16 +156,16 @@ export const SPRINTS_BOARD_ONLY_RESPONSE: GetRecentBoardsQuery = {
       columns: [
         {
           id: 'sprint_tasks',
-          type: ColumnType.BoardRelation,
+          type: NonDeprecatedColumnType.BoardRelation,
           settings: { boardIds: ['2001'] }, // References board not in the list
         },
-        { id: 'sprint_timeline', type: ColumnType.Timeline, settings: {} },
-        { id: 'sprint_completion', type: ColumnType.Checkbox, settings: {} },
-        { id: 'sprint_start_date', type: ColumnType.Date, settings: {} },
-        { id: 'sprint_end_date', type: ColumnType.Date, settings: {} },
-        { id: 'sprint_activation', type: ColumnType.Checkbox, settings: {} },
-        { id: 'sprint_summary', type: ColumnType.Doc, settings: {} },
-        { id: 'sprint_capacity', type: ColumnType.Text, settings: {} },
+        { id: 'sprint_timeline', type: NonDeprecatedColumnType.Timeline, settings: {} },
+        { id: 'sprint_completion', type: NonDeprecatedColumnType.Checkbox, settings: {} },
+        { id: 'sprint_start_date', type: NonDeprecatedColumnType.Date, settings: {} },
+        { id: 'sprint_end_date', type: NonDeprecatedColumnType.Date, settings: {} },
+        { id: 'sprint_activation', type: NonDeprecatedColumnType.Checkbox, settings: {} },
+        { id: 'sprint_summary', type: NonDeprecatedColumnType.Doc, settings: {} },
+        { id: 'sprint_capacity', type: NonDeprecatedColumnType.Text, settings: {} },
       ],
     },
   ],
@@ -186,12 +186,12 @@ export const TASKS_BOARD_ONLY_RESPONSE: GetRecentBoardsQuery = {
       columns: [
         {
           id: 'task_sprint',
-          type: ColumnType.BoardRelation,
+          type: NonDeprecatedColumnType.BoardRelation,
           settings: { boardIds: ['1001'] }, // References board not in the list
         },
-        { id: 'task_status', type: ColumnType.Status, settings: {} },
-        { id: 'task_epic', type: ColumnType.BoardRelation, settings: {} },
-        { id: 'task_estimation', type: ColumnType.Numbers, settings: {} },
+        { id: 'task_status', type: NonDeprecatedColumnType.Status, settings: {} },
+        { id: 'task_epic', type: NonDeprecatedColumnType.BoardRelation, settings: {} },
+        { id: 'task_estimation', type: NonDeprecatedColumnType.Numbers, settings: {} },
       ],
     },
   ],
@@ -212,16 +212,16 @@ export const ALTERNATIVE_SETTINGS_FORMAT_RESPONSE: GetRecentBoardsQuery = {
       columns: [
         {
           id: 'sprint_tasks',
-          type: ColumnType.BoardRelation,
+          type: NonDeprecatedColumnType.BoardRelation,
           settings: { boardId: '2001' }, // Using boardId instead of boardIds
         },
-        { id: 'sprint_timeline', type: ColumnType.Timeline, settings: {} },
-        { id: 'sprint_completion', type: ColumnType.Checkbox, settings: {} },
-        { id: 'sprint_start_date', type: ColumnType.Date, settings: {} },
-        { id: 'sprint_end_date', type: ColumnType.Date, settings: {} },
-        { id: 'sprint_activation', type: ColumnType.Checkbox, settings: {} },
-        { id: 'sprint_summary', type: ColumnType.Doc, settings: {} },
-        { id: 'sprint_capacity', type: ColumnType.Text, settings: {} },
+        { id: 'sprint_timeline', type: NonDeprecatedColumnType.Timeline, settings: {} },
+        { id: 'sprint_completion', type: NonDeprecatedColumnType.Checkbox, settings: {} },
+        { id: 'sprint_start_date', type: NonDeprecatedColumnType.Date, settings: {} },
+        { id: 'sprint_end_date', type: NonDeprecatedColumnType.Date, settings: {} },
+        { id: 'sprint_activation', type: NonDeprecatedColumnType.Checkbox, settings: {} },
+        { id: 'sprint_summary', type: NonDeprecatedColumnType.Doc, settings: {} },
+        { id: 'sprint_capacity', type: NonDeprecatedColumnType.Text, settings: {} },
       ],
     },
     {
@@ -234,12 +234,12 @@ export const ALTERNATIVE_SETTINGS_FORMAT_RESPONSE: GetRecentBoardsQuery = {
       columns: [
         {
           id: 'task_sprint',
-          type: ColumnType.BoardRelation,
+          type: NonDeprecatedColumnType.BoardRelation,
           settings: { boardId: '1001' },
         },
-        { id: 'task_status', type: ColumnType.Status, settings: {} },
-        { id: 'task_epic', type: ColumnType.BoardRelation, settings: {} },
-        { id: 'task_estimation', type: ColumnType.Numbers, settings: {} },
+        { id: 'task_status', type: NonDeprecatedColumnType.Status, settings: {} },
+        { id: 'task_epic', type: NonDeprecatedColumnType.BoardRelation, settings: {} },
+        { id: 'task_estimation', type: NonDeprecatedColumnType.Numbers, settings: {} },
       ],
     },
   ],
@@ -257,16 +257,16 @@ export const BOARDS_WITHOUT_WORKSPACE_RESPONSE: GetRecentBoardsQuery = {
       columns: [
         {
           id: 'sprint_tasks',
-          type: ColumnType.BoardRelation,
+          type: NonDeprecatedColumnType.BoardRelation,
           settings: { boardIds: ['2001'] },
         },
-        { id: 'sprint_timeline', type: ColumnType.Timeline, settings: {} },
-        { id: 'sprint_completion', type: ColumnType.Checkbox, settings: {} },
-        { id: 'sprint_start_date', type: ColumnType.Date, settings: {} },
-        { id: 'sprint_end_date', type: ColumnType.Date, settings: {} },
-        { id: 'sprint_activation', type: ColumnType.Checkbox, settings: {} },
-        { id: 'sprint_summary', type: ColumnType.Doc, settings: {} },
-        { id: 'sprint_capacity', type: ColumnType.Text, settings: {} },
+        { id: 'sprint_timeline', type: NonDeprecatedColumnType.Timeline, settings: {} },
+        { id: 'sprint_completion', type: NonDeprecatedColumnType.Checkbox, settings: {} },
+        { id: 'sprint_start_date', type: NonDeprecatedColumnType.Date, settings: {} },
+        { id: 'sprint_end_date', type: NonDeprecatedColumnType.Date, settings: {} },
+        { id: 'sprint_activation', type: NonDeprecatedColumnType.Checkbox, settings: {} },
+        { id: 'sprint_summary', type: NonDeprecatedColumnType.Doc, settings: {} },
+        { id: 'sprint_capacity', type: NonDeprecatedColumnType.Text, settings: {} },
       ],
     },
     {
@@ -276,12 +276,12 @@ export const BOARDS_WITHOUT_WORKSPACE_RESPONSE: GetRecentBoardsQuery = {
       columns: [
         {
           id: 'task_sprint',
-          type: ColumnType.BoardRelation,
+          type: NonDeprecatedColumnType.BoardRelation,
           settings: { boardIds: ['1001'] },
         },
-        { id: 'task_status', type: ColumnType.Status, settings: {} },
-        { id: 'task_epic', type: ColumnType.BoardRelation, settings: {} },
-        { id: 'task_estimation', type: ColumnType.Numbers, settings: {} },
+        { id: 'task_status', type: NonDeprecatedColumnType.Status, settings: {} },
+        { id: 'task_epic', type: NonDeprecatedColumnType.BoardRelation, settings: {} },
+        { id: 'task_estimation', type: NonDeprecatedColumnType.Numbers, settings: {} },
       ],
     },
   ],
@@ -302,10 +302,10 @@ export const INVALID_BOARDS_RESPONSE: GetRecentBoardsQuery = {
       columns: [
         {
           id: 'sprint_tasks',
-          type: ColumnType.BoardRelation,
+          type: NonDeprecatedColumnType.BoardRelation,
           settings: { boardIds: ['2001'] },
         },
-        { id: 'sprint_timeline', type: ColumnType.Timeline, settings: {} },
+        { id: 'sprint_timeline', type: NonDeprecatedColumnType.Timeline, settings: {} },
         // Missing other required columns
       ],
     },
@@ -319,7 +319,7 @@ export const INVALID_BOARDS_RESPONSE: GetRecentBoardsQuery = {
       columns: [
         {
           id: 'task_sprint',
-          type: ColumnType.BoardRelation,
+          type: NonDeprecatedColumnType.BoardRelation,
           settings: { boardIds: ['1001'] },
         },
         // Missing task_epic and task_estimation
@@ -348,9 +348,9 @@ export const REGULAR_BOARDS_RESPONSE: GetRecentBoardsQuery = {
         name: 'General Workspace',
       },
       columns: [
-        { id: 'status', type: ColumnType.Status, settings: {} },
-        { id: 'owner', type: ColumnType.People, settings: {} },
-        { id: 'date', type: ColumnType.Date, settings: {} },
+        { id: 'status', type: NonDeprecatedColumnType.Status, settings: {} },
+        { id: 'owner', type: NonDeprecatedColumnType.People, settings: {} },
+        { id: 'date', type: NonDeprecatedColumnType.Date, settings: {} },
       ],
     },
     {
@@ -361,9 +361,9 @@ export const REGULAR_BOARDS_RESPONSE: GetRecentBoardsQuery = {
         name: 'Sales Workspace',
       },
       columns: [
-        { id: 'client_name', type: ColumnType.Text, settings: {} },
-        { id: 'deal_value', type: ColumnType.Numbers, settings: {} },
-        { id: 'stage', type: ColumnType.Status, settings: {} },
+        { id: 'client_name', type: NonDeprecatedColumnType.Text, settings: {} },
+        { id: 'deal_value', type: NonDeprecatedColumnType.Numbers, settings: {} },
+        { id: 'stage', type: NonDeprecatedColumnType.Status, settings: {} },
       ],
     },
   ],
