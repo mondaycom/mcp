@@ -15,7 +15,7 @@ export const searchSchema = {
   page: z.number().optional().default(1).describe('The page number to get. The default value is 1.'),
 
   // for boards and docs
-  workspaceIds: z.array(z.number()).optional().describe('The ids of the workspaces to search in. Pass if you want to search only in specific workspaces.'),
+  workspaceIds: z.array(z.number()).optional().describe('The ids of the workspaces to search in. [IMPORTANT] Only pass this param if user explicitly asked to search within specific workspaces.'),
 
 };
 
