@@ -52,7 +52,7 @@ export const boardInsightsToolSchema = {
     .array(
       z.object({
         columnId: z.string().describe('The id of the column to filter by'),
-        compareAttribute: z.string().optional().describe('The attribute to compare the value to'),
+        compareAttribute: z.string().optional().describe('The attribute to compare the value to. This is OPTIONAL property.'),
         compareValue: z
           .any()
           .describe(
@@ -110,7 +110,7 @@ export class BoardInsightsTool extends BaseMondayApiTool<typeof boardInsightsToo
     return (
       "This tool allows you to calculate insights about board's data by filtering, grouping and aggregating columns. For example, you can get the total number of items in a board, the number of items in each status, the number of items in each column, etc. " +
       "Use this tool when you need to get a summary of the board's data, for example, you want to know the total number of items in a board, the number of items in each status, the number of items in each column, etc." +
-      "[REQUIRED PRECONDITION]: Before using this tool, if you are not familiar with the board's structure (column IDs, column types, status labels, etc.), first use get_board_info to understand the board metadata. This is essential for constructing proper filters and knowing which columns are available."
+      "[REQUIRED PRECONDITION]: Before using this tool, if new columns were added to the board or if you are not familiar with the board's structure (column IDs, column types, status labels, etc.), first use get_board_info to understand the board metadata. This is essential for constructing proper filters and knowing which columns are available."
     );
   }
 

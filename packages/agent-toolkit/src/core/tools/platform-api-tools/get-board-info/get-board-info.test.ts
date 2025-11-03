@@ -1,5 +1,6 @@
 import { formatBoardInfo, BoardInfoData } from './helpers';
-import { State, BoardKind, WorkspaceKind, ColumnType } from '../../../../monday-graphql/generated/graphql';
+import { State, BoardKind, WorkspaceKind } from '../../../../monday-graphql/generated/graphql';
+import { NonDeprecatedColumnType } from 'src/utils/types';
 
 describe('formatBoardInfo - Simple Tests', () => {
   it('should format basic board information correctly', () => {
@@ -44,14 +45,14 @@ describe('formatBoardInfo - Simple Tests', () => {
           id: 'col_1',
           title: 'Task Name',
           description: 'The name of the task',
-          type: ColumnType.Text,
+          type: NonDeprecatedColumnType.Text,
           settings: { width: 200 },
         },
         {
           id: 'col_2',
           title: 'Status',
           description: undefined,
-          type: ColumnType.Status,
+          type: NonDeprecatedColumnType.Status,
           settings: {labels: ["Not Started", "In Progress", "Done"]},
         },
       ],
@@ -203,7 +204,7 @@ describe('formatBoardInfo - Simple Tests', () => {
       team_owners: [{ id: '1', name: 'Team', picture_url: 'pic.jpg' }],
       groups: [{ id: '1', title: 'Group' }],
       top_group: { id: '1' },
-      columns: [{ id: '1', title: 'Column', description: 'Test', type: ColumnType.Text, settings: {} }],
+      columns: [{ id: '1', title: 'Column', description: 'Test', type: NonDeprecatedColumnType.Text, settings: {} }],
       tags: [{ id: '1', name: 'tag' }],
     } as BoardInfoData;
 
@@ -255,14 +256,14 @@ describe('formatBoardInfo - Simple Tests', () => {
           id: 'main_col_1',
           title: 'Main Task Name',
           description: 'The name of the main task',
-          type: ColumnType.Text,
+          type: NonDeprecatedColumnType.Text,
           settings: { width: 200 },
         },
         {
           id: 'main_col_2',
           title: 'Main Status',
           description: undefined,
-          type: ColumnType.Status,
+          type: NonDeprecatedColumnType.Status,
           settings: { labels: ['Not Started', 'In Progress', 'Done'] },
         },
       ],
@@ -277,14 +278,14 @@ describe('formatBoardInfo - Simple Tests', () => {
           id: 'sub_col_1',
           title: 'Sub Task Name',
           description: 'The name of the sub task',
-          type: ColumnType.Text,
+          type: NonDeprecatedColumnType.Text,
           settings: { width: 150 },
         },
         {
           id: 'sub_col_2',
           title: 'Sub Priority',
           description: undefined,
-          type: ColumnType.Status,
+          type: NonDeprecatedColumnType.Status,
           settings: { labels: ['Low', 'Medium', 'High'] },
         },
       ],

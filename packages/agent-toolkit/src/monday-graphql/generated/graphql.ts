@@ -533,6 +533,8 @@ export type AppSubscriptionDetails = {
   discounts: Array<SubscriptionDiscount>;
   /** The date the the inactive subscription ended. Equals to null for active subscriptions */
   end_date?: Maybe<Scalars['String']['output']>;
+  /** The subscribed unit quantity. Null for feature-based plans */
+  max_units?: Maybe<Scalars['Int']['output']>;
   /** The monthly price of the product purchased in the given currency, after applying discounts */
   monthly_price: Scalars['Float']['output'];
   period_type: SubscriptionPeriodType;
@@ -730,9 +732,9 @@ export type AssignTeamOwnersResult = {
 /** Assignee filter for search queries */
 export type AssigneeInput = {
   /** List of person IDs to filter by */
-  personIds?: InputMaybe<Array<Scalars['ID']['input']>>;
+  person_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   /** List of team IDs to filter by */
-  teamIds?: InputMaybe<Array<Scalars['ID']['input']>>;
+  team_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
 };
 
 /** Text formatting attributes (bold, italic, links, colors, etc.) */
@@ -2628,6 +2630,8 @@ export type ExtendTrialPeriod = {
 export enum ExternalWidget {
   /** Battery widgets for progress tracking and completion status visualization. Displays progress bars, completion percentages, status indicators, and goal achievement metrics. Perfect for showing project completion, task progress, capacity utilization, and milestone tracking. */
   Battery = 'BATTERY',
+  /** Calendar widgets for timeline and schedule visualization. Displays date and timeline column data in a traditional calendar format, supporting time slots, color-coded events by board/group/status, and multi-board aggregation. Ideal for project scheduling, deadline tracking, event planning, and time-based workflow visualization. */
+  Calendar = 'CALENDAR',
   /** Chart widgets for visual data representation including pie charts, bar charts, line graphs, and column charts. Used to display trends, comparisons, distributions, and relationships between data points over time or categories. */
   Chart = 'CHART',
   /** Number widgets for displaying numeric metrics such as accumulated sums, averages, counts, totals, percentages. Ideal for showing single-value metrics, counters, calculated aggregations, and key performance indicators in a prominent numeric format. */
@@ -6864,16 +6868,15 @@ export type QueryRepliesArgs = {
 /** Root query type for the Dependencies service */
 export type QuerySearch_ItemsArgs = {
   assignee?: InputMaybe<AssigneeInput>;
-  boardId?: InputMaybe<Scalars['ID']['input']>;
+  board_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   boosts?: InputMaybe<BoostConfigurationInput>;
-  dateRange?: InputMaybe<SearchDateRangeInput>;
-  exactMatch?: InputMaybe<Scalars['Boolean']['input']>;
+  date_range?: InputMaybe<SearchDateRangeInput>;
+  exact_match?: InputMaybe<Scalars['Boolean']['input']>;
   query?: InputMaybe<Scalars['String']['input']>;
-  rerankingStrategy?: InputMaybe<RerankingStrategy>;
-  searchType: Search;
+  reranking_strategy?: InputMaybe<RerankingStrategy>;
   size: Scalars['Int']['input'];
   status?: InputMaybe<Scalars['String']['input']>;
-  workspaceIds?: InputMaybe<Array<Scalars['ID']['input']>>;
+  workspace_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
 };
 
 
@@ -7142,6 +7145,18 @@ export enum Search {
 
 /** Date range filter for search queries */
 export type SearchDateRangeInput = {
+  /** Filter items created after this date */
+  created_after?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
+  /** Filter items created before this date */
+  created_before?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
+  /** Filter items updated after this date */
+  updated_after?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
+  /** Filter items updated before this date */
+  updated_before?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
+};
+
+/** Date range filter for search queries */
+export type SearchDateRangeLegacyInput = {
   /** Filter items created after this date */
   createdAfter?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
   /** Filter items created before this date */
@@ -8552,7 +8567,7 @@ export type Widget = {
   __typename?: 'Widget';
   /** Unique identifier of this widget. */
   id?: Maybe<Scalars['ID']['output']>;
-  /** The type of widget (CHART, NUMBER, BATTERY). */
+  /** The type of widget (CHART, NUMBER, BATTERY, CALENDAR). */
   kind?: Maybe<ExternalWidget>;
   /** Widget label (UTF-8 chars). */
   name?: Maybe<Scalars['String']['output']>;
@@ -8910,6 +8925,13 @@ export type GetSprintsByIdsQueryVariables = Exact<{
 
 export type GetSprintsByIdsQuery = { __typename?: 'Query', items?: Array<{ __typename?: 'Item', id: string, name: string, board?: { __typename?: 'Board', id: string } | null, column_values: Array<{ __typename: 'BatteryValue', id: string, type: ColumnType } | { __typename: 'BoardRelationValue', id: string, type: ColumnType } | { __typename: 'ButtonValue', id: string, type: ColumnType } | { __typename: 'CheckboxValue', checked?: boolean | null, id: string, type: ColumnType } | { __typename: 'ColorPickerValue', id: string, type: ColumnType } | { __typename: 'CountryValue', id: string, type: ColumnType } | { __typename: 'CreationLogValue', id: string, type: ColumnType } | { __typename: 'DateValue', date?: string | null, id: string, type: ColumnType } | { __typename: 'DependencyValue', id: string, type: ColumnType } | { __typename: 'DirectDocValue', id: string, type: ColumnType } | { __typename: 'DocValue', id: string, type: ColumnType, file?: { __typename?: 'FileDocValue', doc: { __typename?: 'Document', object_id: string } } | null } | { __typename: 'DropdownValue', id: string, type: ColumnType } | { __typename: 'EmailValue', id: string, type: ColumnType } | { __typename: 'FileValue', id: string, type: ColumnType } | { __typename: 'FormulaValue', id: string, type: ColumnType } | { __typename: 'GroupValue', id: string, type: ColumnType } | { __typename: 'HourValue', id: string, type: ColumnType } | { __typename: 'IntegrationValue', id: string, type: ColumnType } | { __typename: 'ItemIdValue', id: string, type: ColumnType } | { __typename: 'LastUpdatedValue', id: string, type: ColumnType } | { __typename: 'LinkValue', id: string, type: ColumnType } | { __typename: 'LocationValue', id: string, type: ColumnType } | { __typename: 'LongTextValue', id: string, type: ColumnType } | { __typename: 'MirrorValue', id: string, type: ColumnType } | { __typename: 'NumbersValue', id: string, type: ColumnType } | { __typename: 'PeopleValue', id: string, type: ColumnType } | { __typename: 'PersonValue', id: string, type: ColumnType } | { __typename: 'PhoneValue', id: string, type: ColumnType } | { __typename: 'ProgressValue', id: string, type: ColumnType } | { __typename: 'RatingValue', id: string, type: ColumnType } | { __typename: 'StatusValue', id: string, type: ColumnType } | { __typename: 'SubtasksValue', id: string, type: ColumnType } | { __typename: 'TagsValue', id: string, type: ColumnType } | { __typename: 'TeamValue', id: string, type: ColumnType } | { __typename: 'TextValue', value?: any | null, id: string, type: ColumnType } | { __typename: 'TimeTrackingValue', id: string, type: ColumnType } | { __typename: 'TimelineValue', from?: any | null, to?: any | null, id: string, type: ColumnType } | { __typename: 'UnsupportedValue', id: string, type: ColumnType } | { __typename: 'VoteValue', id: string, type: ColumnType } | { __typename: 'WeekValue', id: string, type: ColumnType } | { __typename: 'WorldClockValue', id: string, type: ColumnType }> } | null> | null };
 
+export type GetRecentBoardsQueryVariables = Exact<{
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type GetRecentBoardsQuery = { __typename?: 'Query', boards?: Array<{ __typename?: 'Board', id: string, name: string, workspace?: { __typename?: 'Workspace', id?: string | null, name: string } | null, columns?: Array<{ __typename?: 'Column', id: string, type: ColumnType, settings?: any | null } | null> | null } | null> | null };
+
 export type GetSprintsBoardItemsWithColumnsQueryVariables = Exact<{
   boardId: Scalars['ID']['input'];
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -9075,7 +9097,7 @@ export type GetBoardItemsPageQuery = { __typename?: 'Query', boards?: Array<{ __
 
 export type SmartSearchBoardItemIdsQueryVariables = Exact<{
   searchTerm: Scalars['String']['input'];
-  boardId: Scalars['ID']['input'];
+  board_ids?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
 }>;
 
 
@@ -9178,6 +9200,33 @@ export type UpdateOverviewHierarchyMutationVariables = Exact<{
 
 
 export type UpdateOverviewHierarchyMutation = { __typename?: 'Mutation', update_overview_hierarchy?: { __typename?: 'UpdateOverviewHierarchy', success: boolean, message: string, overview?: { __typename?: 'Overview', id: string } | null } | null };
+
+export type GetBoardsQueryVariables = Exact<{
+  page: Scalars['Int']['input'];
+  limit: Scalars['Int']['input'];
+  workspace_ids?: InputMaybe<Array<InputMaybe<Scalars['ID']['input']>> | InputMaybe<Scalars['ID']['input']>>;
+}>;
+
+
+export type GetBoardsQuery = { __typename?: 'Query', boards?: Array<{ __typename?: 'Board', id: string, name: string, url: string } | null> | null };
+
+export type GetDocsQueryVariables = Exact<{
+  page: Scalars['Int']['input'];
+  limit: Scalars['Int']['input'];
+  workspace_ids?: InputMaybe<Array<InputMaybe<Scalars['ID']['input']>> | InputMaybe<Scalars['ID']['input']>>;
+}>;
+
+
+export type GetDocsQuery = { __typename?: 'Query', docs?: Array<{ __typename?: 'Document', id: string, name: string, url?: string | null } | null> | null };
+
+export type GetFoldersQueryVariables = Exact<{
+  page: Scalars['Int']['input'];
+  limit: Scalars['Int']['input'];
+  workspace_ids?: InputMaybe<Array<InputMaybe<Scalars['ID']['input']>> | InputMaybe<Scalars['ID']['input']>>;
+}>;
+
+
+export type GetFoldersQuery = { __typename?: 'Query', folders?: Array<{ __typename?: 'Folder', id: string, name: string } | null> | null };
 
 export type UpdateFolderMutationVariables = Exact<{
   folderId: Scalars['ID']['input'];

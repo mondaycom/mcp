@@ -1,0 +1,8 @@
+description = "Get a comprehensive summary of a monday.com sprint."
+prompt = """
+Please provide a comprehensive summary for the monday.com sprint.
+
+Sprint ID or details: {{args}}
+
+Use the `get_sprint_summary` tool. If the Sprint ID is missing, please ask for it.
+"""

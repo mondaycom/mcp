@@ -1,0 +1,11 @@
+description = "Analyze a monday.com board to provide insights."
+prompt = """
+Please analyze the monday.com board corresponding to this input: {{args}}
+
+Goal: Provide a summary of the board's data, such as total items, items per status, or other relevant aggregations.
+
+Steps:
+1. Identify the Board ID from the input. If not provided, ask for it. You can extract it from the board's url.
+2. If you are not familiar with the board's structure, use `get_board_info` first to understand available columns.
+3. Use the `board_insights` tool to calculate relevant insights based on the user's request or general best practices if no specific insight was requested.
+"""

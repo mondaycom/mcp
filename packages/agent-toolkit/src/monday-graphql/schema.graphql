@@ -772,23 +772,20 @@ type Query {
     """The search query string."""
     query: String
 
-    """The type of search to perform."""
-    searchType: Search!
-
     """Maximum number of results to return (max 100)."""
     size: Int!
 
     """Whether to perform exact match search."""
-    exactMatch: Boolean
+    exact_match: Boolean
 
     """Date range filter for created/updated dates."""
-    dateRange: SearchDateRangeInput
+    date_range: SearchDateRangeInput
 
-    """Filter results to a specific board ID."""
-    boardId: ID
+    """Filter results to specific board IDs."""
+    board_ids: [ID!]
 
     """Filter results to specific workspace IDs."""
-    workspaceIds: [ID!]
+    workspace_ids: [ID!]
 
     """Filter by assignee (person IDs and/or team IDs)."""
     assignee: AssigneeInput
@@ -802,7 +799,7 @@ type Query {
     boosts: BoostConfigurationInput
 
     """Reranking strategy to use for results."""
-    rerankingStrategy: RerankingStrategy
+    reranking_strategy: RerankingStrategy
   ): SearchItemsGraphQlResultsView
 
   """Get a collection of monday dev sprints"""
@@ -2717,7 +2714,7 @@ type Mutation {
     """Parent container for the widget (dashboard or board view)."""
     parent: WidgetParentInput!
 
-    """The kind of widget to create (i.e CHART, NUMBER, BATTERY)."""
+    """The kind of widget to create (i.e CHART, NUMBER, BATTERY, CALENDAR)."""
     kind: ExternalWidget!
 
     """The name of the widget."""
@@ -5577,6 +5574,9 @@ type AppSubscriptionDetails {
 
   """The number of days left until the subscription ends"""
   days_left: Int!
+
+  """The subscribed unit quantity. Null for feature-based plans"""
+  max_units: Int
 }
 
 type AppSubscriptions {
@@ -9599,10 +9599,10 @@ enum AggregateSelectFunctionName {
 """Assignee filter for search queries"""
 input AssigneeInput {
   """List of person IDs to filter by"""
-  personIds: [ID!]
+  person_ids: [ID!]
 
   """List of team IDs to filter by"""
-  teamIds: [ID!]
+  team_ids: [ID!]
 }
 
 """
@@ -9644,6 +9644,21 @@ enum Search {
 
 """Date range filter for search queries"""
 input SearchDateRangeInput {
+  """Filter items created before this date"""
+  created_before: ISO8601DateTime
+
+  """Filter items created after this date"""
+  created_after: ISO8601DateTime
+
+  """Filter items updated before this date"""
+  updated_before: ISO8601DateTime
+
+  """Filter items updated after this date"""
+  updated_after: ISO8601DateTime
+}
+
+"""Date range filter for search queries"""
+input SearchDateRangeLegacyInput {
   """Filter items created before this date"""
   createdBefore: ISO8601DateTime
 
@@ -10178,6 +10193,11 @@ enum ExternalWidget {
   Battery widgets for progress tracking and completion status visualization. Displays progress bars, completion percentages, status indicators, and goal achievement metrics. Perfect for showing project completion, task progress, capacity utilization, and milestone tracking.
   """
   BATTERY
+
+  """
+  Calendar widgets for timeline and schedule visualization. Displays date and timeline column data in a traditional calendar format, supporting time slots, color-coded events by board/group/status, and multi-board aggregation. Ideal for project scheduling, deadline tracking, event planning, and time-based workflow visualization.
+  """
+  CALENDAR
 }
 
 """Data visualization object."""
@@ -10188,7 +10208,7 @@ type Widget {
   """Parent container where the widget is placed."""
   parent: WidgetParentOutput
 
-  """The type of widget (CHART, NUMBER, BATTERY)."""
+  """The type of widget (CHART, NUMBER, BATTERY, CALENDAR)."""
   kind: ExternalWidget
 
   """Widget label (UTF-8 chars)."""

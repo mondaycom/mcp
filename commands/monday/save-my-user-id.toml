@@ -1,0 +1,9 @@
+description = "Fetches the current monday.com user ID and saves it to long-term memory."
+prompt = """
+I need you to find and remember my monday.com User ID.
+
+Please execute the following steps:
+1. Use the `list_users_and_teams` tool with `{"getMe": true}` to find my user details.
+2. Once you have the response, extract the `id` field.
+3. Use the `save_memory` tool to save this exact fact: "My monday.com user ID is [THE_ID_YOU_FOUND]".
+"""
