@@ -8,6 +8,7 @@ import {
 import { createWidget } from './dashboard-queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+import { fallbackToStringifiedVersionIfNull } from '../../../../utils/microsoft-copilot.utils';
 
 export const createWidgetToolSchema = {
   parent_container_id: z
@@ -22,9 +23,11 @@ export const createWidgetToolSchema = {
     .describe('Widget display name (1-255 UTF-8 chars)'),
   settings: z
     .record(z.unknown())
+    .optional()
     .describe(
       'Widget-specific settings as JSON object conforming to widget schema. Use all_widgets_schema tool to get the required schema for each widget type.',
     ),
+  settingsStringified: z.string().optional().describe('**ONLY FOR MICROSOFT COPILOT**: The settings object. Send this as a stringified JSON of "settings" field. Read "settings" field description for details how to use it.')
 };
 
 export class CreateWidgetTool extends BaseMondayApiTool<typeof createWidgetToolSchema, never> {
@@ -61,6 +64,11 @@ export class CreateWidgetTool extends BaseMondayApiTool<typeof createWidgetToolS
   }
 
   protected async executeInternal(input: ToolInputType<typeof createWidgetToolSchema>): Promise<ToolOutputType<never>> {
+    fallbackToStringifiedVersionIfNull(input, 'settings', createWidgetToolSchema.settings);
+    if(!input.settings) {
+      throw new Error('You must pass either settings or settingsStringified parameter');
+    }
+    
     try {
       // Prepare GraphQL variables
       const variables: CreateWidgetMutationVariables = {

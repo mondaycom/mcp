@@ -13,14 +13,9 @@ export const updateFolderToolSchema = {
   parentFolderId: z.string().optional().describe('The ID of the new parent folder'),
   workspaceId: z.string().optional().describe('The ID of the workspace containing the folder'),
   accountProductId: z.string().optional().describe('The account product ID associated with the folder'),
-  position: z
-    .object({
-      object_id: z.string().describe('The ID of the object to position the folder relative to'),
-      object_type: z.nativeEnum(ObjectType).describe('The type of object to position the folder relative to'),
-      is_after: z.boolean().optional().describe('Whether to position the folder after the object'),
-    })
-    .optional()
-    .describe('The new position of the folder'),
+  position_object_id: z.string().optional().describe('The ID of the object to position the folder relative to. If this parameter is provided, position_object_type must be also provided.'),
+  position_object_type: z.nativeEnum(ObjectType).optional().describe('The type of object to position the folder relative to. If this parameter is provided, position_object_id must be also provided.'),
+  position_is_after: z.boolean().optional().describe('Whether to position the folder after the object'),
 };
 
 export type UpdateFolderToolInput = typeof updateFolderToolSchema;
@@ -44,6 +39,12 @@ export class UpdateFolderTool extends BaseMondayApiTool<UpdateFolderToolInput> {
   }
 
   protected async executeInternal(input: ToolInputType<UpdateFolderToolInput>): Promise<ToolOutputType<never>> {
+    const { position_object_id, position_object_type, position_is_after } = input;
+    
+    if (!!position_object_id !== !!position_object_type) {
+      throw new Error('position_object_id and position_object_type must be provided together');
+    }
+    
     const variables = {
       folderId: input.folderId,
       name: input.name,
@@ -53,7 +54,11 @@ export class UpdateFolderTool extends BaseMondayApiTool<UpdateFolderToolInput> {
       parentFolderId: input.parentFolderId,
       workspaceId: input.workspaceId,
       accountProductId: input.accountProductId,
-      position: input.position,
+      position: !position_object_id ? undefined : {
+        position_is_after,
+        position_object_id,
+        position_object_type
+      },
     };
 
     const res = await this.mondayApi.request<{ update_folder: { id: string } }>(updateFolder, variables);

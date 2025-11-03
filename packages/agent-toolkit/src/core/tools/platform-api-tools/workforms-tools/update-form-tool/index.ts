@@ -3,6 +3,7 @@ import { ToolInputType, ToolOutputType, ToolType } from '../../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../../base-monday-api-tool';
 import { FormActions, updateFormToolSchema } from './schema';
 import { UpdateFormToolHelpers } from '../utils/update-form-tool-helpers';
+import { fallbackToStringifiedVersionIfNull } from 'src/utils/microsoft-copilot.utils';
 
 export class UpdateFormTool extends BaseMondayApiTool<typeof updateFormToolSchema, never> {
   name = 'update_form';
@@ -64,6 +65,9 @@ export class UpdateFormTool extends BaseMondayApiTool<typeof updateFormToolSchem
         content: 'Received an invalid action for the update form tool.',
       };
     }
+
+    fallbackToStringifiedVersionIfNull(input, 'tag', updateFormToolSchema.tag);
+    fallbackToStringifiedVersionIfNull(input, 'form', updateFormToolSchema.form);
 
     return await handler(input);
   }

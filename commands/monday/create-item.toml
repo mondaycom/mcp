@@ -1,0 +1,12 @@
+description = "Create a new item in a monday.com board."
+prompt = """
+I want to create a new item in monday.com.
+
+Here is the input: {{args}}
+
+Please use the `create_item` tool.
+If any strictly required information (like Board ID or Item Name) is missing
+from the input, please ask for it before proceeding. If column values are
+provided in natural language, please try to map them to the board's actual
+columns (you might need to use `get_board_info` first if you don't know the column IDs).
+"""

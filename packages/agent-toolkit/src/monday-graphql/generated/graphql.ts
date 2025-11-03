@@ -533,6 +533,8 @@ export type AppSubscriptionDetails = {
   discounts: Array<SubscriptionDiscount>;
   /** The date the the inactive subscription ended. Equals to null for active subscriptions */
   end_date?: Maybe<Scalars['String']['output']>;
+  /** The subscribed unit quantity. Null for feature-based plans */
+  max_units?: Maybe<Scalars['Int']['output']>;
   /** The monthly price of the product purchased in the given currency, after applying discounts */
   monthly_price: Scalars['Float']['output'];
   period_type: SubscriptionPeriodType;
@@ -730,9 +732,9 @@ export type AssignTeamOwnersResult = {
 /** Assignee filter for search queries */
 export type AssigneeInput = {
   /** List of person IDs to filter by */
-  personIds?: InputMaybe<Array<Scalars['ID']['input']>>;
+  person_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   /** List of team IDs to filter by */
-  teamIds?: InputMaybe<Array<Scalars['ID']['input']>>;
+  team_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
 };
 
 /** Text formatting attributes (bold, italic, links, colors, etc.) */
@@ -1302,6 +1304,79 @@ export enum BoardsOrderBy {
 export type BoostConfigurationInput = {
   /** Boost strategies as key-value pairs (strategy: weight). Empty object {} disables all boosts. */
   boosts?: InputMaybe<Scalars['JSON']['input']>;
+};
+
+/** Reason for failure when status is Rejected or Failed */
+export enum BulkImportFailureReason {
+  /** The authorization failed. */
+  AuthorizationFailed = 'AUTHORIZATION_FAILED',
+  /** The board capacity exceeded. */
+  BoardCapacityExceeded = 'BOARD_CAPACITY_EXCEEDED',
+  /** An internal error occurred. */
+  InternalError = 'INTERNAL_ERROR',
+  /** The upload is invalid. */
+  InvalidUpload = 'INVALID_UPLOAD',
+  /** The permission was denied. */
+  PermissionDenied = 'PERMISSION_DENIED'
+}
+
+/** Initialization response for bulk import containing import ID and upload URL */
+export type BulkImportInit = {
+  __typename?: 'BulkImportInit';
+  /** The unique identifier of the bulk import operation */
+  import_id?: Maybe<Scalars['ID']['output']>;
+  /** The URL where the file should be uploaded for processing */
+  upload_url?: Maybe<Scalars['String']['output']>;
+};
+
+/** Item counts for a bulk import process */
+export type BulkImportItemCounts = {
+  __typename?: 'BulkImportItemCounts';
+  /** Number of items that have been created */
+  created?: Maybe<Scalars['Int']['output']>;
+  /** Number of valid items that failed during import execution */
+  failed?: Maybe<Scalars['Int']['output']>;
+  /** Number of items that failed validation */
+  invalid?: Maybe<Scalars['Int']['output']>;
+  /** Number of items that were skipped */
+  skipped?: Maybe<Scalars['Int']['output']>;
+  /** Total number of items submitted for import */
+  submitted?: Maybe<Scalars['Int']['output']>;
+  /** Number of items that have been updated */
+  updated?: Maybe<Scalars['Int']['output']>;
+};
+
+/** Current state of the import process */
+export enum BulkImportState {
+  /** The import is completed. */
+  Completed = 'COMPLETED',
+  /** The import is failed. */
+  Failed = 'FAILED',
+  /** The import is processing. */
+  Processing = 'PROCESSING',
+  /** The import is rejected. */
+  Rejected = 'REJECTED',
+  /** The upload is pending. */
+  UploadPending = 'UPLOAD_PENDING'
+}
+
+/** Status information for a bulk import process */
+export type BulkImportStatus = {
+  __typename?: 'BulkImportStatus';
+  /** Item counts breakdown for the import process */
+  counts?: Maybe<BulkImportItemCounts>;
+  /** Reason for failure when status is Rejected or Failed */
+  failure_reason?: Maybe<BulkImportFailureReason>;
+  /** Indicates if the upload is completely done */
+  fully_imported?: Maybe<Scalars['Boolean']['output']>;
+  /** Progress percentage (0-100) of the import process */
+  progress_percentage?: Maybe<Scalars['Int']['output']>;
+  /** Indicates if a report file has been generated */
+  report_created?: Maybe<Scalars['Boolean']['output']>;
+  /** URL to download the import report, valid for 10 minutes */
+  report_url?: Maybe<Scalars['String']['output']>;
+  /** Current state of the import process */
+  status?: Maybe<BulkImportState>;
 };
 
 export type ButtonValue = ColumnValue & {
@@ -2555,6 +2630,8 @@ export type ExtendTrialPeriod = {
 export enum ExternalWidget {
   /** Battery widgets for progress tracking and completion status visualization. Displays progress bars, completion percentages, status indicators, and goal achievement metrics. Perfect for showing project completion, task progress, capacity utilization, and milestone tracking. */
   Battery = 'BATTERY',
+  /** Calendar widgets for timeline and schedule visualization. Displays date and timeline column data in a traditional calendar format, supporting time slots, color-coded events by board/group/status, and multi-board aggregation. Ideal for project scheduling, deadline tracking, event planning, and time-based workflow visualization. */
+  Calendar = 'CALENDAR',
   /** Chart widgets for visual data representation including pie charts, bar charts, line graphs, and column charts. Used to display trends, comparisons, distributions, and relationships between data points over time or categories. */
   Chart = 'CHART',
   /** Number widgets for displaying numeric metrics such as accumulated sums, averages, counts, totals, percentages. Ideal for showing single-value metrics, counters, calculated aggregations, and key performance indicators in a prominent numeric format. */
@@ -4310,6 +4387,8 @@ export type Mutation = {
   assign_team_owners?: Maybe<AssignTeamOwnersResult>;
   /** Extends trial period of an application to selected accounts */
   batch_extend_trial_period?: Maybe<BatchExtendTrialPeriod>;
+  /** Initialize bulk import for a board and group. Returns import ID and upload URL to begin the process. */
+  bulk_import_items?: Maybe<BulkImportInit>;
   /** Change a column's properties */
   change_column_metadata?: Maybe<Column>;
   /** Change a column's title */
@@ -4705,6 +4784,13 @@ export type MutationBatch_Extend_Trial_PeriodArgs = {
   app_id: Scalars['ID']['input'];
   duration_in_days: Scalars['Int']['input'];
   plan_id: Scalars['String']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationBulk_Import_ItemsArgs = {
+  board_id: Scalars['ID']['input'];
+  group_id: Scalars['ID']['input'];
 };
 
 
@@ -5825,24 +5911,10 @@ export enum NoticeBoxTheme {
 /** A notification. */
 export type Notification = {
   __typename?: 'Notification';
-  /** The board that is associated with the notification. */
-  board?: Maybe<Board>;
-  /** The date and time the notification was created. */
-  created_at?: Maybe<Scalars['Date']['output']>;
-  /** The users who created the notification. */
-  creators: Array<User>;
   /** The notification's unique identifier. */
   id: Scalars['ID']['output'];
-  /** The item that is associated with the notification. */
-  item?: Maybe<Item>;
-  /** Whether the notification has been read. */
-  read: Scalars['Boolean']['output'];
   /** The notification text. */
   text?: Maybe<Scalars['String']['output']>;
-  /** The title of the notification. */
-  title?: Maybe<Scalars['String']['output']>;
-  /** The update that triggered the notification. */
-  update?: Maybe<Update>;
 };
 
 /** Represents notification settings configuration */
@@ -5878,6 +5950,29 @@ export enum NotificationTargetType {
   /** Item or Board. */
   Project = 'Project'
 }
+
+/** A notification. */
+export type NotificationV2 = {
+  __typename?: 'NotificationV2';
+  /** The board that is associated with the notification. */
+  board?: Maybe<Board>;
+  /** The date and time the notification was created. */
+  created_at?: Maybe<Scalars['Date']['output']>;
+  /** The users who created the notification. */
+  creators: Array<User>;
+  /** The unique identifier of the notification. */
+  id: Scalars['ID']['output'];
+  /** The item that is associated with the notification. */
+  item?: Maybe<Item>;
+  /** Whether the notification has been read. */
+  read: Scalars['Boolean']['output'];
+  /** The text content of the notification. */
+  text?: Maybe<Scalars['String']['output']>;
+  /** The title of the notification. */
+  title?: Maybe<Scalars['String']['output']>;
+  /** The update that triggered the notification. */
+  update?: Maybe<Update>;
+};
 
 /** Indicates where the unit symbol should be placed in a number value */
 export enum NumberValueUnitDirection {
@@ -6378,6 +6473,8 @@ export type Query = {
   board_candidates?: Maybe<Array<Board>>;
   /** Get a collection of boards. */
   boards?: Maybe<Array<Maybe<Board>>>;
+  /** Get the status of a bulk import items process */
+  bulk_import_items_status: BulkImportStatus;
   /** Get the complexity data of your queries. */
   complexity?: Maybe<Complexity>;
   /** Fetch a single connection by its unique ID. */
@@ -6428,7 +6525,7 @@ export type Query = {
   mute_board_settings?: Maybe<Array<BoardMuteSettings>>;
   /** Get next pages of board's items (rows) by cursor. */
   next_items_page: ItemsResponse;
-  notifications?: Maybe<Array<Notification>>;
+  notifications?: Maybe<Array<NotificationV2>>;
   /** Retrieves the current user's notification settings across all available channels. */
   notifications_settings?: Maybe<Array<NotificationSetting>>;
   /** Retrieves a list of available object types that can be created or queried. Each object type is uniquely identified by an 'object_type_unique_key'. This key is required for mutations like 'create_object' and for filtering in the 'objects' query. Use this query to discover what types of objects are available in the system (e.g., 'workflows', 'projects') and get their corresponding unique keys. The structure of unique key is 'app_slug::app_feature_slug'. */
@@ -6563,6 +6660,12 @@ export type QueryBoardsArgs = {
   page?: InputMaybe<Scalars['Int']['input']>;
   state?: InputMaybe<State>;
   workspace_ids?: InputMaybe<Array<InputMaybe<Scalars['ID']['input']>>>;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryBulk_Import_Items_StatusArgs = {
+  import_id: Scalars['ID']['input'];
 };
 
 
@@ -6765,16 +6868,15 @@ export type QueryRepliesArgs = {
 /** Root query type for the Dependencies service */
 export type QuerySearch_ItemsArgs = {
   assignee?: InputMaybe<AssigneeInput>;
-  boardId?: InputMaybe<Scalars['ID']['input']>;
+  board_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   boosts?: InputMaybe<BoostConfigurationInput>;
-  dateRange?: InputMaybe<SearchDateRangeInput>;
-  exactMatch?: InputMaybe<Scalars['Boolean']['input']>;
+  date_range?: InputMaybe<SearchDateRangeInput>;
+  exact_match?: InputMaybe<Scalars['Boolean']['input']>;
   query?: InputMaybe<Scalars['String']['input']>;
-  rerankingStrategy?: InputMaybe<RerankingStrategy>;
-  searchType: Search;
+  reranking_strategy?: InputMaybe<RerankingStrategy>;
   size: Scalars['Int']['input'];
   status?: InputMaybe<Scalars['String']['input']>;
-  workspaceIds?: InputMaybe<Array<Scalars['ID']['input']>>;
+  workspace_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
 };
 
 
@@ -7043,6 +7145,18 @@ export enum Search {
 
 /** Date range filter for search queries */
 export type SearchDateRangeInput = {
+  /** Filter items created after this date */
+  created_after?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
+  /** Filter items created before this date */
+  created_before?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
+  /** Filter items updated after this date */
+  updated_after?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
+  /** Filter items updated before this date */
+  updated_before?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
+};
+
+/** Date range filter for search queries */
+export type SearchDateRangeLegacyInput = {
   /** Filter items created after this date */
   createdAfter?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
   /** Filter items created before this date */
@@ -8453,7 +8567,7 @@ export type Widget = {
   __typename?: 'Widget';
   /** Unique identifier of this widget. */
   id?: Maybe<Scalars['ID']['output']>;
-  /** The type of widget (CHART, NUMBER, BATTERY). */
+  /** The type of widget (CHART, NUMBER, BATTERY, CALENDAR). */
   kind?: Maybe<ExternalWidget>;
   /** Widget label (UTF-8 chars). */
   name?: Maybe<Scalars['String']['output']>;
@@ -8804,6 +8918,66 @@ export enum __TypeKind {
   NonNull = 'NON_NULL'
 }
 
+export type GetSprintsByIdsQueryVariables = Exact<{
+  ids?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+}>;
+
+
+export type GetSprintsByIdsQuery = { __typename?: 'Query', items?: Array<{ __typename?: 'Item', id: string, name: string, board?: { __typename?: 'Board', id: string } | null, column_values: Array<{ __typename: 'BatteryValue', id: string, type: ColumnType } | { __typename: 'BoardRelationValue', id: string, type: ColumnType } | { __typename: 'ButtonValue', id: string, type: ColumnType } | { __typename: 'CheckboxValue', checked?: boolean | null, id: string, type: ColumnType } | { __typename: 'ColorPickerValue', id: string, type: ColumnType } | { __typename: 'CountryValue', id: string, type: ColumnType } | { __typename: 'CreationLogValue', id: string, type: ColumnType } | { __typename: 'DateValue', date?: string | null, id: string, type: ColumnType } | { __typename: 'DependencyValue', id: string, type: ColumnType } | { __typename: 'DirectDocValue', id: string, type: ColumnType } | { __typename: 'DocValue', id: string, type: ColumnType, file?: { __typename?: 'FileDocValue', doc: { __typename?: 'Document', object_id: string } } | null } | { __typename: 'DropdownValue', id: string, type: ColumnType } | { __typename: 'EmailValue', id: string, type: ColumnType } | { __typename: 'FileValue', id: string, type: ColumnType } | { __typename: 'FormulaValue', id: string, type: ColumnType } | { __typename: 'GroupValue', id: string, type: ColumnType } | { __typename: 'HourValue', id: string, type: ColumnType } | { __typename: 'IntegrationValue', id: string, type: ColumnType } | { __typename: 'ItemIdValue', id: string, type: ColumnType } | { __typename: 'LastUpdatedValue', id: string, type: ColumnType } | { __typename: 'LinkValue', id: string, type: ColumnType } | { __typename: 'LocationValue', id: string, type: ColumnType } | { __typename: 'LongTextValue', id: string, type: ColumnType } | { __typename: 'MirrorValue', id: string, type: ColumnType } | { __typename: 'NumbersValue', id: string, type: ColumnType } | { __typename: 'PeopleValue', id: string, type: ColumnType } | { __typename: 'PersonValue', id: string, type: ColumnType } | { __typename: 'PhoneValue', id: string, type: ColumnType } | { __typename: 'ProgressValue', id: string, type: ColumnType } | { __typename: 'RatingValue', id: string, type: ColumnType } | { __typename: 'StatusValue', id: string, type: ColumnType } | { __typename: 'SubtasksValue', id: string, type: ColumnType } | { __typename: 'TagsValue', id: string, type: ColumnType } | { __typename: 'TeamValue', id: string, type: ColumnType } | { __typename: 'TextValue', value?: any | null, id: string, type: ColumnType } | { __typename: 'TimeTrackingValue', id: string, type: ColumnType } | { __typename: 'TimelineValue', from?: any | null, to?: any | null, id: string, type: ColumnType } | { __typename: 'UnsupportedValue', id: string, type: ColumnType } | { __typename: 'VoteValue', id: string, type: ColumnType } | { __typename: 'WeekValue', id: string, type: ColumnType } | { __typename: 'WorldClockValue', id: string, type: ColumnType }> } | null> | null };
+
+export type GetRecentBoardsQueryVariables = Exact<{
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type GetRecentBoardsQuery = { __typename?: 'Query', boards?: Array<{ __typename?: 'Board', id: string, name: string, workspace?: { __typename?: 'Workspace', id?: string | null, name: string } | null, columns?: Array<{ __typename?: 'Column', id: string, type: ColumnType, settings?: any | null } | null> | null } | null> | null };
+
+export type GetSprintsBoardItemsWithColumnsQueryVariables = Exact<{
+  boardId: Scalars['ID']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type GetSprintsBoardItemsWithColumnsQuery = { __typename?: 'Query', boards?: Array<{ __typename?: 'Board', items_page: { __typename?: 'ItemsResponse', items: Array<{ __typename?: 'Item', id: string, name: string, column_values: Array<{ __typename: 'BatteryValue', id: string, type: ColumnType } | { __typename: 'BoardRelationValue', id: string, type: ColumnType } | { __typename: 'ButtonValue', id: string, type: ColumnType } | { __typename: 'CheckboxValue', checked?: boolean | null, id: string, type: ColumnType } | { __typename: 'ColorPickerValue', id: string, type: ColumnType } | { __typename: 'CountryValue', id: string, type: ColumnType } | { __typename: 'CreationLogValue', id: string, type: ColumnType } | { __typename: 'DateValue', date?: string | null, id: string, type: ColumnType } | { __typename: 'DependencyValue', id: string, type: ColumnType } | { __typename: 'DirectDocValue', id: string, type: ColumnType } | { __typename: 'DocValue', id: string, type: ColumnType, file?: { __typename?: 'FileDocValue', doc: { __typename?: 'Document', object_id: string } } | null } | { __typename: 'DropdownValue', id: string, type: ColumnType } | { __typename: 'EmailValue', id: string, type: ColumnType } | { __typename: 'FileValue', id: string, type: ColumnType } | { __typename: 'FormulaValue', id: string, type: ColumnType } | { __typename: 'GroupValue', id: string, type: ColumnType } | { __typename: 'HourValue', id: string, type: ColumnType } | { __typename: 'IntegrationValue', id: string, type: ColumnType } | { __typename: 'ItemIdValue', id: string, type: ColumnType } | { __typename: 'LastUpdatedValue', id: string, type: ColumnType } | { __typename: 'LinkValue', id: string, type: ColumnType } | { __typename: 'LocationValue', id: string, type: ColumnType } | { __typename: 'LongTextValue', id: string, type: ColumnType } | { __typename: 'MirrorValue', id: string, type: ColumnType } | { __typename: 'NumbersValue', id: string, type: ColumnType } | { __typename: 'PeopleValue', id: string, type: ColumnType } | { __typename: 'PersonValue', id: string, type: ColumnType } | { __typename: 'PhoneValue', id: string, type: ColumnType } | { __typename: 'ProgressValue', id: string, type: ColumnType } | { __typename: 'RatingValue', id: string, type: ColumnType } | { __typename: 'StatusValue', id: string, type: ColumnType } | { __typename: 'SubtasksValue', id: string, type: ColumnType } | { __typename: 'TagsValue', id: string, type: ColumnType } | { __typename: 'TeamValue', id: string, type: ColumnType } | { __typename: 'TextValue', value?: any | null, id: string, type: ColumnType } | { __typename: 'TimeTrackingValue', id: string, type: ColumnType } | { __typename: 'TimelineValue', from?: any | null, to?: any | null, id: string, type: ColumnType } | { __typename: 'UnsupportedValue', id: string, type: ColumnType } | { __typename: 'VoteValue', id: string, type: ColumnType } | { __typename: 'WeekValue', id: string, type: ColumnType } | { __typename: 'WorldClockValue', id: string, type: ColumnType }> }> } } | null> | null };
+
+export type AggregateBoardInsightsQueryVariables = Exact<{
+  query: AggregateQueryInput;
+}>;
+
+
+export type AggregateBoardInsightsQuery = { __typename?: 'Query', aggregate?: { __typename?: 'AggregateQueryResult', results?: Array<{ __typename?: 'AggregateResultSet', entries?: Array<{ __typename?: 'AggregateResultEntry', alias?: string | null, value?: { __typename?: 'AggregateBasicAggregationResult', result?: number | null } | { __typename?: 'AggregateGroupByResult', value_string?: string | null, value_int?: number | null, value_float?: number | null, value_boolean?: boolean | null } | null }> | null }> | null } | null };
+
+export type GetItemBoardQueryVariables = Exact<{
+  itemId: Scalars['ID']['input'];
+}>;
+
+
+export type GetItemBoardQuery = { __typename?: 'Query', items?: Array<{ __typename?: 'Item', id: string, board?: { __typename?: 'Board', id: string, columns?: Array<{ __typename?: 'Column', id: string, type: ColumnType } | null> | null } | null } | null> | null };
+
+export type CreateDocMutationVariables = Exact<{
+  location: CreateDocInput;
+}>;
+
+
+export type CreateDocMutation = { __typename?: 'Mutation', create_doc?: { __typename?: 'Document', id: string, url?: string | null, name: string } | null };
+
+export type AddContentToDocFromMarkdownMutationVariables = Exact<{
+  docId: Scalars['ID']['input'];
+  markdown: Scalars['String']['input'];
+  afterBlockId?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type AddContentToDocFromMarkdownMutation = { __typename?: 'Mutation', add_content_to_doc_from_markdown?: { __typename?: 'DocBlocksFromMarkdownResult', success: boolean, block_ids?: Array<string> | null, error?: string | null } | null };
+
+export type UpdateDocNameMutationVariables = Exact<{
+  docId: Scalars['ID']['input'];
+  name: Scalars['String']['input'];
+}>;
+
+
+export type UpdateDocNameMutation = { __typename?: 'Mutation', update_doc_name?: any | null };
+
 export type CreateFolderMutationVariables = Exact<{
   workspaceId: Scalars['ID']['input'];
   name: Scalars['String']['input'];
@@ -8923,7 +9097,7 @@ export type GetBoardItemsPageQuery = { __typename?: 'Query', boards?: Array<{ __
 
 export type SmartSearchBoardItemIdsQueryVariables = Exact<{
   searchTerm: Scalars['String']['input'];
-  boardId: Scalars['ID']['input'];
+  board_ids?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
 }>;
 
 
@@ -9005,6 +9179,7 @@ export type GetCurrentUserQuery = { __typename?: 'Query', me?: { __typename?: 'U
 
 export type ListWorkspacesQueryVariables = Exact<{
   limit: Scalars['Int']['input'];
+  page: Scalars['Int']['input'];
 }>;
 
 
@@ -9025,6 +9200,33 @@ export type UpdateOverviewHierarchyMutationVariables = Exact<{
 
 
 export type UpdateOverviewHierarchyMutation = { __typename?: 'Mutation', update_overview_hierarchy?: { __typename?: 'UpdateOverviewHierarchy', success: boolean, message: string, overview?: { __typename?: 'Overview', id: string } | null } | null };
+
+export type GetBoardsQueryVariables = Exact<{
+  page: Scalars['Int']['input'];
+  limit: Scalars['Int']['input'];
+  workspace_ids?: InputMaybe<Array<InputMaybe<Scalars['ID']['input']>> | InputMaybe<Scalars['ID']['input']>>;
+}>;
+
+
+export type GetBoardsQuery = { __typename?: 'Query', boards?: Array<{ __typename?: 'Board', id: string, name: string, url: string } | null> | null };
+
+export type GetDocsQueryVariables = Exact<{
+  page: Scalars['Int']['input'];
+  limit: Scalars['Int']['input'];
+  workspace_ids?: InputMaybe<Array<InputMaybe<Scalars['ID']['input']>> | InputMaybe<Scalars['ID']['input']>>;
+}>;
+
+
+export type GetDocsQuery = { __typename?: 'Query', docs?: Array<{ __typename?: 'Document', id: string, name: string, url?: string | null } | null> | null };
+
+export type GetFoldersQueryVariables = Exact<{
+  page: Scalars['Int']['input'];
+  limit: Scalars['Int']['input'];
+  workspace_ids?: InputMaybe<Array<InputMaybe<Scalars['ID']['input']>> | InputMaybe<Scalars['ID']['input']>>;
+}>;
+
+
+export type GetFoldersQuery = { __typename?: 'Query', folders?: Array<{ __typename?: 'Folder', id: string, name: string } | null> | null };
 
 export type UpdateFolderMutationVariables = Exact<{
   folderId: Scalars['ID']['input'];
@@ -9256,13 +9458,6 @@ export type GetBoardSchemaQueryVariables = Exact<{
 
 export type GetBoardSchemaQuery = { __typename?: 'Query', boards?: Array<{ __typename?: 'Board', groups?: Array<{ __typename?: 'Group', id: string, title: string } | null> | null, columns?: Array<{ __typename?: 'Column', id: string, type: ColumnType, title: string } | null> | null } | null> | null };
 
-export type GetUsersByNameQueryVariables = Exact<{
-  name?: InputMaybe<Scalars['String']['input']>;
-}>;
-
-
-export type GetUsersByNameQuery = { __typename?: 'Query', users?: Array<{ __typename?: 'User', id: string, name: string, title?: string | null } | null> | null };
-
 export type ChangeItemColumnValuesMutationVariables = Exact<{
   boardId: Scalars['ID']['input'];
   itemId: Scalars['ID']['input'];
@@ -9359,37 +9554,6 @@ export type FetchCustomActivityQueryVariables = Exact<{ [key: string]: never; }>
 
 
 export type FetchCustomActivityQuery = { __typename?: 'Query', custom_activity?: Array<{ __typename?: 'CustomActivity', color?: CustomActivityColor | null, icon_id?: CustomActivityIcon | null, id?: string | null, name?: string | null, type?: string | null }> | null };
-
-export type GetItemBoardQueryVariables = Exact<{
-  itemId: Scalars['ID']['input'];
-}>;
-
-
-export type GetItemBoardQuery = { __typename?: 'Query', items?: Array<{ __typename?: 'Item', id: string, board?: { __typename?: 'Board', id: string, columns?: Array<{ __typename?: 'Column', id: string, type: ColumnType } | null> | null } | null } | null> | null };
-
-export type CreateDocMutationVariables = Exact<{
-  location: CreateDocInput;
-}>;
-
-
-export type CreateDocMutation = { __typename?: 'Mutation', create_doc?: { __typename?: 'Document', id: string, url?: string | null, name: string } | null };
-
-export type AddContentToDocFromMarkdownMutationVariables = Exact<{
-  docId: Scalars['ID']['input'];
-  markdown: Scalars['String']['input'];
-  afterBlockId?: InputMaybe<Scalars['String']['input']>;
-}>;
-
-
-export type AddContentToDocFromMarkdownMutation = { __typename?: 'Mutation', add_content_to_doc_from_markdown?: { __typename?: 'DocBlocksFromMarkdownResult', success: boolean, block_ids?: Array<string> | null, error?: string | null } | null };
-
-export type UpdateDocNameMutationVariables = Exact<{
-  docId: Scalars['ID']['input'];
-  name: Scalars['String']['input'];
-}>;
-
-
-export type UpdateDocNameMutation = { __typename?: 'Mutation', update_doc_name?: any | null };
 
 export type ReadDocsQueryVariables = Exact<{
   ids?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;

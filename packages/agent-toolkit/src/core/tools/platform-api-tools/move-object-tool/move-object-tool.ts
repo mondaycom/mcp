@@ -9,14 +9,9 @@ import { UpdateBoardHierarchyMutation, UpdateFolderMutation } from 'src/monday-g
 export const moveObjectToolSchema = {
   objectType: z.nativeEnum(ObjectType).describe('The type of object to move'),
   id: z.string().describe('The ID of the object to move'),
-  position: z
-    .object({
-      object_id: z.string().describe('The ID of the object to position the object relative to'),
-      object_type: z.nativeEnum(ObjectType).describe('The type of object to position the object relative to'),
-      is_after: z.boolean().optional().describe('Whether to position the object after the object'),
-    })
-    .optional()
-    .describe('The new position of the object. Required if changing the position based on another object.'),
+  position_object_id: z.string().optional().describe('The ID of the object to position the object relative to. If this parameter is provided, position_object_type must be also provided.'),
+  position_object_type: z.nativeEnum(ObjectType).optional().describe('The type of object to position the object relative to. If this parameter is provided, position_object_id must be also provided.'),
+  position_is_after: z.boolean().optional().describe('Whether to position the object after the object'),
   parentFolderId: z
     .string()
     .optional()
@@ -54,8 +49,21 @@ export class MoveObjectTool extends BaseMondayApiTool<MoveObjectToolInput> {
   }
 
   private async executeUpdateFolder(input: ToolInputType<MoveObjectToolInput>): Promise<ToolOutputType<never>> {
-    const { id, position, parentFolderId, workspaceId, accountProductId } = input;
-    const variables = { folderId: id, position, parentFolderId, workspaceId, accountProductId };
+    const { id, position_object_id, position_object_type, position_is_after, parentFolderId, workspaceId, accountProductId } = input;
+    if (!!position_object_id !== !!position_object_type) {
+      throw new Error('position_object_id and position_object_type must be provided together');
+    }
+    const variables = { 
+      folderId: id, 
+      position: !position_object_id ? undefined : {
+        position_is_after,
+        position_object_id,
+        position_object_type
+      }, 
+      parentFolderId, 
+      workspaceId, 
+      accountProductId 
+    };
 
     const res = await this.mondayApi.request<UpdateFolderMutation>(updateFolder, variables);
 
@@ -65,11 +73,20 @@ export class MoveObjectTool extends BaseMondayApiTool<MoveObjectToolInput> {
   }
 
   private async executeUpdateBoardHierarchy(input: ToolInputType<MoveObjectToolInput>): Promise<ToolOutputType<never>> {
-    const { id, position, parentFolderId, workspaceId, accountProductId } = input;
+    const { id, position_object_id, position_object_type, position_is_after, parentFolderId, workspaceId, accountProductId } = input;
+
+    if (!!position_object_id !== !!position_object_type) {
+      throw new Error('position_object_id and position_object_type must be provided together');
+    }
+
     const variables = {
       boardId: id,
       attributes: {
-        position,
+        position: !position_object_id ? undefined : {
+          position_is_after,
+          position_object_id,
+          position_object_type
+        },
         folder_id: parentFolderId,
         workspace_id: workspaceId,
         account_product_id: accountProductId,
@@ -90,11 +107,20 @@ export class MoveObjectTool extends BaseMondayApiTool<MoveObjectToolInput> {
   private async executeUpdateOverviewHierarchy(
     input: ToolInputType<MoveObjectToolInput>,
   ): Promise<ToolOutputType<never>> {
-    const { id, position, parentFolderId, workspaceId, accountProductId } = input;
+    const { id, position_object_id, position_object_type, position_is_after, parentFolderId, workspaceId, accountProductId } = input;
+
+    if (!!position_object_id !== !!position_object_type) {
+      throw new Error('position_object_id and position_object_type must be provided together');
+    }
+
     const variables = {
       overviewId: id,
       attributes: {
-        position,
+        position: !position_object_id ? undefined : {
+          position_is_after,
+          position_object_id,
+          position_object_type
+        },
         folder_id: parentFolderId,
         workspace_id: workspaceId,
         account_product_id: accountProductId,

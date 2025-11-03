@@ -21,7 +21,7 @@ Before running the MCP server, make sure you have:
 ## ⚙️ Usage
 
 ```bash
-npx @mondaydotcomorg/monday-api-mcp -t abcd123
+npx @mondaydotcomorg/monday-api-mcp@latest -t abcd123
 ```
 
 The monday.com API token can also be provided via the `monday_token` environment variable.
@@ -43,7 +43,7 @@ The monday.com API token can also be provided via the `monday_token` environment
     "monday-api-mcp": {
       "command": "npx",
       "args": [
-        "@mondaydotcomorg/monday-api-mcp",
+        "@mondaydotcomorg/monday-api-mcp@latest",
         "-t",
         "abcd123"
       ]
@@ -62,7 +62,7 @@ The monday.com API token can also be provided via the `monday_token` environment
     "monday-api-mcp": {
       "command": "npx",
       "args": [
-        "@mondaydotcomorg/monday-api-mcp",
+        "@mondaydotcomorg/monday-api-mcp@latest",
         "-t",
         "abcd123"
       ],
@@ -80,7 +80,7 @@ The monday.com API token can also be provided via the `monday_token` environment
     "monday-api-mcp": {
       "command": "npx",
       "args": [
-        "@mondaydotcomorg/monday-api-mcp"
+        "@mondaydotcomorg/monday-api-mcp@latest"
       ],
       "env": {
         "monday_token": "abcd123"

@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { Tool } from '../core/tool';
 import { MondayAgentToolkitConfig } from '../core/monday-agent-toolkit';
+import { API_VERSION } from 'src/utils/version.utils';
 
 export class MondayAgentToolkit {
   private readonly mondayApi: ApiClient;
@@ -19,7 +20,7 @@ export class MondayAgentToolkit {
   constructor(config: MondayAgentToolkitConfig) {
     this.mondayApi = new ApiClient({
       token: config.mondayApiToken,
-      apiVersion: config.mondayApiVersion,
+      apiVersion: config.mondayApiVersion ?? API_VERSION,
       requestConfig: config.mondayApiRequestConfig,
     });
     this.mondayApiToken = config.mondayApiToken;

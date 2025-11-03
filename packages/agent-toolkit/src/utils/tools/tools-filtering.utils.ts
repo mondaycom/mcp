@@ -1,5 +1,5 @@
 import { ApiClient } from '@mondaydotcomorg/api';
-import { allGraphqlApiTools, allMondayAppsTools, Tool, ToolType } from '../../core';
+import { allGraphqlApiTools, allMondayAppsTools, allMondayDevTools, Tool, ToolType } from '../../core';
 import { ToolMode, ToolsConfiguration } from '../../core/monday-agent-toolkit';
 import { toolFactory } from './initializing.utils';
 import { MondayApiToolContext } from '../../core/tools/platform-api-tools/base-monday-api-tool';
@@ -12,7 +12,7 @@ export const getFilteredToolInstances = (
   if (config?.mode === ToolMode.APPS) {
     allToolConstructors = [...allMondayAppsTools];
   } else if (config?.mode === ToolMode.API || !config?.mode) {
-    allToolConstructors = [...allGraphqlApiTools];
+    allToolConstructors = [...allGraphqlApiTools, ...allMondayDevTools];
   }
 
   const allToolInstances = allToolConstructors.map((ctor) => toolFactory(ctor, instanceOptions));

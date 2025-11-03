@@ -3,6 +3,7 @@ import { BaseMondayApiTool, createMondayApiAnnotations } from '../../base-monday
 import { FormQuestionActions } from '../workforms.types';
 import { formQuestionsEditorToolSchema } from './schema';
 import { FormQuestionsEditorToolHelpers } from '../utils/form-questions-editor-tool-helpers';
+import { fallbackToStringifiedVersionIfNull } from 'src/utils/microsoft-copilot.utils';
 
 export class FormQuestionsEditorTool extends BaseMondayApiTool<typeof formQuestionsEditorToolSchema, never> {
   name = 'form_questions_editor';
@@ -43,7 +44,8 @@ export class FormQuestionsEditorTool extends BaseMondayApiTool<typeof formQuesti
         content: `Unknown action: ${input.action}`,
       };
     }
-
+    
+    fallbackToStringifiedVersionIfNull(input, 'question', formQuestionsEditorToolSchema.question);
     return await handler(input);
   }
 }
