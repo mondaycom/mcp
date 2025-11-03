@@ -1,5 +1,33 @@
 import { FormattedResponse, isExtendedTeam, UserTeam } from './types';
 
+// Type for optional field configuration: [fieldName, displayLabel, valueFormatter]
+type OptionalFieldConfig = [string, string, (value: any) => string | null];
+
+// Reusable formatter functions for common field types
+const formatters = {
+  // Boolean fields that default to false
+  boolean: (v: any): string | null => (v !== undefined ? `${v || false}` : null),
+  // Fields that are included if truthy
+  truthy: (v: any): string | null => (v ? `${v}` : null),
+  // Numeric fields that need null check
+  numeric: (v: any): string | null => (v !== undefined && v !== null ? `${v}` : null),
+};
+
+// Configuration for optional team member fields
+const optionalTeamMemberFields: OptionalFieldConfig[] = [
+  ['is_pending', 'Pending', formatters.boolean],
+  ['is_verified', 'Verified', formatters.boolean],
+  ['is_view_only', 'View Only', formatters.boolean],
+  ['join_date', 'Join Date', formatters.truthy],
+  ['last_activity', 'Last Activity', formatters.truthy],
+  ['location', 'Location', formatters.truthy],
+  ['mobile_phone', 'Mobile Phone', formatters.truthy],
+  ['phone', 'Phone', formatters.truthy],
+  ['photo_thumb', 'Photo Thumb', formatters.truthy],
+  ['time_zone_identifier', 'Timezone', formatters.truthy],
+  ['utc_hours_diff', 'UTC Hours Diff', formatters.numeric],
+];
+
 export const formatUsersAndTeams = (data: FormattedResponse): string => {
   const sections: string[] = [];
 
@@ -76,40 +104,15 @@ export const formatUsersAndTeams = (data: FormattedResponse): string => {
                   `Guest: ${user.is_guest || false}`,
                 ];
 
-                // Add optional fields if they exist in the user object
-                if ('is_pending' in user && user.is_pending !== undefined) {
-                  memberDetails.push(`Pending: ${user.is_pending || false}`);
-                }
-                if ('is_verified' in user && user.is_verified !== undefined) {
-                  memberDetails.push(`Verified: ${user.is_verified || false}`);
-                }
-                if ('is_view_only' in user && user.is_view_only !== undefined) {
-                  memberDetails.push(`View Only: ${user.is_view_only || false}`);
-                }
-                if ('join_date' in user && user.join_date) {
-                  memberDetails.push(`Join Date: ${user.join_date}`);
-                }
-                if ('last_activity' in user && user.last_activity) {
-                  memberDetails.push(`Last Activity: ${user.last_activity}`);
-                }
-                if ('location' in user && user.location) {
-                  memberDetails.push(`Location: ${user.location}`);
-                }
-                if ('mobile_phone' in user && user.mobile_phone) {
-                  memberDetails.push(`Mobile Phone: ${user.mobile_phone}`);
-                }
-                if ('phone' in user && user.phone) {
-                  memberDetails.push(`Phone: ${user.phone}`);
-                }
-                if ('photo_thumb' in user && user.photo_thumb) {
-                  memberDetails.push(`Photo Thumb: ${user.photo_thumb}`);
-                }
-                if ('time_zone_identifier' in user && user.time_zone_identifier) {
-                  memberDetails.push(`Timezone: ${user.time_zone_identifier}`);
-                }
-                if ('utc_hours_diff' in user && user.utc_hours_diff !== undefined && user.utc_hours_diff !== null) {
-                  memberDetails.push(`UTC Hours Diff: ${user.utc_hours_diff}`);
-                }
+                // Add optional fields if they exist and have values
+                optionalTeamMemberFields.forEach(([fieldName, displayLabel, formatter]) => {
+                  if (fieldName in user && (user as any)[fieldName] !== undefined) {
+                    const formattedValue = formatter((user as any)[fieldName]);
+                    if (formattedValue !== null) {
+                      memberDetails.push(`${displayLabel}: ${formattedValue}`);
+                    }
+                  }
+                });
 
                 sections.push(`    - ${memberDetails.join(', ')}`);
               }
