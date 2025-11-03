@@ -80,10 +80,11 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
       expect(result).toContain('Location: Tatooine');
       expect(result).toContain('Mobile Phone: +1234567890');
       expect(result).toContain('Phone: +1234567890');
+      expect(result).toContain('Photo Thumb: https://starwars.com/luke.jpg');
       expect(result).toContain('Timezone: Tatooine/Binary_Sunset');
       expect(result).toContain('UTC Hours Diff: -5');
       expect(result).toContain('Teams:');
-      expect(result).toContain('- ID: 1, Name: Rebel Alliance, Guest Team: false');
+      expect(result).toContain('- ID: 1, Name: Rebel Alliance, Guest Team: false, Picture URL: N/A');
 
       // Test teams section
       expect(result).toContain('Teams:');
@@ -483,6 +484,132 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
       expect(result).toContain('Jedi Council');
       // Should contain Teams: for user's team memberships, but only one instance (not a separate Teams section)
       expect(result.split('Teams:').length).toBe(2); // Only one "Teams:" for user's teams
+    });
+
+    it('should include all fields fetched from GraphQL in the formatted output', () => {
+      // This test ensures that all fields fetched in GraphQL fragments are included in the output
+      // Fields from UserDetailsFragment
+      const mockUser: FormattedResponse = {
+        users: [
+          {
+            id: '1',
+            name: 'Test User',
+            title: 'Developer',
+            email: 'test@example.com',
+            enabled: true,
+            is_admin: true,
+            is_guest: false,
+            is_pending: false,
+            is_verified: true,
+            is_view_only: false,
+            join_date: '2024-01-01',
+            last_activity: '2024-01-15',
+            location: 'San Francisco',
+            mobile_phone: '+1234567890',
+            phone: '+0987654321',
+            photo_thumb: 'https://example.com/photo.jpg',
+            time_zone_identifier: 'America/Los_Angeles',
+            utc_hours_diff: -8,
+            teams: [
+              {
+                id: '1',
+                name: 'Test Team',
+                is_guest: false,
+                picture_url: 'https://example.com/team.jpg',
+              },
+            ],
+          },
+        ],
+      };
+
+      const result = formatUsersAndTeams(mockUser);
+
+      // Verify all UserDetailsFragment fields are present
+      expect(result).toContain('ID: 1');
+      expect(result).toContain('Name: Test User');
+      expect(result).toContain('Email: test@example.com');
+      expect(result).toContain('Title: Developer');
+      expect(result).toContain('Enabled: true');
+      expect(result).toContain('Admin: true');
+      expect(result).toContain('Guest: false');
+      expect(result).toContain('Pending: false');
+      expect(result).toContain('Verified: true');
+      expect(result).toContain('View Only: false');
+      expect(result).toContain('Join Date: 2024-01-01');
+      expect(result).toContain('Last Activity: 2024-01-15');
+      expect(result).toContain('Location: San Francisco');
+      expect(result).toContain('Mobile Phone: +1234567890');
+      expect(result).toContain('Phone: +0987654321');
+      expect(result).toContain('Photo Thumb: https://example.com/photo.jpg');
+      expect(result).toContain('Timezone: America/Los_Angeles');
+      expect(result).toContain('UTC Hours Diff: -8');
+
+      // Verify UserTeamMembershipFragment fields are present
+      expect(result).toContain('Picture URL: https://example.com/team.jpg');
+    });
+
+    it('should include all team member fields when displaying teams with members', () => {
+      // This test ensures that all fields from TeamMemberFragment are included in team member display
+      const mockTeam: FormattedResponse = {
+        teams: [
+          {
+            id: '1',
+            name: 'Development Team',
+            is_guest: false,
+            picture_url: 'https://example.com/team.jpg',
+            owners: [
+              {
+                id: '1',
+                name: 'Team Lead',
+                email: 'lead@example.com',
+              },
+            ],
+            users: [
+              {
+                id: '2',
+                name: 'Developer',
+                email: 'dev@example.com',
+                title: 'Senior Developer',
+                is_admin: false,
+                is_guest: false,
+                is_pending: false,
+                is_verified: true,
+                is_view_only: false,
+                join_date: '2024-01-01',
+                last_activity: '2024-01-15',
+                location: 'Remote',
+                mobile_phone: '+1111111111',
+                phone: '+2222222222',
+                photo_thumb: 'https://example.com/dev.jpg',
+                time_zone_identifier: 'America/New_York',
+                utc_hours_diff: -5,
+              },
+            ],
+          },
+        ],
+      };
+
+      const result = formatUsersAndTeams(mockTeam);
+
+      // Verify all TeamMemberFragment fields are present in member display
+      expect(result).toContain('Members:');
+      expect(result).toContain('ID: 2');
+      expect(result).toContain('Name: Developer');
+      expect(result).toContain('Email: dev@example.com');
+      expect(result).toContain('Title: Senior Developer');
+      expect(result).toContain('Admin: false');
+      expect(result).toContain('Guest: false');
+      expect(result).toContain('Pending: false');
+      expect(result).toContain('Verified: true');
+      expect(result).toContain('View Only: false');
+      expect(result).toContain('Join Date: 2024-01-01');
+      expect(result).toContain('Last Activity: 2024-01-15');
+      expect(result).toContain('Location: Remote');
+      expect(result).toContain('Mobile Phone: +1111111111');
+      expect(result).toContain('Phone: +2222222222');
+      expect(result).toContain('Photo Thumb: https://example.com/dev.jpg');
+      expect(result).toContain('Timezone: America/New_York');
+      expect(result).toContain('UTC Hours Diff: -5');
     });
   });
 });

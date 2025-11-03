@@ -9153,7 +9153,7 @@ export type GetUserByNameQuery = { __typename?: 'Query', users?: Array<{ __typen
 export type GetCurrentUserQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetCurrentUserQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, name: string, title?: string | null, enabled: boolean, is_admin?: boolean | null, is_guest?: boolean | null } | null };
+export type GetCurrentUserQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, name: string, title?: string | null, enabled: boolean, is_admin?: boolean | null, is_guest?: boolean | null, photo_thumb?: string | null } | null };
 
 export type ListWorkspacesQueryVariables = Exact<{
   limit: Scalars['Int']['input'];

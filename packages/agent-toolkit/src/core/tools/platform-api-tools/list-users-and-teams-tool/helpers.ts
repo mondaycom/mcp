@@ -23,6 +23,7 @@ export const formatUsersAndTeams = (data: FormattedResponse): string => {
         sections.push(`  Location: ${user.location || 'N/A'}`);
         sections.push(`  Mobile Phone: ${user.mobile_phone || 'N/A'}`);
         sections.push(`  Phone: ${user.phone || 'N/A'}`);
+        sections.push(`  Photo Thumb: ${user.photo_thumb || 'N/A'}`);
         sections.push(`  Timezone: ${user.time_zone_identifier || 'N/A'}`);
         sections.push(`  UTC Hours Diff: ${user.utc_hours_diff || 'N/A'}`);
 
@@ -30,7 +31,9 @@ export const formatUsersAndTeams = (data: FormattedResponse): string => {
           sections.push(`  Teams:`);
           user.teams.forEach((team) => {
             if (team) {
-              sections.push(`    - ID: ${team.id}, Name: ${team.name}, Guest Team: ${team.is_guest || false}`);
+              sections.push(
+                `    - ID: ${team.id}, Name: ${team.name}, Guest Team: ${team.is_guest || false}, Picture URL: ${team.picture_url || 'N/A'}`,
+              );
             }
           });
         }
@@ -63,9 +66,52 @@ export const formatUsersAndTeams = (data: FormattedResponse): string => {
             sections.push(`  Members:`);
             team.users.forEach((user) => {
               if (user) {
-                sections.push(
-                  `    - ID: ${user.id}, Name: ${user.name}, Email: ${user.email}, Title: ${user.title || 'N/A'}, Admin: ${user.is_admin || false}, Guest: ${user.is_guest || false}`,
-                );
+                // Build member details line with all available fields
+                const memberDetails = [
+                  `ID: ${user.id}`,
+                  `Name: ${user.name}`,
+                  `Email: ${user.email}`,
+                  `Title: ${user.title || 'N/A'}`,
+                  `Admin: ${user.is_admin || false}`,
+                  `Guest: ${user.is_guest || false}`,
+                ];
+
+                // Add optional fields if they exist in the user object
+                if ('is_pending' in user && user.is_pending !== undefined) {
+                  memberDetails.push(`Pending: ${user.is_pending || false}`);
+                }
+                if ('is_verified' in user && user.is_verified !== undefined) {
+                  memberDetails.push(`Verified: ${user.is_verified || false}`);
+                }
+                if ('is_view_only' in user && user.is_view_only !== undefined) {
+                  memberDetails.push(`View Only: ${user.is_view_only || false}`);
+                }
+                if ('join_date' in user && user.join_date) {
+                  memberDetails.push(`Join Date: ${user.join_date}`);
+                }
+                if ('last_activity' in user && user.last_activity) {
+                  memberDetails.push(`Last Activity: ${user.last_activity}`);
+                }
+                if ('location' in user && user.location) {
+                  memberDetails.push(`Location: ${user.location}`);
+                }
+                if ('mobile_phone' in user && user.mobile_phone) {
+                  memberDetails.push(`Mobile Phone: ${user.mobile_phone}`);
+                }
+                if ('phone' in user && user.phone) {
+                  memberDetails.push(`Phone: ${user.phone}`);
+                }
+                if ('photo_thumb' in user && user.photo_thumb) {
+                  memberDetails.push(`Photo Thumb: ${user.photo_thumb}`);
+                }
+                if ('time_zone_identifier' in user && user.time_zone_identifier) {
+                  memberDetails.push(`Timezone: ${user.time_zone_identifier}`);
+                }
+                if ('utc_hours_diff' in user && user.utc_hours_diff !== undefined && user.utc_hours_diff !== null) {
+                  memberDetails.push(`UTC Hours Diff: ${user.utc_hours_diff}`);
+                }
+
+                sections.push(`    - ${memberDetails.join(', ')}`);
               }
             });
           }
