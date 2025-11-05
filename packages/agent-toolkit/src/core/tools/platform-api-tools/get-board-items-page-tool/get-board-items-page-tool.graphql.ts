@@ -1,7 +1,5 @@
 import { gql } from 'graphql-request';
 
-// TODO: Check if aggregation by person can return names
-
 export const getBoardItemsPage = gql`
   fragment ItemDataFragment on Item {
     id
