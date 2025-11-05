@@ -1,5 +1,7 @@
 import { gql } from 'graphql-request';
 
+// TODO: Check if aggregation by person can return names
+
 export const getBoardItemsPage = gql`
   fragment ItemDataFragment on Item {
     id
@@ -8,8 +10,24 @@ export const getBoardItemsPage = gql`
     updated_at
     column_values(ids: $columnIds) @include(if: $includeColumns) {
       id
+      type
       text
       value
+
+      ... on FormulaValue {
+        display_value
+      }
+
+      ... on BoardRelationValue {
+        linked_items {
+          id 
+          name
+          board {
+            id
+            name
+          }
+        }
+      }
     }
   }
   

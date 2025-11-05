@@ -1,10 +1,13 @@
 import { z } from 'zod';
 
-import { GetBoardItemsPageQuery, GetBoardItemsPageQueryVariables, ItemsOrderByDirection, ItemsQueryOperator, ItemsQueryRuleOperator, SmartSearchBoardItemIdsQuery, SmartSearchBoardItemIdsQueryVariables } from '../../../../monday-graphql/generated/graphql';
+import { BoardRelationValue, FormulaValue, GetBoardItemsPageQuery, GetBoardItemsPageQueryVariables, ItemsOrderByDirection, ItemsQueryOperator, ItemsQueryRuleOperator, SmartSearchBoardItemIdsQuery, SmartSearchBoardItemIdsQueryVariables } from '../../../../monday-graphql/generated/graphql';
 import { getBoardItemsPage, smartSearchGetBoardItemIds } from './get-board-items-page-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { fallbackToStringifiedVersionIfNull, STRINGIFIED_SUFFIX } from '../../../../utils/microsoft-copilot.utils';
+import { NonDeprecatedColumnType } from 'src/utils/types';
+
+const COLUMN_VALUE_NOT_SUPPORTED_MESSAGE = 'Column value type is not supported';
 
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 500;
@@ -15,6 +18,7 @@ type FiltersType = ToolInputType<GetBoardItemsPageToolInput>['filters'];
 const MAX_SUB_ITEM_LIMIT = 100;
 
 type Item = NonNullable<NonNullable<NonNullable<NonNullable<GetBoardItemsPageQuery['boards']>[0]>['items_page']>['items'][0]>;
+type ColumnValue = NonNullable<NonNullable<Item['column_values']>[0]>;
 type SubItem = NonNullable<NonNullable<Item['subitems']>[0]>;
 
 type GetBoardItemsPageResult = {
@@ -208,15 +212,28 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
     return itemResult;
   }
 
-  private getColumnValueData(cv: any): any {  
-    if (!cv.value) {  
-      return cv.text || null;  
+  private getColumnValueData(cv: ColumnValue): any {  
+
+    switch(cv.type) {      
+      case NonDeprecatedColumnType.BoardRelation:
+        return (cv as BoardRelationValue).linked_items;
+
+      case NonDeprecatedColumnType.Formula:
+        return (cv as FormulaValue).display_value;
+
+      case NonDeprecatedColumnType.Mirror:
+        return COLUMN_VALUE_NOT_SUPPORTED_MESSAGE;
+    }
+
+    // fallback logic for most column types
+    if (cv.text) {  
+      return cv.text;  
     }  
   
     try {  
       return JSON.parse(cv.value);  
     } catch {  
-      return cv.value  
+      return cv.value || null;
     }  
   }  
 
