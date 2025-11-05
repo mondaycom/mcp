@@ -10,6 +10,20 @@ import {
   ItemsOrderByDirection,
 } from 'src/monday-graphql/generated/graphql';
 import { DEFAULT_LIMIT } from './board-insights.consts';
+import { NonDeprecatedColumnType } from 'src/utils/types';
+
+// Helper function to create a mock board info response
+const createMockBoardInfoResponse = (boardId: number, peopleColumns: string[] = []) => ({
+  boards: [
+    {
+      id: boardId.toString(),
+      columns: peopleColumns.map((columnId) => ({
+        id: columnId,
+        type: NonDeprecatedColumnType.People,
+      })),
+    },
+  ],
+});
 
 describe('Board Insights Tool', () => {
   describe('Utility Functions', () => {
@@ -270,7 +284,7 @@ describe('Board Insights Tool', () => {
           aggregations: [{ columnId: 'status' }],
         };
 
-        const result = handleSelectAndGroupByElements(input as any);
+        const result = handleSelectAndGroupByElements(input as any, []);
 
         expect(result.selectElements).toEqual([
           {
@@ -294,7 +308,7 @@ describe('Board Insights Tool', () => {
           ],
         };
 
-        const result = handleSelectAndGroupByElements(input as any);
+        const result = handleSelectAndGroupByElements(input as any, []);
 
         expect(result.selectElements).toEqual([
           {
@@ -328,7 +342,7 @@ describe('Board Insights Tool', () => {
           limit: DEFAULT_LIMIT,
         };
 
-        const result = handleSelectAndGroupByElements(input as any);
+        const result = handleSelectAndGroupByElements(input as any, []);
 
         expect(result.selectElements).toEqual([
           {
@@ -363,7 +377,7 @@ describe('Board Insights Tool', () => {
           groupBy: ['status'],
         };
 
-        const result = handleSelectAndGroupByElements(input as any);
+        const result = handleSelectAndGroupByElements(input as any, []);
 
         expect(result.selectElements).toHaveLength(2);
         expect(result.selectElements[0]).toEqual({
@@ -387,7 +401,7 @@ describe('Board Insights Tool', () => {
           groupBy: ['status', 'priority'],
         };
 
-        const result = handleSelectAndGroupByElements(input as any);
+        const result = handleSelectAndGroupByElements(input as any, []);
 
         expect(result.selectElements).toHaveLength(3);
         expect(result.groupByElements).toEqual([{ column_id: 'status' }, { column_id: 'priority' }]);
@@ -420,7 +434,7 @@ describe('Board Insights Tool', () => {
           ],
         };
 
-        const result = handleSelectAndGroupByElements(input as any);
+        const result = handleSelectAndGroupByElements(input as any, []);
 
         expect(result.selectElements).toHaveLength(3);
         expect(result.selectElements[0].as).toBe('SUM_numbers_0');
@@ -443,11 +457,73 @@ describe('Board Insights Tool', () => {
           ],
         };
 
-        const result = handleSelectAndGroupByElements(input as any);
+        const result = handleSelectAndGroupByElements(input as any, []);
 
         expect(result.selectElements).toHaveLength(2);
         expect(result.selectElements[0].as).toBe('SUM_numbers_0');
         expect(result.selectElements[1].as).toBe('SUM_numbers_1');
+      });
+
+      it('should create LABEL select element for people columns in groupBy', () => {
+        const input = {
+          boardId: 123,
+          aggregations: [
+            {
+              columnId: 'item_id',
+              function: AggregateSelectFunctionName.Count,
+            },
+          ],
+          groupBy: ['person'],
+        };
+
+        const result = handleSelectAndGroupByElements(input as any, ['person']);
+
+        expect(result.selectElements).toHaveLength(3);
+        
+        // Should have the COUNT aggregation
+        expect(result.selectElements[0]).toEqual({
+          type: AggregateSelectElementType.Function,
+          function: {
+            function: AggregateSelectFunctionName.Count,
+            params: [
+              {
+                type: AggregateSelectElementType.Column,
+                column: { column_id: 'item_id' },
+                as: 'item_id',
+              },
+            ],
+          },
+          as: 'COUNT_item_id_0',
+        });
+
+        // Should have added a LABEL function for the people column
+        expect(result.selectElements[1]).toEqual({
+          type: AggregateSelectElementType.Function,
+          function: {
+            function: AggregateSelectFunctionName.Label,
+            params: [
+              {
+                type: AggregateSelectElementType.Column,
+                column: { column_id: 'person' },
+                as: 'person',
+              },
+            ],
+          },
+          as: 'LABEL_person_0',
+        });
+
+        // Should have added a column select for person (from groupBy)
+        expect(result.selectElements[2]).toEqual({
+          type: AggregateSelectElementType.Column,
+          column: { column_id: 'person' },
+          as: 'person',
+        });
+
+        // GroupBy should contain both person and the LABEL_person_0
+        expect(result.groupByElements).toEqual([
+          { column_id: 'person' },
+          { column_id: 'LABEL_person_0' },
+        ]);
       });
     });
   });
@@ -492,7 +568,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponse(createMockBoardInfoResponse(123456), true);
+      mocks.setResponse(mockResponse, true);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -536,7 +613,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponse(createMockBoardInfoResponse(123456), true);
+      mocks.setResponse(mockResponse, true);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -557,7 +635,7 @@ describe('Board Insights Tool', () => {
       expect(result.content).toContain('Board insights result (1 rows)');
       expect(result.content).toContain('"COUNT_item_id_0": 10');
 
-      const mockCall = mocks.getMockRequest().mock.calls[0];
+      const mockCall = mocks.getMockRequest().mock.calls[1];
       expect(mockCall[1].query.query).toEqual({
         rules: [
           {
@@ -587,7 +665,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponse(createMockBoardInfoResponse(123456), true);
+      mocks.setResponse(mockResponse, true);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -598,7 +677,7 @@ describe('Board Insights Tool', () => {
         filtersOperator: ItemsQueryOperator.And,
       });
 
-      const mockCall = mocks.getMockRequest().mock.calls[0];
+      const mockCall = mocks.getMockRequest().mock.calls[1];
       expect(mockCall[1].query.limit).toBe(5);
     });
 
@@ -609,7 +688,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponse(createMockBoardInfoResponse(123456), true);
+      mocks.setResponse(mockResponse, true);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -628,7 +708,8 @@ describe('Board Insights Tool', () => {
         aggregate: null,
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponse(createMockBoardInfoResponse(123456), true);
+      mocks.setResponse(mockResponse, true);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -674,7 +755,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponse(createMockBoardInfoResponse(123456), true);
+      mocks.setResponse(mockResponse, true);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -718,7 +800,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponse(createMockBoardInfoResponse(123456), true);
+      mocks.setResponse(mockResponse, true);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -753,7 +836,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponse(createMockBoardInfoResponse(123456), true);
+      mocks.setResponse(mockResponse, true);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -827,7 +911,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponse(createMockBoardInfoResponse(123456), true);
+      mocks.setResponse(mockResponse, true);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -874,7 +959,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponse(createMockBoardInfoResponse(123456), true);
+      mocks.setResponse(mockResponse, true);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -892,7 +978,7 @@ describe('Board Insights Tool', () => {
         limit: DEFAULT_LIMIT,
       });
 
-      const mockCall = mocks.getMockRequest().mock.calls[0];
+      const mockCall = mocks.getMockRequest().mock.calls[1];
       expect(mockCall[1].query.query).toEqual({
         order_by: [
           {
@@ -918,7 +1004,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponse(createMockBoardInfoResponse(123456), true);
+      mocks.setResponse(mockResponse, true);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -944,7 +1031,7 @@ describe('Board Insights Tool', () => {
         limit: DEFAULT_LIMIT,
       });
 
-      const mockCall = mocks.getMockRequest().mock.calls[0];
+      const mockCall = mocks.getMockRequest().mock.calls[1];
       expect(mockCall[1].query.query).toEqual({
         order_by: [
           {
@@ -973,7 +1060,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponse(createMockBoardInfoResponse(123456), true);
+      mocks.setResponse(mockResponse, true);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -998,7 +1086,7 @@ describe('Board Insights Tool', () => {
         limit: DEFAULT_LIMIT,
       });
 
-      const mockCall = mocks.getMockRequest().mock.calls[0];
+      const mockCall = mocks.getMockRequest().mock.calls[1];
       expect(mockCall[1].query.query).toEqual({
         rules: [
           {
@@ -1032,7 +1120,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponse(createMockBoardInfoResponse(123456), true);
+      mocks.setResponse(mockResponse, true);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -1053,7 +1142,7 @@ describe('Board Insights Tool', () => {
         limit: DEFAULT_LIMIT,
       });
 
-      const mockCall = mocks.getMockRequest().mock.calls[0];
+      const mockCall = mocks.getMockRequest().mock.calls[1];
       expect(mockCall[1].query.query.order_by[0].direction).toBe(ItemsOrderByDirection.Desc);
     });
 
@@ -1073,7 +1162,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponse(createMockBoardInfoResponse(123456), true);
+      mocks.setResponse(mockResponse, true);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -1126,7 +1216,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponse(createMockBoardInfoResponse(123456), true);
+      mocks.setResponse(mockResponse, true);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -1152,7 +1243,7 @@ describe('Board Insights Tool', () => {
       expect(result.content).toContain('Board insights result (1 rows)');
       expect(result.content).toContain('"COUNT_ITEMS_item_id_0": 15');
 
-      const mockCall = mocks.getMockRequest().mock.calls[0];
+      const mockCall = mocks.getMockRequest().mock.calls[1];
       expect(mockCall[1].query.query).toEqual({
         rules: [
           {
@@ -1211,7 +1302,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponse(createMockBoardInfoResponse(123456), true);
+      mocks.setResponse(mockResponse, true);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -1258,7 +1350,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponse(createMockBoardInfoResponse(123456), true);
+      mocks.setResponse(mockResponse, true);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -1281,7 +1374,7 @@ describe('Board Insights Tool', () => {
       expect(result.content).toContain('Board insights result (1 rows)');
       expect(result.content).toContain('"COUNT_item_id_0": 10');
 
-      const mockCall = mocks.getMockRequest().mock.calls[0];
+      const mockCall = mocks.getMockRequest().mock.calls[1];
       expect(mockCall[1].query.query).toEqual({
         rules: [
           {
@@ -1309,7 +1402,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponse(createMockBoardInfoResponse(123456), true);
+      mocks.setResponse(mockResponse, true);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -1331,7 +1425,7 @@ describe('Board Insights Tool', () => {
 
       expect(result.content).toContain('Board insights result (1 rows)');
 
-      const mockCall = mocks.getMockRequest().mock.calls[0];
+      const mockCall = mocks.getMockRequest().mock.calls[1];
       expect(mockCall[1].query.query).toEqual({
         order_by: [
           {
@@ -1356,7 +1450,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponse(createMockBoardInfoResponse(123456), true);
+      mocks.setResponse(mockResponse, true);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -1394,7 +1489,7 @@ describe('Board Insights Tool', () => {
       expect(result.content).toContain('"status": "Done"');
       expect(result.content).toContain('"COUNT_item_id_0": 8');
 
-      const mockCall = mocks.getMockRequest().mock.calls[0];
+      const mockCall = mocks.getMockRequest().mock.calls[1];
       expect(mockCall[1].query.query).toEqual({
         rules: [
           {
@@ -1444,7 +1539,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponse(createMockBoardInfoResponse(123456), true);
+      mocks.setResponse(mockResponse, true);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -1466,7 +1562,7 @@ describe('Board Insights Tool', () => {
       expect(result.content).toContain('"priority": "High"');
 
       // Should use priority, not status
-      const mockCall = mocks.getMockRequest().mock.calls[0];
+      const mockCall = mocks.getMockRequest().mock.calls[1];
       expect(mockCall[1].query.select).toEqual(
         expect.arrayContaining([
           expect.objectContaining({

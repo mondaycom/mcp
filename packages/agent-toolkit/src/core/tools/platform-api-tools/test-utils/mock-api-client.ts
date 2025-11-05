@@ -24,8 +24,12 @@ export function createMockApiClient() {
     mockApiClient,
     mockRequest,
 
-    setResponse: (data: any) => {
-      mockRequest.mockResolvedValue(data);
+    setResponse: (data: any, onlyOnce = false) => {
+      if(onlyOnce) {
+        mockRequest.mockResolvedValueOnce(data);
+      } else {
+        mockRequest.mockResolvedValue(data);
+      }
     },
 
     setError: (messageOrError: string | Error, path: string[] = []) => {
