@@ -21,7 +21,9 @@ export class PromoteAppTool extends BaseMondayAppsTool<typeof promoteAppSchema.s
     return promoteAppSchema.shape;
   }
 
-  async execute(input: ToolInputType<typeof promoteAppSchema.shape>): Promise<ToolOutputType<PromoteAppResponse>> {
+  protected async executeInternal(
+    input: ToolInputType<typeof promoteAppSchema.shape>,
+  ): Promise<ToolOutputType<PromoteAppResponse>> {
     try {
       const { appId, versionId } = input;
       const data = versionId ? { versionId } : undefined;

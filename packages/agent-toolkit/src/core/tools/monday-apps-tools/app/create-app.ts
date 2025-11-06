@@ -20,7 +20,9 @@ export class CreateAppTool extends BaseMondayAppsTool<typeof createPlainAppSchem
     return createPlainAppSchema.shape;
   }
 
-  async execute(input: ToolInputType<typeof createPlainAppSchema.shape>): Promise<ToolOutputType<CreateAppResponse>> {
+  protected async executeInternal(
+    input: ToolInputType<typeof createPlainAppSchema.shape>,
+  ): Promise<ToolOutputType<CreateAppResponse>> {
     try {
       const response = await this.executeApiRequest<CreateAppResponse>(HttpMethod.POST, API_ENDPOINTS.APPS.CREATE, {
         data: {

@@ -21,7 +21,9 @@ export class GetTunnelTokenTool extends BaseMondayAppsTool<typeof getTunnelToken
     return getTunnelTokenSchema.shape;
   }
 
-  async execute(input: ToolInputType<typeof getTunnelTokenSchema.shape>): Promise<ToolOutputType<TunnelTokenResponse>> {
+  protected async executeInternal(
+    input: ToolInputType<typeof getTunnelTokenSchema.shape>,
+  ): Promise<ToolOutputType<TunnelTokenResponse>> {
     try {
       const { appId } = input;
 

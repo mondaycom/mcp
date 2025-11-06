@@ -23,7 +23,7 @@ export class GetDeploymentStatusTool extends BaseMondayAppsTool<
     return getDeploymentStatusSchema.shape;
   }
 
-  async execute(
+  protected async executeInternal(
     input: ToolInputType<typeof getDeploymentStatusSchema.shape>,
   ): Promise<ToolOutputType<DeploymentStatusResponse>> {
     try {

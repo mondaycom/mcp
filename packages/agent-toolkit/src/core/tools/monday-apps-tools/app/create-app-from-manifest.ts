@@ -20,7 +20,9 @@ export class CreateAppFromManifestTool extends BaseMondayAppsTool<typeof createA
     return createAppSchema.shape;
   }
 
-  async execute(input: ToolInputType<typeof createAppSchema.shape>): Promise<ToolOutputType<CreateAppResponse>> {
+  protected async executeInternal(
+    input: ToolInputType<typeof createAppSchema.shape>,
+  ): Promise<ToolOutputType<CreateAppResponse>> {
     try {
       // Convert base64 to Blob for form data
       const manifestData = Buffer.from(input.manifestFile, 'base64');

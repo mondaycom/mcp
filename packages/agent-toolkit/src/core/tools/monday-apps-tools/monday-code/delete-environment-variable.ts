@@ -21,7 +21,9 @@ export class DeleteEnvironmentVariableTool extends BaseMondayAppsTool<typeof del
     return deleteEnvVarSchema.shape;
   }
 
-  async execute(input: ToolInputType<typeof deleteEnvVarSchema.shape>): Promise<ToolOutputType<EnvVarResponse>> {
+  protected async executeInternal(
+    input: ToolInputType<typeof deleteEnvVarSchema.shape>,
+  ): Promise<ToolOutputType<EnvVarResponse>> {
     try {
       const { appId, key } = input;
 

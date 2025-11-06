@@ -21,7 +21,9 @@ export class SetEnvironmentVariableTool extends BaseMondayAppsTool<typeof setEnv
     return setEnvVarSchema.shape;
   }
 
-  async execute(input: ToolInputType<typeof setEnvVarSchema.shape>): Promise<ToolOutputType<EnvVarResponse>> {
+  protected async executeInternal(
+    input: ToolInputType<typeof setEnvVarSchema.shape>,
+  ): Promise<ToolOutputType<EnvVarResponse>> {
     try {
       const { appId, key, value } = input;
 

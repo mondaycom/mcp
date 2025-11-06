@@ -24,7 +24,7 @@ export class RemoveAppStorageDataTool extends BaseMondayAppsTool<
     return removeAppStorageDataSchema.shape;
   }
 
-  async execute(
+  protected async executeInternal(
     input: ToolInputType<typeof removeAppStorageDataSchema.shape>,
   ): Promise<ToolOutputType<RemoveAppStorageDataResponse>> {
     try {
