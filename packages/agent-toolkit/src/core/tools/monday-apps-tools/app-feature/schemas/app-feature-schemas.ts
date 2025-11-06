@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { AppFeatureType } from '../../consts/apps.consts';
 import { MondayApiResponse } from '../../base-tool/base-monday-apps-tool';
 
 export interface AppFeature {
@@ -8,7 +9,7 @@ export interface AppFeature {
   app_feature_reference_id: number;
   source_app_feature_id: number | null;
   name: string;
-  type: string;
+  type: AppFeatureType | string;
   state: string;
   user_id: number;
   data: Record<string, any>;
@@ -23,7 +24,10 @@ export interface AppFeaturesResponse extends MondayApiResponse {
 
 export const getAppFeaturesSchema = z.object({
   appVersionId: z.number().describe('The ID of the app version to get features for'),
-  type: z.string().optional().describe('Filter by app feature type'),
+  type: z
+    .union([z.nativeEnum(AppFeatureType), z.string()])
+    .optional()
+    .describe('Filter by app feature type'),
 });
 
 export interface AppFeatureReference {
@@ -51,6 +55,6 @@ export const createAppFeatureSchema = z.object({
   appId: z.number().describe('The ID of the app'),
   appVersionId: z.number().describe('The ID of the app version'),
   name: z.string().describe('The name of the app feature'),
-  type: z.string().describe('The type of the app feature'),
+  type: z.union([z.nativeEnum(AppFeatureType), z.string()]).describe('The type of the app feature'),
   data: z.record(z.any()).optional().describe('Additional data for the app feature'),
 });
