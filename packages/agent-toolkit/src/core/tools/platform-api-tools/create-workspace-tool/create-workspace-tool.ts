@@ -3,7 +3,7 @@ import {
   CreateWorkspaceMutation,
   CreateWorkspaceMutationVariables,
   WorkspaceKind,
-} from '../../../../monday-graphql/generated/graphql';
+} from '../../../../monday-graphql/generated/graphql/graphql';
 import { createWorkspace } from './create-workspace-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';

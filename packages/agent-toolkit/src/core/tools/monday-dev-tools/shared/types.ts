@@ -5,7 +5,7 @@ import {
   TimelineValue,
   DocValue,
   GetRecentBoardsQuery,
-} from '../../../../monday-graphql/generated/graphql';
+} from '../../../../monday-graphql/generated/graphql/graphql';
 import type { MONDAY_DEV_TASK_COLUMN_IDS } from './constants';
 
 

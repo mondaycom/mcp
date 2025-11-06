@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { GetBoardInfoJustColumnsQuery, GetBoardInfoQuery, GetBoardInfoQueryVariables } from '../../../../monday-graphql/generated/graphql';
+import { GetBoardInfoJustColumnsQuery, GetBoardInfoQuery, GetBoardInfoQueryVariables } from '../../../../monday-graphql/generated/graphql/graphql';
 import { getBoardInfo, getBoardInfoJustColumns } from './get-board-info.graphql';
 import { BoardInfoData, BoardInfoJustColumnsData, formatBoardInfoAsJson } from './helpers';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';

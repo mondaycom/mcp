@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { updateWorkspace } from './update-workspace-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { WorkspaceKind } from 'src/monday-graphql/generated/graphql';
+import { WorkspaceKind } from 'src/monday-graphql/generated/graphql/graphql';
 
 export const updateWorkspaceToolSchema = {
   id: z.string().describe('The ID of the workspace to update'),

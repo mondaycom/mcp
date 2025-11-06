@@ -1,1 +1,6 @@
-schema: src/monday-graphql/schema.graphql
+projects:
+  api:
+    schema: ./src/monday-graphql/schema.graphql
+    documents:
+      - ./src/**/*.graphql
+      - ./src/**/*.graphql.ts

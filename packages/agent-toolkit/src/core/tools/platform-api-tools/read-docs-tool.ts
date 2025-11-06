@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { ReadDocsQuery, ReadDocsQueryVariables, DocsOrderBy } from '../../../monday-graphql/generated/graphql';
-import { readDocs, exportMarkdownFromDoc } from '../../../monday-graphql/queries.graphql';
+import { ReadDocsQuery, ReadDocsQueryVariables, DocsOrderBy } from 'src/monday-graphql/generated/graphql/graphql';
+import { readDocs, exportMarkdownFromDoc } from 'src/monday-graphql/queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
 

@@ -1,6 +1,9 @@
 import { z } from 'zod';
-import { MoveItemToGroupMutation, MoveItemToGroupMutationVariables } from '../../../monday-graphql/generated/graphql';
-import { moveItemToGroup } from '../../../monday-graphql/queries.graphql';
+import {
+  MoveItemToGroupMutation,
+  MoveItemToGroupMutationVariables,
+} from 'src/monday-graphql/generated/graphql/graphql';
+import { moveItemToGroup } from 'src/monday-graphql/queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
 

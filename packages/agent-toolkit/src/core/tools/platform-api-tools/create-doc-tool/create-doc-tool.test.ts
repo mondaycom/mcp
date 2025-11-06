@@ -1,7 +1,7 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
 import { createDocToolSchema } from './create-doc-tool';
-import { BoardKind } from 'src/monday-graphql';
+import { BoardKind } from 'src/monday-graphql/generated/graphql/graphql';
 import { z, ZodTypeAny } from 'zod';
 import { NonDeprecatedColumnType } from 'src/utils/types';
 

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { GetBoardSchemaQuery, GetBoardSchemaQueryVariables } from '../../../monday-graphql/generated/graphql';
+import { GetBoardSchemaQuery, GetBoardSchemaQueryVariables } from 'src/monday-graphql/generated/graphql/graphql';
 import { getBoardSchema } from '../../../monday-graphql/queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
