@@ -54,7 +54,6 @@ export const API_ENDPOINTS = {
       `${STORAGE_URL}/app/${appId}/account/${accountId}/records?term=${encodeURI(term)}`,
     EXPORT_DATA: (appId: number, accountId: number) =>
       `${STORAGE_URL}/app/${appId}/account/${accountId}/records/export`,
-    REMOVE_APP_DATA: (appId: number, accountId: number) => `${APPS_URL}/${appId}/accounts/${accountId}`,
   },
 
   CODE: {
