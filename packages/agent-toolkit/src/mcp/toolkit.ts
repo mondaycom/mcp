@@ -316,49 +316,4 @@ export class MondayAgentToolkit extends McpServer {
       isError: true,
     };
   }
-
-  /**
-   * Register a tool that requires input
-   */
-  private registerInputTool(tool: Tool<any, any>, inputSchema: any): void {
-    this.tool(tool.name, tool.getDescription(), inputSchema, async (args: any, _extra: any) => {
-      try {
-        const parsedArgs = z.object(inputSchema).safeParse(args);
-        if (!parsedArgs.success) {
-          throw new Error(`Invalid arguments: ${parsedArgs.error.message}`);
-        }
-
-        const res = await tool.execute(parsedArgs.data);
-        return this.formatToolResult(res.content);
-      } catch (error) {
-        return this.handleToolError(error, tool.name);
-      }
-    });
-  }
-
-  /**
-   * Format the tool result into the expected MCP format
-   */
-  private formatToolResult(content: string): CallToolResult {
-    return {
-      content: [{ type: 'text', text: content }],
-    };
-  }
-
-  /**
-   * Handle tool execution errors
-   */
-  private handleToolError(error: unknown, toolName: string): CallToolResult {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error(`Error executing tool ${toolName}:`, errorMessage);
-
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Failed to execute tool ${toolName}: ${errorMessage}`,
-        },
-      ],
-    };
-  }
 }
