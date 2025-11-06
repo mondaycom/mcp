@@ -1,0 +1,6 @@
+projects:
+  api:
+    schema: ./packages/agent-toolkit/src/monday-graphql/schema.graphql
+    documents:
+      - ./packages/agent-toolkit/src/**/*.graphql
+      - ./packages/agent-toolkit/src/**/*.graphql.ts
