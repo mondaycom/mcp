@@ -1,5 +1,5 @@
 projects:
-  api:
+  agent-toolkit:
     schema: ./packages/agent-toolkit/src/monday-graphql/schema.graphql
     documents:
       - ./packages/agent-toolkit/src/**/*.graphql
