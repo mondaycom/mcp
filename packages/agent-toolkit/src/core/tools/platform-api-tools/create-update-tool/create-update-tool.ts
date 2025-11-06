@@ -8,6 +8,7 @@ import {
 import { createUpdate } from './create-update.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+import { rethrowWithContext } from '../../../../utils';
 
 export const mentionSchema = z.object({
   id: z.string().describe('The ID of the entity to mention'),
@@ -85,18 +86,7 @@ export class CreateUpdateTool extends BaseMondayApiTool<typeof createUpdateToolS
         content: `Update ${res.create_update.id} successfully created on item ${input.itemId}`,
       };
     } catch (error) {
-      this.rethrowWrapped(error, 'create update');
+      rethrowWithContext(error, 'create update');
     }
-  }
-
-  private rethrowWrapped(error: unknown, operation: string): never {
-    const joinedErrors = (error as any)?.response?.errors?.map((e: any) => e.message)?.join(', ') ?? '';
-
-    if (joinedErrors) {
-      throw new Error(`Failed to ${operation}: ${joinedErrors}`);
-    }
-
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    throw new Error(`Failed to ${operation}: ${errorMessage}`);
   }
 }
