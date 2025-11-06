@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CreateItemMutation, CreateItemMutationVariables, DuplicateItemMutation, CreateSubitemMutation } from '../../../../monday-graphql/generated/graphql';
+import { CreateItemMutation, CreateItemMutationVariables, DuplicateItemMutation, CreateSubitemMutation } from '../../../../monday-graphql/generated/graphql/graphql';
 import { createItem } from '../../../../monday-graphql/queries.graphql';
 import { duplicateItem } from './duplicate-item.graphql';
 import { createSubitem } from './create-subitem.graphql';

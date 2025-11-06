@@ -26,6 +26,7 @@ type Documents = {
     "\n  mutation createGroup(\n    $boardId: ID!\n    $groupName: String!\n    $groupColor: String\n    $relativeTo: String\n    $positionRelativeMethod: PositionRelative\n  ) {\n    create_group(\n      board_id: $boardId\n      group_name: $groupName\n      group_color: $groupColor\n      relative_to: $relativeTo\n      position_relative_method: $positionRelativeMethod\n    ) {\n      id\n      title\n    }\n  }\n": typeof types.CreateGroupDocument,
     "\n  mutation createSubitem($parentItemId: ID!, $itemName: String!, $columnValues: JSON) {\n    create_subitem(parent_item_id: $parentItemId, item_name: $itemName, column_values: $columnValues) {\n      id\n      name\n      parent_item {\n        id\n      }\n    }\n  }\n": typeof types.CreateSubitemDocument,
     "\n  mutation duplicateItem($boardId: ID!, $itemId: ID!, $withUpdates: Boolean) {\n    duplicate_item(board_id: $boardId, item_id: $itemId, with_updates: $withUpdates) {\n      id\n      name\n    }\n  }\n": typeof types.DuplicateItemDocument,
+    "\n  mutation createUpdate($itemId: ID!, $body: String!, $mentionsList: [UpdateMention]) {\n    create_update(body: $body, item_id: $itemId, mentions_list: $mentionsList) {\n      id\n    }\n  }\n": typeof types.CreateUpdateDocument,
     "\n  mutation createWorkspace(\n    $name: String!\n    $workspaceKind: WorkspaceKind!\n    $description: String\n    $accountProductId: ID\n  ) {\n    create_workspace(\n      name: $name\n      kind: $workspaceKind\n      description: $description\n      account_product_id: $accountProductId\n    ) {\n      id\n    }\n  }\n": typeof types.CreateWorkspaceDocument,
     "\n  mutation CreateDashboard(\n    $name: String!\n    $workspace_id: ID!\n    $board_ids: [ID!]!\n    $kind: DashboardKind\n    $board_folder_id: ID\n  ) {\n    create_dashboard(\n      name: $name\n      workspace_id: $workspace_id\n      board_ids: $board_ids\n      kind: $kind\n      board_folder_id: $board_folder_id\n    ) {\n      id\n      name\n      workspace_id\n      kind\n      board_folder_id\n    }\n  }\n": typeof types.CreateDashboardDocument,
     "\n  query GetAllWidgetsSchema {\n    all_widgets_schema {\n      widget_type\n      schema\n    }\n  }\n": typeof types.GetAllWidgetsSchemaDocument,
@@ -88,7 +89,6 @@ type Documents = {
     "\n  mutation updateFormHeader($formToken: String!, $title: String, $description: String) {\n    update_form(formToken: $formToken, input: { title: $title, description: $description }) {\n      title\n      description\n    }\n  }\n": typeof types.UpdateFormHeaderDocument,
     "\n  mutation DeleteItem($id: ID!) {\n    delete_item(item_id: $id) {\n      id\n    }\n  }\n": typeof types.DeleteItemDocument,
     "\n  mutation createItem($boardId: ID!, $itemName: String!, $groupId: String, $columnValues: JSON) {\n    create_item(board_id: $boardId, item_name: $itemName, group_id: $groupId, column_values: $columnValues) {\n      id\n      name\n    }\n  }\n": typeof types.CreateItemDocument,
-    "\n  mutation createUpdate($itemId: ID!, $body: String!, $mentionsList: [UpdateMention]) {\n    create_update(item_id: $itemId, body: $body, mentions_list: $mentionsList) {\n      id\n    }\n  }\n": typeof types.CreateUpdateDocument,
     "\n  query getBoardSchema($boardId: ID!) {\n    boards(ids: [$boardId]) {\n      groups {\n        id\n        title\n      }\n      columns {\n        id\n        type\n        title\n      }\n    }\n  }\n": typeof types.GetBoardSchemaDocument,
     "\n  mutation changeItemColumnValues($boardId: ID!, $itemId: ID!, $columnValues: JSON!) {\n    change_multiple_column_values(board_id: $boardId, item_id: $itemId, column_values: $columnValues) {\n      id\n    }\n  }\n": typeof types.ChangeItemColumnValuesDocument,
     "\n  mutation moveItemToGroup($itemId: ID!, $groupId: String!) {\n    move_item_to_group(item_id: $itemId, group_id: $groupId) {\n      id\n    }\n  }\n": typeof types.MoveItemToGroupDocument,
@@ -118,6 +118,7 @@ const documents: Documents = {
     "\n  mutation createGroup(\n    $boardId: ID!\n    $groupName: String!\n    $groupColor: String\n    $relativeTo: String\n    $positionRelativeMethod: PositionRelative\n  ) {\n    create_group(\n      board_id: $boardId\n      group_name: $groupName\n      group_color: $groupColor\n      relative_to: $relativeTo\n      position_relative_method: $positionRelativeMethod\n    ) {\n      id\n      title\n    }\n  }\n": types.CreateGroupDocument,
     "\n  mutation createSubitem($parentItemId: ID!, $itemName: String!, $columnValues: JSON) {\n    create_subitem(parent_item_id: $parentItemId, item_name: $itemName, column_values: $columnValues) {\n      id\n      name\n      parent_item {\n        id\n      }\n    }\n  }\n": types.CreateSubitemDocument,
     "\n  mutation duplicateItem($boardId: ID!, $itemId: ID!, $withUpdates: Boolean) {\n    duplicate_item(board_id: $boardId, item_id: $itemId, with_updates: $withUpdates) {\n      id\n      name\n    }\n  }\n": types.DuplicateItemDocument,
+    "\n  mutation createUpdate($itemId: ID!, $body: String!, $mentionsList: [UpdateMention]) {\n    create_update(body: $body, item_id: $itemId, mentions_list: $mentionsList) {\n      id\n    }\n  }\n": types.CreateUpdateDocument,
     "\n  mutation createWorkspace(\n    $name: String!\n    $workspaceKind: WorkspaceKind!\n    $description: String\n    $accountProductId: ID\n  ) {\n    create_workspace(\n      name: $name\n      kind: $workspaceKind\n      description: $description\n      account_product_id: $accountProductId\n    ) {\n      id\n    }\n  }\n": types.CreateWorkspaceDocument,
     "\n  mutation CreateDashboard(\n    $name: String!\n    $workspace_id: ID!\n    $board_ids: [ID!]!\n    $kind: DashboardKind\n    $board_folder_id: ID\n  ) {\n    create_dashboard(\n      name: $name\n      workspace_id: $workspace_id\n      board_ids: $board_ids\n      kind: $kind\n      board_folder_id: $board_folder_id\n    ) {\n      id\n      name\n      workspace_id\n      kind\n      board_folder_id\n    }\n  }\n": types.CreateDashboardDocument,
     "\n  query GetAllWidgetsSchema {\n    all_widgets_schema {\n      widget_type\n      schema\n    }\n  }\n": types.GetAllWidgetsSchemaDocument,
@@ -180,7 +181,6 @@ const documents: Documents = {
     "\n  mutation updateFormHeader($formToken: String!, $title: String, $description: String) {\n    update_form(formToken: $formToken, input: { title: $title, description: $description }) {\n      title\n      description\n    }\n  }\n": types.UpdateFormHeaderDocument,
     "\n  mutation DeleteItem($id: ID!) {\n    delete_item(item_id: $id) {\n      id\n    }\n  }\n": types.DeleteItemDocument,
     "\n  mutation createItem($boardId: ID!, $itemName: String!, $groupId: String, $columnValues: JSON) {\n    create_item(board_id: $boardId, item_name: $itemName, group_id: $groupId, column_values: $columnValues) {\n      id\n      name\n    }\n  }\n": types.CreateItemDocument,
-    "\n  mutation createUpdate($itemId: ID!, $body: String!, $mentionsList: [UpdateMention]) {\n    create_update(item_id: $itemId, body: $body, mentions_list: $mentionsList) {\n      id\n    }\n  }\n": types.CreateUpdateDocument,
     "\n  query getBoardSchema($boardId: ID!) {\n    boards(ids: [$boardId]) {\n      groups {\n        id\n        title\n      }\n      columns {\n        id\n        type\n        title\n      }\n    }\n  }\n": types.GetBoardSchemaDocument,
     "\n  mutation changeItemColumnValues($boardId: ID!, $itemId: ID!, $columnValues: JSON!) {\n    change_multiple_column_values(board_id: $boardId, item_id: $itemId, column_values: $columnValues) {\n      id\n    }\n  }\n": types.ChangeItemColumnValuesDocument,
     "\n  mutation moveItemToGroup($itemId: ID!, $groupId: String!) {\n    move_item_to_group(item_id: $itemId, group_id: $groupId) {\n      id\n    }\n  }\n": types.MoveItemToGroupDocument,
@@ -260,6 +260,10 @@ export function graphql(source: "\n  mutation createSubitem($parentItemId: ID!, 
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  mutation duplicateItem($boardId: ID!, $itemId: ID!, $withUpdates: Boolean) {\n    duplicate_item(board_id: $boardId, item_id: $itemId, with_updates: $withUpdates) {\n      id\n      name\n    }\n  }\n"): (typeof documents)["\n  mutation duplicateItem($boardId: ID!, $itemId: ID!, $withUpdates: Boolean) {\n    duplicate_item(board_id: $boardId, item_id: $itemId, with_updates: $withUpdates) {\n      id\n      name\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation createUpdate($itemId: ID!, $body: String!, $mentionsList: [UpdateMention]) {\n    create_update(body: $body, item_id: $itemId, mentions_list: $mentionsList) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation createUpdate($itemId: ID!, $body: String!, $mentionsList: [UpdateMention]) {\n    create_update(body: $body, item_id: $itemId, mentions_list: $mentionsList) {\n      id\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -508,10 +512,6 @@ export function graphql(source: "\n  mutation DeleteItem($id: ID!) {\n    delete
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  mutation createItem($boardId: ID!, $itemName: String!, $groupId: String, $columnValues: JSON) {\n    create_item(board_id: $boardId, item_name: $itemName, group_id: $groupId, column_values: $columnValues) {\n      id\n      name\n    }\n  }\n"): (typeof documents)["\n  mutation createItem($boardId: ID!, $itemName: String!, $groupId: String, $columnValues: JSON) {\n    create_item(board_id: $boardId, item_name: $itemName, group_id: $groupId, column_values: $columnValues) {\n      id\n      name\n    }\n  }\n"];
-/**
- * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
- */
-export function graphql(source: "\n  mutation createUpdate($itemId: ID!, $body: String!, $mentionsList: [UpdateMention]) {\n    create_update(item_id: $itemId, body: $body, mentions_list: $mentionsList) {\n      id\n    }\n  }\n"): (typeof documents)["\n  mutation createUpdate($itemId: ID!, $body: String!, $mentionsList: [UpdateMention]) {\n    create_update(item_id: $itemId, body: $body, mentions_list: $mentionsList) {\n      id\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

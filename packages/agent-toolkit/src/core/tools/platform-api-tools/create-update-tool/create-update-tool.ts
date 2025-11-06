@@ -2,11 +2,19 @@ import { z } from 'zod';
 import {
   CreateUpdateMutation,
   CreateUpdateMutationVariables,
+  MentionType,
   UpdateMention,
-} from '../../../../monday-graphql/generated/graphql';
+} from '../../../../monday-graphql/generated/graphql/graphql';
 import { createUpdate } from './create-update.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+
+export const mentionSchema = z.object({
+  id: z.string().describe('The ID of the entity to mention'),
+  type: z.nativeEnum(MentionType).describe('The type of mention: User, Team, Board, or Project'),
+});
+
+export const mentionsListSchema = z.array(mentionSchema);
 
 export const createUpdateToolSchema = {
   itemId: z.number().describe('The id of the item to which the update will be added'),
@@ -44,11 +52,19 @@ export class CreateUpdateTool extends BaseMondayApiTool<typeof createUpdateToolS
 
     if (input.mentionsList) {
       try {
-        parsedMentionsList = JSON.parse(input.mentionsList) as Array<UpdateMention>;
+        const parsedJson = JSON.parse(input.mentionsList);
+        const validationResult = mentionsListSchema.safeParse(parsedJson);
+
+        if (!validationResult.success) {
+          throw new Error(`Invalid mentionsList format: ${validationResult.error.message}`);
+        }
+
+        parsedMentionsList = validationResult.data;
       } catch (error) {
-        throw new Error(
-          `Invalid mentionsList JSON format: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        );
+        if (error instanceof z.ZodError) {
+          throw new Error(`Invalid mentionsList format: ${error.message}`);
+        }
+        throw new Error(`Invalid mentionsList JSON format: ${(error as Error).message}`);
       }
     }
 

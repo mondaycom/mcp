@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { GraphQLDescriptions } from '../workforms.consts';
-import { BoardKind } from '../../../../../monday-graphql/generated/graphql';
+import { BoardKind } from '../../../../../monday-graphql/generated/graphql/graphql';
 
 export const createFormToolSchema = {
   destination_workspace_id: z.string().describe(GraphQLDescriptions.form.args.destinationWorkspaceId),
