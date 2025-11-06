@@ -74,15 +74,13 @@ export class CreateUpdateTool extends BaseMondayApiTool<typeof createUpdateToolS
   }
 
   private rethrowWrapped(error: unknown, operation: string): never {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const joinedErrors = (error as any)?.response?.errors?.map((e: any) => e.message)?.join(', ') ?? '';
 
-    if (error instanceof Error && 'response' in error) {
-      const clientError = error as any;
-      if (clientError.response?.errors) {
-        throw new Error(`Failed to ${operation}: ${clientError.response.errors.map((e: any) => e.message).join(', ')}`);
-      }
+    if (joinedErrors) {
+      throw new Error(`Failed to ${operation}: ${joinedErrors}`);
     }
 
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     throw new Error(`Failed to ${operation}: ${errorMessage}`);
   }
 }
