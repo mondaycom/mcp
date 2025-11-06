@@ -1,0 +1,88 @@
+import { z } from 'zod';
+import {
+  CreateUpdateMutation,
+  CreateUpdateMutationVariables,
+  UpdateMention,
+} from '../../../../monday-graphql/generated/graphql';
+import { createUpdate } from './create-update.graphql';
+import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
+import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+
+export const createUpdateToolSchema = {
+  itemId: z.number().describe('The id of the item to which the update will be added'),
+  body: z
+    .string()
+    .describe('The update text to be created. Do not use @ to mention users, use the mentionsList field instead.'),
+  mentionsList: z
+    .string()
+    .optional()
+    .describe(
+      'Optional JSON array of mentions in the format: [{"id": "123", "type": "User"}, {"id": "456", "type": "Team"}]. Valid types are: User, Team, Board, Project',
+    ),
+};
+
+export class CreateUpdateTool extends BaseMondayApiTool<typeof createUpdateToolSchema> {
+  name = 'create_update';
+  type = ToolType.WRITE;
+  annotations = createMondayApiAnnotations({
+    title: 'Create Update',
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+  });
+
+  getDescription(): string {
+    return 'Create a new update (comment/post) on a monday.com item. Updates can be used to add comments, notes, or discussions to items. You can optionally mention users, teams, or boards in the update.';
+  }
+
+  getInputSchema(): typeof createUpdateToolSchema {
+    return createUpdateToolSchema;
+  }
+
+  protected async executeInternal(input: ToolInputType<typeof createUpdateToolSchema>): Promise<ToolOutputType<never>> {
+    let parsedMentionsList: Array<UpdateMention> | undefined;
+
+    if (input.mentionsList) {
+      try {
+        parsedMentionsList = JSON.parse(input.mentionsList) as Array<UpdateMention>;
+      } catch (error) {
+        throw new Error(
+          `Invalid mentionsList JSON format: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
+      }
+    }
+
+    try {
+      const variables: CreateUpdateMutationVariables = {
+        itemId: input.itemId.toString(),
+        body: input.body,
+        mentionsList: parsedMentionsList,
+      };
+
+      const res = await this.mondayApi.request<CreateUpdateMutation>(createUpdate, variables);
+
+      if (!res.create_update?.id) {
+        throw new Error('Failed to create update: no update created');
+      }
+
+      return {
+        content: `Update ${res.create_update.id} successfully created on item ${input.itemId}`,
+      };
+    } catch (error) {
+      this.rethrowWrapped(error, 'create update');
+    }
+  }
+
+  private rethrowWrapped(error: unknown, operation: string): never {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    if (error instanceof Error && 'response' in error) {
+      const clientError = error as any;
+      if (clientError.response?.errors) {
+        throw new Error(`Failed to ${operation}: ${clientError.response.errors.map((e: any) => e.message).join(', ')}`);
+      }
+    }
+
+    throw new Error(`Failed to ${operation}: ${errorMessage}`);
+  }
+}
