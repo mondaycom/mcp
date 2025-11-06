@@ -153,7 +153,7 @@ describe('Full Board Data Tool', () => {
     expect(mocks.mockApiClient.request).toHaveBeenCalledTimes(2);
     expect(mocks.mockApiClient.request).toHaveBeenCalledWith(expect.stringContaining('query getBoardData'), {
       boardId: '123456',
-      itemsLimit: 5,
+      itemsLimit: 7,
     });
     expect(mocks.mockApiClient.request).toHaveBeenCalledWith(expect.stringContaining('query getUsersByIds'), {
       userIds: expect.arrayContaining(['user1', 'user2']),
