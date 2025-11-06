@@ -1,4 +1,4 @@
-import { MondayAppsToolType } from './base-tool/monday-apps-tool';
+import { MondayAppsToolType } from './base-tool/base-monday-apps-tool';
 import { MondayAppsToolCategory } from './consts/apps.consts';
 import { storageTools } from './storage';
 import { appTools } from './app';

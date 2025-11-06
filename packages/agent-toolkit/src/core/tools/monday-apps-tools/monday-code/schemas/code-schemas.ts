@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { MondayApiResponse } from '../../base-tool/monday-apps-tool';
+import { MondayApiResponse } from '../../base-tool/base-monday-apps-tool';
 
 export interface DeploymentStatusResponse extends MondayApiResponse {
   status?: string;

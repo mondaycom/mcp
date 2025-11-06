@@ -1,5 +1,5 @@
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
-import { BaseMondayAppsTool, createMondayAppsAnnotations } from '../base-tool/monday-apps-tool';
+import { BaseMondayAppsTool, createMondayAppsAnnotations } from '../base-tool/base-monday-apps-tool';
 import { MondayAppsToolCategory } from '../consts/apps.consts';
 import { API_ENDPOINTS, HttpMethod } from '../consts/routes.consts';
 import { PromoteAppResponse, promoteAppSchema } from './schemas/app-schemas';
