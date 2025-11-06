@@ -8,19 +8,6 @@ export const deleteItem = gql`
   }
 `;
 
-export const getBoardItemsByName = gql`
-  query GetBoardItemsByName($boardId: ID!, $term: CompareValue!) {
-    boards(ids: [$boardId]) {
-      items_page(query_params: { rules: [{ column_id: "name", operator: contains_text, compare_value: $term }] }) {
-        items {
-          id
-          name
-        }
-      }
-    }
-  }
-`;
-
 export const createItem = gql`
   mutation createItem($boardId: ID!, $itemName: String!, $groupId: String, $columnValues: JSON) {
     create_item(board_id: $boardId, item_name: $itemName, group_id: $groupId, column_values: $columnValues) {
@@ -31,8 +18,8 @@ export const createItem = gql`
 `;
 
 export const createUpdate = gql`
-  mutation createUpdate($itemId: ID!, $body: String!) {
-    create_update(item_id: $itemId, body: $body) {
+  mutation createUpdate($itemId: ID!, $body: String!, $mentionsList: [UpdateMention]) {
+    create_update(item_id: $itemId, body: $body, mentions_list: $mentionsList) {
       id
     }
   }
@@ -50,16 +37,6 @@ export const getBoardSchema = gql`
         type
         title
       }
-    }
-  }
-`;
-
-export const getUsersByName = gql`
-  query getUsersByName($name: String) {
-    users(name: $name) {
-      id
-      name
-      title
     }
   }
 `;
@@ -425,6 +402,92 @@ export const fetchCustomActivity = gql`
       id
       name
       type
+    }
+  }
+`;
+
+// -----------------------------
+// Documents (Docs) Operations
+// -----------------------------
+
+export const readDocs = gql`
+  query readDocs(
+    $ids: [ID!]
+    $object_ids: [ID!]
+    $limit: Int
+    $order_by: DocsOrderBy
+    $page: Int
+    $workspace_ids: [ID]
+  ) {
+    docs(
+      ids: $ids
+      object_ids: $object_ids
+      limit: $limit
+      order_by: $order_by
+      page: $page
+      workspace_ids: $workspace_ids
+    ) {
+      id
+      object_id
+      name
+      doc_kind
+      created_at
+      created_by {
+        id
+        name
+      }
+      settings
+      url
+      relative_url
+      workspace {
+        id
+        name
+      }
+      workspace_id
+      doc_folder_id
+    }
+  }
+`;
+
+export const exportMarkdownFromDoc = gql`
+  query exportMarkdownFromDoc($docId: ID!, $blockIds: [String!]) {
+    export_markdown_from_doc(docId: $docId, blockIds: $blockIds) {
+      success
+      markdown
+      error
+    }
+  }
+`;
+
+export const getWorkspaceInfo = gql`
+  query getWorkspaceInfo($workspace_id: ID!) {
+    workspaces(ids: [$workspace_id]) {
+      id
+      name
+      description
+      kind
+      created_at
+      state
+      is_default_workspace
+      owners_subscribers {
+        id
+        name
+        email
+      }
+    }
+    boards(workspace_ids: [$workspace_id], limit: 100, order_by: used_at, state: active) {
+      id
+      name
+      board_folder_id
+    }
+    docs(workspace_ids: [$workspace_id], limit: 100, order_by: used_at) {
+      id
+      name
+      doc_folder_id
+    }
+    folders(workspace_ids: [$workspace_id], limit: 100) {
+      id
+      name
     }
   }
 `;

@@ -23,12 +23,12 @@ async function runServer() {
     toolsConfiguration: {
       readOnlyMode: validatedArgs.readOnlyMode,
       enableDynamicApiTools: validatedArgs.enableDynamicApiTools,
-      enableMondayAppsTools: validatedArgs.enableMondayAppsTools,
+      mode: validatedArgs.mode,
+      enableToolManager: false,
     },
   });
 
   const transport = new StdioServerTransport();
-
   await toolkit.connect(transport);
 }
 

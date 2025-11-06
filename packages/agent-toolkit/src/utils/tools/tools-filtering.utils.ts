@@ -1,25 +1,34 @@
 import { ApiClient } from '@mondaydotcomorg/api';
-import { allGraphqlApiTools, allMondayAppsTools, Tool, ToolType } from 'src/core';
-import { ToolsConfiguration } from 'src/types';
-import { createToolInstance } from './initializing.utils';
+import { allGraphqlApiTools, allMondayAppsTools, allMondayDevTools, Tool, ToolType } from '../../core';
+import { ToolMode, ToolsConfiguration } from '../../core/monday-agent-toolkit';
+import { toolFactory } from './initializing.utils';
 
-export const getFilteredTools = (
+export const getFilteredToolInstances = (
   instanceOptions: { apiClient: ApiClient; apiToken: string },
   config?: ToolsConfiguration,
-) => {
-  const allTools: Array<new (...args: any[]) => Tool<any, any>> = [...allGraphqlApiTools];
-  if (!config) {
-    return allTools;
+): Tool<any, any>[] => {
+  let allToolConstructors: Array<new (...args: any[]) => Tool<any, any>> = [];
+  if (config?.mode === ToolMode.APPS) {
+    allToolConstructors = [...allMondayAppsTools];
+  } else if (config?.mode === ToolMode.API || !config?.mode) {
+    allToolConstructors = [...allGraphqlApiTools, ...allMondayDevTools];
   }
 
-  if (config.enableMondayAppsTools) {
-    allTools.push(...allMondayAppsTools);
-  }
+  const allToolInstances = allToolConstructors.map((ctor) => toolFactory(ctor, instanceOptions));
 
-  return allTools.filter((tool) => {
-    const toolInstance = createToolInstance(tool, instanceOptions);
+  return allToolInstances.filter((toolInstance) => {
+    if (!config) {
+      return toolInstance.type !== ToolType.ALL_API;
+    }
+
+    if (config.mode === ToolMode.API) {
+      if (config.enableDynamicApiTools === 'only') {
+        return toolInstance.type === ToolType.ALL_API;
+      }
+    }
+
     let shouldFilter = false;
-    if (!config.enableDynamicApiTools) {
+    if (config.mode === ToolMode.API && config.enableDynamicApiTools === false) {
       shouldFilter = shouldFilter || toolInstance.type === ToolType.ALL_API;
     }
     if (config.readOnlyMode) {

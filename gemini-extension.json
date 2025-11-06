@@ -1,0 +1,11 @@
+{
+    "name": "monday",
+    "description": "Manage your monday.com projects, tasks, and everday work.",
+    "version": "0.0.41",
+    "contextFileName": "MONDAY.md",
+    "mcpServers": {
+        "monday": {
+          "httpUrl": "https://mcp.monday.com/mcp"
+        }
+    }
+}

@@ -1,0 +1,108 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.12'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install Yarn
+        run: npm install -g yarn@1.22.21
+
+      - name: Install dependencies
+        run: yarn install
+
+      # Bump version based on merged PR labels
+      - name: Bump version and create tag
+        id: bumpr
+        uses: haya14busa/action-bumpr@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          default_bump_level: 'patch'
+          tag_as_user: 'github-actions[bot]'
+          tag_as_email: 'github-actions[bot]@users.noreply.github.com'
+
+      # Update package.json files if version was bumped
+      - name: Update package versions
+        if: ${{ !steps.bumpr.outputs.skip }}
+        run: |
+          NEW_VERSION="${{ steps.bumpr.outputs.next_version }}"
+          NEW_VERSION_NO_V="${NEW_VERSION#v}"
+
+          echo "Updating versions to: $NEW_VERSION_NO_V"
+
+          # Update root package.json
+          npm version $NEW_VERSION_NO_V --no-git-tag-version
+
+          # Update all package.json files in packages/
+          for package_dir in packages/*/; do
+            if [ -f "$package_dir/package.json" ]; then
+              echo "Updating $package_dir/package.json"
+              cd "$package_dir"
+              npm version $NEW_VERSION_NO_V --no-git-tag-version
+              cd ../..
+            fi
+          done
+
+      # Commit the version updates
+      - name: Commit version updates
+        if: ${{ !steps.bumpr.outputs.skip }}
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add package.json packages/*/package.json
+          git commit -m "chore: bump version to ${{ steps.bumpr.outputs.next_version }} [skip ci]" || exit 0
+          git push
+
+      # Build packages after version bump
+      - name: Build packages
+        if: ${{ !steps.bumpr.outputs.skip }}
+        run: yarn build
+
+      # Create GitHub Release
+      - name: Create GitHub Release
+        if: ${{ !steps.bumpr.outputs.skip }}
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.bumpr.outputs.next_version }}
+          release_name: Release ${{ steps.bumpr.outputs.next_version }}
+          body: |
+            ## Changes
+
+            ${{ steps.bumpr.outputs.message }}
+
+            ## Packages Updated
+            - @mondaydotcomorg/agent-toolkit
+            - @mondaydotcomorg/monday-api-mcp
+
+            Auto-generated release from Release workflow.
+          draft: false
+          prerelease: false
+
+      # Output results
+      - name: Release Summary
+        if: ${{ !steps.bumpr.outputs.skip }}
+        run: |
+          echo "🚀 Release completed!"
+          echo "📋 Version: ${{ steps.bumpr.outputs.next_version }}"
+          echo "📦 Packages updated and published"
+          echo "🏷️ GitHub release created"

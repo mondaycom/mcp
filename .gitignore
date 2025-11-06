@@ -137,7 +137,13 @@ dist
 
 # turbo
 .turbo
-
-.mappsrc
-
 .idea/
+.qodo
+
+#claude
+.claude
+claude.md
+
+# macOS
+.DS_Store
+.DS_Store?

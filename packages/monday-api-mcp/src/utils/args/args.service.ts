@@ -68,7 +68,13 @@ export function validateArgs(parsedArgs: ParsedArgs): ValidatedArgs {
   ARG_CONFIGS.forEach((config) => {
     if (typeof config.defaultValue === 'boolean' && parsedArgs[config.name] !== undefined) {
       const stringValue = parsedArgs[config.name] as string;
-      typedArgs[config.name] = stringValue.toLowerCase() === 'true';
+
+      // Special handling for enableDynamicApiTools to support "only" option
+      if (config.name === 'enableDynamicApiTools' && stringValue.toLowerCase() === 'only') {
+        typedArgs[config.name] = 'only';
+      } else {
+        typedArgs[config.name] = stringValue.toLowerCase() === 'true';
+      }
     }
   });
 

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { MoveItemToGroupMutation, MoveItemToGroupMutationVariables } from '../../../monday-graphql/generated/graphql';
 import { moveItemToGroup } from '../../../monday-graphql/queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
-import { BaseMondayApiTool } from './base-monday-api-tool';
+import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
 
 export const moveItemToGroupToolSchema = {
   itemId: z.number().describe('The id of the item to which the update will be added'),
@@ -12,6 +12,12 @@ export const moveItemToGroupToolSchema = {
 export class MoveItemToGroupTool extends BaseMondayApiTool<typeof moveItemToGroupToolSchema> {
   name = 'move_item_to_group';
   type = ToolType.WRITE;
+  annotations = createMondayApiAnnotations({
+    title: 'Move Item to Group',
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: true,
+  });
 
   getDescription(): string {
     return 'Move an item to a group in a monday.com board';
@@ -21,7 +27,9 @@ export class MoveItemToGroupTool extends BaseMondayApiTool<typeof moveItemToGrou
     return moveItemToGroupToolSchema;
   }
 
-  async execute(input: ToolInputType<typeof moveItemToGroupToolSchema>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(
+    input: ToolInputType<typeof moveItemToGroupToolSchema>,
+  ): Promise<ToolOutputType<never>> {
     const variables: MoveItemToGroupMutationVariables = {
       itemId: input.itemId.toString(),
       groupId: input.groupId,

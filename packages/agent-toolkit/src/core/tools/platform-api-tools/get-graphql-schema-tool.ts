@@ -1,23 +1,41 @@
-import { GetGraphQlSchemaQuery } from '../../../monday-graphql/generated/graphql';
+import { ToolOutputType, ToolType, ToolInputType } from '../../tool';
+import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
 import { getGraphQLSchema } from '../../../monday-graphql/queries.graphql';
-import { ToolOutputType, ToolType } from '../../tool';
-import { BaseMondayApiTool } from './base-monday-api-tool';
+import { GetGraphQlSchemaQuery } from '../../../monday-graphql/generated/graphql';
+import { z } from 'zod';
 
-export class GetGraphQLSchemaTool extends BaseMondayApiTool<undefined> {
+export const getGraphQLSchemaToolSchema = {
+  random_string: z.string().describe('Dummy parameter for no-parameter tools').optional(),
+  operationType: z
+    .enum(['read', 'write'])
+    .describe('Type of operation: "read" for queries, "write" for mutations')
+    .optional(),
+};
+
+export class GetGraphQLSchemaTool extends BaseMondayApiTool<typeof getGraphQLSchemaToolSchema> {
   name = 'get_graphql_schema';
   type = ToolType.ALL_API;
+  annotations = createMondayApiAnnotations({
+    title: 'Get GraphQL Schema',
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+  });
 
   getDescription(): string {
-    return 'Fetch the Monday.com GraphQL schema structure including query and mutation definitions';
+    return 'Fetch the monday.com GraphQL schema structure including query and mutation definitions. This tool returns available query fields, mutation fields, and a list of GraphQL types in the schema. You can filter results by operation type (read/write) to focus on either queries or mutations.';
   }
 
-  getInputSchema(): undefined {
-    return undefined;
+  getInputSchema(): typeof getGraphQLSchemaToolSchema {
+    return getGraphQLSchemaToolSchema;
   }
 
-  async execute(): Promise<ToolOutputType<never>> {
+  protected async executeInternal(
+    input?: ToolInputType<typeof getGraphQLSchemaToolSchema>,
+  ): Promise<ToolOutputType<never>> {
     try {
       const res = await this.mondayApi.request<GetGraphQlSchemaQuery>(getGraphQLSchema);
+      const operationType = input?.operationType;
 
       const queryFields =
         res.queryType?.fields
@@ -36,23 +54,21 @@ export class GetGraphQLSchemaTool extends BaseMondayApiTool<undefined> {
           .map((type: any) => `- ${type.name} (${type.kind || 'unknown'})`)
           .join('\n') || 'No types found';
 
-      const formattedResponse = `
-## GraphQL Schema
-- Query Type: ${res.__schema?.queryType?.name}
-- Mutation Type: ${res.__schema?.mutationType?.name}
+      // Build response based on operation type
+      let formattedResponse = '## GraphQL Schema\n';
 
-## Query Fields
-${queryFields}
+      if (!operationType || operationType === 'read') {
+        formattedResponse += `- Query Type: ${res.__schema?.queryType?.name}\n\n`;
+        formattedResponse += `## Query Fields\n${queryFields}\n\n`;
+      }
 
-## Mutation Fields
-${mutationFields}
+      if (!operationType || operationType === 'write') {
+        formattedResponse += `- Mutation Type: ${res.__schema?.mutationType?.name}\n\n`;
+        formattedResponse += `## Mutation Fields\n${mutationFields}\n\n`;
+      }
 
-## Available Types
-${typesList}
-
-To get detailed information about a specific type, use the get_type_details tool with the type name.
-For example: get_type_details(typeName: "Board") to see Board type details.
-`;
+      formattedResponse += `## Available Types\n${typesList}\n\n`;
+      formattedResponse += `To get detailed information about a specific type, use the get_type_details tool with the type name.\nFor example: get_type_details(typeName: "Board") to see Board type details.`;
 
       return {
         content: formattedResponse,
