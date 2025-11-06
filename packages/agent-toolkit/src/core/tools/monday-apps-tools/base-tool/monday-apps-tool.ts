@@ -5,6 +5,7 @@ import { ZodRawShape } from 'zod';
 import { Tool, ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { MondayAppsToolCategory } from '../consts/apps.consts';
 import { APPS_MS_TIMEOUT_IN_MS } from '../consts/routes.consts';
+import { ToolAnnotations } from '@modelcontextprotocol/sdk/types';
 
 export interface MondayApiResponse {
   statusCode: number;
@@ -13,6 +14,13 @@ export interface MondayApiResponse {
 }
 
 export type MondayAppsToolType = new (mondayApiToken?: string) => BaseMondayAppsTool<any, any>;
+
+export function createMondayAppsAnnotations(annotations: ToolAnnotations): ToolAnnotations {
+  return {
+    openWorldHint: true,
+    ...annotations,
+  };
+}
 
 export abstract class BaseMondayAppsTool<
   Input extends ZodRawShape | undefined,
@@ -23,6 +31,7 @@ export abstract class BaseMondayAppsTool<
   abstract type: ToolType;
   abstract category: MondayAppsToolCategory;
   private mondayApiToken?: string;
+  abstract annotations: ToolAnnotations;
 
   constructor(mondayApiToken?: string) {
     this.mondayApiToken = mondayApiToken;

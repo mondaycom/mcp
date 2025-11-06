@@ -1,5 +1,5 @@
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
-import { BaseMondayAppsTool } from '../base-tool/monday-apps-tool';
+import { BaseMondayAppsTool, createMondayAppsAnnotations } from '../base-tool/monday-apps-tool';
 import { MondayAppsToolCategory } from '../consts/apps.consts';
 import { API_ENDPOINTS, HttpMethod } from '../consts/routes.consts';
 import { PromoteAppResponse, promoteAppSchema } from './schemas/app-schemas';
@@ -8,6 +8,10 @@ export class PromoteAppTool extends BaseMondayAppsTool<typeof promoteAppSchema.s
   name = 'monday_apps_promote_app';
   category = MondayAppsToolCategory.APP;
   type: ToolType = ToolType.WRITE;
+  annotations = createMondayAppsAnnotations({
+    destructiveHint: true,
+    title: 'Promote App',
+  });
 
   getDescription(): string {
     return 'Promote an app version to live';

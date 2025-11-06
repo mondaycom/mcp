@@ -1,5 +1,5 @@
 import { ToolInputType, ToolOutputType, ToolType } from 'src/core/tool';
-import { BaseMondayAppsTool } from '../base-tool/monday-apps-tool';
+import { BaseMondayAppsTool, createMondayAppsAnnotations } from '../base-tool/monday-apps-tool';
 import { MondayAppsToolCategory } from '../consts/apps.consts';
 import { API_ENDPOINTS, HttpMethod } from '../consts/routes.consts';
 import { StorageRecordsResponse, searchStorageRecordsSchema } from './schemas/storage-schemas';
@@ -11,6 +11,10 @@ export class SearchStorageRecordsTool extends BaseMondayAppsTool<
   name = 'monday_apps_search_storage_records';
   category = MondayAppsToolCategory.STORAGE;
   type: ToolType = ToolType.READ;
+  annotations = createMondayAppsAnnotations({
+    readOnlyHint: true,
+    title: 'Search Storage Records',
+  });
 
   getDescription(): string {
     return 'Search for storage records in a Monday.com app';

@@ -1,5 +1,5 @@
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
-import { BaseMondayAppsTool } from '../base-tool/monday-apps-tool';
+import { BaseMondayAppsTool, createMondayAppsAnnotations } from '../base-tool/monday-apps-tool';
 import { MondayAppsToolCategory } from '../consts/apps.consts';
 import { API_ENDPOINTS, HttpMethod } from '../consts/routes.consts';
 import { CreateAppResponse, createAppSchema } from './schemas/app-schemas';
@@ -8,6 +8,9 @@ export class CreateAppFromManifestTool extends BaseMondayAppsTool<typeof createA
   name = 'monday_apps_create_app_from_manifest';
   category = MondayAppsToolCategory.APP;
   type: ToolType = ToolType.WRITE;
+  annotations = createMondayAppsAnnotations({
+    title: 'Create App from Manifest',
+  });
 
   getDescription(): string {
     return 'Create a new app from a manifest file (Not ready to use yet)';

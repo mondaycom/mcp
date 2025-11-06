@@ -1,5 +1,5 @@
 import { ToolInputType, ToolOutputType, ToolType } from 'src/core/tool';
-import { BaseMondayAppsTool } from '../base-tool/monday-apps-tool';
+import { BaseMondayAppsTool, createMondayAppsAnnotations } from '../base-tool/monday-apps-tool';
 import { MondayAppsToolCategory } from '../consts/apps.consts';
 import { API_ENDPOINTS, HttpMethod } from '../consts/routes.consts';
 import { ExportStorageDataResponse, exportStorageDataSchema } from './schemas/storage-schemas';
@@ -11,6 +11,10 @@ export class ExportStorageDataTool extends BaseMondayAppsTool<
   name = 'monday_apps_export_storage_data';
   category = MondayAppsToolCategory.STORAGE;
   type: ToolType = ToolType.READ;
+  annotations = createMondayAppsAnnotations({
+    readOnlyHint: true,
+    title: 'Export Storage Data',
+  });
 
   getDescription(): string {
     return 'Export storage data from a Monday.com app';

@@ -1,5 +1,5 @@
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
-import { BaseMondayAppsTool } from '../base-tool/monday-apps-tool';
+import { BaseMondayAppsTool, createMondayAppsAnnotations } from '../base-tool/monday-apps-tool';
 import { MondayAppsToolCategory } from '../consts/apps.consts';
 import { API_ENDPOINTS, HttpMethod } from '../consts/routes.consts';
 import { CreateAppFeatureResponse, createAppFeatureSchema } from './schemas/app-feature-schemas';
@@ -11,6 +11,9 @@ export class CreateAppFeatureTool extends BaseMondayAppsTool<
   name = 'monday_apps_create_app_feature';
   category = MondayAppsToolCategory.APP_FEATURE;
   type: ToolType = ToolType.WRITE;
+  annotations = createMondayAppsAnnotations({
+    title: 'Create App Feature',
+  });
 
   getDescription(): string {
     return 'Create a new app feature for an app version';

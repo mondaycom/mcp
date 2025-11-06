@@ -1,5 +1,5 @@
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
-import { BaseMondayAppsTool } from '../base-tool/monday-apps-tool';
+import { BaseMondayAppsTool, createMondayAppsAnnotations } from '../base-tool/monday-apps-tool';
 import { MondayAppsToolCategory } from '../consts/apps.consts';
 import { API_ENDPOINTS, HttpMethod } from '../consts/routes.consts';
 import { DeploymentStatusResponse, getDeploymentStatusSchema } from './schemas/code-schemas';
@@ -11,6 +11,9 @@ export class GetDeploymentStatusTool extends BaseMondayAppsTool<
   name = 'monday_apps_get_deployment_status';
   category = MondayAppsToolCategory.MONDAY_CODE;
   type: ToolType = ToolType.READ;
+  annotations = createMondayAppsAnnotations({
+    readOnlyHint: true,
+  });
 
   getDescription(): string {
     return 'Get the deployment status for a specific app version';

@@ -1,5 +1,5 @@
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
-import { BaseMondayAppsTool } from '../base-tool/monday-apps-tool';
+import { BaseMondayAppsTool, createMondayAppsAnnotations } from '../base-tool/monday-apps-tool';
 import { MondayAppsToolCategory } from '../consts/apps.consts';
 import { API_ENDPOINTS, HttpMethod } from '../consts/routes.consts';
 import { AppFeaturesResponse, getAppFeaturesSchema } from './schemas/app-feature-schemas';
@@ -8,6 +8,9 @@ export class GetAppFeaturesTool extends BaseMondayAppsTool<typeof getAppFeatures
   name = 'monday_apps_get_app_features';
   category = MondayAppsToolCategory.APP_FEATURE;
   type: ToolType = ToolType.READ;
+  annotations = createMondayAppsAnnotations({
+    readOnlyHint: true,
+  });
 
   getDescription(): string {
     return 'Retrieve app features by app version id';

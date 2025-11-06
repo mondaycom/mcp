@@ -1,5 +1,5 @@
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
-import { BaseMondayAppsTool } from '../base-tool/monday-apps-tool';
+import { BaseMondayAppsTool, createMondayAppsAnnotations } from '../base-tool/monday-apps-tool';
 import { MondayAppsToolCategory } from '../consts/apps.consts';
 import { API_ENDPOINTS, HttpMethod } from '../consts/routes.consts';
 import { EnvVarResponse, deleteEnvVarSchema } from './schemas/code-schemas';
@@ -8,6 +8,10 @@ export class DeleteEnvironmentVariableTool extends BaseMondayAppsTool<typeof del
   name = 'monday_apps_delete_environment_variable';
   category = MondayAppsToolCategory.MONDAY_CODE;
   type: ToolType = ToolType.WRITE;
+  annotations = createMondayAppsAnnotations({
+    destructiveHint: true,
+    title: 'Delete Environment Variable',
+  });
 
   getDescription(): string {
     return 'Delete an environment variable for an app';

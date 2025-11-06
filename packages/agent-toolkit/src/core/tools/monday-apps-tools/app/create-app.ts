@@ -1,5 +1,5 @@
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
-import { BaseMondayAppsTool } from '../base-tool/monday-apps-tool';
+import { BaseMondayAppsTool, createMondayAppsAnnotations } from '../base-tool/monday-apps-tool';
 import { MondayAppsToolCategory } from '../consts/apps.consts';
 import { API_ENDPOINTS, HttpMethod } from '../consts/routes.consts';
 import { CreateAppResponse, createPlainAppSchema } from './schemas/app-schemas';
@@ -8,6 +8,9 @@ export class CreateAppTool extends BaseMondayAppsTool<typeof createPlainAppSchem
   name = 'monday_apps_create_app';
   category = MondayAppsToolCategory.APP;
   type: ToolType = ToolType.WRITE;
+  annotations = createMondayAppsAnnotations({
+    title: 'Create App',
+  });
 
   getDescription(): string {
     return 'Create a new app with basic information';

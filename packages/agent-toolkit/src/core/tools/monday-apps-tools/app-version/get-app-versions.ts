@@ -1,5 +1,5 @@
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
-import { BaseMondayAppsTool } from '../base-tool/monday-apps-tool';
+import { BaseMondayAppsTool, createMondayAppsAnnotations } from '../base-tool/monday-apps-tool';
 import { MondayAppsToolCategory } from '../consts/apps.consts';
 import { API_ENDPOINTS, HttpMethod } from '../consts/routes.consts';
 import { AppVersionsApiDataResponse, getAppVersionsSchema } from './schemas/app-version-schemas';
@@ -11,6 +11,9 @@ export class GetAppVersionsTool extends BaseMondayAppsTool<
   name = 'monday_apps_get_app_versions';
   category = MondayAppsToolCategory.APP_VERSION;
   type: ToolType = ToolType.READ;
+  annotations = createMondayAppsAnnotations({
+    readOnlyHint: true,
+  });
 
   getDescription(): string {
     return 'Retrieve all the app versions of an app';
