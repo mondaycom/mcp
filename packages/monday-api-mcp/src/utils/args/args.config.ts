@@ -37,11 +37,4 @@ export const ARG_CONFIGS: ArgConfig[] = [
     required: false,
     defaultValue: false,
   },
-  {
-    name: 'enableMondayAppsTools',
-    flags: ['--enable-monday-apps-tools', '-emat'],
-    description: '(Beta) Enable Monday Apps tools',
-    required: false,
-    defaultValue: false,
-  },
 ];
