@@ -62,9 +62,6 @@ export class CreateUpdateTool extends BaseMondayApiTool<typeof createUpdateToolS
 
         parsedMentionsList = validationResult.data;
       } catch (error) {
-        if (error instanceof z.ZodError) {
-          throw new Error(`Invalid mentionsList format: ${error.message}`);
-        }
         throw new Error(`Invalid mentionsList JSON format: ${(error as Error).message}`);
       }
     }
