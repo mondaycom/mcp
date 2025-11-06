@@ -34,7 +34,7 @@ The monday.com API token can also be provided via the `monday_token` environment
 | API Version | `--version`, `-v` | monday.com API version | No | `current` |
 | Read Only Mode | `--read-only`, `-ro` | Enable read-only mode | No | `false` |
 | Dynamic API Tools | `--enable-dynamic-api-tools`, `-edat` | (Beta) Enable dynamic API tools (Mode that includes the whole API schema, not supported when using read-only mode) | No | `false` |
-| Monday apps Tools | `--enable-monday-apps-tools`, `-emat` | (Beta) Enable Monday Apps tools | No | `false` |
+| Monday apps Tools | `--mode`, `-m` | Set the mode for tool selection: "api" - API tools only, "apps" - (Beta) Monday Apps tools only | No | `api` |
 
 ## 💻 Claude Desktop Integration
 
