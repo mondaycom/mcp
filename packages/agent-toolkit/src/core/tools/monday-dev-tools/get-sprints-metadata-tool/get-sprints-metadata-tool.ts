@@ -5,7 +5,7 @@ import {
   GetSprintsBoardItemsWithColumnsQueryVariables,
   GetBoardSchemaQuery,
   GetBoardSchemaQueryVariables,
-} from '../../../../monday-graphql/generated/graphql';
+} from '../../../../monday-graphql/generated/graphql/graphql';
 import { getBoardSchema } from '../../../../monday-graphql/queries.graphql';
 import { getSprintsBoardItemsWithColumns } from './get-sprints-metadata-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';

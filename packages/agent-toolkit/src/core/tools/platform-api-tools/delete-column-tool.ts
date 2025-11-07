@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { DeleteColumnMutation, DeleteColumnMutationVariables } from '../../../monday-graphql/generated/graphql';
-import { deleteColumn } from '../../../monday-graphql/queries.graphql';
+import { DeleteColumnMutation, DeleteColumnMutationVariables } from 'src/monday-graphql/generated/graphql/graphql';
+import { deleteColumn } from 'src/monday-graphql/queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
 

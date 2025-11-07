@@ -1,5 +1,5 @@
 import { formatBoardInfo, BoardInfoData } from './helpers';
-import { State, BoardKind, WorkspaceKind } from '../../../../monday-graphql/generated/graphql';
+import { State, BoardKind, WorkspaceKind } from '../../../../monday-graphql/generated/graphql/graphql';
 import { NonDeprecatedColumnType } from 'src/utils/types';
 
 describe('formatBoardInfo - Simple Tests', () => {

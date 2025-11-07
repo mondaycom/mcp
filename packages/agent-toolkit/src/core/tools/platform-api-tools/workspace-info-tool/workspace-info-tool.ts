@@ -3,7 +3,7 @@ import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { getWorkspaceInfo } from '../../../../monday-graphql/queries.graphql';
 import { organizeWorkspaceInfoHierarchy } from './helpers';
-import { GetWorkspaceInfoQuery } from 'src/monday-graphql/generated/graphql';
+import { GetWorkspaceInfoQuery } from 'src/monday-graphql/generated/graphql/graphql';
 
 export const workspaceInfoToolSchema = {
   workspace_id: z.number().describe('The ID of the workspace to get information for'),

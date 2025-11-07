@@ -1,7 +1,7 @@
 import { ToolOutputType, ToolType, ToolInputType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
 import { getGraphQLSchema } from '../../../monday-graphql/queries.graphql';
-import { GetGraphQlSchemaQuery } from '../../../monday-graphql/generated/graphql';
+import { GetGraphQlSchemaQuery } from 'src/monday-graphql/generated/graphql/graphql';
 import { z } from 'zod';
 
 export const getGraphQLSchemaToolSchema = {

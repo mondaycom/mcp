@@ -1,6 +1,6 @@
 {
   "name": "@mondaydotcomorg/agent-toolkit",
-  "version": "2.24.3",
+  "version": "2.26.0",
   "description": "monday.com agent toolkit",
   "exports": {
     "./mcp": {

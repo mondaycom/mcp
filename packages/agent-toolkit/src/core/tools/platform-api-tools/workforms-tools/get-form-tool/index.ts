@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { GetFormQuery, GetFormQueryVariables } from '../../../../../monday-graphql/generated/graphql';
+import { GetFormQuery, GetFormQueryVariables } from '../../../../../monday-graphql/generated/graphql/graphql';
 import { getForm } from '../workforms.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../../base-monday-api-tool';
