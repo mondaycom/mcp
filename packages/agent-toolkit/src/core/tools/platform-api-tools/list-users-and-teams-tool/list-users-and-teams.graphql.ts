@@ -29,7 +29,11 @@ const userDetailsFragment = gql`
     location
     mobile_phone
     phone
+
+    #Photo url
     photo_thumb
+
+    #Timezone details
     time_zone_identifier
     utc_hours_diff
   }
@@ -224,7 +228,7 @@ export const listTeamsWithMembers = gql`
   }
 `;
 
-// Query for fetching user by name 
+// Query for fetching user by name
 // This one doesn't use user limits so can be static
 export const getUserByName = gql`
   ${userDetailsFragment}
@@ -252,6 +256,7 @@ export const getCurrentUser = gql`
       enabled
       is_admin
       is_guest
+      photo_thumb
     }
   }
 `;
