@@ -17,7 +17,7 @@ export class ExportStorageDataTool extends BaseMondayAppsTool<
   });
 
   getDescription(): string {
-    return 'Export storage data from a Monday.com app';
+    return 'Export all storage data from a Monday.com app for a specific account. You can choose the export format (JSON or CSV). Returns a download URL to retrieve the exported data. Use this for data backup, migration, or analysis purposes.';
   }
 
   getInputSchema() {

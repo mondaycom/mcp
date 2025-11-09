@@ -14,7 +14,7 @@ export class PromoteAppTool extends BaseMondayAppsTool<typeof promoteAppSchema.s
   });
 
   getDescription(): string {
-    return 'Promote an app version to live';
+    return 'Promote a specific app version to live/production status. This makes the app version available to end users. You can specify a version ID to promote, or if omitted, the latest draft version will be promoted. This is a critical operation that deploys your app changes.';
   }
 
   getInputSchema() {

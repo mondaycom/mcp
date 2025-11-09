@@ -17,7 +17,7 @@ export class ListEnvironmentVariableKeysTool extends BaseMondayAppsTool<
   });
 
   getDescription(): string {
-    return 'List all environment variable keys for an app';
+    return 'List all environment variable keys configured for an app\'s monday-code backend. Returns only the keys (not values) for security reasons. Use this to see what environment variables are currently configured for your app before adding or updating them.';
   }
 
   getInputSchema() {

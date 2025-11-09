@@ -13,7 +13,7 @@ export class CreateAppTool extends BaseMondayAppsTool<typeof createPlainAppSchem
   });
 
   getDescription(): string {
-    return 'Create a new app with basic information';
+    return 'Create a new Monday.com app with basic information (name and optional description). This creates both a new app and its initial draft version. Use this when starting development of a new app from scratch.';
   }
 
   getInputSchema() {
