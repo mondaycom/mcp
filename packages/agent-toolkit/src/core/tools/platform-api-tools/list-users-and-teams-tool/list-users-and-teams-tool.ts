@@ -49,8 +49,8 @@ export const listUsersAndTeamsToolSchema = {
     .string()
     .optional()
     .describe(
-      `Name-based user search. STANDALONE parameter - cannot be combined with others. PREFERRED method for finding users when you know names. Performs fuzzy matching.
-      This parameter CONFLICTS with all others.`,
+      `Name-based USER search ONLY. STANDALONE parameter - cannot be combined with others. PREFERRED method for finding users when you know names. Performs fuzzy matching.
+      CRITICAL: This parameter searches for USERS ONLY, NOT teams. To search for teams, use teamIds parameter instead.`,
     ),
   getMe: z
     .boolean()
@@ -90,20 +90,21 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
 
       MANDATORY BEST PRACTICES:
       1. ALWAYS use specific IDs or names when available
-      2. If no ids available, use name search if possible
+      2. If no ids available, use name search if possible (USERS ONLY)
       3. Use 'getMe: true' to get current user information
       4. AVOID broad queries (no parameters) - use only as last resort
 
       REQUIRED PARAMETER PRIORITY (use in this order):
       1. getMe - STANDALONE
       2. userIds
-      3. name - STANDALONE  
+      3. name - STANDALONE (USERS ONLY, NOT for teams)
       4. teamIds + teamsOnly
       5. No parameters - LAST RESORT
 
       CRITICAL USAGE RULES:
       • userIds + teamIds requires explicit includeTeams: true flag
-      • includeTeams: true fetches both users and teams, do not use this to fetch a specific user's teams rather fetch that user by id and you will get their team memberships.`;
+      • includeTeams: true fetches both users and teams, do not use this to fetch a specific user's teams rather fetch that user by id and you will get their team memberships.
+      • name parameter is for USER search ONLY - it cannot be used to search for teams. Use teamIds to fetch specific teams.`;
   }
 
   getInputSchema(): typeof listUsersAndTeamsToolSchema {
