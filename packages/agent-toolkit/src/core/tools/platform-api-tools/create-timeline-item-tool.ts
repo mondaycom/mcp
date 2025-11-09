@@ -2,7 +2,7 @@ import { z } from 'zod';
 import {
   CreateTimelineItemMutation,
   CreateTimelineItemMutationVariables,
-} from '../../../monday-graphql/generated/graphql';
+} from '../../../monday-graphql/generated/graphql/graphql';
 import { createTimelineItem } from '../../../monday-graphql/queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';

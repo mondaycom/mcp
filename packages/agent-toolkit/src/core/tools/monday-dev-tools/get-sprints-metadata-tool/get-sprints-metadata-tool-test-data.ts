@@ -2,7 +2,7 @@ import { NonDeprecatedColumnType } from 'src/utils/types';
 import {
   GetSprintsBoardItemsWithColumnsQuery,
   GetBoardSchemaQuery,
-} from '../../../../monday-graphql/generated/graphql';
+} from '../../../../monday-graphql/generated/graphql/graphql';
 
 export const VALID_SPRINTS_BOARD_SCHEMA: GetBoardSchemaQuery = {
   boards: [

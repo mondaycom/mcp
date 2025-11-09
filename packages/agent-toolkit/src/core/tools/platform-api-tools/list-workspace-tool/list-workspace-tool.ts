@@ -1,7 +1,7 @@
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { listWorkspaces } from './list-workspace.graphql';
-import { ListWorkspacesQuery } from '../../../../monday-graphql/generated/graphql';
+import { ListWorkspacesQuery } from '../../../../monday-graphql/generated/graphql/graphql';
 import { DEFAULT_WORKSPACE_LIMIT, MAX_WORKSPACE_LIMIT_FOR_SEARCH } from './list-workspace.consts';
 import { z } from 'zod';
 import { normalizeString } from 'src/utils/string.utils';

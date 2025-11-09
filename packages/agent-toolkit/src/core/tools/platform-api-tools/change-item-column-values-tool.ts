@@ -2,7 +2,7 @@ import { z } from 'zod';
 import {
   ChangeItemColumnValuesMutation,
   ChangeItemColumnValuesMutationVariables,
-} from '../../../monday-graphql/generated/graphql';
+} from 'src/monday-graphql/generated/graphql/graphql';
 import { changeItemColumnValues } from '../../../monday-graphql/queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';

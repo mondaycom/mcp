@@ -2,7 +2,7 @@ import { z } from 'zod';
 import {
   GetBoardAllActivityQuery,
   GetBoardAllActivityQueryVariables,
-} from '../../../../monday-graphql/generated/graphql';
+} from '../../../../monday-graphql/generated/graphql/graphql';
 import { getBoardAllActivity } from './get-board-activity.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './../base-monday-api-tool';

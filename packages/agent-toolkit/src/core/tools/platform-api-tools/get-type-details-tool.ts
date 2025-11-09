@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { GetTypeDetailsQuery } from '../../../monday-graphql/generated/graphql';
+import { GetTypeDetailsQuery } from 'src/monday-graphql/generated/graphql/graphql';
 import { generateTypeDetailsQuery } from '../../../monday-graphql/queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';

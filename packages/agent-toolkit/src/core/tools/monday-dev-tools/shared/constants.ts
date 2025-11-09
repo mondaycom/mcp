@@ -1,4 +1,4 @@
-import { SprintState } from '../../../../monday-graphql/generated/graphql';
+import { SprintState } from '../../../../monday-graphql/generated/graphql/graphql';
 import type { CheckboxValue, DateValue, TimelineValue, DocValue } from './types';
 
 /**
