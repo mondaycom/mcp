@@ -56,11 +56,17 @@ export class FullBoardDataTool extends BaseMondayApiTool<typeof fullBoardDataToo
       const userIds = new Set<string>();
 
       board.items_page.items.forEach((item) => {
-        // Collect IDs from update creators
+        // Collect IDs from update creators and reply creators
         item.updates?.forEach((update) => {
           if (update.creator_id) {
             userIds.add(update.creator_id);
           }
+          // Collect IDs from reply creators
+          update.replies?.forEach((reply) => {
+            if (reply.creator_id) {
+              userIds.add(reply.creator_id);
+            }
+          });
         });
 
         // Collect IDs from people column values
@@ -108,6 +114,14 @@ export class FullBoardDataTool extends BaseMondayApiTool<typeof fullBoardDataToo
                 creator: update.creator_id ? userMap.get(update.creator_id) || null : null,
                 text_body: update.text_body,
                 created_at: update.created_at,
+                replies:
+                  update.replies?.map((reply) => ({
+                    id: reply.id,
+                    creator_id: reply.creator_id || '',
+                    creator: reply.creator_id ? userMap.get(reply.creator_id) || null : null,
+                    text_body: reply.text_body,
+                    created_at: reply.created_at,
+                  })) || [],
               })) || [],
           })),
         },
