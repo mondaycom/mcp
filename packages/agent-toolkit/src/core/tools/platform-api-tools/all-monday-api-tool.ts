@@ -93,7 +93,6 @@ export class AllMondayApiTool extends BaseMondayApiTool<typeof allMondayApiToolS
       }
 
       const data = await this.mondayApi.request<GraphQLResponse>(query, parsedVariables);
-
       return {
         content: JSON.stringify(data),
       };
