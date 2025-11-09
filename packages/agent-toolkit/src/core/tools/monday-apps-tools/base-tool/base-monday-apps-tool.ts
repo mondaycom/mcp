@@ -67,7 +67,7 @@ export abstract class BaseMondayAppsTool<
   protected abstract executeInternal(input?: ToolInputType<Input>): Promise<ToolOutputType<Output>>;
 
   /**
-   * Execute an API request to the Monday.com API
+   * Execute an API request to the monday.com  API
    */
   protected async executeApiRequest<T extends MondayApiResponse>(
     method: string,
@@ -80,7 +80,7 @@ export abstract class BaseMondayAppsTool<
     } = {},
   ): Promise<T> {
     if (!this.mondayApiToken) {
-      throw new Error('Monday API token is required to execute Monday.com API requests');
+      throw new Error('Monday API token is required to execute monday.com  API requests');
     }
 
     const { data, query, headers = {}, timeout = APPS_MS_TIMEOUT_IN_MS } = options;
@@ -121,13 +121,13 @@ export abstract class BaseMondayAppsTool<
         const errorData = error.response?.data || { message: error.message };
 
         throw new Error(
-          `Monday.com API request failed with status ${statusCode}: ${
+          `monday.com  API request failed with status ${statusCode}: ${
             typeof errorData === 'object' ? JSON.stringify(errorData) : errorData
           }`,
         );
       }
 
-      throw new Error(`Failed to execute Monday.com API request: ${error.message}`);
+      throw new Error(`Failed to execute monday.com  API request: ${error.message}`);
     }
   }
 

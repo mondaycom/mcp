@@ -28,7 +28,7 @@ export interface AppVersionApiDataResponse extends MondayApiResponse {
 }
 
 export const getAppVersionsSchema = z.object({
-  appId: z.number().describe('The unique identifier of the app to retrieve version history for. Each app can have multiple versions (draft, live, previous). Get app IDs from get_all_apps'),
+  appId: z.number().describe('The unique identifier of the app to retrieve version history for. Each app can have multiple versions (draft, live, deprecated). Get app IDs from get_all_apps'),
 });
 
 export const getAppVersionSchema = z.object({

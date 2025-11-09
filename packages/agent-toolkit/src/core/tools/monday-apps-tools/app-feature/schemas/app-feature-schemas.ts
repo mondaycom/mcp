@@ -56,5 +56,5 @@ export const createAppFeatureSchema = z.object({
   appVersionId: z.number().describe('The specific version ID to add the feature to (typically a draft version). Features are tied to specific versions. Get from get_app_versions'),
   name: z.string().describe('A descriptive name for this feature instance. This helps identify the feature in your app configuration and management UI'),
   type: z.union([z.nativeEnum(AppFeatureType), z.string()]).describe('The feature type that determines how it integrates with monday.com. Examples: AppFeatureStatusColumn (custom status column), AppFeatureBoardView (board view), AppFeatureItemView (item view), AppFeatureDashboardWidget (widget)'),
-  data: z.record(z.any()).optional().describe('Feature-specific configuration data as a JSON object. The structure depends on the feature type. For example, column features need column settings; view features need URL endpoints and authentication details'),
+  data: z.record(z.any()).optional().describe('Feature-specific configuration data as a JSON object. The structure depends on the feature type'),
 });

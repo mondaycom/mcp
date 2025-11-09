@@ -35,7 +35,7 @@ export interface CreateAppResponse extends MondayApiResponse {
 }
 
 export const createAppSchema = z.object({
-  manifestFile: z.string().describe('The manifest file as a base64-encoded string. The original file must be a ZIP archive containing your app configuration (manifest.json, views, features, etc.)'),
+  manifestFile: z.string().describe('The manifest file as a base64-encoded string. The original file must be a ZIP archive containing your app configuration (manifest.json). Full documentation: https://developer.monday.com/apps/docs/use-a-manifest-file-to-configure-your-app'),
 });
 
 export const createPlainAppSchema = z.object({

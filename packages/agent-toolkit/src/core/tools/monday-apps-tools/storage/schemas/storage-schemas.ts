@@ -27,12 +27,3 @@ export const exportStorageDataSchema = z.object({
   accountId: z.number().describe('The monday.com account ID to export storage from. Each account has isolated storage data'),
   fileFormat: z.enum(['JSON', 'CSV']).optional().describe('The desired export format. JSON preserves data structure and is best for re-importing; CSV is easier to view in spreadsheet applications. Defaults to JSON if not specified'),
 });
-
-export interface RemoveAppStorageDataResponse extends MondayApiResponse {
-  success?: boolean;
-}
-
-export const removeAppStorageDataSchema = z.object({
-  appId: z.number().describe('The unique identifier of the app whose storage data will be deleted. This is a destructive operation'),
-  accountId: z.number().describe('The monday.com account ID whose storage data will be removed. Only affects this specific account\'s data, not other accounts'),
-});
