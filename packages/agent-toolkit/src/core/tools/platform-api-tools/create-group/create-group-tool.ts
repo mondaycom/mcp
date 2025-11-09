@@ -3,7 +3,7 @@ import {
   PositionRelative,
   CreateGroupMutation,
   CreateGroupMutationVariables,
-} from '../../../../monday-graphql';
+} from '../../../../monday-graphql/generated/graphql/graphql';
 import { createGroup } from './create-group.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';

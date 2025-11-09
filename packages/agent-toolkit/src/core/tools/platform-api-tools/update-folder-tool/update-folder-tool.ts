@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { updateFolder } from './update-folder-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { FolderColor, FolderFontWeight, FolderCustomIcon, ObjectType } from 'src/monday-graphql/generated/graphql';
+import { FolderColor, FolderFontWeight, FolderCustomIcon, ObjectType } from 'src/monday-graphql/generated/graphql/graphql';
 
 export const updateFolderToolSchema = {
   folderId: z.string().describe('The ID of the folder to update'),

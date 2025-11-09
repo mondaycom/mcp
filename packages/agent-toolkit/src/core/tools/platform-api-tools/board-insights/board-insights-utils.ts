@@ -11,7 +11,7 @@ import {
   AggregateSelectFunctionName,
   ItemsQuery,
   ItemsQueryOrderBy,
-} from 'src/monday-graphql/generated/graphql';
+} from 'src/monday-graphql/generated/graphql/graphql';
 import { transformativeFunctions } from './board-insights.consts';
 
 export function handleFrom(input: ToolInputType<typeof boardInsightsToolSchema>): AggregateFromTableInput {

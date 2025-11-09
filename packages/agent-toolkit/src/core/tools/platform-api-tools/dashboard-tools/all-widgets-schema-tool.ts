@@ -1,7 +1,7 @@
 import {
   GetAllWidgetsSchemaQuery,
   GetAllWidgetsSchemaQueryVariables,
-} from '../../../../monday-graphql/generated/graphql';
+} from '../../../../monday-graphql/generated/graphql/graphql';
 import { getAllWidgetsSchema } from './dashboard-queries.graphql';
 import { ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';

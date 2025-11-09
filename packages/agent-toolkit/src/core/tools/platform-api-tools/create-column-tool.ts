@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CreateColumnMutation, CreateColumnMutationVariables } from '../../../monday-graphql/generated/graphql';
+import { CreateColumnMutation, CreateColumnMutationVariables } from 'src/monday-graphql/generated/graphql/graphql';
 import { createColumn } from '../../../monday-graphql/queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
@@ -50,7 +50,7 @@ export class CreateColumnTool extends BaseMondayApiTool<CreateColumnToolInput> {
     const boardId = this.context?.boardId ?? (input as ToolInputType<typeof createColumnInBoardToolSchema>).boardId;
 
     const variables: CreateColumnMutationVariables = {
-      boardId: boardId.toString(),
+      boardId: boardId?.toString() ?? '',
       columnType: input.columnType,
       columnTitle: input.columnTitle,
       columnDescription: input.columnDescription,

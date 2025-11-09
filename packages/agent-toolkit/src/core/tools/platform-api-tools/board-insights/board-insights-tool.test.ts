@@ -8,7 +8,7 @@ import {
   AggregateFromElementType,
   AggregateSelectElementType,
   ItemsOrderByDirection,
-} from 'src/monday-graphql/generated/graphql';
+} from 'src/monday-graphql/generated/graphql/graphql';
 import { DEFAULT_LIMIT } from './board-insights.consts';
 
 describe('Board Insights Tool', () => {

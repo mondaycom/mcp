@@ -5,7 +5,7 @@ import {
   FolderCustomIcon,
   CreateFolderMutation,
   CreateFolderMutationVariables,
-} from '../../../../monday-graphql/generated/graphql';
+} from '../../../../monday-graphql/generated/graphql/graphql';
 import { createFolderTool } from './create-folder-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';

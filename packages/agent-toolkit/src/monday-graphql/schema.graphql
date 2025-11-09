@@ -1546,7 +1546,7 @@ type Mutation {
   create_app(
     """App configuration data"""
     input: CreateAppInput!
-  ): AppType
+  ): CreateAppResponse
 
   """
   Updates an existing app. If the app latest version is live, a new draft version is automatically created and updated.
@@ -2714,7 +2714,9 @@ type Mutation {
     """Parent container for the widget (dashboard or board view)."""
     parent: WidgetParentInput!
 
-    """The kind of widget to create (i.e CHART, NUMBER, BATTERY, CALENDAR)."""
+    """
+    The kind of widget to create (i.e CHART, NUMBER, BATTERY, CALENDAR, GANTT).
+    """
     kind: ExternalWidget!
 
     """The name of the widget."""
@@ -3417,6 +3419,8 @@ type Board {
 
     """Should include only board-level updates."""
     board_updates_only: Boolean
+    from_date: ISO8601DateTime
+    to_date: ISO8601DateTime
   ): [Update!]
 
   """The board's visible columns."""
@@ -6196,6 +6200,26 @@ input CreateAppInput {
 
   """Array of user IDs with access"""
   collaborators: [ID!]
+}
+
+"""
+Response object for app creation operations, including app data and API credentials
+"""
+type CreateAppResponse {
+  """The app's ID"""
+  id: ID
+
+  """The app's API app ID"""
+  api_app_id: ID
+
+  """The app's client ID"""
+  client_id: String
+
+  """The app's client secret"""
+  client_secret: String
+
+  """The app's signing secret used for webhook signature verification"""
+  signing_secret: String
 }
 
 """
@@ -10198,6 +10222,11 @@ enum ExternalWidget {
   Calendar widgets for timeline and schedule visualization. Displays date and timeline column data in a traditional calendar format, supporting time slots, color-coded events by board/group/status, and multi-board aggregation. Ideal for project scheduling, deadline tracking, event planning, and time-based workflow visualization.
   """
   CALENDAR
+
+  """
+  A Gantt chart visualization of board timelines with dependencies, grouping, and coloring capabilities.
+  """
+  GANTT
 }
 
 """Data visualization object."""
@@ -10208,7 +10237,7 @@ type Widget {
   """Parent container where the widget is placed."""
   parent: WidgetParentOutput
 
-  """The type of widget (CHART, NUMBER, BATTERY, CALENDAR)."""
+  """The type of widget (CHART, NUMBER, BATTERY, CALENDAR, GANTT)."""
   kind: ExternalWidget
 
   """Widget label (UTF-8 chars)."""

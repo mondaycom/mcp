@@ -1,4 +1,4 @@
-import { FetchCustomActivityQuery } from '../../../monday-graphql/generated/graphql';
+import { FetchCustomActivityQuery } from 'src/monday-graphql/generated/graphql/graphql';
 import { fetchCustomActivity } from '../../../monday-graphql/queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';

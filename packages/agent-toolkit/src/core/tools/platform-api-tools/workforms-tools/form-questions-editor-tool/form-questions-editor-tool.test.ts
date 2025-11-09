@@ -7,7 +7,7 @@ import {
   FormQuestionPrefillSources,
   FormQuestionSelectDisplay,
   FormQuestionSelectOrderByOptions,
-} from 'src/monday-graphql/generated/graphql';
+} from 'src/monday-graphql/generated/graphql/graphql';
 import { z, ZodTypeAny } from 'zod';
 
 export type inputType = z.objectInputType<typeof formQuestionsEditorToolSchema, ZodTypeAny>;

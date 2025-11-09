@@ -1,4 +1,4 @@
-import { GetWorkspaceInfoQuery } from 'src/monday-graphql/generated/graphql';
+import { GetWorkspaceInfoQuery } from 'src/monday-graphql/generated/graphql/graphql';
 import { OrganizedWorkspaceInfo } from './types';
 
 export function organizeWorkspaceInfoHierarchy(response: GetWorkspaceInfoQuery): OrganizedWorkspaceInfo {

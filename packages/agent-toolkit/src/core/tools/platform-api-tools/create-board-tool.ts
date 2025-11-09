@@ -3,7 +3,7 @@ import {
   BoardKind,
   CreateBoardMutation,
   CreateBoardMutationVariables,
-} from '../../../monday-graphql/generated/graphql';
+} from '../../../monday-graphql/generated/graphql/graphql';
 import { createBoard } from '../../../monday-graphql/queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';

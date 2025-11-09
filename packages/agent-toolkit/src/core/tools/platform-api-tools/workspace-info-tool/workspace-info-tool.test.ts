@@ -1,5 +1,5 @@
 import { organizeWorkspaceInfoHierarchy } from './helpers';
-import { WorkspaceKind, State } from '../../../../monday-graphql/generated/graphql';
+import { WorkspaceKind, State } from '../../../../monday-graphql/generated/graphql/graphql';
 
 describe('WorkspaceInfoTool', () => {
   describe('organizeWorkspaceInfoHierarchy', () => {

@@ -6,7 +6,7 @@ import {
   FormQuestionSelectOrderByOptions,
   FormQuestionType,
   FormQuestionPrefillSources,
-} from '../../../../../monday-graphql/generated/graphql';
+} from '../../../../../monday-graphql/generated/graphql/graphql';
 import { STRINGIFIED_SUFFIX } from 'src/utils/microsoft-copilot.utils';
 
 const questionSchema = z.object({

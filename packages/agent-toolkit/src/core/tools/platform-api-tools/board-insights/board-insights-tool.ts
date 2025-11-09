@@ -8,7 +8,7 @@ import {
   AggregateBoardInsightsQueryVariables,
   AggregateBoardInsightsQuery,
   ItemsOrderByDirection,
-} from 'src/monday-graphql/generated/graphql';
+} from 'src/monday-graphql/generated/graphql/graphql';
 import { handleFilters, handleFrom, handleSelectAndGroupByElements } from './board-insights-utils';
 import { BoardInsightsAggregationFunction, DEFAULT_LIMIT, MAX_LIMIT } from './board-insights.consts';
 import { fallbackToStringifiedVersionIfNull } from '../../../../utils/microsoft-copilot.utils';

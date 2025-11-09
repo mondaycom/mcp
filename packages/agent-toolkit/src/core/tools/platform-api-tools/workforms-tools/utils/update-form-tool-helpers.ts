@@ -27,7 +27,7 @@ import {
   UpdateFormQuestionOrderMutationVariables,
   UpdateFormTagMutation,
   UpdateFormTagMutationVariables,
-} from '../../../../../monday-graphql/generated/graphql';
+} from '../../../../../monday-graphql/generated/graphql/graphql';
 import {
   activateForm,
   createFormTag,

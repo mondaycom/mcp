@@ -1,4 +1,4 @@
-import { ColumnType } from "src/monday-graphql";
+import { ColumnType } from "src/monday-graphql/generated/graphql/graphql";
 
 export const NonDeprecatedColumnType = Object.fromEntries(
   Object.entries(ColumnType).filter(([key]) => key !== "Person")

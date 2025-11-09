@@ -1,7 +1,7 @@
 import { NonDeprecatedColumnType } from 'src/utils/types';
 import {
   GetRecentBoardsQuery,
-} from '../../../../monday-graphql/generated/graphql';
+} from '../../../../monday-graphql/generated/graphql/graphql';
 
 /**
  * Valid sprints and tasks boards with proper relationships
