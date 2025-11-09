@@ -1,32 +1,29 @@
 import { FormattedResponse, isExtendedTeam, UserTeam } from './types';
 
-// Type for optional field configuration: [fieldName, displayLabel, valueFormatter]
-type OptionalFieldConfig = [string, string, (value: any) => string | null];
-
-// Reusable formatter functions for common field types
-const formatters = {
-  // Boolean fields that default to false
-  boolean: (v: any): string | null => (v !== undefined ? `${v || false}` : null),
-  // Fields that are included if truthy
-  truthy: (v: any): string | null => (v ? `${v}` : null),
-  // Numeric fields that need null check
-  numeric: (v: any): string | null => (v !== undefined && v !== null ? `${v}` : null),
-};
-
-// Configuration for optional team member fields
-const optionalTeamMemberFields: OptionalFieldConfig[] = [
-  ['is_pending', 'Pending', formatters.boolean],
-  ['is_verified', 'Verified', formatters.boolean],
-  ['is_view_only', 'View Only', formatters.boolean],
-  ['join_date', 'Join Date', formatters.truthy],
-  ['last_activity', 'Last Activity', formatters.truthy],
-  ['location', 'Location', formatters.truthy],
-  ['mobile_phone', 'Mobile Phone', formatters.truthy],
-  ['phone', 'Phone', formatters.truthy],
-  ['photo_thumb', 'Photo Thumb', formatters.truthy],
-  ['time_zone_identifier', 'Timezone', formatters.truthy],
-  ['utc_hours_diff', 'UTC Hours Diff', formatters.numeric],
+// Configuration for optional team member fields: [fieldName, displayLabel]
+const optionalTeamMemberFields: Array<[string, string]> = [
+  ['is_pending', 'Pending'],
+  ['is_verified', 'Verified'],
+  ['is_view_only', 'View Only'],
+  ['join_date', 'Join Date'],
+  ['last_activity', 'Last Activity'],
+  ['location', 'Location'],
+  ['mobile_phone', 'Mobile Phone'],
+  ['phone', 'Phone'],
+  ['photo_thumb', 'Photo Thumb'],
+  ['time_zone_identifier', 'Timezone'],
+  ['utc_hours_diff', 'UTC Hours Diff'],
 ];
+ 
+// For optional fields - returns array of formatted strings
+function formatOptionalUserFields(user: Record<string, any>, prefix = ''): string[] {
+  return optionalTeamMemberFields
+    .filter(([fieldName]) => {
+      const value = user[fieldName];
+      return value !== undefined && value !== null;
+    })
+    .map(([fieldName, displayLabel]) => `${prefix}${displayLabel}: ${user[fieldName]}`);
+}
 
 export const formatUsersAndTeams = (data: FormattedResponse): string => {
   const sections: string[] = [];
@@ -43,17 +40,8 @@ export const formatUsersAndTeams = (data: FormattedResponse): string => {
         sections.push(`  Enabled: ${user.enabled}`);
         sections.push(`  Admin: ${user.is_admin || false}`);
         sections.push(`  Guest: ${user.is_guest || false}`);
-        sections.push(`  Pending: ${user.is_pending || false}`);
-        sections.push(`  Verified: ${user.is_verified || false}`);
-        sections.push(`  View Only: ${user.is_view_only || false}`);
-        sections.push(`  Join Date: ${user.join_date || 'N/A'}`);
-        sections.push(`  Last Activity: ${user.last_activity || 'N/A'}`);
-        sections.push(`  Location: ${user.location || 'N/A'}`);
-        sections.push(`  Mobile Phone: ${user.mobile_phone || 'N/A'}`);
-        sections.push(`  Phone: ${user.phone || 'N/A'}`);
-        sections.push(`  Photo Thumb: ${user.photo_thumb || 'N/A'}`);
-        sections.push(`  Timezone: ${user.time_zone_identifier || 'N/A'}`);
-        sections.push(`  UTC Hours Diff: ${user.utc_hours_diff || 'N/A'}`);
+        // Add optional fields that exist and have values
+        sections.push(...formatOptionalUserFields(user, '  '));
 
         if (user.teams && user.teams.length > 0) {
           sections.push(`  Teams:`);
@@ -94,7 +82,7 @@ export const formatUsersAndTeams = (data: FormattedResponse): string => {
             sections.push(`  Members:`);
             team.users.forEach((user) => {
               if (user) {
-                // Build member details line with all available fields
+                // Build member details line with required fields
                 const memberDetails = [
                   `ID: ${user.id}`,
                   `Name: ${user.name}`,
@@ -102,17 +90,9 @@ export const formatUsersAndTeams = (data: FormattedResponse): string => {
                   `Title: ${user.title || 'N/A'}`,
                   `Admin: ${user.is_admin || false}`,
                   `Guest: ${user.is_guest || false}`,
+                  // Add all optional fields that exist and have values
+                  ...formatOptionalUserFields(user),
                 ];
-
-                // Add optional fields if they exist and have values
-                optionalTeamMemberFields.forEach(([fieldName, displayLabel, formatter]) => {
-                  if (fieldName in user && (user as any)[fieldName] !== undefined) {
-                    const formattedValue = formatter((user as any)[fieldName]);
-                    if (formattedValue !== null) {
-                      memberDetails.push(`${displayLabel}: ${formattedValue}`);
-                    }
-                  }
-                });
 
                 sections.push(`    - ${memberDetails.join(', ')}`);
               }

@@ -188,11 +188,12 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
       expect(result).toContain('Han Solo');
       expect(result).toContain('Title: N/A');
       expect(result).toContain('Admin: false');
-      expect(result).toContain('Join Date: N/A');
-      expect(result).toContain('Location: N/A');
-      expect(result).toContain('Mobile Phone: N/A');
-      expect(result).toContain('Timezone: N/A');
-      expect(result).toContain('UTC Hours Diff: N/A');
+      // Optional fields with null values are not included in the output
+      expect(result).not.toContain('Join Date:');
+      expect(result).not.toContain('Location:');
+      expect(result).not.toContain('Mobile Phone:');
+      expect(result).not.toContain('Timezone:');
+      expect(result).not.toContain('UTC Hours Diff:');
     });
 
     it('should return appropriate message for empty data', () => {
