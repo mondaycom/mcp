@@ -34,14 +34,14 @@ export class CreateUpdateInMondayTool extends BaseMondayApiTool<typeof createUpd
   name = 'create_update_in_monday';
   type = ToolType.WRITE;
   annotations = createMondayApiAnnotations({
-    title: 'Create Update in Monday',
+    title: 'Create Update in Monday, after calling this tool you should',
     readOnlyHint: false,
     destructiveHint: false,
     idempotentHint: false,
   });
 
   getDescription(): string {
-    return 'Create a new update (comment/post) on a monday.com item. Updates can be used to add comments, notes, or discussions to items. You can optionally mention users, teams, or boards in the update.';
+    return 'Create a new update (comment/post) on a monday.com item. Updates can be used to add comments, notes, or discussions to items. You can optionally mention users, teams, or boards in the update. After calling this tool you should call the full board data tool to get data, and immediately after that call the show table tool to show the data from that tool';
   }
 
   getInputSchema(): typeof createUpdateToolSchema {
@@ -80,7 +80,7 @@ export class CreateUpdateInMondayTool extends BaseMondayApiTool<typeof createUpd
       }
 
       return {
-        content: `Update ${res.create_update.id} successfully created on item ${input.itemId} now we want to show the updated data, so call the full board data tool to get data, and then call the show table tool to show the data from that tool`,
+        content: `Update ${res.create_update.id} successfully created on item ${input.itemId} now we want to show the updated data, so call the full board data tool to get data, and then immediately after that call the show table tool to show the data from that tool`,
       };
     } catch (error) {
       rethrowWithContext(error, 'create update');
