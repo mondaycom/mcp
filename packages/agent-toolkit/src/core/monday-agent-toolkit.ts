@@ -1,4 +1,5 @@
 import { ApiClientConfig } from '@mondaydotcomorg/api';
+import { MondayApiToolContext } from './tools/platform-api-tools/base-monday-api-tool';
 
 export enum ToolMode {
   API = 'api',
@@ -19,4 +20,5 @@ export type MondayAgentToolkitConfig = {
   mondayApiVersion?: ApiClientConfig['apiVersion'];
   mondayApiRequestConfig?: ApiClientConfig['requestConfig'];
   toolsConfiguration?: ToolsConfiguration;
+  context?: MondayApiToolContext;
 };
