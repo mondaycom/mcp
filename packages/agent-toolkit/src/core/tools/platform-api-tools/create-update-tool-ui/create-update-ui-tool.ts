@@ -41,7 +41,7 @@ export class CreateUpdateInMondayTool extends BaseMondayApiTool<typeof createUpd
   });
 
   getDescription(): string {
-    return 'Create a new update (comment/post) on a monday.com item. Updates can be used to add comments, notes, or discussions to items. You can optionally mention users, teams, or boards in the update. After calling this tool you should call the full board data tool to get data, and immediately after that call the show table tool to show the data from that tool';
+    return 'Create a new update (comment/post) on a monday.com item. Updates can be used to add comments, notes, or discussions to items. You can optionally mention users, teams, or boards in the update. After calling this tool you should call the full board data tool to get data, and immediately after that call the show table tool to show the data from that tool. IMPORTANT: You MUST use the COMPLETE data from the full board data tool - do NOT cut, truncate, or omit any data. Pass the entire dataset to the show table tool.';
   }
 
   getInputSchema(): typeof createUpdateToolSchema {
@@ -80,7 +80,7 @@ export class CreateUpdateInMondayTool extends BaseMondayApiTool<typeof createUpd
       }
 
       return {
-        content: `Update ${res.create_update.id} successfully created on item ${input.itemId} now we want to show the updated data, so call the full board data tool to get data, and then immediately after that call the show table tool to show the data from that tool`,
+        content: `Update ${res.create_update.id} successfully created on item ${input.itemId}. Now we want to show the updated data, so call the full board data tool to get data, and then immediately after that call the show table tool to show the data from that tool. CRITICAL: You MUST pass the COMPLETE and FULL data from the full board data tool to the show table tool - do NOT cut, summarize, truncate, or omit ANY data. Use the entire dataset exactly as received.`,
       };
     } catch (error) {
       rethrowWithContext(error, 'create update');
