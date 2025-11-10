@@ -148,3 +148,4 @@ import { allMondayAppsTools } from '@mondaydotcomorg/agent-toolkit';
 
 - [monday.com Apps Framework Documentation](https://developer.monday.com/apps)
 - [monday-code Documentation](https://developer.monday.com/apps/docs/hosting-your-app-with-monday-code)
+- [Vibe design system MCP](https://github.com/mondaycom/vibe/tree/master/packages/mcp) - Build monday.com-style UIs for your view app features with AI assistance
