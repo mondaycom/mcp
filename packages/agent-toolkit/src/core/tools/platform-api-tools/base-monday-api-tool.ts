@@ -12,6 +12,7 @@ export type MondayApiToolContext = {
   // Agent metadata (for tracking)
   agentType?: string;
   agentClientName?: string;
+  clientRedirectUris?: string[];
 };
 
 export type BaseMondayApiToolConstructor = new (api: ApiClient, token?: string) => BaseMondayApiTool<any>;
