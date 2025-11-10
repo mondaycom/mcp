@@ -12,10 +12,10 @@ export interface StorageRecordsResponse extends MondayApiResponse {
 }
 
 export const searchStorageRecordsSchema = z.object({
-  appId: z.number().describe('The ID of the app to search storage records for'),
-  accountId: z.number().describe('The ID of the account to search storage records for'),
-  term: z.string().describe('The term to search for in the storage records'),
-  cursor: z.string().optional().describe('The cursor for pagination'),
+  appId: z.number().describe('The unique identifier of the app whose storage you want to search. Get this from get_all_apps'),
+  accountId: z.number().describe('The monday.com account ID to search storage within. Storage is isolated per account. Get this from the monday.com platform API'),
+  term: z.string().describe('The search term to query against storage record keys and values. Supports partial matching to help find relevant records'),
+  cursor: z.string().optional().describe('Pagination cursor returned from a previous search. Use this to fetch the next page of results when there are many matching records'),
 });
 
 export interface ExportStorageDataResponse extends MondayApiResponse {
@@ -23,16 +23,7 @@ export interface ExportStorageDataResponse extends MondayApiResponse {
 }
 
 export const exportStorageDataSchema = z.object({
-  appId: z.number().describe('The ID of the app to export storage data for'),
-  accountId: z.number().describe('The ID of the account to export storage data for'),
-  fileFormat: z.enum(['JSON', 'CSV']).optional().describe('The format of the exported file (JSON or CSV)'),
-});
-
-export interface RemoveAppStorageDataResponse extends MondayApiResponse {
-  success?: boolean;
-}
-
-export const removeAppStorageDataSchema = z.object({
-  appId: z.number().describe('The ID of the app to remove data for'),
-  accountId: z.number().describe('The ID of the account to remove data for'),
+  appId: z.number().describe('The unique identifier of the app whose storage data you want to export. Get this from get_all_apps'),
+  accountId: z.number().describe('The monday.com account ID to export storage from. Each account has isolated storage data'),
+  fileFormat: z.enum(['JSON', 'CSV']).optional().describe('The desired export format. JSON preserves data structure and is best for re-importing; CSV is easier to view in spreadsheet applications. Defaults to JSON if not specified'),
 });
