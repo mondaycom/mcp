@@ -13,7 +13,7 @@ export class CreateAppFromManifestTool extends BaseMondayAppsTool<typeof createA
   });
 
   getDescription(): string {
-    return 'Create a new monday.com  app from a manifest file. The manifest file should be provided as a base64-encoded ZIP file containing the app configuration. Full documentation: https://developer.monday.com/apps/docs/use-a-manifest-file-to-configure-your-app';
+    return 'Create a new monday.com  app from a manifest file. The manifest file should be provided as a zipped base64-encoded file containing a file called manifest.json. Full documentation for the manifest.json file structure: https://developer.monday.com/apps/docs/use-a-manifest-file-to-configure-your-app';
   }
 
   getInputSchema() {
