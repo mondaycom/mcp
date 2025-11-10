@@ -289,6 +289,95 @@ Our MCP server provides a rich set of tools that give AI assistants the ability 
 | **WorkForms Operations** | create_form | Create a new monday.com form |
 | | get_form | Get a form by its token |
 
+## 🎨 monday.com Apps Framework Tools
+
+The Apps Framework Tools provide AI agents with complete access to monday.com's app development platform. These tools enable you to build, manage, and deploy custom monday.com apps directly through AI assistants.
+
+### What is the monday.com Apps Framework?
+
+The [monday.com Apps Framework](https://developer.monday.com/apps/docs) allows developers to build custom applications that extend monday.com's functionality. With these tools, AI agents can:
+
+- **Create and manage apps** - Build new apps or modify existing ones
+- **Configure app features** - Add custom views, columns, widgets, and integrations
+- **Manage app versions** - Control version lifecycle and promotions
+- **Deploy to monday-code** - Manage serverless backend deployments
+- **Handle app storage** - Query and manage app data storage
+
+### How to Enable Apps Framework Tools
+
+To enable the Apps Framework tools, add the `--mode apps` flag to your MCP configuration:
+
+#### For Cursor or Local MCP Setup
+
+```json
+{
+  "mcpServers": {
+    "monday-api-mcp-apps": {
+      "command": "npx",
+      "args": [
+        "@mondaydotcomorg/monday-api-mcp@latest",
+        "-t",
+        "your_monday_api_token",
+        "--mode",
+        "apps"
+      ]
+    }
+  }
+}
+```
+
+### Available Apps Framework Tools
+
+| Category | Tool | Description |
+|----------|------|-------------|
+| **App Management** | get_all_apps | Retrieve all the development apps that the user has collaboration permissions for |
+| | create_app | Create a new monday.com  app with basic information (name and optional description) |
+| | create_app_from_manifest | Create a new monday.com  app from a manifest file |
+| | promote_app | Promote a specific app version to live/production status |
+| **App Versions** | get_app_versions | Retrieve all versions of a specific app |
+| | get_app_version | Retrieve detailed data for a specific app version by version ID |
+| **App Features** | get_app_features | Retrieve all features (views, columns, integrations, etc.) for a specific app version |
+| | create_app_feature | Create a new feature for a specific app version (custom columns, board views, widgets, etc.) |
+| **monday-code Deployment** | get_deployment_status | Get the deployment status for a specific app version in monday-code |
+| | set_environment_variable | Set or update an environment variable for an app's monday-code backend |
+| **Storage Management** | search_storage_records | Search for storage records in an app by search term |
+| | export_storage_data | Export all storage data from an app for a specific account |
+
+### Example Use Cases
+
+Here are some examples of what you can build with Apps Framework tools:
+
+#### 1. Build a Custom App
+
+```
+"Create a new monday.com app called 'Task Analyzer' that adds a custom status column to track task complexity"
+```
+
+#### 2. Manage App Deployments
+
+```
+"Check the deployment status of my app version and set the API_KEY environment variable"
+```
+
+#### 3. Query App Storage
+
+```
+"Search for all storage records in app 12345 for account 67890 containing 'user_preferences'"
+```
+
+#### 4. Version Management
+
+```
+"Show me all versions of my app and promote the latest draft version to production"
+```
+
+### Prerequisites for Apps Framework Tools
+
+To use the Apps Framework tools, you need:
+
+1. A monday.com developer account with developer mode enabled
+2. Familiarity with the [monday.com Apps Framework](https://developer.monday.com/apps/docs)
+
 ## 🔮 Dynamic API Tools (Beta)
 
 Our Dynamic API Tools feature represents a significant advancement in how AI agents can interact with monday.com. While our standard tools cover common operations, Dynamic API Tools unlock the **full potential** of the monday.com GraphQL API.
@@ -342,6 +431,7 @@ When 'only' mode is enabled, the server will provide just the Dynamic API Tools,
 |----------|-------|-------------|----------|---------|
 | monday.com API Token | `--token`, `-t` | monday.com API token | Yes | - |
 | API Version | `--version`, `-v` | monday.com API version | No | `current` |
+| Mode | `--mode`, `-m` | Tool mode: `default` for standard platform tools, `apps` for Apps Framework tools | No | `default` |
 | Read Only Mode | `--read-only`, `-ro` | Enable read-only mode | No | `false` |
 | Dynamic API Tools | `--enable-dynamic-api-tools`, `-edat` | Enable dynamic API tools | No | `false` |
 
