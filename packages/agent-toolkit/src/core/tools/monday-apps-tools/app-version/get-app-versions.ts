@@ -16,7 +16,7 @@ export class GetAppVersionsTool extends BaseMondayAppsTool<
   });
 
   getDescription(): string {
-    return 'Retrieve all the app versions of an app';
+    return 'Retrieve all versions of a specific app. Returns detailed information including version numbers, IDs, names, and status (draft, live, etc.) for each version. Use this to view the version history and current state of your app.';
   }
 
   getInputSchema() {

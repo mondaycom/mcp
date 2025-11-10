@@ -16,7 +16,7 @@ export class CreateAppFeatureTool extends BaseMondayAppsTool<
   });
 
   getDescription(): string {
-    return 'Create a new app feature for an app version';
+    return 'Create a new feature for a specific app version. Features include custom columns, board views, item views, dashboard widgets, integrations, and more. Requires app ID, version ID, feature name, type, and optional feature-specific data configuration. Use this to add functionality to your app.';
   }
 
   getInputSchema() {

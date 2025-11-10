@@ -13,7 +13,7 @@ export class GetAppFeaturesTool extends BaseMondayAppsTool<typeof getAppFeatures
   });
 
   getDescription(): string {
-    return 'Retrieve app features by app version id';
+    return 'Retrieve all features (views, columns, integrations, etc.) for a specific app version. Optionally filter by feature type (e.g., AppFeatureStatusColumn, AppFeatureBoardView, AppFeatureItemView). Returns feature names, IDs, types, and states. Use this to inspect what features are configured in an app version.';
   }
 
   getInputSchema() {
