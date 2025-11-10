@@ -5,7 +5,7 @@ import {
   DeleteFormQuestionMutationVariables,
   UpdateFormQuestionMutation,
   UpdateFormQuestionMutationVariables,
-} from '../../../../../monday-graphql/generated/graphql';
+} from '../../../../../monday-graphql/generated/graphql/graphql';
 import { createFormQuestion, deleteFormQuestion, updateFormQuestion } from '../workforms.graphql';
 import { ToolInputType, ToolOutputType } from '../../../../tool';
 import { ApiClient } from '@mondaydotcomorg/api';

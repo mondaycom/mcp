@@ -3,7 +3,7 @@ import { BaseMondayApiTool, createMondayApiAnnotations } from '../../platform-ap
 import { 
   GetRecentBoardsQuery,
   GetRecentBoardsQueryVariables,
-} from '../../../../monday-graphql/generated/graphql';
+} from '../../../../monday-graphql/generated/graphql/graphql';
 import { getRecentBoards } from './get-sprints-boards-tool.graphql';
 import {
   ERROR_PREFIXES,

@@ -3,7 +3,7 @@ import {
   GetSprintsByIdsQuery,
   ReadDocsQuery,
   ExportMarkdownFromDocQuery
-} from '../../../../monday-graphql/generated/graphql';
+} from '../../../../monday-graphql/generated/graphql/graphql';
 
 export const VALID_SPRINT_WITH_SUMMARY: GetSprintsByIdsQuery = {
   items: [

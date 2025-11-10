@@ -1,9 +1,12 @@
-
 overwrite: true
-schema: "src/monday-graphql/schema.graphql"
-documents: "src/**/*.graphql.ts"
+schema: 'src/monday-graphql/schema.graphql'
+documents: 'src/**/*.graphql.ts'
+ignoreNoDocuments: true
 generates:
-  src/monday-graphql/generated/graphql.ts:
-    plugins:
-      - "typescript"
-      - "typescript-operations"
+  src/monday-graphql/generated/graphql/:
+    presetConfig:
+      fragmentMasking: false
+    preset: client
+    hooks:
+      afterOneFileWrite:
+        - node -e "const fs = require('fs'); fs.writeFileSync('src/monday-graphql/generated/graphql/index.ts', '/* eslint-disable */\nexport * from \'./gql\';');"

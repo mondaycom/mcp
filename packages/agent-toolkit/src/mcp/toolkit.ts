@@ -119,6 +119,7 @@ export class MondayAgentToolkit extends McpServer {
         title: tool.annotations?.title,
         description: tool.getDescription(),
         inputSchema,
+        annotations: tool.annotations,
       },
       async (args: any, _extra: any) => {
         try {
@@ -184,13 +185,14 @@ export class MondayAgentToolkit extends McpServer {
 
   /**
    * Get all tools as an array of tool objects that can be registered individually
-   * Each tool includes name, description, schema, and handler for external registration
+   * Each tool includes name, description, schema, annotations, and handler for external registration
    * @returns Array of tool objects ready for individual registration
    */
   public getTools(): Array<{
     name: string;
     description: string;
     schema: any;
+    annotations: any;
     handler: (params: any) => Promise<any>;
   }> {
     const allTools = [...this.toolInstances];
@@ -204,6 +206,7 @@ export class MondayAgentToolkit extends McpServer {
       name: tool.name,
       description: tool.getDescription(),
       schema: tool.getInputSchema(),
+      annotations: tool.annotations,
       handler: this.createToolHandler(tool),
     }));
   }
@@ -217,6 +220,7 @@ export class MondayAgentToolkit extends McpServer {
     name: string;
     description: string;
     schema: any;
+    annotations: any;
     handler: (params: any, extra?: any) => Promise<CallToolResult>;
   }> {
     const allTools = [...this.toolInstances];
@@ -230,6 +234,7 @@ export class MondayAgentToolkit extends McpServer {
       name: tool.name,
       description: tool.getDescription(),
       schema: tool.getInputSchema(),
+      annotations: tool.annotations,
       handler: this.createMcpToolHandler(tool),
     }));
   }

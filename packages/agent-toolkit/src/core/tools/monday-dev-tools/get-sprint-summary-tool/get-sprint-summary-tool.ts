@@ -8,7 +8,7 @@ import {
   ReadDocsQueryVariables,
   ExportMarkdownFromDocQuery,
   ExportMarkdownFromDocQueryVariables,
-} from '../../../../monday-graphql/generated/graphql';
+} from '../../../../monday-graphql/generated/graphql/graphql';
 import {
   readDocs as readSprintSummaryDocs,
   exportMarkdownFromDoc as exportSprintSummaryMarkdown,

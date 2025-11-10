@@ -4,7 +4,7 @@ import {
   CreateCustomActivityMutationVariables,
   CustomActivityColor,
   CustomActivityIcon,
-} from '../../../monday-graphql/generated/graphql';
+} from '../../../monday-graphql/generated/graphql/graphql';
 import { createCustomActivity } from '../../../monday-graphql/queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';

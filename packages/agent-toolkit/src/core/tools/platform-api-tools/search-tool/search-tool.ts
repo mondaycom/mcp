@@ -2,7 +2,7 @@ import { ToolInputType, ToolOutputType, ToolType } from 'src/core/tool';
 import { z } from 'zod';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { getBoards, getDocs, getFolders } from './search-tool.graphql';
-import { GetBoardsQuery, GetBoardsQueryVariables, GetDocsQuery, GetDocsQueryVariables, GetFoldersQuery, GetFoldersQueryVariables } from 'src/monday-graphql';
+import { GetBoardsQuery, GetBoardsQueryVariables, GetDocsQuery, GetDocsQueryVariables, GetFoldersQuery, GetFoldersQueryVariables } from 'src/monday-graphql/generated/graphql/graphql';
 import { normalizeString } from 'src/utils/string.utils';
 import { DataWithFilterInfo, GlobalSearchType, ObjectPrefixes, SearchResult } from './search-tool.types';
 import { LOAD_INTO_MEMORY_LIMIT, SEARCH_LIMIT } from './search-tool.consts';
@@ -15,7 +15,7 @@ export const searchSchema = {
   page: z.number().optional().default(1).describe('The page number to get. The default value is 1.'),
 
   // for boards and docs
-  workspaceIds: z.array(z.number()).optional().describe('The ids of the workspaces to search in. Pass if you want to search only in specific workspaces.'),
+  workspaceIds: z.array(z.number()).optional().describe('The ids of the workspaces to search in. [IMPORTANT] Only pass this param if user explicitly asked to search within specific workspaces.'),
 
 };
 

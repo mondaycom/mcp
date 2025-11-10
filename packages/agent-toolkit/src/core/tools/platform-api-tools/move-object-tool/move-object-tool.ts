@@ -3,8 +3,8 @@ import { updateFolder } from '../update-folder-tool/update-folder-tool.graphql';
 import { updateBoardHierarchy, updateOverviewHierarchy } from './move-object-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { ObjectType, UpdateOverviewHierarchyMutation } from 'src/monday-graphql/generated/graphql';
-import { UpdateBoardHierarchyMutation, UpdateFolderMutation } from 'src/monday-graphql/generated/graphql';
+import { ObjectType, UpdateOverviewHierarchyMutation } from 'src/monday-graphql/generated/graphql/graphql';
+import { UpdateBoardHierarchyMutation, UpdateFolderMutation } from 'src/monday-graphql/generated/graphql/graphql';
 
 export const moveObjectToolSchema = {
   objectType: z.nativeEnum(ObjectType).describe('The type of object to move'),
