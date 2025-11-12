@@ -74,7 +74,7 @@ export function handleOrderBy(input: ToolInputType<typeof boardInsightsToolSchem
   }));
 }
 
-export function handleSelectAndGroupByElements(input: ToolInputType<typeof boardInsightsToolSchema>): {
+export function handleSelectAndGroupByElements(input: ToolInputType<typeof boardInsightsToolSchema>, peopleColumnIds: string[]): {
   selectElements: AggregateSelectElementInput[];
   groupByElements: AggregateGroupByElementInput[];
 } {
@@ -85,7 +85,17 @@ export function handleSelectAndGroupByElements(input: ToolInputType<typeof board
       column_id: columnId,
     })) || [];
 
-  const selectElements = input.aggregations!.map((aggregation) => {
+  // select fullname of people when grouping by people columns
+  const peopleAggregations = input.groupBy
+    ?.filter(columnId => peopleColumnIds.includes(columnId))
+    .map(columnId => ({
+      function: AggregateSelectFunctionName.Label,
+      columnId: columnId,
+    })) ?? [];
+
+  const aggregationsToBuild = input.aggregations!.concat(peopleAggregations);
+
+  const selectElements = aggregationsToBuild.map((aggregation) => {
     // handle a function
     if (aggregation.function) {
       // create a unique alias for the select element
@@ -124,6 +134,7 @@ export function handleSelectAndGroupByElements(input: ToolInputType<typeof board
         column_id: aggregation.columnId,
       });
     }
+
     return selectElement;
   });
 

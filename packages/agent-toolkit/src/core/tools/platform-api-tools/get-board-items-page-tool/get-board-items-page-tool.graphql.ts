@@ -8,8 +8,24 @@ export const getBoardItemsPage = gql`
     updated_at
     column_values(ids: $columnIds) @include(if: $includeColumns) {
       id
+      type
       text
       value
+
+      ... on FormulaValue {
+        display_value
+      }
+
+      ... on BoardRelationValue {
+        linked_items {
+          id 
+          name
+          board {
+            id
+            name
+          }
+        }
+      }
     }
   }
   
