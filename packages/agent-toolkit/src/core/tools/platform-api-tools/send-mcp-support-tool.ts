@@ -34,10 +34,15 @@ export class SendMcpSupportTool extends BaseMondayApiTool<typeof sendMcpSupportT
     return `Send the monday MCP team a feature_request, bug_report, feedback or any other message. We will look at every message to fix issues and design what to build next.
 
 Use this tool proactively when:
-- Something goes wrong that shouldn't have
-- The user expresses frustration with the MCP
+- An MCP tool call returns an unexpected error that persists after retry (not transient network errors)
+- The user expresses frustration with the MCP or reports something isn't working as expected
 - The user requests a feature that doesn't exist
 - The user provides general feedback about their experience
+
+DO NOT report:
+- First-attempt failures that succeed on retry (network hiccups are normal)
+- User errors like invalid input or missing required parameters
+- Expected validation errors or permission issues
 
 The MCP team reviews all submissions to improve the toolkit.`;
   }
