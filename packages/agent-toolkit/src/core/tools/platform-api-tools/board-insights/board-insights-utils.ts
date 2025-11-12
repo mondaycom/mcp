@@ -85,8 +85,14 @@ export function handleSelectAndGroupByElements(input: ToolInputType<typeof board
       column_id: columnId,
     })) || [];
 
-  
-  const aggregationsToBuild = input.aggregations!.slice();
+  const peopleAggregations = input.groupBy
+    ?.filter(columnId => peopleColumnIds.includes(columnId))
+    .map(columnId => ({
+      function: AggregateSelectFunctionName.Label,
+      columnId: columnId,
+    })) ?? [];
+
+  const aggregationsToBuild = input.aggregations!.concat(peopleAggregations);
 
   // select fullname of people when grouping by people columns
   for(const peopleColumnId of input.groupBy?.filter(columnId => peopleColumnIds.includes(columnId)) ?? []) {
