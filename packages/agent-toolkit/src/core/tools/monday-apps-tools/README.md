@@ -41,7 +41,6 @@ To enable the Apps Framework tools, add the `--mode apps` flag to your MCP confi
 |----------|------|-------------|
 | **App Management** | get_all_apps | Retrieve all the development apps that the user has collaboration permissions for |
 | | create_app | Create a new monday.com  app with basic information (name and optional description) |
-| | create_app_from_manifest | Create a new monday.com  app from a manifest file |
 | | promote_app | Promote a specific app version to live/production status |
 | **App Versions** | get_app_versions | Retrieve all versions of a specific app |
 | | get_app_version | Retrieve detailed data for a specific app version by version ID |
@@ -95,7 +94,6 @@ Tools for creating and managing monday.com apps at the top level.
 
 - **get_all_apps**: List all apps you have access to
 - **create_app**: Create a new app with basic configuration
-- **create_app_from_manifest**: Create an app from a complete manifest file
 - **promote_app**: Promote an app version to production
 
 ### App Version Tools
