@@ -568,8 +568,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(createMockBoardInfoResponse(123456), true);
-      mocks.setResponse(mockResponse, true);
+      mocks.setResponseOnce(createMockBoardInfoResponse(123456));
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -613,8 +613,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(createMockBoardInfoResponse(123456), true);
-      mocks.setResponse(mockResponse, true);
+      mocks.setResponseOnce(createMockBoardInfoResponse(123456));
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -665,8 +665,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(createMockBoardInfoResponse(123456), true);
-      mocks.setResponse(mockResponse, true);
+      mocks.setResponseOnce(createMockBoardInfoResponse(123456));
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -688,8 +688,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(createMockBoardInfoResponse(123456), true);
-      mocks.setResponse(mockResponse, true);
+      mocks.setResponseOnce(createMockBoardInfoResponse(123456));
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -708,8 +708,8 @@ describe('Board Insights Tool', () => {
         aggregate: null,
       };
 
-      mocks.setResponse(createMockBoardInfoResponse(123456), true);
-      mocks.setResponse(mockResponse, true);
+      mocks.setResponseOnce(createMockBoardInfoResponse(123456));
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -755,8 +755,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(createMockBoardInfoResponse(123456), true);
-      mocks.setResponse(mockResponse, true);
+      mocks.setResponseOnce(createMockBoardInfoResponse(123456));
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -800,8 +800,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(createMockBoardInfoResponse(123456), true);
-      mocks.setResponse(mockResponse, true);
+      mocks.setResponseOnce(createMockBoardInfoResponse(123456));
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -836,8 +836,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(createMockBoardInfoResponse(123456), true);
-      mocks.setResponse(mockResponse, true);
+      mocks.setResponseOnce(createMockBoardInfoResponse(123456));
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -911,8 +911,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(createMockBoardInfoResponse(123456), true);
-      mocks.setResponse(mockResponse, true);
+      mocks.setResponseOnce(createMockBoardInfoResponse(123456));
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -959,8 +959,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(createMockBoardInfoResponse(123456), true);
-      mocks.setResponse(mockResponse, true);
+      mocks.setResponseOnce(createMockBoardInfoResponse(123456));
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -1004,8 +1004,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(createMockBoardInfoResponse(123456), true);
-      mocks.setResponse(mockResponse, true);
+      mocks.setResponseOnce(createMockBoardInfoResponse(123456));
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -1060,8 +1060,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(createMockBoardInfoResponse(123456), true);
-      mocks.setResponse(mockResponse, true);
+      mocks.setResponseOnce(createMockBoardInfoResponse(123456));
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -1120,8 +1120,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(createMockBoardInfoResponse(123456), true);
-      mocks.setResponse(mockResponse, true);
+      mocks.setResponseOnce(createMockBoardInfoResponse(123456));
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -1162,8 +1162,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(createMockBoardInfoResponse(123456), true);
-      mocks.setResponse(mockResponse, true);
+      mocks.setResponseOnce(createMockBoardInfoResponse(123456));
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -1216,8 +1216,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(createMockBoardInfoResponse(123456), true);
-      mocks.setResponse(mockResponse, true);
+      mocks.setResponseOnce(createMockBoardInfoResponse(123456));
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -1302,8 +1302,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(createMockBoardInfoResponse(123456), true);
-      mocks.setResponse(mockResponse, true);
+      mocks.setResponseOnce(createMockBoardInfoResponse(123456));
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -1350,8 +1350,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(createMockBoardInfoResponse(123456), true);
-      mocks.setResponse(mockResponse, true);
+      mocks.setResponseOnce(createMockBoardInfoResponse(123456));
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -1402,8 +1402,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(createMockBoardInfoResponse(123456), true);
-      mocks.setResponse(mockResponse, true);
+      mocks.setResponseOnce(createMockBoardInfoResponse(123456));
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -1450,8 +1450,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(createMockBoardInfoResponse(123456), true);
-      mocks.setResponse(mockResponse, true);
+      mocks.setResponseOnce(createMockBoardInfoResponse(123456));
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -1539,8 +1539,8 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(createMockBoardInfoResponse(123456), true);
-      mocks.setResponse(mockResponse, true);
+      mocks.setResponseOnce(createMockBoardInfoResponse(123456));
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
