@@ -8,10 +8,14 @@ import {
   AggregateBoardInsightsQueryVariables,
   AggregateBoardInsightsQuery,
   ItemsOrderByDirection,
+  GetBoardInfoQueryVariables,
+  GetBoardInfoQuery,
 } from 'src/monday-graphql/generated/graphql/graphql';
 import { handleFilters, handleFrom, handleSelectAndGroupByElements } from './board-insights-utils';
 import { BoardInsightsAggregationFunction, DEFAULT_LIMIT, MAX_LIMIT } from './board-insights.consts';
 import { fallbackToStringifiedVersionIfNull } from '../../../../utils/microsoft-copilot.utils';
+import { getBoardInfo } from '../get-board-info/get-board-info.graphql';
+import { NonDeprecatedColumnType } from 'src/utils/types';
 
 export const boardInsightsToolSchema = {
   boardId: z.number().describe('The id of the board to get insights for'),
@@ -129,7 +133,16 @@ export class BoardInsightsTool extends BaseMondayApiTool<typeof boardInsightsToo
     fallbackToStringifiedVersionIfNull(input, 'filters', boardInsightsToolSchema.filters);
     fallbackToStringifiedVersionIfNull(input, 'orderBy', boardInsightsToolSchema.orderBy);
 
-    const { selectElements, groupByElements } = handleSelectAndGroupByElements(input);
+    const boardInfoVariables: GetBoardInfoQueryVariables = { boardId: input.boardId.toString() };
+    const boardInfo = await this.mondayApi.request<GetBoardInfoQuery>(getBoardInfo, boardInfoVariables);
+    const board = boardInfo.boards?.[0];
+    if(!board) {
+      return { content: `Board with id ${input.boardId} not found or you don't have access to it.` };
+    }
+
+    const peopleColumnIds = board.columns?.filter((column) => column?.type === NonDeprecatedColumnType.People)?.map((column) => column!.id) ?? [];
+
+    const { selectElements, groupByElements } = handleSelectAndGroupByElements(input, peopleColumnIds);
     const filters = handleFilters(input);
     const from = handleFrom(input);
 

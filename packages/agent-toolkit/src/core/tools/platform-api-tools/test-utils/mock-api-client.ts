@@ -24,9 +24,8 @@ export function createMockApiClient() {
     mockApiClient,
     mockRequest,
 
-    setResponse: (data: any) => {
-      mockRequest.mockResolvedValue(data);
-    },
+    setResponse: (data: any) => mockRequest.mockResolvedValue(data),
+    setResponseOnce: (data: any) => mockRequest.mockResolvedValueOnce(data),
 
     setError: (messageOrError: string | Error, path: string[] = []) => {
       if (typeof messageOrError === 'string') {

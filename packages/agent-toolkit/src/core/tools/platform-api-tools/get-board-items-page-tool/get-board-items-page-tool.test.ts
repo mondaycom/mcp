@@ -3,6 +3,7 @@ import { callToolByNameAsync, callToolByNameRawAsync, createMockApiClient } from
 import { GetBoardItemsPageTool, GetBoardItemsPageToolInput, getBoardItemsPageToolSchema } from './get-board-items-page-tool';
 import { z, ZodTypeAny } from 'zod';
 import { GetBoardItemsPageQuery, ItemsOrderByDirection, ItemsQueryRuleOperator } from 'src/monday-graphql/generated/graphql/graphql';
+import { NonDeprecatedColumnType } from 'src/utils/types';
 
 
 export type inputType = z.objectInputType<GetBoardItemsPageToolInput, ZodTypeAny>;
@@ -30,8 +31,8 @@ describe('GetBoardItemsPageTool', () => {
               created_at: '2024-01-15T10:30:00Z',
               updated_at: '2024-01-16T14:20:00Z',
               column_values: [
-                { id: 'status', text: 'In Progress', value: '{"label":{"text":"In Progress"}}' },
-                { id: 'priority', text: 'High', value: '{"label":{"text":"High"}}' }
+                { id: 'status', type: NonDeprecatedColumnType.Status, text: 'In Progress', value: '{"label":{"text":"In Progress"}}' },
+                { id: 'priority', type: NonDeprecatedColumnType.Status, text: 'High', value: '{"label":{"text":"High"}}' }
               ],
               subitems: [
                 {
@@ -54,8 +55,8 @@ describe('GetBoardItemsPageTool', () => {
               created_at: '2024-01-14T09:15:00Z',
               updated_at: '2024-01-15T16:45:00Z',
               column_values: [
-                { id: 'status', text: 'Done', value: '{"label":{"text":"Done"}}' },
-                { id: 'priority', text: 'Low', value: '{"label":{"text":"Low"}}' }
+                { id: 'status', type: NonDeprecatedColumnType.Status, text: 'Done', value: '{"label":{"text":"Done"}}' },
+                { id: 'priority', type: NonDeprecatedColumnType.Status, text: 'Low', value: '{"label":{"text":"Low"}}' }
               ]
             }
           ],
@@ -601,8 +602,8 @@ describe('GetBoardItemsPageTool', () => {
         created_at: '2024-01-15T10:30:00Z',
         updated_at: '2024-01-16T14:20:00Z',
         column_values: {
-          status: { label: { text: 'In Progress' } },
-          priority: { label: { text: 'High' } }
+          status: 'In Progress',
+          priority: 'High'
         }
       });
       expect(parsedResult.items[1]).toEqual({
@@ -611,8 +612,8 @@ describe('GetBoardItemsPageTool', () => {
         created_at: '2024-01-14T09:15:00Z',
         updated_at: '2024-01-15T16:45:00Z',
         column_values: {
-          status: { label: { text: 'Done' } },
-          priority: { label: { text: 'Low' } }
+          status: 'Done',
+          priority: 'Low'
         }
       });
       expect(parsedResult.pagination.has_more).toBe(true);
@@ -669,6 +670,158 @@ describe('GetBoardItemsPageTool', () => {
         column_values: {
           status: null,
           priority: null
+        }
+      });
+    });
+
+    it('should return linked_items for BoardRelation column type', async () => {
+      const responseWithBoardRelation = {
+        boards: [
+          {
+            id: '123456789',
+            name: 'Test Board',
+            items_page: {
+              items: [
+                {
+                  id: 'item1',
+                  name: 'Item with board relation',
+                  created_at: '2024-01-15T10:30:00Z',
+                  updated_at: '2024-01-16T14:20:00Z',
+                  column_values: [
+                    {
+                      id: 'board_relation',
+                      type: NonDeprecatedColumnType.BoardRelation,
+                      text: 'Linked Item 1, Linked Item 2',
+                      value: '{"linked_item_ids":["123","456"]}',
+                      linked_items: [
+                        { id: '123', name: 'Linked Item 1', board: { id: '999', name: 'Linked Board' } },
+                        { id: '456', name: 'Linked Item 2', board: { id: '999', name: 'Linked Board' } }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              cursor: null
+            }
+          }
+        ]
+      };
+
+      mocks.setResponse(responseWithBoardRelation);
+
+      const args: inputType = {
+        boardId: 123456789,
+        includeColumns: true
+      };
+      const parsedResult = await callToolByNameAsync('get_board_items_page', args);
+
+      expect(parsedResult.items[0]).toEqual({
+        id: 'item1',
+        name: 'Item with board relation',
+        created_at: '2024-01-15T10:30:00Z',
+        updated_at: '2024-01-16T14:20:00Z',
+        column_values: {
+          board_relation: [
+            { id: '123', name: 'Linked Item 1', board: { id: '999', name: 'Linked Board' } },
+            { id: '456', name: 'Linked Item 2', board: { id: '999', name: 'Linked Board' } }
+          ]
+        }
+      });
+    });
+
+    it('should return display_value for Formula column type', async () => {
+      const responseWithFormula = {
+        boards: [
+          {
+            id: '123456789',
+            name: 'Test Board',
+            items_page: {
+              items: [
+                {
+                  id: 'item1',
+                  name: 'Item with formula',
+                  created_at: '2024-01-15T10:30:00Z',
+                  updated_at: '2024-01-16T14:20:00Z',
+                  column_values: [
+                    {
+                      id: 'formula',
+                      type: NonDeprecatedColumnType.Formula,
+                      text: '42',
+                      value: '{"formula":"2*21"}',
+                      display_value: '42'
+                    }
+                  ]
+                }
+              ],
+              cursor: null
+            }
+          }
+        ]
+      };
+
+      mocks.setResponse(responseWithFormula);
+
+      const args: inputType = {
+        boardId: 123456789,
+        includeColumns: true
+      };
+      const parsedResult = await callToolByNameAsync('get_board_items_page', args);
+
+      expect(parsedResult.items[0]).toEqual({
+        id: 'item1',
+        name: 'Item with formula',
+        created_at: '2024-01-15T10:30:00Z',
+        updated_at: '2024-01-16T14:20:00Z',
+        column_values: {
+          formula: '42'
+        }
+      });
+    });
+
+    it('should return not supported message for Mirror column type', async () => {
+      const responseWithMirror = {
+        boards: [
+          {
+            id: '123456789',
+            name: 'Test Board',
+            items_page: {
+              items: [
+                {
+                  id: 'item1',
+                  name: 'Item with mirror',
+                  created_at: '2024-01-15T10:30:00Z',
+                  updated_at: '2024-01-16T14:20:00Z',
+                  column_values: [
+                    {
+                      id: 'mirror',
+                      type: NonDeprecatedColumnType.Mirror,
+                      text: 'Mirrored value',
+                      value: '{"mirrored_column":"status"}'
+                    }
+                  ]
+                }
+              ],
+              cursor: null
+            }
+          }
+        ]
+      };
+
+      mocks.setResponse(responseWithMirror);
+
+      const args: inputType = {
+        boardId: 123456789,
+        includeColumns: true
+      };
+      const parsedResult = await callToolByNameAsync('get_board_items_page', args);
+
+      expect(parsedResult.items[0]).toEqual({
+        id: 'item1',
+        name: 'Item with mirror',
+        created_at: '2024-01-15T10:30:00Z',
+        updated_at: '2024-01-16T14:20:00Z',
+        column_values: {
+          mirror: 'Column value type is not supported'
         }
       });
     });
