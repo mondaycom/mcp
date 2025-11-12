@@ -91,7 +91,7 @@ export abstract class BaseMondayApiTool<
         isError,
         params,
         toolType: 'monday_api_tool',
-        ...(this.context || {}),
+        ...this.context,
         ...tokenInfo,
       },
     });

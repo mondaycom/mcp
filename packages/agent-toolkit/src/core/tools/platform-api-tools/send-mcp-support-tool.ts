@@ -67,13 +67,13 @@ The MCP team reviews all submissions to improve the toolkit.`;
     // Send feedback to BigBrain
     trackEvent({
       name: 'monday_mcp_support_feedback',
-      data: { ...(this.context || {}), ...eventData },
+      data: { ...this.context, ...eventData },
     });
 
     // Return success message
     const feedbackTypeLabel = input.type.replace('_', ' ');
     return {
-      content: `Thank you for your ${feedbackTypeLabel}! Your message has been sent to the monday MCP team. We review all feedback to improve the toolkit and will use this to make the MCP better.`,
+      content: `Thank you for your ${feedbackTypeLabel}! Your message has been sent to the monday MCP team. The team reviews all feedback to improve the toolkit.`,
     };
   }
 }
