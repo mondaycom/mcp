@@ -26,6 +26,12 @@ export const getBoardDataQuery = gql`
             creator_id
             text_body
             created_at
+            replies {
+              id
+              text_body
+              created_at
+              creator_id
+            }
           }
         }
       }

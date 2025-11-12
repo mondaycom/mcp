@@ -39,12 +39,14 @@ import { CreateFolderTool } from './create-folder-tool/create-folder-tool';
 import { MoveObjectTool } from './move-object-tool/move-object-tool';
 import { BoardInsightsTool } from './board-insights/board-insights-tool';
 import { SearchTool } from './search-tool/search-tool';
+import { CreateUpdateInMondayTool } from './create-update-tool-ui/create-update-ui-tool';
 
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteItemTool,
   GetBoardItemsPageTool,
   CreateItemTool,
   CreateUpdateTool,
+  CreateUpdateInMondayTool,
   GetBoardSchemaTool,
   GetBoardActivityTool,
   GetBoardInfoTool,

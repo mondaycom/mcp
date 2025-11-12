@@ -289,6 +289,12 @@ Our MCP server provides a rich set of tools that give AI assistants the ability 
 | **WorkForms Operations** | create_form | Create a new monday.com form |
 | | get_form | Get a form by its token |
 
+## 🎨 monday.com Apps Framework Tools
+
+Looking to build custom monday.com apps with AI assistance? The Apps Framework Tools provide AI agents with complete access to monday.com's app development platform, enabling you to create, manage, and deploy custom apps directly through AI assistants.
+
+**📖 [View Full Apps Framework Tools Documentation](./packages/agent-toolkit/src/core/tools/monday-apps-tools/README.md)**
+
 ## 🔮 Dynamic API Tools (Beta)
 
 Our Dynamic API Tools feature represents a significant advancement in how AI agents can interact with monday.com. While our standard tools cover common operations, Dynamic API Tools unlock the **full potential** of the monday.com GraphQL API.
@@ -342,6 +348,7 @@ When 'only' mode is enabled, the server will provide just the Dynamic API Tools,
 |----------|-------|-------------|----------|---------|
 | monday.com API Token | `--token`, `-t` | monday.com API token | Yes | - |
 | API Version | `--version`, `-v` | monday.com API version | No | `current` |
+| Mode | `--mode`, `-m` | Tool mode: `default` for standard platform tools, `apps` for Apps Framework tools | No | `default` |
 | Read Only Mode | `--read-only`, `-ro` | Enable read-only mode | No | `false` |
 | Dynamic API Tools | `--enable-dynamic-api-tools`, `-edat` | Enable dynamic API tools | No | `false` |
 

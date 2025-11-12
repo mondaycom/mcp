@@ -15,6 +15,7 @@ import { API_VERSION } from 'src/utils/version.utils';
 export class MondayAgentToolkit extends McpServer {
   private readonly mondayApiClient: ApiClient;
   private readonly mondayApiToken: string;
+  private readonly context?: MondayAgentToolkitConfig['context'];
   private readonly dynamicToolManager: DynamicToolManager = new DynamicToolManager();
   private toolInstances: Tool<any, any>[] = [];
   private managementTool: Tool<any, any> | null = null;
@@ -40,6 +41,7 @@ export class MondayAgentToolkit extends McpServer {
 
     this.mondayApiClient = this.createApiClient(config);
     this.mondayApiToken = config.mondayApiToken;
+    this.context = config.context;
 
     this.registerTools(config);
   }
@@ -97,6 +99,7 @@ export class MondayAgentToolkit extends McpServer {
     const instanceOptions = {
       apiClient: this.mondayApiClient,
       apiToken: this.mondayApiToken,
+      context: this.context,
     };
 
     const filteredTools = getFilteredToolInstances(instanceOptions, config.toolsConfiguration);
@@ -116,6 +119,7 @@ export class MondayAgentToolkit extends McpServer {
         title: tool.annotations?.title,
         description: tool.getDescription(),
         inputSchema,
+        annotations: tool.annotations,
       },
       async (args: any, _extra: any) => {
         try {
@@ -181,13 +185,14 @@ export class MondayAgentToolkit extends McpServer {
 
   /**
    * Get all tools as an array of tool objects that can be registered individually
-   * Each tool includes name, description, schema, and handler for external registration
+   * Each tool includes name, description, schema, annotations, and handler for external registration
    * @returns Array of tool objects ready for individual registration
    */
   public getTools(): Array<{
     name: string;
     description: string;
     schema: any;
+    annotations: any;
     handler: (params: any) => Promise<any>;
   }> {
     const allTools = [...this.toolInstances];
@@ -201,6 +206,7 @@ export class MondayAgentToolkit extends McpServer {
       name: tool.name,
       description: tool.getDescription(),
       schema: tool.getInputSchema(),
+      annotations: tool.annotations,
       handler: this.createToolHandler(tool),
     }));
   }
@@ -214,6 +220,7 @@ export class MondayAgentToolkit extends McpServer {
     name: string;
     description: string;
     schema: any;
+    annotations: any;
     handler: (params: any, extra?: any) => Promise<CallToolResult>;
   }> {
     const allTools = [...this.toolInstances];
@@ -227,6 +234,7 @@ export class MondayAgentToolkit extends McpServer {
       name: tool.name,
       description: tool.getDescription(),
       schema: tool.getInputSchema(),
+      annotations: tool.annotations,
       handler: this.createMcpToolHandler(tool),
     }));
   }

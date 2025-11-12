@@ -6,7 +6,13 @@ import { trackEvent } from '../../../utils/tracking.utils';
 import { extractTokenInfo } from '../../../utils/token.utils';
 
 export type MondayApiToolContext = {
+  // Operational context
   boardId?: number;
+  
+  // Agent metadata (for tracking)
+  agentType?: string;
+  agentClientName?: string;
+  clientRedirectUris?: string[];
 };
 
 export type BaseMondayApiToolConstructor = new (api: ApiClient, token?: string) => BaseMondayApiTool<any>;
@@ -85,6 +91,7 @@ export abstract class BaseMondayApiTool<
         isError,
         params,
         toolType: 'monday_api_tool',
+        ...(this.context || {}),
         ...tokenInfo,
       },
     });

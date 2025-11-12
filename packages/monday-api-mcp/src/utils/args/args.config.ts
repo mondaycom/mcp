@@ -24,8 +24,7 @@ export const ARG_CONFIGS: ArgConfig[] = [
   {
     name: 'mode',
     flags: ['--mode', '-m'],
-    description:
-      'Set the mode for tool selection: "api" (API tools only), "apps" (Monday Apps tools only), or "all" (all tools)',
+    description: 'Set the mode for tool selection: "api" - API tools only, "apps" - (Beta) Monday Apps tools only',
     required: false,
     defaultValue: 'api',
   },
