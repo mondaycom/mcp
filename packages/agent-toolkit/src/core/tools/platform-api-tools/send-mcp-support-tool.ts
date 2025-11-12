@@ -70,10 +70,8 @@ The MCP team reviews all submissions to improve the toolkit.`;
       data: { ...this.context, ...eventData },
     });
 
-    // Return success message
-    const feedbackTypeLabel = input.type.replace('_', ' ');
     return {
-      content: `Thank you for your ${feedbackTypeLabel}! Your message has been sent to the monday MCP team. The team reviews all feedback to improve the toolkit.`,
+      content: 'Message has been sent to the monday MCP team. The team reviews all feedback to improve the toolkit.',
     };
   }
 }
