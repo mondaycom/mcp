@@ -34,8 +34,8 @@ describe('Send MCP Support Tool', () => {
       message: 'This is a test bug report with sufficient details.',
     });
 
-    expect(result.content).toContain('Thank you for your bug report!');
-    expect(result.content).toContain('sent to the monday MCP team');
+    expect(result.content).toContain('Message has been sent to the monday MCP team');
+    expect(result.content).toContain('reviews all feedback');
 
     const feedbackCall = mockedTrackEvent.mock.calls.find(
       call => call[0].name === 'monday_mcp_support_feedback'
@@ -58,7 +58,7 @@ describe('Send MCP Support Tool', () => {
       message: 'Message with title',
       title: 'Test Title',
     });
-    expect(withTitle.content).toContain('Thank you');
+    expect(withTitle.content).toContain('Message has been sent to the monday MCP team');
     
     let feedbackCall = mockedTrackEvent.mock.calls.find(
       call => call[0].name === 'monday_mcp_support_feedback'
@@ -71,7 +71,7 @@ describe('Send MCP Support Tool', () => {
       type: 'feedback',
       message: 'Message without title',
     });
-    expect(withoutTitle.content).toContain('Thank you');
+    expect(withoutTitle.content).toContain('Message has been sent to the monday MCP team');
     
     feedbackCall = mockedTrackEvent.mock.calls.find(
       call => call[0].name === 'monday_mcp_support_feedback'
