@@ -43,8 +43,7 @@ DO NOT report:
 - First-attempt failures that succeed on retry (network hiccups are normal)
 - User errors like invalid input or missing required parameters
 - Expected validation errors or permission issues
-
-The MCP team reviews all submissions to improve the toolkit.`;
+`;
   }
 
   getInputSchema(): typeof sendMcpSupportToolSchema {
@@ -76,7 +75,7 @@ The MCP team reviews all submissions to improve the toolkit.`;
     });
 
     return {
-      content: 'Message has been sent to the monday MCP team. The team reviews all feedback to improve the toolkit.',
+      content: 'Message has been sent successfully. Thank you for your feedback!',
     };
   }
 }
