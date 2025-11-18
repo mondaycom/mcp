@@ -86,7 +86,7 @@ export class AppFeatureSchemaManager {
       });
 
       const response = await axios.get<AppFeatureSchemaDefinition[]>(this.SCHEMA_ENDPOINT, {
-        timeout: 10000, // 10 second timeout (increased from 3)
+        timeout: 5000, // 5 second timeout
         headers: {
           'Accept': 'application/json',
         },
