@@ -19,15 +19,7 @@ export interface MondayTokenPayload {
  * @returns The clean token string
  */
 export const normalizeToken = (token: string): string => {
-  const trimmed = token.trim();
-
-  // Check if token starts with Bearer scheme
-  if (trimmed.toLowerCase().startsWith('bearer ')) {
-    // Split by space and return the token part (everything after "Bearer ")
-    return trimmed.split(/\s+/)[1] || trimmed;
-  }
-
-  return trimmed;
+  return token.trim().replace(/^Bearer\s+/i, '');
 };
 
 /**
