@@ -14,8 +14,25 @@ export interface MondayTokenPayload {
 }
 
 /**
+ * Normalizes a token by removing common prefixes and whitespace
+ * @param token - The token to normalize (may include "Bearer " prefix)
+ * @returns The clean token string
+ */
+export const normalizeToken = (token: string): string => {
+  const trimmed = token.trim();
+
+  // Check if token starts with Bearer scheme
+  if (trimmed.toLowerCase().startsWith('bearer ')) {
+    // Split by space and return the token part (everything after "Bearer ")
+    return trimmed.split(/\s+/)[1] || trimmed;
+  }
+
+  return trimmed;
+};
+
+/**
  * Decodes a JWT token to extract the payload
- * @param token - The JWT token to decode
+ * @param token - The JWT token to decode (should be a clean token without "Bearer " prefix)
  * @returns The decoded payload or null if invalid
  */
 export const decodeJwtToken = (token: string): MondayTokenPayload | null => {
@@ -31,11 +48,12 @@ export const decodeJwtToken = (token: string): MondayTokenPayload | null => {
 
 /**
  * Extracts token information for tracking
- * @param token - The monday.com API token
+ * @param token - The monday.com API token (may include "Bearer " prefix)
  * @returns Token information object or empty object if extraction fails
  */
 export const extractTokenInfo = (token: string): Partial<MondayTokenPayload> => {
-  const tokenPayload = decodeJwtToken(token);
+  const normalizedToken = normalizeToken(token);
+  const tokenPayload = decodeJwtToken(normalizedToken);
   if (!tokenPayload) {
     return {};
   }
