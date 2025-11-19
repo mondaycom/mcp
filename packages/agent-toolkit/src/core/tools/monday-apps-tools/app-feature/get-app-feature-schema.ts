@@ -84,11 +84,9 @@ export class GetAppFeatureSchemaToool extends BaseMondayAppsTool<
             },
           };
         }
-
-        const featureInfo = schemaManager.getFeatureInfo(featureType);
         
         return {
-          content: this.formatSchemaResponse(featureType, schema, featureInfo),
+          content: this.formatSchemaResponse(featureType, schema),
           metadata: {
             statusCode: 200,
             featureType,
@@ -130,7 +128,6 @@ export class GetAppFeatureSchemaToool extends BaseMondayAppsTool<
   private formatSchemaResponse(
     featureType: string,
     schema: AppFeatureSchemaDefinition,
-    info?: ReturnType<typeof schemaManager.getFeatureInfo>,
   ): string {
     const lines: string[] = [
       `App Feature Schema: ${featureType}`,
@@ -143,27 +140,6 @@ export class GetAppFeatureSchemaToool extends BaseMondayAppsTool<
     if (schema.dataSchema) {
       lines.push('Data Schema (JSON):');
       lines.push(JSON.stringify(schema.dataSchema, null, 2));
-      lines.push('');
-    }
-
-    // Required Fields
-    if (schema.dataSchema?.required && Array.isArray(schema.dataSchema.required)) {
-      lines.push('Required Fields:');
-      schema.dataSchema.required.forEach((field: string) => {
-        lines.push(`  - ${field}`);
-      });
-      lines.push('');
-    }
-
-    // Available Properties
-    if (info?.dataSchemaProperties && info.dataSchemaProperties.length > 0) {
-      lines.push('Available Properties:');
-      info.dataSchemaProperties.forEach((prop) => {
-        const propSchema = schema.dataSchema?.properties?.[prop];
-        const propType = propSchema?.type || 'any';
-        const propDesc = propSchema?.title || propSchema?.description || '';
-        lines.push(`  - ${prop} (${propType})${propDesc ? ': ' + propDesc : ''}`);
-      });
       lines.push('');
     }
 
@@ -210,6 +186,7 @@ export class GetAppFeatureSchemaToool extends BaseMondayAppsTool<
       byCategory[category].push(type);
     });
 
+    lines.push(JSON.stringify(byCategory, null, 2));
     lines.push('To get the detailed schema for a specific feature type, call this tool again with the featureType parameter.');
     lines.push('Example: monday_apps_get_app_feature_schema featureType="AppFeatureStatusColumn"');
 

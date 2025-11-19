@@ -181,31 +181,6 @@ export class AppFeatureSchemaManager {
     this.fetchError = undefined;
     await this.initialize();
   }
-
-  /**
-   * Get human-readable information about a feature type
-   */
-  public getFeatureInfo(featureType: string):
-    | {
-        name: string;
-        version: number;
-        dataSchemaProperties?: string[];
-      }
-    | undefined {
-    const schema = this.schemas.get(featureType);
-
-    if (!schema) {
-      return undefined;
-    }
-
-    const dataSchemaProperties = schema.dataSchema?.properties ? Object.keys(schema.dataSchema.properties) : undefined;
-
-    return {
-      name: schema.name,
-      version: schema.version,
-      dataSchemaProperties,
-    };
-  }
 }
 
 /**
