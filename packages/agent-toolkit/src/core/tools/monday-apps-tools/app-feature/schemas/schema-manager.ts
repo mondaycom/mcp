@@ -1,6 +1,7 @@
 import axios from 'axios';
 import * as crypto from 'crypto';
 import * as https from 'https';
+import { API_ENDPOINTS } from '../../consts/routes.consts';
 
 export interface AppFeatureSchemaDefinition {
   id: number;
@@ -33,7 +34,7 @@ export class AppFeatureSchemaManager {
   private lastFetchedAt?: Date;
   private fetchPromise?: Promise<void>;
   private fetchError?: string;
-  private readonly SCHEMA_ENDPOINT = 'https://monday-apps-ms.monday.com/apps_ms/public/platform-building-blocks-schemas';
+  private readonly SCHEMA_ENDPOINT = API_ENDPOINTS.PLATFORM_BUILDING_BLOCKS_SCHEMAS.GET_ALL;
 
   private constructor() {}
 
@@ -58,13 +59,13 @@ export class AppFeatureSchemaManager {
     }
 
     // If already initialized, return immediately
-    if (this.schemas.size > 0 && this.lastFetchedAt) {
+    if (this.isInitializedAndNotExpired()) {
       return Promise.resolve();
     }
 
     // Create a new fetch promise
     this.fetchPromise = this.fetchSchemas();
-    
+
     try {
       await this.fetchPromise;
     } finally {
@@ -88,7 +89,7 @@ export class AppFeatureSchemaManager {
       const response = await axios.get<AppFeatureSchemaDefinition[]>(this.SCHEMA_ENDPOINT, {
         timeout: 5000, // 5 second timeout
         headers: {
-          'Accept': 'application/json',
+          Accept: 'application/json',
         },
         httpsAgent,
       });
@@ -99,7 +100,7 @@ export class AppFeatureSchemaManager {
 
       // Parse and store schemas
       const schemasArray = Array.isArray(response.data) ? response.data : [];
-      
+
       for (const schema of schemasArray) {
         if (schema.name && schema.status === 'ACTIVE') {
           this.schemas.set(schema.name, schema);
@@ -107,12 +108,11 @@ export class AppFeatureSchemaManager {
       }
 
       this.lastFetchedAt = new Date();
-    
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       this.fetchError = errorMessage;
       console.error(`Failed to fetch app feature schemas: ${errorMessage}`);
-      
+
       // Don't throw - allow the system to continue without schemas
       // Tools can still work, just without schema validation/hints
     }
@@ -151,10 +151,14 @@ export class AppFeatureSchemaManager {
   }
 
   /**
-   * Check if schemas have been initialized
+   * Check if schemas have been initialized and not expired
    */
-  public isInitialized(): boolean {
-    return this.schemas.size > 0 && this.lastFetchedAt !== undefined;
+  public isInitializedAndNotExpired(): boolean {
+    return (
+      this.schemas.size > 0 &&
+      this.lastFetchedAt !== undefined &&
+      this.lastFetchedAt.getTime() + 1000 * 60 * 60 * 2 > Date.now()
+    ); // 2 hours cache
   }
 
   /**
@@ -181,29 +185,25 @@ export class AppFeatureSchemaManager {
   /**
    * Get human-readable information about a feature type
    */
-  public getFeatureInfo(featureType: string): {
-    name: string;
-    version: number;
-    hasDataSchema: boolean;
-    dataSchemaProperties?: string[];
-    description?: string;
-  } | undefined {
+  public getFeatureInfo(featureType: string):
+    | {
+        name: string;
+        version: number;
+        dataSchemaProperties?: string[];
+      }
+    | undefined {
     const schema = this.schemas.get(featureType);
-    
+
     if (!schema) {
       return undefined;
     }
 
-    const dataSchemaProperties = schema.dataSchema?.properties 
-      ? Object.keys(schema.dataSchema.properties)
-      : undefined;
+    const dataSchemaProperties = schema.dataSchema?.properties ? Object.keys(schema.dataSchema.properties) : undefined;
 
     return {
       name: schema.name,
       version: schema.version,
-      hasDataSchema: !!schema.dataSchema,
       dataSchemaProperties,
-      description: schema.settings?.marketplaceConfig?.description || schema.settings?.marketplaceConfig?.name,
     };
   }
 }
@@ -212,4 +212,3 @@ export class AppFeatureSchemaManager {
  * Export a singleton instance for convenience
  */
 export const schemaManager = AppFeatureSchemaManager.getInstance();
-

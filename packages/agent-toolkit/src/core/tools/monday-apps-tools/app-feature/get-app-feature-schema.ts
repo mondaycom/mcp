@@ -48,8 +48,8 @@ export class GetAppFeatureSchemaToool extends BaseMondayAppsTool<
     input?: ToolInputType<typeof getAppFeatureSchemaSchema.shape>,
   ): Promise<ToolOutputType<GetAppFeatureSchemaResponse>> {
     try {
-      // Ensure schemas are initialized
-      if (!schemaManager.isInitialized()) {
+      // Ensure schemas are initialized and not expired
+      if (!schemaManager.isInitializedAndNotExpired()) {
         await schemaManager.initialize();
       }
 
@@ -139,14 +139,9 @@ export class GetAppFeatureSchemaToool extends BaseMondayAppsTool<
       '',
     ];
 
-    if (info?.description) {
-      lines.push(`Description: ${info.description}`);
-      lines.push('');
-    }
-
     // Data Schema
     if (schema.dataSchema) {
-      lines.push('Data Schema:');
+      lines.push('Data Schema (JSON):');
       lines.push(JSON.stringify(schema.dataSchema, null, 2));
       lines.push('');
     }
@@ -173,7 +168,7 @@ export class GetAppFeatureSchemaToool extends BaseMondayAppsTool<
     }
 
     lines.push('Usage:');
-    lines.push(`Call monday_apps_create_app_feature with type="${featureType}" and structure the "data" parameter according to the schema above.`);
+    lines.push(`Call monday_apps_create_app_feature or monday_apps_update_app_feature with type="${featureType}" and structure the "data" parameter according to the schema above.`);
 
     return lines.join('\n');
   }
@@ -213,17 +208,6 @@ export class GetAppFeatureSchemaToool extends BaseMondayAppsTool<
         byCategory[category] = [];
       }
       byCategory[category].push(type);
-    });
-
-    // Display by category
-    Object.entries(byCategory).forEach(([category, types]) => {
-      lines.push(`${category.toUpperCase()}:`);
-      types.forEach((type) => {
-        const schema = schemas.find(s => s.name === type);
-        const description = schema?.settings?.marketplaceConfig?.name || '';
-        lines.push(`  - ${type}${description ? ` (${description})` : ''}`);
-      });
-      lines.push('');
     });
 
     lines.push('To get the detailed schema for a specific feature type, call this tool again with the featureType parameter.');
