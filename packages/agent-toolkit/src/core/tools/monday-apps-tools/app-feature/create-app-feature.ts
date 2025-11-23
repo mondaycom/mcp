@@ -16,7 +16,7 @@ export class CreateAppFeatureTool extends BaseMondayAppsTool<
   });
 
   getDescription(): string {
-    return 'Create a new feature for a specific app version. Features include custom columns, board views, item views, dashboard widgets, integrations, and more. Requires app ID, version ID, feature name, type, and optional feature-specific data configuration. Use this to add functionality to your app.';
+    return 'Create a new feature for a specific app version. Features include custom columns, board views, item views, dashboard widgets, integrations, and more. Requires app ID, version ID, feature name, type, and optional feature-specific data configuration. Use this to add functionality to your app.\n\nIMPORTANT: Before calling this tool, you MUST first call monday_apps_get_app_feature_schema with the featureType parameter to retrieve the schema for the specific feature type you want to create. This will show you the required and optional fields for the "data" parameter. Structure your "data" parameter according to the schema returned by monday_apps_get_app_feature_schema.';
   }
 
   getInputSchema() {
