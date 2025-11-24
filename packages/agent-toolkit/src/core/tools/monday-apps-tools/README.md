@@ -21,7 +21,7 @@ To enable the Apps Framework tools, add the `--mode apps` flag to your MCP confi
 ```json
 {
   "mcpServers": {
-    "monday-api-mcp-apps": {
+    "monday-apps-mcp": {
       "command": "npx",
       "args": [
         "@mondaydotcomorg/monday-api-mcp@latest",
