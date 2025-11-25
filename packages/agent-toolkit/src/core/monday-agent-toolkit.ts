@@ -4,6 +4,7 @@ import { MondayApiToolContext } from './tools/platform-api-tools/base-monday-api
 export enum ToolMode {
   API = 'api',
   APPS = 'apps',
+  ATP = 'atp',
 }
 
 export type ToolsConfiguration = {
