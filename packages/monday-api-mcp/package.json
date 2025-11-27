@@ -26,8 +26,8 @@
     "@modelcontextprotocol/sdk": "^1.13.2",
     "@mondaydotcomorg/agent-toolkit": "*",
     "@mondaydotcomorg/atp-client": "^0.19.6",
-    "@mondaydotcomorg/atp-mcp-adapter": "^0.19.6",
-    "@mondaydotcomorg/atp-server": "^0.19.6",
+    "@mondaydotcomorg/atp-mcp-adapter": "^0.19.7",
+    "@mondaydotcomorg/atp-server": "^0.19.7",
     "dotenv": "^16.4.7",
     "zod": "^3.25.0"
   },

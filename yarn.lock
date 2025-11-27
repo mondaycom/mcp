@@ -1250,10 +1250,10 @@
     undici "*"
     zod-to-json-schema "^3.24.6"
 
-"@mondaydotcomorg/atp-compiler@0.19.6":
-  version "0.19.6"
-  resolved "https://registry.npmjs.org/@mondaydotcomorg/atp-compiler/-/atp-compiler-0.19.6.tgz#20f00f4d57fc5a537d61d59c9bc68d021ff46764"
-  integrity sha512-C2MElXsFVR3+BB7fcrxuXl6fbKNMhvSaEPTSpqwP/0bAAU4wSd6Bg4tRY+kKY3IL9Vs+FqOGfUdkp7WUpZVshA==
+"@mondaydotcomorg/atp-compiler@0.19.7":
+  version "0.19.7"
+  resolved "https://registry.npmjs.org/@mondaydotcomorg/atp-compiler/-/atp-compiler-0.19.7.tgz#ed583a6f8a27652949990636ae90d0243f7fe709"
+  integrity sha512-LlHioZ1RlKPM8rZ7GBGCSUUka3jN80qbqfbvSBaNkhCBXxuR6Dftcw6OnWl0W52hBsA+XJ9AxJnipykzIHIuCA==
   dependencies:
     "@babel/generator" "^7.26.0"
     "@babel/parser" "^7.26.0"
@@ -1265,13 +1265,13 @@
     "@types/babel__traverse" "^7.20.0"
     nanoid "^5.0.0"
 
-"@mondaydotcomorg/atp-mcp-adapter@^0.19.6":
-  version "0.19.6"
-  resolved "https://registry.npmjs.org/@mondaydotcomorg/atp-mcp-adapter/-/atp-mcp-adapter-0.19.6.tgz#aa5dea18af3d8a8b5a3d4bb11862514030af2e95"
-  integrity sha512-5jQ7RMWW7BMxpzKCGnfrtD682EH7bGtvQUC2sst6fOkZ6+Fu4q5NHuB6j2aEf8EvhSVyU1IBu0NSLTzIaF6Gkg==
+"@mondaydotcomorg/atp-mcp-adapter@^0.19.7":
+  version "0.19.7"
+  resolved "https://registry.npmjs.org/@mondaydotcomorg/atp-mcp-adapter/-/atp-mcp-adapter-0.19.7.tgz#3e59caf8ca51b9b0f252a922cc96910a6a2ca851"
+  integrity sha512-UP+fALrGwjd5q/nsBcbWgqThWiCIxCiag3Hriw6dJgJ3Xh+/rmi6+RLedrSqDq04nFV0XwCwk1IYFMb35mbq6w==
   dependencies:
     "@mondaydotcomorg/atp-protocol" "0.19.6"
-    "@mondaydotcomorg/atp-server" "0.19.6"
+    "@mondaydotcomorg/atp-server" "0.19.7"
 
 "@mondaydotcomorg/atp-protocol@0.19.6":
   version "0.19.6"
@@ -1313,16 +1313,16 @@
     reflect-metadata "^0.2.1"
     undici "*"
 
-"@mondaydotcomorg/atp-server@0.19.6", "@mondaydotcomorg/atp-server@^0.19.6":
-  version "0.19.6"
-  resolved "https://registry.npmjs.org/@mondaydotcomorg/atp-server/-/atp-server-0.19.6.tgz#067119bdf198e6f24f1636de94836954119f7744"
-  integrity sha512-3zm9tMMcl4IZgm16UbALurjH1M59OCNnCw5Zb5FvaayEK+wu9KMML+oIGHnj2UGoAFrAHN59nCWkb68BeZQ54g==
+"@mondaydotcomorg/atp-server@0.19.7", "@mondaydotcomorg/atp-server@^0.19.7":
+  version "0.19.7"
+  resolved "https://registry.npmjs.org/@mondaydotcomorg/atp-server/-/atp-server-0.19.7.tgz#00455588da09f74813bfa387d5cf978e2a22723b"
+  integrity sha512-G53dPo61u5jif4o1kdIujYT6TSRm8FZP918gU9/88/ZBSFKpwCySTDora6VkTYZItNzw8X8ACkOm1nnjv55Y0A==
   dependencies:
     "@babel/generator" "^7.26.0"
     "@babel/parser" "^7.26.0"
     "@babel/traverse" "^7.26.0"
     "@babel/types" "^7.26.0"
-    "@mondaydotcomorg/atp-compiler" "0.19.6"
+    "@mondaydotcomorg/atp-compiler" "0.19.7"
     "@mondaydotcomorg/atp-protocol" "0.19.6"
     "@mondaydotcomorg/atp-provenance" "0.19.6"
     "@mondaydotcomorg/atp-providers" "0.19.6"

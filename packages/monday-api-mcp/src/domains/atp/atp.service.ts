@@ -1,7 +1,7 @@
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { createServer as createNetServer } from 'net';
 import {
-  ATP_PORT,
   ATP_SERVER_NAME,
   ATP_SERVER_VERSION,
   MONDAY_API_BASE_URL,
@@ -45,10 +45,49 @@ function filterAndEnhanceTools(tools: ReturnType<AtpClient['getATPTools']>, tool
     }));
 }
 
-async function initAtpServer(createServer: CreateServerFn) {
+/**
+ * Gets the ATP port from environment variable, or returns undefined to use dynamic port allocation.
+ * Set MONDAY_ATP_PORT environment variable to use a specific port.
+ */
+function getAtpPort(): number | undefined {
+  const envPort = process.env.MONDAY_ATP_PORT;
+  if (envPort) {
+    const port = parseInt(envPort, 10);
+    if (!isNaN(port) && port > 0 && port <= 65535) {
+      return port;
+    }
+  }
+  return undefined; // Will use dynamic port allocation
+}
+
+/**
+ * Finds an available port by binding to port 0 and letting the OS assign one.
+ */
+async function findAvailablePort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const server = createNetServer();
+    server.listen(0, () => {
+      const address = server.address();
+      if (address && typeof address === 'object') {
+        const port = address.port;
+        server.close(() => resolve(port));
+      } else {
+        server.close(() => reject(new Error('Failed to get port from server address')));
+      }
+    });
+    server.on('error', reject);
+  });
+}
+
+async function initAtpServer(createServer: CreateServerFn): Promise<{ server: AtpServer; port: number }> {
   const server = createServer({ logger: 'none' });
-  await server.listen(ATP_PORT);
-  return server;
+
+  // Use configured port or find an available one
+  const configuredPort = getAtpPort();
+  const port = configuredPort ?? (await findAvailablePort());
+
+  await server.listen(port);
+  return { server, port };
 }
 
 async function loadMondaySchema(server: AtpServer, token: string, version?: string) {
@@ -64,9 +103,9 @@ async function loadMondaySchema(server: AtpServer, token: string, version?: stri
   });
 }
 
-async function initAtpClient(AgentToolProtocolClient: AtpClientClass) {
+async function initAtpClient(AgentToolProtocolClient: AtpClientClass, port: number) {
   const client = new AgentToolProtocolClient({
-    baseUrl: `http://localhost:${ATP_PORT}`,
+    baseUrl: `http://localhost:${port}`,
   });
   await client.init({ name: 'monday-api-mcp', version: '1.0.0' });
   await client.connect();
@@ -92,10 +131,10 @@ export async function runAtpMcpServer(config: AtpServerConfig): Promise<void> {
 
   const { createServer, AgentToolProtocolClient, ToolNames, registerToolsWithMCP } = await loadAtpDependencies();
 
-  const server = await initAtpServer(createServer);
+  const { server, port } = await initAtpServer(createServer);
   await loadMondaySchema(server, token, version);
 
-  const client = await initAtpClient(AgentToolProtocolClient);
+  const client = await initAtpClient(AgentToolProtocolClient, port);
 
   const mcpServer = createMcpServer();
   const toolDescriptions = getToolDescriptions(ToolNames);

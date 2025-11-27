@@ -1,5 +1,3 @@
-export const ATP_PORT = 3456;
-
 export const ATP_SERVER_NAME = 'monday.com';
 export const ATP_SERVER_VERSION = '1.0.0';
 
@@ -21,7 +19,6 @@ export const TOOL_DESCRIPTIONS = {
 - ColumnValue has: id, type, text, value (NOT "title")
 - items_page returns ~25 items - use pagination for more
 - When searching/filtering, use the FULL value provided by the user (e.g., full name, not partial)
-- **NO Promise.all()**: Code runs in an isolated-vm sandbox. Do NOT use Promise.all or parallel promises - they fail with "#<Promise> could not be cloned" errors. Make sequential await calls instead.
 
 **When Unsure - ASK THE USER:**
 - If you're not 100% sure about the user's intent, ASK before executing
@@ -30,7 +27,7 @@ export const TOOL_DESCRIPTIONS = {
 
 **Multi-line Example:**
 \`\`\`typescript
-// 1. Get board with columns and cursor (use sequential awaits, NOT Promise.all)
+// 1. Get board with columns and cursor
 const boards = await api.monday.query_boards({ 
   ids: ['BOARD_ID'],
   _fields: 'id,columns{id,title,type},items_page{cursor}'
