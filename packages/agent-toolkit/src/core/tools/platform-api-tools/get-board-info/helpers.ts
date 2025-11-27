@@ -1,4 +1,4 @@
-import { Column, GetBoardInfoJustColumnsQuery, GetBoardInfoQuery } from '../../../../monday-graphql/generated/graphql/graphql';
+import { AggregateSelectFunctionName, Column, GetBoardInfoJustColumnsQuery, GetBoardInfoQuery } from '../../../../monday-graphql/generated/graphql/graphql';
 
 export type BoardInfoData = NonNullable<NonNullable<GetBoardInfoQuery['boards']>[0]>;
 export type BoardInfoJustColumnsData = NonNullable<NonNullable<GetBoardInfoJustColumnsQuery['boards']>[0]>;
@@ -7,6 +7,7 @@ export type ColumnInfo = NonNullable<BoardInfoJustColumnsData['columns']>[0];
 export interface BoardInfoResponse {
   board: BoardInfoData & { subItemColumns: ColumnInfo[] | undefined };
   filteringGuidelines: string;
+  aggregationGuidelines: string;
 }
 
 export const formatBoardInfoAsJson = (board: BoardInfoData, subItemsBoard: BoardInfoJustColumnsData | null): BoardInfoResponse => {
@@ -16,6 +17,7 @@ export const formatBoardInfoAsJson = (board: BoardInfoData, subItemsBoard: Board
       subItemColumns: subItemsBoard?.columns ?? undefined, 
     },
     filteringGuidelines: getColumnFilteringGuidelines(board.columns!.filter(isBaseColumnInfo) as BaseColumnInfo[]),
+    aggregationGuidelines: getColumnAggregationGuidelines(),
   }
 }
 
@@ -257,6 +259,13 @@ const generateColumnsSection = (board: BoardInfoData | BoardInfoJustColumnsData,
   }
 
   return columnSections;
+}
+
+const getColumnAggregationGuidelines = () => {
+  return `
+## [IMPORTANT] Best Practices
+- When asked to get count of items you MUST USE ${AggregateSelectFunctionName.CountItems} function. Do not use ${AggregateSelectFunctionName.Count} function for that purpose.
+  `;
 }
 
 const getColumnFilteringGuidelines = (columns: BaseColumnInfo[]) => {
