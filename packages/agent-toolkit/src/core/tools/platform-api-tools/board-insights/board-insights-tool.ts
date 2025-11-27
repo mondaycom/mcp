@@ -36,7 +36,7 @@ export const boardInsightsToolSchema = {
       }),
     )
     .describe(
-      'The aggregations to get. Transformative functions and plain columns (no function) must be in group by. [REQUIRED PRECONDITION]: Either send this field or the stringified version of it.',
+      'The aggregations to get. Before sending the aggregations, use get_board_info tool to check "aggregationGuidelines" key for information. Transformative functions and plain columns (no function) must be in group by. [REQUIRED PRECONDITION]: Either send this field or the stringified version of it.',
     )
     .optional(),
   groupBy: z
