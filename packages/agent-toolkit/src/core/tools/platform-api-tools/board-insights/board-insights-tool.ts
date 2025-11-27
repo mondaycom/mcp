@@ -114,7 +114,8 @@ export class BoardInsightsTool extends BaseMondayApiTool<typeof boardInsightsToo
     return (
       "This tool allows you to calculate insights about board's data by filtering, grouping and aggregating columns. For example, you can get the total number of items in a board, the number of items in each status, the number of items in each column, etc. " +
       "Use this tool when you need to get a summary of the board's data, for example, you want to know the total number of items in a board, the number of items in each status, the number of items in each column, etc." +
-      "[REQUIRED PRECONDITION]: Before using this tool, if new columns were added to the board or if you are not familiar with the board's structure (column IDs, column types, status labels, etc.), first use get_board_info to understand the board metadata. This is essential for constructing proper filters and knowing which columns are available."
+      "[REQUIRED PRECONDITION]: Before using this tool, if new columns were added to the board or if you are not familiar with the board's structure (column IDs, column types, status labels, etc.), first use get_board_info to understand the board metadata. This is essential for constructing proper filters and knowing which columns are available." +
+      "[IMPORTANT]: For some columns, human-friendly label is returned inside 'LABEL_<column_id' field. E.g. for column with id 'status_123' the label is returned inside 'LABEL_status_123' field."
     );
   }
 
@@ -133,16 +134,7 @@ export class BoardInsightsTool extends BaseMondayApiTool<typeof boardInsightsToo
     fallbackToStringifiedVersionIfNull(input, 'filters', boardInsightsToolSchema.filters);
     fallbackToStringifiedVersionIfNull(input, 'orderBy', boardInsightsToolSchema.orderBy);
 
-    const boardInfoVariables: GetBoardInfoQueryVariables = { boardId: input.boardId.toString() };
-    const boardInfo = await this.mondayApi.request<GetBoardInfoQuery>(getBoardInfo, boardInfoVariables);
-    const board = boardInfo.boards?.[0];
-    if(!board) {
-      return { content: `Board with id ${input.boardId} not found or you don't have access to it.` };
-    }
-
-    const peopleColumnIds = board.columns?.filter((column) => column?.type === NonDeprecatedColumnType.People)?.map((column) => column!.id) ?? [];
-
-    const { selectElements, groupByElements } = handleSelectAndGroupByElements(input, peopleColumnIds);
+    const { selectElements, groupByElements } = handleSelectAndGroupByElements(input);
     const filters = handleFilters(input);
     const from = handleFrom(input);
 
