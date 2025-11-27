@@ -51,14 +51,6 @@ ATP (Agent Tool Protocol) mode provides an alternative integration that enables 
 npx @mondaydotcomorg/monday-api-mcp@latest -t abcd123 -m atp
 ```
 
-### Configuration
-
-| Environment Variable | Description | Required |
-|---------------------|-------------|----------|
-| `MONDAY_ATP_PORT` | Specify a fixed port for the ATP server (1-65535). If not set, a random available port will be used. | No |
-| `NODE_OPTIONS` | Node.js runtime options. Set to `--no-node-snapshot` for compatibility. | Yes |
-| `ATP_JWT_SECRET` | JWT secret for ATP authentication. Must be set but currently not used (e.g., `ignore`). | Yes |
-
 ### Cursor Integration (ATP Mode)
 
 ```json
@@ -74,8 +66,7 @@ npx @mondaydotcomorg/monday-api-mcp@latest -t abcd123 -m atp
         "atp"
       ],
       "env": {
-        "NODE_OPTIONS": "--no-node-snapshot",
-        "ATP_JWT_SECRET": "ignore"
+        "NODE_OPTIONS": "--no-node-snapshot"
       }
     }
   }
