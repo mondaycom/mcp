@@ -827,6 +827,66 @@ describe('GetBoardItemsPageTool', () => {
     });
   });
 
+  describe('Description Functionality', () => {
+    it('should return description when item has description blocks', async () => {
+      const responseWithDescription = {
+        boards: [
+          {
+            id: '123456789',
+            name: 'Test Board',
+            items_page: {
+              items: [
+                {
+                  id: 'item1',
+                  name: 'Item with description',
+                  created_at: '2024-01-15T10:30:00Z',
+                  updated_at: '2024-01-16T14:20:00Z',
+                  description: {
+                    blocks: [
+                      { content: 'This is the first line of description' },
+                      { content: 'This is the second line' },
+                      { content: 'This is the third line' }
+                    ]
+                  }
+                },
+                {
+                  id: 'item2',
+                  name: 'Item without description',
+                  created_at: '2024-01-14T09:15:00Z',
+                  updated_at: '2024-01-15T16:45:00Z',
+                  description: {
+                    blocks: []
+                  }
+                }
+              ],
+              cursor: null
+            }
+          }
+        ]
+      };
+
+      mocks.setResponse(responseWithDescription);
+
+      const args: inputType = { boardId: 123456789 };
+      const parsedResult = await callToolByNameAsync('get_board_items_page', args);
+
+      expect(parsedResult.items).toHaveLength(2);
+      expect(parsedResult.items[0]).toEqual({
+        id: 'item1',
+        name: 'Item with description',
+        created_at: '2024-01-15T10:30:00Z',
+        updated_at: '2024-01-16T14:20:00Z',
+        description: 'This is the first line of description\nThis is the second line\nThis is the third line'
+      });
+      expect(parsedResult.items[1]).toEqual({
+        id: 'item2',
+        name: 'Item without description',
+        created_at: '2024-01-14T09:15:00Z',
+        updated_at: '2024-01-15T16:45:00Z'
+      });
+    });
+  });
+
   describe('Empty Results', () => {
     it('should handle empty board gracefully', async () => {
       mocks.setResponse(emptyResponse);

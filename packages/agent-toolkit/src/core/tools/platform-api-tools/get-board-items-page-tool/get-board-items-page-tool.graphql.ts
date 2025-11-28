@@ -18,13 +18,19 @@ export const getBoardItemsPage = gql`
 
       ... on BoardRelationValue {
         linked_items {
-          id 
+          id
           name
           board {
             id
             name
           }
         }
+      }
+    }
+    description {
+      blocks {
+        id
+        content
       }
     }
   }

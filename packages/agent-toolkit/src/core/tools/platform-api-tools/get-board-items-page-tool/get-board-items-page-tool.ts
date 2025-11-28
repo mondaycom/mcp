@@ -39,6 +39,7 @@ type GetBoardItemsPageResultItem = {
   name: string;
   created_at: any;
   updated_at: any;
+  description?: string;
   column_values?: Record<string, any>;
   subitems?: GetBoardItemsPageResultItem[];
 }
@@ -174,7 +175,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
     const itemsPage = board?.items_page;
     const items = itemsPage?.items || [];
 
-    const result = {
+    return {
       board: {
         id: board?.id,
         name: board?.name,
@@ -186,8 +187,6 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
         count: items.length,
       },
     };
-
-    return result;
   }
 
   private mapItem(item: Item | SubItem, input: ToolInputType<GetBoardItemsPageToolInput>): GetBoardItemsPageResultItem {
@@ -197,6 +196,10 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
       created_at: item.created_at,
       updated_at: item.updated_at,
     };
+
+    if (item.description?.blocks && item.description.blocks.length > 0) {
+      itemResult.description = item.description.blocks.map((block) => block?.content).join('\n');
+    }
 
     if (input.includeColumns && item.column_values) {
       itemResult.column_values = {};
