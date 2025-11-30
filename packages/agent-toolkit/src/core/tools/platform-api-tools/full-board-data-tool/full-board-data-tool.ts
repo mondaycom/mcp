@@ -27,7 +27,7 @@ export class FullBoardDataTool extends BaseMondayApiTool<typeof fullBoardDataToo
   });
 
   getDescription(): string {
-    return `Retrieve comprehensive board data including items (up to ${DEFAULT_ITEMS_LIMIT}), columns, updates, and associated user information. This tool fetches board structure and content, then enriches it with user details from update creators and people column values.`;
+    return `INTERNAL USE ONLY - DO NOT CALL THIS TOOL DIRECTLY. This tool is exclusively triggered by UI components and should never be invoked directly by the agent.`;
   }
 
   getInputSchema(): typeof fullBoardDataToolSchema {
