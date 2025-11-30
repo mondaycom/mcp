@@ -7,6 +7,7 @@
   "bin": {
     "mcp-server-monday-api": "dist/index.js"
   },
+  "main": "dist/index.js",
   "files": [
     "dist"
   ],
