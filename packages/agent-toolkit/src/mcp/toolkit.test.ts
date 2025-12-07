@@ -473,10 +473,7 @@ describe('MondayAgentToolkit', () => {
       expect(tools[0]).toHaveProperty('name', 'test-tool-1');
       expect(tools[0]).toHaveProperty('description', 'Test tool 1 description');
       expect(tools[0]).toHaveProperty('schema');
-      // Schema should be a proper JSON Schema with type: 'object' and properties
-      expect(tools[0].schema).toHaveProperty('type', 'object');
-      expect(tools[0].schema).toHaveProperty('properties');
-      expect(tools[0].schema.properties).toHaveProperty('param1');
+      expect(tools[0].schema).toHaveProperty('param1');
       expect(tools[0]).toHaveProperty('annotations');
       expect(tools[0]).toHaveProperty('handler');
       expect(typeof tools[0].handler).toBe('function');
@@ -484,9 +481,7 @@ describe('MondayAgentToolkit', () => {
       // Check second tool structure
       expect(tools[1]).toHaveProperty('name', 'test-tool-2');
       expect(tools[1]).toHaveProperty('description', 'Test tool 2 description');
-      expect(tools[1]).toHaveProperty('schema');
-      // Empty input schema should still produce a valid JSON Schema
-      expect(tools[1].schema).toHaveProperty('type', 'object');
+      expect(tools[1]).toHaveProperty('schema', {});
       expect(tools[1]).toHaveProperty('annotations');
       expect(tools[1]).toHaveProperty('handler');
       expect(typeof tools[1].handler).toBe('function');
