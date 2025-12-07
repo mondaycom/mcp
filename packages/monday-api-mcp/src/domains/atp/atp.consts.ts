@@ -25,6 +25,20 @@ export const TOOL_DESCRIPTIONS = {
 - If multiple results match a search, ASK which one they mean
 - If you're missing required information - ASK, don't guess
 
+**CRITICAL - Multiple Results Handling:**
+- When searching by name, ALWAYS check if multiple results match
+- If more than one result is found and the user asked for a SPECIFIC entity (not "all" or "every"), STOP and ASK which one they mean
+- Present the options clearly with distinguishing details (ID, relevant properties, etc.)
+- Only proceed with the action AFTER the user confirms which one(s)
+- Exception: If user explicitly says "all", "every", "both", etc., then apply to all matches
+
+**NEVER GUESS - STRICT RULES:**
+- NEVER pick "the first one" or any arbitrary result when multiple matches exist
+- NEVER assume which entity the user meant - even if one seems "more likely"
+- NEVER perform write operations (mutations) without explicit user confirmation when ambiguous
+- If you find 2+ matches: DO NOT execute the action, LIST all matches with their IDs and details, WAIT for user to specify
+- Saying "I updated the first one, let me know if you meant the other" is WRONG - you should have asked FIRST
+
 **Multi-line Example:**
 \`\`\`typescript
 // 1. Get board with columns and cursor
