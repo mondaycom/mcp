@@ -3,6 +3,7 @@ import { CallToolResult, ServerCapabilities } from '@modelcontextprotocol/sdk/ty
 import { ApiClient } from '@mondaydotcomorg/api';
 import { getFilteredToolInstances } from '../utils/tools/tools-filtering.utils';
 import { z } from 'zod';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 import { Tool } from '../core/tool';
 import { MondayAgentToolkitConfig } from '../core/monday-agent-toolkit';
 import { ManageToolsTool } from '../core/tools/platform-api-tools/manage-tools-tool';
@@ -202,13 +203,16 @@ export class MondayAgentToolkit extends McpServer {
       allTools.push(this.managementTool);
     }
 
-    return allTools.map((tool) => ({
-      name: tool.name,
-      description: tool.getDescription(),
-      schema: tool.getInputSchema(),
-      annotations: tool.annotations,
-      handler: this.createToolHandler(tool),
-    }));
+    return allTools.map((tool) => {
+      const inputSchema = tool.getInputSchema();
+      return {
+        name: tool.name,
+        description: tool.getDescription(),
+        schema: inputSchema ? zodToJsonSchema(z.object(inputSchema)) : undefined,
+        annotations: tool.annotations,
+        handler: this.createToolHandler(tool),
+      };
+    });
   }
 
   /**
@@ -230,13 +234,16 @@ export class MondayAgentToolkit extends McpServer {
       allTools.push(this.managementTool);
     }
 
-    return allTools.map((tool) => ({
-      name: tool.name,
-      description: tool.getDescription(),
-      schema: tool.getInputSchema(),
-      annotations: tool.annotations,
-      handler: this.createMcpToolHandler(tool),
-    }));
+    return allTools.map((tool) => {
+      const inputSchema = tool.getInputSchema();
+      return {
+        name: tool.name,
+        description: tool.getDescription(),
+        schema: inputSchema ? zodToJsonSchema(z.object(inputSchema)) : undefined,
+        annotations: tool.annotations,
+        handler: this.createMcpToolHandler(tool),
+      };
+    });
   }
 
   /**
