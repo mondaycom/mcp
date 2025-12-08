@@ -54,6 +54,7 @@ const statusCol = board.columns.find(c => c.title === 'Status')?.id;
 // 3. Paginate items
 let cursor = board.items_page.cursor;
 const allItems = [];
+// if need to get all the items, use while loop instead
 for (let page = 0; page < 20; page++) {
   if (!cursor) break;
   const result = await api.monday.query_next_items_page({ 
