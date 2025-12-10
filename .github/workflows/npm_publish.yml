@@ -43,6 +43,7 @@ jobs:
       - name: Publish changed packages
         if: steps.changed.outputs.packages != '[]'
         run: |
+          echo "//registry.npmjs.org/:_authToken=$NODE_AUTH_TOKEN" > .npmrc
           PACKAGES=$(echo '${{ steps.changed.outputs.packages }}' | jq -r '.[]')
           for PKG in $PACKAGES; do
             cd packages/$PKG
