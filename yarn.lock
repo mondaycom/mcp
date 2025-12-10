@@ -1240,71 +1240,69 @@
     graphql-request "^6.1.0"
     graphql-tag "^2.12.6"
 
-"@mondaydotcomorg/atp-client@^0.19.7":
-  version "0.19.7"
-  resolved "https://registry.npmjs.org/@mondaydotcomorg/atp-client/-/atp-client-0.19.7.tgz#7d83e39d43429d1ae8e03475fa64fdb5cac30711"
-  integrity sha512-V69CQBKy34IpOrmbNk7TCHgLbRlRp7Bn0rG1GpJAVVoc8gb8CZOSSfxyzq/6ZsYHyIgLH5FjaK83dxOtEYvTwA==
+"@mondaydotcomorg/atp-client@^0.19.11":
+  version "0.19.11"
+  resolved "https://registry.yarnpkg.com/@mondaydotcomorg/atp-client/-/atp-client-0.19.11.tgz#061bed8e8547397c10cef4d67b227e6c73f30996"
+  integrity sha512-/7hZXZxbyOpoI8tEWpAPpfs5GHUt+PVhnTR4+pERyt0A6g5kYUsj8YGl2otnKwVjUnxrsF46PKYLOo1ox+Jwpw==
   dependencies:
-    "@mondaydotcomorg/atp-protocol" "0.19.7"
-    "@mondaydotcomorg/atp-runtime" "0.19.7"
+    "@mondaydotcomorg/atp-protocol" "0.19.11"
+    "@mondaydotcomorg/atp-runtime" "0.19.10"
     undici "*"
     zod-to-json-schema "^3.24.6"
 
-"@mondaydotcomorg/atp-compiler@0.19.8":
-  version "0.19.8"
-  resolved "https://registry.npmjs.org/@mondaydotcomorg/atp-compiler/-/atp-compiler-0.19.8.tgz#7ba0c414af73d440692cc4bd460f6f423f510781"
-  integrity sha512-MLkuRFOLwTfSUgZuYNDyeUWF8a5vs9w13/2aIbwq5d8TTPrBeW8K2cZHwlU6rRPJRl8ZJraex4uLRGx+pqSwdw==
+"@mondaydotcomorg/atp-compiler@0.19.13":
+  version "0.19.13"
+  resolved "https://registry.yarnpkg.com/@mondaydotcomorg/atp-compiler/-/atp-compiler-0.19.13.tgz#a2b615545d8a34c8c83c96e50d5c49420aceed54"
+  integrity sha512-zWQKMIslavXRNy1ohdKDvQeLQ6GieE9xosRRrKl0XXf274Xg9Hsf0sl6eAL23gIB0tgwjzNe/LQLdnz0ZLnP2Q==
   dependencies:
     "@babel/generator" "^7.26.0"
     "@babel/parser" "^7.26.0"
     "@babel/traverse" "^7.26.0"
     "@babel/types" "^7.26.0"
-    "@mondaydotcomorg/atp-protocol" "0.19.7"
-    "@mondaydotcomorg/atp-runtime" "0.19.7"
+    "@mondaydotcomorg/atp-protocol" "0.19.11"
+    "@mondaydotcomorg/atp-runtime" "0.19.10"
     "@types/babel__generator" "^7.6.0"
     "@types/babel__traverse" "^7.20.0"
-    nanoid "^5.0.0"
 
-"@mondaydotcomorg/atp-mcp-adapter@^0.19.8":
-  version "0.19.8"
-  resolved "https://registry.npmjs.org/@mondaydotcomorg/atp-mcp-adapter/-/atp-mcp-adapter-0.19.8.tgz#13bd1630dec4f783292c9aca556c8b86f4f173fb"
-  integrity sha512-WlMgq0arbzK1RTBbXxkAAr4HPDtDxpyfPq29/JKboRa8v6pLPM/0Aj1ykGY2YjX3jXR/lRnDmQtyo2NM9OlWtQ==
+"@mondaydotcomorg/atp-mcp-adapter@^0.19.14":
+  version "0.19.14"
+  resolved "https://registry.yarnpkg.com/@mondaydotcomorg/atp-mcp-adapter/-/atp-mcp-adapter-0.19.14.tgz#ed27333b5f926a164a2ae95b5c3bf8578fe2a304"
+  integrity sha512-iPYB9V09NSEb/WUHsEekod51AZAuORAYmwXQLXQ5yN/iYz1Afd6eJ66W6GDm+AiyK8LfQ8fFplulyxesQ53wWw==
   dependencies:
-    "@mondaydotcomorg/atp-protocol" "0.19.7"
-    "@mondaydotcomorg/atp-server" "0.19.8"
+    "@mondaydotcomorg/atp-protocol" "0.19.11"
+    "@mondaydotcomorg/atp-server" "0.19.14"
 
-"@mondaydotcomorg/atp-protocol@0.19.7":
-  version "0.19.7"
-  resolved "https://registry.npmjs.org/@mondaydotcomorg/atp-protocol/-/atp-protocol-0.19.7.tgz#55b602836e24b79618405b78b3f2502cee95092b"
-  integrity sha512-G/R+RXRu1iATBoMkj0TSTmzj8x+/n2ASkVMPtAletT6pQv9o9JmB17rL55HSRubppZI1u+VqpH8DgHuB+5cX6A==
+"@mondaydotcomorg/atp-protocol@0.19.11":
+  version "0.19.11"
+  resolved "https://registry.yarnpkg.com/@mondaydotcomorg/atp-protocol/-/atp-protocol-0.19.11.tgz#036f0f7f301524d1d76fc94df11cfc89d54e6457"
+  integrity sha512-e2vn2cXGwBTrlJex79tblAzduVA079K+qtUhCFLRHXONHfHij2nTISEFroXfae427CkTjleBAzuaM7Ok4PesjA==
   dependencies:
-    "@mondaydotcomorg/atp-provenance" "0.19.7"
+    "@mondaydotcomorg/atp-provenance" "0.19.10"
 
-"@mondaydotcomorg/atp-provenance@0.19.7":
-  version "0.19.7"
-  resolved "https://registry.npmjs.org/@mondaydotcomorg/atp-provenance/-/atp-provenance-0.19.7.tgz#e77beaf2436feba16dd880c8a313967841f942b8"
-  integrity sha512-vWr4VPYfnKt8jK0QTVzyEs+qWCc/N9x3Mt2UV2SnDsC8V+J7f73ZoTWyyXSTSm39jSUsfQ36GXlkBJXyGMvJrQ==
+"@mondaydotcomorg/atp-provenance@0.19.10":
+  version "0.19.10"
+  resolved "https://registry.yarnpkg.com/@mondaydotcomorg/atp-provenance/-/atp-provenance-0.19.10.tgz#afa92145f11dcac419aed52dfe101f4752d4e1d0"
+  integrity sha512-3YsQEvNoJ+Rv/jDnLnNb7hRViVLwinAYVbmbkQW4sGcOowfr2MupsTxdkxau2/EaxueMChr2QU+yRlfmpt/wWQ==
   dependencies:
-    "@mondaydotcomorg/atp-runtime" "0.19.7"
+    "@mondaydotcomorg/atp-runtime" "0.19.10"
     "@types/escodegen" "^0.0.10"
     acorn "^8.11.0"
     acorn-walk "^8.3.0"
     escodegen "^2.1.0"
-    nanoid "^5.0.0"
 
-"@mondaydotcomorg/atp-providers@0.19.7":
-  version "0.19.7"
-  resolved "https://registry.npmjs.org/@mondaydotcomorg/atp-providers/-/atp-providers-0.19.7.tgz#33b2c10c392a9eb16527e7235d9bf84047b90909"
-  integrity sha512-0U+8KeLcLtkn8ZDXHdgsE9YhjJ+1Imt+caAoslEcf2uxxSvSb3ikfqID7Twi7hlbhOZV7ooa1MThzRFGYc6nwQ==
+"@mondaydotcomorg/atp-providers@0.19.11":
+  version "0.19.11"
+  resolved "https://registry.yarnpkg.com/@mondaydotcomorg/atp-providers/-/atp-providers-0.19.11.tgz#256e54c370c0e7f911bca57162e30f187ddebb09"
+  integrity sha512-PVOmVXEXhZc9q8AW8V9ZVK4HZpHO4CLgOlRY4jOuImNqt101nwtRNAlvmAZAgUC/8AM0RdZ9nZQ8p6D0A9uKvw==
   dependencies:
-    "@mondaydotcomorg/atp-protocol" "0.19.7"
-    "@mondaydotcomorg/atp-runtime" "0.19.7"
+    "@mondaydotcomorg/atp-protocol" "0.19.11"
+    "@mondaydotcomorg/atp-runtime" "0.19.10"
     "@opentelemetry/api" "^1.9.0"
 
-"@mondaydotcomorg/atp-runtime@0.19.7":
-  version "0.19.7"
-  resolved "https://registry.npmjs.org/@mondaydotcomorg/atp-runtime/-/atp-runtime-0.19.7.tgz#fe47fd6aacb0777623fecf94d017b5aa258b3f24"
-  integrity sha512-aXOMbz4cCOeNMNENxLgJPxbIWlDwAU6eRebiWKjayPxk8jH/5Yv/b2BDNwEjazvhg0QDidBcRQTsZdt4AUN8Ng==
+"@mondaydotcomorg/atp-runtime@0.19.10":
+  version "0.19.10"
+  resolved "https://registry.yarnpkg.com/@mondaydotcomorg/atp-runtime/-/atp-runtime-0.19.10.tgz#75b9b264bd9a28f820e7a8fe18a4bb8fae01d15b"
+  integrity sha512-8AjM4ws9nUdGGipZh6uCL6NT5JQu1VM4jzZr5WhdRCp3c0+aJ5rcHHOQAd4vmlPmwZpb0GO5Ma2R+YEuucAdFg==
   dependencies:
     ioredis "^5.8.0"
     node-cache "*"
@@ -1313,20 +1311,20 @@
     reflect-metadata "^0.2.1"
     undici "*"
 
-"@mondaydotcomorg/atp-server@0.19.8", "@mondaydotcomorg/atp-server@^0.19.8":
-  version "0.19.8"
-  resolved "https://registry.npmjs.org/@mondaydotcomorg/atp-server/-/atp-server-0.19.8.tgz#d32b0dfe8351b1db2a37a03798a813a7bf373ce1"
-  integrity sha512-UtOG/Py3ZJcddxc6823j5+LisbShrtqiZsK51D/VjiWe+EqDFOVjrJPvp/8r6PRv0SB9KHgKgsmnOru/B3rFOg==
+"@mondaydotcomorg/atp-server@0.19.14", "@mondaydotcomorg/atp-server@^0.19.14":
+  version "0.19.14"
+  resolved "https://registry.yarnpkg.com/@mondaydotcomorg/atp-server/-/atp-server-0.19.14.tgz#26d13151458919086cb5c38153fc206247b2dfcb"
+  integrity sha512-GDIaCOiR7PCZyZh8zW0RqL6ypKOFg+KhLN+k3V1TZhvwHnkY65yNiT/SHvoh/pbY/o1lGD1m51Q9/N3O90Vj+A==
   dependencies:
     "@babel/generator" "^7.26.0"
     "@babel/parser" "^7.26.0"
     "@babel/traverse" "^7.26.0"
     "@babel/types" "^7.26.0"
-    "@mondaydotcomorg/atp-compiler" "0.19.8"
-    "@mondaydotcomorg/atp-protocol" "0.19.7"
-    "@mondaydotcomorg/atp-provenance" "0.19.7"
-    "@mondaydotcomorg/atp-providers" "0.19.7"
-    "@mondaydotcomorg/atp-runtime" "0.19.7"
+    "@mondaydotcomorg/atp-compiler" "0.19.13"
+    "@mondaydotcomorg/atp-protocol" "0.19.11"
+    "@mondaydotcomorg/atp-provenance" "0.19.10"
+    "@mondaydotcomorg/atp-providers" "0.19.11"
+    "@mondaydotcomorg/atp-runtime" "0.19.10"
     "@opentelemetry/api" "^1.9.0"
     "@opentelemetry/auto-instrumentations-node" "^0.66.0"
     "@opentelemetry/core" "^2.2.0"
@@ -1346,7 +1344,6 @@
     isolated-vm "5.0.4"
     js-yaml "^4.1.0"
     jsonwebtoken "^9.0.2"
-    nanoid "^5.1.6"
     rate-limiter-flexible "*"
 
 "@nodelib/fs.scandir@2.1.5":
@@ -5429,11 +5426,6 @@ mute-stream@0.0.8:
   version "0.0.8"
   resolved "https://registry.yarnpkg.com/mute-stream/-/mute-stream-0.0.8.tgz#1630c42b2251ff81e2a283de96a5497ea92e5e0d"
   integrity sha512-nnbWWOkoWyUsTjKrhgD0dcz22mdkSnpYqbEjIm2nhwhuxlSkpywJmBo8h0ZqJdkp73mb90SssHkN4rsRaBAfAA==
-
-nanoid@^5.0.0, nanoid@^5.1.6:
-  version "5.1.6"
-  resolved "https://registry.npmjs.org/nanoid/-/nanoid-5.1.6.tgz#30363f664797e7d40429f6c16946d6bd7a3f26c9"
-  integrity sha512-c7+7RQ+dMB5dPwwCp4ee1/iV/q2P6aK1mTZcfr1BTuVlyW9hJYiMPybJCcnBlQtuSmTIWNeazm/zqNoZSSElBg==
 
 napi-build-utils@^2.0.0:
   version "2.0.0"
