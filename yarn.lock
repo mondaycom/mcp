@@ -1240,69 +1240,69 @@
     graphql-request "^6.1.0"
     graphql-tag "^2.12.6"
 
-"@mondaydotcomorg/atp-client@^0.19.11":
-  version "0.19.11"
-  resolved "https://registry.yarnpkg.com/@mondaydotcomorg/atp-client/-/atp-client-0.19.11.tgz#061bed8e8547397c10cef4d67b227e6c73f30996"
-  integrity sha512-/7hZXZxbyOpoI8tEWpAPpfs5GHUt+PVhnTR4+pERyt0A6g5kYUsj8YGl2otnKwVjUnxrsF46PKYLOo1ox+Jwpw==
+"@mondaydotcomorg/atp-client@^0.19.13":
+  version "0.19.13"
+  resolved "https://registry.yarnpkg.com/@mondaydotcomorg/atp-client/-/atp-client-0.19.13.tgz#1b8df89c95a2e9ec85c0eed5ca4da39331a941e1"
+  integrity sha512-EQzcWEt8fwpbVazThejt7q7pEhvdgNrnAchYdPKeevjzqIuKGuge9GGc6I7QDbZmciH2m1kDSX3HHbTgFVK8HA==
   dependencies:
-    "@mondaydotcomorg/atp-protocol" "0.19.11"
-    "@mondaydotcomorg/atp-runtime" "0.19.10"
+    "@mondaydotcomorg/atp-protocol" "0.19.13"
+    "@mondaydotcomorg/atp-runtime" "0.19.12"
     undici "*"
     zod-to-json-schema "^3.24.6"
 
-"@mondaydotcomorg/atp-compiler@0.19.13":
-  version "0.19.13"
-  resolved "https://registry.yarnpkg.com/@mondaydotcomorg/atp-compiler/-/atp-compiler-0.19.13.tgz#a2b615545d8a34c8c83c96e50d5c49420aceed54"
-  integrity sha512-zWQKMIslavXRNy1ohdKDvQeLQ6GieE9xosRRrKl0XXf274Xg9Hsf0sl6eAL23gIB0tgwjzNe/LQLdnz0ZLnP2Q==
+"@mondaydotcomorg/atp-compiler@0.19.15":
+  version "0.19.15"
+  resolved "https://registry.yarnpkg.com/@mondaydotcomorg/atp-compiler/-/atp-compiler-0.19.15.tgz#246d7e88e975065d24be0b22556cfa4c0d4aa16a"
+  integrity sha512-hE4k3mqHUw7Zy534/3AtZ4Le788yI9Im7u+NOn20jlgnn+sCUjuibRejAut92tDqhRA2SiHBIfn/gd+MRECf+g==
   dependencies:
     "@babel/generator" "^7.26.0"
     "@babel/parser" "^7.26.0"
     "@babel/traverse" "^7.26.0"
     "@babel/types" "^7.26.0"
-    "@mondaydotcomorg/atp-protocol" "0.19.11"
-    "@mondaydotcomorg/atp-runtime" "0.19.10"
+    "@mondaydotcomorg/atp-protocol" "0.19.13"
+    "@mondaydotcomorg/atp-runtime" "0.19.12"
     "@types/babel__generator" "^7.6.0"
     "@types/babel__traverse" "^7.20.0"
 
-"@mondaydotcomorg/atp-mcp-adapter@^0.19.14":
-  version "0.19.14"
-  resolved "https://registry.yarnpkg.com/@mondaydotcomorg/atp-mcp-adapter/-/atp-mcp-adapter-0.19.14.tgz#ed27333b5f926a164a2ae95b5c3bf8578fe2a304"
-  integrity sha512-iPYB9V09NSEb/WUHsEekod51AZAuORAYmwXQLXQ5yN/iYz1Afd6eJ66W6GDm+AiyK8LfQ8fFplulyxesQ53wWw==
+"@mondaydotcomorg/atp-mcp-adapter@^0.19.17":
+  version "0.19.17"
+  resolved "https://registry.yarnpkg.com/@mondaydotcomorg/atp-mcp-adapter/-/atp-mcp-adapter-0.19.17.tgz#796d5ffe38e057fba7bc786127091e50ca475efa"
+  integrity sha512-gtLQeZm02RkUdzDht4twHrjqGdcEDrDGtIk/7X9nD8yCrEYETpCVb5kYbFdDpT3yybdfZ1I43BU+hk4J66DMvA==
   dependencies:
-    "@mondaydotcomorg/atp-protocol" "0.19.11"
-    "@mondaydotcomorg/atp-server" "0.19.14"
+    "@mondaydotcomorg/atp-protocol" "0.19.13"
+    "@mondaydotcomorg/atp-server" "0.19.17"
 
-"@mondaydotcomorg/atp-protocol@0.19.11":
-  version "0.19.11"
-  resolved "https://registry.yarnpkg.com/@mondaydotcomorg/atp-protocol/-/atp-protocol-0.19.11.tgz#036f0f7f301524d1d76fc94df11cfc89d54e6457"
-  integrity sha512-e2vn2cXGwBTrlJex79tblAzduVA079K+qtUhCFLRHXONHfHij2nTISEFroXfae427CkTjleBAzuaM7Ok4PesjA==
+"@mondaydotcomorg/atp-protocol@0.19.13":
+  version "0.19.13"
+  resolved "https://registry.yarnpkg.com/@mondaydotcomorg/atp-protocol/-/atp-protocol-0.19.13.tgz#a2c6cbde48a90cfbf48d36870592a7fe6383a3d9"
+  integrity sha512-Ze2Dvci5tH5msAuskBXlS6w59sOLKp04JeNQsc3Fc82zQTz3uVD+t5h10lTuXyYhexgE574R1+Xzxa4Sfhoqhw==
   dependencies:
-    "@mondaydotcomorg/atp-provenance" "0.19.10"
+    "@mondaydotcomorg/atp-provenance" "0.19.12"
 
-"@mondaydotcomorg/atp-provenance@0.19.10":
-  version "0.19.10"
-  resolved "https://registry.yarnpkg.com/@mondaydotcomorg/atp-provenance/-/atp-provenance-0.19.10.tgz#afa92145f11dcac419aed52dfe101f4752d4e1d0"
-  integrity sha512-3YsQEvNoJ+Rv/jDnLnNb7hRViVLwinAYVbmbkQW4sGcOowfr2MupsTxdkxau2/EaxueMChr2QU+yRlfmpt/wWQ==
+"@mondaydotcomorg/atp-provenance@0.19.12":
+  version "0.19.12"
+  resolved "https://registry.yarnpkg.com/@mondaydotcomorg/atp-provenance/-/atp-provenance-0.19.12.tgz#1135163313d28e9b76a6f4e9b71f9e673aef9b15"
+  integrity sha512-piU1eebLSZjVDwq6D0GbMmwO6e1Vay9rK6DLg25NnopGEl5mcVUyc5KrW9/Rd2w4jnxBkGu1bvHYx4RAEA1xsQ==
   dependencies:
-    "@mondaydotcomorg/atp-runtime" "0.19.10"
+    "@mondaydotcomorg/atp-runtime" "0.19.12"
     "@types/escodegen" "^0.0.10"
     acorn "^8.11.0"
     acorn-walk "^8.3.0"
     escodegen "^2.1.0"
 
-"@mondaydotcomorg/atp-providers@0.19.11":
-  version "0.19.11"
-  resolved "https://registry.yarnpkg.com/@mondaydotcomorg/atp-providers/-/atp-providers-0.19.11.tgz#256e54c370c0e7f911bca57162e30f187ddebb09"
-  integrity sha512-PVOmVXEXhZc9q8AW8V9ZVK4HZpHO4CLgOlRY4jOuImNqt101nwtRNAlvmAZAgUC/8AM0RdZ9nZQ8p6D0A9uKvw==
+"@mondaydotcomorg/atp-providers@0.19.13":
+  version "0.19.13"
+  resolved "https://registry.yarnpkg.com/@mondaydotcomorg/atp-providers/-/atp-providers-0.19.13.tgz#592c2c42e3b914cb3791ac0f2e9b6f4aed4700e2"
+  integrity sha512-5NMtGOc+gHduqia6nNsbOXab6NYJz//Uc8R6m6Xatd9pqELJ8ybEurjCfdMeAnwLxeiixYK2bxj9umjnzV8opQ==
   dependencies:
-    "@mondaydotcomorg/atp-protocol" "0.19.11"
-    "@mondaydotcomorg/atp-runtime" "0.19.10"
+    "@mondaydotcomorg/atp-protocol" "0.19.13"
+    "@mondaydotcomorg/atp-runtime" "0.19.12"
     "@opentelemetry/api" "^1.9.0"
 
-"@mondaydotcomorg/atp-runtime@0.19.10":
-  version "0.19.10"
-  resolved "https://registry.yarnpkg.com/@mondaydotcomorg/atp-runtime/-/atp-runtime-0.19.10.tgz#75b9b264bd9a28f820e7a8fe18a4bb8fae01d15b"
-  integrity sha512-8AjM4ws9nUdGGipZh6uCL6NT5JQu1VM4jzZr5WhdRCp3c0+aJ5rcHHOQAd4vmlPmwZpb0GO5Ma2R+YEuucAdFg==
+"@mondaydotcomorg/atp-runtime@0.19.12":
+  version "0.19.12"
+  resolved "https://registry.yarnpkg.com/@mondaydotcomorg/atp-runtime/-/atp-runtime-0.19.12.tgz#163f83f37f37a508bdeac37f58bc213242cca9a7"
+  integrity sha512-PU/6L+yFSim5xLuViKSQo1Woq0vAkk1iKNvVL5M8w8/qtUosIaLC5E1blFbUKBGGLwW2z+7YWymdZ7ljQfMh1A==
   dependencies:
     ioredis "^5.8.0"
     node-cache "*"
@@ -1311,20 +1311,20 @@
     reflect-metadata "^0.2.1"
     undici "*"
 
-"@mondaydotcomorg/atp-server@0.19.14", "@mondaydotcomorg/atp-server@^0.19.14":
-  version "0.19.14"
-  resolved "https://registry.yarnpkg.com/@mondaydotcomorg/atp-server/-/atp-server-0.19.14.tgz#26d13151458919086cb5c38153fc206247b2dfcb"
-  integrity sha512-GDIaCOiR7PCZyZh8zW0RqL6ypKOFg+KhLN+k3V1TZhvwHnkY65yNiT/SHvoh/pbY/o1lGD1m51Q9/N3O90Vj+A==
+"@mondaydotcomorg/atp-server@0.19.17", "@mondaydotcomorg/atp-server@^0.19.17":
+  version "0.19.17"
+  resolved "https://registry.yarnpkg.com/@mondaydotcomorg/atp-server/-/atp-server-0.19.17.tgz#7de95abddc07cb4e766360894d5779ba3672919e"
+  integrity sha512-b1Krn1TFT8MCbQIJA5k57xA0yqo4rV+uljL1bUlzMfCMv7HxSUE7fj/lOm784eHVj3iLJdK+LHaLhJFCIy3ojg==
   dependencies:
     "@babel/generator" "^7.26.0"
     "@babel/parser" "^7.26.0"
     "@babel/traverse" "^7.26.0"
     "@babel/types" "^7.26.0"
-    "@mondaydotcomorg/atp-compiler" "0.19.13"
-    "@mondaydotcomorg/atp-protocol" "0.19.11"
-    "@mondaydotcomorg/atp-provenance" "0.19.10"
-    "@mondaydotcomorg/atp-providers" "0.19.11"
-    "@mondaydotcomorg/atp-runtime" "0.19.10"
+    "@mondaydotcomorg/atp-compiler" "0.19.15"
+    "@mondaydotcomorg/atp-protocol" "0.19.13"
+    "@mondaydotcomorg/atp-provenance" "0.19.12"
+    "@mondaydotcomorg/atp-providers" "0.19.13"
+    "@mondaydotcomorg/atp-runtime" "0.19.12"
     "@opentelemetry/api" "^1.9.0"
     "@opentelemetry/auto-instrumentations-node" "^0.66.0"
     "@opentelemetry/core" "^2.2.0"

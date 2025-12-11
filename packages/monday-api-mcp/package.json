@@ -1,6 +1,6 @@
 {
   "name": "@mondaydotcomorg/monday-api-mcp",
-  "version": "1.12.10",
+  "version": "1.12.8",
   "description": "MCP server for using the monday.com API",
   "mcpName": "com.monday/monday.com",
   "license": "MIT",
@@ -26,9 +26,9 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.13.2",
     "@mondaydotcomorg/agent-toolkit": "*",
-    "@mondaydotcomorg/atp-client": "^0.19.11",
-    "@mondaydotcomorg/atp-mcp-adapter": "^0.19.14",
-    "@mondaydotcomorg/atp-server": "^0.19.14",
+    "@mondaydotcomorg/atp-client": "^0.19.13",
+    "@mondaydotcomorg/atp-mcp-adapter": "^0.19.17",
+    "@mondaydotcomorg/atp-server": "^0.19.17",
     "dotenv": "^16.4.7",
     "zod": "^3.25.0"
   },
