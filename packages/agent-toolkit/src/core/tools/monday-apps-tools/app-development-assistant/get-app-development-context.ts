@@ -6,24 +6,42 @@ import {
   AppDevelopmentContextType,
   getAppDevelopmentContextSchema,
 } from './schemas/assistant-schemas';
-import { APP_DEVELOPMENT_GUIDE_CONTENT } from './docs/app-development-guide-content';
+import {
+  APP_DEVELOPMENT_GUIDE_CONTENT,
+  QUICK_START_SECTION,
+  SDK_REFERENCE_CONTENT,
+  DEPLOYMENT_CONTENT,
+  BEST_PRACTICES_CONTENT,
+  TROUBLESHOOTING_SECTION,
+} from './docs/app-development-guide-content';
 
 /**
- * Section markers for filtering content by context type
+ * Content lookup by context type - simple direct mapping
  */
-const SECTION_MARKERS: Record<AppDevelopmentContextType, { start: string; end?: string }[]> = {
-  [AppDevelopmentContextType.FULL]: [], // Return everything
-  [AppDevelopmentContextType.QUICK_START]: [{ start: '## Quick Start', end: '## monday.com SDK Reference' }],
-  [AppDevelopmentContextType.SDK_REFERENCE]: [
-    { start: '## monday.com SDK Reference', end: '## monday-code Deployment' },
-  ],
-  [AppDevelopmentContextType.MONDAY_CODE_DEPLOYMENT]: [{ start: '## monday-code Deployment', end: '## App Features' }],
-  [AppDevelopmentContextType.BEST_PRACTICES]: [{ start: '## Best Practices', end: '## Troubleshooting' }],
-  [AppDevelopmentContextType.TROUBLESHOOTING]: [
-    { start: '## Troubleshooting', end: '## CLI Commands Reference' },
-    { start: '## CLI Commands Reference', end: '## Useful Links' },
-  ],
+const CONTENT_BY_TYPE: Record<AppDevelopmentContextType, string> = {
+  [AppDevelopmentContextType.FULL]: APP_DEVELOPMENT_GUIDE_CONTENT,
+  [AppDevelopmentContextType.QUICK_START]: QUICK_START_SECTION,
+  [AppDevelopmentContextType.SDK_REFERENCE]: SDK_REFERENCE_CONTENT,
+  [AppDevelopmentContextType.MONDAY_CODE_DEPLOYMENT]: DEPLOYMENT_CONTENT,
+  [AppDevelopmentContextType.BEST_PRACTICES]: BEST_PRACTICES_CONTENT,
+  [AppDevelopmentContextType.TROUBLESHOOTING]: TROUBLESHOOTING_SECTION,
 };
+
+/**
+ * Quick CLI commands hint for deployment-related queries
+ */
+const DEPLOYMENT_HINT = `
+
+💡 **Quick Commands:**
+- Deploy backend to monday-code: \`mapps code:push\`
+- Deploy frontend to CDN: \`mapps code:push -c\`
+- **Connect to feature**: \`mapps app-features:build -a <app_id> -i <version_id> -f <feature_id> -d\`
+- List features: \`mapps app-features:list -a <app_id> -i <version_id>\`
+- Check status: \`mapps code:status --appVersionId <id>\`
+- Set env var: \`mapps code:env:set --appId <id> --key KEY --value "value"\`
+- View logs: \`mapps code:logs --appVersionId <id>\`
+
+⚠️ **Important**: After \`code:push\`, always connect deployment to features with \`app-features:build\`!`;
 
 export class GetAppDevelopmentContextTool extends BaseMondayAppsTool<
   typeof getAppDevelopmentContextSchema.shape,
@@ -45,8 +63,6 @@ export class GetAppDevelopmentContextTool extends BaseMondayAppsTool<
 - monday-code deployment instructions (including 'mapps code:push')
 - Connecting deployments to app features (mapps app-features:build)
 - Vibe Design System components and styling
-- Workflow Blocks (custom triggers and actions for automations)
-- Custom Objects (app-defined data entities)
 - Best practices for performance, security, and error handling
 - Troubleshooting common issues
 - CLI commands reference
@@ -83,29 +99,21 @@ The context includes code examples for:
     const contextType = input?.contextType || AppDevelopmentContextType.FULL;
     const specificTopic = input?.specificTopic;
 
-    let content = this.getContentByType(contextType);
+    // Get content directly from lookup map
+    let content = CONTENT_BY_TYPE[contextType] || APP_DEVELOPMENT_GUIDE_CONTENT;
 
-    // If a specific topic is requested, try to filter further
+    // If a specific topic is requested, filter further
     if (specificTopic) {
       content = this.filterByTopic(content, specificTopic);
     }
 
     // Add CLI helper hint for deployment-related queries
-    const deploymentHint =
+    const shouldShowDeploymentHint =
       contextType === AppDevelopmentContextType.MONDAY_CODE_DEPLOYMENT ||
       specificTopic?.toLowerCase().includes('deploy') ||
-      specificTopic?.toLowerCase().includes('push')
-        ? `\n\n💡 **Quick Commands:**
-- Deploy backend to monday-code: \`mapps code:push\`
-- Deploy frontend to CDN: \`mapps code:push -c\`
-- **Connect to feature**: \`mapps app-features:build -a <app_id> -i <version_id> -f <feature_id> -d\`
-- List features: \`mapps app-features:list -a <app_id> -i <version_id>\`
-- Check status: \`mapps code:status --appVersionId <id>\`
-- Set env var: \`mapps code:env:set --appId <id> --key KEY --value "value"\`
-- View logs: \`mapps code:logs --appVersionId <id>\`
+      specificTopic?.toLowerCase().includes('push');
 
-⚠️ **Important**: After \`code:push\`, always connect deployment to features with \`app-features:build\`!`
-        : '';
+    const deploymentHint = shouldShowDeploymentHint ? DEPLOYMENT_HINT : '';
 
     return {
       content: content + deploymentHint,
@@ -118,50 +126,6 @@ The context includes code examples for:
   }
 
   /**
-   * Extract content sections based on the context type
-   */
-  private getContentByType(contextType: AppDevelopmentContextType): string {
-    if (contextType === AppDevelopmentContextType.FULL) {
-      return APP_DEVELOPMENT_GUIDE_CONTENT;
-    }
-
-    const markers = SECTION_MARKERS[contextType];
-    if (!markers || markers.length === 0) {
-      return APP_DEVELOPMENT_GUIDE_CONTENT;
-    }
-
-    let result = `# monday.com App Development - ${this.formatContextTypeName(contextType)}\n\n`;
-
-    for (const marker of markers) {
-      const section = this.extractSection(APP_DEVELOPMENT_GUIDE_CONTENT, marker.start, marker.end);
-      if (section) {
-        result += section + '\n\n';
-      }
-    }
-
-    return result.trim();
-  }
-
-  /**
-   * Extract a section from the content between start and end markers
-   */
-  private extractSection(content: string, start: string, end?: string): string | null {
-    const startIndex = content.indexOf(start);
-    if (startIndex === -1) return null;
-
-    if (!end) {
-      return content.substring(startIndex);
-    }
-
-    const endIndex = content.indexOf(end, startIndex);
-    if (endIndex === -1) {
-      return content.substring(startIndex);
-    }
-
-    return content.substring(startIndex, endIndex).trim();
-  }
-
-  /**
    * Filter content to focus on a specific topic
    */
   private filterByTopic(content: string, topic: string): string {
@@ -170,7 +134,6 @@ The context includes code examples for:
     const relevantSections: string[] = [];
     let currentSection: string[] = [];
     let isRelevant = false;
-    let sectionDepth = 0;
 
     for (const line of lines) {
       // Check if this is a header
@@ -184,7 +147,6 @@ The context includes code examples for:
 
         // Start new section
         currentSection = [line];
-        sectionDepth = headerMatch[1].length;
         isRelevant = headerMatch[2].toLowerCase().includes(topicLower);
       } else {
         currentSection.push(line);
@@ -205,20 +167,5 @@ The context includes code examples for:
     }
 
     return `# Content related to "${topic}"\n\n${relevantSections.join('\n\n---\n\n')}`;
-  }
-
-  /**
-   * Format context type for display
-   */
-  private formatContextTypeName(contextType: AppDevelopmentContextType): string {
-    const names: Record<AppDevelopmentContextType, string> = {
-      [AppDevelopmentContextType.FULL]: 'Complete Guide',
-      [AppDevelopmentContextType.QUICK_START]: 'Quick Start',
-      [AppDevelopmentContextType.SDK_REFERENCE]: 'SDK Reference',
-      [AppDevelopmentContextType.MONDAY_CODE_DEPLOYMENT]: 'monday-code Deployment',
-      [AppDevelopmentContextType.BEST_PRACTICES]: 'Best Practices',
-      [AppDevelopmentContextType.TROUBLESHOOTING]: 'Troubleshooting',
-    };
-    return names[contextType] || contextType;
   }
 }

@@ -1,18 +1,24 @@
 /**
  * App Development Guide Content
- * This file contains the complete documentation for building monday.com apps.
- * The content is stored as a TypeScript string constant for easy import.
+ * This file contains the documentation for building monday.com apps, split by topic.
+ * Each section is a separate const for easy import and lookup.
  */
 
-export const APP_DEVELOPMENT_GUIDE_CONTENT = `# monday.com App Development Complete Guide
+// =============================================================================
+// OVERVIEW
+// =============================================================================
+export const OVERVIEW_CONTENT = `# monday.com App Development Complete Guide
 
 ## Overview
 
 This guide provides comprehensive documentation for building, deploying, and maintaining monday.com apps. Use this as your reference for SDK usage, monday-code deployment, and best practices.
 
----
+---`;
 
-## Quick Start
+// =============================================================================
+// QUICK START
+// =============================================================================
+export const QUICK_START_CONTENT = `## Quick Start
 
 ### Prerequisites
 
@@ -56,9 +62,12 @@ your-app/
 └── .env                     # Environment variables
 \`\`\`
 
----
+---`;
 
-## OAuth Scopes
+// =============================================================================
+// OAUTH SCOPES
+// =============================================================================
+export const OAUTH_SCOPES_CONTENT = `## OAuth Scopes
 
 OAuth scopes define what permissions your app has. **You must configure the correct scopes based on what your app does.** Users will see these permissions when installing your app.
 
@@ -140,9 +149,12 @@ mapps manifest:import -p ./manifest.json -a <app_id> -i <version_id>
 3. **Check permissions at runtime** - Handle cases where users haven't granted all scopes
 4. **Document your scopes** - Explain why each permission is needed in your app listing
 
----
+---`;
 
-## monday.com SDK Reference
+// =============================================================================
+// SDK REFERENCE
+// =============================================================================
+export const SDK_REFERENCE_CONTENT = `## monday.com SDK Reference
 
 ### Installation
 
@@ -304,9 +316,12 @@ monday.listen('events', (res) => {
 });
 \`\`\`
 
----
+---`;
 
-## monday-code Deployment
+// =============================================================================
+// MONDAY-CODE DEPLOYMENT
+// =============================================================================
+export const DEPLOYMENT_CONTENT = `## monday-code Deployment
 
 ### What is monday-code?
 
@@ -525,9 +540,12 @@ mapps code:logs --appVersionId <version_id>
 mapps code:logs --appVersionId <version_id> --follow
 \`\`\`
 
----
+---`;
 
-## App Features
+// =============================================================================
+// APP FEATURES
+// =============================================================================
+export const APP_FEATURES_CONTENT = `## App Features
 
 ### Board View
 
@@ -680,9 +698,12 @@ function CustomColumn() {
 }
 \`\`\`
 
----
+---`;
 
-## Vibe Design System
+// =============================================================================
+// VIBE DESIGN SYSTEM
+// =============================================================================
+export const VIBE_CONTENT = `## Vibe Design System
 
 Vibe is monday.com's official design system. Use Vibe components to create apps that look and feel native to monday.com.
 
@@ -958,9 +979,12 @@ function IconExamples() {
 }
 \`\`\`
 
----
+---`;
 
-## Workflow Blocks (Integrations & Automations)
+// =============================================================================
+// WORKFLOW BLOCKS
+// =============================================================================
+export const WORKFLOW_BLOCKS_CONTENT = `## Workflow Blocks (Integrations & Automations)
 
 Workflow blocks allow you to create custom triggers and actions that users can use in monday.com's automation recipes.
 
@@ -1175,9 +1199,12 @@ The \`sentence\` field defines how your block appears in the recipe builder:
 "Create a {itemType} in {targetBoard} with name {itemName}"
 \`\`\`
 
----
+---`;
 
-## Custom Objects
+// =============================================================================
+// CUSTOM OBJECTS
+// =============================================================================
+export const CUSTOM_OBJECTS_CONTENT = `## Custom Objects
 
 Custom Objects allow you to extend monday.com's data model with your own entity types. Objects can have relationships with boards, items, and other objects.
 
@@ -1428,9 +1455,12 @@ function ObjectListView() {
 4. **Validate data** - Implement validation in your app before creating/updating objects
 5. **Handle pagination** - Use cursors for large object collections
 
----
+---`;
 
-## Best Practices
+// =============================================================================
+// BEST PRACTICES
+// =============================================================================
+export const BEST_PRACTICES_CONTENT = `## Best Practices
 
 ### 1. Performance
 
@@ -1561,9 +1591,12 @@ const saveSettings = async (userId, settings) => {
 };
 \`\`\`
 
----
+---`;
 
-## Troubleshooting
+// =============================================================================
+// TROUBLESHOOTING
+// =============================================================================
+export const TROUBLESHOOTING_CONTENT = `## Troubleshooting
 
 ### Common Issues
 
@@ -1670,9 +1703,12 @@ monday.api = async (...args) => {
 };
 \`\`\`
 
----
+---`;
 
-## CLI Commands Reference
+// =============================================================================
+// CLI COMMANDS
+// =============================================================================
+export const CLI_COMMANDS_CONTENT = `## CLI Commands Reference
 
 ### App Management
 
@@ -1759,14 +1795,69 @@ mapps manifest:import -p ./manifest.json -a <app_id> -i <version_id>
 }
 \`\`\`
 
----
+---`;
 
-## Useful Links
+// =============================================================================
+// USEFUL LINKS
+// =============================================================================
+export const USEFUL_LINKS_CONTENT = `## Useful Links
 
 - [monday.com Apps Framework Documentation](https://developer.monday.com/apps/docs)
 - [monday-code Documentation](https://developer.monday.com/apps/docs/hosting-your-app-with-monday-code)
 - [GraphQL API Reference](https://developer.monday.com/api-reference/reference)
 - [SDK Documentation](https://developer.monday.com/apps/docs/mondaycom-client-sdk)
 - [Vibe Design System](https://style.monday.com/) - Build monday.com-style UIs
-- [App Marketplace](https://monday.com/marketplace)
-`;
+- [App Marketplace](https://monday.com/marketplace)`;
+
+// =============================================================================
+// COMBINED SECTIONS FOR CONTEXT TYPES
+// =============================================================================
+
+/**
+ * Quick Start section combines: Overview + Quick Start + OAuth Scopes
+ */
+export const QUICK_START_SECTION = `# monday.com App Development - Quick Start
+
+${OVERVIEW_CONTENT}
+
+${QUICK_START_CONTENT}
+
+${OAUTH_SCOPES_CONTENT}`;
+
+/**
+ * Troubleshooting section combines: Troubleshooting + CLI Commands
+ */
+export const TROUBLESHOOTING_SECTION = `# monday.com App Development - Troubleshooting
+
+${TROUBLESHOOTING_CONTENT}
+
+${CLI_COMMANDS_CONTENT}`;
+
+/**
+ * Full content - all sections combined
+ */
+export const APP_DEVELOPMENT_GUIDE_CONTENT = `${OVERVIEW_CONTENT}
+
+${QUICK_START_CONTENT}
+
+${OAUTH_SCOPES_CONTENT}
+
+${SDK_REFERENCE_CONTENT}
+
+${DEPLOYMENT_CONTENT}
+
+${APP_FEATURES_CONTENT}
+
+${VIBE_CONTENT}
+
+${WORKFLOW_BLOCKS_CONTENT}
+
+${CUSTOM_OBJECTS_CONTENT}
+
+${BEST_PRACTICES_CONTENT}
+
+${TROUBLESHOOTING_CONTENT}
+
+${CLI_COMMANDS_CONTENT}
+
+${USEFUL_LINKS_CONTENT}`;
