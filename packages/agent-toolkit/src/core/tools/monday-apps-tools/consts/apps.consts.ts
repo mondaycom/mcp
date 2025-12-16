@@ -16,7 +16,6 @@ export enum AppFeatureType {
   AppFeatureItemView = 'AppFeatureItemView',
   AppFeatureBoardView = 'AppFeatureBoardView',
   AppFeatureDashboardWidget = 'AppFeatureDashboardWidget',
-
 }
 
 export enum MondayAppsToolCategory {
@@ -25,4 +24,5 @@ export enum MondayAppsToolCategory {
   APP_FEATURE = 'app_feature',
   STORAGE = 'storage',
   MONDAY_CODE = 'monday_code',
+  APP_DEVELOPMENT_ASSISTANT = 'app_development_assistant',
 }
