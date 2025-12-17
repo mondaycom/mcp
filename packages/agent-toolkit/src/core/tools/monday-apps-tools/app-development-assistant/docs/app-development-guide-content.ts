@@ -170,7 +170,7 @@ import mondaySdk from '@mondaydotcomorg/monday-sdk-js';
 const monday = mondaySdk();
 
 // Initialize the SDK
-monday.setApiVersion('2024-10');
+monday.setApiVersion('2026-01');
 \`\`\`
 
 ### Core SDK Methods
@@ -247,19 +247,146 @@ const updateColumn = await monday.api(\`
 
 #### 3. Storage - Persist App Data
 
+monday.com provides persistent key-value storage with two scopes:
+
+**Storage Limits:**
+- Key length: **256 characters max**
+- Value size: **6MB per key**
+
+##### Instance Storage (Board Views, Item Views, Dashboard Widgets)
+
+Use \`monday.storage.instance\` for data specific to each feature instance.
+- Each board view, item view, or dashboard widget has **isolated storage**
+- Compartmentalized by: \`accountId\` + \`app\` + \`instance\`
+- **Resets when you release a new major version** (each version has its own instances)
+
 \`\`\`typescript
-// Store data
-await monday.storage.instance.setItem('user_settings', JSON.stringify({
-  theme: 'dark',
-  notifications: true
+// INSTANCE STORAGE - Scoped to the current feature instance
+
+// Store instance-specific settings (e.g., board view config)
+monday.storage.instance.setItem('view_config', JSON.stringify({
+  columns: ['status', 'date', 'person'],
+  sortBy: 'date',
+  filterEnabled: true
+})).then(res => {
+  console.log(res.data); // { success: true, version: "465cc" }
+});
+
+// Retrieve instance settings
+monday.storage.instance.getItem('view_config').then(res => {
+  const config = JSON.parse(res.data.value);
+  console.log(res.data.version); // Version identifier for concurrency
+});
+
+// Delete instance data
+monday.storage.instance.deleteItem('view_config').then(res => {
+  console.log(res.data); // { success: true, value: null }
+});
+
+// Dashboard Widget example
+monday.storage.instance.setItem('widget_settings', JSON.stringify({
+  chartType: 'bar',
+  dataSource: 'board_123',
+  refreshInterval: 60
 }));
+\`\`\`
 
-// Retrieve data
-const result = await monday.storage.instance.getItem('user_settings');
-const settings = JSON.parse(result.data.value);
+##### Global Storage (App-Level)
 
-// Delete data
-await monday.storage.instance.deleteItem('user_settings');
+Use \`monday.storage\` (without \`.instance\`) for app-wide data shared across all instances.
+- Shared across **all app usages** (not tied to specific instances)
+- Compartmentalized by: \`accountId\` + \`app\`
+- **Does NOT reset between major versions**
+- Supports \`searchItem\` for searching keys
+
+\`\`\`typescript
+// GLOBAL STORAGE - Shared across entire app
+
+// Store app-level settings
+monday.storage.setItem('app_config', JSON.stringify({
+  apiEndpoint: 'https://api.example.com',
+  featureFlags: { beta: true }
+})).then(res => {
+  console.log(res.data); // { success: true, version: "abc123" }
+});
+
+// Retrieve app-level data
+monday.storage.getItem('app_config').then(res => {
+  const config = JSON.parse(res.data.value);
+});
+
+// Search for keys (global storage only)
+monday.storage.searchItem('user_').then(res => {
+  console.log(res.data); // Returns matching keys
+});
+
+// Delete app-level data
+monday.storage.deleteItem('app_config');
+
+// Store user preferences at app level
+monday.storage.setItem(\`user_\${userId}_prefs\`, JSON.stringify({
+  theme: 'dark',
+  notifications: true,
+  language: 'en'
+}));
+\`\`\`
+
+##### Versioning (Prevent Race Conditions)
+
+Both storage types return a \`version\` identifier to handle concurrent writes:
+
+\`\`\`typescript
+// Use versioning to prevent overwrites from concurrent users
+monday.storage.instance.getItem('shared_data').then(res => {
+  const { value, version } = res.data;
+  
+  // Later, when saving, pass the version to ensure no one else modified it
+  monday.storage.instance.setItem('shared_data', newValue, { 
+    previous_version: version 
+  }).then(res => {
+    if (!res.data.success) {
+      // Version mismatch - someone else updated the data
+      console.error(res.data.error);
+      // "Version mismatch: key was updated from another context"
+    }
+  });
+});
+\`\`\`
+
+##### When to Use Each Storage Type
+
+| Storage Type | Use Case | Scope | Resets on Major Version? |
+|--------------|----------|-------|--------------------------|
+| \`monday.storage.instance\` | Board view settings, widget config, item view state | Per instance | ✅ Yes |
+| \`monday.storage\` | User preferences, app config, shared data | Entire app | ❌ No |
+
+##### Storage Best Practices
+
+\`\`\`typescript
+// Use structured key prefixes for organization
+const STORAGE_KEYS = {
+  // Instance-level keys (reset per version)
+  viewConfig: 'view_config',
+  widgetSettings: 'widget_settings',
+  
+  // Global keys with prefixes (persist across versions)
+  userPrefs: (userId: string) => \`user:\${userId}:prefs\`,
+  boardCache: (boardId: string) => \`cache:board:\${boardId}\`,
+  appConfig: 'app:config',
+  syncState: 'sync:last_run'
+};
+
+// Helper with error handling
+const getStorageItem = async (key: string, useInstance = true) => {
+  try {
+    const storage = useInstance ? monday.storage.instance : monday.storage;
+    const result = await storage.getItem(key);
+    return result.data.value ? JSON.parse(result.data.value) : null;
+  } catch (error) {
+    console.error('Storage error:', error);
+    return null;
+  }
+};
 \`\`\`
 
 #### 4. Execute - Trigger UI Actions
@@ -392,6 +519,114 @@ app.listen(PORT, () => {
 export default app;
 \`\`\`
 
+### monday-code Services (Backend SDK)
+
+The \`@mondaydotcomorg/apps-sdk\` provides several services for monday-code backend apps:
+
+\`\`\`bash
+npm install @mondaydotcomorg/apps-sdk
+\`\`\`
+
+#### 1. Environment Variables
+
+Access env vars set via CLI (\`mapps code:env:set\`):
+
+\`\`\`typescript
+import { EnvironmentVariablesManager } from '@mondaydotcomorg/apps-sdk';
+
+const envManager = new EnvironmentVariablesManager();
+
+// Get environment variables (async - fetches from monday servers)
+const apiKey = await envManager.get('API_KEY');
+const webhookSecret = await envManager.get('MONDAY_SIGNING_SECRET');
+\`\`\`
+
+#### 2. Secure Storage
+
+Store sensitive data securely (encrypted at rest). Different from regular Storage - use for OAuth tokens, API keys, secrets:
+
+\`\`\`typescript
+import { SecureStorage } from '@mondaydotcomorg/apps-sdk';
+
+const secureStorage = new SecureStorage();
+
+// Store OAuth tokens securely
+await secureStorage.set('oauth_token', {
+  accessToken: 'user-access-token',
+  refreshToken: 'user-refresh-token',
+  expiresAt: Date.now() + 3600000
+});
+
+// Retrieve
+const tokenData = await secureStorage.get('oauth_token');
+
+// Delete
+await secureStorage.delete('oauth_token');
+\`\`\`
+
+#### 3. Storage (Backend Access)
+
+Access the same \`monday.storage\` from backend. See "Storage - Persist App Data" section above for full API:
+
+\`\`\`typescript
+import { Storage } from '@mondaydotcomorg/apps-sdk';
+
+const storage = new Storage();
+await storage.set('key', JSON.stringify(data));
+const result = await storage.get('key');
+await storage.delete('key');
+\`\`\`
+
+#### 4. Logger
+
+Structured logging viewable in monday-code logs:
+
+\`\`\`typescript
+import { Logger } from '@mondaydotcomorg/apps-sdk';
+
+const logger = new Logger('my-app');
+
+logger.info('User action completed', { userId: '123', action: 'create_item' });
+logger.warn('Rate limit approaching', { currentRate: 80, limit: 100 });
+logger.error('Failed to process webhook', { error: 'Invalid payload' });
+logger.debug('Processing request', { requestId: 'abc123' });
+\`\`\`
+
+#### 5. Queue (Async Task Processing)
+
+Process tasks asynchronously (useful for bulk operations):
+
+\`\`\`typescript
+import { Queue } from '@mondaydotcomorg/apps-sdk';
+
+const queue = new Queue();
+
+// Publish a message
+await queue.publishMessage({
+  type: 'sync_board',
+  boardId: '12345'
+});
+
+// Consume messages (in worker)
+await queue.consumeMessages(async (message) => {
+  if (message.type === 'sync_board') {
+    await syncBoard(message.boardId);
+  }
+});
+\`\`\`
+
+#### All Services Import
+
+\`\`\`typescript
+import { 
+  Logger, 
+  Storage, 
+  SecureStorage, 
+  EnvironmentVariablesManager,
+  Queue 
+} from '@mondaydotcomorg/apps-sdk';
+\`\`\`
+
 ### Pushing to monday-code
 
 \`\`\`bash
@@ -407,11 +642,9 @@ mapps code:push -c
 # Push to a specific app version
 mapps code:push --appVersionId <version_id>
 
-# Push with force (skip confirmation)
-mapps code:push --force
 
 # Combine flags as needed
-mapps code:push -c --force --appVersionId <version_id>
+mapps code:push -c --appVersionId <version_id>
 \`\`\`
 
 **When to use \`-c\` (CDN) flag:**
@@ -462,61 +695,90 @@ The build path tells monday-code which route/path to use for the feature:
 mapps app-features:build -a <app_id> -i <version_id> -f <feature_id> -d --buildPath /custom-path
 \`\`\`
 
-#### Multiple Features Example
+#### Frontend-Only Apps (Views, Widgets)
 
-If your app has multiple features (e.g., board view + item view):
-
-\`\`\`javascript
-// src/index.ts - Express server handling multiple features
-import express from 'express';
-import path from 'path';
-
-const app = express();
-
-// Serve board view at /board-view
-app.use('/board-view', express.static(path.join(__dirname, 'public/board-view')));
-
-// Serve item view at /item-view  
-app.use('/item-view', express.static(path.join(__dirname, 'public/item-view')));
-
-// Health check for monday-code
-app.get('/health', (req, res) => res.send('OK'));
-
-app.listen(process.env.PORT || 8080);
-\`\`\`
-
-Then connect each feature with its build path:
-\`\`\`bash
-# Connect board view feature
-mapps app-features:build -a <app_id> -i <version_id> -f <board_view_feature_id> -d --buildPath /board-view
-
-# Connect item view feature
-mapps app-features:build -a <app_id> -i <version_id> -f <item_view_feature_id> -d --buildPath /item-view
-\`\`\`
-
-#### CDN Deployment for Frontend-Only Apps
-
-For frontend-only apps (no backend), use CDN deployment:
+For apps with only frontend features (board views, item views, dashboard widgets), deploy to CDN:
 
 \`\`\`bash
-# First push to CDN
+# Build your frontend app
+npm run build
+
+# Deploy to CDN
 mapps code:push -c
 
-# Then connect to feature (note: uses default deployment URL automatically for CDN)
+# Connect to feature
 mapps app-features:build -a <app_id> -i <version_id> -f <feature_id> -d
+\`\`\`
+
+#### Backend-Only Apps (Integrations, Webhooks)
+
+For apps with only backend features (webhooks, integrations), deploy to serverless:
+
+\`\`\`bash
+# Build your backend
+npm run build
+
+# Deploy to serverless
+mapps code:push
+
+# Connect to integration/webhook feature
+mapps app-features:build -a <app_id> -i <version_id> -f <feature_id> -d
+\`\`\`
+
+#### Fullstack Apps (Frontend + Backend)
+
+For apps with both frontend views AND backend logic, deploy separately:
+
+\`\`\`
+your-app/
+├── frontend/              # React app for views
+│   ├── src/
+│   ├── package.json
+│   └── dist/              # Built frontend
+└── backend/               # Express server for webhooks/API
+    ├── src/
+    ├── package.json
+    └── dist/              # Built backend
+\`\`\`
+
+**Deploy each separately:**
+\`\`\`bash
+# 1. Deploy frontend to CDN
+cd frontend
+npm run build
+mapps code:push -c
+
+# 2. Deploy backend to serverless
+cd ../backend
+npm run build
+mapps code:push
+
+# 3. Connect frontend features to CDN deployment
+mapps app-features:build -a <app_id> -i <version_id> -f <board_view_feature_id> -d
+
+# 4. Connect backend features to serverless deployment
+mapps app-features:build -a <app_id> -i <version_id> -f <integration_feature_id> -d
+\`\`\`
+
+**Frontend calls backend:**
+\`\`\`typescript
+// In your frontend React component
+const backendUrl = 'https://your-app.monday.app'; // monday-code serverless URL
+
+const response = await fetch(\`\${backendUrl}/api/my-endpoint\`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ data: 'example' })
+});
 \`\`\`
 
 #### Deployment Flow Summary
 
-After creating an app with features, the complete deployment flow is:
-
-1. **Build your app**: \`npm run build\`
-2. **Push to monday-code**: \`mapps code:push\` (or \`mapps code:push -c\` for CDN)
-3. **Get feature IDs**: \`mapps app-features:list -a <app_id> -i <version_id>\`
-4. **Connect deployment to each feature**: \`mapps app-features:build -a <app_id> -i <version_id> -f <feature_id> -d\`
-5. **Test your app** in monday.com
-
-**Auto-connect tip:** Always connect deployment to features immediately after \`code:push\`. This ensures users can access your app's UI.
+| App Type | Command | Use Case |
+|----------|---------|----------|
+| Frontend only | \`code:push -c\` | Board views, item views, widgets |
+| Backend only | \`code:push\` | Webhooks, integrations, API |
+| Fullstack | Both commands | Views + backend logic |
 
 ### Checking Deployment Status
 
@@ -696,6 +958,203 @@ function CustomColumn() {
     </div>
   );
 }
+\`\`\`
+
+### Object View
+
+Object views display custom app objects (Custom Objects). They receive the object instance context.
+
+\`\`\`typescript
+function ObjectView() {
+  const [objectData, setObjectData] = useState(null);
+  const [context, setContext] = useState(null);
+
+  useEffect(() => {
+    monday.get('context').then((res) => {
+      setContext(res.data);
+      // Context includes objectId and other metadata
+      const { objectId } = res.data;
+      
+      // Fetch your custom object data
+      fetchObjectData(objectId);
+    });
+  }, []);
+
+  const fetchObjectData = async (objectId) => {
+    // Query your custom object using the API
+    const response = await monday.api(\`
+      query ($objectId: ID!) {
+        app_objects(ids: [$objectId]) {
+          id
+          name
+          kind
+          fields {
+            id
+            title
+            type
+            value
+          }
+        }
+      }
+    \`, { variables: { objectId } });
+    
+    setObjectData(response.data.app_objects[0]);
+  };
+
+  const updateObjectField = async (fieldId, newValue) => {
+    await monday.api(\`
+      mutation ($objectId: ID!, $fieldId: ID!, $value: String!) {
+        update_app_object_field(
+          object_id: $objectId,
+          field_id: $fieldId,
+          value: $value
+        ) {
+          id
+        }
+      }
+    \`, { 
+      variables: { 
+        objectId: context.objectId, 
+        fieldId, 
+        value: JSON.stringify(newValue) 
+      } 
+    });
+  };
+
+  return (
+    <div className="object-view">
+      <h1>{objectData?.name}</h1>
+      {objectData?.fields.map(field => (
+        <div key={field.id}>
+          <strong>{field.title}:</strong> {field.value}
+        </div>
+      ))}
+    </div>
+  );
+}
+\`\`\`
+
+---`;
+
+// =============================================================================
+// WORKFLOW BLOCKS (monday workflows)
+// =============================================================================
+export const WORKFLOW_BLOCKS_CONTENT = `## Workflow Blocks (monday workflows)
+
+Build custom automation triggers and actions using monday workflows. Each block is created as a separate "Automation block" app feature in the Developer Center.
+
+**Documentation:** [Create a workflow block](https://developer.monday.com/apps/docs/create-a-workflow-block)
+
+### Creating a Workflow Block
+
+1. Go to **Developer Center** > Your App > **Features**
+2. Click **Create feature** > **Automation block** > **Create**
+3. Configure the block:
+   - **Block name**: User-visible name in workflow builder
+   - **Block description**: Internal description (not shown to users)
+   - **Block type**: Select \`trigger\` or \`action\`
+
+### Block Configuration
+
+| Block Type | Required URLs | Purpose |
+|------------|---------------|---------|
+| **Trigger** | Subscribe URL, Unsubscribe URL | Called when workflow is activated/deactivated |
+| **Action** | Execution URL | Called when the action runs |
+
+### Input & Output Fields
+
+- **Input fields**: Data the user provides when configuring the block
+- **Output fields**: Data your block returns (can be used by subsequent blocks)
+- **Main field**: Mark one input field as "main" - appears in workflow builder preview
+
+### Trigger Block Handler
+
+\`\`\`typescript
+// Subscribe endpoint - called when user activates the workflow
+router.post('/triggers/subscribe', async (req, res) => {
+  const { payload, webhookUrl } = req.body;
+  
+  // Store the webhookUrl to call later when trigger fires
+  await saveSubscription({
+    webhookUrl,
+    boardId: payload.inputFields.boardId,
+    // ... other input field values
+  });
+  
+  res.status(200).json({ webhookId: 'unique-subscription-id' });
+});
+
+// Unsubscribe endpoint - called when user deactivates the workflow
+router.post('/triggers/unsubscribe', async (req, res) => {
+  const { webhookId } = req.body;
+  
+  await deleteSubscription(webhookId);
+  
+  res.status(200).json({ success: true });
+});
+
+// When your trigger fires, call the stored webhookUrl
+const fireTrigger = async (subscription, outputData) => {
+  await fetch(subscription.webhookUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      trigger: {
+        outputFields: {
+          itemId: outputData.itemId,
+          // ... other output field values matching your block config
+        }
+      }
+    })
+  });
+};
+\`\`\`
+
+### Action Block Handler
+
+\`\`\`typescript
+// Execution endpoint - called when action runs in workflow
+router.post('/actions/execute', async (req, res) => {
+  const { payload } = req.body;
+  const { inputFields } = payload;
+  
+  // Process the action with input fields
+  const result = await processAction({
+    itemId: inputFields.itemId,
+    message: inputFields.message,
+    // ... other input field values
+  });
+  
+  // Return output fields for subsequent blocks
+  res.status(200).json({
+    outputFields: {
+      success: true,
+      resultId: result.id,
+      // ... other output field values matching your block config
+    }
+  });
+});
+\`\`\`
+
+### Challenge Verification
+
+monday.com sends a challenge request to verify your endpoints:
+
+\`\`\`typescript
+// Handle challenge for all workflow endpoints
+router.post('/triggers/*', (req, res, next) => {
+  if (req.body.challenge) {
+    return res.json({ challenge: req.body.challenge });
+  }
+  next();
+});
+
+router.post('/actions/*', (req, res, next) => {
+  if (req.body.challenge) {
+    return res.json({ challenge: req.body.challenge });
+  }
+  next();
+});
 \`\`\`
 
 ---`;
@@ -982,478 +1441,184 @@ function IconExamples() {
 ---`;
 
 // =============================================================================
-// WORKFLOW BLOCKS
+// DEPLOYMENT WORKFLOW & GUARDRAILS
 // =============================================================================
-export const WORKFLOW_BLOCKS_CONTENT = `## Workflow Blocks (Integrations & Automations)
+export const DEPLOYMENT_WORKFLOW_CONTENT = `## Deployment Workflow & Guardrails
 
-Workflow blocks allow you to create custom triggers and actions that users can use in monday.com's automation recipes.
+This section covers the critical deployment workflow and guardrails you must follow when building monday.com apps.
 
-### Block Types
+### Project Setup Requirements
 
-1. **Triggers** - Events that start an automation (e.g., "When an item is created")
-2. **Actions** - Operations performed when triggered (e.g., "Send to my service")
-3. **Custom Fields** - Input fields users configure in the recipe
+Before deploying, ensure your project meets these requirements:
 
-### Creating Custom Triggers
-
-\`\`\`typescript
-// Manifest configuration for a custom trigger
+\`\`\`json
+// package.json - MUST include:
 {
-  "type": "AppFeatureWorkflowBlock",
-  "kind": "trigger",
-  "name": "high_priority_item",
-  "sentence": "When an item's priority is set to {priority} in {boardId}",
-  "inputFields": [
-    {
-      "key": "boardId",
-      "type": "board",
-      "title": "Board"
-    },
-    {
-      "key": "priority",
-      "type": "dropdown",
-      "title": "Priority Level",
-      "options": [
-        { "value": "critical", "title": "Critical" },
-        { "value": "high", "title": "High" },
-        { "value": "medium", "title": "Medium" }
-      ]
-    }
-  ],
-  "outputFields": [
-    {
-      "key": "itemId",
-      "type": "text",
-      "title": "Item ID"
-    },
-    {
-      "key": "itemName",
-      "type": "text", 
-      "title": "Item Name"
-    }
-  ],
-  "webhookUrl": "https://your-app.monday.app/webhooks/trigger/high-priority"
+  "type": "module",
+  "main": "index.js"
 }
 \`\`\`
 
-### Creating Custom Actions
-
-\`\`\`typescript
-// Manifest configuration for a custom action
-{
-  "type": "AppFeatureWorkflowBlock",
-  "kind": "action",
-  "name": "send_to_slack",
-  "sentence": "Send {message} to Slack channel {channel}",
-  "inputFields": [
-    {
-      "key": "message",
-      "type": "text",
-      "title": "Message",
-      "description": "The message to send"
-    },
-    {
-      "key": "channel",
-      "type": "text",
-      "title": "Slack Channel",
-      "description": "Channel name or ID"
-    },
-    {
-      "key": "includeLink",
-      "type": "boolean",
-      "title": "Include item link",
-      "defaultValue": true
-    }
-  ],
-  "webhookUrl": "https://your-app.monday.app/webhooks/action/send-slack"
-}
-\`\`\`
-
-### Input Field Types
-
-| Type | Description | Example Use |
-|------|-------------|-------------|
-| \`text\` | Free text input | Message content, names |
-| \`board\` | Board selector | Select a board |
-| \`column\` | Column selector | Select a column from board |
-| \`dropdown\` | Predefined options | Status, priority levels |
-| \`boolean\` | Checkbox | Enable/disable options |
-| \`number\` | Numeric input | Thresholds, counts |
-| \`date\` | Date picker | Due dates, schedules |
-
-### Webhook Handler for Workflow Blocks
-
-\`\`\`typescript
-// Backend handler for workflow block webhooks
+\`\`\`javascript
+// index.js - Entry point serving dist/
 import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-const router = express.Router();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const app = express();
 
-// Handle trigger subscription (monday.com subscribing to your trigger)
-router.post('/webhooks/trigger/high-priority', async (req, res) => {
-  const { challenge, payload, type } = req.body;
-  
-  // Handle webhook verification
-  if (challenge) {
-    return res.json({ challenge });
-  }
-  
-  // Handle subscription request
-  if (type === 'subscribe') {
-    const { webhookUrl, subscriptionId, inputFields } = payload;
-    // Store the subscription to notify later when trigger conditions are met
-    await saveSubscription({
-      subscriptionId,
-      webhookUrl,
-      boardId: inputFields.boardId,
-      priority: inputFields.priority
-    });
-    return res.json({ success: true });
-  }
-  
-  // Handle unsubscribe
-  if (type === 'unsubscribe') {
-    await removeSubscription(payload.subscriptionId);
-    return res.json({ success: true });
-  }
-  
-  res.status(200).json({ success: true });
-});
+app.use(express.static(path.join(__dirname, 'dist')));
+app.get('/health', (req, res) => res.send('OK'));
 
-// Handle action execution
-router.post('/webhooks/action/send-slack', async (req, res) => {
-  const { challenge, payload } = req.body;
-  
-  if (challenge) {
-    return res.json({ challenge });
-  }
-  
-  const { inputFields, recipeId, integrationId } = payload;
-  const { message, channel, includeLink } = inputFields;
-  
-  try {
-    // Execute your action logic
-    await sendSlackMessage(channel, message, includeLink);
-    
-    // Return success
-    res.json({ success: true });
-  } catch (error) {
-    // Return error to monday.com
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
-    });
-  }
-});
-
-// Function to fire a trigger (notify monday.com that trigger conditions are met)
-async function fireTrigger(subscriptionWebhookUrl: string, outputFields: object) {
-  await fetch(subscriptionWebhookUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      trigger: {
-        outputFields
-      }
-    })
-  });
-}
-
-export default router;
+app.listen(process.env.PORT || 8080);
 \`\`\`
 
-### Dynamic Field Mapping
+### Draft vs Live Version Lifecycle
 
-Allow users to map board columns to your workflow block inputs:
+**CRITICAL: Understanding version states is essential for successful deployment.**
 
-\`\`\`typescript
+\`\`\`
+┌─────────────────────────────────────────────────────────────┐
+│                    VERSION LIFECYCLE                        │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│   CREATE APP ──► DRAFT VERSION                              │
+│                      │                                      │
+│                      ▼                                      │
+│              Add Features (MCP)                             │
+│                      │                                      │
+│                      ▼                                      │
+│              Push Code (CLI)                                │
+│                      │                                      │
+│                      ▼                                      │
+│              Build Features (CLI)                           │
+│                      │                                      │
+│                      ▼                                      │
+│              PROMOTE ──► LIVE VERSION                       │
+│                                                             │
+│   ⚠️  Once LIVE, you CANNOT modify the version!            │
+│   ⚠️  Create a new draft version for changes.              │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+\`\`\`
+
+### Mandatory Deployment Order
+
+**⚠️ CRITICAL: Follow this EXACT order. Skipping steps or changing order WILL cause failures.**
+
+\`\`\`bash
+# STEP 1: Create App (via MCP tool)
+# Tool: monday_apps_create_app
+# Returns: appId and versionId (version starts as DRAFT)
+
+# STEP 2: Create Feature (via MCP tool)
+# Tool: monday_apps_create_app_feature
+# ⚠️ NEVER pass the "data" parameter - it can corrupt the feature schema!
+
+# STEP 3: Push Code (via CLI)
+npx -y @mondaycom/apps-cli@latest code:push -a <appId> -i <versionId> -d .
+# ⚠️ First deployment takes ~6 minutes. Wait for completion!
+
+# STEP 4: Build Feature (via CLI) - Connects code to feature
+npx -y @mondaycom/apps-cli@latest app-features:build -a <appId> -i <versionId> -f <featureId> -d
+
+# STEP 5: Promote to Live (via CLI or MCP)
+npx -y @mondaycom/apps-cli@latest app:promote -a <appId> -i <versionId>
+# OR use MCP tool: monday_apps_promote_app
+\`\`\`
+
+### .mappsrc Configuration File
+
+Create a \`.mappsrc\` file to automate CLI arguments:
+
+\`\`\`json
 {
-  "inputFields": [
-    {
-      "key": "itemName",
-      "type": "text",
-      "title": "Item Name",
-      "fieldMapping": {
-        "allowColumnMapping": true,
-        "supportedColumnTypes": ["text", "name"]
-      }
-    },
-    {
-      "key": "status",
-      "type": "column",
-      "title": "Status Column",
-      "columnTypes": ["status", "dropdown"]
-    }
-  ]
+  "appId": 12345678,
+  "versionId": 87654321,
+  "accessToken": "your-api-token"
 }
 \`\`\`
 
-### Recipe Sentence Patterns
+With \`.mappsrc\`, you can simplify commands:
+\`\`\`bash
+# Instead of:
+npx -y @mondaycom/apps-cli@latest code:push -a 12345678 -i 87654321 -d .
 
-The \`sentence\` field defines how your block appears in the recipe builder:
-
-\`\`\`
-// Field placeholders use curly braces
-"When {status} changes to {targetValue} in {boardId}"
-"Send {message} to {recipient} via {channel}"
-"Create a {itemType} in {targetBoard} with name {itemName}"
+# You can just run:
+npx -y @mondaycom/apps-cli@latest code:push -d .
 \`\`\`
 
----`;
+### Pre-Flight Checklist
 
-// =============================================================================
-// CUSTOM OBJECTS
-// =============================================================================
-export const CUSTOM_OBJECTS_CONTENT = `## Custom Objects
+**Before deploying, verify ALL of these:**
 
-Custom Objects allow you to extend monday.com's data model with your own entity types. Objects can have relationships with boards, items, and other objects.
+\`\`\`
+☐ Version is DRAFT (check with monday_apps_get_app_versions)
+☐ Feature exists (check with monday_apps_get_app_features)  
+☐ Build completed (npm run build - dist/ folder exists)
+☐ package.json has "type": "module"
+☐ index.js entry point serves dist/ folder
+☐ .mappsrc or CLI args are correct
+\`\`\`
 
-### What are Custom Objects?
+### Critical Warnings & Guardrails
 
-Custom Objects are app-defined data entities that:
-- Live within the monday.com platform
-- Can be linked to items, boards, and other objects
-- Have their own schema (fields/properties)
-- Support CRUD operations via API
-- Can be displayed in custom views
+#### ⛔ NEVER Do These:
 
-### Creating an Object Type
-
+1. **Never pass \`data\` parameter to \`create_app_feature\`**
 \`\`\`typescript
-// Define your object type in the app manifest
-{
-  "type": "AppFeatureObject",
-  "name": "customer",
-  "displayName": "Customer",
-  "description": "Customer records for CRM integration",
-  "schema": {
-    "fields": [
-      {
-        "key": "name",
-        "type": "text",
-        "title": "Customer Name",
-        "required": true
-      },
-      {
-        "key": "email",
-        "type": "email",
-        "title": "Email Address"
-      },
-      {
-        "key": "company",
-        "type": "text",
-        "title": "Company"
-      },
-      {
-        "key": "status",
-        "type": "dropdown",
-        "title": "Status",
-        "options": [
-          { "value": "lead", "label": "Lead" },
-          { "value": "prospect", "label": "Prospect" },
-          { "value": "customer", "label": "Customer" },
-          { "value": "churned", "label": "Churned" }
-        ]
-      },
-      {
-        "key": "revenue",
-        "type": "number",
-        "title": "Annual Revenue"
-      },
-      {
-        "key": "lastContact",
-        "type": "date",
-        "title": "Last Contact Date"
-      }
-    ]
-  }
-}
+   // ❌ BAD - Can corrupt feature schema
+   monday_apps_create_app_feature({
+     appId: 123,
+     appVersionId: 456,
+     name: "My View",
+     type: "AppFeatureBoardView",
+     data: { ... }  // ⛔ NEVER include this!
+   });
+   
+   // ✅ GOOD - Let monday.com set defaults
+   monday_apps_create_app_feature({
+     appId: 123,
+     appVersionId: 456,
+     name: "My View",
+     type: "AppFeatureBoardView"
+   });
+   \`\`\`
+
+2. **Never promote before BOTH code:push AND app-features:build complete**
+   \`\`\`bash
+   # ❌ BAD - Promoting too early
+   code:push ──► promote  # Missing app-features:build!
+   
+   # ✅ GOOD - Complete workflow
+   code:push ──► app-features:build ──► promote
 \`\`\`
 
-### Object Field Types
-
-| Type | Description | Example |
-|------|-------------|---------|
-| \`text\` | Plain text | Names, descriptions |
-| \`email\` | Email address | Contact emails |
-| \`phone\` | Phone number | Contact numbers |
-| \`number\` | Numeric value | Revenue, quantity |
-| \`date\` | Date value | Dates, timestamps |
-| \`dropdown\` | Single select | Status, category |
-| \`multi_dropdown\` | Multi select | Tags, labels |
-| \`boolean\` | True/false | Flags, toggles |
-| \`url\` | Web link | Website, profile |
-| \`relationship\` | Link to other objects/items | Parent company |
-
-### CRUD Operations on Objects
-
-\`\`\`typescript
-// Create an object instance
-const createObject = await monday.api(\`
-  mutation {
-    create_object(
-      object_type: "customer",
-      fields: {
-        name: "Acme Corp",
-        email: "contact@acme.com",
-        status: "prospect",
-        revenue: 50000
-      }
-    ) {
-      id
-      fields
-    }
-  }
-\`);
-
-// Query objects
-const getObjects = await monday.api(\`
-  query {
-    objects(object_type: "customer", limit: 50) {
-      id
-      fields
-      created_at
-      updated_at
-    }
-  }
-\`);
-
-// Query with filters
-const filteredObjects = await monday.api(\`
-  query {
-    objects(
-      object_type: "customer",
-      filters: {
-        field: "status",
-        operator: "eq",
-        value: "customer"
-      }
-    ) {
-      id
-      fields
-    }
-  }
-\`);
-
-// Update an object
-const updateObject = await monday.api(\`
-  mutation {
-    update_object(
-      object_id: "obj_12345",
-      fields: {
-        status: "customer",
-        revenue: 75000
-      }
-    ) {
-      id
-      fields
-    }
-  }
-\`);
-
-// Delete an object
-const deleteObject = await monday.api(\`
-  mutation {
-    delete_object(object_id: "obj_12345") {
-      id
-    }
-  }
-\`);
+3. **Never try to modify a LIVE version**
+   \`\`\`bash
+   # If you see "No valid version found" error:
+   # The version is LIVE. Create a new draft version first.
 \`\`\`
 
-### Object Relationships
+### Common Errors & Solutions
 
-Link objects to items or other objects:
+| Error | Cause | Solution |
+|-------|-------|----------|
+| "No valid version found" | Trying to modify a LIVE version | Create a new draft version |
+| "Permission denied" | Global CLI install issues | Use \`npx -y @mondaycom/apps-cli@latest\` |
+| Feature not showing | \`app-features:build\` not run | Run the build command after code:push |
+| Deployment timeout | First deploy takes longer | Wait ~6 minutes for first deployment |
+| Schema corruption | Passed \`data\` param to create_app_feature | Delete feature, recreate WITHOUT data param |
 
-\`\`\`typescript
-// Define a relationship field in your schema
-{
-  "key": "relatedItems",
-  "type": "relationship",
-  "title": "Related Items",
-  "relationshipConfig": {
-    "targetType": "item", // 'item' | 'object'
-    "targetObjectType": null, // Required if targetType is 'object'
-    "cardinality": "many" // 'one' | 'many'
-  }
-}
+### Deployment Timing Expectations
 
-// Link an object to items
-await monday.api(\`
-  mutation {
-    link_object_to_items(
-      object_id: "obj_12345",
-      item_ids: [123, 456, 789]
-    ) {
-      id
-    }
-  }
-\`);
-
-// Query objects with their relationships
-const objectsWithRelations = await monday.api(\`
-  query {
-    objects(object_type: "customer") {
-      id
-      fields
-      related_items {
-        id
-        name
-        board {
-          id
-          name
-        }
-      }
-    }
-  }
-\`);
-\`\`\`
-
-### Object Views
-
-Display your objects in a custom view:
-
-\`\`\`typescript
-function ObjectListView() {
-  const [objects, setObjects] = useState([]);
-  
-  useEffect(() => {
-    fetchObjects();
-  }, []);
-  
-  const fetchObjects = async () => {
-    const response = await monday.api(\`
-      query {
-        objects(object_type: "customer", limit: 100) {
-          id
-          fields
-        }
-      }
-    \`);
-    setObjects(response.data.objects);
-  };
-  
-  return (
-    <div className="object-list">
-      {objects.map(obj => (
-        <div key={obj.id} className="object-card">
-          <h3>{obj.fields.name}</h3>
-          <p>{obj.fields.email}</p>
-          <span className="status">{obj.fields.status}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-\`\`\`
-
-### Best Practices for Objects
-
-1. **Design schema carefully** - Plan your fields before implementation, as schema changes can affect existing data
-2. **Use relationships** - Link objects to items to leverage monday.com's existing UI
-3. **Index searchable fields** - Mark frequently searched fields for better query performance
-4. **Validate data** - Implement validation in your app before creating/updating objects
-5. **Handle pagination** - Use cursors for large object collections
+| Operation | Expected Duration |
+|-----------|-------------------|
+| \`code:push\` (first time) | ~5-6 minutes |
+| \`code:push\` (subsequent) | ~1-2 minutes |
+| \`app-features:build\` | ~30 seconds |
+| \`promote\` | ~10 seconds |
 
 ---`;
 
@@ -1691,7 +1856,7 @@ mapps code:logs --appVersionId <version_id>
 
 \`\`\`typescript
 // Enable debug mode for SDK
-monday.setApiVersion('2024-10');
+monday.setApiVersion('2026-01');
 
 // Log all API calls
 const originalApi = monday.api;
@@ -1710,80 +1875,83 @@ monday.api = async (...args) => {
 // =============================================================================
 export const CLI_COMMANDS_CONTENT = `## CLI Commands Reference
 
-### App Management
+Use \`npx -y @mondaycom/apps-cli@latest [COMMAND]\` or install globally with \`npm i -g @mondaycom/apps-cli\`.
+
+### Init
 
 \`\`\`bash
-# Initialize new app
-mapps init
-
-# List your apps
-mapps app:list
-
-# Get app details
-mapps app:info --appId <app_id>
+mapps init                              # Initialize .mappsrc config file with API token
 \`\`\`
 
-### Development
+### App Management (app:*)
 
 \`\`\`bash
-# Start local development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Run tests
-npm test
+mapps app:create                        # Create a new monday.com app
+mapps app:list                          # List all apps for the authenticated user
+mapps app:deploy                        # Deploy an app using manifest file
+mapps app:promote                       # Promote an app version to live
+mapps app:scaffold                      # Scaffold a new app project from template
 \`\`\`
 
-### Deployment
+### App Versions (app-version:*)
 
 \`\`\`bash
-# Push to monday-code
-mapps code:push
-
-# Check deployment status
-mapps code:status --appVersionId <version_id>
-
-# View logs
-mapps code:logs --appVersionId <version_id>
-
-# Environment variables
-mapps code:env:list --appId <app_id>
-mapps code:env:set --appId <app_id> --key KEY --value "value"
+mapps app-version:list -a <app_id>      # List all versions for a specific app
+mapps app-version:builds -i <version_id> # List all builds for a specific app version
 \`\`\`
 
-### Version Management
+### App Features (app-features:*)
 
 \`\`\`bash
-# Create new version
-mapps app:version:create --appId <app_id>
-
-# Promote to live
-mapps app:version:promote --appVersionId <version_id>
+mapps app-features:list -a <app_id> -i <version_id>     # List all features for an app version
+mapps app-features:create -a <app_id> -i <version_id>   # Create an app feature (board view, widget, etc.)
+mapps app-features:build -a <app_id> -i <version_id> -f <feature_id> -d  # Connect deployment to feature
+mapps app-features:build ... -d -t monday_code          # Specify hosting type
+mapps app-features:build ... -d --buildPath /custom-path # Custom build path
 \`\`\`
 
-### App Features
+### Code Deployment (code:*)
 
 \`\`\`bash
-# List all features for an app version
-mapps app-features:list -a <app_id> -i <version_id>
-
-# Connect monday-code deployment to feature
-mapps app-features:build -a <app_id> -i <version_id> -f <feature_id> -d
-
-# Connect with custom build path
-mapps app-features:build -a <app_id> -i <version_id> -f <feature_id> -d --buildPath /custom-path
+mapps code:push                         # Push to monday-code serverless (backend)
+mapps code:push -c                      # Push to CDN (frontend-only apps)
+mapps code:status -i <version_id>       # Get deployment status
+mapps code:logs -i <version_id>         # Fetch logs from monday-code
+mapps code:logs -i <version_id> --follow # Stream logs in real-time
+mapps code:env                          # Manage environment variables (list-keys, set, delete)
+mapps code:secret                       # Manage secret variables (list-keys, set, delete)
+mapps code:report -i <version_id>       # Get security scan report for deployed code
 \`\`\`
 
-### Manifest & OAuth Scopes
+### Scheduler (scheduler:*)
 
 \`\`\`bash
-# Export app manifest (includes OAuth scopes)
-mapps manifest:export -a <app_id> -i <version_id>
+mapps scheduler:list -a <app_id>        # List all scheduler jobs for an app
+mapps scheduler:create                  # Create a new scheduler/cron job
+mapps scheduler:update                  # Update an existing scheduler job
+mapps scheduler:delete                  # Delete a scheduler job
+mapps scheduler:run                     # Manually trigger a scheduled job to run
+\`\`\`
 
-# Import updated manifest (to update scopes)
-mapps manifest:import -p ./manifest.json -a <app_id> -i <version_id>
+### Storage (storage:*)
+
+\`\`\`bash
+mapps storage:search -a <app_id>        # Search keys/values for a specific customer account
+mapps storage:export -a <app_id>        # Export all keys/values (JSON/CSV)
+mapps storage:remove-data -a <app_id>   # Remove all storage data for a customer account
+\`\`\`
+
+### Database (database:*)
+
+\`\`\`bash
+mapps database:connection-string -a <app_id>  # Get PostgreSQL connection string for app database
+\`\`\`
+
+### Manifest (manifest:*)
+
+\`\`\`bash
+mapps manifest:export -a <app_id> -i <version_id>        # Export app manifest to file
+mapps manifest:import -p ./manifest.json -a <app_id> -i <version_id>  # Import manifest to create/update app
 \`\`\`
 
 **Manifest OAuth section example:**
@@ -1794,6 +1962,33 @@ mapps manifest:import -p ./manifest.json -a <app_id> -i <version_id>
   }
 }
 \`\`\`
+
+### Tunnel (tunnel:*)
+
+\`\`\`bash
+mapps tunnel:create                     # Create ngrok tunnel to expose local code publicly
+\`\`\`
+
+### API (api:*)
+
+\`\`\`bash
+mapps api:generate                      # Generate GraphQL API setup for custom queries
+\`\`\`
+
+### Help & Utilities
+
+\`\`\`bash
+mapps help [COMMAND]                    # Display help for mapps
+mapps autocomplete [SHELL]              # Setup shell autocomplete (bash/zsh/powershell)
+\`\`\`
+
+### Global Flags
+
+| Flag | Description |
+|------|-------------|
+| \`--verbose\` | Print advanced/debug logs |
+| \`--print-command\` | Print the command that was executed |
+| \`--help\` | Show help for command |
 
 ---`;
 
@@ -1846,13 +2041,13 @@ ${SDK_REFERENCE_CONTENT}
 
 ${DEPLOYMENT_CONTENT}
 
-${APP_FEATURES_CONTENT}
+${DEPLOYMENT_WORKFLOW_CONTENT}
 
-${VIBE_CONTENT}
+${APP_FEATURES_CONTENT}
 
 ${WORKFLOW_BLOCKS_CONTENT}
 
-${CUSTOM_OBJECTS_CONTENT}
+${VIBE_CONTENT}
 
 ${BEST_PRACTICES_CONTENT}
 

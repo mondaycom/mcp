@@ -68,7 +68,7 @@ import mondaySdk from '@mondaydotcomorg/monday-sdk-js';
 const monday = mondaySdk();
 
 // Initialize the SDK
-monday.setApiVersion('2024-10');
+monday.setApiVersion('2026-01');
 ```
 
 ### Core SDK Methods
@@ -145,23 +145,64 @@ const updateColumn = await monday.api(`
 
 #### 3. Storage - Persist App Data
 
+**Two storage types:**
+
+- `monday.storage.instance` - Scoped to each feature instance (board view, widget, etc.)
+- `monday.storage` - Global, shared across entire app
+
 ```typescript
-// Store data
+// ============================================
+// INSTANCE STORAGE - Per feature instance
+// ============================================
+
+// Store instance-specific data (e.g., board view config)
 await monday.storage.instance.setItem(
-  'user_settings',
+  'view_config',
   JSON.stringify({
-    theme: 'dark',
-    notifications: true,
+    columns: ['status', 'date'],
+    sortBy: 'date',
   }),
 );
 
-// Retrieve data
-const result = await monday.storage.instance.getItem('user_settings');
-const settings = JSON.parse(result.data.value);
+// Retrieve instance data
+const result = await monday.storage.instance.getItem('view_config');
+const config = JSON.parse(result.data.value);
+console.log(result.data.version); // For concurrency control
 
-// Delete data
-await monday.storage.instance.deleteItem('user_settings');
+// Delete instance data
+await monday.storage.instance.deleteItem('view_config');
+
+// ============================================
+// GLOBAL STORAGE - Shared across entire app
+// ============================================
+
+// Store app-level settings
+await monday.storage.setItem(
+  'app_config',
+  JSON.stringify({
+    apiEndpoint: 'https://api.example.com',
+    featureFlags: { beta: true },
+  }),
+);
+
+// Retrieve app-level data
+const appResult = await monday.storage.getItem('app_config');
+const appConfig = JSON.parse(appResult.data.value);
+
+// Search for keys (global storage only)
+const searchResult = await monday.storage.searchItem('user_');
+console.log(searchResult.data); // Returns matching keys
+
+// Delete app-level data
+await monday.storage.deleteItem('app_config');
 ```
+
+**Key Differences:**
+
+| Storage Type              | Scope        | Resets on Major Version? | Use Case                            |
+| ------------------------- | ------------ | ------------------------ | ----------------------------------- |
+| `monday.storage.instance` | Per instance | ✅ Yes                   | Board view config, widget settings  |
+| `monday.storage`          | Entire app   | ❌ No                    | User prefs, app config, shared data |
 
 #### 4. Execute - Trigger UI Actions
 
@@ -302,9 +343,6 @@ mapps code:push
 
 # Push to a specific app version
 mapps code:push --appVersionId <version_id>
-
-# Push with force (skip confirmation)
-mapps code:push --force
 ```
 
 ### Environment Variables
@@ -340,6 +378,25 @@ mapps code:logs --appVersionId <version_id>
 
 # Stream logs in real-time
 mapps code:logs --appVersionId <version_id> --follow
+```
+
+### Scheduler (Cron Jobs)
+
+```bash
+# List all scheduler jobs for an app
+mapps scheduler:list -a <app_id>
+
+# Create a new scheduler job
+mapps scheduler:create
+
+# Update an existing scheduler job
+mapps scheduler:update
+
+# Delete a scheduler job
+mapps scheduler:delete
+
+# Manually trigger a scheduled job to run
+mapps scheduler:run
 ```
 
 ---
@@ -497,56 +554,197 @@ function CustomColumn() {
 }
 ```
 
----
+### Object View
 
-## Integrations (Automations & Integrations)
+Object views display custom app objects (Custom Objects). They receive the object instance context.
 
-### Integration Recipe Blocks
+```typescript
+function ObjectView() {
+  const [objectData, setObjectData] = useState(null);
+  const [context, setContext] = useState(null);
 
-```json
-// In your app manifest or feature configuration
-{
-  "type": "integration",
-  "blocks": [
-    {
-      "type": "trigger",
-      "kind": "item_created",
-      "sentence": "When an item is created in {boardId}"
-    },
-    {
-      "type": "action",
-      "kind": "custom_action",
-      "sentence": "Send data to my service"
-    }
-  ]
+  useEffect(() => {
+    monday.get('context').then((res) => {
+      setContext(res.data);
+      // Context includes objectId and other metadata
+      const { objectId } = res.data;
+
+      // Fetch your custom object data
+      fetchObjectData(objectId);
+    });
+  }, []);
+
+  const fetchObjectData = async (objectId) => {
+    // Query your custom object using the API
+    const response = await monday.api(`
+      query ($objectId: ID!) {
+        app_objects(ids: [$objectId]) {
+          id
+          name
+          kind
+          fields {
+            id
+            title
+            type
+            value
+          }
+        }
+      }
+    `, { variables: { objectId } });
+
+    setObjectData(response.data.app_objects[0]);
+  };
+
+  const updateObjectField = async (fieldId, newValue) => {
+    await monday.api(`
+      mutation ($objectId: ID!, $fieldId: ID!, $value: String!) {
+        update_app_object_field(
+          object_id: $objectId,
+          field_id: $fieldId,
+          value: $value
+        ) {
+          id
+        }
+      }
+    `, {
+      variables: {
+        objectId: context.objectId,
+        fieldId,
+        value: JSON.stringify(newValue)
+      }
+    });
+  };
+
+  return (
+    <div className="object-view">
+      <h1>{objectData?.name}</h1>
+      {objectData?.fields.map(field => (
+        <div key={field.id}>
+          <strong>{field.title}:</strong> {field.value}
+        </div>
+      ))}
+    </div>
+  );
 }
 ```
 
-### Webhook Handler
+---
+
+## Workflow Blocks (monday workflows)
+
+Build custom automation triggers and actions using monday workflows. Each block is created as a separate "Automation block" app feature in the Developer Center.
+
+**Documentation:** [Create a workflow block](https://developer.monday.com/apps/docs/create-a-workflow-block)
+
+### Creating a Workflow Block
+
+1. Go to **Developer Center** > Your App > **Features**
+2. Click **Create feature** > **Automation block** > **Create**
+3. Configure the block:
+   - **Block name**: User-visible name in workflow builder
+   - **Block description**: Internal description (not shown to users)
+   - **Block type**: Select `trigger` or `action`
+
+### Block Configuration
+
+| Block Type  | Required URLs                  | Purpose                                       |
+| ----------- | ------------------------------ | --------------------------------------------- |
+| **Trigger** | Subscribe URL, Unsubscribe URL | Called when workflow is activated/deactivated |
+| **Action**  | Execution URL                  | Called when the action runs                   |
+
+### Input & Output Fields
+
+- **Input fields**: Data the user provides when configuring the block
+- **Output fields**: Data your block returns (can be used by subsequent blocks)
+- **Main field**: Mark one input field as "main" - appears in workflow builder preview
+
+### Trigger Block Handler
 
 ```typescript
-// Backend webhook handler
-router.post('/webhooks/integration', async (req, res) => {
-  const { challenge, event, payload } = req.body;
+// Subscribe endpoint - called when user activates the workflow
+router.post('/triggers/subscribe', async (req, res) => {
+  const { payload, webhookUrl } = req.body;
 
-  // Handle challenge for webhook verification
-  if (challenge) {
-    return res.json({ challenge });
-  }
+  // Store the webhookUrl to call later when trigger fires
+  await saveSubscription({
+    webhookUrl,
+    boardId: payload.inputFields.boardId,
+    // ... other input field values
+  });
 
-  // Process the integration event
-  const { type, data } = event;
+  res.status(200).json({ webhookId: 'unique-subscription-id' });
+});
 
-  switch (type) {
-    case 'item_created':
-      await handleItemCreated(data);
-      break;
-    case 'column_changed':
-      await handleColumnChanged(data);
-      break;
-  }
+// Unsubscribe endpoint - called when user deactivates the workflow
+router.post('/triggers/unsubscribe', async (req, res) => {
+  const { webhookId } = req.body;
+
+  await deleteSubscription(webhookId);
 
   res.status(200).json({ success: true });
+});
+
+// When your trigger fires, call the stored webhookUrl
+const fireTrigger = async (subscription, outputData) => {
+  await fetch(subscription.webhookUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      trigger: {
+        outputFields: {
+          itemId: outputData.itemId,
+          // ... other output field values matching your block config
+        },
+      },
+    }),
+  });
+};
+```
+
+### Action Block Handler
+
+```typescript
+// Execution endpoint - called when action runs in workflow
+router.post('/actions/execute', async (req, res) => {
+  const { payload } = req.body;
+  const { inputFields } = payload;
+
+  // Process the action with input fields
+  const result = await processAction({
+    itemId: inputFields.itemId,
+    message: inputFields.message,
+    // ... other input field values
+  });
+
+  // Return output fields for subsequent blocks
+  res.status(200).json({
+    outputFields: {
+      success: true,
+      resultId: result.id,
+      // ... other output field values matching your block config
+    },
+  });
+});
+```
+
+### Challenge Verification
+
+monday.com sends a challenge request to verify your endpoints:
+
+```typescript
+// Handle challenge for all workflow endpoints
+router.post('/triggers/*', (req, res, next) => {
+  if (req.body.challenge) {
+    return res.json({ challenge: req.body.challenge });
+  }
+  next();
+});
+
+router.post('/actions/*', (req, res, next) => {
+  if (req.body.challenge) {
+    return res.json({ challenge: req.body.challenge });
+  }
+  next();
 });
 ```
 
@@ -666,20 +864,42 @@ app.use('/webhooks', (req, res, next) => {
 ```typescript
 // Use structured keys for organization
 const STORAGE_KEYS = {
-  userSettings: (userId) => `user:${userId}:settings`,
-  boardConfig: (boardId) => `board:${boardId}:config`,
+  // Instance storage keys (per board view, widget, etc.)
+  viewConfig: 'view_config',
+  widgetSettings: 'widget_settings',
+
+  // Global storage keys (shared across app)
+  userPrefs: (userId) => `user:${userId}:prefs`,
+  appConfig: 'app_config',
   cache: (key) => `cache:${key}`,
 };
 
-// Set with proper error handling
-const saveSettings = async (userId, settings) => {
+// Helper with error handling for both storage types
+const getStorageItem = async (key, useInstance = true) => {
   try {
-    await monday.storage.instance.setItem(STORAGE_KEYS.userSettings(userId), JSON.stringify(settings));
-    return true;
+    const storage = useInstance ? monday.storage.instance : monday.storage;
+    const result = await storage.getItem(key);
+    return result.data.value ? JSON.parse(result.data.value) : null;
   } catch (error) {
     console.error('Storage error:', error);
+    return null;
+  }
+};
+
+// Use versioning to prevent concurrent overwrites
+const saveWithVersioning = async (key, newValue) => {
+  const result = await monday.storage.instance.getItem(key);
+  const { version } = result.data;
+
+  const saveResult = await monday.storage.instance.setItem(key, JSON.stringify(newValue), {
+    previous_version: version,
+  });
+
+  if (!saveResult.data.success) {
+    console.error('Version mismatch - data was modified by another user');
     return false;
   }
+  return true;
 };
 ```
 
@@ -782,7 +1002,7 @@ mapps code:logs --appVersionId <version_id>
 
 ```typescript
 // Enable debug mode for SDK
-monday.setApiVersion('2024-10');
+monday.setApiVersion('2026-01');
 
 // Log all API calls
 const originalApi = monday.api;

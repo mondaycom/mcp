@@ -14,6 +14,7 @@ import {
   BEST_PRACTICES_CONTENT,
   TROUBLESHOOTING_SECTION,
 } from './docs/app-development-guide-content';
+import { filterByTopic } from '../../../../utils/content-filter.utils';
 
 /**
  * Content lookup by context type - simple direct mapping
@@ -37,7 +38,7 @@ const DEPLOYMENT_HINT = `
 - Deploy frontend to CDN: \`mapps code:push -c\`
 - **Connect to feature**: \`mapps app-features:build -a <app_id> -i <version_id> -f <feature_id> -d\`
 - List features: \`mapps app-features:list -a <app_id> -i <version_id>\`
-- Check status: \`mapps code:status --appVersionId <id>\`
+- Check backend deployment status: \`mapps code:status --appVersionId <id>\`
 - Set env var: \`mapps code:env:set --appId <id> --key KEY --value "value"\`
 - View logs: \`mapps code:logs --appVersionId <id>\`
 
@@ -104,7 +105,7 @@ The context includes code examples for:
 
     // If a specific topic is requested, filter further
     if (specificTopic) {
-      content = this.filterByTopic(content, specificTopic);
+      content = filterByTopic(content, specificTopic);
     }
 
     // Add CLI helper hint for deployment-related queries
@@ -123,49 +124,5 @@ The context includes code examples for:
         content: content.substring(0, 500) + '...', // Truncated for metadata
       },
     };
-  }
-
-  /**
-   * Filter content to focus on a specific topic
-   */
-  private filterByTopic(content: string, topic: string): string {
-    const topicLower = topic.toLowerCase();
-    const lines = content.split('\n');
-    const relevantSections: string[] = [];
-    let currentSection: string[] = [];
-    let isRelevant = false;
-
-    for (const line of lines) {
-      // Check if this is a header
-      const headerMatch = line.match(/^(#{1,4})\s+(.+)/);
-
-      if (headerMatch) {
-        // Save previous section if relevant
-        if (isRelevant && currentSection.length > 0) {
-          relevantSections.push(currentSection.join('\n'));
-        }
-
-        // Start new section
-        currentSection = [line];
-        isRelevant = headerMatch[2].toLowerCase().includes(topicLower);
-      } else {
-        currentSection.push(line);
-        // Also check content for relevance
-        if (line.toLowerCase().includes(topicLower)) {
-          isRelevant = true;
-        }
-      }
-    }
-
-    // Don't forget the last section
-    if (isRelevant && currentSection.length > 0) {
-      relevantSections.push(currentSection.join('\n'));
-    }
-
-    if (relevantSections.length === 0) {
-      return `No specific content found for topic "${topic}". Here's the general guide:\n\n${content}`;
-    }
-
-    return `# Content related to "${topic}"\n\n${relevantSections.join('\n\n---\n\n')}`;
   }
 }
