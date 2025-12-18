@@ -23,13 +23,7 @@ To enable the Apps Framework tools, add the `--mode apps` flag to your MCP confi
   "mcpServers": {
     "monday-apps-mcp": {
       "command": "npx",
-      "args": [
-        "@mondaydotcomorg/monday-api-mcp@latest",
-        "-t",
-        "your_monday_api_token",
-        "--mode",
-        "apps"
-      ]
+      "args": ["@mondaydotcomorg/monday-api-mcp@latest", "-t", "your_monday_api_token", "--mode", "apps"]
     }
   }
 }
@@ -37,19 +31,20 @@ To enable the Apps Framework tools, add the `--mode apps` flag to your MCP confi
 
 ## Available Apps Framework Tools
 
-| Category | Tool | Description |
-|----------|------|-------------|
-| **App Management** | get_all_apps | Retrieve all the development apps that the user has collaboration permissions for |
-| | create_app | Create a new monday.com  app with basic information (name and optional description) |
-| | promote_app | Promote a specific app version to live/production status |
-| **App Versions** | get_app_versions | Retrieve all versions of a specific app |
-| | get_app_version | Retrieve detailed data for a specific app version by version ID |
-| **App Features** | get_app_features | Retrieve all features (views, columns, integrations, etc.) for a specific app version |
-| | create_app_feature | Create a new feature for a specific app version (custom columns, board views, widgets, etc.) |
-| **monday-code Deployment** | get_deployment_status | Get the deployment status for a specific app version in monday-code |
-| | set_environment_variable | Set or update an environment variable for an app's monday-code backend |
-| **Storage Management** | search_storage_records | Search for storage records in an app by search term |
-| | export_storage_data | Export all storage data from an app for a specific account |
+| Category                      | Tool                     | Description                                                                                                             |
+| ----------------------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| **App Management**            | get_all_apps             | Retrieve all the development apps that the user has collaboration permissions for                                       |
+|                               | create_app               | Create a new monday.com app with basic information (name and optional description)                                      |
+|                               | promote_app              | Promote a specific app version to live/production status                                                                |
+| **App Versions**              | get_app_versions         | Retrieve all versions of a specific app                                                                                 |
+|                               | get_app_version          | Retrieve detailed data for a specific app version by version ID                                                         |
+| **App Features**              | get_app_features         | Retrieve all features (views, columns, integrations, etc.) for a specific app version                                   |
+|                               | create_app_feature       | Create a new feature for a specific app version (custom columns, board views, widgets, etc.)                            |
+| **monday-code Deployment**    | get_deployment_status    | Get the deployment status for a specific app version in monday-code                                                     |
+|                               | set_environment_variable | Set or update an environment variable for an app's monday-code backend                                                  |
+| **Storage Management**        | search_storage_records   | Search for storage records in an app by search term                                                                     |
+|                               | export_storage_data      | Export all storage data from an app for a specific account                                                              |
+| **App Development Assistant** | get_development_context  | Get comprehensive documentation for building monday.com apps including SDK usage, deployment guides, and best practices |
 
 ## Example Use Cases
 
@@ -111,6 +106,7 @@ Tools for adding and configuring app features like custom columns, views, and wi
 - **create_app_feature**: Add a new feature to an app version
 
 Supported feature types include:
+
 - `AppFeatureStatusColumn` - Custom status columns
 - `AppFeatureBoardView` - Custom board views
 - `AppFeatureItemView` - Custom item views
@@ -131,6 +127,35 @@ Tools for querying and exporting data stored by your apps.
 
 - **search_storage_records**: Find specific records in app storage
 - **export_storage_data**: Export all storage data (JSON or CSV)
+
+### App Development Assistant Tools
+
+Tools that provide comprehensive documentation and guidance for building monday.com apps.
+
+- **get_development_context**: Get complete documentation including:
+  - Quick start guides for creating new apps
+  - monday.com SDK reference and usage examples
+  - monday-code deployment instructions (including `mapps code:push`)
+  - Best practices for performance, security, and error handling
+  - Troubleshooting common issues
+  - CLI commands reference
+
+Context types available:
+
+- `full` - Complete guide (default)
+- `quick_start` - Getting started guide
+- `sdk_reference` - SDK usage and examples
+- `monday_code_deployment` - Deployment guide
+- `best_practices` - Coding standards and patterns
+- `troubleshooting` - Common issues and solutions
+
+Example usage:
+
+```
+"Help me build a board view app" → Uses SDK reference + app features context
+"Deploy my app to monday-code" → Uses deployment context with CLI commands
+"My app is showing CORS errors" → Uses troubleshooting context
+```
 
 ## Integration with Agent Toolkit
 
