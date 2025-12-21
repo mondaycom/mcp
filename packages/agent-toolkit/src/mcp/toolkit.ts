@@ -41,7 +41,10 @@ export class MondayAgentToolkit extends McpServer {
 
     this.mondayApiClient = this.createApiClient(config);
     this.mondayApiToken = config.mondayApiToken;
-    this.context = config.context;
+    this.context = {
+      ...config.context,
+      apiVersion: config.mondayApiVersion ?? API_VERSION,
+    };
 
     this.registerTools(config);
   }
@@ -53,6 +56,7 @@ export class MondayAgentToolkit extends McpServer {
     return new ApiClient({
       token: config.mondayApiToken,
       apiVersion: config.mondayApiVersion ?? API_VERSION,
+      endpoint: config.mondayApiEndpoint,
       requestConfig: {
         ...config.mondayApiRequestConfig,
         headers: {

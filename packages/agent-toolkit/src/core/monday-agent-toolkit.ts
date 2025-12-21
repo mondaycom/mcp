@@ -19,6 +19,7 @@ export type ToolsConfiguration = {
 export type MondayAgentToolkitConfig = {
   mondayApiToken: ApiClientConfig['token'];
   mondayApiVersion?: ApiClientConfig['apiVersion'];
+  mondayApiEndpoint?: ApiClientConfig['endpoint'];
   mondayApiRequestConfig?: ApiClientConfig['requestConfig'];
   toolsConfiguration?: ToolsConfiguration;
   context?: MondayApiToolContext;

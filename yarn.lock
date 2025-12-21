@@ -1231,10 +1231,10 @@
     zod "^3.23.8"
     zod-to-json-schema "^3.24.1"
 
-"@mondaydotcomorg/api@^10.0.5":
-  version "10.0.5"
-  resolved "https://registry.npmjs.org/@mondaydotcomorg/api/-/api-10.0.5.tgz#4de80a6dfb35d49e73f47aed44f35e08a2bfd223"
-  integrity sha512-kKg9P64S1mHTki42mdynWNuy41u79FPTTGpNYTRiRZ3jDJYIdaq/aHoMhZ//YvIxAvYHZnKiVWEOhRnHFsrQnA==
+"@mondaydotcomorg/api@^12.0.1":
+  version "12.0.1"
+  resolved "https://registry.npmjs.org/@mondaydotcomorg/api/-/api-12.0.1.tgz#98dacef366213cad0a971f39ee9344f27fb34893"
+  integrity sha512-/hxkX6lmjiGjyVRQF8w+j8VImCf3nIkDtX4AOWPDHsZGiT9OkqT9Yr+6RsiDJ5GbBJBZ53rSMlXidAxIdlmNxA==
   dependencies:
     graphql "16.8.2"
     graphql-request "^6.1.0"
