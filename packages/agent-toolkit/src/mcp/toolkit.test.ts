@@ -52,6 +52,7 @@ describe('MondayAgentToolkit', () => {
       expect(mockApiClient).toHaveBeenCalledWith({
         token: 'test-token',
         apiVersion: API_VERSION,
+        endpoint: undefined,
         requestConfig: {
           headers: {
             'user-agent': 'monday-api-mcp',
@@ -63,6 +64,9 @@ describe('MondayAgentToolkit', () => {
         {
           apiClient: expect.any(Object),
           apiToken: 'test-token',
+          context: {
+            apiVersion: API_VERSION,
+          },
         },
         undefined,
       );
@@ -91,6 +95,7 @@ describe('MondayAgentToolkit', () => {
       expect(mockApiClient).toHaveBeenCalledWith({
         token: 'test-token',
         apiVersion: '2023-10',
+        endpoint: undefined,
         requestConfig: {
           timeout: 5000,
           headers: {
@@ -104,6 +109,9 @@ describe('MondayAgentToolkit', () => {
         {
           apiClient: expect.any(Object),
           apiToken: 'test-token',
+          context: {
+            apiVersion: '2023-10',
+          },
         },
         config.toolsConfiguration,
       );
