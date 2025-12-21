@@ -53,6 +53,7 @@ export class MondayAgentToolkit extends McpServer {
     return new ApiClient({
       token: config.mondayApiToken,
       apiVersion: config.mondayApiVersion ?? API_VERSION,
+      endpoint: config.mondayApiEndpoint,
       requestConfig: {
         ...config.mondayApiRequestConfig,
         headers: {
