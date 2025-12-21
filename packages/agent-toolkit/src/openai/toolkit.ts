@@ -25,7 +25,10 @@ export class MondayAgentToolkit {
       requestConfig: config.mondayApiRequestConfig,
     });
     this.mondayApiToken = config.mondayApiToken;
-    this.context = config.context;
+    this.context = {
+      ...config.context,
+      apiVersion: config.mondayApiVersion ?? API_VERSION,
+    };
 
     this.tools = this.initializeTools(config);
   }

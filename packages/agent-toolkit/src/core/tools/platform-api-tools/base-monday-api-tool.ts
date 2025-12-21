@@ -8,7 +8,8 @@ import { extractTokenInfo } from '../../../utils/token.utils';
 export type MondayApiToolContext = {
   // Operational context
   boardId?: number;
-  
+  apiVersion?: string;
+
   // Agent metadata (for tracking)
   agentType?: string;
   agentClientName?: string;

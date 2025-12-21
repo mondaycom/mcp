@@ -4,6 +4,7 @@ import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { buildClientSchema, GraphQLSchema, IntrospectionQuery, parse, validate } from 'graphql';
 import { ApiClient } from '@mondaydotcomorg/api';
 import { introspectionQuery } from '../../../monday-graphql';
+import { API_VERSION } from '../../../utils/version.utils';
 
 export const allMondayApiToolSchema = {
   query: z.string().describe('Custom GraphQL query/mutation. you need to provide the full query / mutation'),
@@ -83,9 +84,7 @@ export class AllMondayApiTool extends BaseMondayApiTool<typeof allMondayApiToolS
         };
       }
 
-      const apiVersion = this.mondayApi.apiVersion;
-
-      const validationErrors = await this.validateOperation(query, apiVersion);
+      const validationErrors = await this.validateOperation(query, this.context?.apiVersion ?? API_VERSION);
       if (validationErrors.length > 0) {
         return {
           content: validationErrors.join(', '),
