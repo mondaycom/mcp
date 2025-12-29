@@ -1,6 +1,6 @@
 {
   "name": "@mondaydotcomorg/agent-toolkit",
-  "version": "2.32.0",
+  "version": "2.32.1",
   "description": "monday.com agent toolkit",
   "exports": {
     "./mcp": {
@@ -30,8 +30,8 @@
     "test": "jest -c",
     "watch": "rollup -c -w",
     "fetch:schema": "bash fetch-schema.sh",
-    "codegen": "graphql-codegen",
-    "fetch:generate": "yarn fetch:schema && yarn codegen"
+    "codegen": "bash codegen.sh",
+    "fetch:generate": "bash fetch-and-generate.sh"
   },
   "engines": {
     "node": ">= 16.20.0"

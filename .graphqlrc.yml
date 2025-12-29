@@ -4,3 +4,7 @@ projects:
     documents:
       - ./packages/agent-toolkit/src/**/*.graphql
       - ./packages/agent-toolkit/src/**/*.graphql.ts
+      - '!./packages/agent-toolkit/src/**/*.graphql.dev.ts'
+  dev:
+    schema: ./packages/agent-toolkit/src/monday-graphql/schema.dev.graphql
+    documents: ./packages/agent-toolkit/src/**/*.graphql.dev.ts

@@ -8,14 +8,14 @@ import {
   ItemsOrderByDirection,
   ItemsQueryOperator,
   ItemsQueryRuleOperator,
-  SmartSearchBoardItemIdsQuery,
-  SmartSearchBoardItemIdsQueryVariables,
 } from '../../../../monday-graphql/generated/graphql/graphql';
-import { getBoardItemsPage, smartSearchGetBoardItemIds } from './get-board-items-page-tool.graphql';
+import { getBoardItemsPage } from './get-board-items-page-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { fallbackToStringifiedVersionIfNull, STRINGIFIED_SUFFIX } from '../../../../utils/microsoft-copilot.utils';
 import { NonDeprecatedColumnType } from 'src/utils/types';
+import { SearchItemsDevQuery, SearchItemsDevQueryVariables } from 'src/monday-graphql/generated/graphql.dev/graphql';
+import { searchItemsDev } from './get-board-items-page-tool.graphql.dev';
 
 const COLUMN_VALUE_NOT_SUPPORTED_MESSAGE = 'Column value type is not supported';
 
@@ -322,15 +322,14 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
   }
 
   private async getItemIdsFromSmartSearchAsync(input: ToolInputType<GetBoardItemsPageToolInput>): Promise<number[]> {
-    const smartSearchVariables: SmartSearchBoardItemIdsQueryVariables = {
+    const smartSearchVariables: SearchItemsDevQueryVariables = {
       board_ids: [input.boardId.toString()],
       searchTerm: input.searchTerm!,
     };
 
-    const smartSearchRes = await this.mondayApi.request<SmartSearchBoardItemIdsQuery>(
-      smartSearchGetBoardItemIds,
-      smartSearchVariables,
-    );
+    const smartSearchRes = await this.mondayApi.request<SearchItemsDevQuery>(searchItemsDev, smartSearchVariables, {
+      versionOverride: 'dev',
+    });
 
     const itemIdsFromSmartSearch = smartSearchRes.search_items?.results?.map((result) => Number(result.data.id)) ?? [];
 

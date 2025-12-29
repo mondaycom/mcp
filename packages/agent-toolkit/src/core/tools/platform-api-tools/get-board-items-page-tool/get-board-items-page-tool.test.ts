@@ -296,7 +296,7 @@ describe('GetBoardItemsPageTool', () => {
 
       // Mock the smart search request
       jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string, variables: any) => {
-        if (query.includes('query SmartSearchBoardItemIds')) {
+        if (query.includes('query SearchItemsDev')) {
           return Promise.resolve(smartSearchResults);
         }
         // For the main getBoardItemsPage query, just return a dummy response
@@ -331,7 +331,7 @@ describe('GetBoardItemsPageTool', () => {
 
       // Mock the smart search request
       jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string, variables: any) => {
-        if (query.includes('query SmartSearchBoardItemIds')) {
+        if (query.includes('query SearchItemsDev')) {
           return Promise.resolve(smartSearchResults);
         }
         // For the main getBoardItemsPage query, just return a dummy response
@@ -362,7 +362,7 @@ describe('GetBoardItemsPageTool', () => {
 
       // Mock the smart search request
       jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string, variables: any) => {
-        if (query.includes('query SmartSearchBoardItemIds')) {
+        if (query.includes('query SearchItemsDev')) {
           return Promise.resolve(smartSearchResults);
         }
         // For the main getBoardItemsPage query, just return a dummy response

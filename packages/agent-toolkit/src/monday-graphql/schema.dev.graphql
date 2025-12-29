@@ -103,6 +103,71 @@ type Query {
   """
   audit_event_catalogue: [AuditEventCatalogueEntry!]
 
+  """Get workflow by ID"""
+  get_live_workflow(
+    """Workflow numeric ID (supports both integer and bigint)"""
+    id: String!
+  ): Workflow
+
+  """Get list of live workflows with pagination"""
+  get_live_workflows(
+    """Host instance ID (e.g., board ID) to filter workflows"""
+    hostInstanceId: String!
+
+    """Host type for filtering workflows"""
+    hostType: HostType!
+
+    """Optional list of app IDs to filter workflows by creator app"""
+    creator_app_ids: [ID!]
+
+    """Pagination parameters"""
+    pagination: PaginationInput
+  ): [Workflow!]!
+
+  """Count active workflows for a given host instance"""
+  count_active_workflows(
+    """Instance ID of the host"""
+    host_instance_id: ID!
+
+    """Type of host for this workflow"""
+    host_type: HostType!
+
+    """ID of the creator app"""
+    creator_app_id: ID
+  ): Int!
+
+  """List of all supported workflow variable kinds with their json schemas"""
+  get_workflow_variable_schemas: [WorkflowVariableSchema!]!
+
+  """
+  List of all supported workflow block next mapping kinds with their json schemas. Note: Only the following mapping types are currently supported: routesMapping, waitTriggerMapping.
+  """
+  get_workflow_block_next_mapping_schemas: [WorkflowBlockNextMappingSchema!]!
+
+  """
+  Get blocks for the current user.
+  
+  Engine usage when building live workflows:
+  • Always invoke this query first to retrieve the catalogue of workflow steps available to the account.
+  • Each element in `blocks.blocks` contains an `id` – this is the canonical `blockReferenceId` that must be supplied inside `WorkflowBlockInput.blockReferenceId` when calling `create_live_workflow`.
+  • The `kind` field tells you whether the block is a TRIGGER, ACTION or CONDITION, which helps decide its placement in the workflow.
+  """
+  blocks(
+    """Input parameters for getting blocks"""
+    input: GetBlocksInput
+  ): BlocksResult
+
+  """
+  Fetch remote options for a field type.
+  
+  Engine usage when building live workflows:
+  • Certain block fields declare that their value must be chosen from a dynamic (remote) list – for example, status labels, column identifiers, users, etc.
+  • Before constructing the corresponding `WorkflowVariableInput`, call this query with the proper context parameters (fieldTypeReferenceId, boardId, columnId, etc.).
+  • Inspect the returned array and pick the desired option's `value`; place that value in `WorkflowVariableInput.sourceMetadata.value` and mark the variable's `sourceKind` as `REMOTE`.
+  • This ensures the workflow always references an up-to-date, valid option.
+  """
+  remote_options(input: RemoteOptionsInput!): RemoteOptionsResponse
+
   """
   Returns connections for the authenticated user. Supports filtering, pagination, ordering, and partial-scope options.
   """
@@ -197,6 +262,18 @@ type Query {
     """Unique identifier of the connection."""
     connectionId: Int!
   ): [Int!]
+
+  """Get automation data (automation and recipe) by ID - internal use only"""
+  get_automation_data(
+    """Account ID that owns the automation"""
+    account_id: ID!
+
+    """Unique identifier for the automation"""
+    automation_id: ID!
+
+    """Internal API token for backend service authentication"""
+    internal_token: String!
+  ): AutomationData
 
   """List trigger events with optional filters"""
   trigger_events(nextPageOffset: Int = 0, filters: TriggerEventsFiltersInput): TriggerEventsPage
@@ -306,6 +383,31 @@ type Query {
     skipConnectedItems: Boolean
   ): TimelineResponse
 
+  """Get the entity snapshots"""
+  get_entity_snapshots(
+    """The id of the migration job."""
+    migrationJobId: String!
+
+    """The statuses to filter by"""
+    snapshotStatuses: [SnapshotStatus!]
+
+    """The ids of the entities to filter by"""
+    entityIds: [String!]
+  ): [GetSnapshotsQueryResults!]
+  get_entities_for_migration(migrationJobId: String!): [GetEntitiesForMigrationResult!]
+
+  """Get the entity restores"""
+  get_restores(
+    """The id of the migration job."""
+    migrationJobId: String!
+
+    """The ids of the entities to filter by"""
+    entityIds: [String!]!
+
+    """The statuses to filter by"""
+    status: [RestoreStatus!]! = []
+  ): [GetRestoresQueryResults!]
+
   """Get managed column data."""
   managed_column(
     """The managed column ids."""
@@ -338,6 +440,41 @@ type Query {
     """The ID of the board to export the graph for"""
     boardId: String!
   ): BoardGraphExport
+
+  """
+  Retrieves blocks for the published version of a specific article if the requesting user has permission to access it. Returns paginated blocks in their position order. Will return an error if the user lacks the required permissions.
+  """
+  article_blocks(
+    """
+    The unique identifier of the article object. Can be used to reference this specific object in queries and mutations. This ID can be found in the article's URL.
+    """
+    object_id: ID!
+
+    """Maximum number of blocks to return per article. Defaults to 25."""
+    limit: Int = 25
+
+    """Page number for blocks pagination, starting from 1."""
+    page: Int = 1
+  ): [ArticleBlock]!
+
+  """
+  Retrieves a list of published articles with their metadata and content blocks that the requesting user has permission to access. Articles without proper permissions will be filtered out. By default, returns the first 25 blocks per article. To retrieve more blocks, use the article_blocks query.
+  """
+  articles(
+    """
+    Array of article object IDs to fetch. These IDs can be found in the articles' URLs.
+    """
+    object_ids: [ID!]!
+
+    """Optional array of workspace IDs to filter articles by."""
+    workspace_ids: [ID!]
+
+    """Maximum number of articles to return. Defaults to 25."""
+    limit: Int = 25
+
+    """Page number, starting from 1."""
+    page: Int = 1
+  ): [Article]!
 
   """
   Converts document content into standard markdown format for external use, backup, or processing. Exports the entire document by default, or specific blocks if block IDs are provided. Use this to extract content for integration with other systems, create backups, generate reports, or process document content with external tools. The output is clean, portable markdown that preserves formatting and structure.
@@ -782,6 +919,43 @@ type Query {
     query: AggregateQueryInput!
   ): AggregateQueryResult
 
+  """A test query for resource allocation functionality."""
+  resource_allocation_test: String
+
+  """Fetch resources information from the resource directory"""
+  get_directory_resources(
+    """List of team IDs to filter by (e.g., ["1234", "5678"])"""
+    team_ids: [String!]
+
+    """The cursor which allows to fetch the next page of directory resources."""
+    cursor: String
+
+    """Number of items to get, the default is 25."""
+    limit: Int = 25
+  ): DirectoryResourcesResponse
+
+  """
+  A query to search across all boards in the account. Returns raw json results.
+  """
+  search_benchmark(
+    """A query to search for."""
+    query: String!
+
+    """The board id to search in."""
+    boardId: String
+
+    """Version of the search to use."""
+    version: String!
+  ): SearchBenchmarkResults
+
+  """
+  A query to search across all boards in the account. Returns raw json results.
+  """
+  search_cross_board(
+    """A query to search for."""
+    query: String!
+  ): SearchAllResult
+
   """Search for items using various search strategies."""
   search_items(
     """The search query string."""
@@ -817,6 +991,21 @@ type Query {
     reranking_strategy: RerankingStrategy
   ): SearchItemsGraphQlResultsView
 
+  """Search across multiple entity types (items, boards, documents)."""
+  search(
+    """The search query string."""
+    query: String!
+
+    """Maximum number of results to return per entity (max 100)."""
+    size: Int!
+
+    """Entity types to search. If empty, searches all types."""
+    entity_types: [SearchableEntity!]
+
+    """Filter results to specific workspace IDs."""
+    workspace_ids: [ID!]
+  ): [CrossEntityResult!]
+
   """Get a collection of monday dev sprints"""
   sprints(
     """A list of monday dev sprints unique identifiers"""
@@ -844,6 +1033,36 @@ type Query {
 
 """Root mutation type for the Dependencies service"""
 type Mutation {
+  """Namespace for all vibe-related mutations"""
+  vibe: VibeMutations
+
+  """Create a new live workflow."""
+  create_live_workflow(workflow: WorkflowInput!): CreateWorkflowResult
+
+  """Update live workflow"""
+  update_live_workflow(workflow: UpdateWorkflowInput!): UpdateWorkflowResult
+
+  """Update live workflow metadata"""
+  update_live_workflow_metadata(workflow: UpdateWorkflowMetadataInput!): UpdateWorkflowResult
+
+  """Delete a live workflow"""
+  delete_live_workflow(
+    """ID of the workflow to delete"""
+    id: ID!
+  ): DeleteWorkflowResult
+
+  """Activate a live workflow"""
+  activate_live_workflow(
+    """ID of the workflow to activate"""
+    id: ID!
+  ): ActivateWorkflowResult
+
+  """Deactivate a live workflow"""
+  deactivate_live_workflow(
+    """ID of the workflow to deactivate"""
+    id: ID!
+  ): DeactivateWorkflowResult
+
   """Create a new table view"""
   create_view_table(
     """The ID of the board"""
@@ -851,6 +1070,9 @@ type Mutation {
 
     """The name of the view"""
     name: String
+
+    """Entity scope for the view"""
+    context: ViewContext = BOARD
 
     """User ID to filter by"""
     filter_user_id: ID
@@ -881,6 +1103,9 @@ type Mutation {
 
     """The name of the view"""
     name: String
+
+    """Entity scope for the view"""
+    context: ViewContext = BOARD
 
     """User ID to filter by"""
     filter_user_id: ID
@@ -917,6 +1142,9 @@ type Mutation {
     """The name of the view"""
     name: String
 
+    """Entity scope for the view"""
+    context: ViewContext = BOARD
+
     """User ID to filter by"""
     filter_user_id: ID
 
@@ -940,6 +1168,9 @@ type Mutation {
   update_view(
     """The name of the view"""
     name: String
+
+    """Entity scope for the view"""
+    context: ViewContext = BOARD
 
     """User ID to filter by"""
     filter_user_id: ID
@@ -1091,6 +1322,57 @@ type Mutation {
     """The id of the custom activity"""
     id: String!
   ): CustomActivity
+
+  """Create a snapshot for a given entity in a migration job"""
+  create_entity_snapshot(
+    """The id of the migration job."""
+    migrationJobId: String!
+
+    """The entity to snapshot."""
+    entity: String!
+
+    """Whether to include descendants in the snapshot."""
+    includeDescendants: Boolean = true
+  ): CreateEntitySnapshotResult
+
+  """Create a new migration job"""
+  create_migration_job(
+    """The target account ID."""
+    targetAccountId: Int!
+
+    """The target user ID."""
+    targetUserId: Int!
+
+    """The API token for the target account."""
+    targetAccountApiToken: String
+  ): CreateMigrationJobResult
+
+  """Connect a migration job from a source account to the target account"""
+  connect_migration_job(
+    """The migration job ID from the source account."""
+    migrationJobId: String!
+
+    """The source account ID."""
+    sourceAccountId: Int!
+
+    """The source user ID."""
+    sourceUserId: Int!
+
+    """The source region."""
+    sourceRegion: String!
+  ): ConnectMigrationJobResult
+
+  """Restore an entity from a migration job"""
+  restore_entity(
+    """The id of the migration job."""
+    migrationJobId: String!
+
+    """The package to restore."""
+    entity: String!
+
+    """The API token for the source account."""
+    sourceAccountApiToken: String
+  ): RestoreEntityResult
 
   """Create managed column of type dropdown mutation."""
   create_dropdown_managed_column(
@@ -1499,6 +1781,24 @@ type Mutation {
   ): DocBlocksFromMarkdownResult
 
   """
+  Creates a new article in the specified workspace. Optionally accepts a name and folder ID. Returns the created article metadata.
+  """
+  create_article(
+    """
+    The display name of the article. This is what appears in the monday.com interface.
+    """
+    name: String
+
+    """The ID of the workspace containing this article."""
+    workspace_id: ID!
+
+    """
+    The ID of the folder containing this article, if the article is organized in a folder structure.
+    """
+    folder_id: ID
+  ): ArticleMetadata
+
+  """
   Creates multiple document blocks in a single operation for efficient content creation. Use this when adding substantial content like importing documents, creating structured content (articles, reports, guides), or building complex document sections. Supports all block types including text paragraphs, headers, bullet/numbered lists, images, tables, code blocks, and more. Much faster than creating blocks individually. Perfect for content migration, template creation, or generating documents from external data. Maximum 25 blocks per request.
   """
   create_doc_blocks(
@@ -1517,6 +1817,14 @@ type Mutation {
     """
     blocksInput: [CreateBlockInput!]!
   ): [DocumentBlockV2!]
+
+  """Deletes an article with the specified object ID"""
+  delete_article(
+    """
+    The unique identifier of the article object. Can be used to reference this specific object in queries and mutations. This ID can be found in the article's URL.
+    """
+    object_id: ID!
+  ): ArticleMetadata
 
   """
   Permanently deletes a document and all its content from the system. This action cannot be undone. The document will be removed from all user views and workspaces. Use with caution - ensure the document is no longer needed before deletion. Returns success status and the deleted document ID.
@@ -1568,6 +1876,46 @@ type Mutation {
     """
     title: String
   ): ImportDocFromHtmlResult
+
+  """
+  Publishes an article with the specified object ID. Allows setting privacy level, target folder, and managing subscribers (users and teams). Returns the updated article metadata.
+  """
+  publish_article(
+    """
+    The unique identifier of the article object. Can be used to reference this specific object in queries and mutations. This ID can be found in the article's URL.
+    """
+    object_id: ID!
+
+    """
+    The kind/visibility setting of the article (private, public). Determines who can access it.
+    """
+    privacy_kind: PrivacyKind!
+
+    """
+    The ID of the folder to move the article to. If not specified, the article will remain at its current folder level
+    """
+    folder_id: ID
+
+    """
+    List of user IDs to add as subscribers to this article. Only applicable when privacy_kind is PRIVATE
+    """
+    add_subscriber_ids: [ID!]
+
+    """
+    List of team IDs to add as subscribers to this article. Only applicable when privacy_kind is PRIVATE
+    """
+    add_subscriber_team_ids: [ID!]
+
+    """
+    List of user IDs to remove from article subscribers. Only applicable when privacy_kind is PRIVATE
+    """
+    remove_subscriber_ids: [ID!]
+
+    """
+    List of team IDs to remove from article subscribers. Only applicable when privacy_kind is PRIVATE
+    """
+    remove_subscriber_team_ids: [ID!]
+  ): ArticleMetadata
 
   """
   Converts a document to an article in Knowledge. Requires the Knowledge product to be installed in the account. The original document will be deleted after conversion. Returns the created article metadata.
@@ -2016,6 +2364,9 @@ type Mutation {
 
     """Optional flag to create an empty board (without any default items)"""
     empty: Boolean = false
+
+    """Optional entity model id to extend the board with"""
+    entity_model_id: String
 
     """Optional board folder id"""
     folder_id: ID
@@ -2535,6 +2886,22 @@ type Mutation {
     overview_id: ID!
   ): UpdateOverviewHierarchy
 
+  """Update board roles for multiple users."""
+  update_users_board_role(
+    """The board's unique identifier"""
+    board_id: ID!
+
+    """
+    The role name to set for the users. One of: editor (can edit structure and
+    content), contributor (can edit content only), viewer (read-only access).
+    Note: assigned_contributor is not yet supported.
+    """
+    role_name: BoardBasicRoleName!
+
+    """List of user IDs whose roles should be updated. The maximum is 200."""
+    user_ids: [ID!]!
+  ): UpdateUsersBoardRoleResponse
+
   """Update an existing workspace."""
   update_workspace(
     """The attributes of the workspace to update"""
@@ -2596,6 +2963,11 @@ type Mutation {
   Convert an existing monday.com board into a project with enhanced project management capabilities. This mutation transforms a regular board by applying project-specific features and configurations through column mappings that define how existing board columns should be interpreted in the project context. The conversion process is asynchronous and returns a process_id for tracking completion. Optionally accepts a callback URL for notification when the conversion completes. Use this when you have an existing board with data that needs to be upgraded to a full project with advanced project management features like Resource Planner integration.
   """
   convert_board_to_project(input: ConvertBoardToProjectInput!): ConvertBoardToProjectResult
+
+  """
+  Create a new project in monday.com from scratch. This mutation creates a project (board) with comprehensive customization options including: privacy settings (private/public/share), optional companions like Resource Planner for enhanced project management capabilities, workspace assignment for organizational structure, folder placement for better organization, and template selection for predefined project structures. Use this when you need to programmatically create a brand new project with specific configuration requirements. Returns the project ID upon successful creation.
+  """
+  create_project(input: CreateProjectInput!): CreateProjectResult
 
   """Updates a notification setting's enabled status."""
   update_notification_setting(
@@ -2775,6 +3147,20 @@ type Mutation {
 
   """Create a new portfolio"""
   create_portfolio(boardName: String!, boardPrivacy: String!, destinationWorkspaceId: Int): CreatePortfolioResult
+
+  """
+  Update attributes (Job Role, Skills, or Location) for multiple resources in the directory
+  """
+  update_directory_resources_attributes(
+    """The attribute type to update (JOB_ROLE, SKILLS, or LOCATION)"""
+    attribute: DirectoryResourceAttribute!
+
+    """The values of the attribute to update"""
+    values: [String!]!
+
+    """List of resource IDs to update"""
+    resource_ids: [ID!]!
+  ): UpdateDirectoryResourceAttributesResponse
 
   """Creates a new team."""
   create_team(input: CreateTeamAttributesInput!, options: CreateTeamOptionsInput): Team
@@ -3135,14 +3521,112 @@ type Mutation {
   ): ResponseForm
 }
 
+"""Response from AI action request"""
+type AiActionResponse {
+  """The structured response data from the AI"""
+  data: JSON
+
+  """Whether the request was successful"""
+  success: Boolean
+
+  """Token usage information"""
+  usage: TokenUsage
+}
+
 """A date."""
 scalar Date
+
+"""Result of enhancing a prompt with AI capabilities"""
+type EnhancedPromptResult {
+  """The original user prompt"""
+  original: String
+
+  """The AI capabilities text that was added"""
+  addition: String
+}
 
 """An ISO 8601-encoded datetime (e.g., 2024-04-09T13:45:30Z)"""
 scalar ISO8601DateTime
 
 """A JSON formatted string."""
 scalar JSON
+
+"""Standard success response for mutations"""
+type SuccessResponse {
+  """Whether the operation was successful"""
+  success: Boolean
+
+  """Optional message describing the result"""
+  message: String
+}
+
+"""Token usage details from AI request"""
+type TokenUsage {
+  """Total tokens used in the request"""
+  total_tokens: Int
+
+  """Tokens used in the prompt"""
+  prompt_tokens: Int
+
+  """Tokens used in the completion"""
+  completion_tokens: Int
+}
+
+"""Namespace for all vibe-related mutations"""
+type VibeMutations {
+  """Rollback an AI app to an older specific version """
+  rollback_to_version(
+    """The id of the vibe app"""
+    id: ID!
+
+    """The id of the version to rollback to"""
+    version_id: String!
+  ): SuccessResponse
+
+  """Execute an AI action and get a structured response"""
+  ai_actions(
+    """The prompt to send to the AI"""
+    prompt: String!
+
+    """
+    JSON Schema for structured output (optional, defaults to text response)
+    """
+    schema: JSON
+
+    """System prompt to guide the AI behavior"""
+    systemPrompt: String
+
+    """The ID of the app making the request"""
+    appId: ID
+
+    """Web search configuration for context augmentation"""
+    useWebSearch: WebSearchConfigInput
+  ): AiActionResponse!
+
+  """Enhance a user prompt to include AI capabilities"""
+  enhance_prompt(
+    """The original user prompt to enhance"""
+    prompt: String!
+  ): EnhancedPromptResult!
+}
+
+"""Configuration for enabling web search in AI requests"""
+input WebSearchConfigInput {
+  """Whether web search is enabled for this request"""
+  allowed: Boolean!
+
+  """Optional configuration for web search behavior"""
+  options: WebSearchOptionsInput
+}
+
+"""Configuration options for web search functionality"""
+input WebSearchOptionsInput {
+  """Maximum number of search results to retrieve (default: 5)"""
+  topK: Int
+
+  """Limit search results to content from the last N days"""
+  recencyDays: Int
+}
 
 type AuditEventCatalogueEntry {
   name: String
@@ -3313,6 +3797,121 @@ type User {
   utc_hours_diff: Int
 }
 
+"""Result of activating a workflow"""
+type ActivateWorkflowResult {
+  """Whether the workflow was successfully activated"""
+  is_success: Boolean!
+}
+
+"""Automation entity"""
+type Automation {
+  """Unique identifier for the automation"""
+  id: ID!
+
+  """Account ID that owns the automation"""
+  account_id: ID!
+
+  """User ID who created the automation"""
+  user_id: ID!
+
+  """Type of recipe (static, custom, app_recipe, one_off, workflow)"""
+  recipe_kind: String
+
+  """Whether the automation is active"""
+  active: Boolean
+
+  """Board ID associated with the automation. deprecated for workflows"""
+  board_id: ID!
+
+  """Description of the automation entered by the user"""
+  description: String
+
+  """Configuration data for the automation"""
+  config: JSON
+
+  """When the automation was created"""
+  created_at: String
+
+  """When the automation was last updated"""
+  updated_at: String
+}
+
+"""Automation data including automation and recipe information"""
+type AutomationData {
+  """Unique identifier (automation ID)"""
+  id: ID!
+
+  """The automation entity"""
+  automation: Automation
+
+  """The recipe entity associated with the automation"""
+  recipe: Recipe
+}
+
+"""Base field type implementation"""
+type BaseFieldType implements FieldType {
+  """Unique identifier for the field type"""
+  id: Int
+
+  """Unique key of the field type"""
+  uniqueKey: String
+
+  """Name of the field type"""
+  name: String
+
+  """Description of the field type"""
+  description: String
+
+  """Current state of the field type"""
+  state: FieldTypeState
+
+  """Unique key identifier for the field type"""
+  key: String
+
+  """Default key for fields of this type"""
+  defaultFieldKey: String
+
+  """
+  Dependency configuration specifying mandatory and optional field dependencies required to enable this field and compute its dynamic values. When fetching the permitted values for custom input fields via the remote_options query, you must provide these dependencies in the query input.
+  """
+  dependencyConfig: DependencyConfig
+
+  """List of field type implementations"""
+  implement: [FieldTypeImplementation!]
+}
+
+"""A block in the framework"""
+type Block {
+  """Unique identifier for the block"""
+  id: Int
+
+  """Unique key of the block"""
+  uniqueKey: String
+
+  """Name of the block"""
+  name: String
+
+  """Description of the block"""
+  description: String
+
+  """Type of the block"""
+  kind: String
+
+  """
+  Configuration for input fields. To fetch the available options of a specific input field, first query the block requesting the `fieldTypeData` for that field and then call the `remote_options` query using the resulting `fieldTypeReferenceId`. 
+  """
+  inputFieldsConfig: [InputFieldConfig!]
+
+  """Configuration for output fields"""
+  outputFieldsConfig: [OutputFieldConfig!]
+}
+
+"""Result of a blocks query"""
+type BlocksResult {
+  """List of blocks"""
+  blocks: [Block!]
+}
+
 """
 Represents an integration connection between a monday.com account and an external service.
 """
@@ -3350,6 +3949,381 @@ type Connection {
   updatedAt: String
 }
 
+type CreateWorkflowResult {
+  """Workflow numeric ID (supports both integer and bigint)"""
+  id: String
+}
+
+"""The access level for CRUD operations on a workflow"""
+enum CrudAccessLevel {
+  """
+  Only the creator can modify the workflow (default for account-level workflows)
+  """
+  USER
+
+  """Anyone in the account can modify the workflow"""
+  ACCOUNT
+}
+
+"""Configuration for a custom input field"""
+type CustomInputFieldConfig implements InputFieldConfig {
+  """Unique identifier for the field"""
+  id: Int
+
+  """Key identifier for the field"""
+  fieldKey: String
+
+  """Display title for the field"""
+  fieldTitle: String
+
+  """Whether the field can be null"""
+  isNullable: Boolean
+
+  """Whether the field is an array type"""
+  isArray: Boolean
+
+  """Whether the field is optional"""
+  isOptional: Boolean
+
+  """Additional information about the field"""
+  information: FieldInformation
+
+  """Detailed description of the field"""
+  description: FieldInformation
+
+  """Type of the field relation"""
+  type: FieldTypeRelationType
+
+  """Reference ID to the field type"""
+  fieldTypeReferenceId: Int
+
+  """Unique key of the field type"""
+  fieldTypeUniqueKey: String
+
+  """Constraints applied to the field"""
+  constraints: InputFieldConstraints
+
+  """
+  Data for the referenced field type. Fetch this field when you need the `fieldTypeReferenceId` to call the `remote_options` query and retrieve the available options for the input field.
+  """
+  fieldTypeData: FieldType
+}
+
+"""Configuration for a custom output field"""
+type CustomOutputFieldConfig implements OutputFieldConfig {
+  """Unique identifier for the field"""
+  id: Int
+
+  """Key identifier for the field"""
+  fieldKey: String
+
+  """Display title for the field"""
+  fieldTitle: String
+
+  """Whether the field can be null"""
+  isNullable: Boolean
+
+  """Whether the field is an array type"""
+  isArray: Boolean
+
+  """Whether the field is optional"""
+  isOptional: Boolean
+
+  """Additional information about the field"""
+  information: FieldInformation
+
+  """Detailed description of the field"""
+  description: FieldInformation
+
+  """Type of the field relation"""
+  type: FieldTypeRelationType
+
+  """Reference ID to the field type"""
+  fieldTypeReferenceId: Int
+
+  """Unique key of the field type"""
+  fieldTypeUniqueKey: String
+
+  """Constraints applied to the field"""
+  constraints: OutputFieldConstraints
+
+  """Data for the referenced field type"""
+  fieldTypeData: FieldType
+}
+
+"""Result of deactivating a workflow"""
+type DeactivateWorkflowResult {
+  """Whether the workflow was successfully deactivated"""
+  is_success: Boolean!
+}
+
+type DeleteWorkflowResult {
+  """Whether the workflow was successfully deleted"""
+  is_success: Boolean!
+}
+
+"""
+Defines mandatory and optional dependencies that must be populated to allow resolving the field dynamic values
+"""
+type DependencyConfig {
+  """Required dependencies evaluated in order"""
+  orderedMandatoryFields: [DependencyField!]
+
+  """
+  Non-required dependencies that refine the dynamic values request but do not block enablement
+  """
+  optionalFields: [DependencyField!]
+}
+
+"""
+Maps a source field-type to the key name expected in the dynamic-values payload for this dependency
+"""
+type DependencyField {
+  """Reference ID of the field-type that supplies the dependency value"""
+  sourceFieldTypeReferenceId: Int
+
+  """Unique key of the source field type"""
+  sourceFieldTypeUniqueKey: String
+
+  """JSON key that the backend expects for this dependency value"""
+  targetFieldKey: String
+}
+
+"""Information about a field"""
+type FieldInformation {
+  """The text content of the field information"""
+  text: String
+
+  """A link to more information"""
+  link: JSON
+}
+
+"""A field type in the framework"""
+interface FieldType {
+  """Unique identifier for the field type"""
+  id: Int
+
+  """Unique key of the field type"""
+  uniqueKey: String
+
+  """Name of the field type"""
+  name: String
+
+  """Description of the field type"""
+  description: String
+
+  """Current state of the field type"""
+  state: FieldTypeState
+
+  """Unique key identifier for the field type"""
+  key: String
+
+  """Default key for fields of this type"""
+  defaultFieldKey: String
+
+  """
+  Dependency configuration specifying mandatory and optional field dependencies required to enable this field and compute its dynamic values. When fetching the permitted values for custom input fields via the remote_options query, you must provide these dependencies in the query input.
+  """
+  dependencyConfig: DependencyConfig
+
+  """List of field type implementations"""
+  implement: [FieldTypeImplementation!]
+}
+
+"""Implementation of a field type"""
+type FieldTypeImplementation {
+  """Unique identifier for the implementation"""
+  id: Int
+
+  """Unique key of the app feature"""
+  uniqueKey: String
+
+  """Name of the implementation"""
+  name: String
+}
+
+"""The type of relation between a field and its type"""
+enum FieldTypeRelationType {
+  """The field type is a primitive type (string, number, boolean, etc.)"""
+  PRIMITIVE
+
+  """The field type is an interface type"""
+  INTERFACE
+
+  """The field type is a custom type"""
+  CUSTOM
+}
+
+"""The state of a field type"""
+enum FieldTypeState {
+  """The field type is active and can be used"""
+  ACTIVE
+
+  """The field type has been deleted and cannot be used"""
+  DELETED
+}
+
+"""Input parameters for getting blocks"""
+input GetBlocksInput {
+  """Optional array of app feature unique keys to filter blocks"""
+  app_feature_unique_keys: [String!]
+
+  """Optional array of contexts to filter blocks"""
+  contexts: [String!]
+}
+
+enum HostType {
+  """Workflow hosted under an app feature object"""
+  APP_FEATURE_OBJECT
+
+  """Workflow hosted in a board"""
+  BOARD
+
+  """Workflow hosted in the account"""
+  ACCOUNT_LEVEL
+}
+
+"""Interface for input field configuration"""
+interface InputFieldConfig {
+  """Unique identifier for the field"""
+  id: Int
+
+  """Key identifier for the field"""
+  fieldKey: String
+
+  """Display title for the field"""
+  fieldTitle: String
+
+  """Whether the field can be null"""
+  isNullable: Boolean
+
+  """Whether the field is an array type"""
+  isArray: Boolean
+
+  """Whether the field is optional"""
+  isOptional: Boolean
+
+  """Additional information about the field"""
+  information: FieldInformation
+
+  """Detailed description of the field"""
+  description: FieldInformation
+
+  """Type of the field relation"""
+  type: FieldTypeRelationType
+}
+
+"""Input field constraints"""
+type InputFieldConstraints {
+  """Dependencies for remote options that affect this field"""
+  remoteOptionsDependencies: JSON
+
+  """Dependencies that affect this field's behavior or validation"""
+  dependencies: JSON
+
+  """Dependencies between this field and its subfields"""
+  subFieldsDependencies: JSON
+
+  """Credential dependencies required for this field"""
+  credentials: JSON
+}
+
+"""Configuration for an interface input field"""
+type InterfaceInputFieldConfig implements InputFieldConfig {
+  """Unique identifier for the field"""
+  id: Int
+
+  """Key identifier for the field"""
+  fieldKey: String
+
+  """Display title for the field"""
+  fieldTitle: String
+
+  """Whether the field can be null"""
+  isNullable: Boolean
+
+  """Whether the field is an array type"""
+  isArray: Boolean
+
+  """Whether the field is optional"""
+  isOptional: Boolean
+
+  """Additional information about the field"""
+  information: FieldInformation
+
+  """Detailed description of the field"""
+  description: FieldInformation
+
+  """Type of the field relation"""
+  type: FieldTypeRelationType
+
+  """Name of the subfield in the interface"""
+  subfieldName: String
+
+  """Constraints applied to the field"""
+  constraints: InputFieldConstraints
+}
+
+"""Data required to request the next page of remote options"""
+type NextPageRequestData {
+  """The page identifier to request"""
+  page: JSON
+
+  """Optional cursor for cursor-based pagination"""
+  cursor: JSON
+}
+
+"""A single option in a remote options list"""
+type Option {
+  """The value of the option"""
+  value: JSON
+
+  """The display title of the option"""
+  title: String
+}
+
+"""Interface for output field configuration"""
+interface OutputFieldConfig {
+  """Unique identifier for the field"""
+  id: Int
+
+  """Key identifier for the field"""
+  fieldKey: String
+
+  """Display title for the field"""
+  fieldTitle: String
+
+  """Whether the field can be null"""
+  isNullable: Boolean
+
+  """Whether the field is an array type"""
+  isArray: Boolean
+
+  """Whether the field is optional"""
+  isOptional: Boolean
+
+  """Additional information about the field"""
+  information: FieldInformation
+
+  """Detailed description of the field"""
+  description: FieldInformation
+
+  """Type of the field relation"""
+  type: FieldTypeRelationType
+}
+
+"""Output field constraints"""
+type OutputFieldConstraints {
+  """Dependencies that affect this field's output behavior"""
+  dependencies: JSON
+
+  """Dependencies between this field and its subfields in the output"""
+  subFieldsDependencies: JSON
+
+  """Credential dependencies required for this field's output"""
+  credentials: JSON
+}
+
 """Pagination parameters for queries"""
 input PaginationInput {
   """Maximum number of results to return"""
@@ -3357,6 +4331,510 @@ input PaginationInput {
 
   """Last ID for cursor-based pagination"""
   lastId: Int
+}
+
+"""Primitive field type implementation"""
+type PrimitiveFieldType implements FieldType {
+  """Unique identifier for the field type"""
+  id: Int
+
+  """Unique key of the field type"""
+  uniqueKey: String
+
+  """Name of the field type"""
+  name: String
+
+  """Description of the field type"""
+  description: String
+
+  """Current state of the field type"""
+  state: FieldTypeState
+
+  """Unique key identifier for the field type"""
+  key: String
+
+  """Default key for fields of this type"""
+  defaultFieldKey: String
+
+  """
+  Dependency configuration specifying mandatory and optional field dependencies required to enable this field and compute its dynamic values. When fetching the permitted values for custom input fields via the remote_options query, you must provide these dependencies in the query input.
+  """
+  dependencyConfig: DependencyConfig
+
+  """List of field type implementations"""
+  implement: [FieldTypeImplementation!]
+
+  """The primitive type of the field"""
+  primitiveType: PrimitiveTypes
+
+  """Configuration metadata for the field type"""
+  configurartionMetadata: JSON
+}
+
+"""Configuration for a primitive input field"""
+type PrimitiveInputFieldConfig implements InputFieldConfig {
+  """Unique identifier for the field"""
+  id: Int
+
+  """Key identifier for the field"""
+  fieldKey: String
+
+  """Display title for the field"""
+  fieldTitle: String
+
+  """Whether the field can be null"""
+  isNullable: Boolean
+
+  """Whether the field is an array type"""
+  isArray: Boolean
+
+  """Whether the field is optional"""
+  isOptional: Boolean
+
+  """Additional information about the field"""
+  information: FieldInformation
+
+  """Detailed description of the field"""
+  description: FieldInformation
+
+  """Type of the field relation"""
+  type: FieldTypeRelationType
+
+  """Type of the primitive field"""
+  primitiveType: PrimitiveTypes
+}
+
+"""Configuration for a primitive output field"""
+type PrimitiveOutputFieldConfig implements OutputFieldConfig {
+  """Unique identifier for the field"""
+  id: Int
+
+  """Key identifier for the field"""
+  fieldKey: String
+
+  """Display title for the field"""
+  fieldTitle: String
+
+  """Whether the field can be null"""
+  isNullable: Boolean
+
+  """Whether the field is an array type"""
+  isArray: Boolean
+
+  """Whether the field is optional"""
+  isOptional: Boolean
+
+  """Additional information about the field"""
+  information: FieldInformation
+
+  """Detailed description of the field"""
+  description: FieldInformation
+
+  """Type of the field relation"""
+  type: FieldTypeRelationType
+
+  """Type of the primitive field"""
+  primitiveType: PrimitiveTypes
+}
+
+"""The primitive types supported by the system"""
+enum PrimitiveTypes {
+  """String type for text values"""
+  STRING
+
+  """Number type for integer values"""
+  NUMBER
+
+  """Float type for decimal values"""
+  FLOAT
+
+  """Boolean type for true/false values"""
+  BOOLEAN
+
+  """Date type for date values"""
+  DATE
+
+  """Hour type for hour values"""
+  HOUR
+}
+
+"""Recipe entity"""
+type Recipe {
+  """Unique identifier for the recipe"""
+  id: ID!
+
+  """Account ID that owns the recipe"""
+  account_id: ID!
+
+  """User ID who created the recipe"""
+  user_id: ID!
+
+  """Name of the recipe"""
+  name: String
+
+  """Type of recipe"""
+  kind: String
+
+  """Current state of the recipe"""
+  state: String
+
+  """Raw node data for the recipe"""
+  raw_nodes: String
+}
+
+"""
+Input type for requesting remote options for a field type, including dependencies, credentials, pagination, and search query.
+"""
+input RemoteOptionsInput {
+  """The unique key of the field type"""
+  field_type_unique_key: String!
+
+  """
+  Map all the dependencies fieldKeys to their values. Example: { "my-field-key": { value: 123 }, "my-other-field-key": { value: 456 } } .The schema is: Record<string, { value: unknown }>
+  """
+  dependencies_values: JSON
+
+  """
+  Map a credentialsKey to the credentials data. Example: { "my-credentials-key": { userCredentialsId: 123, accessToken: "abc" } }
+  """
+  credentials_values: JSON
+
+  """
+  Pagination data matching the schema of the field's remote options pagination data
+  """
+  page_request_data: JSON
+
+  """Search query"""
+  query: String
+
+  """Request specific values to fetch their title"""
+  values_to_fetch: JSON
+}
+
+"""
+Response containing a list of remote options and pagination information
+"""
+type RemoteOptionsResponse {
+  """List of available options"""
+  options: [Option!]
+
+  """Whether the options list supports pagination"""
+  isPaginated: Boolean
+
+  """Whether this is the last page of options"""
+  isLastPage: Boolean
+
+  """Data required to fetch the next page of options"""
+  nextPageRequestData: NextPageRequestData
+
+  """Optional disclaimer text to display with the options"""
+  disclaimer: String
+}
+
+"""Object field type implementation"""
+type SubfieldsFieldType implements FieldType {
+  """Unique identifier for the field type"""
+  id: Int
+
+  """Unique key of the field type"""
+  uniqueKey: String
+
+  """Name of the field type"""
+  name: String
+
+  """Description of the field type"""
+  description: String
+
+  """Current state of the field type"""
+  state: FieldTypeState
+
+  """Unique key identifier for the field type"""
+  key: String
+
+  """Default key for fields of this type"""
+  defaultFieldKey: String
+
+  """
+  Dependency configuration specifying mandatory and optional field dependencies required to enable this field and compute its dynamic values. When fetching the permitted values for custom input fields via the remote_options query, you must provide these dependencies in the query input.
+  """
+  dependencyConfig: DependencyConfig
+
+  """List of field type implementations"""
+  implement: [FieldTypeImplementation!]
+
+  """Indicates if the object field type has remote subfields"""
+  hasRemoteSubfields: Boolean
+}
+
+input UpdateWorkflowInput {
+  """ID of the workflow to update"""
+  id: ID!
+
+  """New set of workflow blocks to replace existing ones"""
+  workflowBlocks: [WorkflowBlockInput!]!
+
+  """
+  Variables used within this workflow. To get the accurate JSON schema call the GraphQL query 'get_workflow_variable_schemas'
+  """
+  workflowVariables: [JSON!]!
+}
+
+input UpdateWorkflowMetadataInput {
+  """ID of the workflow to update"""
+  id: ID!
+
+  """New title for the workflow"""
+  title: String
+
+  """New description for the workflow"""
+  description: String
+
+  """Importance level of the workflow"""
+  importance: Int
+}
+
+type UpdateWorkflowResult {
+  """Workflow numeric ID (supports both integer and bigint)"""
+  id: String
+}
+
+type Workflow {
+  """Workflow numeric ID (supports both integer and bigint)"""
+  id: ID!
+
+  """User ID who owns the workflow"""
+  user_id: Int!
+
+  """Whether the workflow is currently active"""
+  is_active: Boolean!
+
+  """Automation ID associated with the workflow"""
+  automation_id: ID!
+
+  """Last updated timestamp of the workflow"""
+  updated_at: Date!
+
+  """Created timestamp of the workflow"""
+  created_at: Date!
+
+  """Importance level of the workflow"""
+  importance: Int
+
+  """Title of the workflow"""
+  title: String!
+
+  """Detailed description of the workflow"""
+  description: String!
+
+  """Define the workflow's steps and the configuration of each step"""
+  workflow_blocks: [WorkflowBlock!]!
+
+  """
+  Variables used within this workflow. To get the accurate JSON schema call the GraphQL query 'get_workflow_variable_schemas'
+  """
+  workflow_variables: JSON!
+
+  """Hierarchy level the workflow is hosted in"""
+  workflow_host_data: WorkflowHostData!
+
+  """Notice/Error message for the workflow"""
+  notice_message: String
+}
+
+type WorkflowBlock {
+  """Unique node identifier within the workflow"""
+  workflowNodeId: Int!
+
+  """Reference ID of the block"""
+  blockReferenceId: Int!
+
+  """Title of the workflow block"""
+  title: String!
+
+  """
+  Defines the input fields of the workflow block. This corresponds to the input fields defined by the block used in the Workflow Block. You must call the remote_options query to retrieve the allowed values for any custom input field before configuring it.
+  """
+  inputFields: [WorkflowBlockInputField!]!
+
+  """
+  Defines the credential fields for the workflow block. Each field references a workflow variable containing the credential value.
+  """
+  credentialFields: [WorkflowBlockCredentialField!]
+
+  """
+  Configuration for the next workflow blocks. To get the accurate JSON schema call the graphQL query 'get_workflow_block_next_mapping_schemas'. Note: Only the following mapping types are currently supported: routesMapping, waitTriggerMapping.
+  """
+  nextWorkflowBlocksConfig: JSON
+  kind: WorkflowBlockKind!
+}
+
+"""Credential field configuration for workflow blocks"""
+type WorkflowBlockCredentialField {
+  """The credential field key"""
+  fieldKey: String!
+
+  """
+  Key of the workflow variable containing the credential value. Always a positive number
+  """
+  workflowVariableKey: Int!
+}
+
+"""Input for credential field configuration in workflow blocks"""
+input WorkflowBlockCredentialFieldInput {
+  """The credential field key"""
+  fieldKey: String!
+
+  """
+  Key of the workflow variable containing the credential value. Always a positive number
+  """
+  workflowVariableKey: Int!
+}
+
+input WorkflowBlockFieldInput {
+  """The block's field key"""
+  fieldKey: String!
+
+  """
+  Key of the workflow variable defining the configuration for the field key. Always a positive number
+  """
+  workflowVariableKey: Int!
+}
+
+input WorkflowBlockInput {
+  """Unique node identifier within the workflow"""
+  workflowNodeId: Int!
+
+  """Reference ID of the block"""
+  blockReferenceId: Int!
+
+  """Title of the workflow block"""
+  title: String!
+
+  """
+  Defines the input fields of the workflow block. This corresponds to the input fields defined by the block used in the Workflow Block. You must call the remote_options query to retrieve the allowed values for any custom input field before configuring it.
+  """
+  inputFields: [WorkflowBlockFieldInput!]!
+
+  """
+  Defines the credential fields for the workflow block. Each field references a workflow variable containing the credential value.
+  """
+  credentialFields: [WorkflowBlockCredentialFieldInput!]
+
+  """
+  Configuration for the next workflow blocks. To get the accurate JSON schema call the graphQL query 'get_workflow_block_next_mapping_schemas'. Note: Only the following mapping types are currently supported: routesMapping, waitTriggerMapping.
+  """
+  nextWorkflowBlocksConfig: JSON
+  kind: WorkflowBlockKind
+}
+
+type WorkflowBlockInputField {
+  """The block's field key"""
+  fieldKey: String!
+
+  """
+  Key of the workflow variable defining the configuration for the field key. Always a positive number
+  """
+  workflowVariableKey: Int!
+}
+
+"""
+The kind of workflow block. This is the type of the block that is used in the UI
+"""
+enum WorkflowBlockKind {
+  """A wait block"""
+  WAIT
+}
+
+"""
+The json schema definition for a given workflow block next mapping kind
+"""
+type WorkflowBlockNextMappingSchema {
+  """The kind of workflow block next mapping"""
+  kind: String
+
+  """JSON schema for this workflow block next mapping kind"""
+  schema: JSON
+}
+
+"""Customization settings for the workflow"""
+input WorkflowCustomizationInput {
+  """
+  The access level for CRUD operations on an account-level workflow. Only applicable for ACCOUNT_LEVEL host type. Defaults to USER (only the creator can modify).
+  """
+  crud_access_level: CrudAccessLevel
+}
+
+"""Hierarchy level the workflow is hosted in"""
+type WorkflowHostData {
+  """Type of host for this workflow"""
+  type: HostType!
+
+  """Instance ID of the host"""
+  id: String
+}
+
+input WorkflowHostDataInput {
+  """Instance ID of the host"""
+  id: String!
+
+  """Type of host for this workflow"""
+  type: HostType!
+}
+
+input WorkflowInput {
+  """Title of the workflow"""
+  title: String!
+
+  """Detailed description of the workflow"""
+  description: String!
+
+  """Define the workflow's steps and the configuration of each step"""
+  workflowBlocks: [WorkflowBlockInput!]!
+
+  """
+  Variables used within this workflow. To get the accurate JSON schema call the GraphQL query 'get_workflow_variable_schemas'
+  """
+  workflowVariables: [JSON!]!
+
+  """Hierarchy level the workflow is hosted in"""
+  workflowHostData: WorkflowHostDataInput!
+
+  """Reference ID of the creator app feature"""
+  creatorAppFeatureReferenceId: Int
+
+  """ID of the creator app"""
+  creatorAppId: Int
+
+  """Customization settings for the workflow"""
+  customization: WorkflowCustomizationInput
+}
+
+"""The kind and JSON schema definition for a given workflow variable kind"""
+type WorkflowVariableSchema {
+  """The kind of workflow variable"""
+  kind: WorkflowVariableSourceKind
+
+  """JSON schema of the workflow variable"""
+  schema: JSON
+}
+
+enum WorkflowVariableSourceKind {
+  """A value defined by the user"""
+  user_config
+
+  """A value from a previous node output"""
+  node_results
+
+  """A value from a reference to another workflow variable"""
+  reference
+
+  """
+  Points to the host ID value where the workflow is hosted (board ID, object ID, account ID, etc.). It's auto calculated during when the workflow runs
+  """
+  host_metadata
+
+  """A value fetched from an external context provider"""
+  external_context_provider
 }
 
 """Aggregated automation runs statistics grouped by entity Ids"""
@@ -3758,6 +5236,9 @@ type Board {
   """The board's permissions."""
   permissions: String!
 
+  """The Board's source solution item mapping"""
+  source_solution_item_mapping: String
+
   """The board's state (all / active / archived / deleted)."""
   state: State!
 
@@ -3814,6 +5295,9 @@ type BoardView {
 
   """The view's type."""
   type: String
+
+  """Specifies whether the view is bound to the board or item page"""
+  context: ViewContext!
 
   """The view's settings in a string form."""
   settings_str: String!
@@ -4025,6 +5509,15 @@ input TableViewSettingsInput {
 
   """The group by to apply to the board view"""
   group_by: GroupBySettingsInput
+}
+
+"""Specifies the entity scope for the created view"""
+enum ViewContext {
+  """Associate the view with the board"""
+  BOARD
+
+  """Associate the view with item page"""
+  ITEM
 }
 
 """Available view types for board displays"""
@@ -4374,6 +5867,102 @@ type TimelineResponse {
     """The limit for the current page of timeline items"""
     limit: Int = 25
   ): TimelineItemsPage!
+}
+
+"""The result of the connect_migration_job mutation."""
+type ConnectMigrationJobResult {
+  """Whether the connection was successfully created or already exists."""
+  success: Boolean
+
+  """The unique identifier of the migration job connection."""
+  migrationJobConnectionId: ID
+}
+
+type CreateEntitySnapshotResult {
+  """The unique identifier of the snapshot."""
+  snapshotId: ID!
+
+  """The date and time the snapshot was created."""
+  createdAt: String!
+
+  """The entity that was snapshot."""
+  entity: String!
+
+  """The unique identifier of the migration job."""
+  migrationJobId: String!
+}
+
+type CreateMigrationJobResult {
+  """The unique identifier of the migration job."""
+  id: ID!
+}
+
+type GetEntitiesForMigrationResult {
+  """The entities for migration."""
+  entityId: String
+}
+
+"""The result of querying entity restores."""
+type GetRestoresQueryResults {
+  """The unique identifier of the restore."""
+  id: ID!
+
+  """The date and time the restore was created."""
+  createdAt: String!
+
+  """The entity id of the restore."""
+  entityId: String!
+
+  """The unique identifier of the migration job."""
+  migrationJobId: String!
+
+  """The status of the restore."""
+  status: RestoreStatus!
+}
+
+type GetSnapshotsQueryResults {
+  """The unique identifier of the snapshot."""
+  id: ID!
+
+  """The date and time the snapshot was created."""
+  createdAt: String!
+
+  """The entity id of the snapshot."""
+  entityId: String!
+
+  """The unique identifier of the migration job."""
+  migrationJobId: String!
+
+  """The status of the snapshot."""
+  status: SnapshotStatus!
+}
+
+"""The result of the restore entity mutation."""
+type RestoreEntityResult {
+  """Confirms the restore request was accepted."""
+  accepted: Boolean
+}
+
+"""The possible statuses of a restore operation."""
+enum RestoreStatus {
+  """The restore is pending and has not started yet."""
+  pending
+
+  """The restore is currently being processed."""
+  processing
+
+  """The restore completed successfully."""
+  success
+
+  """The restore failed to complete."""
+  failed
+}
+
+enum SnapshotStatus {
+  pending
+  processing
+  success
+  failed
 }
 
 """Calculated capability settings for a column"""
@@ -4775,6 +6364,9 @@ type StatusLabel {
   id: Int
   label: String
   color: StatusColumnColors
+
+  """Hex value of the color"""
+  hex: String
   index: Int
   description: String
   is_deactivated: Boolean
@@ -4937,6 +6529,19 @@ input UpdateDependencyColumnInput {
 
   """Optional metadata containing dependency configuration (type and lag)"""
   metadata: MetadataInput
+}
+
+"""
+The Article is the main object type of monday.com Knowledge product. A collaborative article that can contain rich text, media, and structured content. Articles have both draft and published versions, and are organized within workspaces and folders, with configurable privacy settings and access controls. They support features like version history, real-time collaboration, and can be shared with specific users or teams. Articles are commonly used for documentation, knowledge sharing, and team collaboration.
+"""
+type Article {
+  """
+  The Article is the main object type of monday.com Knowledge product. Article Metadata is a subset of the Article object that contains only the metadata of the article, not the article itself. It is used to get the metadata of an article without having to fetch the article itself.
+  """
+  metadata: ArticleMetadata
+
+  """The content blocks that make up the article."""
+  blocks: [ArticleBlock!]
 }
 
 """The content blocks that make up the article."""
@@ -7858,6 +9463,17 @@ type ExtendTrialPeriod {
   success: Boolean!
 }
 
+"""
+Information about a failed user board role update, including the user ID and the error encountered.
+"""
+type FailedUserBoardRoleUpdate {
+  """The error message describing why the role update failed."""
+  error: String!
+
+  """The ID of the user whose board role update failed."""
+  user_id: ID!
+}
+
 """A multipart file"""
 scalar File
 
@@ -9311,6 +10927,18 @@ input UpdateOverviewHierarchyAttributesInput {
   workspace_id: ID
 }
 
+"""
+Response type for updating multiple users' board roles. Contains information
+about which users were successfully updated and which failed.
+"""
+type UpdateUsersBoardRoleResponse {
+  """List of failed user updates with error details."""
+  failed_users: [FailedUserBoardRoleUpdate!]!
+
+  """List of IDs of users whose board roles were successfully updated."""
+  successful_user_ids: [ID!]!
+}
+
 """Attributes of a workspace to update"""
 input UpdateWorkspaceAttributesInput {
   """The target account product's ID to move the workspace to"""
@@ -9696,6 +11324,41 @@ type ConvertBoardToProjectResult {
   message: String
   projectId: ID
   process_id: String
+}
+
+input CreateProjectInput {
+  """The name of the project to create"""
+  name: String!
+
+  """The project's kind (public / private / share)"""
+  board_kind: BoardKind!
+
+  """
+  Optional template id to create the project from. Currently only supported for solution templates
+  """
+  template_id: ID
+
+  """
+  Optional list of companion features to enable (currently only "resource_planner")
+  """
+  companions: [String!]
+
+  """Optional workspace ID to associate with the project"""
+  workspace_id: String
+
+  """Optional folder ID to associate with the project"""
+  folder_id: String
+}
+
+type CreateProjectResult {
+  """Indicates if the project creation was successful"""
+  success: Boolean
+
+  """Success message when project is created"""
+  message: String
+
+  """Error message if project creation failed"""
+  error: String
 }
 
 type BoardMuteSettings {
@@ -10281,6 +11944,78 @@ enum AggregateSelectFunctionName {
   PHONE_COUNTRY_SHORT_NAME
 }
 
+"""A resource from the directory"""
+type DirectoryResource {
+  """The identifier of the directory resource."""
+  id: ID!
+
+  """The name of the directory resource."""
+  name: String!
+
+  """The email address of the directory resource."""
+  email: String
+
+  """The job role of the directory resource."""
+  job_role: String
+
+  """The skills of the directory resource."""
+  skills: [String!]
+
+  """The location of the directory resource."""
+  location: String
+}
+
+"""Attributes that can be updated on a resource directory entry"""
+enum DirectoryResourceAttribute {
+  """Represents the resource directory job role attribute.."""
+  JOB_ROLE
+
+  """Represents the resource directory skills attribute."""
+  SKILLS
+
+  """Represents the resource directory location attribute."""
+  LOCATION
+}
+
+"""
+Paginated response containing directory resources and cursor for next page
+"""
+type DirectoryResourcesResponse {
+  """Response identifier"""
+  id: ID!
+
+  """List of directory resources"""
+  resources: [DirectoryResource!]!
+
+  """Cursor for fetching the next page of results"""
+  cursor: String
+}
+
+"""Response indicating whether the directory attribute update succeeded"""
+type UpdateDirectoryResourceAttributesResponse {
+  """Indicates whether the batch update completed successfully."""
+  success: Boolean!
+}
+
+"""Ranked results of a search query."""
+type BoardResult {
+  """Board matching the search query."""
+  board: Board
+
+  """Items matching the search query."""
+  items: [Item!]
+}
+
+type SearchAllResult {
+  """The results of the search."""
+  results: [BoardResult!]
+}
+
+"""The results of the search for benchmark."""
+type SearchBenchmarkResults {
+  data: String
+}
+
 """
 Boost configuration for search results. Key-value pairs where key is strategy type and value is boost weight.
 """
@@ -10290,6 +12025,71 @@ input BoostConfigurationInput {
   """
   boosts: JSON
 }
+
+"""Contains the results of a board query."""
+type CrossEntityBoardResult {
+  """The unique identifier of the board."""
+  id: ID!
+
+  """The type of entity."""
+  entity_type: SearchableEntity!
+
+  """The relevance score of the search result."""
+  score: Float!
+
+  """Board data for the search results."""
+  data: IndexedBoard!
+
+  """
+  Latest board data for the search results. Requires additional GraphQL federation calls.
+  """
+  live_data: Board!
+}
+
+"""Contains the results of a doc query."""
+type CrossEntityDocResult {
+  """The unique identifier of the document."""
+  id: ID!
+
+  """The type of entity."""
+  entity_type: SearchableEntity!
+
+  """The relevance score of the search result."""
+  score: Float!
+
+  """Document data for the search results."""
+  data: IndexedDoc!
+
+  """
+  Latest document data for the search results. Requires additional GraphQL federation calls.
+  """
+  live_data: Document!
+}
+
+"""Contains the results of an item query."""
+type CrossEntityItemResult {
+  """The unique identifier of the item."""
+  id: ID!
+
+  """The type of entity."""
+  entity_type: SearchableEntity!
+
+  """The relevance score of the search result."""
+  score: Float!
+
+  """Item data for the search results."""
+  data: IndexedItem!
+
+  """
+  Latest item data for the search results. Requires additional GraphQL federation calls.
+  """
+  live_data: Item!
+}
+
+"""
+Union type representing different searchable entity types returned from cross-entity search.
+"""
+union CrossEntityResult = CrossEntityItemResult | CrossEntityBoardResult | CrossEntityDocResult
 
 """Deprecated board object."""
 type DeprecatedBoard {
@@ -10316,6 +12116,63 @@ type EnrichedColumnValues {
 
   """List of user IDs allowed to view this column"""
   allowed_users: [String!]!
+}
+
+"""Board data present in the search index."""
+type IndexedBoard {
+  """Board ID."""
+  id: ID!
+
+  """Board name."""
+  name: String!
+
+  """Board description."""
+  description: String
+
+  """ID of the board owner."""
+  owner_id: ID!
+
+  """ID of the workspace containing this board."""
+  workspace_id: ID!
+
+  """ISO timestamp when the board was created."""
+  created_at: String!
+
+  """ISO timestamp when the board was last updated."""
+  updated_at: String!
+
+  """URL to view this board."""
+  url: String!
+
+  """Board type."""
+  type: String!
+
+  """Board kind (e.g., public, private)."""
+  kind: String!
+
+  """Board kind classification."""
+  board_kind: String!
+
+  """Board state flag."""
+  state: Int!
+}
+
+"""Document data present in the search index."""
+type IndexedDoc {
+  """Document ID."""
+  id: ID!
+
+  """Document name."""
+  name: String!
+
+  """Document content."""
+  content: String!
+
+  """ISO timestamp when the document was created."""
+  created_at: String!
+
+  """ISO timestamp when the document was last updated."""
+  updated_at: String!
 }
 
 """Item data present in the search index."""
@@ -10408,6 +12265,18 @@ enum Search {
 
   """Combined lexical and semantic search with reranking."""
   HYBRID
+}
+
+"""Supported entity types to search for."""
+enum SearchableEntity {
+  """Item entity type for searching board items."""
+  ITEM
+
+  """Board entity type for searching boards."""
+  BOARD
+
+  """Document entity type for searching documents."""
+  DOCUMENT
 }
 
 """Date range filter for search queries"""
