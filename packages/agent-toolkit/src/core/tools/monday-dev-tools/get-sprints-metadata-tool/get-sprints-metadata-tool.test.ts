@@ -61,9 +61,8 @@ describe('GetSprintsMetadataTool', () => {
 
       const args: InputType = { sprintsBoardId: 123456789, limit: 50 };
       const result = await callToolByNameRawAsync('get_sprints_metadata', args);
-      
-      expect(result.content[0].text).toContain(expectedSprintsReportOutput);
 
+      expect(result.content[0].text).toContain(expectedSprintsReportOutput);
 
       const calls = mocks.getMockRequest().mock.calls;
       const itemsCall = calls.find((call) => call[0].includes('query GetSprintsBoardItemsWithColumns'));
@@ -71,7 +70,6 @@ describe('GetSprintsMetadataTool', () => {
       expect(itemsCall).toBeDefined();
       expect(itemsCall[1]).toEqual({ boardId: '123456789', limit: 50 });
     });
-
   });
 
   describe('Schema Validation', () => {
@@ -187,5 +185,4 @@ describe('GetSprintsMetadataTool', () => {
       expect(result.content[0].text).toContain(ERROR_PREFIXES.INTERNAL_ERROR);
     });
   });
-
 });

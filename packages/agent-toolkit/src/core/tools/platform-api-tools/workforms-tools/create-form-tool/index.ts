@@ -1,4 +1,7 @@
-import { CreateFormMutation, CreateFormMutationVariables } from '../../../../../monday-graphql/generated/graphql/graphql';
+import {
+  CreateFormMutation,
+  CreateFormMutationVariables,
+} from '../../../../../monday-graphql/generated/graphql/graphql';
 import { createForm } from '../workforms.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../../base-monday-api-tool';

@@ -409,10 +409,14 @@ describe('Board Insights Tool', () => {
         ).toBe(true);
         // Should have added LABEL functions for status and priority
         expect(
-          result.selectElements.some((el) => el.type === AggregateSelectElementType.Function && el.as === 'LABEL_status_0'),
+          result.selectElements.some(
+            (el) => el.type === AggregateSelectElementType.Function && el.as === 'LABEL_status_0',
+          ),
         ).toBe(true);
         expect(
-          result.selectElements.some((el) => el.type === AggregateSelectElementType.Function && el.as === 'LABEL_priority_0'),
+          result.selectElements.some(
+            (el) => el.type === AggregateSelectElementType.Function && el.as === 'LABEL_priority_0',
+          ),
         ).toBe(true);
       });
 
@@ -480,7 +484,7 @@ describe('Board Insights Tool', () => {
         const result = handleSelectAndGroupByElements(input as any);
 
         expect(result.selectElements).toHaveLength(3);
-        
+
         // Should have the COUNT aggregation
         expect(result.selectElements[0]).toEqual({
           type: AggregateSelectElementType.Function,
@@ -521,10 +525,7 @@ describe('Board Insights Tool', () => {
         });
 
         // GroupBy should contain both person and the LABEL_person_0
-        expect(result.groupByElements).toEqual([
-          { column_id: 'person' },
-          { column_id: 'LABEL_person_0' },
-        ]);
+        expect(result.groupByElements).toEqual([{ column_id: 'person' }, { column_id: 'LABEL_person_0' }]);
       });
     });
   });

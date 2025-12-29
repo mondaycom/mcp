@@ -10,9 +10,7 @@ import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-ap
 
 export const createDashboardToolSchema = {
   name: z.string().min(1, 'Dashboard name is required').describe('Human-readable dashboard title (UTF-8 chars)'),
-  workspace_id: z
-    .string()
-    .describe('ID of the workspace that will own the dashboard'),
+  workspace_id: z.string().describe('ID of the workspace that will own the dashboard'),
   board_ids: z
     .array(z.string())
     .min(1, 'At least one board ID is required')
