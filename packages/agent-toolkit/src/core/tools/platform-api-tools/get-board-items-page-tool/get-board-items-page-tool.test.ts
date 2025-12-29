@@ -896,7 +896,7 @@ describe('GetBoardItemsPageTool', () => {
 
   describe('Schema Validation', () => {
     it('should have correct tool metadata', () => {
-      const tool = new GetBoardItemsPageTool(mocks.mockApiClient, 'fake_token');
+      const tool = new GetBoardItemsPageTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token');
 
       expect(tool.name).toBe('get_board_items_page');
       expect(tool.type).toBe('read');

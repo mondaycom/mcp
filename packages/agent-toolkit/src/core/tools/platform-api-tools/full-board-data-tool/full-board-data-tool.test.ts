@@ -110,7 +110,7 @@ describe('Full Board Data Tool', () => {
       }
     });
 
-    const tool = new FullBoardDataTool(mocks.mockApiClient, 'fake_token');
+    const tool = new FullBoardDataTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token');
 
     const result = await tool.execute({
       boardId: 123456,
@@ -182,7 +182,7 @@ describe('Full Board Data Tool', () => {
     };
 
     mocks.setResponse(boardWithoutUpdates);
-    const tool = new FullBoardDataTool(mocks.mockApiClient, 'fake_token');
+    const tool = new FullBoardDataTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token');
 
     const result = await tool.execute({
       boardId: 123456,
@@ -201,7 +201,7 @@ describe('Full Board Data Tool', () => {
   });
 
   it('Throws error when board is not found', async () => {
-    const tool = new FullBoardDataTool(mocks.mockApiClient, 'fake_token');
+    const tool = new FullBoardDataTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token');
 
     // Test with empty array
     mocks.setResponse({ boards: [] });
@@ -241,7 +241,7 @@ describe('Full Board Data Tool', () => {
     };
 
     mocks.setResponse(boardWithNullCreators);
-    const tool = new FullBoardDataTool(mocks.mockApiClient, 'fake_token');
+    const tool = new FullBoardDataTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token');
 
     const result = await tool.execute({
       boardId: 123456,
@@ -263,7 +263,7 @@ describe('Full Board Data Tool', () => {
       errors: [{ message: 'Invalid board ID' }, { message: 'Insufficient permissions' }],
     };
     mocks.setError(graphqlError);
-    const tool = new FullBoardDataTool(mocks.mockApiClient, 'fake_token');
+    const tool = new FullBoardDataTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token');
 
     await expect(
       tool.execute({
@@ -322,7 +322,7 @@ describe('Full Board Data Tool', () => {
       }
     });
 
-    const tool = new FullBoardDataTool(mocks.mockApiClient, 'fake_token');
+    const tool = new FullBoardDataTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token');
     const result = await tool.execute({ boardId: 123456 });
     const parsedResult = JSON.parse(result.content);
 

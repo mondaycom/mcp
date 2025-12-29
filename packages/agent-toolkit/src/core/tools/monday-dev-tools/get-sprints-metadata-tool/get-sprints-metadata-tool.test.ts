@@ -102,7 +102,7 @@ describe('GetSprintsMetadataTool', () => {
   });
 
   it('should have correct tool metadata', () => {
-    const tool = new GetSprintsMetadataTool(mocks.mockApiClient, 'fake_token');
+    const tool = new GetSprintsMetadataTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token');
 
     expect(tool.name).toBe('get_sprints_metadata');
     expect(tool.type).toBe('read');
