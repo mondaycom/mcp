@@ -207,6 +207,18 @@ type Query {
   """List block events for a given trigger UUID"""
   block_events(triggerUuid: String!, nextPageOffset: Int = 0): BlockEventsPage
 
+  """Get aggregated automation runs statistics in the account"""
+  account_trigger_statistics(filters: AccountTriggerStatisticsFiltersInput): AccountTriggerStatistics
+
+  """Get aggregated automation runs statistics grouped by entity Ids"""
+  account_triggers_statistics_by_entity_id(run_status: TriggerEventState!, filters: AccountTriggersByEntityIdFiltersInput): AccountTriggersByEntityId
+
+  """
+  Placeholder query field for automations-test microservice.
+  This can be replaced with actual queries as the service evolves.
+  """
+  empty: String
+
   """
   Retrieves the JSON schema definition for a specific create view type. 
         Use this query before calling create_view mutation to understand the structure and validation rules for the settings parameter. 
@@ -232,7 +244,7 @@ type Query {
     """Page number to get, starting at 1."""
     page: Int = 1
 
-    """A list of items unique identifiers."""
+    """A list of updates unique identifiers."""
     ids: [ID!]
 
     """
@@ -648,6 +660,9 @@ type Query {
     """Number of items to get, the default is 25."""
     limit: Int = 25
 
+    """The workspace's membership kind (member / all)"""
+    membership_kind: WorkspaceMembershipKind = all
+
     """Property to order by (created_at)."""
     order_by: WorkspacesOrderBy
 
@@ -778,7 +793,7 @@ type Query {
     """Whether to perform exact match search."""
     exact_match: Boolean
 
-    """Date range filter for created/updated dates."""
+    """Date range filter for created/updated or column values dates."""
     date_range: SearchDateRangeInput
 
     """Filter results to specific board IDs."""
@@ -787,8 +802,8 @@ type Query {
     """Filter results to specific workspace IDs."""
     workspace_ids: [ID!]
 
-    """Filter by assignee (person IDs and/or team IDs)."""
-    assignee: AssigneeInput
+    """Filter by persons (person IDs, team IDs, and/or person names)."""
+    persons: PersonsInput
 
     """Filter by status."""
     status: String
@@ -1168,6 +1183,11 @@ type Mutation {
     description: String
 
     """
+    The width of the column. If not provided, the current width remains unchanged.
+    """
+    width: Int
+
+    """
     The revision of the column, as returned by the column query. Used for optimistic concurrency control.
     """
     revision: String!
@@ -1204,6 +1224,11 @@ type Mutation {
     description: String
 
     """
+    The width of the column. If not provided, the current width remains unchanged.
+    """
+    width: Int
+
+    """
     The revision of the column, as returned by the column query. Used for optimistic concurrency control.
     """
     revision: String!
@@ -1233,6 +1258,11 @@ type Mutation {
     The new description text for the column. If not provided, the current description remains unchanged.
     """
     description: String
+
+    """
+    The width of the column. If not provided, the current width remains unchanged.
+    """
+    width: Int
 
     """
     The revision of the column, as returned by the column query. Used for optimistic concurrency control.
@@ -1368,6 +1398,61 @@ type Mutation {
     column_type: ColumnType!
   ): Column
 
+  """
+  Creates a new status column in a board that is linked to a managed column. The column data and settings are controlled by the managed column. Only title and description can be overridden locally.
+  """
+  attach_status_managed_column(
+    """The unique identifier of the board where the column will be created."""
+    board_id: ID!
+
+    """The unique identifier of the managed column to attach."""
+    managed_column_id: ID!
+
+    """
+    Optional title override for the column. If not provided, uses the managed column title.
+    """
+    title: String
+
+    """
+    Optional description override for the column. If not provided, uses the managed column description.
+    """
+    description: String
+
+    """
+    The column's unique identifier after which the new column will be inserted.
+    """
+    after_column_id: ID
+  ): Column
+
+  """
+  Creates a new dropdown column in a board that is linked to a managed column. The column data and settings are controlled by the managed column. Title, description, and dropdown-specific settings (limit_select, label_limit_count) can be overridden locally.
+  """
+  attach_dropdown_managed_column(
+    """The unique identifier of the board where the column will be created."""
+    board_id: ID!
+
+    """The unique identifier of the managed column to attach."""
+    managed_column_id: ID!
+
+    """
+    Optional title override for the column. If not provided, uses the managed column title.
+    """
+    title: String
+
+    """
+    Optional description override for the column. If not provided, uses the managed column description.
+    """
+    description: String
+
+    """
+    The column's unique identifier after which the new column will be inserted.
+    """
+    after_column_id: ID
+
+    """Optional settings overrides for the dropdown column."""
+    settings: DropdownSettingsOverridesInput
+  ): Column
+
   """Add a required column to a board"""
   add_required_column(
     id: ID!
@@ -1387,7 +1472,17 @@ type Mutation {
   ): RequiredColumns
 
   """Update the dependency column for a specific pulse"""
-  update_dependency_column(boardId: String!, pulseId: String!, value: DependencyValueInput!, columnId: String!): JSON!
+  update_dependency_column(
+    boardId: String!
+    pulseId: String!
+    value: DependencyValueInput!
+    columnId: String!
+
+    """
+    Optional new date for the successor node (or one of its descendants). When provided, updates the successor date and all predecessor edge lags.
+    """
+    successor_new_date: TimelineDateInput
+  ): JSON!
 
   """
   Adds markdown content to an existing document by converting it into document blocks. Use this to append content to the end of a document or insert content after a specific block. The markdown will be parsed and converted into the appropriate document block types (text, headers, lists, etc.). Returns the IDs of the newly created blocks on success.
@@ -1475,6 +1570,39 @@ type Mutation {
   ): ImportDocFromHtmlResult
 
   """
+  Converts a document to an article in Knowledge. Requires the Knowledge product to be installed in the account. The original document will be deleted after conversion. Returns the created article metadata.
+  """
+  publish_doc_to_knowledge(
+    """
+    The unique identifier of the article object. Can be used to reference this specific object in queries and mutations. This ID can be found in the article's URL.
+    """
+    object_id: ID!
+
+    """The ID of the workspace containing this article."""
+    workspace_id: ID!
+
+    """
+    The ID of the folder to move the article to. If not specified, the article will remain at its current folder level
+    """
+    folder_id: ID
+
+    """
+    The kind/visibility setting of the article (private, public). Determines who can access it.
+    """
+    privacy_kind: PrivacyKind!
+
+    """
+    List of user IDs to add as subscribers to this article. Only applicable when privacy_kind is PRIVATE
+    """
+    add_subscriber_ids: [ID!]
+
+    """
+    List of team IDs to add as subscribers to this article. Only applicable when privacy_kind is PRIVATE
+    """
+    add_subscriber_team_ids: [ID!]
+  ): ArticleMetadata
+
+  """
   Updates the content of a specific article block. The block must belong to a draft article that the user has permission to edit. Cannot update blocks of published articles.
   """
   update_article_block(
@@ -1540,6 +1668,11 @@ type Mutation {
 
     """The ID of the group to import items into"""
     group_id: ID!
+
+    """
+    Configuration for handling matching items. When provided, items will be matched based on the specified column.
+    """
+    on_match: OnMatchInput
   ): BulkImportInit
 
   """Creates a new app with the specified configuration."""
@@ -1960,6 +2093,9 @@ type Mutation {
   create_item(
     """The board's unique identifier."""
     board_id: ID!
+
+    """Files to upload to file columns."""
+    column_files: [ColumnFileInput!]
 
     """The column values of the new item."""
     column_values: JSON
@@ -3212,6 +3348,58 @@ input PaginationInput {
   lastId: Int
 }
 
+"""Aggregated automation runs statistics grouped by entity Ids"""
+type AccountTriggersByEntityId {
+  """Unique identifier for the statistics result"""
+  id: ID!
+
+  """
+  Statistics for automations grouped by automation Id. Returns an object where each key is an automation Id, and the value contains the total count and breakdown by error reason
+  """
+  automation_statistics: JSON
+
+  """
+  Statistics for workflows grouped by workflow entity Id. Returns an object where each key is a workflow entity Id, and the value contains the total count and breakdown by error reason
+  """
+  workflow_statistics: JSON
+}
+
+"""Filters for account triggers statistics by entity Id query"""
+input AccountTriggersByEntityIdFiltersInput {
+  """Filter by board Id"""
+  board_id: Int
+
+  """Exclude statistics for the specified automation Ids"""
+  automation_ids: [Int!]
+
+  """Filter by multiple user Ids"""
+  user_ids: [Int!]
+}
+
+"""Aggregated automation runs statistics in the account"""
+type AccountTriggerStatistics {
+  """Unique identifier for the statistics result"""
+  id: ID!
+
+  """Number of successful automation runs"""
+  success: Int
+
+  """Number of failed automation runs"""
+  failure: Int
+
+  """Total number of automation runs"""
+  total: Int
+}
+
+"""Filters for account trigger statistics query"""
+input AccountTriggerStatisticsFiltersInput {
+  """Filter by board Id"""
+  board_id: Int
+
+  """Filter by multiple user Ids"""
+  user_ids: [Int!]
+}
+
 """Automation block execution event"""
 type BlockEvent {
   """Document identifier"""
@@ -3392,6 +3580,18 @@ type TriggerEventsPage {
   triggerEvents: [TriggerEvent!]
 }
 
+"""Automation run status"""
+enum TriggerEventState {
+  """Automation run completed successfully"""
+  success
+
+  """Automation run failed"""
+  failure
+
+  """Automation run exhausted all retry attempts"""
+  exhausted
+}
+
 """A monday.com board."""
 type Board {
   """The unique identifier of the board."""
@@ -3432,9 +3632,9 @@ type Board {
     types: [ColumnType!]
 
     """
-    A list of column capabilities to filter by. If unspecified, only columns with no capabilities will be returned.
+    A list of column capabilities to filter by. Returns columns that have any of the specified capabilities. Use null in the array to represent columns with no capabilities (e.g., [null] for only columns without capabilities, [null, CALCULATED] for columns without capabilities or with calculated).
     """
-    capabilities: [ColumnCapability!]
+    capabilities: [ColumnCapability] = [null, VISIBILITY]
   ): [Column]
 
   """The user's permission level for this board (view / edit)."""
@@ -3827,7 +4027,7 @@ enum ViewKind {
   """Form view for input and data entry"""
   FORM
 
-  """App view for feature-specific board display"""
+  """App view for feature-specific display"""
   APP
 }
 
@@ -3942,11 +4142,22 @@ type Like {
   updated_at: Date
 }
 
+"""The type of the mention."""
 enum MentionType {
+  """Mention a user"""
   User
+
+  """Mention a team"""
   Team
+
+  """Mention a project"""
   Project
+
+  """Mention a board"""
   Board
+
+  """Mention an AI agent"""
+  Agent
 }
 
 """A reply for an update."""
@@ -4037,6 +4248,8 @@ type Update {
 input UpdateMention {
   """The object id."""
   id: ID!
+
+  """The type of the mention."""
   type: MentionType!
 }
 
@@ -4228,6 +4441,9 @@ type Column {
 type ColumnCapabilities {
   """Calculated capability settings"""
   calculated: CalculatedCapability
+
+  """Visibility capability settings"""
+  visibility: String
 }
 
 """Input for configuring column capabilities during creation"""
@@ -4242,6 +4458,9 @@ input ColumnCapabilitiesInput {
 enum ColumnCapability {
   """Capability to show column's calculated value"""
   CALCULATED
+
+  """Capability to mark column as hidden"""
+  VISIBILITY
 }
 
 union ColumnSettings = StatusColumnSettings | DropdownColumnSettings
@@ -4427,6 +4646,19 @@ type DropdownManagedColumn {
   created_at: Date
   updated_at: Date
   settings: DropdownColumnSettings
+}
+
+"""
+Overridable settings for dropdown columns attached to a managed column.
+"""
+input DropdownSettingsOverridesInput {
+  """Whether to limit the number of selectable labels."""
+  limit_select: Boolean
+
+  """
+  Maximum number of labels that can be selected when limit_select is enabled.
+  """
+  label_limit_count: Int
 }
 
 type ManagedColumn {
@@ -4673,6 +4905,18 @@ input PayloadInput {
   lag: Int
 }
 
+"""Input type for timeline dates with from and to date strings"""
+input TimelineDateInput {
+  """The ID of the successor pulse whose date should be updated"""
+  id: ID!
+
+  """Start date of the timeline in ISO format"""
+  from: String!
+
+  """End date of the timeline in ISO format"""
+  to: String!
+}
+
 """
 Input type for updating a single dependency relationship between pulses
 """
@@ -4716,6 +4960,63 @@ type ArticleBlock {
 
   """The block's last updated date."""
   updated_at: String
+}
+
+"""
+The Article is the main object type of monday.com Knowledge product. Article Metadata is a subset of the Article object that contains only the metadata of the article, not the article itself. It is used to get the metadata of an article without having to fetch the article itself.
+"""
+type ArticleMetadata {
+  """
+  The unique identifier of the article object. Can be used to reference this specific object in queries and mutations. This ID can be found in the article's URL.
+  """
+  object_id: ID
+
+  """The ID of the draft version of this article."""
+  draft_article_id: ID
+
+  """The ID of the published version of this article."""
+  published_article_id: ID
+
+  """
+  The display name of the article. This is what appears in the monday.com interface.
+  """
+  name: String
+
+  """
+  The kind/visibility setting of the article (private, public). Determines who can access it.
+  """
+  privacy_kind: String
+
+  """The ID of the workspace containing this article."""
+  workspace_id: ID
+
+  """
+  The ID of the folder containing this article, if the article is organized in a folder structure.
+  """
+  folder_id: ID
+
+  """Timestamp of when the article was last updated. Format is ISO 8601."""
+  updated_at: String
+
+  """
+  The current state of the article. Determines visibility in the interface.
+  """
+  state: String
+
+  """
+  The ID of the user who created this article. Useful for tracking article origin.
+  """
+  creator: ID
+
+  """
+  List of users who are owners of this article. Owners have full control permissions.
+  """
+  owners: [User!]
+
+  """
+  List of users who are subscribers to this article. Subscribers receive notifications about changes.
+  """
+  subscribers: [User!]
 }
 
 """Text formatting attributes (bold, italic, links, colors, etc.)"""
@@ -5499,6 +5800,9 @@ enum GraphqlMondayObject {
 
   """Aggregates data from one or more boards."""
   Dashboard
+
+  """A monday.com workspace"""
+  Workspace
 }
 
 """Represents a monday object identifier with its type"""
@@ -5607,14 +5911,27 @@ type DeleteMarketplaceAppDiscountResult {
   deleted_discount: DeleteMarketplaceAppDiscount!
 }
 
-"""The period of a discount"""
+"""The period of a discount. Provide only for standard discounts."""
 enum DiscountPeriod {
   MONTHLY
   YEARLY
 }
 
+"""
+The scope of a discount. Possible values: standard, renewal. Defaults to standard when not provided.
+"""
+enum DiscountScope {
+  """Standard discount scope - applies to new subscriptions"""
+  STANDARD
+
+  """Renewal discount scope - applies to subscription renewals"""
+  RENEWAL
+}
+
 type GrantMarketplaceAppDiscount {
-  """Number of days a discount will be valid"""
+  """
+  Number of days a discount will be valid. Provide only for standard discounts.
+  """
   days_valid: Int!
 
   """Percentage value of a discount"""
@@ -5624,7 +5941,7 @@ type GrantMarketplaceAppDiscount {
   is_recurring: Boolean!
   period: DiscountPeriod
 
-  """List of app plan ids"""
+  """List of app plan ids. Provide only for standard discounts."""
   app_plan_ids: [String!]!
 
   """The id of an app"""
@@ -5632,7 +5949,9 @@ type GrantMarketplaceAppDiscount {
 }
 
 input GrantMarketplaceAppDiscountData {
-  """Number of days a discount will be valid"""
+  """
+  Number of days a discount will be valid. Provide only for standard discounts.
+  """
   days_valid: Int!
 
   """Percentage value of a discount"""
@@ -5641,10 +5960,10 @@ input GrantMarketplaceAppDiscountData {
   """Is discount recurring"""
   is_recurring: Boolean!
 
-  """The period of a discount"""
+  """The period of a discount. Provide only for standard discounts."""
   period: DiscountPeriod
 
-  """List of app plan ids"""
+  """List of app plan ids. Provide only for standard discounts."""
   app_plan_ids: [String!]!
 }
 
@@ -5691,7 +6010,7 @@ type MarketplaceAppDiscount {
   """Is discount recurring"""
   is_recurring: Boolean!
 
-  """List of app plan ids"""
+  """List of app plan ids. Provide only for standard discounts."""
   app_plan_ids: [String!]!
   period: DiscountPeriod
 
@@ -5700,6 +6019,11 @@ type MarketplaceAppDiscount {
 
   """Date when a discount was created"""
   created_at: String!
+
+  """
+  The scope of a discount. Possible values: standard, renewal. Defaults to standard when not provided.
+  """
+  discount_scope: DiscountScope
 }
 
 type MarketplaceAppMetadata {
@@ -5889,6 +6213,26 @@ type BulkImportStatus {
 
   """URL to download the import report, valid for 10 minutes"""
   report_url: String
+}
+
+"""Strategy for handling matching items during import"""
+enum OnMatchBehaviour {
+  """Update if a matching item exists, otherwise create a new item"""
+  UPSERT
+
+  """Skip if a matching item exists"""
+  SKIP
+}
+
+"""Configuration for how to handle matching items during import"""
+input OnMatchInput {
+  """
+  The column ID to use for matching (e.g., email, phone number). When importing items, this column value will be used to identify matches.
+  """
+  match_column_id: String!
+
+  """Strategy for handling matching items"""
+  behaviour: OnMatchBehaviour!
 }
 
 """Input for app feature release data."""
@@ -6095,6 +6439,9 @@ enum AppFeatureTypeE {
 
   """AI_AGENT_SKILL"""
   AI_AGENT_SKILL
+
+  """VIBE_OBJECT"""
+  VIBE_OBJECT
 }
 
 """The visibility type of an app"""
@@ -6104,6 +6451,66 @@ enum AppKind {
 
   """App is public and can be shared and installed by other accounts"""
   PUBLIC
+}
+
+"""Permitted OAuth scopes for apps"""
+enum AppPermission {
+  """Permission scope: me:read"""
+  ME_READ
+
+  """Permission scope: boards:read"""
+  BOARDS_READ
+
+  """Permission scope: boards:write"""
+  BOARDS_WRITE
+
+  """Permission scope: workspaces:read"""
+  WORKSPACES_READ
+
+  """Permission scope: workspaces:write"""
+  WORKSPACES_WRITE
+
+  """Permission scope: users:read"""
+  USERS_READ
+
+  """Permission scope: users:write"""
+  USERS_WRITE
+
+  """Permission scope: account:read"""
+  ACCOUNT_READ
+
+  """Permission scope: updates:read"""
+  UPDATES_READ
+
+  """Permission scope: updates:write"""
+  UPDATES_WRITE
+
+  """Permission scope: tags:read"""
+  TAGS_READ
+
+  """Permission scope: assets:read"""
+  ASSETS_READ
+
+  """Permission scope: teams:read"""
+  TEAMS_READ
+
+  """Permission scope: teams:write"""
+  TEAMS_WRITE
+
+  """Permission scope: notifications:write"""
+  NOTIFICATIONS_WRITE
+
+  """Permission scope: webhooks:write"""
+  WEBHOOKS_WRITE
+
+  """Permission scope: webhooks:read"""
+  WEBHOOKS_READ
+
+  """Permission scope: docs:read"""
+  DOCS_READ
+
+  """Permission scope: docs:write"""
+  DOCS_WRITE
 }
 
 """The current state of an app based on its version status"""
@@ -6193,7 +6600,7 @@ input CreateAppInput {
   slug: String
 
   """Array of permission scopes"""
-  permissions: [String!]
+  permissions: [AppPermission!]
 
   """Webhook endpoint URL"""
   webhook_url: String
@@ -6254,7 +6661,7 @@ input UpdateAppInput {
   slug: String
 
   """Array of permission scopes (replaces existing permissions)"""
-  permissions: [String!]
+  permissions: [AppPermission!]
 
   """Webhook endpoint URL"""
   webhook_url: String
@@ -6271,11 +6678,20 @@ type Account {
   """The account's country two-letter code in ISO3166 format"""
   country_code: String
 
+  """The account's creation date."""
+  created_at: Date
+
   """The first day of the week for the account (sunday / monday)"""
   first_day_of_the_week: FirstDayOfTheWeek!
 
   """The account's unique identifier."""
   id: ID!
+
+  """Is the account during the free trial period"""
+  is_during_trial: Boolean
+
+  """Is the account's trial expired"""
+  is_trial_expired: Boolean
 
   """The account's logo."""
   logo: String
@@ -6315,6 +6731,9 @@ type AccountProduct {
   projectManagement / project_management / service / forms / whiteboard).
   """
   kind: String
+
+  """The account product tier."""
+  tier: String
 }
 
 """An activity log event"""
@@ -6523,6 +6942,9 @@ type BatteryValue implements ColumnValue {
   """The column's unique identifier."""
   id: ID!
 
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
+
   """
   Text representation of the column value. Note: Not all columns support textual value
   """
@@ -6664,6 +7086,9 @@ type BoardRelationValue implements ColumnValue {
   """The column's unique identifier."""
   id: ID!
 
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
+
   """The linked items IDs"""
   linked_item_ids: [ID!]!
 
@@ -6713,6 +7138,9 @@ type ButtonValue implements ColumnValue {
   """The column's unique identifier."""
   id: ID!
 
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
+
   """The button's label."""
   label: String
   text: String
@@ -6742,6 +7170,9 @@ type CheckboxValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
   text: String
 
   """The column's type."""
@@ -6761,6 +7192,9 @@ type ColorPickerValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
   text: String
 
   """The column's type."""
@@ -6771,6 +7205,15 @@ type ColorPickerValue implements ColumnValue {
 
   """The column's raw value in JSON format."""
   value: JSON
+}
+
+"""Input for uploading a file to a column when creating an item."""
+input ColumnFileInput {
+  """The column's unique identifier."""
+  column_id: String!
+
+  """The file to upload."""
+  file: File!
 }
 
 """
@@ -6799,6 +7242,9 @@ interface ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
 
   """
   Text representation of the column value. Note: Not all columns support textual value
@@ -6844,6 +7290,9 @@ type CountryValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
 
   """
   Text representation of the column value. Note: Not all columns support textual value
@@ -6902,6 +7351,9 @@ type CreationLogValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
   text: String
 
   """The column's type."""
@@ -6960,6 +7412,9 @@ type DateValue implements ColumnValue {
   """The column's unique identifier."""
   id: ID!
 
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
+
   """The formatted date and time in user time zone."""
   text: String
 
@@ -6987,6 +7442,9 @@ type DependencyValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
 
   """The linked items ids"""
   linked_item_ids: [ID!]!
@@ -7018,6 +7476,9 @@ type DirectDocValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
 
   """
   Text representation of the column value. Note: Not all columns support textual value
@@ -7144,6 +7605,9 @@ type Document {
   """The document's settings."""
   settings: JSON
 
+  """The document's last updated date."""
+  updated_at: Date
+
   """The document's direct url"""
   url: String
 
@@ -7200,6 +7664,9 @@ type DocValue implements ColumnValue {
   """The column's unique identifier."""
   id: ID!
 
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
+
   """
   Text representation of the column value. Note: Not all columns support textual value
   """
@@ -7218,6 +7685,9 @@ type DropdownValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
   text: String
 
   """The column's type."""
@@ -7279,6 +7749,9 @@ type EmailValue implements ColumnValue {
   """The column's unique identifier."""
   id: ID!
 
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
+
   """
   The column's text value. It can be the same as email when user didn't enter any text.
   """
@@ -7313,6 +7786,27 @@ type ExtendTrialPeriod {
 
 """A multipart file"""
 scalar File
+
+"""A file with an invalid or missing asset."""
+type FileAssetInvalidValue {
+  """The asset's id."""
+  asset_id: ID!
+
+  """The file's creation date."""
+  created_at: Date!
+
+  """The user who created the file."""
+  creator: User
+
+  """The ID of user who created the file."""
+  creator_id: ID
+
+  """The error message."""
+  error: String!
+
+  """The file's name."""
+  name: String
+}
 
 type FileAssetValue {
   """The asset associated with the file."""
@@ -7451,6 +7945,9 @@ type FileValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
   text: String
 
   """The column's type."""
@@ -7461,7 +7958,7 @@ type FileValue implements ColumnValue {
 }
 
 """A single file in a column."""
-union FileValueItem = FileAssetValue | FileDocValue | FileLinkValue
+union FileValueItem = FileAssetInvalidValue | FileAssetValue | FileDocValue | FileLinkValue
 
 """The first day of work week"""
 enum FirstDayOfTheWeek {
@@ -7604,6 +8101,9 @@ type FormulaValue implements ColumnValue {
   """The column's unique identifier."""
   id: ID!
 
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
+
   """
   Text representation of the column value. Note: Not all columns support textual value
   """
@@ -7699,6 +8199,9 @@ type GroupValue implements ColumnValue {
   """The column's unique identifier."""
   id: ID!
 
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
+
   """
   Text representation of the column value. Note: Not all columns support textual value
   """
@@ -7720,6 +8223,9 @@ type HourValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
 
   """Minute"""
   minute: Int
@@ -7744,6 +8250,9 @@ type IntegrationValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
 
   """URL of the issue"""
   issue_api_url: ID
@@ -7784,6 +8293,9 @@ type ItemIdValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
 
   """ID of the item"""
   item_id: ID!
@@ -7862,6 +8374,9 @@ type LastUpdatedValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
   text: String
 
   """The column's type."""
@@ -7886,6 +8401,9 @@ type LinkValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
   text: String
 
   """The column's type."""
@@ -7926,6 +8444,9 @@ type LocationValue implements ColumnValue {
   """The column's unique identifier."""
   id: ID!
 
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
+
   """Latitude"""
   lat: Float
 
@@ -7964,6 +8485,9 @@ type LongTextValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
 
   """
   Text representation of the column value. Note: Not all columns support textual value
@@ -8009,6 +8533,9 @@ type MirrorValue implements ColumnValue {
   """The column's unique identifier."""
   id: ID!
 
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
+
   """The mirrored items."""
   mirrored_items: [MirroredItem!]!
 
@@ -8053,6 +8580,9 @@ type NumbersValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
 
   """Number"""
   number: Float
@@ -8152,6 +8682,9 @@ type PeopleValue implements ColumnValue {
   """The column's unique identifier."""
   id: ID!
 
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
+
   """The people and teams assigned to the item."""
   persons_and_teams: [PeopleEntity!]
   text: String
@@ -8172,6 +8705,9 @@ type PersonValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
 
   """The person assigned to the item."""
   person_id: ID
@@ -8196,6 +8732,9 @@ type PhoneValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
 
   """Phone number"""
   phone: String
@@ -8242,6 +8781,9 @@ type ProgressValue implements ColumnValue {
   """The column's unique identifier."""
   id: ID!
 
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
+
   """
   Text representation of the column value. Note: Not all columns support textual value
   """
@@ -8260,6 +8802,9 @@ type RatingValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
 
   """Rating value"""
   rating: Int
@@ -8325,6 +8870,9 @@ type StatusValue implements ColumnValue {
   """Whether the status is done"""
   is_done: Boolean
 
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
+
   """The label of the status"""
   label: String
 
@@ -8356,6 +8904,9 @@ type SubtasksValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
 
   """The subitems"""
   subitems: [Item!]!
@@ -8393,6 +8944,9 @@ type TagsValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
 
   """Tag ID's"""
   tag_ids: [Int!]!
@@ -8463,6 +9017,9 @@ type TeamValue implements ColumnValue {
   """The column's unique identifier."""
   id: ID!
 
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
+
   """ID of the assigned team"""
   team_id: Int
   text: String
@@ -8490,6 +9047,9 @@ type TextValue implements ColumnValue {
   """The column's unique identifier."""
   id: ID!
 
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
+
   """The column's textual value"""
   text: String
 
@@ -8509,6 +9069,9 @@ type TimelineValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
 
   """The range of dates representing the timeline (YYYY-MM-DD)"""
   text: String
@@ -8580,6 +9143,9 @@ type TimeTrackingValue implements ColumnValue {
   """The column's unique identifier."""
   id: ID!
 
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
+
   """Whether the time tracker is running"""
   running: Boolean
 
@@ -8601,6 +9167,9 @@ type UnsupportedValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
 
   """
   Text representation of the column value. Note: Not all columns support textual value
@@ -8751,6 +9320,9 @@ type VoteValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
   text: String
 
   """The column's type."""
@@ -8863,6 +9435,9 @@ type WeekValue implements ColumnValue {
   """The column's unique identifier."""
   id: ID!
 
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
+
   """The start date of the week"""
   start_date: Date
 
@@ -8967,6 +9542,15 @@ enum WorkspaceKind {
   template
 }
 
+"""The membership kind of the user in the workspace."""
+enum WorkspaceMembershipKind {
+  """All accessible workspaces"""
+  all
+
+  """Workspace member."""
+  member
+}
+
 """The workspace's settings."""
 type WorkspaceSettings {
   """The workspace icon."""
@@ -8994,6 +9578,9 @@ type WorldClockValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
   text: String
 
   """Timezone"""
@@ -9419,10 +10006,10 @@ input AggregateGroupByElementInput {
 }
 
 type AggregateGroupByResult {
-  value_string: String
-  value_int: Int
-  value_float: Float
-  value_boolean: Boolean
+  """
+  The value of the group by result. Can be an integer, float, string, or boolean.
+  """
+  value: JSON
 }
 
 input AggregateQueryInput {
@@ -9620,15 +10207,6 @@ enum AggregateSelectFunctionName {
   PHONE_COUNTRY_SHORT_NAME
 }
 
-"""Assignee filter for search queries"""
-input AssigneeInput {
-  """List of person IDs to filter by"""
-  person_ids: [ID!]
-
-  """List of team IDs to filter by"""
-  team_ids: [ID!]
-}
-
 """
 Boost configuration for search results. Key-value pairs where key is strategy type and value is boost weight.
 """
@@ -9639,13 +10217,105 @@ input BoostConfigurationInput {
   boosts: JSON
 }
 
-"""Contains the results of the query."""
-type QueryResult {
-  """The relevance score of the search result."""
-  score: Float!
+"""Deprecated board object."""
+type DeprecatedBoard {
+  """Board ID."""
+  id: ID!
+}
 
-  """The item data from the search result."""
-  data: Item!
+"""Item's column values"""
+type EnrichedColumnValues {
+  """Column ID."""
+  id: ID!
+
+  """Column type."""
+  col_type: String!
+
+  """Column value."""
+  value: String!
+
+  """Column title."""
+  col_title: String
+
+  """Whether the column is publicly visible."""
+  is_public: Boolean!
+
+  """List of user IDs allowed to view this column"""
+  allowed_users: [String!]!
+}
+
+"""Item data present in the search index."""
+type IndexedItem {
+  """Item ID."""
+  id: ID!
+
+  """Item name."""
+  name: String!
+
+  """Item description."""
+  description: String
+
+  """ID of the board containing this item."""
+  board_id: ID!
+
+  """Name of the board containing this item."""
+  board_name: String!
+
+  """ID of the workspace containing this item."""
+  workspace_id: ID!
+
+  """ID of the item owner."""
+  owner_id: ID!
+
+  """ID of the group containing this item."""
+  group_id: ID!
+
+  """Name of the group containing this item."""
+  group_name: String!
+
+  """ISO timestamp when the item was created."""
+  created_at: String!
+
+  """ISO timestamp when the item was last updated."""
+  updated_at: String!
+
+  """URL to view this item."""
+  url: String!
+
+  """Item type (e.g., Project)."""
+  type: String!
+
+  """Item kind classification."""
+  kind: String!
+
+  """Board kind (e.g., public, private)."""
+  board_kind: String!
+
+  """Item state flag."""
+  state: Int!
+
+  """List of tags associated with the item."""
+  tags: [String!]!
+
+  """The item's column values."""
+  column_values: [EnrichedColumnValues!]!
+
+  """Board containing this item."""
+  board: DeprecatedBoard! @deprecated(reason: "Use board_id field instead or live_data if you need more board data.")
+}
+
+"""Persons filter for search queries"""
+input PersonsInput {
+  """List of person IDs to filter by"""
+  person_ids: [ID!]
+
+  """List of team IDs to filter by"""
+  team_ids: [ID!]
+
+  """
+  List of person names to filter by (searches in multiple-person columns)
+  """
+  person_names: [String!]
 }
 
 """Algorithms for reranking results."""
@@ -9679,6 +10349,12 @@ input SearchDateRangeInput {
 
   """Filter items updated after this date"""
   updated_after: ISO8601DateTime
+
+  """Filter items with a date column having a value before this date"""
+  column_value_before: ISO8601DateTime
+
+  """Filter items with a date column having a value after this date"""
+  column_value_after: ISO8601DateTime
 }
 
 """Date range filter for search queries"""
@@ -9699,10 +10375,24 @@ input SearchDateRangeLegacyInput {
 """Response of the search request."""
 type SearchItemsGraphQlResultsView {
   """The results of the items search."""
-  results: [QueryResult!]!
+  results: [SearchItemsQueryResult!]!
 
   """Indicates if the results have been reranked"""
   reranked: Boolean
+}
+
+"""Contains search items query results."""
+type SearchItemsQueryResult {
+  """The relevance score of the search result."""
+  score: Float!
+
+  """Item data for the search results."""
+  data: IndexedItem!
+
+  """
+  Latest item data for the search results. Requires additional GraphQL federation calls.
+  """
+  live_data: Item!
 }
 
 """A monday dev sprint."""

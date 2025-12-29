@@ -545,7 +545,7 @@ describe('Board Insights Tool', () => {
               entries: [
                 {
                   alias: 'status',
-                  value: { value_string: 'Done' },
+                  value: { value: 'Done' },
                 },
                 {
                   alias: 'COUNT_item_id_0',
@@ -557,7 +557,7 @@ describe('Board Insights Tool', () => {
               entries: [
                 {
                   alias: 'status',
-                  value: { value_string: 'Working on it' },
+                  value: { value: 'Working on it' },
                 },
                 {
                   alias: 'COUNT_item_id_0',
@@ -656,7 +656,7 @@ describe('Board Insights Tool', () => {
               entries: [
                 {
                   alias: 'status',
-                  value: { value_string: 'Done' },
+                  value: { value: 'Done' },
                 },
               ],
             },
@@ -727,19 +727,19 @@ describe('Board Insights Tool', () => {
               entries: [
                 {
                   alias: 'string_col',
-                  value: { value_string: 'text value' },
+                  value: { value: 'text value' },
                 },
                 {
                   alias: 'int_col',
-                  value: { value_int: 42 },
+                  value: { value: 42 },
                 },
                 {
                   alias: 'float_col',
-                  value: { value_float: 3.14 },
+                  value: { value: 3.14 },
                 },
                 {
                   alias: 'bool_col',
-                  value: { value_boolean: true },
+                  value: { value: true },
                 },
                 {
                   alias: 'result_col',
@@ -818,11 +818,11 @@ describe('Board Insights Tool', () => {
               entries: [
                 {
                   alias: '',
-                  value: { value_string: 'should be ignored' },
+                  value: { value: 'should be ignored' },
                 },
                 {
                   alias: 'status',
-                  value: { value_string: 'Done' },
+                  value: { value: 'Done' },
                 },
               ],
             },
@@ -886,16 +886,16 @@ describe('Board Insights Tool', () => {
           results: [
             {
               entries: [
-                { alias: 'status', value: { value_string: 'Done' } },
-                { alias: 'priority', value: { value_string: 'High' } },
+                { alias: 'status', value: { value: 'Done' } },
+                { alias: 'priority', value: { value: 'High' } },
                 { alias: 'SUM_numbers_0', value: { result: 150 } },
                 { alias: 'AVERAGE_numbers_0', value: { result: 30 } },
               ],
             },
             {
               entries: [
-                { alias: 'status', value: { value_string: 'Done' } },
-                { alias: 'priority', value: { value_string: 'Low' } },
+                { alias: 'status', value: { value: 'Done' } },
+                { alias: 'priority', value: { value: 'Low' } },
                 { alias: 'SUM_numbers_0', value: { result: 80 } },
                 { alias: 'AVERAGE_numbers_0', value: { result: 20 } },
               ],
@@ -937,13 +937,13 @@ describe('Board Insights Tool', () => {
           results: [
             {
               entries: [
-                { alias: 'status', value: { value_string: 'Done' } },
+                { alias: 'status', value: { value: 'Done' } },
                 { alias: 'COUNT_item_id_0', value: { result: 5 } },
               ],
             },
             {
               entries: [
-                { alias: 'status', value: { value_string: 'Working on it' } },
+                { alias: 'status', value: { value: 'Working on it' } },
                 { alias: 'COUNT_item_id_0', value: { result: 3 } },
               ],
             },
@@ -986,8 +986,8 @@ describe('Board Insights Tool', () => {
           results: [
             {
               entries: [
-                { alias: 'status', value: { value_string: 'Done' } },
-                { alias: 'priority', value: { value_string: 'High' } },
+                { alias: 'status', value: { value: 'Done' } },
+                { alias: 'priority', value: { value: 'High' } },
                 { alias: 'COUNT_item_id_0', value: { result: 2 } },
               ],
             },
@@ -1042,7 +1042,7 @@ describe('Board Insights Tool', () => {
           results: [
             {
               entries: [
-                { alias: 'status', value: { value_string: 'Done' } },
+                { alias: 'status', value: { value: 'Done' } },
                 { alias: 'COUNT_item_id_0', value: { result: 8 } },
               ],
             },
@@ -1101,7 +1101,7 @@ describe('Board Insights Tool', () => {
           results: [
             {
               entries: [
-                { alias: 'created_at', value: { value_string: '2024-01-15' } },
+                { alias: 'created_at', value: { value: '2024-01-15' } },
                 { alias: 'COUNT_item_id_0', value: { result: 10 } },
               ],
             },
@@ -1277,7 +1277,7 @@ describe('Board Insights Tool', () => {
               entries: [
                 {
                   alias: 'status',
-                  value: { value_string: 'Done' },
+                  value: { value: 'Done' },
                 },
                 {
                   alias: 'COUNT_item_id_0',
@@ -1379,7 +1379,7 @@ describe('Board Insights Tool', () => {
           results: [
             {
               entries: [
-                { alias: 'status', value: { value_string: 'Done' } },
+                { alias: 'status', value: { value: 'Done' } },
                 { alias: 'COUNT_item_id_0', value: { result: 5 } },
               ],
             },
@@ -1426,7 +1426,7 @@ describe('Board Insights Tool', () => {
           results: [
             {
               entries: [
-                { alias: 'status', value: { value_string: 'Done' } },
+                { alias: 'status', value: { value: 'Done' } },
                 { alias: 'COUNT_item_id_0', value: { result: 8 } },
               ],
             },
@@ -1514,7 +1514,7 @@ describe('Board Insights Tool', () => {
               entries: [
                 {
                   alias: 'priority',
-                  value: { value_string: 'High' },
+                  value: { value: 'High' },
                 },
               ],
             },

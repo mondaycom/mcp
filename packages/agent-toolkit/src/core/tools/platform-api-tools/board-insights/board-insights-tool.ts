@@ -160,8 +160,7 @@ export class BoardInsightsTool extends BaseMondayApiTool<typeof boardInsightsToo
           row[alias] = null;
           return;
         }
-        const v =
-          value.result ?? value.value_string ?? value.value_int ?? value.value_float ?? value.value_boolean ?? null;
+        const v = value.result ?? value.value ?? null;
         row[alias] = v;
       });
       return row;
