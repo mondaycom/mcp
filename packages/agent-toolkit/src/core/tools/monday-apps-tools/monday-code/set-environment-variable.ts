@@ -14,7 +14,7 @@ export class SetEnvironmentVariableTool extends BaseMondayAppsTool<typeof setEnv
   });
 
   getDescription(): string {
-    return 'Set or update an environment variable for an app\'s monday-code backend. Environment variables are used to configure your app\'s runtime behavior (API keys, configuration values, etc.). The variable will be available to all versions of the app. Use this to manage app configuration securely.';
+    return "Set or update an environment variable for an app's monday-code backend. Environment variables are used to configure your app's runtime behavior (API keys, configuration values, etc.). The variable will be available to all versions of the app. Use this to manage app configuration securely.";
   }
 
   getInputSchema() {

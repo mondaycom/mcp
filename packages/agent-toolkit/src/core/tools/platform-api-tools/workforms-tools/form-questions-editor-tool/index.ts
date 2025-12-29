@@ -44,7 +44,7 @@ export class FormQuestionsEditorTool extends BaseMondayApiTool<typeof formQuesti
         content: `Unknown action: ${input.action}`,
       };
     }
-    
+
     fallbackToStringifiedVersionIfNull(input, 'question', formQuestionsEditorToolSchema.question);
     return await handler(input);
   }

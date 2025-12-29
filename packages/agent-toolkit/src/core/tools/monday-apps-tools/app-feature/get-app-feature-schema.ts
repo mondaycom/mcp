@@ -17,7 +17,9 @@ export const getAppFeatureSchemaSchema = z.object({
   featureType: z
     .string()
     .optional()
-    .describe('The app feature type to get the schema for (e.g., AppFeatureStatusColumn, AppFeatureBoardView). If omitted, returns all available schemas.'),
+    .describe(
+      'The app feature type to get the schema for (e.g., AppFeatureStatusColumn, AppFeatureBoardView). If omitted, returns all available schemas.',
+    ),
 });
 
 /**
@@ -71,7 +73,7 @@ export class GetAppFeatureSchemaToool extends BaseMondayAppsTool<
       // If a specific feature type is requested
       if (featureType) {
         const schema = schemaManager.getSchema(featureType);
-        
+
         if (!schema) {
           const availableTypes = schemaManager.getAvailableFeatureTypes();
           return {
@@ -84,7 +86,7 @@ export class GetAppFeatureSchemaToool extends BaseMondayAppsTool<
             },
           };
         }
-        
+
         return {
           content: this.formatSchemaResponse(featureType, schema),
           metadata: {
@@ -125,10 +127,7 @@ export class GetAppFeatureSchemaToool extends BaseMondayAppsTool<
   /**
    * Format a single schema response
    */
-  private formatSchemaResponse(
-    featureType: string,
-    schema: AppFeatureSchemaDefinition,
-  ): string {
+  private formatSchemaResponse(featureType: string, schema: AppFeatureSchemaDefinition): string {
     const lines: string[] = [
       `App Feature Schema: ${featureType}`,
       `Version: ${schema.version}`,
@@ -144,7 +143,9 @@ export class GetAppFeatureSchemaToool extends BaseMondayAppsTool<
     }
 
     lines.push('Usage:');
-    lines.push(`Call monday_apps_create_app_feature or monday_apps_update_app_feature with type="${featureType}" and structure the "data" parameter according to the schema above.`);
+    lines.push(
+      `Call monday_apps_create_app_feature or monday_apps_update_app_feature with type="${featureType}" and structure the "data" parameter according to the schema above.`,
+    );
 
     return lines.join('\n');
   }
@@ -175,11 +176,11 @@ export class GetAppFeatureSchemaToool extends BaseMondayAppsTool<
 
     // Group by category if available
     const byCategory: Record<string, string[]> = {};
-    
+
     availableTypes.forEach((type) => {
-      const schema = schemas.find(s => s.name === type);
+      const schema = schemas.find((s) => s.name === type);
       const category = schema?.settings?.family || 'other';
-      
+
       if (!byCategory[category]) {
         byCategory[category] = [];
       }
@@ -187,10 +188,11 @@ export class GetAppFeatureSchemaToool extends BaseMondayAppsTool<
     });
 
     lines.push(JSON.stringify(byCategory, null, 2));
-    lines.push('To get the detailed schema for a specific feature type, call this tool again with the featureType parameter.');
+    lines.push(
+      'To get the detailed schema for a specific feature type, call this tool again with the featureType parameter.',
+    );
     lines.push('Example: monday_apps_get_app_feature_schema featureType="AppFeatureStatusColumn"');
 
     return lines.join('\n');
   }
 }
-

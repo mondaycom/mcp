@@ -86,18 +86,19 @@ export function handleSelectAndGroupByElements(input: ToolInputType<typeof board
     })) || [];
 
   const columnsWithLabelFunction = new Set<string>(
-    input.aggregations!
-    .filter(aggregation => aggregation.function === AggregateSelectFunctionName.Label)
-    .map(aggregation => aggregation.columnId)
+    input
+      .aggregations!.filter((aggregation) => aggregation.function === AggregateSelectFunctionName.Label)
+      .map((aggregation) => aggregation.columnId),
   );
 
   // select human-friendly label if not specified
-  const labelAggregations = input.groupBy
-    ?.filter(columnId => !columnsWithLabelFunction.has(columnId))
-    .map(columnId => ({
-      function: AggregateSelectFunctionName.Label,
-      columnId: columnId,
-    })) ?? [];
+  const labelAggregations =
+    input.groupBy
+      ?.filter((columnId) => !columnsWithLabelFunction.has(columnId))
+      .map((columnId) => ({
+        function: AggregateSelectFunctionName.Label,
+        columnId: columnId,
+      })) ?? [];
 
   const aggregationsToBuild = input.aggregations!.concat(labelAggregations);
 

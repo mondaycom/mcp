@@ -14,7 +14,7 @@ const optionalTeamMemberFields: Array<[string, string]> = [
   ['time_zone_identifier', 'Timezone'],
   ['utc_hours_diff', 'UTC Hours Diff'],
 ];
- 
+
 // For optional fields - returns array of formatted strings
 function formatOptionalUserFields(user: Record<string, any>, prefix = ''): string[] {
   return optionalTeamMemberFields

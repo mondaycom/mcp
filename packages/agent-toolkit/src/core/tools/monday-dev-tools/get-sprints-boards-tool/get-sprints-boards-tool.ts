@@ -1,6 +1,6 @@
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../../platform-api-tools/base-monday-api-tool';
-import { 
+import {
   GetRecentBoardsQuery,
   GetRecentBoardsQueryVariables,
 } from '../../../../monday-graphql/generated/graphql/graphql';
@@ -51,7 +51,7 @@ Searches recently used boards (up to ${RECENT_BOARDS_LIMIT}). If none found, ask
   }
 
   protected async executeInternal(
-    input: ToolInputType<typeof getSprintsBoardsToolSchema>
+    input: ToolInputType<typeof getSprintsBoardsToolSchema>,
   ): Promise<ToolOutputType<never>> {
     try {
       const variables: GetRecentBoardsQueryVariables = {
@@ -69,7 +69,7 @@ Searches recently used boards (up to ${RECENT_BOARDS_LIMIT}). If none found, ask
       }
 
       const pairs = this.extractBoardPairs(boards);
-      
+
       if (pairs.length === 0) {
         return {
           content: this.generateNotFoundMessage(boards.length),
@@ -158,87 +158,79 @@ No board pairs with sprint relationships found in your recent boards.
   }
 
   private createBoardInfo(
-  boardId: string,
-  board: Board | undefined,
-  fallbackName: string
-): SprintsBoardPair['sprintsBoard'] | SprintsBoardPair['tasksBoard']  {
-  return {
-    id: boardId,
-    name: board?.name || fallbackName,
-    workspaceId: board?.workspace?.id || 'unknown',
-    workspaceName: board?.workspace?.name || 'Unknown',
-  };
-}
+    boardId: string,
+    board: Board | undefined,
+    fallbackName: string,
+  ): SprintsBoardPair['sprintsBoard'] | SprintsBoardPair['tasksBoard'] {
+    return {
+      id: boardId,
+      name: board?.name || fallbackName,
+      workspaceId: board?.workspace?.id || 'unknown',
+      workspaceName: board?.workspace?.name || 'Unknown',
+    };
+  }
 
-  private processSprintsBoard(
-  board: Board,
-  boardsById: Map<string, Board>,
-  pairsMap: Map<string, SprintsBoardPair>
-){
-  const sprintTasksColumn = getBoardRelationColumn(board, REQUIRED_SPRINT_COLUMNS.SPRINT_TASKS);
-  if (!sprintTasksColumn) return;
+  private processSprintsBoard(board: Board, boardsById: Map<string, Board>, pairsMap: Map<string, SprintsBoardPair>) {
+    const sprintTasksColumn = getBoardRelationColumn(board, REQUIRED_SPRINT_COLUMNS.SPRINT_TASKS);
+    if (!sprintTasksColumn) return;
 
-  const tasksBoardId = getRelatedBoardIdFromRelationColumn(sprintTasksColumn);
-  if (!tasksBoardId) return;
+    const tasksBoardId = getRelatedBoardIdFromRelationColumn(sprintTasksColumn);
+    if (!tasksBoardId) return;
 
-  const pairKey = `${board.id}:${tasksBoardId}`;
-  if (pairsMap.has(pairKey)) return;
+    const pairKey = `${board.id}:${tasksBoardId}`;
+    if (pairsMap.has(pairKey)) return;
 
-  const tasksBoard = boardsById.get(tasksBoardId);
-  pairsMap.set(pairKey, {
-    sprintsBoard: this.createBoardInfo(board.id, board, `Sprints Board ${board.id}`),
-    tasksBoard: this.createBoardInfo(tasksBoardId, tasksBoard, `Tasks Board ${tasksBoardId}`),
-  });
-}
+    const tasksBoard = boardsById.get(tasksBoardId);
+    pairsMap.set(pairKey, {
+      sprintsBoard: this.createBoardInfo(board.id, board, `Sprints Board ${board.id}`),
+      tasksBoard: this.createBoardInfo(tasksBoardId, tasksBoard, `Tasks Board ${tasksBoardId}`),
+    });
+  }
 
-  private processTasksBoard(
-  board: Board,
-  boardsById: Map<string, Board>,
-  pairsMap: Map<string, SprintsBoardPair>
-){
-  const taskSprintColumn = getBoardRelationColumn(board, MONDAY_DEV_TASK_COLUMN_IDS.TASK_SPRINT);
-  if (!taskSprintColumn) return;
+  private processTasksBoard(board: Board, boardsById: Map<string, Board>, pairsMap: Map<string, SprintsBoardPair>) {
+    const taskSprintColumn = getBoardRelationColumn(board, MONDAY_DEV_TASK_COLUMN_IDS.TASK_SPRINT);
+    if (!taskSprintColumn) return;
 
-  const sprintsBoardId = getRelatedBoardIdFromRelationColumn(taskSprintColumn);
-  if (!sprintsBoardId) return;
+    const sprintsBoardId = getRelatedBoardIdFromRelationColumn(taskSprintColumn);
+    if (!sprintsBoardId) return;
 
-  const pairKey = `${sprintsBoardId}:${board.id}`;
-  if (pairsMap.has(pairKey)) return;
+    const pairKey = `${sprintsBoardId}:${board.id}`;
+    if (pairsMap.has(pairKey)) return;
 
-  const sprintsBoard = boardsById.get(sprintsBoardId);
-  pairsMap.set(pairKey, {
-    sprintsBoard: this.createBoardInfo(sprintsBoardId, sprintsBoard, `Sprints Board ${sprintsBoardId}`),
-    tasksBoard: this.createBoardInfo(board.id, board, `Tasks Board ${board.id}`),
-  });
-}
+    const sprintsBoard = boardsById.get(sprintsBoardId);
+    pairsMap.set(pairKey, {
+      sprintsBoard: this.createBoardInfo(sprintsBoardId, sprintsBoard, `Sprints Board ${sprintsBoardId}`),
+      tasksBoard: this.createBoardInfo(board.id, board, `Tasks Board ${board.id}`),
+    });
+  }
 
   /**
    * Extracts board pairs directly from column relationships
- * This approach works even if one board in the pair wasn't fetched (not in recent boards limit)
- * We can identify pairs from either direction:
- * - From sprints board: sprint_tasks column references tasks board
- * - From tasks board: task_sprint column references sprints board
- * 
- * Note: If a board in the pair is not found in the recent boards list,
+   * This approach works even if one board in the pair wasn't fetched (not in recent boards limit)
+   * We can identify pairs from either direction:
+   * - From sprints board: sprint_tasks column references tasks board
+   * - From tasks board: task_sprint column references sprints board
+   *
+   * Note: If a board in the pair is not found in the recent boards list,
    * its name and workspace will show as "Unknown" or generic names (e.g., "Tasks Board {id}").
    * The board relationship and ID are still valid and functional.
    */
   private extractBoardPairs(boards: Board[]): SprintsBoardPair[] {
-  const pairsMap = new Map<string, SprintsBoardPair>();
-  const boardsById = new Map(boards.map((board) => [board.id, board]));
+    const pairsMap = new Map<string, SprintsBoardPair>();
+    const boardsById = new Map(boards.map((board) => [board.id, board]));
 
-  for (const board of boards) {
-    if (!board.columns) continue;
+    for (const board of boards) {
+      if (!board.columns) continue;
 
-    if (isSprintsBoard(board)) {
-      this.processSprintsBoard(board, boardsById, pairsMap);
+      if (isSprintsBoard(board)) {
+        this.processSprintsBoard(board, boardsById, pairsMap);
+      }
+
+      if (isTasksBoard(board)) {
+        this.processTasksBoard(board, boardsById, pairsMap);
+      }
     }
 
-    if (isTasksBoard(board)) {
-      this.processTasksBoard(board, boardsById, pairsMap);
-    }
-  }
-
-  return Array.from(pairsMap.values());
+    return Array.from(pairsMap.values());
   }
 }

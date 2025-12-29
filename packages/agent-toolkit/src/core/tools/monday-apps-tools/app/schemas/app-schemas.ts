@@ -16,11 +16,15 @@ export interface PromoteAppResponse extends MondayApiResponse {
 }
 
 export const promoteAppSchema = z.object({
-  appId: z.number().describe('The unique identifier of the app to promote. You can get this from the get_all_apps tool'),
+  appId: z
+    .number()
+    .describe('The unique identifier of the app to promote. You can get this from the get_all_apps tool'),
   versionId: z
     .number()
     .optional()
-    .describe('The specific version ID to promote to live/production. If not provided, the latest draft version will be automatically promoted. Use get_app_versions to find available version IDs'),
+    .describe(
+      'The specific version ID to promote to live/production. If not provided, the latest draft version will be automatically promoted. Use get_app_versions to find available version IDs',
+    ),
 });
 
 export interface CreateAppResponse extends MondayApiResponse {
@@ -35,6 +39,15 @@ export interface CreateAppResponse extends MondayApiResponse {
 }
 
 export const createPlainAppSchema = z.object({
-  name: z.string().describe('The display name for your app. This will be visible to users in the monday.com marketplace and UI. Should be clear and descriptive'),
-  description: z.string().optional().describe('An optional detailed description of what your app does and its main features. This helps users understand the app\'s purpose'),
+  name: z
+    .string()
+    .describe(
+      'The display name for your app. This will be visible to users in the monday.com marketplace and UI. Should be clear and descriptive',
+    ),
+  description: z
+    .string()
+    .optional()
+    .describe(
+      "An optional detailed description of what your app does and its main features. This helps users understand the app's purpose",
+    ),
 });
