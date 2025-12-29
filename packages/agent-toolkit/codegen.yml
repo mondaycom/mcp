@@ -23,10 +23,10 @@ projects:
     extensions:
       codegen:
         generates:
-          src/monday-graphql/generated/graphql-dev/:
+          src/monday-graphql/generated/graphql.dev/:
             presetConfig:
               fragmentMasking: false
             preset: client
             hooks:
               afterOneFileWrite:
-                - node -e "const fs = require('fs'); fs.writeFileSync('src/monday-graphql/generated/graphql-dev/index.ts', '/* eslint-disable */\nexport * from \'./gql\';');"
+                - node -e "const fs = require('fs'); fs.writeFileSync('src/monday-graphql/generated/graphql.dev/index.ts', '/* eslint-disable */\nexport * from \'./gql\';');"

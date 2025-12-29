@@ -15,11 +15,9 @@ import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/
  */
 type Documents = {
     "\n  query SearchItemsDev($searchTerm: String!, $board_ids: [ID!]) {\n    search_items(board_ids: $board_ids, query: $searchTerm, size: 100) {\n      results {\n        data {\n          id\n        }\n      }\n    }\n  }\n": typeof types.SearchItemsDevDocument,
-    "\n  query SearchDev {\n    search(query: \"test\", size: 100) {\n      ... on CrossEntityItemResult {\n        id\n      }\n    }\n  }\n": typeof types.SearchDevDocument,
 };
 const documents: Documents = {
     "\n  query SearchItemsDev($searchTerm: String!, $board_ids: [ID!]) {\n    search_items(board_ids: $board_ids, query: $searchTerm, size: 100) {\n      results {\n        data {\n          id\n        }\n      }\n    }\n  }\n": types.SearchItemsDevDocument,
-    "\n  query SearchDev {\n    search(query: \"test\", size: 100) {\n      ... on CrossEntityItemResult {\n        id\n      }\n    }\n  }\n": types.SearchDevDocument,
 };
 
 /**
@@ -40,10 +38,6 @@ export function graphql(source: string): unknown;
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  query SearchItemsDev($searchTerm: String!, $board_ids: [ID!]) {\n    search_items(board_ids: $board_ids, query: $searchTerm, size: 100) {\n      results {\n        data {\n          id\n        }\n      }\n    }\n  }\n"): (typeof documents)["\n  query SearchItemsDev($searchTerm: String!, $board_ids: [ID!]) {\n    search_items(board_ids: $board_ids, query: $searchTerm, size: 100) {\n      results {\n        data {\n          id\n        }\n      }\n    }\n  }\n"];
-/**
- * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
- */
-export function graphql(source: "\n  query SearchDev {\n    search(query: \"test\", size: 100) {\n      ... on CrossEntityItemResult {\n        id\n      }\n    }\n  }\n"): (typeof documents)["\n  query SearchDev {\n    search(query: \"test\", size: 100) {\n      ... on CrossEntityItemResult {\n        id\n      }\n    }\n  }\n"];
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};
