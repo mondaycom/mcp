@@ -47,7 +47,7 @@ describe('Create Item Tool Behaviour', () => {
       it('Successfully creates a new item', async () => {
         mocks.setResponse(successfulCreateItemResponse);
 
-        const tool = new CreateItemTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token', { boardId: 456 });
+        const tool = new CreateItemTool(mocks.mockApiClient, 'fake_token', { boardId: 456 });
 
         const result = await tool.execute({
           name: 'Test Item',
@@ -70,7 +70,7 @@ describe('Create Item Tool Behaviour', () => {
       it('Successfully creates a new item without groupId', async () => {
         mocks.setResponse(successfulCreateItemResponse);
 
-        const tool = new CreateItemTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token', { boardId: 456 });
+        const tool = new CreateItemTool(mocks.mockApiClient, 'fake_token', { boardId: 456 });
 
         const result = await tool.execute({
           name: 'Test Item',
@@ -92,7 +92,7 @@ describe('Create Item Tool Behaviour', () => {
       it('Successfully creates a new item with boardId in input', async () => {
         mocks.setResponse(successfulCreateItemResponse);
 
-        const tool = new CreateItemTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token');
+        const tool = new CreateItemTool(mocks.mockApiClient, 'fake_token');
 
         const result = await tool.execute({
           boardId: 789,
@@ -115,7 +115,7 @@ describe('Create Item Tool Behaviour', () => {
       it('Passes GraphQL errors to caller for create path', async () => {
         mocks.setError('Bad thing happened!');
 
-        const tool = new CreateItemTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token', { boardId: 456 });
+        const tool = new CreateItemTool(mocks.mockApiClient, 'fake_token', { boardId: 456 });
 
         await expect(tool.execute({
           name: 'Test Item',
@@ -133,7 +133,7 @@ describe('Create Item Tool Behaviour', () => {
         };
         mocks.setError(graphqlError);
 
-        const tool = new CreateItemTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token', { boardId: 456 });
+        const tool = new CreateItemTool(mocks.mockApiClient, 'fake_token', { boardId: 456 });
 
         await expect(tool.execute({
           name: 'Test Item',
@@ -150,7 +150,7 @@ describe('Create Item Tool Behaviour', () => {
         };
         mocks.setError(graphqlError);
 
-        const tool = new CreateItemTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token', { boardId: 456 });
+        const tool = new CreateItemTool(mocks.mockApiClient, 'fake_token', { boardId: 456 });
 
         await expect(tool.execute({
           name: 'Test Item',
@@ -166,7 +166,7 @@ describe('Create Item Tool Behaviour', () => {
         // Mock the update response
         mockChangeColumnValuesTool.execute.mockResolvedValue(successfulUpdateResponse);
 
-        const tool = new CreateItemTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token', { boardId: 456 });
+        const tool = new CreateItemTool(mocks.mockApiClient, 'fake_token', { boardId: 456 });
 
         const result = await tool.execute({
           name: 'Updated Item',
@@ -188,7 +188,6 @@ describe('Create Item Tool Behaviour', () => {
         // Verify ChangeItemColumnValuesTool was called correctly
         expect(MockedChangeItemColumnValuesTool).toHaveBeenCalledWith(
           mocks.mockApiClient,
-          mocks.mockApiClient,
           'fake_token',
           { boardId: 456 }
         );
@@ -201,7 +200,7 @@ describe('Create Item Tool Behaviour', () => {
       it('Throws error when duplicate item fails', async () => {
         mocks.setError('Duplicate failed');
 
-        const tool = new CreateItemTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token', { boardId: 456 });
+        const tool = new CreateItemTool(mocks.mockApiClient, 'fake_token', { boardId: 456 });
 
         await expect(tool.execute({
           name: 'Updated Item',
@@ -220,7 +219,7 @@ describe('Create Item Tool Behaviour', () => {
         };
         mocks.setError(graphqlError);
 
-        const tool = new CreateItemTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token', { boardId: 456 });
+        const tool = new CreateItemTool(mocks.mockApiClient, 'fake_token', { boardId: 456 });
 
         await expect(tool.execute({
           name: 'Updated Item',
@@ -233,7 +232,7 @@ describe('Create Item Tool Behaviour', () => {
         // Set up a successful duplicate response so the API call succeeds, but JSON parsing fails
         mocks.setResponse(successfulDuplicateItemResponse);
         
-        const tool = new CreateItemTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token', { boardId: 456 });
+        const tool = new CreateItemTool(mocks.mockApiClient, 'fake_token', { boardId: 456 });
 
         await expect(tool.execute({
           name: 'Updated Item',
@@ -245,7 +244,7 @@ describe('Create Item Tool Behaviour', () => {
       it('Throws error when duplicate item returns no item', async () => {
         mocks.setResponse({ duplicate_item: null });
 
-        const tool = new CreateItemTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token', { boardId: 456 });
+        const tool = new CreateItemTool(mocks.mockApiClient, 'fake_token', { boardId: 456 });
 
         await expect(tool.execute({
           name: 'Updated Item',
@@ -260,7 +259,7 @@ describe('Create Item Tool Behaviour', () => {
           content: 'Error: Update failed'
         });
 
-        const tool = new CreateItemTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token', { boardId: 456 });
+        const tool = new CreateItemTool(mocks.mockApiClient, 'fake_token', { boardId: 456 });
 
         await expect(tool.execute({
           name: 'Updated Item',
@@ -273,7 +272,7 @@ describe('Create Item Tool Behaviour', () => {
         mocks.setResponse(successfulDuplicateItemResponse);
         mockChangeColumnValuesTool.execute.mockResolvedValue(successfulUpdateResponse);
 
-        const tool = new CreateItemTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token');
+        const tool = new CreateItemTool(mocks.mockApiClient, 'fake_token');
 
         const result = await tool.execute({
           boardId: 789,
@@ -296,7 +295,6 @@ describe('Create Item Tool Behaviour', () => {
         // Verify ChangeItemColumnValuesTool was called with input boardId
         expect(MockedChangeItemColumnValuesTool).toHaveBeenCalledWith(
           mocks.mockApiClient,
-          mocks.mockApiClient,
           'fake_token',
           { boardId: 789 }
         );
@@ -317,7 +315,7 @@ describe('Create Item Tool Behaviour', () => {
       it('Successfully creates a subitem', async () => {
         mocks.setResponse(successfulCreateSubitemResponse);
 
-        const tool = new CreateItemTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token', { boardId: 456 });
+        const tool = new CreateItemTool(mocks.mockApiClient, 'fake_token', { boardId: 456 });
 
         const result = await tool.execute({
           name: 'New Subitem',
@@ -340,7 +338,7 @@ describe('Create Item Tool Behaviour', () => {
       it('Throws error when create subitem fails', async () => {
         mocks.setResponse({ create_subitem: null });
 
-        const tool = new CreateItemTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token', { boardId: 456 });
+        const tool = new CreateItemTool(mocks.mockApiClient, 'fake_token', { boardId: 456 });
 
         await expect(tool.execute({
           name: 'New Subitem',
@@ -352,7 +350,7 @@ describe('Create Item Tool Behaviour', () => {
       it('Throws error when create subitem returns no item', async () => {
         mocks.setResponse({ create_subitem: { id: null, name: 'New Subitem' } });
 
-        const tool = new CreateItemTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token', { boardId: 456 });
+        const tool = new CreateItemTool(mocks.mockApiClient, 'fake_token', { boardId: 456 });
 
         await expect(tool.execute({
           name: 'New Subitem',
@@ -371,7 +369,7 @@ describe('Create Item Tool Behaviour', () => {
         };
         mocks.setError(graphqlError);
 
-        const tool = new CreateItemTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token', { boardId: 456 });
+        const tool = new CreateItemTool(mocks.mockApiClient, 'fake_token', { boardId: 456 });
 
         await expect(tool.execute({
           name: 'New Subitem',
@@ -383,7 +381,7 @@ describe('Create Item Tool Behaviour', () => {
 
     describe('Parameter Conflict Validation', () => {
       it('Throws error when both parentItemId and duplicateFromItemId are provided', async () => {
-        const tool = new CreateItemTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token', { boardId: 456 });
+        const tool = new CreateItemTool(mocks.mockApiClient, 'fake_token', { boardId: 456 });
 
         await expect(tool.execute({
           name: 'Conflicting Item',
