@@ -108,7 +108,7 @@ export class MondayAgentToolkit extends McpServer {
   private initializeTools(config: MondayAgentToolkitConfig): Tool<any, any>[] {
     const instanceOptions = {
       apiClient: this.mondayApiClient,
-      devMondayApiClient: this.devMondayApiClient,
+      devApiClient: this.devMondayApiClient,
       apiToken: this.mondayApiToken,
       context: this.context,
     };

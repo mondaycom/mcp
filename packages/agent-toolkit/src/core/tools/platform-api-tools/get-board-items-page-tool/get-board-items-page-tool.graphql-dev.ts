@@ -11,13 +11,3 @@ export const searchItemsDev = gql`
     }
   }
 `;
-
-export const searchDev = gql`
-  query SearchDev {
-    search(query: "test", size: 100) {
-      ... on CrossEntityItemResult {
-        id
-      }
-    }
-  }
-`;

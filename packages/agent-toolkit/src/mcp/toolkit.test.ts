@@ -63,6 +63,7 @@ describe('MondayAgentToolkit', () => {
       expect(mockGetFilteredToolInstances).toHaveBeenCalledWith(
         {
           apiClient: expect.any(Object),
+          devApiClient: expect.any(Object),
           apiToken: 'test-token',
           context: {
             apiVersion: API_VERSION,
@@ -108,6 +109,7 @@ describe('MondayAgentToolkit', () => {
       expect(mockGetFilteredToolInstances).toHaveBeenCalledWith(
         {
           apiClient: expect.any(Object),
+          devApiClient: expect.any(Object),
           apiToken: 'test-token',
           context: {
             apiVersion: '2023-10',
