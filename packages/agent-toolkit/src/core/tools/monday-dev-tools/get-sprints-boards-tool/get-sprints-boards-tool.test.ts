@@ -55,7 +55,7 @@ describe('GetSprintsBoardsTool', () => {
     });
 
     it('should have correct tool metadata', () => {
-      const tool = new GetSprintsBoardsTool(mocks.mockApiClient,  'fake_token');
+      const tool = new GetSprintsBoardsTool(mocks.mockApiClient, 'fake_token');
 
       expect(tool.name).toBe('get_monday_dev_sprints_boards');
       expect(tool.type).toBe('read');
