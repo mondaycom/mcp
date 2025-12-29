@@ -15,7 +15,7 @@ describe('Create Update Tool', () => {
 
   it('Successfully creates an update without mentions', async () => {
     mocks.setResponse(successfulResponse);
-    const tool = new CreateUpdateTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token');
+    const tool = new CreateUpdateTool(mocks.mockApiClient, 'fake_token');
 
     const result = await tool.execute({
       itemId: 456,
@@ -32,7 +32,7 @@ describe('Create Update Tool', () => {
 
   it('Successfully creates an update with mentions', async () => {
     mocks.setResponse(successfulResponse);
-    const tool = new CreateUpdateTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token');
+    const tool = new CreateUpdateTool(mocks.mockApiClient, 'fake_token');
 
     const result = await tool.execute({
       itemId: 789,
@@ -53,7 +53,7 @@ describe('Create Update Tool', () => {
 
   it('Throws error when API returns no update ID', async () => {
     mocks.setResponse({ create_update: null });
-    const tool = new CreateUpdateTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token');
+    const tool = new CreateUpdateTool(mocks.mockApiClient, 'fake_token');
 
     await expect(
       tool.execute({
@@ -64,7 +64,7 @@ describe('Create Update Tool', () => {
   });
 
   it('Throws error for invalid mentionsList JSON', async () => {
-    const tool = new CreateUpdateTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token');
+    const tool = new CreateUpdateTool(mocks.mockApiClient,'fake_token');
 
     await expect(
       tool.execute({
@@ -76,7 +76,7 @@ describe('Create Update Tool', () => {
   });
 
   it('Throws error for invalid mentionsList structure - missing type', async () => {
-    const tool = new CreateUpdateTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token');
+    const tool = new CreateUpdateTool(mocks.mockApiClient, 'fake_token');
 
     await expect(
       tool.execute({
@@ -88,7 +88,7 @@ describe('Create Update Tool', () => {
   });
 
   it('Throws error for invalid mentionsList structure - missing id', async () => {
-    const tool = new CreateUpdateTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token');
+    const tool = new CreateUpdateTool(mocks.mockApiClient, 'fake_token');
 
     await expect(
       tool.execute({
@@ -100,7 +100,7 @@ describe('Create Update Tool', () => {
   });
 
   it('Throws error for invalid mentionsList structure - invalid type', async () => {
-    const tool = new CreateUpdateTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token');
+    const tool = new CreateUpdateTool(mocks.mockApiClient, 'fake_token');
 
     await expect(
       tool.execute({
@@ -112,7 +112,7 @@ describe('Create Update Tool', () => {
   });
 
   it('Throws error for invalid mentionsList structure - non-string id', async () => {
-    const tool = new CreateUpdateTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token');
+    const tool = new CreateUpdateTool(mocks.mockApiClient, 'fake_token');
 
     await expect(
       tool.execute({
@@ -124,7 +124,7 @@ describe('Create Update Tool', () => {
   });
 
   it('Throws error for non-array mentionsList', async () => {
-    const tool = new CreateUpdateTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token');
+    const tool = new CreateUpdateTool(mocks.mockApiClient, 'fake_token');
 
     await expect(
       tool.execute({
@@ -137,7 +137,7 @@ describe('Create Update Tool', () => {
 
   it('Successfully validates all valid mention types', async () => {
     mocks.setResponse(successfulResponse);
-    const tool = new CreateUpdateTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token');
+    const tool = new CreateUpdateTool(mocks.mockApiClient, 'fake_token');
 
     const result = await tool.execute({
       itemId: 789,
@@ -165,7 +165,7 @@ describe('Create Update Tool', () => {
       errors: [{ message: 'Invalid item ID' }, { message: 'Insufficient permissions' }],
     };
     mocks.setError(graphqlError);
-    const tool = new CreateUpdateTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token');
+    const tool = new CreateUpdateTool(mocks.mockApiClient, 'fake_token');
 
     await expect(
       tool.execute({
@@ -176,7 +176,7 @@ describe('Create Update Tool', () => {
   });
 
   it('Has correct schema and tool properties', () => {
-    const tool = new CreateUpdateTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token');
+    const tool = new CreateUpdateTool(mocks.mockApiClient,'fake_token');
     const schema = tool.getInputSchema();
 
     expect(tool.name).toBe('create_update');

@@ -43,7 +43,7 @@ describe('SearchTool', () => {
 
   describe('Tool Metadata', () => {
     it('should have correct tool metadata', () => {
-      const tool = new SearchTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token');
+      const tool = new SearchTool(mocks.mockApiClient, 'fake_token');
 
       expect(tool.name).toBe('search');
       expect(tool.type).toBe('read');
@@ -54,7 +54,7 @@ describe('SearchTool', () => {
     });
 
     it('should have correct description', () => {
-      const tool = new SearchTool(mocks.mockApiClient, mocks.mockApiClient, 'fake_token');
+      const tool = new SearchTool(mocks.mockApiClient, 'fake_token');
       const description = tool.getDescription();
 
       expect(description).toContain('Search within monday.com platform');
