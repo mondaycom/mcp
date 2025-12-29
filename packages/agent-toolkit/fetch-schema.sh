@@ -9,5 +9,5 @@ fi
 
 if [ "$TYPE" == "dev" ] || [ "$TYPE" == "all" ]; then
     echo "Fetching dev schema..."
-    curl "https://api.monday.com/v2/get_schema?format=sdl&version=dev" -o src/monday-graphql/schema-dev.graphql
+    curl "https://api.monday.com/v2/get_schema?format=sdl&version=dev" -o src/monday-graphql/schema.dev.graphql
 fi

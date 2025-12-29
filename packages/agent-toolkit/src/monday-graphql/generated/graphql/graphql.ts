@@ -3709,6 +3709,32 @@ export type GrantMarketplaceAppDiscountData = {
   period?: InputMaybe<DiscountPeriod>;
 };
 
+/** A granted marketplace app discount offer */
+export type GrantMarketplaceAppDiscountOffer = {
+  __typename?: 'GrantMarketplaceAppDiscountOffer';
+  /** The id of an app */
+  app_id: Scalars['ID']['output'];
+  /** List of app plan ids. Provide only for standard discounts. */
+  app_plan_ids?: Maybe<Array<Scalars['ID']['output']>>;
+  /** Number of days a discount will be valid. Provide only for standard discounts. */
+  days_valid: Scalars['Int']['output'];
+  /** Percentage value of a discount */
+  discount: Scalars['Int']['output'];
+  /** The scope of a discount. Possible values: standard, renewal. Defaults to standard when not provided. */
+  discount_scope?: Maybe<DiscountScope>;
+  /** Is discount recurring */
+  is_recurring: Scalars['Boolean']['output'];
+  /** The period of a discount. Provide only for standard discounts. */
+  period?: Maybe<DiscountPeriod>;
+};
+
+/** Result of granting a marketplace app discount offer */
+export type GrantMarketplaceAppDiscountOfferResult = {
+  __typename?: 'GrantMarketplaceAppDiscountOfferResult';
+  /** The granted discount offer */
+  granted_discount: GrantMarketplaceAppDiscountOffer;
+};
+
 export type GrantMarketplaceAppDiscountResult = {
   __typename?: 'GrantMarketplaceAppDiscountResult';
   granted_discount: GrantMarketplaceAppDiscount;
@@ -4852,6 +4878,8 @@ export type Mutation = {
   duplicate_item?: Maybe<Item>;
   edit_update: Update;
   grant_marketplace_app_discount: GrantMarketplaceAppDiscountResult;
+  /** Grant a marketplace app discount offer */
+  grant_marketplace_app_discount_offer: GrantMarketplaceAppDiscountOfferResult;
   /** Imports HTML content as a new document by converting it into document blocks. The HTML will be parsed and converted into the appropriate document block types (text, headers, lists, etc.). Returns the ID of the newly created document on success. */
   import_doc_from_html?: Maybe<ImportDocFromHtmlResult>;
   /** Increase operations counter */
@@ -5777,6 +5805,15 @@ export type MutationGrant_Marketplace_App_DiscountArgs = {
   account_slug: Scalars['String']['input'];
   app_id: Scalars['ID']['input'];
   data: GrantMarketplaceAppDiscountData;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationGrant_Marketplace_App_Discount_OfferArgs = {
+  account_slug: Scalars['String']['input'];
+  app_id: Scalars['ID']['input'];
+  renewal_discount_data?: InputMaybe<RenewalDiscountDataInput>;
+  standard_discount_data?: InputMaybe<StandardDiscountDataInput>;
 };
 
 
@@ -7457,6 +7494,14 @@ export type RemoveTeamOwnersResult = {
   team?: Maybe<Team>;
 };
 
+/** Input data for granting a renewal marketplace app discount offer */
+export type RenewalDiscountDataInput = {
+  /** Percentage value of a discount */
+  discount: Scalars['Int']['input'];
+  /** Is discount recurring */
+  is_recurring: Scalars['Boolean']['input'];
+};
+
 /** A reply for an update. */
 export type Reply = {
   __typename?: 'Reply';
@@ -7722,6 +7767,20 @@ export type SprintTimeline = {
   from?: Maybe<Scalars['Date']['output']>;
   /** user-editable complete date of the monday dev sprint timeline, may be different than the sprint complete date */
   to?: Maybe<Scalars['Date']['output']>;
+};
+
+/** Input data for granting a standard marketplace app discount offer */
+export type StandardDiscountDataInput = {
+  /** List of app plan ids. Provide only for standard discounts. */
+  app_plan_ids: Array<Scalars['ID']['input']>;
+  /** Number of days a discount will be valid. Provide only for standard discounts. */
+  days_valid: Scalars['Int']['input'];
+  /** Percentage value of a discount */
+  discount: Scalars['Int']['input'];
+  /** Is discount recurring */
+  is_recurring: Scalars['Boolean']['input'];
+  /** The period of a discount. Provide only for standard discounts. */
+  period?: InputMaybe<DiscountPeriod>;
 };
 
 /** The possible states for a board or item. */

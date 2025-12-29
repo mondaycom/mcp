@@ -1651,6 +1651,17 @@ type Mutation {
     account_slug: String!
     data: GrantMarketplaceAppDiscountData!
   ): GrantMarketplaceAppDiscountResult!
+
+  """Grant a marketplace app discount offer"""
+  grant_marketplace_app_discount_offer(
+    """The id of an app"""
+    app_id: ID!
+
+    """Slug of an account"""
+    account_slug: String!
+    standard_discount_data: StandardDiscountDataInput
+    renewal_discount_data: RenewalDiscountDataInput
+  ): GrantMarketplaceAppDiscountOfferResult!
   delete_marketplace_app_discount(
     """The id of an app"""
     app_id: ID!
@@ -5967,6 +5978,40 @@ input GrantMarketplaceAppDiscountData {
   app_plan_ids: [String!]!
 }
 
+"""A granted marketplace app discount offer"""
+type GrantMarketplaceAppDiscountOffer {
+  """
+  Number of days a discount will be valid. Provide only for standard discounts.
+  """
+  days_valid: Int!
+
+  """Percentage value of a discount"""
+  discount: Int!
+
+  """Is discount recurring"""
+  is_recurring: Boolean!
+
+  """The period of a discount. Provide only for standard discounts."""
+  period: DiscountPeriod
+
+  """List of app plan ids. Provide only for standard discounts."""
+  app_plan_ids: [ID!]
+
+  """
+  The scope of a discount. Possible values: standard, renewal. Defaults to standard when not provided.
+  """
+  discount_scope: DiscountScope
+
+  """The id of an app"""
+  app_id: ID!
+}
+
+"""Result of granting a marketplace app discount offer"""
+type GrantMarketplaceAppDiscountOfferResult {
+  """The granted discount offer"""
+  granted_discount: GrantMarketplaceAppDiscountOffer!
+}
+
 type GrantMarketplaceAppDiscountResult {
   granted_discount: GrantMarketplaceAppDiscount!
 }
@@ -6083,6 +6128,35 @@ type MarketplaceSearchResults {
 
   """The time taken to perform the search"""
   elapsed: String!
+}
+
+"""Input data for granting a renewal marketplace app discount offer"""
+input RenewalDiscountDataInput {
+  """Percentage value of a discount"""
+  discount: Int!
+
+  """Is discount recurring"""
+  is_recurring: Boolean!
+}
+
+"""Input data for granting a standard marketplace app discount offer"""
+input StandardDiscountDataInput {
+  """
+  Number of days a discount will be valid. Provide only for standard discounts.
+  """
+  days_valid: Int!
+
+  """Percentage value of a discount"""
+  discount: Int!
+
+  """Is discount recurring"""
+  is_recurring: Boolean!
+
+  """The period of a discount. Provide only for standard discounts."""
+  period: DiscountPeriod
+
+  """List of app plan ids. Provide only for standard discounts."""
+  app_plan_ids: [ID!]!
 }
 
 """The discounts granted to the subscription"""
