@@ -5,10 +5,10 @@ import { BaseMondayAppsTool } from 'src/core/tools/monday-apps-tools/base-tool/b
 
 export const toolFactory = (
   tool: new (...args: any[]) => Tool<any, any>,
-  instanceOptions: { apiClient: ApiClient; devMondayApiClient: ApiClient; apiToken: string; context?: MondayApiToolContext },
+  instanceOptions: { apiClient: ApiClient; devApiClient: ApiClient; apiToken: string; context?: MondayApiToolContext },
 ) => {
   if (tool.prototype instanceof BaseMondayApiTool) {
-    return new tool(instanceOptions.apiClient, instanceOptions.devMondayApiClient, instanceOptions.apiToken, instanceOptions.context);
+    return new tool(instanceOptions.apiClient, instanceOptions.devApiClient, instanceOptions.apiToken, instanceOptions.context);
   } else if (tool.prototype instanceof BaseMondayAppsTool) {
     return new tool(instanceOptions.apiToken);
   }

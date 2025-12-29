@@ -38,7 +38,7 @@ export abstract class BaseMondayApiTool<
 
   constructor(
     protected readonly mondayApi: ApiClient,
-    protected readonly devMondayApiClient: ApiClient,
+    protected readonly devMondayApi: ApiClient,
     protected readonly apiToken?: string,
     protected readonly context?: MondayApiToolContext,
   ) {}
