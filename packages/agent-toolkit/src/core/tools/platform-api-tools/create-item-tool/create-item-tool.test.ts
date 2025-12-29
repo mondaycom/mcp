@@ -188,6 +188,7 @@ describe('Create Item Tool Behaviour', () => {
         // Verify ChangeItemColumnValuesTool was called correctly
         expect(MockedChangeItemColumnValuesTool).toHaveBeenCalledWith(
           mocks.mockApiClient,
+          mocks.mockApiClient,
           'fake_token',
           { boardId: 456 }
         );
@@ -294,6 +295,7 @@ describe('Create Item Tool Behaviour', () => {
 
         // Verify ChangeItemColumnValuesTool was called with input boardId
         expect(MockedChangeItemColumnValuesTool).toHaveBeenCalledWith(
+          mocks.mockApiClient,
           mocks.mockApiClient,
           'fake_token',
           { boardId: 789 }
