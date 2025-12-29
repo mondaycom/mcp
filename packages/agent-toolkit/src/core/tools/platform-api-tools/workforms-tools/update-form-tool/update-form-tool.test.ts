@@ -2,15 +2,7 @@ import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameRawAsync, createMockApiClient } from '../../test-utils/mock-api-client';
 import { updateFormToolSchema, FormActions } from './schema';
 import { z, ZodTypeAny } from 'zod';
-import {
-  BackgroundType,
-  Direction,
-  Format,
-  Alignment,
-  LogoPosition,
-  LogoSize,
-  FontSize,
-} from '../workforms.types';
+import { BackgroundType, Direction, Format, Alignment, LogoPosition, LogoSize, FontSize } from '../workforms.types';
 
 export type inputType = z.objectInputType<typeof updateFormToolSchema, ZodTypeAny>;
 
@@ -244,7 +236,7 @@ describe('UpdateFormTool', () => {
         const result = await callToolByNameRawAsync('update_form', args);
 
         expect(result.content[0].text).toBe(
-          'formPassword is required for the action "setFormPassword" in the update form tool.'
+          'formPassword is required for the action "setFormPassword" in the update form tool.',
         );
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
@@ -394,14 +386,12 @@ describe('UpdateFormTool', () => {
           tag: {
             value: 'test_value',
             // name is missing
-          }
+          },
         };
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toBe(
-          'Tag name is required for the action "createTag" in the update form tool.'
-        );
+        expect(result.content[0].text).toBe('Tag name is required for the action "createTag" in the update form tool.');
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
     });
@@ -528,7 +518,7 @@ describe('UpdateFormTool', () => {
           formToken: 'token_123',
           tag: {
             // id is missing
-          }
+          },
         };
 
         const result = await callToolByNameRawAsync('update_form', args);
@@ -654,7 +644,9 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toBe('Tag with id: tag_stringified successfully updated to value: copilot_value.');
+        expect(result.content[0].text).toBe(
+          'Tag with id: tag_stringified successfully updated to value: copilot_value.',
+        );
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].tagId).toBe('tag_stringified');
@@ -689,7 +681,7 @@ describe('UpdateFormTool', () => {
         const result = await callToolByNameRawAsync('update_form', args);
 
         expect(result.content[0].text).toBe(
-          'Tag id and value are required for the action "updateTag" in the update form tool.'
+          'Tag id and value are required for the action "updateTag" in the update form tool.',
         );
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
@@ -701,13 +693,13 @@ describe('UpdateFormTool', () => {
           tag: {
             id: 'tag_123',
             // value is missing
-          }
+          },
         };
 
         const result = await callToolByNameRawAsync('update_form', args);
 
         expect(result.content[0].text).toBe(
-          'Tag id and value are required for the action "updateTag" in the update form tool.'
+          'Tag id and value are required for the action "updateTag" in the update form tool.',
         );
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
@@ -951,7 +943,7 @@ describe('UpdateFormTool', () => {
         const result = await callToolByNameRawAsync('update_form', args);
 
         expect(result.content[0].text).toBe(
-          'Appearance is required for the action "updateAppearance" in the update form tool.'
+          'Appearance is required for the action "updateAppearance" in the update form tool.',
         );
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
@@ -966,7 +958,7 @@ describe('UpdateFormTool', () => {
         const result = await callToolByNameRawAsync('update_form', args);
 
         expect(result.content[0].text).toBe(
-          'Appearance is required for the action "updateAppearance" in the update form tool.'
+          'Appearance is required for the action "updateAppearance" in the update form tool.',
         );
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
@@ -1115,7 +1107,7 @@ describe('UpdateFormTool', () => {
         const result = await callToolByNameRawAsync('update_form', args);
 
         expect(result.content[0].text).toBe(
-          'Accessibility is required for the action "updateAccessibility" in the update form tool.'
+          'Accessibility is required for the action "updateAccessibility" in the update form tool.',
         );
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
@@ -1130,7 +1122,7 @@ describe('UpdateFormTool', () => {
         const result = await callToolByNameRawAsync('update_form', args);
 
         expect(result.content[0].text).toBe(
-          'Accessibility is required for the action "updateAccessibility" in the update form tool.'
+          'Accessibility is required for the action "updateAccessibility" in the update form tool.',
         );
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
@@ -1513,7 +1505,7 @@ describe('UpdateFormTool', () => {
         const result = await callToolByNameRawAsync('update_form', args);
 
         expect(result.content[0].text).toBe(
-          'Features is required for the action "updateFeatures" in the update form tool.'
+          'Features is required for the action "updateFeatures" in the update form tool.',
         );
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
@@ -1528,7 +1520,7 @@ describe('UpdateFormTool', () => {
         const result = await callToolByNameRawAsync('update_form', args);
 
         expect(result.content[0].text).toBe(
-          'Features is required for the action "updateFeatures" in the update form tool.'
+          'Features is required for the action "updateFeatures" in the update form tool.',
         );
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
@@ -1565,11 +1557,7 @@ describe('UpdateFormTool', () => {
       it('should update question order successfully', async () => {
         const updateQuestionOrderResponse = {
           update_form: {
-            questions: [
-              { id: 'question_3' },
-              { id: 'question_1' },
-              { id: 'question_2' },
-            ],
+            questions: [{ id: 'question_3' }, { id: 'question_1' }, { id: 'question_2' }],
           },
         };
 
@@ -1579,11 +1567,7 @@ describe('UpdateFormTool', () => {
           action: FormActions.updateQuestionOrder,
           formToken: 'token_123',
           form: {
-            questions: [
-              { id: 'question_3' },
-              { id: 'question_1' },
-              { id: 'question_2' },
-            ],
+            questions: [{ id: 'question_3' }, { id: 'question_1' }, { id: 'question_2' }],
           },
         };
 
@@ -1597,23 +1581,14 @@ describe('UpdateFormTool', () => {
         expect(mockCall[0]).toContain('mutation updateFormQuestionOrder');
         expect(mockCall[1]).toEqual({
           formToken: 'token_123',
-          questions: [
-            { id: 'question_3' },
-            { id: 'question_1' },
-            { id: 'question_2' },
-          ],
+          questions: [{ id: 'question_3' }, { id: 'question_1' }, { id: 'question_2' }],
         });
       });
 
       it('should update question order with different set of questions', async () => {
         const updateQuestionOrderResponse = {
           update_form: {
-            questions: [
-              { id: 'q_a' },
-              { id: 'q_b' },
-              { id: 'q_c' },
-              { id: 'q_d' },
-            ],
+            questions: [{ id: 'q_a' }, { id: 'q_b' }, { id: 'q_c' }, { id: 'q_d' }],
           },
         };
 
@@ -1623,12 +1598,7 @@ describe('UpdateFormTool', () => {
           action: FormActions.updateQuestionOrder,
           formToken: 'token_456',
           form: {
-            questions: [
-              { id: 'q_a' },
-              { id: 'q_b' },
-              { id: 'q_c' },
-              { id: 'q_d' },
-            ],
+            questions: [{ id: 'q_a' }, { id: 'q_b' }, { id: 'q_c' }, { id: 'q_d' }],
           },
         };
 
@@ -1644,20 +1614,14 @@ describe('UpdateFormTool', () => {
       it('should handle formStringified parameter for Microsoft Copilot', async () => {
         const updateQuestionOrderResponse = {
           update_form: {
-            questions: [
-              { id: 'question_x' },
-              { id: 'question_y' },
-            ],
+            questions: [{ id: 'question_x' }, { id: 'question_y' }],
           },
         };
 
         mocks.setResponse(updateQuestionOrderResponse);
 
         const formObject = {
-          questions: [
-            { id: 'question_x' },
-            { id: 'question_y' },
-          ],
+          questions: [{ id: 'question_x' }, { id: 'question_y' }],
         };
 
         const args: inputType = {
@@ -1690,7 +1654,7 @@ describe('UpdateFormTool', () => {
         const result = await callToolByNameRawAsync('update_form', args);
 
         expect(result.content[0].text).toBe(
-          'List of dehydrated questions is required for the action "updateQuestionOrder" in the update form tool.'
+          'List of dehydrated questions is required for the action "updateQuestionOrder" in the update form tool.',
         );
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
@@ -1705,7 +1669,7 @@ describe('UpdateFormTool', () => {
         const result = await callToolByNameRawAsync('update_form', args);
 
         expect(result.content[0].text).toBe(
-          'List of dehydrated questions is required for the action "updateQuestionOrder" in the update form tool.'
+          'List of dehydrated questions is required for the action "updateQuestionOrder" in the update form tool.',
         );
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
@@ -1720,9 +1684,7 @@ describe('UpdateFormTool', () => {
           action: FormActions.updateQuestionOrder,
           formToken: 'token_123',
           form: {
-            questions: [
-              { id: 'nonexistent_question' },
-            ],
+            questions: [{ id: 'nonexistent_question' }],
           },
         };
 
@@ -1877,7 +1839,7 @@ describe('UpdateFormTool', () => {
         const result = await callToolByNameRawAsync('update_form', args);
 
         expect(result.content[0].text).toBe(
-          'Title or description is required for the action "updateFormHeader" in the update form tool.'
+          'Title or description is required for the action "updateFormHeader" in the update form tool.',
         );
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
@@ -1892,7 +1854,7 @@ describe('UpdateFormTool', () => {
         const result = await callToolByNameRawAsync('update_form', args);
 
         expect(result.content[0].text).toBe(
-          'Title or description is required for the action "updateFormHeader" in the update form tool.'
+          'Title or description is required for the action "updateFormHeader" in the update form tool.',
         );
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
@@ -1990,7 +1952,7 @@ describe('UpdateFormTool', () => {
 
       // Empty string is falsy in JavaScript, so validation should fail
       expect(result.content[0].text).toBe(
-        'formPassword is required for the action "setFormPassword" in the update form tool.'
+        'formPassword is required for the action "setFormPassword" in the update form tool.',
       );
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
@@ -2018,7 +1980,7 @@ describe('UpdateFormTool', () => {
       const result = await callToolByNameRawAsync('update_form', args);
 
       expect(result.content[0].text).toBe(
-        'Appearance is required for the action "updateAppearance" in the update form tool.'
+        'Appearance is required for the action "updateAppearance" in the update form tool.',
       );
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
@@ -2053,4 +2015,3 @@ describe('UpdateFormTool', () => {
     });
   });
 });
-

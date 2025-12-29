@@ -172,4 +172,3 @@ describe('rethrowWithContext', () => {
     });
   });
 });
-

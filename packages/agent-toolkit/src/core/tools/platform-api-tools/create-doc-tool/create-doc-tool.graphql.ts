@@ -44,4 +44,3 @@ export const updateDocName = gql`
     update_doc_name(docId: $docId, name: $name)
   }
 `;
-

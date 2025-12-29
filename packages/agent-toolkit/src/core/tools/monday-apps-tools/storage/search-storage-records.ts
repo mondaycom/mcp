@@ -17,7 +17,7 @@ export class SearchStorageRecordsTool extends BaseMondayAppsTool<
   });
 
   getDescription(): string {
-    return 'Search for storage records in a monday.com  app by search term. This allows you to query the app\'s storage data for a specific account. Supports pagination via cursor. Use this to find and inspect data stored by your app in monday.com\'s apps framework storage service';
+    return "Search for storage records in a monday.com  app by search term. This allows you to query the app's storage data for a specific account. Supports pagination via cursor. Use this to find and inspect data stored by your app in monday.com's apps framework storage service";
   }
 
   getInputSchema() {

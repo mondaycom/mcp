@@ -11,9 +11,7 @@ import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-ap
 import { fallbackToStringifiedVersionIfNull } from '../../../../utils/microsoft-copilot.utils';
 
 export const createWidgetToolSchema = {
-  parent_container_id: z
-    .string()
-    .describe('ID of the parent container (dashboard ID or board view ID)'),
+  parent_container_id: z.string().describe('ID of the parent container (dashboard ID or board view ID)'),
   parent_container_type: z.nativeEnum(WidgetParentKind).describe('Type of parent container: DASHBOARD or BOARD_VIEW'),
   widget_kind: z.nativeEnum(ExternalWidget).describe('Type of widget to create: i.e CHART, NUMBER, BATTERY'),
   widget_name: z
@@ -27,7 +25,12 @@ export const createWidgetToolSchema = {
     .describe(
       'Widget-specific settings as JSON object conforming to widget schema. Use all_widgets_schema tool to get the required schema for each widget type.',
     ),
-  settingsStringified: z.string().optional().describe('**ONLY FOR MICROSOFT COPILOT**: The settings object. Send this as a stringified JSON of "settings" field. Read "settings" field description for details how to use it.')
+  settingsStringified: z
+    .string()
+    .optional()
+    .describe(
+      '**ONLY FOR MICROSOFT COPILOT**: The settings object. Send this as a stringified JSON of "settings" field. Read "settings" field description for details how to use it.',
+    ),
 };
 
 export class CreateWidgetTool extends BaseMondayApiTool<typeof createWidgetToolSchema, never> {
@@ -65,10 +68,10 @@ export class CreateWidgetTool extends BaseMondayApiTool<typeof createWidgetToolS
 
   protected async executeInternal(input: ToolInputType<typeof createWidgetToolSchema>): Promise<ToolOutputType<never>> {
     fallbackToStringifiedVersionIfNull(input, 'settings', createWidgetToolSchema.settings);
-    if(!input.settings) {
+    if (!input.settings) {
       throw new Error('You must pass either settings or settingsStringified parameter');
     }
-    
+
     try {
       // Prepare GraphQL variables
       const variables: CreateWidgetMutationVariables = {

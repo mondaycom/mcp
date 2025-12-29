@@ -1,7 +1,5 @@
 import { NonDeprecatedColumnType } from 'src/utils/types';
-import {
-  GetRecentBoardsQuery,
-} from '../../../../monday-graphql/generated/graphql/graphql';
+import { GetRecentBoardsQuery } from '../../../../monday-graphql/generated/graphql/graphql';
 
 /**
  * Valid sprints and tasks boards with proper relationships
@@ -553,4 +551,3 @@ Found **1** matched pair(s):
 **Critical:** \`task_sprint\` column references ONLY its paired sprints board. Cross-pair operations WILL FAIL.`;
 
 export const EXPECTED_GRAPHQL_ERROR = `INTERNAL_ERROR: Error retrieving sprints boards: GraphQL error occurred`;
-

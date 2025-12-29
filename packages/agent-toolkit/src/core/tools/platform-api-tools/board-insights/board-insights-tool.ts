@@ -56,7 +56,10 @@ export const boardInsightsToolSchema = {
     .array(
       z.object({
         columnId: z.string().describe('The id of the column to filter by'),
-        compareAttribute: z.string().optional().describe('The attribute to compare the value to. This is OPTIONAL property.'),
+        compareAttribute: z
+          .string()
+          .optional()
+          .describe('The attribute to compare the value to. This is OPTIONAL property.'),
         compareValue: z
           .any()
           .describe(

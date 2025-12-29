@@ -5,8 +5,12 @@ import { z, ZodTypeAny } from 'zod';
 
 export type inputType = z.objectInputType<typeof listWorkspaceToolSchema, ZodTypeAny>;
 
-const addDummyWorkspaces = (workspaces: {id: string, name: string, description: string}[], name: string, count: number) => {
-  const maxId = Math.max(...workspaces.map(w => parseInt(w.id)));
+const addDummyWorkspaces = (
+  workspaces: { id: string; name: string; description: string }[],
+  name: string,
+  count: number,
+) => {
+  const maxId = Math.max(...workspaces.map((w) => parseInt(w.id)));
   for (let i = 1; i <= count; i++) {
     workspaces.push({
       id: `${maxId + i}`,
@@ -15,7 +19,7 @@ const addDummyWorkspaces = (workspaces: {id: string, name: string, description: 
     });
   }
   return workspaces;
-}
+};
 
 describe('ListWorkspaceTool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
@@ -80,7 +84,7 @@ describe('ListWorkspaceTool', () => {
       const result = await callToolByNameRawAsync('list_workspaces', args);
 
       expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
-      
+
       const mockCall = mocks.getMockRequest().mock.calls[0];
       expect(mockCall[0]).toContain('query listWorkspaces');
       expect(mockCall[1]).toEqual({
@@ -145,7 +149,7 @@ describe('ListWorkspaceTool', () => {
       const result = await callToolByNameRawAsync('list_workspaces', args);
 
       expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
-      
+
       const mockCall = mocks.getMockRequest().mock.calls[0];
       expect(mockCall[1]).toEqual({
         limit: 10000,
@@ -183,7 +187,7 @@ describe('ListWorkspaceTool', () => {
       const result = await callToolByNameRawAsync('list_workspaces', args);
 
       expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
-      
+
       const mockCall = mocks.getMockRequest().mock.calls[0];
       expect(mockCall[1]).toEqual({
         limit: 10000,
@@ -217,7 +221,7 @@ describe('ListWorkspaceTool', () => {
       const result = await callToolByNameRawAsync('list_workspaces', args);
 
       expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
-      
+
       const mockCall = mocks.getMockRequest().mock.calls[0];
       expect(mockCall[1]).toEqual({
         limit: 10000,
@@ -232,7 +236,9 @@ describe('ListWorkspaceTool', () => {
       expect(content).toContain('• **Development** (ID: 4)');
       expect(content).toContain('• **HR Department** (ID: 5)');
       // Should include disclaimer that filtering was not applied
-      expect(content).toContain('IMPORTANT: Search term was not applied. Returning all workspaces. Please perform the filtering manually.');
+      expect(content).toContain(
+        'IMPORTANT: Search term was not applied. Returning all workspaces. Please perform the filtering manually.',
+      );
     });
   });
 
@@ -244,7 +250,9 @@ describe('ListWorkspaceTool', () => {
 
       const result = await callToolByNameRawAsync('list_workspaces', args);
 
-      expect(result.content[0].text).toBe('Failed to execute tool list_workspaces: Search term did not include any alphanumeric characters. Please provide a valid search term.');
+      expect(result.content[0].text).toBe(
+        'Failed to execute tool list_workspaces: Search term did not include any alphanumeric characters. Please provide a valid search term.',
+      );
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
   });
@@ -273,9 +281,11 @@ describe('ListWorkspaceTool', () => {
 
       const result = await callToolByNameRawAsync('list_workspaces', args);
 
-      expect(result.content[0].text).toBe('No workspaces found matching the search term. Try using the tool without a search term');
+      expect(result.content[0].text).toBe(
+        'No workspaces found matching the search term. Try using the tool without a search term',
+      );
       expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
-      
+
       const mockCall = mocks.getMockRequest().mock.calls[0];
       expect(mockCall[1]).toEqual({
         limit: 10000,
