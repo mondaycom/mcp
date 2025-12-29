@@ -34,8 +34,8 @@ export class AllMondayApiTool extends BaseMondayApiTool<typeof allMondayApiToolS
   });
   private static schemaCache: Record<string, GraphQLSchema> = {};
 
-  constructor(mondayApi: ApiClient, devMondayApi: ApiClient, apiToken?: string, context?: MondayApiToolContext) {
-    super(mondayApi, devMondayApi, apiToken, context);
+  constructor(mondayApi: ApiClient, apiToken?: string, context?: MondayApiToolContext) {
+    super(mondayApi, apiToken, context);
   }
 
   getDescription(): string {

@@ -16,7 +16,7 @@ export type MondayApiToolContext = {
   clientRedirectUris?: string[];
 };
 
-export type BaseMondayApiToolConstructor = new (api: ApiClient, devApi: ApiClient, token?: string) => BaseMondayApiTool<any>;
+export type BaseMondayApiToolConstructor = new (api: ApiClient, token?: string) => BaseMondayApiTool<any>;
 
 // Helper function to merge annotations with default openWorldHint
 export function createMondayApiAnnotations(annotations: ToolAnnotations): ToolAnnotations {
@@ -38,7 +38,6 @@ export abstract class BaseMondayApiTool<
 
   constructor(
     protected readonly mondayApi: ApiClient,
-    protected readonly devMondayApi: ApiClient,
     protected readonly apiToken?: string,
     protected readonly context?: MondayApiToolContext,
   ) {}
