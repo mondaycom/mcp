@@ -46,15 +46,3 @@ export const getBoardItemsPage = gql`
     }
   }
 `;
-
-export const smartSearchGetBoardItemIds = gql`
-  query SmartSearchBoardItemIds($searchTerm: String!, $board_ids: [ID!]) {
-    search_items(board_ids: $board_ids, query: $searchTerm, size: 100) {
-      results {
-        data {
-          id
-        }
-      }
-    }
-  }
-`;

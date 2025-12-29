@@ -30,7 +30,7 @@
     "test": "jest -c",
     "watch": "rollup -c -w",
     "fetch:schema": "bash fetch-schema.sh",
-    "codegen": "graphql-codegen",
+    "codegen": "graphql-codegen --config codegen.yml && graphql-codegen --config codegen.yml --project dev",
     "fetch:generate": "yarn fetch:schema && yarn codegen"
   },
   "engines": {

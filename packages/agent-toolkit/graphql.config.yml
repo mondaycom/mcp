@@ -4,3 +4,7 @@ projects:
     documents:
       - ./src/**/*.graphql
       - ./src/**/*.graphql.ts
+      - '!./src/**/*.graphql-dev.ts'
+  dev:
+    schema: ./src/monday-graphql/schema-dev.graphql
+    documents: ./src/**/*.graphql-dev.ts
