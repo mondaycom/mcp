@@ -26,8 +26,7 @@ describe('normalizeString', () => {
   });
 
   it('returns empty string when input contains only symbols', () => {
-    expect(normalizeString("$%^&*()—_+=[]{}|;:'\"<>,.?/`~"))
-      .toBe('');
+    expect(normalizeString('$%^&*()—_+=[]{}|;:\'"<>,.?/`~')).toBe('');
   });
 
   it('preserves CJK characters', () => {
@@ -40,9 +39,6 @@ describe('normalizeString', () => {
   });
 
   it('removes quotes and special punctuation', () => {
-    expect(normalizeString('Test$123\'abc"'))
-      .toBe('test123abc');
+    expect(normalizeString('Test$123\'abc"')).toBe('test123abc');
   });
 });
-
-

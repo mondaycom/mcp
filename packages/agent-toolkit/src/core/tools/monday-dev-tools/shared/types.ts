@@ -8,7 +8,6 @@ import {
 } from '../../../../monday-graphql/generated/graphql/graphql';
 import type { MONDAY_DEV_TASK_COLUMN_IDS } from './constants';
 
-
 export type MondayDevTaskColumnId = (typeof MONDAY_DEV_TASK_COLUMN_IDS)[keyof typeof MONDAY_DEV_TASK_COLUMN_IDS];
 
 export type Sprint = NonNullable<

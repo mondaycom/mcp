@@ -64,7 +64,7 @@ describe('Create Update Tool', () => {
   });
 
   it('Throws error for invalid mentionsList JSON', async () => {
-    const tool = new CreateUpdateTool(mocks.mockApiClient,'fake_token');
+    const tool = new CreateUpdateTool(mocks.mockApiClient, 'fake_token');
 
     await expect(
       tool.execute({
@@ -176,7 +176,7 @@ describe('Create Update Tool', () => {
   });
 
   it('Has correct schema and tool properties', () => {
-    const tool = new CreateUpdateTool(mocks.mockApiClient,'fake_token');
+    const tool = new CreateUpdateTool(mocks.mockApiClient, 'fake_token');
     const schema = tool.getInputSchema();
 
     expect(tool.name).toBe('create_update');

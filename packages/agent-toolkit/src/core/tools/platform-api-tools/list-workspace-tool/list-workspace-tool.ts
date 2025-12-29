@@ -7,9 +7,19 @@ import { z } from 'zod';
 import { normalizeString } from 'src/utils/string.utils';
 
 export const listWorkspaceToolSchema = {
-  searchTerm: z.string().optional().describe('The search term to filter the workspaces by. If not provided, all workspaces will be returned. [IMPORANT] Only alphanumeric characters are supported.'),
-  limit: z.number().min(1).max(DEFAULT_WORKSPACE_LIMIT).default(DEFAULT_WORKSPACE_LIMIT).describe(`The number of workspaces to return. Default and maximum allowed is ${DEFAULT_WORKSPACE_LIMIT}`),
-  page: z.number().min(1).default(1).describe('The page number to return. Default is 1.')
+  searchTerm: z
+    .string()
+    .optional()
+    .describe(
+      'The search term to filter the workspaces by. If not provided, all workspaces will be returned. [IMPORANT] Only alphanumeric characters are supported.',
+    ),
+  limit: z
+    .number()
+    .min(1)
+    .max(DEFAULT_WORKSPACE_LIMIT)
+    .default(DEFAULT_WORKSPACE_LIMIT)
+    .describe(`The number of workspaces to return. Default and maximum allowed is ${DEFAULT_WORKSPACE_LIMIT}`),
+  page: z.number().min(1).default(1).describe('The page number to return. Default is 1.'),
 };
 
 type Workspace = NonNullable<ListWorkspacesQuery['workspaces']>[number];
@@ -42,8 +52,8 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
     const pageOverride = input.searchTerm ? 1 : input.page;
 
     let searchTermNormalized: string | null = null;
-    if(input.searchTerm) {
-      searchTermNormalized = normalizeString(input.searchTerm)
+    if (input.searchTerm) {
+      searchTermNormalized = normalizeString(input.searchTerm);
       if (searchTermNormalized.length === 0) {
         throw new Error('Search term did not include any alphanumeric characters. Please provide a valid search term.');
       }
@@ -51,11 +61,11 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
 
     const variables = {
       limit: limitOverride,
-      page: pageOverride
+      page: pageOverride,
     };
 
     const res = await this.mondayApi.request<ListWorkspacesQuery>(listWorkspaces, variables);
-    const workspaces = res.workspaces?.filter(w => w);
+    const workspaces = res.workspaces?.filter((w) => w);
 
     if (!workspaces || workspaces.length === 0) {
       return {
@@ -66,7 +76,7 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
     const shouldIncludeNoFilteringDisclaimer = searchTermNormalized && workspaces.length <= DEFAULT_WORKSPACE_LIMIT;
     const filteredWorkspaces = this.filterWorkspacesIfNeeded(searchTermNormalized, workspaces, input);
 
-    if(filteredWorkspaces.length === 0) {
+    if (filteredWorkspaces.length === 0) {
       return {
         content: 'No workspaces found matching the search term. Try using the tool without a search term',
       };
@@ -76,25 +86,25 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
     const hasMorePages = filteredWorkspaces.length === input.limit;
 
     const workspacesList = filteredWorkspaces
-      .map(workspace => {
+      .map((workspace) => {
         const description = workspace!.description ? ` - ${workspace!.description}` : '';
         return `• **${workspace!.name}** (ID: ${workspace!.id})${description}`;
       })
       .join('\n');
 
-
-    return { 
+    return {
       content: `
 ${shouldIncludeNoFilteringDisclaimer ? 'IMPORTANT: Search term was not applied. Returning all workspaces. Please perform the filtering manually.' : ''}
 ${workspacesList}
 ${hasMorePages ? `PAGINATION INFO: More results available - call the tool again with page: ${input.page + 1}` : ''}
-      `};
+      `,
+    };
   }
 
   private filterWorkspacesIfNeeded(
     searchTermNormalized: string | null,
     workspaces: Workspace[],
-    input: ToolInputType<typeof listWorkspaceToolSchema>
+    input: ToolInputType<typeof listWorkspaceToolSchema>,
   ) {
     // If there is no more than single page of results, let LLM do the filtering
     if (!searchTermNormalized || workspaces.length <= DEFAULT_WORKSPACE_LIMIT) {
@@ -105,7 +115,7 @@ ${hasMorePages ? `PAGINATION INFO: More results available - call the tool again 
     const endIndex = startIndex + input.limit;
 
     return workspaces
-      .filter(workspace => normalizeString(workspace!.name).includes(searchTermNormalized))
+      .filter((workspace) => normalizeString(workspace!.name).includes(searchTermNormalized))
       .slice(startIndex, endIndex);
   }
 }

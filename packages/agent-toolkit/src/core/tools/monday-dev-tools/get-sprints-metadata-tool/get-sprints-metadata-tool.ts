@@ -152,26 +152,26 @@ Requires the Main Sprints board ID of the monday-dev containing your sprints.`;
   }
 
   private validateSprintsBoardSchemaFromColumns(boardColumns: Column[]): { isValid: boolean; errorMessage: string } {
-  const existingColumnIds = new Set(
-    boardColumns.filter((col): col is NonNullable<Column> => col !== null).map((col) => col.id),
-  );
+    const existingColumnIds = new Set(
+      boardColumns.filter((col): col is NonNullable<Column> => col !== null).map((col) => col.id),
+    );
 
-  const requiredColumns = Object.values(REQUIRED_SPRINT_COLUMNS);
-  const validation = validateItemColumns(existingColumnIds, requiredColumns);
+    const requiredColumns = Object.values(REQUIRED_SPRINT_COLUMNS);
+    const validation = validateItemColumns(existingColumnIds, requiredColumns);
 
-  if (!validation.isValid) {
-    let errorMessage = `BoardID provided is not a valid sprints board. Missing required columns:\n\n`;
+    if (!validation.isValid) {
+      let errorMessage = `BoardID provided is not a valid sprints board. Missing required columns:\n\n`;
 
-    validation.missingColumns.forEach((columnId) => {
-      const columnDisplayName = getSprintColumnDisplayName(columnId as keyof typeof SPRINT_COLUMN_DISPLAY_NAMES);
-      errorMessage += `- ${columnDisplayName}\n`;
-    });
+      validation.missingColumns.forEach((columnId) => {
+        const columnDisplayName = getSprintColumnDisplayName(columnId as keyof typeof SPRINT_COLUMN_DISPLAY_NAMES);
+        errorMessage += `- ${columnDisplayName}\n`;
+      });
 
-    return { isValid: false, errorMessage };
+      return { isValid: false, errorMessage };
+    }
+
+    return { isValid: true, errorMessage: '' };
   }
-
-  return { isValid: true, errorMessage: '' };
-}
 
   private generateSprintsMetadataReport(sprints: Sprint[]): string {
     let report = `# Sprints Metadata Report\n\n`;

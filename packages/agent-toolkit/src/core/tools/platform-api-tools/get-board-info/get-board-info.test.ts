@@ -53,7 +53,7 @@ describe('formatBoardInfo - Simple Tests', () => {
           title: 'Status',
           description: undefined,
           type: NonDeprecatedColumnType.Status,
-          settings: {labels: ["Not Started", "In Progress", "Done"]},
+          settings: { labels: ['Not Started', 'In Progress', 'Done'] },
         },
       ],
       tags: [

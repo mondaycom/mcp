@@ -23,11 +23,17 @@ export interface AppFeaturesResponse extends MondayApiResponse {
 }
 
 export const getAppFeaturesSchema = z.object({
-  appVersionId: z.number().describe('The unique identifier of the app version to retrieve features from. Features are version-specific. Get version IDs from get_app_versions'),
+  appVersionId: z
+    .number()
+    .describe(
+      'The unique identifier of the app version to retrieve features from. Features are version-specific. Get version IDs from get_app_versions',
+    ),
   type: z
     .union([z.nativeEnum(AppFeatureType), z.string()])
     .optional()
-    .describe('Optional filter to retrieve only features of a specific type. Examples: AppFeatureStatusColumn, AppFeatureBoardView, AppFeatureItemView, AppFeatureDashboardWidget, AppFeatureObject. Leave empty to get all features'),
+    .describe(
+      'Optional filter to retrieve only features of a specific type. Examples: AppFeatureStatusColumn, AppFeatureBoardView, AppFeatureItemView, AppFeatureDashboardWidget, AppFeatureObject. Leave empty to get all features',
+    ),
 });
 
 export interface AppFeatureReference {
@@ -53,8 +59,23 @@ export interface CreateAppFeatureResponse extends MondayApiResponse {
 
 export const createAppFeatureSchema = z.object({
   appId: z.number().describe('The unique identifier of the app to add the feature to. Get from get_all_apps'),
-  appVersionId: z.number().describe('The specific version ID to add the feature to (typically a draft version). Features are tied to specific versions. Get from get_app_versions'),
-  name: z.string().describe('A descriptive name for this feature instance. This helps identify the feature in your app configuration and management UI'),
-  type: z.union([z.nativeEnum(AppFeatureType), z.string()]).describe('The feature type that determines how it integrates with monday.com. Examples: AppFeatureStatusColumn (custom status column), AppFeatureBoardView (board view), AppFeatureItemView (item view), AppFeatureDashboardWidget (widget)'),
-  data: z.record(z.any()).optional().describe('Feature-specific configuration data as a JSON object. The structure depends on the feature type'),
+  appVersionId: z
+    .number()
+    .describe(
+      'The specific version ID to add the feature to (typically a draft version). Features are tied to specific versions. Get from get_app_versions',
+    ),
+  name: z
+    .string()
+    .describe(
+      'A descriptive name for this feature instance. This helps identify the feature in your app configuration and management UI',
+    ),
+  type: z
+    .union([z.nativeEnum(AppFeatureType), z.string()])
+    .describe(
+      'The feature type that determines how it integrates with monday.com. Examples: AppFeatureStatusColumn (custom status column), AppFeatureBoardView (board view), AppFeatureItemView (item view), AppFeatureDashboardWidget (widget)',
+    ),
+  data: z
+    .record(z.any())
+    .optional()
+    .describe('Feature-specific configuration data as a JSON object. The structure depends on the feature type'),
 });

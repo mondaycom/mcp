@@ -52,7 +52,6 @@ describe('fallbackToStringifiedVersionIfNull', () => {
       // Should remain null since empty string is falsy
       expect(input.data).toBeNull();
     });
-
   });
 
   describe('Error scenarios', () => {
@@ -143,7 +142,6 @@ describe('fallbackToStringifiedVersionIfNull', () => {
         fallbackToStringifiedVersionIfNull(input, 'data', simpleSchema);
       }).toThrow('JSON string defined as dataStringified does not match the specified schema');
     });
-    
   });
 
   describe('Success scenarios - Direct object (unwrapped)', () => {
@@ -485,15 +483,11 @@ describe('fallbackToStringifiedVersionIfNull', () => {
 
     it('should work with symbol-like key names', () => {
       const input = {
-        'config_data': null,
-        'config_dataStringified': '{"name":"Config","age":50}',
+        config_data: null,
+        config_dataStringified: '{"name":"Config","age":50}',
       };
 
-      fallbackToStringifiedVersionIfNull(
-        input,
-        'config_data',
-        simpleSchema
-      );
+      fallbackToStringifiedVersionIfNull(input, 'config_data', simpleSchema);
 
       expect(input.config_data).toEqual({ name: 'Config', age: 50 });
     });
@@ -514,4 +508,3 @@ describe('fallbackToStringifiedVersionIfNull', () => {
     });
   });
 });
-

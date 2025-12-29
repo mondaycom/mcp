@@ -134,7 +134,6 @@ describe('GetSprintsBoardsTool', () => {
       expect(content).toContain('No Monday-Dev Sprints Board Pairs Found');
       expect(content).toContain('**Boards Checked:** 2');
     });
-
   });
 
   describe('Error Handling', () => {
@@ -148,6 +147,4 @@ describe('GetSprintsBoardsTool', () => {
       expect(content).toBe(EXPECTED_GRAPHQL_ERROR);
     });
   });
-
 });
-

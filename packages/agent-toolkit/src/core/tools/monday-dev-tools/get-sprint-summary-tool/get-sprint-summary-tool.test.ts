@@ -53,7 +53,6 @@ describe('GetSprintSummaryTool', () => {
       const content = result.content[0].text;
 
       expect(content).toContain(validMarkdownExportResponse.export_markdown_from_doc!.markdown);
-  
 
       const calls = mocks.getMockRequest().mock.calls;
 

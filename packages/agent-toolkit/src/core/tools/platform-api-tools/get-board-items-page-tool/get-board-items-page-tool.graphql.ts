@@ -18,7 +18,7 @@ export const getBoardItemsPage = gql`
 
       ... on BoardRelationValue {
         linked_items {
-          id 
+          id
           name
           board {
             id
@@ -28,8 +28,16 @@ export const getBoardItemsPage = gql`
       }
     }
   }
-  
-  query GetBoardItemsPage($boardId: ID!, $limit: Int, $cursor: String, $includeColumns: Boolean!, $columnIds: [String!], $queryParams: ItemsQuery, $includeSubItems: Boolean!) {
+
+  query GetBoardItemsPage(
+    $boardId: ID!
+    $limit: Int
+    $cursor: String
+    $includeColumns: Boolean!
+    $columnIds: [String!]
+    $queryParams: ItemsQuery
+    $includeSubItems: Boolean!
+  ) {
     boards(ids: [$boardId]) {
       id
       name

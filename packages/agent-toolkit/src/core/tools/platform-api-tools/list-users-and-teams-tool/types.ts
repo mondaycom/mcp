@@ -50,7 +50,7 @@ export interface UserTeam {
   picture_url?: string | null;
 }
 
-// User structure 
+// User structure
 export interface User {
   __typename?: 'User';
   id: string;
@@ -92,10 +92,7 @@ export interface UsersAndTeamsResponse {
 }
 
 // Union type for all possible responses
-export type FormattedResponse = 
-  | UsersOnlyResponse 
-  | TeamsResponse 
-  | UsersAndTeamsResponse;
+export type FormattedResponse = UsersOnlyResponse | TeamsResponse | UsersAndTeamsResponse;
 
 // Type guards
 export function isUsersOnlyResponse(data: FormattedResponse): data is UsersOnlyResponse {
