@@ -5,7 +5,7 @@ import { toolFactory } from './initializing.utils';
 import { MondayApiToolContext } from '../../core/tools/platform-api-tools/base-monday-api-tool';
 
 export const getFilteredToolInstances = (
-  instanceOptions: { apiClient: ApiClient; apiToken: string; context?: MondayApiToolContext },
+  instanceOptions: { apiClient: ApiClient; devMondayApiClient: ApiClient; apiToken: string; context?: MondayApiToolContext },
   config?: ToolsConfiguration,
 ): Tool<any, any>[] => {
   let allToolConstructors: Array<new (...args: any[]) => Tool<any, any>> = [];

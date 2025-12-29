@@ -14,6 +14,7 @@ import { API_VERSION } from 'src/utils/version.utils';
 export class MondayAgentToolkit {
   private readonly mondayApi: ApiClient;
   private readonly mondayApiToken: string;
+  private readonly devMondayApiClient: ApiClient;
   private readonly context?: MondayAgentToolkitConfig['context'];
   tools: Tool<any, any>[];
 
@@ -21,6 +22,12 @@ export class MondayAgentToolkit {
     this.mondayApi = new ApiClient({
       token: config.mondayApiToken,
       apiVersion: config.mondayApiVersion ?? API_VERSION,
+      endpoint: config.mondayApiEndpoint,
+      requestConfig: config.mondayApiRequestConfig,
+    });
+    this.devMondayApiClient = new ApiClient({
+      token: config.mondayApiToken,
+      apiVersion: 'dev',
       endpoint: config.mondayApiEndpoint,
       requestConfig: config.mondayApiRequestConfig,
     });
@@ -41,6 +48,7 @@ export class MondayAgentToolkit {
     const instanceOptions = {
       apiClient: this.mondayApi,
       apiToken: this.mondayApiToken,
+      devMondayApiClient: this.devMondayApiClient,
       context: this.context,
     };
 
