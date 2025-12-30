@@ -44,7 +44,11 @@ describe('ListWorkspaceTool', () => {
       const result = await callToolByNameRawAsync('list_workspaces', args);
 
       expect(result.content[0].text).toBe('No workspaces found.');
+      // Only one call because no search term, so no fallback
       expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+      const mockCall = mocks.getMockRequest().mock.calls[0];
+      expect(mockCall[0]).toContain('query listWorkspaces');
+      expect(mockCall[1]).toMatchObject({ membershipKind: 'member' });
     });
 
     it('should return "No workspaces found." when GraphQL query returns empty array', async () => {
@@ -59,12 +63,16 @@ describe('ListWorkspaceTool', () => {
       const result = await callToolByNameRawAsync('list_workspaces', args);
 
       expect(result.content[0].text).toBe('No workspaces found.');
+      // Only one call because no search term, so no fallback
       expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+      const mockCall = mocks.getMockRequest().mock.calls[0];
+      expect(mockCall[0]).toContain('query listWorkspaces');
+      expect(mockCall[1]).toMatchObject({ membershipKind: 'member' });
     });
   });
 
   describe('Successful Flow Without SearchTerm', () => {
-    it('should list workspaces without search term (basic case)', async () => {
+    it('should list workspaces without search term (basic case) using member-only query', async () => {
       const response = {
         workspaces: [
           { id: '123', name: 'Marketing Team', description: 'Marketing workspace' },
@@ -80,15 +88,17 @@ describe('ListWorkspaceTool', () => {
       const result = await callToolByNameRawAsync('list_workspaces', args);
 
       expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
-      
+
       const mockCall = mocks.getMockRequest().mock.calls[0];
       expect(mockCall[0]).toContain('query listWorkspaces');
       expect(mockCall[1]).toEqual({
         limit: 100,
         page: 1,
+        membershipKind: 'member',
       });
 
       const content = result.content[0].text;
+      expect(content).toContain('Showing workspaces you are a member of.');
       expect(content).toContain('• **Marketing Team** (ID: 123) - Marketing workspace');
       expect(content).toContain('• **Sales Team** (ID: 456) - Sales workspace');
       expect(content).toContain('• **Development** (ID: 789) - Dev workspace');
@@ -112,6 +122,7 @@ describe('ListWorkspaceTool', () => {
       expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
 
       const content = result.content[0].text;
+      expect(content).toContain('Showing workspaces you are a member of.');
       expect(content).toContain('• **Workspace One** (ID: 111)');
       expect(content).toContain('• **Workspace Two** (ID: 222)');
       // Verify no dash at the end when description is null
@@ -144,15 +155,19 @@ describe('ListWorkspaceTool', () => {
 
       const result = await callToolByNameRawAsync('list_workspaces', args);
 
+      // Only one call because match was found in member workspaces
       expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
-      
+
       const mockCall = mocks.getMockRequest().mock.calls[0];
+      expect(mockCall[0]).toContain('query listWorkspaces');
       expect(mockCall[1]).toEqual({
         limit: 10000,
         page: 1,
+        membershipKind: 'member',
       });
 
       const content = result.content[0].text;
+      expect(content).toContain('Showing workspaces you are a member of.');
       expect(content).toContain('• **Marketing Team** (ID: 1)');
       expect(content).toContain('• **Digital Marketing** (ID: 2)');
       expect(content).not.toContain('Sales Team');
@@ -182,12 +197,15 @@ describe('ListWorkspaceTool', () => {
 
       const result = await callToolByNameRawAsync('list_workspaces', args);
 
+      // Only one call because match was found in member workspaces
       expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
-      
+
       const mockCall = mocks.getMockRequest().mock.calls[0];
+      expect(mockCall[0]).toContain('query listWorkspaces');
       expect(mockCall[1]).toEqual({
         limit: 10000,
         page: 1,
+        membershipKind: 'member',
       });
 
       const content = result.content[0].text;
@@ -216,23 +234,74 @@ describe('ListWorkspaceTool', () => {
 
       const result = await callToolByNameRawAsync('list_workspaces', args);
 
+      // Only one call because matches were found in member workspaces
       expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
-      
+
       const mockCall = mocks.getMockRequest().mock.calls[0];
+      expect(mockCall[0]).toContain('query listWorkspaces');
       expect(mockCall[1]).toEqual({
         limit: 10000,
         page: 1,
+        membershipKind: 'member',
       });
 
       const content = result.content[0].text;
       // Should include all workspaces, not just matching ones
+      expect(content).toContain('Showing workspaces you are a member of.');
       expect(content).toContain('• **Marketing Team** (ID: 1)');
       expect(content).toContain('• **Digital Marketing** (ID: 2)');
       expect(content).toContain('• **Sales Team** (ID: 3)');
       expect(content).toContain('• **Development** (ID: 4)');
       expect(content).toContain('• **HR Department** (ID: 5)');
       // Should include disclaimer that filtering was not applied
-      expect(content).toContain('IMPORTANT: Search term was not applied. Returning all workspaces. Please perform the filtering manually.');
+      expect(content).toContain(
+        'IMPORTANT: Search term not applied - returning all workspaces. Perform the filtering manually.',
+      );
+    });
+
+    it('should fallback to all workspaces when search term not found in member workspaces', async () => {
+      const memberWorkspaces = [
+        { id: '1', name: 'Marketing Team', description: 'Marketing workspace' },
+        { id: '2', name: 'Sales Team', description: 'Sales workspace' },
+      ];
+
+      let allWorkspaces = [
+        { id: '1', name: 'Marketing Team', description: 'Marketing workspace' },
+        { id: '2', name: 'Sales Team', description: 'Sales workspace' },
+        { id: '3', name: 'Engineering Team', description: 'Engineering workspace' },
+        { id: '4', name: 'Engineering Infra', description: 'Infra workspace' },
+      ];
+      // Add more workspaces to exceed DEFAULT_WORKSPACE_LIMIT (100)
+      allWorkspaces = addDummyWorkspaces(allWorkspaces, 'Workspace', 97);
+
+      // First call returns member workspaces (no match for "Engineering")
+      // Second call returns all workspaces (has match for "Engineering")
+      mocks.setResponses([{ workspaces: memberWorkspaces }, { workspaces: allWorkspaces }]);
+
+      const args: inputType = {
+        searchTerm: 'Engineering',
+      };
+
+      const result = await callToolByNameRawAsync('list_workspaces', args);
+
+      // Two calls: first member, then all
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
+
+      const firstCall = mocks.getMockRequest().mock.calls[0];
+      expect(firstCall[0]).toContain('query listWorkspaces');
+      expect(firstCall[1]).toMatchObject({ membershipKind: 'member' });
+
+      const secondCall = mocks.getMockRequest().mock.calls[1];
+      expect(secondCall[0]).toContain('query listWorkspaces');
+      expect(secondCall[1]).toMatchObject({ membershipKind: 'all' });
+
+      const content = result.content[0].text;
+      // Should NOT show member-only note since we fell back to all
+      expect(content).not.toContain('Showing workspaces you are a member of.');
+      expect(content).toContain('• **Engineering Team** (ID: 3)');
+      expect(content).toContain('• **Engineering Infra** (ID: 4)');
+      expect(content).not.toContain('Marketing Team');
+      expect(content).not.toContain('Sales Team');
     });
   });
 
@@ -244,13 +313,15 @@ describe('ListWorkspaceTool', () => {
 
       const result = await callToolByNameRawAsync('list_workspaces', args);
 
-      expect(result.content[0].text).toBe('Failed to execute tool list_workspaces: Search term did not include any alphanumeric characters. Please provide a valid search term.');
+      expect(result.content[0].text).toBe(
+        'Failed to execute tool list_workspaces: Search term did not include any alphanumeric characters. Please provide a valid search term.',
+      );
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
   });
 
   describe('Unsuccessful Flow - SearchTerm Not Finding Anything', () => {
-    it('should return "no matches" message when search finds no results', async () => {
+    it('should return "no matches" message when search finds no results in either member or all workspaces', async () => {
       let workspaces = [
         { id: '1', name: 'Marketing Team', description: 'Marketing workspace' },
         { id: '2', name: 'Sales Team', description: 'Sales workspace' },
@@ -265,7 +336,8 @@ describe('ListWorkspaceTool', () => {
         workspaces,
       };
 
-      mocks.setResponse(response);
+      // Both member and all workspaces return the same response (no match)
+      mocks.setResponses([response, response]);
 
       const args: inputType = {
         searchTerm: 'NonexistentWorkspace',
@@ -273,13 +345,26 @@ describe('ListWorkspaceTool', () => {
 
       const result = await callToolByNameRawAsync('list_workspaces', args);
 
-      expect(result.content[0].text).toBe('No workspaces found matching the search term. Try using the tool without a search term');
-      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
-      
-      const mockCall = mocks.getMockRequest().mock.calls[0];
-      expect(mockCall[1]).toEqual({
+      expect(result.content[0].text).toBe(
+        'No workspaces found matching the search term. Try using the tool without a search term',
+      );
+      // Two calls: first member (no match), then all (still no match)
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
+
+      const firstCall = mocks.getMockRequest().mock.calls[0];
+      expect(firstCall[0]).toContain('query listWorkspaces');
+      expect(firstCall[1]).toEqual({
         limit: 10000,
         page: 1,
+        membershipKind: 'member',
+      });
+
+      const secondCall = mocks.getMockRequest().mock.calls[1];
+      expect(secondCall[0]).toContain('query listWorkspaces');
+      expect(secondCall[1]).toEqual({
+        limit: 10000,
+        page: 1,
+        membershipKind: 'all',
       });
     });
   });
