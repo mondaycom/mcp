@@ -2,8 +2,9 @@ import { normalizeString } from 'src/utils/string.utils';
 import { DEFAULT_WORKSPACE_LIMIT } from './list-workspace.consts';
 import { Workspace, ListWorkspacesQueryResponse } from './list-workspace.types';
 
-export function filterNullWorkspaces(response: ListWorkspacesQueryResponse): Workspace[] | undefined {
-  return response.workspaces?.filter((w): w is NonNullable<typeof w> => w !== null);
+export function filterNullWorkspaces(response: ListWorkspacesQueryResponse): Workspace[] {
+  const filteredWorkspaces = response.workspaces?.filter((w): w is NonNullable<typeof w> => w !== null);
+  return filteredWorkspaces || [];
 }
 
 export function hasMatchingWorkspace(searchTermNormalized: string, workspaces: Workspace[]): boolean {

@@ -56,7 +56,7 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
     let searchTermNormalized: string | null = null;
     if (input.searchTerm) {
       searchTermNormalized = normalizeString(input.searchTerm);
-      if (searchTermNormalized.length === 0) {
+      if (searchTermNormalized?.length === 0) {
         throw new Error('Search term did not include any alphanumeric characters. Please provide a valid search term.');
       }
     }
@@ -73,32 +73,29 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
     let usedMemberOnly = true;
 
     // If searching with a term and no matches found in member workspaces, try with all workspaces
-    if (
-      searchTermNormalized &&
-      (!workspaces || workspaces.length === 0 || !hasMatchingWorkspace(searchTermNormalized, workspaces))
-    ) {
+    if (searchTermNormalized && (workspaces?.length === 0 || !hasMatchingWorkspace(searchTermNormalized, workspaces))) {
       res = await this.mondayApi.request<ListWorkspacesQueryResponse>(listWorkspaces, createVariables('all'));
       workspaces = filterNullWorkspaces(res);
       usedMemberOnly = false;
     }
 
-    if (!workspaces || workspaces.length === 0) {
+    if (workspaces?.length === 0) {
       return {
         content: 'No workspaces found.',
       };
     }
 
-    const shouldIncludeNoFilteringDisclaimer = searchTermNormalized && workspaces.length <= DEFAULT_WORKSPACE_LIMIT;
+    const shouldIncludeNoFilteringDisclaimer = searchTermNormalized && workspaces?.length <= DEFAULT_WORKSPACE_LIMIT;
     const filteredWorkspaces = filterWorkspacesBySearchTerm(searchTermNormalized, workspaces, input.page, input.limit);
 
-    if (filteredWorkspaces.length === 0) {
+    if (filteredWorkspaces?.length === 0) {
       return {
         content: 'No workspaces found matching the search term. Try using the tool without a search term',
       };
     }
 
     // Naive check to see if there are more pages
-    const hasMorePages = filteredWorkspaces.length === input.limit;
+    const hasMorePages = filteredWorkspaces?.length === input.limit;
     const workspacesList = formatWorkspacesList(filteredWorkspaces);
     const memberOnlyNote = usedMemberOnly ? 'Showing workspaces you are a member of. ' : '';
 
