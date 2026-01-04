@@ -12,6 +12,17 @@ import {
   ItemsQueryRuleOperator,
 } from 'src/monday-graphql/generated/graphql/graphql';
 import { NonDeprecatedColumnType } from 'src/utils/types';
+import { ApiClient } from '@mondaydotcomorg/api';
+
+// Mock the ApiClient constructor for dev API calls
+jest.mock('@mondaydotcomorg/api', () => ({
+  ApiClient: jest.fn().mockImplementation(() => ({
+    request: jest.fn(),
+  })),
+  AvailableVersions: {
+    DEV: 'dev',
+  },
+}));
 
 export type inputType = z.objectInputType<GetBoardItemsPageToolInput, ZodTypeAny>;
 
@@ -22,6 +33,8 @@ describe('GetBoardItemsPageTool', () => {
     jest.clearAllMocks();
     mocks = createMockApiClient();
     jest.spyOn(MondayAgentToolkit.prototype as any, 'createApiClient').mockReturnValue(mocks.mockApiClient);
+    // Make the ApiClient constructor return our mock client for dev API calls
+    (ApiClient as jest.Mock).mockImplementation(() => mocks.mockApiClient);
   });
 
   const successfulResponseWithItems: GetBoardItemsPageQuery = {

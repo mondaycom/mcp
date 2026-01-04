@@ -1,4 +1,4 @@
-import { ApiClient } from '@mondaydotcomorg/api';
+import { ApiClient, AvailableVersions } from '@mondaydotcomorg/api';
 import { ZodRawShape } from 'zod';
 import { ToolAnnotations } from '@modelcontextprotocol/sdk/types';
 import { Tool, ToolInputType, ToolOutputType, ToolType } from '../../tool';
@@ -26,21 +26,38 @@ export function createMondayApiAnnotations(annotations: ToolAnnotations): ToolAn
   };
 }
 
-export abstract class BaseMondayApiTool<
-  Input extends ZodRawShape | undefined,
-  Output extends Record<string, unknown> = never,
-> implements Tool<Input, Output>
+export abstract class BaseMondayApiTool<Input extends ZodRawShape | undefined, Output extends Record<string, unknown> = never>
+  implements Tool<Input, Output>
 {
   abstract name: string;
   abstract type: ToolType;
   abstract annotations: ToolAnnotations;
   enabledByDefault?: boolean;
 
+  private devApiClient?: ApiClient;
+
   constructor(
     protected readonly mondayApi: ApiClient,
     protected readonly apiToken?: string,
     protected readonly context?: MondayApiToolContext,
   ) {}
+
+  /**
+   * Returns an API client configured for the 'dev' API version.
+   * Lazily initialized and cached for the lifetime of the tool instance.
+   */
+  protected getDevApiClient(): ApiClient {
+    if (!this.devApiClient) {
+      if (!this.apiToken) {
+        throw new Error('API token is required for dev API calls');
+      }
+      this.devApiClient = new ApiClient({
+        token: this.apiToken,
+        apiVersion: AvailableVersions.DEV,
+      });
+    }
+    return this.devApiClient;
+  }
 
   abstract getDescription(): string;
   abstract getInputSchema(): Input;

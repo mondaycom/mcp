@@ -327,9 +327,9 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
       searchTerm: input.searchTerm!,
     };
 
-    const smartSearchRes = await this.mondayApi.request<SearchItemsDevQuery>(searchItemsDev, smartSearchVariables, {
-      versionOverride: 'dev',
-    });
+    // Use dev API client for smart search as it requires dev schema
+    const devApiClient = this.getDevApiClient();
+    const smartSearchRes = await devApiClient.request<SearchItemsDevQuery>(searchItemsDev, smartSearchVariables);
 
     const itemIdsFromSmartSearch = smartSearchRes.search_items?.results?.map((result) => Number(result.data.id)) ?? [];
 
