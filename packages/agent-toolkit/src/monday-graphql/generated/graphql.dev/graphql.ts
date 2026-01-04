@@ -17,7 +17,7 @@ export type Scalars = {
   CompareValue: { input: any; output: any; }
   /** A date. */
   Date: { input: any; output: any; }
-  /** A multipart file */
+  /** A file */
   File: { input: any; output: any; }
   /** An ISO 8601-encoded datetime (e.g., 2024-04-09T13:45:30Z) */
   ISO8601DateTime: { input: any; output: any; }
@@ -360,6 +360,20 @@ export type AiActionResponse = {
   usage?: Maybe<TokenUsage>;
 };
 
+/** Allowed MIME types for file uploads */
+export enum AllowedFileMime {
+  /** PDF document */
+  ApplicationPdf = 'APPLICATION_PDF',
+  /** GIF image */
+  ImageGif = 'IMAGE_GIF',
+  /** JPEG image */
+  ImageJpeg = 'IMAGE_JPEG',
+  /** PNG image */
+  ImagePng = 'IMAGE_PNG',
+  /** WebP image */
+  ImageWebp = 'IMAGE_WEBP'
+}
+
 /** Input for app feature release data. */
 export type AppFeatureReleaseDataInput = {
   /** The URL for the release. */
@@ -433,6 +447,8 @@ export enum AppFeatureTypeE {
   AiItemEmailsAndActivitiesActions = 'AI_ITEM_EMAILS_AND_ACTIVITIES_ACTIONS',
   /** AI_ITEM_UPDATE_ACTIONS */
   AiItemUpdateActions = 'AI_ITEM_UPDATE_ACTIONS',
+  /** AI_PLATFORM_AGENT */
+  AiPlatformAgent = 'AI_PLATFORM_AGENT',
   /** APP_WIZARD */
   AppWizard = 'APP_WIZARD',
   /** BLOCK */
@@ -501,6 +517,8 @@ export enum AppFeatureTypeE {
   SyncableResource = 'SYNCABLE_RESOURCE',
   /** TOPBAR */
   Topbar = 'TOPBAR',
+  /** VIBE_ITEM_VIEW */
+  VibeItemView = 'VIBE_ITEM_VIEW',
   /** VIBE_OBJECT */
   VibeObject = 'VIBE_OBJECT',
   /** WORKFLOW_TEMPLATE */
@@ -2211,12 +2229,16 @@ export type CreatePortfolioResult = {
 export type CreateProjectInput = {
   /** The project's kind (public / private / share) */
   board_kind: BoardKind;
+  /** Optional external callback URL where the project ID will be sent after async creation. The callback will receive a POST request with { is_success: boolean, process_id: string, project_id?: number } */
+  callback_url?: InputMaybe<Scalars['String']['input']>;
   /** Optional list of companion features to enable (currently only "resource_planner") */
   companions?: InputMaybe<Array<Scalars['String']['input']>>;
   /** Optional folder ID to associate with the project */
   folder_id?: InputMaybe<Scalars['String']['input']>;
   /** The name of the project to create */
   name: Scalars['String']['input'];
+  /** Optional ID of the portfolio to add the project to */
+  portfolio_id?: InputMaybe<Scalars['ID']['input']>;
   /** Optional template id to create the project from. Currently only supported for solution templates */
   template_id?: InputMaybe<Scalars['ID']['input']>;
   /** Optional workspace ID to associate with the project */
@@ -2225,11 +2247,13 @@ export type CreateProjectInput = {
 
 export type CreateProjectResult = {
   __typename?: 'CreateProjectResult';
-  /** Error message if project creation failed */
+  /** Error message if project creation request failed */
   error?: Maybe<Scalars['String']['output']>;
-  /** Success message when project is created */
+  /** Success message when project creation is initiated */
   message?: Maybe<Scalars['String']['output']>;
-  /** Indicates if the project creation was successful */
+  /** Unique process ID for tracking this creation request. This will be included in the callback when creation completes. */
+  process_id?: Maybe<Scalars['ID']['output']>;
+  /** Indicates if the project creation request was accepted */
   success?: Maybe<Scalars['Boolean']['output']>;
 };
 
@@ -2669,6 +2693,19 @@ export type DeleteWorkflowResult = {
   is_success: Scalars['Boolean']['output'];
 };
 
+/** A department in the account. */
+export type Department = {
+  __typename?: 'Department';
+  /** The number of seats assigned to the department. */
+  assigned_seats: Scalars['Int']['output'];
+  /** The department's ID. */
+  id: Scalars['ID']['output'];
+  /** The department's name. */
+  name: Scalars['String']['output'];
+  /** The number of seats reserved for the department. */
+  reserved_seats: Scalars['Int']['output'];
+};
+
 /** Defines mandatory and optional dependencies that must be populated to allow resolving the field dynamic values */
 export type DependencyConfig = {
   __typename?: 'DependencyConfig';
@@ -2687,6 +2724,14 @@ export type DependencyField = {
   sourceFieldTypeUniqueKey?: Maybe<Scalars['String']['output']>;
   /** JSON key that the backend expects for this dependency value */
   targetFieldKey?: Maybe<Scalars['String']['output']>;
+};
+
+/** Input type for updating a single pulse dependency value */
+export type DependencyPulseValueInput = {
+  /** The ID of the pulse to update the dependency value for */
+  pulseId: Scalars['ID']['input'];
+  /** The value of the dependency pulse value to update */
+  value: DependencyValueInput;
 };
 
 /** Type of dependency relationship between items */
@@ -3232,7 +3277,9 @@ export enum ExternalWidget {
   /** A Gantt chart visualization of board timelines with dependencies, grouping, and coloring capabilities. */
   Gantt = 'GANTT',
   /** Number widgets for displaying numeric metrics such as accumulated sums, averages, counts, totals, percentages. Ideal for showing single-value metrics, counters, calculated aggregations, and key performance indicators in a prominent numeric format. */
-  Number = 'NUMBER'
+  Number = 'NUMBER',
+  /** Table widgets for visualization */
+  Table = 'TABLE'
 }
 
 /** Information about a failed user board role update, including the user ID and the error encountered. */
@@ -3419,6 +3466,17 @@ export enum FileLinkValueKind {
   /** OneDrive file */
   Onedrive = 'onedrive'
 }
+
+/** Presigned URL for uploading a file to S3 */
+export type FileUploadUrl = {
+  __typename?: 'FileUploadUrl';
+  /** When the presigned URL expires */
+  expires_at?: Maybe<Scalars['Date']['output']>;
+  /** S3 key where the file will be stored */
+  s3_key?: Maybe<Scalars['String']['output']>;
+  /** Presigned URL to upload the file directly to S3 */
+  upload_url?: Maybe<Scalars['String']['output']>;
+};
 
 export type FileValue = ColumnValue & {
   __typename?: 'FileValue';
@@ -5339,6 +5397,8 @@ export type Mutation = {
   attach_status_managed_column?: Maybe<Column>;
   /** Extends trial period of an application to selected accounts */
   batch_extend_trial_period?: Maybe<BatchExtendTrialPeriod>;
+  /** Batch update the dependency column values in a board */
+  batch_update_dependency_column: Scalars['JSON']['output'];
   /** Initialize bulk import for a board and group. Returns import ID and upload URL to begin the process. */
   bulk_import_items?: Maybe<BulkImportInit>;
   /** Change a column's properties */
@@ -5414,7 +5474,7 @@ export type Mutation = {
   create_or_get_tag?: Maybe<Tag>;
   /** Create a new portfolio */
   create_portfolio?: Maybe<CreatePortfolioResult>;
-  /** Create a new project in monday.com from scratch. This mutation creates a project (board) with comprehensive customization options including: privacy settings (private/public/share), optional companions like Resource Planner for enhanced project management capabilities, workspace assignment for organizational structure, folder placement for better organization, and template selection for predefined project structures. Use this when you need to programmatically create a brand new project with specific configuration requirements. Returns the project ID upon successful creation. */
+  /** Create a new project in monday.com from scratch. This mutation initiates asynchronous project creation with comprehensive customization options including: privacy settings (private/public/share), optional companions like Resource Planner for enhanced project management capabilities, workspace assignment for organizational structure, folder placement for better organization, and template selection for predefined project structures. Since project creation is asynchronous, you can optionally provide a callback_url where the project ID will be sent via POST request once creation completes. The callback will receive: { is_success: boolean, process_id: string, project_id?: number }. Returns a process_id for tracking the creation request. */
   create_project?: Maybe<CreateProjectResult>;
   /** Creates a new status column with strongly typed settings. Status columns allow users to track item progress through customizable labels (e.g., "Working on it", "Done", "Stuck"). This mutation is specifically for status/color columns and provides type-safe creation with label configuration. */
   create_status_column?: Maybe<Column>;
@@ -5799,6 +5859,14 @@ export type MutationBatch_Extend_Trial_PeriodArgs = {
   app_id: Scalars['ID']['input'];
   duration_in_days: Scalars['Int']['input'];
   plan_id: Scalars['String']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationBatch_Update_Dependency_ColumnArgs = {
+  boardId: Scalars['String']['input'];
+  columnId: Scalars['String']['input'];
+  values: Array<DependencyPulseValueInput>;
 };
 
 
@@ -7840,6 +7908,8 @@ export type Query = {
   /** Count active workflows for a given host instance */
   count_active_workflows: Scalars['Int']['output'];
   custom_activity?: Maybe<Array<CustomActivity>>;
+  /** Get account departments */
+  departments?: Maybe<Array<Department>>;
   /** Get a collection of docs. */
   docs?: Maybe<Array<Maybe<Document>>>;
   /**
@@ -8140,6 +8210,12 @@ export type QueryCustom_ActivityArgs = {
   icon_id?: InputMaybe<CustomActivityIcon>;
   ids?: InputMaybe<Array<Scalars['String']['input']>>;
   name?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryDepartmentsArgs = {
+  ids?: InputMaybe<Array<Scalars['ID']['input']>>;
 };
 
 
@@ -10200,6 +10276,8 @@ export type VibeMutations = {
   ai_actions: AiActionResponse;
   /** Enhance a user prompt to include AI capabilities */
   enhance_prompt: EnhancedPromptResult;
+  /** Get a presigned URL to upload a file to S3 */
+  file_upload_url?: Maybe<FileUploadUrl>;
   /** Rollback an AI app to an older specific version  */
   rollback_to_version?: Maybe<SuccessResponse>;
 };
@@ -10218,6 +10296,13 @@ export type VibeMutationsAi_ActionsArgs = {
 /** Namespace for all vibe-related mutations */
 export type VibeMutationsEnhance_PromptArgs = {
   prompt: Scalars['String']['input'];
+};
+
+
+/** Namespace for all vibe-related mutations */
+export type VibeMutationsFile_Upload_UrlArgs = {
+  file_name: Scalars['String']['input'];
+  mime_type: AllowedFileMime;
 };
 
 

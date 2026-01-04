@@ -17,7 +17,7 @@ export type Scalars = {
   CompareValue: { input: any; output: any; }
   /** A date. */
   Date: { input: any; output: any; }
-  /** A multipart file */
+  /** A file */
   File: { input: any; output: any; }
   /** An ISO 8601-encoded datetime (e.g., 2024-04-09T13:45:30Z) */
   ISO8601DateTime: { input: any; output: any; }
@@ -415,6 +415,8 @@ export enum AppFeatureTypeE {
   AiItemEmailsAndActivitiesActions = 'AI_ITEM_EMAILS_AND_ACTIVITIES_ACTIONS',
   /** AI_ITEM_UPDATE_ACTIONS */
   AiItemUpdateActions = 'AI_ITEM_UPDATE_ACTIONS',
+  /** AI_PLATFORM_AGENT */
+  AiPlatformAgent = 'AI_PLATFORM_AGENT',
   /** APP_WIZARD */
   AppWizard = 'APP_WIZARD',
   /** BLOCK */
@@ -483,6 +485,8 @@ export enum AppFeatureTypeE {
   SyncableResource = 'SYNCABLE_RESOURCE',
   /** TOPBAR */
   Topbar = 'TOPBAR',
+  /** VIBE_ITEM_VIEW */
+  VibeItemView = 'VIBE_ITEM_VIEW',
   /** VIBE_OBJECT */
   VibeObject = 'VIBE_OBJECT',
   /** WORKFLOW_TEMPLATE */
@@ -1421,12 +1425,6 @@ export enum BoardsOrderBy {
   UsedAt = 'used_at'
 }
 
-/** Boost configuration for search results. Key-value pairs where key is strategy type and value is boost weight. */
-export type BoostConfigurationInput = {
-  /** Boost strategies as key-value pairs (strategy: weight). Empty object {} disables all boosts. */
-  boosts?: InputMaybe<Scalars['JSON']['input']>;
-};
-
 /** Reason for failure when status is Rejected or Failed */
 export enum BulkImportFailureReason {
   /** The authorization failed. */
@@ -2355,6 +2353,27 @@ export type DeleteMarketplaceAppDiscountResult = {
   deleted_discount: DeleteMarketplaceAppDiscount;
 };
 
+/** A department in the account. */
+export type Department = {
+  __typename?: 'Department';
+  /** The number of seats assigned to the department. */
+  assigned_seats: Scalars['Int']['output'];
+  /** The department's ID. */
+  id: Scalars['ID']['output'];
+  /** The department's name. */
+  name: Scalars['String']['output'];
+  /** The number of seats reserved for the department. */
+  reserved_seats: Scalars['Int']['output'];
+};
+
+/** Input type for updating a single pulse dependency value */
+export type DependencyPulseValueInput = {
+  /** The ID of the pulse to update the dependency value for */
+  pulseId: Scalars['ID']['input'];
+  /** The value of the dependency pulse value to update */
+  value: DependencyValueInput;
+};
+
 /** Type of dependency relationship between items */
 export enum DependencyRelation {
   /** Finish to Finish - The dependent item can finish only after the predecessor finishes */
@@ -2399,13 +2418,6 @@ export type DependencyValueInput = {
   removed_pulse?: InputMaybe<Array<UpdateDependencyColumnInput>>;
 };
 
-/** Deprecated board object. */
-export type DeprecatedBoard = {
-  __typename?: 'DeprecatedBoard';
-  /** Board ID. */
-  id: Scalars['ID']['output'];
-};
-
 export type DirectDocValue = ColumnValue & {
   __typename?: 'DirectDocValue';
   /** The column that this value belongs to. */
@@ -2422,6 +2434,44 @@ export type DirectDocValue = ColumnValue & {
   type: ColumnType;
   /** The column's raw value in JSON format. */
   value?: Maybe<Scalars['JSON']['output']>;
+};
+
+/** A resource from the directory */
+export type DirectoryResource = {
+  __typename?: 'DirectoryResource';
+  /** The email address of the directory resource. */
+  email?: Maybe<Scalars['String']['output']>;
+  /** The identifier of the directory resource. */
+  id: Scalars['ID']['output'];
+  /** The job role of the directory resource. */
+  job_role?: Maybe<Scalars['String']['output']>;
+  /** The location of the directory resource. */
+  location?: Maybe<Scalars['String']['output']>;
+  /** The name of the directory resource. */
+  name: Scalars['String']['output'];
+  /** The skills of the directory resource. */
+  skills?: Maybe<Array<Scalars['String']['output']>>;
+};
+
+/** Attributes that can be updated on a resource directory entry */
+export enum DirectoryResourceAttribute {
+  /** Represents the resource directory job role attribute.. */
+  JobRole = 'JOB_ROLE',
+  /** Represents the resource directory location attribute. */
+  Location = 'LOCATION',
+  /** Represents the resource directory skills attribute. */
+  Skills = 'SKILLS'
+}
+
+/** Paginated response containing directory resources and cursor for next page */
+export type DirectoryResourcesResponse = {
+  __typename?: 'DirectoryResourcesResponse';
+  /** Cursor for fetching the next page of results */
+  cursor?: Maybe<Scalars['String']['output']>;
+  /** Response identifier */
+  id: Scalars['ID']['output'];
+  /** List of directory resources */
+  resources: Array<DirectoryResource>;
 };
 
 /** The period of a discount. Provide only for standard discounts. */
@@ -2799,23 +2849,6 @@ export type EmailValue = ColumnValue & {
   updated_at?: Maybe<Scalars['Date']['output']>;
   /** The column's raw value in JSON format. */
   value?: Maybe<Scalars['JSON']['output']>;
-};
-
-/** Item's column values */
-export type EnrichedColumnValues = {
-  __typename?: 'EnrichedColumnValues';
-  /** List of user IDs allowed to view this column */
-  allowed_users: Array<Scalars['String']['output']>;
-  /** Column title. */
-  col_title?: Maybe<Scalars['String']['output']>;
-  /** Column type. */
-  col_type: Scalars['String']['output'];
-  /** Column ID. */
-  id: Scalars['ID']['output'];
-  /** Whether the column is publicly visible. */
-  is_public: Scalars['Boolean']['output'];
-  /** Column value. */
-  value: Scalars['String']['output'];
 };
 
 /** Response from exporting document content as markdown. Contains the generated markdown text or error details. */
@@ -3952,52 +3985,6 @@ export type ImportDocFromHtmlResult = {
   success: Scalars['Boolean']['output'];
 };
 
-/** Item data present in the search index. */
-export type IndexedItem = {
-  __typename?: 'IndexedItem';
-  /**
-   * Board containing this item.
-   * @deprecated Use board_id field instead or live_data if you need more board data.
-   */
-  board: DeprecatedBoard;
-  /** ID of the board containing this item. */
-  board_id: Scalars['ID']['output'];
-  /** Board kind (e.g., public, private). */
-  board_kind: Scalars['String']['output'];
-  /** Name of the board containing this item. */
-  board_name: Scalars['String']['output'];
-  /** The item's column values. */
-  column_values: Array<EnrichedColumnValues>;
-  /** ISO timestamp when the item was created. */
-  created_at: Scalars['String']['output'];
-  /** Item description. */
-  description?: Maybe<Scalars['String']['output']>;
-  /** ID of the group containing this item. */
-  group_id: Scalars['ID']['output'];
-  /** Name of the group containing this item. */
-  group_name: Scalars['String']['output'];
-  /** Item ID. */
-  id: Scalars['ID']['output'];
-  /** Item kind classification. */
-  kind: Scalars['String']['output'];
-  /** Item name. */
-  name: Scalars['String']['output'];
-  /** ID of the item owner. */
-  owner_id: Scalars['ID']['output'];
-  /** Item state flag. */
-  state: Scalars['Int']['output'];
-  /** List of tags associated with the item. */
-  tags: Array<Scalars['String']['output']>;
-  /** Item type (e.g., Project). */
-  type: Scalars['String']['output'];
-  /** ISO timestamp when the item was last updated. */
-  updated_at: Scalars['String']['output'];
-  /** URL to view this item. */
-  url: Scalars['String']['output'];
-  /** ID of the workspace containing this item. */
-  workspace_id: Scalars['ID']['output'];
-};
-
 /** Content inserted in delta operations */
 export type InsertOps = {
   __typename?: 'InsertOps';
@@ -4729,6 +4716,8 @@ export type Mutation = {
   attach_status_managed_column?: Maybe<Column>;
   /** Extends trial period of an application to selected accounts */
   batch_extend_trial_period?: Maybe<BatchExtendTrialPeriod>;
+  /** Batch update the dependency column values in a board */
+  batch_update_dependency_column: Scalars['JSON']['output'];
   /** Initialize bulk import for a board and group. Returns import ID and upload URL to begin the process. */
   bulk_import_items?: Maybe<BulkImportInit>;
   /** Change a column's properties */
@@ -4937,6 +4926,8 @@ export type Mutation = {
   update_dashboard?: Maybe<Dashboard>;
   /** Update the dependency column for a specific pulse */
   update_dependency_column: Scalars['JSON']['output'];
+  /** Update attributes (Job Role, Skills, or Location) for multiple resources in the directory */
+  update_directory_resources_attributes?: Maybe<UpdateDirectoryResourceAttributesResponse>;
   /** Update a document block */
   update_doc_block?: Maybe<DocumentBlock>;
   /** Update a document's name/title. Changes are applied immediately and visible to all users with access to the document. */
@@ -5151,6 +5142,14 @@ export type MutationBatch_Extend_Trial_PeriodArgs = {
   app_id: Scalars['ID']['input'];
   duration_in_days: Scalars['Int']['input'];
   plan_id: Scalars['String']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationBatch_Update_Dependency_ColumnArgs = {
+  boardId: Scalars['String']['input'];
+  columnId: Scalars['String']['input'];
+  values: Array<DependencyPulseValueInput>;
 };
 
 
@@ -6051,6 +6050,14 @@ export type MutationUpdate_Dependency_ColumnArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationUpdate_Directory_Resources_AttributesArgs = {
+  attribute: DirectoryResourceAttribute;
+  resource_ids: Array<Scalars['ID']['input']>;
+  values: Array<Scalars['String']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Doc_BlockArgs = {
   block_id: Scalars['String']['input'];
   content: Scalars['JSON']['input'];
@@ -6643,16 +6650,6 @@ export type PersonValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
-/** Persons filter for search queries */
-export type PersonsInput = {
-  /** List of person IDs to filter by */
-  person_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
-  /** List of person names to filter by (searches in multiple-person columns) */
-  person_names?: InputMaybe<Array<Scalars['String']['input']>>;
-  /** List of team IDs to filter by */
-  team_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
-};
-
 /** Phone questions only: Configuration for setting a specific predefined phone country prefix that will be pre-selected for users. */
 export type PhonePrefixPredefined = {
   __typename?: 'PhonePrefixPredefined';
@@ -6917,6 +6914,8 @@ export type Query = {
   /** Returns connections for the authenticated user. Supports filtering, pagination, ordering, and partial-scope options. */
   connections?: Maybe<Array<Connection>>;
   custom_activity?: Maybe<Array<CustomActivity>>;
+  /** Get account departments */
+  departments?: Maybe<Array<Department>>;
   /** Get a collection of docs. */
   docs?: Maybe<Array<Maybe<Document>>>;
   /**
@@ -6936,6 +6935,8 @@ export type Query = {
   form?: Maybe<ResponseForm>;
   /** Retrieves the JSON schema definition for a specific column type. Use this query before calling update_column mutation to understand the structure and validation rules for the defaults parameter. The schema defines what properties are available when updating columns of a specific type. */
   get_column_type_schema?: Maybe<Scalars['JSON']['output']>;
+  /** Fetch resources information from the resource directory */
+  get_directory_resources?: Maybe<DirectoryResourcesResponse>;
   /**
    * Retrieves the JSON schema definition for a specific create view type.
    *       Use this query before calling create_view mutation to understand the structure and validation rules for the settings parameter.
@@ -6974,8 +6975,6 @@ export type Query = {
   platform_api?: Maybe<PlatformApi>;
   /** Get a collection of replies filtered by board IDs and date range. */
   replies?: Maybe<Array<Reply>>;
-  /** Search for items using various search strategies. */
-  search_items?: Maybe<SearchItemsGraphQlResultsView>;
   /** Get a collection of monday dev sprints */
   sprints?: Maybe<Array<Sprint>>;
   /** Get a collection of tags. */
@@ -7155,6 +7154,12 @@ export type QueryCustom_ActivityArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QueryDepartmentsArgs = {
+  ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryDocsArgs = {
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -7196,6 +7201,14 @@ export type QueryFormArgs = {
 /** Root query type for the Dependencies service */
 export type QueryGet_Column_Type_SchemaArgs = {
   type: ColumnType;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryGet_Directory_ResourcesArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  team_ids?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
 
@@ -7313,21 +7326,6 @@ export type QueryRepliesArgs = {
   created_at_to?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
-};
-
-
-/** Root query type for the Dependencies service */
-export type QuerySearch_ItemsArgs = {
-  board_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
-  boosts?: InputMaybe<BoostConfigurationInput>;
-  date_range?: InputMaybe<SearchDateRangeInput>;
-  exact_match?: InputMaybe<Scalars['Boolean']['input']>;
-  persons?: InputMaybe<PersonsInput>;
-  query?: InputMaybe<Scalars['String']['input']>;
-  reranking_strategy?: InputMaybe<RerankingStrategy>;
-  size: Scalars['Int']['input'];
-  status?: InputMaybe<Scalars['String']['input']>;
-  workspace_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
 };
 
 
@@ -7542,12 +7540,6 @@ export type RequiredColumns = {
   required_column_ids: Array<Scalars['String']['output']>;
 };
 
-/** Algorithms for reranking results. */
-export enum RerankingStrategy {
-  /** Use cross-encoder model for reranking results. */
-  CrossEncoder = 'CROSS_ENCODER'
-}
-
 export type ResponseForm = {
   __typename?: 'ResponseForm';
   /** Object containing accessibility settings such as language, alt text, and reading direction. */
@@ -7585,64 +7577,6 @@ export enum ScopeType {
   AccountNewUserDefaults = 'AccountNewUserDefaults',
   User = 'User'
 }
-
-/** Available search modes. */
-export enum Search {
-  /** Combined lexical and semantic search with reranking. */
-  Hybrid = 'HYBRID',
-  /** Keyword-based search using text matching. */
-  Lexical = 'LEXICAL',
-  /** Vector-based search using semantic similarity. */
-  Semantic = 'SEMANTIC'
-}
-
-/** Date range filter for search queries */
-export type SearchDateRangeInput = {
-  /** Filter items with a date column having a value after this date */
-  column_value_after?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
-  /** Filter items with a date column having a value before this date */
-  column_value_before?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
-  /** Filter items created after this date */
-  created_after?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
-  /** Filter items created before this date */
-  created_before?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
-  /** Filter items updated after this date */
-  updated_after?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
-  /** Filter items updated before this date */
-  updated_before?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
-};
-
-/** Date range filter for search queries */
-export type SearchDateRangeLegacyInput = {
-  /** Filter items created after this date */
-  createdAfter?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
-  /** Filter items created before this date */
-  createdBefore?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
-  /** Filter items updated after this date */
-  updatedAfter?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
-  /** Filter items updated before this date */
-  updatedBefore?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
-};
-
-/** Response of the search request. */
-export type SearchItemsGraphQlResultsView = {
-  __typename?: 'SearchItemsGraphQlResultsView';
-  /** Indicates if the results have been reranked */
-  reranked?: Maybe<Scalars['Boolean']['output']>;
-  /** The results of the items search. */
-  results: Array<SearchItemsQueryResult>;
-};
-
-/** Contains search items query results. */
-export type SearchItemsQueryResult = {
-  __typename?: 'SearchItemsQueryResult';
-  /** Item data for the search results. */
-  data: IndexedItem;
-  /** Latest item data for the search results. Requires additional GraphQL federation calls. */
-  live_data: Item;
-  /** The relevance score of the search result. */
-  score: Scalars['Float']['output'];
-};
 
 /** Response type for detailed board permissions. Contains information about the permissions that were set. */
 export type SetBoardPermissionResponse = {
@@ -8527,6 +8461,13 @@ export type UpdateDependencyColumnInput = {
   linkedPulseId: Scalars['ID']['input'];
   /** Optional metadata containing dependency configuration (type and lag) */
   metadata?: InputMaybe<MetadataInput>;
+};
+
+/** Response indicating whether the directory attribute update succeeded */
+export type UpdateDirectoryResourceAttributesResponse = {
+  __typename?: 'UpdateDirectoryResourceAttributesResponse';
+  /** Indicates whether the batch update completed successfully. */
+  success: Scalars['Boolean']['output'];
 };
 
 export type UpdateDropdownColumnSettingsInput = {
@@ -9729,6 +9670,7 @@ export type GetCurrentUserQuery = { __typename?: 'Query', me?: { __typename?: 'U
 export type ListWorkspacesQueryVariables = Exact<{
   limit: Scalars['Int']['input'];
   page: Scalars['Int']['input'];
+  membershipKind: WorkspaceMembershipKind;
 }>;
 
 
@@ -10173,7 +10115,7 @@ export const ListTeamsOnlyDocument = {"kind":"Document","definitions":[{"kind":"
 export const ListTeamsWithMembersDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"listTeamsWithMembers"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"teamIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"teams"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"teamIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"TeamExtendedInfo"}},{"kind":"Field","name":{"kind":"Name","value":"owners"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"TeamOwner"}}]}},{"kind":"Field","name":{"kind":"Name","value":"users"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"TeamMember"}}]}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"TeamBasicInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Team"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"TeamExtendedInfo"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Team"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"TeamBasicInfo"}},{"kind":"Field","name":{"kind":"Name","value":"is_guest"}},{"kind":"Field","name":{"kind":"Name","value":"picture_url"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"TeamOwner"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"email"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"TeamMember"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"is_admin"}},{"kind":"Field","name":{"kind":"Name","value":"is_guest"}},{"kind":"Field","name":{"kind":"Name","value":"is_pending"}},{"kind":"Field","name":{"kind":"Name","value":"is_verified"}},{"kind":"Field","name":{"kind":"Name","value":"is_view_only"}},{"kind":"Field","name":{"kind":"Name","value":"join_date"}},{"kind":"Field","name":{"kind":"Name","value":"last_activity"}},{"kind":"Field","name":{"kind":"Name","value":"location"}},{"kind":"Field","name":{"kind":"Name","value":"mobile_phone"}},{"kind":"Field","name":{"kind":"Name","value":"phone"}},{"kind":"Field","name":{"kind":"Name","value":"photo_thumb"}},{"kind":"Field","name":{"kind":"Name","value":"time_zone_identifier"}},{"kind":"Field","name":{"kind":"Name","value":"utc_hours_diff"}}]}}]} as unknown as DocumentNode<ListTeamsWithMembersQuery, ListTeamsWithMembersQueryVariables>;
 export const GetUserByNameDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getUserByName"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"name"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"users"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"name"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserDetails"}},{"kind":"Field","name":{"kind":"Name","value":"teams"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserTeamMembership"}}]}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserDetails"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"enabled"}},{"kind":"Field","name":{"kind":"Name","value":"is_admin"}},{"kind":"Field","name":{"kind":"Name","value":"is_guest"}},{"kind":"Field","name":{"kind":"Name","value":"is_pending"}},{"kind":"Field","name":{"kind":"Name","value":"is_verified"}},{"kind":"Field","name":{"kind":"Name","value":"is_view_only"}},{"kind":"Field","name":{"kind":"Name","value":"join_date"}},{"kind":"Field","name":{"kind":"Name","value":"last_activity"}},{"kind":"Field","name":{"kind":"Name","value":"location"}},{"kind":"Field","name":{"kind":"Name","value":"mobile_phone"}},{"kind":"Field","name":{"kind":"Name","value":"phone"}},{"kind":"Field","name":{"kind":"Name","value":"photo_thumb"}},{"kind":"Field","name":{"kind":"Name","value":"time_zone_identifier"}},{"kind":"Field","name":{"kind":"Name","value":"utc_hours_diff"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserTeamMembership"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Team"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"is_guest"}},{"kind":"Field","name":{"kind":"Name","value":"picture_url"}}]}}]} as unknown as DocumentNode<GetUserByNameQuery, GetUserByNameQueryVariables>;
 export const GetCurrentUserDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getCurrentUser"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"me"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"enabled"}},{"kind":"Field","name":{"kind":"Name","value":"is_admin"}},{"kind":"Field","name":{"kind":"Name","value":"is_guest"}},{"kind":"Field","name":{"kind":"Name","value":"photo_thumb"}}]}}]}}]} as unknown as DocumentNode<GetCurrentUserQuery, GetCurrentUserQueryVariables>;
-export const ListWorkspacesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"listWorkspaces"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"page"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"workspaces"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"page"},"value":{"kind":"Variable","name":{"kind":"Name","value":"page"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}}]}}]} as unknown as DocumentNode<ListWorkspacesQuery, ListWorkspacesQueryVariables>;
+export const ListWorkspacesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"listWorkspaces"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"page"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"membershipKind"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"WorkspaceMembershipKind"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"workspaces"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"page"},"value":{"kind":"Variable","name":{"kind":"Name","value":"page"}}},{"kind":"Argument","name":{"kind":"Name","value":"membership_kind"},"value":{"kind":"Variable","name":{"kind":"Name","value":"membershipKind"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}}]}}]} as unknown as DocumentNode<ListWorkspacesQuery, ListWorkspacesQueryVariables>;
 export const UpdateBoardHierarchyDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"updateBoardHierarchy"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"attributes"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateBoardHierarchyAttributesInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"update_board_hierarchy"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"board_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}},{"kind":"Argument","name":{"kind":"Name","value":"attributes"},"value":{"kind":"Variable","name":{"kind":"Name","value":"attributes"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"board"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]}}]} as unknown as DocumentNode<UpdateBoardHierarchyMutation, UpdateBoardHierarchyMutationVariables>;
 export const UpdateOverviewHierarchyDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"updateOverviewHierarchy"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"overviewId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"attributes"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateOverviewHierarchyAttributesInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"update_overview_hierarchy"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"overview_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"overviewId"}}},{"kind":"Argument","name":{"kind":"Name","value":"attributes"},"value":{"kind":"Variable","name":{"kind":"Name","value":"attributes"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"overview"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]}}]} as unknown as DocumentNode<UpdateOverviewHierarchyMutation, UpdateOverviewHierarchyMutationVariables>;
 export const GetBoardsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetBoards"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"page"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspace_ids"}},"type":{"kind":"ListType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"boards"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"page"},"value":{"kind":"Variable","name":{"kind":"Name","value":"page"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"workspace_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspace_ids"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"url"}}]}}]}}]} as unknown as DocumentNode<GetBoardsQuery, GetBoardsQueryVariables>;

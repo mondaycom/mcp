@@ -435,6 +435,12 @@ type Query {
     type: ValidationsEntityType = board
   ): Validations
 
+  """Get account departments"""
+  departments(
+    """Filter by department IDs"""
+    ids: [ID!]
+  ): [Department!]
+
   """Export the dependency graph for a specific board"""
   export_graph(
     """The ID of the board to export the graph for"""
@@ -1766,6 +1772,15 @@ type Mutation {
     successor_new_date: TimelineDateInput
   ): JSON!
 
+  """Batch update the dependency column values in a board"""
+  batch_update_dependency_column(
+    boardId: String!
+    columnId: String!
+
+    """The list of pulses with their dependency column values to update"""
+    values: [DependencyPulseValueInput!]!
+  ): JSON!
+
   """
   Adds markdown content to an existing document by converting it into document blocks. Use this to append content to the end of a document or insert content after a specific block. The markdown will be parsed and converted into the appropriate document block types (text, headers, lists, etc.). Returns the IDs of the newly created blocks on success.
   """
@@ -2965,7 +2980,7 @@ type Mutation {
   convert_board_to_project(input: ConvertBoardToProjectInput!): ConvertBoardToProjectResult
 
   """
-  Create a new project in monday.com from scratch. This mutation creates a project (board) with comprehensive customization options including: privacy settings (private/public/share), optional companions like Resource Planner for enhanced project management capabilities, workspace assignment for organizational structure, folder placement for better organization, and template selection for predefined project structures. Use this when you need to programmatically create a brand new project with specific configuration requirements. Returns the project ID upon successful creation.
+  Create a new project in monday.com from scratch. This mutation initiates asynchronous project creation with comprehensive customization options including: privacy settings (private/public/share), optional companions like Resource Planner for enhanced project management capabilities, workspace assignment for organizational structure, folder placement for better organization, and template selection for predefined project structures. Since project creation is asynchronous, you can optionally provide a callback_url where the project ID will be sent via POST request once creation completes. The callback will receive: { is_success: boolean, process_id: string, project_id?: number }. Returns a process_id for tracking the creation request.
   """
   create_project(input: CreateProjectInput!): CreateProjectResult
 
@@ -3533,6 +3548,24 @@ type AiActionResponse {
   usage: TokenUsage
 }
 
+"""Allowed MIME types for file uploads"""
+enum AllowedFileMime {
+  """PNG image"""
+  IMAGE_PNG
+
+  """JPEG image"""
+  IMAGE_JPEG
+
+  """GIF image"""
+  IMAGE_GIF
+
+  """WebP image"""
+  IMAGE_WEBP
+
+  """PDF document"""
+  APPLICATION_PDF
+}
+
 """A date."""
 scalar Date
 
@@ -3543,6 +3576,18 @@ type EnhancedPromptResult {
 
   """The AI capabilities text that was added"""
   addition: String
+}
+
+"""Presigned URL for uploading a file to S3"""
+type FileUploadUrl {
+  """Presigned URL to upload the file directly to S3"""
+  upload_url: String
+
+  """S3 key where the file will be stored"""
+  s3_key: String
+
+  """When the presigned URL expires"""
+  expires_at: Date
 }
 
 """An ISO 8601-encoded datetime (e.g., 2024-04-09T13:45:30Z)"""
@@ -3608,6 +3653,15 @@ type VibeMutations {
     """The original user prompt to enhance"""
     prompt: String!
   ): EnhancedPromptResult!
+
+  """Get a presigned URL to upload a file to S3"""
+  file_upload_url(
+    """Original file name"""
+    file_name: String!
+
+    """MIME type of the file"""
+    mime_type: AllowedFileMime!
+  ): FileUploadUrl
 }
 
 """Configuration for enabling web search in AI requests"""
@@ -6437,6 +6491,21 @@ enum ValidationsEntityType {
   board
 }
 
+"""A department in the account."""
+type Department {
+  """The department's ID."""
+  id: ID!
+
+  """The department's name."""
+  name: String!
+
+  """The number of seats reserved for the department."""
+  reserved_seats: Int!
+
+  """The number of seats assigned to the department."""
+  assigned_seats: Int!
+}
+
 """The complete graph export for a board"""
 type BoardGraphExport {
   """The ID of the board"""
@@ -6453,6 +6522,15 @@ type BoardGraphExport {
 
   """The total number of edges in the graph"""
   edgeCount: Int
+}
+
+"""Input type for updating a single pulse dependency value"""
+input DependencyPulseValueInput {
+  """The ID of the pulse to update the dependency value for"""
+  pulseId: ID!
+
+  """The value of the dependency pulse value to update"""
+  value: DependencyValueInput!
 }
 
 """Type of dependency relationship between items"""
@@ -8121,6 +8199,12 @@ enum AppFeatureTypeE {
 
   """VIBE_OBJECT"""
   VIBE_OBJECT
+
+  """VIBE_ITEM_VIEW"""
+  VIBE_ITEM_VIEW
+
+  """AI_PLATFORM_AGENT"""
+  AI_PLATFORM_AGENT
 }
 
 """The visibility type of an app"""
@@ -8348,6 +8432,9 @@ input UpdateAppInput {
   """Array of user IDs with access (replaces existing collaborators)"""
   collaborators: [ID!]
 }
+
+"""A file"""
+scalar File
 
 """Your monday.com account"""
 type Account {
@@ -9473,9 +9560,6 @@ type FailedUserBoardRoleUpdate {
   """The ID of the user whose board role update failed."""
   user_id: ID!
 }
-
-"""A multipart file"""
-scalar File
 
 """A file with an invalid or missing asset."""
 type FileAssetInvalidValue {
@@ -11348,17 +11432,30 @@ input CreateProjectInput {
 
   """Optional folder ID to associate with the project"""
   folder_id: String
+
+  """Optional ID of the portfolio to add the project to"""
+  portfolio_id: ID
+
+  """
+  Optional external callback URL where the project ID will be sent after async creation. The callback will receive a POST request with { is_success: boolean, process_id: string, project_id?: number }
+  """
+  callback_url: String
 }
 
 type CreateProjectResult {
-  """Indicates if the project creation was successful"""
+  """Indicates if the project creation request was accepted"""
   success: Boolean
 
-  """Success message when project is created"""
+  """Success message when project creation is initiated"""
   message: String
 
-  """Error message if project creation failed"""
+  """Error message if project creation request failed"""
   error: String
+
+  """
+  Unique process ID for tracking this creation request. This will be included in the callback when creation completes.
+  """
+  process_id: ID
 }
 
 type BoardMuteSettings {
@@ -12860,6 +12957,9 @@ enum ExternalWidget {
   A Gantt chart visualization of board timelines with dependencies, grouping, and coloring capabilities.
   """
   GANTT
+
+  """Table widgets for visualization"""
+  TABLE
 }
 
 """Data visualization object."""

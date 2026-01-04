@@ -1,6 +1,6 @@
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { listWorkspaces, WorkspaceMembershipKind } from './list-workspace.graphql';
+import { listWorkspaces } from './list-workspace.graphql';
 import { DEFAULT_WORKSPACE_LIMIT, MAX_WORKSPACE_LIMIT_FOR_SEARCH } from './list-workspace.consts';
 import { ListWorkspacesQueryResponse } from './list-workspace.types';
 import {
@@ -9,6 +9,7 @@ import {
   filterWorkspacesBySearchTerm,
   formatWorkspacesList,
 } from './list-workspace.utils';
+import { WorkspaceMembershipKind } from '../../../../monday-graphql/generated/graphql/graphql';
 import { z } from 'zod';
 import { normalizeString } from 'src/utils/string.utils';
 
@@ -68,13 +69,19 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
     });
 
     // First, try to get workspaces where the user is a member (more relevant results)
-    let res = await this.mondayApi.request<ListWorkspacesQueryResponse>(listWorkspaces, createVariables('member'));
+    let res = await this.mondayApi.request<ListWorkspacesQueryResponse>(
+      listWorkspaces,
+      createVariables(WorkspaceMembershipKind.Member),
+    );
     let workspaces = filterNullWorkspaces(res);
     let usedMemberOnly = true;
 
     // If searching with a term and no matches found in member workspaces, try with all workspaces
     if (searchTermNormalized && (workspaces?.length === 0 || !hasMatchingWorkspace(searchTermNormalized, workspaces))) {
-      res = await this.mondayApi.request<ListWorkspacesQueryResponse>(listWorkspaces, createVariables('all'));
+      res = await this.mondayApi.request<ListWorkspacesQueryResponse>(
+        listWorkspaces,
+        createVariables(WorkspaceMembershipKind.All),
+      );
       workspaces = filterNullWorkspaces(res);
       usedMemberOnly = false;
     }
