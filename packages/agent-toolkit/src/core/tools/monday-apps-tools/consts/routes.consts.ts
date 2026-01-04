@@ -49,6 +49,9 @@ export const API_ENDPOINTS = {
     GET_ENV_KEYS: (appId: number) => `${CODE_URL}/${appId}/env-keys`,
     MANAGE_ENV: (appId: number, key: string) => `${CODE_URL}/${appId}/env/${key}`,
   },
+  PLATFORM_BUILDING_BLOCKS_SCHEMAS: {
+    GET_ALL: `${MONDAY_APPS_DOMAIN}/apps_ms/public/platform-building-blocks-schemas`,
+  },
 };
 
 export const APPS_MS_TIMEOUT_IN_MS = 30000;

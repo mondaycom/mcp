@@ -51,15 +51,37 @@ const CreateDocLocationSchema = z.discriminatedUnion('type', [
 export const createDocToolSchema = {
   doc_name: z.string().describe('Name for the new document.'),
   markdown: z.string().describe('Markdown content that will be imported into the newly created document as blocks.'),
-  location: z.enum(['workspace', 'item']).describe('Location where the document should be created - either in a workspace or attached to an item'),
-  
-  workspace_id: z.number().optional().describe('[REQUIRED - use only when location="workspace"] Workspace ID under which to create the new document'),
-  doc_kind: z.nativeEnum(BoardKind).optional().describe('[OPTIONAL - use only when location="workspace"] Document kind (public/private/share). Defaults to public.'),
-  folder_id: z.number().optional().describe('[OPTIONAL - use only when location="workspace"] Optional folder ID to place the document inside a specific folder'),
+  location: z
+    .enum(['workspace', 'item'])
+    .describe('Location where the document should be created - either in a workspace or attached to an item'),
 
-  item_id: z.number().optional().describe('[REQUIRED - use only when location="item"] Item ID to attach the new document to'),
-  column_id: z.string().optional().describe('[OPTIONAL - use only when location="item"] ID of an existing "doc" column on the board which contains the item. If not provided, the tool will create a new doc column automatically when creating a doc on an item.',),
+  workspace_id: z
+    .number()
+    .optional()
+    .describe('[REQUIRED - use only when location="workspace"] Workspace ID under which to create the new document'),
+  doc_kind: z
+    .nativeEnum(BoardKind)
+    .optional()
+    .describe(
+      '[OPTIONAL - use only when location="workspace"] Document kind (public/private/share). Defaults to public.',
+    ),
+  folder_id: z
+    .number()
+    .optional()
+    .describe(
+      '[OPTIONAL - use only when location="workspace"] Optional folder ID to place the document inside a specific folder',
+    ),
 
+  item_id: z
+    .number()
+    .optional()
+    .describe('[REQUIRED - use only when location="item"] Item ID to attach the new document to'),
+  column_id: z
+    .string()
+    .optional()
+    .describe(
+      '[OPTIONAL - use only when location="item"] ID of an existing "doc" column on the board which contains the item. If not provided, the tool will create a new doc column automatically when creating a doc on an item.',
+    ),
 };
 
 export class CreateDocTool extends BaseMondayApiTool<typeof createDocToolSchema> {
@@ -92,13 +114,13 @@ USAGE EXAMPLES:
   protected async executeInternal(input: ToolInputType<typeof createDocToolSchema>): Promise<ToolOutputType<never>> {
     const inputParsingResult = CreateDocLocationSchema.safeParse({
       ...input,
-      type: input.location
+      type: input.location,
     });
 
-    if(!inputParsingResult.success) {
+    if (!inputParsingResult.success) {
       return { content: `Required parameters were not provided for location parameter of ${input.location}` };
     }
-    
+
     const parsedInput = inputParsingResult.data;
 
     try {

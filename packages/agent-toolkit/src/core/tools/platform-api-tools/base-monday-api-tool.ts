@@ -6,7 +6,14 @@ import { trackEvent } from '../../../utils/tracking.utils';
 import { extractTokenInfo } from '../../../utils/token.utils';
 
 export type MondayApiToolContext = {
+  // Operational context
   boardId?: number;
+  apiVersion?: string;
+
+  // Agent metadata (for tracking)
+  agentType?: string;
+  agentClientName?: string;
+  clientRedirectUris?: string[];
 };
 
 export type BaseMondayApiToolConstructor = new (api: ApiClient, token?: string) => BaseMondayApiTool<any>;
@@ -53,7 +60,7 @@ export abstract class BaseMondayApiTool<
       throw error;
     } finally {
       const executionTimeInMs = Date.now() - startTime;
-      this.trackToolExecution(this.name, executionTimeInMs, isError, input as Record<string, unknown>);
+      this.trackToolExecution(this.name, executionTimeInMs, isError);
     }
   }
 
@@ -85,6 +92,7 @@ export abstract class BaseMondayApiTool<
         isError,
         params,
         toolType: 'monday_api_tool',
+        ...(this.context || {}),
         ...tokenInfo,
       },
     });

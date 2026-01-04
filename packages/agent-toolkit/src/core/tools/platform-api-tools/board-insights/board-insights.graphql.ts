@@ -11,10 +11,7 @@ export const boardInsights = gql`
               result
             }
             ... on AggregateGroupByResult {
-              value_string
-              value_int
-              value_float
-              value_boolean
+              value
             }
           }
         }

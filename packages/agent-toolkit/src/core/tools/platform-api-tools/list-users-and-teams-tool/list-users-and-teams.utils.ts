@@ -1,5 +1,30 @@
 import { FormattedResponse, isExtendedTeam, UserTeam } from './types';
 
+// Configuration for optional team member fields: [fieldName, displayLabel]
+const optionalTeamMemberFields: Array<[string, string]> = [
+  ['is_pending', 'Pending'],
+  ['is_verified', 'Verified'],
+  ['is_view_only', 'View Only'],
+  ['join_date', 'Join Date'],
+  ['last_activity', 'Last Activity'],
+  ['location', 'Location'],
+  ['mobile_phone', 'Mobile Phone'],
+  ['phone', 'Phone'],
+  ['photo_thumb', 'Photo Thumb'],
+  ['time_zone_identifier', 'Timezone'],
+  ['utc_hours_diff', 'UTC Hours Diff'],
+];
+
+// For optional fields - returns array of formatted strings
+function formatOptionalUserFields(user: Record<string, any>, prefix = ''): string[] {
+  return optionalTeamMemberFields
+    .filter(([fieldName]) => {
+      const value = user[fieldName];
+      return value !== undefined && value !== null;
+    })
+    .map(([fieldName, displayLabel]) => `${prefix}${displayLabel}: ${user[fieldName]}`);
+}
+
 export const formatUsersAndTeams = (data: FormattedResponse): string => {
   const sections: string[] = [];
 
@@ -15,22 +40,16 @@ export const formatUsersAndTeams = (data: FormattedResponse): string => {
         sections.push(`  Enabled: ${user.enabled}`);
         sections.push(`  Admin: ${user.is_admin || false}`);
         sections.push(`  Guest: ${user.is_guest || false}`);
-        sections.push(`  Pending: ${user.is_pending || false}`);
-        sections.push(`  Verified: ${user.is_verified || false}`);
-        sections.push(`  View Only: ${user.is_view_only || false}`);
-        sections.push(`  Join Date: ${user.join_date || 'N/A'}`);
-        sections.push(`  Last Activity: ${user.last_activity || 'N/A'}`);
-        sections.push(`  Location: ${user.location || 'N/A'}`);
-        sections.push(`  Mobile Phone: ${user.mobile_phone || 'N/A'}`);
-        sections.push(`  Phone: ${user.phone || 'N/A'}`);
-        sections.push(`  Timezone: ${user.time_zone_identifier || 'N/A'}`);
-        sections.push(`  UTC Hours Diff: ${user.utc_hours_diff || 'N/A'}`);
+        // Add optional fields that exist and have values
+        sections.push(...formatOptionalUserFields(user, '  '));
 
         if (user.teams && user.teams.length > 0) {
           sections.push(`  Teams:`);
           user.teams.forEach((team) => {
             if (team) {
-              sections.push(`    - ID: ${team.id}, Name: ${team.name}, Guest Team: ${team.is_guest || false}`);
+              sections.push(
+                `    - ID: ${team.id}, Name: ${team.name}, Guest Team: ${team.is_guest || false}, Picture URL: ${team.picture_url || 'N/A'}`,
+              );
             }
           });
         }
@@ -63,9 +82,19 @@ export const formatUsersAndTeams = (data: FormattedResponse): string => {
             sections.push(`  Members:`);
             team.users.forEach((user) => {
               if (user) {
-                sections.push(
-                  `    - ID: ${user.id}, Name: ${user.name}, Email: ${user.email}, Title: ${user.title || 'N/A'}, Admin: ${user.is_admin || false}, Guest: ${user.is_guest || false}`,
-                );
+                // Build member details line with required fields
+                const memberDetails = [
+                  `ID: ${user.id}`,
+                  `Name: ${user.name}`,
+                  `Email: ${user.email}`,
+                  `Title: ${user.title || 'N/A'}`,
+                  `Admin: ${user.is_admin || false}`,
+                  `Guest: ${user.is_guest || false}`,
+                  // Add all optional fields that exist and have values
+                  ...formatOptionalUserFields(user),
+                ];
+
+                sections.push(`    - ${memberDetails.join(', ')}`);
               }
             });
           }

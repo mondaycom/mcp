@@ -2,9 +2,10 @@ import { ApiClient } from '@mondaydotcomorg/api';
 import { allGraphqlApiTools, allMondayAppsTools, allMondayDevTools, Tool, ToolType } from '../../core';
 import { ToolMode, ToolsConfiguration } from '../../core/monday-agent-toolkit';
 import { toolFactory } from './initializing.utils';
+import { MondayApiToolContext } from '../../core/tools/platform-api-tools/base-monday-api-tool';
 
 export const getFilteredToolInstances = (
-  instanceOptions: { apiClient: ApiClient; apiToken: string },
+  instanceOptions: { apiClient: ApiClient; apiToken: string; context?: MondayApiToolContext },
   config?: ToolsConfiguration,
 ): Tool<any, any>[] => {
   let allToolConstructors: Array<new (...args: any[]) => Tool<any, any>> = [];

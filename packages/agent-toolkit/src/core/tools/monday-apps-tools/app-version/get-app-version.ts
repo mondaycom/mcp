@@ -13,7 +13,7 @@ export class GetAppVersionTool extends BaseMondayAppsTool<typeof getAppVersionSc
   });
 
   getDescription(): string {
-    return 'Retrieve the app version data';
+    return "Retrieve detailed data for a specific app version by version ID. Returns comprehensive information including the version name, number, status, associated app ID, and configuration details. Use this to inspect a particular version's configuration.";
   }
 
   getInputSchema() {

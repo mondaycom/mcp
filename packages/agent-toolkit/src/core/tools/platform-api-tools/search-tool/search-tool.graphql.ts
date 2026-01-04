@@ -10,7 +10,6 @@ export const getBoards = gql`
   }
 `;
 
-
 export const getDocs = gql`
   query GetDocs($page: Int!, $limit: Int!, $workspace_ids: [ID]) {
     docs(page: $page, limit: $limit, workspace_ids: $workspace_ids) {

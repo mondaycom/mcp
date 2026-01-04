@@ -14,7 +14,7 @@ export class GetAllAppsTool extends BaseMondayAppsTool<undefined, AppApiDataResp
   });
 
   getDescription(): string {
-    return 'Retrieve all the development apps that the user has collaboration permissions for';
+    return 'Retrieve all the development apps that the user has collaboration permissions for. Returns a list of apps with their IDs, names, and multi-region configuration. Use this to discover available apps before performing other operations that require an app ID';
   }
 
   getInputSchema() {

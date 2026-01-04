@@ -5,7 +5,9 @@ import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-ap
 import { NonDeprecatedColumnType } from 'src/utils/types';
 
 export const getNonDeprecatedColumnTypeInfoToolSchema = {
-  columnType: z.nativeEnum(NonDeprecatedColumnType).describe('The column type to retrieve information for (e.g., "text", "status", "date", "numbers")'),
+  columnType: z
+    .nativeEnum(NonDeprecatedColumnType)
+    .describe('The column type to retrieve information for (e.g., "text", "status", "date", "numbers")'),
 };
 
 export class GetColumnTypeInfoTool extends BaseMondayApiTool<typeof getNonDeprecatedColumnTypeInfoToolSchema> {
@@ -26,7 +28,9 @@ export class GetColumnTypeInfoTool extends BaseMondayApiTool<typeof getNonDeprec
     return getNonDeprecatedColumnTypeInfoToolSchema;
   }
 
-  protected async executeInternal(input: ToolInputType<typeof getNonDeprecatedColumnTypeInfoToolSchema>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(
+    input: ToolInputType<typeof getNonDeprecatedColumnTypeInfoToolSchema>,
+  ): Promise<ToolOutputType<never>> {
     const variables = {
       type: input.columnType,
     };
@@ -47,4 +51,4 @@ export class GetColumnTypeInfoTool extends BaseMondayApiTool<typeof getNonDeprec
       content: `Column Type Information for "${input.columnType}":\n\n${JSON.stringify(columnTypeInfo, null, 2)}`,
     };
   }
-} 
+}

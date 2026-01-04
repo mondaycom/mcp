@@ -350,7 +350,7 @@ describe('Board Insights Tool', () => {
         expect(result.groupByElements).toEqual([{ column_id: 'LABEL_status_0' }]);
       });
 
-      it('should handle mixed aggregations with group by', () => {
+      it('should handle mixed aggregations with group by and add label function', () => {
         const input = {
           boardId: 123,
           aggregations: [
@@ -365,14 +365,16 @@ describe('Board Insights Tool', () => {
 
         const result = handleSelectAndGroupByElements(input as any);
 
-        expect(result.selectElements).toHaveLength(2);
+        expect(result.selectElements).toHaveLength(3);
         expect(result.selectElements[0]).toEqual({
           type: AggregateSelectElementType.Column,
           column: { column_id: 'status' },
           as: 'status',
         });
         expect(result.selectElements[1].type).toBe(AggregateSelectElementType.Function);
-        expect(result.groupByElements).toEqual([{ column_id: 'status' }]);
+        expect(result.selectElements[2].function?.function).toEqual(AggregateSelectFunctionName.Label);
+        expect(result.selectElements[2].function?.params?.[0].column?.column_id).toEqual('status');
+        expect(result.groupByElements).toEqual([{ column_id: 'status' }, { column_id: 'LABEL_status_0' }]);
       });
 
       it('should add select elements for group by columns not in aggregations', () => {
@@ -389,8 +391,14 @@ describe('Board Insights Tool', () => {
 
         const result = handleSelectAndGroupByElements(input as any);
 
-        expect(result.selectElements).toHaveLength(3);
-        expect(result.groupByElements).toEqual([{ column_id: 'status' }, { column_id: 'priority' }]);
+        // COUNT + LABEL for status + LABEL for priority + column select for status + column select for priority
+        expect(result.selectElements).toHaveLength(5);
+        expect(result.groupByElements).toEqual([
+          { column_id: 'status' },
+          { column_id: 'priority' },
+          { column_id: 'LABEL_status_0' },
+          { column_id: 'LABEL_priority_0' },
+        ]);
 
         // Should have added column selects for status and priority
         expect(
@@ -398,6 +406,17 @@ describe('Board Insights Tool', () => {
         ).toBe(true);
         expect(
           result.selectElements.some((el) => el.type === AggregateSelectElementType.Column && el.as === 'priority'),
+        ).toBe(true);
+        // Should have added LABEL functions for status and priority
+        expect(
+          result.selectElements.some(
+            (el) => el.type === AggregateSelectElementType.Function && el.as === 'LABEL_status_0',
+          ),
+        ).toBe(true);
+        expect(
+          result.selectElements.some(
+            (el) => el.type === AggregateSelectElementType.Function && el.as === 'LABEL_priority_0',
+          ),
         ).toBe(true);
       });
 
@@ -449,6 +468,65 @@ describe('Board Insights Tool', () => {
         expect(result.selectElements[0].as).toBe('SUM_numbers_0');
         expect(result.selectElements[1].as).toBe('SUM_numbers_1');
       });
+
+      it('should create LABEL select element for people columns in groupBy', () => {
+        const input = {
+          boardId: 123,
+          aggregations: [
+            {
+              columnId: 'item_id',
+              function: AggregateSelectFunctionName.Count,
+            },
+          ],
+          groupBy: ['person'],
+        };
+
+        const result = handleSelectAndGroupByElements(input as any);
+
+        expect(result.selectElements).toHaveLength(3);
+
+        // Should have the COUNT aggregation
+        expect(result.selectElements[0]).toEqual({
+          type: AggregateSelectElementType.Function,
+          function: {
+            function: AggregateSelectFunctionName.Count,
+            params: [
+              {
+                type: AggregateSelectElementType.Column,
+                column: { column_id: 'item_id' },
+                as: 'item_id',
+              },
+            ],
+          },
+          as: 'COUNT_item_id_0',
+        });
+
+        // Should have added a LABEL function for the people column
+        expect(result.selectElements[1]).toEqual({
+          type: AggregateSelectElementType.Function,
+          function: {
+            function: AggregateSelectFunctionName.Label,
+            params: [
+              {
+                type: AggregateSelectElementType.Column,
+                column: { column_id: 'person' },
+                as: 'person',
+              },
+            ],
+          },
+          as: 'LABEL_person_0',
+        });
+
+        // Should have added a column select for person (from groupBy)
+        expect(result.selectElements[2]).toEqual({
+          type: AggregateSelectElementType.Column,
+          column: { column_id: 'person' },
+          as: 'person',
+        });
+
+        // GroupBy should contain both person and the LABEL_person_0
+        expect(result.groupByElements).toEqual([{ column_id: 'person' }, { column_id: 'LABEL_person_0' }]);
+      });
     });
   });
 
@@ -468,7 +546,7 @@ describe('Board Insights Tool', () => {
               entries: [
                 {
                   alias: 'status',
-                  value: { value_string: 'Done' },
+                  value: { value: 'Done' },
                 },
                 {
                   alias: 'COUNT_item_id_0',
@@ -480,7 +558,7 @@ describe('Board Insights Tool', () => {
               entries: [
                 {
                   alias: 'status',
-                  value: { value_string: 'Working on it' },
+                  value: { value: 'Working on it' },
                 },
                 {
                   alias: 'COUNT_item_id_0',
@@ -492,7 +570,7 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -536,7 +614,7 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -579,7 +657,7 @@ describe('Board Insights Tool', () => {
               entries: [
                 {
                   alias: 'status',
-                  value: { value_string: 'Done' },
+                  value: { value: 'Done' },
                 },
               ],
             },
@@ -587,7 +665,7 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -609,7 +687,7 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -628,7 +706,7 @@ describe('Board Insights Tool', () => {
         aggregate: null,
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -650,19 +728,19 @@ describe('Board Insights Tool', () => {
               entries: [
                 {
                   alias: 'string_col',
-                  value: { value_string: 'text value' },
+                  value: { value: 'text value' },
                 },
                 {
                   alias: 'int_col',
-                  value: { value_int: 42 },
+                  value: { value: 42 },
                 },
                 {
                   alias: 'float_col',
-                  value: { value_float: 3.14 },
+                  value: { value: 3.14 },
                 },
                 {
                   alias: 'bool_col',
-                  value: { value_boolean: true },
+                  value: { value: true },
                 },
                 {
                   alias: 'result_col',
@@ -674,7 +752,7 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -718,7 +796,7 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -741,11 +819,11 @@ describe('Board Insights Tool', () => {
               entries: [
                 {
                   alias: '',
-                  value: { value_string: 'should be ignored' },
+                  value: { value: 'should be ignored' },
                 },
                 {
                   alias: 'status',
-                  value: { value_string: 'Done' },
+                  value: { value: 'Done' },
                 },
               ],
             },
@@ -753,7 +831,7 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -809,16 +887,16 @@ describe('Board Insights Tool', () => {
           results: [
             {
               entries: [
-                { alias: 'status', value: { value_string: 'Done' } },
-                { alias: 'priority', value: { value_string: 'High' } },
+                { alias: 'status', value: { value: 'Done' } },
+                { alias: 'priority', value: { value: 'High' } },
                 { alias: 'SUM_numbers_0', value: { result: 150 } },
                 { alias: 'AVERAGE_numbers_0', value: { result: 30 } },
               ],
             },
             {
               entries: [
-                { alias: 'status', value: { value_string: 'Done' } },
-                { alias: 'priority', value: { value_string: 'Low' } },
+                { alias: 'status', value: { value: 'Done' } },
+                { alias: 'priority', value: { value: 'Low' } },
                 { alias: 'SUM_numbers_0', value: { result: 80 } },
                 { alias: 'AVERAGE_numbers_0', value: { result: 20 } },
               ],
@@ -827,7 +905,7 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -860,13 +938,13 @@ describe('Board Insights Tool', () => {
           results: [
             {
               entries: [
-                { alias: 'status', value: { value_string: 'Done' } },
+                { alias: 'status', value: { value: 'Done' } },
                 { alias: 'COUNT_item_id_0', value: { result: 5 } },
               ],
             },
             {
               entries: [
-                { alias: 'status', value: { value_string: 'Working on it' } },
+                { alias: 'status', value: { value: 'Working on it' } },
                 { alias: 'COUNT_item_id_0', value: { result: 3 } },
               ],
             },
@@ -874,7 +952,7 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -909,8 +987,8 @@ describe('Board Insights Tool', () => {
           results: [
             {
               entries: [
-                { alias: 'status', value: { value_string: 'Done' } },
-                { alias: 'priority', value: { value_string: 'High' } },
+                { alias: 'status', value: { value: 'Done' } },
+                { alias: 'priority', value: { value: 'High' } },
                 { alias: 'COUNT_item_id_0', value: { result: 2 } },
               ],
             },
@@ -918,7 +996,7 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -965,7 +1043,7 @@ describe('Board Insights Tool', () => {
           results: [
             {
               entries: [
-                { alias: 'status', value: { value_string: 'Done' } },
+                { alias: 'status', value: { value: 'Done' } },
                 { alias: 'COUNT_item_id_0', value: { result: 8 } },
               ],
             },
@@ -973,7 +1051,7 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -1024,7 +1102,7 @@ describe('Board Insights Tool', () => {
           results: [
             {
               entries: [
-                { alias: 'created_at', value: { value_string: '2024-01-15' } },
+                { alias: 'created_at', value: { value: '2024-01-15' } },
                 { alias: 'COUNT_item_id_0', value: { result: 10 } },
               ],
             },
@@ -1032,7 +1110,7 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -1073,7 +1151,7 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -1126,7 +1204,7 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -1174,7 +1252,8 @@ describe('Board Insights Tool', () => {
       expect(tool.getDescription()).toBe(
         "This tool allows you to calculate insights about board's data by filtering, grouping and aggregating columns. For example, you can get the total number of items in a board, the number of items in each status, the number of items in each column, etc. " +
           "Use this tool when you need to get a summary of the board's data, for example, you want to know the total number of items in a board, the number of items in each status, the number of items in each column, etc." +
-          "[REQUIRED PRECONDITION]: Before using this tool, if new columns were added to the board or if you are not familiar with the board's structure (column IDs, column types, status labels, etc.), first use get_board_info to understand the board metadata. This is essential for constructing proper filters and knowing which columns are available.",
+          "[REQUIRED PRECONDITION]: Before using this tool, if new columns were added to the board or if you are not familiar with the board's structure (column IDs, column types, status labels, etc.), first use get_board_info to understand the board metadata. This is essential for constructing proper filters and knowing which columns are available." +
+          "[IMPORTANT]: For some columns, human-friendly label is returned inside 'LABEL_<column_id' field. E.g. for column with id 'status_123' the label is returned inside 'LABEL_status_123' field.",
       );
       expect(tool.annotations.title).toBe('Get Board Insights');
       expect(tool.annotations.readOnlyHint).toBe(true);
@@ -1199,7 +1278,7 @@ describe('Board Insights Tool', () => {
               entries: [
                 {
                   alias: 'status',
-                  value: { value_string: 'Done' },
+                  value: { value: 'Done' },
                 },
                 {
                   alias: 'COUNT_item_id_0',
@@ -1211,7 +1290,7 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -1258,7 +1337,7 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -1301,7 +1380,7 @@ describe('Board Insights Tool', () => {
           results: [
             {
               entries: [
-                { alias: 'status', value: { value_string: 'Done' } },
+                { alias: 'status', value: { value: 'Done' } },
                 { alias: 'COUNT_item_id_0', value: { result: 5 } },
               ],
             },
@@ -1309,7 +1388,7 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -1348,7 +1427,7 @@ describe('Board Insights Tool', () => {
           results: [
             {
               entries: [
-                { alias: 'status', value: { value_string: 'Done' } },
+                { alias: 'status', value: { value: 'Done' } },
                 { alias: 'COUNT_item_id_0', value: { result: 8 } },
               ],
             },
@@ -1356,7 +1435,7 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 
@@ -1436,7 +1515,7 @@ describe('Board Insights Tool', () => {
               entries: [
                 {
                   alias: 'priority',
-                  value: { value_string: 'High' },
+                  value: { value: 'High' },
                 },
               ],
             },
@@ -1444,7 +1523,7 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
       const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
 

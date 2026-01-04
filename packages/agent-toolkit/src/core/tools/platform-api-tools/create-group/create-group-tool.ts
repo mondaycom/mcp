@@ -12,9 +12,17 @@ import { GROUP_COLORS } from './create-group.consts';
 export const createGroupToolSchema = {
   boardId: z.string().describe('The ID of the board to create the group in'),
   groupName: z.string().max(255).describe('The name of the new group (maximum 255 characters)'),
-  groupColor: z.enum(GROUP_COLORS).optional().describe(`The color for the group. Must be one of the predefined Monday.com group colors: ${GROUP_COLORS.join(', ')}`),
+  groupColor: z
+    .enum(GROUP_COLORS)
+    .optional()
+    .describe(
+      `The color for the group. Must be one of the predefined Monday.com group colors: ${GROUP_COLORS.join(', ')}`,
+    ),
   relativeTo: z.string().optional().describe('The ID of the group to position this new group relative to'),
-  positionRelativeMethod: z.nativeEnum(PositionRelative).optional().describe('Whether to position the new group before or after the relativeTo group'),
+  positionRelativeMethod: z
+    .nativeEnum(PositionRelative)
+    .optional()
+    .describe('Whether to position the new group before or after the relativeTo group'),
 };
 
 export class CreateGroupTool extends BaseMondayApiTool<typeof createGroupToolSchema, never> {

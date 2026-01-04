@@ -195,7 +195,9 @@ describe('CreateDocTool', () => {
 
         const result = await callToolByNameRawAsync('create_doc', args);
 
-        expect(result.content[0].text).toContain('Required parameters were not provided for location parameter of workspace');
+        expect(result.content[0].text).toContain(
+          'Required parameters were not provided for location parameter of workspace',
+        );
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
 
@@ -579,7 +581,9 @@ describe('CreateDocTool', () => {
 
         const result = await callToolByNameRawAsync('create_doc', args);
 
-        expect(result.content[0].text).toContain('Required parameters were not provided for location parameter of item');
+        expect(result.content[0].text).toContain(
+          'Required parameters were not provided for location parameter of item',
+        );
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
     });
@@ -815,6 +819,4 @@ describe('CreateDocTool', () => {
       });
     });
   });
-
 });
-

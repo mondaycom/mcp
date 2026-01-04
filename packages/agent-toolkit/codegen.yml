@@ -1,12 +1,32 @@
 overwrite: true
-schema: 'src/monday-graphql/schema.graphql'
-documents: 'src/**/*.graphql.ts'
-ignoreNoDocuments: true
-generates:
-  src/monday-graphql/generated/graphql/:
-    presetConfig:
-      fragmentMasking: false
-    preset: client
-    hooks:
-      afterOneFileWrite:
-        - node -e "const fs = require('fs'); fs.writeFileSync('src/monday-graphql/generated/graphql/index.ts', '/* eslint-disable */\nexport * from \'./gql\';');"
+projects:
+  default:
+    schema: 'src/monday-graphql/schema.graphql'
+    documents: 
+      - 'src/**/*.graphql.ts'
+      - '!src/**/*.graphql.dev.ts'
+    ignoreNoDocuments: true
+    extensions:
+      codegen:
+        generates:
+          src/monday-graphql/generated/graphql/:
+            presetConfig:
+              fragmentMasking: false
+            preset: client
+            hooks:
+              afterOneFileWrite:
+                - node -e "const fs = require('fs'); fs.writeFileSync('src/monday-graphql/generated/graphql/index.ts', '/* eslint-disable */\nexport * from \'./gql\';');"
+  dev:
+    schema: 'src/monday-graphql/schema.dev.graphql'
+    documents: 'src/**/*.graphql.dev.ts'
+    ignoreNoDocuments: true
+    extensions:
+      codegen:
+        generates:
+          src/monday-graphql/generated/graphql.dev/:
+            presetConfig:
+              fragmentMasking: false
+            preset: client
+            hooks:
+              afterOneFileWrite:
+                - node -e "const fs = require('fs'); fs.writeFileSync('src/monday-graphql/generated/graphql.dev/index.ts', '/* eslint-disable */\nexport * from \'./gql\';');"

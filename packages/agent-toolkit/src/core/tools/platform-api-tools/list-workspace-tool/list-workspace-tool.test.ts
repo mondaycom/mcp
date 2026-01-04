@@ -5,8 +5,12 @@ import { z, ZodTypeAny } from 'zod';
 
 export type inputType = z.objectInputType<typeof listWorkspaceToolSchema, ZodTypeAny>;
 
-const addDummyWorkspaces = (workspaces: {id: string, name: string, description: string}[], name: string, count: number) => {
-  const maxId = Math.max(...workspaces.map(w => parseInt(w.id)));
+const addDummyWorkspaces = (
+  workspaces: { id: string; name: string; description: string }[],
+  name: string,
+  count: number,
+) => {
+  const maxId = Math.max(...workspaces.map((w) => parseInt(w.id)));
   for (let i = 1; i <= count; i++) {
     workspaces.push({
       id: `${maxId + i}`,
@@ -15,7 +19,7 @@ const addDummyWorkspaces = (workspaces: {id: string, name: string, description: 
     });
   }
   return workspaces;
-}
+};
 
 describe('ListWorkspaceTool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;

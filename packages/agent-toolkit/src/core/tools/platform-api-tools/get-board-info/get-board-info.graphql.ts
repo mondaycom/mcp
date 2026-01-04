@@ -89,7 +89,6 @@ export const getBoardInfoJustColumns = gql`
         type
         settings
       }
-
     }
   }
 `;

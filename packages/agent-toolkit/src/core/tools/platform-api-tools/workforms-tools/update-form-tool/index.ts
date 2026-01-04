@@ -38,7 +38,6 @@ export class UpdateFormTool extends BaseMondayApiTool<typeof updateFormToolSchem
     return updateFormToolSchema;
   }
 
-
   private readonly actionHandlers = new Map<
     FormActions,
     (input: ToolInputType<typeof updateFormToolSchema>) => Promise<ToolOutputType<never>>

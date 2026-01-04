@@ -9,6 +9,7 @@ on:
 
 jobs:
   publish-npm:
+    environment: prod
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -17,7 +18,7 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
-          node-version: 20.12
+          node-version: '20.18.1'
           registry-url: https://registry.npmjs.org/
 
       - name: Install Yarn
@@ -43,6 +44,7 @@ jobs:
       - name: Publish changed packages
         if: steps.changed.outputs.packages != '[]'
         run: |
+          echo "//registry.npmjs.org/:_authToken=$NODE_AUTH_TOKEN" > .npmrc
           PACKAGES=$(echo '${{ steps.changed.outputs.packages }}' | jq -r '.[]')
           for PKG in $PACKAGES; do
             cd packages/$PKG

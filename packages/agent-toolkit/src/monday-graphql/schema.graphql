@@ -782,17 +782,40 @@ type Query {
     query: AggregateQueryInput!
   ): AggregateQueryResult
 
-  """Fetch resources information from the resource directory"""
-  get_directory_resources(
-    """List of team IDs to filter by (e.g., ["1234", "5678"])"""
-    team_ids: [String!]
+  """Search for items using various search strategies."""
+  search_items(
+    """The search query string."""
+    query: String
 
-    """The cursor which allows to fetch the next page of directory resources."""
-    cursor: String
+    """Maximum number of results to return (max 100)."""
+    size: Int!
 
-    """Number of items to get, the default is 25."""
-    limit: Int = 25
-  ): DirectoryResourcesResponse
+    """Whether to perform exact match search."""
+    exact_match: Boolean
+
+    """Date range filter for created/updated or column values dates."""
+    date_range: SearchDateRangeInput
+
+    """Filter results to specific board IDs."""
+    board_ids: [ID!]
+
+    """Filter results to specific workspace IDs."""
+    workspace_ids: [ID!]
+
+    """Filter by persons (person IDs, team IDs, and/or person names)."""
+    persons: PersonsInput
+
+    """Filter by status."""
+    status: String
+
+    """
+    Boost configuration for search results. When not set, uses default configuration from feature flag.
+    """
+    boosts: BoostConfigurationInput
+
+    """Reranking strategy to use for results."""
+    reranking_strategy: RerankingStrategy
+  ): SearchItemsGraphQlResultsView
 
   """Get a collection of monday dev sprints"""
   sprints(
@@ -1461,15 +1484,6 @@ type Mutation {
     successor_new_date: TimelineDateInput
   ): JSON!
 
-  """Batch update the dependency column values in a board"""
-  batch_update_dependency_column(
-    boardId: String!
-    columnId: String!
-
-    """The list of pulses with their dependency column values to update"""
-    values: [DependencyPulseValueInput!]!
-  ): JSON!
-
   """
   Adds markdown content to an existing document by converting it into document blocks. Use this to append content to the end of a document or insert content after a specific block. The markdown will be parsed and converted into the appropriate document block types (text, headers, lists, etc.). Returns the IDs of the newly created blocks on success.
   """
@@ -1483,6 +1497,26 @@ type Mutation {
     """Optional block ID to insert the markdown content after."""
     afterBlockId: String
   ): DocBlocksFromMarkdownResult
+
+  """
+  Creates multiple document blocks in a single operation for efficient content creation. Use this when adding substantial content like importing documents, creating structured content (articles, reports, guides), or building complex document sections. Supports all block types including text paragraphs, headers, bullet/numbered lists, images, tables, code blocks, and more. Much faster than creating blocks individually. Perfect for content migration, template creation, or generating documents from external data. Maximum 25 blocks per request.
+  """
+  create_doc_blocks(
+    """
+    The document's unique identifier where blocks will be created. Get this from document queries or creation responses.
+    """
+    docId: ID!
+
+    """
+    Insert all new blocks immediately after this specific block ID. If omitted, blocks will be positioned based on their parentBlockId or appended at the end of the document in the provided order.
+    """
+    afterBlockId: String
+
+    """
+    Array of block definitions to create. Each element must specify exactly one block type (text, list, image, etc.). Maximum 25 blocks per request.
+    """
+    blocksInput: [CreateBlockInput!]!
+  ): [DocumentBlockV2!]
 
   """
   Permanently deletes a document and all its content from the system. This action cannot be undone. The document will be removed from all user views and workspaces. Use with caution - ensure the document is no longer needed before deletion. Returns success status and the deleted document ID.
@@ -2070,6 +2104,9 @@ type Mutation {
   create_item(
     """The board's unique identifier."""
     board_id: ID!
+
+    """Files to upload to file columns."""
+    column_files: [ColumnFileInput!]
 
     """The column values of the new item."""
     column_values: JSON
@@ -2738,20 +2775,6 @@ type Mutation {
 
   """Create a new portfolio"""
   create_portfolio(boardName: String!, boardPrivacy: String!, destinationWorkspaceId: Int): CreatePortfolioResult
-
-  """
-  Update attributes (Job Role, Skills, or Location) for multiple resources in the directory
-  """
-  update_directory_resources_attributes(
-    """The attribute type to update (JOB_ROLE, SKILLS, or LOCATION)"""
-    attribute: DirectoryResourceAttribute!
-
-    """The values of the attribute to update"""
-    values: [String!]!
-
-    """List of resource IDs to update"""
-    resource_ids: [ID!]!
-  ): UpdateDirectoryResourceAttributesResponse
 
   """Creates a new team."""
   create_team(input: CreateTeamAttributesInput!, options: CreateTeamOptionsInput): Team
@@ -4840,15 +4863,6 @@ type BoardGraphExport {
   edgeCount: Int
 }
 
-"""Input type for updating a single pulse dependency value"""
-input DependencyPulseValueInput {
-  """The ID of the pulse to update the dependency value for"""
-  pulseId: ID!
-
-  """The value of the dependency pulse value to update"""
-  value: DependencyValueInput!
-}
-
 """Type of dependency relationship between items"""
 enum DependencyRelation {
   """
@@ -5016,6 +5030,174 @@ type ArticleMetadata {
   subscribers: [User!]
 }
 
+"""Text formatting attributes (bold, italic, links, colors, etc.)"""
+type Attributes {
+  """Apply bold formatting to the text"""
+  bold: Boolean
+
+  """Apply italic formatting to the text"""
+  italic: Boolean
+
+  """Apply underline formatting to the text"""
+  underline: Boolean
+
+  """Apply strikethrough formatting to the text"""
+  strike: Boolean
+
+  """Apply inline code formatting to the text"""
+  code: Boolean
+
+  """URL to create a hyperlink"""
+  link: String
+
+  """Text color (hex, rgb, or named color)"""
+  color: String
+
+  """Background color for text highlighting (hex, rgb, or named color)"""
+  background: String
+}
+
+"""Text formatting attributes (bold, italic, links, colors, etc.)"""
+input AttributesInput {
+  """Apply bold formatting to the text"""
+  bold: Boolean
+
+  """Apply italic formatting to the text"""
+  italic: Boolean
+
+  """Apply underline formatting to the text"""
+  underline: Boolean
+
+  """Apply strikethrough formatting to the text"""
+  strike: Boolean
+
+  """Apply inline code formatting to the text"""
+  code: Boolean
+
+  """URL to create a hyperlink"""
+  link: String
+
+  """Text color (hex, rgb, or named color)"""
+  color: String
+
+  """Background color for text highlighting (hex, rgb, or named color)"""
+  background: String
+}
+
+"""Alignment options for blocks"""
+enum BlockAlignment {
+  LEFT
+  RIGHT
+  CENTER
+}
+
+"""Abstract union type representing different types of block content"""
+union BlockContent = TextBlockContent | ListBlockContent | NoticeBoxContent | ImageContent | VideoContent | TableContent | LayoutContent | DividerContent | PageBreakContent
+
+"""Text direction options for blocks"""
+enum BlockDirection {
+  LTR
+  RTL
+}
+
+"""Object representing structured data within a text block"""
+union BlotContent = Mention | DocsColumnValue
+
+"""Object representing structured data within a text block"""
+input BlotInput {
+  """Mention blot data"""
+  mention: MentionInput
+
+  """Column value blot data"""
+  column_value: DocsColumnValueInput
+}
+
+"""A cell containing a reference to a block"""
+type Cell {
+  """
+  The ID of the block representing the cell (parent block of all the content blocks in the cell)
+  """
+  block_id: String!
+}
+
+"""Column style configuration"""
+type ColumnStyle {
+  """The width percentage of the column"""
+  width: Int!
+}
+
+"""Column style configuration input"""
+input ColumnStyleInput {
+  """The width percentage of the column"""
+  width: Int!
+}
+
+"""
+  Choose one specific block type to create.
+
+💡 TIP: Before using table_block, consider add_content_to_doc_from_markdown for tables with data.
+
+table_block creates empty structure requiring manual cell population.
+"""
+input CreateBlockInput {
+  """Create a text block (normal text, titles)"""
+  text_block: TextBlockInput
+
+  """Create a list block (bulleted, numbered, checklist)"""
+  list_block: ListBlockInput
+
+  """
+  The notice-box's own ID must be captured.  Every block that should appear inside it must be created with parentBlockId = that ID (and can still use afterBlockId for ordering among siblings).
+  """
+  notice_box_block: NoticeBoxBlockInput
+
+  """Create an image block"""
+  image_block: ImageBlockInput
+
+  """Create a video block"""
+  video_block: VideoBlockInput
+
+  """
+  Create a table block. Capture its returned ID; nest child blocks by setting parentBlockId to that ID and use afterBlockId for sibling ordering.
+  """
+  table_block: TableBlockInput
+
+  """
+  Create a layout block. Capture its returned ID; nest child blocks by setting parentBlockId to that ID and use afterBlockId for sibling ordering.
+  """
+  layout_block: LayoutBlockInput
+
+  """Create a divider block"""
+  divider_block: DividerBlockInput
+
+  """Create a page break block"""
+  page_break_block: PageBreakBlockInput
+}
+
+"""Input for creating divider blocks"""
+input DividerBlockInput {
+  """The parent block id to append the created block under."""
+  parent_block_id: String
+}
+
+"""Content for a divider block"""
+type DividerContent implements DocBaseBlockContent {
+  """The alignment of the block content"""
+  alignment: BlockAlignment
+
+  """The text direction of the block content"""
+  direction: BlockDirection
+}
+
+"""Base interface for all block content types"""
+interface DocBaseBlockContent {
+  """The alignment of the block content"""
+  alignment: BlockAlignment
+
+  """The text direction of the block content"""
+  direction: BlockDirection
+}
+
 """
 Response from adding markdown content to a document. Contains success status and the IDs of newly created blocks.
 """
@@ -5044,6 +5226,72 @@ enum DocKind {
 
   """Shareable document"""
   share
+}
+
+"""Column value reference for displaying board item column data"""
+type DocsColumnValue {
+  """The ID of the board item"""
+  item_id: Int
+
+  """The ID of the column"""
+  column_id: String
+}
+
+"""Column value reference for displaying board item column data"""
+input DocsColumnValueInput {
+  """The ID of the board item"""
+  item_id: Int!
+
+  """The ID of the column"""
+  column_id: String!
+}
+
+"""Type of mention - user, document, or board"""
+enum DocsMention {
+  """Mention of a user"""
+  USER
+
+  """Mention of a document"""
+  DOC
+
+  """Mention of a board"""
+  BOARD
+}
+
+"""
+Represents a content block — the fundamental building unit of a monday.com document. Each block encapsulates its structured content, hierarchical relationships, and associated metadata.
+"""
+type DocumentBlockV2 {
+  """The block's unique identifier."""
+  id: ID!
+
+  """The block's document unique identifier."""
+  doc_id: ID
+
+  """
+  The block's parent block unique identifier. Used for nesting (e.g., content inside table cells, layout columns, or notice boxes). Null for top-level blocks.
+  """
+  parent_block_id: String
+
+  """The block content type."""
+  type: String
+
+  """The block's content as an array of structured content blocks."""
+  content: [BlockContent]!
+
+  """
+  The block's position on the document (auto-generated). Higher numbers appear later in document. Use afterBlockId in mutations to control ordering.
+  """
+  position: Float
+
+  """The block's creation date."""
+  created_at: String
+
+  """The block's last updated date."""
+  updated_at: String
+
+  """The block's creator."""
+  created_by: User
 }
 
 """Controls what gets copied when duplicating a document"""
@@ -5077,6 +5325,33 @@ type ExportMarkdownResult {
   error: String
 }
 
+"""Input for creating image blocks"""
+input ImageBlockInput {
+  """The parent block id to append the created block under."""
+  parent_block_id: String
+
+  """The public URL of the image"""
+  public_url: String!
+
+  """The width of the image"""
+  width: Int
+}
+
+"""Content for an image block"""
+type ImageContent implements DocBaseBlockContent {
+  """The alignment of the block content"""
+  alignment: BlockAlignment
+
+  """The text direction of the block content"""
+  direction: BlockDirection
+
+  """The public URL of the image"""
+  public_url: String!
+
+  """The width of the image"""
+  width: Int
+}
+
 """
 Response from importing an HTML document. Contains success status and the ID of the newly created document.
 """
@@ -5095,6 +5370,201 @@ type ImportDocFromHtmlResult {
   error: String
 }
 
+"""Content inserted in delta operations"""
+type InsertOps {
+  """Plain text content"""
+  text: String
+
+  """Object representing structured data within a text block"""
+  blot: BlotContent
+}
+
+"""Content to insert in delta operations"""
+input InsertOpsInput {
+  """Plain text content"""
+  text: String
+
+  """Object representing structured data within a text block"""
+  blot: BlotInput
+}
+
+"""
+Input for creating layout blocks.
+
+Behaviour:
+• When a layout is created the system automatically generates
+  column_count child "cell" blocks (one per column).
+• The layout block itself is just a container; each generated cell block has
+  parentBlockId === <layout-block-id> and acts as the direct parent for any
+  content you want to insert into that column.
+• The creation response already contains the ordered list of generated cell
+  IDs under `content[0].cells` (1-D array from left to right).
+• To populate a layout:
+    1. Create the layout and capture its ID.
+    2. Obtain the cell block IDs either by inspecting `content[0].cells`
+       in the response **or** by querying the document for children of the
+       layout block.
+    3. Create your content blocks (textBlock, imageBlock, tableBlock, etc.)
+       with parentBlockId set to the specific cell block ID.
+• Use afterBlockId only to order siblings *within* the same cell.
+"""
+input LayoutBlockInput {
+  """The parent block id to append the created block under."""
+  parent_block_id: String
+
+  """The number of columns in the layout"""
+  column_count: Int!
+
+  """The column style configuration"""
+  column_style: [ColumnStyleInput!]
+}
+
+"""Content for a layout block"""
+type LayoutContent implements DocBaseBlockContent {
+  """The alignment of the block content"""
+  alignment: BlockAlignment
+
+  """The text direction of the block content"""
+  direction: BlockDirection
+
+  """The column style configuration"""
+  column_style: [ColumnStyle!]
+
+  """1-D array of cells (columns). Each cell carries a blockId reference."""
+  cells: [Cell!]
+}
+
+"""Specific types of list blocks"""
+enum ListBlock {
+  BULLETED_LIST
+  NUMBERED_LIST
+  CHECK_LIST
+}
+
+"""Content for a list block (bulleted, numbered, todo)"""
+type ListBlockContent implements DocBaseBlockContent {
+  """The alignment of the block content"""
+  alignment: BlockAlignment
+
+  """The text direction of the block content"""
+  direction: BlockDirection
+
+  """
+  The text content in delta format - array of operations with insert content and optional attributes
+  """
+  delta_format: [Operation!]!
+
+  """The indentation level of the list item"""
+  indentation: Int
+}
+
+"""Input for creating list blocks (bulleted, numbered, todo)"""
+input ListBlockInput {
+  """The parent block id to append the created block under."""
+  parent_block_id: String
+  alignment: BlockAlignment
+  direction: BlockDirection
+
+  """The specific type of list block (defaults to bulleted list)"""
+  list_block_type: ListBlock
+
+  """
+  The text content in delta format - array of operations with insert content and optional attributes
+  """
+  delta_format: [OperationInput!]!
+
+  """The indentation level of the list item"""
+  indentation: Int
+}
+
+"""Mention object for user or document references"""
+type Mention {
+  """The unique identifier of the mentioned entity"""
+  id: Int
+
+  """The type of the mentioned entity"""
+  type: DocsMention
+}
+
+"""Mention object for user or document references"""
+input MentionInput {
+  """The ID of the mentioned user or document"""
+  id: Int!
+
+  """The type of mention: user, doc, or board"""
+  type: DocsMention!
+}
+
+"""
+The notice-box's own ID must be captured.  Every block that should appear inside it must be created with parentBlockId = that ID (and can still use afterBlockId for ordering among siblings).
+"""
+input NoticeBoxBlockInput {
+  """The parent block id to append the created block under."""
+  parent_block_id: String
+  theme: NoticeBoxTheme!
+}
+
+"""Content for a notice box block"""
+type NoticeBoxContent implements DocBaseBlockContent {
+  """The alignment of the block content"""
+  alignment: BlockAlignment
+
+  """The text direction of the block content"""
+  direction: BlockDirection
+
+  """The theme of the notice box"""
+  theme: NoticeBoxTheme!
+}
+
+"""Theme options for notice box blocks"""
+enum NoticeBoxTheme {
+  INFO
+  TIPS
+  WARNING
+  GENERAL
+}
+
+"""
+A delta operation with insert content and optional formatting attributes
+"""
+type Operation {
+  """Content to insert - either text or blot object"""
+  insert: InsertOps
+
+  """
+  Optional formatting attributes (bold, italic, underline, strike, code, link, color, background)
+  """
+  attributes: Attributes
+}
+
+"""
+A delta operation with insert content and optional formatting attributes
+"""
+input OperationInput {
+  """Content to insert - either text or blot object"""
+  insert: InsertOpsInput!
+
+  """
+  Optional formatting attributes (bold, italic, underline, strike, code, link, color, background)
+  """
+  attributes: AttributesInput
+}
+
+"""Input for creating page break blocks"""
+input PageBreakBlockInput {
+  """The parent block id to append the created block under."""
+  parent_block_id: String
+}
+
+"""Content for a page break block"""
+type PageBreakContent implements DocBaseBlockContent {
+  """The alignment of the block content"""
+  alignment: BlockAlignment
+
+  """The text direction of the block content"""
+  direction: BlockDirection
+}
+
 """
 The kind/visibility setting of the article (private, public). Determines who can access it.
 """
@@ -5108,6 +5578,147 @@ enum PrivacyKind {
   Public objects are visible to all users within the account, unless their access is blocked on a higher level in the hierarchy, or by specific object permission.
   """
   PUBLIC
+}
+
+"""
+Input for creating table blocks.
+⚠️  RECOMMENDATION: Use add_content_to_doc_from_markdown with markdown tables instead for simpler table creation.
+Behavior:
+- When a table is created, the system automatically generates `row_count × column_count` child "cell" blocks (one per cell).
+- The table block is a container. Each generated cell block has `parentBlockId === <table-block-id>` and is used to insert content.
+
+Important:
+- Always use the 2D matrix returned under `content[0].cells` to access cells.
+- This matrix is row-major: `matrix[rowIndex][columnIndex]`.
+- Do not rely on the order returned by `docs { blocks { ... } }`, as it's implementation-specific.
+
+Recommended workflow:
+1. Create the table and capture its ID.
+2. Read `content[0].cells` to get the cell ID matrix.
+3. Use bulk create blocks to create all the child blocks (e.g. textBlock, imageBlock) with `parentBlockId = matrix[row][col]`.
+   Use `afterBlockId` only to order siblings within the same cell.
+"""
+input TableBlockInput {
+  """The parent block id to append the created block under."""
+  parent_block_id: String
+
+  """The number of columns in the table"""
+  column_count: Int!
+
+  """The number of rows in the table"""
+  row_count: Int!
+
+  """The width of the table"""
+  width: Int
+
+  """The column style configuration"""
+  column_style: [ColumnStyleInput!]
+}
+
+"""Content for a table block"""
+type TableContent implements DocBaseBlockContent {
+  """The alignment of the block content"""
+  alignment: BlockAlignment
+
+  """The text direction of the block content"""
+  direction: BlockDirection
+
+  """The width of the table"""
+  width: Int
+
+  """The column style configuration"""
+  column_style: [ColumnStyle!]
+
+  """
+  2-D array of cells (rows × columns). Each cell contains a blockId reference that represents the parent block for all content blocks within that cell.
+  """
+  cells: [TableRow!]
+}
+
+"""A row of cells in a table"""
+type TableRow {
+  """The cells in this row"""
+  row_cells: [Cell!]!
+}
+
+"""
+Text block formatting types. Controls visual appearance and semantic meaning.
+"""
+enum TextBlock {
+  """Regular paragraph text"""
+  NORMAL_TEXT
+
+  """Main document title (H1 equivalent)"""
+  LARGE_TITLE
+
+  """Section heading (H2 equivalent)"""
+  MEDIUM_TITLE
+
+  """Subsection heading (H3 equivalent)"""
+  SMALL_TITLE
+
+  """Code styling"""
+  CODE
+
+  """Indented quote/blockquote styling"""
+  QUOTE
+}
+
+"""Content for a text block"""
+type TextBlockContent implements DocBaseBlockContent {
+  """The alignment of the block content"""
+  alignment: BlockAlignment
+
+  """The text direction of the block content"""
+  direction: BlockDirection
+
+  """
+  The text content in delta format - array of operations with insert content and optional attributes
+  """
+  delta_format: [Operation!]!
+}
+
+"""Input for creating text blocks (normal text, titles, quote, code)"""
+input TextBlockInput {
+  """The parent block id to append the created block under."""
+  parent_block_id: String
+  alignment: BlockAlignment
+  direction: BlockDirection
+
+  """The specific type of text block (defaults to normal text)"""
+  text_block_type: TextBlock
+
+  """
+  The text content in delta format - array of operations with insert content and optional attributes
+  """
+  delta_format: [OperationInput!]!
+}
+
+"""Input for creating video blocks"""
+input VideoBlockInput {
+  """The parent block id to append the created block under."""
+  parent_block_id: String
+
+  """The raw URL of the video"""
+  raw_url: String!
+
+  """The width of the video"""
+  width: Int
+}
+
+"""Content for a video block"""
+type VideoContent implements DocBaseBlockContent {
+  """The alignment of the block content"""
+  alignment: BlockAlignment
+
+  """The text direction of the block content"""
+  direction: BlockDirection
+
+  """The raw URL of the video"""
+  url: String!
+
+  """The width of the video"""
+  width: Int
 }
 
 """Input type for adding an object to a hierarchy list"""
@@ -5905,12 +6516,6 @@ enum AppFeatureTypeE {
 
   """VIBE_OBJECT"""
   VIBE_OBJECT
-
-  """VIBE_ITEM_VIEW"""
-  VIBE_ITEM_VIEW
-
-  """AI_PLATFORM_AGENT"""
-  AI_PLATFORM_AGENT
 }
 
 """The visibility type of an app"""
@@ -6138,9 +6743,6 @@ input UpdateAppInput {
   """Array of user IDs with access (replaces existing collaborators)"""
   collaborators: [ID!]
 }
-
-"""A file"""
-scalar File
 
 """Your monday.com account"""
 type Account {
@@ -6677,6 +7279,15 @@ type ColorPickerValue implements ColumnValue {
 
   """The column's raw value in JSON format."""
   value: JSON
+}
+
+"""Input for uploading a file to a column when creating an item."""
+input ColumnFileInput {
+  """The column's unique identifier."""
+  column_id: String!
+
+  """The file to upload."""
+  file: File!
 }
 
 """
@@ -7246,6 +7857,9 @@ type ExtendTrialPeriod {
   """Result of a single operation"""
   success: Boolean!
 }
+
+"""A multipart file"""
+scalar File
 
 """A file with an invalid or missing asset."""
 type FileAssetInvalidValue {
@@ -9466,18 +10080,6 @@ input AggregateGroupByElementInput {
 }
 
 type AggregateGroupByResult {
-  """The string value of the group by result."""
-  value_string: String
-
-  """The integer value of the group by result."""
-  value_int: Int
-
-  """The float value of the group by result."""
-  value_float: Float
-
-  """The boolean value of the group by result."""
-  value_boolean: Boolean
-
   """
   The value of the group by result. Can be an integer, float, string, or boolean.
   """
@@ -9679,57 +10281,192 @@ enum AggregateSelectFunctionName {
   PHONE_COUNTRY_SHORT_NAME
 }
 
-"""A resource from the directory"""
-type DirectoryResource {
-  """The identifier of the directory resource."""
+"""
+Boost configuration for search results. Key-value pairs where key is strategy type and value is boost weight.
+"""
+input BoostConfigurationInput {
+  """
+  Boost strategies as key-value pairs (strategy: weight). Empty object {} disables all boosts.
+  """
+  boosts: JSON
+}
+
+"""Deprecated board object."""
+type DeprecatedBoard {
+  """Board ID."""
+  id: ID!
+}
+
+"""Item's column values"""
+type EnrichedColumnValues {
+  """Column ID."""
   id: ID!
 
-  """The name of the directory resource."""
+  """Column type."""
+  col_type: String!
+
+  """Column value."""
+  value: String!
+
+  """Column title."""
+  col_title: String
+
+  """Whether the column is publicly visible."""
+  is_public: Boolean!
+
+  """List of user IDs allowed to view this column"""
+  allowed_users: [String!]!
+}
+
+"""Item data present in the search index."""
+type IndexedItem {
+  """Item ID."""
+  id: ID!
+
+  """Item name."""
   name: String!
 
-  """The email address of the directory resource."""
-  email: String
+  """Item description."""
+  description: String
 
-  """The job role of the directory resource."""
-  job_role: String
+  """ID of the board containing this item."""
+  board_id: ID!
 
-  """The skills of the directory resource."""
-  skills: [String!]
+  """Name of the board containing this item."""
+  board_name: String!
 
-  """The location of the directory resource."""
-  location: String
+  """ID of the workspace containing this item."""
+  workspace_id: ID!
+
+  """ID of the item owner."""
+  owner_id: ID!
+
+  """ID of the group containing this item."""
+  group_id: ID!
+
+  """Name of the group containing this item."""
+  group_name: String!
+
+  """ISO timestamp when the item was created."""
+  created_at: String!
+
+  """ISO timestamp when the item was last updated."""
+  updated_at: String!
+
+  """URL to view this item."""
+  url: String!
+
+  """Item type (e.g., Project)."""
+  type: String!
+
+  """Item kind classification."""
+  kind: String!
+
+  """Board kind (e.g., public, private)."""
+  board_kind: String!
+
+  """Item state flag."""
+  state: Int!
+
+  """List of tags associated with the item."""
+  tags: [String!]!
+
+  """The item's column values."""
+  column_values: [EnrichedColumnValues!]!
+
+  """Board containing this item."""
+  board: DeprecatedBoard! @deprecated(reason: "Use board_id field instead or live_data if you need more board data.")
 }
 
-"""Attributes that can be updated on a resource directory entry"""
-enum DirectoryResourceAttribute {
-  """Represents the resource directory job role attribute.."""
-  JOB_ROLE
+"""Persons filter for search queries"""
+input PersonsInput {
+  """List of person IDs to filter by"""
+  person_ids: [ID!]
 
-  """Represents the resource directory skills attribute."""
-  SKILLS
+  """List of team IDs to filter by"""
+  team_ids: [ID!]
 
-  """Represents the resource directory location attribute."""
-  LOCATION
+  """
+  List of person names to filter by (searches in multiple-person columns)
+  """
+  person_names: [String!]
 }
 
-"""
-Paginated response containing directory resources and cursor for next page
-"""
-type DirectoryResourcesResponse {
-  """Response identifier"""
-  id: ID!
-
-  """List of directory resources"""
-  resources: [DirectoryResource!]!
-
-  """Cursor for fetching the next page of results"""
-  cursor: String
+"""Algorithms for reranking results."""
+enum RerankingStrategy {
+  """Use cross-encoder model for reranking results."""
+  CROSS_ENCODER
 }
 
-"""Response indicating whether the directory attribute update succeeded"""
-type UpdateDirectoryResourceAttributesResponse {
-  """Indicates whether the batch update completed successfully."""
-  success: Boolean!
+"""Available search modes."""
+enum Search {
+  """Keyword-based search using text matching."""
+  LEXICAL
+
+  """Vector-based search using semantic similarity."""
+  SEMANTIC
+
+  """Combined lexical and semantic search with reranking."""
+  HYBRID
+}
+
+"""Date range filter for search queries"""
+input SearchDateRangeInput {
+  """Filter items created before this date"""
+  created_before: ISO8601DateTime
+
+  """Filter items created after this date"""
+  created_after: ISO8601DateTime
+
+  """Filter items updated before this date"""
+  updated_before: ISO8601DateTime
+
+  """Filter items updated after this date"""
+  updated_after: ISO8601DateTime
+
+  """Filter items with a date column having a value before this date"""
+  column_value_before: ISO8601DateTime
+
+  """Filter items with a date column having a value after this date"""
+  column_value_after: ISO8601DateTime
+}
+
+"""Date range filter for search queries"""
+input SearchDateRangeLegacyInput {
+  """Filter items created before this date"""
+  createdBefore: ISO8601DateTime
+
+  """Filter items created after this date"""
+  createdAfter: ISO8601DateTime
+
+  """Filter items updated before this date"""
+  updatedBefore: ISO8601DateTime
+
+  """Filter items updated after this date"""
+  updatedAfter: ISO8601DateTime
+}
+
+"""Response of the search request."""
+type SearchItemsGraphQlResultsView {
+  """The results of the items search."""
+  results: [SearchItemsQueryResult!]!
+
+  """Indicates if the results have been reranked"""
+  reranked: Boolean
+}
+
+"""Contains search items query results."""
+type SearchItemsQueryResult {
+  """The relevance score of the search result."""
+  score: Float!
+
+  """Item data for the search results."""
+  data: IndexedItem!
+
+  """
+  Latest item data for the search results. Requires additional GraphQL federation calls.
+  """
+  live_data: Item!
 }
 
 """A monday dev sprint."""

@@ -8,12 +8,36 @@ export const getBoardItemsPage = gql`
     updated_at
     column_values(ids: $columnIds) @include(if: $includeColumns) {
       id
+      type
       text
       value
+
+      ... on FormulaValue {
+        display_value
+      }
+
+      ... on BoardRelationValue {
+        linked_items {
+          id
+          name
+          board {
+            id
+            name
+          }
+        }
+      }
     }
   }
-  
-  query GetBoardItemsPage($boardId: ID!, $limit: Int, $cursor: String, $includeColumns: Boolean!, $columnIds: [String!], $queryParams: ItemsQuery, $includeSubItems: Boolean!) {
+
+  query GetBoardItemsPage(
+    $boardId: ID!
+    $limit: Int
+    $cursor: String
+    $includeColumns: Boolean!
+    $columnIds: [String!]
+    $queryParams: ItemsQuery
+    $includeSubItems: Boolean!
+  ) {
     boards(ids: [$boardId]) {
       id
       name
@@ -26,18 +50,6 @@ export const getBoardItemsPage = gql`
           }
         }
         cursor
-      }
-    }
-  }
-`;
-
-export const smartSearchGetBoardItemIds = gql`
-  query SmartSearchBoardItemIds($searchTerm: String!, $board_ids: [ID!]) {
-    search_items(board_ids: $board_ids, query: $searchTerm, size: 100) {
-      results {
-        data {
-          id
-        }
       }
     }
   }

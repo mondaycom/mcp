@@ -1,5 +1,9 @@
 import { z } from 'zod';
-import { GetBoardInfoJustColumnsQuery, GetBoardInfoQuery, GetBoardInfoQueryVariables } from '../../../../monday-graphql/generated/graphql/graphql';
+import {
+  GetBoardInfoJustColumnsQuery,
+  GetBoardInfoQuery,
+  GetBoardInfoQueryVariables,
+} from '../../../../monday-graphql/generated/graphql/graphql';
 import { getBoardInfo, getBoardInfoJustColumns } from './get-board-info.graphql';
 import { BoardInfoData, BoardInfoJustColumnsData, formatBoardInfoAsJson } from './helpers';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
@@ -46,19 +50,21 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
     const subItemsBoard = await this.getSubItemsBoardAsync(board);
 
     return {
-      content: JSON.stringify(formatBoardInfoAsJson(board, subItemsBoard), null, 2)
+      content: JSON.stringify(formatBoardInfoAsJson(board, subItemsBoard), null, 2),
     };
   }
 
   private async getSubItemsBoardAsync(board: BoardInfoData): Promise<BoardInfoJustColumnsData | null> {
     const subTasksColumn = board.columns?.find((column) => column?.type === NonDeprecatedColumnType.Subtasks);
-    if(!subTasksColumn) {
+    if (!subTasksColumn) {
       return null;
     }
 
     const subItemsBoardId = subTasksColumn.settings.boardIds[0];
 
-    const response = await this.mondayApi.request<GetBoardInfoJustColumnsQuery>(getBoardInfoJustColumns, { boardId: subItemsBoardId });
+    const response = await this.mondayApi.request<GetBoardInfoJustColumnsQuery>(getBoardInfoJustColumns, {
+      boardId: subItemsBoardId,
+    });
     const subItemsBoard = response.boards?.[0] ?? null;
 
     return subItemsBoard;

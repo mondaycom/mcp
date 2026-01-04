@@ -52,6 +52,7 @@ describe('MondayAgentToolkit', () => {
       expect(mockApiClient).toHaveBeenCalledWith({
         token: 'test-token',
         apiVersion: API_VERSION,
+        endpoint: undefined,
         requestConfig: {
           headers: {
             'user-agent': 'monday-api-mcp',
@@ -63,6 +64,9 @@ describe('MondayAgentToolkit', () => {
         {
           apiClient: expect.any(Object),
           apiToken: 'test-token',
+          context: {
+            apiVersion: API_VERSION,
+          },
         },
         undefined,
       );
@@ -91,6 +95,7 @@ describe('MondayAgentToolkit', () => {
       expect(mockApiClient).toHaveBeenCalledWith({
         token: 'test-token',
         apiVersion: '2023-10',
+        endpoint: undefined,
         requestConfig: {
           timeout: 5000,
           headers: {
@@ -104,6 +109,9 @@ describe('MondayAgentToolkit', () => {
         {
           apiClient: expect.any(Object),
           apiToken: 'test-token',
+          context: {
+            apiVersion: '2023-10',
+          },
         },
         config.toolsConfiguration,
       );
@@ -474,6 +482,7 @@ describe('MondayAgentToolkit', () => {
       expect(tools[0]).toHaveProperty('description', 'Test tool 1 description');
       expect(tools[0]).toHaveProperty('schema');
       expect(tools[0].schema).toHaveProperty('param1');
+      expect(tools[0]).toHaveProperty('annotations');
       expect(tools[0]).toHaveProperty('handler');
       expect(typeof tools[0].handler).toBe('function');
 
@@ -481,6 +490,7 @@ describe('MondayAgentToolkit', () => {
       expect(tools[1]).toHaveProperty('name', 'test-tool-2');
       expect(tools[1]).toHaveProperty('description', 'Test tool 2 description');
       expect(tools[1]).toHaveProperty('schema', {});
+      expect(tools[1]).toHaveProperty('annotations');
       expect(tools[1]).toHaveProperty('handler');
       expect(typeof tools[1].handler).toBe('function');
     });
@@ -966,6 +976,7 @@ describe('MondayAgentToolkit', () => {
       expect(tools[0]).toHaveProperty('name', 'mcp-test-tool');
       expect(tools[0]).toHaveProperty('description', 'MCP test tool');
       expect(tools[0]).toHaveProperty('schema');
+      expect(tools[0]).toHaveProperty('annotations');
       expect(tools[0]).toHaveProperty('handler');
       expect(typeof tools[0].handler).toBe('function');
     });

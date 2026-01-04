@@ -16,7 +16,7 @@ export class GetDeploymentStatusTool extends BaseMondayAppsTool<
   });
 
   getDescription(): string {
-    return 'Get the deployment status for a specific app version';
+    return 'Get the deployment status for a specific app version in monday-code (serverless backend). Returns status, start time, end time, any errors, and deployment logs. Use this to monitor the progress and outcome of app deployments, especially after pushing code with mapps code:push';
   }
 
   getInputSchema() {

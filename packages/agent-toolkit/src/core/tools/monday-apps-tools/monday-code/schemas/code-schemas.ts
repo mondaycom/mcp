@@ -8,7 +8,11 @@ export interface DeploymentStatusResponse extends MondayApiResponse {
 }
 
 export const getDeploymentStatusSchema = z.object({
-  appVersionId: z.number().describe('The ID of the app version to get deployment status for'),
+  appVersionId: z
+    .number()
+    .describe(
+      'The unique identifier of the app version to check deployment status for. Use this after running mapps code:push to monitor the deployment progress and verify it completed successfully',
+    ),
 });
 
 export interface TunnelTokenResponse extends MondayApiResponse {
@@ -16,29 +20,36 @@ export interface TunnelTokenResponse extends MondayApiResponse {
   domain: string;
 }
 
-export const getTunnelTokenSchema = z.object({
-  appId: z.number().optional().describe('The ID of the app to get a tunnel token for (optional)'),
-});
-
 export interface EnvVarResponse extends MondayApiResponse {
   success?: boolean;
 }
 
-export const baseEnvVarSchema = z.object({
-  appId: z.number().describe('The ID of the app to manage environment variables for'),
-  key: z.string().describe('The environment variable key'),
+export const setEnvVarSchema = z.object({
+  appId: z
+    .number()
+    .describe(
+      'The unique identifier of the app to manage environment variables for. Environment variables are app-level settings available to all versions',
+    ),
+  key: z
+    .string()
+    .describe(
+      'The environment variable key/name (e.g., API_KEY, DATABASE_URL, DEBUG_MODE). Use uppercase with underscores by convention',
+    ),
+  value: z
+    .string()
+    .describe(
+      'The value to set for this environment variable. Can be any string (API keys, URLs, configuration values, etc.). Values are stored securely and available at runtime',
+    ),
 });
-
-export const setEnvVarSchema = baseEnvVarSchema.extend({
-  value: z.string().describe('The environment variable value'),
-});
-
-export const deleteEnvVarSchema = baseEnvVarSchema;
 
 export interface EnvVarKeysResponse extends MondayApiResponse {
   keys: string[];
 }
 
 export const listEnvVarKeysSchema = z.object({
-  appId: z.number().describe('The ID of the app to list environment variable keys for'),
+  appId: z
+    .number()
+    .describe(
+      'The unique identifier of the app to list environment variable keys for. Returns only the keys (not values) for security. Get app IDs from get_all_apps',
+    ),
 });

@@ -85,7 +85,24 @@ export function handleSelectAndGroupByElements(input: ToolInputType<typeof board
       column_id: columnId,
     })) || [];
 
-  const selectElements = input.aggregations!.map((aggregation) => {
+  const columnsWithLabelFunction = new Set<string>(
+    input
+      .aggregations!.filter((aggregation) => aggregation.function === AggregateSelectFunctionName.Label)
+      .map((aggregation) => aggregation.columnId),
+  );
+
+  // select human-friendly label if not specified
+  const labelAggregations =
+    input.groupBy
+      ?.filter((columnId) => !columnsWithLabelFunction.has(columnId))
+      .map((columnId) => ({
+        function: AggregateSelectFunctionName.Label,
+        columnId: columnId,
+      })) ?? [];
+
+  const aggregationsToBuild = input.aggregations!.concat(labelAggregations);
+
+  const selectElements = aggregationsToBuild.map((aggregation) => {
     // handle a function
     if (aggregation.function) {
       // create a unique alias for the select element
@@ -124,6 +141,7 @@ export function handleSelectAndGroupByElements(input: ToolInputType<typeof board
         column_id: aggregation.columnId,
       });
     }
+
     return selectElement;
   });
 
