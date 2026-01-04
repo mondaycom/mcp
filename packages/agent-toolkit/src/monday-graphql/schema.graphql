@@ -207,6 +207,18 @@ type Query {
   """List block events for a given trigger UUID"""
   block_events(triggerUuid: String!, nextPageOffset: Int = 0): BlockEventsPage
 
+  """Get aggregated automation runs statistics in the account"""
+  account_trigger_statistics(filters: AccountTriggerStatisticsFiltersInput): AccountTriggerStatistics
+
+  """Get aggregated automation runs statistics grouped by entity Ids"""
+  account_triggers_statistics_by_entity_id(run_status: TriggerEventState!, filters: AccountTriggersByEntityIdFiltersInput): AccountTriggersByEntityId
+
+  """
+  Placeholder query field for automations-test microservice.
+  This can be replaced with actual queries as the service evolves.
+  """
+  empty: String
+
   """
   Retrieves the JSON schema definition for a specific create view type. 
         Use this query before calling create_view mutation to understand the structure and validation rules for the settings parameter. 
@@ -232,7 +244,7 @@ type Query {
     """Page number to get, starting at 1."""
     page: Int = 1
 
-    """A list of items unique identifiers."""
+    """A list of updates unique identifiers."""
     ids: [ID!]
 
     """
@@ -648,6 +660,9 @@ type Query {
     """Number of items to get, the default is 25."""
     limit: Int = 25
 
+    """The workspace's membership kind (member / all)"""
+    membership_kind: WorkspaceMembershipKind = all
+
     """Property to order by (created_at)."""
     order_by: WorkspacesOrderBy
 
@@ -767,40 +782,17 @@ type Query {
     query: AggregateQueryInput!
   ): AggregateQueryResult
 
-  """Search for items using various search strategies."""
-  search_items(
-    """The search query string."""
-    query: String
+  """Fetch resources information from the resource directory"""
+  get_directory_resources(
+    """List of team IDs to filter by (e.g., ["1234", "5678"])"""
+    team_ids: [String!]
 
-    """Maximum number of results to return (max 100)."""
-    size: Int!
+    """The cursor which allows to fetch the next page of directory resources."""
+    cursor: String
 
-    """Whether to perform exact match search."""
-    exact_match: Boolean
-
-    """Date range filter for created/updated dates."""
-    date_range: SearchDateRangeInput
-
-    """Filter results to specific board IDs."""
-    board_ids: [ID!]
-
-    """Filter results to specific workspace IDs."""
-    workspace_ids: [ID!]
-
-    """Filter by assignee (person IDs and/or team IDs)."""
-    assignee: AssigneeInput
-
-    """Filter by status."""
-    status: String
-
-    """
-    Boost configuration for search results. When not set, uses default configuration from feature flag.
-    """
-    boosts: BoostConfigurationInput
-
-    """Reranking strategy to use for results."""
-    reranking_strategy: RerankingStrategy
-  ): SearchItemsGraphQlResultsView
+    """Number of items to get, the default is 25."""
+    limit: Int = 25
+  ): DirectoryResourcesResponse
 
   """Get a collection of monday dev sprints"""
   sprints(
@@ -1168,6 +1160,11 @@ type Mutation {
     description: String
 
     """
+    The width of the column. If not provided, the current width remains unchanged.
+    """
+    width: Int
+
+    """
     The revision of the column, as returned by the column query. Used for optimistic concurrency control.
     """
     revision: String!
@@ -1204,6 +1201,11 @@ type Mutation {
     description: String
 
     """
+    The width of the column. If not provided, the current width remains unchanged.
+    """
+    width: Int
+
+    """
     The revision of the column, as returned by the column query. Used for optimistic concurrency control.
     """
     revision: String!
@@ -1233,6 +1235,11 @@ type Mutation {
     The new description text for the column. If not provided, the current description remains unchanged.
     """
     description: String
+
+    """
+    The width of the column. If not provided, the current width remains unchanged.
+    """
+    width: Int
 
     """
     The revision of the column, as returned by the column query. Used for optimistic concurrency control.
@@ -1368,6 +1375,61 @@ type Mutation {
     column_type: ColumnType!
   ): Column
 
+  """
+  Creates a new status column in a board that is linked to a managed column. The column data and settings are controlled by the managed column. Only title and description can be overridden locally.
+  """
+  attach_status_managed_column(
+    """The unique identifier of the board where the column will be created."""
+    board_id: ID!
+
+    """The unique identifier of the managed column to attach."""
+    managed_column_id: ID!
+
+    """
+    Optional title override for the column. If not provided, uses the managed column title.
+    """
+    title: String
+
+    """
+    Optional description override for the column. If not provided, uses the managed column description.
+    """
+    description: String
+
+    """
+    The column's unique identifier after which the new column will be inserted.
+    """
+    after_column_id: ID
+  ): Column
+
+  """
+  Creates a new dropdown column in a board that is linked to a managed column. The column data and settings are controlled by the managed column. Title, description, and dropdown-specific settings (limit_select, label_limit_count) can be overridden locally.
+  """
+  attach_dropdown_managed_column(
+    """The unique identifier of the board where the column will be created."""
+    board_id: ID!
+
+    """The unique identifier of the managed column to attach."""
+    managed_column_id: ID!
+
+    """
+    Optional title override for the column. If not provided, uses the managed column title.
+    """
+    title: String
+
+    """
+    Optional description override for the column. If not provided, uses the managed column description.
+    """
+    description: String
+
+    """
+    The column's unique identifier after which the new column will be inserted.
+    """
+    after_column_id: ID
+
+    """Optional settings overrides for the dropdown column."""
+    settings: DropdownSettingsOverridesInput
+  ): Column
+
   """Add a required column to a board"""
   add_required_column(
     id: ID!
@@ -1387,7 +1449,26 @@ type Mutation {
   ): RequiredColumns
 
   """Update the dependency column for a specific pulse"""
-  update_dependency_column(boardId: String!, pulseId: String!, value: DependencyValueInput!, columnId: String!): JSON!
+  update_dependency_column(
+    boardId: String!
+    pulseId: String!
+    value: DependencyValueInput!
+    columnId: String!
+
+    """
+    Optional new date for the successor node (or one of its descendants). When provided, updates the successor date and all predecessor edge lags.
+    """
+    successor_new_date: TimelineDateInput
+  ): JSON!
+
+  """Batch update the dependency column values in a board"""
+  batch_update_dependency_column(
+    boardId: String!
+    columnId: String!
+
+    """The list of pulses with their dependency column values to update"""
+    values: [DependencyPulseValueInput!]!
+  ): JSON!
 
   """
   Adds markdown content to an existing document by converting it into document blocks. Use this to append content to the end of a document or insert content after a specific block. The markdown will be parsed and converted into the appropriate document block types (text, headers, lists, etc.). Returns the IDs of the newly created blocks on success.
@@ -1402,26 +1483,6 @@ type Mutation {
     """Optional block ID to insert the markdown content after."""
     afterBlockId: String
   ): DocBlocksFromMarkdownResult
-
-  """
-  Creates multiple document blocks in a single operation for efficient content creation. Use this when adding substantial content like importing documents, creating structured content (articles, reports, guides), or building complex document sections. Supports all block types including text paragraphs, headers, bullet/numbered lists, images, tables, code blocks, and more. Much faster than creating blocks individually. Perfect for content migration, template creation, or generating documents from external data. Maximum 25 blocks per request.
-  """
-  create_doc_blocks(
-    """
-    The document's unique identifier where blocks will be created. Get this from document queries or creation responses.
-    """
-    docId: ID!
-
-    """
-    Insert all new blocks immediately after this specific block ID. If omitted, blocks will be positioned based on their parentBlockId or appended at the end of the document in the provided order.
-    """
-    afterBlockId: String
-
-    """
-    Array of block definitions to create. Each element must specify exactly one block type (text, list, image, etc.). Maximum 25 blocks per request.
-    """
-    blocksInput: [CreateBlockInput!]!
-  ): [DocumentBlockV2!]
 
   """
   Permanently deletes a document and all its content from the system. This action cannot be undone. The document will be removed from all user views and workspaces. Use with caution - ensure the document is no longer needed before deletion. Returns success status and the deleted document ID.
@@ -1475,6 +1536,39 @@ type Mutation {
   ): ImportDocFromHtmlResult
 
   """
+  Converts a document to an article in Knowledge. Requires the Knowledge product to be installed in the account. The original document will be deleted after conversion. Returns the created article metadata.
+  """
+  publish_doc_to_knowledge(
+    """
+    The unique identifier of the article object. Can be used to reference this specific object in queries and mutations. This ID can be found in the article's URL.
+    """
+    object_id: ID!
+
+    """The ID of the workspace containing this article."""
+    workspace_id: ID!
+
+    """
+    The ID of the folder to move the article to. If not specified, the article will remain at its current folder level
+    """
+    folder_id: ID
+
+    """
+    The kind/visibility setting of the article (private, public). Determines who can access it.
+    """
+    privacy_kind: PrivacyKind!
+
+    """
+    List of user IDs to add as subscribers to this article. Only applicable when privacy_kind is PRIVATE
+    """
+    add_subscriber_ids: [ID!]
+
+    """
+    List of team IDs to add as subscribers to this article. Only applicable when privacy_kind is PRIVATE
+    """
+    add_subscriber_team_ids: [ID!]
+  ): ArticleMetadata
+
+  """
   Updates the content of a specific article block. The block must belong to a draft article that the user has permission to edit. Cannot update blocks of published articles.
   """
   update_article_block(
@@ -1523,6 +1617,17 @@ type Mutation {
     account_slug: String!
     data: GrantMarketplaceAppDiscountData!
   ): GrantMarketplaceAppDiscountResult!
+
+  """Grant a marketplace app discount offer"""
+  grant_marketplace_app_discount_offer(
+    """The id of an app"""
+    app_id: ID!
+
+    """Slug of an account"""
+    account_slug: String!
+    standard_discount_data: StandardDiscountDataInput
+    renewal_discount_data: RenewalDiscountDataInput
+  ): GrantMarketplaceAppDiscountOfferResult!
   delete_marketplace_app_discount(
     """The id of an app"""
     app_id: ID!
@@ -1540,6 +1645,11 @@ type Mutation {
 
     """The ID of the group to import items into"""
     group_id: ID!
+
+    """
+    Configuration for handling matching items. When provided, items will be matched based on the specified column.
+    """
+    on_match: OnMatchInput
   ): BulkImportInit
 
   """Creates a new app with the specified configuration."""
@@ -2629,6 +2739,20 @@ type Mutation {
   """Create a new portfolio"""
   create_portfolio(boardName: String!, boardPrivacy: String!, destinationWorkspaceId: Int): CreatePortfolioResult
 
+  """
+  Update attributes (Job Role, Skills, or Location) for multiple resources in the directory
+  """
+  update_directory_resources_attributes(
+    """The attribute type to update (JOB_ROLE, SKILLS, or LOCATION)"""
+    attribute: DirectoryResourceAttribute!
+
+    """The values of the attribute to update"""
+    values: [String!]!
+
+    """List of resource IDs to update"""
+    resource_ids: [ID!]!
+  ): UpdateDirectoryResourceAttributesResponse
+
   """Creates a new team."""
   create_team(input: CreateTeamAttributesInput!, options: CreateTeamOptionsInput): Team
 
@@ -3212,6 +3336,58 @@ input PaginationInput {
   lastId: Int
 }
 
+"""Aggregated automation runs statistics grouped by entity Ids"""
+type AccountTriggersByEntityId {
+  """Unique identifier for the statistics result"""
+  id: ID!
+
+  """
+  Statistics for automations grouped by automation Id. Returns an object where each key is an automation Id, and the value contains the total count and breakdown by error reason
+  """
+  automation_statistics: JSON
+
+  """
+  Statistics for workflows grouped by workflow entity Id. Returns an object where each key is a workflow entity Id, and the value contains the total count and breakdown by error reason
+  """
+  workflow_statistics: JSON
+}
+
+"""Filters for account triggers statistics by entity Id query"""
+input AccountTriggersByEntityIdFiltersInput {
+  """Filter by board Id"""
+  board_id: Int
+
+  """Exclude statistics for the specified automation Ids"""
+  automation_ids: [Int!]
+
+  """Filter by multiple user Ids"""
+  user_ids: [Int!]
+}
+
+"""Aggregated automation runs statistics in the account"""
+type AccountTriggerStatistics {
+  """Unique identifier for the statistics result"""
+  id: ID!
+
+  """Number of successful automation runs"""
+  success: Int
+
+  """Number of failed automation runs"""
+  failure: Int
+
+  """Total number of automation runs"""
+  total: Int
+}
+
+"""Filters for account trigger statistics query"""
+input AccountTriggerStatisticsFiltersInput {
+  """Filter by board Id"""
+  board_id: Int
+
+  """Filter by multiple user Ids"""
+  user_ids: [Int!]
+}
+
 """Automation block execution event"""
 type BlockEvent {
   """Document identifier"""
@@ -3392,6 +3568,18 @@ type TriggerEventsPage {
   triggerEvents: [TriggerEvent!]
 }
 
+"""Automation run status"""
+enum TriggerEventState {
+  """Automation run completed successfully"""
+  success
+
+  """Automation run failed"""
+  failure
+
+  """Automation run exhausted all retry attempts"""
+  exhausted
+}
+
 """A monday.com board."""
 type Board {
   """The unique identifier of the board."""
@@ -3432,9 +3620,9 @@ type Board {
     types: [ColumnType!]
 
     """
-    A list of column capabilities to filter by. If unspecified, only columns with no capabilities will be returned.
+    A list of column capabilities to filter by. Returns columns that have any of the specified capabilities. Use null in the array to represent columns with no capabilities (e.g., [null] for only columns without capabilities, [null, CALCULATED] for columns without capabilities or with calculated).
     """
-    capabilities: [ColumnCapability!]
+    capabilities: [ColumnCapability] = [null, VISIBILITY]
   ): [Column]
 
   """The user's permission level for this board (view / edit)."""
@@ -3827,7 +4015,7 @@ enum ViewKind {
   """Form view for input and data entry"""
   FORM
 
-  """App view for feature-specific board display"""
+  """App view for feature-specific display"""
   APP
 }
 
@@ -3942,11 +4130,22 @@ type Like {
   updated_at: Date
 }
 
+"""The type of the mention."""
 enum MentionType {
+  """Mention a user"""
   User
+
+  """Mention a team"""
   Team
+
+  """Mention a project"""
   Project
+
+  """Mention a board"""
   Board
+
+  """Mention an AI agent"""
+  Agent
 }
 
 """A reply for an update."""
@@ -4037,6 +4236,8 @@ type Update {
 input UpdateMention {
   """The object id."""
   id: ID!
+
+  """The type of the mention."""
   type: MentionType!
 }
 
@@ -4228,6 +4429,9 @@ type Column {
 type ColumnCapabilities {
   """Calculated capability settings"""
   calculated: CalculatedCapability
+
+  """Visibility capability settings"""
+  visibility: String
 }
 
 """Input for configuring column capabilities during creation"""
@@ -4242,6 +4446,9 @@ input ColumnCapabilitiesInput {
 enum ColumnCapability {
   """Capability to show column's calculated value"""
   CALCULATED
+
+  """Capability to mark column as hidden"""
+  VISIBILITY
 }
 
 union ColumnSettings = StatusColumnSettings | DropdownColumnSettings
@@ -4427,6 +4634,19 @@ type DropdownManagedColumn {
   created_at: Date
   updated_at: Date
   settings: DropdownColumnSettings
+}
+
+"""
+Overridable settings for dropdown columns attached to a managed column.
+"""
+input DropdownSettingsOverridesInput {
+  """Whether to limit the number of selectable labels."""
+  limit_select: Boolean
+
+  """
+  Maximum number of labels that can be selected when limit_select is enabled.
+  """
+  label_limit_count: Int
 }
 
 type ManagedColumn {
@@ -4620,6 +4840,15 @@ type BoardGraphExport {
   edgeCount: Int
 }
 
+"""Input type for updating a single pulse dependency value"""
+input DependencyPulseValueInput {
+  """The ID of the pulse to update the dependency value for"""
+  pulseId: ID!
+
+  """The value of the dependency pulse value to update"""
+  value: DependencyValueInput!
+}
+
 """Type of dependency relationship between items"""
 enum DependencyRelation {
   """
@@ -4673,6 +4902,18 @@ input PayloadInput {
   lag: Int
 }
 
+"""Input type for timeline dates with from and to date strings"""
+input TimelineDateInput {
+  """The ID of the successor pulse whose date should be updated"""
+  id: ID!
+
+  """Start date of the timeline in ISO format"""
+  from: String!
+
+  """End date of the timeline in ISO format"""
+  to: String!
+}
+
 """
 Input type for updating a single dependency relationship between pulses
 """
@@ -4718,172 +4959,61 @@ type ArticleBlock {
   updated_at: String
 }
 
-"""Text formatting attributes (bold, italic, links, colors, etc.)"""
-type Attributes {
-  """Apply bold formatting to the text"""
-  bold: Boolean
-
-  """Apply italic formatting to the text"""
-  italic: Boolean
-
-  """Apply underline formatting to the text"""
-  underline: Boolean
-
-  """Apply strikethrough formatting to the text"""
-  strike: Boolean
-
-  """Apply inline code formatting to the text"""
-  code: Boolean
-
-  """URL to create a hyperlink"""
-  link: String
-
-  """Text color (hex, rgb, or named color)"""
-  color: String
-
-  """Background color for text highlighting (hex, rgb, or named color)"""
-  background: String
-}
-
-"""Text formatting attributes (bold, italic, links, colors, etc.)"""
-input AttributesInput {
-  """Apply bold formatting to the text"""
-  bold: Boolean
-
-  """Apply italic formatting to the text"""
-  italic: Boolean
-
-  """Apply underline formatting to the text"""
-  underline: Boolean
-
-  """Apply strikethrough formatting to the text"""
-  strike: Boolean
-
-  """Apply inline code formatting to the text"""
-  code: Boolean
-
-  """URL to create a hyperlink"""
-  link: String
-
-  """Text color (hex, rgb, or named color)"""
-  color: String
-
-  """Background color for text highlighting (hex, rgb, or named color)"""
-  background: String
-}
-
-"""Alignment options for blocks"""
-enum BlockAlignment {
-  LEFT
-  RIGHT
-  CENTER
-}
-
-"""Abstract union type representing different types of block content"""
-union BlockContent = TextBlockContent | ListBlockContent | NoticeBoxContent | ImageContent | VideoContent | TableContent | LayoutContent | DividerContent | PageBreakContent
-
-"""Text direction options for blocks"""
-enum BlockDirection {
-  LTR
-  RTL
-}
-
-"""Object representing structured data within a text block"""
-union BlotContent = Mention | DocsColumnValue
-
-"""Object representing structured data within a text block"""
-input BlotInput {
-  """Mention blot data"""
-  mention: MentionInput
-
-  """Column value blot data"""
-  column_value: DocsColumnValueInput
-}
-
-"""A cell containing a reference to a block"""
-type Cell {
-  """
-  The ID of the block representing the cell (parent block of all the content blocks in the cell)
-  """
-  block_id: String!
-}
-
-"""Column style configuration"""
-type ColumnStyle {
-  """The width percentage of the column"""
-  width: Int!
-}
-
-"""Column style configuration input"""
-input ColumnStyleInput {
-  """The width percentage of the column"""
-  width: Int!
-}
-
 """
-  Choose one specific block type to create.
-
-💡 TIP: Before using table_block, consider add_content_to_doc_from_markdown for tables with data.
-
-table_block creates empty structure requiring manual cell population.
+The Article is the main object type of monday.com Knowledge product. Article Metadata is a subset of the Article object that contains only the metadata of the article, not the article itself. It is used to get the metadata of an article without having to fetch the article itself.
 """
-input CreateBlockInput {
-  """Create a text block (normal text, titles)"""
-  text_block: TextBlockInput
+type ArticleMetadata {
+  """
+  The unique identifier of the article object. Can be used to reference this specific object in queries and mutations. This ID can be found in the article's URL.
+  """
+  object_id: ID
 
-  """Create a list block (bulleted, numbered, checklist)"""
-  list_block: ListBlockInput
+  """The ID of the draft version of this article."""
+  draft_article_id: ID
+
+  """The ID of the published version of this article."""
+  published_article_id: ID
 
   """
-  The notice-box's own ID must be captured.  Every block that should appear inside it must be created with parentBlockId = that ID (and can still use afterBlockId for ordering among siblings).
+  The display name of the article. This is what appears in the monday.com interface.
   """
-  notice_box_block: NoticeBoxBlockInput
-
-  """Create an image block"""
-  image_block: ImageBlockInput
-
-  """Create a video block"""
-  video_block: VideoBlockInput
+  name: String
 
   """
-  Create a table block. Capture its returned ID; nest child blocks by setting parentBlockId to that ID and use afterBlockId for sibling ordering.
+  The kind/visibility setting of the article (private, public). Determines who can access it.
   """
-  table_block: TableBlockInput
+  privacy_kind: String
+
+  """The ID of the workspace containing this article."""
+  workspace_id: ID
 
   """
-  Create a layout block. Capture its returned ID; nest child blocks by setting parentBlockId to that ID and use afterBlockId for sibling ordering.
+  The ID of the folder containing this article, if the article is organized in a folder structure.
   """
-  layout_block: LayoutBlockInput
+  folder_id: ID
 
-  """Create a divider block"""
-  divider_block: DividerBlockInput
+  """Timestamp of when the article was last updated. Format is ISO 8601."""
+  updated_at: String
 
-  """Create a page break block"""
-  page_break_block: PageBreakBlockInput
-}
+  """
+  The current state of the article. Determines visibility in the interface.
+  """
+  state: String
 
-"""Input for creating divider blocks"""
-input DividerBlockInput {
-  """The parent block id to append the created block under."""
-  parent_block_id: String
-}
+  """
+  The ID of the user who created this article. Useful for tracking article origin.
+  """
+  creator: ID
 
-"""Content for a divider block"""
-type DividerContent implements DocBaseBlockContent {
-  """The alignment of the block content"""
-  alignment: BlockAlignment
+  """
+  List of users who are owners of this article. Owners have full control permissions.
+  """
+  owners: [User!]
 
-  """The text direction of the block content"""
-  direction: BlockDirection
-}
-
-"""Base interface for all block content types"""
-interface DocBaseBlockContent {
-  """The alignment of the block content"""
-  alignment: BlockAlignment
-
-  """The text direction of the block content"""
-  direction: BlockDirection
+  """
+  List of users who are subscribers to this article. Subscribers receive notifications about changes.
+  """
+  subscribers: [User!]
 }
 
 """
@@ -4914,72 +5044,6 @@ enum DocKind {
 
   """Shareable document"""
   share
-}
-
-"""Column value reference for displaying board item column data"""
-type DocsColumnValue {
-  """The ID of the board item"""
-  item_id: Int
-
-  """The ID of the column"""
-  column_id: String
-}
-
-"""Column value reference for displaying board item column data"""
-input DocsColumnValueInput {
-  """The ID of the board item"""
-  item_id: Int!
-
-  """The ID of the column"""
-  column_id: String!
-}
-
-"""Type of mention - user, document, or board"""
-enum DocsMention {
-  """Mention of a user"""
-  USER
-
-  """Mention of a document"""
-  DOC
-
-  """Mention of a board"""
-  BOARD
-}
-
-"""
-Represents a content block — the fundamental building unit of a monday.com document. Each block encapsulates its structured content, hierarchical relationships, and associated metadata.
-"""
-type DocumentBlockV2 {
-  """The block's unique identifier."""
-  id: ID!
-
-  """The block's document unique identifier."""
-  doc_id: ID
-
-  """
-  The block's parent block unique identifier. Used for nesting (e.g., content inside table cells, layout columns, or notice boxes). Null for top-level blocks.
-  """
-  parent_block_id: String
-
-  """The block content type."""
-  type: String
-
-  """The block's content as an array of structured content blocks."""
-  content: [BlockContent]!
-
-  """
-  The block's position on the document (auto-generated). Higher numbers appear later in document. Use afterBlockId in mutations to control ordering.
-  """
-  position: Float
-
-  """The block's creation date."""
-  created_at: String
-
-  """The block's last updated date."""
-  updated_at: String
-
-  """The block's creator."""
-  created_by: User
 }
 
 """Controls what gets copied when duplicating a document"""
@@ -5013,33 +5077,6 @@ type ExportMarkdownResult {
   error: String
 }
 
-"""Input for creating image blocks"""
-input ImageBlockInput {
-  """The parent block id to append the created block under."""
-  parent_block_id: String
-
-  """The public URL of the image"""
-  public_url: String!
-
-  """The width of the image"""
-  width: Int
-}
-
-"""Content for an image block"""
-type ImageContent implements DocBaseBlockContent {
-  """The alignment of the block content"""
-  alignment: BlockAlignment
-
-  """The text direction of the block content"""
-  direction: BlockDirection
-
-  """The public URL of the image"""
-  public_url: String!
-
-  """The width of the image"""
-  width: Int
-}
-
 """
 Response from importing an HTML document. Contains success status and the ID of the newly created document.
 """
@@ -5058,201 +5095,6 @@ type ImportDocFromHtmlResult {
   error: String
 }
 
-"""Content inserted in delta operations"""
-type InsertOps {
-  """Plain text content"""
-  text: String
-
-  """Object representing structured data within a text block"""
-  blot: BlotContent
-}
-
-"""Content to insert in delta operations"""
-input InsertOpsInput {
-  """Plain text content"""
-  text: String
-
-  """Object representing structured data within a text block"""
-  blot: BlotInput
-}
-
-"""
-Input for creating layout blocks.
-
-Behaviour:
-• When a layout is created the system automatically generates
-  column_count child "cell" blocks (one per column).
-• The layout block itself is just a container; each generated cell block has
-  parentBlockId === <layout-block-id> and acts as the direct parent for any
-  content you want to insert into that column.
-• The creation response already contains the ordered list of generated cell
-  IDs under `content[0].cells` (1-D array from left to right).
-• To populate a layout:
-    1. Create the layout and capture its ID.
-    2. Obtain the cell block IDs either by inspecting `content[0].cells`
-       in the response **or** by querying the document for children of the
-       layout block.
-    3. Create your content blocks (textBlock, imageBlock, tableBlock, etc.)
-       with parentBlockId set to the specific cell block ID.
-• Use afterBlockId only to order siblings *within* the same cell.
-"""
-input LayoutBlockInput {
-  """The parent block id to append the created block under."""
-  parent_block_id: String
-
-  """The number of columns in the layout"""
-  column_count: Int!
-
-  """The column style configuration"""
-  column_style: [ColumnStyleInput!]
-}
-
-"""Content for a layout block"""
-type LayoutContent implements DocBaseBlockContent {
-  """The alignment of the block content"""
-  alignment: BlockAlignment
-
-  """The text direction of the block content"""
-  direction: BlockDirection
-
-  """The column style configuration"""
-  column_style: [ColumnStyle!]
-
-  """1-D array of cells (columns). Each cell carries a blockId reference."""
-  cells: [Cell!]
-}
-
-"""Specific types of list blocks"""
-enum ListBlock {
-  BULLETED_LIST
-  NUMBERED_LIST
-  CHECK_LIST
-}
-
-"""Content for a list block (bulleted, numbered, todo)"""
-type ListBlockContent implements DocBaseBlockContent {
-  """The alignment of the block content"""
-  alignment: BlockAlignment
-
-  """The text direction of the block content"""
-  direction: BlockDirection
-
-  """
-  The text content in delta format - array of operations with insert content and optional attributes
-  """
-  delta_format: [Operation!]!
-
-  """The indentation level of the list item"""
-  indentation: Int
-}
-
-"""Input for creating list blocks (bulleted, numbered, todo)"""
-input ListBlockInput {
-  """The parent block id to append the created block under."""
-  parent_block_id: String
-  alignment: BlockAlignment
-  direction: BlockDirection
-
-  """The specific type of list block (defaults to bulleted list)"""
-  list_block_type: ListBlock
-
-  """
-  The text content in delta format - array of operations with insert content and optional attributes
-  """
-  delta_format: [OperationInput!]!
-
-  """The indentation level of the list item"""
-  indentation: Int
-}
-
-"""Mention object for user or document references"""
-type Mention {
-  """The unique identifier of the mentioned entity"""
-  id: Int
-
-  """The type of the mentioned entity"""
-  type: DocsMention
-}
-
-"""Mention object for user or document references"""
-input MentionInput {
-  """The ID of the mentioned user or document"""
-  id: Int!
-
-  """The type of mention: user, doc, or board"""
-  type: DocsMention!
-}
-
-"""
-The notice-box's own ID must be captured.  Every block that should appear inside it must be created with parentBlockId = that ID (and can still use afterBlockId for ordering among siblings).
-"""
-input NoticeBoxBlockInput {
-  """The parent block id to append the created block under."""
-  parent_block_id: String
-  theme: NoticeBoxTheme!
-}
-
-"""Content for a notice box block"""
-type NoticeBoxContent implements DocBaseBlockContent {
-  """The alignment of the block content"""
-  alignment: BlockAlignment
-
-  """The text direction of the block content"""
-  direction: BlockDirection
-
-  """The theme of the notice box"""
-  theme: NoticeBoxTheme!
-}
-
-"""Theme options for notice box blocks"""
-enum NoticeBoxTheme {
-  INFO
-  TIPS
-  WARNING
-  GENERAL
-}
-
-"""
-A delta operation with insert content and optional formatting attributes
-"""
-type Operation {
-  """Content to insert - either text or blot object"""
-  insert: InsertOps
-
-  """
-  Optional formatting attributes (bold, italic, underline, strike, code, link, color, background)
-  """
-  attributes: Attributes
-}
-
-"""
-A delta operation with insert content and optional formatting attributes
-"""
-input OperationInput {
-  """Content to insert - either text or blot object"""
-  insert: InsertOpsInput!
-
-  """
-  Optional formatting attributes (bold, italic, underline, strike, code, link, color, background)
-  """
-  attributes: AttributesInput
-}
-
-"""Input for creating page break blocks"""
-input PageBreakBlockInput {
-  """The parent block id to append the created block under."""
-  parent_block_id: String
-}
-
-"""Content for a page break block"""
-type PageBreakContent implements DocBaseBlockContent {
-  """The alignment of the block content"""
-  alignment: BlockAlignment
-
-  """The text direction of the block content"""
-  direction: BlockDirection
-}
-
 """
 The kind/visibility setting of the article (private, public). Determines who can access it.
 """
@@ -5266,147 +5108,6 @@ enum PrivacyKind {
   Public objects are visible to all users within the account, unless their access is blocked on a higher level in the hierarchy, or by specific object permission.
   """
   PUBLIC
-}
-
-"""
-Input for creating table blocks.
-⚠️  RECOMMENDATION: Use add_content_to_doc_from_markdown with markdown tables instead for simpler table creation.
-Behavior:
-- When a table is created, the system automatically generates `row_count × column_count` child "cell" blocks (one per cell).
-- The table block is a container. Each generated cell block has `parentBlockId === <table-block-id>` and is used to insert content.
-
-Important:
-- Always use the 2D matrix returned under `content[0].cells` to access cells.
-- This matrix is row-major: `matrix[rowIndex][columnIndex]`.
-- Do not rely on the order returned by `docs { blocks { ... } }`, as it's implementation-specific.
-
-Recommended workflow:
-1. Create the table and capture its ID.
-2. Read `content[0].cells` to get the cell ID matrix.
-3. Use bulk create blocks to create all the child blocks (e.g. textBlock, imageBlock) with `parentBlockId = matrix[row][col]`.
-   Use `afterBlockId` only to order siblings within the same cell.
-"""
-input TableBlockInput {
-  """The parent block id to append the created block under."""
-  parent_block_id: String
-
-  """The number of columns in the table"""
-  column_count: Int!
-
-  """The number of rows in the table"""
-  row_count: Int!
-
-  """The width of the table"""
-  width: Int
-
-  """The column style configuration"""
-  column_style: [ColumnStyleInput!]
-}
-
-"""Content for a table block"""
-type TableContent implements DocBaseBlockContent {
-  """The alignment of the block content"""
-  alignment: BlockAlignment
-
-  """The text direction of the block content"""
-  direction: BlockDirection
-
-  """The width of the table"""
-  width: Int
-
-  """The column style configuration"""
-  column_style: [ColumnStyle!]
-
-  """
-  2-D array of cells (rows × columns). Each cell contains a blockId reference that represents the parent block for all content blocks within that cell.
-  """
-  cells: [TableRow!]
-}
-
-"""A row of cells in a table"""
-type TableRow {
-  """The cells in this row"""
-  row_cells: [Cell!]!
-}
-
-"""
-Text block formatting types. Controls visual appearance and semantic meaning.
-"""
-enum TextBlock {
-  """Regular paragraph text"""
-  NORMAL_TEXT
-
-  """Main document title (H1 equivalent)"""
-  LARGE_TITLE
-
-  """Section heading (H2 equivalent)"""
-  MEDIUM_TITLE
-
-  """Subsection heading (H3 equivalent)"""
-  SMALL_TITLE
-
-  """Code styling"""
-  CODE
-
-  """Indented quote/blockquote styling"""
-  QUOTE
-}
-
-"""Content for a text block"""
-type TextBlockContent implements DocBaseBlockContent {
-  """The alignment of the block content"""
-  alignment: BlockAlignment
-
-  """The text direction of the block content"""
-  direction: BlockDirection
-
-  """
-  The text content in delta format - array of operations with insert content and optional attributes
-  """
-  delta_format: [Operation!]!
-}
-
-"""Input for creating text blocks (normal text, titles, quote, code)"""
-input TextBlockInput {
-  """The parent block id to append the created block under."""
-  parent_block_id: String
-  alignment: BlockAlignment
-  direction: BlockDirection
-
-  """The specific type of text block (defaults to normal text)"""
-  text_block_type: TextBlock
-
-  """
-  The text content in delta format - array of operations with insert content and optional attributes
-  """
-  delta_format: [OperationInput!]!
-}
-
-"""Input for creating video blocks"""
-input VideoBlockInput {
-  """The parent block id to append the created block under."""
-  parent_block_id: String
-
-  """The raw URL of the video"""
-  raw_url: String!
-
-  """The width of the video"""
-  width: Int
-}
-
-"""Content for a video block"""
-type VideoContent implements DocBaseBlockContent {
-  """The alignment of the block content"""
-  alignment: BlockAlignment
-
-  """The text direction of the block content"""
-  direction: BlockDirection
-
-  """The raw URL of the video"""
-  url: String!
-
-  """The width of the video"""
-  width: Int
 }
 
 """Input type for adding an object to a hierarchy list"""
@@ -5499,6 +5200,9 @@ enum GraphqlMondayObject {
 
   """Aggregates data from one or more boards."""
   Dashboard
+
+  """A monday.com workspace"""
+  Workspace
 }
 
 """Represents a monday object identifier with its type"""
@@ -5607,14 +5311,27 @@ type DeleteMarketplaceAppDiscountResult {
   deleted_discount: DeleteMarketplaceAppDiscount!
 }
 
-"""The period of a discount"""
+"""The period of a discount. Provide only for standard discounts."""
 enum DiscountPeriod {
   MONTHLY
   YEARLY
 }
 
+"""
+The scope of a discount. Possible values: standard, renewal. Defaults to standard when not provided.
+"""
+enum DiscountScope {
+  """Standard discount scope - applies to new subscriptions"""
+  STANDARD
+
+  """Renewal discount scope - applies to subscription renewals"""
+  RENEWAL
+}
+
 type GrantMarketplaceAppDiscount {
-  """Number of days a discount will be valid"""
+  """
+  Number of days a discount will be valid. Provide only for standard discounts.
+  """
   days_valid: Int!
 
   """Percentage value of a discount"""
@@ -5624,7 +5341,7 @@ type GrantMarketplaceAppDiscount {
   is_recurring: Boolean!
   period: DiscountPeriod
 
-  """List of app plan ids"""
+  """List of app plan ids. Provide only for standard discounts."""
   app_plan_ids: [String!]!
 
   """The id of an app"""
@@ -5632,7 +5349,9 @@ type GrantMarketplaceAppDiscount {
 }
 
 input GrantMarketplaceAppDiscountData {
-  """Number of days a discount will be valid"""
+  """
+  Number of days a discount will be valid. Provide only for standard discounts.
+  """
   days_valid: Int!
 
   """Percentage value of a discount"""
@@ -5641,11 +5360,45 @@ input GrantMarketplaceAppDiscountData {
   """Is discount recurring"""
   is_recurring: Boolean!
 
-  """The period of a discount"""
+  """The period of a discount. Provide only for standard discounts."""
   period: DiscountPeriod
 
-  """List of app plan ids"""
+  """List of app plan ids. Provide only for standard discounts."""
   app_plan_ids: [String!]!
+}
+
+"""A granted marketplace app discount offer"""
+type GrantMarketplaceAppDiscountOffer {
+  """
+  Number of days a discount will be valid. Provide only for standard discounts.
+  """
+  days_valid: Int!
+
+  """Percentage value of a discount"""
+  discount: Int!
+
+  """Is discount recurring"""
+  is_recurring: Boolean!
+
+  """The period of a discount. Provide only for standard discounts."""
+  period: DiscountPeriod
+
+  """List of app plan ids. Provide only for standard discounts."""
+  app_plan_ids: [ID!]
+
+  """
+  The scope of a discount. Possible values: standard, renewal. Defaults to standard when not provided.
+  """
+  discount_scope: DiscountScope
+
+  """The id of an app"""
+  app_id: ID!
+}
+
+"""Result of granting a marketplace app discount offer"""
+type GrantMarketplaceAppDiscountOfferResult {
+  """The granted discount offer"""
+  granted_discount: GrantMarketplaceAppDiscountOffer!
 }
 
 type GrantMarketplaceAppDiscountResult {
@@ -5691,7 +5444,7 @@ type MarketplaceAppDiscount {
   """Is discount recurring"""
   is_recurring: Boolean!
 
-  """List of app plan ids"""
+  """List of app plan ids. Provide only for standard discounts."""
   app_plan_ids: [String!]!
   period: DiscountPeriod
 
@@ -5700,6 +5453,11 @@ type MarketplaceAppDiscount {
 
   """Date when a discount was created"""
   created_at: String!
+
+  """
+  The scope of a discount. Possible values: standard, renewal. Defaults to standard when not provided.
+  """
+  discount_scope: DiscountScope
 }
 
 type MarketplaceAppMetadata {
@@ -5759,6 +5517,35 @@ type MarketplaceSearchResults {
 
   """The time taken to perform the search"""
   elapsed: String!
+}
+
+"""Input data for granting a renewal marketplace app discount offer"""
+input RenewalDiscountDataInput {
+  """Percentage value of a discount"""
+  discount: Int!
+
+  """Is discount recurring"""
+  is_recurring: Boolean!
+}
+
+"""Input data for granting a standard marketplace app discount offer"""
+input StandardDiscountDataInput {
+  """
+  Number of days a discount will be valid. Provide only for standard discounts.
+  """
+  days_valid: Int!
+
+  """Percentage value of a discount"""
+  discount: Int!
+
+  """Is discount recurring"""
+  is_recurring: Boolean!
+
+  """The period of a discount. Provide only for standard discounts."""
+  period: DiscountPeriod
+
+  """List of app plan ids. Provide only for standard discounts."""
+  app_plan_ids: [ID!]!
 }
 
 """The discounts granted to the subscription"""
@@ -5889,6 +5676,26 @@ type BulkImportStatus {
 
   """URL to download the import report, valid for 10 minutes"""
   report_url: String
+}
+
+"""Strategy for handling matching items during import"""
+enum OnMatchBehaviour {
+  """Update if a matching item exists, otherwise create a new item"""
+  UPSERT
+
+  """Skip if a matching item exists"""
+  SKIP
+}
+
+"""Configuration for how to handle matching items during import"""
+input OnMatchInput {
+  """
+  The column ID to use for matching (e.g., email, phone number). When importing items, this column value will be used to identify matches.
+  """
+  match_column_id: String!
+
+  """Strategy for handling matching items"""
+  behaviour: OnMatchBehaviour!
 }
 
 """Input for app feature release data."""
@@ -6095,6 +5902,15 @@ enum AppFeatureTypeE {
 
   """AI_AGENT_SKILL"""
   AI_AGENT_SKILL
+
+  """VIBE_OBJECT"""
+  VIBE_OBJECT
+
+  """VIBE_ITEM_VIEW"""
+  VIBE_ITEM_VIEW
+
+  """AI_PLATFORM_AGENT"""
+  AI_PLATFORM_AGENT
 }
 
 """The visibility type of an app"""
@@ -6104,6 +5920,66 @@ enum AppKind {
 
   """App is public and can be shared and installed by other accounts"""
   PUBLIC
+}
+
+"""Permitted OAuth scopes for apps"""
+enum AppPermission {
+  """Permission scope: me:read"""
+  ME_READ
+
+  """Permission scope: boards:read"""
+  BOARDS_READ
+
+  """Permission scope: boards:write"""
+  BOARDS_WRITE
+
+  """Permission scope: workspaces:read"""
+  WORKSPACES_READ
+
+  """Permission scope: workspaces:write"""
+  WORKSPACES_WRITE
+
+  """Permission scope: users:read"""
+  USERS_READ
+
+  """Permission scope: users:write"""
+  USERS_WRITE
+
+  """Permission scope: account:read"""
+  ACCOUNT_READ
+
+  """Permission scope: updates:read"""
+  UPDATES_READ
+
+  """Permission scope: updates:write"""
+  UPDATES_WRITE
+
+  """Permission scope: tags:read"""
+  TAGS_READ
+
+  """Permission scope: assets:read"""
+  ASSETS_READ
+
+  """Permission scope: teams:read"""
+  TEAMS_READ
+
+  """Permission scope: teams:write"""
+  TEAMS_WRITE
+
+  """Permission scope: notifications:write"""
+  NOTIFICATIONS_WRITE
+
+  """Permission scope: webhooks:write"""
+  WEBHOOKS_WRITE
+
+  """Permission scope: webhooks:read"""
+  WEBHOOKS_READ
+
+  """Permission scope: docs:read"""
+  DOCS_READ
+
+  """Permission scope: docs:write"""
+  DOCS_WRITE
 }
 
 """The current state of an app based on its version status"""
@@ -6193,7 +6069,7 @@ input CreateAppInput {
   slug: String
 
   """Array of permission scopes"""
-  permissions: [String!]
+  permissions: [AppPermission!]
 
   """Webhook endpoint URL"""
   webhook_url: String
@@ -6254,7 +6130,7 @@ input UpdateAppInput {
   slug: String
 
   """Array of permission scopes (replaces existing permissions)"""
-  permissions: [String!]
+  permissions: [AppPermission!]
 
   """Webhook endpoint URL"""
   webhook_url: String
@@ -6262,6 +6138,9 @@ input UpdateAppInput {
   """Array of user IDs with access (replaces existing collaborators)"""
   collaborators: [ID!]
 }
+
+"""A file"""
+scalar File
 
 """Your monday.com account"""
 type Account {
@@ -6271,11 +6150,20 @@ type Account {
   """The account's country two-letter code in ISO3166 format"""
   country_code: String
 
+  """The account's creation date."""
+  created_at: Date
+
   """The first day of the week for the account (sunday / monday)"""
   first_day_of_the_week: FirstDayOfTheWeek!
 
   """The account's unique identifier."""
   id: ID!
+
+  """Is the account during the free trial period"""
+  is_during_trial: Boolean
+
+  """Is the account's trial expired"""
+  is_trial_expired: Boolean
 
   """The account's logo."""
   logo: String
@@ -6315,6 +6203,9 @@ type AccountProduct {
   projectManagement / project_management / service / forms / whiteboard).
   """
   kind: String
+
+  """The account product tier."""
+  tier: String
 }
 
 """An activity log event"""
@@ -6523,6 +6414,9 @@ type BatteryValue implements ColumnValue {
   """The column's unique identifier."""
   id: ID!
 
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
+
   """
   Text representation of the column value. Note: Not all columns support textual value
   """
@@ -6664,6 +6558,9 @@ type BoardRelationValue implements ColumnValue {
   """The column's unique identifier."""
   id: ID!
 
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
+
   """The linked items IDs"""
   linked_item_ids: [ID!]!
 
@@ -6713,6 +6610,9 @@ type ButtonValue implements ColumnValue {
   """The column's unique identifier."""
   id: ID!
 
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
+
   """The button's label."""
   label: String
   text: String
@@ -6742,6 +6642,9 @@ type CheckboxValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
   text: String
 
   """The column's type."""
@@ -6761,6 +6664,9 @@ type ColorPickerValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
   text: String
 
   """The column's type."""
@@ -6799,6 +6705,9 @@ interface ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
 
   """
   Text representation of the column value. Note: Not all columns support textual value
@@ -6844,6 +6753,9 @@ type CountryValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
 
   """
   Text representation of the column value. Note: Not all columns support textual value
@@ -6902,6 +6814,9 @@ type CreationLogValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
   text: String
 
   """The column's type."""
@@ -6960,6 +6875,9 @@ type DateValue implements ColumnValue {
   """The column's unique identifier."""
   id: ID!
 
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
+
   """The formatted date and time in user time zone."""
   text: String
 
@@ -6987,6 +6905,9 @@ type DependencyValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
 
   """The linked items ids"""
   linked_item_ids: [ID!]!
@@ -7018,6 +6939,9 @@ type DirectDocValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
 
   """
   Text representation of the column value. Note: Not all columns support textual value
@@ -7144,6 +7068,9 @@ type Document {
   """The document's settings."""
   settings: JSON
 
+  """The document's last updated date."""
+  updated_at: Date
+
   """The document's direct url"""
   url: String
 
@@ -7200,6 +7127,9 @@ type DocValue implements ColumnValue {
   """The column's unique identifier."""
   id: ID!
 
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
+
   """
   Text representation of the column value. Note: Not all columns support textual value
   """
@@ -7218,6 +7148,9 @@ type DropdownValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
   text: String
 
   """The column's type."""
@@ -7279,6 +7212,9 @@ type EmailValue implements ColumnValue {
   """The column's unique identifier."""
   id: ID!
 
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
+
   """
   The column's text value. It can be the same as email when user didn't enter any text.
   """
@@ -7311,8 +7247,26 @@ type ExtendTrialPeriod {
   success: Boolean!
 }
 
-"""A multipart file"""
-scalar File
+"""A file with an invalid or missing asset."""
+type FileAssetInvalidValue {
+  """The asset's id."""
+  asset_id: ID!
+
+  """The file's creation date."""
+  created_at: Date!
+
+  """The user who created the file."""
+  creator: User
+
+  """The ID of user who created the file."""
+  creator_id: ID
+
+  """The error message."""
+  error: String!
+
+  """The file's name."""
+  name: String
+}
 
 type FileAssetValue {
   """The asset associated with the file."""
@@ -7451,6 +7405,9 @@ type FileValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
   text: String
 
   """The column's type."""
@@ -7461,7 +7418,7 @@ type FileValue implements ColumnValue {
 }
 
 """A single file in a column."""
-union FileValueItem = FileAssetValue | FileDocValue | FileLinkValue
+union FileValueItem = FileAssetInvalidValue | FileAssetValue | FileDocValue | FileLinkValue
 
 """The first day of work week"""
 enum FirstDayOfTheWeek {
@@ -7604,6 +7561,9 @@ type FormulaValue implements ColumnValue {
   """The column's unique identifier."""
   id: ID!
 
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
+
   """
   Text representation of the column value. Note: Not all columns support textual value
   """
@@ -7699,6 +7659,9 @@ type GroupValue implements ColumnValue {
   """The column's unique identifier."""
   id: ID!
 
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
+
   """
   Text representation of the column value. Note: Not all columns support textual value
   """
@@ -7720,6 +7683,9 @@ type HourValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
 
   """Minute"""
   minute: Int
@@ -7744,6 +7710,9 @@ type IntegrationValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
 
   """URL of the issue"""
   issue_api_url: ID
@@ -7784,6 +7753,9 @@ type ItemIdValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
 
   """ID of the item"""
   item_id: ID!
@@ -7862,6 +7834,9 @@ type LastUpdatedValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
   text: String
 
   """The column's type."""
@@ -7886,6 +7861,9 @@ type LinkValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
   text: String
 
   """The column's type."""
@@ -7926,6 +7904,9 @@ type LocationValue implements ColumnValue {
   """The column's unique identifier."""
   id: ID!
 
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
+
   """Latitude"""
   lat: Float
 
@@ -7964,6 +7945,9 @@ type LongTextValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
 
   """
   Text representation of the column value. Note: Not all columns support textual value
@@ -8009,6 +7993,9 @@ type MirrorValue implements ColumnValue {
   """The column's unique identifier."""
   id: ID!
 
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
+
   """The mirrored items."""
   mirrored_items: [MirroredItem!]!
 
@@ -8053,6 +8040,9 @@ type NumbersValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
 
   """Number"""
   number: Float
@@ -8152,6 +8142,9 @@ type PeopleValue implements ColumnValue {
   """The column's unique identifier."""
   id: ID!
 
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
+
   """The people and teams assigned to the item."""
   persons_and_teams: [PeopleEntity!]
   text: String
@@ -8172,6 +8165,9 @@ type PersonValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
 
   """The person assigned to the item."""
   person_id: ID
@@ -8196,6 +8192,9 @@ type PhoneValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
 
   """Phone number"""
   phone: String
@@ -8242,6 +8241,9 @@ type ProgressValue implements ColumnValue {
   """The column's unique identifier."""
   id: ID!
 
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
+
   """
   Text representation of the column value. Note: Not all columns support textual value
   """
@@ -8260,6 +8262,9 @@ type RatingValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
 
   """Rating value"""
   rating: Int
@@ -8325,6 +8330,9 @@ type StatusValue implements ColumnValue {
   """Whether the status is done"""
   is_done: Boolean
 
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
+
   """The label of the status"""
   label: String
 
@@ -8356,6 +8364,9 @@ type SubtasksValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
 
   """The subitems"""
   subitems: [Item!]!
@@ -8393,6 +8404,9 @@ type TagsValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
 
   """Tag ID's"""
   tag_ids: [Int!]!
@@ -8463,6 +8477,9 @@ type TeamValue implements ColumnValue {
   """The column's unique identifier."""
   id: ID!
 
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
+
   """ID of the assigned team"""
   team_id: Int
   text: String
@@ -8490,6 +8507,9 @@ type TextValue implements ColumnValue {
   """The column's unique identifier."""
   id: ID!
 
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
+
   """The column's textual value"""
   text: String
 
@@ -8509,6 +8529,9 @@ type TimelineValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
 
   """The range of dates representing the timeline (YYYY-MM-DD)"""
   text: String
@@ -8580,6 +8603,9 @@ type TimeTrackingValue implements ColumnValue {
   """The column's unique identifier."""
   id: ID!
 
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
+
   """Whether the time tracker is running"""
   running: Boolean
 
@@ -8601,6 +8627,9 @@ type UnsupportedValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
 
   """
   Text representation of the column value. Note: Not all columns support textual value
@@ -8751,6 +8780,9 @@ type VoteValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
   text: String
 
   """The column's type."""
@@ -8863,6 +8895,9 @@ type WeekValue implements ColumnValue {
   """The column's unique identifier."""
   id: ID!
 
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
+
   """The start date of the week"""
   start_date: Date
 
@@ -8967,6 +9002,15 @@ enum WorkspaceKind {
   template
 }
 
+"""The membership kind of the user in the workspace."""
+enum WorkspaceMembershipKind {
+  """All accessible workspaces"""
+  all
+
+  """Workspace member."""
+  member
+}
+
 """The workspace's settings."""
 type WorkspaceSettings {
   """The workspace icon."""
@@ -8994,6 +9038,9 @@ type WorldClockValue implements ColumnValue {
 
   """The column's unique identifier."""
   id: ID!
+
+  """Whether this item is a leaf (has no subitems)."""
+  is_leaf: Boolean!
   text: String
 
   """Timezone"""
@@ -9419,10 +9466,22 @@ input AggregateGroupByElementInput {
 }
 
 type AggregateGroupByResult {
+  """The string value of the group by result."""
   value_string: String
+
+  """The integer value of the group by result."""
   value_int: Int
+
+  """The float value of the group by result."""
   value_float: Float
+
+  """The boolean value of the group by result."""
   value_boolean: Boolean
+
+  """
+  The value of the group by result. Can be an integer, float, string, or boolean.
+  """
+  value: JSON
 }
 
 input AggregateQueryInput {
@@ -9620,89 +9679,57 @@ enum AggregateSelectFunctionName {
   PHONE_COUNTRY_SHORT_NAME
 }
 
-"""Assignee filter for search queries"""
-input AssigneeInput {
-  """List of person IDs to filter by"""
-  person_ids: [ID!]
+"""A resource from the directory"""
+type DirectoryResource {
+  """The identifier of the directory resource."""
+  id: ID!
 
-  """List of team IDs to filter by"""
-  team_ids: [ID!]
+  """The name of the directory resource."""
+  name: String!
+
+  """The email address of the directory resource."""
+  email: String
+
+  """The job role of the directory resource."""
+  job_role: String
+
+  """The skills of the directory resource."""
+  skills: [String!]
+
+  """The location of the directory resource."""
+  location: String
+}
+
+"""Attributes that can be updated on a resource directory entry"""
+enum DirectoryResourceAttribute {
+  """Represents the resource directory job role attribute.."""
+  JOB_ROLE
+
+  """Represents the resource directory skills attribute."""
+  SKILLS
+
+  """Represents the resource directory location attribute."""
+  LOCATION
 }
 
 """
-Boost configuration for search results. Key-value pairs where key is strategy type and value is boost weight.
+Paginated response containing directory resources and cursor for next page
 """
-input BoostConfigurationInput {
-  """
-  Boost strategies as key-value pairs (strategy: weight). Empty object {} disables all boosts.
-  """
-  boosts: JSON
+type DirectoryResourcesResponse {
+  """Response identifier"""
+  id: ID!
+
+  """List of directory resources"""
+  resources: [DirectoryResource!]!
+
+  """Cursor for fetching the next page of results"""
+  cursor: String
 }
 
-"""Contains the results of the query."""
-type QueryResult {
-  """The relevance score of the search result."""
-  score: Float!
-
-  """The item data from the search result."""
-  data: Item!
-}
-
-"""Algorithms for reranking results."""
-enum RerankingStrategy {
-  """Use cross-encoder model for reranking results."""
-  CROSS_ENCODER
-}
-
-"""Available search modes."""
-enum Search {
-  """Keyword-based search using text matching."""
-  LEXICAL
-
-  """Vector-based search using semantic similarity."""
-  SEMANTIC
-
-  """Combined lexical and semantic search with reranking."""
-  HYBRID
-}
-
-"""Date range filter for search queries"""
-input SearchDateRangeInput {
-  """Filter items created before this date"""
-  created_before: ISO8601DateTime
-
-  """Filter items created after this date"""
-  created_after: ISO8601DateTime
-
-  """Filter items updated before this date"""
-  updated_before: ISO8601DateTime
-
-  """Filter items updated after this date"""
-  updated_after: ISO8601DateTime
-}
-
-"""Date range filter for search queries"""
-input SearchDateRangeLegacyInput {
-  """Filter items created before this date"""
-  createdBefore: ISO8601DateTime
-
-  """Filter items created after this date"""
-  createdAfter: ISO8601DateTime
-
-  """Filter items updated before this date"""
-  updatedBefore: ISO8601DateTime
-
-  """Filter items updated after this date"""
-  updatedAfter: ISO8601DateTime
-}
-
-"""Response of the search request."""
-type SearchItemsGraphQlResultsView {
-  """The results of the items search."""
-  results: [QueryResult!]!
-
-  """Indicates if the results have been reranked"""
-  reranked: Boolean
+"""Response indicating whether the directory attribute update succeeded"""
+type UpdateDirectoryResourceAttributesResponse {
+  """Indicates whether the batch update completed successfully."""
+  success: Boolean!
 }
 
 """A monday dev sprint."""
