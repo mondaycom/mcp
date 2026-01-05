@@ -2,17 +2,16 @@ import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { listWorkspaces } from './list-workspace.graphql';
 import { DEFAULT_WORKSPACE_LIMIT, MAX_WORKSPACE_LIMIT_FOR_SEARCH } from './list-workspace.consts';
-import { ListWorkspacesQueryResponse } from './list-workspace.types';
 import {
   filterNullWorkspaces,
   hasMatchingWorkspace,
   filterWorkspacesBySearchTerm,
   formatWorkspacesList,
 } from './list-workspace.utils';
-import { WorkspaceMembershipKind } from '../../../../monday-graphql/generated/graphql/graphql';
+import { ListWorkspacesQuery, WorkspaceMembershipKind } from '../../../../monday-graphql/generated/graphql/graphql';
 import { z } from 'zod';
 import { normalizeString } from 'src/utils/string.utils';
-import { isEmpty } from 'src/utils/array.utils';
+import { isNonEmptyArray } from 'src/utils/array.utils';
 
 export const listWorkspaceToolSchema = {
   searchTerm: z
@@ -70,7 +69,7 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
     });
 
     // First, try to get workspaces where the user is a member (more relevant results)
-    let res = await this.mondayApi.request<ListWorkspacesQueryResponse>(
+    let res = await this.mondayApi.request<ListWorkspacesQuery>(
       listWorkspaces,
       createVariables(WorkspaceMembershipKind.Member),
     );
@@ -78,8 +77,11 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
     let usedMemberOnly = true;
 
     // Fallback to all workspaces if member workspaces are empty, or if searching and no matches found
-    if (isEmpty(workspaces) || (searchTermNormalized && !hasMatchingWorkspace(searchTermNormalized, workspaces))) {
-      res = await this.mondayApi.request<ListWorkspacesQueryResponse>(
+    if (
+      !isNonEmptyArray(workspaces) ||
+      (searchTermNormalized && !hasMatchingWorkspace(searchTermNormalized, workspaces))
+    ) {
+      res = await this.mondayApi.request<ListWorkspacesQuery>(
         listWorkspaces,
         createVariables(WorkspaceMembershipKind.All),
       );
@@ -87,7 +89,7 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
       usedMemberOnly = false;
     }
 
-    if (isEmpty(workspaces)) {
+    if (!isNonEmptyArray(workspaces)) {
       return {
         content: 'No workspaces found.',
       };
@@ -96,14 +98,14 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
     const shouldIncludeNoFilteringDisclaimer = searchTermNormalized && workspaces?.length <= DEFAULT_WORKSPACE_LIMIT;
     const filteredWorkspaces = filterWorkspacesBySearchTerm(searchTermNormalized, workspaces, input.page, input.limit);
 
-    if (isEmpty(filteredWorkspaces)) {
+    if (!isNonEmptyArray(filteredWorkspaces)) {
       return {
         content: 'No workspaces found matching the search term. Try using the tool without a search term',
       };
     }
 
     // Naive check to see if there are more pages
-    const hasMorePages = filteredWorkspaces?.length === input.limit;
+    const hasMorePages = filteredWorkspaces.length === input.limit;
     const workspacesList = formatWorkspacesList(filteredWorkspaces);
     const memberOnlyNote = usedMemberOnly ? 'Showing workspaces you are a member of. ' : '';
 
