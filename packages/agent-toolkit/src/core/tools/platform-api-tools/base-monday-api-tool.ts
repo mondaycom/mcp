@@ -26,8 +26,10 @@ export function createMondayApiAnnotations(annotations: ToolAnnotations): ToolAn
   };
 }
 
-export abstract class BaseMondayApiTool<Input extends ZodRawShape | undefined, Output extends Record<string, unknown> = never>
-  implements Tool<Input, Output>
+export abstract class BaseMondayApiTool<
+  Input extends ZodRawShape | undefined,
+  Output extends Record<string, unknown> = never,
+> implements Tool<Input, Output>
 {
   abstract name: string;
   abstract type: ToolType;
