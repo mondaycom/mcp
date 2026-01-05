@@ -21,6 +21,7 @@ export class MondayAgentToolkit {
     this.mondayApi = new ApiClient({
       token: config.mondayApiToken,
       apiVersion: config.mondayApiVersion ?? API_VERSION,
+      endpoint: config.mondayApiEndpoint,
       requestConfig: config.mondayApiRequestConfig,
     });
     this.mondayApiToken = config.mondayApiToken;
