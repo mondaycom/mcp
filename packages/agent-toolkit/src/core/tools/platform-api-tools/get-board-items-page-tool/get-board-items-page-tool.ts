@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { AvailableVersions } from '@mondaydotcomorg/api';
 
 import {
   BoardRelationValue,
@@ -327,9 +328,9 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
       searchTerm: input.searchTerm!,
     };
 
-    // Use dev API client for smart search as it requires dev schema
-    const devApiClient = this.getDevApiClient();
-    const smartSearchRes = await devApiClient.request<SearchItemsDevQuery>(searchItemsDev, smartSearchVariables);
+    const smartSearchRes = await this.mondayApi.request<SearchItemsDevQuery>(searchItemsDev, smartSearchVariables, {
+      versionOverride: AvailableVersions.DEV,
+    });
 
     const itemIdsFromSmartSearch = smartSearchRes.search_items?.results?.map((result) => Number(result.data.id)) ?? [];
 
