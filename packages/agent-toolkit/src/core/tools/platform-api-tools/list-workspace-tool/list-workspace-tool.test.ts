@@ -41,18 +41,24 @@ describe('ListWorkspaceTool', () => {
         workspaces: null,
       };
 
-      mocks.setResponse(response);
+      // Both member and all workspaces return null
+      mocks.setResponses([response, response]);
 
       const args: inputType = {};
 
       const result = await callToolByNameRawAsync('list_workspaces', args);
 
       expect(result.content[0].text).toBe('No workspaces found.');
-      // Only one call because no search term, so no fallback
-      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
-      const mockCall = mocks.getMockRequest().mock.calls[0];
-      expect(mockCall[0]).toContain('query listWorkspaces');
-      expect(mockCall[1]).toMatchObject({ membershipKind: 'member' });
+      // Two calls: first member (empty), then all (also empty)
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
+
+      const firstCall = mocks.getMockRequest().mock.calls[0];
+      expect(firstCall[0]).toContain('query listWorkspaces');
+      expect(firstCall[1]).toMatchObject({ membershipKind: 'member' });
+
+      const secondCall = mocks.getMockRequest().mock.calls[1];
+      expect(secondCall[0]).toContain('query listWorkspaces');
+      expect(secondCall[1]).toMatchObject({ membershipKind: 'all' });
     });
 
     it('should return "No workspaces found." when GraphQL query returns empty array', async () => {
@@ -60,18 +66,24 @@ describe('ListWorkspaceTool', () => {
         workspaces: [],
       };
 
-      mocks.setResponse(response);
+      // Both member and all workspaces return empty array
+      mocks.setResponses([response, response]);
 
       const args: inputType = {};
 
       const result = await callToolByNameRawAsync('list_workspaces', args);
 
       expect(result.content[0].text).toBe('No workspaces found.');
-      // Only one call because no search term, so no fallback
-      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
-      const mockCall = mocks.getMockRequest().mock.calls[0];
-      expect(mockCall[0]).toContain('query listWorkspaces');
-      expect(mockCall[1]).toMatchObject({ membershipKind: 'member' });
+      // Two calls: first member (empty), then all (also empty)
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
+
+      const firstCall = mocks.getMockRequest().mock.calls[0];
+      expect(firstCall[0]).toContain('query listWorkspaces');
+      expect(firstCall[1]).toMatchObject({ membershipKind: 'member' });
+
+      const secondCall = mocks.getMockRequest().mock.calls[1];
+      expect(secondCall[0]).toContain('query listWorkspaces');
+      expect(secondCall[1]).toMatchObject({ membershipKind: 'all' });
     });
   });
 

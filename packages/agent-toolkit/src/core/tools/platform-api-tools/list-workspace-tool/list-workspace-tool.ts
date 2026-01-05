@@ -12,6 +12,7 @@ import {
 import { WorkspaceMembershipKind } from '../../../../monday-graphql/generated/graphql/graphql';
 import { z } from 'zod';
 import { normalizeString } from 'src/utils/string.utils';
+import { isEmpty } from 'src/utils/array.utils';
 
 export const listWorkspaceToolSchema = {
   searchTerm: z
@@ -57,7 +58,7 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
     let searchTermNormalized: string | null = null;
     if (input.searchTerm) {
       searchTermNormalized = normalizeString(input.searchTerm);
-      if (searchTermNormalized?.length === 0) {
+      if (searchTermNormalized.length === 0) {
         throw new Error('Search term did not include any alphanumeric characters. Please provide a valid search term.');
       }
     }
@@ -76,8 +77,8 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
     let workspaces = filterNullWorkspaces(res);
     let usedMemberOnly = true;
 
-    // If searching with a term and no matches found in member workspaces, try with all workspaces
-    if (searchTermNormalized && (workspaces?.length === 0 || !hasMatchingWorkspace(searchTermNormalized, workspaces))) {
+    // Fallback to all workspaces if member workspaces are empty, or if searching and no matches found
+    if (isEmpty(workspaces) || (searchTermNormalized && !hasMatchingWorkspace(searchTermNormalized, workspaces))) {
       res = await this.mondayApi.request<ListWorkspacesQueryResponse>(
         listWorkspaces,
         createVariables(WorkspaceMembershipKind.All),
@@ -86,7 +87,7 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
       usedMemberOnly = false;
     }
 
-    if (workspaces?.length === 0) {
+    if (isEmpty(workspaces)) {
       return {
         content: 'No workspaces found.',
       };
@@ -95,7 +96,7 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
     const shouldIncludeNoFilteringDisclaimer = searchTermNormalized && workspaces?.length <= DEFAULT_WORKSPACE_LIMIT;
     const filteredWorkspaces = filterWorkspacesBySearchTerm(searchTermNormalized, workspaces, input.page, input.limit);
 
-    if (filteredWorkspaces?.length === 0) {
+    if (isEmpty(filteredWorkspaces)) {
       return {
         content: 'No workspaces found matching the search term. Try using the tool without a search term',
       };
