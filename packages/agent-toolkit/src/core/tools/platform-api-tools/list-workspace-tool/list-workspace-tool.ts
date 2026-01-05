@@ -11,7 +11,7 @@ import {
 import { ListWorkspacesQuery, WorkspaceMembershipKind } from '../../../../monday-graphql/generated/graphql/graphql';
 import { z } from 'zod';
 import { normalizeString } from 'src/utils/string.utils';
-import { isNonEmptyArray } from 'src/utils/array.utils';
+import { hasElements } from 'src/utils/array.utils';
 
 export const listWorkspaceToolSchema = {
   searchTerm: z
@@ -77,10 +77,11 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
     let usedMemberOnly = true;
 
     // Fallback to all workspaces if member workspaces are empty, or if searching and no matches found
-    if (
-      !isNonEmptyArray(workspaces) ||
-      (searchTermNormalized && !hasMatchingWorkspace(searchTermNormalized, workspaces))
-    ) {
+
+    const shouldFallbackToFetchAllWorkspaces =
+      !hasElements(workspaces) || (searchTermNormalized && !hasMatchingWorkspace(searchTermNormalized, workspaces));
+
+    if (shouldFallbackToFetchAllWorkspaces) {
       res = await this.mondayApi.request<ListWorkspacesQuery>(
         listWorkspaces,
         createVariables(WorkspaceMembershipKind.All),
@@ -89,7 +90,7 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
       usedMemberOnly = false;
     }
 
-    if (!isNonEmptyArray(workspaces)) {
+    if (!hasElements(workspaces)) {
       return {
         content: 'No workspaces found.',
       };
@@ -98,7 +99,7 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
     const shouldIncludeNoFilteringDisclaimer = searchTermNormalized && workspaces?.length <= DEFAULT_WORKSPACE_LIMIT;
     const filteredWorkspaces = filterWorkspacesBySearchTerm(searchTermNormalized, workspaces, input.page, input.limit);
 
-    if (!isNonEmptyArray(filteredWorkspaces)) {
+    if (!hasElements(filteredWorkspaces)) {
       return {
         content: 'No workspaces found matching the search term. Try using the tool without a search term',
       };
