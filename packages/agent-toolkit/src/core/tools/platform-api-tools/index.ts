@@ -103,7 +103,7 @@ export * from './delete-column-tool';
 export * from './delete-item-tool';
 export * from './fetch-custom-activity-tool';
 export * from './full-board-data-tool/full-board-data-tool';
-export * from './get-board-items-page-tool/get-board-items-page-tool';
+export * from './get-board-items-page-tool';
 export * from './get-board-schema-tool';
 export * from './get-column-type-info/get-column-type-info-tool';
 export * from './get-graphql-schema-tool';

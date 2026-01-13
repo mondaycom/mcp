@@ -11,9 +11,14 @@ import { User, PeopleEntity, PeopleValue } from './full-board-data.types';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { rethrowWithContext } from '../../../../utils';
+import { itemsFilterSchema } from '../get-board-items-page-tool/schema';
+
+// Re-export for hosted-mcp to import
+export { itemsFilterSchema };
 
 export const fullBoardDataToolSchema = {
   boardId: z.number().describe('The ID of the board to fetch complete data for'),
+  ...itemsFilterSchema,
 };
 
 export class FullBoardDataTool extends BaseMondayApiTool<typeof fullBoardDataToolSchema> {
@@ -43,6 +48,19 @@ export class FullBoardDataTool extends BaseMondayApiTool<typeof fullBoardDataToo
         boardId: input.boardId.toString(),
         itemsLimit: DEFAULT_ITEMS_LIMIT,
       };
+
+      // Add query params if filters are provided
+      if (input.filters) {
+        variables.queryParams = {
+          operator: input.filtersOperator,
+          rules: input.filters.map((filter) => ({
+            column_id: filter.columnId.toString(),
+            compare_value: filter.compareValue,
+            operator: filter.operator,
+            compare_attribute: filter.compareAttribute,
+          })),
+        };
+      }
 
       const boardData = await this.mondayApi.request<GetBoardDataQuery>(getBoardDataQuery, variables);
 
