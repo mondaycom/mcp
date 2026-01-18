@@ -1,48 +1,32 @@
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayAppsTool, createMondayAppsAnnotations } from '../base-tool/base-monday-apps-tool';
 import { MondayAppsToolCategory } from '../consts/apps.consts';
-import {
-  AppDevelopmentContextResponse,
-  AppDevelopmentContextType,
-  getAppDevelopmentContextSchema,
-} from './schemas/assistant-schemas';
-import {
-  APP_DEVELOPMENT_GUIDE_CONTENT,
-  QUICK_START_SECTION,
-  SDK_REFERENCE_CONTENT,
-  DEPLOYMENT_CONTENT,
-  BEST_PRACTICES_CONTENT,
-  TROUBLESHOOTING_SECTION,
-} from './docs/app-development-guide-content';
-import { filterByTopic } from '../../../../utils/content-filter.utils';
+import { API_ENDPOINTS, HttpMethod } from '../consts/routes.consts';
+import { AppDevelopmentContextResponse, getAppDevelopmentContextSchema } from './schemas/assistant-schemas';
+import { API_VERSION } from '../../../../utils/version.utils';
 
-/**
- * Content lookup by context type - simple direct mapping
- */
-const CONTENT_BY_TYPE: Record<AppDevelopmentContextType, string> = {
-  [AppDevelopmentContextType.FULL]: APP_DEVELOPMENT_GUIDE_CONTENT,
-  [AppDevelopmentContextType.QUICK_START]: QUICK_START_SECTION,
-  [AppDevelopmentContextType.SDK_REFERENCE]: SDK_REFERENCE_CONTENT,
-  [AppDevelopmentContextType.MONDAY_CODE_DEPLOYMENT]: DEPLOYMENT_CONTENT,
-  [AppDevelopmentContextType.BEST_PRACTICES]: BEST_PRACTICES_CONTENT,
-  [AppDevelopmentContextType.TROUBLESHOOTING]: TROUBLESHOOTING_SECTION,
-};
+// Response types for kapa.ai GraphQL query
+interface KapaSourceReference {
+  title: string;
+  subtitle?: string;
+  source_url: string;
+}
 
-/**
- * Quick CLI commands hint for deployment-related queries
- */
-const DEPLOYMENT_HINT = `
+interface KapaQueryResponse {
+  id: string;
+  question: string;
+  answer: string;
+  sources?: KapaSourceReference[];
+  conversation_id?: string;
+}
 
-💡 **Quick Commands:**
-- Deploy backend to monday-code: \`mapps code:push\`
-- Deploy frontend to CDN: \`mapps code:push -c\`
-- **Connect to feature**: \`mapps app-features:build -a <app_id> -i <version_id> -f <feature_id> -d\`
-- List features: \`mapps app-features:list -a <app_id> -i <version_id>\`
-- Check backend deployment status: \`mapps code:status --appVersionId <id>\`
-- Set env var: \`mapps code:env:set --appId <id> --key KEY --value "value"\`
-- View logs: \`mapps code:logs --appVersionId <id>\`
-
-⚠️ **Important**: After \`code:push\`, always connect deployment to features with \`app-features:build\`!`;
+interface GraphQLResponse {
+  statusCode: number;
+  data?: {
+    apps_documentation_ai_query: KapaQueryResponse;
+  };
+  errors?: Array<{ message: string }>;
+}
 
 export class GetAppDevelopmentContextTool extends BaseMondayAppsTool<
   typeof getAppDevelopmentContextSchema.shape,
@@ -57,37 +41,20 @@ export class GetAppDevelopmentContextTool extends BaseMondayAppsTool<
   });
 
   getDescription(): string {
-    return `Get comprehensive documentation and context for building monday.com apps. This tool provides:
-- Quick start guides for creating new apps
-- OAuth scopes reference (boards:read, boards:write, users:read, etc.) with guidance on which scopes to use
+    return `Search monday.com apps documentation using AI-powered semantic search powered by Kapa.ai.
+
+This tool provides accurate, contextual answers about:
+- Building app features (board views, item views, dashboard widgets, custom columns)
+- OAuth scopes and permissions (boards:read, boards:write, users:read, etc.)
 - monday.com SDK reference and usage examples
-- monday-code deployment instructions (including 'mapps code:push')
-- Connecting deployments to app features (mapps app-features:build)
+- monday-code deployment and integration
 - Vibe Design System components and styling
-- Best practices for performance, security, and error handling
-- Troubleshooting common issues
-- CLI commands reference
+- Workflow blocks, custom triggers, and automation actions
+- Custom objects and data schemas
+- Best practices, troubleshooting, and common patterns
 
-Use this tool when you need to:
-- Help users build or modify monday.com apps
-- Determine which OAuth scopes an app needs based on its functionality
-- Guide users through deploying to monday-code
-- Connect deployed code to app features
-- Provide SDK usage examples and patterns
-- Build UIs with Vibe components
-- Create workflow automations with custom triggers/actions
-- Implement custom objects and relationships
-- Troubleshoot app development issues
-
-The context includes code examples for:
-- Board views, item views, dashboard widgets
-- Custom columns and integrations
-- Vibe components (Button, TextField, Dropdown, Modal, Toast, etc.)
-- Workflow blocks with input/output field definitions
-- Custom objects with schemas and CRUD operations
-- API calls, storage, and webhooks
-- OAuth scope configuration via manifest
-- Deployment and connecting features to deployments`;
+Use this when you need specific information from the official monday.com apps documentation.
+Provide a clear question or topic in the query parameter for best results.`;
   }
 
   getInputSchema() {
@@ -97,32 +64,93 @@ The context includes code examples for:
   protected async executeInternal(
     input?: ToolInputType<typeof getAppDevelopmentContextSchema.shape>,
   ): Promise<ToolOutputType<AppDevelopmentContextResponse>> {
-    const contextType = input?.contextType || AppDevelopmentContextType.FULL;
-    const specificTopic = input?.specificTopic;
-
-    // Get content directly from lookup map
-    let content = CONTENT_BY_TYPE[contextType] || APP_DEVELOPMENT_GUIDE_CONTENT;
-
-    // If a specific topic is requested, filter further
-    if (specificTopic) {
-      content = filterByTopic(content, specificTopic);
+    if (!input?.query) {
+      throw new Error('Query parameter is required. Please provide a specific question or topic to search.');
     }
 
-    // Add CLI helper hint for deployment-related queries
-    const shouldShowDeploymentHint =
-      contextType === AppDevelopmentContextType.MONDAY_CODE_DEPLOYMENT ||
-      specificTopic?.toLowerCase().includes('deploy') ||
-      specificTopic?.toLowerCase().includes('push');
+    const graphqlQuery = `
+      query SearchAppsDocumentation($query: String!) {
+        apps_documentation_ai_query(query: $query) {
+          id
+          question
+          answer
+          sources {
+            title
+            subtitle
+            source_url
+          }
+          conversation_id
+        }
+      }
+    `;
 
-    const deploymentHint = shouldShowDeploymentHint ? DEPLOYMENT_HINT : '';
-
-    return {
-      content: content + deploymentHint,
-      metadata: {
-        statusCode: 200,
-        contextType,
-        content: content.substring(0, 500) + '...', // Truncated for metadata
-      },
+    const variables = {
+      query: input.query,
     };
+
+    try {
+      const response = await this.executeApiRequest<GraphQLResponse>(HttpMethod.POST, API_ENDPOINTS.GRAPHQL, {
+        data: {
+          query: graphqlQuery,
+          variables,
+        },
+        headers: {
+          'API-Version': API_VERSION,
+        },
+      });
+
+      // Handle GraphQL errors
+      if (response.errors && response.errors.length > 0) {
+        const errorMessages = response.errors.map((e) => e.message).join(', ');
+        throw new Error(`Documentation search failed: ${errorMessages}`);
+      }
+
+      // Check if we got valid data
+      if (!response.data?.apps_documentation_ai_query) {
+        throw new Error('No data returned from documentation search. Please try rephrasing your question.');
+      }
+
+      const kapaResponse = response.data.apps_documentation_ai_query;
+
+      // Check if the answer is meaningful
+      if (!kapaResponse.answer || kapaResponse.answer.trim().length === 0) {
+        throw new Error(
+          'No relevant documentation found for your query. Please try rephrasing or being more specific.',
+        );
+      }
+
+      // Format the response
+      let content = `## ${kapaResponse.question}\n\n${kapaResponse.answer}`;
+
+      // Add sources if available
+      if (kapaResponse.sources && kapaResponse.sources.length > 0) {
+        content += '\n\n### 📚 Sources\n';
+        kapaResponse.sources.forEach((source, index) => {
+          content += `${index + 1}. **[${source.title}](${source.source_url})**`;
+          if (source.subtitle) {
+            content += ` - ${source.subtitle}`;
+          }
+          content += '\n';
+        });
+      }
+
+      return {
+        content,
+        metadata: {
+          statusCode: response.statusCode,
+          queryId: kapaResponse.id,
+          conversationId: kapaResponse.conversation_id,
+        },
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      return {
+        content: `Failed to search documentation: ${errorMessage}`,
+        metadata: {
+          statusCode: 500,
+          error: errorMessage,
+        },
+      };
+    }
   }
 }
