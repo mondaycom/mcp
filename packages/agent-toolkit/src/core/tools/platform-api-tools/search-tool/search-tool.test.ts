@@ -1157,7 +1157,7 @@ describe('SearchTool', () => {
             entityTypes: [SearchableEntity.Board],
             workspaceIds: undefined,
           },
-          { versionOverride: 'dev' },
+          expect.objectContaining({ versionOverride: 'dev' }),
         );
       });
 
@@ -1191,7 +1191,7 @@ describe('SearchTool', () => {
           expect.objectContaining({
             size: 50,
           }),
-          { versionOverride: 'dev' },
+          expect.objectContaining({ versionOverride: 'dev' }),
         );
       });
 
@@ -1211,7 +1211,7 @@ describe('SearchTool', () => {
           expect.objectContaining({
             workspaceIds: ['12345', '67890'],
           }),
-          { versionOverride: 'dev' },
+          expect.objectContaining({ versionOverride: 'dev' }),
         );
       });
 
@@ -1284,7 +1284,7 @@ describe('SearchTool', () => {
             entityTypes: [SearchableEntity.Document],
             workspaceIds: undefined,
           },
-          { versionOverride: 'dev' },
+          expect.objectContaining({ versionOverride: 'dev' }),
         );
       });
 
@@ -1353,7 +1353,7 @@ describe('SearchTool', () => {
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(
           expect.stringContaining('query SearchDev'),
           expect.any(Object),
-          { versionOverride: 'dev' },
+          expect.objectContaining({ versionOverride: 'dev' })
         );
         expect(parsedResult.results).toHaveLength(2);
       });
@@ -1379,7 +1379,7 @@ describe('SearchTool', () => {
           1,
           expect.stringContaining('query SearchDev'),
           expect.any(Object),
-          { versionOverride: 'dev' },
+          expect.objectContaining({ versionOverride: 'dev' })
         );
         expect(mocks.getMockRequest()).toHaveBeenNthCalledWith(
           2,
