@@ -16,6 +16,8 @@ import { fallbackToStringifiedVersionIfNull, STRINGIFIED_SUFFIX } from '../../..
 import { NonDeprecatedColumnType } from 'src/utils/types';
 import { SearchItemsDevQuery, SearchItemsDevQueryVariables } from 'src/monday-graphql/generated/graphql.dev/graphql';
 import { searchItemsDev } from './get-board-items-page-tool.graphql.dev';
+import { SEARCH_TIMEOUT } from 'src/utils/time.utils';
+import { throwIfSearchTimeoutError } from 'src/utils/error.utils';
 
 const COLUMN_VALUE_NOT_SUPPORTED_MESSAGE = 'Column value type is not supported';
 
@@ -198,7 +200,8 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
             content: `No items found matching the specified searchTerm`,
           };
         }
-      } catch {
+      } catch(error) {
+        throwIfSearchTimeoutError(error);
         fallbackToStringifiedVersionIfNull(input, 'filters', getBoardItemsPageToolSchema.filters);
         input.filters = this.rebuildFiltersWithManualSearch(input.searchTerm, input.filters);
       }
@@ -329,6 +332,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
 
     const smartSearchRes = await this.mondayApi.request<SearchItemsDevQuery>(searchItemsDev, smartSearchVariables, {
       versionOverride: 'dev',
+      timeout: SEARCH_TIMEOUT
     });
 
     const itemIdsFromSmartSearch = smartSearchRes.search_items?.results?.map((result) => Number(result.data.id)) ?? [];

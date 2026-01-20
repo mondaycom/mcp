@@ -20,6 +20,8 @@ import { normalizeString } from 'src/utils/string.utils';
 import { CROSS_ENTITY_BOARD_RESULT_TYPENAME, CROSS_ENTITY_DOC_RESULT_TYPENAME, DataWithFilterInfo, GlobalSearchType, ObjectPrefixes, SearchResult } from './search-tool.types';
 import { LOAD_INTO_MEMORY_LIMIT, SEARCH_LIMIT } from './search-tool.consts';
 import { TIME_IN_MILLISECONDS } from 'src/utils';
+import { SEARCH_TIMEOUT } from 'src/utils/time.utils';
+import { throwIfSearchTimeoutError } from 'src/utils/error.utils';
 
 export const searchSchema = {
   searchTerm: z.string().optional().describe('The search term to use for the search.'),
@@ -79,8 +81,8 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
         return {
           content: JSON.stringify(response, null, 2),
         };
-      } catch {
-        // Fall back to old implementation on error
+      } catch (error) {
+       throwIfSearchTimeoutError(error);
       }
     }
 
@@ -137,7 +139,7 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
 
     const response = await this.mondayApi.request<SearchDevQuery>(searchDev, variables, {
       versionOverride: 'dev',
-      timeout: 30 * TIME_IN_MILLISECONDS.SECOND
+      timeout: SEARCH_TIMEOUT
     });
 
     const results = response.search || [];

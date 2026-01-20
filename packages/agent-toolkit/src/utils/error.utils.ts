@@ -39,3 +39,9 @@ export function rethrowWithContext(error: unknown, operation: string): never {
   const errorMessage = error instanceof Error ? error.message : 'Unknown error';
   throw new Error(`Failed to ${operation}: ${errorMessage}`);
 }
+
+export function throwIfSearchTimeoutError(error: unknown): void {
+  if (error instanceof DOMException && error.name === 'AbortError') {
+    throw new Error('Search has timed out, try providing alternative search term');
+  }
+}
