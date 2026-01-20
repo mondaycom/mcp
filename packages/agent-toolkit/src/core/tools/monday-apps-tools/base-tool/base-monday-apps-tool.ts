@@ -4,10 +4,11 @@ import * as https from 'https';
 import { ZodRawShape } from 'zod';
 import { Tool, ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { MondayAppsToolCategory } from '../consts/apps.consts';
-import { APPS_MS_TIMEOUT_IN_MS } from '../consts/routes.consts';
+import { APPS_MS_TIMEOUT_IN_MS, API_ENDPOINTS, HttpMethod } from '../consts/routes.consts';
 import { ToolAnnotations } from '@modelcontextprotocol/sdk/types';
 import { trackEvent } from '../../../../utils/tracking.utils';
 import { extractTokenInfo } from '../../../../utils/token.utils';
+import { API_VERSION } from '../../../../utils/version.utils';
 
 export interface MondayApiResponse {
   statusCode: number;
@@ -128,6 +129,65 @@ export abstract class BaseMondayAppsTool<
       }
 
       throw new Error(`Failed to execute monday.com  API request: ${error.message}`);
+    }
+  }
+
+  /**
+   * Execute a GraphQL query against the monday.com API
+   * This allows apps tools to use GraphQL queries when needed
+   */
+  protected async executeGraphQLQuery<T>(
+    query: string,
+    variables?: Record<string, unknown>,
+  ): Promise<T> {
+    if (!this.mondayApiToken) {
+      throw new Error('Monday API token is required to execute GraphQL queries');
+    }
+
+    try {
+      const httpsAgent = new https.Agent({
+        secureOptions: crypto.constants.SSL_OP_LEGACY_SERVER_CONNECT,
+        rejectUnauthorized: false,
+      });
+
+      const response = await axios.post<{ data?: T; errors?: Array<{ message: string }> }>(
+        API_ENDPOINTS.MONDAY_API_GRAPHQL,
+        {
+          query,
+          variables,
+        },
+        {
+          headers: {
+            Authorization: `${this.mondayApiToken}`,
+            'Content-Type': 'application/json',
+            'API-Version': API_VERSION,
+          },
+          timeout: APPS_MS_TIMEOUT_IN_MS,
+          httpsAgent,
+        },
+      );
+
+      if (response.data.errors && response.data.errors.length > 0) {
+        const errorMessages = response.data.errors.map((e) => e.message).join(', ');
+        throw new Error(`GraphQL query failed: ${errorMessages}`);
+      }
+
+      if (!response.data.data) {
+        throw new Error('No data returned from GraphQL query');
+      }
+
+      return response.data.data;
+    } catch (error: any) {
+      if (axios.isAxiosError(error)) {
+        const statusCode = error.response?.status || 500;
+        const errorData = error.response?.data || { message: error.message };
+        throw new Error(
+          `GraphQL request failed with status ${statusCode}: ${
+            typeof errorData === 'object' ? JSON.stringify(errorData) : errorData
+          }`,
+        );
+      }
+      throw new Error(`Failed to execute GraphQL query: ${error.message}`);
     }
   }
 

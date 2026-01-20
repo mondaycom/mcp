@@ -1,9 +1,7 @@
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
-import {
-  BaseMondayApiTool,
-  createMondayApiAnnotations,
-} from '../../platform-api-tools/base-monday-api-tool';
-import { getAppDevelopmentContextSchema } from './schemas/assistant-schemas';
+import { BaseMondayAppsTool, createMondayAppsAnnotations } from '../base-tool/base-monday-apps-tool';
+import { MondayAppsToolCategory } from '../consts/apps.consts';
+import { AppDevelopmentContextResponse, getAppDevelopmentContextSchema } from './schemas/assistant-schemas';
 import { appsDocumentationQuery } from './get-app-development-context.graphql';
 
 interface AskDeveloperDocsResponse {
@@ -15,13 +13,14 @@ interface AskDeveloperDocsResponse {
   } | null;
 }
 
-export class GetAppDevelopmentContextTool extends BaseMondayApiTool<
+export class GetAppDevelopmentContextTool extends BaseMondayAppsTool<
   typeof getAppDevelopmentContextSchema.shape,
-  never
+  AppDevelopmentContextResponse
 > {
   name = 'monday_apps_get_development_context';
+  category = MondayAppsToolCategory.APP_DEVELOPMENT_ASSISTANT;
   type: ToolType = ToolType.READ;
-  annotations = createMondayApiAnnotations({
+  annotations = createMondayAppsAnnotations({
     title: 'Get App Development Context',
     readOnlyHint: true,
   });
@@ -49,7 +48,7 @@ Provide a clear question or topic in the query parameter for best results.`;
 
   protected async executeInternal(
     input?: ToolInputType<typeof getAppDevelopmentContextSchema.shape>,
-  ): Promise<ToolOutputType<never>> {
+  ): Promise<ToolOutputType<AppDevelopmentContextResponse>> {
     if (!input?.query) {
       throw new Error('Query parameter is required. Please provide a specific question or topic to search.');
     }
@@ -59,7 +58,7 @@ Provide a clear question or topic in the query parameter for best results.`;
         query: input.query,
       };
 
-      const response = await this.mondayApi.request<AskDeveloperDocsResponse>(appsDocumentationQuery, variables);
+      const response = await this.executeGraphQLQuery<AskDeveloperDocsResponse>(appsDocumentationQuery, variables);
 
       const docsResponse = response.ask_developer_docs;
       if (!docsResponse) {
@@ -79,11 +78,20 @@ Provide a clear question or topic in the query parameter for best results.`;
 
       return {
         content,
+        metadata: {
+          statusCode: 200,
+          queryId: docsResponse.id,
+          conversationId: docsResponse.conversation_id,
+        },
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       return {
         content: `Failed to search documentation: ${errorMessage}`,
+        metadata: {
+          statusCode: 500,
+          error: errorMessage,
+        },
       };
     }
   }

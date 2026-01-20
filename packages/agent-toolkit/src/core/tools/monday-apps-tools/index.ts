@@ -5,6 +5,7 @@ import { appTools } from './app';
 import { appVersionTools } from './app-version';
 import { appFeatureTools } from './app-feature';
 import { codeTools } from './monday-code';
+import { appDevelopmentAssistantTools } from './app-development-assistant';
 
 export const mondayAppsTools = {
   [MondayAppsToolCategory.STORAGE]: storageTools,
@@ -12,6 +13,7 @@ export const mondayAppsTools = {
   [MondayAppsToolCategory.APP_VERSION]: appVersionTools,
   [MondayAppsToolCategory.APP_FEATURE]: appFeatureTools,
   [MondayAppsToolCategory.MONDAY_CODE]: codeTools,
+  [MondayAppsToolCategory.APP_DEVELOPMENT_ASSISTANT]: appDevelopmentAssistantTools,
 };
 
 export const allMondayAppsTools: MondayAppsToolType[] = [
@@ -20,6 +22,7 @@ export const allMondayAppsTools: MondayAppsToolType[] = [
   ...appVersionTools,
   ...appFeatureTools,
   ...codeTools,
+  ...appDevelopmentAssistantTools,
 ];
 
 export * from './storage';

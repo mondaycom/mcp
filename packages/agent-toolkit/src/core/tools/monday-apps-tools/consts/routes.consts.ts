@@ -52,7 +52,10 @@ export const API_ENDPOINTS = {
   PLATFORM_BUILDING_BLOCKS_SCHEMAS: {
     GET_ALL: `${MONDAY_APPS_DOMAIN}/apps_ms/public/platform-building-blocks-schemas`,
   },
+  // Apps microservice GraphQL (for apps-specific queries)
   GRAPHQL: `${MONDAY_APPS_DOMAIN}/graphql`,
+  // Main monday.com API GraphQL (for platform queries like ask_developer_docs)
+  MONDAY_API_GRAPHQL: 'https://api.monday.com/v2',
 };
 
 export const APPS_MS_TIMEOUT_IN_MS = 30000;
