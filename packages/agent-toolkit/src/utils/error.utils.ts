@@ -41,7 +41,7 @@ export function rethrowWithContext(error: unknown, operation: string): never {
 }
 
 export function throwIfSearchTimeoutError(error: unknown): void {
-  if (error instanceof DOMException && error.name === 'AbortError') {
+  if (error instanceof Error && error.name === 'AbortError') {
     throw new Error('Search has timed out, try providing alternative search term');
   }
 }
