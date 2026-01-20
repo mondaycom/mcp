@@ -65,14 +65,12 @@ Provide a clear question or topic in the query parameter for best results.`;
         throw new Error('No data returned from documentation search. Please try rephrasing your question.');
       }
 
-      // Check if the answer is meaningful
       if (!docsResponse.answer || docsResponse.answer.trim().length === 0) {
         throw new Error(
           'No relevant documentation found for your query. Please try rephrasing or being more specific.',
         );
       }
 
-      // Format the response
       const questionHeader = docsResponse.question ? `## ${docsResponse.question}\n\n` : '## Answer\n\n';
       const content = `${questionHeader}${docsResponse.answer}`;
 

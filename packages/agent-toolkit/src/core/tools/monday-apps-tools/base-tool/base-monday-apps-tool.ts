@@ -4,7 +4,7 @@ import * as https from 'https';
 import { ZodRawShape } from 'zod';
 import { Tool, ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { MondayAppsToolCategory } from '../consts/apps.consts';
-import { APPS_MS_TIMEOUT_IN_MS, API_ENDPOINTS, HttpMethod } from '../consts/routes.consts';
+import { APPS_MS_TIMEOUT_IN_MS, API_ENDPOINTS } from '../consts/routes.consts';
 import { ToolAnnotations } from '@modelcontextprotocol/sdk/types';
 import { trackEvent } from '../../../../utils/tracking.utils';
 import { extractTokenInfo } from '../../../../utils/token.utils';
@@ -132,10 +132,6 @@ export abstract class BaseMondayAppsTool<
     }
   }
 
-  /**
-   * Execute a GraphQL query against the monday.com API
-   * This allows apps tools to use GraphQL queries when needed
-   */
   protected async executeGraphQLQuery<T>(
     query: string,
     variables?: Record<string, unknown>,
