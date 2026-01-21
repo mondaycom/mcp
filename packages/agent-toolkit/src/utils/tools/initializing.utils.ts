@@ -1,7 +1,7 @@
 import { ApiClient } from '@mondaydotcomorg/api';
 import { Tool } from '../../core/tool';
 import { BaseMondayApiTool, MondayApiToolContext } from '../../core/tools/platform-api-tools/base-monday-api-tool';
-import { BaseMondayAppsTool } from 'src/core/tools/monday-apps-tools/base-tool/base-monday-apps-tool';
+import { BaseMondayAppsTool } from '../../core/tools/monday-apps-tools/base-tool/base-monday-apps-tool';
 
 export const toolFactory = (
   tool: new (...args: any[]) => Tool<any, any>,
