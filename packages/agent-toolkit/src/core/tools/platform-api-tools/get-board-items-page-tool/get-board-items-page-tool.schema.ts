@@ -1,10 +1,10 @@
 import { z } from 'zod';
+
 import {
   ItemsQueryOperator,
   ItemsQueryRuleOperator,
 } from '../../../../monday-graphql/generated/graphql/graphql';
 
-// Filter schema (excludes filtersStringified - that's Microsoft Copilot specific)
 export const itemsFilterSchema = {
   filters: z
     .array(
@@ -32,7 +32,7 @@ export const itemsFilterSchema = {
     ),
   filtersOperator: z
     .nativeEnum(ItemsQueryOperator)
-    .default(ItemsQueryOperator.And)
     .optional()
+    .default(ItemsQueryOperator.And)
     .describe('The operator to use for the filters'),
 };

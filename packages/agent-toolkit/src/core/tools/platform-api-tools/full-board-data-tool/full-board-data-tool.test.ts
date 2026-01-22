@@ -1,6 +1,6 @@
 import { createMockApiClient } from '../test-utils/mock-api-client';
 import { FullBoardDataTool } from './full-board-data-tool';
-import { ColumnType } from '../../../../monday-graphql/generated/graphql/graphql';
+import { ColumnType, ItemsQueryOperator } from '../../../../monday-graphql/generated/graphql/graphql';
 
 describe('Full Board Data Tool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
@@ -268,6 +268,8 @@ describe('Full Board Data Tool', () => {
     await expect(
       tool.execute({
         boardId: 123456,
+        filtersOperator: ItemsQueryOperator.And,
+        filters: [],
       }),
     ).rejects.toThrow('Failed to get full board data: Invalid board ID, Insufficient permissions');
   });
