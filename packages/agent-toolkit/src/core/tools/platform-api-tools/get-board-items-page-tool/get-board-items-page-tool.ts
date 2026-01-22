@@ -6,10 +6,9 @@ import {
   GetBoardItemsPageQuery,
   GetBoardItemsPageQueryVariables,
   ItemsOrderByDirection,
-  ItemsQueryOperator,
   ItemsQueryRuleOperator,
 } from '../../../../monday-graphql/generated/graphql/graphql';
-import { itemsFilterSchema } from './schema';
+import { filterRulesSchema, filtersOperatorSchema } from './items-filter-schema';
 import { getBoardItemsPage } from './get-board-items-page-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
@@ -104,8 +103,8 @@ PERFORMANCE OPTIMIZATION: Only set this to true when you actually need the colum
     .describe(
       '**ONLY FOR MICROSOFT COPILOT**: The filters to apply on the items. Send this as a stringified JSON array of "filters" field. Read "filters" field description for details how to use it.',
     ),
-  ...itemsFilterSchema,
-
+  filters: filterRulesSchema,
+  filtersOperator: filtersOperatorSchema,
   columnIds: z
     .array(z.string())
     .optional()
