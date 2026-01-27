@@ -33,6 +33,6 @@ export const filterRulesSchema = z
 
 export const filtersOperatorSchema = z
   .nativeEnum(ItemsQueryOperator)
-  .default(ItemsQueryOperator.And)
   .optional()
+  .default(ItemsQueryOperator.And)
   .describe('The operator to use for the filters')
