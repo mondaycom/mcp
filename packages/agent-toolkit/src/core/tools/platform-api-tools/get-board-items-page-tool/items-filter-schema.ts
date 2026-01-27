@@ -6,6 +6,12 @@ import {
   ItemsQueryRuleOperator,
 } from '../../../../monday-graphql/generated/graphql/graphql';
 
+// IMPORTANT:
+// ------------------------------------------------------------------------------------------------
+// THESE FILTER SCHEMAS ARE SHARED WITH get_full_board_data tool and are also copied to 
+// hosted-mcp/src/components/table/items-filter-schema.ts in order to support filtering in the mcp ui table.
+// If changing these schemas, make sure to update the copies in the hosted-mcp project as well and test the ui flow as well.
+// ------------------------------------------------------------------------------------------------
 export const filterRulesSchema = z
   .array(
     z.object({
