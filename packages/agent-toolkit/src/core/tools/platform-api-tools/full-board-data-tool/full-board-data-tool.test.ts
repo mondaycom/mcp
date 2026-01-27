@@ -1,8 +1,9 @@
 import { z } from 'zod';
-import { callToolByNameAsync, createMockApiClient } from '../test-utils/mock-api-client';
+import { callToolByNameAsync, callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
 import { ColumnType } from '../../../../monday-graphql/generated/graphql/graphql';
 import { ZodTypeAny } from 'zod';
 import { FullBoardDataToolSchema } from './full-board-data-tool';
+import { MondayAgentToolkit } from 'src/mcp/toolkit';
 
 export type inputType = z.objectInputType<FullBoardDataToolSchema, ZodTypeAny>;
 
@@ -10,8 +11,9 @@ describe('Full Board Data Tool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
 
   beforeEach(() => {
-    mocks = createMockApiClient();
     jest.clearAllMocks();
+    mocks = createMockApiClient();
+    jest.spyOn(MondayAgentToolkit.prototype as any, 'createApiClient').mockReturnValue(mocks.mockApiClient);
   });
 
   const mockBoardResponse = {
@@ -118,9 +120,7 @@ describe('Full Board Data Tool', () => {
       boardId: 123456,
     };
 
-    const result = await callToolByNameAsync('full_board_data', args);
-
-    const parsedResult = JSON.parse(result.content);
+    const parsedResult = await callToolByNameAsync('get_full_board_data', args);
 
     // Verify board data
     expect(parsedResult.board.id).toBe('123456');
@@ -191,9 +191,7 @@ describe('Full Board Data Tool', () => {
       boardId: 123456,
     };
 
-    const result = await callToolByNameAsync('full_board_data', args);
-
-    const parsedResult = JSON.parse(result.content);
+    const parsedResult = await callToolByNameAsync('get_full_board_data', args);
 
     expect(parsedResult.board.items).toHaveLength(1);
     expect(parsedResult.board.items[0].updates).toHaveLength(0);
@@ -209,12 +207,14 @@ describe('Full Board Data Tool', () => {
     // Test with empty array
     mocks.setResponse({ boards: [] });
     const args1: inputType = { boardId: 999999 };
-    await expect(callToolByNameAsync('full_board_data', args1)).rejects.toThrow('Board with ID 999999 not found');
+    const result1 = await callToolByNameRawAsync('get_full_board_data', args1);
+    expect(result1.content[0].text).toContain('Board with ID 999999 not found');
 
     // Test with null
     mocks.setResponse({ boards: null });
     const args2: inputType = { boardId: 888888 };
-    await expect(callToolByNameAsync('full_board_data', args2)).rejects.toThrow('Board with ID 888888 not found');
+    const result2 = await callToolByNameRawAsync('get_full_board_data', args2);
+    expect(result2.content[0].text).toContain('Board with ID 888888 not found');
   });
 
   it('Handles updates with null creator_id gracefully', async () => {
@@ -251,9 +251,7 @@ describe('Full Board Data Tool', () => {
       boardId: 123456,
     };
 
-    const result = await callToolByNameAsync('full_board_data', args);
-
-    const parsedResult = JSON.parse(result.content);
+    const parsedResult = await callToolByNameAsync('get_full_board_data', args);
 
     expect(parsedResult.board.items[0].updates[0].creator_id).toBe('');
     expect(parsedResult.board.items[0].updates[0].creator).toBeNull();
@@ -274,9 +272,8 @@ describe('Full Board Data Tool', () => {
       boardId: 123456,
     };
 
-    await expect(callToolByNameAsync('full_board_data', args)).rejects.toThrow(
-      'Failed to get full board data: Invalid board ID, Insufficient permissions',
-    );
+    const result = await callToolByNameRawAsync('get_full_board_data', args);
+    expect(result.content[0].text).toContain('Failed to get full board data: Invalid board ID, Insufficient permissions');
   });
 
   it('Extracts user IDs from people column values', async () => {
@@ -330,8 +327,7 @@ describe('Full Board Data Tool', () => {
     });
 
     const args: inputType = { boardId: 123456 };
-    const result = await callToolByNameAsync('full_board_data', args);
-    const parsedResult = JSON.parse(result.content);
+    const parsedResult = await callToolByNameAsync('get_full_board_data', args);
 
     // Should extract only person IDs, not team IDs
     expect(parsedResult.users).toHaveLength(2);

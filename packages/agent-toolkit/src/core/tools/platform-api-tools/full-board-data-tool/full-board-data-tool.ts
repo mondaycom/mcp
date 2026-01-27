@@ -18,6 +18,7 @@ export const fullBoardDataToolSchema = {
   filters: filterRulesSchema,
   filtersOperator: filtersOperatorSchema,
 };
+export type FullBoardDataToolSchema = typeof fullBoardDataToolSchema;
 
 export class FullBoardDataTool extends BaseMondayApiTool<typeof fullBoardDataToolSchema> {
   name = 'get_full_board_data';
