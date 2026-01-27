@@ -17,7 +17,7 @@ export type Scalars = {
   CompareValue: { input: any; output: any; }
   /** A date. */
   Date: { input: any; output: any; }
-  /** A multipart file */
+  /** A file */
   File: { input: any; output: any; }
   /** An ISO 8601-encoded datetime (e.g., 2024-04-09T13:45:30Z) */
   ISO8601DateTime: { input: any; output: any; }
@@ -415,6 +415,8 @@ export enum AppFeatureTypeE {
   AiItemEmailsAndActivitiesActions = 'AI_ITEM_EMAILS_AND_ACTIVITIES_ACTIONS',
   /** AI_ITEM_UPDATE_ACTIONS */
   AiItemUpdateActions = 'AI_ITEM_UPDATE_ACTIONS',
+  /** AI_PLATFORM_AGENT */
+  AiPlatformAgent = 'AI_PLATFORM_AGENT',
   /** APP_WIZARD */
   AppWizard = 'APP_WIZARD',
   /** BLOCK */
@@ -483,6 +485,8 @@ export enum AppFeatureTypeE {
   SyncableResource = 'SYNCABLE_RESOURCE',
   /** TOPBAR */
   Topbar = 'TOPBAR',
+  /** VIBE_ITEM_VIEW */
+  VibeItemView = 'VIBE_ITEM_VIEW',
   /** VIBE_OBJECT */
   VibeObject = 'VIBE_OBJECT',
   /** WORKFLOW_TEMPLATE */
@@ -556,6 +560,10 @@ export enum AppPermission {
   BoardsRead = 'BOARDS_READ',
   /** Permission scope: boards:write */
   BoardsWrite = 'BOARDS_WRITE',
+  /** Permission scope: departments:read */
+  DepartmentsRead = 'DEPARTMENTS_READ',
+  /** Permission scope: departments:write */
+  DepartmentsWrite = 'DEPARTMENTS_WRITE',
   /** Permission scope: docs:read */
   DocsRead = 'DOCS_READ',
   /** Permission scope: docs:write */
@@ -820,6 +828,15 @@ export enum AssetsSource {
   /** Assets only from item's files gallery */
   Gallery = 'gallery'
 }
+
+/** Result of assigning members to a department. */
+export type AssignDepartmentMembersResult = {
+  __typename?: 'AssignDepartmentMembersResult';
+  /** The users that were not assigned to the department. */
+  failed_users?: Maybe<Array<User>>;
+  /** The users that were successfully assigned to the department. */
+  successful_users?: Maybe<Array<User>>;
+};
 
 /** Error that occurred while changing team owners. */
 export type AssignTeamOwnersError = {
@@ -1262,6 +1279,8 @@ export type BoardGraphExport = {
   __typename?: 'BoardGraphExport';
   /** The ID of the board */
   boardId?: Maybe<Scalars['String']['output']>;
+  /** The cycles in the graph */
+  cycles?: Maybe<Scalars['JSON']['output']>;
   /** The total number of edges in the graph */
   edgeCount?: Maybe<Scalars['Int']['output']>;
   /** The timestamp when the graph was exported */
@@ -1420,12 +1439,6 @@ export enum BoardsOrderBy {
   /** The last time the user making the request used the board (desc). */
   UsedAt = 'used_at'
 }
-
-/** Boost configuration for search results. Key-value pairs where key is strategy type and value is boost weight. */
-export type BoostConfigurationInput = {
-  /** Boost strategies as key-value pairs (strategy: weight). Empty object {} disables all boosts. */
-  boosts?: InputMaybe<Scalars['JSON']['input']>;
-};
 
 /** Reason for failure when status is Rejected or Failed */
 export enum BulkImportFailureReason {
@@ -1598,6 +1611,13 @@ export type CheckboxValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
+/** Result of clearing users department. */
+export type ClearUsersDepartmentResult = {
+  __typename?: 'ClearUsersDepartmentResult';
+  /** The users that their department was cleared. */
+  cleared_users?: Maybe<Array<User>>;
+};
+
 export type ColorPickerValue = ColumnValue & {
   __typename?: 'ColorPickerValue';
   /** The color in hex value. */
@@ -1666,14 +1686,6 @@ export enum ColumnCapability {
   /** Capability to mark column as hidden */
   Visibility = 'VISIBILITY'
 }
-
-/** Input for uploading a file to a column when creating an item. */
-export type ColumnFileInput = {
-  /** The column's unique identifier. */
-  column_id: Scalars['String']['input'];
-  /** The file to upload. */
-  file: Scalars['File']['input'];
-};
 
 /** An object defining a mapping of column between source board and destination board */
 export type ColumnMappingInput = {
@@ -2046,6 +2058,42 @@ export type CreateFormTagInput = {
   value?: InputMaybe<Scalars['String']['input']>;
 };
 
+/** A granted marketplace app discount offer */
+export type CreateMarketplaceAppDiscount = {
+  __typename?: 'CreateMarketplaceAppDiscount';
+  /** The id of an app */
+  app_id: Scalars['ID']['output'];
+  /** List of app plan ids */
+  app_plan_ids?: Maybe<Array<Scalars['ID']['output']>>;
+  /** Number of days a discount will be valid */
+  days_valid: Scalars['Int']['output'];
+  /** Percentage value of a discount */
+  discount: Scalars['Int']['output'];
+  /** Is discount recurring */
+  is_recurring: Scalars['Boolean']['output'];
+  /** The period of a discount */
+  period?: Maybe<DiscountPeriod>;
+};
+
+/** Input data for creating a marketplace app discount */
+export type CreateMarketplaceAppDiscountInput = {
+  /** List of app plan ids */
+  app_plan_ids: Array<Scalars['ID']['input']>;
+  /** Number of days a discount will be valid */
+  days_valid: Scalars['Int']['input'];
+  /** Percentage value of a discount */
+  discount: Scalars['Int']['input'];
+  /** The period of a discount */
+  period?: InputMaybe<DiscountPeriod>;
+};
+
+/** Result of granting a marketplace app discount offer */
+export type CreateMarketplaceAppDiscountResult = {
+  __typename?: 'CreateMarketplaceAppDiscountResult';
+  /** The granted discount offer */
+  granted_discount: CreateMarketplaceAppDiscount;
+};
+
 export type CreatePortfolioResult = {
   __typename?: 'CreatePortfolioResult';
   /** A message describing the result of the operation. */
@@ -2053,6 +2101,35 @@ export type CreatePortfolioResult = {
   /** The ID of the solution that was created */
   solution_live_version_id?: Maybe<Scalars['String']['output']>;
   /** Indicates if the operation was successful. */
+  success?: Maybe<Scalars['Boolean']['output']>;
+};
+
+export type CreateProjectInput = {
+  /** The project's privacy setting (public / private) */
+  board_kind: BoardKind;
+  /** Optional external callback URL where the project ID will be sent after async creation. The callback will receive a POST request with { is_success: boolean, process_id: string, project_id?: number } */
+  callback_url?: InputMaybe<Scalars['String']['input']>;
+  /** Optional list of companion features to enable (currently only "resource_planner") */
+  companions?: InputMaybe<Array<Scalars['String']['input']>>;
+  /** Optional folder ID to associate with the project */
+  folder_id?: InputMaybe<Scalars['String']['input']>;
+  /** The name of the project to create */
+  name: Scalars['String']['input'];
+  /** Optional template id to create the project from. Currently only supported for solution templates */
+  template_id?: InputMaybe<Scalars['ID']['input']>;
+  /** Optional workspace ID to associate with the project */
+  workspace_id?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type CreateProjectResult = {
+  __typename?: 'CreateProjectResult';
+  /** Error message if project creation request failed */
+  error?: Maybe<Scalars['String']['output']>;
+  /** Success message when project creation is initiated */
+  message?: Maybe<Scalars['String']['output']>;
+  /** Unique process ID for tracking this creation request. This will be included in the callback when creation completes. */
+  process_id?: Maybe<Scalars['ID']['output']>;
+  /** Indicates if the project creation request was accepted */
   success?: Maybe<Scalars['Boolean']['output']>;
 };
 
@@ -2355,6 +2432,31 @@ export type DeleteMarketplaceAppDiscountResult = {
   deleted_discount: DeleteMarketplaceAppDiscount;
 };
 
+/** A department in the account. */
+export type Department = {
+  __typename?: 'Department';
+  /** The number of seats assigned to the department. */
+  assigned_seats: Scalars['Int']['output'];
+  /** The department's ID. */
+  id: Scalars['ID']['output'];
+  /** The members of the department */
+  members?: Maybe<Array<User>>;
+  /** The department's name. */
+  name: Scalars['String']['output'];
+  /** The owners of the department */
+  owners?: Maybe<Array<User>>;
+  /** The number of seats reserved for the department. */
+  reserved_seats: Scalars['Int']['output'];
+};
+
+/** Input type for updating a single pulse dependency value */
+export type DependencyPulseValueInput = {
+  /** The ID of the pulse to update the dependency value for */
+  pulseId: Scalars['ID']['input'];
+  /** The value of the dependency pulse value to update */
+  value: DependencyValueInput;
+};
+
 /** Type of dependency relationship between items */
 export enum DependencyRelation {
   /** Finish to Finish - The dependent item can finish only after the predecessor finishes */
@@ -2399,13 +2501,6 @@ export type DependencyValueInput = {
   removed_pulse?: InputMaybe<Array<UpdateDependencyColumnInput>>;
 };
 
-/** Deprecated board object. */
-export type DeprecatedBoard = {
-  __typename?: 'DeprecatedBoard';
-  /** Board ID. */
-  id: Scalars['ID']['output'];
-};
-
 export type DirectDocValue = ColumnValue & {
   __typename?: 'DirectDocValue';
   /** The column that this value belongs to. */
@@ -2424,18 +2519,48 @@ export type DirectDocValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
-/** The period of a discount. Provide only for standard discounts. */
+/** A resource from the directory */
+export type DirectoryResource = {
+  __typename?: 'DirectoryResource';
+  /** The email address of the directory resource. */
+  email?: Maybe<Scalars['String']['output']>;
+  /** The identifier of the directory resource. */
+  id: Scalars['ID']['output'];
+  /** The job role of the directory resource. */
+  job_role?: Maybe<Scalars['String']['output']>;
+  /** The location of the directory resource. */
+  location?: Maybe<Scalars['String']['output']>;
+  /** The name of the directory resource. */
+  name: Scalars['String']['output'];
+  /** The skills of the directory resource. */
+  skills?: Maybe<Array<Scalars['String']['output']>>;
+};
+
+/** Attributes that can be updated on a resource directory entry */
+export enum DirectoryResourceAttribute {
+  /** Represents the resource directory job role attribute.. */
+  JobRole = 'JOB_ROLE',
+  /** Represents the resource directory location attribute. */
+  Location = 'LOCATION',
+  /** Represents the resource directory skills attribute. */
+  Skills = 'SKILLS'
+}
+
+/** Paginated response containing directory resources and cursor for next page */
+export type DirectoryResourcesResponse = {
+  __typename?: 'DirectoryResourcesResponse';
+  /** Cursor for fetching the next page of results */
+  cursor?: Maybe<Scalars['String']['output']>;
+  /** Response identifier */
+  id: Scalars['ID']['output'];
+  /** List of directory resources */
+  resources: Array<DirectoryResource>;
+};
+
+/** The period of a discount */
 export enum DiscountPeriod {
   Monthly = 'MONTHLY',
   Yearly = 'YEARLY'
-}
-
-/** The scope of a discount. Possible values: standard, renewal. Defaults to standard when not provided. */
-export enum DiscountScope {
-  /** Renewal discount scope - applies to subscription renewals */
-  Renewal = 'RENEWAL',
-  /** Standard discount scope - applies to new subscriptions */
-  Standard = 'STANDARD'
 }
 
 /** Input for creating divider blocks */
@@ -2801,21 +2926,23 @@ export type EmailValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
-/** Item's column values */
-export type EnrichedColumnValues = {
-  __typename?: 'EnrichedColumnValues';
-  /** List of user IDs allowed to view this column */
-  allowed_users: Array<Scalars['String']['output']>;
-  /** Column title. */
-  col_title?: Maybe<Scalars['String']['output']>;
-  /** Column type. */
-  col_type: Scalars['String']['output'];
-  /** Column ID. */
-  id: Scalars['ID']['output'];
-  /** Whether the column is publicly visible. */
-  is_public: Scalars['Boolean']['output'];
-  /** Column value. */
-  value: Scalars['String']['output'];
+/** Input for enrolling multiple items to a single sequence */
+export type EnrollToSequenceInput = {
+  /** The ID of the board containing the items */
+  board_id: Scalars['ID']['input'];
+  /** List of item IDs to enroll (maximum 50 items) */
+  item_ids: Array<Scalars['ID']['input']>;
+  /** The ID of the sequence to enroll items to */
+  sequence_id: Scalars['ID']['input'];
+};
+
+/** Result of enrolling items to a sequence */
+export type EnrollToSequenceResult = {
+  __typename?: 'EnrollToSequenceResult';
+  /** List of item IDs that failed to enroll */
+  failed_item_ids?: Maybe<Array<Scalars['ID']['output']>>;
+  /** List of item IDs that were successfully enrolled, including items that were provided and are already enrolled */
+  succeeded_item_ids?: Maybe<Array<Scalars['ID']['output']>>;
 };
 
 /** Response from exporting document content as markdown. Contains the generated markdown text or error details. */
@@ -3685,9 +3812,9 @@ export type GrantMarketplaceAppDiscount = {
   __typename?: 'GrantMarketplaceAppDiscount';
   /** The id of an app */
   app_id: Scalars['ID']['output'];
-  /** List of app plan ids. Provide only for standard discounts. */
+  /** List of app plan ids */
   app_plan_ids: Array<Scalars['String']['output']>;
-  /** Number of days a discount will be valid. Provide only for standard discounts. */
+  /** Number of days a discount will be valid */
   days_valid: Scalars['Int']['output'];
   /** Percentage value of a discount */
   discount: Scalars['Int']['output'];
@@ -3697,42 +3824,16 @@ export type GrantMarketplaceAppDiscount = {
 };
 
 export type GrantMarketplaceAppDiscountData = {
-  /** List of app plan ids. Provide only for standard discounts. */
+  /** List of app plan ids */
   app_plan_ids: Array<Scalars['String']['input']>;
-  /** Number of days a discount will be valid. Provide only for standard discounts. */
+  /** Number of days a discount will be valid */
   days_valid: Scalars['Int']['input'];
   /** Percentage value of a discount */
   discount: Scalars['Int']['input'];
   /** Is discount recurring */
   is_recurring: Scalars['Boolean']['input'];
-  /** The period of a discount. Provide only for standard discounts. */
+  /** The period of a discount */
   period?: InputMaybe<DiscountPeriod>;
-};
-
-/** A granted marketplace app discount offer */
-export type GrantMarketplaceAppDiscountOffer = {
-  __typename?: 'GrantMarketplaceAppDiscountOffer';
-  /** The id of an app */
-  app_id: Scalars['ID']['output'];
-  /** List of app plan ids. Provide only for standard discounts. */
-  app_plan_ids?: Maybe<Array<Scalars['ID']['output']>>;
-  /** Number of days a discount will be valid. Provide only for standard discounts. */
-  days_valid: Scalars['Int']['output'];
-  /** Percentage value of a discount */
-  discount: Scalars['Int']['output'];
-  /** The scope of a discount. Possible values: standard, renewal. Defaults to standard when not provided. */
-  discount_scope?: Maybe<DiscountScope>;
-  /** Is discount recurring */
-  is_recurring: Scalars['Boolean']['output'];
-  /** The period of a discount. Provide only for standard discounts. */
-  period?: Maybe<DiscountPeriod>;
-};
-
-/** Result of granting a marketplace app discount offer */
-export type GrantMarketplaceAppDiscountOfferResult = {
-  __typename?: 'GrantMarketplaceAppDiscountOfferResult';
-  /** The granted discount offer */
-  granted_discount: GrantMarketplaceAppDiscountOffer;
 };
 
 export type GrantMarketplaceAppDiscountResult = {
@@ -3745,6 +3846,8 @@ export type GraphqlFolder = {
   __typename?: 'GraphqlFolder';
   /** The account identifier this folder belongs to */
   accountId?: Maybe<Scalars['ID']['output']>;
+  /** The app feature slug associated with this folder */
+  app_feature_slug?: Maybe<Scalars['String']['output']>;
   /** The timestamp when this folder was created */
   createdAt?: Maybe<Scalars['Date']['output']>;
   /** The user who created this folder */
@@ -3952,52 +4055,6 @@ export type ImportDocFromHtmlResult = {
   success: Scalars['Boolean']['output'];
 };
 
-/** Item data present in the search index. */
-export type IndexedItem = {
-  __typename?: 'IndexedItem';
-  /**
-   * Board containing this item.
-   * @deprecated Use board_id field instead or live_data if you need more board data.
-   */
-  board: DeprecatedBoard;
-  /** ID of the board containing this item. */
-  board_id: Scalars['ID']['output'];
-  /** Board kind (e.g., public, private). */
-  board_kind: Scalars['String']['output'];
-  /** Name of the board containing this item. */
-  board_name: Scalars['String']['output'];
-  /** The item's column values. */
-  column_values: Array<EnrichedColumnValues>;
-  /** ISO timestamp when the item was created. */
-  created_at: Scalars['String']['output'];
-  /** Item description. */
-  description?: Maybe<Scalars['String']['output']>;
-  /** ID of the group containing this item. */
-  group_id: Scalars['ID']['output'];
-  /** Name of the group containing this item. */
-  group_name: Scalars['String']['output'];
-  /** Item ID. */
-  id: Scalars['ID']['output'];
-  /** Item kind classification. */
-  kind: Scalars['String']['output'];
-  /** Item name. */
-  name: Scalars['String']['output'];
-  /** ID of the item owner. */
-  owner_id: Scalars['ID']['output'];
-  /** Item state flag. */
-  state: Scalars['Int']['output'];
-  /** List of tags associated with the item. */
-  tags: Array<Scalars['String']['output']>;
-  /** Item type (e.g., Project). */
-  type: Scalars['String']['output'];
-  /** ISO timestamp when the item was last updated. */
-  updated_at: Scalars['String']['output'];
-  /** URL to view this item. */
-  url: Scalars['String']['output'];
-  /** ID of the workspace containing this item. */
-  workspace_id: Scalars['ID']['output'];
-};
-
 /** Content inserted in delta operations */
 export type InsertOps = {
   __typename?: 'InsertOps';
@@ -4013,6 +4070,13 @@ export type InsertOpsInput = {
   blot?: InputMaybe<BlotInput>;
   /** Plain text content */
   text?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** Result of executing an integration block */
+export type IntegrationExecutionResult = {
+  __typename?: 'IntegrationExecutionResult';
+  /** The output fields returned by the integration block execution */
+  output_fields?: Maybe<Scalars['JSON']['output']>;
 };
 
 export type IntegrationValue = ColumnValue & {
@@ -4540,14 +4604,12 @@ export type MarketplaceAppDiscount = {
   account_id: Scalars['ID']['output'];
   /** Slug of an account */
   account_slug: Scalars['String']['output'];
-  /** List of app plan ids. Provide only for standard discounts. */
+  /** List of app plan ids */
   app_plan_ids: Array<Scalars['String']['output']>;
   /** Date when a discount was created */
   created_at: Scalars['String']['output'];
   /** Percentage value of a discount */
   discount: Scalars['Int']['output'];
-  /** The scope of a discount. Possible values: standard, renewal. Defaults to standard when not provided. */
-  discount_scope?: Maybe<DiscountScope>;
   /** Is discount recurring */
   is_recurring: Scalars['Boolean']['output'];
   period?: Maybe<DiscountPeriod>;
@@ -4721,6 +4783,8 @@ export type Mutation = {
   archive_item?: Maybe<Item>;
   /** Archives an object in the Monday.com Objects Platform, changing its state to "archived" while preserving all data. Archived objects remain in the system but are hidden from regular views. This operation works for any object type including boards, docs, dashboards, workflows, and specialized objects (CRM, capacity manager, etc.). Under the hood, this archives the board that represents this object. */
   archive_object?: Maybe<Object>;
+  /** Assigns members to a department. */
+  assign_department_members?: Maybe<AssignDepartmentMembersResult>;
   /** Assigns the specified users as owners of the specified team. */
   assign_team_owners?: Maybe<AssignTeamOwnersResult>;
   /** Creates a new dropdown column in a board that is linked to a managed column. The column data and settings are controlled by the managed column. Title, description, and dropdown-specific settings (limit_select, label_limit_count) can be overridden locally. */
@@ -4729,6 +4793,8 @@ export type Mutation = {
   attach_status_managed_column?: Maybe<Column>;
   /** Extends trial period of an application to selected accounts */
   batch_extend_trial_period?: Maybe<BatchExtendTrialPeriod>;
+  /** Batch update the dependency column values in a board */
+  batch_update_dependency_column: Scalars['JSON']['output'];
   /** Initialize bulk import for a board and group. Returns import ID and upload URL to begin the process. */
   bulk_import_items?: Maybe<BulkImportInit>;
   /** Change a column's properties */
@@ -4745,6 +4811,8 @@ export type Mutation = {
   change_simple_column_value?: Maybe<Item>;
   /** Clear an item's updates. */
   clear_item_updates?: Maybe<Item>;
+  /** Clear users department */
+  clear_users_department?: Maybe<ClearUsersDepartmentResult>;
   /** Get the complexity data of your mutations. */
   complexity?: Maybe<Complexity>;
   /** Connect project to portfolio */
@@ -4786,14 +4854,18 @@ export type Mutation = {
   create_group?: Maybe<Group>;
   /** Create a new item. */
   create_item?: Maybe<Item>;
+  /** Create a marketplace app discount */
+  create_marketplace_app_discount: CreateMarketplaceAppDiscountResult;
   /** Create a new notification. */
   create_notification?: Maybe<Notification>;
-  /** Creates a new object in the Monday.com Objects Platform. The type of object created is determined by the app_feature_reference_id parameter. This mutation can create boards, docs, dashboards, workflows, or specialized objects like CRM, capacity manager, etc. Under the hood, this creates a board with the specified app_feature_id. */
+  /** Creates a new object in the Monday.com Objects Platform. The type of object created is determined by the object_type_unique_key parameter. This mutation can create boards, docs, dashboards, workflows, or specialized objects like CRM, capacity manager, etc. Under the hood, this creates a board with the corresponding app_feature_id. */
   create_object?: Maybe<Object>;
   /** Create a new tag or get it if it already exists. */
   create_or_get_tag?: Maybe<Tag>;
   /** Create a new portfolio */
   create_portfolio?: Maybe<CreatePortfolioResult>;
+  /** Create a new project in monday.com from scratch. This mutation initiates asynchronous project creation with comprehensive customization options including: privacy settings (private/public - share is currently not supported), optional companions like Resource Planner for enhanced project management capabilities, workspace assignment for organizational structure, folder placement for better organization, and template selection for predefined project structures. Since project creation is asynchronous, you can optionally provide a callback_url where the project ID will be sent via POST request once creation completes. The callback will receive: { is_success: boolean, process_id: string, project_id?: number }. Returns a process_id for tracking the creation request. */
+  create_project?: Maybe<CreateProjectResult>;
   /** Creates a new status column with strongly typed settings. Status columns allow users to track item progress through customizable labels (e.g., "Working on it", "Done", "Stuck"). This mutation is specifically for status/color columns and provides type-safe creation with label configuration. */
   create_status_column?: Maybe<Column>;
   /** Create managed column of type status mutation. */
@@ -4877,9 +4949,11 @@ export type Mutation = {
   /** Duplicate an item. */
   duplicate_item?: Maybe<Item>;
   edit_update: Update;
+  /** Enroll multiple items to a single sequence. Maximum 50 items per request. */
+  enroll_items_to_sequence?: Maybe<EnrollToSequenceResult>;
+  /** Execute an integration block with the provided field values */
+  execute_integration_block?: Maybe<IntegrationExecutionResult>;
   grant_marketplace_app_discount: GrantMarketplaceAppDiscountResult;
-  /** Grant a marketplace app discount offer */
-  grant_marketplace_app_discount_offer: GrantMarketplaceAppDiscountOfferResult;
   /** Imports HTML content as a new document by converting it into document blocks. The HTML will be parsed and converted into the appropriate document block types (text, headers, lists, etc.). Returns the ID of the newly created document on success. */
   import_doc_from_html?: Maybe<ImportDocFromHtmlResult>;
   /** Increase operations counter */
@@ -4937,6 +5011,8 @@ export type Mutation = {
   update_dashboard?: Maybe<Dashboard>;
   /** Update the dependency column for a specific pulse */
   update_dependency_column: Scalars['JSON']['output'];
+  /** Update attributes (Job Role, Skills, or Location) for multiple resources in the directory */
+  update_directory_resources_attributes?: Maybe<UpdateDirectoryResourceAttributesResponse>;
   /** Update a document block */
   update_doc_block?: Maybe<DocumentBlock>;
   /** Update a document's name/title. Changes are applied immediately and visible to all users with access to the document. */
@@ -5118,6 +5194,13 @@ export type MutationArchive_ObjectArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationAssign_Department_MembersArgs = {
+  department_id: Scalars['ID']['input'];
+  user_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationAssign_Team_OwnersArgs = {
   team_id: Scalars['ID']['input'];
   user_ids: Array<Scalars['ID']['input']>;
@@ -5151,6 +5234,14 @@ export type MutationBatch_Extend_Trial_PeriodArgs = {
   app_id: Scalars['ID']['input'];
   duration_in_days: Scalars['Int']['input'];
   plan_id: Scalars['String']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationBatch_Update_Dependency_ColumnArgs = {
+  boardId: Scalars['String']['input'];
+  columnId: Scalars['String']['input'];
+  values: Array<DependencyPulseValueInput>;
 };
 
 
@@ -5221,6 +5312,12 @@ export type MutationChange_Simple_Column_ValueArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationClear_Item_UpdatesArgs = {
   item_id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationClear_Users_DepartmentArgs = {
+  user_ids: Array<Scalars['ID']['input']>;
 };
 
 
@@ -5405,13 +5502,20 @@ export type MutationCreate_GroupArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationCreate_ItemArgs = {
   board_id: Scalars['ID']['input'];
-  column_files?: InputMaybe<Array<ColumnFileInput>>;
   column_values?: InputMaybe<Scalars['JSON']['input']>;
   create_labels_if_missing?: InputMaybe<Scalars['Boolean']['input']>;
   group_id?: InputMaybe<Scalars['String']['input']>;
   item_name: Scalars['String']['input'];
   position_relative_method?: InputMaybe<PositionRelative>;
   relative_to?: InputMaybe<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationCreate_Marketplace_App_DiscountArgs = {
+  account_slug: Scalars['String']['input'];
+  app_id: Scalars['ID']['input'];
+  discount_data: CreateMarketplaceAppDiscountInput;
 };
 
 
@@ -5452,6 +5556,12 @@ export type MutationCreate_PortfolioArgs = {
   boardName: Scalars['String']['input'];
   boardPrivacy: Scalars['String']['input'];
   destinationWorkspaceId?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationCreate_ProjectArgs = {
+  input: CreateProjectInput;
 };
 
 
@@ -5801,19 +5911,23 @@ export type MutationEdit_UpdateArgs = {
 
 
 /** Root mutation type for the Dependencies service */
-export type MutationGrant_Marketplace_App_DiscountArgs = {
-  account_slug: Scalars['String']['input'];
-  app_id: Scalars['ID']['input'];
-  data: GrantMarketplaceAppDiscountData;
+export type MutationEnroll_Items_To_SequenceArgs = {
+  input: EnrollToSequenceInput;
 };
 
 
 /** Root mutation type for the Dependencies service */
-export type MutationGrant_Marketplace_App_Discount_OfferArgs = {
+export type MutationExecute_Integration_BlockArgs = {
+  block_instance_id: Scalars['ID']['input'];
+  inbound_field_values: Scalars['JSON']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationGrant_Marketplace_App_DiscountArgs = {
   account_slug: Scalars['String']['input'];
   app_id: Scalars['ID']['input'];
-  renewal_discount_data?: InputMaybe<RenewalDiscountDataInput>;
-  standard_discount_data?: InputMaybe<StandardDiscountDataInput>;
+  data: GrantMarketplaceAppDiscountData;
 };
 
 
@@ -6047,6 +6161,14 @@ export type MutationUpdate_Dependency_ColumnArgs = {
   pulseId: Scalars['String']['input'];
   successor_new_date?: InputMaybe<TimelineDateInput>;
   value: DependencyValueInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUpdate_Directory_Resources_AttributesArgs = {
+  attribute: DirectoryResourceAttribute;
+  resource_ids: Array<Scalars['ID']['input']>;
+  values: Array<Scalars['String']['input']>;
 };
 
 
@@ -6396,7 +6518,7 @@ export type NumbersValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
-/** The central type in the Monday.com Objects Platform, representing any entity in the system. This unified type can represent instances of boards, docs, dashboards, workflows, and specialized objects. The specific type of an object is determined by its app_feature_reference_id. */
+/** The central type in the Monday.com Objects Platform, representing any entity in the system. This unified type can represent instances of boards, docs, dashboards, workflows, and specialized objects. The specific type of an object is determined by its object_type_unique_key. */
 export type Object = {
   __typename?: 'Object';
   /** The ID of the user who created this object. Useful for tracking object origin. */
@@ -6643,16 +6765,6 @@ export type PersonValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
-/** Persons filter for search queries */
-export type PersonsInput = {
-  /** List of person IDs to filter by */
-  person_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
-  /** List of person names to filter by (searches in multiple-person columns) */
-  person_names?: InputMaybe<Array<Scalars['String']['input']>>;
-  /** List of team IDs to filter by */
-  team_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
-};
-
 /** Phone questions only: Configuration for setting a specific predefined phone country prefix that will be pre-selected for users. */
 export type PhonePrefixPredefined = {
   __typename?: 'PhonePrefixPredefined';
@@ -6824,6 +6936,8 @@ export type Query = {
   aggregate?: Maybe<AggregateQueryResult>;
   /** Returns all available widget schemas for documentation and validation purposes */
   all_widgets_schema?: Maybe<Array<WidgetSchemaInfo>>;
+  /** Get sequences that the current user is allowed to enroll items to, that are connected to the provided board. Returns sequences owned by the user or sequences where the user has access to the sender connection. */
+  allowed_sequences_to_enroll?: Maybe<Array<Sequence>>;
   /** Get an app by ID. */
   app?: Maybe<AppType>;
   /** Get a collection of installs of an app. */
@@ -6917,6 +7031,8 @@ export type Query = {
   /** Returns connections for the authenticated user. Supports filtering, pagination, ordering, and partial-scope options. */
   connections?: Maybe<Array<Connection>>;
   custom_activity?: Maybe<Array<CustomActivity>>;
+  /** Get account departments */
+  departments?: Maybe<Array<Department>>;
   /** Get a collection of docs. */
   docs?: Maybe<Array<Maybe<Document>>>;
   /**
@@ -6936,6 +7052,8 @@ export type Query = {
   form?: Maybe<ResponseForm>;
   /** Retrieves the JSON schema definition for a specific column type. Use this query before calling update_column mutation to understand the structure and validation rules for the defaults parameter. The schema defines what properties are available when updating columns of a specific type. */
   get_column_type_schema?: Maybe<Scalars['JSON']['output']>;
+  /** Fetch resources information from the resource directory */
+  get_directory_resources?: Maybe<DirectoryResourcesResponse>;
   /**
    * Retrieves the JSON schema definition for a specific create view type.
    *       Use this query before calling create_view mutation to understand the structure and validation rules for the settings parameter.
@@ -6974,8 +7092,6 @@ export type Query = {
   platform_api?: Maybe<PlatformApi>;
   /** Get a collection of replies filtered by board IDs and date range. */
   replies?: Maybe<Array<Reply>>;
-  /** Search for items using various search strategies. */
-  search_items?: Maybe<SearchItemsGraphQlResultsView>;
   /** Get a collection of monday dev sprints */
   sprints?: Maybe<Array<Sprint>>;
   /** Get a collection of tags. */
@@ -7034,6 +7150,12 @@ export type QueryAccount_Triggers_Statistics_By_Entity_IdArgs = {
 /** Root query type for the Dependencies service */
 export type QueryAggregateArgs = {
   query: AggregateQueryInput;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryAllowed_Sequences_To_EnrollArgs = {
+  board_id: Scalars['ID']['input'];
 };
 
 
@@ -7155,6 +7277,12 @@ export type QueryCustom_ActivityArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QueryDepartmentsArgs = {
+  ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryDocsArgs = {
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -7196,6 +7324,14 @@ export type QueryFormArgs = {
 /** Root query type for the Dependencies service */
 export type QueryGet_Column_Type_SchemaArgs = {
   type: ColumnType;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryGet_Directory_ResourcesArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  team_ids?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
 
@@ -7313,21 +7449,6 @@ export type QueryRepliesArgs = {
   created_at_to?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
-};
-
-
-/** Root query type for the Dependencies service */
-export type QuerySearch_ItemsArgs = {
-  board_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
-  boosts?: InputMaybe<BoostConfigurationInput>;
-  date_range?: InputMaybe<SearchDateRangeInput>;
-  exact_match?: InputMaybe<Scalars['Boolean']['input']>;
-  persons?: InputMaybe<PersonsInput>;
-  query?: InputMaybe<Scalars['String']['input']>;
-  reranking_strategy?: InputMaybe<RerankingStrategy>;
-  size: Scalars['Int']['input'];
-  status?: InputMaybe<Scalars['String']['input']>;
-  workspace_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
 };
 
 
@@ -7494,14 +7615,6 @@ export type RemoveTeamOwnersResult = {
   team?: Maybe<Team>;
 };
 
-/** Input data for granting a renewal marketplace app discount offer */
-export type RenewalDiscountDataInput = {
-  /** Percentage value of a discount */
-  discount: Scalars['Int']['input'];
-  /** Is discount recurring */
-  is_recurring: Scalars['Boolean']['input'];
-};
-
 /** A reply for an update. */
 export type Reply = {
   __typename?: 'Reply';
@@ -7542,12 +7655,6 @@ export type RequiredColumns = {
   required_column_ids: Array<Scalars['String']['output']>;
 };
 
-/** Algorithms for reranking results. */
-export enum RerankingStrategy {
-  /** Use cross-encoder model for reranking results. */
-  CrossEncoder = 'CROSS_ENCODER'
-}
-
 export type ResponseForm = {
   __typename?: 'ResponseForm';
   /** Object containing accessibility settings such as language, alt text, and reading direction. */
@@ -7586,63 +7693,48 @@ export enum ScopeType {
   User = 'User'
 }
 
-/** Available search modes. */
-export enum Search {
-  /** Combined lexical and semantic search with reranking. */
-  Hybrid = 'HYBRID',
-  /** Keyword-based search using text matching. */
-  Lexical = 'LEXICAL',
-  /** Vector-based search using semantic similarity. */
-  Semantic = 'SEMANTIC'
+/** A sequence that can be used to automate email outreach */
+export type Sequence = {
+  __typename?: 'Sequence';
+  /** The ID of the context (e.g., board ID) the sequence is associated with */
+  context_id?: Maybe<Scalars['ID']['output']>;
+  /** The type of context the sequence is associated with */
+  context_type?: Maybe<SequenceContext>;
+  /** The timestamp when the sequence was created or last updated */
+  created_at?: Maybe<Scalars['Date']['output']>;
+  /** The total duration of the sequence in seconds */
+  duration?: Maybe<Scalars['Int']['output']>;
+  /** The unique identifier of the sequence */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** The current status of the sequence */
+  status?: Maybe<SequenceStatus>;
+  /** The number of steps in the sequence */
+  step_count?: Maybe<Scalars['Int']['output']>;
+  /** The title of the sequence */
+  title?: Maybe<Scalars['String']['output']>;
+  /** The timestamp when the sequence was created or last updated */
+  updated_at?: Maybe<Scalars['Date']['output']>;
+  /** The ID of the user who owns the sequence */
+  user_id?: Maybe<Scalars['ID']['output']>;
+};
+
+/** The type of context a sequence is associated with */
+export enum SequenceContext {
+  /** Sequence is associated with a board */
+  Board = 'BOARD'
 }
 
-/** Date range filter for search queries */
-export type SearchDateRangeInput = {
-  /** Filter items with a date column having a value after this date */
-  column_value_after?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
-  /** Filter items with a date column having a value before this date */
-  column_value_before?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
-  /** Filter items created after this date */
-  created_after?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
-  /** Filter items created before this date */
-  created_before?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
-  /** Filter items updated after this date */
-  updated_after?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
-  /** Filter items updated before this date */
-  updated_before?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
-};
-
-/** Date range filter for search queries */
-export type SearchDateRangeLegacyInput = {
-  /** Filter items created after this date */
-  createdAfter?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
-  /** Filter items created before this date */
-  createdBefore?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
-  /** Filter items updated after this date */
-  updatedAfter?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
-  /** Filter items updated before this date */
-  updatedBefore?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
-};
-
-/** Response of the search request. */
-export type SearchItemsGraphQlResultsView = {
-  __typename?: 'SearchItemsGraphQlResultsView';
-  /** Indicates if the results have been reranked */
-  reranked?: Maybe<Scalars['Boolean']['output']>;
-  /** The results of the items search. */
-  results: Array<SearchItemsQueryResult>;
-};
-
-/** Contains search items query results. */
-export type SearchItemsQueryResult = {
-  __typename?: 'SearchItemsQueryResult';
-  /** Item data for the search results. */
-  data: IndexedItem;
-  /** Latest item data for the search results. Requires additional GraphQL federation calls. */
-  live_data: Item;
-  /** The relevance score of the search result. */
-  score: Scalars['Float']['output'];
-};
+/** The status of a sequence */
+export enum SequenceStatus {
+  /** Sequence is active */
+  Active = 'ACTIVE',
+  /** Sequence has been deleted */
+  Deleted = 'DELETED',
+  /** Sequence is inactive */
+  Inactive = 'INACTIVE',
+  /** Sequence is missing required configuration */
+  MissingConfig = 'MISSING_CONFIG'
+}
 
 /** Response type for detailed board permissions. Contains information about the permissions that were set. */
 export type SetBoardPermissionResponse = {
@@ -7767,20 +7859,6 @@ export type SprintTimeline = {
   from?: Maybe<Scalars['Date']['output']>;
   /** user-editable complete date of the monday dev sprint timeline, may be different than the sprint complete date */
   to?: Maybe<Scalars['Date']['output']>;
-};
-
-/** Input data for granting a standard marketplace app discount offer */
-export type StandardDiscountDataInput = {
-  /** List of app plan ids. Provide only for standard discounts. */
-  app_plan_ids: Array<Scalars['ID']['input']>;
-  /** Number of days a discount will be valid. Provide only for standard discounts. */
-  days_valid: Scalars['Int']['input'];
-  /** Percentage value of a discount */
-  discount: Scalars['Int']['input'];
-  /** Is discount recurring */
-  is_recurring: Scalars['Boolean']['input'];
-  /** The period of a discount. Provide only for standard discounts. */
-  period?: InputMaybe<DiscountPeriod>;
 };
 
 /** The possible states for a board or item. */
@@ -8529,6 +8607,13 @@ export type UpdateDependencyColumnInput = {
   metadata?: InputMaybe<MetadataInput>;
 };
 
+/** Response indicating whether the directory attribute update succeeded */
+export type UpdateDirectoryResourceAttributesResponse = {
+  __typename?: 'UpdateDirectoryResourceAttributesResponse';
+  /** Indicates whether the batch update completed successfully. */
+  success: Scalars['Boolean']['output'];
+};
+
 export type UpdateDropdownColumnSettingsInput = {
   /** Maximum number of labels that can be selected when limit_select is enabled */
   label_limit_count?: InputMaybe<Scalars['Int']['input']>;
@@ -8780,6 +8865,8 @@ export type User = {
   custom_field_metas?: Maybe<Array<Maybe<CustomFieldMetas>>>;
   /** The custom field values of the user profile. */
   custom_field_values?: Maybe<Array<Maybe<CustomFieldValue>>>;
+  /** The department the user is a member of (if any) */
+  department?: Maybe<Department>;
   /** The user's email. */
   email: Scalars['String']['output'];
   /** Is the user enabled or not. */

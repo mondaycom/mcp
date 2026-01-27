@@ -17,7 +17,7 @@ export type Scalars = {
   CompareValue: { input: any; output: any; }
   /** A date. */
   Date: { input: any; output: any; }
-  /** A multipart file */
+  /** A file */
   File: { input: any; output: any; }
   /** An ISO 8601-encoded datetime (e.g., 2024-04-09T13:45:30Z) */
   ISO8601DateTime: { input: any; output: any; }
@@ -206,6 +206,292 @@ export type AggregateGroupByResult = {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
+/** The result of an aggregation function. */
+export type AggregateHistoryBasicAggregationResult = {
+  __typename?: 'AggregateHistoryBasicAggregationResult';
+  /** The numeric result from the aggregation function. */
+  result?: Maybe<Scalars['Float']['output']>;
+};
+
+/** Aggregation results for a specific historical date. */
+export type AggregateHistoryDateResult = {
+  __typename?: 'AggregateHistoryDateResult';
+  /** The aggregation result entries for this date. */
+  entries?: Maybe<Array<AggregateHistoryResultEntry>>;
+};
+
+/** A group of filter rules that can be combined with AND/OR logic. Supports nesting. */
+export type AggregateHistoryFilterGroupInput = {
+  /** Nested filter groups for complex logic. */
+  groups?: InputMaybe<Array<AggregateHistoryFilterGroupInput>>;
+  /** The logical operator to combine rules within this group. */
+  operator?: InputMaybe<AggregateHistoryQueryOperator>;
+  /** Filter rules in this group. */
+  rules?: InputMaybe<Array<AggregateHistoryFilterRuleInput>>;
+};
+
+/** Comparison operators for filtering items in aggregate queries. */
+export enum AggregateHistoryFilterOperator {
+  /** Match any of the specified values (OR). */
+  AnyOf = 'ANY_OF',
+  /** Value is between two specified values (inclusive). */
+  Between = 'BETWEEN',
+  /** Text contains any of the specified terms. */
+  ContainsTerms = 'CONTAINS_TERMS',
+  /** Text contains the specified substring. */
+  ContainsText = 'CONTAINS_TEXT',
+  /** Text ends with the specified substring. */
+  EndsWith = 'ENDS_WITH',
+  /** Value is greater than the specified value. */
+  GreaterThan = 'GREATER_THAN',
+  /** Value is greater than or equal to the specified value. */
+  GreaterThanOrEquals = 'GREATER_THAN_OR_EQUALS',
+  /** Value is empty or null. */
+  IsEmpty = 'IS_EMPTY',
+  /** Value is not empty or null. */
+  IsNotEmpty = 'IS_NOT_EMPTY',
+  /** Value is less than the specified value. */
+  LowerThan = 'LOWER_THAN',
+  /** Value is less than or equal to the specified value. */
+  LowerThanOrEqual = 'LOWER_THAN_OR_EQUAL',
+  /** Match none of the specified values. */
+  NotAnyOf = 'NOT_ANY_OF',
+  /** Text does not contain the specified substring. */
+  NotContainsText = 'NOT_CONTAINS_TEXT',
+  /** Text starts with the specified substring. */
+  StartsWith = 'STARTS_WITH',
+  /** Date/time is within the last N periods. */
+  WithinTheLast = 'WITHIN_THE_LAST',
+  /** Date/time is within the next N periods. */
+  WithinTheNext = 'WITHIN_THE_NEXT'
+}
+
+/** A single filter rule for matching items based on column values. */
+export type AggregateHistoryFilterRuleInput = {
+  /** The unique identifier of the column to filter by. */
+  column_id: Scalars['String']['input'];
+  /** Optional attribute for complex column types (e.g., date for timeline columns). */
+  compare_attribute?: InputMaybe<Scalars['String']['input']>;
+  /** The value(s) to compare against. Can be a string, number, boolean, or array. */
+  compare_value?: InputMaybe<Scalars['JSON']['input']>;
+  /** The comparison operator to use. */
+  operator: AggregateHistoryFilterOperator;
+};
+
+/** The source type for the aggregate history query. */
+export enum AggregateHistoryFromElement {
+  /** Query historical snapshots of board/table data at specific dates. */
+  TableHistory = 'TABLE_HISTORY'
+}
+
+/** The source table and its ID for the aggregate history query. */
+export type AggregateHistoryFromInput = {
+  /** The unique identifier of the source board. */
+  id: Scalars['ID']['input'];
+  /** The source type. Must be TABLE_HISTORY for historical queries. */
+  type: AggregateHistoryFromElement;
+};
+
+/** The aggregation function to apply. */
+export enum AggregateHistoryFunction {
+  /** Calculate the average of numeric values. */
+  Average = 'AVERAGE',
+  /** Get the color value. */
+  Color = 'COLOR',
+  /** Count all values. */
+  Count = 'COUNT',
+  /** Count distinct values. */
+  CountDistinct = 'COUNT_DISTINCT',
+  /** Count items. */
+  CountItems = 'COUNT_ITEMS',
+  /** Count subitems. */
+  CountSubitems = 'COUNT_SUBITEMS',
+  /** Get the date value. */
+  Date = 'DATE',
+  /** Truncate date to day. */
+  DateTruncDay = 'DATE_TRUNC_DAY',
+  /** Truncate date to month. */
+  DateTruncMonth = 'DATE_TRUNC_MONTH',
+  /** Truncate date to quarter. */
+  DateTruncQuarter = 'DATE_TRUNC_QUARTER',
+  /** Truncate date to week. */
+  DateTruncWeek = 'DATE_TRUNC_WEEK',
+  /** Truncate date to year. */
+  DateTruncYear = 'DATE_TRUNC_YEAR',
+  /** Get running duration. */
+  DurationRunning = 'DURATION_RUNNING',
+  /** Get the end date from a timeline. */
+  EndDate = 'END_DATE',
+  /** Check equality. */
+  Equals = 'EQUALS',
+  /** Get the first value. */
+  First = 'FIRST',
+  /** Flatten nested values. */
+  Flatten = 'FLATTEN',
+  /** Extract hour from time. */
+  Hour = 'HOUR',
+  /** Get the ID. */
+  Id = 'ID',
+  /** Check if done/completed. */
+  IsDone = 'IS_DONE',
+  /** Get the label value. */
+  Label = 'LABEL',
+  /** Get the length of a value. */
+  Length = 'LENGTH',
+  /** Convert to lowercase. */
+  Lower = 'LOWER',
+  /** Get the maximum value. */
+  Max = 'MAX',
+  /** Calculate the median. */
+  Median = 'MEDIAN',
+  /** Get the minimum value. */
+  Min = 'MIN',
+  /** Get both min and max values. */
+  MinMax = 'MIN_MAX',
+  /** Get the order/position. */
+  Order = 'ORDER',
+  /** Get the person value. */
+  Person = 'PERSON',
+  /** Get phone country short name. */
+  PhoneCountryShortName = 'PHONE_COUNTRY_SHORT_NAME',
+  /** Get the start date from a timeline. */
+  StartDate = 'START_DATE',
+  /** Calculate the sum of numeric values. */
+  Sum = 'SUM',
+  /** Trim whitespace from value. */
+  Trim = 'TRIM',
+  /** Convert to uppercase. */
+  Upper = 'UPPER'
+}
+
+/** Configuration for grouping aggregate results by a column. */
+export type AggregateHistoryGroupByInput = {
+  /** The unique identifier of the column to group results by. */
+  column_id: Scalars['String']['input'];
+  /** The maximum number of groups to return. Default: 1000. */
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+/** The group-by key value from the aggregation. */
+export type AggregateHistoryGroupByResult = {
+  __typename?: 'AggregateHistoryGroupByResult';
+  /** The group-by value for booleans. */
+  value_boolean?: Maybe<Scalars['Boolean']['output']>;
+  /** The group-by value for decimal numbers. */
+  value_float?: Maybe<Scalars['Float']['output']>;
+  /** The group-by value for whole numbers. */
+  value_int?: Maybe<Scalars['Int']['output']>;
+  /** The string representation of the group-by value. */
+  value_string?: Maybe<Scalars['String']['output']>;
+};
+
+/** Filter configuration for selecting which items to include in the aggregation. */
+export type AggregateHistoryItemsQueryInput = {
+  /** Nested filter groups for complex logic. */
+  groups?: InputMaybe<Array<AggregateHistoryFilterGroupInput>>;
+  /** Specific item IDs to include. If provided, only these items are considered. */
+  ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  /** The logical operator to combine top-level rules and groups. */
+  operator?: InputMaybe<AggregateHistoryQueryOperator>;
+  /** Configuration for ordering results before aggregation. */
+  order_by?: InputMaybe<Array<AggregateHistoryOrderByInput>>;
+  /** Filter rules to apply. */
+  rules?: InputMaybe<Array<AggregateHistoryFilterRuleInput>>;
+};
+
+/** Configuration for sorting query results by a column. */
+export type AggregateHistoryOrderByInput = {
+  /** The unique identifier of the column to sort by. */
+  column_id: Scalars['String']['input'];
+  /** The sort direction. Default: ASC. */
+  direction?: InputMaybe<AggregateHistorySortDirection>;
+};
+
+/** Input for querying historical aggregated data from a board at specific dates. */
+export type AggregateHistoryQueryInput = {
+  /** Array of ISO timestamp/date strings to retrieve historical snapshots for. */
+  at_timestamps: Array<Scalars['String']['input']>;
+  /** The data source for the aggregation (board with TABLE_HISTORY type). */
+  from: AggregateHistoryFromInput;
+  /** Columns to group results by. */
+  group_by?: InputMaybe<Array<AggregateHistoryGroupByInput>>;
+  /** Maximum number of results to return. Default: 1000. */
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  /** Filters for the items being aggregated. Without filters, all items are included. */
+  query?: InputMaybe<AggregateHistoryItemsQueryInput>;
+  /** The fields or functions to include in the results. */
+  select: Array<AggregateHistorySelectInput>;
+};
+
+/** Logical operators for combining filter rules. */
+export enum AggregateHistoryQueryOperator {
+  /** All rules must match (AND logic). */
+  And = 'AND',
+  /** Any rule can match (OR logic). */
+  Or = 'OR'
+}
+
+/** A single field result from the aggregation, containing the alias and value. */
+export type AggregateHistoryResultEntry = {
+  __typename?: 'AggregateHistoryResultEntry';
+  /** The name of the field, as defined using the as field in the select input. */
+  alias?: Maybe<Scalars['String']['output']>;
+  /** The value for this field. Can be an aggregation result or a group-by key. */
+  value?: Maybe<AggregateHistoryResultValue>;
+};
+
+/** The complete result set from an aggregate_history query. */
+export type AggregateHistoryResultSet = {
+  __typename?: 'AggregateHistoryResultSet';
+  /** Array of results, one for each date specified in at_timestamps. */
+  results?: Maybe<Array<AggregateHistoryDateResult>>;
+};
+
+/** The value of an aggregate result entry. Can be an aggregation result or a group-by key. */
+export type AggregateHistoryResultValue = AggregateHistoryBasicAggregationResult | AggregateHistoryGroupByResult;
+
+/** Specifies a column to select in the aggregation. */
+export type AggregateHistorySelectColumnInput = {
+  /** The unique identifier of the column. */
+  column_id: Scalars['String']['input'];
+};
+
+/** Specifies an aggregation function and its parameters. */
+export type AggregateHistorySelectFunctionInput = {
+  /** The aggregation function to apply. */
+  function: AggregateHistoryFunction;
+  /** Parameters to pass to the function (can include columns or nested functions). */
+  params?: InputMaybe<Array<AggregateHistorySelectInput>>;
+};
+
+/** Specifies a field or function to include in the aggregation results. */
+export type AggregateHistorySelectInput = {
+  /** The alias for this field in the result set. */
+  as: Scalars['String']['input'];
+  /** The column to select. Required when type is COLUMN. */
+  column?: InputMaybe<AggregateHistorySelectColumnInput>;
+  /** The function to apply. Required when type is FUNCTION. */
+  function?: InputMaybe<AggregateHistorySelectFunctionInput>;
+  /** The type of selection: COLUMN for direct column values, FUNCTION for aggregations. */
+  type: AggregateHistorySelectKind;
+};
+
+/** The type of element to select in the aggregation. */
+export enum AggregateHistorySelectKind {
+  /** Select a column value directly. */
+  Column = 'COLUMN',
+  /** Apply an aggregation function to column(s). */
+  Function = 'FUNCTION'
+}
+
+/** Sort direction for ordering results. */
+export enum AggregateHistorySortDirection {
+  /** Sort in ascending order (A-Z, 0-9). */
+  Asc = 'ASC',
+  /** Sort in descending order (Z-A, 9-0). */
+  Desc = 'DESC'
+}
+
 export type AggregateQueryInput = {
   /** Table to select from */
   from: AggregateFromTableInput;
@@ -360,6 +646,20 @@ export type AiActionResponse = {
   usage?: Maybe<TokenUsage>;
 };
 
+/** Allowed MIME types for file uploads */
+export enum AllowedFileMime {
+  /** PDF document */
+  ApplicationPdf = 'APPLICATION_PDF',
+  /** GIF image */
+  ImageGif = 'IMAGE_GIF',
+  /** JPEG image */
+  ImageJpeg = 'IMAGE_JPEG',
+  /** PNG image */
+  ImagePng = 'IMAGE_PNG',
+  /** WebP image */
+  ImageWebp = 'IMAGE_WEBP'
+}
+
 /** Input for app feature release data. */
 export type AppFeatureReleaseDataInput = {
   /** The URL for the release. */
@@ -433,6 +733,8 @@ export enum AppFeatureTypeE {
   AiItemEmailsAndActivitiesActions = 'AI_ITEM_EMAILS_AND_ACTIVITIES_ACTIONS',
   /** AI_ITEM_UPDATE_ACTIONS */
   AiItemUpdateActions = 'AI_ITEM_UPDATE_ACTIONS',
+  /** AI_PLATFORM_AGENT */
+  AiPlatformAgent = 'AI_PLATFORM_AGENT',
   /** APP_WIZARD */
   AppWizard = 'APP_WIZARD',
   /** BLOCK */
@@ -501,6 +803,8 @@ export enum AppFeatureTypeE {
   SyncableResource = 'SYNCABLE_RESOURCE',
   /** TOPBAR */
   Topbar = 'TOPBAR',
+  /** VIBE_ITEM_VIEW */
+  VibeItemView = 'VIBE_ITEM_VIEW',
   /** VIBE_OBJECT */
   VibeObject = 'VIBE_OBJECT',
   /** WORKFLOW_TEMPLATE */
@@ -574,6 +878,10 @@ export enum AppPermission {
   BoardsRead = 'BOARDS_READ',
   /** Permission scope: boards:write */
   BoardsWrite = 'BOARDS_WRITE',
+  /** Permission scope: departments:read */
+  DepartmentsRead = 'DEPARTMENTS_READ',
+  /** Permission scope: departments:write */
+  DepartmentsWrite = 'DEPARTMENTS_WRITE',
   /** Permission scope: docs:read */
   DocsRead = 'DOCS_READ',
   /** Permission scope: docs:write */
@@ -847,6 +1155,15 @@ export enum AssetsSource {
   /** Assets only from item's files gallery */
   Gallery = 'gallery'
 }
+
+/** Result of assigning members to a department. */
+export type AssignDepartmentMembersResult = {
+  __typename?: 'AssignDepartmentMembersResult';
+  /** The users that were not assigned to the department. */
+  failed_users?: Maybe<Array<User>>;
+  /** The users that were successfully assigned to the department. */
+  successful_users?: Maybe<Array<User>>;
+};
 
 /** Error that occurred while changing team owners. */
 export type AssignTeamOwnersError = {
@@ -1376,6 +1693,8 @@ export type BoardGraphExport = {
   __typename?: 'BoardGraphExport';
   /** The ID of the board */
   boardId?: Maybe<Scalars['String']['output']>;
+  /** The cycles in the graph */
+  cycles?: Maybe<Scalars['JSON']['output']>;
   /** The total number of edges in the graph */
   edgeCount?: Maybe<Scalars['Int']['output']>;
   /** The timestamp when the graph was exported */
@@ -1691,6 +2010,13 @@ export type ChangeTeamMembershipsResult = {
   successful_users?: Maybe<Array<User>>;
 };
 
+/** Result of changing workflow owner */
+export type ChangeWorkflowOwnerResult = {
+  __typename?: 'ChangeWorkflowOwnerResult';
+  /** Whether the workflow owner was successfully changed */
+  is_success: Scalars['Boolean']['output'];
+};
+
 /** Whether this channel is editable, always enabled, or not relevant to the notification */
 export enum ChannelEditableStatus {
   AllRelatedNotificationsDontHaveChannel = 'AllRelatedNotificationsDontHaveChannel',
@@ -1721,6 +2047,13 @@ export type CheckboxValue = ColumnValue & {
   /** The date when column value was last updated. */
   updated_at?: Maybe<Scalars['Date']['output']>;
   value?: Maybe<Scalars['JSON']['output']>;
+};
+
+/** Result of clearing users department. */
+export type ClearUsersDepartmentResult = {
+  __typename?: 'ClearUsersDepartmentResult';
+  /** The users that their department was cleared. */
+  cleared_users?: Maybe<Array<User>>;
 };
 
 export type ColorPickerValue = ColumnValue & {
@@ -1791,14 +2124,6 @@ export enum ColumnCapability {
   /** Capability to mark column as hidden */
   Visibility = 'VISIBILITY'
 }
-
-/** Input for uploading a file to a column when creating an item. */
-export type ColumnFileInput = {
-  /** The column's unique identifier. */
-  column_id: Scalars['String']['input'];
-  /** The file to upload. */
-  file: Scalars['File']['input'];
-};
 
 /** An object defining a mapping of column between source board and destination board */
 export type ColumnMappingInput = {
@@ -2192,6 +2517,42 @@ export type CreateFormTagInput = {
   value?: InputMaybe<Scalars['String']['input']>;
 };
 
+/** A granted marketplace app discount offer */
+export type CreateMarketplaceAppDiscount = {
+  __typename?: 'CreateMarketplaceAppDiscount';
+  /** The id of an app */
+  app_id: Scalars['ID']['output'];
+  /** List of app plan ids */
+  app_plan_ids?: Maybe<Array<Scalars['ID']['output']>>;
+  /** Number of days a discount will be valid */
+  days_valid: Scalars['Int']['output'];
+  /** Percentage value of a discount */
+  discount: Scalars['Int']['output'];
+  /** Is discount recurring */
+  is_recurring: Scalars['Boolean']['output'];
+  /** The period of a discount */
+  period?: Maybe<DiscountPeriod>;
+};
+
+/** Input data for creating a marketplace app discount */
+export type CreateMarketplaceAppDiscountInput = {
+  /** List of app plan ids */
+  app_plan_ids: Array<Scalars['ID']['input']>;
+  /** Number of days a discount will be valid */
+  days_valid: Scalars['Int']['input'];
+  /** Percentage value of a discount */
+  discount: Scalars['Int']['input'];
+  /** The period of a discount */
+  period?: InputMaybe<DiscountPeriod>;
+};
+
+/** Result of granting a marketplace app discount offer */
+export type CreateMarketplaceAppDiscountResult = {
+  __typename?: 'CreateMarketplaceAppDiscountResult';
+  /** The granted discount offer */
+  granted_discount: CreateMarketplaceAppDiscount;
+};
+
 export type CreateMigrationJobResult = {
   __typename?: 'CreateMigrationJobResult';
   /** The unique identifier of the migration job. */
@@ -2209,8 +2570,10 @@ export type CreatePortfolioResult = {
 };
 
 export type CreateProjectInput = {
-  /** The project's kind (public / private / share) */
+  /** The project's privacy setting (public / private) */
   board_kind: BoardKind;
+  /** Optional external callback URL where the project ID will be sent after async creation. The callback will receive a POST request with { is_success: boolean, process_id: string, project_id?: number } */
+  callback_url?: InputMaybe<Scalars['String']['input']>;
   /** Optional list of companion features to enable (currently only "resource_planner") */
   companions?: InputMaybe<Array<Scalars['String']['input']>>;
   /** Optional folder ID to associate with the project */
@@ -2225,11 +2588,13 @@ export type CreateProjectInput = {
 
 export type CreateProjectResult = {
   __typename?: 'CreateProjectResult';
-  /** Error message if project creation failed */
+  /** Error message if project creation request failed */
   error?: Maybe<Scalars['String']['output']>;
-  /** Success message when project is created */
+  /** Success message when project creation is initiated */
   message?: Maybe<Scalars['String']['output']>;
-  /** Indicates if the project creation was successful */
+  /** Unique process ID for tracking this creation request. This will be included in the callback when creation completes. */
+  process_id?: Maybe<Scalars['ID']['output']>;
+  /** Indicates if the project creation request was accepted */
   success?: Maybe<Scalars['Boolean']['output']>;
 };
 
@@ -2669,6 +3034,23 @@ export type DeleteWorkflowResult = {
   is_success: Scalars['Boolean']['output'];
 };
 
+/** A department in the account. */
+export type Department = {
+  __typename?: 'Department';
+  /** The number of seats assigned to the department. */
+  assigned_seats: Scalars['Int']['output'];
+  /** The department's ID. */
+  id: Scalars['ID']['output'];
+  /** The members of the department */
+  members?: Maybe<Array<User>>;
+  /** The department's name. */
+  name: Scalars['String']['output'];
+  /** The owners of the department */
+  owners?: Maybe<Array<User>>;
+  /** The number of seats reserved for the department. */
+  reserved_seats: Scalars['Int']['output'];
+};
+
 /** Defines mandatory and optional dependencies that must be populated to allow resolving the field dynamic values */
 export type DependencyConfig = {
   __typename?: 'DependencyConfig';
@@ -2687,6 +3069,14 @@ export type DependencyField = {
   sourceFieldTypeUniqueKey?: Maybe<Scalars['String']['output']>;
   /** JSON key that the backend expects for this dependency value */
   targetFieldKey?: Maybe<Scalars['String']['output']>;
+};
+
+/** Input type for updating a single pulse dependency value */
+export type DependencyPulseValueInput = {
+  /** The ID of the pulse to update the dependency value for */
+  pulseId: Scalars['ID']['input'];
+  /** The value of the dependency pulse value to update */
+  value: DependencyValueInput;
 };
 
 /** Type of dependency relationship between items */
@@ -2796,18 +3186,10 @@ export type DirectoryResourcesResponse = {
   resources: Array<DirectoryResource>;
 };
 
-/** The period of a discount. Provide only for standard discounts. */
+/** The period of a discount */
 export enum DiscountPeriod {
   Monthly = 'MONTHLY',
   Yearly = 'YEARLY'
-}
-
-/** The scope of a discount. Possible values: standard, renewal. Defaults to standard when not provided. */
-export enum DiscountScope {
-  /** Renewal discount scope - applies to subscription renewals */
-  Renewal = 'RENEWAL',
-  /** Standard discount scope - applies to new subscriptions */
-  Standard = 'STANDARD'
 }
 
 /** Input for creating divider blocks */
@@ -3199,6 +3581,25 @@ export type EnrichedColumnValues = {
   value: Scalars['String']['output'];
 };
 
+/** Input for enrolling multiple items to a single sequence */
+export type EnrollToSequenceInput = {
+  /** The ID of the board containing the items */
+  board_id: Scalars['ID']['input'];
+  /** List of item IDs to enroll (maximum 50 items) */
+  item_ids: Array<Scalars['ID']['input']>;
+  /** The ID of the sequence to enroll items to */
+  sequence_id: Scalars['ID']['input'];
+};
+
+/** Result of enrolling items to a sequence */
+export type EnrollToSequenceResult = {
+  __typename?: 'EnrollToSequenceResult';
+  /** List of item IDs that failed to enroll */
+  failed_item_ids?: Maybe<Array<Scalars['ID']['output']>>;
+  /** List of item IDs that were successfully enrolled, including items that were provided and are already enrolled */
+  succeeded_item_ids?: Maybe<Array<Scalars['ID']['output']>>;
+};
+
 /** Response from exporting document content as markdown. Contains the generated markdown text or error details. */
 export type ExportMarkdownResult = {
   __typename?: 'ExportMarkdownResult';
@@ -3232,7 +3633,9 @@ export enum ExternalWidget {
   /** A Gantt chart visualization of board timelines with dependencies, grouping, and coloring capabilities. */
   Gantt = 'GANTT',
   /** Number widgets for displaying numeric metrics such as accumulated sums, averages, counts, totals, percentages. Ideal for showing single-value metrics, counters, calculated aggregations, and key performance indicators in a prominent numeric format. */
-  Number = 'NUMBER'
+  Number = 'NUMBER',
+  /** Table widgets for visualization */
+  Table = 'TABLE'
 }
 
 /** Information about a failed user board role update, including the user ID and the error encountered. */
@@ -3419,6 +3822,17 @@ export enum FileLinkValueKind {
   /** OneDrive file */
   Onedrive = 'onedrive'
 }
+
+/** Presigned URL for uploading a file to S3 */
+export type FileUploadUrl = {
+  __typename?: 'FileUploadUrl';
+  /** When the presigned URL expires */
+  expires_at?: Maybe<Scalars['Date']['output']>;
+  /** S3 key where the file will be stored */
+  s3_key?: Maybe<Scalars['String']['output']>;
+  /** Presigned URL to upload the file directly to S3 */
+  upload_url?: Maybe<Scalars['String']['output']>;
+};
 
 export type FileValue = ColumnValue & {
   __typename?: 'FileValue';
@@ -4178,9 +4592,9 @@ export type GrantMarketplaceAppDiscount = {
   __typename?: 'GrantMarketplaceAppDiscount';
   /** The id of an app */
   app_id: Scalars['ID']['output'];
-  /** List of app plan ids. Provide only for standard discounts. */
+  /** List of app plan ids */
   app_plan_ids: Array<Scalars['String']['output']>;
-  /** Number of days a discount will be valid. Provide only for standard discounts. */
+  /** Number of days a discount will be valid */
   days_valid: Scalars['Int']['output'];
   /** Percentage value of a discount */
   discount: Scalars['Int']['output'];
@@ -4190,42 +4604,16 @@ export type GrantMarketplaceAppDiscount = {
 };
 
 export type GrantMarketplaceAppDiscountData = {
-  /** List of app plan ids. Provide only for standard discounts. */
+  /** List of app plan ids */
   app_plan_ids: Array<Scalars['String']['input']>;
-  /** Number of days a discount will be valid. Provide only for standard discounts. */
+  /** Number of days a discount will be valid */
   days_valid: Scalars['Int']['input'];
   /** Percentage value of a discount */
   discount: Scalars['Int']['input'];
   /** Is discount recurring */
   is_recurring: Scalars['Boolean']['input'];
-  /** The period of a discount. Provide only for standard discounts. */
+  /** The period of a discount */
   period?: InputMaybe<DiscountPeriod>;
-};
-
-/** A granted marketplace app discount offer */
-export type GrantMarketplaceAppDiscountOffer = {
-  __typename?: 'GrantMarketplaceAppDiscountOffer';
-  /** The id of an app */
-  app_id: Scalars['ID']['output'];
-  /** List of app plan ids. Provide only for standard discounts. */
-  app_plan_ids?: Maybe<Array<Scalars['ID']['output']>>;
-  /** Number of days a discount will be valid. Provide only for standard discounts. */
-  days_valid: Scalars['Int']['output'];
-  /** Percentage value of a discount */
-  discount: Scalars['Int']['output'];
-  /** The scope of a discount. Possible values: standard, renewal. Defaults to standard when not provided. */
-  discount_scope?: Maybe<DiscountScope>;
-  /** Is discount recurring */
-  is_recurring: Scalars['Boolean']['output'];
-  /** The period of a discount. Provide only for standard discounts. */
-  period?: Maybe<DiscountPeriod>;
-};
-
-/** Result of granting a marketplace app discount offer */
-export type GrantMarketplaceAppDiscountOfferResult = {
-  __typename?: 'GrantMarketplaceAppDiscountOfferResult';
-  /** The granted discount offer */
-  granted_discount: GrantMarketplaceAppDiscountOffer;
 };
 
 export type GrantMarketplaceAppDiscountResult = {
@@ -4238,6 +4626,8 @@ export type GraphqlFolder = {
   __typename?: 'GraphqlFolder';
   /** The account identifier this folder belongs to */
   accountId?: Maybe<Scalars['ID']['output']>;
+  /** The app feature slug associated with this folder */
+  app_feature_slug?: Maybe<Scalars['String']['output']>;
   /** The timestamp when this folder was created */
   createdAt?: Maybe<Scalars['Date']['output']>;
   /** The user who created this folder */
@@ -4480,7 +4870,7 @@ export type IndexedBoard = {
   /** URL to view this board. */
   url: Scalars['String']['output'];
   /** ID of the workspace containing this board. */
-  workspace_id: Scalars['ID']['output'];
+  workspace_id?: Maybe<Scalars['ID']['output']>;
 };
 
 /** Document data present in the search index. */
@@ -4541,7 +4931,7 @@ export type IndexedItem = {
   /** URL to view this item. */
   url: Scalars['String']['output'];
   /** ID of the workspace containing this item. */
-  workspace_id: Scalars['ID']['output'];
+  workspace_id?: Maybe<Scalars['ID']['output']>;
 };
 
 /** Interface for input field configuration */
@@ -4594,6 +4984,13 @@ export type InsertOpsInput = {
   blot?: InputMaybe<BlotInput>;
   /** Plain text content */
   text?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** Result of executing an integration block */
+export type IntegrationExecutionResult = {
+  __typename?: 'IntegrationExecutionResult';
+  /** The output fields returned by the integration block execution */
+  output_fields?: Maybe<Scalars['JSON']['output']>;
 };
 
 export type IntegrationValue = ColumnValue & {
@@ -5092,6 +5489,14 @@ export type LongTextValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
+/** Supported entity types for lookup. */
+export enum LookupableEntity {
+  /** Board entity type for lookup. */
+  Board = 'BOARD',
+  /** Document entity type for lookup. */
+  Document = 'DOCUMENT'
+}
+
 export type ManagedColumn = {
   __typename?: 'ManagedColumn';
   created_at?: Maybe<Scalars['Date']['output']>;
@@ -5148,14 +5553,12 @@ export type MarketplaceAppDiscount = {
   account_id: Scalars['ID']['output'];
   /** Slug of an account */
   account_slug: Scalars['String']['output'];
-  /** List of app plan ids. Provide only for standard discounts. */
+  /** List of app plan ids */
   app_plan_ids: Array<Scalars['String']['output']>;
   /** Date when a discount was created */
   created_at: Scalars['String']['output'];
   /** Percentage value of a discount */
   discount: Scalars['Int']['output'];
-  /** The scope of a discount. Possible values: standard, renewal. Defaults to standard when not provided. */
-  discount_scope?: Maybe<DiscountScope>;
   /** Is discount recurring */
   is_recurring: Scalars['Boolean']['output'];
   period?: Maybe<DiscountPeriod>;
@@ -5331,6 +5734,8 @@ export type Mutation = {
   archive_item?: Maybe<Item>;
   /** Archives an object in the Monday.com Objects Platform, changing its state to "archived" while preserving all data. Archived objects remain in the system but are hidden from regular views. This operation works for any object type including boards, docs, dashboards, workflows, and specialized objects (CRM, capacity manager, etc.). Under the hood, this archives the board that represents this object. */
   archive_object?: Maybe<Object>;
+  /** Assigns members to a department. */
+  assign_department_members?: Maybe<AssignDepartmentMembersResult>;
   /** Assigns the specified users as owners of the specified team. */
   assign_team_owners?: Maybe<AssignTeamOwnersResult>;
   /** Creates a new dropdown column in a board that is linked to a managed column. The column data and settings are controlled by the managed column. Title, description, and dropdown-specific settings (limit_select, label_limit_count) can be overridden locally. */
@@ -5339,6 +5744,8 @@ export type Mutation = {
   attach_status_managed_column?: Maybe<Column>;
   /** Extends trial period of an application to selected accounts */
   batch_extend_trial_period?: Maybe<BatchExtendTrialPeriod>;
+  /** Batch update the dependency column values in a board */
+  batch_update_dependency_column: Scalars['JSON']['output'];
   /** Initialize bulk import for a board and group. Returns import ID and upload URL to begin the process. */
   bulk_import_items?: Maybe<BulkImportInit>;
   /** Change a column's properties */
@@ -5349,12 +5756,16 @@ export type Mutation = {
   change_column_value?: Maybe<Item>;
   /** Change an item's position. */
   change_item_position?: Maybe<Item>;
+  /** Change the owner of a live workflow */
+  change_live_workflow_owner?: Maybe<ChangeWorkflowOwnerResult>;
   /** Changes the column values of a specific item. */
   change_multiple_column_values?: Maybe<Item>;
   /** Change an item's column with simple value. */
   change_simple_column_value?: Maybe<Item>;
   /** Clear an item's updates. */
   clear_item_updates?: Maybe<Item>;
+  /** Clear users department */
+  clear_users_department?: Maybe<ClearUsersDepartmentResult>;
   /** Get the complexity data of your mutations. */
   complexity?: Maybe<Complexity>;
   /** Connect a migration job from a source account to the target account */
@@ -5404,17 +5815,19 @@ export type Mutation = {
   create_item?: Maybe<Item>;
   /** Create a new live workflow. */
   create_live_workflow?: Maybe<CreateWorkflowResult>;
+  /** Create a marketplace app discount */
+  create_marketplace_app_discount: CreateMarketplaceAppDiscountResult;
   /** Create a new migration job */
   create_migration_job?: Maybe<CreateMigrationJobResult>;
   /** Create a new notification. */
   create_notification?: Maybe<Notification>;
-  /** Creates a new object in the Monday.com Objects Platform. The type of object created is determined by the app_feature_reference_id parameter. This mutation can create boards, docs, dashboards, workflows, or specialized objects like CRM, capacity manager, etc. Under the hood, this creates a board with the specified app_feature_id. */
+  /** Creates a new object in the Monday.com Objects Platform. The type of object created is determined by the object_type_unique_key parameter. This mutation can create boards, docs, dashboards, workflows, or specialized objects like CRM, capacity manager, etc. Under the hood, this creates a board with the corresponding app_feature_id. */
   create_object?: Maybe<Object>;
   /** Create a new tag or get it if it already exists. */
   create_or_get_tag?: Maybe<Tag>;
   /** Create a new portfolio */
   create_portfolio?: Maybe<CreatePortfolioResult>;
-  /** Create a new project in monday.com from scratch. This mutation creates a project (board) with comprehensive customization options including: privacy settings (private/public/share), optional companions like Resource Planner for enhanced project management capabilities, workspace assignment for organizational structure, folder placement for better organization, and template selection for predefined project structures. Use this when you need to programmatically create a brand new project with specific configuration requirements. Returns the project ID upon successful creation. */
+  /** Create a new project in monday.com from scratch. This mutation initiates asynchronous project creation with comprehensive customization options including: privacy settings (private/public - share is currently not supported), optional companions like Resource Planner for enhanced project management capabilities, workspace assignment for organizational structure, folder placement for better organization, and template selection for predefined project structures. Since project creation is asynchronous, you can optionally provide a callback_url where the project ID will be sent via POST request once creation completes. The callback will receive: { is_success: boolean, process_id: string, project_id?: number }. Returns a process_id for tracking the creation request. */
   create_project?: Maybe<CreateProjectResult>;
   /** Creates a new status column with strongly typed settings. Status columns allow users to track item progress through customizable labels (e.g., "Working on it", "Done", "Stuck"). This mutation is specifically for status/color columns and provides type-safe creation with label configuration. */
   create_status_column?: Maybe<Column>;
@@ -5505,9 +5918,11 @@ export type Mutation = {
   /** Duplicate an item. */
   duplicate_item?: Maybe<Item>;
   edit_update: Update;
+  /** Enroll multiple items to a single sequence. Maximum 50 items per request. */
+  enroll_items_to_sequence?: Maybe<EnrollToSequenceResult>;
+  /** Execute an integration block with the provided field values */
+  execute_integration_block?: Maybe<IntegrationExecutionResult>;
   grant_marketplace_app_discount: GrantMarketplaceAppDiscountResult;
-  /** Grant a marketplace app discount offer */
-  grant_marketplace_app_discount_offer: GrantMarketplaceAppDiscountOfferResult;
   /** Imports HTML content as a new document by converting it into document blocks. The HTML will be parsed and converted into the appropriate document block types (text, headers, lists, etc.). Returns the ID of the newly created document on success. */
   import_doc_from_html?: Maybe<ImportDocFromHtmlResult>;
   /** Increase operations counter */
@@ -5766,6 +6181,13 @@ export type MutationArchive_ObjectArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationAssign_Department_MembersArgs = {
+  department_id: Scalars['ID']['input'];
+  user_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationAssign_Team_OwnersArgs = {
   team_id: Scalars['ID']['input'];
   user_ids: Array<Scalars['ID']['input']>;
@@ -5799,6 +6221,14 @@ export type MutationBatch_Extend_Trial_PeriodArgs = {
   app_id: Scalars['ID']['input'];
   duration_in_days: Scalars['Int']['input'];
   plan_id: Scalars['String']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationBatch_Update_Dependency_ColumnArgs = {
+  boardId: Scalars['String']['input'];
+  columnId: Scalars['String']['input'];
+  values: Array<DependencyPulseValueInput>;
 };
 
 
@@ -5848,6 +6278,14 @@ export type MutationChange_Item_PositionArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationChange_Live_Workflow_OwnerArgs = {
+  id: Scalars['ID']['input'];
+  notify_users?: InputMaybe<Scalars['Boolean']['input']>;
+  to_user_id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationChange_Multiple_Column_ValuesArgs = {
   board_id: Scalars['ID']['input'];
   column_values: Scalars['JSON']['input'];
@@ -5869,6 +6307,12 @@ export type MutationChange_Simple_Column_ValueArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationClear_Item_UpdatesArgs = {
   item_id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationClear_Users_DepartmentArgs = {
+  user_ids: Array<Scalars['ID']['input']>;
 };
 
 
@@ -6079,7 +6523,6 @@ export type MutationCreate_GroupArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationCreate_ItemArgs = {
   board_id: Scalars['ID']['input'];
-  column_files?: InputMaybe<Array<ColumnFileInput>>;
   column_values?: InputMaybe<Scalars['JSON']['input']>;
   create_labels_if_missing?: InputMaybe<Scalars['Boolean']['input']>;
   group_id?: InputMaybe<Scalars['String']['input']>;
@@ -6092,6 +6535,14 @@ export type MutationCreate_ItemArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationCreate_Live_WorkflowArgs = {
   workflow: WorkflowInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationCreate_Marketplace_App_DiscountArgs = {
+  account_slug: Scalars['String']['input'];
+  app_id: Scalars['ID']['input'];
+  discount_data: CreateMarketplaceAppDiscountInput;
 };
 
 
@@ -6515,19 +6966,23 @@ export type MutationEdit_UpdateArgs = {
 
 
 /** Root mutation type for the Dependencies service */
-export type MutationGrant_Marketplace_App_DiscountArgs = {
-  account_slug: Scalars['String']['input'];
-  app_id: Scalars['ID']['input'];
-  data: GrantMarketplaceAppDiscountData;
+export type MutationEnroll_Items_To_SequenceArgs = {
+  input: EnrollToSequenceInput;
 };
 
 
 /** Root mutation type for the Dependencies service */
-export type MutationGrant_Marketplace_App_Discount_OfferArgs = {
+export type MutationExecute_Integration_BlockArgs = {
+  block_instance_id: Scalars['ID']['input'];
+  inbound_field_values: Scalars['JSON']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationGrant_Marketplace_App_DiscountArgs = {
   account_slug: Scalars['String']['input'];
   app_id: Scalars['ID']['input'];
-  renewal_discount_data?: InputMaybe<RenewalDiscountDataInput>;
-  standard_discount_data?: InputMaybe<StandardDiscountDataInput>;
+  data: GrantMarketplaceAppDiscountData;
 };
 
 
@@ -7169,7 +7624,7 @@ export type NumbersValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
-/** The central type in the Monday.com Objects Platform, representing any entity in the system. This unified type can represent instances of boards, docs, dashboards, workflows, and specialized objects. The specific type of an object is determined by its app_feature_reference_id. */
+/** The central type in the Monday.com Objects Platform, representing any entity in the system. This unified type can represent instances of boards, docs, dashboards, workflows, and specialized objects. The specific type of an object is determined by its object_type_unique_key. */
 export type Object = {
   __typename?: 'Object';
   /** The ID of the user who created this object. Useful for tracking object origin. */
@@ -7730,8 +8185,12 @@ export type Query = {
   account_triggers_statistics_by_entity_id?: Maybe<AccountTriggersByEntityId>;
   /** Performs aggregation operations on board data */
   aggregate?: Maybe<AggregateQueryResult>;
+  /** Retrieve aggregated board data at specific historical dates for point-in-time analysis. */
+  aggregate_history?: Maybe<AggregateHistoryResultSet>;
   /** Returns all available widget schemas for documentation and validation purposes */
   all_widgets_schema?: Maybe<Array<WidgetSchemaInfo>>;
+  /** Get sequences that the current user is allowed to enroll items to, that are connected to the provided board. Returns sequences owned by the user or sequences where the user has access to the sender connection. */
+  allowed_sequences_to_enroll?: Maybe<Array<Sequence>>;
   /** Get an app by ID. */
   app?: Maybe<AppType>;
   /** Get a collection of installs of an app. */
@@ -7840,6 +8299,8 @@ export type Query = {
   /** Count active workflows for a given host instance */
   count_active_workflows: Scalars['Int']['output'];
   custom_activity?: Maybe<Array<CustomActivity>>;
+  /** Get account departments */
+  departments?: Maybe<Array<Department>>;
   /** Get a collection of docs. */
   docs?: Maybe<Array<Maybe<Document>>>;
   /**
@@ -7934,6 +8395,8 @@ export type Query = {
   search_cross_board?: Maybe<SearchAllResult>;
   /** Search for items using various search strategies. */
   search_items?: Maybe<SearchItemsGraphQlResultsView>;
+  /** Lookup a single entity type by name or other relevant properties. */
+  search_lookup?: Maybe<Array<CrossEntityResult>>;
   /** Get a collection of monday dev sprints */
   sprints?: Maybe<Array<Sprint>>;
   /** Get a collection of tags. */
@@ -7992,6 +8455,18 @@ export type QueryAccount_Triggers_Statistics_By_Entity_IdArgs = {
 /** Root query type for the Dependencies service */
 export type QueryAggregateArgs = {
   query: AggregateQueryInput;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryAggregate_HistoryArgs = {
+  query: AggregateHistoryQueryInput;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryAllowed_Sequences_To_EnrollArgs = {
+  board_id: Scalars['ID']['input'];
 };
 
 
@@ -8144,6 +8619,12 @@ export type QueryCustom_ActivityArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QueryDepartmentsArgs = {
+  ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryDocsArgs = {
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -8227,8 +8708,8 @@ export type QueryGet_Live_WorkflowArgs = {
 /** Root query type for the Dependencies service */
 export type QueryGet_Live_WorkflowsArgs = {
   creator_app_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
-  hostInstanceId: Scalars['String']['input'];
-  hostType: HostType;
+  hostInstanceId?: InputMaybe<Scalars['String']['input']>;
+  hostType?: InputMaybe<HostType>;
   pagination?: InputMaybe<PaginationInput>;
 };
 
@@ -8398,6 +8879,15 @@ export type QuerySearch_ItemsArgs = {
   reranking_strategy?: InputMaybe<RerankingStrategy>;
   size: Scalars['Int']['input'];
   status?: InputMaybe<Scalars['String']['input']>;
+  workspace_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QuerySearch_LookupArgs = {
+  entity_type: LookupableEntity;
+  query: Scalars['String']['input'];
+  size: Scalars['Int']['input'];
   workspace_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
 };
 
@@ -8615,14 +9105,6 @@ export type RemoveTeamOwnersResult = {
   team?: Maybe<Team>;
 };
 
-/** Input data for granting a renewal marketplace app discount offer */
-export type RenewalDiscountDataInput = {
-  /** Percentage value of a discount */
-  discount: Scalars['Int']['input'];
-  /** Is discount recurring */
-  is_recurring: Scalars['Boolean']['input'];
-};
-
 /** A reply for an update. */
 export type Reply = {
   __typename?: 'Reply';
@@ -8806,6 +9288,49 @@ export enum SearchableEntity {
   Item = 'ITEM'
 }
 
+/** A sequence that can be used to automate email outreach */
+export type Sequence = {
+  __typename?: 'Sequence';
+  /** The ID of the context (e.g., board ID) the sequence is associated with */
+  context_id?: Maybe<Scalars['ID']['output']>;
+  /** The type of context the sequence is associated with */
+  context_type?: Maybe<SequenceContext>;
+  /** The timestamp when the sequence was created or last updated */
+  created_at?: Maybe<Scalars['Date']['output']>;
+  /** The total duration of the sequence in seconds */
+  duration?: Maybe<Scalars['Int']['output']>;
+  /** The unique identifier of the sequence */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** The current status of the sequence */
+  status?: Maybe<SequenceStatus>;
+  /** The number of steps in the sequence */
+  step_count?: Maybe<Scalars['Int']['output']>;
+  /** The title of the sequence */
+  title?: Maybe<Scalars['String']['output']>;
+  /** The timestamp when the sequence was created or last updated */
+  updated_at?: Maybe<Scalars['Date']['output']>;
+  /** The ID of the user who owns the sequence */
+  user_id?: Maybe<Scalars['ID']['output']>;
+};
+
+/** The type of context a sequence is associated with */
+export enum SequenceContext {
+  /** Sequence is associated with a board */
+  Board = 'BOARD'
+}
+
+/** The status of a sequence */
+export enum SequenceStatus {
+  /** Sequence is active */
+  Active = 'ACTIVE',
+  /** Sequence has been deleted */
+  Deleted = 'DELETED',
+  /** Sequence is inactive */
+  Inactive = 'INACTIVE',
+  /** Sequence is missing required configuration */
+  MissingConfig = 'MISSING_CONFIG'
+}
+
 /** Response type for detailed board permissions. Contains information about the permissions that were set. */
 export type SetBoardPermissionResponse = {
   __typename?: 'SetBoardPermissionResponse';
@@ -8936,20 +9461,6 @@ export type SprintTimeline = {
   from?: Maybe<Scalars['Date']['output']>;
   /** user-editable complete date of the monday dev sprint timeline, may be different than the sprint complete date */
   to?: Maybe<Scalars['Date']['output']>;
-};
-
-/** Input data for granting a standard marketplace app discount offer */
-export type StandardDiscountDataInput = {
-  /** List of app plan ids. Provide only for standard discounts. */
-  app_plan_ids: Array<Scalars['ID']['input']>;
-  /** Number of days a discount will be valid. Provide only for standard discounts. */
-  days_valid: Scalars['Int']['input'];
-  /** Percentage value of a discount */
-  discount: Scalars['Int']['input'];
-  /** Is discount recurring */
-  is_recurring: Scalars['Boolean']['input'];
-  /** The period of a discount. Provide only for standard discounts. */
-  period?: InputMaybe<DiscountPeriod>;
 };
 
 /** The possible states for a board or item. */
@@ -10041,6 +10552,8 @@ export type User = {
   custom_field_metas?: Maybe<Array<Maybe<CustomFieldMetas>>>;
   /** The custom field values of the user profile. */
   custom_field_values?: Maybe<Array<Maybe<CustomFieldValue>>>;
+  /** The department the user is a member of (if any) */
+  department?: Maybe<Department>;
   /** The user's email. */
   email: Scalars['String']['output'];
   /** Is the user enabled or not. */
@@ -10200,6 +10713,8 @@ export type VibeMutations = {
   ai_actions: AiActionResponse;
   /** Enhance a user prompt to include AI capabilities */
   enhance_prompt: EnhancedPromptResult;
+  /** Get a presigned URL to upload a file to S3 */
+  file_upload_url?: Maybe<FileUploadUrl>;
   /** Rollback an AI app to an older specific version  */
   rollback_to_version?: Maybe<SuccessResponse>;
 };
@@ -10210,6 +10725,7 @@ export type VibeMutationsAi_ActionsArgs = {
   appId?: InputMaybe<Scalars['ID']['input']>;
   prompt: Scalars['String']['input'];
   schema?: InputMaybe<Scalars['JSON']['input']>;
+  session_tracker?: InputMaybe<Scalars['String']['input']>;
   systemPrompt?: InputMaybe<Scalars['String']['input']>;
   useWebSearch?: InputMaybe<WebSearchConfigInput>;
 };
@@ -10218,6 +10734,13 @@ export type VibeMutationsAi_ActionsArgs = {
 /** Namespace for all vibe-related mutations */
 export type VibeMutationsEnhance_PromptArgs = {
   prompt: Scalars['String']['input'];
+};
+
+
+/** Namespace for all vibe-related mutations */
+export type VibeMutationsFile_Upload_UrlArgs = {
+  file_name: Scalars['String']['input'];
+  mime_type: AllowedFileMime;
 };
 
 
@@ -10576,11 +11099,12 @@ export type WorkflowHostData = {
   type: HostType;
 };
 
+/** Host data for the workflow. Both id and type must be provided together. If omitted, defaults to account-level with the current account ID. */
 export type WorkflowHostDataInput = {
   /** Instance ID of the host */
-  id: Scalars['String']['input'];
+  id?: InputMaybe<Scalars['String']['input']>;
   /** Type of host for this workflow */
-  type: HostType;
+  type?: InputMaybe<HostType>;
 };
 
 export type WorkflowInput = {
@@ -10596,8 +11120,8 @@ export type WorkflowInput = {
   title: Scalars['String']['input'];
   /** Define the workflow's steps and the configuration of each step */
   workflowBlocks: Array<WorkflowBlockInput>;
-  /** Hierarchy level the workflow is hosted in */
-  workflowHostData: WorkflowHostDataInput;
+  /** Hierarchy level the workflow is hosted in If omitted, defaults to account-level with the current account ID. */
+  workflowHostData?: InputMaybe<WorkflowHostDataInput>;
   /** Variables used within this workflow. To get the accurate JSON schema call the GraphQL query 'get_workflow_variable_schemas' */
   workflowVariables: Array<Scalars['JSON']['input']>;
 };
@@ -10762,5 +11286,16 @@ export type SearchItemsDevQueryVariables = Exact<{
 
 export type SearchItemsDevQuery = { __typename?: 'Query', search_items?: { __typename?: 'SearchItemsGraphQlResultsView', results: Array<{ __typename?: 'SearchItemsQueryResult', data: { __typename?: 'IndexedItem', id: string } }> } | null };
 
+export type SearchDevQueryVariables = Exact<{
+  query: Scalars['String']['input'];
+  size: Scalars['Int']['input'];
+  entityTypes?: InputMaybe<Array<SearchableEntity> | SearchableEntity>;
+  workspaceIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+}>;
+
+
+export type SearchDevQuery = { __typename?: 'Query', search?: Array<{ __typename: 'CrossEntityBoardResult', entity_type: SearchableEntity, data: { __typename?: 'IndexedBoard', id: string, name: string, url: string } } | { __typename: 'CrossEntityDocResult', entity_type: SearchableEntity, data: { __typename?: 'IndexedDoc', id: string, name: string } } | { __typename: 'CrossEntityItemResult' }> | null };
+
 
 export const SearchItemsDevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchItemsDev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"searchTerm"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"board_ids"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search_items"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"board_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"board_ids"}}},{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"searchTerm"}}},{"kind":"Argument","name":{"kind":"Name","value":"size"},"value":{"kind":"IntValue","value":"100"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"results"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchItemsDevQuery, SearchItemsDevQueryVariables>;
+export const SearchDevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchDev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"size"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"entityTypes"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SearchableEntity"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"size"},"value":{"kind":"Variable","name":{"kind":"Name","value":"size"}}},{"kind":"Argument","name":{"kind":"Name","value":"entity_types"},"value":{"kind":"Variable","name":{"kind":"Name","value":"entityTypes"}}},{"kind":"Argument","name":{"kind":"Name","value":"workspace_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"CrossEntityBoardResult"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"entity_type"}},{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"url"}}]}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"CrossEntityDocResult"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"entity_type"}},{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchDevQuery, SearchDevQueryVariables>;

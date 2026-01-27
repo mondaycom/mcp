@@ -1231,14 +1231,15 @@
     zod "^3.23.8"
     zod-to-json-schema "^3.24.1"
 
-"@mondaydotcomorg/api@^12.0.1":
-  version "12.0.1"
-  resolved "https://registry.npmjs.org/@mondaydotcomorg/api/-/api-12.0.1.tgz#98dacef366213cad0a971f39ee9344f27fb34893"
-  integrity sha512-/hxkX6lmjiGjyVRQF8w+j8VImCf3nIkDtX4AOWPDHsZGiT9OkqT9Yr+6RsiDJ5GbBJBZ53rSMlXidAxIdlmNxA==
+"@mondaydotcomorg/api@^13.0.0":
+  version "13.0.0"
+  resolved "https://registry.yarnpkg.com/@mondaydotcomorg/api/-/api-13.0.0.tgz#2870d8495bb6e4f11b3ebf5feb280f1de0664a0c"
+  integrity sha512-CsnHtZ5bz84iFuMon0s0TJ1bM29u/ntbpoZkNZb6xla7kIbBUXg4k55fe//I/vCOR7Jg2KHndyiX69X4KdHLTg==
   dependencies:
     graphql "16.8.2"
     graphql-request "^6.1.0"
     graphql-tag "^2.12.6"
+    zod "3.24.4"
 
 "@mondaydotcomorg/atp-client@^0.19.13":
   version "0.19.13"
@@ -7124,6 +7125,11 @@ zod-to-json-schema@^3.24.6:
   version "3.25.0"
   resolved "https://registry.npmjs.org/zod-to-json-schema/-/zod-to-json-schema-3.25.0.tgz#df504c957c4fb0feff467c74d03e6aab0b013e1c"
   integrity sha512-HvWtU2UG41LALjajJrML6uQejQhNJx+JBO9IflpSja4R03iNWfKXrj6W2h7ljuLyc1nKS+9yDyL/9tD1U/yBnQ==
+
+zod@3.24.4:
+  version "3.24.4"
+  resolved "https://registry.yarnpkg.com/zod/-/zod-3.24.4.tgz#e2e2cca5faaa012d76e527d0d36622e0a90c315f"
+  integrity sha512-OdqJE9UDRPwWsrHjLN2F8bPxvwJBK22EHLWtanu0LSYr5YqzsaaW3RMgmjwr8Rypg5k+meEJdSPXJZXE/yqOMg==
 
 zod@^3.23.8, zod@^3.24.2:
   version "3.24.2"

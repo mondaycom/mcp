@@ -333,6 +333,12 @@ type Query {
     type: ValidationsEntityType = board
   ): Validations
 
+  """Get account departments"""
+  departments(
+    """Filter by department IDs"""
+    ids: [ID!]
+  ): [Department!]
+
   """Export the dependency graph for a specific board"""
   export_graph(
     """The ID of the board to export the graph for"""
@@ -782,40 +788,25 @@ type Query {
     query: AggregateQueryInput!
   ): AggregateQueryResult
 
-  """Search for items using various search strategies."""
-  search_items(
-    """The search query string."""
-    query: String
+  """Fetch resources information from the resource directory"""
+  get_directory_resources(
+    """List of team IDs to filter by (e.g., ["1234", "5678"])"""
+    team_ids: [String!]
 
-    """Maximum number of results to return (max 100)."""
-    size: Int!
+    """The cursor which allows to fetch the next page of directory resources."""
+    cursor: String
 
-    """Whether to perform exact match search."""
-    exact_match: Boolean
+    """Number of items to get, the default is 25."""
+    limit: Int = 25
+  ): DirectoryResourcesResponse
 
-    """Date range filter for created/updated or column values dates."""
-    date_range: SearchDateRangeInput
-
-    """Filter results to specific board IDs."""
-    board_ids: [ID!]
-
-    """Filter results to specific workspace IDs."""
-    workspace_ids: [ID!]
-
-    """Filter by persons (person IDs, team IDs, and/or person names)."""
-    persons: PersonsInput
-
-    """Filter by status."""
-    status: String
-
-    """
-    Boost configuration for search results. When not set, uses default configuration from feature flag.
-    """
-    boosts: BoostConfigurationInput
-
-    """Reranking strategy to use for results."""
-    reranking_strategy: RerankingStrategy
-  ): SearchItemsGraphQlResultsView
+  """
+  Get sequences that the current user is allowed to enroll items to, that are connected to the provided board. Returns sequences owned by the user or sequences where the user has access to the sender connection.
+  """
+  allowed_sequences_to_enroll(
+    """The ID of the board to get allowed sequences for"""
+    board_id: ID!
+  ): [Sequence!]
 
   """Get a collection of monday dev sprints"""
   sprints(
@@ -844,6 +835,15 @@ type Query {
 
 """Root mutation type for the Dependencies service"""
 type Mutation {
+  """Execute an integration block with the provided field values"""
+  execute_integration_block(
+    """The ID of the integration block instance to execute"""
+    block_instance_id: ID!
+
+    """The field values to pass to the integration block"""
+    inbound_field_values: JSON!
+  ): IntegrationExecutionResult
+
   """Create a new table view"""
   create_view_table(
     """The ID of the board"""
@@ -1471,6 +1471,21 @@ type Mutation {
     type: ValidationsEntityType = board
   ): RequiredColumns
 
+  """Assigns members to a department."""
+  assign_department_members(
+    """The department ID to assign the members to."""
+    department_id: ID!
+
+    """The user IDs to assign to the department."""
+    user_ids: [ID!]!
+  ): AssignDepartmentMembersResult
+
+  """Clear users department"""
+  clear_users_department(
+    """The user IDs to remove theirs department."""
+    user_ids: [ID!]!
+  ): ClearUsersDepartmentResult
+
   """Update the dependency column for a specific pulse"""
   update_dependency_column(
     boardId: String!
@@ -1482,6 +1497,15 @@ type Mutation {
     Optional new date for the successor node (or one of its descendants). When provided, updates the successor date and all predecessor edge lags.
     """
     successor_new_date: TimelineDateInput
+  ): JSON!
+
+  """Batch update the dependency column values in a board"""
+  batch_update_dependency_column(
+    boardId: String!
+    columnId: String!
+
+    """The list of pulses with their dependency column values to update"""
+    values: [DependencyPulseValueInput!]!
   ): JSON!
 
   """
@@ -1643,6 +1667,23 @@ type Mutation {
     """The input for updating the favorite object position"""
     input: UpdateObjectHierarchyPositionInput!
   ): UpdateFavoriteResultType
+
+  """Create a marketplace app discount"""
+  create_marketplace_app_discount(
+    """The id of an app"""
+    app_id: ID!
+
+    """Slug of an account"""
+    account_slug: String!
+    discount_data: CreateMarketplaceAppDiscountInput!
+  ): CreateMarketplaceAppDiscountResult!
+  delete_marketplace_app_discount(
+    """The id of an app"""
+    app_id: ID!
+
+    """Slug of an account"""
+    account_slug: String!
+  ): DeleteMarketplaceAppDiscountResult!
   grant_marketplace_app_discount(
     """The id of an app"""
     app_id: ID!
@@ -1651,24 +1692,6 @@ type Mutation {
     account_slug: String!
     data: GrantMarketplaceAppDiscountData!
   ): GrantMarketplaceAppDiscountResult!
-
-  """Grant a marketplace app discount offer"""
-  grant_marketplace_app_discount_offer(
-    """The id of an app"""
-    app_id: ID!
-
-    """Slug of an account"""
-    account_slug: String!
-    standard_discount_data: StandardDiscountDataInput
-    renewal_discount_data: RenewalDiscountDataInput
-  ): GrantMarketplaceAppDiscountOfferResult!
-  delete_marketplace_app_discount(
-    """The id of an app"""
-    app_id: ID!
-
-    """Slug of an account"""
-    account_slug: String!
-  ): DeleteMarketplaceAppDiscountResult!
 
   """
   Initialize bulk import for a board and group. Returns import ID and upload URL to begin the process.
@@ -2104,9 +2127,6 @@ type Mutation {
   create_item(
     """The board's unique identifier."""
     board_id: ID!
-
-    """Files to upload to file columns."""
-    column_files: [ColumnFileInput!]
 
     """The column values of the new item."""
     column_values: JSON
@@ -2597,6 +2617,11 @@ type Mutation {
   """
   convert_board_to_project(input: ConvertBoardToProjectInput!): ConvertBoardToProjectResult
 
+  """
+  Create a new project in monday.com from scratch. This mutation initiates asynchronous project creation with comprehensive customization options including: privacy settings (private/public - share is currently not supported), optional companions like Resource Planner for enhanced project management capabilities, workspace assignment for organizational structure, folder placement for better organization, and template selection for predefined project structures. Since project creation is asynchronous, you can optionally provide a callback_url where the project ID will be sent via POST request once creation completes. The callback will receive: { is_success: boolean, process_id: string, project_id?: number }. Returns a process_id for tracking the creation request.
+  """
+  create_project(input: CreateProjectInput!): CreateProjectResult
+
   """Updates a notification setting's enabled status."""
   update_notification_setting(
     """
@@ -2646,7 +2671,7 @@ type Mutation {
   ): [BoardMuteSettings!]
 
   """
-  Creates a new object in the Monday.com Objects Platform. The type of object created is determined by the app_feature_reference_id parameter. This mutation can create boards, docs, dashboards, workflows, or specialized objects like CRM, capacity manager, etc. Under the hood, this creates a board with the specified app_feature_id.
+  Creates a new object in the Monday.com Objects Platform. The type of object created is determined by the object_type_unique_key parameter. This mutation can create boards, docs, dashboards, workflows, or specialized objects like CRM, capacity manager, etc. Under the hood, this creates a board with the corresponding app_feature_id.
   """
   create_object(
     """
@@ -2775,6 +2800,28 @@ type Mutation {
 
   """Create a new portfolio"""
   create_portfolio(boardName: String!, boardPrivacy: String!, destinationWorkspaceId: Int): CreatePortfolioResult
+
+  """
+  Update attributes (Job Role, Skills, or Location) for multiple resources in the directory
+  """
+  update_directory_resources_attributes(
+    """The attribute type to update (JOB_ROLE, SKILLS, or LOCATION)"""
+    attribute: DirectoryResourceAttribute!
+
+    """The values of the attribute to update"""
+    values: [String!]!
+
+    """List of resource IDs to update"""
+    resource_ids: [ID!]!
+  ): UpdateDirectoryResourceAttributesResponse
+
+  """
+  Enroll multiple items to a single sequence. Maximum 50 items per request.
+  """
+  enroll_items_to_sequence(
+    """Input for enrolling multiple items to a single sequence"""
+    input: EnrollToSequenceInput!
+  ): EnrollToSequenceResult
 
   """Creates a new team."""
   create_team(input: CreateTeamAttributesInput!, options: CreateTeamOptionsInput): Team
@@ -3138,6 +3185,12 @@ type Mutation {
 """A date."""
 scalar Date
 
+"""Result of executing an integration block"""
+type IntegrationExecutionResult {
+  """The output fields returned by the integration block execution"""
+  output_fields: JSON
+}
+
 """An ISO 8601-encoded datetime (e.g., 2024-04-09T13:45:30Z)"""
 scalar ISO8601DateTime
 
@@ -3206,6 +3259,9 @@ type Pagination {
 type User {
   """The user's unique identifier."""
   id: ID!
+
+  """The department the user is a member of (if any)"""
+  department: Department
 
   """The user's account."""
   account: Account!
@@ -4376,6 +4432,9 @@ type TimelineResponse {
   ): TimelineItemsPage!
 }
 
+"""A file"""
+scalar File
+
 """Calculated capability settings for a column"""
 type CalculatedCapability {
   """Function to calculate the parent values"""
@@ -4845,6 +4904,42 @@ enum ValidationsEntityType {
   board
 }
 
+"""Result of assigning members to a department."""
+type AssignDepartmentMembersResult {
+  """The users that were successfully assigned to the department."""
+  successful_users: [User!]
+
+  """The users that were not assigned to the department."""
+  failed_users: [User!]
+}
+
+"""Result of clearing users department."""
+type ClearUsersDepartmentResult {
+  """The users that their department was cleared."""
+  cleared_users: [User!]
+}
+
+"""A department in the account."""
+type Department {
+  """The department's ID."""
+  id: ID!
+
+  """The department's name."""
+  name: String!
+
+  """The number of seats reserved for the department."""
+  reserved_seats: Int!
+
+  """The number of seats assigned to the department."""
+  assigned_seats: Int!
+
+  """The members of the department"""
+  members: [User!]
+
+  """The owners of the department"""
+  owners: [User!]
+}
+
 """The complete graph export for a board"""
 type BoardGraphExport {
   """The ID of the board"""
@@ -4861,6 +4956,18 @@ type BoardGraphExport {
 
   """The total number of edges in the graph"""
   edgeCount: Int
+
+  """The cycles in the graph"""
+  cycles: JSON
+}
+
+"""Input type for updating a single pulse dependency value"""
+input DependencyPulseValueInput {
+  """The ID of the pulse to update the dependency value for"""
+  pulseId: ID!
+
+  """The value of the dependency pulse value to update"""
+  value: DependencyValueInput!
 }
 
 """Type of dependency relationship between items"""
@@ -5775,6 +5882,9 @@ type GraphqlFolder {
 
   """The user who created this folder"""
   createdBy: ID
+
+  """The app feature slug associated with this folder"""
+  app_feature_slug: String
 }
 
 """Represents an item in favorites"""
@@ -5910,6 +6020,48 @@ type AppSubscriptions {
   cursor: String
 }
 
+"""A granted marketplace app discount offer"""
+type CreateMarketplaceAppDiscount {
+  """Number of days a discount will be valid"""
+  days_valid: Int!
+
+  """Percentage value of a discount"""
+  discount: Int!
+
+  """Is discount recurring"""
+  is_recurring: Boolean!
+
+  """The period of a discount"""
+  period: DiscountPeriod
+
+  """List of app plan ids"""
+  app_plan_ids: [ID!]
+
+  """The id of an app"""
+  app_id: ID!
+}
+
+"""Input data for creating a marketplace app discount"""
+input CreateMarketplaceAppDiscountInput {
+  """Number of days a discount will be valid"""
+  days_valid: Int!
+
+  """Percentage value of a discount"""
+  discount: Int!
+
+  """The period of a discount"""
+  period: DiscountPeriod
+
+  """List of app plan ids"""
+  app_plan_ids: [ID!]!
+}
+
+"""Result of granting a marketplace app discount offer"""
+type CreateMarketplaceAppDiscountResult {
+  """The granted discount offer"""
+  granted_discount: CreateMarketplaceAppDiscount!
+}
+
 type DeleteMarketplaceAppDiscount {
   """Slug of an account"""
   account_slug: String!
@@ -5922,27 +6074,14 @@ type DeleteMarketplaceAppDiscountResult {
   deleted_discount: DeleteMarketplaceAppDiscount!
 }
 
-"""The period of a discount. Provide only for standard discounts."""
+"""The period of a discount"""
 enum DiscountPeriod {
   MONTHLY
   YEARLY
 }
 
-"""
-The scope of a discount. Possible values: standard, renewal. Defaults to standard when not provided.
-"""
-enum DiscountScope {
-  """Standard discount scope - applies to new subscriptions"""
-  STANDARD
-
-  """Renewal discount scope - applies to subscription renewals"""
-  RENEWAL
-}
-
 type GrantMarketplaceAppDiscount {
-  """
-  Number of days a discount will be valid. Provide only for standard discounts.
-  """
+  """Number of days a discount will be valid"""
   days_valid: Int!
 
   """Percentage value of a discount"""
@@ -5952,7 +6091,7 @@ type GrantMarketplaceAppDiscount {
   is_recurring: Boolean!
   period: DiscountPeriod
 
-  """List of app plan ids. Provide only for standard discounts."""
+  """List of app plan ids"""
   app_plan_ids: [String!]!
 
   """The id of an app"""
@@ -5960,9 +6099,7 @@ type GrantMarketplaceAppDiscount {
 }
 
 input GrantMarketplaceAppDiscountData {
-  """
-  Number of days a discount will be valid. Provide only for standard discounts.
-  """
+  """Number of days a discount will be valid"""
   days_valid: Int!
 
   """Percentage value of a discount"""
@@ -5971,45 +6108,11 @@ input GrantMarketplaceAppDiscountData {
   """Is discount recurring"""
   is_recurring: Boolean!
 
-  """The period of a discount. Provide only for standard discounts."""
+  """The period of a discount"""
   period: DiscountPeriod
 
-  """List of app plan ids. Provide only for standard discounts."""
+  """List of app plan ids"""
   app_plan_ids: [String!]!
-}
-
-"""A granted marketplace app discount offer"""
-type GrantMarketplaceAppDiscountOffer {
-  """
-  Number of days a discount will be valid. Provide only for standard discounts.
-  """
-  days_valid: Int!
-
-  """Percentage value of a discount"""
-  discount: Int!
-
-  """Is discount recurring"""
-  is_recurring: Boolean!
-
-  """The period of a discount. Provide only for standard discounts."""
-  period: DiscountPeriod
-
-  """List of app plan ids. Provide only for standard discounts."""
-  app_plan_ids: [ID!]
-
-  """
-  The scope of a discount. Possible values: standard, renewal. Defaults to standard when not provided.
-  """
-  discount_scope: DiscountScope
-
-  """The id of an app"""
-  app_id: ID!
-}
-
-"""Result of granting a marketplace app discount offer"""
-type GrantMarketplaceAppDiscountOfferResult {
-  """The granted discount offer"""
-  granted_discount: GrantMarketplaceAppDiscountOffer!
 }
 
 type GrantMarketplaceAppDiscountResult {
@@ -6055,7 +6158,7 @@ type MarketplaceAppDiscount {
   """Is discount recurring"""
   is_recurring: Boolean!
 
-  """List of app plan ids. Provide only for standard discounts."""
+  """List of app plan ids"""
   app_plan_ids: [String!]!
   period: DiscountPeriod
 
@@ -6064,11 +6167,6 @@ type MarketplaceAppDiscount {
 
   """Date when a discount was created"""
   created_at: String!
-
-  """
-  The scope of a discount. Possible values: standard, renewal. Defaults to standard when not provided.
-  """
-  discount_scope: DiscountScope
 }
 
 type MarketplaceAppMetadata {
@@ -6128,35 +6226,6 @@ type MarketplaceSearchResults {
 
   """The time taken to perform the search"""
   elapsed: String!
-}
-
-"""Input data for granting a renewal marketplace app discount offer"""
-input RenewalDiscountDataInput {
-  """Percentage value of a discount"""
-  discount: Int!
-
-  """Is discount recurring"""
-  is_recurring: Boolean!
-}
-
-"""Input data for granting a standard marketplace app discount offer"""
-input StandardDiscountDataInput {
-  """
-  Number of days a discount will be valid. Provide only for standard discounts.
-  """
-  days_valid: Int!
-
-  """Percentage value of a discount"""
-  discount: Int!
-
-  """Is discount recurring"""
-  is_recurring: Boolean!
-
-  """The period of a discount. Provide only for standard discounts."""
-  period: DiscountPeriod
-
-  """List of app plan ids. Provide only for standard discounts."""
-  app_plan_ids: [ID!]!
 }
 
 """The discounts granted to the subscription"""
@@ -6516,6 +6585,12 @@ enum AppFeatureTypeE {
 
   """VIBE_OBJECT"""
   VIBE_OBJECT
+
+  """VIBE_ITEM_VIEW"""
+  VIBE_ITEM_VIEW
+
+  """AI_PLATFORM_AGENT"""
+  AI_PLATFORM_AGENT
 }
 
 """The visibility type of an app"""
@@ -6570,6 +6645,12 @@ enum AppPermission {
 
   """Permission scope: teams:write"""
   TEAMS_WRITE
+
+  """Permission scope: departments:read"""
+  DEPARTMENTS_READ
+
+  """Permission scope: departments:write"""
+  DEPARTMENTS_WRITE
 
   """Permission scope: notifications:write"""
   NOTIFICATIONS_WRITE
@@ -7281,15 +7362,6 @@ type ColorPickerValue implements ColumnValue {
   value: JSON
 }
 
-"""Input for uploading a file to a column when creating an item."""
-input ColumnFileInput {
-  """The column's unique identifier."""
-  column_id: String!
-
-  """The file to upload."""
-  file: File!
-}
-
 """
 An object defining a mapping of column between source board and destination board
 """
@@ -7857,9 +7929,6 @@ type ExtendTrialPeriod {
   """Result of a single operation"""
   success: Boolean!
 }
-
-"""A multipart file"""
-scalar File
 
 """A file with an invalid or missing asset."""
 type FileAssetInvalidValue {
@@ -9698,6 +9767,51 @@ type ConvertBoardToProjectResult {
   process_id: String
 }
 
+input CreateProjectInput {
+  """The name of the project to create"""
+  name: String!
+
+  """The project's privacy setting (public / private)"""
+  board_kind: BoardKind!
+
+  """
+  Optional template id to create the project from. Currently only supported for solution templates
+  """
+  template_id: ID
+
+  """
+  Optional list of companion features to enable (currently only "resource_planner")
+  """
+  companions: [String!]
+
+  """Optional workspace ID to associate with the project"""
+  workspace_id: String
+
+  """Optional folder ID to associate with the project"""
+  folder_id: String
+
+  """
+  Optional external callback URL where the project ID will be sent after async creation. The callback will receive a POST request with { is_success: boolean, process_id: string, project_id?: number }
+  """
+  callback_url: String
+}
+
+type CreateProjectResult {
+  """Indicates if the project creation request was accepted"""
+  success: Boolean
+
+  """Success message when project creation is initiated"""
+  message: String
+
+  """Error message if project creation request failed"""
+  error: String
+
+  """
+  Unique process ID for tracking this creation request. This will be included in the callback when creation completes.
+  """
+  process_id: ID
+}
+
 type BoardMuteSettings {
   """Board ID"""
   board_id: ID
@@ -9844,7 +9958,7 @@ enum ScopeType {
 }
 
 """
-The central type in the Monday.com Objects Platform, representing any entity in the system. This unified type can represent instances of boards, docs, dashboards, workflows, and specialized objects. The specific type of an object is determined by its app_feature_reference_id.
+The central type in the Monday.com Objects Platform, representing any entity in the system. This unified type can represent instances of boards, docs, dashboards, workflows, and specialized objects. The specific type of an object is determined by its object_type_unique_key.
 """
 type Object {
   """
@@ -10281,192 +10395,134 @@ enum AggregateSelectFunctionName {
   PHONE_COUNTRY_SHORT_NAME
 }
 
-"""
-Boost configuration for search results. Key-value pairs where key is strategy type and value is boost weight.
-"""
-input BoostConfigurationInput {
-  """
-  Boost strategies as key-value pairs (strategy: weight). Empty object {} disables all boosts.
-  """
-  boosts: JSON
-}
-
-"""Deprecated board object."""
-type DeprecatedBoard {
-  """Board ID."""
-  id: ID!
-}
-
-"""Item's column values"""
-type EnrichedColumnValues {
-  """Column ID."""
+"""A resource from the directory"""
+type DirectoryResource {
+  """The identifier of the directory resource."""
   id: ID!
 
-  """Column type."""
-  col_type: String!
-
-  """Column value."""
-  value: String!
-
-  """Column title."""
-  col_title: String
-
-  """Whether the column is publicly visible."""
-  is_public: Boolean!
-
-  """List of user IDs allowed to view this column"""
-  allowed_users: [String!]!
-}
-
-"""Item data present in the search index."""
-type IndexedItem {
-  """Item ID."""
-  id: ID!
-
-  """Item name."""
+  """The name of the directory resource."""
   name: String!
 
-  """Item description."""
-  description: String
+  """The email address of the directory resource."""
+  email: String
 
-  """ID of the board containing this item."""
+  """The job role of the directory resource."""
+  job_role: String
+
+  """The skills of the directory resource."""
+  skills: [String!]
+
+  """The location of the directory resource."""
+  location: String
+}
+
+"""Attributes that can be updated on a resource directory entry"""
+enum DirectoryResourceAttribute {
+  """Represents the resource directory job role attribute.."""
+  JOB_ROLE
+
+  """Represents the resource directory skills attribute."""
+  SKILLS
+
+  """Represents the resource directory location attribute."""
+  LOCATION
+}
+
+"""
+Paginated response containing directory resources and cursor for next page
+"""
+type DirectoryResourcesResponse {
+  """Response identifier"""
+  id: ID!
+
+  """List of directory resources"""
+  resources: [DirectoryResource!]!
+
+  """Cursor for fetching the next page of results"""
+  cursor: String
+}
+
+"""Response indicating whether the directory attribute update succeeded"""
+type UpdateDirectoryResourceAttributesResponse {
+  """Indicates whether the batch update completed successfully."""
+  success: Boolean!
+}
+
+"""Input for enrolling multiple items to a single sequence"""
+input EnrollToSequenceInput {
+  """The ID of the sequence to enroll items to"""
+  sequence_id: ID!
+
+  """The ID of the board containing the items"""
   board_id: ID!
 
-  """Name of the board containing this item."""
-  board_name: String!
-
-  """ID of the workspace containing this item."""
-  workspace_id: ID!
-
-  """ID of the item owner."""
-  owner_id: ID!
-
-  """ID of the group containing this item."""
-  group_id: ID!
-
-  """Name of the group containing this item."""
-  group_name: String!
-
-  """ISO timestamp when the item was created."""
-  created_at: String!
-
-  """ISO timestamp when the item was last updated."""
-  updated_at: String!
-
-  """URL to view this item."""
-  url: String!
-
-  """Item type (e.g., Project)."""
-  type: String!
-
-  """Item kind classification."""
-  kind: String!
-
-  """Board kind (e.g., public, private)."""
-  board_kind: String!
-
-  """Item state flag."""
-  state: Int!
-
-  """List of tags associated with the item."""
-  tags: [String!]!
-
-  """The item's column values."""
-  column_values: [EnrichedColumnValues!]!
-
-  """Board containing this item."""
-  board: DeprecatedBoard! @deprecated(reason: "Use board_id field instead or live_data if you need more board data.")
+  """List of item IDs to enroll (maximum 50 items)"""
+  item_ids: [ID!]!
 }
 
-"""Persons filter for search queries"""
-input PersonsInput {
-  """List of person IDs to filter by"""
-  person_ids: [ID!]
-
-  """List of team IDs to filter by"""
-  team_ids: [ID!]
-
+"""Result of enrolling items to a sequence"""
+type EnrollToSequenceResult {
   """
-  List of person names to filter by (searches in multiple-person columns)
+  List of item IDs that were successfully enrolled, including items that were provided and are already enrolled
   """
-  person_names: [String!]
+  succeeded_item_ids: [ID!]
+
+  """List of item IDs that failed to enroll"""
+  failed_item_ids: [ID!]
 }
 
-"""Algorithms for reranking results."""
-enum RerankingStrategy {
-  """Use cross-encoder model for reranking results."""
-  CROSS_ENCODER
+"""A sequence that can be used to automate email outreach"""
+type Sequence {
+  """The unique identifier of the sequence"""
+  id: ID
+
+  """The title of the sequence"""
+  title: String
+
+  """The current status of the sequence"""
+  status: SequenceStatus
+
+  """The type of context the sequence is associated with"""
+  context_type: SequenceContext
+
+  """The ID of the context (e.g., board ID) the sequence is associated with"""
+  context_id: ID
+
+  """The ID of the user who owns the sequence"""
+  user_id: ID
+
+  """The number of steps in the sequence"""
+  step_count: Int
+
+  """The total duration of the sequence in seconds"""
+  duration: Int
+
+  """The timestamp when the sequence was created or last updated"""
+  created_at: Date
+
+  """The timestamp when the sequence was created or last updated"""
+  updated_at: Date
 }
 
-"""Available search modes."""
-enum Search {
-  """Keyword-based search using text matching."""
-  LEXICAL
-
-  """Vector-based search using semantic similarity."""
-  SEMANTIC
-
-  """Combined lexical and semantic search with reranking."""
-  HYBRID
+"""The type of context a sequence is associated with"""
+enum SequenceContext {
+  """Sequence is associated with a board"""
+  BOARD
 }
 
-"""Date range filter for search queries"""
-input SearchDateRangeInput {
-  """Filter items created before this date"""
-  created_before: ISO8601DateTime
+"""The status of a sequence"""
+enum SequenceStatus {
+  """Sequence is active"""
+  ACTIVE
 
-  """Filter items created after this date"""
-  created_after: ISO8601DateTime
+  """Sequence is inactive"""
+  INACTIVE
 
-  """Filter items updated before this date"""
-  updated_before: ISO8601DateTime
+  """Sequence is missing required configuration"""
+  MISSING_CONFIG
 
-  """Filter items updated after this date"""
-  updated_after: ISO8601DateTime
-
-  """Filter items with a date column having a value before this date"""
-  column_value_before: ISO8601DateTime
-
-  """Filter items with a date column having a value after this date"""
-  column_value_after: ISO8601DateTime
-}
-
-"""Date range filter for search queries"""
-input SearchDateRangeLegacyInput {
-  """Filter items created before this date"""
-  createdBefore: ISO8601DateTime
-
-  """Filter items created after this date"""
-  createdAfter: ISO8601DateTime
-
-  """Filter items updated before this date"""
-  updatedBefore: ISO8601DateTime
-
-  """Filter items updated after this date"""
-  updatedAfter: ISO8601DateTime
-}
-
-"""Response of the search request."""
-type SearchItemsGraphQlResultsView {
-  """The results of the items search."""
-  results: [SearchItemsQueryResult!]!
-
-  """Indicates if the results have been reranked"""
-  reranked: Boolean
-}
-
-"""Contains search items query results."""
-type SearchItemsQueryResult {
-  """The relevance score of the search result."""
-  score: Float!
-
-  """Item data for the search results."""
-  data: IndexedItem!
-
-  """
-  Latest item data for the search results. Requires additional GraphQL federation calls.
-  """
-  live_data: Item!
+  """Sequence has been deleted"""
+  DELETED
 }
 
 """A monday dev sprint."""
