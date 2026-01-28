@@ -6,9 +6,9 @@ import {
   GetBoardItemsPageQuery,
   GetBoardItemsPageQueryVariables,
   ItemsOrderByDirection,
-  ItemsQueryOperator,
   ItemsQueryRuleOperator,
 } from '../../../../monday-graphql/generated/graphql/graphql';
+import { filterRulesSchema, filtersOperatorSchema } from './items-filter-schema';
 import { getBoardItemsPage } from './get-board-items-page-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
@@ -105,36 +105,8 @@ PERFORMANCE OPTIMIZATION: Only set this to true when you actually need the colum
     .describe(
       '**ONLY FOR MICROSOFT COPILOT**: The filters to apply on the items. Send this as a stringified JSON array of "filters" field. Read "filters" field description for details how to use it.',
     ),
-  filters: z
-    .array(
-      z.object({
-        columnId: z.string().describe('The id of the column to filter by'),
-        compareAttribute: z
-          .string()
-          .optional()
-          .describe('The attribute to compare the value to. This is OPTIONAL property.'),
-        compareValue: z
-          .union([z.string(), z.number(), z.boolean(), z.array(z.union([z.string(), z.number()]))])
-          .describe(
-            'The value to compare the attribute to. This can be a string or index value depending on the column type.',
-          ),
-        operator: z
-          .nativeEnum(ItemsQueryRuleOperator)
-          .optional()
-          .default(ItemsQueryRuleOperator.AnyOf)
-          .describe('The operator to use for the filter'),
-      }),
-    )
-    .optional()
-    .describe(
-      'The configuration of filters to apply on the items. Before sending the filters, use get_board_info tool to check "filteringGuidelines" key for filtering by the column.',
-    ),
-  filtersOperator: z
-    .nativeEnum(ItemsQueryOperator)
-    .optional()
-    .default(ItemsQueryOperator.And)
-    .describe('The operator to use for the filters'),
-
+  filters: filterRulesSchema,
+  filtersOperator: filtersOperatorSchema,
   columnIds: z
     .array(z.string())
     .optional()
