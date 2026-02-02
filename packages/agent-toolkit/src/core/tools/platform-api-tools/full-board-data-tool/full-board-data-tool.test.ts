@@ -1,13 +1,19 @@
-import { createMockApiClient } from '../test-utils/mock-api-client';
-import { FullBoardDataTool } from './full-board-data-tool';
+import { z } from 'zod';
+import { callToolByNameAsync, callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
 import { ColumnType } from '../../../../monday-graphql/generated/graphql/graphql';
+import { ZodTypeAny } from 'zod';
+import { FullBoardDataToolSchema } from './full-board-data-tool';
+import { MondayAgentToolkit } from 'src/mcp/toolkit';
+
+export type inputType = z.objectInputType<FullBoardDataToolSchema, ZodTypeAny>;
 
 describe('Full Board Data Tool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
 
   beforeEach(() => {
-    mocks = createMockApiClient();
     jest.clearAllMocks();
+    mocks = createMockApiClient();
+    jest.spyOn(MondayAgentToolkit.prototype as any, 'createApiClient').mockReturnValue(mocks.mockApiClient);
   });
 
   const mockBoardResponse = {
@@ -110,13 +116,11 @@ describe('Full Board Data Tool', () => {
       }
     });
 
-    const tool = new FullBoardDataTool(mocks.mockApiClient, 'fake_token');
-
-    const result = await tool.execute({
+    const args: inputType = {
       boardId: 123456,
-    });
+    };
 
-    const parsedResult = JSON.parse(result.content);
+    const parsedResult = await callToolByNameAsync('get_full_board_data', args);
 
     // Verify board data
     expect(parsedResult.board.id).toBe('123456');
@@ -182,13 +186,12 @@ describe('Full Board Data Tool', () => {
     };
 
     mocks.setResponse(boardWithoutUpdates);
-    const tool = new FullBoardDataTool(mocks.mockApiClient, 'fake_token');
 
-    const result = await tool.execute({
+    const args: inputType = {
       boardId: 123456,
-    });
+    };
 
-    const parsedResult = JSON.parse(result.content);
+    const parsedResult = await callToolByNameAsync('get_full_board_data', args);
 
     expect(parsedResult.board.items).toHaveLength(1);
     expect(parsedResult.board.items[0].updates).toHaveLength(0);
@@ -201,15 +204,17 @@ describe('Full Board Data Tool', () => {
   });
 
   it('Throws error when board is not found', async () => {
-    const tool = new FullBoardDataTool(mocks.mockApiClient, 'fake_token');
-
     // Test with empty array
     mocks.setResponse({ boards: [] });
-    await expect(tool.execute({ boardId: 999999 })).rejects.toThrow('Board with ID 999999 not found');
+    const args1: inputType = { boardId: 999999 };
+    const result1 = await callToolByNameRawAsync('get_full_board_data', args1);
+    expect(result1.content[0].text).toContain('Board with ID 999999 not found');
 
     // Test with null
     mocks.setResponse({ boards: null });
-    await expect(tool.execute({ boardId: 888888 })).rejects.toThrow('Board with ID 888888 not found');
+    const args2: inputType = { boardId: 888888 };
+    const result2 = await callToolByNameRawAsync('get_full_board_data', args2);
+    expect(result2.content[0].text).toContain('Board with ID 888888 not found');
   });
 
   it('Handles updates with null creator_id gracefully', async () => {
@@ -241,13 +246,12 @@ describe('Full Board Data Tool', () => {
     };
 
     mocks.setResponse(boardWithNullCreators);
-    const tool = new FullBoardDataTool(mocks.mockApiClient, 'fake_token');
 
-    const result = await tool.execute({
+    const args: inputType = {
       boardId: 123456,
-    });
+    };
 
-    const parsedResult = JSON.parse(result.content);
+    const parsedResult = await callToolByNameAsync('get_full_board_data', args);
 
     expect(parsedResult.board.items[0].updates[0].creator_id).toBe('');
     expect(parsedResult.board.items[0].updates[0].creator).toBeNull();
@@ -263,13 +267,13 @@ describe('Full Board Data Tool', () => {
       errors: [{ message: 'Invalid board ID' }, { message: 'Insufficient permissions' }],
     };
     mocks.setError(graphqlError);
-    const tool = new FullBoardDataTool(mocks.mockApiClient, 'fake_token');
 
-    await expect(
-      tool.execute({
-        boardId: 123456,
-      }),
-    ).rejects.toThrow('Failed to get full board data: Invalid board ID, Insufficient permissions');
+    const args: inputType = {
+      boardId: 123456,
+    };
+
+    const result = await callToolByNameRawAsync('get_full_board_data', args);
+    expect(result.content[0].text).toContain('Failed to get full board data: Invalid board ID, Insufficient permissions');
   });
 
   it('Extracts user IDs from people column values', async () => {
@@ -322,9 +326,8 @@ describe('Full Board Data Tool', () => {
       }
     });
 
-    const tool = new FullBoardDataTool(mocks.mockApiClient, 'fake_token');
-    const result = await tool.execute({ boardId: 123456 });
-    const parsedResult = JSON.parse(result.content);
+    const args: inputType = { boardId: 123456 };
+    const parsedResult = await callToolByNameAsync('get_full_board_data', args);
 
     // Should extract only person IDs, not team IDs
     expect(parsedResult.users).toHaveLength(2);

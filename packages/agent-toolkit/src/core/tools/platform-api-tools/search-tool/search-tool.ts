@@ -2,6 +2,7 @@ import { ToolInputType, ToolOutputType, ToolType } from 'src/core/tool';
 import { z } from 'zod';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { getBoards, getDocs, getFolders } from './search-tool.graphql';
+import { searchDev } from './search-tool.graphql.dev';
 import {
   GetBoardsQuery,
   GetBoardsQueryVariables,
@@ -10,9 +11,17 @@ import {
   GetFoldersQuery,
   GetFoldersQueryVariables,
 } from 'src/monday-graphql/generated/graphql/graphql';
+import {
+  SearchDevQuery,
+  SearchDevQueryVariables,
+  SearchableEntity,
+} from 'src/monday-graphql/generated/graphql.dev/graphql';
 import { normalizeString } from 'src/utils/string.utils';
-import { DataWithFilterInfo, GlobalSearchType, ObjectPrefixes, SearchResult } from './search-tool.types';
+import { CROSS_ENTITY_BOARD_RESULT_TYPENAME, CROSS_ENTITY_DOC_RESULT_TYPENAME, DataWithFilterInfo, GlobalSearchType, ObjectPrefixes, SearchResult } from './search-tool.types';
 import { LOAD_INTO_MEMORY_LIMIT, SEARCH_LIMIT } from './search-tool.consts';
+import { TIME_IN_MILLISECONDS } from 'src/utils';
+import { SEARCH_TIMEOUT } from 'src/utils/time.utils';
+import { throwIfSearchTimeoutError } from 'src/utils/error.utils';
 
 export const searchSchema = {
   searchTerm: z.string().optional().describe('The search term to use for the search.'),
@@ -61,6 +70,22 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
   }
 
   protected async executeInternal(input: ToolInputType<SearchToolInput>): Promise<ToolOutputType<never>> {
+    // Try using new "search" field from dev schema for BOARD and DOCUMENTS types
+    if (input.searchType !== GlobalSearchType.FOLDERS && input.searchTerm) {
+      try {
+        const data = await this.searchWithDevEndpointAsync(input);
+        const response = {
+          results: data.items,
+        };
+
+        return {
+          content: JSON.stringify(response, null, 2),
+        };
+      } catch (error) {
+       throwIfSearchTimeoutError(error);
+      }
+    }
+
     const handlers = {
       [GlobalSearchType.BOARD]: this.searchBoardsAsync.bind(this),
       [GlobalSearchType.DOCUMENTS]: this.searchDocsAsync.bind(this),
@@ -85,6 +110,57 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     return {
       content: JSON.stringify(response, null, 2),
     };
+  }
+
+  private async searchWithDevEndpointAsync(
+    input: ToolInputType<SearchToolInput>,
+  ): Promise<DataWithFilterInfo<SearchResult>> {
+    const entityTypeMap: Record<GlobalSearchType, SearchableEntity | undefined> = {
+      [GlobalSearchType.BOARD]: SearchableEntity.Board,
+      [GlobalSearchType.DOCUMENTS]: SearchableEntity.Document,
+      [GlobalSearchType.FOLDERS]: undefined,
+    };
+
+    const entityType = entityTypeMap[input.searchType];
+    if (!entityType) {
+      throw new Error(`Unsupported search type for dev endpoint: ${input.searchType}`);
+    }
+
+    if(input.page > 1) {
+      throw new Error('Pagination is not supported for search, increase the limit parameter instead');
+    }
+
+    const variables: SearchDevQueryVariables = {
+      query: input.searchTerm!,
+      size: input.limit,
+      entityTypes: [entityType],
+      workspaceIds: input.workspaceIds?.map((id) => id.toString()),
+    };
+
+    const response = await this.mondayApi.request<SearchDevQuery>(searchDev, variables, {
+      versionOverride: 'dev',
+      timeout: SEARCH_TIMEOUT
+    });
+
+    const results = response.search || [];
+    const items: SearchResult[] = [];
+
+    for (const result of results) {
+      if (result.__typename === CROSS_ENTITY_BOARD_RESULT_TYPENAME) {
+        items.push({
+          id: ObjectPrefixes.BOARD + result.data.id,
+          title: result.data.name,
+          url: result.data.url,
+        });
+      } else if (result.__typename === CROSS_ENTITY_DOC_RESULT_TYPENAME) {
+        items.push({
+          id: ObjectPrefixes.DOCUMENT + result.data.id,
+          title: result.data.name,
+        });
+      }
+    }
+
+    return { items, wasFiltered: true };
   }
 
   private async searchFoldersAsync(input: ToolInputType<SearchToolInput>): Promise<DataWithFilterInfo<SearchResult>> {

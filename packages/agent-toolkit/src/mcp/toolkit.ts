@@ -3,11 +3,16 @@ import { CallToolResult, ServerCapabilities } from '@modelcontextprotocol/sdk/ty
 import { ApiClient } from '@mondaydotcomorg/api';
 import { getFilteredToolInstances } from '../utils/tools/tools-filtering.utils';
 import { z } from 'zod';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 import { Tool } from '../core/tool';
 import { MondayAgentToolkitConfig } from '../core/monday-agent-toolkit';
 import { ManageToolsTool } from '../core/tools/platform-api-tools/manage-tools-tool';
 import { DynamicToolManager } from './dynamic-tool-manager';
 import { API_VERSION } from 'src/utils/version.utils';
+
+export interface GetToolsOptions {
+  schemaFormat?: 'zod' | 'json';
+}
 
 /**
  * Monday Agent Toolkit providing an MCP server with monday.com tools
@@ -190,9 +195,10 @@ export class MondayAgentToolkit extends McpServer {
   /**
    * Get all tools as an array of tool objects that can be registered individually
    * Each tool includes name, description, schema, annotations, and handler for external registration
+   * @param options Options for schema format control
    * @returns Array of tool objects ready for individual registration
    */
-  public getTools(): Array<{
+  public getTools(options?: GetToolsOptions): Array<{
     name: string;
     description: string;
     schema: any;
@@ -209,7 +215,7 @@ export class MondayAgentToolkit extends McpServer {
     return allTools.map((tool) => ({
       name: tool.name,
       description: tool.getDescription(),
-      schema: tool.getInputSchema(),
+      schema: this.getSchemaForTool(tool, options),
       annotations: tool.annotations,
       handler: this.createToolHandler(tool),
     }));
@@ -218,9 +224,10 @@ export class MondayAgentToolkit extends McpServer {
   /**
    * Get all tools with MCP-formatted handlers for direct registration with MCP servers
    * This method wraps the handlers to return the proper CallToolResult format
+   * @param options Options for schema format control
    * @returns Array of tool objects with MCP-compatible handlers
    */
-  public getToolsForMcp(): Array<{
+  public getToolsForMcp(options?: GetToolsOptions): Array<{
     name: string;
     description: string;
     schema: any;
@@ -237,7 +244,7 @@ export class MondayAgentToolkit extends McpServer {
     return allTools.map((tool) => ({
       name: tool.name,
       description: tool.getDescription(),
-      schema: tool.getInputSchema(),
+      schema: this.getSchemaForTool(tool, options),
       annotations: tool.annotations,
       handler: this.createMcpToolHandler(tool),
     }));
@@ -301,6 +308,26 @@ export class MondayAgentToolkit extends McpServer {
         };
       }
     };
+  }
+
+  /**
+   * Get the schema for a tool in the requested format
+   * @param tool The tool instance
+   * @param options Options for schema format control
+   * @returns Schema in the requested format (Zod shape or JSON Schema)
+   */
+  private getSchemaForTool(tool: Tool<any, any>, options?: GetToolsOptions): any {
+    const inputSchema = tool.getInputSchema();
+
+    if (!inputSchema) {
+      return undefined;
+    }
+
+    if (options?.schemaFormat === 'json') {
+      return zodToJsonSchema(z.object(inputSchema));
+    }
+
+    return inputSchema;
   }
 
   /**

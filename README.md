@@ -128,10 +128,11 @@ To interact with monday.com's API, you'll need an API token:
     "monday-api-mcp": {
       "command": "npx",
       "args": [
-        "@mondaydotcomorg/monday-api-mcp@latest",
-        "-t",
-        "your_monday_api_token"
-      ]
+        "@mondaydotcomorg/monday-api-mcp@latest"
+      ],
+      "env": {
+        "MONDAY_TOKEN": "your_monday_api_token"
+      }
     }
   }
 }
@@ -193,11 +194,11 @@ Add to your settings:
     "monday-api-mcp": {
       "command": "npx",
       "args": [
-        "@mondaydotcomorg/monday-api-mcp@latest",
-        "-t",
-        "your_monday_api_token"
+        "@mondaydotcomorg/monday-api-mcp@latest"
       ],
-      "env": {}
+      "env": {
+        "MONDAY_TOKEN": "your_monday_api_token"
+      }
     }
   }
 }
@@ -329,13 +330,13 @@ With Dynamic API Tools, your AI assistants can:
 Dynamic API Tools are in beta and disabled by default. Enable them with:
 
 ```bash
-npx @mondaydotcomorg/monday-api-mcp@latest -t your_token --enable-dynamic-api-tools true
+MONDAY_TOKEN=your_monday_api_token npx @mondaydotcomorg/monday-api-mcp@latest --enable-dynamic-api-tools true
 ```
 
 You can also use the 'only' mode to exclusively enable Dynamic API Tools:
 
 ```bash
-npx @mondaydotcomorg/monday-api-mcp@latest -t your_token --enable-dynamic-api-tools only
+MONDAY_TOKEN=your_monday_api_token npx @mondaydotcomorg/monday-api-mcp@latest --enable-dynamic-api-tools only
 ```
 
 When 'only' mode is enabled, the server will provide just the Dynamic API Tools, filtering out all other standard tools. This is useful for advanced users who want to work directly with the GraphQL API.
@@ -356,8 +357,8 @@ When 'only' mode is enabled, the server will provide just the Dynamic API Tools,
 
 The server requires a monday.com API token to authenticate with the monday.com API. You can provide this token in two ways:
 
-1. Command line argument: `-t your_monday_api_token`
-2. Environment variable: `monday_token=your_monday_api_token`
+1. Environment variable: `MONDAY_TOKEN=your_monday_api_token`
+2. Command line argument: `-t your_monday_api_token`
 
 ### Security Best Practices
 
@@ -416,12 +417,12 @@ To develop for the repo:
       "command": "node",
       "args": [
         "<your_full_path_to_the_package>/dist/index.js",
-        "-t",
-        "123",
         "--enable-dynamic-api-tools",
         "true"
       ],
-      "env": {}
+      "env": {
+        "MONDAY_TOKEN": "your_monday_api_token"
+      }
     }
 ```
 

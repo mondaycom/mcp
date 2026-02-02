@@ -111,11 +111,15 @@ type Query {
 
   """Get list of live workflows with pagination"""
   get_live_workflows(
-    """Host instance ID (e.g., board ID) to filter workflows"""
-    hostInstanceId: String!
+    """
+    Host instance ID (e.g., board ID) to filter workflows. If omitted, defaults to the current account ID.
+    """
+    hostInstanceId: String
 
-    """Host type for filtering workflows"""
-    hostType: HostType!
+    """
+    Host type for filtering workflows. If omitted, defaults to ACCOUNT_LEVEL.
+    """
+    hostType: HostType
 
     """Optional list of app IDs to filter workflows by creator app"""
     creator_app_ids: [ID!]
@@ -925,6 +929,16 @@ type Query {
     query: AggregateQueryInput!
   ): AggregateQueryResult
 
+  """
+  Retrieve aggregated board data at specific historical dates for point-in-time analysis.
+  """
+  aggregate_history(
+    """
+    The aggregation query configuration including source, dates, filters, and selections.
+    """
+    query: AggregateHistoryQueryInput!
+  ): AggregateHistoryResultSet
+
   """A test query for resource allocation functionality."""
   resource_allocation_test: String
 
@@ -1012,6 +1026,29 @@ type Query {
     workspace_ids: [ID!]
   ): [CrossEntityResult!]
 
+  """Lookup a single entity type by name or other relevant properties."""
+  search_lookup(
+    """The search query string."""
+    query: String!
+
+    """Maximum number of results to return (max 100)."""
+    size: Int!
+
+    """Entity type to lookup."""
+    entity_type: LookupableEntity!
+
+    """Filter results to specific workspace IDs."""
+    workspace_ids: [ID!]
+  ): [CrossEntityResult!]
+
+  """
+  Get sequences that the current user is allowed to enroll items to, that are connected to the provided board. Returns sequences owned by the user or sequences where the user has access to the sender connection.
+  """
+  allowed_sequences_to_enroll(
+    """The ID of the board to get allowed sequences for"""
+    board_id: ID!
+  ): [Sequence!]
+
   """Get a collection of monday dev sprints"""
   sprints(
     """A list of monday dev sprints unique identifiers"""
@@ -1042,6 +1079,15 @@ type Mutation {
   """Namespace for all vibe-related mutations"""
   vibe: VibeMutations
 
+  """Execute an integration block with the provided field values"""
+  execute_integration_block(
+    """The ID of the integration block instance to execute"""
+    block_instance_id: ID!
+
+    """The field values to pass to the integration block"""
+    inbound_field_values: JSON!
+  ): IntegrationExecutionResult
+
   """Create a new live workflow."""
   create_live_workflow(workflow: WorkflowInput!): CreateWorkflowResult
 
@@ -1068,6 +1114,18 @@ type Mutation {
     """ID of the workflow to deactivate"""
     id: ID!
   ): DeactivateWorkflowResult
+
+  """Change the owner of a live workflow"""
+  change_live_workflow_owner(
+    """ID of the workflow entity"""
+    id: ID!
+
+    """ID of the user to transfer ownership to"""
+    to_user_id: ID!
+
+    """Whether to notify users about the ownership change"""
+    notify_users: Boolean = false
+  ): ChangeWorkflowOwnerResult
 
   """Create a new table view"""
   create_view_table(
@@ -1759,6 +1817,21 @@ type Mutation {
     type: ValidationsEntityType = board
   ): RequiredColumns
 
+  """Assigns members to a department."""
+  assign_department_members(
+    """The department ID to assign the members to."""
+    department_id: ID!
+
+    """The user IDs to assign to the department."""
+    user_ids: [ID!]!
+  ): AssignDepartmentMembersResult
+
+  """Clear users department"""
+  clear_users_department(
+    """The user IDs to remove theirs department."""
+    user_ids: [ID!]!
+  ): ClearUsersDepartmentResult
+
   """Update the dependency column for a specific pulse"""
   update_dependency_column(
     boardId: String!
@@ -2006,6 +2079,23 @@ type Mutation {
     """The input for updating the favorite object position"""
     input: UpdateObjectHierarchyPositionInput!
   ): UpdateFavoriteResultType
+
+  """Create a marketplace app discount"""
+  create_marketplace_app_discount(
+    """The id of an app"""
+    app_id: ID!
+
+    """Slug of an account"""
+    account_slug: String!
+    discount_data: CreateMarketplaceAppDiscountInput!
+  ): CreateMarketplaceAppDiscountResult!
+  delete_marketplace_app_discount(
+    """The id of an app"""
+    app_id: ID!
+
+    """Slug of an account"""
+    account_slug: String!
+  ): DeleteMarketplaceAppDiscountResult!
   grant_marketplace_app_discount(
     """The id of an app"""
     app_id: ID!
@@ -2014,24 +2104,6 @@ type Mutation {
     account_slug: String!
     data: GrantMarketplaceAppDiscountData!
   ): GrantMarketplaceAppDiscountResult!
-
-  """Grant a marketplace app discount offer"""
-  grant_marketplace_app_discount_offer(
-    """The id of an app"""
-    app_id: ID!
-
-    """Slug of an account"""
-    account_slug: String!
-    standard_discount_data: StandardDiscountDataInput
-    renewal_discount_data: RenewalDiscountDataInput
-  ): GrantMarketplaceAppDiscountOfferResult!
-  delete_marketplace_app_discount(
-    """The id of an app"""
-    app_id: ID!
-
-    """Slug of an account"""
-    account_slug: String!
-  ): DeleteMarketplaceAppDiscountResult!
 
   """
   Initialize bulk import for a board and group. Returns import ID and upload URL to begin the process.
@@ -2470,9 +2542,6 @@ type Mutation {
   create_item(
     """The board's unique identifier."""
     board_id: ID!
-
-    """Files to upload to file columns."""
-    column_files: [ColumnFileInput!]
 
     """The column values of the new item."""
     column_values: JSON
@@ -2980,7 +3049,7 @@ type Mutation {
   convert_board_to_project(input: ConvertBoardToProjectInput!): ConvertBoardToProjectResult
 
   """
-  Create a new project in monday.com from scratch. This mutation initiates asynchronous project creation with comprehensive customization options including: privacy settings (private/public/share), optional companions like Resource Planner for enhanced project management capabilities, workspace assignment for organizational structure, folder placement for better organization, and template selection for predefined project structures. Since project creation is asynchronous, you can optionally provide a callback_url where the project ID will be sent via POST request once creation completes. The callback will receive: { is_success: boolean, process_id: string, project_id?: number }. Returns a process_id for tracking the creation request.
+  Create a new project in monday.com from scratch. This mutation initiates asynchronous project creation with comprehensive customization options including: privacy settings (private/public - share is currently not supported), optional companions like Resource Planner for enhanced project management capabilities, workspace assignment for organizational structure, folder placement for better organization, and template selection for predefined project structures. Since project creation is asynchronous, you can optionally provide a callback_url where the project ID will be sent via POST request once creation completes. The callback will receive: { is_success: boolean, process_id: string, project_id?: number }. Returns a process_id for tracking the creation request.
   """
   create_project(input: CreateProjectInput!): CreateProjectResult
 
@@ -3033,7 +3102,7 @@ type Mutation {
   ): [BoardMuteSettings!]
 
   """
-  Creates a new object in the Monday.com Objects Platform. The type of object created is determined by the app_feature_reference_id parameter. This mutation can create boards, docs, dashboards, workflows, or specialized objects like CRM, capacity manager, etc. Under the hood, this creates a board with the specified app_feature_id.
+  Creates a new object in the Monday.com Objects Platform. The type of object created is determined by the object_type_unique_key parameter. This mutation can create boards, docs, dashboards, workflows, or specialized objects like CRM, capacity manager, etc. Under the hood, this creates a board with the corresponding app_feature_id.
   """
   create_object(
     """
@@ -3176,6 +3245,14 @@ type Mutation {
     """List of resource IDs to update"""
     resource_ids: [ID!]!
   ): UpdateDirectoryResourceAttributesResponse
+
+  """
+  Enroll multiple items to a single sequence. Maximum 50 items per request.
+  """
+  enroll_items_to_sequence(
+    """Input for enrolling multiple items to a single sequence"""
+    input: EnrollToSequenceInput!
+  ): EnrollToSequenceResult
 
   """Creates a new team."""
   create_team(input: CreateTeamAttributesInput!, options: CreateTeamOptionsInput): Team
@@ -3590,6 +3667,12 @@ type FileUploadUrl {
   expires_at: Date
 }
 
+"""Result of executing an integration block"""
+type IntegrationExecutionResult {
+  """The output fields returned by the integration block execution"""
+  output_fields: JSON
+}
+
 """An ISO 8601-encoded datetime (e.g., 2024-04-09T13:45:30Z)"""
 scalar ISO8601DateTime
 
@@ -3646,6 +3729,9 @@ type VibeMutations {
 
     """Web search configuration for context augmentation"""
     useWebSearch: WebSearchConfigInput
+
+    """Optional session ID for tracking"""
+    session_tracker: String
   ): AiActionResponse!
 
   """Enhance a user prompt to include AI capabilities"""
@@ -3744,6 +3830,9 @@ type Pagination {
 type User {
   """The user's unique identifier."""
   id: ID!
+
+  """The department the user is a member of (if any)"""
+  department: Department
 
   """The user's account."""
   account: Account!
@@ -3964,6 +4053,12 @@ type Block {
 type BlocksResult {
   """List of blocks"""
   blocks: [Block!]
+}
+
+"""Result of changing workflow owner"""
+type ChangeWorkflowOwnerResult {
+  """Whether the workflow owner was successfully changed"""
+  is_success: Boolean!
 }
 
 """
@@ -4827,12 +4922,15 @@ type WorkflowHostData {
   id: String
 }
 
+"""
+Host data for the workflow. Both id and type must be provided together. If omitted, defaults to account-level with the current account ID.
+"""
 input WorkflowHostDataInput {
   """Instance ID of the host"""
-  id: String!
+  id: String
 
   """Type of host for this workflow"""
-  type: HostType!
+  type: HostType
 }
 
 input WorkflowInput {
@@ -4850,8 +4948,10 @@ input WorkflowInput {
   """
   workflowVariables: [JSON!]!
 
-  """Hierarchy level the workflow is hosted in"""
-  workflowHostData: WorkflowHostDataInput!
+  """
+  Hierarchy level the workflow is hosted in If omitted, defaults to account-level with the current account ID.
+  """
+  workflowHostData: WorkflowHostDataInput
 
   """Reference ID of the creator app feature"""
   creatorAppFeatureReferenceId: Int
@@ -5951,6 +6051,9 @@ type CreateMigrationJobResult {
   id: ID!
 }
 
+"""A file"""
+scalar File
+
 type GetEntitiesForMigrationResult {
   """The entities for migration."""
   entityId: String
@@ -6491,6 +6594,21 @@ enum ValidationsEntityType {
   board
 }
 
+"""Result of assigning members to a department."""
+type AssignDepartmentMembersResult {
+  """The users that were successfully assigned to the department."""
+  successful_users: [User!]
+
+  """The users that were not assigned to the department."""
+  failed_users: [User!]
+}
+
+"""Result of clearing users department."""
+type ClearUsersDepartmentResult {
+  """The users that their department was cleared."""
+  cleared_users: [User!]
+}
+
 """A department in the account."""
 type Department {
   """The department's ID."""
@@ -6504,6 +6622,12 @@ type Department {
 
   """The number of seats assigned to the department."""
   assigned_seats: Int!
+
+  """The members of the department"""
+  members: [User!]
+
+  """The owners of the department"""
+  owners: [User!]
 }
 
 """The complete graph export for a board"""
@@ -6522,6 +6646,9 @@ type BoardGraphExport {
 
   """The total number of edges in the graph"""
   edgeCount: Int
+
+  """The cycles in the graph"""
+  cycles: JSON
 }
 
 """Input type for updating a single pulse dependency value"""
@@ -7458,6 +7585,9 @@ type GraphqlFolder {
 
   """The user who created this folder"""
   createdBy: ID
+
+  """The app feature slug associated with this folder"""
+  app_feature_slug: String
 }
 
 """Represents an item in favorites"""
@@ -7593,6 +7723,48 @@ type AppSubscriptions {
   cursor: String
 }
 
+"""A granted marketplace app discount offer"""
+type CreateMarketplaceAppDiscount {
+  """Number of days a discount will be valid"""
+  days_valid: Int!
+
+  """Percentage value of a discount"""
+  discount: Int!
+
+  """Is discount recurring"""
+  is_recurring: Boolean!
+
+  """The period of a discount"""
+  period: DiscountPeriod
+
+  """List of app plan ids"""
+  app_plan_ids: [ID!]
+
+  """The id of an app"""
+  app_id: ID!
+}
+
+"""Input data for creating a marketplace app discount"""
+input CreateMarketplaceAppDiscountInput {
+  """Number of days a discount will be valid"""
+  days_valid: Int!
+
+  """Percentage value of a discount"""
+  discount: Int!
+
+  """The period of a discount"""
+  period: DiscountPeriod
+
+  """List of app plan ids"""
+  app_plan_ids: [ID!]!
+}
+
+"""Result of granting a marketplace app discount offer"""
+type CreateMarketplaceAppDiscountResult {
+  """The granted discount offer"""
+  granted_discount: CreateMarketplaceAppDiscount!
+}
+
 type DeleteMarketplaceAppDiscount {
   """Slug of an account"""
   account_slug: String!
@@ -7605,27 +7777,14 @@ type DeleteMarketplaceAppDiscountResult {
   deleted_discount: DeleteMarketplaceAppDiscount!
 }
 
-"""The period of a discount. Provide only for standard discounts."""
+"""The period of a discount"""
 enum DiscountPeriod {
   MONTHLY
   YEARLY
 }
 
-"""
-The scope of a discount. Possible values: standard, renewal. Defaults to standard when not provided.
-"""
-enum DiscountScope {
-  """Standard discount scope - applies to new subscriptions"""
-  STANDARD
-
-  """Renewal discount scope - applies to subscription renewals"""
-  RENEWAL
-}
-
 type GrantMarketplaceAppDiscount {
-  """
-  Number of days a discount will be valid. Provide only for standard discounts.
-  """
+  """Number of days a discount will be valid"""
   days_valid: Int!
 
   """Percentage value of a discount"""
@@ -7635,7 +7794,7 @@ type GrantMarketplaceAppDiscount {
   is_recurring: Boolean!
   period: DiscountPeriod
 
-  """List of app plan ids. Provide only for standard discounts."""
+  """List of app plan ids"""
   app_plan_ids: [String!]!
 
   """The id of an app"""
@@ -7643,9 +7802,7 @@ type GrantMarketplaceAppDiscount {
 }
 
 input GrantMarketplaceAppDiscountData {
-  """
-  Number of days a discount will be valid. Provide only for standard discounts.
-  """
+  """Number of days a discount will be valid"""
   days_valid: Int!
 
   """Percentage value of a discount"""
@@ -7654,45 +7811,11 @@ input GrantMarketplaceAppDiscountData {
   """Is discount recurring"""
   is_recurring: Boolean!
 
-  """The period of a discount. Provide only for standard discounts."""
+  """The period of a discount"""
   period: DiscountPeriod
 
-  """List of app plan ids. Provide only for standard discounts."""
+  """List of app plan ids"""
   app_plan_ids: [String!]!
-}
-
-"""A granted marketplace app discount offer"""
-type GrantMarketplaceAppDiscountOffer {
-  """
-  Number of days a discount will be valid. Provide only for standard discounts.
-  """
-  days_valid: Int!
-
-  """Percentage value of a discount"""
-  discount: Int!
-
-  """Is discount recurring"""
-  is_recurring: Boolean!
-
-  """The period of a discount. Provide only for standard discounts."""
-  period: DiscountPeriod
-
-  """List of app plan ids. Provide only for standard discounts."""
-  app_plan_ids: [ID!]
-
-  """
-  The scope of a discount. Possible values: standard, renewal. Defaults to standard when not provided.
-  """
-  discount_scope: DiscountScope
-
-  """The id of an app"""
-  app_id: ID!
-}
-
-"""Result of granting a marketplace app discount offer"""
-type GrantMarketplaceAppDiscountOfferResult {
-  """The granted discount offer"""
-  granted_discount: GrantMarketplaceAppDiscountOffer!
 }
 
 type GrantMarketplaceAppDiscountResult {
@@ -7738,7 +7861,7 @@ type MarketplaceAppDiscount {
   """Is discount recurring"""
   is_recurring: Boolean!
 
-  """List of app plan ids. Provide only for standard discounts."""
+  """List of app plan ids"""
   app_plan_ids: [String!]!
   period: DiscountPeriod
 
@@ -7747,11 +7870,6 @@ type MarketplaceAppDiscount {
 
   """Date when a discount was created"""
   created_at: String!
-
-  """
-  The scope of a discount. Possible values: standard, renewal. Defaults to standard when not provided.
-  """
-  discount_scope: DiscountScope
 }
 
 type MarketplaceAppMetadata {
@@ -7811,35 +7929,6 @@ type MarketplaceSearchResults {
 
   """The time taken to perform the search"""
   elapsed: String!
-}
-
-"""Input data for granting a renewal marketplace app discount offer"""
-input RenewalDiscountDataInput {
-  """Percentage value of a discount"""
-  discount: Int!
-
-  """Is discount recurring"""
-  is_recurring: Boolean!
-}
-
-"""Input data for granting a standard marketplace app discount offer"""
-input StandardDiscountDataInput {
-  """
-  Number of days a discount will be valid. Provide only for standard discounts.
-  """
-  days_valid: Int!
-
-  """Percentage value of a discount"""
-  discount: Int!
-
-  """Is discount recurring"""
-  is_recurring: Boolean!
-
-  """The period of a discount. Provide only for standard discounts."""
-  period: DiscountPeriod
-
-  """List of app plan ids. Provide only for standard discounts."""
-  app_plan_ids: [ID!]!
 }
 
 """The discounts granted to the subscription"""
@@ -8260,6 +8349,12 @@ enum AppPermission {
   """Permission scope: teams:write"""
   TEAMS_WRITE
 
+  """Permission scope: departments:read"""
+  DEPARTMENTS_READ
+
+  """Permission scope: departments:write"""
+  DEPARTMENTS_WRITE
+
   """Permission scope: notifications:write"""
   NOTIFICATIONS_WRITE
 
@@ -8432,9 +8527,6 @@ input UpdateAppInput {
   """Array of user IDs with access (replaces existing collaborators)"""
   collaborators: [ID!]
 }
-
-"""A file"""
-scalar File
 
 """Your monday.com account"""
 type Account {
@@ -8971,15 +9063,6 @@ type ColorPickerValue implements ColumnValue {
 
   """The column's raw value in JSON format."""
   value: JSON
-}
-
-"""Input for uploading a file to a column when creating an item."""
-input ColumnFileInput {
-  """The column's unique identifier."""
-  column_id: String!
-
-  """The file to upload."""
-  file: File!
 }
 
 """
@@ -11414,7 +11497,7 @@ input CreateProjectInput {
   """The name of the project to create"""
   name: String!
 
-  """The project's kind (public / private / share)"""
+  """The project's privacy setting (public / private)"""
   board_kind: BoardKind!
 
   """
@@ -11432,9 +11515,6 @@ input CreateProjectInput {
 
   """Optional folder ID to associate with the project"""
   folder_id: String
-
-  """Optional ID of the portfolio to add the project to"""
-  portfolio_id: ID
 
   """
   Optional external callback URL where the project ID will be sent after async creation. The callback will receive a POST request with { is_success: boolean, process_id: string, project_id?: number }
@@ -11604,7 +11684,7 @@ enum ScopeType {
 }
 
 """
-The central type in the Monday.com Objects Platform, representing any entity in the system. This unified type can represent instances of boards, docs, dashboards, workflows, and specialized objects. The specific type of an object is determined by its app_feature_reference_id.
+The central type in the Monday.com Objects Platform, representing any entity in the system. This unified type can represent instances of boards, docs, dashboards, workflows, and specialized objects. The specific type of an object is determined by its object_type_unique_key.
 """
 type Object {
   """
@@ -12041,6 +12121,391 @@ enum AggregateSelectFunctionName {
   PHONE_COUNTRY_SHORT_NAME
 }
 
+"""The result of an aggregation function."""
+type AggregateHistoryBasicAggregationResult {
+  """The numeric result from the aggregation function."""
+  result: Float
+}
+
+"""Aggregation results for a specific historical date."""
+type AggregateHistoryDateResult {
+  """The aggregation result entries for this date."""
+  entries: [AggregateHistoryResultEntry!]
+}
+
+"""
+A group of filter rules that can be combined with AND/OR logic. Supports nesting.
+"""
+input AggregateHistoryFilterGroupInput {
+  """The logical operator to combine rules within this group."""
+  operator: AggregateHistoryQueryOperator
+
+  """Filter rules in this group."""
+  rules: [AggregateHistoryFilterRuleInput!]
+
+  """Nested filter groups for complex logic."""
+  groups: [AggregateHistoryFilterGroupInput!]
+}
+
+"""Comparison operators for filtering items in aggregate queries."""
+enum AggregateHistoryFilterOperator {
+  """Match any of the specified values (OR)."""
+  ANY_OF
+
+  """Match none of the specified values."""
+  NOT_ANY_OF
+
+  """Value is greater than the specified value."""
+  GREATER_THAN
+
+  """Value is greater than or equal to the specified value."""
+  GREATER_THAN_OR_EQUALS
+
+  """Value is less than the specified value."""
+  LOWER_THAN
+
+  """Value is less than or equal to the specified value."""
+  LOWER_THAN_OR_EQUAL
+
+  """Value is between two specified values (inclusive)."""
+  BETWEEN
+
+  """Text contains the specified substring."""
+  CONTAINS_TEXT
+
+  """Text does not contain the specified substring."""
+  NOT_CONTAINS_TEXT
+
+  """Text contains any of the specified terms."""
+  CONTAINS_TERMS
+
+  """Text starts with the specified substring."""
+  STARTS_WITH
+
+  """Text ends with the specified substring."""
+  ENDS_WITH
+
+  """Value is empty or null."""
+  IS_EMPTY
+
+  """Value is not empty or null."""
+  IS_NOT_EMPTY
+
+  """Date/time is within the last N periods."""
+  WITHIN_THE_LAST
+
+  """Date/time is within the next N periods."""
+  WITHIN_THE_NEXT
+}
+
+"""A single filter rule for matching items based on column values."""
+input AggregateHistoryFilterRuleInput {
+  """The unique identifier of the column to filter by."""
+  column_id: String!
+
+  """The comparison operator to use."""
+  operator: AggregateHistoryFilterOperator!
+
+  """
+  The value(s) to compare against. Can be a string, number, boolean, or array.
+  """
+  compare_value: JSON
+
+  """
+  Optional attribute for complex column types (e.g., date for timeline columns).
+  """
+  compare_attribute: String
+}
+
+"""The source type for the aggregate history query."""
+enum AggregateHistoryFromElement {
+  """Query historical snapshots of board/table data at specific dates."""
+  TABLE_HISTORY
+}
+
+"""The source table and its ID for the aggregate history query."""
+input AggregateHistoryFromInput {
+  """The source type. Must be TABLE_HISTORY for historical queries."""
+  type: AggregateHistoryFromElement!
+
+  """The unique identifier of the source board."""
+  id: ID!
+}
+
+"""The aggregation function to apply."""
+enum AggregateHistoryFunction {
+  """Calculate the average of numeric values."""
+  AVERAGE
+
+  """Get the color value."""
+  COLOR
+
+  """Count all values."""
+  COUNT
+
+  """Count distinct values."""
+  COUNT_DISTINCT
+
+  """Count items."""
+  COUNT_ITEMS
+
+  """Count subitems."""
+  COUNT_SUBITEMS
+
+  """Get the date value."""
+  DATE
+
+  """Truncate date to day."""
+  DATE_TRUNC_DAY
+
+  """Truncate date to month."""
+  DATE_TRUNC_MONTH
+
+  """Truncate date to quarter."""
+  DATE_TRUNC_QUARTER
+
+  """Truncate date to week."""
+  DATE_TRUNC_WEEK
+
+  """Truncate date to year."""
+  DATE_TRUNC_YEAR
+
+  """Get running duration."""
+  DURATION_RUNNING
+
+  """Get the end date from a timeline."""
+  END_DATE
+
+  """Check equality."""
+  EQUALS
+
+  """Get the first value."""
+  FIRST
+
+  """Flatten nested values."""
+  FLATTEN
+
+  """Extract hour from time."""
+  HOUR
+
+  """Get the ID."""
+  ID
+
+  """Check if done/completed."""
+  IS_DONE
+
+  """Get the label value."""
+  LABEL
+
+  """Get the length of a value."""
+  LENGTH
+
+  """Convert to lowercase."""
+  LOWER
+
+  """Get the maximum value."""
+  MAX
+
+  """Calculate the median."""
+  MEDIAN
+
+  """Get the minimum value."""
+  MIN
+
+  """Get both min and max values."""
+  MIN_MAX
+
+  """Get the order/position."""
+  ORDER
+
+  """Get the person value."""
+  PERSON
+
+  """Get phone country short name."""
+  PHONE_COUNTRY_SHORT_NAME
+
+  """Get the start date from a timeline."""
+  START_DATE
+
+  """Calculate the sum of numeric values."""
+  SUM
+
+  """Trim whitespace from value."""
+  TRIM
+
+  """Convert to uppercase."""
+  UPPER
+}
+
+"""Configuration for grouping aggregate results by a column."""
+input AggregateHistoryGroupByInput {
+  """The unique identifier of the column to group results by."""
+  column_id: String!
+
+  """The maximum number of groups to return. Default: 1000."""
+  limit: Int = 1000
+}
+
+"""The group-by key value from the aggregation."""
+type AggregateHistoryGroupByResult {
+  """The string representation of the group-by value."""
+  value_string: String
+
+  """The group-by value for whole numbers."""
+  value_int: Int
+
+  """The group-by value for decimal numbers."""
+  value_float: Float
+
+  """The group-by value for booleans."""
+  value_boolean: Boolean
+}
+
+"""
+Filter configuration for selecting which items to include in the aggregation.
+"""
+input AggregateHistoryItemsQueryInput {
+  """The logical operator to combine top-level rules and groups."""
+  operator: AggregateHistoryQueryOperator
+
+  """Filter rules to apply."""
+  rules: [AggregateHistoryFilterRuleInput!]
+
+  """Nested filter groups for complex logic."""
+  groups: [AggregateHistoryFilterGroupInput!]
+
+  """
+  Specific item IDs to include. If provided, only these items are considered.
+  """
+  ids: [ID!]
+
+  """Configuration for ordering results before aggregation."""
+  order_by: [AggregateHistoryOrderByInput!]
+}
+
+"""Configuration for sorting query results by a column."""
+input AggregateHistoryOrderByInput {
+  """The unique identifier of the column to sort by."""
+  column_id: String!
+
+  """The sort direction. Default: ASC."""
+  direction: AggregateHistorySortDirection = ASC
+}
+
+"""
+Input for querying historical aggregated data from a board at specific dates.
+"""
+input AggregateHistoryQueryInput {
+  """The data source for the aggregation (board with TABLE_HISTORY type)."""
+  from: AggregateHistoryFromInput!
+
+  """
+  Array of ISO timestamp/date strings to retrieve historical snapshots for.
+  """
+  at_timestamps: [String!]!
+
+  """Columns to group results by."""
+  group_by: [AggregateHistoryGroupByInput!]
+
+  """
+  Filters for the items being aggregated. Without filters, all items are included.
+  """
+  query: AggregateHistoryItemsQueryInput
+
+  """The fields or functions to include in the results."""
+  select: [AggregateHistorySelectInput!]!
+
+  """Maximum number of results to return. Default: 1000."""
+  limit: Int = 1000
+}
+
+"""Logical operators for combining filter rules."""
+enum AggregateHistoryQueryOperator {
+  """All rules must match (AND logic)."""
+  AND
+
+  """Any rule can match (OR logic)."""
+  OR
+}
+
+"""
+A single field result from the aggregation, containing the alias and value.
+"""
+type AggregateHistoryResultEntry {
+  """
+  The name of the field, as defined using the as field in the select input.
+  """
+  alias: String
+
+  """
+  The value for this field. Can be an aggregation result or a group-by key.
+  """
+  value: AggregateHistoryResultValue
+}
+
+"""The complete result set from an aggregate_history query."""
+type AggregateHistoryResultSet {
+  """Array of results, one for each date specified in at_timestamps."""
+  results: [AggregateHistoryDateResult!]
+}
+
+"""
+The value of an aggregate result entry. Can be an aggregation result or a group-by key.
+"""
+union AggregateHistoryResultValue = AggregateHistoryBasicAggregationResult | AggregateHistoryGroupByResult
+
+"""Specifies a column to select in the aggregation."""
+input AggregateHistorySelectColumnInput {
+  """The unique identifier of the column."""
+  column_id: String!
+}
+
+"""Specifies an aggregation function and its parameters."""
+input AggregateHistorySelectFunctionInput {
+  """The aggregation function to apply."""
+  function: AggregateHistoryFunction!
+
+  """
+  Parameters to pass to the function (can include columns or nested functions).
+  """
+  params: [AggregateHistorySelectInput!]
+}
+
+"""Specifies a field or function to include in the aggregation results."""
+input AggregateHistorySelectInput {
+  """
+  The type of selection: COLUMN for direct column values, FUNCTION for aggregations.
+  """
+  type: AggregateHistorySelectKind!
+
+  """The alias for this field in the result set."""
+  as: String!
+
+  """The column to select. Required when type is COLUMN."""
+  column: AggregateHistorySelectColumnInput
+
+  """The function to apply. Required when type is FUNCTION."""
+  function: AggregateHistorySelectFunctionInput
+}
+
+"""The type of element to select in the aggregation."""
+enum AggregateHistorySelectKind {
+  """Select a column value directly."""
+  COLUMN
+
+  """Apply an aggregation function to column(s)."""
+  FUNCTION
+}
+
+"""Sort direction for ordering results."""
+enum AggregateHistorySortDirection {
+  """Sort in ascending order (A-Z, 0-9)."""
+  ASC
+
+  """Sort in descending order (Z-A, 9-0)."""
+  DESC
+}
+
 """A resource from the directory"""
 type DirectoryResource {
   """The identifier of the directory resource."""
@@ -12230,7 +12695,7 @@ type IndexedBoard {
   owner_id: ID!
 
   """ID of the workspace containing this board."""
-  workspace_id: ID!
+  workspace_id: ID
 
   """ISO timestamp when the board was created."""
   created_at: String!
@@ -12290,7 +12755,7 @@ type IndexedItem {
   board_name: String!
 
   """ID of the workspace containing this item."""
-  workspace_id: ID!
+  workspace_id: ID
 
   """ID of the item owner."""
   owner_id: ID!
@@ -12330,6 +12795,15 @@ type IndexedItem {
 
   """Board containing this item."""
   board: DeprecatedBoard! @deprecated(reason: "Use board_id field instead or live_data if you need more board data.")
+}
+
+"""Supported entity types for lookup."""
+enum LookupableEntity {
+  """Board entity type for lookup."""
+  BOARD
+
+  """Document entity type for lookup."""
+  DOCUMENT
 }
 
 """Persons filter for search queries"""
@@ -12433,6 +12907,83 @@ type SearchItemsQueryResult {
   Latest item data for the search results. Requires additional GraphQL federation calls.
   """
   live_data: Item!
+}
+
+"""Input for enrolling multiple items to a single sequence"""
+input EnrollToSequenceInput {
+  """The ID of the sequence to enroll items to"""
+  sequence_id: ID!
+
+  """The ID of the board containing the items"""
+  board_id: ID!
+
+  """List of item IDs to enroll (maximum 50 items)"""
+  item_ids: [ID!]!
+}
+
+"""Result of enrolling items to a sequence"""
+type EnrollToSequenceResult {
+  """
+  List of item IDs that were successfully enrolled, including items that were provided and are already enrolled
+  """
+  succeeded_item_ids: [ID!]
+
+  """List of item IDs that failed to enroll"""
+  failed_item_ids: [ID!]
+}
+
+"""A sequence that can be used to automate email outreach"""
+type Sequence {
+  """The unique identifier of the sequence"""
+  id: ID
+
+  """The title of the sequence"""
+  title: String
+
+  """The current status of the sequence"""
+  status: SequenceStatus
+
+  """The type of context the sequence is associated with"""
+  context_type: SequenceContext
+
+  """The ID of the context (e.g., board ID) the sequence is associated with"""
+  context_id: ID
+
+  """The ID of the user who owns the sequence"""
+  user_id: ID
+
+  """The number of steps in the sequence"""
+  step_count: Int
+
+  """The total duration of the sequence in seconds"""
+  duration: Int
+
+  """The timestamp when the sequence was created or last updated"""
+  created_at: Date
+
+  """The timestamp when the sequence was created or last updated"""
+  updated_at: Date
+}
+
+"""The type of context a sequence is associated with"""
+enum SequenceContext {
+  """Sequence is associated with a board"""
+  BOARD
+}
+
+"""The status of a sequence"""
+enum SequenceStatus {
+  """Sequence is active"""
+  ACTIVE
+
+  """Sequence is inactive"""
+  INACTIVE
+
+  """Sequence is missing required configuration"""
+  MISSING_CONFIG
+
+  """Sequence has been deleted"""
+  DELETED
 }
 
 """A monday dev sprint."""

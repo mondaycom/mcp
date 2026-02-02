@@ -1,6 +1,6 @@
 {
   "name": "@mondaydotcomorg/agent-toolkit",
-  "version": "2.32.1",
+  "version": "2.35.0",
   "description": "monday.com agent toolkit",
   "exports": {
     "./mcp": {
@@ -48,7 +48,7 @@
     "url": "https://github.com/mondaycom/monday-ai/tree/master/packages/agent-toolkit"
   },
   "dependencies": {
-    "@mondaydotcomorg/api": "^12.0.1",
+    "@mondaydotcomorg/api": "^13.0.0",
     "axios": "^1.10.0",
     "jsonwebtoken": "^9.0.2",
     "zod": "^3.24.2",
