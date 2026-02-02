@@ -44,6 +44,9 @@ The toolkit includes several pre-built tools for common monday.com operations, o
 ### Account Operations
 - `ListUsersAndTeams` - Get users or teams, either by ids, names or by searching the account
 
+### Workspace Operations
+- `ListWorkspaceTool` - List workspaces available to the user, prioritizing workspaces where the user is a member
+
 ### Dynamic API Tools
 - `AllMondayApiTool` - Execute any monday.com API operation by generating GraphQL queries and mutations dynamically
 - `GetGraphQLSchemaTool` - Fetch the monday.com GraphQL schema structure including query and mutation definitions
