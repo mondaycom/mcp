@@ -69,26 +69,26 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
     });
 
     // First, try to get workspaces where the user is a member (more relevant results)
-    let res = await this.mondayApi.request<ListWorkspacesQuery>(
+    const memberRes = await this.mondayApi.request<ListWorkspacesQuery>(
       listWorkspaces,
       createVariables(WorkspaceMembershipKind.Member),
     );
-    let workspaces = filterNullWorkspaces(res);
-    let usedMemberOnly = true;
+    const memberWorkspaces = filterNullWorkspaces(memberRes);
 
-    // Fallback to all workspaces if member workspaces are empty, or if searching and no matches found
+    const shouldFetchAllWorkspaces =
+      !hasElements(memberWorkspaces) || (searchTermNormalized && !hasMatchingWorkspace(searchTermNormalized, memberWorkspaces));
 
-    const shouldFallbackToFetchAllWorkspaces =
-      !hasElements(workspaces) || (searchTermNormalized && !hasMatchingWorkspace(searchTermNormalized, workspaces));
+    // Fetch all workspaces only if needed, otherwise use member workspaces
+    let workspaces = memberWorkspaces;
 
-    if (shouldFallbackToFetchAllWorkspaces) {
-      res = await this.mondayApi.request<ListWorkspacesQuery>(
+    if (shouldFetchAllWorkspaces) {
+      const allWorkspacesRes = await this.mondayApi.request<ListWorkspacesQuery>(
         listWorkspaces,
         createVariables(WorkspaceMembershipKind.All),
       );
-      workspaces = filterNullWorkspaces(res);
-      usedMemberOnly = false;
+      workspaces = filterNullWorkspaces(allWorkspacesRes);
     }
+
 
     if (!hasElements(workspaces)) {
       return {
@@ -96,7 +96,7 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
       };
     }
 
-    // If the number of workspaces is small there is no need to filter since the LLM can get all the context and filter or show options
+    // If the number of workspaces is small we prefer not filter and return all workspaces to LLM to filter
     const shouldIncludeNoFilteringDisclaimer = searchTermNormalized && workspaces?.length <= DEFAULT_WORKSPACE_LIMIT;
     const filteredWorkspaces = filterWorkspacesBySearchTerm(searchTermNormalized, workspaces, input.page, input.limit);
 
@@ -109,7 +109,7 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
     // Naive check to see if there are more pages
     const hasMorePages = filteredWorkspaces.length === input.limit;
     const workspacesList = formatWorkspacesList(filteredWorkspaces);
-    const memberOnlyNote = usedMemberOnly ? 'Showing workspaces you are a member of. ' : '';
+    const memberOnlyNote = !shouldFetchAllWorkspaces ? 'Showing workspaces you are a member of. ' : '';
 
     return {
       content: `
