@@ -279,6 +279,18 @@ type Query {
     internal_token: String!
   ): AutomationData
 
+  """Get workflow data by workflow entity ID - internal use only"""
+  get_workflow_data(
+    """Account ID that owns the automation"""
+    account_id: ID!
+
+    """Unique identifier for the workflow"""
+    workflow_entity_id: ID!
+
+    """Internal API token for backend service authentication"""
+    internal_token: String!
+  ): JSON
+
   """List trigger events with optional filters"""
   trigger_events(nextPageOffset: Int = 0, filters: TriggerEventsFiltersInput): TriggerEventsPage
 
@@ -411,6 +423,16 @@ type Query {
     """The statuses to filter by"""
     status: [RestoreStatus!]! = []
   ): [GetRestoresQueryResults!]
+  migrated_entity_id_mappings(
+    migrationJobId: String!
+    entityType: String!
+
+    """Array of old IDs to resolve. Cannot be used together with newIds."""
+    oldIds: [String!]
+
+    """Array of new IDs to resolve. Cannot be used together with oldIds."""
+    newIds: [String!]
+  ): [MigratedEntityIdMappingsResult!]
 
   """Get managed column data."""
   managed_column(
@@ -501,8 +523,20 @@ type Query {
     blockIds: [String!]
   ): ExportMarkdownResult
 
+  """Search knowledge base snippets."""
+  knowledge_base_search(
+    """The search query."""
+    query: String!
+
+    """The maximum number of results to return."""
+    limit: Int = 5
+  ): KnowledgeBaseAnswer
+
   """Get all personal list items by list ID"""
   favorites: [GraphqlHierarchyObjectItem!]
+
+  """Intelligence data."""
+  intelligence: Intelligence
   marketplace_app_discounts(
     """The id of an app"""
     app_id: ID!
@@ -564,11 +598,19 @@ type Query {
     import_id: ID!
   ): BulkImportStatus!
 
-  """Get an app by ID."""
+  """Get an app by ID or slug."""
   app(
-    """The ID of the app"""
+    """The ID or slug of the app"""
     id: ID!
   ): AppType
+
+  """
+  Query the monday.com apps documentation using AI. Returns an AI-generated answer based on the documentation.
+  """
+  ask_developer_docs(
+    """The question to ask about monday.com apps documentation."""
+    query: String!
+  ): AppDocumentationAiResponse
 
   """Get the connected account's information."""
   account: Account
@@ -914,6 +956,18 @@ type Query {
     workspace_ids: [ID!]
   ): [Object!]
 
+  """Fetch relations for a specific object"""
+  object_relations(
+    """ID of the source object"""
+    object_id: ID!
+
+    """Kind of the relation to fetch"""
+    kind: RelationKind!
+
+    """Direction of the relation (defaults to "outgoing")"""
+    direction: RelationDirection = OUTGOING
+  ): [ObjectRelation!]
+
   """Get the API version in use"""
   version: Version!
 
@@ -1091,6 +1145,9 @@ type Mutation {
   """Create a new live workflow."""
   create_live_workflow(workflow: WorkflowInput!): CreateWorkflowResult
 
+  """Create a workflow template for an account"""
+  save_workflow_as_template(workflow_template_data: WorkflowTemplateInput!): SaveWorkflowAsTemplateResult
+
   """Update live workflow"""
   update_live_workflow(workflow: UpdateWorkflowInput!): UpdateWorkflowResult
 
@@ -1114,6 +1171,12 @@ type Mutation {
     """ID of the workflow to deactivate"""
     id: ID!
   ): DeactivateWorkflowResult
+
+  """Create a new live workflow from a template."""
+  create_live_workflow_from_template(input: CreateWorkflowFromTemplateInput!): CreateWorkflowResult
+
+  """Update live workflow created from a template."""
+  update_live_workflow_from_template(input: UpdateWorkflowFromTemplateInput!): UpdateWorkflowResult
 
   """Change the owner of a live workflow"""
   change_live_workflow_owner(
@@ -1437,6 +1500,30 @@ type Mutation {
     """The API token for the source account."""
     sourceAccountApiToken: String
   ): RestoreEntityResult
+
+  """Upsert entity ID mappings for a migration job."""
+  upsert_entity_id_mappings(
+    """The id of the migration job."""
+    migrationJobId: String!
+
+    """The entity type for the mappings."""
+    entityType: String!
+
+    """Array of entity ID mappings to upsert."""
+    mappings: [EntityIdMappingInput!]!
+  ): UpsertEntityIdMappingsResult
+
+  """Delete entity ID mappings by old IDs for a migration job."""
+  delete_entity_id_mappings(
+    """The id of the migration job."""
+    migrationJobId: String!
+
+    """The entity type for the mappings."""
+    entityType: String!
+
+    """Array of old IDs to delete mappings for."""
+    oldIds: [String!]!
+  ): DeleteEntityIdMappingsResult
 
   """Create managed column of type dropdown mutation."""
   create_dropdown_managed_column(
@@ -1832,6 +1919,40 @@ type Mutation {
     user_ids: [ID!]!
   ): ClearUsersDepartmentResult
 
+  """Assigns an owner to a department."""
+  assign_department_owner(
+    """The department ID to assign the owner to."""
+    department_id: ID!
+
+    """The user ID to assign as the owner of the department."""
+    user_id: ID!
+  ): AssignDepartmentOwnerResult
+
+  """Unassigns owners from a department."""
+  unassign_department_owners(
+    """The department ID to unassign the owners from."""
+    department_id: ID!
+
+    """The user IDs to unassign as the owners of the department."""
+    user_ids: [ID!]!
+  ): UnassignDepartmentOwnerResult
+
+  """Creates a new department."""
+  create_department(data: CreateDepartmentDataInput!): Department
+
+  """Updates a department."""
+  update_department(
+    """The department ID to update."""
+    department_id: ID!
+    data: UpdateDepartmentOptionsInput
+  ): Department
+
+  """Deletes a department."""
+  delete_department(
+    """The department ID to delete."""
+    department_id: ID!
+  ): Department
+
   """Update the dependency column for a specific pulse"""
   update_dependency_column(
     boardId: String!
@@ -2061,6 +2182,17 @@ type Mutation {
     """
     name: String!
   ): JSON
+
+  """
+  Sets an item description document's content with new markdown data. This mutation converts the provided markdown into document blocks and replaces the existing content of the item's description. Returns the IDs of the newly created blocks on success. Note: Markdown does not support text colors or background highlights. Any existing colored or highlighted text will be lost after replacement.
+  """
+  set_item_description_content(
+    """The item's unique identifier."""
+    item_id: ID!
+
+    """The markdown content to replace the document with."""
+    markdown: String!
+  ): DocBlocksFromMarkdownResult
 
   """Add workspace object to favorites"""
   create_favorite(
@@ -3159,6 +3291,9 @@ type Mutation {
     JSON of creation payload, that will include additional fields for the object creation
     """
     payload: JSON
+
+    """Optional relations to create with the object"""
+    relations: [ObjectRelationInput!]
   ): Object
 
   """
@@ -3219,6 +3354,28 @@ type Mutation {
     """The unique identifier of the object instance."""
     id: ID!
   ): ObjectOperationResponse
+
+  """Create relations for an object"""
+  create_object_relations(
+    """ID of the source object"""
+    source_object_id: ID!
+
+    """List of relations to create"""
+    relations: [ObjectRelationInput!]!
+  ): [ObjectRelation!]
+
+  """
+  Delete a specific object relation or all relations for an object. Returns the number of relations deleted.
+  """
+  delete_object_relation(
+    """ID of the source object"""
+    source_object_id: ID!
+
+    """
+    ID of the relation to delete. If not provided, deletes all relations for the source object.
+    """
+    relation_id: ID
+  ): Int
 
   """Connect project to portfolio"""
   connect_project_to_portfolio(
@@ -4098,6 +4255,39 @@ type Connection {
   updatedAt: String
 }
 
+"""Input for creating a workflow from a template"""
+input CreateWorkflowFromTemplateInput {
+  """Title of the workflow"""
+  title: String!
+
+  """Detailed description of the workflow"""
+  description: String
+
+  """The reference ID of the workflow template to create the workflow from"""
+  template_reference_id: ID!
+
+  """
+  A map of workflow variable keys to their configuration values. Each value can contain: value, title, icon, and dependencies
+  """
+  workflow_variables_values: JSON
+
+  """
+  Variables used within this workflow. To get the accurate JSON schema call the GraphQL query 'get_workflow_variable_schemas' These variables will be appended to the template workflow variables.
+  """
+  workflow_variables: [JSON!]
+
+  """ID of the creator app"""
+  creator_app_id: ID!
+
+  """Reference ID of the creator app feature"""
+  creator_app_feature_reference_id: ID
+
+  """
+  Hierarchy level the workflow is hosted in If omitted, defaults to account-level with the current account ID.
+  """
+  workflow_host_data: WorkflowHostDataInput
+}
+
 type CreateWorkflowResult {
   """Workflow numeric ID (supports both integer and bigint)"""
   id: String
@@ -4680,6 +4870,12 @@ type RemoteOptionsResponse {
   disclaimer: String
 }
 
+"""Result of saving a workflow as a template"""
+type SaveWorkflowAsTemplateResult {
+  """AppFeature reference ID of the created template"""
+  template_reference_id: ID!
+}
+
 """Object field type implementation"""
 type SubfieldsFieldType implements FieldType {
   """Unique identifier for the field type"""
@@ -4713,6 +4909,31 @@ type SubfieldsFieldType implements FieldType {
 
   """Indicates if the object field type has remote subfields"""
   hasRemoteSubfields: Boolean
+}
+
+"""Input for updating a workflow created from a template"""
+input UpdateWorkflowFromTemplateInput {
+  """Workflow numeric ID (supports both integer and bigint)"""
+  id: ID!
+
+  """
+  A map of workflow variable keys to their configuration values. Each value can contain: value, title, icon, and dependencies
+  """
+  workflow_variables_values: JSON
+
+  """
+  Variables used within this workflow. To get the accurate JSON schema call the GraphQL query 'get_workflow_variable_schemas'
+  """
+  workflow_variables: [JSON!]
+
+  """Title of the workflow"""
+  title: String
+
+  """Detailed description of the workflow"""
+  description: String
+
+  """Importance level of the workflow"""
+  importance: Int
 }
 
 input UpdateWorkflowInput {
@@ -4788,6 +5009,9 @@ type Workflow {
 
   """Notice/Error message for the workflow"""
   notice_message: String
+
+  """Reference ID of the template this workflow was created from, if any"""
+  template_reference_id: ID
 }
 
 type WorkflowBlock {
@@ -4961,6 +5185,72 @@ input WorkflowInput {
 
   """Customization settings for the workflow"""
   customization: WorkflowCustomizationInput
+}
+
+"""The context where a workflow template can be accessed"""
+enum WorkflowTemplateContext {
+  """
+  Using this context will make the template accessible in the Lite Builder
+  """
+  LITE_BUILDER
+}
+
+"""Input data for creating a workflow template"""
+input WorkflowTemplateInput {
+  """Name of the template"""
+  name: String!
+
+  """Description of the template"""
+  description: String!
+
+  """URL of the image for the template"""
+  image_url: String
+
+  """Define the workflow's steps and the configuration of each step"""
+  workflow_blocks: [WorkflowTemplateWorkflowBlockInput!]!
+
+  """
+  Variables used within this workflow. To get the accurate JSON schema call the GraphQL query 'get_workflow_variable_schemas'
+  """
+  workflow_variables: [JSON!]!
+
+  """Contexts that the template should be accessible from"""
+  contexts: [WorkflowTemplateContext!]
+}
+
+"""
+Defines the input fields of the workflow block. This corresponds to the input fields defined by the block used in the Workflow Block. You must call the remote_options query to retrieve the allowed values for any custom input field before configuring it.
+"""
+input WorkflowTemplateWorkflowBlockFieldInput {
+  """
+  Key of the workflow variable defining the configuration for the field key. Always a positive number
+  """
+  workflow_variable_key: Int!
+
+  """The block's field key"""
+  field_key: String!
+}
+
+"""Define the workflow's steps and the configuration of each step"""
+input WorkflowTemplateWorkflowBlockInput {
+  """Unique node identifier within the workflow"""
+  workflow_node_id: Int!
+
+  """Reference ID of the block"""
+  block_reference_id: Int!
+
+  """Title of the workflow block"""
+  title: String!
+
+  """
+  Defines the input fields of the workflow block. This corresponds to the input fields defined by the block used in the Workflow Block. You must call the remote_options query to retrieve the allowed values for any custom input field before configuring it.
+  """
+  input_fields: [WorkflowTemplateWorkflowBlockFieldInput!]!
+
+  """
+  Configuration for the next workflow blocks. To get the accurate JSON schema call the graphQL query 'get_workflow_block_next_mapping_schemas'. Note: Only the following mapping types are currently supported: routesMapping, waitTriggerMapping.
+  """
+  next_workflow_blocks_config: JSON
 }
 
 """The kind and JSON schema definition for a given workflow variable kind"""
@@ -5234,6 +5524,9 @@ enum TriggerEventState {
   """Automation run exhausted all retry attempts"""
   exhausted
 }
+
+"""A file"""
+scalar File
 
 """A monday.com board."""
 type Board {
@@ -6051,8 +6344,23 @@ type CreateMigrationJobResult {
   id: ID!
 }
 
-"""A file"""
-scalar File
+"""The result of deleting entity ID mappings."""
+type DeleteEntityIdMappingsResult {
+  """Whether the delete operation was successful."""
+  success: Boolean
+
+  """The number of mappings that were deleted."""
+  count: Int
+}
+
+"""Input type for entity ID mapping."""
+input EntityIdMappingInput {
+  """The old ID of the entity."""
+  oldId: String!
+
+  """The new ID of the entity."""
+  newId: String!
+}
 
 type GetEntitiesForMigrationResult {
   """The entities for migration."""
@@ -6094,6 +6402,17 @@ type GetSnapshotsQueryResults {
   status: SnapshotStatus!
 }
 
+type MigratedEntityIdMappingsResult {
+  """The entity type of migrated entities."""
+  entityType: String
+
+  """The old ID of the migrated entity."""
+  oldId: String
+
+  """The new ID of the migrated entity."""
+  newId: String
+}
+
 """The result of the restore entity mutation."""
 type RestoreEntityResult {
   """Confirms the restore request was accepted."""
@@ -6120,6 +6439,15 @@ enum SnapshotStatus {
   processing
   success
   failed
+}
+
+"""The result of upserting entity ID mappings."""
+type UpsertEntityIdMappingsResult {
+  """Whether the upsert operation was successful."""
+  success: Boolean
+
+  """The number of mappings that were upserted."""
+  count: Int
 }
 
 """Calculated capability settings for a column"""
@@ -6603,10 +6931,25 @@ type AssignDepartmentMembersResult {
   failed_users: [User!]
 }
 
+"""Result of assigning an owner to a department."""
+type AssignDepartmentOwnerResult {
+  """The user ID of the owner that was assigned to the department."""
+  owner: User
+}
+
 """Result of clearing users department."""
 type ClearUsersDepartmentResult {
   """The users that their department was cleared."""
   cleared_users: [User!]
+}
+
+"""Data for creating a department."""
+input CreateDepartmentDataInput {
+  """The name of the department."""
+  name: String!
+
+  """The number of reserved seats for the department."""
+  reserved_seats: Int
 }
 
 """A department in the account."""
@@ -6628,6 +6971,21 @@ type Department {
 
   """The owners of the department"""
   owners: [User!]
+}
+
+"""Result of unassigning owners from a department."""
+type UnassignDepartmentOwnerResult {
+  """The user IDs of the owners that were unassigned from the department."""
+  unassigned_users: [User!]
+}
+
+"""Options for updating a department."""
+input UpdateDepartmentOptionsInput {
+  """The new name of the department."""
+  name: String
+
+  """The new number of reserved seats for the department."""
+  reserved_seats: Int
 }
 
 """The complete graph export for a board"""
@@ -7531,6 +7889,44 @@ type VideoContent implements DocBaseBlockContent {
   width: Int
 }
 
+"""Knowledge base answer generated from snippets using LLM."""
+type KnowledgeBaseAnswer {
+  """List of knowledge base snippets used to generate the answer."""
+  raw_snippets: [SnippetSearchResult!]
+
+  """LLM-generated answer based on the knowledge base snippets."""
+  answer: String
+}
+
+"""
+A knowledge base for monday.com which returns a list of snippet search results containing document content and metadata.
+"""
+type SnippetSearchResult {
+  """The unique identifier of the snippet."""
+  id: ID!
+
+  """The title of the article."""
+  title: String
+
+  """The content of the snippet."""
+  text: String
+
+  """The parent document ID."""
+  parent_id: ID
+
+  """When the snippet was created."""
+  created_at: String
+
+  """When the snippet was last updated."""
+  updated_at: String
+
+  """The vector distance score. Lower is better. value between 0 and 1."""
+  distance: Float
+
+  """The URL of the source article."""
+  url: String
+}
+
 """Input type for adding an object to a hierarchy list"""
 input CreateFavoriteInput {
   """The object to add to the list"""
@@ -7670,6 +8066,24 @@ input UpdateObjectHierarchyPositionInput {
 
   """The new position for the object"""
   newPosition: ObjectDynamicPositionInput
+}
+
+"""Intelligence data."""
+type Intelligence {
+  """Top visited boards ranked by relevance (frequency + recency)."""
+  relevant_boards(
+    """Maximum number of boards to return. Default: 10, Max: 50."""
+    limit: Int
+  ): [RelevantBoard!]
+}
+
+"""A board ranked by relevance based on visit frequency and recency."""
+type RelevantBoard {
+  """Board ID"""
+  id: ID
+
+  """Board details resolved via federation from the boards subgraph."""
+  board: Board
 }
 
 """Subscription object"""
@@ -8081,6 +8495,21 @@ input OnMatchInput {
   behaviour: OnMatchBehaviour!
 }
 
+"""Response from querying the apps documentation AI."""
+type AppDocumentationAiResponse {
+  """Unique identifier for this query response."""
+  id: ID
+
+  """The original question that was asked."""
+  question: String
+
+  """The AI-generated answer based on the documentation."""
+  answer: String!
+
+  """The conversation ID for follow-up queries."""
+  conversation_id: ID
+}
+
 """Input for app feature release data."""
 input AppFeatureReleaseDataInput {
   """The URL for the release."""
@@ -8454,7 +8883,9 @@ input CreateAppInput {
   """Detailed description of the app"""
   description: String
 
-  """URL-friendly identifier"""
+  """
+  URL-friendly identifier in the format {account_slug}_{app_slug}. Must contain only letters, numbers, dashes, and underscores. Example: "account-slug_my-scheduler"
+  """
   slug: String
 
   """Array of permission scopes"""
@@ -11739,12 +12170,51 @@ type Object {
   List of users who are subscribers to this object. Subscribers receive notifications about changes.
   """
   subscribers: [User!]
+
+  """Relations for this object"""
+  relations(
+    """Kind of the relation to fetch"""
+    kind: RelationKind!
+
+    """Direction of the relation (defaults to "outgoing")"""
+    direction: RelationDirection = OUTGOING
+  ): [ObjectRelation!]
 }
 
 """Response for object operations indicating success or failure"""
 type ObjectOperationResponse {
   """Indicates whether the operation was successful"""
   success: Boolean
+}
+
+"""Represents a relation between two objects"""
+type ObjectRelation {
+  """Unique identifier for the relation"""
+  id: ID
+
+  """ID of the source object in the relation"""
+  source_object_id: ID
+
+  """ID of the target object in the relation"""
+  target_id: ID
+
+  """Type of the target object (board or dashboard)"""
+  target_object_type: TargetObject
+
+  """Kind of the relation"""
+  kind: String
+}
+
+"""Input for creating object relations"""
+input ObjectRelationInput {
+  """Kind of the relation"""
+  kind: RelationKind!
+
+  """ID of the target object"""
+  target_id: ID!
+
+  """Type of the target object (defaults to "board")"""
+  target_object_type: TargetObject = BOARD
 }
 
 """The state of the object."""
@@ -11789,6 +12259,24 @@ enum OrderBy {
   USED_AT
 }
 
+"""The direction of the relation from the object perspective"""
+enum RelationDirection {
+  """Relations where the object is the source"""
+  OUTGOING
+
+  """Relations where the object is the target"""
+  INCOMING
+}
+
+"""The kind/type of relation between objects"""
+enum RelationKind {
+  """Alias relation type"""
+  ALIAS
+
+  """Dependency relation type"""
+  DEPENDENCY
+}
+
 """Defines the type of the user's role as members of the object"""
 enum SubscriberKind {
   """
@@ -11802,6 +12290,15 @@ enum SubscriberKind {
   SUBSCRIBER
 }
 
+"""The type of target object for a relation"""
+enum TargetObject {
+  """Board object type"""
+  BOARD
+
+  """Dashboard object type"""
+  DASHBOARD
+}
+
 """Input for updating an object"""
 input UpdateObjectInput {
   """The new name for the object."""
@@ -11812,6 +12309,9 @@ input UpdateObjectInput {
 
   """The new privacy kind for the object."""
   privacy_kind: PrivacyKind
+
+  """Optional relations to add to the object"""
+  relations: [ObjectRelationInput!]
 }
 
 """API usage data."""
