@@ -5,3 +5,8 @@ export interface Favorite {
   name: string;
   type: GraphqlMondayObject;
 }
+
+export interface RelevantBoard {
+  id: string;
+  name: string;
+}
