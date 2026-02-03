@@ -21,9 +21,15 @@ describe('UserContextTool', () => {
       { object: { id: '20', type: GraphqlMondayObject.Workspace } },
       { object: { id: '30', type: GraphqlMondayObject.Dashboard } },
     ],
+    intelligence: {
+      relevant_boards: [
+        { id: '100', board: { name: 'Top Board' } },
+        { id: '101', board: { name: 'Recent Board' } },
+      ],
+    },
   };
 
-  const mockFavoriteDetailsResponse: GetFavoriteDetailsQuery = {
+  const mockFavoriteDetailsQuery: GetFavoriteDetailsQuery = {
     boards: [
       { id: '1', name: 'Marketing Board' },
       { id: '2', name: 'Sprint Planning' },
@@ -33,9 +39,9 @@ describe('UserContextTool', () => {
     dashboards: [{ id: '30', name: 'Q1 Dashboard' }],
   };
 
-  it('should fetch user context and favorites', async () => {
+  it('should fetch user context, favorites, and relevant boards', async () => {
     mocks.setResponseOnce(mockUserContextResponse);
-    mocks.setResponseOnce(mockFavoriteDetailsResponse);
+    mocks.setResponseOnce(mockFavoriteDetailsQuery);
 
     const result = await callToolByNameRawAsync('get_user_context', {});
 
@@ -52,24 +58,38 @@ describe('UserContextTool', () => {
         { id: '20', name: 'Engineering Workspace', type: 'Workspace' },
         { id: '30', name: 'Q1 Dashboard', type: 'Dashboard' },
       ],
+      relevantBoards: [
+        { id: '100', name: 'Top Board' },
+        { id: '101', name: 'Recent Board' },
+      ],
     };
 
     expect(result.content[0].text).toBe(JSON.stringify(expectedOutput, null, 2));
 
     expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
-    expect(mocks.getMockRequest()).toHaveBeenNthCalledWith(1, expect.stringContaining('getUserContext'));
-    expect(mocks.getMockRequest()).toHaveBeenNthCalledWith(2, expect.stringContaining('getFavoriteDetails'), {
-      boardIds: ['1', '2'],
-      folderIds: ['10'],
-      workspaceIds: ['20'],
-      dashboardIds: ['30'],
-    });
+    expect(mocks.getMockRequest()).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining('getUserContext'),
+      {},
+      expect.objectContaining({ versionOverride: 'dev' }),
+    );
+    expect(mocks.getMockRequest()).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining('getFavoriteDetails'),
+      {
+        boardIds: ['1', '2'],
+        folderIds: ['10'],
+        workspaceIds: ['20'],
+        dashboardIds: ['30'],
+      },
+    );
   });
 
-  it('should handle empty favorites', async () => {
+  it('should handle empty favorites and no relevant boards', async () => {
     mocks.setResponseOnce({
       me: { id: '123', name: 'John Doe', title: null },
       favorites: [],
+      intelligence: null,
     });
 
     const result = await callToolByNameRawAsync('get_user_context', {});
@@ -81,6 +101,7 @@ describe('UserContextTool', () => {
         title: null,
       },
       favorites: [],
+      relevantBoards: [],
     };
 
     expect(result.content[0].text).toBe(JSON.stringify(expectedOutput, null, 2));
@@ -91,6 +112,12 @@ describe('UserContextTool', () => {
     mocks.setResponseOnce({
       me: { id: '123', name: 'John Doe', title: 'Dev' },
       favorites: [{ object: { id: '1', type: GraphqlMondayObject.Board } }],
+      intelligence: {
+        relevant_boards: [
+          { id: '200', board: { name: 'Active Board' } },
+          { id: '300', board: null }, // Should be filtered out
+        ],
+      },
     });
     mocks.setResponseOnce({
       boards: [{ id: '1', name: 'Valid Board' }, null],
@@ -108,6 +135,7 @@ describe('UserContextTool', () => {
         title: 'Dev',
       },
       favorites: [{ id: '1', name: 'Valid Board', type: 'Board' }],
+      relevantBoards: [{ id: '200', name: 'Active Board' }],
     };
 
     expect(result.content[0].text).toBe(JSON.stringify(expectedOutput, null, 2));

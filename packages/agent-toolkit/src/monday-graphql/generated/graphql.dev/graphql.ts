@@ -660,6 +660,19 @@ export enum AllowedFileMime {
   ImageWebp = 'IMAGE_WEBP'
 }
 
+/** Response from querying the apps documentation AI. */
+export type AppDocumentationAiResponse = {
+  __typename?: 'AppDocumentationAiResponse';
+  /** The AI-generated answer based on the documentation. */
+  answer: Scalars['String']['output'];
+  /** The conversation ID for follow-up queries. */
+  conversation_id?: Maybe<Scalars['ID']['output']>;
+  /** Unique identifier for this query response. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** The original question that was asked. */
+  question?: Maybe<Scalars['String']['output']>;
+};
+
 /** Input for app feature release data. */
 export type AppFeatureReleaseDataInput = {
   /** The URL for the release. */
@@ -1163,6 +1176,13 @@ export type AssignDepartmentMembersResult = {
   failed_users?: Maybe<Array<User>>;
   /** The users that were successfully assigned to the department. */
   successful_users?: Maybe<Array<User>>;
+};
+
+/** Result of assigning an owner to a department. */
+export type AssignDepartmentOwnerResult = {
+  __typename?: 'AssignDepartmentOwnerResult';
+  /** The user ID of the owner that was assigned to the department. */
+  owner?: Maybe<User>;
 };
 
 /** Error that occurred while changing team owners. */
@@ -2395,7 +2415,7 @@ export type CreateAppInput = {
   name: Scalars['String']['input'];
   /** Array of permission scopes */
   permissions?: InputMaybe<Array<AppPermission>>;
-  /** URL-friendly identifier */
+  /** URL-friendly identifier in the format {account_slug}_{app_slug}. Must contain only letters, numbers, dashes, and underscores. Example: "account-slug_my-scheduler" */
   slug?: InputMaybe<Scalars['String']['input']>;
   /** Webhook endpoint URL */
   webhook_url?: InputMaybe<Scalars['String']['input']>;
@@ -2442,6 +2462,14 @@ export type CreateBlockInput = {
   text_block?: InputMaybe<TextBlockInput>;
   /** Create a video block */
   video_block?: InputMaybe<VideoBlockInput>;
+};
+
+/** Data for creating a department. */
+export type CreateDepartmentDataInput = {
+  /** The name of the department. */
+  name: Scalars['String']['input'];
+  /** The number of reserved seats for the department. */
+  reserved_seats?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type CreateDocBoardInput = {
@@ -2643,6 +2671,26 @@ export type CreateTeamAttributesInput = {
 export type CreateTeamOptionsInput = {
   /** Whether to allow a team without any subscribers. */
   allow_empty_team?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+/** Input for creating a workflow from a template */
+export type CreateWorkflowFromTemplateInput = {
+  /** Reference ID of the creator app feature */
+  creator_app_feature_reference_id?: InputMaybe<Scalars['ID']['input']>;
+  /** ID of the creator app */
+  creator_app_id: Scalars['ID']['input'];
+  /** Detailed description of the workflow */
+  description?: InputMaybe<Scalars['String']['input']>;
+  /** The reference ID of the workflow template to create the workflow from */
+  template_reference_id: Scalars['ID']['input'];
+  /** Title of the workflow */
+  title: Scalars['String']['input'];
+  /** Hierarchy level the workflow is hosted in If omitted, defaults to account-level with the current account ID. */
+  workflow_host_data?: InputMaybe<WorkflowHostDataInput>;
+  /** Variables used within this workflow. To get the accurate JSON schema call the GraphQL query 'get_workflow_variable_schemas' These variables will be appended to the template workflow variables. */
+  workflow_variables?: InputMaybe<Array<Scalars['JSON']['input']>>;
+  /** A map of workflow variable keys to their configuration values. Each value can contain: value, title, icon, and dependencies */
+  workflow_variables_values?: InputMaybe<Scalars['JSON']['input']>;
 };
 
 export type CreateWorkflowResult = {
@@ -2995,6 +3043,15 @@ export type DehydratedFormResponse = {
   boardId: Scalars['ID']['output'];
   /** The unique identifier token for the form. Required for all form-specific operations. */
   token: Scalars['String']['output'];
+};
+
+/** The result of deleting entity ID mappings. */
+export type DeleteEntityIdMappingsResult = {
+  __typename?: 'DeleteEntityIdMappingsResult';
+  /** The number of mappings that were deleted. */
+  count?: Maybe<Scalars['Int']['output']>;
+  /** Whether the delete operation was successful. */
+  success?: Maybe<Scalars['Boolean']['output']>;
 };
 
 /** Input type for removing an object from favorites */
@@ -3598,6 +3655,14 @@ export type EnrollToSequenceResult = {
   failed_item_ids?: Maybe<Array<Scalars['ID']['output']>>;
   /** List of item IDs that were successfully enrolled, including items that were provided and are already enrolled */
   succeeded_item_ids?: Maybe<Array<Scalars['ID']['output']>>;
+};
+
+/** Input type for entity ID mapping. */
+export type EntityIdMappingInput = {
+  /** The new ID of the entity. */
+  newId: Scalars['String']['input'];
+  /** The old ID of the entity. */
+  oldId: Scalars['String']['input'];
 };
 
 /** Response from exporting document content as markdown. Contains the generated markdown text or error details. */
@@ -5015,6 +5080,19 @@ export type IntegrationValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
+/** Intelligence data. */
+export type Intelligence = {
+  __typename?: 'Intelligence';
+  /** Top visited boards ranked by relevance (frequency + recency). */
+  relevant_boards?: Maybe<Array<RelevantBoard>>;
+};
+
+
+/** Intelligence data. */
+export type IntelligenceRelevant_BoardsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
 /** Configuration for an interface input field */
 export type InterfaceInputFieldConfig = InputFieldConfig & {
   __typename?: 'InterfaceInputFieldConfig';
@@ -5301,6 +5379,15 @@ export enum Kind {
   /** Represents a team */
   Team = 'team'
 }
+
+/** Knowledge base answer generated from snippets using LLM. */
+export type KnowledgeBaseAnswer = {
+  __typename?: 'KnowledgeBaseAnswer';
+  /** LLM-generated answer based on the knowledge base snippets. */
+  answer?: Maybe<Scalars['String']['output']>;
+  /** List of knowledge base snippets used to generate the answer. */
+  raw_snippets?: Maybe<Array<SnippetSearchResult>>;
+};
 
 export type LastUpdatedValue = ColumnValue & {
   __typename?: 'LastUpdatedValue';
@@ -5655,6 +5742,16 @@ export type MetadataInput = {
   payload?: InputMaybe<PayloadInput>;
 };
 
+export type MigratedEntityIdMappingsResult = {
+  __typename?: 'MigratedEntityIdMappingsResult';
+  /** The entity type of migrated entities. */
+  entityType?: Maybe<Scalars['String']['output']>;
+  /** The new ID of the migrated entity. */
+  newId?: Maybe<Scalars['String']['output']>;
+  /** The old ID of the migrated entity. */
+  oldId?: Maybe<Scalars['String']['output']>;
+};
+
 export type MirrorValue = ColumnValue & {
   __typename?: 'MirrorValue';
   /** The column that this value belongs to. */
@@ -5736,6 +5833,8 @@ export type Mutation = {
   archive_object?: Maybe<Object>;
   /** Assigns members to a department. */
   assign_department_members?: Maybe<AssignDepartmentMembersResult>;
+  /** Assigns an owner to a department. */
+  assign_department_owner?: Maybe<AssignDepartmentOwnerResult>;
   /** Assigns the specified users as owners of the specified team. */
   assign_team_owners?: Maybe<AssignTeamOwnersResult>;
   /** Creates a new dropdown column in a board that is linked to a managed column. The column data and settings are controlled by the managed column. Title, description, and dropdown-specific settings (limit_select, label_limit_count) can be overridden locally. */
@@ -5787,6 +5886,8 @@ export type Mutation = {
   create_custom_activity?: Maybe<CustomActivity>;
   /** Create a new dashboard. */
   create_dashboard?: Maybe<Dashboard>;
+  /** Creates a new department. */
+  create_department?: Maybe<Department>;
   /** Create a new doc. */
   create_doc?: Maybe<Document>;
   /** Create new document block */
@@ -5815,6 +5916,8 @@ export type Mutation = {
   create_item?: Maybe<Item>;
   /** Create a new live workflow. */
   create_live_workflow?: Maybe<CreateWorkflowResult>;
+  /** Create a new live workflow from a template. */
+  create_live_workflow_from_template?: Maybe<CreateWorkflowResult>;
   /** Create a marketplace app discount */
   create_marketplace_app_discount: CreateMarketplaceAppDiscountResult;
   /** Create a new migration job */
@@ -5823,6 +5926,8 @@ export type Mutation = {
   create_notification?: Maybe<Notification>;
   /** Creates a new object in the Monday.com Objects Platform. The type of object created is determined by the object_type_unique_key parameter. This mutation can create boards, docs, dashboards, workflows, or specialized objects like CRM, capacity manager, etc. Under the hood, this creates a board with the corresponding app_feature_id. */
   create_object?: Maybe<Object>;
+  /** Create relations for an object */
+  create_object_relations?: Maybe<Array<ObjectRelation>>;
   /** Create a new tag or get it if it already exists. */
   create_or_get_tag?: Maybe<Tag>;
   /** Create a new portfolio */
@@ -5866,10 +5971,14 @@ export type Mutation = {
   delete_custom_activity?: Maybe<CustomActivity>;
   /** Delete an existing dashboard. */
   delete_dashboard?: Maybe<Scalars['Boolean']['output']>;
+  /** Deletes a department. */
+  delete_department?: Maybe<Department>;
   /** Permanently deletes a document and all its content from the system. This action cannot be undone. The document will be removed from all user views and workspaces. Use with caution - ensure the document is no longer needed before deletion. Returns success status and the deleted document ID. */
   delete_doc?: Maybe<Scalars['JSON']['output']>;
   /** Delete a document block */
   delete_doc_block?: Maybe<DocumentBlockIdOnly>;
+  /** Delete entity ID mappings by old IDs for a migration job. */
+  delete_entity_id_mappings?: Maybe<DeleteEntityIdMappingsResult>;
   /** Remove an object from favorites */
   delete_favorite?: Maybe<DeleteFavoriteInputResultType>;
   /** Deletes a folder in a specific workspace. */
@@ -5887,6 +5996,8 @@ export type Mutation = {
   delete_marketplace_app_discount: DeleteMarketplaceAppDiscountResult;
   /** Permanently deletes an object from the Monday.com Objects Platform. Unlike archiving, deletion is only reversible for 30 days and removes all associated data. This operation works for any object type including boards, docs, dashboards, workflows, and specialized objects (CRM, capacity manager, etc.). WARNING: This operation cannot be undone after 30 days. */
   delete_object?: Maybe<Object>;
+  /** Delete a specific object relation or all relations for an object. Returns the number of relations deleted. */
+  delete_object_relation?: Maybe<Scalars['Int']['output']>;
   /** Permanently remove a question from a form. This action cannot be undone. */
   delete_question?: Maybe<Scalars['Boolean']['output']>;
   /** Remove subscribers from the board. */
@@ -5951,6 +6062,8 @@ export type Mutation = {
   remove_users_from_team?: Maybe<ChangeTeamMembershipsResult>;
   /** Restore an entity from a migration job */
   restore_entity?: Maybe<RestoreEntityResult>;
+  /** Create a workflow template for an account */
+  save_workflow_as_template?: Maybe<SaveWorkflowAsTemplateResult>;
   /**
    * Set or update the board's permission to specified role. This concept is also
    * known as default board role, general access or board permission set.
@@ -5958,10 +6071,14 @@ export type Mutation = {
   set_board_permission?: Maybe<SetBoardPermissionResponse>;
   /** Set a password on a form to restrict access. This will enable password protection for the form. */
   set_form_password?: Maybe<ResponseForm>;
+  /** Sets an item description document's content with new markdown data. This mutation converts the provided markdown into document blocks and replaces the existing content of the item's description. Returns the IDs of the newly created blocks on success. Note: Markdown does not support text colors or background highlights. Any existing colored or highlighted text will be lost after replacement. */
+  set_item_description_content?: Maybe<DocBlocksFromMarkdownResult>;
   /** Set mock app subscription for the current account */
   set_mock_app_subscription?: Maybe<AppSubscription>;
   /** Shorten a URL for a form and store it in the form settings. Returns the shortened link object. */
   shorten_form_url?: Maybe<FormShortenedLink>;
+  /** Unassigns owners from a department. */
+  unassign_department_owners?: Maybe<UnassignDepartmentOwnerResult>;
   unlike_update: Update;
   unpin_from_top: Update;
   /** Unpublishes object from public state back to draft state. Returns {success: true} on success, {success: false} on failure. */
@@ -5982,6 +6099,8 @@ export type Mutation = {
   update_column?: Maybe<Column>;
   /** Update an existing dashboard. */
   update_dashboard?: Maybe<Dashboard>;
+  /** Updates a department. */
+  update_department?: Maybe<Department>;
   /** Update the dependency column for a specific pulse */
   update_dependency_column: Scalars['JSON']['output'];
   /** Update attributes (Job Role, Skills, or Location) for multiple resources in the directory */
@@ -6012,6 +6131,8 @@ export type Mutation = {
   update_group?: Maybe<Group>;
   /** Update live workflow */
   update_live_workflow?: Maybe<UpdateWorkflowResult>;
+  /** Update live workflow created from a template. */
+  update_live_workflow_from_template?: Maybe<UpdateWorkflowResult>;
   /** Update live workflow metadata */
   update_live_workflow_metadata?: Maybe<UpdateWorkflowResult>;
   /** Updates attributes for users. */
@@ -6038,6 +6159,8 @@ export type Mutation = {
   update_view_table?: Maybe<BoardView>;
   /** Update an existing workspace. */
   update_workspace?: Maybe<Workspace>;
+  /** Upsert entity ID mappings for a migration job. */
+  upsert_entity_id_mappings?: Maybe<UpsertEntityIdMappingsResult>;
   /** Use a template */
   use_template?: Maybe<Template>;
   /** Namespace for all vibe-related mutations */
@@ -6184,6 +6307,13 @@ export type MutationArchive_ObjectArgs = {
 export type MutationAssign_Department_MembersArgs = {
   department_id: Scalars['ID']['input'];
   user_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationAssign_Department_OwnerArgs = {
+  department_id: Scalars['ID']['input'];
+  user_id: Scalars['ID']['input'];
 };
 
 
@@ -6414,6 +6544,12 @@ export type MutationCreate_DashboardArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationCreate_DepartmentArgs = {
+  data: CreateDepartmentDataInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_DocArgs = {
   location: CreateDocInput;
 };
@@ -6539,6 +6675,12 @@ export type MutationCreate_Live_WorkflowArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationCreate_Live_Workflow_From_TemplateArgs = {
+  input: CreateWorkflowFromTemplateInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_Marketplace_App_DiscountArgs = {
   account_slug: Scalars['String']['input'];
   app_id: Scalars['ID']['input'];
@@ -6573,9 +6715,17 @@ export type MutationCreate_ObjectArgs = {
   owner_team_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   payload?: InputMaybe<Scalars['JSON']['input']>;
   privacy_kind: PrivacyKind;
+  relations?: InputMaybe<Array<ObjectRelationInput>>;
   subscriber_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   subscriber_teams_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   workspace_id?: InputMaybe<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationCreate_Object_RelationsArgs = {
+  relations: Array<ObjectRelationInput>;
+  source_object_id: Scalars['ID']['input'];
 };
 
 
@@ -6776,6 +6926,12 @@ export type MutationDelete_DashboardArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationDelete_DepartmentArgs = {
+  department_id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationDelete_DocArgs = {
   docId: Scalars['ID']['input'];
 };
@@ -6784,6 +6940,14 @@ export type MutationDelete_DocArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationDelete_Doc_BlockArgs = {
   block_id: Scalars['String']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationDelete_Entity_Id_MappingsArgs = {
+  entityType: Scalars['String']['input'];
+  migrationJobId: Scalars['String']['input'];
+  oldIds: Array<Scalars['String']['input']>;
 };
 
 
@@ -6842,6 +7006,13 @@ export type MutationDelete_Marketplace_App_DiscountArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationDelete_ObjectArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationDelete_Object_RelationArgs = {
+  relation_id?: InputMaybe<Scalars['ID']['input']>;
+  source_object_id: Scalars['ID']['input'];
 };
 
 
@@ -7109,6 +7280,12 @@ export type MutationRestore_EntityArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationSave_Workflow_As_TemplateArgs = {
+  workflow_template_data: WorkflowTemplateInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationSet_Board_PermissionArgs = {
   basic_role_name: BoardBasicRoleName;
   board_id: Scalars['ID']['input'];
@@ -7119,6 +7296,13 @@ export type MutationSet_Board_PermissionArgs = {
 export type MutationSet_Form_PasswordArgs = {
   formToken: Scalars['String']['input'];
   input: SetFormPasswordInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationSet_Item_Description_ContentArgs = {
+  item_id: Scalars['ID']['input'];
+  markdown: Scalars['String']['input'];
 };
 
 
@@ -7138,6 +7322,13 @@ export type MutationSet_Mock_App_SubscriptionArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationShorten_Form_UrlArgs = {
   formToken: Scalars['String']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUnassign_Department_OwnersArgs = {
+  department_id: Scalars['ID']['input'];
+  user_ids: Array<Scalars['ID']['input']>;
 };
 
 
@@ -7226,6 +7417,13 @@ export type MutationUpdate_DashboardArgs = {
   kind?: InputMaybe<DashboardKind>;
   name?: InputMaybe<Scalars['String']['input']>;
   workspace_id?: InputMaybe<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUpdate_DepartmentArgs = {
+  data?: InputMaybe<UpdateDepartmentOptionsInput>;
+  department_id: Scalars['ID']['input'];
 };
 
 
@@ -7355,6 +7553,12 @@ export type MutationUpdate_Live_WorkflowArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationUpdate_Live_Workflow_From_TemplateArgs = {
+  input: UpdateWorkflowFromTemplateInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Live_Workflow_MetadataArgs = {
   workflow: UpdateWorkflowMetadataInput;
 };
@@ -7474,6 +7678,14 @@ export type MutationUpdate_View_TableArgs = {
 export type MutationUpdate_WorkspaceArgs = {
   attributes: UpdateWorkspaceAttributesInput;
   id?: InputMaybe<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUpsert_Entity_Id_MappingsArgs = {
+  entityType: Scalars['String']['input'];
+  mappings: Array<EntityIdMappingInput>;
+  migrationJobId: Scalars['String']['input'];
 };
 
 
@@ -7641,6 +7853,8 @@ export type Object = {
   owners?: Maybe<Array<User>>;
   /** The kind/visibility setting of the object (private, public, share). Determines who can access it. */
   privacy_kind?: Maybe<Scalars['String']['output']>;
+  /** Relations for this object */
+  relations?: Maybe<Array<ObjectRelation>>;
   /** The current state of the object. Determines visibility in the interface. */
   state?: Maybe<Scalars['String']['output']>;
   /** List of users who are subscribers to this object. Subscribers receive notifications about changes. */
@@ -7649,6 +7863,13 @@ export type Object = {
   updated_at?: Maybe<Scalars['String']['output']>;
   /** The ID of the workspace containing this object. Null indicates the object is in the main workspace. */
   workspace_id?: Maybe<Scalars['String']['output']>;
+};
+
+
+/** The central type in the Monday.com Objects Platform, representing any entity in the system. This unified type can represent instances of boards, docs, dashboards, workflows, and specialized objects. The specific type of an object is determined by its object_type_unique_key. */
+export type ObjectRelationsArgs = {
+  direction?: InputMaybe<RelationDirection>;
+  kind: RelationKind;
 };
 
 export type ObjectDynamicPositionInput = {
@@ -7663,6 +7884,31 @@ export type ObjectOperationResponse = {
   __typename?: 'ObjectOperationResponse';
   /** Indicates whether the operation was successful */
   success?: Maybe<Scalars['Boolean']['output']>;
+};
+
+/** Represents a relation between two objects */
+export type ObjectRelation = {
+  __typename?: 'ObjectRelation';
+  /** Unique identifier for the relation */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Kind of the relation */
+  kind?: Maybe<Scalars['String']['output']>;
+  /** ID of the source object in the relation */
+  source_object_id?: Maybe<Scalars['ID']['output']>;
+  /** ID of the target object in the relation */
+  target_id?: Maybe<Scalars['ID']['output']>;
+  /** Type of the target object (board or dashboard) */
+  target_object_type?: Maybe<TargetObject>;
+};
+
+/** Input for creating object relations */
+export type ObjectRelationInput = {
+  /** Kind of the relation */
+  kind: RelationKind;
+  /** ID of the target object */
+  target_id: Scalars['ID']['input'];
+  /** Type of the target object (defaults to "board") */
+  target_object_type?: InputMaybe<TargetObject>;
 };
 
 /** The state of the object. */
@@ -8191,7 +8437,7 @@ export type Query = {
   all_widgets_schema?: Maybe<Array<WidgetSchemaInfo>>;
   /** Get sequences that the current user is allowed to enroll items to, that are connected to the provided board. Returns sequences owned by the user or sequences where the user has access to the sender connection. */
   allowed_sequences_to_enroll?: Maybe<Array<Sequence>>;
-  /** Get an app by ID. */
+  /** Get an app by ID or slug. */
   app?: Maybe<AppType>;
   /** Get a collection of installs of an app. */
   app_installs?: Maybe<Array<Maybe<AppInstall>>>;
@@ -8208,6 +8454,8 @@ export type Query = {
   article_blocks: Array<Maybe<ArticleBlock>>;
   /** Retrieves a list of published articles with their metadata and content blocks that the requesting user has permission to access. Articles without proper permissions will be filtered out. By default, returns the first 25 blocks per article. To retrieve more blocks, use the article_blocks query. */
   articles: Array<Maybe<Article>>;
+  /** Query the monday.com apps documentation using AI. Returns an AI-generated answer based on the documentation. */
+  ask_developer_docs?: Maybe<AppDocumentationAiResponse>;
   /** Get a collection of assets by ids. */
   assets?: Maybe<Array<Maybe<Asset>>>;
   /**
@@ -8341,12 +8589,18 @@ export type Query = {
   get_view_schema_by_type?: Maybe<Scalars['JSON']['output']>;
   /** List of all supported workflow block next mapping kinds with their json schemas. Note: Only the following mapping types are currently supported: routesMapping, waitTriggerMapping. */
   get_workflow_block_next_mapping_schemas: Array<WorkflowBlockNextMappingSchema>;
+  /** Get workflow data by workflow entity ID - internal use only */
+  get_workflow_data?: Maybe<Scalars['JSON']['output']>;
   /** List of all supported workflow variable kinds with their json schemas */
   get_workflow_variable_schemas: Array<WorkflowVariableSchema>;
+  /** Intelligence data. */
+  intelligence?: Maybe<Intelligence>;
   /** Get a collection of items. */
   items?: Maybe<Array<Maybe<Item>>>;
   /** Search items by multiple columns and values. */
   items_page_by_column_values: ItemsResponse;
+  /** Search knowledge base snippets. */
+  knowledge_base_search?: Maybe<KnowledgeBaseAnswer>;
   /** Get managed column data. */
   managed_column?: Maybe<Array<ManagedColumn>>;
   /** Search for marketplace apps using AI */
@@ -8360,6 +8614,7 @@ export type Query = {
   marketplace_vector_search: MarketplaceSearchResults;
   /** Get the connected user's information. */
   me?: Maybe<User>;
+  migrated_entity_id_mappings?: Maybe<Array<MigratedEntityIdMappingsResult>>;
   /** Get mute board notification settings for the current user */
   mute_board_settings?: Maybe<Array<BoardMuteSettings>>;
   /** Get next pages of board's items (rows) by cursor. */
@@ -8367,6 +8622,8 @@ export type Query = {
   notifications?: Maybe<Array<NotificationV2>>;
   /** Retrieves the current user's notification settings across all available channels. */
   notifications_settings?: Maybe<Array<NotificationSetting>>;
+  /** Fetch relations for a specific object */
+  object_relations?: Maybe<Array<ObjectRelation>>;
   /** Retrieves a list of available object types that can be created or queried. Each object type is uniquely identified by an 'object_type_unique_key'. This key is required for mutations like 'create_object' and for filtering in the 'objects' query. Use this query to discover what types of objects are available in the system (e.g., 'workflows', 'projects') and get their corresponding unique keys. The structure of unique key is 'app_slug::app_feature_slug'. */
   object_types_unique_keys?: Maybe<Array<ObjectTypeUniqueKey>>;
   /** Retrieves a list of objects from the Monday.com Objects Platform based on specified filters. This query can return any type of object (board, doc, dashboard, workflow, etc.) depending on the filter criteria. Use object_type_unique_keys to filter for specific object types. */
@@ -8515,6 +8772,12 @@ export type QueryArticlesArgs = {
   object_ids: Array<Scalars['ID']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
   workspace_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryAsk_Developer_DocsArgs = {
+  query: Scalars['String']['input'];
 };
 
 
@@ -8730,6 +8993,14 @@ export type QueryGet_View_Schema_By_TypeArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QueryGet_Workflow_DataArgs = {
+  account_id: Scalars['ID']['input'];
+  internal_token: Scalars['String']['input'];
+  workflow_entity_id: Scalars['ID']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryItemsArgs = {
   exclude_nonactive?: InputMaybe<Scalars['Boolean']['input']>;
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
@@ -8746,6 +9017,13 @@ export type QueryItems_Page_By_Column_ValuesArgs = {
   cursor?: InputMaybe<Scalars['String']['input']>;
   hierarchy_scope_config?: InputMaybe<Scalars['String']['input']>;
   limit?: Scalars['Int']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryKnowledge_Base_SearchArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  query: Scalars['String']['input'];
 };
 
 
@@ -8787,6 +9065,15 @@ export type QueryMarketplace_Vector_SearchArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QueryMigrated_Entity_Id_MappingsArgs = {
+  entityType: Scalars['String']['input'];
+  migrationJobId: Scalars['String']['input'];
+  newIds?: InputMaybe<Array<Scalars['String']['input']>>;
+  oldIds?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryMute_Board_SettingsArgs = {
   board_ids: Array<Scalars['ID']['input']>;
 };
@@ -8814,6 +9101,14 @@ export type QueryNotifications_SettingsArgs = {
   scope_id?: InputMaybe<Scalars['Int']['input']>;
   scope_type: ScopeType;
   setting_kinds?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryObject_RelationsArgs = {
+  direction?: InputMaybe<RelationDirection>;
+  kind: RelationKind;
+  object_id: Scalars['ID']['input'];
 };
 
 
@@ -9043,6 +9338,31 @@ export type Recipe = {
   user_id: Scalars['ID']['output'];
 };
 
+/** The direction of the relation from the object perspective */
+export enum RelationDirection {
+  /** Relations where the object is the target */
+  Incoming = 'INCOMING',
+  /** Relations where the object is the source */
+  Outgoing = 'OUTGOING'
+}
+
+/** The kind/type of relation between objects */
+export enum RelationKind {
+  /** Alias relation type */
+  Alias = 'ALIAS',
+  /** Dependency relation type */
+  Dependency = 'DEPENDENCY'
+}
+
+/** A board ranked by relevance based on visit frequency and recency. */
+export type RelevantBoard = {
+  __typename?: 'RelevantBoard';
+  /** Board details resolved via federation from the boards subgraph. */
+  board?: Maybe<Board>;
+  /** Board ID */
+  id?: Maybe<Scalars['ID']['output']>;
+};
+
 /** Input type for requesting remote options for a field type, including dependencies, credentials, pagination, and search query. */
 export type RemoteOptionsInput = {
   /** Map a credentialsKey to the credentials data. Example: { "my-credentials-key": { userCredentialsId: 123, accessToken: "abc" } } */
@@ -9202,6 +9522,13 @@ export enum RestoreStatus {
   Success = 'success'
 }
 
+/** Result of saving a workflow as a template */
+export type SaveWorkflowAsTemplateResult = {
+  __typename?: 'SaveWorkflowAsTemplateResult';
+  /** AppFeature reference ID of the created template */
+  template_reference_id: Scalars['ID']['output'];
+};
+
 /** notification settings scope types, the options are account user defaults or user private settings */
 export enum ScopeType {
   AccountNewUserDefaults = 'AccountNewUserDefaults',
@@ -9352,6 +9679,27 @@ export enum SnapshotStatus {
   Processing = 'processing',
   Success = 'success'
 }
+
+/** A knowledge base for monday.com which returns a list of snippet search results containing document content and metadata. */
+export type SnippetSearchResult = {
+  __typename?: 'SnippetSearchResult';
+  /** When the snippet was created. */
+  created_at?: Maybe<Scalars['String']['output']>;
+  /** The vector distance score. Lower is better. value between 0 and 1. */
+  distance?: Maybe<Scalars['Float']['output']>;
+  /** The unique identifier of the snippet. */
+  id: Scalars['ID']['output'];
+  /** The parent document ID. */
+  parent_id?: Maybe<Scalars['ID']['output']>;
+  /** The content of the snippet. */
+  text?: Maybe<Scalars['String']['output']>;
+  /** The title of the article. */
+  title?: Maybe<Scalars['String']['output']>;
+  /** When the snippet was last updated. */
+  updated_at?: Maybe<Scalars['String']['output']>;
+  /** The URL of the source article. */
+  url?: Maybe<Scalars['String']['output']>;
+};
 
 /** Direction for sorting items */
 export enum SortDirection {
@@ -9794,6 +10142,14 @@ export type TagsValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
+/** The type of target object for a relation */
+export enum TargetObject {
+  /** Board object type */
+  Board = 'BOARD',
+  /** Dashboard object type */
+  Dashboard = 'DASHBOARD'
+}
+
 /** A team of users. */
 export type Team = {
   __typename?: 'Team';
@@ -10144,6 +10500,13 @@ export type TriggerEventsPage = {
   triggerEvents?: Maybe<Array<TriggerEvent>>;
 };
 
+/** Result of unassigning owners from a department. */
+export type UnassignDepartmentOwnerResult = {
+  __typename?: 'UnassignDepartmentOwnerResult';
+  /** The user IDs of the owners that were unassigned from the department. */
+  unassigned_users?: Maybe<Array<User>>;
+};
+
 export type UnsupportedValue = ColumnValue & {
   __typename?: 'UnsupportedValue';
   /** The column that this value belongs to. */
@@ -10246,6 +10609,14 @@ export type UpdateBoardHierarchyResult = {
   message?: Maybe<Scalars['String']['output']>;
   /** Whether the operation was successful */
   success: Scalars['Boolean']['output'];
+};
+
+/** Options for updating a department. */
+export type UpdateDepartmentOptionsInput = {
+  /** The new name of the department. */
+  name?: InputMaybe<Scalars['String']['input']>;
+  /** The new number of reserved seats for the department. */
+  reserved_seats?: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** Input type for updating a single dependency relationship between pulses */
@@ -10369,6 +10740,8 @@ export type UpdateObjectInput = {
   name?: InputMaybe<Scalars['String']['input']>;
   /** The new privacy kind for the object. */
   privacy_kind?: InputMaybe<PrivacyKind>;
+  /** Optional relations to add to the object */
+  relations?: InputMaybe<Array<ObjectRelationInput>>;
 };
 
 /** Result type for updating an overview's hierarchy */
@@ -10495,6 +10868,22 @@ export type UpdateUsersRoleResult = {
   updated_users?: Maybe<Array<User>>;
 };
 
+/** Input for updating a workflow created from a template */
+export type UpdateWorkflowFromTemplateInput = {
+  /** Detailed description of the workflow */
+  description?: InputMaybe<Scalars['String']['input']>;
+  /** Workflow numeric ID (supports both integer and bigint) */
+  id: Scalars['ID']['input'];
+  /** Importance level of the workflow */
+  importance?: InputMaybe<Scalars['Int']['input']>;
+  /** Title of the workflow */
+  title?: InputMaybe<Scalars['String']['input']>;
+  /** Variables used within this workflow. To get the accurate JSON schema call the GraphQL query 'get_workflow_variable_schemas' */
+  workflow_variables?: InputMaybe<Array<Scalars['JSON']['input']>>;
+  /** A map of workflow variable keys to their configuration values. Each value can contain: value, title, icon, and dependencies */
+  workflow_variables_values?: InputMaybe<Scalars['JSON']['input']>;
+};
+
 export type UpdateWorkflowInput = {
   /** ID of the workflow to update */
   id: Scalars['ID']['input'];
@@ -10531,6 +10920,15 @@ export type UpdateWorkspaceAttributesInput = {
   kind?: InputMaybe<WorkspaceKind>;
   /** The name of the workspace to update */
   name?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** The result of upserting entity ID mappings. */
+export type UpsertEntityIdMappingsResult = {
+  __typename?: 'UpsertEntityIdMappingsResult';
+  /** The number of mappings that were upserted. */
+  count?: Maybe<Scalars['Int']['output']>;
+  /** Whether the upsert operation was successful. */
+  success?: Maybe<Scalars['Boolean']['output']>;
 };
 
 /** A monday.com user. */
@@ -10990,6 +11388,8 @@ export type Workflow = {
   is_active: Scalars['Boolean']['output'];
   /** Notice/Error message for the workflow */
   notice_message?: Maybe<Scalars['String']['output']>;
+  /** Reference ID of the template this workflow was created from, if any */
+  template_reference_id?: Maybe<Scalars['ID']['output']>;
   /** Title of the workflow */
   title: Scalars['String']['output'];
   /** Last updated timestamp of the workflow */
@@ -11124,6 +11524,50 @@ export type WorkflowInput = {
   workflowHostData?: InputMaybe<WorkflowHostDataInput>;
   /** Variables used within this workflow. To get the accurate JSON schema call the GraphQL query 'get_workflow_variable_schemas' */
   workflowVariables: Array<Scalars['JSON']['input']>;
+};
+
+/** The context where a workflow template can be accessed */
+export enum WorkflowTemplateContext {
+  /** Using this context will make the template accessible in the Lite Builder */
+  LiteBuilder = 'LITE_BUILDER'
+}
+
+/** Input data for creating a workflow template */
+export type WorkflowTemplateInput = {
+  /** Contexts that the template should be accessible from */
+  contexts?: InputMaybe<Array<WorkflowTemplateContext>>;
+  /** Description of the template */
+  description: Scalars['String']['input'];
+  /** URL of the image for the template */
+  image_url?: InputMaybe<Scalars['String']['input']>;
+  /** Name of the template */
+  name: Scalars['String']['input'];
+  /** Define the workflow's steps and the configuration of each step */
+  workflow_blocks: Array<WorkflowTemplateWorkflowBlockInput>;
+  /** Variables used within this workflow. To get the accurate JSON schema call the GraphQL query 'get_workflow_variable_schemas' */
+  workflow_variables: Array<Scalars['JSON']['input']>;
+};
+
+/** Defines the input fields of the workflow block. This corresponds to the input fields defined by the block used in the Workflow Block. You must call the remote_options query to retrieve the allowed values for any custom input field before configuring it. */
+export type WorkflowTemplateWorkflowBlockFieldInput = {
+  /** The block's field key */
+  field_key: Scalars['String']['input'];
+  /** Key of the workflow variable defining the configuration for the field key. Always a positive number */
+  workflow_variable_key: Scalars['Int']['input'];
+};
+
+/** Define the workflow's steps and the configuration of each step */
+export type WorkflowTemplateWorkflowBlockInput = {
+  /** Reference ID of the block */
+  block_reference_id: Scalars['Int']['input'];
+  /** Defines the input fields of the workflow block. This corresponds to the input fields defined by the block used in the Workflow Block. You must call the remote_options query to retrieve the allowed values for any custom input field before configuring it. */
+  input_fields: Array<WorkflowTemplateWorkflowBlockFieldInput>;
+  /** Configuration for the next workflow blocks. To get the accurate JSON schema call the graphQL query 'get_workflow_block_next_mapping_schemas'. Note: Only the following mapping types are currently supported: routesMapping, waitTriggerMapping. */
+  next_workflow_blocks_config?: InputMaybe<Scalars['JSON']['input']>;
+  /** Title of the workflow block */
+  title: Scalars['String']['input'];
+  /** Unique node identifier within the workflow */
+  workflow_node_id: Scalars['Int']['input'];
 };
 
 /** The kind and JSON schema definition for a given workflow variable kind */
@@ -11296,6 +11740,23 @@ export type SearchDevQueryVariables = Exact<{
 
 export type SearchDevQuery = { __typename?: 'Query', search?: Array<{ __typename: 'CrossEntityBoardResult', entity_type: SearchableEntity, data: { __typename?: 'IndexedBoard', id: string, name: string, url: string } } | { __typename: 'CrossEntityDocResult', entity_type: SearchableEntity, data: { __typename?: 'IndexedDoc', id: string, name: string } } | { __typename: 'CrossEntityItemResult' }> | null };
 
+export type GetUserContextDevQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetUserContextDevQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, name: string, title?: string | null } | null, favorites?: Array<{ __typename?: 'GraphqlHierarchyObjectItem', object?: { __typename?: 'HierarchyObjectID', id?: string | null, type?: GraphqlMondayObject | null } | null }> | null, intelligence?: { __typename?: 'Intelligence', relevant_boards?: Array<{ __typename?: 'RelevantBoard', id?: string | null, board?: { __typename?: 'Board', name: string } | null }> | null } | null };
+
+export type GetFavoriteDetailsDevQueryVariables = Exact<{
+  boardIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+  folderIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+  workspaceIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+  dashboardIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+}>;
+
+
+export type GetFavoriteDetailsDevQuery = { __typename?: 'Query', boards?: Array<{ __typename?: 'Board', id: string, name: string } | null> | null, folders?: Array<{ __typename?: 'Folder', id: string, name: string } | null> | null, workspaces?: Array<{ __typename?: 'Workspace', id?: string | null, name: string } | null> | null, dashboards?: Array<{ __typename?: 'Board', id: string, name: string } | null> | null };
+
 
 export const SearchItemsDevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchItemsDev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"searchTerm"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"board_ids"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search_items"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"board_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"board_ids"}}},{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"searchTerm"}}},{"kind":"Argument","name":{"kind":"Name","value":"size"},"value":{"kind":"IntValue","value":"100"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"results"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchItemsDevQuery, SearchItemsDevQueryVariables>;
 export const SearchDevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchDev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"size"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"entityTypes"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SearchableEntity"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"size"},"value":{"kind":"Variable","name":{"kind":"Name","value":"size"}}},{"kind":"Argument","name":{"kind":"Name","value":"entity_types"},"value":{"kind":"Variable","name":{"kind":"Name","value":"entityTypes"}}},{"kind":"Argument","name":{"kind":"Name","value":"workspace_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"CrossEntityBoardResult"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"entity_type"}},{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"url"}}]}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"CrossEntityDocResult"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"entity_type"}},{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchDevQuery, SearchDevQueryVariables>;
+export const GetUserContextDevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getUserContextDev"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"me"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}},{"kind":"Field","name":{"kind":"Name","value":"favorites"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"object"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"type"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"intelligence"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"relevant_boards"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"board"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetUserContextDevQuery, GetUserContextDevQueryVariables>;
+export const GetFavoriteDetailsDevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getFavoriteDetailsDev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"folderIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"dashboardIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"boards"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"folders"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"folderIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"workspaces"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","alias":{"kind":"Name","value":"dashboards"},"name":{"kind":"Name","value":"boards"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"dashboardIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]} as unknown as DocumentNode<GetFavoriteDetailsDevQuery, GetFavoriteDetailsDevQueryVariables>;
