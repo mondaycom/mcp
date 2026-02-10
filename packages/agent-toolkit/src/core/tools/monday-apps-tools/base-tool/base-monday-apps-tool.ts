@@ -203,7 +203,7 @@ export abstract class BaseMondayAppsTool<
     const tokenInfo = this.mondayApiToken ? extractTokenInfo(this.mondayApiToken) : {};
 
     trackEvent({
-      name: 'monday_mcp_tool_execution',
+      name: 'monday_apps_mcp_tool_execution',
       data: {
         toolName,
         executionTimeMs,
