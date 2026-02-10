@@ -13,6 +13,14 @@ export const getUserContextQuery = gql`
         type
       }
     }
+    intelligence {
+      relevant_boards {
+        id
+        board {
+          name
+        }
+      }
+    }
   }
 `;
 

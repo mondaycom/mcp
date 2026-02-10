@@ -2,7 +2,7 @@ import { ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { getUserContextQuery, getFavoriteDetailsQuery } from './user-context.graphql';
 import { GetUserContextQuery, GetFavoriteDetailsQuery, GraphqlMondayObject } from '../../../../monday-graphql/generated/graphql/graphql';
-import { Favorite } from './user-context-tool.types';
+import { Favorite, RelevantBoard } from './user-context-tool.types';
 import { TYPE_TO_QUERY_VAR, TYPE_TO_RESPONSE_KEY } from './user-context-tool.consts';
 
 export class UserContextTool extends BaseMondayApiTool<undefined> {
@@ -19,13 +19,10 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
     return `Fetch current user information and their relevant items (boards, folders, workspaces, dashboards).
     
     Use this tool at the beginning of conversations to:
-    - Get context about who the current user is (name, title)
-    - Discover user's favorite/recently used boards, folders, workspaces, and dashboards
+    - Get context about who the current user is (id, name, title)
+    - Discover user's favorite boards, folders, workspaces, and dashboards
+    - Get user's most relevant boards based on visit frequency and recency
     - Reduce the need for search requests by knowing user's commonly accessed items
-    
-    This tool takes no parameters and returns:
-    - User info: id, name, title
-    - Favorite boards, folders, workspaces, and dashboards
     `;
   }
 
@@ -34,7 +31,11 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
   }
 
   protected async executeInternal(): Promise<ToolOutputType<never>> {
-    const { me, favorites } = await this.mondayApi.request<GetUserContextQuery>(getUserContextQuery);
+    const { me, favorites, intelligence } = await this.mondayApi.request<GetUserContextQuery>(
+      getUserContextQuery,
+      {},
+      { versionOverride: 'dev' },
+    );
 
     if (!me) {
       return {
@@ -43,8 +44,9 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
     }
 
     const enrichedFavorites = await this.fetchFavorites(favorites || []);
+    const relevantBoards = this.extractRelevantBoards(intelligence);
 
-    const output = { user: me, favorites: enrichedFavorites };
+    const output = { user: me, favorites: enrichedFavorites, relevantBoards };
     return { content: JSON.stringify(output, null, 2) };
   }
 
@@ -71,6 +73,22 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
         if (item?.id) {
           result.push({ id: item.id, name: item.name, type });
         }
+      }
+    }
+
+    return result;
+  }
+
+  private extractRelevantBoards(intelligence: GetUserContextQuery['intelligence']): RelevantBoard[] {
+    if (!intelligence?.relevant_boards) {
+      return [];
+    }
+
+    const result: RelevantBoard[] = [];
+
+    for (const rb of intelligence.relevant_boards) {
+      if (rb?.id && rb?.board?.name) {
+        result.push({ id: rb.id, name: rb.board.name });
       }
     }
 

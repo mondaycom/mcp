@@ -3,19 +3,14 @@ import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { boardInsights } from './board-insights.graphql';
 import {
-  ItemsQueryOperator,
-  ItemsQueryRuleOperator,
   AggregateBoardInsightsQueryVariables,
   AggregateBoardInsightsQuery,
   ItemsOrderByDirection,
-  GetBoardInfoQueryVariables,
-  GetBoardInfoQuery,
 } from 'src/monday-graphql/generated/graphql/graphql';
 import { handleFilters, handleFrom, handleSelectAndGroupByElements } from './board-insights-utils';
 import { BoardInsightsAggregationFunction, DEFAULT_LIMIT, MAX_LIMIT } from './board-insights.consts';
 import { fallbackToStringifiedVersionIfNull } from '../../../../utils/microsoft-copilot.utils';
-import { getBoardInfo } from '../get-board-info/get-board-info.graphql';
-import { NonDeprecatedColumnType } from 'src/utils/types';
+import { filterRulesSchema, filtersOperatorSchema } from '../get-board-items-page-tool';
 
 export const boardInsightsToolSchema = {
   boardId: z.number().describe('The id of the board to get insights for'),
@@ -52,35 +47,8 @@ export const boardInsightsToolSchema = {
     .describe(
       '**ONLY FOR MICROSOFT COPILOT**: The filters to apply on the items. Send this as a stringified JSON array of "filters" field. Read "filters" field description for details how to use it.',
     ),
-  filters: z
-    .array(
-      z.object({
-        columnId: z.string().describe('The id of the column to filter by'),
-        compareAttribute: z
-          .string()
-          .optional()
-          .describe('The attribute to compare the value to. This is OPTIONAL property.'),
-        compareValue: z
-          .any()
-          .describe(
-            'The value to compare the attribute to. This can be a string or index value depending on the column type.',
-          ),
-        operator: z
-          .nativeEnum(ItemsQueryRuleOperator)
-          .optional()
-          .default(ItemsQueryRuleOperator.AnyOf)
-          .describe('The operator to use for the filter'),
-      }),
-    )
-    .optional()
-    .describe(
-      'The configuration of filters to apply on the items. Before sending the filters, use get_board_info tool to check "filteringGuidelines" key for filtering by the column.',
-    ),
-  filtersOperator: z
-    .nativeEnum(ItemsQueryOperator)
-    .optional()
-    .default(ItemsQueryOperator.And)
-    .describe('The logical operator to use for the filters'),
+  filters: filterRulesSchema,
+  filtersOperator: filtersOperatorSchema,
 
   orderByStringified: z
     .string()
