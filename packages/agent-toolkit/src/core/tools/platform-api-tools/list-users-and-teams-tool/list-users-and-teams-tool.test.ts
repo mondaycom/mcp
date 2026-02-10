@@ -1,4 +1,4 @@
-import { formatUsersAndTeams } from './helpers';
+import { formatUsersAndTeams } from './list-users-and-teams.utils';
 import { FormattedResponse } from './types';
 
 describe('ListUsersAndTeamsTool - Helper Functions', () => {

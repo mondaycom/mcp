@@ -25,7 +25,7 @@ import {
 } from './list-users-and-teams.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { formatUsersAndTeams } from './helpers';
+import { formatUsersAndTeams } from './list-users-and-teams.utils';
 import { FormattedResponse } from './types';
 import { MAX_USER_IDS, MAX_TEAM_IDS, DEFAULT_USER_LIMIT } from './constants';
 
