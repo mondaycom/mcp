@@ -17,13 +17,17 @@ export const listWorkspaceToolSchema = {
   searchTerm: z
     .string()
     .optional()
-    .describe('Optional search term used to filter workspaces. [IMPORANT] Only alphanumeric characters are supported.'),
+    .describe(
+      'Optional search term used to filter workspaces. [IMPORTANT] Only alphanumeric characters are supported.',
+    ),
   limit: z
     .number()
     .min(1)
     .max(DEFAULT_WORKSPACE_LIMIT)
     .default(DEFAULT_WORKSPACE_LIMIT)
-    .describe(`Number of workspaces to return. Default is (${DEFAULT_WORKSPACE_LIMIT}), lower for a smaller response size`),
+    .describe(
+      `Number of workspaces to return. Default is (${DEFAULT_WORKSPACE_LIMIT}), lower for a smaller response size`,
+    ),
   page: z.number().min(1).default(1).describe('Page number to return. Default is 1.'),
 };
 
