@@ -11,7 +11,7 @@ import {
 import { ListWorkspacesQuery, WorkspaceMembershipKind } from '../../../../monday-graphql/generated/graphql/graphql';
 import { z } from 'zod';
 import { normalizeString } from 'src/utils/string.utils';
-import { hasElements } from 'src/utils/array.utils';
+import { arrayHasElements } from 'src/utils/array.utils';
 
 export const listWorkspaceToolSchema = {
   searchTerm: z
@@ -23,7 +23,7 @@ export const listWorkspaceToolSchema = {
     .min(1)
     .max(DEFAULT_WORKSPACE_LIMIT)
     .default(DEFAULT_WORKSPACE_LIMIT)
-    .describe(`Number of workspaces to return. Set to max (${DEFAULT_WORKSPACE_LIMIT}) lower for smaller response size`),
+    .describe(`Number of workspaces to return. Default is (${DEFAULT_WORKSPACE_LIMIT}), lower for a smaller response size`),
   page: z.number().min(1).default(1).describe('Page number to return. Default is 1.'),
 };
 
@@ -76,7 +76,7 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
     const memberWorkspaces = filterNullWorkspaces(memberRes);
 
     const shouldFetchAllWorkspaces =
-      !hasElements(memberWorkspaces) || (searchTermNormalized && !hasMatchingWorkspace(searchTermNormalized, memberWorkspaces));
+      !arrayHasElements(memberWorkspaces) || (searchTermNormalized && !hasMatchingWorkspace(searchTermNormalized, memberWorkspaces));
 
     // Fetch all workspaces only if needed, otherwise use member workspaces
     let workspaces = memberWorkspaces;
@@ -90,7 +90,7 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
     }
 
 
-    if (!hasElements(workspaces)) {
+    if (!arrayHasElements(workspaces)) {
       return {
         content: 'No workspaces found.',
       };
@@ -100,7 +100,7 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
     const shouldIncludeNoFilteringDisclaimer = searchTermNormalized && workspaces?.length <= DEFAULT_WORKSPACE_LIMIT;
     const filteredWorkspaces = filterWorkspacesBySearchTerm(searchTermNormalized, workspaces, input.page, input.limit);
 
-    if (!hasElements(filteredWorkspaces)) {
+    if (!arrayHasElements(filteredWorkspaces)) {
       return {
         content: 'No workspaces found matching the search term. Try using the tool without a search term',
       };
