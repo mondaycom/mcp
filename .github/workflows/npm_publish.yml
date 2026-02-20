@@ -52,4 +52,4 @@ jobs:
             cd ../..
           done
         env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN_PUBLISH_ACCESS}}
+          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
