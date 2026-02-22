@@ -1,0 +1,21 @@
+{
+  "name": "monday.com",
+  "version": "1.0.0",
+  "description": "Connect your AI agents to monday.com — your work OS for managing projects, tasks, and everyday work.",
+  "author": {
+    "name": "monday.com"
+  },
+  "homepage": "https://monday.com/w/mcp",
+  "repository": "https://github.com/mondaycom/mcp",
+  "license": "MIT",
+  "keywords": [
+    "monday",
+    "monday.com",
+    "mcp",
+    "work-os",
+    "project-management",
+    "task-management",
+    "boards",
+    "items"
+  ]
+}
