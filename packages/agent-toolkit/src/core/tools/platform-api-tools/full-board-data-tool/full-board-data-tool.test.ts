@@ -117,7 +117,7 @@ describe('Full Board Data Tool', () => {
     });
 
     const args: inputType = {
-      boardId: '123456',
+      boardId: 123456,
     };
 
     const parsedResult = await callToolByNameAsync('get_full_board_data', args);
@@ -188,7 +188,7 @@ describe('Full Board Data Tool', () => {
     mocks.setResponse(boardWithoutUpdates);
 
     const args: inputType = {
-      boardId: '123456',
+      boardId: 123456,
     };
 
     const parsedResult = await callToolByNameAsync('get_full_board_data', args);
@@ -206,13 +206,13 @@ describe('Full Board Data Tool', () => {
   it('Throws error when board is not found', async () => {
     // Test with empty array
     mocks.setResponse({ boards: [] });
-    const args1: inputType = { boardId: '999999' };
+    const args1: inputType = { boardId: 999999 };
     const result1 = await callToolByNameRawAsync('get_full_board_data', args1);
     expect(result1.content[0].text).toContain('Board with ID 999999 not found');
 
     // Test with null
     mocks.setResponse({ boards: null });
-    const args2: inputType = { boardId: '888888' };
+    const args2: inputType = { boardId: 888888 };
     const result2 = await callToolByNameRawAsync('get_full_board_data', args2);
     expect(result2.content[0].text).toContain('Board with ID 888888 not found');
   });
@@ -248,7 +248,7 @@ describe('Full Board Data Tool', () => {
     mocks.setResponse(boardWithNullCreators);
 
     const args: inputType = {
-      boardId: '123456',
+      boardId: 123456,
     };
 
     const parsedResult = await callToolByNameAsync('get_full_board_data', args);
@@ -269,7 +269,7 @@ describe('Full Board Data Tool', () => {
     mocks.setError(graphqlError);
 
     const args: inputType = {
-      boardId: '123456',
+      boardId: 123456,
     };
 
     const result = await callToolByNameRawAsync('get_full_board_data', args);
@@ -326,7 +326,7 @@ describe('Full Board Data Tool', () => {
       }
     });
 
-    const args: inputType = { boardId: '123456' };
+    const args: inputType = { boardId: 123456 };
     const parsedResult = await callToolByNameAsync('get_full_board_data', args);
 
     // Should extract only person IDs, not team IDs

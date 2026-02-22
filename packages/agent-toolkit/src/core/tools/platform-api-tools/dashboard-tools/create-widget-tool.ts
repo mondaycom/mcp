@@ -8,6 +8,8 @@ import {
 import { createWidget } from './dashboard-queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+import { fallbackToStringifiedVersionIfNull } from '../../../../utils/microsoft-copilot.utils';
+
 export const createWidgetToolSchema = {
   parent_container_id: z.string().describe('ID of the parent container (dashboard ID or board view ID)'),
   parent_container_type: z.nativeEnum(WidgetParentKind).describe('Type of parent container: DASHBOARD or BOARD_VIEW'),
@@ -22,6 +24,12 @@ export const createWidgetToolSchema = {
     .optional()
     .describe(
       'Widget-specific settings as JSON object conforming to widget schema. Use all_widgets_schema tool to get the required schema for each widget type.',
+    ),
+  settingsStringified: z
+    .string()
+    .optional()
+    .describe(
+      '**ONLY FOR MICROSOFT COPILOT**: The settings object. Send this as a stringified JSON of "settings" field. Read "settings" field description for details how to use it.',
     ),
 };
 
@@ -59,8 +67,9 @@ export class CreateWidgetTool extends BaseMondayApiTool<typeof createWidgetToolS
   }
 
   protected async executeInternal(input: ToolInputType<typeof createWidgetToolSchema>): Promise<ToolOutputType<never>> {
+    fallbackToStringifiedVersionIfNull(input, 'settings', createWidgetToolSchema.settings);
     if (!input.settings) {
-      throw new Error('You must pass the settings parameter');
+      throw new Error('You must pass either settings or settingsStringified parameter');
     }
 
     try {
