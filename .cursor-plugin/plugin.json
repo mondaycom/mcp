@@ -8,6 +8,7 @@
   "homepage": "https://monday.com/w/mcp",
   "repository": "https://github.com/mondaycom/mcp",
   "license": "MIT",
+  "logo": "assets/logo.svg",
   "keywords": [
     "monday",
     "monday.com",
