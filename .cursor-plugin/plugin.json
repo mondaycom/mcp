@@ -9,14 +9,5 @@
   "repository": "https://github.com/mondaycom/mcp",
   "license": "MIT",
   "logo": "assets/logo.svg",
-  "keywords": [
-    "monday",
-    "monday.com",
-    "mcp",
-    "work-os",
-    "project-management",
-    "task-management",
-    "boards",
-    "items"
-  ]
+  "keywords": ["monday", "monday.com", "mcp", "work-os", "project-management", "task-management", "boards", "items"]
 }
