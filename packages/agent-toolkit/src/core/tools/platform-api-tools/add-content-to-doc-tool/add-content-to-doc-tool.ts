@@ -18,19 +18,19 @@ export const addContentToDocToolSchema = {
     .string()
     .min(1)
     .optional()
-    .describe('The internal document ID. Provide this OR object_id (doc_id takes priority if both are provided).'),
+    .describe('The document ID (the id field returned by read_docs). Provide this OR object_id. Takes priority if both are provided.'),
   object_id: z
     .string()
     .min(1)
     .optional()
     .describe(
-      'The external object ID of the document. Will be resolved to an internal doc_id. Provide this OR doc_id.',
+      'The document object ID (the object_id field from read_docs, also visible in the document URL). Will be resolved to a doc_id. Provide this OR doc_id.',
     ),
   markdown: z.string().describe('Markdown content to add to the document.'),
   after_block_id: z
     .string()
     .optional()
-    .describe('Optional block ID after which to insert the new content. If omitted, content is appended at the end.'),
+    .describe('Block ID after which to insert the new content. If omitted, content is appended at the end. To insert at the beginning, pass the first block ID from read_docs. Block IDs can be obtained from read_docs or from a previous add_content_to_doc response.'),
 };
 
 export class AddContentToDocTool extends BaseMondayApiTool<typeof addContentToDocToolSchema> {
@@ -47,8 +47,8 @@ export class AddContentToDocTool extends BaseMondayApiTool<typeof addContentToDo
     return `Add markdown content to an existing monday.com document.
 
 IDENTIFICATION: Provide either doc_id or object_id to identify the document:
-- doc_id: The internal document ID (takes priority if both provided)
-- object_id: The external object ID, which will be resolved to a doc_id
+- doc_id: The document ID (the id field returned by read_docs). Takes priority if both provided.
+- object_id: The document object ID (the object_id field from read_docs, also visible in the document URL). Will be resolved to a doc_id.
 
 USAGE EXAMPLES:
 - By doc_id: { doc_id: "123", markdown: "# New Section\\nContent here" }
