@@ -9,10 +9,17 @@ import {
 } from 'src/monday-graphql/generated/graphql/graphql';
 import { handleFilters, handleFrom, handleSelectAndGroupByElements } from './board-insights-utils';
 import { BoardInsightsAggregationFunction, DEFAULT_LIMIT, MAX_LIMIT } from './board-insights.consts';
+import { fallbackToStringifiedVersionIfNull } from '../../../../utils/microsoft-copilot.utils';
 import { filterRulesSchema, filtersOperatorSchema } from '../get-board-items-page-tool';
 
 export const boardInsightsToolSchema = {
   boardId: z.number().describe('The id of the board to get insights for'),
+  aggregationsStringified: z
+    .string()
+    .optional()
+    .describe(
+      '**ONLY FOR MICROSOFT COPILOT**: The aggregations to get. Send this as a stringified JSON array of "aggregations" field. Read "aggregations" field description for details how to use it.',
+    ),
   aggregations: z
     .array(
       z.object({
@@ -24,7 +31,7 @@ export const boardInsightsToolSchema = {
       }),
     )
     .describe(
-      'The aggregations to get. Before sending the aggregations, use get_board_info tool to check "aggregationGuidelines" key for information. Transformative functions and plain columns (no function) must be in group by.',
+      'The aggregations to get. Before sending the aggregations, use get_board_info tool to check "aggregationGuidelines" key for information. Transformative functions and plain columns (no function) must be in group by. [REQUIRED PRECONDITION]: Either send this field or the stringified version of it.',
     )
     .optional(),
   groupBy: z
@@ -34,8 +41,21 @@ export const boardInsightsToolSchema = {
     )
     .optional(),
   limit: z.number().describe('The limit of the results').max(MAX_LIMIT).optional().default(DEFAULT_LIMIT),
+  filtersStringified: z
+    .string()
+    .optional()
+    .describe(
+      '**ONLY FOR MICROSOFT COPILOT**: The filters to apply on the items. Send this as a stringified JSON array of "filters" field. Read "filters" field description for details how to use it.',
+    ),
   filters: filterRulesSchema,
   filtersOperator: filtersOperatorSchema,
+
+  orderByStringified: z
+    .string()
+    .optional()
+    .describe(
+      '**ONLY FOR MICROSOFT COPILOT**: The order by to apply on the items. Send this as a stringified JSON array of "orderBy" field. Read "orderBy" field description for details how to use it.',
+    ),
   orderBy: z
     .array(
       z.object({
@@ -77,9 +97,13 @@ export class BoardInsightsTool extends BaseMondayApiTool<typeof boardInsightsToo
   protected async executeInternal(
     input: ToolInputType<typeof boardInsightsToolSchema>,
   ): Promise<ToolOutputType<never>> {
-    if (!input.aggregations) {
-      return { content: 'Input must contain the "aggregations" field.' };
+    if (!input.aggregations && !input.aggregationsStringified) {
+      return { content: 'Input must contain either the "aggregations" field or the "aggregationsStringified" field.' };
     }
+
+    fallbackToStringifiedVersionIfNull(input, 'aggregations', boardInsightsToolSchema.aggregations);
+    fallbackToStringifiedVersionIfNull(input, 'filters', boardInsightsToolSchema.filters);
+    fallbackToStringifiedVersionIfNull(input, 'orderBy', boardInsightsToolSchema.orderBy);
 
     const { selectElements, groupByElements } = handleSelectAndGroupByElements(input);
     const filters = handleFilters(input);

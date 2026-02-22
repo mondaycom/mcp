@@ -12,6 +12,7 @@ import { filterRulesSchema, filtersOperatorSchema } from './items-filter-schema'
 import { getBoardItemsPage } from './get-board-items-page-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+import { fallbackToStringifiedVersionIfNull, STRINGIFIED_SUFFIX } from '../../../../utils/microsoft-copilot.utils';
 import { NonDeprecatedColumnType } from 'src/utils/types';
 import { SearchItemsDevQuery, SearchItemsDevQueryVariables } from 'src/monday-graphql/generated/graphql.dev/graphql';
 import { searchItemsDev } from './get-board-items-page-tool.graphql.dev';
@@ -98,6 +99,12 @@ PERFORMANCE OPTIMIZATION: Only set this to true when you actually need the colum
     .default(DEFAULT_LIMIT)
     .describe('The number of sub items to get per item. This is only used when includeSubItems is true.'),
 
+  filtersStringified: z
+    .string()
+    .optional()
+    .describe(
+      '**ONLY FOR MICROSOFT COPILOT**: The filters to apply on the items. Send this as a stringified JSON array of "filters" field. Read "filters" field description for details how to use it.',
+    ),
   filters: filterRulesSchema,
   filtersOperator: filtersOperatorSchema,
   columnIds: z
@@ -105,6 +112,12 @@ PERFORMANCE OPTIMIZATION: Only set this to true when you actually need the colum
     .optional()
     .describe(
       'The ids of the item columns and subitem columns to get, can be used to reduce the response size when user asks for specific columns. Works only when includeColumns is true. If not provided, all columns will be returned',
+    ),
+  orderByStringified: z
+    .string()
+    .optional()
+    .describe(
+      '**ONLY FOR MICROSOFT COPILOT**: The order by to apply on the items. Send this as a stringified JSON array of "orderBy" field. Read "orderBy" field description for details how to use it.',
     ),
   orderBy: z
     .array(
@@ -161,6 +174,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
         }
       } catch(error) {
         throwIfSearchTimeoutError(error);
+        fallbackToStringifiedVersionIfNull(input, 'filters', getBoardItemsPageToolSchema.filters);
         input.filters = this.rebuildFiltersWithManualSearch(input.searchTerm, input.filters);
       }
     }
@@ -173,6 +187,9 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
       columnIds: input.columnIds,
       includeSubItems: input.includeSubItems,
     };
+
+    fallbackToStringifiedVersionIfNull(input, 'filters', getBoardItemsPageToolSchema.filters);
+    fallbackToStringifiedVersionIfNull(input, 'orderBy', getBoardItemsPageToolSchema.orderBy);
 
     if (canIncludeFilters && (input.itemIds || input.filters || input.orderBy)) {
       variables.queryParams = {

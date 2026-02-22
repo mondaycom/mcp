@@ -262,6 +262,42 @@ describe('FormQuestionsEditorTool', () => {
         expect(mockCall[1].question.settings.prefixPredefined.enabled).toBe(true);
         expect(mockCall[1].question.settings.prefixPredefined.prefix).toBe('US');
       });
+
+      it('should handle questionStringified parameter for Microsoft Copilot', async () => {
+        const createQuestionResponse = {
+          create_form_question: {
+            id: 'question_stringified',
+            type: FormQuestionType.ShortText,
+            title: 'Test Question',
+            description: null,
+            visible: true,
+            required: false,
+            options: null,
+            settings: null,
+          },
+        };
+
+        mocks.setResponse(createQuestionResponse);
+
+        const questionObject = {
+          type: FormQuestionType.ShortText,
+          title: 'Test Question',
+        };
+
+        const args: inputType = {
+          action: FormQuestionActions.Create,
+          formToken: 'form_token_123',
+          questionStringified: JSON.stringify(questionObject),
+          // question is omitted, fallback will use questionStringified
+        };
+
+        const result = await callToolByNameRawAsync('form_questions_editor', args);
+
+        expect(result.content[0].text).toBe('Form question created successfully. ID: question_stringified');
+
+        const mockCall = mocks.getMockRequest().mock.calls[0];
+        expect(mockCall[1].question).toEqual(questionObject);
+      });
     });
 
     describe('Validation Errors', () => {
@@ -539,6 +575,43 @@ describe('FormQuestionsEditorTool', () => {
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].question.visible).toBe(false);
         expect(mockCall[1].question.required).toBe(true);
+      });
+
+      it('should handle questionStringified parameter for Microsoft Copilot', async () => {
+        const updateQuestionResponse = {
+          update_form_question: {
+            id: 'question_stringified',
+            type: FormQuestionType.ShortText,
+            title: 'Stringified Update',
+            description: null,
+            visible: true,
+            required: false,
+            options: null,
+            settings: null,
+          },
+        };
+
+        mocks.setResponse(updateQuestionResponse);
+
+        const questionObject = {
+          type: FormQuestionType.ShortText,
+          title: 'Stringified Update',
+        };
+
+        const args: inputType = {
+          action: FormQuestionActions.Update,
+          formToken: 'form_token_123',
+          questionId: 'question_stringified',
+          questionStringified: JSON.stringify(questionObject),
+          // question is omitted, fallback will use questionStringified
+        };
+
+        const result = await callToolByNameRawAsync('form_questions_editor', args);
+
+        expect(result.content[0].text).toBe('Form question with id question_stringified updated successfully.');
+
+        const mockCall = mocks.getMockRequest().mock.calls[0];
+        expect(mockCall[1].question).toEqual(questionObject);
       });
     });
 

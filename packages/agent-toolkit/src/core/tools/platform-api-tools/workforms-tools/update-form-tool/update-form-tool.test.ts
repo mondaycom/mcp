@@ -331,6 +331,38 @@ describe('UpdateFormTool', () => {
         expect(mockCall[1].tag.name).toBe('campaign');
         expect(mockCall[1].tag.value).toBeUndefined();
       });
+
+      it('should handle tagStringified parameter for Microsoft Copilot', async () => {
+        const createTagResponse = {
+          create_form_tag: {
+            id: 'tag_stringified',
+            name: 'utm_medium',
+            value: 'email',
+            columnId: 'column_999',
+          },
+        };
+
+        mocks.setResponse(createTagResponse);
+
+        const tagObject = {
+          name: 'utm_medium',
+          value: 'email',
+        };
+
+        const args: inputType = {
+          action: FormActions.createTag,
+          formToken: 'token_123',
+          tagStringified: JSON.stringify(tagObject),
+          // tag is omitted, fallback will use tagStringified
+        };
+
+        const result = await callToolByNameRawAsync('update_form', args);
+
+        expect(result.content[0].text).toContain('Tag successfully added:');
+
+        const mockCall = mocks.getMockRequest().mock.calls[0];
+        expect(mockCall[1].tag).toEqual(tagObject);
+      });
     });
 
     describe('Validation Errors', () => {
@@ -437,6 +469,32 @@ describe('UpdateFormTool', () => {
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].tagId).toBe('another_tag_id');
+      });
+
+      it('should handle tagStringified parameter for Microsoft Copilot', async () => {
+        const deleteTagResponse = {
+          delete_form_tag: true,
+        };
+
+        mocks.setResponse(deleteTagResponse);
+
+        const tagObject = {
+          id: 'tag_stringified',
+        };
+
+        const args: inputType = {
+          action: FormActions.deleteTag,
+          formToken: 'token_123',
+          tagStringified: JSON.stringify(tagObject),
+          // tag is omitted, fallback will use tagStringified
+        };
+
+        const result = await callToolByNameRawAsync('update_form', args);
+
+        expect(result.content[0].text).toBe('Tag with id: tag_stringified successfully deleted.');
+
+        const mockCall = mocks.getMockRequest().mock.calls[0];
+        expect(mockCall[1].tagId).toBe('tag_stringified');
       });
     });
 
@@ -558,6 +616,41 @@ describe('UpdateFormTool', () => {
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].tagId).toBe('tag_456');
         expect(mockCall[1].tag.value).toBe('summer_2024');
+      });
+
+      it('should handle tagStringified parameter for Microsoft Copilot', async () => {
+        const updateTagResponse = {
+          update_form_tag: {
+            id: 'tag_stringified',
+            name: 'utm_medium',
+            value: 'copilot_value',
+            columnId: 'column_999',
+          },
+        };
+
+        mocks.setResponse(updateTagResponse);
+
+        const tagObject = {
+          id: 'tag_stringified',
+          value: 'copilot_value',
+        };
+
+        const args: inputType = {
+          action: FormActions.updateTag,
+          formToken: 'token_123',
+          tagStringified: JSON.stringify(tagObject),
+          // tag is omitted, fallback will use tagStringified
+        };
+
+        const result = await callToolByNameRawAsync('update_form', args);
+
+        expect(result.content[0].text).toBe(
+          'Tag with id: tag_stringified successfully updated to value: copilot_value.',
+        );
+
+        const mockCall = mocks.getMockRequest().mock.calls[0];
+        expect(mockCall[1].tagId).toBe('tag_stringified');
+        expect(mockCall[1].tag.value).toBe('copilot_value');
       });
     });
 
@@ -803,6 +896,38 @@ describe('UpdateFormTool', () => {
         expect(mockCall[1].appearance.background.type).toBe(BackgroundType.Image);
         expect(mockCall[1].appearance.background.value).toBe('https://example.com/image.jpg');
       });
+
+      it('should handle formStringified parameter for Microsoft Copilot', async () => {
+        const updateAppearanceResponse = {
+          update_form_settings: {
+            appearance: {
+              primaryColor: '#00ff00',
+            },
+          },
+        };
+
+        mocks.setResponse(updateAppearanceResponse);
+
+        const formObject = {
+          appearance: {
+            primaryColor: '#00ff00',
+          },
+        };
+
+        const args: inputType = {
+          action: FormActions.updateAppearance,
+          formToken: 'token_123',
+          formStringified: JSON.stringify(formObject),
+          // form is omitted, fallback will use formStringified
+        };
+
+        const result = await callToolByNameRawAsync('update_form', args);
+
+        expect(result.content[0].text).toContain('Appearance successfully updated:');
+
+        const mockCall = mocks.getMockRequest().mock.calls[0];
+        expect(mockCall[1].appearance.primaryColor).toBe('#00ff00');
+      });
     });
 
     describe('Validation Errors', () => {
@@ -931,6 +1056,41 @@ describe('UpdateFormTool', () => {
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].accessibility.language).toBe('es');
+      });
+
+      it('should handle formStringified parameter for Microsoft Copilot', async () => {
+        const updateAccessibilityResponse = {
+          update_form_settings: {
+            accessibility: {
+              language: 'fr',
+              logoAltText: 'Logo de la société',
+            },
+          },
+        };
+
+        mocks.setResponse(updateAccessibilityResponse);
+
+        const formObject = {
+          accessibility: {
+            language: 'fr',
+            logoAltText: 'Logo de la société',
+          },
+        };
+
+        const args: inputType = {
+          action: FormActions.updateAccessibility,
+          formToken: 'token_123',
+          formStringified: JSON.stringify(formObject),
+          // form is omitted, fallback will use formStringified
+        };
+
+        const result = await callToolByNameRawAsync('update_form', args);
+
+        expect(result.content[0].text).toContain('Accessibility successfully updated:');
+
+        const mockCall = mocks.getMockRequest().mock.calls[0];
+        expect(mockCall[1].accessibility.language).toBe('fr');
+        expect(mockCall[1].accessibility.logoAltText).toBe('Logo de la société');
       });
     });
 
@@ -1298,6 +1458,38 @@ describe('UpdateFormTool', () => {
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].features.reCaptchaChallenge).toBe(true);
       });
+
+      it('should handle formStringified parameter for Microsoft Copilot', async () => {
+        const updateFeaturesResponse = {
+          update_form_settings: {
+            features: {
+              reCaptchaChallenge: false,
+            },
+          },
+        };
+
+        mocks.setResponse(updateFeaturesResponse);
+
+        const formObject = {
+          features: {
+            reCaptchaChallenge: false,
+          },
+        };
+
+        const args: inputType = {
+          action: FormActions.updateFeatures,
+          formToken: 'token_123',
+          formStringified: JSON.stringify(formObject),
+          // form is omitted, fallback will use formStringified
+        };
+
+        const result = await callToolByNameRawAsync('update_form', args);
+
+        expect(result.content[0].text).toContain('Features successfully updated:');
+
+        const mockCall = mocks.getMockRequest().mock.calls[0];
+        expect(mockCall[1].features.reCaptchaChallenge).toBe(false);
+      });
     });
 
     describe('Validation Errors', () => {
@@ -1417,6 +1609,35 @@ describe('UpdateFormTool', () => {
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].questions).toHaveLength(4);
         expect(mockCall[1].questions[0].id).toBe('q_a');
+      });
+
+      it('should handle formStringified parameter for Microsoft Copilot', async () => {
+        const updateQuestionOrderResponse = {
+          update_form: {
+            questions: [{ id: 'question_x' }, { id: 'question_y' }],
+          },
+        };
+
+        mocks.setResponse(updateQuestionOrderResponse);
+
+        const formObject = {
+          questions: [{ id: 'question_x' }, { id: 'question_y' }],
+        };
+
+        const args: inputType = {
+          action: FormActions.updateQuestionOrder,
+          formToken: 'token_123',
+          formStringified: JSON.stringify(formObject),
+          // form is omitted, fallback will use formStringified
+        };
+
+        const result = await callToolByNameRawAsync('update_form', args);
+
+        expect(result.content[0].text).toContain('Question order successfully updated:');
+
+        const mockCall = mocks.getMockRequest().mock.calls[0];
+        expect(mockCall[1].questions).toHaveLength(2);
+        expect(mockCall[1].questions[0].id).toBe('question_x');
       });
     });
 
@@ -1569,6 +1790,39 @@ describe('UpdateFormTool', () => {
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].title).toBeUndefined();
         expect(mockCall[1].description).toBe('Updated Description');
+      });
+
+      it('should handle formStringified parameter for Microsoft Copilot', async () => {
+        const updateFormHeaderResponse = {
+          update_form: {
+            id: 'form_stringified',
+            token: 'token_stringified',
+            title: 'Copilot Title',
+            description: 'Copilot Description',
+          },
+        };
+
+        mocks.setResponse(updateFormHeaderResponse);
+
+        const formObject = {
+          title: 'Copilot Title',
+          description: 'Copilot Description',
+        };
+
+        const args: inputType = {
+          action: FormActions.updateFormHeader,
+          formToken: 'token_123',
+          formStringified: JSON.stringify(formObject),
+          // form is omitted, fallback will use formStringified
+        };
+
+        const result = await callToolByNameRawAsync('update_form', args);
+
+        expect(result.content[0].text).toContain('Form header content successfully updated:');
+
+        const mockCall = mocks.getMockRequest().mock.calls[0];
+        expect(mockCall[1].title).toBe('Copilot Title');
+        expect(mockCall[1].description).toBe('Copilot Description');
       });
     });
 

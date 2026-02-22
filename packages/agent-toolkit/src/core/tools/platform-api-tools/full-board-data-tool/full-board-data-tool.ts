@@ -14,7 +14,7 @@ import { rethrowWithContext } from '../../../../utils';
 import { filterRulesSchema, filtersOperatorSchema } from '../get-board-items-page-tool/items-filter-schema';
 
 export const fullBoardDataToolSchema = {
-  boardId: z.string().describe('The ID of the board to fetch complete data for'),
+  boardId: z.number().describe('The ID of the board to fetch complete data for'),
   filters: filterRulesSchema,
   filtersOperator: filtersOperatorSchema,
 };
@@ -44,7 +44,7 @@ export class FullBoardDataTool extends BaseMondayApiTool<typeof fullBoardDataToo
     try {
       // Step 1: Fetch board data with items and updates
       const variables: GetBoardDataQueryVariables = {
-        boardId: input.boardId,
+        boardId: input.boardId.toString(),
         itemsLimit: DEFAULT_ITEMS_LIMIT,
       };
 
