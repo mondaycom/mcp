@@ -16,8 +16,8 @@ const fileInputSchema = z.object({
 });
 
 export const updateAssetsOnItemToolSchema = {
-  boardId: z.number().describe("The board's unique identifier"),
-  itemId: z.number().describe("The item's unique identifier"),
+  boardId: z.string().describe("The board's unique identifier"),
+  itemId: z.string().describe("The item's unique identifier"),
   columnId: z.string().describe("The file or doc column's unique identifier"),
   files: z.array(fileInputSchema).describe('Array of file values to set on the column'),
 };
@@ -64,8 +64,8 @@ export class UpdateAssetsOnItemTool extends BaseMondayApiTool<typeof updateAsset
     input: ToolInputType<typeof updateAssetsOnItemToolSchema>,
   ): Promise<ToolOutputType<never>> {
     const variables: UpdateAssetsOnItemMutationVariables = {
-      boardId: input.boardId.toString(),
-      itemId: input.itemId.toString(),
+      boardId: input.boardId,
+      itemId: input.itemId,
       columnId: input.columnId,
       files: input.files,
     };
