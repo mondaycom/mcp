@@ -40,7 +40,7 @@ export class CreateNotificationTool extends BaseMondayApiTool<typeof createNotif
     };
 
     try {
-      await this.mondayApi.request(createNotification, variables);
+      const createResult : CreateNotificationMutation = await this.mondayApi.request(createNotification, variables);
 
       return {
         content: `Notification successfully sent to user ${input.user_id}: "${input.text}"`,
