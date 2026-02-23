@@ -3,6 +3,7 @@ import { BaseMondayAppsTool, createMondayAppsAnnotations } from '../base-tool/ba
 import { MondayAppsToolCategory } from '../consts/apps.consts';
 import { AppDevelopmentContextResponse, getAppDevelopmentContextSchema } from './schemas/assistant-schemas';
 import { appsDocumentationQuery } from './get-app-development-context.graphql';
+  import { APP_DEVELOPMENT_SYSTEM_PROMPT } from './prompts/app-development-system-prompt';
 
 interface AskDeveloperDocsResponse {
   ask_developer_docs: {
@@ -26,19 +27,22 @@ export class GetAppDevelopmentContextTool extends BaseMondayAppsTool<
   });
 
   getDescription(): string {
-    return `Search monday.com apps documentation using AI-powered semantic search.
+    return `Search monday.com apps documentation and get comprehensive development guidance using AI-powered semantic search.
 
-This tool provides accurate, contextual answers about:
-- Building app features (board views, item views, dashboard widgets, custom columns)
-- OAuth scopes and permissions (boards:read, boards:write, users:read, etc.)
+[REQUIRED]: Call this tool BEFORE implementing any monday.com app feature. This is your primary source of truth for SDK usage, feature implementation patterns, deployment procedures, and best practices.
+
+This tool returns both static development guidelines (app lifecycle, CLI reference, available tools) and dynamic documentation answers from the official monday.com apps knowledge base.
+
+Topics covered:
+- Building app features (board views, item views, dashboard widgets, custom columns, workflow blocks)
 - monday.com SDK reference and usage examples
-- monday-code deployment and integration
+- monday-code deployment and server-side patterns
 - Vibe Design System components and styling
-- Workflow blocks, custom triggers, and automation actions
-- Custom objects and data schemas
+- OAuth scopes, permissions, and authentication
+- CLI commands (mapps) for deployment and local development
+- Custom objects, data schemas, and storage
 - Best practices, troubleshooting, and common patterns
 
-Use this when you need specific information from the official monday.com apps documentation.
 Provide a clear question or topic in the query parameter for best results.`;
   }
 
@@ -71,8 +75,7 @@ Provide a clear question or topic in the query parameter for best results.`;
         );
       }
 
-      const questionHeader = docsResponse.question ? `## ${docsResponse.question}\n\n` : '## Answer\n\n';
-      const content = `${questionHeader}${docsResponse.answer}`;
+      const content = this.buildStructuredResponse(docsResponse);
 
       return {
         content,
@@ -92,5 +95,17 @@ Provide a clear question or topic in the query parameter for best results.`;
         },
       };
     }
+  }
+
+  private buildStructuredResponse(docsResponse: NonNullable<AskDeveloperDocsResponse['ask_developer_docs']>): string {
+    const sections: string[] = [];
+
+    sections.push(APP_DEVELOPMENT_SYSTEM_PROMPT);
+    sections.push('---');
+
+    const questionHeader = docsResponse.question ? `## ${docsResponse.question}` : '## Documentation Response';
+    sections.push(`${questionHeader}\n\n${docsResponse.answer}`);
+
+    return sections.join('\n\n');
   }
 }
