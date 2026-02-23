@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { NotificationTargetType } from '../../../../monday-graphql/generated/graphql/graphql';
+import { CreateNotificationMutation, NotificationTargetType } from 'src/monday-graphql/generated/graphql/graphql';
 import { createNotification } from './create-notification.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
@@ -8,7 +8,9 @@ export const createNotificationToolSchema = {
   user_id: z.string().describe('The user ID to send the notification to'),
   target_id: z.string().describe('The target ID (update/reply ID for Post type, item/board ID for Project type)'),
   text: z.string().describe('The notification text'),
-  target_type: z.nativeEnum(NotificationTargetType).describe('The target type (Post for update/reply, Project for item/board)'),
+  target_type: z
+    .nativeEnum(NotificationTargetType)
+    .describe('The target type (Post for update/reply, Project for item/board)'),
 };
 
 export class CreateNotificationTool extends BaseMondayApiTool<typeof createNotificationToolSchema> {
@@ -40,7 +42,7 @@ export class CreateNotificationTool extends BaseMondayApiTool<typeof createNotif
     };
 
     try {
-      const createResult : CreateNotificationMutation = await this.mondayApi.request(createNotification, variables);
+      const createResult: CreateNotificationMutation = await this.mondayApi.request(createNotification, variables);
 
       return {
         content: `Notification successfully sent to user ${input.user_id}: "${input.text}"`,
