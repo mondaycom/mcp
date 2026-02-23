@@ -1,7 +1,7 @@
 import { gql } from 'graphql-request';
 
 export const getItemUpdates = gql`
-  query GetItemUpdates($itemId: ID!, $limit: Int, $page: Int, $includeReplies: Boolean!, $includeAssets: Boolean!) {
+  query GetItemUpdates($itemId: ID!, $limit: Int, $page: Int) {
     items(ids: [$itemId]) {
       id
       updates(limit: $limit, page: $page) {
@@ -15,7 +15,7 @@ export const getItemUpdates = gql`
           id
           name
         }
-        replies @include(if: $includeReplies) {
+        replies {
           id
           body
           text_body
@@ -26,7 +26,7 @@ export const getItemUpdates = gql`
             name
           }
         }
-        assets @include(if: $includeAssets) {
+        assets {
           id
           name
           url
@@ -40,7 +40,7 @@ export const getItemUpdates = gql`
 `;
 
 export const getBoardUpdates = gql`
-  query GetBoardUpdates($boardId: ID!, $limit: Int, $page: Int, $includeReplies: Boolean!, $includeAssets: Boolean!) {
+  query GetBoardUpdates($boardId: ID!, $limit: Int, $page: Int) {
     boards(ids: [$boardId]) {
       id
       updates(limit: $limit, page: $page, board_updates_only: true) {
@@ -54,7 +54,7 @@ export const getBoardUpdates = gql`
           id
           name
         }
-        replies @include(if: $includeReplies) {
+        replies {
           id
           body
           text_body
@@ -65,7 +65,7 @@ export const getBoardUpdates = gql`
             name
           }
         }
-        assets @include(if: $includeAssets) {
+        assets {
           id
           name
           url
