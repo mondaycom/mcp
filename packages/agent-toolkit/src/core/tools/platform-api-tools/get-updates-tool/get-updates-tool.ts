@@ -54,8 +54,6 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
       const variables = {
         limit: input.limit ?? 25,
         page: input.page ?? 1,
-        includeReplies: input.includeReplies ?? false,
-        includeAssets: input.includeAssets ?? false,
       };
 
       let res: any;
