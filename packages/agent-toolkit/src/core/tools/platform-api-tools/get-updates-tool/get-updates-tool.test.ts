@@ -88,10 +88,6 @@ describe('Get Updates Tool', () => {
         itemId: '123',
         limit: 25,
         page: 1,
-        includeReplies: false,
-        includeAssets: false,
-        includeLikes: false,
-        includeViewers: false,
       }),
     );
   });
@@ -193,7 +189,7 @@ describe('Get Updates Tool', () => {
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
-        includeReplies: true,
+        itemId: '123',
       }),
     );
   });
@@ -244,99 +240,7 @@ describe('Get Updates Tool', () => {
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
-        includeAssets: true,
-      }),
-    );
-  });
-
-  it('Successfully gets updates with likes included', async () => {
-    const responseWithLikes = {
-      items: [
-        {
-          id: '123',
-          updates: [
-            {
-              id: 'update_1',
-              body: '<p>Popular update</p>',
-              text_body: 'Popular update',
-              created_at: '2024-01-01T10:00:00Z',
-              updated_at: '2024-01-01T10:00:00Z',
-              item_id: '123',
-              creator: {
-                id: 'user_1',
-                name: 'John Doe',
-              },
-              likes: [
-                {
-                  id: 'like_1',
-                  created_at: '2024-01-01T11:00:00Z',
-                  creator: {
-                    id: 'user_2',
-                    name: 'Jane Smith',
-                  },
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    };
-
-    mocks.setResponse(responseWithLikes);
-    const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
-
-    const result = await tool.execute({ itemId: 123, includeLikes: true } as any);
-
-    const parsedResult = JSON.parse(result.content);
-    expect(parsedResult.updates[0].likes).toBeDefined();
-    expect(parsedResult.updates[0].likes).toHaveLength(1);
-    expect(parsedResult.updates[0].likes[0].creator.name).toBe('Jane Smith');
-
-    expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        includeLikes: true,
-      }),
-    );
-  });
-
-  it('Successfully gets updates with viewers included', async () => {
-    const responseWithViewers = {
-      items: [
-        {
-          id: '123',
-          updates: [
-            {
-              id: 'update_1',
-              body: '<p>Update with viewers</p>',
-              text_body: 'Update with viewers',
-              created_at: '2024-01-01T10:00:00Z',
-              updated_at: '2024-01-01T10:00:00Z',
-              item_id: '123',
-              creator: {
-                id: 'user_1',
-                name: 'John Doe',
-              },
-              viewers: [{ id: 'viewer_1' }, { id: 'viewer_2' }],
-            },
-          ],
-        },
-      ],
-    };
-
-    mocks.setResponse(responseWithViewers);
-    const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
-
-    const result = await tool.execute({ itemId: 123, includeViewers: true } as any);
-
-    const parsedResult = JSON.parse(result.content);
-    expect(parsedResult.updates[0].viewers).toBeDefined();
-    expect(parsedResult.updates[0].viewers).toHaveLength(2);
-
-    expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        includeViewers: true,
+        itemId: '123',
       }),
     );
   });
@@ -375,14 +279,6 @@ describe('Get Updates Tool', () => {
                   created_at: '2024-01-01T10:00:00Z',
                 },
               ],
-              likes: [
-                {
-                  id: 'like_1',
-                  created_at: '2024-01-01T11:00:00Z',
-                  creator: { id: 'user_3', name: 'Bob Johnson' },
-                },
-              ],
-              viewers: [{ id: 'viewer_1' }],
             },
           ],
         },
@@ -396,15 +292,11 @@ describe('Get Updates Tool', () => {
       itemId: 123,
       includeReplies: true,
       includeAssets: true,
-      includeLikes: true,
-      includeViewers: true,
     } as any);
 
     const parsedResult = JSON.parse(result.content);
     expect(parsedResult.updates[0].replies).toBeDefined();
     expect(parsedResult.updates[0].assets).toBeDefined();
-    expect(parsedResult.updates[0].likes).toBeDefined();
-    expect(parsedResult.updates[0].viewers).toBeDefined();
   });
 
   it('Returns empty array when no updates exist', async () => {
@@ -488,8 +380,6 @@ describe('Get Updates Tool', () => {
     expect(() => schema.page.parse(2)).not.toThrow();
     expect(() => schema.includeReplies.parse(true)).not.toThrow();
     expect(() => schema.includeAssets.parse(true)).not.toThrow();
-    expect(() => schema.includeLikes.parse(true)).not.toThrow();
-    expect(() => schema.includeViewers.parse(true)).not.toThrow();
   });
 
   it('Rejects limit values outside valid range', async () => {
