@@ -116,7 +116,7 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
 
         if (input.includeAssets && update.assets) {
           formattedUpdate.assets = update.assets
-            .filter((asset) => !!asset)
+            .filter((asset): asset is NonNullable<typeof asset> => !!asset)
             .map((asset) => ({
               id: asset.id,
               name: asset.name,
