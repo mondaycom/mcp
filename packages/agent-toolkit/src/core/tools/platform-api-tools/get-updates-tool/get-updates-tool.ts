@@ -25,16 +25,6 @@ export const getUpdatesToolSchema = {
     .optional()
     .default(false)
     .describe('Include file attachments in the response'),
-  includeLikes: z
-    .boolean()
-    .optional()
-    .default(false)
-    .describe('Include likes data in the response'),
-  includeViewers: z
-    .boolean()
-    .optional()
-    .default(false)
-    .describe('Include viewers/watchers data in the response'),
 };
 
 export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchema> {
@@ -51,7 +41,7 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
     return (
       'Get updates (comments/posts) from a monday.com item or board. ' +
       'Use itemId to get updates for a specific item, or boardId to get board-level updates only. ' +
-      'Returns update text, creator info, timestamps, and optionally replies, assets, likes, and viewers.'
+      'Returns update text, creator info, timestamps, and optionally replies and assets.'
     );
   }
 
@@ -74,10 +64,6 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
         boardId: input.boardId?.toString(),
         limit: input.limit ?? 25,
         page: input.page ?? 1,
-        includeReplies: input.includeReplies ?? false,
-        includeAssets: input.includeAssets ?? false,
-        includeLikes: input.includeLikes ?? false,
-        includeViewers: input.includeViewers ?? false,
       };
 
       let res: any;
@@ -124,19 +110,23 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
         };
 
         if (input.includeReplies && update.replies) {
-          formattedUpdate.replies = update.replies.map((reply: any) => ({
-            id: reply.id,
-            body: reply.body,
-            text_body: reply.text_body,
-            created_at: reply.created_at,
-            updated_at: reply.updated_at,
-            creator: reply.creator
-              ? {
-                  id: reply.creator.id,
-                  name: reply.creator.name,
-                }
-              : null,
-          }));
+          formattedUpdate.replies = update.replies.map((reply: any) => {
+            const formattedReply: any = {
+              id: reply.id,
+              body: reply.body,
+              text_body: reply.text_body,
+              created_at: reply.created_at,
+              updated_at: reply.updated_at,
+              creator: reply.creator
+                ? {
+                    id: reply.creator.id,
+                    name: reply.creator.name,
+                  }
+                : null,
+            };
+
+            return formattedReply;
+          });
         }
 
         if (input.includeAssets && update.assets) {
@@ -147,25 +137,6 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
             file_extension: asset.file_extension,
             file_size: asset.file_size,
             created_at: asset.created_at,
-          }));
-        }
-
-        if (input.includeLikes && update.likes) {
-          formattedUpdate.likes = update.likes.map((like: any) => ({
-            id: like.id,
-            created_at: like.created_at,
-            creator: like.creator
-              ? {
-                  id: like.creator.id,
-                  name: like.creator.name,
-                }
-              : null,
-          }));
-        }
-
-        if (input.includeViewers && update.viewers) {
-          formattedUpdate.viewers = update.viewers.map((viewer: any) => ({
-            id: viewer.id,
           }));
         }
 
