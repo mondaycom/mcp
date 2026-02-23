@@ -3,10 +3,16 @@ import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { rethrowWithContext } from '../../../../utils';
 import { getItemUpdates, getBoardUpdates } from './get-updates.graphql';
+import { GetBoardUpdatesQuery, GetItemUpdatesQuery } from 'src/monday-graphql/generated/graphql/graphql';
+
+export enum UpdateObjectType {
+  Item = 'Item',
+  Board = 'Board',
+}
 
 export const getUpdatesToolSchema = {
   objectId: z.string().describe('The ID of the item or board to get updates from'),
-  objectType: z.enum(['Item', 'Board']).describe('Type of object for which objectId was provided'),
+  objectType: z.enum([UpdateObjectType.Item, UpdateObjectType.Board]).describe('Type of object for which objectId was provided'),
   limit: z
     .number()
     .min(1)
@@ -58,15 +64,15 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
         includeAssets: input.includeAssets ?? false,
       };
 
-      let res: any;
+      let res: GetItemUpdatesQuery | GetBoardUpdatesQuery;
 
-      if (input.objectType === 'Item') {
-        res = await this.mondayApi.request(getItemUpdates, { ...variables, itemId: input.objectId });
+      if (input.objectType === UpdateObjectType.Item) {
+        res = await this.mondayApi.request<GetItemUpdatesQuery>(getItemUpdates, { ...variables, itemId: input.objectId });
       } else {
-        res = await this.mondayApi.request(getBoardUpdates, { ...variables, boardId: input.objectId });
+        res = await this.mondayApi.request<GetBoardUpdatesQuery>(getBoardUpdates, { ...variables, boardId: input.objectId });
       }
 
-      const updates = input.objectType === 'Item' ? res.items?.[0]?.updates : res.boards?.[0]?.updates;
+      const updates = input.objectType === UpdateObjectType.Item ? (res as GetItemUpdatesQuery).items?.[0]?.updates : (res as GetBoardUpdatesQuery).boards?.[0]?.updates;
 
       if (!updates || updates.length === 0) {
         return {
@@ -74,7 +80,7 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
         };
       }
 
-      const formattedUpdates = updates.map((update: any) => {
+      const formattedUpdates = updates.map((update) => {
         const formattedUpdate: any = {
           id: update.id,
           body: update.body,
@@ -91,7 +97,7 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
         };
 
         if (input.includeReplies && update.replies) {
-          formattedUpdate.replies = update.replies.map((reply: any) => {
+          formattedUpdate.replies = update.replies.map((reply) => {
             const formattedReply: any = {
               id: reply.id,
               body: reply.body,
@@ -111,14 +117,16 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
         }
 
         if (input.includeAssets && update.assets) {
-          formattedUpdate.assets = update.assets.map((asset: any) => ({
-            id: asset.id,
-            name: asset.name,
-            url: asset.url,
-            file_extension: asset.file_extension,
-            file_size: asset.file_size,
-            created_at: asset.created_at,
-          }));
+          formattedUpdate.assets = update.assets
+            .filter((asset) => !!asset)
+            .map((asset) => ({
+              id: asset.id,
+              name: asset.name,
+              url: asset.url,
+              file_extension: asset.file_extension,
+              file_size: asset.file_size,
+              created_at: asset.created_at,
+            }));
         }
 
         return formattedUpdate;
