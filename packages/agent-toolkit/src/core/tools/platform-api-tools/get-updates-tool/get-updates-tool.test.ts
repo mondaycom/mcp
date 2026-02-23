@@ -69,7 +69,7 @@ describe('Get Updates Tool', () => {
     mocks.setResponse(mockItemUpdatesResponse);
     const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
 
-    const result = await tool.execute({ itemId: 123 } as any);
+    const result = await tool.execute({ objectId: '123', objectType: 'Item' } as any);
 
     const parsedResult = JSON.parse(result.content);
     expect(parsedResult.updates).toHaveLength(2);
@@ -96,7 +96,7 @@ describe('Get Updates Tool', () => {
     mocks.setResponse(mockBoardUpdatesResponse);
     const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
 
-    const result = await tool.execute({ boardId: 456 } as any);
+    const result = await tool.execute({ objectId: '456', objectType: 'Board' } as any);
 
     const parsedResult = JSON.parse(result.content);
     expect(parsedResult.updates).toHaveLength(1);
@@ -122,7 +122,7 @@ describe('Get Updates Tool', () => {
     mocks.setResponse(mockItemUpdatesResponse);
     const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
 
-    const result = await tool.execute({ itemId: 123, limit: 50, page: 2 } as any);
+    const result = await tool.execute({ objectId: '123', objectType: 'Item', limit: 50, page: 2 } as any);
 
     const parsedResult = JSON.parse(result.content);
     expect(parsedResult.pagination).toEqual({
@@ -179,7 +179,7 @@ describe('Get Updates Tool', () => {
     mocks.setResponse(responseWithReplies);
     const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
 
-    const result = await tool.execute({ itemId: 123, includeReplies: true } as any);
+    const result = await tool.execute({ objectId: '123', objectType: 'Item', includeReplies: true } as any);
 
     const parsedResult = JSON.parse(result.content);
     expect(parsedResult.updates[0].replies).toBeDefined();
@@ -230,7 +230,7 @@ describe('Get Updates Tool', () => {
     mocks.setResponse(responseWithAssets);
     const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
 
-    const result = await tool.execute({ itemId: 123, includeAssets: true } as any);
+    const result = await tool.execute({ objectId: '123', objectType: 'Item', includeAssets: true } as any);
 
     const parsedResult = JSON.parse(result.content);
     expect(parsedResult.updates[0].assets).toBeDefined();
@@ -289,7 +289,8 @@ describe('Get Updates Tool', () => {
     const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
 
     const result = await tool.execute({
-      itemId: 123,
+      objectId: '123',
+      objectType: 'Item',
       includeReplies: true,
       includeAssets: true,
     } as any);
@@ -299,7 +300,7 @@ describe('Get Updates Tool', () => {
     expect(parsedResult.updates[0].assets).toBeDefined();
   });
 
-  it('Returns empty array when no updates exist', async () => {
+  it('Returns message when no updates exist', async () => {
     const emptyResponse = {
       items: [{ id: '123', updates: [] }],
     };
@@ -307,14 +308,12 @@ describe('Get Updates Tool', () => {
     mocks.setResponse(emptyResponse);
     const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
 
-    const result = await tool.execute({ itemId: 123 } as any);
+    const result = await tool.execute({ objectId: '123', objectType: 'Item' } as any);
 
-    const parsedResult = JSON.parse(result.content);
-    expect(parsedResult.updates).toEqual([]);
-    expect(parsedResult.pagination.count).toBe(0);
+    expect(result.content).toBe('No updates found for item with id 123');
   });
 
-  it('Returns empty array when item has no updates field', async () => {
+  it('Returns message when item has no updates field', async () => {
     const noUpdatesResponse = {
       items: [{ id: '123' }],
     };
@@ -322,26 +321,11 @@ describe('Get Updates Tool', () => {
     mocks.setResponse(noUpdatesResponse);
     const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
 
-    const result = await tool.execute({ itemId: 123 } as any);
+    const result = await tool.execute({ objectId: '123', objectType: 'Item' } as any);
 
-    const parsedResult = JSON.parse(result.content);
-    expect(parsedResult.updates).toEqual([]);
-    expect(parsedResult.pagination.count).toBe(0);
+    expect(result.content).toBe('No updates found for item with id 123');
   });
 
-  it('Throws error when neither itemId nor boardId is provided', async () => {
-    const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
-
-    await expect(tool.execute({} as any)).rejects.toThrow('Either itemId or boardId must be provided');
-  });
-
-  it('Throws error when both itemId and boardId are provided', async () => {
-    const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
-
-    await expect(tool.execute({ itemId: 123, boardId: 456 } as any)).rejects.toThrow(
-      'Cannot provide both itemId and boardId - choose one',
-    );
-  });
 
   it('Handles GraphQL response errors', async () => {
     const graphqlError = new Error('GraphQL Error');
@@ -351,7 +335,7 @@ describe('Get Updates Tool', () => {
     mocks.setError(graphqlError);
     const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
 
-    await expect(tool.execute({ itemId: 123 } as any)).rejects.toThrow(
+    await expect(tool.execute({ objectId: '123', objectType: 'Item' } as any)).rejects.toThrow(
       'Failed to get updates: Item not found, Insufficient permissions',
     );
   });
@@ -361,7 +345,7 @@ describe('Get Updates Tool', () => {
     mocks.setError(networkError);
     const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
 
-    await expect(tool.execute({ itemId: 123 } as any)).rejects.toThrow('Failed to get updates: Network request failed');
+    await expect(tool.execute({ objectId: '123', objectType: 'Item' } as any)).rejects.toThrow('Failed to get updates: Network request failed');
   });
 
   it('Has correct schema and tool properties', () => {
@@ -374,8 +358,9 @@ describe('Get Updates Tool', () => {
     expect(tool.getDescription()).toContain('item');
     expect(tool.getDescription()).toContain('board');
 
-    expect(() => schema.itemId.parse(123)).not.toThrow();
-    expect(() => schema.boardId.parse(456)).not.toThrow();
+    expect(() => schema.objectId.parse('123')).not.toThrow();
+    expect(() => schema.objectType.parse('Item')).not.toThrow();
+    expect(() => schema.objectType.parse('Board')).not.toThrow();
     expect(() => schema.limit.parse(50)).not.toThrow();
     expect(() => schema.page.parse(2)).not.toThrow();
     expect(() => schema.includeReplies.parse(true)).not.toThrow();

@@ -5,8 +5,8 @@ import { rethrowWithContext } from '../../../../utils';
 import { getItemUpdates, getBoardUpdates } from './get-updates.graphql';
 
 export const getUpdatesToolSchema = {
-  itemId: z.number().optional().describe('The item ID to get updates from'),
-  boardId: z.number().optional().describe('The board ID to get board-level updates from'),
+  objectId: z.string().describe('The ID of the item or board to get updates from'),
+  objectType: z.enum(['Item', 'Board']).describe('Type of object for which objectId was provided'),
   limit: z
     .number()
     .min(1)
@@ -40,7 +40,7 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
   getDescription(): string {
     return (
       'Get updates (comments/posts) from a monday.com item or board. ' +
-      'Use itemId to get updates for a specific item, or boardId to get board-level updates only. ' +
+      'Specify objectId and objectType (Item or Board) to retrieve updates. ' +
       'Returns update text, creator info, timestamps, and optionally replies and assets.'
     );
   }
@@ -50,46 +50,25 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
   }
 
   protected async executeInternal(input: ToolInputType<typeof getUpdatesToolSchema>): Promise<ToolOutputType<never>> {
-    if (!input.itemId && !input.boardId) {
-      throw new Error('Either itemId or boardId must be provided');
-    }
-
-    if (input.itemId && input.boardId) {
-      throw new Error('Cannot provide both itemId and boardId - choose one');
-    }
-
     try {
       const variables = {
-        itemId: input.itemId?.toString(),
-        boardId: input.boardId?.toString(),
         limit: input.limit ?? 25,
         page: input.page ?? 1,
       };
 
       let res: any;
 
-      if (input.itemId) {
-        res = await this.mondayApi.request(getItemUpdates, variables);
+      if (input.objectType === 'Item') {
+        res = await this.mondayApi.request(getItemUpdates, { ...variables, itemId: input.objectId });
       } else {
-        res = await this.mondayApi.request(getBoardUpdates, variables);
+        res = await this.mondayApi.request(getBoardUpdates, { ...variables, boardId: input.objectId });
       }
 
-      const updates = input.itemId ? res.items?.[0]?.updates : res.boards?.[0]?.updates;
+      const updates = input.objectType === 'Item' ? res.items?.[0]?.updates : res.boards?.[0]?.updates;
 
-      if (!updates) {
+      if (!updates || updates.length === 0) {
         return {
-          content: JSON.stringify(
-            {
-              updates: [],
-              pagination: {
-                page: input.page ?? 1,
-                limit: input.limit ?? 25,
-                count: 0,
-              },
-            },
-            null,
-            2,
-          ),
+          content: `No updates found for ${input.objectType.toLowerCase()} with id ${input.objectId}`,
         };
       }
 
