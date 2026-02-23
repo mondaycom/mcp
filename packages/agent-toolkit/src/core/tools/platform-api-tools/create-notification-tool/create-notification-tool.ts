@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { NotificationTargetType } from '../../../monday-graphql/generated/graphql/graphql';
-import { createNotification } from '../../../monday-graphql/queries.graphql';
-import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
-import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
+import { NotificationTargetType } from '../../../../monday-graphql/generated/graphql/graphql';
+import { createNotification } from './create-notification.graphql';
+import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
+import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 
 export const createNotificationToolSchema = {
   user_id: z.string().describe('The user ID to send the notification to'),
