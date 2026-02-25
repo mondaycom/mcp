@@ -14,13 +14,13 @@ export const getUserContextQuery = gql`
       }
     }
     intelligence {
-      relevant_boards {
+      relevant_boards(limit: 10) {
         id
         board {
           name
         }
       }
-      relevant_people {
+      relevant_people(limit: 10) {
         id
         user {
           name
