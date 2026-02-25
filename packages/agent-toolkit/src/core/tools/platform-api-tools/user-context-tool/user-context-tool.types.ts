@@ -10,3 +10,8 @@ export interface RelevantBoard {
   id: string;
   name: string;
 }
+
+export interface RelevantPerson {
+  id: string;
+  name: string;
+}

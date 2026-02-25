@@ -4,7 +4,7 @@ import { getUserContextQuery } from './user-context.graphql.dev';
 import { getFavoriteDetailsQuery } from './user-context.graphql';
 import { GetUserContextQuery } from '../../../../monday-graphql/generated/graphql.dev/graphql';
 import { GetFavoriteDetailsQuery, GraphqlMondayObject } from '../../../../monday-graphql/generated/graphql/graphql';
-import { Favorite, RelevantBoard } from './user-context-tool.types';
+import { Favorite, RelevantBoard, RelevantPerson } from './user-context-tool.types';
 import { TYPE_TO_QUERY_VAR, TYPE_TO_RESPONSE_KEY } from './user-context-tool.consts';
 
 export class UserContextTool extends BaseMondayApiTool<undefined> {
@@ -24,6 +24,7 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
     - Get context about who the current user is (id, name, title)
     - Discover user's favorite boards, folders, workspaces, and dashboards
     - Get user's most relevant boards based on visit frequency and recency
+    - Get user's most relevant people based on interaction frequency and recency
     - Reduce the need for search requests by knowing user's commonly accessed items
     `;
   }
@@ -47,8 +48,9 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
 
     const enrichedFavorites = await this.fetchFavorites(favorites || []);
     const relevantBoards = this.extractRelevantBoards(intelligence);
+    const relevantPeople = this.extractRelevantPeople(intelligence);
 
-    const output = { user: me, favorites: enrichedFavorites, relevantBoards };
+    const output = { user: me, favorites: enrichedFavorites, relevantBoards, relevantPeople };
     return { content: JSON.stringify(output, null, 2) };
   }
 
@@ -91,6 +93,22 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
     for (const rb of intelligence.relevant_boards) {
       if (rb?.id && rb?.board?.name) {
         result.push({ id: rb.id, name: rb.board.name });
+      }
+    }
+
+    return result;
+  }
+
+  private extractRelevantPeople(intelligence: GetUserContextQuery['intelligence']): RelevantPerson[] {
+    if (!intelligence?.relevant_people) {
+      return [];
+    }
+
+    const result: RelevantPerson[] = [];
+
+    for (const rp of intelligence.relevant_people) {
+      if (rp?.id && rp?.user?.name) {
+        result.push({ id: rp.id, name: rp.user.name });
       }
     }
 
