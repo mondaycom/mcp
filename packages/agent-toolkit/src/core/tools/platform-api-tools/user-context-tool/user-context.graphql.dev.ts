@@ -20,6 +20,12 @@ export const getUserContextQuery = gql`
           name
         }
       }
+      relevant_people {
+        id
+        user {
+          name
+        }
+      }
     }
   }
 `;
