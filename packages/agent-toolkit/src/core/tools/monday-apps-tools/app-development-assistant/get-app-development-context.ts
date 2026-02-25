@@ -27,21 +27,11 @@ export class GetAppDevelopmentContextTool extends BaseMondayAppsTool<
   });
 
   getDescription(): string {
-    return `Search monday.com apps documentation and get comprehensive development guidance using AI-powered semantic search.
+    return `Your primary source of truth for building apps on top of monday.com. Call this tool whenever you need guidance on app development — from understanding the platform and its capabilities, to writing code, deploying, configuring permissions, and following best practices.
 
-[REQUIRED]: Call this tool BEFORE implementing any monday.com app feature. This is your primary source of truth for SDK usage, feature implementation patterns, deployment procedures, and best practices.
+[REQUIRED]: Call this tool BEFORE implementing any monday.com app feature or performing any app-related action.
 
-This tool returns both static development guidelines (app lifecycle, CLI reference, available tools) and dynamic documentation answers from the official monday.com apps knowledge base.
-
-Topics covered:
-- Building app features (board views, item views, dashboard widgets, custom columns, workflow blocks)
-- monday.com SDK reference and usage examples
-- monday-code deployment and server-side patterns
-- Vibe Design System components and styling
-- OAuth scopes, permissions, and authentication
-- CLI commands (mapps) for deployment and local development
-- Custom objects, data schemas, and storage
-- Best practices, troubleshooting, and common patterns
+This tool returns development guidelines and dynamic documentation answers from the official monday.com apps knowledge base. It covers everything you need to build, deploy, and manage monday.com apps — including SDK usage, CLI commands, feature types, deployment procedures, OAuth scopes, manifest configuration, and troubleshooting.
 
 Provide a clear question or topic in the query parameter for best results.`;
   }
