@@ -16,10 +16,12 @@ import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/
 type Documents = {
     "\n  query SearchItemsDev($searchTerm: String!, $board_ids: [ID!]) {\n    search_items(board_ids: $board_ids, query: $searchTerm, size: 100) {\n      results {\n        data {\n          id\n        }\n      }\n    }\n  }\n": typeof types.SearchItemsDevDocument,
     "\n  query SearchDev($query: String!, $size: Int!, $entityTypes: [SearchableEntity!], $workspaceIds: [ID!]) {\n    search(query: $query, size: $size, entity_types: $entityTypes, workspace_ids: $workspaceIds) {\n      __typename\n      ... on CrossEntityBoardResult {\n        entity_type\n        data {\n          id\n          name\n          url\n        }\n      }\n      ... on CrossEntityDocResult {\n        entity_type\n        data {\n          id\n          name\n        }\n      }\n    }\n  }\n": typeof types.SearchDevDocument,
+    "\n  query getUserContext {\n    me {\n      id\n      name\n      title\n    }\n    favorites {\n      object {\n        id\n        type\n      }\n    }\n    intelligence {\n      relevant_boards {\n        id\n        board {\n          name\n        }\n      }\n    }\n  }\n": typeof types.GetUserContextDocument,
 };
 const documents: Documents = {
     "\n  query SearchItemsDev($searchTerm: String!, $board_ids: [ID!]) {\n    search_items(board_ids: $board_ids, query: $searchTerm, size: 100) {\n      results {\n        data {\n          id\n        }\n      }\n    }\n  }\n": types.SearchItemsDevDocument,
     "\n  query SearchDev($query: String!, $size: Int!, $entityTypes: [SearchableEntity!], $workspaceIds: [ID!]) {\n    search(query: $query, size: $size, entity_types: $entityTypes, workspace_ids: $workspaceIds) {\n      __typename\n      ... on CrossEntityBoardResult {\n        entity_type\n        data {\n          id\n          name\n          url\n        }\n      }\n      ... on CrossEntityDocResult {\n        entity_type\n        data {\n          id\n          name\n        }\n      }\n    }\n  }\n": types.SearchDevDocument,
+    "\n  query getUserContext {\n    me {\n      id\n      name\n      title\n    }\n    favorites {\n      object {\n        id\n        type\n      }\n    }\n    intelligence {\n      relevant_boards {\n        id\n        board {\n          name\n        }\n      }\n    }\n  }\n": types.GetUserContextDocument,
 };
 
 /**
@@ -44,6 +46,10 @@ export function graphql(source: "\n  query SearchItemsDev($searchTerm: String!, 
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  query SearchDev($query: String!, $size: Int!, $entityTypes: [SearchableEntity!], $workspaceIds: [ID!]) {\n    search(query: $query, size: $size, entity_types: $entityTypes, workspace_ids: $workspaceIds) {\n      __typename\n      ... on CrossEntityBoardResult {\n        entity_type\n        data {\n          id\n          name\n          url\n        }\n      }\n      ... on CrossEntityDocResult {\n        entity_type\n        data {\n          id\n          name\n        }\n      }\n    }\n  }\n"): (typeof documents)["\n  query SearchDev($query: String!, $size: Int!, $entityTypes: [SearchableEntity!], $workspaceIds: [ID!]) {\n    search(query: $query, size: $size, entity_types: $entityTypes, workspace_ids: $workspaceIds) {\n      __typename\n      ... on CrossEntityBoardResult {\n        entity_type\n        data {\n          id\n          name\n          url\n        }\n      }\n      ... on CrossEntityDocResult {\n        entity_type\n        data {\n          id\n          name\n        }\n      }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query getUserContext {\n    me {\n      id\n      name\n      title\n    }\n    favorites {\n      object {\n        id\n        type\n      }\n    }\n    intelligence {\n      relevant_boards {\n        id\n        board {\n          name\n        }\n      }\n    }\n  }\n"): (typeof documents)["\n  query getUserContext {\n    me {\n      id\n      name\n      title\n    }\n    favorites {\n      object {\n        id\n        type\n      }\n    }\n    intelligence {\n      relevant_boards {\n        id\n        board {\n          name\n        }\n      }\n    }\n  }\n"];
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};

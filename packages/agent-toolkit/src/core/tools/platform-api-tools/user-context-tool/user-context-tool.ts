@@ -1,7 +1,9 @@
 import { ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { getUserContextQuery, getFavoriteDetailsQuery } from './user-context.graphql';
-import { GetUserContextQuery, GetFavoriteDetailsQuery, GraphqlMondayObject } from '../../../../monday-graphql/generated/graphql/graphql';
+import { getUserContextQuery } from './user-context.graphql.dev';
+import { getFavoriteDetailsQuery } from './user-context.graphql';
+import { GetUserContextQuery } from '../../../../monday-graphql/generated/graphql.dev/graphql';
+import { GetFavoriteDetailsQuery, GraphqlMondayObject } from '../../../../monday-graphql/generated/graphql/graphql';
 import { Favorite, RelevantBoard } from './user-context-tool.types';
 import { TYPE_TO_QUERY_VAR, TYPE_TO_RESPONSE_KEY } from './user-context-tool.consts';
 
