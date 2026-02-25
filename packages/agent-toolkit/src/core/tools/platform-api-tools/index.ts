@@ -8,10 +8,12 @@ import { UpdateFormTool } from './workforms-tools/update-form-tool';
 import { GetFormTool } from './workforms-tools/get-form-tool';
 import { CreateColumnTool } from './create-column-tool';
 import { CreateCustomActivityTool } from './create-custom-activity-tool';
+import { CreateNotificationTool } from './create-notification-tool/create-notification-tool';
 import { CreateGroupTool } from './create-group/create-group-tool';
 import { CreateItemTool } from './create-item-tool/create-item-tool';
 import { CreateTimelineItemTool } from './create-timeline-item-tool';
 import { CreateUpdateTool } from './create-update-tool/create-update-tool';
+import { GetUpdatesTool } from './get-updates-tool/get-updates-tool';
 import { DeleteColumnTool } from './delete-column-tool';
 import { DeleteItemTool } from './delete-item-tool';
 import { FetchCustomActivityTool } from './fetch-custom-activity-tool';
@@ -41,6 +43,7 @@ import { MoveObjectTool } from './move-object-tool/move-object-tool';
 import { BoardInsightsTool } from './board-insights/board-insights-tool';
 import { SearchTool } from './search-tool/search-tool';
 import { CreateUpdateInMondayTool } from './create-update-tool-ui/create-update-ui-tool';
+import { UpdateAssetsOnItemTool } from './update-assets-on-item-tool/update-assets-on-item-tool';
 import { UserContextTool } from './user-context-tool/user-context-tool';
 
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
@@ -48,6 +51,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   GetBoardItemsPageTool,
   CreateItemTool,
   CreateUpdateTool,
+  GetUpdatesTool,
   CreateUpdateInMondayTool,
   GetBoardSchemaTool,
   GetBoardActivityTool,
@@ -69,6 +73,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   GetColumnTypeInfoTool,
   GetTypeDetailsTool,
   CreateCustomActivityTool,
+  CreateNotificationTool,
   CreateTimelineItemTool,
   FetchCustomActivityTool,
   ReadDocsTool,
@@ -88,6 +93,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   BoardInsightsTool,
   SearchTool,
   UserContextTool,
+  UpdateAssetsOnItemTool,
 ];
 
 export * from './all-monday-api-tool';
@@ -100,9 +106,11 @@ export * from './workforms-tools/form-questions-editor-tool';
 export * from './create-column-tool';
 export * from './create-group/create-group-tool';
 export * from './create-custom-activity-tool';
+export * from './create-notification-tool/create-notification-tool';
 export * from './create-item-tool/create-item-tool';
 export * from './create-timeline-item-tool';
 export * from './create-update-tool/create-update-tool';
+export * from './get-updates-tool/get-updates-tool';
 export * from './delete-column-tool';
 export * from './delete-item-tool';
 export * from './fetch-custom-activity-tool';
@@ -130,6 +138,7 @@ export * from './move-object-tool/move-object-tool';
 export * from './board-insights/board-insights-tool';
 export * from './search-tool/search-tool';
 export * from './user-context-tool/user-context-tool';
+export * from './update-assets-on-item-tool/update-assets-on-item-tool';
 // Dashboard Tools
 export * from './dashboard-tools';
 // Monday Dev Tools
