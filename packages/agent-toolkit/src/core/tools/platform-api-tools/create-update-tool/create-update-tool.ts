@@ -21,7 +21,9 @@ export const createUpdateToolSchema = {
   itemId: z.number().describe('The id of the item to which the update will be added'),
   body: z
     .string()
-    .describe('The update text to be created. Do not use @ to mention users, use the mentionsList field instead.'),
+    .describe(
+      'The update text to be created. Do not use @ to mention users, use the mentionsList field instead. use html tags to format the text, dont use markdown.',
+    ),
   mentionsList: z
     .string()
     .optional()
