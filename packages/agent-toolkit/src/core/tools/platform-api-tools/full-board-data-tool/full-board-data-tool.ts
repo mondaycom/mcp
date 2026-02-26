@@ -101,11 +101,12 @@ export class FullBoardDataTool extends BaseMondayApiTool<typeof fullBoardDataToo
       });
 
       // Step 3: Fetch user details for all collected user IDs (if any exist)
+      // Filter out negative IDs (e.g. automation/integration pseudo-users) which are not valid user IDs
+      const validUserIds = Array.from(userIds).filter((id) => !(Number(id) < 0));
       let users: User[] = [];
-      if (userIds.size > 0) {
-        const userIdsList = Array.from(userIds);
+      if (validUserIds.length > 0) {
         const userVariables: GetUsersByIdsQueryVariables = {
-          userIds: userIdsList,
+          userIds: validUserIds,
         };
         const usersData = await this.mondayApi.request<GetUsersByIdsQuery>(getUsersByIdsQuery, userVariables);
         users = usersData.users?.filter((u): u is User => u !== null) || [];
