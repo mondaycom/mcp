@@ -300,6 +300,9 @@ type Query {
   """List block events for a given trigger UUID"""
   block_events(triggerUuid: String!, nextPageOffset: Int = 0): BlockEventsPage
 
+  """List tool events for a given trigger UUID"""
+  tool_events(trigger_uuid: String!, next_page_offset: Int = 0): ToolEventsPage
+
   """Get aggregated automation runs statistics in the account"""
   account_trigger_statistics(filters: AccountTriggerStatisticsFiltersInput): AccountTriggerStatistics
 
@@ -453,7 +456,7 @@ type Query {
     type: ColumnType!
   ): JSON
 
-  """Get the required column IDs for a board"""
+  """Get validations configuration for a board"""
   validations(
     id: ID!
 
@@ -472,6 +475,48 @@ type Query {
     """The ID of the board to export the graph for"""
     boardId: String!
   ): BoardGraphExport
+
+  """Fetch dependency column configuration for a board"""
+  dependency_column_config(
+    """The ID of the board to fetch dependency columns from"""
+    board_id: ID!
+
+    """The account ID (needed for authentication)"""
+    account_id: ID!
+
+    """The user ID (needed for authentication)"""
+    user_id: ID!
+  ): DependencyColumnConfigResult
+
+  """Export events with optional filters and pagination"""
+  export_events(
+    """Filter events by board ID"""
+    board_id: ID
+
+    """Filter events by state(s)"""
+    state: [String!]
+
+    """Filter events by type(s)"""
+    type: [String!]
+
+    """Filter events created after this date (ISO format)"""
+    start_date: String
+
+    """Filter events created before this date (ISO format)"""
+    end_date: String
+
+    """Maximum number of events to return (default: 100, max: 1000)"""
+    limit: Int
+
+    """Number of events to skip for pagination"""
+    offset: Int
+
+    """Field to order by (default: createdAt)"""
+    order_by: String
+
+    """Order direction: ASC or DESC (default: DESC)"""
+    order_direction: String
+  ): EventsExport
 
   """
   Retrieves blocks for the published version of a specific article if the requesting user has permission to access it. Returns paginated blocks in their position order. Will return an error if the user lacks the required permissions.
@@ -611,6 +656,19 @@ type Query {
     """The question to ask about monday.com apps documentation."""
     query: String!
   ): AppDocumentationAiResponse
+
+  """
+  Get lifecycle subscriptions for all entity types in a specific app version. If version_id is not provided, resolves the active version (user testing version, live, or latest).
+  """
+  get_app_lifecycle_subscriptions(
+    """The app ID or slug"""
+    app_id: ID!
+
+    """
+    Optional app version ID. If not provided, resolves the active version (user testing version, live, or latest)
+    """
+    version_id: ID
+  ): [LifecycleSubscriptionKind!]
 
   """Get the connected account's information."""
   account: Account
@@ -961,8 +1019,10 @@ type Query {
     """ID of the source object"""
     object_id: ID!
 
-    """Kind of the relation to fetch"""
-    kind: RelationKind!
+    """
+    Kind of the relation to fetch. If not provided, all relation kinds are returned.
+    """
+    kind: RelationKind
 
     """Direction of the relation (defaults to "outgoing")"""
     direction: RelationDirection = OUTGOING
@@ -976,6 +1036,15 @@ type Query {
 
   """Platform API data."""
   platform_api: PlatformApi
+
+  """Validate projects and portfolios"""
+  validate_projects_and_portfolios(
+    """The IDs of the boards (projects and portfolios) to validate"""
+    board_ids: [ID!]!
+
+    """Internal token for authentication"""
+    internal_token: String!
+  ): ValidateProjectsAndPortfoliosResult
 
   """Performs aggregation operations on board data"""
   aggregate(
@@ -998,8 +1067,8 @@ type Query {
 
   """Fetch resources information from the resource directory"""
   get_directory_resources(
-    """List of team IDs to filter by (e.g., ["1234", "5678"])"""
-    team_ids: [String!]
+    """Query parameters for filtering resources"""
+    query_params: ItemsQuery
 
     """The cursor which allows to fetch the next page of directory resources."""
     cursor: String
@@ -1007,6 +1076,48 @@ type Query {
     """Number of items to get, the default is 25."""
     limit: Int = 25
   ): DirectoryResourcesResponse
+
+  """Fetch available attribute options for a resource attribute type"""
+  get_resource_attributes(
+    """The resource attribute type to fetch attributes for"""
+    attribute_type: String!
+  ): GetAttributesResponse
+
+  """Retrieve available resource attribute types with descriptions"""
+  get_resource_attribute_types: [ResourceAttributeTypeInfo!]
+
+  """Fetch allocations from a resource planner with pagination"""
+  get_allocations(
+    """The planner ID to query allocations from"""
+    planner_id: ID!
+
+    """When provided, calculates the effort per period in the specified unit"""
+    effort_per_period_type: EffortUnit
+
+    """The cursor which allows to fetch the next page of directory resources."""
+    cursor: String
+
+    """Number of items to get, the default is 25."""
+    limit: Int = 25
+  ): GetAllocationsResponse
+
+  """
+  Fetch the unique set of resources (assignees and placeholders) in a planner
+  """
+  get_allocated_resources(
+    """The planner ID"""
+    planner_id: ID!
+  ): [AllocatedResource!]
+
+  """
+  Returns utilization report for resources: optional grouping by attribute, filtering, resource list, and project breakdown.
+  """
+  utilization_report(
+    """
+    Time range, effort types, optional groupBy, filters, resourceIds, and options.
+    """
+    input: UtilizationReportInput!
+  ): UtilizationReport
 
   """
   A query to search across all boards in the account. Returns raw json results.
@@ -1066,6 +1177,20 @@ type Query {
   ): SearchItemsGraphQlResultsView
 
   """Search across multiple entity types (items, boards, documents)."""
+  search_v2(
+    """The search query string."""
+    query: String!
+
+    """Maximum number of results to return per entity (max 100)."""
+    limit: Int!
+
+    """
+    Filters specifying which entities to search and their per-entity filters.
+    """
+    filters: SearchFiltersInput!
+  ): [SearchResult!]
+
+  """Search across multiple entity types (items, boards, documents)."""
   search(
     """The search query string."""
     query: String!
@@ -1108,6 +1233,29 @@ type Query {
     """A list of monday dev sprints unique identifiers"""
     ids: [ID!]!
   ): [Sprint!]
+
+  """
+  Get the changelog of decisions that were made for a task by the My Tasks agent.
+  """
+  get_task_changelog(
+    """The task (item) ID to fetch the changelog of decisions for"""
+    task_id: ID!
+  ): [TaskDecisionChangelogEvent!]
+
+  """Get or create the current user's task board."""
+  my_task_board: MyTaskBoardResponse
+
+  """Fetch all tasks for the current user."""
+  my_tasks: MyTasksResponse
+
+  """Get the current user's priority prompt."""
+  priority_prompt: PriorityPromptResponse
+
+  """Fetch a single task by its ID."""
+  task(
+    """The task (item) ID to fetch"""
+    task_id: ID!
+  ): Task
 
   """Get all roles for the account"""
   account_roles: [AccountRole!]
@@ -1501,6 +1649,15 @@ type Mutation {
     sourceAccountApiToken: String
   ): RestoreEntityResult
 
+  """Rollback a snapshot to allow creating a new one for the same entity"""
+  rollback_snapshot(
+    """The id of the migration job."""
+    migration_job_id: ID!
+
+    """The snapshot id to rollback."""
+    snapshot_id: ID!
+  ): RollbackSnapshotMutationResult
+
   """Upsert entity ID mappings for a migration job."""
   upsert_entity_id_mappings(
     """The id of the migration job."""
@@ -1885,6 +2042,27 @@ type Mutation {
     """Optional settings overrides for the dropdown column."""
     settings: DropdownSettingsOverridesInput
   ): Column
+
+  """Create a new account entity."""
+  create_account_entity(
+    """A unique human-readable name for this entity."""
+    name: String!
+
+    """The ID of the parent entity."""
+    parent_id: ID
+  ): AccountEntity
+
+  """Update an account entity."""
+  update_account_entity(
+    """The ID of the entity to update."""
+    id: ID!
+
+    """The current revision number for optimistic locking."""
+    revision: Int!
+
+    """The ID of the parent entity."""
+    parent_id: ID
+  ): AccountEntity
 
   """Add a required column to a board"""
   add_required_column(
@@ -2310,6 +2488,31 @@ type Mutation {
     """
     deployment: AppFeatureReleaseInput
   ): AppFeatureType
+
+  """
+  Update (or create) lifecycle subscriptions for an entity. This will soft delete all existing subscriptions for this entity_identifier and create new ones.
+  """
+  update_app_lifecycle_subscription(
+    """App feature entity ID or full slug (app_slug::feature_slug)"""
+    entity_identifier: ID!
+
+    """Entity type enum (currently only "appFeature" is supported)"""
+    entity_type: String!
+
+    """Lifecycle event configurations"""
+    input: UpdateLifecycleSubscriptionsInput!
+  ): [LifecycleSubscriptionKind!]
+
+  """
+  Delete all lifecycle subscriptions for an entity. Returns true if deleted successfully or if no subscriptions exist.
+  """
+  delete_app_lifecycle_subscription(
+    """App feature entity ID or full slug (app_slug::feature_slug)"""
+    entity_identifier: ID!
+
+    """Entity type enum (currently only "appFeature" is supported)"""
+    entity_type: String!
+  ): Boolean
 
   """Add a file to a column value."""
   add_file_to_column(
@@ -3403,6 +3606,52 @@ type Mutation {
     resource_ids: [ID!]!
   ): UpdateDirectoryResourceAttributesResponse
 
+  """Add resources to the planner without allocations"""
+  add_allocated_resources(
+    """The planner board ID where resources will be added"""
+    planner_id: ID!
+
+    """List of resources to add (minimum 1, maximum 500 resources)"""
+    resources: [AllocatedResourceInput!]!
+  ): [AllocatedResourceOperationResult!]
+
+  """Delete an allocation by its ID"""
+  delete_allocation(
+    """The ID of the allocation to delete"""
+    allocation_id: ID!
+  ): DeleteAllocationResponse
+
+  """Delete a resource and all its allocations from the planner"""
+  delete_planner_resource(
+    """The planner board ID"""
+    planner_id: ID!
+
+    """Resource or placeholder ID"""
+    resource_id: ID!
+  ): DeletePlannerResourceResponse
+
+  """
+  Add allocations to resources that already exist on the Resource Planner
+  """
+  add_allocations_to_resources(
+    """The Resource Planner ID"""
+    planner_id: ID!
+
+    """List of allocations to add (minimum 1, maximum 10)"""
+    allocations: [AllocationToResourceInput!]!
+  ): AddAllocationsToResourcesResponse
+
+  """
+  Update multiple allocations in a single batch operation. Returns per-item results.
+  """
+  update_allocations(
+    """The ID of the planner containing the allocations"""
+    planner_id: ID!
+
+    """Array of allocation updates to apply"""
+    updates: [AllocationUpdateInput!]!
+  ): [UpdateAllocationResult!]
+
   """
   Enroll multiple items to a single sequence. Maximum 50 items per request.
   """
@@ -3410,6 +3659,25 @@ type Mutation {
     """Input for enrolling multiple items to a single sequence"""
     input: EnrollToSequenceInput!
   ): EnrollToSequenceResult
+
+  """
+  Process an event through the task engine AI. Returns true when accepted.
+  """
+  process_events(
+    """Event payload to process"""
+    input: ProcessEventsInput!
+  ): Boolean
+
+  """
+  Reconcile the current user tasks board with latest source item changes.
+  """
+  reconcile_with_items: ReconciliationResult
+
+  """Update the current user's priority prompt for task prioritization."""
+  update_priority_prompt(
+    """Free-text prompt describing how to prioritize tasks (max 1000 chars)"""
+    priority_prompt: String!
+  ): UpdatePriorityPromptResponse
 
   """Creates a new team."""
   create_team(input: CreateTeamAttributesInput!, options: CreateTeamOptionsInput): Team
@@ -3537,6 +3805,12 @@ type Mutation {
 
     """Folder ID within the workspace in which to place the dashboard."""
     board_folder_id: ID
+
+    """Dashboard flavor (e.g., "portfolio"). Null for standard dashboards."""
+    flavor: String
+
+    """Data infrastructure version for the dashboard."""
+    data_infra_version: Int
   ): Dashboard
 
   """Update an existing dashboard."""
@@ -3963,6 +4237,9 @@ type AuditLogPage {
   """Pagination metadata. See the pagination object for more details."""
   pagination: Pagination
 }
+
+"""A file"""
+scalar File
 
 """
 Pagination metadata: indicates the current page and page size, whether there
@@ -5185,6 +5462,36 @@ input WorkflowInput {
 
   """Customization settings for the workflow"""
   customization: WorkflowCustomizationInput
+
+  """
+  Optional array of iterator configurations. Iterators enable looping over collections, executing specified workflow blocks once for each item. Currently supports forEach iterators only.
+  """
+  iterators: [WorkflowIteratorInput!]
+}
+
+"""Configuration for a single iterator"""
+input WorkflowIteratorInput {
+  """Unique identifier for the iterator"""
+  iterator_id: Int!
+
+  """List of all node IDs in the loop"""
+  node_ids: [Int!]!
+
+  """Loop entry node ID"""
+  entry_node_id: Int!
+
+  """
+  Node ID that executes after the iterator completes (null if no post-iterator node)
+  """
+  post_iterator_node_id: Int!
+
+  """
+  For FOREACH iterators - workflow variable key containing the collection
+  """
+  collection_workflow_variable_key: Int!
+
+  """Optional - workflow variable key containing the max iterations limit"""
+  max_iterations_workflow_variable_key: Int
 }
 
 """The context where a workflow template can be accessed"""
@@ -5405,6 +5712,57 @@ input DateRangeInput {
   endDate: String!
 }
 
+"""MCP tool execution event"""
+type ToolEvent {
+  """Document identifier"""
+  id: ID
+
+  """Account identifier"""
+  account_id: ID
+
+  """User identifier"""
+  user_id: ID
+
+  """UUID of the parent trigger event"""
+  trigger_uuid: String
+
+  """Atomic action identifier"""
+  atomic_action_id: ID
+
+  """Recipe identifier"""
+  recipe_id: ID
+
+  """Integration identifier"""
+  integration_id: ID
+
+  """Name of the MCP tool"""
+  tool_name: String
+
+  """MCP server name"""
+  mcp_server: String
+
+  """Status of the tool execution"""
+  event_status: String
+
+  """Error message if tool execution failed"""
+  error_message: String
+
+  """Timestamp (epoch) when tool execution started"""
+  tool_start_timestamp: Float
+
+  """Timestamp (epoch) when tool execution finished"""
+  tool_finish_timestamp: Float
+
+  """Execution duration in milliseconds"""
+  execution_duration_ms: Int
+}
+
+"""A page of tool events"""
+type ToolEventsPage {
+  """List of tool events in the current page"""
+  tool_events: [ToolEvent!]
+}
+
 """Represents a single automation trigger event"""
 type TriggerEvent {
   """Account identifier"""
@@ -5524,9 +5882,6 @@ enum TriggerEventState {
   """Automation run exhausted all retry attempts"""
   exhausted
 }
-
-"""A file"""
-scalar File
 
 """A monday.com board."""
 type Board {
@@ -5808,6 +6163,7 @@ input ColumnsConfigInput {
   column_order: [String!]
 }
 
+"""A string or number value for comparison"""
 scalar CompareValue
 
 """Configuration settings for group by column"""
@@ -6434,11 +6790,31 @@ enum RestoreStatus {
   failed
 }
 
+"""Result of a snapshot rollback operation."""
+type RollbackSnapshotMutationResult {
+  """The unique identifier of the snapshot."""
+  snapshot_id: ID!
+
+  """The new status of the snapshot (rollback)."""
+  status: SnapshotStatus!
+}
+
+"""The possible statuses of a snapshot operation."""
 enum SnapshotStatus {
+  """The snapshot is pending and has not started yet."""
   pending
+
+  """The snapshot is currently being processed."""
   processing
+
+  """The snapshot completed successfully."""
   success
+
+  """The snapshot failed to complete."""
   failed
+
+  """The snapshot has been rolled back and can be recreated."""
+  rollback
 }
 
 """The result of upserting entity ID mappings."""
@@ -6448,6 +6824,40 @@ type UpsertEntityIdMappingsResult {
 
   """The number of mappings that were upserted."""
   count: Int
+}
+
+"""
+Represents an account-level entity model that can be customized per account.
+"""
+type AccountEntity {
+  """The unique identifier of the entity."""
+  id: ID!
+
+  """The account ID this entity belongs to."""
+  account_id: ID!
+
+  """The user ID who created this entity."""
+  created_by: ID!
+
+  """The revision number for optimistic locking."""
+  revision: Int!
+
+  """The date and time of creation."""
+  created_at: Date
+
+  """The date and time of the last update."""
+  updated_at: Date
+
+  """
+  Map of columns keyed by column ID. Each value contains full structure (id, model, policy, tags).
+  """
+  columns: JSON!
+
+  """The ID of the parent entity (typically a global entity)."""
+  parent_id: ID
+
+  """The name of this entity."""
+  name: String
 }
 
 """Calculated capability settings for a column"""
@@ -6728,7 +7138,11 @@ type DropdownManagedColumn {
   updated_by: ID
   revision: Int
   state: ManagedColumnState
+
+  """The date and time of creation."""
   created_at: Date
+
+  """The date and time of the last update."""
   updated_at: Date
   settings: DropdownColumnSettings
 }
@@ -6755,7 +7169,11 @@ type ManagedColumn {
   updated_by: ID
   revision: Int
   state: ManagedColumnState
+
+  """The date and time of creation."""
   created_at: Date
+
+  """The date and time of the last update."""
   updated_at: Date
   settings: ColumnSettings
 }
@@ -6867,7 +7285,11 @@ type StatusManagedColumn {
   updated_by: ID
   revision: Int
   state: ManagedColumnState
+
+  """The date and time of creation."""
   created_at: Date
+
+  """The date and time of the last update."""
   updated_at: Date
   settings: StatusColumnSettings
 }
@@ -7005,8 +7427,44 @@ type BoardGraphExport {
   """The total number of edges in the graph"""
   edgeCount: Int
 
+  """The attributes of the graph"""
+  graphAttributes: JSON
+
   """The cycles in the graph"""
   cycles: JSON
+}
+
+"""Configuration record for a dependency column"""
+type DependencyColumnConfig {
+  """The ID of the configuration record"""
+  id: ID
+
+  """The account ID"""
+  account_id: ID
+
+  """The board ID"""
+  board_id: ID
+
+  """Configuration data containing mode and is_new_dependency"""
+  data: JSON
+
+  """Creation timestamp"""
+  created_at: String
+
+  """Last update timestamp"""
+  updated_at: String
+
+  """The type of configuration (always "dependency")"""
+  config_type: String
+}
+
+"""Result containing dependency column configurations for a board"""
+type DependencyColumnConfigResult {
+  """The ID of the board"""
+  board_id: ID
+
+  """Array of dependency column configurations"""
+  dependency_columns: [DependencyColumnConfig!]
 }
 
 """Input type for updating a single pulse dependency value"""
@@ -7050,6 +7508,48 @@ input DependencyValueInput {
 
   """List of pulses to remove from dependencies"""
   removed_pulse: [UpdateDependencyColumnInput!]
+}
+
+"""A single event record"""
+type Event {
+  """The unique identifier of the event"""
+  id: ID
+
+  """The type of the event"""
+  type: String
+
+  """The current state of the event"""
+  state: String
+
+  """The ID of the board associated with this event"""
+  board_id: ID
+
+  """The event data payload"""
+  event_data: JSON
+
+  """The timestamp of the origin last update"""
+  origin_last_updated: String
+
+  """The timestamp when the event was created"""
+  created_at: String
+
+  """The timestamp when the event was last updated"""
+  updated_at: String
+}
+
+"""Paginated export of events"""
+type EventsExport {
+  """The list of events"""
+  events: [Event!]
+
+  """The total number of events matching the query"""
+  total: Int
+
+  """The maximum number of events returned"""
+  limit: Int
+
+  """The offset from which events are returned"""
+  offset: Int
 }
 
 """
@@ -8068,6 +8568,37 @@ input UpdateObjectHierarchyPositionInput {
   newPosition: ObjectDynamicPositionInput
 }
 
+"""Account context information."""
+type AccountContext {
+  """Unique account identifier."""
+  id: ID
+
+  """Account name."""
+  name: String
+
+  """Account industry. Examples: "Technology", "Healthcare", "Finance"."""
+  industry: String
+
+  """Industry sector."""
+  sector: String
+
+  """Industry sub-sector."""
+  sub_sector: String
+
+  """Primary use cases for the account."""
+  golden_use_cases: [String!]
+
+  """
+  Platform usage categories. Examples: "project_management", "crm", "marketing".
+  """
+  platform_usages: [String!]
+
+  """
+  Active monday.com products. Values: "core", "crm", "software", "marketing", "project_management", "service".
+  """
+  active_product_kinds: [String!]
+}
+
 """Intelligence data."""
 type Intelligence {
   """Top visited boards ranked by relevance (frequency + recency)."""
@@ -8075,6 +8606,17 @@ type Intelligence {
     """Maximum number of boards to return. Default: 10, Max: 50."""
     limit: Int
   ): [RelevantBoard!]
+
+  """
+  Top related users ranked by relevance (multi-signal frequency + recency).
+  """
+  relevant_people(
+    """Maximum number of users to return. Default: 10, Max: 50."""
+    limit: Int
+  ): [RelevantPerson!]
+
+  """User and account context information."""
+  context: UserContextResponse
 }
 
 """A board ranked by relevance based on visit frequency and recency."""
@@ -8084,6 +8626,65 @@ type RelevantBoard {
 
   """Board details resolved via federation from the boards subgraph."""
   board: Board
+}
+
+"""A user ranked by relevance based on interaction frequency and recency."""
+type RelevantPerson {
+  """User ID"""
+  id: ID
+
+  """User details resolved via federation from the users subgraph."""
+  user: User
+}
+
+"""User context information."""
+type UserContext {
+  """Unique user identifier."""
+  id: ID
+
+  """User display name."""
+  name: String
+
+  """User email address."""
+  email: String
+
+  """
+  User type. Values: null (regular), "guest", "view_only", "portal_user".
+  """
+  kind: String
+
+  """
+  User job role. Examples: "project_manager", "marketing_manager", "ceo".
+  """
+  job_role: String
+
+  """
+  User job department. Examples: "engineering", "marketing", "sales", "hr".
+  """
+  job_department: String
+
+  """Organizational department within the workspace."""
+  department: String
+
+  """User time zone. Examples: "America/New_York", "Europe/London"."""
+  time_zone: String
+
+  """
+  User locale for date and number formatting. Examples: "en-US", "de-DE".
+  """
+  locale: String
+
+  """Number of days since the user became active."""
+  tenure_days: Int
+}
+
+"""Combined user and account context."""
+type UserContextResponse {
+  """User context."""
+  user: UserContext
+
+  """Account context."""
+  account: AccountContext
 }
 
 """Subscription object"""
@@ -8397,6 +8998,9 @@ enum BulkImportFailureReason {
   """The board capacity exceeded."""
   BOARD_CAPACITY_EXCEEDED
 
+  """The account item capacity was exceeded."""
+  ACCOUNT_CAPACITY_EXCEEDED
+
   """An internal error occurred."""
   INTERNAL_ERROR
 }
@@ -8464,6 +9068,11 @@ type BulkImportStatus {
 
   """Reason for failure when status is Rejected or Failed"""
   failure_reason: BulkImportFailureReason
+
+  """
+  User-friendly error message explaining why the import failed or was rejected
+  """
+  failure_message: String
 
   """Indicates if the upload is completely done"""
   fully_imported: Boolean
@@ -8918,6 +9527,45 @@ type CreateAppResponse {
   signing_secret: String
 }
 
+"""Input for a single lifecycle event subscription"""
+input LifecycleEventInput {
+  """The lifecycle event type (e.g., "AppFeatureColumn:create")"""
+  event_type: String!
+
+  """The webhook URL for this event (max 2048 characters)"""
+  webhook_url: String!
+
+  """Whether the subscription is synchronous (defaults to false)"""
+  is_sync: Boolean
+}
+
+"""A lifecycle subscription configuration for an entity"""
+type LifecycleSubscriptionKind {
+  """The subscription ID"""
+  id: ID
+
+  """The entity ID (e.g., app feature ID)"""
+  entity_id: ID
+
+  """The type of entity (e.g., "appFeature")"""
+  entity_type: String
+
+  """The lifecycle event type (e.g., "AppFeatureColumn:create")"""
+  event_type: String
+
+  """The webhook URL for notifications"""
+  webhook_url: String
+
+  """Whether the subscription is synchronous"""
+  is_sync: Boolean
+
+  """When the subscription was created"""
+  created_at: Date
+
+  """When the subscription was last updated"""
+  updated_at: Date
+}
+
 """
 Input for updating an app feature with its associated data and release information.
 """
@@ -8957,6 +9605,14 @@ input UpdateAppInput {
 
   """Array of user IDs with access (replaces existing collaborators)"""
   collaborators: [ID!]
+}
+
+"""Input for updating lifecycle subscriptions for an entity"""
+input UpdateLifecycleSubscriptionsInput {
+  """
+  List of lifecycle event configurations (must have unique eventType values)
+  """
+  lifecycle_events: [LifecycleEventInput!]!
 }
 
 """Your monday.com account"""
@@ -12173,8 +12829,10 @@ type Object {
 
   """Relations for this object"""
   relations(
-    """Kind of the relation to fetch"""
-    kind: RelationKind!
+    """
+    Kind of the relation to fetch. If not provided, all relation kinds are returned.
+    """
+    kind: RelationKind
 
     """Direction of the relation (defaults to "outgoing")"""
     direction: RelationDirection = OUTGOING
@@ -12399,6 +13057,22 @@ type CreatePortfolioResult {
   message: String
 }
 
+"""
+Result of validating projects and portfolios for connection compatibility.
+"""
+type ValidateProjectsAndPortfoliosResult {
+  """
+  Success message if validation passed, or error message if validation failed.
+  """
+  message: String
+
+  """Validation results for projects, keyed by project ID."""
+  projects: JSON
+
+  """Validation results for portfolios, keyed by portfolio ID."""
+  portfolios: JSON
+}
+
 type AggregateBasicAggregationResult {
   result: Float
 }
@@ -12406,10 +13080,13 @@ type AggregateBasicAggregationResult {
 enum AggregateFromElementType {
   """A single table to select from"""
   TABLE
+
+  """A data view to select from"""
+  DATA_VIEW
 }
 
 input AggregateFromTableInput {
-  """Always TABLE"""
+  """Always TABLE or DATA_VIEW"""
   type: AggregateFromElementType!
   id: ID!
 }
@@ -12432,7 +13109,7 @@ input AggregateQueryInput {
   """
   select: [AggregateSelectElementInput!]!
 
-  """Table to select from"""
+  """Source to select from (table or data view)"""
   from: AggregateFromTableInput!
 
   """Group by elements"""
@@ -12667,18 +13344,6 @@ enum AggregateHistoryFilterOperator {
   """Value is less than or equal to the specified value."""
   LOWER_THAN_OR_EQUAL
 
-  """Value is between two specified values (inclusive)."""
-  BETWEEN
-
-  """Text contains the specified substring."""
-  CONTAINS_TEXT
-
-  """Text does not contain the specified substring."""
-  NOT_CONTAINS_TEXT
-
-  """Text contains any of the specified terms."""
-  CONTAINS_TERMS
-
   """Text starts with the specified substring."""
   STARTS_WITH
 
@@ -12690,12 +13355,6 @@ enum AggregateHistoryFilterOperator {
 
   """Value is not empty or null."""
   IS_NOT_EMPTY
-
-  """Date/time is within the last N periods."""
-  WITHIN_THE_LAST
-
-  """Date/time is within the next N periods."""
-  WITHIN_THE_NEXT
 }
 
 """A single filter rule for matching items based on column values."""
@@ -12720,12 +13379,12 @@ input AggregateHistoryFilterRuleInput {
 """The source type for the aggregate history query."""
 enum AggregateHistoryFromElement {
   """Query historical snapshots of board/table data at specific dates."""
-  TABLE_HISTORY
+  TABLE
 }
 
 """The source table and its ID for the aggregate history query."""
 input AggregateHistoryFromInput {
-  """The source type. Must be TABLE_HISTORY for historical queries."""
+  """The source type. Must be TABLE for historical queries."""
   type: AggregateHistoryFromElement!
 
   """The unique identifier of the source board."""
@@ -12749,44 +13408,8 @@ enum AggregateHistoryFunction {
   """Count items."""
   COUNT_ITEMS
 
-  """Count subitems."""
-  COUNT_SUBITEMS
-
-  """Get the date value."""
-  DATE
-
-  """Truncate date to day."""
-  DATE_TRUNC_DAY
-
-  """Truncate date to month."""
-  DATE_TRUNC_MONTH
-
-  """Truncate date to quarter."""
-  DATE_TRUNC_QUARTER
-
-  """Truncate date to week."""
-  DATE_TRUNC_WEEK
-
-  """Truncate date to year."""
-  DATE_TRUNC_YEAR
-
-  """Get running duration."""
-  DURATION_RUNNING
-
-  """Get the end date from a timeline."""
-  END_DATE
-
-  """Check equality."""
-  EQUALS
-
   """Get the first value."""
   FIRST
-
-  """Flatten nested values."""
-  FLATTEN
-
-  """Extract hour from time."""
-  HOUR
 
   """Get the ID."""
   ID
@@ -12811,21 +13434,6 @@ enum AggregateHistoryFunction {
 
   """Get the minimum value."""
   MIN
-
-  """Get both min and max values."""
-  MIN_MAX
-
-  """Get the order/position."""
-  ORDER
-
-  """Get the person value."""
-  PERSON
-
-  """Get phone country short name."""
-  PHONE_COUNTRY_SHORT_NAME
-
-  """Get the start date from a timeline."""
-  START_DATE
 
   """Calculate the sum of numeric values."""
   SUM
@@ -12896,7 +13504,7 @@ input AggregateHistoryOrderByInput {
 Input for querying historical aggregated data from a board at specific dates.
 """
 input AggregateHistoryQueryInput {
-  """The data source for the aggregation (board with TABLE_HISTORY type)."""
+  """The data source for the aggregation (board with TABLE type)."""
   from: AggregateHistoryFromInput!
 
   """
@@ -13006,6 +13614,197 @@ enum AggregateHistorySortDirection {
   DESC
 }
 
+"""
+Response containing per-item results for adding allocations to resources
+"""
+type AddAllocationsToResourcesResponse {
+  """Per-item results for each allocation in the request"""
+  results: [AllocationToResourceResult!]!
+}
+
+"""A successfully added allocated resource"""
+type AddedAllocatedResource {
+  """
+  The resource ID (includes placeholder index for placeholders, e.g. "134007785_1")
+  """
+  resource_id: ID!
+
+  """Type of resource: USER or PLACEHOLDER"""
+  resource_type: PlannerResourceKind!
+}
+
+"""A unique resource present in the planner"""
+type AllocatedResource {
+  """The Resource id"""
+  resource_id: ID!
+
+  """Type of resource"""
+  resource_type: PlannerResourceKind!
+
+  """The Resource's name"""
+  resource_name: String!
+}
+
+"""A resource to add to the planner without allocations"""
+input AllocatedResourceInput {
+  """Resource or placeholder ID"""
+  id: ID!
+
+  """Type of resource: USER or PLACEHOLDER"""
+  resource_type: PlannerResourceKind!
+}
+
+"""Result of an individual resource allocation operation"""
+type AllocatedResourceOperationResult {
+  """Whether the resource was successfully added"""
+  success: Boolean!
+
+  """The successfully added resource, present when success is true"""
+  resource: AddedAllocatedResource
+
+  """Error details, present when success is false"""
+  error: Error
+}
+
+"""A single allocation in the planner"""
+type Allocation {
+  """The allocation ID"""
+  id: ID!
+
+  """The resource allocated"""
+  resource: AllocationResource!
+
+  """The allocation timeline"""
+  timeline: AllocationTimeline!
+
+  """Effort allocation data"""
+  effort: AllocationEffort!
+}
+
+"""Effort allocation data"""
+type AllocationEffort {
+  """Total effort of the allocation"""
+  total_effort: Float!
+
+  """Calculated effort for the period"""
+  effort_per_period: Float
+}
+
+"""The resource allocated"""
+type AllocationResource {
+  """Resource ID"""
+  id: ID!
+
+  """Type of resource"""
+  type: PlannerResourceKind!
+
+  """Resource Name"""
+  name: String!
+}
+
+"""A timeline with start and end dates"""
+type AllocationTimeline {
+  """Start date"""
+  from: Date!
+
+  """End date"""
+  to: Date!
+}
+
+"""An allocation to add to an existing resource on the planner"""
+input AllocationToResourceInput {
+  """Resource ID (plain "123" for users, "456_2" for placeholder #2)"""
+  resource_id: ID!
+
+  """Type of resource"""
+  resource_type: PlannerResourceKind!
+
+  """Effort value (e.g., 1 FTE, 8 hours). Must be greater than 0"""
+  effort: Float!
+
+  """Unit of effort: DAILY, WEEKLY, MONTHLY, FTE, or TOTAL"""
+  effort_type: EffortUnit!
+
+  """Start date (ISO 8601 format: YYYY-MM-DD)"""
+  from: String!
+
+  """End date (ISO 8601 format: YYYY-MM-DD)"""
+  to: String!
+}
+
+"""Result of adding a single allocation to a resource"""
+type AllocationToResourceResult {
+  """Resource ID"""
+  resource_id: ID!
+
+  """The created allocation item ID, null if creation failed"""
+  allocation_id: ID
+
+  """Whether the allocation was created successfully"""
+  success: Boolean!
+
+  """Error details if the allocation failed"""
+  error: Error
+}
+
+"""
+A single allocation update. All fields except allocation_id are optional - only provided fields will be updated.
+"""
+input AllocationUpdateInput {
+  """ID of the allocation to update"""
+  allocation_id: ID!
+
+  """New effort value"""
+  effort: Float
+
+  """New effort unit: DAILY, WEEKLY, MONTHLY, FTE, or TOTAL"""
+  effort_type: EffortUnit
+
+  """New start date (ISO 8601 format: YYYY-MM-DD)"""
+  from: String
+
+  """New end date (ISO 8601 format: YYYY-MM-DD)"""
+  to: String
+
+  """
+  Reassign allocation to a different resource (must exist in the planner)
+  """
+  resource_id: ID
+}
+
+"""Represents a single attribute type option for a resource"""
+type Attribute {
+  """Unique identifier for the attribute"""
+  id: ID!
+
+  """Name of the attribute"""
+  name: String!
+
+  """Whether the attribute is enabled and can be used"""
+  is_active: Boolean!
+}
+
+"""Response indicating whether the allocation deletion succeeded"""
+type DeleteAllocationResponse {
+  """Indicates whether the allocation was successfully deleted."""
+  success: Boolean!
+
+  """The ID of the allocation that was targeted for deletion."""
+  allocation_id: ID!
+}
+
+"""Response indicating whether the planner resource deletion succeeded"""
+type DeletePlannerResourceResponse {
+  """Indicates whether the resource was successfully deleted."""
+  success: Boolean!
+
+  """The ID of the resource that was targeted for deletion."""
+  resource_id: ID!
+
+  """Number of allocation items that were deleted."""
+  deleted_allocation_count: Int!
+}
+
 """A resource from the directory"""
 type DirectoryResource {
   """The identifier of the directory resource."""
@@ -13029,7 +13828,7 @@ type DirectoryResource {
 
 """Attributes that can be updated on a resource directory entry"""
 enum DirectoryResourceAttribute {
-  """Represents the resource directory job role attribute.."""
+  """Represents the resource directory job role attribute."""
   JOB_ROLE
 
   """Represents the resource directory skills attribute."""
@@ -13053,10 +13852,372 @@ type DirectoryResourcesResponse {
   cursor: String
 }
 
+"""Unit of effort calculation"""
+enum EffortUnit {
+  """Effort per day (hours)"""
+  DAILY
+
+  """Effort per week (hours)"""
+  WEEKLY
+
+  """Effort per month (hours)"""
+  MONTHLY
+
+  """Full-time equivalent (0-1 ratio)"""
+  FTE
+
+  """Total effort for the allocation period"""
+  TOTAL
+}
+
+"""User-facing error with code and optional path"""
+type Error {
+  """Human-readable error message"""
+  message: String!
+
+  """Machine-readable error code for client handling"""
+  code: String!
+
+  """Field path that caused the error (e.g., ["input", "from"])"""
+  path: [String!]
+}
+
+"""Paginated response containing allocations"""
+type GetAllocationsResponse {
+  """List of allocations"""
+  allocations: [Allocation!]
+
+  """Cursor for fetching the next page of results"""
+  cursor: String
+}
+
+"""
+Successful response containing available attribute options for a specific attribute type
+"""
+type GetAttributesResponse {
+  """The attribute type for which attributes were fetched"""
+  attribute_type: String!
+
+  """List of available attributes containing id, name, and is_active"""
+  attributes: [Attribute!]!
+}
+
+"""Type of resource in the planner"""
+enum PlannerResourceKind {
+  """User resource from the directory"""
+  USER
+
+  """Placeholder resource"""
+  PLACEHOLDER
+}
+
+"""Information about a resource directory attribute type"""
+type ResourceAttributeTypeInfo {
+  """The attribute type enum value"""
+  type: ResourceAttributeTypeKey
+
+  """Human-readable description of the attribute"""
+  description: String
+
+  """Whether the attribute values are managed by resource managers"""
+  is_managed: Boolean
+
+  """Whether the attribute can be used for filtering the directory"""
+  is_filterable: Boolean
+}
+
+"""
+Available attribute types that can be retrieved from the resource directory
+"""
+enum ResourceAttributeTypeKey {
+  """Resource name"""
+  NAME
+
+  """Resource email address"""
+  EMAIL
+
+  """Teams resource is a member of"""
+  TEAMS
+
+  """Base role of the resource"""
+  BASE_ROLE
+
+  """Resource status"""
+  STATUS
+
+  """Resource location"""
+  LOCATION
+
+  """Resource skills"""
+  SKILLS
+
+  """Resource job role"""
+  JOB_ROLE
+
+  """Resource managers of the resource"""
+  RESOURCE_MANAGER
+}
+
+"""Result of a single allocation update operation"""
+type UpdateAllocationResult {
+  """Whether the operation succeeded"""
+  success: Boolean!
+
+  """ID of the allocation that was updated (or attempted to update)"""
+  allocation_id: ID!
+
+  """The updated allocation (null if operation failed)"""
+  allocation: Allocation
+
+  """Error details if operation failed (null if succeeded)"""
+  error: Error
+}
+
 """Response indicating whether the directory attribute update succeeded"""
 type UpdateDirectoryResourceAttributesResponse {
   """Indicates whether the batch update completed successfully."""
   success: Boolean!
+}
+
+"""Effort hours per kind (allocated, planned, spent, available)."""
+type Effort {
+  """Allocated effort hours."""
+  allocated: Float
+
+  """Planned effort hours."""
+  planned: Float
+
+  """Spent effort hours."""
+  spent: Float
+
+  """Available capacity hours."""
+  available: Float
+}
+
+"""Kind of effort or availability to include in the utilization report."""
+enum EffortKind {
+  """Allocated effort hours."""
+  ALLOCATED
+
+  """Planned effort hours."""
+  PLANNED
+
+  """Spent effort hours."""
+  SPENT
+
+  """Available capacity hours."""
+  AVAILABLE
+}
+
+"""Resource attribute allowed for grouping in the utilization report."""
+enum GroupByResourceAttribute {
+  """Teams."""
+  TEAMS
+
+  """Location."""
+  LOCATION
+
+  """Skills."""
+  SKILLS
+
+  """Job role."""
+  JOB_ROLE
+
+  """Resource manager."""
+  RESOURCE_MANAGER
+}
+
+"""Effort and utilization for a single time bucket."""
+type TimeBucket {
+  """Label for this bucket (e.g. week or month)."""
+  label: String
+
+  """Effort hours in this bucket."""
+  effort: Effort
+
+  """Utilization ratios in this bucket."""
+  utilization_ratios: UtilizationRatios
+}
+
+"""Granularity of time buckets (day, week, month, quarter, year)."""
+enum TimeGranularity {
+  """Day-level buckets."""
+  DAYS
+
+  """Week-level buckets."""
+  WEEKS
+
+  """Month-level buckets."""
+  MONTHS
+
+  """Quarter-level buckets."""
+  QUARTERS
+
+  """Year-level buckets."""
+  YEARS
+}
+
+"""Header for a time period (label and date range)."""
+type TimePeriodHeader {
+  """Human-readable label for the period."""
+  label: String
+
+  """Start date of the period (ISO 8601)."""
+  start_date: String
+
+  """End date of the period (ISO 8601)."""
+  end_date: String
+}
+
+"""Time range and granularity for utilization report buckets."""
+input TimeRangeInput {
+  """Start of the time range (ISO 8601 date: YYYY-MM-DD)."""
+  start_date: String!
+
+  """End of the time range (ISO 8601 date: YYYY-MM-DD)."""
+  end_date: String!
+
+  """Granularity of time buckets (days, weeks, months, quarters, years)."""
+  granularity: TimeGranularity!
+}
+
+"""
+Denominator for utilization ratio (e.g., utilization = effort / available). Determines what value is used as the denominator.
+"""
+enum UtilizationDenominator {
+  """Use available hours as denominator."""
+  AVAILABLE
+
+  """Use allocated hours as denominator."""
+  ALLOCATED
+
+  """Use spent hours as denominator."""
+  SPENT
+}
+
+"""Utilization ratios (e.g. spent/available) per effort kind."""
+type UtilizationRatios {
+  """Allocated / denominator ratio."""
+  allocated: Float
+
+  """Planned / denominator ratio."""
+  planned: Float
+
+  """Spent / denominator ratio."""
+  spent: Float
+}
+
+"""
+Utilization report: time period headers, optional groups, and resources with effort and ratios.
+"""
+type UtilizationReport {
+  """Headers for each time period in the report."""
+  time_period_headers: [TimePeriodHeader!]
+
+  """Effort kinds included in the report (e.g. allocated, spent)."""
+  effort_types: [String!]
+
+  """Attribute used for grouping, if any."""
+  group_by_attribute: String
+
+  """
+  Aggregates per attribute value. Populated only when group_by_attribute is set; otherwise null.
+  """
+  groups: [UtilizationReportGroup!]
+
+  """
+  Per-resource utilization data. Populated only when group_by_attribute is not set (no grouping); otherwise null.
+  """
+  resources: [UtilizationReportResource!]
+}
+
+"""Utilization report grouped by an attribute value."""
+type UtilizationReportGroup {
+  """ID of the attribute value this group represents."""
+  attribute_value_id: ID
+
+  """Display name of the attribute value."""
+  attribute_value_name: String
+
+  """Number of resources in this group."""
+  resource_count: Int
+
+  """Time buckets for this group."""
+  time_buckets: [TimeBucket!]
+}
+
+"""
+Input for the utilization report query: time range, effort kinds, optional grouping and filters.
+"""
+input UtilizationReportInput {
+  """Time range and granularity for the report."""
+  time_range: TimeRangeInput!
+
+  """Effort kinds to include (e.g. ALLOCATED, PLANNED, SPENT, AVAILABLE)."""
+  effort_types: [EffortKind!]!
+
+  """
+  Optional attribute to group results by (TEAMS, LOCATION, SKILLS, JOB_ROLE, RESOURCE_MANAGER only).
+  """
+  group_by_attribute: GroupByResourceAttribute
+
+  """
+  Optional ItemsQuery (query_params) to restrict resources; aligned with platform items_page.
+  """
+  query_params: JSON
+
+  """
+  Optional list of resource IDs. When used with query_params, applied as AND.
+  """
+  resource_ids: [ID!]
+
+  """
+  When true, include project breakdown in the response. Defaults to false.
+  """
+  include_project_breakdown: Boolean
+
+  """
+  Max resources when no query_params/resource_ids (default 25). Used for "all resources" case.
+  """
+  limit: Int
+
+  """
+  Denominator for utilization ratio. Defaults to AVAILABLE (utilization = effort / available).
+  """
+  utilization_denominator: UtilizationDenominator
+}
+
+"""Utilization breakdown per project for a resource."""
+type UtilizationReportProjectBreakdown {
+  """ID of the project."""
+  project_id: ID
+
+  """Name of the project."""
+  project_name: String
+
+  """Time buckets for this project."""
+  time_buckets: [TimeBucket!]
+}
+
+"""Utilization data for a single resource."""
+type UtilizationReportResource {
+  """ID of the resource."""
+  resource_id: ID
+
+  """Name of the resource."""
+  resource_name: String
+
+  """Whether this row is a placeholder (e.g. unassigned)."""
+  is_placeholder: Boolean
+
+  """Job role of the resource, if any."""
+  job_role: String
+
+  """Time buckets for this resource."""
+  time_buckets: [TimeBucket!]
+
+  """Per-project breakdown when requested."""
+  project_breakdown: [UtilizationReportProjectBreakdown!]
 }
 
 """Ranked results of a search query."""
@@ -13076,6 +14237,32 @@ type SearchAllResult {
 """The results of the search for benchmark."""
 type SearchBenchmarkResults {
   data: String
+}
+
+"""Filters for board search."""
+input BoardSearchFilterInput {
+  """Filter boards to specific workspace IDs."""
+  workspace_ids: [ID!]
+}
+
+"""Contains the results of a board query."""
+type BoardSearchResult {
+  """The unique identifier of the board."""
+  id: ID!
+
+  """The type of entity."""
+  entity_type: SearchableEntity!
+
+  """The relevance score of the search result."""
+  score: Float!
+
+  """Board data for the search results."""
+  data: IndexedBoard!
+
+  """
+  Latest board data for the search results. Requires additional GraphQL federation calls.
+  """
+  live_data: Board!
 }
 
 """
@@ -13157,6 +14344,32 @@ union CrossEntityResult = CrossEntityItemResult | CrossEntityBoardResult | Cross
 type DeprecatedBoard {
   """Board ID."""
   id: ID!
+}
+
+"""Filters for document search."""
+input DocSearchFilterInput {
+  """Filter documents to specific workspace IDs."""
+  workspace_ids: [ID!]
+}
+
+"""Contains the results of a doc query."""
+type DocSearchResult {
+  """The unique identifier of the document."""
+  id: ID!
+
+  """The type of entity."""
+  entity_type: SearchableEntity!
+
+  """The relevance score of the search result."""
+  score: Float!
+
+  """Document data for the search results."""
+  data: IndexedDoc!
+
+  """
+  Latest document data for the search results. Requires additional GraphQL federation calls.
+  """
+  live_data: Document!
 }
 
 """Item's column values"""
@@ -13297,6 +14510,35 @@ type IndexedItem {
   board: DeprecatedBoard! @deprecated(reason: "Use board_id field instead or live_data if you need more board data.")
 }
 
+"""Filters for item search."""
+input ItemSearchFilterInput {
+  """Filter items to specific board IDs."""
+  board_ids: [ID!]
+
+  """Filter items to specific workspace IDs."""
+  workspace_ids: [ID!]
+}
+
+"""Contains the results of an item query."""
+type ItemSearchResult {
+  """The unique identifier of the item."""
+  id: ID!
+
+  """The type of entity."""
+  entity_type: SearchableEntity!
+
+  """The relevance score of the search result."""
+  score: Float!
+
+  """Item data for the search results."""
+  data: IndexedItem!
+
+  """
+  Latest item data for the search results. Requires additional GraphQL federation calls.
+  """
+  live_data: Item!
+}
+
 """Supported entity types for lookup."""
 enum LookupableEntity {
   """Board entity type for lookup."""
@@ -13386,6 +14628,28 @@ input SearchDateRangeLegacyInput {
   updatedAfter: ISO8601DateTime
 }
 
+"""
+Tagged-union input: set exactly one field to indicate the entity type and its filters.
+"""
+input SearchEntityFilterInput {
+  """Include items in the search with optional item-specific filters."""
+  items: ItemSearchFilterInput
+
+  """Include boards in the search."""
+  boards: BoardSearchFilterInput
+
+  """Include documents in the search."""
+  docs: DocSearchFilterInput
+}
+
+"""Top-level search filters specifying which entities to search."""
+input SearchFiltersInput {
+  """
+  List of entity filters. Each entry is a tagged-union: set one field (items, boards, docs) to include that entity type.
+  """
+  entities: [SearchEntityFilterInput!]!
+}
+
 """Response of the search request."""
 type SearchItemsGraphQlResultsView {
   """The results of the items search."""
@@ -13408,6 +14672,11 @@ type SearchItemsQueryResult {
   """
   live_data: Item!
 }
+
+"""
+Union type representing different searchable entity types returned from search.
+"""
+union SearchResult = ItemSearchResult | BoardSearchResult | DocSearchResult
 
 """Input for enrolling multiple items to a single sequence"""
 input EnrollToSequenceInput {
@@ -13610,6 +14879,153 @@ type SprintTimeline {
   user-editable complete date of the monday dev sprint timeline, may be different than the sprint complete date
   """
   to: Date
+}
+
+"""A single column value change within a task decision"""
+type ColumnChange {
+  """The identifier of the column that changed"""
+  column_id: ID
+
+  """The previous value of the column before the change"""
+  old_value: JSON
+
+  """The new value of the column after the change"""
+  new_value: JSON
+}
+
+"""Response containing the current user's task board id"""
+type MyTaskBoardResponse {
+  """The current user's task board id"""
+  task_board_id: ID
+}
+
+"""Response containing the user's tasks with board metadata"""
+type MyTasksResponse {
+  """The user's tasks"""
+  tasks: [Task!]
+
+  """The user's task board ID"""
+  task_board_id: ID
+
+  """The column prefix for board column IDs"""
+  column_prefix: String
+}
+
+"""Response containing the current user's priority prompt"""
+type PriorityPromptResponse {
+  """The user's priority prompt for task prioritization"""
+  priority_prompt: String
+}
+
+"""Payload for processing an event through the task engine"""
+input ProcessEventsInput {
+  """Type of event source (e.g. update_mention)"""
+  source_type: TaskIngestionSource!
+
+  """Unique identifier of the source event"""
+  source_id: String!
+
+  """Account ID"""
+  account_id: Int!
+
+  """User ID (e.g. the mentioned user)"""
+  user_id: Int!
+
+  """Raw JSON string of the event payload"""
+  data: String!
+}
+
+"""Result of a task board reconciliation"""
+type ReconciliationResult {
+  """Number of tasks successfully reconciled"""
+  succeeded: Int
+
+  """Number of tasks that failed to reconcile"""
+  failed: Int
+}
+
+"""A task in the user's task board"""
+type Task {
+  """The task ID"""
+  id: ID
+
+  """The task title"""
+  title: String
+
+  """The current status of the task"""
+  status: TaskStatus
+
+  """The task description"""
+  description: String
+
+  """The task priority (higher is more important)"""
+  priority: Int
+
+  """When the task was created"""
+  created_at: String
+
+  """The task due date, if set"""
+  due_date: String
+}
+
+"""Action taken by the task engine when processing a task"""
+enum TaskAction {
+  """A new task was created"""
+  CREATE
+
+  """An existing task was updated"""
+  UPDATE
+}
+
+"""A changelog entry representing a decision made by the task engine"""
+type TaskDecisionChangelogEvent {
+  """Timestamp when this decision was made"""
+  created_at: String
+
+  """The action taken (create or update)"""
+  action: TaskAction
+
+  """The AI-generated reason explaining why this decision was made"""
+  reason: String
+
+  """A human-readable summary of the changes applied"""
+  change_summary: String
+
+  """The list of individual column value changes in this decision"""
+  changes: [ColumnChange!]
+}
+
+"""Type of event source for task ingestion"""
+enum TaskIngestionSource {
+  """Event from an update mention"""
+  UPDATE_MENTION
+
+  """Event from a person/creator column change (user assigned to item)"""
+  USER_ASSIGNED
+}
+
+"""Status of a task"""
+enum TaskStatus {
+  """Task is pending triage"""
+  PENDING
+
+  """Task is queued to be worked on"""
+  TODO
+
+  """Task is being worked on"""
+  IN_PROGRESS
+
+  """Task is deferred"""
+  NOT_NOW
+
+  """Task is completed"""
+  DONE
+}
+
+"""Response from updating the priority prompt"""
+type UpdatePriorityPromptResponse {
+  """Whether the update succeeded"""
+  success: Boolean
 }
 
 """A role in the account"""
@@ -13972,6 +15388,12 @@ type Dashboard {
   Folder ID that groups elements inside the workspace (null = workspace root).
   """
   board_folder_id: ID
+
+  """Dashboard flavor (e.g., "portfolio"). Null for standard dashboards."""
+  flavor: String
+
+  """Data infrastructure version for the dashboard."""
+  data_infra_version: Int
 }
 
 """
@@ -14011,6 +15433,11 @@ enum ExternalWidget {
 
   """Table widgets for visualization"""
   TABLE
+
+  """
+  ListView widgets for displaying cross-board items in a tabular list format with filtering and sorting.
+  """
+  LISTVIEW
 }
 
 """Data visualization object."""
