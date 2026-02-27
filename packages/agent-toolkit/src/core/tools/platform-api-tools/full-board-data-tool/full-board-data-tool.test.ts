@@ -61,6 +61,12 @@ describe('Full Board Data Tool', () => {
                   text_body: 'Second update',
                   created_at: '2023-01-02T00:00:00Z',
                 },
+                {
+                  id: 'update3_auto',
+                  creator_id: '-4',
+                  text_body: 'Automation update',
+                  created_at: '2023-01-02T12:00:00Z',
+                },
               ],
             },
             {
@@ -131,7 +137,7 @@ describe('Full Board Data Tool', () => {
     // Verify items
     expect(parsedResult.board.items[0].id).toBe('111');
     expect(parsedResult.board.items[0].name).toBe('Item 1');
-    expect(parsedResult.board.items[0].updates).toHaveLength(2);
+    expect(parsedResult.board.items[0].updates).toHaveLength(3);
 
     // Verify updates are enriched with creator info
     expect(parsedResult.board.items[0].updates[0].creator).toEqual({
@@ -145,27 +151,32 @@ describe('Full Board Data Tool', () => {
       photo_tiny: 'https://example.com/user2.jpg',
     });
 
-    // Verify users list
+    // Verify negative creator IDs are not enriched but update is still present
+    expect(parsedResult.board.items[0].updates[2].creator_id).toBe('-4');
+    expect(parsedResult.board.items[0].updates[2].creator).toBeNull();
+
+    // Verify users list (only valid users, not negative IDs)
     expect(parsedResult.users).toHaveLength(2);
 
     // Verify stats
     expect(parsedResult.stats.total_items).toBe(2);
-    expect(parsedResult.stats.total_updates).toBe(3);
+    expect(parsedResult.stats.total_updates).toBe(4);
     expect(parsedResult.stats.total_unique_creators).toBe(2);
 
-    // Verify API calls
+    // Verify API calls - negative IDs should not be included in user fetch
     expect(mocks.mockApiClient.request).toHaveBeenCalledTimes(2);
     expect(mocks.mockApiClient.request).toHaveBeenCalledWith(expect.stringContaining('query getBoardData'), {
       boardId: '123456',
       itemsLimit: 7,
     });
-    expect(mocks.mockApiClient.request).toHaveBeenCalledWith(expect.stringContaining('query getUsersByIds'), {
-      userIds: expect.arrayContaining(['user1', 'user2']),
-    });
+    const userIdsCall = (mocks.mockApiClient.request as jest.Mock).mock.calls[1][1].userIds;
+    expect(userIdsCall).toContain('user1');
+    expect(userIdsCall).toContain('user2');
+    expect(userIdsCall).not.toContain('-4');
   });
 
-  it('Successfully handles board with no updates (no user fetch needed)', async () => {
-    const boardWithoutUpdates = {
+  it('Skips user fetch when there are no valid user IDs (no updates or only negative IDs)', async () => {
+    const boardWithoutValidUserIds = {
       boards: [
         {
           id: '123456',
@@ -179,13 +190,26 @@ describe('Full Board Data Tool', () => {
                 column_values: [],
                 updates: [],
               },
+              {
+                id: '222',
+                name: 'Item with only automation updates',
+                column_values: [],
+                updates: [
+                  {
+                    id: 'update_auto',
+                    creator_id: '-4',
+                    text_body: 'Automation update',
+                    created_at: '2023-01-01T00:00:00Z',
+                  },
+                ],
+              },
             ],
           },
         },
       ],
     };
 
-    mocks.setResponse(boardWithoutUpdates);
+    mocks.setResponse(boardWithoutValidUserIds);
 
     const args: inputType = {
       boardId: '123456',
@@ -193,10 +217,11 @@ describe('Full Board Data Tool', () => {
 
     const parsedResult = await callToolByNameAsync('get_full_board_data', args);
 
-    expect(parsedResult.board.items).toHaveLength(1);
+    expect(parsedResult.board.items).toHaveLength(2);
     expect(parsedResult.board.items[0].updates).toHaveLength(0);
+    expect(parsedResult.board.items[1].updates).toHaveLength(1);
+    expect(parsedResult.board.items[1].updates[0].creator).toBeNull();
     expect(parsedResult.users).toHaveLength(0);
-    expect(parsedResult.stats.total_updates).toBe(0);
     expect(parsedResult.stats.total_unique_creators).toBe(0);
 
     // Should only call board query, not users query
@@ -339,4 +364,5 @@ describe('Full Board Data Tool', () => {
     expect(userIdsCall).toContain('user789');
     expect(userIdsCall).not.toContain('team456');
   });
+
 });
