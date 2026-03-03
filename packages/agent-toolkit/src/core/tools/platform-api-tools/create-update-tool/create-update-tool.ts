@@ -30,6 +30,10 @@ export const createUpdateToolSchema = {
     .describe(
       'Optional JSON array of mentions in the format: [{"id": "123", "type": "User"}, {"id": "456", "type": "Team"}]. Valid types are: User, Team, Board, Project',
     ),
+  parentId: z
+    .number()
+    .optional()
+    .describe('Use this parameter when you want to reply on an existing update'),
 };
 
 export class CreateUpdateTool extends BaseMondayApiTool<typeof createUpdateToolSchema> {
@@ -73,6 +77,7 @@ export class CreateUpdateTool extends BaseMondayApiTool<typeof createUpdateToolS
         itemId: input.itemId.toString(),
         body: input.body,
         mentionsList: parsedMentionsList,
+        parentId: input.parentId?.toString(),
       };
 
       const res = await this.mondayApi.request<CreateUpdateMutation>(createUpdate, variables);
