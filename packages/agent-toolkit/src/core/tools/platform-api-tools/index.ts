@@ -95,7 +95,6 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   SearchTool,
   UserContextTool,
   UpdateAssetsOnItemTool,
-  // Notetaker Tools
   GetNotetakerMeetingsTool,
 ];
 
