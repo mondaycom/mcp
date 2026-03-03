@@ -799,6 +799,9 @@ type Query {
     """The usage type for filtering boards"""
     usageType: BoardUsage!
   ): [Board!]
+
+  """Namespace for all notetaker-related queries."""
+  notetaker: NotetakerQueries
   notifications(
     """The last notification id to get."""
     cursor: ID
@@ -1657,7 +1660,9 @@ type Mutation {
     successor_new_date: TimelineDateInput
   ): JSON!
 
-  """Batch update the dependency column values in a board"""
+  """
+  Batch update the dependency column values in a board. Limited to 50 items per batch.
+  """
   batch_update_dependency_column(
     boardId: String!
     columnId: String!
@@ -10390,6 +10395,161 @@ type CreateProjectResult {
   Unique process ID for tracking this creation request. This will be included in the callback when creation completes.
   """
   process_id: ID
+}
+
+"""An action item from a meeting."""
+type ActionItem {
+  """The unique identifier of the action item."""
+  id: ID!
+
+  """The text content of the action item."""
+  content: String!
+
+  """Whether the action item has been completed."""
+  is_completed: Boolean!
+
+  """The owner assigned to the action item."""
+  owner: String
+
+  """The due date of the action item."""
+  due_date: Date
+}
+
+"""A recorded meeting with its metadata, transcript, and insights."""
+type Meeting {
+  """The unique identifier of the meeting."""
+  id: ID!
+
+  """The title of the meeting."""
+  title: String!
+
+  """The start time of the meeting."""
+  start_time: Date!
+
+  """The end time of the meeting."""
+  end_time: Date!
+
+  """The duration of the recording in seconds."""
+  recording_duration: Int
+
+  """The type of access the current user has to this meeting."""
+  access_type: MeetingAccess!
+
+  """The URL to view the meeting in the notetaker."""
+  meeting_link: String!
+
+  """The list of participants in the meeting."""
+  participants: [Participant!]!
+
+  """The AI-generated summary of the meeting."""
+  summary: String
+
+  """The topics discussed during the meeting."""
+  topics: [Topic!]
+
+  """The action items from the meeting."""
+  action_items: [ActionItem!]
+
+  """The transcript entries for the meeting."""
+  transcript: [TranscriptEntry!]
+}
+
+"""The type of access the current user has to a meeting."""
+enum MeetingAccess {
+  """The user was a participant in the meeting or invited the bot."""
+  OWN
+
+  """The meeting was shared directly with the user or their team."""
+  SHARED_WITH_ME
+
+  """The meeting was shared with the account."""
+  SHARED_WITH_ACCOUNT
+}
+
+"""Filters for the meetings query."""
+input MeetingsFilterInput {
+  """Filter meetings by specific IDs."""
+  ids: [ID!]
+
+  """Search meetings by title, participant name, or email."""
+  search: String
+}
+
+"""A paginated response containing meetings."""
+type MeetingsResponse {
+  """The list of meetings in the current page."""
+  meetings: [Meeting!]
+
+  """Pagination metadata for fetching additional pages."""
+  page_info: PageInfo
+}
+
+"""Namespace for all notetaker-related queries."""
+type NotetakerQueries {
+  """
+  Retrieve a paginated list of meetings with completed recordings that the current user has view permissions for.
+  """
+  meetings(
+    """Maximum number of meetings to return per page (1-100)."""
+    limit: Int = 10
+
+    """Cursor for pagination. Use cursor from the previous page_info."""
+    cursor: String
+
+    """Filters to apply to the meetings list."""
+    filters: MeetingsFilterInput
+  ): MeetingsResponse
+}
+
+"""Pagination metadata for cursor-based pagination."""
+type PageInfo {
+  """Whether there are more results available after this page."""
+  has_next_page: Boolean
+
+  """Cursor to use as the "after" argument to fetch the next page."""
+  cursor: String
+}
+
+"""A meeting participant."""
+type Participant {
+  """The email address of the participant."""
+  email: String
+}
+
+"""A talking point within a meeting topic."""
+type TalkingPoint {
+  """The text content of the talking point."""
+  content: String!
+
+  """The timestamp of the talking point in seconds."""
+  timestamp: Float!
+}
+
+"""A topic discussed during a meeting."""
+type Topic {
+  """The title of the topic."""
+  title: String!
+
+  """The talking points discussed under this topic."""
+  talking_points: [TalkingPoint!]!
+}
+
+"""A single entry in a meeting transcript."""
+type TranscriptEntry {
+  """The transcribed text content."""
+  text: String!
+
+  """The start time of the transcript entry in seconds."""
+  start_time: Float!
+
+  """The end time of the transcript entry in seconds."""
+  end_time: Float!
+
+  """The name of the speaker."""
+  speaker: String!
+
+  """The language of the transcript entry."""
+  language: String!
 }
 
 type BoardMuteSettings {

@@ -131,6 +131,21 @@ export type AccountTriggersByEntityIdFiltersInput = {
   user_ids?: InputMaybe<Array<Scalars['Int']['input']>>;
 };
 
+/** An action item from a meeting. */
+export type ActionItem = {
+  __typename?: 'ActionItem';
+  /** The text content of the action item. */
+  content: Scalars['String']['output'];
+  /** The due date of the action item. */
+  due_date?: Maybe<Scalars['Date']['output']>;
+  /** The unique identifier of the action item. */
+  id: Scalars['ID']['output'];
+  /** Whether the action item has been completed. */
+  is_completed: Scalars['Boolean']['output'];
+  /** The owner assigned to the action item. */
+  owner?: Maybe<Scalars['String']['output']>;
+};
+
 /** Error that occurred during activation. */
 export type ActivateUsersError = {
   __typename?: 'ActivateUsersError';
@@ -4819,6 +4834,62 @@ export type MarketplaceSearchResults = {
   hits: Array<MarketplaceSearchHit>;
 };
 
+/** A recorded meeting with its metadata, transcript, and insights. */
+export type Meeting = {
+  __typename?: 'Meeting';
+  /** The type of access the current user has to this meeting. */
+  access_type: MeetingAccess;
+  /** The action items from the meeting. */
+  action_items?: Maybe<Array<ActionItem>>;
+  /** The end time of the meeting. */
+  end_time: Scalars['Date']['output'];
+  /** The unique identifier of the meeting. */
+  id: Scalars['ID']['output'];
+  /** The URL to view the meeting in the notetaker. */
+  meeting_link: Scalars['String']['output'];
+  /** The list of participants in the meeting. */
+  participants: Array<Participant>;
+  /** The duration of the recording in seconds. */
+  recording_duration?: Maybe<Scalars['Int']['output']>;
+  /** The start time of the meeting. */
+  start_time: Scalars['Date']['output'];
+  /** The AI-generated summary of the meeting. */
+  summary?: Maybe<Scalars['String']['output']>;
+  /** The title of the meeting. */
+  title: Scalars['String']['output'];
+  /** The topics discussed during the meeting. */
+  topics?: Maybe<Array<Topic>>;
+  /** The transcript entries for the meeting. */
+  transcript?: Maybe<Array<TranscriptEntry>>;
+};
+
+/** The type of access the current user has to a meeting. */
+export enum MeetingAccess {
+  /** The user was a participant in the meeting or invited the bot. */
+  Own = 'OWN',
+  /** The meeting was shared with the account. */
+  SharedWithAccount = 'SHARED_WITH_ACCOUNT',
+  /** The meeting was shared directly with the user or their team. */
+  SharedWithMe = 'SHARED_WITH_ME'
+}
+
+/** Filters for the meetings query. */
+export type MeetingsFilterInput = {
+  /** Filter meetings by specific IDs. */
+  ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  /** Search meetings by title, participant name, or email. */
+  search?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** A paginated response containing meetings. */
+export type MeetingsResponse = {
+  __typename?: 'MeetingsResponse';
+  /** The list of meetings in the current page. */
+  meetings?: Maybe<Array<Meeting>>;
+  /** Pagination metadata for fetching additional pages. */
+  page_info?: Maybe<PageInfo>;
+};
+
 /** Mention object for user or document references */
 export type Mention = {
   __typename?: 'Mention';
@@ -4945,7 +5016,7 @@ export type Mutation = {
   attach_status_managed_column?: Maybe<Column>;
   /** Extends trial period of an application to selected accounts */
   batch_extend_trial_period?: Maybe<BatchExtendTrialPeriod>;
-  /** Batch update the dependency column values in a board */
+  /** Batch update the dependency column values in a board. Limited to 50 items per batch. */
   batch_update_dependency_column: Scalars['JSON']['output'];
   /** Initialize bulk import for a board and group. Returns import ID and upload URL to begin the process. */
   bulk_import_items?: Maybe<BulkImportInit>;
@@ -6669,6 +6740,21 @@ export type MutationUse_TemplateArgs = {
   template_id: Scalars['Int']['input'];
 };
 
+/** Namespace for all notetaker-related queries. */
+export type NotetakerQueries = {
+  __typename?: 'NotetakerQueries';
+  /** Retrieve a paginated list of meetings with completed recordings that the current user has view permissions for. */
+  meetings?: Maybe<MeetingsResponse>;
+};
+
+
+/** Namespace for all notetaker-related queries. */
+export type NotetakerQueriesMeetingsArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  filters?: InputMaybe<MeetingsFilterInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
 /** The notice-box's own ID must be captured.  Every block that should appear inside it must be created with parentBlockId = that ID (and can still use afterBlockId for ordering among siblings). */
 export type NoticeBoxBlockInput = {
   /** The parent block id to append the created block under. */
@@ -6992,6 +7078,15 @@ export type PageBreakContent = DocBaseBlockContent & {
   direction?: Maybe<BlockDirection>;
 };
 
+/** Pagination metadata for cursor-based pagination. */
+export type PageInfo = {
+  __typename?: 'PageInfo';
+  /** Cursor to use as the "after" argument to fetch the next page. */
+  cursor?: Maybe<Scalars['String']['output']>;
+  /** Whether there are more results available after this page. */
+  has_next_page?: Maybe<Scalars['Boolean']['output']>;
+};
+
 /**
  * Pagination metadata: indicates the current page and page size, whether there
  *   are more pages, and the next page number if one exists. Note that the page size reflects
@@ -7015,6 +7110,13 @@ export type PaginationInput = {
   lastId?: InputMaybe<Scalars['Int']['input']>;
   /** Maximum number of results to return */
   limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+/** A meeting participant. */
+export type Participant = {
+  __typename?: 'Participant';
+  /** The email address of the participant. */
+  email?: Maybe<Scalars['String']['output']>;
 };
 
 /** Input type for dependency metadata payload containing dependency type and lag configuration */
@@ -7401,6 +7503,8 @@ export type Query = {
   mute_board_settings?: Maybe<Array<BoardMuteSettings>>;
   /** Get next pages of board's items (rows) by cursor. */
   next_items_page: ItemsResponse;
+  /** Namespace for all notetaker-related queries. */
+  notetaker?: Maybe<NotetakerQueries>;
   notifications?: Maybe<Array<NotificationV2>>;
   /** Retrieves the current user's notification settings across all available channels. */
   notifications_settings?: Maybe<Array<NotificationSetting>>;
@@ -8593,6 +8697,15 @@ export type TagsValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
+/** A talking point within a meeting topic. */
+export type TalkingPoint = {
+  __typename?: 'TalkingPoint';
+  /** The text content of the talking point. */
+  content: Scalars['String']['output'];
+  /** The timestamp of the talking point in seconds. */
+  timestamp: Scalars['Float']['output'];
+};
+
 /** The type of target object for a relation */
 export enum TargetObject {
   /** Board object type */
@@ -8888,6 +9001,30 @@ export type ToolEventsPage = {
   __typename?: 'ToolEventsPage';
   /** List of tool events in the current page */
   tool_events?: Maybe<Array<ToolEvent>>;
+};
+
+/** A topic discussed during a meeting. */
+export type Topic = {
+  __typename?: 'Topic';
+  /** The talking points discussed under this topic. */
+  talking_points: Array<TalkingPoint>;
+  /** The title of the topic. */
+  title: Scalars['String']['output'];
+};
+
+/** A single entry in a meeting transcript. */
+export type TranscriptEntry = {
+  __typename?: 'TranscriptEntry';
+  /** The end time of the transcript entry in seconds. */
+  end_time: Scalars['Float']['output'];
+  /** The language of the transcript entry. */
+  language: Scalars['String']['output'];
+  /** The name of the speaker. */
+  speaker: Scalars['String']['output'];
+  /** The start time of the transcript entry in seconds. */
+  start_time: Scalars['Float']['output'];
+  /** The transcribed text content. */
+  text: Scalars['String']['output'];
 };
 
 /** Represents a single automation trigger event */
@@ -10272,6 +10409,22 @@ export type GetColumnTypeSchemaQueryVariables = Exact<{
 
 export type GetColumnTypeSchemaQuery = { __typename?: 'Query', get_column_type_schema?: any | null };
 
+export type GetMeetingQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type GetMeetingQuery = { __typename?: 'Query', notetaker?: { __typename?: 'NotetakerQueries', meetings?: { __typename?: 'MeetingsResponse', meetings?: Array<{ __typename?: 'Meeting', id: string, title: string, start_time: any, end_time: any, recording_duration?: number | null, access_type: MeetingAccess, meeting_link: string, summary?: string | null, participants: Array<{ __typename?: 'Participant', email?: string | null }>, topics?: Array<{ __typename?: 'Topic', title: string, talking_points: Array<{ __typename?: 'TalkingPoint', content: string, timestamp: number }> }> | null, action_items?: Array<{ __typename?: 'ActionItem', id: string, content: string, is_completed: boolean, owner?: string | null, due_date?: any | null }> | null, transcript?: Array<{ __typename?: 'TranscriptEntry', text: string, start_time: number, end_time: number, speaker: string, language: string }> | null }> | null } | null } | null };
+
+export type GetMeetingsQueryVariables = Exact<{
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  filters?: InputMaybe<MeetingsFilterInput>;
+}>;
+
+
+export type GetMeetingsQuery = { __typename?: 'Query', notetaker?: { __typename?: 'NotetakerQueries', meetings?: { __typename?: 'MeetingsResponse', meetings?: Array<{ __typename?: 'Meeting', id: string, title: string, start_time: any, end_time: any, recording_duration?: number | null, access_type: MeetingAccess, meeting_link: string, participants: Array<{ __typename?: 'Participant', email?: string | null }> }> | null, page_info?: { __typename?: 'PageInfo', has_next_page?: boolean | null, cursor?: string | null } | null } | null } | null };
+
 export type GetItemUpdatesQueryVariables = Exact<{
   itemId: Scalars['ID']['input'];
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -10820,6 +10973,8 @@ export const GetBoardInfoDocument = {"kind":"Document","definitions":[{"kind":"O
 export const GetBoardInfoJustColumnsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetBoardInfoJustColumns"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"boards"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"ListValue","values":[{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"columns"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"settings"}}]}}]}}]}}]} as unknown as DocumentNode<GetBoardInfoJustColumnsQuery, GetBoardInfoJustColumnsQueryVariables>;
 export const GetBoardItemsPageDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetBoardItemsPage"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"cursor"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"includeColumns"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"queryParams"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ItemsQuery"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"includeSubItems"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"boards"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"ListValue","values":[{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"items_page"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"cursor"},"value":{"kind":"Variable","name":{"kind":"Name","value":"cursor"}}},{"kind":"Argument","name":{"kind":"Name","value":"query_params"},"value":{"kind":"Variable","name":{"kind":"Name","value":"queryParams"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"ItemDataFragment"}},{"kind":"Field","name":{"kind":"Name","value":"subitems"},"directives":[{"kind":"Directive","name":{"kind":"Name","value":"include"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"if"},"value":{"kind":"Variable","name":{"kind":"Name","value":"includeSubItems"}}}]}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"ItemDataFragment"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"cursor"}}]}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"ItemDataFragment"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Item"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}},{"kind":"Field","name":{"kind":"Name","value":"column_values"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnIds"}}}],"directives":[{"kind":"Directive","name":{"kind":"Name","value":"include"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"if"},"value":{"kind":"Variable","name":{"kind":"Name","value":"includeColumns"}}}]}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"text"}},{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"FormulaValue"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"display_value"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BoardRelationValue"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"linked_items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"board"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetBoardItemsPageQuery, GetBoardItemsPageQueryVariables>;
 export const GetColumnTypeSchemaDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetColumnTypeSchema"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"type"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ColumnType"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"get_column_type_schema"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"type"}}}]}]}}]} as unknown as DocumentNode<GetColumnTypeSchemaQuery, GetColumnTypeSchemaQueryVariables>;
+export const GetMeetingDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetMeeting"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"notetaker"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"meetings"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"filters"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"ids"},"value":{"kind":"ListValue","values":[{"kind":"Variable","name":{"kind":"Name","value":"id"}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"meetings"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"start_time"}},{"kind":"Field","name":{"kind":"Name","value":"end_time"}},{"kind":"Field","name":{"kind":"Name","value":"recording_duration"}},{"kind":"Field","name":{"kind":"Name","value":"access_type"}},{"kind":"Field","name":{"kind":"Name","value":"meeting_link"}},{"kind":"Field","name":{"kind":"Name","value":"participants"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"email"}}]}},{"kind":"Field","name":{"kind":"Name","value":"summary"}},{"kind":"Field","name":{"kind":"Name","value":"topics"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"talking_points"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"timestamp"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"action_items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"is_completed"}},{"kind":"Field","name":{"kind":"Name","value":"owner"}},{"kind":"Field","name":{"kind":"Name","value":"due_date"}}]}},{"kind":"Field","name":{"kind":"Name","value":"transcript"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"text"}},{"kind":"Field","name":{"kind":"Name","value":"start_time"}},{"kind":"Field","name":{"kind":"Name","value":"end_time"}},{"kind":"Field","name":{"kind":"Name","value":"speaker"}},{"kind":"Field","name":{"kind":"Name","value":"language"}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetMeetingQuery, GetMeetingQueryVariables>;
+export const GetMeetingsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetMeetings"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"cursor"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filters"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"MeetingsFilterInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"notetaker"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"meetings"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"cursor"},"value":{"kind":"Variable","name":{"kind":"Name","value":"cursor"}}},{"kind":"Argument","name":{"kind":"Name","value":"filters"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filters"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"meetings"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"start_time"}},{"kind":"Field","name":{"kind":"Name","value":"end_time"}},{"kind":"Field","name":{"kind":"Name","value":"recording_duration"}},{"kind":"Field","name":{"kind":"Name","value":"access_type"}},{"kind":"Field","name":{"kind":"Name","value":"meeting_link"}},{"kind":"Field","name":{"kind":"Name","value":"participants"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"email"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"page_info"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"has_next_page"}},{"kind":"Field","name":{"kind":"Name","value":"cursor"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetMeetingsQuery, GetMeetingsQueryVariables>;
 export const GetItemUpdatesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetItemUpdates"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"itemId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"page"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"ListValue","values":[{"kind":"Variable","name":{"kind":"Name","value":"itemId"}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"updates"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"page"},"value":{"kind":"Variable","name":{"kind":"Name","value":"page"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"body"}},{"kind":"Field","name":{"kind":"Name","value":"text_body"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}},{"kind":"Field","name":{"kind":"Name","value":"item_id"}},{"kind":"Field","name":{"kind":"Name","value":"creator"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"replies"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"body"}},{"kind":"Field","name":{"kind":"Name","value":"text_body"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}},{"kind":"Field","name":{"kind":"Name","value":"creator"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"assets"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"file_extension"}},{"kind":"Field","name":{"kind":"Name","value":"file_size"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetItemUpdatesQuery, GetItemUpdatesQueryVariables>;
 export const GetBoardUpdatesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetBoardUpdates"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"page"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"boards"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"ListValue","values":[{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"updates"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"page"},"value":{"kind":"Variable","name":{"kind":"Name","value":"page"}}},{"kind":"Argument","name":{"kind":"Name","value":"board_updates_only"},"value":{"kind":"BooleanValue","value":true}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"body"}},{"kind":"Field","name":{"kind":"Name","value":"text_body"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}},{"kind":"Field","name":{"kind":"Name","value":"item_id"}},{"kind":"Field","name":{"kind":"Name","value":"creator"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"replies"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"body"}},{"kind":"Field","name":{"kind":"Name","value":"text_body"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}},{"kind":"Field","name":{"kind":"Name","value":"creator"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"assets"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"file_extension"}},{"kind":"Field","name":{"kind":"Name","value":"file_size"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetBoardUpdatesQuery, GetBoardUpdatesQueryVariables>;
 export const ListUsersWithTeamsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"listUsersWithTeams"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"userIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}},"defaultValue":{"kind":"IntValue","value":"1000"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"users"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"userIds"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserDetails"}},{"kind":"Field","name":{"kind":"Name","value":"teams"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"UserTeamMembership"}}]}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserDetails"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"enabled"}},{"kind":"Field","name":{"kind":"Name","value":"is_admin"}},{"kind":"Field","name":{"kind":"Name","value":"is_guest"}},{"kind":"Field","name":{"kind":"Name","value":"is_pending"}},{"kind":"Field","name":{"kind":"Name","value":"is_verified"}},{"kind":"Field","name":{"kind":"Name","value":"is_view_only"}},{"kind":"Field","name":{"kind":"Name","value":"join_date"}},{"kind":"Field","name":{"kind":"Name","value":"last_activity"}},{"kind":"Field","name":{"kind":"Name","value":"location"}},{"kind":"Field","name":{"kind":"Name","value":"mobile_phone"}},{"kind":"Field","name":{"kind":"Name","value":"phone"}},{"kind":"Field","name":{"kind":"Name","value":"photo_thumb"}},{"kind":"Field","name":{"kind":"Name","value":"time_zone_identifier"}},{"kind":"Field","name":{"kind":"Name","value":"utc_hours_diff"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserTeamMembership"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Team"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"is_guest"}},{"kind":"Field","name":{"kind":"Name","value":"picture_url"}}]}}]} as unknown as DocumentNode<ListUsersWithTeamsQuery, ListUsersWithTeamsQueryVariables>;

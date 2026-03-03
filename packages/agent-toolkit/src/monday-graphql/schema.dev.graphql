@@ -456,6 +456,27 @@ type Query {
     type: ColumnType!
   ): JSON
 
+  """
+  Retrieve active account entity models by their IDs or names. Only returns account-level entities (not global). Entity models define the structure and columns of boards. If no parameters are provided, all account entities are returned. Results are paginated using page and limit parameters.
+  """
+  account_entities(
+    """A list of entity model IDs to retrieve."""
+    ids: [ID!]
+
+    """
+    A list of entity model names to retrieve. Names are unique identifiers.
+    """
+    names: [String!]
+
+    """
+    The number of entity models to return per page. Default is 25, maximum is 100.
+    """
+    limit: Int
+
+    """The page number to retrieve. Pages are 1-indexed. Default is 1."""
+    page: Int
+  ): [EntityModel!]
+
   """Get validations configuration for a board"""
   validations(
     id: ID!
@@ -930,6 +951,9 @@ type Query {
     """The usage type for filtering boards"""
     usageType: BoardUsage!
   ): [Board!]
+
+  """Namespace for all notetaker-related queries."""
+  notetaker: NotetakerQueries
   notifications(
     """The last notification id to get."""
     cursor: ID
@@ -1110,7 +1134,7 @@ type Query {
   ): [AllocatedResource!]
 
   """
-  Returns utilization report for resources: optional grouping by attribute, filtering, resource list, and project breakdown.
+  Returns utilization report for resources: either grouped by attribute or ungrouped with per-resource data. Use inline fragments to query the appropriate fields.
   """
   utilization_report(
     """
@@ -2064,6 +2088,31 @@ type Mutation {
     parent_id: ID
   ): AccountEntity
 
+  """
+  Delete an account entity model. Can only delete if there are no boards attached to the entity model. Entity models define the structure and columns of boards.
+  """
+  delete_account_entity(
+    """The entity model ID to delete."""
+    id: ID
+
+    """The entity model name to delete."""
+    name: String
+  ): EntityModel
+
+  """Connect a board to an entity model."""
+  connect_board_to_entity(
+    """The board ID to connect."""
+    board_id: ID!
+
+    """The entity model ID to connect the board to."""
+    entity_id: ID
+
+    """
+    The entity model name (slug) to connect the board to. Either entity_id or entity_name must be provided.
+    """
+    entity_name: String
+  ): BoardConnection
+
   """Add a required column to a board"""
   add_required_column(
     id: ID!
@@ -2144,7 +2193,9 @@ type Mutation {
     successor_new_date: TimelineDateInput
   ): JSON!
 
-  """Batch update the dependency column values in a board"""
+  """
+  Batch update the dependency column values in a board. Limited to 50 items per batch.
+  """
   batch_update_dependency_column(
     boardId: String!
     columnId: String!
@@ -3678,6 +3729,16 @@ type Mutation {
     """Free-text prompt describing how to prioritize tasks (max 1000 chars)"""
     priority_prompt: String!
   ): UpdatePriorityPromptResponse
+
+  """Create a new task on the current user's task board."""
+  create_task(input: CreateTaskInput!): Task
+
+  """Update an existing task by ID."""
+  update_task(
+    """The ID of the task to update"""
+    task_id: ID!
+    input: UpdateTaskInput!
+  ): Task
 
   """Creates a new team."""
   create_team(input: CreateTeamAttributesInput!, options: CreateTeamOptionsInput): Team
@@ -6860,6 +6921,15 @@ type AccountEntity {
   name: String
 }
 
+"""Represents a board and its connection to an entity model."""
+type BoardConnection {
+  """The unique identifier of the board."""
+  id: ID
+
+  """The entity model ID that this board is connected to."""
+  entity_id: ID
+}
+
 """Calculated capability settings for a column"""
 type CalculatedCapability {
   """Function to calculate the parent values"""
@@ -7158,6 +7228,40 @@ input DropdownSettingsOverridesInput {
   Maximum number of labels that can be selected when limit_select is enabled.
   """
   label_limit_count: Int
+}
+
+"""
+Represents an entity model that defines the structure and columns of a board. Only active entity models are returned.
+"""
+type EntityModel {
+  """The unique identifier of the entity model."""
+  id: ID
+
+  """The unique name identifier of the entity model."""
+  name: String
+
+  """The revision number of the entity model."""
+  revision: Int
+
+  """
+  The ID of the parent entity model, if this entity model inherits from another.
+  """
+  parent_id: ID
+
+  """The account ID that owns this entity model."""
+  account_id: ID
+
+  """The user ID who created this entity model."""
+  created_by: ID
+
+  """The columns definition for this entity model as a JSON object."""
+  columns: JSON
+
+  """The timestamp when this entity model was created or last updated."""
+  created_at: Date
+
+  """The timestamp when this entity model was created or last updated."""
+  updated_at: Date
 }
 
 type ManagedColumn {
@@ -8644,6 +8748,9 @@ type UserContext {
 
   """User display name."""
   name: String
+
+  """User job title."""
+  title: String
 
   """User email address."""
   email: String
@@ -12625,6 +12732,161 @@ type CreateProjectResult {
   process_id: ID
 }
 
+"""An action item from a meeting."""
+type ActionItem {
+  """The unique identifier of the action item."""
+  id: ID!
+
+  """The text content of the action item."""
+  content: String!
+
+  """Whether the action item has been completed."""
+  is_completed: Boolean!
+
+  """The owner assigned to the action item."""
+  owner: String
+
+  """The due date of the action item."""
+  due_date: Date
+}
+
+"""A recorded meeting with its metadata, transcript, and insights."""
+type Meeting {
+  """The unique identifier of the meeting."""
+  id: ID!
+
+  """The title of the meeting."""
+  title: String!
+
+  """The start time of the meeting."""
+  start_time: Date!
+
+  """The end time of the meeting."""
+  end_time: Date!
+
+  """The duration of the recording in seconds."""
+  recording_duration: Int
+
+  """The type of access the current user has to this meeting."""
+  access_type: MeetingAccess!
+
+  """The URL to view the meeting in the notetaker."""
+  meeting_link: String!
+
+  """The list of participants in the meeting."""
+  participants: [Participant!]!
+
+  """The AI-generated summary of the meeting."""
+  summary: String
+
+  """The topics discussed during the meeting."""
+  topics: [Topic!]
+
+  """The action items from the meeting."""
+  action_items: [ActionItem!]
+
+  """The transcript entries for the meeting."""
+  transcript: [TranscriptEntry!]
+}
+
+"""The type of access the current user has to a meeting."""
+enum MeetingAccess {
+  """The user was a participant in the meeting or invited the bot."""
+  OWN
+
+  """The meeting was shared directly with the user or their team."""
+  SHARED_WITH_ME
+
+  """The meeting was shared with the account."""
+  SHARED_WITH_ACCOUNT
+}
+
+"""Filters for the meetings query."""
+input MeetingsFilterInput {
+  """Filter meetings by specific IDs."""
+  ids: [ID!]
+
+  """Search meetings by title, participant name, or email."""
+  search: String
+}
+
+"""A paginated response containing meetings."""
+type MeetingsResponse {
+  """The list of meetings in the current page."""
+  meetings: [Meeting!]
+
+  """Pagination metadata for fetching additional pages."""
+  page_info: PageInfo
+}
+
+"""Namespace for all notetaker-related queries."""
+type NotetakerQueries {
+  """
+  Retrieve a paginated list of meetings with completed recordings that the current user has view permissions for.
+  """
+  meetings(
+    """Maximum number of meetings to return per page (1-100)."""
+    limit: Int = 10
+
+    """Cursor for pagination. Use cursor from the previous page_info."""
+    cursor: String
+
+    """Filters to apply to the meetings list."""
+    filters: MeetingsFilterInput
+  ): MeetingsResponse
+}
+
+"""Pagination metadata for cursor-based pagination."""
+type PageInfo {
+  """Whether there are more results available after this page."""
+  has_next_page: Boolean
+
+  """Cursor to use as the "after" argument to fetch the next page."""
+  cursor: String
+}
+
+"""A meeting participant."""
+type Participant {
+  """The email address of the participant."""
+  email: String
+}
+
+"""A talking point within a meeting topic."""
+type TalkingPoint {
+  """The text content of the talking point."""
+  content: String!
+
+  """The timestamp of the talking point in seconds."""
+  timestamp: Float!
+}
+
+"""A topic discussed during a meeting."""
+type Topic {
+  """The title of the topic."""
+  title: String!
+
+  """The talking points discussed under this topic."""
+  talking_points: [TalkingPoint!]!
+}
+
+"""A single entry in a meeting transcript."""
+type TranscriptEntry {
+  """The transcribed text content."""
+  text: String!
+
+  """The start time of the transcript entry in seconds."""
+  start_time: Float!
+
+  """The end time of the transcript entry in seconds."""
+  end_time: Float!
+
+  """The name of the speaker."""
+  speaker: String!
+
+  """The language of the transcript entry."""
+  language: String!
+}
+
 type BoardMuteSettings {
   """Board ID"""
   board_id: ID
@@ -13919,6 +14181,9 @@ type ResourceAttributeTypeInfo {
   """Human-readable description of the attribute"""
   description: String
 
+  """User-friendly display name"""
+  display_name: String
+
   """Whether the attribute values are managed by resource managers"""
   is_managed: Boolean
 
@@ -14108,42 +14373,35 @@ type UtilizationRatios {
 }
 
 """
-Utilization report: time period headers, optional groups, and resources with effort and ratios.
+Utilization report: either grouped by attribute or ungrouped with per-resource data.
 """
-type UtilizationReport {
-  """Headers for each time period in the report."""
-  time_period_headers: [TimePeriodHeader!]
-
-  """Effort kinds included in the report (e.g. allocated, spent)."""
-  effort_types: [String!]
-
-  """Attribute used for grouping, if any."""
-  group_by_attribute: String
-
-  """
-  Aggregates per attribute value. Populated only when group_by_attribute is set; otherwise null.
-  """
-  groups: [UtilizationReportGroup!]
-
-  """
-  Per-resource utilization data. Populated only when group_by_attribute is not set (no grouping); otherwise null.
-  """
-  resources: [UtilizationReportResource!]
-}
+union UtilizationReport = UtilizationReportGrouped | UtilizationReportUngrouped
 
 """Utilization report grouped by an attribute value."""
 type UtilizationReportGroup {
   """ID of the attribute value this group represents."""
   attribute_value_id: ID
 
-  """Display name of the attribute value."""
-  attribute_value_name: String
-
   """Number of resources in this group."""
   resource_count: Int
 
   """Time buckets for this group."""
   time_buckets: [TimeBucket!]
+}
+
+"""Utilization report grouped by an attribute."""
+type UtilizationReportGrouped {
+  """Headers for each time period in the report."""
+  time_period_headers: [TimePeriodHeader!]
+
+  """Effort kinds included in the report (e.g. allocated, spent)."""
+  effort_types: [String!]
+
+  """Attribute used for grouping."""
+  group_by_attribute: String
+
+  """Aggregates per attribute value."""
+  groups: [UtilizationReportGroup!]
 }
 
 """
@@ -14162,12 +14420,7 @@ input UtilizationReportInput {
   group_by_attribute: GroupByResourceAttribute
 
   """
-  Optional ItemsQuery (query_params) to restrict resources; aligned with platform items_page.
-  """
-  query_params: JSON
-
-  """
-  Optional list of resource IDs. When used with query_params, applied as AND.
+  Optional list of resource IDs to filter by. If not provided, all resources are included (subject to limit).
   """
   resource_ids: [ID!]
 
@@ -14177,7 +14430,7 @@ input UtilizationReportInput {
   include_project_breakdown: Boolean
 
   """
-  Max resources when no query_params/resource_ids (default 25). Used for "all resources" case.
+  Max resources when no resource_ids provided (default 25). Used for "all resources" case.
   """
   limit: Int
 
@@ -14192,9 +14445,6 @@ type UtilizationReportProjectBreakdown {
   """ID of the project."""
   project_id: ID
 
-  """Name of the project."""
-  project_name: String
-
   """Time buckets for this project."""
   time_buckets: [TimeBucket!]
 }
@@ -14204,20 +14454,26 @@ type UtilizationReportResource {
   """ID of the resource."""
   resource_id: ID
 
-  """Name of the resource."""
-  resource_name: String
-
   """Whether this row is a placeholder (e.g. unassigned)."""
   is_placeholder: Boolean
-
-  """Job role of the resource, if any."""
-  job_role: String
 
   """Time buckets for this resource."""
   time_buckets: [TimeBucket!]
 
   """Per-project breakdown when requested."""
   project_breakdown: [UtilizationReportProjectBreakdown!]
+}
+
+"""Utilization report with per-resource data (not grouped)."""
+type UtilizationReportUngrouped {
+  """Headers for each time period in the report."""
+  time_period_headers: [TimePeriodHeader!]
+
+  """Effort kinds included in the report (e.g. allocated, spent)."""
+  effort_types: [String!]
+
+  """Per-resource utilization data."""
+  resources: [UtilizationReportResource!]
 }
 
 """Ranked results of a search query."""
@@ -14893,6 +15149,39 @@ type ColumnChange {
   new_value: JSON
 }
 
+"""Input for creating a new task"""
+input CreateTaskInput {
+  """The task title"""
+  title: String!
+
+  """The task description"""
+  description: String!
+
+  """The initial status of the task"""
+  status: CreateTaskStatus!
+
+  """The task priority (higher is more important)"""
+  priority: Int!
+
+  """The task due date, if any"""
+  due_date: String
+}
+
+"""Statuses allowed when creating a new task (excludes terminal statuses)"""
+enum CreateTaskStatus {
+  """Task is pending triage"""
+  PENDING
+
+  """Task is queued to be worked on"""
+  TODO
+
+  """Task is being worked on"""
+  IN_PROGRESS
+
+  """Task is deferred"""
+  NOT_NOW
+}
+
 """Response containing the current user's task board id"""
 type MyTaskBoardResponse {
   """The current user's task board id"""
@@ -15020,12 +15309,36 @@ enum TaskStatus {
 
   """Task is completed"""
   DONE
+
+  """Task is no longer relevant and should be archived"""
+  NO_LONGER_RELEVANT
+
+  """Item was incorrectly classified as a task"""
+  NOT_A_TASK
 }
 
 """Response from updating the priority prompt"""
 type UpdatePriorityPromptResponse {
   """Whether the update succeeded"""
   success: Boolean
+}
+
+"""Partial input for updating an existing task"""
+input UpdateTaskInput {
+  """The task title"""
+  title: String
+
+  """The task description"""
+  description: String
+
+  """The task status"""
+  status: TaskStatus
+
+  """The task priority (higher is more important)"""
+  priority: Int
+
+  """The task due date"""
+  due_date: String
 }
 
 """A role in the account"""
