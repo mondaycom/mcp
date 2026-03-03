@@ -21,6 +21,7 @@ The package provides several modular components that can be imported separately:
 The toolkit includes several pre-built tools for common monday.com operations, organized by functionality:
 
 ### Item Operations
+
 - `CreateItemTool` - Create a new item in a monday.com board
 - `DeleteItemTool` - Delete an item from a board
 - `GetBoardItemsPageTool` - Get items by board id and apply filters
@@ -29,6 +30,7 @@ The toolkit includes several pre-built tools for common monday.com operations, o
 - `MoveItemToGroupTool` - Move an item to a group in a monday.com board
 
 ### Board Operations
+
 - `CreateBoardTool` - Create a monday.com board
 - `GetBoardSchemaTool` - Get board schema (columns and groups) by board id
 - `CreateGroupTool` - Create a new group in a monday.com board
@@ -36,20 +38,28 @@ The toolkit includes several pre-built tools for common monday.com operations, o
 - `DeleteColumnTool` - Delete a column from a monday.com board
 
 ### WorkForms Operations
+
 - `CreateFormTool` - Create a monday.com form
 - `GetFormTool` - Get a form by its token, found in the form's URL
 - `UpdateFormTool` - Update a monday.com form, including updating the form's feature settings, appearance settings, accessibility settings, title, description, question order, form tags, and form password
 - `FormQuestionsEditorTool` - Create, update, or delete a question in a monday.com form
 
 ### Account Operations
+
 - `ListUsersAndTeams` - Get users or teams, either by ids, names or by searching the account
 
 ### Workspace Operations
+
 - `ListWorkspaceTool` - List workspaces available to the user, prioritizing workspaces where the user is a member
 
 ### Dynamic API Tools
+
 - `AllMondayApiTool` - Execute any monday.com API operation by generating GraphQL queries and mutations dynamically
 - `GetGraphQLSchemaTool` - Fetch the monday.com GraphQL schema structure including query and mutation definitions
 - `GetTypeDetailsTool` - Get detailed information about a specific GraphQL type from the monday.com API schema
+
+## Development
+
+A Cursor skill is available at `.cursor/skills/agent-toolkit-api-tools/SKILL.md` with detailed guidance on creating and modifying platform API tools, including the GraphQL codegen pipeline, tool registration, and version bumping.
 
 ## Usage
