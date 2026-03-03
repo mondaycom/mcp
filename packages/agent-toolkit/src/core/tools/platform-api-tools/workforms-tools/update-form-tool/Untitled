@@ -1,5 +1,0 @@
-export enum MeetingAccess {
-  OWN = 'OWN',
-  SHARED_WITH_ME = 'SHARED_WITH_ME',
-  SHARED_WITH_ACCOUNT = 'SHARED_WITH_ACCOUNT',
-}
