@@ -1,37 +1,37 @@
 import { z } from 'zod';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { getMeetings } from './get-meetings-tool.graphql';
+import { getNotetakerMeetings } from './get-notetaker-meetings-tool.graphql';
 
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 100;
 const MIN_LIMIT = 1;
 
-export const getMeetingsToolSchema = {
+export const getNotetakerMeetingsToolSchema = {
   limit: z
     .number()
     .min(MIN_LIMIT)
     .max(MAX_LIMIT)
     .optional()
     .default(DEFAULT_LIMIT)
-    .describe('Maximum number of meetings to return per page (1-100).'),
+    .describe('Maximum number of notetaker meetings to return per page (1-100).'),
   cursor: z
     .string()
     .optional()
     .describe('Cursor for pagination. Use cursor from the previous page_info to fetch the next page.'),
   filters: z
     .object({
-      search: z.string().optional().describe('Search meetings by title, participant name, or email.'),
+      search: z.string().optional().describe('Search notetaker meetings by title, participant name, or email.'),
     })
     .optional()
-    .describe('Filters to apply to the meetings list.'),
+    .describe('Filters to apply to the notetaker meetings list.'),
 };
 
-export class GetMeetingsTool extends BaseMondayApiTool<typeof getMeetingsToolSchema> {
-  name = 'get_meetings';
+export class GetNotetakerMeetingsTool extends BaseMondayApiTool<typeof getNotetakerMeetingsToolSchema> {
+  name = 'get_notetaker_meetings';
   type = ToolType.READ;
   annotations = createMondayApiAnnotations({
-    title: 'Get Meetings',
+    title: 'Get Notetaker Meetings',
     readOnlyHint: true,
     destructiveHint: false,
     idempotentHint: true,
@@ -39,24 +39,26 @@ export class GetMeetingsTool extends BaseMondayApiTool<typeof getMeetingsToolSch
 
   getDescription(): string {
     return (
-      'Retrieve a paginated list of meetings with completed recordings that the current user has view permissions for. ' +
+      'Retrieve a paginated list of notetaker meetings with completed recordings that the current user has view permissions for. ' +
       'Supports filtering by search term. ' +
       'Use the cursor from page_info to paginate through results.'
     );
   }
 
-  getInputSchema(): typeof getMeetingsToolSchema {
-    return getMeetingsToolSchema;
+  getInputSchema(): typeof getNotetakerMeetingsToolSchema {
+    return getNotetakerMeetingsToolSchema;
   }
 
-  protected async executeInternal(input: ToolInputType<typeof getMeetingsToolSchema>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(
+    input: ToolInputType<typeof getNotetakerMeetingsToolSchema>,
+  ): Promise<ToolOutputType<never>> {
     const variables = {
       limit: input.limit,
       cursor: input.cursor || undefined,
       filters: input.filters || undefined,
     };
 
-    const res = await this.mondayApi.request<any>(getMeetings, variables, {
+    const res = await this.mondayApi.request<any>(getNotetakerMeetings, variables, {
       versionOverride: '2026-04',
     });
 
@@ -64,7 +66,7 @@ export class GetMeetingsTool extends BaseMondayApiTool<typeof getMeetingsToolSch
 
     if (!meetingsResponse?.meetings || meetingsResponse.meetings.length === 0) {
       return {
-        content: 'No meetings found matching the specified criteria.',
+        content: 'No notetaker meetings found matching the specified criteria.',
       };
     }
 

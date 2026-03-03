@@ -1,8 +1,8 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameAsync, callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
-import { GetMeetingsTool } from './get-meetings-tool';
+import { GetNotetakerMeetingsTool } from './get-notetaker-meetings-tool';
 
-describe('GetMeetingsTool', () => {
+describe('GetNotetakerMeetingsTool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
 
   beforeEach(() => {
@@ -57,10 +57,10 @@ describe('GetMeetingsTool', () => {
   };
 
   describe('Basic Functionality', () => {
-    it('should successfully return paginated meetings with default params', async () => {
+    it('should successfully return paginated notetaker meetings with default params', async () => {
       mocks.setResponse(mockMeetingsResponse);
 
-      const parsedResult = await callToolByNameAsync('get_meetings', {});
+      const parsedResult = await callToolByNameAsync('get_notetaker_meetings', {});
 
       expect(parsedResult.meetings).toHaveLength(2);
       expect(parsedResult.meetings[0].id).toBe('meeting_1');
@@ -90,7 +90,7 @@ describe('GetMeetingsTool', () => {
     it('should support cursor pagination', async () => {
       mocks.setResponse(mockMeetingsResponse);
 
-      await callToolByNameAsync('get_meetings', { cursor: 'prev_cursor_xyz' });
+      await callToolByNameAsync('get_notetaker_meetings', { cursor: 'prev_cursor_xyz' });
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.stringContaining('query GetMeetings'),
@@ -104,7 +104,7 @@ describe('GetMeetingsTool', () => {
     it('should support search filter', async () => {
       mocks.setResponse(mockMeetingsResponse);
 
-      await callToolByNameAsync('get_meetings', { filters: { search: 'sprint' } });
+      await callToolByNameAsync('get_notetaker_meetings', { filters: { search: 'sprint' } });
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.stringContaining('query GetMeetings'),
@@ -118,7 +118,7 @@ describe('GetMeetingsTool', () => {
     it('should support custom limit', async () => {
       mocks.setResponse(mockMeetingsResponse);
 
-      await callToolByNameAsync('get_meetings', { limit: 50 });
+      await callToolByNameAsync('get_notetaker_meetings', { limit: 50 });
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.stringContaining('query GetMeetings'),
@@ -131,20 +131,20 @@ describe('GetMeetingsTool', () => {
   });
 
   describe('Empty Results', () => {
-    it('should return "No meetings found" message when no meetings exist', async () => {
+    it('should return "No notetaker meetings found" message when no meetings exist', async () => {
       mocks.setResponse(emptyMeetingsResponse);
 
-      const result = await callToolByNameRawAsync('get_meetings', {});
+      const result = await callToolByNameRawAsync('get_notetaker_meetings', {});
 
-      expect(result.content[0].text).toBe('No meetings found matching the specified criteria.');
+      expect(result.content[0].text).toBe('No notetaker meetings found matching the specified criteria.');
     });
 
-    it('should return "No meetings found" message when meetings field is null', async () => {
+    it('should return "No notetaker meetings found" message when meetings field is null', async () => {
       mocks.setResponse({ notetaker: { meetings: { meetings: null } } });
 
-      const result = await callToolByNameRawAsync('get_meetings', {});
+      const result = await callToolByNameRawAsync('get_notetaker_meetings', {});
 
-      expect(result.content[0].text).toBe('No meetings found matching the specified criteria.');
+      expect(result.content[0].text).toBe('No notetaker meetings found matching the specified criteria.');
     });
   });
 
@@ -153,7 +153,7 @@ describe('GetMeetingsTool', () => {
       const errorMessage = 'GraphQL error occurred';
       mocks.setError(errorMessage);
 
-      const result = await callToolByNameRawAsync('get_meetings', {});
+      const result = await callToolByNameRawAsync('get_notetaker_meetings', {});
 
       expect(result.content[0].text).toContain(errorMessage);
     });
@@ -161,18 +161,18 @@ describe('GetMeetingsTool', () => {
 
   describe('Schema Validation', () => {
     it('should have correct tool metadata', () => {
-      const tool = new GetMeetingsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new GetNotetakerMeetingsTool(mocks.mockApiClient, 'fake_token');
 
-      expect(tool.name).toBe('get_meetings');
+      expect(tool.name).toBe('get_notetaker_meetings');
       expect(tool.type).toBe('read');
-      expect(tool.annotations.title).toBe('Get Meetings');
+      expect(tool.annotations.title).toBe('Get Notetaker Meetings');
       expect(tool.annotations.readOnlyHint).toBe(true);
       expect(tool.annotations.destructiveHint).toBe(false);
       expect(tool.annotations.idempotentHint).toBe(true);
     });
 
     it('should have correct input schema', () => {
-      const tool = new GetMeetingsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new GetNotetakerMeetingsTool(mocks.mockApiClient, 'fake_token');
       const schema = tool.getInputSchema();
 
       expect(schema.limit).toBeDefined();
@@ -186,10 +186,10 @@ describe('GetMeetingsTool', () => {
     });
 
     it('should have correct description', () => {
-      const tool = new GetMeetingsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new GetNotetakerMeetingsTool(mocks.mockApiClient, 'fake_token');
       const description = tool.getDescription();
 
-      expect(description).toContain('meetings');
+      expect(description).toContain('notetaker meetings');
       expect(description).toContain('paginated');
     });
   });

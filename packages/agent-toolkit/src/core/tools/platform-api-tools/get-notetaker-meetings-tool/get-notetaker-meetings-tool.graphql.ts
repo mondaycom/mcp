@@ -1,6 +1,6 @@
 import { gql } from 'graphql-request';
 
-export const getMeetings = gql`
+export const getNotetakerMeetings = gql`
   query GetMeetings($limit: Int, $cursor: String, $filters: MeetingsFilterInput) {
     notetaker {
       meetings(limit: $limit, cursor: $cursor, filters: $filters) {

@@ -1,8 +1,8 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameAsync, callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
-import { GetMeetingTool } from './get-meeting-tool';
+import { GetNotetakerMeetingTool } from './get-notetaker-meeting-tool';
 
-describe('GetMeetingTool', () => {
+describe('GetNotetakerMeetingTool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
 
   beforeEach(() => {
@@ -77,10 +77,10 @@ describe('GetMeetingTool', () => {
   };
 
   describe('Basic Functionality', () => {
-    it('should successfully retrieve a single meeting with full details', async () => {
+    it('should successfully retrieve a single notetaker meeting with full details', async () => {
       mocks.setResponse(mockMeetingResponse);
 
-      const parsedResult = await callToolByNameAsync('get_meeting', { id: 'meeting_42' });
+      const parsedResult = await callToolByNameAsync('get_notetaker_meeting', { id: 'meeting_42' });
 
       expect(parsedResult.id).toBe('meeting_42');
       expect(parsedResult.title).toBe('Architecture Review');
@@ -109,7 +109,7 @@ describe('GetMeetingTool', () => {
   });
 
   describe('Meeting Not Found', () => {
-    it('should return error message when meeting is not found (empty meetings array)', async () => {
+    it('should return error message when notetaker meeting is not found (empty meetings array)', async () => {
       mocks.setResponse({
         notetaker: {
           meetings: {
@@ -118,10 +118,10 @@ describe('GetMeetingTool', () => {
         },
       });
 
-      const result = await callToolByNameRawAsync('get_meeting', { id: 'nonexistent_id' });
+      const result = await callToolByNameRawAsync('get_notetaker_meeting', { id: 'nonexistent_id' });
 
       expect(result.content[0].text).toBe(
-        "No meeting found with id nonexistent_id, or you don't have permission to view it.",
+        "No notetaker meeting found with id nonexistent_id, or you don't have permission to view it.",
       );
     });
 
@@ -134,9 +134,11 @@ describe('GetMeetingTool', () => {
         },
       });
 
-      const result = await callToolByNameRawAsync('get_meeting', { id: 'null_id' });
+      const result = await callToolByNameRawAsync('get_notetaker_meeting', { id: 'null_id' });
 
-      expect(result.content[0].text).toBe("No meeting found with id null_id, or you don't have permission to view it.");
+      expect(result.content[0].text).toBe(
+        "No notetaker meeting found with id null_id, or you don't have permission to view it.",
+      );
     });
   });
 
@@ -145,7 +147,7 @@ describe('GetMeetingTool', () => {
       const errorMessage = 'GraphQL error occurred';
       mocks.setError(errorMessage);
 
-      const result = await callToolByNameRawAsync('get_meeting', { id: 'meeting_42' });
+      const result = await callToolByNameRawAsync('get_notetaker_meeting', { id: 'meeting_42' });
 
       expect(result.content[0].text).toContain(errorMessage);
     });
@@ -153,18 +155,18 @@ describe('GetMeetingTool', () => {
 
   describe('Schema Validation', () => {
     it('should have correct tool metadata', () => {
-      const tool = new GetMeetingTool(mocks.mockApiClient, 'fake_token');
+      const tool = new GetNotetakerMeetingTool(mocks.mockApiClient, 'fake_token');
 
-      expect(tool.name).toBe('get_meeting');
+      expect(tool.name).toBe('get_notetaker_meeting');
       expect(tool.type).toBe('read');
-      expect(tool.annotations.title).toBe('Get Meeting');
+      expect(tool.annotations.title).toBe('Get Notetaker Meeting');
       expect(tool.annotations.readOnlyHint).toBe(true);
       expect(tool.annotations.destructiveHint).toBe(false);
       expect(tool.annotations.idempotentHint).toBe(true);
     });
 
     it('should have correct input schema', () => {
-      const tool = new GetMeetingTool(mocks.mockApiClient, 'fake_token');
+      const tool = new GetNotetakerMeetingTool(mocks.mockApiClient, 'fake_token');
       const schema = tool.getInputSchema();
 
       expect(schema.id).toBeDefined();
@@ -172,10 +174,10 @@ describe('GetMeetingTool', () => {
     });
 
     it('should have correct description', () => {
-      const tool = new GetMeetingTool(mocks.mockApiClient, 'fake_token');
+      const tool = new GetNotetakerMeetingTool(mocks.mockApiClient, 'fake_token');
       const description = tool.getDescription();
 
-      expect(description).toContain('meeting');
+      expect(description).toContain('notetaker meeting');
       expect(description).toContain('summary');
       expect(description).toContain('transcript');
     });
