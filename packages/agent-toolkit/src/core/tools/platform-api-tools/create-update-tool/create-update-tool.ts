@@ -47,7 +47,7 @@ export class CreateUpdateTool extends BaseMondayApiTool<typeof createUpdateToolS
   });
 
   getDescription(): string {
-    return 'Create a new update (comment/post) on a monday.com item. Updates can be used to add comments, notes, or discussions to items. You can optionally mention users, teams, or boards in the update.';
+    return 'Create a new update (comment/post) on a monday.com item. Updates can be used to add comments, notes, or discussions to items. You can optionally mention users, teams, or boards in the update. You can also reply to an existing update by using the parentId parameter.';
   }
 
   getInputSchema(): typeof createUpdateToolSchema {
