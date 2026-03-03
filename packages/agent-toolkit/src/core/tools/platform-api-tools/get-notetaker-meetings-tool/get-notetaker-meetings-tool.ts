@@ -1,0 +1,117 @@
+import { z } from 'zod';
+import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
+import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+import { getNotetakerMeetings } from './get-notetaker-meetings-tool.graphql';
+
+const DEFAULT_LIMIT = 25;
+const MAX_LIMIT = 100;
+const MIN_LIMIT = 1;
+
+export const getNotetakerMeetingsToolSchema = {
+  ids: z
+    .array(z.string())
+    .optional()
+    .describe('Filter by specific meeting IDs. Use this to fetch one or more specific meetings in a single call.'),
+  limit: z
+    .number()
+    .min(MIN_LIMIT)
+    .max(MAX_LIMIT)
+    .optional()
+    .default(DEFAULT_LIMIT)
+    .describe('Maximum number of notetaker meetings to return per page (1-100).'),
+  cursor: z
+    .string()
+    .optional()
+    .describe('Cursor for pagination. Use cursor from the previous page_info to fetch the next page.'),
+  search: z.string().optional().describe('Search notetaker meetings by title, participant name, or email.'),
+  include_summary: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe('Whether to include the AI-generated summary for each meeting.'),
+  include_topics: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe('Whether to include discussion topics and talking points for each meeting.'),
+  include_action_items: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe('Whether to include action items for each meeting.'),
+  include_transcript: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe('Whether to include the full transcript for each meeting. Transcripts can be very large.'),
+};
+
+export class GetNotetakerMeetingsTool extends BaseMondayApiTool<typeof getNotetakerMeetingsToolSchema> {
+  name = 'get_notetaker_meetings';
+  type = ToolType.READ;
+  annotations = createMondayApiAnnotations({
+    title: 'Get Notetaker Meetings',
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+  });
+
+  getDescription(): string {
+    return (
+      'Retrieve notetaker meetings with optional detailed fields. ' +
+      'Use include_summary, include_topics, include_action_items, and include_transcript flags to control which details are returned. ' +
+      'Supports filtering by ids, search term, and cursor-based pagination.'
+    );
+  }
+
+  getInputSchema(): typeof getNotetakerMeetingsToolSchema {
+    return getNotetakerMeetingsToolSchema;
+  }
+
+  protected async executeInternal(
+    input: ToolInputType<typeof getNotetakerMeetingsToolSchema>,
+  ): Promise<ToolOutputType<never>> {
+    const filters: Record<string, unknown> = {};
+    if (input.ids && input.ids.length > 0) {
+      filters.ids = input.ids;
+    }
+    if (input.search) {
+      filters.search = input.search;
+    }
+
+    const variables = {
+      limit: input.limit,
+      cursor: input.cursor || undefined,
+      filters: Object.keys(filters).length > 0 ? filters : undefined,
+      includeSummary: input.include_summary,
+      includeTopics: input.include_topics,
+      includeActionItems: input.include_action_items,
+      includeTranscript: input.include_transcript,
+    };
+
+    const res = await this.mondayApi.request<any>(getNotetakerMeetings, variables, {
+      versionOverride: '2026-04',
+    });
+
+    const meetingsResponse = res.notetaker?.meetings;
+
+    if (!meetingsResponse?.meetings || meetingsResponse.meetings.length === 0) {
+      return {
+        content: 'No notetaker meetings found matching the specified criteria.',
+      };
+    }
+
+    const result = {
+      meetings: meetingsResponse.meetings,
+      pagination: {
+        has_next_page: meetingsResponse.page_info?.has_next_page ?? false,
+        cursor: meetingsResponse.page_info?.cursor ?? null,
+        count: meetingsResponse.meetings.length,
+      },
+    };
+
+    return {
+      content: JSON.stringify(result, null, 2),
+    };
+  }
+}

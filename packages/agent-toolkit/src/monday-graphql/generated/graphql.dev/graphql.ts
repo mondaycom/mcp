@@ -175,6 +175,21 @@ export type AccountTriggersByEntityIdFiltersInput = {
   user_ids?: InputMaybe<Array<Scalars['Int']['input']>>;
 };
 
+/** An action item from a meeting. */
+export type ActionItem = {
+  __typename?: 'ActionItem';
+  /** The text content of the action item. */
+  content: Scalars['String']['output'];
+  /** The due date of the action item. */
+  due_date?: Maybe<Scalars['Date']['output']>;
+  /** The unique identifier of the action item. */
+  id: Scalars['ID']['output'];
+  /** Whether the action item has been completed. */
+  is_completed: Scalars['Boolean']['output'];
+  /** The owner assigned to the action item. */
+  owner?: Maybe<Scalars['String']['output']>;
+};
+
 /** Error that occurred during activation. */
 export type ActivateUsersError = {
   __typename?: 'ActivateUsersError';
@@ -1832,6 +1847,15 @@ export enum BoardBasicRoleName {
   Viewer = 'viewer'
 }
 
+/** Represents a board and its connection to an entity model. */
+export type BoardConnection = {
+  __typename?: 'BoardConnection';
+  /** The entity model ID that this board is connected to. */
+  entity_id?: Maybe<Scalars['ID']['output']>;
+  /** The unique identifier of the board. */
+  id?: Maybe<Scalars['ID']['output']>;
+};
+
 /** A board duplication */
 export type BoardDuplication = {
   __typename?: 'BoardDuplication';
@@ -2837,6 +2861,32 @@ export type CreateStatusLabelInput = {
   is_done?: InputMaybe<Scalars['Boolean']['input']>;
   label: Scalars['String']['input'];
 };
+
+/** Input for creating a new task */
+export type CreateTaskInput = {
+  /** The task description */
+  description: Scalars['String']['input'];
+  /** The task due date, if any */
+  due_date?: InputMaybe<Scalars['String']['input']>;
+  /** The task priority (higher is more important) */
+  priority: Scalars['Int']['input'];
+  /** The initial status of the task */
+  status: CreateTaskStatus;
+  /** The task title */
+  title: Scalars['String']['input'];
+};
+
+/** Statuses allowed when creating a new task (excludes terminal statuses) */
+export enum CreateTaskStatus {
+  /** Task is being worked on */
+  InProgress = 'IN_PROGRESS',
+  /** Task is deferred */
+  NotNow = 'NOT_NOW',
+  /** Task is pending triage */
+  Pending = 'PENDING',
+  /** Task is queued to be worked on */
+  Todo = 'TODO'
+}
 
 /** Attributes of the team to be created. */
 export type CreateTeamAttributesInput = {
@@ -3960,6 +4010,29 @@ export type EntityIdMappingInput = {
   newId: Scalars['String']['input'];
   /** The old ID of the entity. */
   oldId: Scalars['String']['input'];
+};
+
+/** Represents an entity model that defines the structure and columns of a board. Only active entity models are returned. */
+export type EntityModel = {
+  __typename?: 'EntityModel';
+  /** The account ID that owns this entity model. */
+  account_id?: Maybe<Scalars['ID']['output']>;
+  /** The columns definition for this entity model as a JSON object. */
+  columns?: Maybe<Scalars['JSON']['output']>;
+  /** The timestamp when this entity model was created or last updated. */
+  created_at?: Maybe<Scalars['Date']['output']>;
+  /** The user ID who created this entity model. */
+  created_by?: Maybe<Scalars['ID']['output']>;
+  /** The unique identifier of the entity model. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** The unique name identifier of the entity model. */
+  name?: Maybe<Scalars['String']['output']>;
+  /** The ID of the parent entity model, if this entity model inherits from another. */
+  parent_id?: Maybe<Scalars['ID']['output']>;
+  /** The revision number of the entity model. */
+  revision?: Maybe<Scalars['Int']['output']>;
+  /** The timestamp when this entity model was created or last updated. */
+  updated_at?: Maybe<Scalars['Date']['output']>;
 };
 
 /** User-facing error with code and optional path */
@@ -6147,6 +6220,62 @@ export type MarketplaceSearchResults = {
   hits: Array<MarketplaceSearchHit>;
 };
 
+/** A recorded meeting with its metadata, transcript, and insights. */
+export type Meeting = {
+  __typename?: 'Meeting';
+  /** The type of access the current user has to this meeting. */
+  access_type: MeetingAccess;
+  /** The action items from the meeting. */
+  action_items?: Maybe<Array<ActionItem>>;
+  /** The end time of the meeting. */
+  end_time: Scalars['Date']['output'];
+  /** The unique identifier of the meeting. */
+  id: Scalars['ID']['output'];
+  /** The URL to view the meeting in the notetaker. */
+  meeting_link: Scalars['String']['output'];
+  /** The list of participants in the meeting. */
+  participants: Array<Participant>;
+  /** The duration of the recording in seconds. */
+  recording_duration?: Maybe<Scalars['Int']['output']>;
+  /** The start time of the meeting. */
+  start_time: Scalars['Date']['output'];
+  /** The AI-generated summary of the meeting. */
+  summary?: Maybe<Scalars['String']['output']>;
+  /** The title of the meeting. */
+  title: Scalars['String']['output'];
+  /** The topics discussed during the meeting. */
+  topics?: Maybe<Array<Topic>>;
+  /** The transcript entries for the meeting. */
+  transcript?: Maybe<Array<TranscriptEntry>>;
+};
+
+/** The type of access the current user has to a meeting. */
+export enum MeetingAccess {
+  /** The user was a participant in the meeting or invited the bot. */
+  Own = 'OWN',
+  /** The meeting was shared with the account. */
+  SharedWithAccount = 'SHARED_WITH_ACCOUNT',
+  /** The meeting was shared directly with the user or their team. */
+  SharedWithMe = 'SHARED_WITH_ME'
+}
+
+/** Filters for the meetings query. */
+export type MeetingsFilterInput = {
+  /** Filter meetings by specific IDs. */
+  ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  /** Search meetings by title, participant name, or email. */
+  search?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** A paginated response containing meetings. */
+export type MeetingsResponse = {
+  __typename?: 'MeetingsResponse';
+  /** The list of meetings in the current page. */
+  meetings?: Maybe<Array<Meeting>>;
+  /** Pagination metadata for fetching additional pages. */
+  page_info?: Maybe<PageInfo>;
+};
+
 /** Mention object for user or document references */
 export type Mention = {
   __typename?: 'Mention';
@@ -6289,7 +6418,7 @@ export type Mutation = {
   attach_status_managed_column?: Maybe<Column>;
   /** Extends trial period of an application to selected accounts */
   batch_extend_trial_period?: Maybe<BatchExtendTrialPeriod>;
-  /** Batch update the dependency column values in a board */
+  /** Batch update the dependency column values in a board. Limited to 50 items per batch. */
   batch_update_dependency_column: Scalars['JSON']['output'];
   /** Initialize bulk import for a board and group. Returns import ID and upload URL to begin the process. */
   bulk_import_items?: Maybe<BulkImportInit>;
@@ -6313,6 +6442,8 @@ export type Mutation = {
   clear_users_department?: Maybe<ClearUsersDepartmentResult>;
   /** Get the complexity data of your mutations. */
   complexity?: Maybe<Complexity>;
+  /** Connect a board to an entity model. */
+  connect_board_to_entity?: Maybe<BoardConnection>;
   /** Connect a migration job from a source account to the target account */
   connect_migration_job?: Maybe<ConnectMigrationJobResult>;
   /** Connect project to portfolio */
@@ -6388,6 +6519,8 @@ export type Mutation = {
   create_status_managed_column?: Maybe<StatusManagedColumn>;
   /** Create subitem. */
   create_subitem?: Maybe<Item>;
+  /** Create a new task on the current user's task board. */
+  create_task?: Maybe<Task>;
   /** Creates a new team. */
   create_team?: Maybe<Team>;
   create_timeline_item?: Maybe<TimelineItem>;
@@ -6410,6 +6543,8 @@ export type Mutation = {
   deactivate_managed_column?: Maybe<ManagedColumn>;
   /** Deactivates the specified users. */
   deactivate_users?: Maybe<DeactivateUsersResult>;
+  /** Delete an account entity model. Can only delete if there are no boards attached to the entity model. Entity models define the structure and columns of boards. */
+  delete_account_entity?: Maybe<EntityModel>;
   /** Delete an allocation by its ID */
   delete_allocation?: Maybe<DeleteAllocationResponse>;
   /** Delete all lifecycle subscriptions for an entity. Returns true if deleted successfully or if no subscriptions exist. */
@@ -6617,6 +6752,8 @@ export type Mutation = {
   update_status_column?: Maybe<Column>;
   /** Update managed column of type status mutation. */
   update_status_managed_column?: Maybe<StatusManagedColumn>;
+  /** Update an existing task by ID. */
+  update_task?: Maybe<Task>;
   /** Update board roles for multiple users. */
   update_users_board_role?: Maybe<UpdateUsersBoardRoleResponse>;
   /** Updates the role of the specified users. */
@@ -6925,6 +7062,14 @@ export type MutationClear_Item_UpdatesArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationClear_Users_DepartmentArgs = {
   user_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationConnect_Board_To_EntityArgs = {
+  board_id: Scalars['ID']['input'];
+  entity_id?: InputMaybe<Scalars['ID']['input']>;
+  entity_name?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -7271,6 +7416,12 @@ export type MutationCreate_SubitemArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationCreate_TaskArgs = {
+  input: CreateTaskInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_TeamArgs = {
   input: CreateTeamAttributesInput;
   options?: InputMaybe<CreateTeamOptionsInput>;
@@ -7382,6 +7533,13 @@ export type MutationDeactivate_Managed_ColumnArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationDeactivate_UsersArgs = {
   user_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationDelete_Account_EntityArgs = {
+  id?: InputMaybe<Scalars['ID']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -8181,6 +8339,13 @@ export type MutationUpdate_Status_Managed_ColumnArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationUpdate_TaskArgs = {
+  input: UpdateTaskInput;
+  task_id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Users_Board_RoleArgs = {
   board_id: Scalars['ID']['input'];
   role_name: BoardBasicRoleName;
@@ -8284,6 +8449,21 @@ export type NextPageRequestData = {
   cursor?: Maybe<Scalars['JSON']['output']>;
   /** The page identifier to request */
   page?: Maybe<Scalars['JSON']['output']>;
+};
+
+/** Namespace for all notetaker-related queries. */
+export type NotetakerQueries = {
+  __typename?: 'NotetakerQueries';
+  /** Retrieve a paginated list of meetings with completed recordings that the current user has view permissions for. */
+  meetings?: Maybe<MeetingsResponse>;
+};
+
+
+/** Namespace for all notetaker-related queries. */
+export type NotetakerQueriesMeetingsArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  filters?: InputMaybe<MeetingsFilterInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** The notice-box's own ID must be captured.  Every block that should appear inside it must be created with parentBlockId = that ID (and can still use afterBlockId for ordering among siblings). */
@@ -8651,6 +8831,15 @@ export type PageBreakContent = DocBaseBlockContent & {
   direction?: Maybe<BlockDirection>;
 };
 
+/** Pagination metadata for cursor-based pagination. */
+export type PageInfo = {
+  __typename?: 'PageInfo';
+  /** Cursor to use as the "after" argument to fetch the next page. */
+  cursor?: Maybe<Scalars['String']['output']>;
+  /** Whether there are more results available after this page. */
+  has_next_page?: Maybe<Scalars['Boolean']['output']>;
+};
+
 /**
  * Pagination metadata: indicates the current page and page size, whether there
  *   are more pages, and the next page number if one exists. Note that the page size reflects
@@ -8674,6 +8863,13 @@ export type PaginationInput = {
   lastId?: InputMaybe<Scalars['Int']['input']>;
   /** Maximum number of results to return */
   limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+/** A meeting participant. */
+export type Participant = {
+  __typename?: 'Participant';
+  /** The email address of the participant. */
+  email?: Maybe<Scalars['String']['output']>;
 };
 
 /** Input type for dependency metadata payload containing dependency type and lag configuration */
@@ -9023,6 +9219,8 @@ export type Query = {
   account?: Maybe<Account>;
   /** Returns all connections for the account. Requires admin privileges. */
   account_connections?: Maybe<Array<Connection>>;
+  /** Retrieve active account entity models by their IDs or names. Only returns account-level entities (not global). Entity models define the structure and columns of boards. If no parameters are provided, all account entities are returned. Results are paginated using page and limit parameters. */
+  account_entities?: Maybe<Array<EntityModel>>;
   /** Get all roles for the account */
   account_roles?: Maybe<Array<AccountRole>>;
   /** Get aggregated automation runs statistics in the account */
@@ -9239,6 +9437,8 @@ export type Query = {
   my_tasks?: Maybe<MyTasksResponse>;
   /** Get next pages of board's items (rows) by cursor. */
   next_items_page: ItemsResponse;
+  /** Namespace for all notetaker-related queries. */
+  notetaker?: Maybe<NotetakerQueries>;
   notifications?: Maybe<Array<NotificationV2>>;
   /** Retrieves the current user's notification settings across all available channels. */
   notifications_settings?: Maybe<Array<NotificationSetting>>;
@@ -9300,7 +9500,7 @@ export type Query = {
   user_connections?: Maybe<Array<Connection>>;
   /** Get a collection of users. */
   users?: Maybe<Array<Maybe<User>>>;
-  /** Returns utilization report for resources: optional grouping by attribute, filtering, resource list, and project breakdown. */
+  /** Returns utilization report for resources: either grouped by attribute or ungrouped with per-resource data. Use inline fragments to query the appropriate fields. */
   utilization_report?: Maybe<UtilizationReport>;
   /** Validate projects and portfolios */
   validate_projects_and_portfolios?: Maybe<ValidateProjectsAndPortfoliosResult>;
@@ -9325,6 +9525,15 @@ export type QueryAccount_ConnectionsArgs = {
   pagination?: InputMaybe<PaginationInput>;
   withAutomations?: InputMaybe<Scalars['Boolean']['input']>;
   withStateValidation?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryAccount_EntitiesArgs = {
+  ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  names?: InputMaybe<Array<Scalars['String']['input']>>;
+  page?: InputMaybe<Scalars['Int']['input']>;
 };
 
 
@@ -10216,6 +10425,8 @@ export type ResourceAttributeTypeInfo = {
   __typename?: 'ResourceAttributeTypeInfo';
   /** Human-readable description of the attribute */
   description?: Maybe<Scalars['String']['output']>;
+  /** User-friendly display name */
+  display_name?: Maybe<Scalars['String']['output']>;
   /** Whether the attribute can be used for filtering the directory */
   is_filterable?: Maybe<Scalars['Boolean']['output']>;
   /** Whether the attribute values are managed by resource managers */
@@ -10954,6 +11165,15 @@ export type TagsValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
+/** A talking point within a meeting topic. */
+export type TalkingPoint = {
+  __typename?: 'TalkingPoint';
+  /** The text content of the talking point. */
+  content: Scalars['String']['output'];
+  /** The timestamp of the talking point in seconds. */
+  timestamp: Scalars['Float']['output'];
+};
+
 /** The type of target object for a relation */
 export enum TargetObject {
   /** Board object type */
@@ -11018,8 +11238,12 @@ export enum TaskStatus {
   Done = 'DONE',
   /** Task is being worked on */
   InProgress = 'IN_PROGRESS',
+  /** Item was incorrectly classified as a task */
+  NotATask = 'NOT_A_TASK',
   /** Task is deferred */
   NotNow = 'NOT_NOW',
+  /** Task is no longer relevant and should be archived */
+  NoLongerRelevant = 'NO_LONGER_RELEVANT',
   /** Task is pending triage */
   Pending = 'PENDING',
   /** Task is queued to be worked on */
@@ -11370,6 +11594,30 @@ export type ToolEventsPage = {
   __typename?: 'ToolEventsPage';
   /** List of tool events in the current page */
   tool_events?: Maybe<Array<ToolEvent>>;
+};
+
+/** A topic discussed during a meeting. */
+export type Topic = {
+  __typename?: 'Topic';
+  /** The talking points discussed under this topic. */
+  talking_points: Array<TalkingPoint>;
+  /** The title of the topic. */
+  title: Scalars['String']['output'];
+};
+
+/** A single entry in a meeting transcript. */
+export type TranscriptEntry = {
+  __typename?: 'TranscriptEntry';
+  /** The end time of the transcript entry in seconds. */
+  end_time: Scalars['Float']['output'];
+  /** The language of the transcript entry. */
+  language: Scalars['String']['output'];
+  /** The name of the speaker. */
+  speaker: Scalars['String']['output'];
+  /** The start time of the transcript entry in seconds. */
+  start_time: Scalars['Float']['output'];
+  /** The transcribed text content. */
+  text: Scalars['String']['output'];
 };
 
 /** Represents a single automation trigger event */
@@ -11790,6 +12038,20 @@ export type UpdateStatusLabelInput = {
   label: Scalars['String']['input'];
 };
 
+/** Partial input for updating an existing task */
+export type UpdateTaskInput = {
+  /** The task description */
+  description?: InputMaybe<Scalars['String']['input']>;
+  /** The task due date */
+  due_date?: InputMaybe<Scalars['String']['input']>;
+  /** The task priority (higher is more important) */
+  priority?: InputMaybe<Scalars['Int']['input']>;
+  /** The task status */
+  status?: InputMaybe<TaskStatus>;
+  /** The task title */
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
 /** Error that occurred while updating users attributes. */
 export type UpdateUserAttributesError = {
   __typename?: 'UpdateUserAttributesError';
@@ -12047,6 +12309,8 @@ export type UserContext = {
   tenure_days?: Maybe<Scalars['Int']['output']>;
   /** User time zone. Examples: "America/New_York", "Europe/London". */
   time_zone?: Maybe<Scalars['String']['output']>;
+  /** User job title. */
+  title?: Maybe<Scalars['String']['output']>;
 };
 
 /** Combined user and account context. */
@@ -12104,32 +12368,31 @@ export type UtilizationRatios = {
   spent?: Maybe<Scalars['Float']['output']>;
 };
 
-/** Utilization report: time period headers, optional groups, and resources with effort and ratios. */
-export type UtilizationReport = {
-  __typename?: 'UtilizationReport';
-  /** Effort kinds included in the report (e.g. allocated, spent). */
-  effort_types?: Maybe<Array<Scalars['String']['output']>>;
-  /** Attribute used for grouping, if any. */
-  group_by_attribute?: Maybe<Scalars['String']['output']>;
-  /** Aggregates per attribute value. Populated only when group_by_attribute is set; otherwise null. */
-  groups?: Maybe<Array<UtilizationReportGroup>>;
-  /** Per-resource utilization data. Populated only when group_by_attribute is not set (no grouping); otherwise null. */
-  resources?: Maybe<Array<UtilizationReportResource>>;
-  /** Headers for each time period in the report. */
-  time_period_headers?: Maybe<Array<TimePeriodHeader>>;
-};
+/** Utilization report: either grouped by attribute or ungrouped with per-resource data. */
+export type UtilizationReport = UtilizationReportGrouped | UtilizationReportUngrouped;
 
 /** Utilization report grouped by an attribute value. */
 export type UtilizationReportGroup = {
   __typename?: 'UtilizationReportGroup';
   /** ID of the attribute value this group represents. */
   attribute_value_id?: Maybe<Scalars['ID']['output']>;
-  /** Display name of the attribute value. */
-  attribute_value_name?: Maybe<Scalars['String']['output']>;
   /** Number of resources in this group. */
   resource_count?: Maybe<Scalars['Int']['output']>;
   /** Time buckets for this group. */
   time_buckets?: Maybe<Array<TimeBucket>>;
+};
+
+/** Utilization report grouped by an attribute. */
+export type UtilizationReportGrouped = {
+  __typename?: 'UtilizationReportGrouped';
+  /** Effort kinds included in the report (e.g. allocated, spent). */
+  effort_types?: Maybe<Array<Scalars['String']['output']>>;
+  /** Attribute used for grouping. */
+  group_by_attribute?: Maybe<Scalars['String']['output']>;
+  /** Aggregates per attribute value. */
+  groups?: Maybe<Array<UtilizationReportGroup>>;
+  /** Headers for each time period in the report. */
+  time_period_headers?: Maybe<Array<TimePeriodHeader>>;
 };
 
 /** Input for the utilization report query: time range, effort kinds, optional grouping and filters. */
@@ -12140,11 +12403,9 @@ export type UtilizationReportInput = {
   group_by_attribute?: InputMaybe<GroupByResourceAttribute>;
   /** When true, include project breakdown in the response. Defaults to false. */
   include_project_breakdown?: InputMaybe<Scalars['Boolean']['input']>;
-  /** Max resources when no query_params/resource_ids (default 25). Used for "all resources" case. */
+  /** Max resources when no resource_ids provided (default 25). Used for "all resources" case. */
   limit?: InputMaybe<Scalars['Int']['input']>;
-  /** Optional ItemsQuery (query_params) to restrict resources; aligned with platform items_page. */
-  query_params?: InputMaybe<Scalars['JSON']['input']>;
-  /** Optional list of resource IDs. When used with query_params, applied as AND. */
+  /** Optional list of resource IDs to filter by. If not provided, all resources are included (subject to limit). */
   resource_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   /** Time range and granularity for the report. */
   time_range: TimeRangeInput;
@@ -12157,8 +12418,6 @@ export type UtilizationReportProjectBreakdown = {
   __typename?: 'UtilizationReportProjectBreakdown';
   /** ID of the project. */
   project_id?: Maybe<Scalars['ID']['output']>;
-  /** Name of the project. */
-  project_name?: Maybe<Scalars['String']['output']>;
   /** Time buckets for this project. */
   time_buckets?: Maybe<Array<TimeBucket>>;
 };
@@ -12168,16 +12427,23 @@ export type UtilizationReportResource = {
   __typename?: 'UtilizationReportResource';
   /** Whether this row is a placeholder (e.g. unassigned). */
   is_placeholder?: Maybe<Scalars['Boolean']['output']>;
-  /** Job role of the resource, if any. */
-  job_role?: Maybe<Scalars['String']['output']>;
   /** Per-project breakdown when requested. */
   project_breakdown?: Maybe<Array<UtilizationReportProjectBreakdown>>;
   /** ID of the resource. */
   resource_id?: Maybe<Scalars['ID']['output']>;
-  /** Name of the resource. */
-  resource_name?: Maybe<Scalars['String']['output']>;
   /** Time buckets for this resource. */
   time_buckets?: Maybe<Array<TimeBucket>>;
+};
+
+/** Utilization report with per-resource data (not grouped). */
+export type UtilizationReportUngrouped = {
+  __typename?: 'UtilizationReportUngrouped';
+  /** Effort kinds included in the report (e.g. allocated, spent). */
+  effort_types?: Maybe<Array<Scalars['String']['output']>>;
+  /** Per-resource utilization data. */
+  resources?: Maybe<Array<UtilizationReportResource>>;
+  /** Headers for each time period in the report. */
+  time_period_headers?: Maybe<Array<TimePeriodHeader>>;
 };
 
 /** Result of validating projects and portfolios for connection compatibility. */
