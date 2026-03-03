@@ -1,7 +1,15 @@
 import { gql } from 'graphql-request';
 
 export const getNotetakerMeetings = gql`
-  query GetMeetings($limit: Int, $cursor: String, $filters: MeetingsFilterInput) {
+  query GetNotetakerMeetings(
+    $limit: Int
+    $cursor: String
+    $filters: MeetingsFilterInput
+    $includeSummary: Boolean!
+    $includeTopics: Boolean!
+    $includeActionItems: Boolean!
+    $includeTranscript: Boolean!
+  ) {
     notetaker {
       meetings(limit: $limit, cursor: $cursor, filters: $filters) {
         meetings {
@@ -15,53 +23,32 @@ export const getNotetakerMeetings = gql`
           participants {
             email
           }
-        }
-        page_info {
-          has_next_page
-          cursor
-        }
-      }
-    }
-  }
-`;
-
-export const getNotetakerMeeting = gql`
-  query GetMeeting($id: ID!) {
-    notetaker {
-      meetings(filters: { ids: [$id] }) {
-        meetings {
-          id
-          title
-          start_time
-          end_time
-          recording_duration
-          access_type
-          meeting_link
-          participants {
-            email
-          }
-          summary
-          topics {
+          summary @include(if: $includeSummary)
+          topics @include(if: $includeTopics) {
             title
             talking_points {
               content
               timestamp
             }
           }
-          action_items {
+          action_items @include(if: $includeActionItems) {
             id
             content
             is_completed
             owner
             due_date
           }
-          transcript {
+          transcript @include(if: $includeTranscript) {
             text
             start_time
             end_time
             speaker
             language
           }
+        }
+        page_info {
+          has_next_page
+          cursor
         }
       }
     }

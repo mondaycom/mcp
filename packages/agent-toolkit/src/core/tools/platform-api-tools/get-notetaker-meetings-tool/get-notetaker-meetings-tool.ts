@@ -1,37 +1,49 @@
 import { z } from 'zod';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { getNotetakerMeetings, getNotetakerMeeting } from './get-notetaker-meetings-tool.graphql';
+import { getNotetakerMeetings } from './get-notetaker-meetings-tool.graphql';
 
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 100;
 const MIN_LIMIT = 1;
 
 export const getNotetakerMeetingsToolSchema = {
-  id: z
-    .string()
+  ids: z
+    .array(z.string())
     .optional()
-    .describe(
-      'The unique identifier of a specific notetaker meeting to retrieve with full details (summary, topics, action items, transcript). ' +
-        'When provided, limit/cursor/search are ignored.',
-    ),
+    .describe('Filter by specific meeting IDs. Use this to fetch one or more specific meetings in a single call.'),
   limit: z
     .number()
     .min(MIN_LIMIT)
     .max(MAX_LIMIT)
     .optional()
     .default(DEFAULT_LIMIT)
-    .describe('Maximum number of notetaker meetings to return per page (1-100). Used only when id is not provided.'),
+    .describe('Maximum number of notetaker meetings to return per page (1-100).'),
   cursor: z
     .string()
     .optional()
-    .describe(
-      'Cursor for pagination. Use cursor from the previous page_info to fetch the next page. Used only when id is not provided.',
-    ),
-  search: z
-    .string()
+    .describe('Cursor for pagination. Use cursor from the previous page_info to fetch the next page.'),
+  search: z.string().optional().describe('Search notetaker meetings by title, participant name, or email.'),
+  include_summary: z
+    .boolean()
     .optional()
-    .describe('Search notetaker meetings by title, participant name, or email. Used only when id is not provided.'),
+    .default(false)
+    .describe('Whether to include the AI-generated summary for each meeting.'),
+  include_topics: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe('Whether to include discussion topics and talking points for each meeting.'),
+  include_action_items: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe('Whether to include action items for each meeting.'),
+  include_transcript: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe('Whether to include the full transcript for each meeting. Transcripts can be very large.'),
 };
 
 export class GetNotetakerMeetingsTool extends BaseMondayApiTool<typeof getNotetakerMeetingsToolSchema> {
@@ -46,9 +58,9 @@ export class GetNotetakerMeetingsTool extends BaseMondayApiTool<typeof getNoteta
 
   getDescription(): string {
     return (
-      'Retrieve notetaker meetings. ' +
-      'When called with an id, returns a single meeting with full details including AI-generated summary, discussion topics, action items, and transcript. ' +
-      'When called without an id, returns a paginated list of meetings with basic info. Supports filtering by search term and cursor-based pagination.'
+      'Retrieve notetaker meetings with optional detailed fields. ' +
+      'Use include_summary, include_topics, include_action_items, and include_transcript flags to control which details are returned. ' +
+      'Supports filtering by ids, search term, and cursor-based pagination.'
     );
   }
 
@@ -59,36 +71,22 @@ export class GetNotetakerMeetingsTool extends BaseMondayApiTool<typeof getNoteta
   protected async executeInternal(
     input: ToolInputType<typeof getNotetakerMeetingsToolSchema>,
   ): Promise<ToolOutputType<never>> {
-    if (input.id) {
-      return this.fetchMeetingById(input.id);
+    const filters: Record<string, unknown> = {};
+    if (input.ids && input.ids.length > 0) {
+      filters.ids = input.ids;
+    }
+    if (input.search) {
+      filters.search = input.search;
     }
 
-    return this.fetchMeetingsList(input);
-  }
-
-  private async fetchMeetingById(id: string): Promise<ToolOutputType<never>> {
-    const res = await this.mondayApi.request<any>(getNotetakerMeeting, { id }, { versionOverride: '2026-04' });
-
-    const meeting = res.notetaker?.meetings?.meetings?.[0];
-
-    if (!meeting) {
-      return {
-        content: `No notetaker meeting found with id ${id}, or you don't have permission to view it.`,
-      };
-    }
-
-    return {
-      content: JSON.stringify(meeting, null, 2),
-    };
-  }
-
-  private async fetchMeetingsList(
-    input: ToolInputType<typeof getNotetakerMeetingsToolSchema>,
-  ): Promise<ToolOutputType<never>> {
     const variables = {
       limit: input.limit,
       cursor: input.cursor || undefined,
-      filters: input.search ? { search: input.search } : undefined,
+      filters: Object.keys(filters).length > 0 ? filters : undefined,
+      includeSummary: input.include_summary,
+      includeTopics: input.include_topics,
+      includeActionItems: input.include_action_items,
+      includeTranscript: input.include_transcript,
     };
 
     const res = await this.mondayApi.request<any>(getNotetakerMeetings, variables, {
