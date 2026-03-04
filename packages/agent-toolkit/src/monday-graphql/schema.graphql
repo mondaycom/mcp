@@ -2736,7 +2736,9 @@ type Mutation {
 
   """Update Board attribute."""
   update_board(
-    """The board's attribute to update (name / description / communication)"""
+    """
+    The board's attribute to update (name / description / communication / item_nickname)
+    """
     board_attribute: BoardAttributes!
 
     """The board's unique identifier"""
@@ -7723,6 +7725,9 @@ enum BoardAttributes {
   """Board description."""
   description
 
+  """The nickname of items on the board (item terminology)."""
+  item_nickname
+
   """Board name."""
   name
 }
@@ -10466,6 +10471,23 @@ enum MeetingAccess {
   SHARED_WITH_ACCOUNT
 }
 
+"""Filter for the access level of meetings in the query."""
+enum MeetingAccessFilter {
+  """The user was a participant in the meeting or invited the bot."""
+  OWN
+
+  """The meeting was shared directly with the user or their team."""
+  SHARED_WITH_ME
+
+  """The meeting was shared with the account."""
+  SHARED_WITH_ACCOUNT
+
+  """
+  All meetings the user has access to (own, shared with user, and shared with account).
+  """
+  ALL
+}
+
 """Filters for the meetings query."""
 input MeetingsFilterInput {
   """Filter meetings by specific IDs."""
@@ -10473,6 +10495,11 @@ input MeetingsFilterInput {
 
   """Search meetings by title, participant name, or email."""
   search: String
+
+  """
+  Filter meetings by access level. Defaults to OWN, returning only meetings the user owns.
+  """
+  access: MeetingAccessFilter = OWN
 }
 
 """A paginated response containing meetings."""
