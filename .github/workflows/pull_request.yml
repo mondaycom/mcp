@@ -23,3 +23,18 @@ jobs:
 
       - name: Test packages
         run: yarn test
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install snapshot testing dependencies
+        run: pip install -r integration/requirements.txt
+
+      - name: Verify snapshot tests
+        run: |
+          mcp-recorder verify \
+            --cassette integration/cassettes/list_tools.json \
+            --target-stdio "node packages/monday-api-mcp/dist/index.js" \
+            --target-env MONDAY_TOKEN=test-token
