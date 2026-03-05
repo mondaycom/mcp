@@ -162,7 +162,7 @@ describe('GetNotetakerMeetingsTool', () => {
         expect.objectContaining({
           limit: 25,
           cursor: undefined,
-          filters: undefined,
+          filters: { access: 'OWN' },
           includeSummary: false,
           includeTopics: false,
           includeActionItems: false,
@@ -191,7 +191,7 @@ describe('GetNotetakerMeetingsTool', () => {
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.stringContaining('query GetNotetakerMeetings'),
-        expect.objectContaining({ filters: { search: 'sprint' } }),
+        expect.objectContaining({ filters: { access: 'OWN', search: 'sprint' } }),
         expect.objectContaining({ versionOverride: '2026-04' }),
       );
     });
@@ -265,7 +265,7 @@ describe('GetNotetakerMeetingsTool', () => {
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.stringContaining('query GetNotetakerMeetings'),
         expect.objectContaining({
-          filters: { ids: ['meeting_42'] },
+          filters: { access: 'OWN', ids: ['meeting_42'] },
           includeSummary: true,
           includeTopics: true,
           includeActionItems: true,
@@ -308,7 +308,7 @@ describe('GetNotetakerMeetingsTool', () => {
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.stringContaining('query GetNotetakerMeetings'),
-        expect.objectContaining({ filters: { ids: ['meeting_42'] } }),
+        expect.objectContaining({ filters: { access: 'OWN', ids: ['meeting_42'] } }),
         expect.objectContaining({ versionOverride: '2026-04' }),
       );
     });
@@ -337,7 +337,7 @@ describe('GetNotetakerMeetingsTool', () => {
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.stringContaining('query GetNotetakerMeetings'),
-        expect.objectContaining({ filters: { ids: ['meeting_42', 'meeting_43'] } }),
+        expect.objectContaining({ filters: { access: 'OWN', ids: ['meeting_42', 'meeting_43'] } }),
         expect.objectContaining({ versionOverride: '2026-04' }),
       );
     });
@@ -348,6 +348,68 @@ describe('GetNotetakerMeetingsTool', () => {
       const result = await callToolByNameRawAsync('get_notetaker_meetings', { ids: ['nonexistent_id'] });
 
       expect(result.content[0].text).toBe('No notetaker meetings found matching the specified criteria.');
+    });
+  });
+
+  describe('Access filter', () => {
+    it('should default access to OWN', async () => {
+      mocks.setResponse(mockMeetingsResponse);
+
+      await callToolByNameAsync('get_notetaker_meetings', {});
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query GetNotetakerMeetings'),
+        expect.objectContaining({ filters: { access: 'OWN' } }),
+        expect.objectContaining({ versionOverride: '2026-04' }),
+      );
+    });
+
+    it('should pass SHARED_WITH_ME access filter', async () => {
+      mocks.setResponse(mockMeetingsResponse);
+
+      await callToolByNameAsync('get_notetaker_meetings', { access: 'SHARED_WITH_ME' });
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query GetNotetakerMeetings'),
+        expect.objectContaining({ filters: { access: 'SHARED_WITH_ME' } }),
+        expect.objectContaining({ versionOverride: '2026-04' }),
+      );
+    });
+
+    it('should pass SHARED_WITH_ACCOUNT access filter', async () => {
+      mocks.setResponse(mockMeetingsResponse);
+
+      await callToolByNameAsync('get_notetaker_meetings', { access: 'SHARED_WITH_ACCOUNT' });
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query GetNotetakerMeetings'),
+        expect.objectContaining({ filters: { access: 'SHARED_WITH_ACCOUNT' } }),
+        expect.objectContaining({ versionOverride: '2026-04' }),
+      );
+    });
+
+    it('should pass ALL access filter', async () => {
+      mocks.setResponse(mockMeetingsResponse);
+
+      await callToolByNameAsync('get_notetaker_meetings', { access: 'ALL' });
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query GetNotetakerMeetings'),
+        expect.objectContaining({ filters: { access: 'ALL' } }),
+        expect.objectContaining({ versionOverride: '2026-04' }),
+      );
+    });
+
+    it('should combine access filter with other filters', async () => {
+      mocks.setResponse(mockMeetingsResponse);
+
+      await callToolByNameAsync('get_notetaker_meetings', { access: 'SHARED_WITH_ME', search: 'sprint' });
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query GetNotetakerMeetings'),
+        expect.objectContaining({ filters: { access: 'SHARED_WITH_ME', search: 'sprint' } }),
+        expect.objectContaining({ versionOverride: '2026-04' }),
+      );
     });
   });
 
@@ -379,6 +441,7 @@ describe('GetNotetakerMeetingsTool', () => {
       const schema = tool.getInputSchema();
 
       expect(schema.ids).toBeDefined();
+      expect(schema.access).toBeDefined();
       expect(schema.limit).toBeDefined();
       expect(schema.cursor).toBeDefined();
       expect(schema.search).toBeDefined();

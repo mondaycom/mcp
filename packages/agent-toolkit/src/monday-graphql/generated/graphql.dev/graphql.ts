@@ -1827,6 +1827,8 @@ export enum BoardAttributes {
   Communication = 'communication',
   /** Board description. */
   Description = 'description',
+  /** The nickname of items on the board (item terminology). */
+  ItemNickname = 'item_nickname',
   /** Board name. */
   Name = 'name'
 }
@@ -6259,8 +6261,22 @@ export enum MeetingAccess {
   SharedWithMe = 'SHARED_WITH_ME'
 }
 
+/** Filter for the access level of meetings in the query. */
+export enum MeetingAccessFilter {
+  /** All meetings the user has access to (own, shared with user, and shared with account). */
+  All = 'ALL',
+  /** The user was a participant in the meeting or invited the bot. */
+  Own = 'OWN',
+  /** The meeting was shared with the account. */
+  SharedWithAccount = 'SHARED_WITH_ACCOUNT',
+  /** The meeting was shared directly with the user or their team. */
+  SharedWithMe = 'SHARED_WITH_ME'
+}
+
 /** Filters for the meetings query. */
 export type MeetingsFilterInput = {
+  /** Filter meetings by access level. Defaults to OWN, returning only meetings the user owns. */
+  access?: InputMaybe<MeetingAccessFilter>;
   /** Filter meetings by specific IDs. */
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   /** Search meetings by title, participant name, or email. */
