@@ -289,14 +289,12 @@ describe('GetBoardItemsPageTool', () => {
       // Arrange
       const smartSearchItemIds = [111, 222, 333];
       const smartSearchResults = {
-        search_items: {
-          results: smartSearchItemIds.map((id) => ({ data: { id: id.toString() } })),
-        },
+        search_v2: smartSearchItemIds.map((id) => ({ __typename: 'ItemSearchResult', data: { id: id.toString() } })),
       };
 
       // Mock the smart search request
       jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string, variables: any) => {
-        if (query.includes('query SearchItemsDev')) {
+        if (query.includes('query SearchItemsV2Dev')) {
           return Promise.resolve(smartSearchResults);
         }
         // For the main getBoardItemsPage query, just return a dummy response
@@ -324,14 +322,12 @@ describe('GetBoardItemsPageTool', () => {
       const initialItemIds = [222, 444];
       const expectedIds = [222];
       const smartSearchResults = {
-        search_items: {
-          results: smartSearchItemIds.map((id) => ({ data: { id: id.toString() } })),
-        },
+        search_v2: smartSearchItemIds.map((id) => ({ __typename: 'ItemSearchResult', data: { id: id.toString() } })),
       };
 
       // Mock the smart search request
       jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string, variables: any) => {
-        if (query.includes('query SearchItemsDev')) {
+        if (query.includes('query SearchItemsV2Dev')) {
           return Promise.resolve(smartSearchResults);
         }
         // For the main getBoardItemsPage query, just return a dummy response
@@ -355,14 +351,12 @@ describe('GetBoardItemsPageTool', () => {
     it('should build manual name filter in queryParams.rules if smart search returns no itemIds', async () => {
       // Arrange
       const smartSearchResults = {
-        search_items: {
-          results: [],
-        },
+        search_v2: [],
       };
 
       // Mock the smart search request
       jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string, variables: any) => {
-        if (query.includes('query SearchItemsDev')) {
+        if (query.includes('query SearchItemsV2Dev')) {
           return Promise.resolve(smartSearchResults);
         }
         // For the main getBoardItemsPage query, just return a dummy response
