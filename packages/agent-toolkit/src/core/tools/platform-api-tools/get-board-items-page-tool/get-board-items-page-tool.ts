@@ -13,8 +13,8 @@ import { getBoardItemsPage } from './get-board-items-page-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { NonDeprecatedColumnType } from 'src/utils/types';
-import { SearchItemsDevQuery, SearchItemsDevQueryVariables } from 'src/monday-graphql/generated/graphql.dev/graphql';
-import { searchItemsDev } from './get-board-items-page-tool.graphql.dev';
+import { SearchItemsV2DevQuery, SearchItemsV2DevQueryVariables } from 'src/monday-graphql/generated/graphql.dev/graphql';
+import { searchItemsV2Dev } from './get-board-items-page-tool.graphql.dev';
 import { SEARCH_TIMEOUT } from 'src/utils/time.utils';
 import { throwIfSearchTimeoutError } from 'src/utils/error.utils';
 
@@ -280,17 +280,22 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
   }
 
   private async getItemIdsFromSmartSearchAsync(input: ToolInputType<GetBoardItemsPageToolInput>): Promise<number[]> {
-    const smartSearchVariables: SearchItemsDevQueryVariables = {
-      board_ids: [input.boardId.toString()],
-      searchTerm: input.searchTerm!,
+    const smartSearchVariables: SearchItemsV2DevQueryVariables = {
+      query: input.searchTerm!,
+      limit: 100,
+      filters: {
+        entities: [{ items: { board_ids: [input.boardId.toString()] } }],
+      },
     };
 
-    const smartSearchRes = await this.mondayApi.request<SearchItemsDevQuery>(searchItemsDev, smartSearchVariables, {
+    const smartSearchRes = await this.mondayApi.request<SearchItemsV2DevQuery>(searchItemsV2Dev, smartSearchVariables, {
       versionOverride: 'dev',
       timeout: SEARCH_TIMEOUT
     });
 
-    const itemIdsFromSmartSearch = smartSearchRes.search_items?.results?.map((result) => Number(result.data.id)) ?? [];
+    const itemIdsFromSmartSearch = smartSearchRes.search_v2
+      ?.filter((result): result is Extract<typeof result, { __typename?: 'ItemSearchResult' }> => result.__typename === 'ItemSearchResult')
+      ?.map((result) => Number(result.data.id)) ?? [];
 
     if (itemIdsFromSmartSearch.length === 0) {
       // TODO: Refactor this once search team implements exception throwing when tool is not enabled

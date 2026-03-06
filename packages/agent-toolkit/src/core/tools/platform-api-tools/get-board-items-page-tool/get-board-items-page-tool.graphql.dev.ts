@@ -1,9 +1,9 @@
 import { gql } from 'graphql-request';
 
-export const searchItemsDev = gql`
-  query SearchItemsDev($searchTerm: String!, $board_ids: [ID!]) {
-    search_items(board_ids: $board_ids, query: $searchTerm, size: 100) {
-      results {
+export const searchItemsV2Dev = gql`
+  query SearchItemsV2Dev($query: String!, $limit: Int!, $filters: SearchFiltersInput!) {
+    search_v2(query: $query, limit: $limit, filters: $filters) {
+      ... on ItemSearchResult {
         data {
           id
         }
