@@ -17,6 +17,7 @@ import { SearchItemsV2DevQuery, SearchItemsV2DevQueryVariables } from 'src/monda
 import { searchItemsV2Dev } from './get-board-items-page-tool.graphql.dev';
 import { SEARCH_TIMEOUT } from 'src/utils/time.utils';
 import { throwIfSearchTimeoutError } from 'src/utils/error.utils';
+import { ITEM_SEARCH_RESULT_TYPENAME } from '../search-tool/search-tool.types';
 
 const COLUMN_VALUE_NOT_SUPPORTED_MESSAGE = 'Column value type is not supported';
 
@@ -291,10 +292,10 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
     const smartSearchRes = await this.mondayApi.request<SearchItemsV2DevQuery>(searchItemsV2Dev, smartSearchVariables, {
       versionOverride: 'dev',
       timeout: SEARCH_TIMEOUT
-    });
+    }); 
 
     const itemIdsFromSmartSearch = smartSearchRes.search_v2
-      ?.filter((result): result is Extract<typeof result, { __typename?: 'ItemSearchResult' }> => result.__typename === 'ItemSearchResult')
+      ?.filter((result): result is Extract<typeof result, { __typename?: typeof ITEM_SEARCH_RESULT_TYPENAME }> => result.__typename === ITEM_SEARCH_RESULT_TYPENAME)
       ?.map((result) => Number(result.data.id)) ?? [];
 
     if (itemIdsFromSmartSearch.length === 0) {
