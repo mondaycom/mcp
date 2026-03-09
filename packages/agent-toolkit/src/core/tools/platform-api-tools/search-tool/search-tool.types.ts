@@ -1,4 +1,4 @@
-import { CrossEntityBoardResult, CrossEntityDocResult } from "src/monday-graphql/generated/graphql.dev/graphql";
+import { BoardSearchResult, DocSearchResult, ItemSearchResult } from "src/monday-graphql/generated/graphql.dev/graphql";
 
 export interface SearchResult {
   id: string;
@@ -31,5 +31,6 @@ export enum GlobalSearchType {
   // GROUPS = 'GROUPS', // already supported by get_board_info tool
 }
 
-export const CROSS_ENTITY_BOARD_RESULT_TYPENAME = 'CrossEntityBoardResult' satisfies CrossEntityBoardResult['__typename'];
-export const CROSS_ENTITY_DOC_RESULT_TYPENAME = 'CrossEntityDocResult' satisfies CrossEntityDocResult['__typename'];
+export const BOARD_SEARCH_RESULT_TYPENAME = 'BoardSearchResult' satisfies BoardSearchResult['__typename'];
+export const DOC_SEARCH_RESULT_TYPENAME = 'DocSearchResult' satisfies DocSearchResult['__typename'];
+export const ITEM_SEARCH_RESULT_TYPENAME = 'ItemSearchResult' satisfies ItemSearchResult['__typename'];

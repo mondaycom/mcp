@@ -2,7 +2,7 @@ import { ToolInputType, ToolOutputType, ToolType } from 'src/core/tool';
 import { z } from 'zod';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { getBoards, getDocs, getFolders } from './search-tool.graphql';
-import { searchDev } from './search-tool.graphql.dev';
+import { searchV2Dev } from './search-tool.graphql.dev';
 import {
   GetBoardsQuery,
   GetBoardsQueryVariables,
@@ -12,12 +12,11 @@ import {
   GetFoldersQueryVariables,
 } from 'src/monday-graphql/generated/graphql/graphql';
 import {
-  SearchDevQuery,
-  SearchDevQueryVariables,
-  SearchableEntity,
+  SearchV2DevQuery,
+  SearchV2DevQueryVariables,
 } from 'src/monday-graphql/generated/graphql.dev/graphql';
 import { normalizeString } from 'src/utils/string.utils';
-import { CROSS_ENTITY_BOARD_RESULT_TYPENAME, CROSS_ENTITY_DOC_RESULT_TYPENAME, DataWithFilterInfo, GlobalSearchType, ObjectPrefixes, SearchResult } from './search-tool.types';
+import { BOARD_SEARCH_RESULT_TYPENAME, DOC_SEARCH_RESULT_TYPENAME, DataWithFilterInfo, GlobalSearchType, ObjectPrefixes, SearchResult } from './search-tool.types';
 import { LOAD_INTO_MEMORY_LIMIT, SEARCH_LIMIT } from './search-tool.consts';
 import { TIME_IN_MILLISECONDS } from 'src/utils';
 import { SEARCH_TIMEOUT } from 'src/utils/time.utils';
@@ -115,14 +114,18 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
   private async searchWithDevEndpointAsync(
     input: ToolInputType<SearchToolInput>,
   ): Promise<DataWithFilterInfo<SearchResult>> {
-    const entityTypeMap: Record<GlobalSearchType, SearchableEntity | undefined> = {
-      [GlobalSearchType.BOARD]: SearchableEntity.Board,
-      [GlobalSearchType.DOCUMENTS]: SearchableEntity.Document,
+    const entityFilterMap: Record<GlobalSearchType, SearchV2DevQueryVariables['filters'] | undefined> = {
+      [GlobalSearchType.BOARD]: {
+        entities: [{ boards: { workspace_ids: input.workspaceIds?.map((id) => id.toString()) } }],
+      },
+      [GlobalSearchType.DOCUMENTS]: {
+        entities: [{ docs: { workspace_ids: input.workspaceIds?.map((id) => id.toString()) } }],
+      },
       [GlobalSearchType.FOLDERS]: undefined,
     };
 
-    const entityType = entityTypeMap[input.searchType];
-    if (!entityType) {
+    const filters = entityFilterMap[input.searchType];
+    if (!filters) {
       throw new Error(`Unsupported search type for dev endpoint: ${input.searchType}`);
     }
 
@@ -130,29 +133,28 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
       throw new Error('Pagination is not supported for search, increase the limit parameter instead');
     }
 
-    const variables: SearchDevQueryVariables = {
+    const variables: SearchV2DevQueryVariables = {
       query: input.searchTerm!,
-      size: input.limit,
-      entityTypes: [entityType],
-      workspaceIds: input.workspaceIds?.map((id) => id.toString()),
+      limit: input.limit,
+      filters,
     };
 
-    const response = await this.mondayApi.request<SearchDevQuery>(searchDev, variables, {
+    const response = await this.mondayApi.request<SearchV2DevQuery>(searchV2Dev, variables, {
       versionOverride: 'dev',
       timeout: SEARCH_TIMEOUT
     });
 
-    const results = response.search || [];
+    const results = response.search_v2 || [];
     const items: SearchResult[] = [];
 
     for (const result of results) {
-      if (result.__typename === CROSS_ENTITY_BOARD_RESULT_TYPENAME) {
+      if (result.__typename === BOARD_SEARCH_RESULT_TYPENAME) {
         items.push({
           id: ObjectPrefixes.BOARD + result.data.id,
           title: result.data.name,
           url: result.data.url,
         });
-      } else if (result.__typename === CROSS_ENTITY_DOC_RESULT_TYPENAME) {
+      } else if (result.__typename === DOC_SEARCH_RESULT_TYPENAME) {
         items.push({
           id: ObjectPrefixes.DOCUMENT + result.data.id,
           title: result.data.name,
