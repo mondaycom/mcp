@@ -3,7 +3,7 @@ import { callToolByNameAsync, callToolByNameRawAsync, createMockApiClient } from
 import { SearchTool, searchSchema } from './search-tool';
 import { z, ZodTypeAny } from 'zod';
 import { GetBoardsQuery, GetDocsQuery, GetFoldersQuery } from 'src/monday-graphql/generated/graphql/graphql';
-import { SearchV2DevQuery, SearchableEntity } from 'src/monday-graphql/generated/graphql.dev/graphql';
+import { SearchDevQuery, SearchableEntity } from 'src/monday-graphql/generated/graphql.dev/graphql';
 import { GlobalSearchType, ObjectPrefixes, SearchResult, BOARD_SEARCH_RESULT_TYPENAME, DOC_SEARCH_RESULT_TYPENAME } from './search-tool.types';
 
 export type inputType = z.objectInputType<typeof searchSchema, ZodTypeAny>;
@@ -1096,8 +1096,8 @@ describe('SearchTool', () => {
   });
 
   describe('Dev Endpoint Search (searchWithDevEndpointAsync)', () => {
-    const mockDevBoardsResponse: SearchV2DevQuery = {
-      search_v2: [
+    const mockDevBoardsResponse: SearchDevQuery = {
+      search: [
         {
           __typename: BOARD_SEARCH_RESULT_TYPENAME,
           entity_type: SearchableEntity.Board,
@@ -1111,8 +1111,8 @@ describe('SearchTool', () => {
       ],
     };
 
-    const mockDevDocsResponse: SearchV2DevQuery = {
-      search_v2: [
+    const mockDevDocsResponse: SearchDevQuery = {
+      search: [
         {
           __typename: DOC_SEARCH_RESULT_TYPENAME,
           entity_type: SearchableEntity.Document,
@@ -1150,7 +1150,7 @@ describe('SearchTool', () => {
         });
 
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query SearchV2Dev'),
+          expect.stringContaining('query SearchDev'),
           {
             query: 'Test',
             limit: 100,
@@ -1188,7 +1188,7 @@ describe('SearchTool', () => {
         await callToolByNameAsync('search', args);
 
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query SearchV2Dev'),
+          expect.stringContaining('query SearchDev'),
           expect.objectContaining({
             limit: 50,
           }),
@@ -1208,7 +1208,7 @@ describe('SearchTool', () => {
         await callToolByNameAsync('search', args);
 
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query SearchV2Dev'),
+          expect.stringContaining('query SearchDev'),
           expect.objectContaining({
             filters: {
               entities: [{ boards: { workspace_ids: ['12345', '67890'] } }],
@@ -1232,7 +1232,7 @@ describe('SearchTool', () => {
       });
 
       it('should handle empty results from dev endpoint', async () => {
-        mocks.setResponse({ search_v2: [] });
+        mocks.setResponse({ search: [] });
 
         const args: inputType = {
           searchType: GlobalSearchType.BOARD,
@@ -1245,7 +1245,7 @@ describe('SearchTool', () => {
       });
 
       it('should handle null search results from dev endpoint', async () => {
-        mocks.setResponse({ search_v2: null });
+        mocks.setResponse({ search: null });
 
         const args: inputType = {
           searchType: GlobalSearchType.BOARD,
@@ -1280,7 +1280,7 @@ describe('SearchTool', () => {
         });
 
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query SearchV2Dev'),
+          expect.stringContaining('query SearchDev'),
           {
             query: 'Document',
             limit: 100,
@@ -1355,7 +1355,7 @@ describe('SearchTool', () => {
         const parsedResult = await callToolByNameAsync('search', args);
 
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query SearchV2Dev'),
+          expect.stringContaining('query SearchDev'),
           expect.any(Object),
           expect.objectContaining({ versionOverride: 'dev' })
         );
@@ -1381,7 +1381,7 @@ describe('SearchTool', () => {
         expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
         expect(mocks.getMockRequest()).toHaveBeenNthCalledWith(
           1,
-          expect.stringContaining('query SearchV2Dev'),
+          expect.stringContaining('query SearchDev'),
           expect.any(Object),
           expect.objectContaining({ versionOverride: 'dev' })
         );
@@ -1411,7 +1411,7 @@ describe('SearchTool', () => {
           expect.any(Object),
         );
         expect(mocks.getMockRequest()).not.toHaveBeenCalledWith(
-          expect.stringContaining('query SearchV2Dev'),
+          expect.stringContaining('query SearchDev'),
           expect.any(Object),
           expect.any(Object),
         );
@@ -1434,7 +1434,7 @@ describe('SearchTool', () => {
           expect.any(Object),
         );
         expect(mocks.getMockRequest()).not.toHaveBeenCalledWith(
-          expect.stringContaining('query SearchV2Dev'),
+          expect.stringContaining('query SearchDev'),
           expect.any(Object),
           expect.any(Object),
         );
@@ -1462,8 +1462,8 @@ describe('SearchTool', () => {
 
     describe('Mixed Entity Types in Response', () => {
       it('should correctly parse mixed board and doc results from dev endpoint', async () => {
-        const mixedResponse: SearchV2DevQuery = {
-          search_v2: [
+        const mixedResponse: SearchDevQuery = {
+          search: [
             {
               __typename: BOARD_SEARCH_RESULT_TYPENAME,
               entity_type: SearchableEntity.Board,
@@ -1501,8 +1501,8 @@ describe('SearchTool', () => {
       });
 
       it('should skip unknown entity types in dev endpoint response', async () => {
-        const responseWithUnknownType: SearchV2DevQuery = {
-          search_v2: [
+        const responseWithUnknownType: SearchDevQuery = {
+          search: [
             {
               __typename: BOARD_SEARCH_RESULT_TYPENAME,
               entity_type: SearchableEntity.Board,

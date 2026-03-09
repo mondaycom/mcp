@@ -13,8 +13,8 @@ import { getBoardItemsPage } from './get-board-items-page-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { NonDeprecatedColumnType } from 'src/utils/types';
-import { SearchItemsV2DevQuery, SearchItemsV2DevQueryVariables } from 'src/monday-graphql/generated/graphql.dev/graphql';
-import { searchItemsV2Dev } from './get-board-items-page-tool.graphql.dev';
+import { SearchItemsDevQuery, SearchItemsDevQueryVariables } from 'src/monday-graphql/generated/graphql.dev/graphql';
+import { searchItemsDev } from './get-board-items-page-tool.graphql.dev';
 import { SEARCH_TIMEOUT } from 'src/utils/time.utils';
 import { throwIfSearchTimeoutError } from 'src/utils/error.utils';
 import { ITEM_SEARCH_RESULT_TYPENAME } from '../search-tool/search-tool.types';
@@ -281,7 +281,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
   }
 
   private async getItemIdsFromSmartSearchAsync(input: ToolInputType<GetBoardItemsPageToolInput>): Promise<number[]> {
-    const smartSearchVariables: SearchItemsV2DevQueryVariables = {
+    const smartSearchVariables: SearchItemsDevQueryVariables = {
       query: input.searchTerm!,
       limit: 100,
       filters: {
@@ -289,12 +289,12 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
       },
     };
 
-    const smartSearchRes = await this.mondayApi.request<SearchItemsV2DevQuery>(searchItemsV2Dev, smartSearchVariables, {
+    const smartSearchRes = await this.mondayApi.request<SearchItemsDevQuery>(searchItemsDev, smartSearchVariables, {
       versionOverride: 'dev',
       timeout: SEARCH_TIMEOUT
     }); 
 
-    const itemIdsFromSmartSearch = smartSearchRes.search_v2
+    const itemIdsFromSmartSearch = smartSearchRes.search
       ?.filter((result): result is Extract<typeof result, { __typename?: typeof ITEM_SEARCH_RESULT_TYPENAME }> => result.__typename === ITEM_SEARCH_RESULT_TYPENAME)
       ?.map((result) => Number(result.data.id)) ?? [];
 

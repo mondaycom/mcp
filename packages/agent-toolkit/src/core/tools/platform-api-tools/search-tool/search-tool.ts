@@ -2,7 +2,7 @@ import { ToolInputType, ToolOutputType, ToolType } from 'src/core/tool';
 import { z } from 'zod';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { getBoards, getDocs, getFolders } from './search-tool.graphql';
-import { searchV2Dev } from './search-tool.graphql.dev';
+import { searchDev } from './search-tool.graphql.dev';
 import {
   GetBoardsQuery,
   GetBoardsQueryVariables,
@@ -12,8 +12,8 @@ import {
   GetFoldersQueryVariables,
 } from 'src/monday-graphql/generated/graphql/graphql';
 import {
-  SearchV2DevQuery,
-  SearchV2DevQueryVariables,
+  SearchDevQuery,
+  SearchDevQueryVariables,
 } from 'src/monday-graphql/generated/graphql.dev/graphql';
 import { normalizeString } from 'src/utils/string.utils';
 import { BOARD_SEARCH_RESULT_TYPENAME, DOC_SEARCH_RESULT_TYPENAME, DataWithFilterInfo, GlobalSearchType, ObjectPrefixes, SearchResult } from './search-tool.types';
@@ -114,7 +114,7 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
   private async searchWithDevEndpointAsync(
     input: ToolInputType<SearchToolInput>,
   ): Promise<DataWithFilterInfo<SearchResult>> {
-    const entityFilterMap: Record<GlobalSearchType, SearchV2DevQueryVariables['filters'] | undefined> = {
+    const entityFilterMap: Record<GlobalSearchType, SearchDevQueryVariables['filters'] | undefined> = {
       [GlobalSearchType.BOARD]: {
         entities: [{ boards: { workspace_ids: input.workspaceIds?.map((id) => id.toString()) } }],
       },
@@ -133,18 +133,18 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
       throw new Error('Pagination is not supported for search, increase the limit parameter instead');
     }
 
-    const variables: SearchV2DevQueryVariables = {
+    const variables: SearchDevQueryVariables = {
       query: input.searchTerm!,
       limit: input.limit,
       filters,
     };
 
-    const response = await this.mondayApi.request<SearchV2DevQuery>(searchV2Dev, variables, {
+    const response = await this.mondayApi.request<SearchDevQuery>(searchDev, variables, {
       versionOverride: 'dev',
       timeout: SEARCH_TIMEOUT
     });
 
-    const results = response.search_v2 || [];
+    const results = response.search || [];
     const items: SearchResult[] = [];
 
     for (const result of results) {
