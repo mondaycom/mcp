@@ -1702,6 +1702,8 @@ export type Board = {
   items_limit?: Maybe<Scalars['Int']['output']>;
   /** The board's items (rows). */
   items_page: ItemsResponse;
+  /** Metadata associated with this board */
+  metadata?: Maybe<BoardMetadata>;
   /** The board's name. */
   name: Scalars['String']['output'];
   /** The Board's object type unique key */
@@ -1916,6 +1918,13 @@ export enum BoardKind {
   Share = 'share'
 }
 
+/** Metadata associated with a board, such as custom terminology settings. */
+export type BoardMetadata = {
+  __typename?: 'BoardMetadata';
+  /** The custom terminology used for items in this board */
+  item_type?: Maybe<Scalars['String']['output']>;
+};
+
 export type BoardMuteSettings = {
   __typename?: 'BoardMuteSettings';
   /** Board ID */
@@ -1959,6 +1968,29 @@ export enum BoardObjectType {
   /** Sub Items Board. */
   SubItemsBoard = 'sub_items_board'
 }
+
+/** Input for board relation column default settings. */
+export type BoardRelationColumnDefaultsInput = {
+  /** Whether creating a reflection column is allowed. */
+  allow_create_reflection_column?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Whether multiple items can be linked. */
+  allow_multiple_items?: InputMaybe<Scalars['Boolean']['input']>;
+  /** List of linked board identifiers. */
+  board_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  /** The unique identifier of the data view when applicable. */
+  data_view_id?: InputMaybe<Scalars['ID']['input']>;
+  /** The type of relation (e.g. item_to_board). */
+  relation_type?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** A connected board entry (column_id + connected board ref). Used by add/remove mutations and by the get connected boards query page. */
+export type BoardRelationConnectedBoardsResult = {
+  __typename?: 'BoardRelationConnectedBoardsResult';
+  /** The board relation column identifier. */
+  column_id?: Maybe<Scalars['ID']['output']>;
+  /** The connected board reference. */
+  connected_board?: Maybe<ConnectedBoardRef>;
+};
 
 export type BoardRelationValue = ColumnValue & {
   __typename?: 'BoardRelationValue';
@@ -2212,6 +2244,16 @@ export enum CalculatedFunction {
   Sum = 'SUM'
 }
 
+/** Fields that can be overridden in a column policy */
+export enum CanOverrideField {
+  /** Allow overriding column description */
+  Description = 'description',
+  /** Allow overriding column settings */
+  Settings = 'settings',
+  /** Allow overriding column title */
+  Title = 'title'
+}
+
 /** A cell containing a reference to a block */
 export type Cell = {
   __typename?: 'Cell';
@@ -2360,6 +2402,16 @@ export type ColumnMappingInput = {
   source: Scalars['ID']['input'];
   /** The target column's unique identifier. */
   target?: InputMaybe<Scalars['ID']['input']>;
+};
+
+/** Policy rules that control what actions can be performed on a column */
+export type ColumnPolicyInput = {
+  /** List of fields that can be overridden */
+  can_override: Array<CanOverrideField>;
+  /** Whether the column cannot be deleted */
+  cannot_delete: Scalars['Boolean']['input'];
+  /** User-facing messages explaining why certain actions are disabled */
+  messages?: InputMaybe<PolicyMessagesInput>;
 };
 
 /** The property name of the column to be changed. */
@@ -2545,6 +2597,29 @@ export type ConnectProjectResult = {
   success?: Maybe<Scalars['Boolean']['output']>;
 };
 
+/** Mapping between source and target columns for a connected board. */
+export type ConnectedBoardColumnMappingInput = {
+  /** The unique identifier of the source column in the mapping. */
+  source_column_id: Scalars['ID']['input'];
+  /** The unique identifier of the target column in the mapping. */
+  target_column_id: Scalars['ID']['input'];
+};
+
+/** A connected board with optional column mappings. */
+export type ConnectedBoardInput = {
+  /** The unique identifier of the connected board. */
+  board_id: Scalars['ID']['input'];
+  /** Column mappings between the linked boards. */
+  mappings?: InputMaybe<Array<ConnectedBoardColumnMappingInput>>;
+};
+
+/** Reference to a connected board. */
+export type ConnectedBoardRef = {
+  __typename?: 'ConnectedBoardRef';
+  /** The board identifier. */
+  id?: Maybe<Scalars['ID']['output']>;
+};
+
 /** Represents an integration connection between a monday.com account and an external service. */
 export type Connection = {
   __typename?: 'Connection';
@@ -2714,6 +2789,22 @@ export type CreateDropdownColumnSettingsInput = {
 
 export type CreateDropdownLabelInput = {
   label: Scalars['String']['input'];
+};
+
+/** Input for creating a new column on an entity model */
+export type CreateEntityColumnInput = {
+  /** Column type-specific settings (labels for status/dropdown, etc.) */
+  defaults?: InputMaybe<Scalars['JSON']['input']>;
+  /** Optional column description */
+  description?: InputMaybe<Scalars['String']['input']>;
+  /** Whether this column should be opted-out by default on boards. If false or not provided, the column will be automatically included on all boards using this entity (opt-in by default). */
+  opt_out_by_default?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Policy rules controlling what can be done with the column */
+  policy: ColumnPolicyInput;
+  /** The column title */
+  title: Scalars['String']['input'];
+  /** The column type (e.g., "status", "dropdown", "text", "date") */
+  type: ColumnType;
 };
 
 export type CreateEntitySnapshotResult = {
@@ -3530,6 +3621,22 @@ export type DirectoryResourcesResponse = {
   resources: Array<DirectoryResource>;
 };
 
+/** Reasons why specific actions are disabled on a column */
+export type DisabledReasonInput = {
+  /** Reason why the column cannot be deleted */
+  delete?: InputMaybe<Scalars['String']['input']>;
+  /** Reason why the column description cannot be edited */
+  edit_description?: InputMaybe<Scalars['String']['input']>;
+  /** Reason why the column labels cannot be edited */
+  edit_labels?: InputMaybe<Scalars['String']['input']>;
+  /** Reason why the column label positions cannot be edited */
+  edit_labels_positions_v2?: InputMaybe<Scalars['String']['input']>;
+  /** Reason why the column settings cannot be edited */
+  edit_settings?: InputMaybe<Scalars['String']['input']>;
+  /** Reason why the column title cannot be edited */
+  edit_title?: InputMaybe<Scalars['String']['input']>;
+};
+
 /** The period of a discount */
 export enum DiscountPeriod {
   Monthly = 'MONTHLY',
@@ -4106,6 +4213,8 @@ export type ExtendTrialPeriod = {
 
 /** Widget types available for creating data visualizations and displays */
 export enum ExternalWidget {
+  /** App feature widgets for displaying custom application features. Used to embed and render app-specific functionality within dashboards and views. */
+  AppFeature = 'APP_FEATURE',
   /** Battery widgets for progress tracking and completion status visualization. Displays progress bars, completion percentages, status indicators, and goal achievement metrics. Perfect for showing project completion, task progress, capacity utilization, and milestone tracking. */
   Battery = 'BATTERY',
   /** Calendar widgets for timeline and schedule visualization. Displays date and timeline column data in a traditional calendar format, supporting time slots, color-coded events by board/group/status, and multi-board aggregation. Ideal for project scheduling, deadline tracking, event planning, and time-based workflow visualization. */
@@ -6339,6 +6448,48 @@ export type MigratedEntityIdMappingsResult = {
   oldId?: Maybe<Scalars['String']['output']>;
 };
 
+/** Controls how mirrored values are aggregated or selected. */
+export enum MirrorCalc {
+  /** Use only the earliest value/date found. */
+  Earliest = 'EARLIEST',
+  /** Aggregate values from the earliest date through the latest date. */
+  EarliestToLatest = 'EARLIEST_TO_LATEST',
+  /** Use only the latest value/date found. */
+  Latest = 'LATEST'
+}
+
+/** Input for mirror column default settings. */
+export type MirrorColumnDefaultsInput = {
+  /** Calculation type for linked date aggregation. */
+  calc_type?: InputMaybe<MirrorCalc>;
+  /** Array mapping linked boards to the columns to display. Example: [{ board_id, column_ids: ["name", "status"] }]. */
+  displayed_linked_columns?: InputMaybe<Array<MirrorDisplayedLinkedColumnInput>>;
+  /** Filter configuration for the lookup/mirror column. */
+  filter?: InputMaybe<ItemsQueryGroup>;
+  /** Relation column IDs to enable (e.g. board_relation_xxx). Each listed column is treated as enabled. */
+  relation_column?: InputMaybe<Array<Scalars['ID']['input']>>;
+  /** Aggregation type for status summaries. */
+  sum_type?: InputMaybe<MirrorSum>;
+  /** Data view column ID within the target schema. */
+  target_column_id?: InputMaybe<Scalars['ID']['input']>;
+};
+
+/** Mapping of a linked board to the columns to display. */
+export type MirrorDisplayedLinkedColumnInput = {
+  /** The unique identifier of the linked board. */
+  board_id: Scalars['ID']['input'];
+  /** Column IDs to display for this board. */
+  column_ids: Array<Scalars['ID']['input']>;
+};
+
+/** Controls which statuses are included when summing mirrored values. */
+export enum MirrorSum {
+  /** Include items from all statuses. */
+  AllStatuses = 'ALL_STATUSES',
+  /** Include only items whose status is considered "Done". */
+  DoneOnly = 'DONE_ONLY'
+}
+
 export type MirrorValue = ColumnValue & {
   __typename?: 'MirrorValue';
   /** The column that this value belongs to. */
@@ -6389,6 +6540,8 @@ export type Mutation = {
   add_allocated_resources?: Maybe<Array<AllocatedResourceOperationResult>>;
   /** Add allocations to resources that already exist on the Resource Planner */
   add_allocations_to_resources?: Maybe<AddAllocationsToResourcesResponse>;
+  /** Adds connected boards to a board relation column. */
+  add_board_relation_connected_boards?: Maybe<Array<BoardRelationConnectedBoardsResult>>;
   /** Adds markdown content to an existing document by converting it into document blocks. Use this to append content to the end of a document or insert content after a specific block. The markdown will be parsed and converted into the appropriate document block types (text, headers, lists, etc.). Returns the IDs of the newly created blocks on success. */
   add_content_to_doc_from_markdown?: Maybe<DocBlocksFromMarkdownResult>;
   /** Add a file to a column value. */
@@ -6476,6 +6629,8 @@ export type Mutation = {
   create_article?: Maybe<ArticleMetadata>;
   /** Create a new board. */
   create_board?: Maybe<Board>;
+  /** Creates a board relation column. */
+  create_board_relation_column?: Maybe<Column>;
   /** Generic mutation for creating any column type with validation. Supports creating column with properties like title, description, and type-specific defaults/settings. The mutation validates input against the column type's schema before applying changes. Use get_column_type_schema query to understand available properties for each column type. */
   create_column?: Maybe<Column>;
   create_custom_activity?: Maybe<CustomActivity>;
@@ -6493,6 +6648,8 @@ export type Mutation = {
   create_dropdown_column?: Maybe<Column>;
   /** Create managed column of type dropdown mutation. */
   create_dropdown_managed_column?: Maybe<DropdownManagedColumn>;
+  /** Create columns on an account entity. */
+  create_entity_columns?: Maybe<AccountEntity>;
   /** Create a snapshot for a given entity in a migration job */
   create_entity_snapshot?: Maybe<CreateEntitySnapshotResult>;
   /** Add workspace object to favorites */
@@ -6517,6 +6674,8 @@ export type Mutation = {
   create_marketplace_app_discount: CreateMarketplaceAppDiscountResult;
   /** Create a new migration job */
   create_migration_job?: Maybe<CreateMigrationJobResult>;
+  /** Creates a mirror column. */
+  create_mirror_column?: Maybe<Column>;
   /** Create a new notification. */
   create_notification?: Maybe<Notification>;
   /** Creates a new object in the Monday.com Objects Platform. The type of object created is determined by the object_type_unique_key parameter. This mutation can create boards, docs, dashboards, workflows, or specialized objects like CRM, capacity manager, etc. Under the hood, this creates a board with the corresponding app_feature_id. */
@@ -6551,6 +6710,8 @@ export type Mutation = {
   create_widget?: Maybe<Widget>;
   /** Create a new workspace. */
   create_workspace?: Maybe<Workspace>;
+  /** Deprecate a column on an account entity. */
+  deactivate_entity_column?: Maybe<AccountEntity>;
   /** Deactivate a form to hide it from users and stop accepting submissions. Form data is preserved. */
   deactivate_form?: Maybe<Scalars['Boolean']['output']>;
   /** Deactivate a live workflow */
@@ -6661,6 +6822,8 @@ export type Mutation = {
   publish_object?: Maybe<ObjectOperationResponse>;
   /** Reconcile the current user tasks board with latest source item changes. */
   reconcile_with_items?: Maybe<ReconciliationResult>;
+  /** Removes connected boards from a board relation column. */
+  remove_board_relation_connected_boards?: Maybe<Array<BoardRelationConnectedBoardsResult>>;
   /** Remove mock app subscription for the current account */
   remove_mock_app_subscription?: Maybe<AppSubscription>;
   /** Remove a required column from a board */
@@ -6712,6 +6875,10 @@ export type Mutation = {
   update_board?: Maybe<Scalars['JSON']['output']>;
   /** Update a board's position, workspace, or account product. */
   update_board_hierarchy?: Maybe<UpdateBoardHierarchyResult>;
+  /** Updates a board relation column. */
+  update_board_relation_column?: Maybe<Column>;
+  /** Updates source mappings for existing connected boards in a board relation column. */
+  update_board_relation_source_mappings?: Maybe<Array<BoardRelationConnectedBoardsResult>>;
   /** Generic mutation for updating any column type with validation. Supports updating column properties like title, description, and type-specific defaults/settings. The mutation validates input against the column type's schema before applying changes. Use get_column_type_schema query to understand available properties for each column type. */
   update_column?: Maybe<Column>;
   /** Update an existing dashboard. */
@@ -6752,6 +6919,8 @@ export type Mutation = {
   update_live_workflow_from_template?: Maybe<UpdateWorkflowResult>;
   /** Update live workflow metadata */
   update_live_workflow_metadata?: Maybe<UpdateWorkflowResult>;
+  /** Updates a mirror column. */
+  update_mirror_column?: Maybe<Column>;
   /** Updates attributes for users. */
   update_multiple_users?: Maybe<UpdateUserAttributesResult>;
   /** Update mute notification settings for a board. Allows muting all notifications for all users, only for the current user, or setting mentions/assigns-only. Returns the updated mute state for the board. Requires appropriate permissions for muting all users. */
@@ -6824,6 +6993,14 @@ export type MutationAdd_Allocated_ResourcesArgs = {
 export type MutationAdd_Allocations_To_ResourcesArgs = {
   allocations: Array<AllocationToResourceInput>;
   planner_id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationAdd_Board_Relation_Connected_BoardsArgs = {
+  board_id: Scalars['ID']['input'];
+  column_id: Scalars['ID']['input'];
+  connected_boards: Array<ConnectedBoardInput>;
 };
 
 
@@ -7163,6 +7340,17 @@ export type MutationCreate_BoardArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationCreate_Board_Relation_ColumnArgs = {
+  after_column_id?: InputMaybe<Scalars['ID']['input']>;
+  board_id: Scalars['ID']['input'];
+  defaults?: InputMaybe<BoardRelationColumnDefaultsInput>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  id?: InputMaybe<Scalars['ID']['input']>;
+  title: Scalars['String']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_ColumnArgs = {
   after_column_id?: InputMaybe<Scalars['ID']['input']>;
   board_id: Scalars['ID']['input'];
@@ -7241,6 +7429,14 @@ export type MutationCreate_Dropdown_Managed_ColumnArgs = {
   description?: InputMaybe<Scalars['String']['input']>;
   settings?: InputMaybe<CreateDropdownColumnSettingsInput>;
   title: Scalars['String']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationCreate_Entity_ColumnsArgs = {
+  columns: Array<CreateEntityColumnInput>;
+  entity_id?: InputMaybe<Scalars['ID']['input']>;
+  entity_name?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -7345,6 +7541,17 @@ export type MutationCreate_Migration_JobArgs = {
   targetAccountApiToken?: InputMaybe<Scalars['String']['input']>;
   targetAccountId: Scalars['Int']['input'];
   targetUserId: Scalars['Int']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationCreate_Mirror_ColumnArgs = {
+  after_column_id?: InputMaybe<Scalars['ID']['input']>;
+  board_id: Scalars['ID']['input'];
+  defaults?: InputMaybe<MirrorColumnDefaultsInput>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  id?: InputMaybe<Scalars['ID']['input']>;
+  title: Scalars['String']['input'];
 };
 
 
@@ -7525,6 +7732,14 @@ export type MutationCreate_WorkspaceArgs = {
   description?: InputMaybe<Scalars['String']['input']>;
   kind: WorkspaceKind;
   name: Scalars['String']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationDeactivate_Entity_ColumnArgs = {
+  column_id: Scalars['ID']['input'];
+  entity_id?: InputMaybe<Scalars['ID']['input']>;
+  entity_name?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -7934,6 +8149,14 @@ export type MutationPublish_ObjectArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationRemove_Board_Relation_Connected_BoardsArgs = {
+  board_id: Scalars['ID']['input'];
+  column_id: Scalars['ID']['input'];
+  connected_board_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationRemove_Mock_App_SubscriptionArgs = {
   app_id: Scalars['ID']['input'];
   partial_signing_secret: Scalars['String']['input'];
@@ -8118,6 +8341,26 @@ export type MutationUpdate_Board_HierarchyArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationUpdate_Board_Relation_ColumnArgs = {
+  board_id: Scalars['ID']['input'];
+  description?: InputMaybe<Scalars['String']['input']>;
+  id: Scalars['ID']['input'];
+  revision: Scalars['String']['input'];
+  settings?: InputMaybe<BoardRelationColumnDefaultsInput>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  width?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUpdate_Board_Relation_Source_MappingsArgs = {
+  board_id: Scalars['ID']['input'];
+  column_id: Scalars['ID']['input'];
+  connected_boards: Array<ConnectedBoardInput>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationUpdate_ColumnArgs = {
   board_id: Scalars['ID']['input'];
   capabilities?: InputMaybe<ColumnCapabilitiesInput>;
@@ -8282,6 +8525,18 @@ export type MutationUpdate_Live_Workflow_From_TemplateArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationUpdate_Live_Workflow_MetadataArgs = {
   workflow: UpdateWorkflowMetadataInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUpdate_Mirror_ColumnArgs = {
+  board_id: Scalars['ID']['input'];
+  description?: InputMaybe<Scalars['String']['input']>;
+  id: Scalars['ID']['input'];
+  revision: Scalars['String']['input'];
+  settings?: InputMaybe<MirrorColumnDefaultsInput>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  width?: InputMaybe<Scalars['Int']['input']>;
 };
 
 
@@ -9049,6 +9304,12 @@ export type PlatformApiDailyAnalyticsByUser = {
   user?: Maybe<User>;
 };
 
+/** Policy messages that explain why certain actions are disabled on a column */
+export type PolicyMessagesInput = {
+  /** Structured reasons for disabled actions */
+  disabled_reason?: InputMaybe<DisabledReasonInput>;
+};
+
 /** The position relative method. */
 export enum PositionRelative {
   /** position after at the given entity. */
@@ -9483,7 +9744,7 @@ export type Query = {
   /** A test query for resource allocation functionality. */
   resource_allocation_test?: Maybe<Scalars['String']['output']>;
   /** Search across multiple entity types (items, boards, documents). */
-  search?: Maybe<Array<CrossEntityResult>>;
+  search?: Maybe<Array<SearchResult>>;
   /** A query to search across all boards in the account. Returns raw json results. */
   search_benchmark?: Maybe<SearchBenchmarkResults>;
   /** A query to search across all boards in the account. Returns raw json results. */
@@ -10055,10 +10316,9 @@ export type QueryRepliesArgs = {
 
 /** Root query type for the Dependencies service */
 export type QuerySearchArgs = {
-  entity_types?: InputMaybe<Array<SearchableEntity>>;
+  filters: SearchFiltersInput;
+  limit: Scalars['Int']['input'];
   query: Scalars['String']['input'];
-  size: Scalars['Int']['input'];
-  workspace_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
 };
 
 
@@ -13152,23 +13412,23 @@ export type WorldClockValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
-export type SearchItemsV2DevQueryVariables = Exact<{
+export type SearchItemsDevQueryVariables = Exact<{
   query: Scalars['String']['input'];
   limit: Scalars['Int']['input'];
   filters: SearchFiltersInput;
 }>;
 
 
-export type SearchItemsV2DevQuery = { __typename?: 'Query', search_v2?: Array<{ __typename: 'BoardSearchResult' } | { __typename: 'DocSearchResult' } | { __typename: 'ItemSearchResult', data: { __typename?: 'IndexedItem', id: string } }> | null };
+export type SearchItemsDevQuery = { __typename?: 'Query', search?: Array<{ __typename: 'BoardSearchResult' } | { __typename: 'DocSearchResult' } | { __typename: 'ItemSearchResult', data: { __typename?: 'IndexedItem', id: string } }> | null };
 
-export type SearchV2DevQueryVariables = Exact<{
+export type SearchDevQueryVariables = Exact<{
   query: Scalars['String']['input'];
   limit: Scalars['Int']['input'];
   filters: SearchFiltersInput;
 }>;
 
 
-export type SearchV2DevQuery = { __typename?: 'Query', search_v2?: Array<{ __typename: 'BoardSearchResult', entity_type: SearchableEntity, data: { __typename?: 'IndexedBoard', id: string, name: string, url: string } } | { __typename: 'DocSearchResult', entity_type: SearchableEntity, data: { __typename?: 'IndexedDoc', id: string, name: string } } | { __typename: 'ItemSearchResult' }> | null };
+export type SearchDevQuery = { __typename?: 'Query', search?: Array<{ __typename: 'BoardSearchResult', entity_type: SearchableEntity, data: { __typename?: 'IndexedBoard', id: string, name: string, url: string } } | { __typename: 'DocSearchResult', entity_type: SearchableEntity, data: { __typename?: 'IndexedDoc', id: string, name: string } } | { __typename: 'ItemSearchResult' }> | null };
 
 export type GetUserContextQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -13176,6 +13436,6 @@ export type GetUserContextQueryVariables = Exact<{ [key: string]: never; }>;
 export type GetUserContextQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, name: string, title?: string | null } | null, favorites?: Array<{ __typename?: 'GraphqlHierarchyObjectItem', object?: { __typename?: 'HierarchyObjectID', id?: string | null, type?: GraphqlMondayObject | null } | null }> | null, intelligence?: { __typename?: 'Intelligence', relevant_boards?: Array<{ __typename?: 'RelevantBoard', id?: string | null, board?: { __typename?: 'Board', name: string } | null }> | null, relevant_people?: Array<{ __typename?: 'RelevantPerson', id?: string | null, user?: { __typename?: 'User', name: string } | null }> | null } | null };
 
 
-export const SearchItemsV2DevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchItemsV2Dev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filters"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SearchFiltersInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search_v2"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"filters"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filters"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ItemSearchResult"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchItemsV2DevQuery, SearchItemsV2DevQueryVariables>;
-export const SearchV2DevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchV2Dev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filters"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SearchFiltersInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search_v2"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"filters"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filters"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BoardSearchResult"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"entity_type"}},{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"url"}}]}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"DocSearchResult"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"entity_type"}},{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchV2DevQuery, SearchV2DevQueryVariables>;
+export const SearchItemsDevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchItemsDev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filters"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SearchFiltersInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"filters"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filters"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ItemSearchResult"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchItemsDevQuery, SearchItemsDevQueryVariables>;
+export const SearchDevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchDev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filters"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SearchFiltersInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"filters"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filters"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BoardSearchResult"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"entity_type"}},{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"url"}}]}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"DocSearchResult"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"entity_type"}},{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchDevQuery, SearchDevQueryVariables>;
 export const GetUserContextDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getUserContext"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"me"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}},{"kind":"Field","name":{"kind":"Name","value":"favorites"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"object"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"type"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"intelligence"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"relevant_boards"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"10"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"board"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"relevant_people"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"10"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetUserContextQuery, GetUserContextQueryVariables>;
