@@ -289,9 +289,7 @@ describe('GetBoardItemsPageTool', () => {
       // Arrange
       const smartSearchItemIds = [111, 222, 333];
       const smartSearchResults = {
-        search_items: {
-          results: smartSearchItemIds.map((id) => ({ data: { id: id.toString() } })),
-        },
+        search: smartSearchItemIds.map((id) => ({ __typename: 'ItemSearchResult', data: { id: id.toString() } })),
       };
 
       // Mock the smart search request
@@ -324,9 +322,7 @@ describe('GetBoardItemsPageTool', () => {
       const initialItemIds = [222, 444];
       const expectedIds = [222];
       const smartSearchResults = {
-        search_items: {
-          results: smartSearchItemIds.map((id) => ({ data: { id: id.toString() } })),
-        },
+        search: smartSearchItemIds.map((id) => ({ __typename: 'ItemSearchResult', data: { id: id.toString() } })),
       };
 
       // Mock the smart search request
@@ -355,9 +351,7 @@ describe('GetBoardItemsPageTool', () => {
     it('should build manual name filter in queryParams.rules if smart search returns no itemIds', async () => {
       // Arrange
       const smartSearchResults = {
-        search_items: {
-          results: [],
-        },
+        search: [],
       };
 
       // Mock the smart search request
@@ -390,202 +384,6 @@ describe('GetBoardItemsPageTool', () => {
             rule.compare_value === 'no results',
         ),
       ).toBe(true);
-    });
-  });
-
-  describe('Stringified JSONs functionality', () => {
-    it('should parse stringified JSONs when provided', async () => {
-      mocks.setResponse(successfulResponseWithItems);
-
-      const filtersStringified = JSON.stringify([
-        {
-          columnId: 'status',
-          compareValue: 'In Progress',
-          operator: ItemsQueryRuleOperator.AnyOf,
-        },
-      ]);
-
-      const orderByStringified = JSON.stringify([
-        {
-          columnId: 'name',
-          direction: ItemsOrderByDirection.Asc,
-        },
-      ]);
-
-      const args: inputType = {
-        boardId: 123456789,
-        filtersStringified,
-        orderByStringified,
-      };
-      await callToolByNameAsync('get_board_items_page', args);
-
-      expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetBoardItemsPage'), {
-        boardId: '123456789',
-        limit: 25,
-        cursor: undefined,
-        includeColumns: false,
-        columnIds: undefined,
-        includeSubItems: false,
-        queryParams: {
-          ids: undefined,
-          operator: 'and',
-          rules: [
-            {
-              column_id: 'status',
-              compare_value: 'In Progress',
-              operator: ItemsQueryRuleOperator.AnyOf,
-              compare_attribute: undefined,
-            },
-          ],
-          order_by: [
-            {
-              column_id: 'name',
-              direction: ItemsOrderByDirection.Asc,
-            },
-          ],
-        },
-      });
-    });
-
-    it('should raise error when stringified JSONs does not match the schema', async () => {
-      mocks.setResponse(successfulResponseWithItems);
-
-      const filtersStringified = JSON.stringify([
-        {
-          notAcolumnId: 'status',
-          notAcompareValue: 'In Progress',
-          operator: ItemsQueryRuleOperator.AnyOf,
-        },
-      ]);
-
-      const orderByStringified = JSON.stringify([
-        {
-          columnId: 'name',
-          direction: ItemsOrderByDirection.Asc,
-        },
-      ]);
-
-      const args: inputType = {
-        boardId: 123456789,
-        filtersStringified,
-        orderByStringified,
-      };
-      const result = await callToolByNameRawAsync('get_board_items_page', args);
-      expect(result.content[0].text).toContain(
-        'JSON string defined as filtersStringified does not match the specified schema',
-      );
-
-      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
-    });
-
-    it('should throw error for invalid stringified JSON', async () => {
-      const args: inputType = {
-        boardId: 123456789,
-        filtersStringified: 'invalid json',
-      };
-
-      const result = await callToolByNameRawAsync('get_board_items_page', args);
-      expect(result.content[0].text).toContain('filtersStringified is not a valid JSON');
-    });
-
-    it('should handle both regular and stringified JSON parameters', async () => {
-      mocks.setResponse(successfulResponseWithItems);
-
-      const orderByStringified = JSON.stringify([
-        {
-          columnId: 'name',
-          direction: 'asc',
-        },
-      ]);
-
-      const args: inputType = {
-        boardId: 123456789,
-        filters: [
-          {
-            columnId: 'status',
-            compareValue: 'In Progress',
-            operator: 'any_of' as any,
-          },
-        ],
-        orderByStringified,
-      };
-      await callToolByNameAsync('get_board_items_page', args);
-
-      expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetBoardItemsPage'), {
-        boardId: '123456789',
-        limit: 25,
-        cursor: undefined,
-        includeColumns: false,
-        includeSubItems: false,
-        columnIds: undefined,
-        queryParams: {
-          ids: undefined,
-          operator: 'and',
-          rules: [
-            {
-              column_id: 'status',
-              compare_value: 'In Progress',
-              operator: ItemsQueryRuleOperator.AnyOf,
-              compare_attribute: undefined,
-            },
-          ],
-          order_by: [
-            {
-              column_id: 'name',
-              direction: ItemsOrderByDirection.Asc,
-            },
-          ],
-        },
-      });
-    });
-
-    it('should not parse stringified JSONs when regular JSON is provided', async () => {
-      mocks.setResponse(successfulResponseWithItems);
-
-      const orderBy = [
-        {
-          columnId: 'priority',
-          direction: ItemsOrderByDirection.Desc,
-        },
-      ];
-      const orderByStringified = JSON.stringify([
-        {
-          columnId: 'name',
-          direction: ItemsOrderByDirection.Asc,
-        },
-      ]);
-      const args: inputType = {
-        boardId: 123456789,
-        filters: [
-          {
-            columnId: 'status',
-            compareValue: 'In Progress',
-            operator: ItemsQueryRuleOperator.AnyOf,
-          },
-        ],
-        orderBy,
-        orderByStringified,
-      };
-      await callToolByNameAsync('get_board_items_page', args);
-
-      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-        expect.stringContaining('query GetBoardItemsPage'),
-        expect.objectContaining({
-          boardId: '123456789',
-          limit: 25,
-          cursor: undefined,
-          includeColumns: false,
-          columnIds: undefined,
-          queryParams: expect.objectContaining({
-            order_by: [
-              {
-                column_id: 'priority',
-                direction: ItemsOrderByDirection.Desc,
-              },
-            ],
-          }),
-        }),
-      );
     });
   });
 

@@ -21,13 +21,19 @@ export const createUpdateToolSchema = {
   itemId: z.number().describe('The id of the item to which the update will be added'),
   body: z
     .string()
-    .describe('The update text to be created. Do not use @ to mention users, use the mentionsList field instead.'),
+    .describe(
+      'The update text to be created. Do not use @ to mention users, use the mentionsList field instead. use html tags to format the text, dont use markdown.',
+    ),
   mentionsList: z
     .string()
     .optional()
     .describe(
       'Optional JSON array of mentions in the format: [{"id": "123", "type": "User"}, {"id": "456", "type": "Team"}]. Valid types are: User, Team, Board, Project',
     ),
+  parentId: z
+    .number()
+    .optional()
+    .describe('The ID of the update to reply to. Use this parameter when you want to reply on an existing update leave it empty if you want to create a new update'),
 };
 
 export class CreateUpdateTool extends BaseMondayApiTool<typeof createUpdateToolSchema> {
@@ -41,7 +47,7 @@ export class CreateUpdateTool extends BaseMondayApiTool<typeof createUpdateToolS
   });
 
   getDescription(): string {
-    return 'Create a new update (comment/post) on a monday.com item. Updates can be used to add comments, notes, or discussions to items. You can optionally mention users, teams, or boards in the update.';
+    return 'Create a new update (comment/post) on a monday.com item. Updates can be used to add comments, notes, or discussions to items. You can optionally mention users, teams, or boards in the update. You can also reply to an existing update by using the parentId parameter.';
   }
 
   getInputSchema(): typeof createUpdateToolSchema {
@@ -71,6 +77,7 @@ export class CreateUpdateTool extends BaseMondayApiTool<typeof createUpdateToolS
         itemId: input.itemId.toString(),
         body: input.body,
         mentionsList: parsedMentionsList,
+        parentId: input.parentId?.toString(),
       };
 
       const res = await this.mondayApi.request<CreateUpdateMutation>(createUpdate, variables);

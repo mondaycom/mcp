@@ -1,8 +1,8 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
 import { UserContextTool } from './user-context-tool';
-import { GraphqlMondayObject } from 'src/monday-graphql/generated/graphql/graphql';
-import { GetUserContextQuery, GetFavoriteDetailsQuery } from 'src/monday-graphql/generated/graphql/graphql';
+import { GraphqlMondayObject, GetFavoriteDetailsQuery } from 'src/monday-graphql/generated/graphql/graphql';
+import { GetUserContextQuery } from 'src/monday-graphql/generated/graphql.dev/graphql';
 
 describe('UserContextTool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
@@ -25,6 +25,10 @@ describe('UserContextTool', () => {
       relevant_boards: [
         { id: '100', board: { name: 'Top Board' } },
         { id: '101', board: { name: 'Recent Board' } },
+      ],
+      relevant_people: [
+        { id: '200', user: { name: 'Alice Smith' } },
+        { id: '201', user: { name: 'Bob Jones' } },
       ],
     },
   };
@@ -61,6 +65,10 @@ describe('UserContextTool', () => {
       relevantBoards: [
         { id: '100', name: 'Top Board' },
         { id: '101', name: 'Recent Board' },
+      ],
+      relevantPeople: [
+        { id: '200', name: 'Alice Smith' },
+        { id: '201', name: 'Bob Jones' },
       ],
     };
 
@@ -102,6 +110,7 @@ describe('UserContextTool', () => {
       },
       favorites: [],
       relevantBoards: [],
+      relevantPeople: [],
     };
 
     expect(result.content[0].text).toBe(JSON.stringify(expectedOutput, null, 2));
@@ -116,6 +125,10 @@ describe('UserContextTool', () => {
         relevant_boards: [
           { id: '200', board: { name: 'Active Board' } },
           { id: '300', board: null }, // Should be filtered out
+        ],
+        relevant_people: [
+          { id: '400', user: { name: 'Valid Person' } },
+          { id: '500', user: null }, // Should be filtered out
         ],
       },
     });
@@ -136,6 +149,7 @@ describe('UserContextTool', () => {
       },
       favorites: [{ id: '1', name: 'Valid Board', type: 'Board' }],
       relevantBoards: [{ id: '200', name: 'Active Board' }],
+      relevantPeople: [{ id: '400', name: 'Valid Person' }],
     };
 
     expect(result.content[0].text).toBe(JSON.stringify(expectedOutput, null, 2));

@@ -3,6 +3,7 @@ import { BaseMondayAppsTool, createMondayAppsAnnotations } from '../base-tool/ba
 import { MondayAppsToolCategory } from '../consts/apps.consts';
 import { AppDevelopmentContextResponse, getAppDevelopmentContextSchema } from './schemas/assistant-schemas';
 import { appsDocumentationQuery } from './get-app-development-context.graphql';
+  import { APP_DEVELOPMENT_SYSTEM_PROMPT } from './prompts/app-development-system-prompt';
 
 interface AskDeveloperDocsResponse {
   ask_developer_docs: {
@@ -26,19 +27,12 @@ export class GetAppDevelopmentContextTool extends BaseMondayAppsTool<
   });
 
   getDescription(): string {
-    return `Search monday.com apps documentation using AI-powered semantic search.
+    return `Your primary source of truth for building apps on top of monday.com. Call this tool whenever you need guidance on app development — from understanding the platform and its capabilities, to writing code, deploying, configuring permissions, and following best practices.
 
-This tool provides accurate, contextual answers about:
-- Building app features (board views, item views, dashboard widgets, custom columns)
-- OAuth scopes and permissions (boards:read, boards:write, users:read, etc.)
-- monday.com SDK reference and usage examples
-- monday-code deployment and integration
-- Vibe Design System components and styling
-- Workflow blocks, custom triggers, and automation actions
-- Custom objects and data schemas
-- Best practices, troubleshooting, and common patterns
+[REQUIRED]: Call this tool BEFORE implementing any monday.com app feature or performing any app-related action.
 
-Use this when you need specific information from the official monday.com apps documentation.
+This tool returns development guidelines and dynamic documentation answers from the official monday.com apps knowledge base. It covers everything you need to build, deploy, and manage monday.com apps — including SDK usage, CLI commands, feature types, deployment procedures, OAuth scopes, manifest configuration, and troubleshooting.
+
 Provide a clear question or topic in the query parameter for best results.`;
   }
 
@@ -71,8 +65,7 @@ Provide a clear question or topic in the query parameter for best results.`;
         );
       }
 
-      const questionHeader = docsResponse.question ? `## ${docsResponse.question}\n\n` : '## Answer\n\n';
-      const content = `${questionHeader}${docsResponse.answer}`;
+      const content = this.buildStructuredResponse(docsResponse);
 
       return {
         content,
@@ -92,5 +85,17 @@ Provide a clear question or topic in the query parameter for best results.`;
         },
       };
     }
+  }
+
+  private buildStructuredResponse(docsResponse: NonNullable<AskDeveloperDocsResponse['ask_developer_docs']>): string {
+    const sections: string[] = [];
+
+    sections.push(APP_DEVELOPMENT_SYSTEM_PROMPT);
+    sections.push('---');
+
+    const questionHeader = docsResponse.question ? `## ${docsResponse.question}` : '## Documentation Response';
+    sections.push(`${questionHeader}\n\n${docsResponse.answer}`);
+
+    return sections.join('\n\n');
   }
 }

@@ -27,6 +27,7 @@ describe('Create Update Tool', () => {
       itemId: '456',
       body: 'This is a test update',
       mentionsList: undefined,
+      parentId: undefined,
     });
   });
 
@@ -48,6 +49,26 @@ describe('Create Update Tool', () => {
         { id: '12345', type: 'User' },
         { id: '456', type: 'Team' },
       ],
+      parentId: undefined,
+    });
+  });
+
+  it('Successfully creates a reply to an existing update using parentId', async () => {
+    mocks.setResponse(successfulResponse);
+    const tool = new CreateUpdateTool(mocks.mockApiClient, 'fake_token');
+
+    const result = await tool.execute({
+      itemId: 456,
+      body: 'This is a reply',
+      parentId: 111222,
+    });
+
+    expect(result.content).toBe('Update 123456789 successfully created on item 456');
+    expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('mutation createUpdate'), {
+      itemId: '456',
+      body: 'This is a reply',
+      mentionsList: undefined,
+      parentId: '111222',
     });
   });
 
@@ -156,6 +177,7 @@ describe('Create Update Tool', () => {
         { id: '3', type: 'Board' },
         { id: '4', type: 'Project' },
       ],
+      parentId: undefined,
     });
   });
 
@@ -186,5 +208,7 @@ describe('Create Update Tool', () => {
     expect(() => schema.itemId.parse(123)).not.toThrow();
     expect(() => schema.body.parse('test')).not.toThrow();
     expect(() => schema.mentionsList.parse(undefined)).not.toThrow();
+    expect(() => schema.parentId.parse(undefined)).not.toThrow();
+    expect(() => schema.parentId.parse(999)).not.toThrow();
   });
 });
