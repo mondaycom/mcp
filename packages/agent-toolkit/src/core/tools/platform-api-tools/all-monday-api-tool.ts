@@ -39,7 +39,7 @@ export class AllMondayApiTool extends BaseMondayApiTool<typeof allMondayApiToolS
   }
 
   getDescription(): string {
-    return 'Execute any monday.com API operation by generating GraphQL queries and mutations dynamically. Make sure you ask only for the fields you need and nothing more. When providing the query/mutation - use get_graphql_schema and get_type_details tools first to understand the schema before crafting your query.';
+    return 'Execute any monday.com API operation by generating GraphQL queries and mutations dynamically. Make sure you ask only for the fields you need and nothing more. use get_monday_graphql_schema tool first to understand the schema before crafting your query.';
   }
 
   getInputSchema(): typeof allMondayApiToolSchema {
