@@ -60,6 +60,8 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
       const variables = {
         limit: input.limit ?? 25,
         page: input.page ?? 1,
+        includeReplies: input.includeReplies ?? false,
+        includeAssets: input.includeAssets ?? false,
       };
 
       let res: GetItemUpdatesQuery | GetBoardUpdatesQuery;
@@ -81,7 +83,6 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
       const formattedUpdates = updates.map((update) => {
         const formattedUpdate: any = {
           id: update.id,
-          body: update.body,
           text_body: update.text_body,
           created_at: update.created_at,
           updated_at: update.updated_at,
@@ -95,23 +96,18 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
         };
 
         if (input.includeReplies && update.replies) {
-          formattedUpdate.replies = update.replies.map((reply) => {
-            const formattedReply: any = {
-              id: reply.id,
-              body: reply.body,
-              text_body: reply.text_body,
-              created_at: reply.created_at,
-              updated_at: reply.updated_at,
-              creator: reply.creator
-                ? {
-                    id: reply.creator.id,
-                    name: reply.creator.name,
-                  }
-                : null,
-            };
-
-            return formattedReply;
-          });
+          formattedUpdate.replies = update.replies.map((reply) => ({
+            id: reply.id,
+            text_body: reply.text_body,
+            created_at: reply.created_at,
+            updated_at: reply.updated_at,
+            creator: reply.creator
+              ? {
+                  id: reply.creator.id,
+                  name: reply.creator.name,
+                }
+              : null,
+          }));
         }
 
         if (input.includeAssets && update.assets) {

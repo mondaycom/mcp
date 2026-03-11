@@ -88,6 +88,8 @@ describe('Get Updates Tool', () => {
         itemId: '123',
         limit: 25,
         page: 1,
+        includeReplies: false,
+        includeAssets: false,
       }),
     );
   });
@@ -114,6 +116,8 @@ describe('Get Updates Tool', () => {
         boardId: '456',
         limit: 25,
         page: 1,
+        includeReplies: false,
+        includeAssets: false,
       }),
     );
   });
