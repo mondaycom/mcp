@@ -17,6 +17,7 @@ import { SearchItemsDevQuery, SearchItemsDevQueryVariables } from 'src/monday-gr
 import { searchItemsDev } from './get-board-items-page-tool.graphql.dev';
 import { SEARCH_TIMEOUT } from 'src/utils/time.utils';
 import { throwIfSearchTimeoutError } from 'src/utils/error.utils';
+import { ITEM_SEARCH_RESULT_TYPENAME } from '../search-tool/search-tool.types';
 
 const COLUMN_VALUE_NOT_SUPPORTED_MESSAGE = 'Column value type is not supported';
 
@@ -281,16 +282,21 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
 
   private async getItemIdsFromSmartSearchAsync(input: ToolInputType<GetBoardItemsPageToolInput>): Promise<number[]> {
     const smartSearchVariables: SearchItemsDevQueryVariables = {
-      board_ids: [input.boardId.toString()],
-      searchTerm: input.searchTerm!,
+      query: input.searchTerm!,
+      limit: 100,
+      filters: {
+        entities: [{ items: { board_ids: [input.boardId.toString()] } }],
+      },
     };
 
     const smartSearchRes = await this.mondayApi.request<SearchItemsDevQuery>(searchItemsDev, smartSearchVariables, {
       versionOverride: 'dev',
       timeout: SEARCH_TIMEOUT
-    });
+    }); 
 
-    const itemIdsFromSmartSearch = smartSearchRes.search_items?.results?.map((result) => Number(result.data.id)) ?? [];
+    const itemIdsFromSmartSearch = smartSearchRes.search
+      ?.filter((result): result is Extract<typeof result, { __typename?: typeof ITEM_SEARCH_RESULT_TYPENAME }> => result.__typename === ITEM_SEARCH_RESULT_TYPENAME)
+      ?.map((result) => Number(result.data.id)) ?? [];
 
     if (itemIdsFromSmartSearch.length === 0) {
       // TODO: Refactor this once search team implements exception throwing when tool is not enabled

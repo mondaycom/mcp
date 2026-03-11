@@ -14,10 +14,9 @@ import {
 import {
   SearchDevQuery,
   SearchDevQueryVariables,
-  SearchableEntity,
 } from 'src/monday-graphql/generated/graphql.dev/graphql';
 import { normalizeString } from 'src/utils/string.utils';
-import { CROSS_ENTITY_BOARD_RESULT_TYPENAME, CROSS_ENTITY_DOC_RESULT_TYPENAME, DataWithFilterInfo, GlobalSearchType, ObjectPrefixes, SearchResult } from './search-tool.types';
+import { BOARD_SEARCH_RESULT_TYPENAME, DOC_SEARCH_RESULT_TYPENAME, DataWithFilterInfo, GlobalSearchType, ObjectPrefixes, SearchResult } from './search-tool.types';
 import { LOAD_INTO_MEMORY_LIMIT, SEARCH_LIMIT } from './search-tool.consts';
 import { TIME_IN_MILLISECONDS } from 'src/utils';
 import { SEARCH_TIMEOUT } from 'src/utils/time.utils';
@@ -115,14 +114,18 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
   private async searchWithDevEndpointAsync(
     input: ToolInputType<SearchToolInput>,
   ): Promise<DataWithFilterInfo<SearchResult>> {
-    const entityTypeMap: Record<GlobalSearchType, SearchableEntity | undefined> = {
-      [GlobalSearchType.BOARD]: SearchableEntity.Board,
-      [GlobalSearchType.DOCUMENTS]: SearchableEntity.Document,
+    const entityFilterMap: Record<GlobalSearchType, SearchDevQueryVariables['filters'] | undefined> = {
+      [GlobalSearchType.BOARD]: {
+        entities: [{ boards: { workspace_ids: input.workspaceIds?.map((id) => id.toString()) } }],
+      },
+      [GlobalSearchType.DOCUMENTS]: {
+        entities: [{ docs: { workspace_ids: input.workspaceIds?.map((id) => id.toString()) } }],
+      },
       [GlobalSearchType.FOLDERS]: undefined,
     };
 
-    const entityType = entityTypeMap[input.searchType];
-    if (!entityType) {
+    const filters = entityFilterMap[input.searchType];
+    if (!filters) {
       throw new Error(`Unsupported search type for dev endpoint: ${input.searchType}`);
     }
 
@@ -132,9 +135,8 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
 
     const variables: SearchDevQueryVariables = {
       query: input.searchTerm!,
-      size: input.limit,
-      entityTypes: [entityType],
-      workspaceIds: input.workspaceIds?.map((id) => id.toString()),
+      limit: input.limit,
+      filters,
     };
 
     const response = await this.mondayApi.request<SearchDevQuery>(searchDev, variables, {
@@ -146,13 +148,13 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     const items: SearchResult[] = [];
 
     for (const result of results) {
-      if (result.__typename === CROSS_ENTITY_BOARD_RESULT_TYPENAME) {
+      if (result.__typename === BOARD_SEARCH_RESULT_TYPENAME) {
         items.push({
           id: ObjectPrefixes.BOARD + result.data.id,
           title: result.data.name,
           url: result.data.url,
         });
-      } else if (result.__typename === CROSS_ENTITY_DOC_RESULT_TYPENAME) {
+      } else if (result.__typename === DOC_SEARCH_RESULT_TYPENAME) {
         items.push({
           id: ObjectPrefixes.DOCUMENT + result.data.id,
           title: result.data.name,

@@ -1220,14 +1220,13 @@ type Query {
     query: String!
 
     """Maximum number of results to return per entity (max 100)."""
-    size: Int!
+    limit: Int!
 
-    """Entity types to search. If empty, searches all types."""
-    entity_types: [SearchableEntity!]
-
-    """Filter results to specific workspace IDs."""
-    workspace_ids: [ID!]
-  ): [CrossEntityResult!]
+    """
+    Filters specifying which entities to search and their per-entity filters.
+    """
+    filters: SearchFiltersInput!
+  ): [SearchResult!]
 
   """Lookup a single entity type by name or other relevant properties."""
   search_lookup(
@@ -2112,6 +2111,192 @@ type Mutation {
     """
     entity_name: String
   ): BoardConnection
+
+  """Create columns on an account entity."""
+  create_entity_columns(
+    """The ID of the entity model to add columns to"""
+    entity_id: ID
+
+    """
+    The entity model name to add columns to. Either entity_id or entity_name must be provided.
+    """
+    entity_name: String
+
+    """Array of columns to create"""
+    columns: [CreateEntityColumnInput!]!
+  ): AccountEntity
+
+  """Deprecate a column on an account entity."""
+  deactivate_entity_column(
+    """The ID of the entity model"""
+    entity_id: ID
+
+    """
+    The entity model name. Either entity_id or entity_name must be provided.
+    """
+    entity_name: String
+
+    """The ID of the column to deprecate"""
+    column_id: ID!
+  ): AccountEntity
+
+  """Adds connected boards to a board relation column."""
+  add_board_relation_connected_boards(
+    """The unique identifier of the board containing the column."""
+    board_id: ID!
+
+    """The unique identifier of the board relation column."""
+    column_id: ID!
+
+    """Connected boards to add with optional column mappings."""
+    connected_boards: [ConnectedBoardInput!]!
+  ): [BoardRelationConnectedBoardsResult!]
+
+  """Creates a mirror column."""
+  create_mirror_column(
+    """The unique identifier of the board where the column will be created."""
+    board_id: ID!
+
+    """
+    The unique identifier of the column. If not provided, a new id will be generated.
+    """
+    id: ID
+
+    """The display title for the column."""
+    title: String!
+
+    """The description text for the column."""
+    description: String
+
+    """
+    The column's unique identifier after which the new column will be inserted.
+    """
+    after_column_id: ID
+
+    """Configuration object for mirror column settings."""
+    defaults: MirrorColumnDefaultsInput
+  ): Column
+
+  """Creates a board relation column."""
+  create_board_relation_column(
+    """The unique identifier of the board where the column will be created."""
+    board_id: ID!
+
+    """
+    The unique identifier of the column. If not provided, a new id will be generated.
+    """
+    id: ID
+
+    """The display title for the column."""
+    title: String!
+
+    """The description text for the column."""
+    description: String
+
+    """
+    The column's unique identifier after which the new column will be inserted.
+    """
+    after_column_id: ID
+
+    """Configuration object for board relation column settings."""
+    defaults: BoardRelationColumnDefaultsInput
+  ): Column
+
+  """Updates a board relation column."""
+  update_board_relation_column(
+    """The unique identifier of the column to update."""
+    id: ID!
+
+    """The unique identifier of the board containing the column."""
+    board_id: ID!
+
+    """
+    The new display title for the column. If not provided, the current title remains unchanged.
+    """
+    title: String
+
+    """
+    The new description text for the column. If not provided, the current description remains unchanged.
+    """
+    description: String
+
+    """
+    The width of the column. If not provided, the current width remains unchanged.
+    """
+    width: Int
+
+    """
+    The revision of the column, as returned by the column query. Used for optimistic concurrency control.
+    """
+    revision: String!
+
+    """
+    Configuration object for board relation column settings. If not provided, existing settings remain unchanged.
+    """
+    settings: BoardRelationColumnDefaultsInput
+  ): Column
+
+  """Updates a mirror column."""
+  update_mirror_column(
+    """The unique identifier of the column to update."""
+    id: ID!
+
+    """The unique identifier of the board containing the column."""
+    board_id: ID!
+
+    """
+    The new display title for the column. If not provided, the current title remains unchanged.
+    """
+    title: String
+
+    """
+    The new description text for the column. If not provided, the current description remains unchanged.
+    """
+    description: String
+
+    """
+    The width of the column. If not provided, the current width remains unchanged.
+    """
+    width: Int
+
+    """
+    The revision of the column, as returned by the column query. Used for optimistic concurrency control.
+    """
+    revision: String!
+
+    """
+    Configuration object for mirror column settings. If not provided, existing settings remain unchanged.
+    """
+    settings: MirrorColumnDefaultsInput
+  ): Column
+
+  """Removes connected boards from a board relation column."""
+  remove_board_relation_connected_boards(
+    """The unique identifier of the board containing the column."""
+    board_id: ID!
+
+    """The unique identifier of the board relation column."""
+    column_id: ID!
+
+    """Board identifiers to disconnect from the column."""
+    connected_board_ids: [ID!]!
+  ): [BoardRelationConnectedBoardsResult!]
+
+  """
+  Updates source mappings for existing connected boards in a board relation column.
+  """
+  update_board_relation_source_mappings(
+    """The unique identifier of the board containing the column."""
+    board_id: ID!
+
+    """The unique identifier of the board relation column."""
+    column_id: ID!
+
+    """
+    Connected boards with updated column mappings. Only updates mappings for existing connected boards.
+    """
+    connected_boards: [ConnectedBoardInput!]!
+  ): [BoardRelationConnectedBoardsResult!]
 
   """Add a required column to a board"""
   add_required_column(
@@ -5960,6 +6145,9 @@ type Board {
     type: String
   ): [BoardView]
 
+  """Metadata associated with this board"""
+  metadata: BoardMetadata
+
   """The board's updates."""
   updates(
     """Number of items to get, the default is 25."""
@@ -6408,6 +6596,12 @@ enum ViewMutationKind {
 
   """Update operation"""
   UPDATE
+}
+
+"""Metadata associated with a board, such as custom terminology settings."""
+type BoardMetadata {
+  """The custom terminology used for items in this board"""
+  item_type: String
 }
 
 """An item (table row)."""
@@ -6970,6 +7164,18 @@ enum CalculatedFunction {
   COUNT_KEYS
 }
 
+"""Fields that can be overridden in a column policy"""
+enum CanOverrideField {
+  """Allow overriding column settings"""
+  settings
+
+  """Allow overriding column title"""
+  title
+
+  """Allow overriding column description"""
+  description
+}
+
 type Column {
   """The column's unique identifier."""
   id: ID!
@@ -7028,6 +7234,18 @@ enum ColumnCapability {
 
   """Capability to mark column as hidden"""
   VISIBILITY
+}
+
+"""Policy rules that control what actions can be performed on a column"""
+input ColumnPolicyInput {
+  """User-facing messages explaining why certain actions are disabled"""
+  messages: PolicyMessagesInput
+
+  """List of fields that can be overridden"""
+  can_override: [CanOverrideField!]!
+
+  """Whether the column cannot be deleted"""
+  cannot_delete: Boolean!
 }
 
 union ColumnSettings = StatusColumnSettings | DropdownColumnSettings
@@ -7178,6 +7396,29 @@ input CreateDropdownLabelInput {
   label: String!
 }
 
+"""Input for creating a new column on an entity model"""
+input CreateEntityColumnInput {
+  """The column type (e.g., "status", "dropdown", "text", "date")"""
+  type: ColumnType!
+
+  """The column title"""
+  title: String!
+
+  """Optional column description"""
+  description: String
+
+  """Column type-specific settings (labels for status/dropdown, etc.)"""
+  defaults: JSON
+
+  """
+  Whether this column should be opted-out by default on boards. If false or not provided, the column will be automatically included on all boards using this entity (opt-in by default).
+  """
+  opt_out_by_default: Boolean
+
+  """Policy rules controlling what can be done with the column"""
+  policy: ColumnPolicyInput!
+}
+
 input CreateStatusColumnSettingsInput {
   labels: [CreateStatusLabelInput!]!
 }
@@ -7188,6 +7429,27 @@ input CreateStatusLabelInput {
   index: Int!
   description: String
   is_done: Boolean
+}
+
+"""Reasons why specific actions are disabled on a column"""
+input DisabledReasonInput {
+  """Reason why the column cannot be deleted"""
+  delete: String
+
+  """Reason why the column title cannot be edited"""
+  edit_title: String
+
+  """Reason why the column labels cannot be edited"""
+  edit_labels: String
+
+  """Reason why the column settings cannot be edited"""
+  edit_settings: String
+
+  """Reason why the column description cannot be edited"""
+  edit_description: String
+
+  """Reason why the column label positions cannot be edited"""
+  edit_labels_positions_v2: String
 }
 
 type DropdownColumnSettings {
@@ -7293,6 +7555,14 @@ enum ManagedColumnState {
 enum ManagedColumnTypes {
   status
   dropdown
+}
+
+"""
+Policy messages that explain why certain actions are disabled on a column
+"""
+input PolicyMessagesInput {
+  """Structured reasons for disabled actions"""
+  disabled_reason: DisabledReasonInput
 }
 
 """
@@ -7430,6 +7700,114 @@ input UpdateStatusLabelInput {
   is_done: Boolean
   id: Int
   is_deactivated: Boolean
+}
+
+"""Input for board relation column default settings."""
+input BoardRelationColumnDefaultsInput {
+  """Whether creating a reflection column is allowed."""
+  allow_create_reflection_column: Boolean
+
+  """Whether multiple items can be linked."""
+  allow_multiple_items: Boolean
+
+  """List of linked board identifiers."""
+  board_ids: [ID!]
+
+  """The unique identifier of the data view when applicable."""
+  data_view_id: ID
+
+  """The type of relation (e.g. item_to_board)."""
+  relation_type: String
+}
+
+"""
+A connected board entry (column_id + connected board ref). Used by add/remove mutations and by the get connected boards query page.
+"""
+type BoardRelationConnectedBoardsResult {
+  """The board relation column identifier."""
+  column_id: ID
+
+  """The connected board reference."""
+  connected_board: ConnectedBoardRef
+}
+
+"""Mapping between source and target columns for a connected board."""
+input ConnectedBoardColumnMappingInput {
+  """The unique identifier of the source column in the mapping."""
+  source_column_id: ID!
+
+  """The unique identifier of the target column in the mapping."""
+  target_column_id: ID!
+}
+
+"""A connected board with optional column mappings."""
+input ConnectedBoardInput {
+  """The unique identifier of the connected board."""
+  board_id: ID!
+
+  """Column mappings between the linked boards."""
+  mappings: [ConnectedBoardColumnMappingInput!]
+}
+
+"""Reference to a connected board."""
+type ConnectedBoardRef {
+  """The board identifier."""
+  id: ID
+}
+
+"""Controls how mirrored values are aggregated or selected."""
+enum MirrorCalc {
+  """Aggregate values from the earliest date through the latest date."""
+  EARLIEST_TO_LATEST
+
+  """Use only the earliest value/date found."""
+  EARLIEST
+
+  """Use only the latest value/date found."""
+  LATEST
+}
+
+"""Input for mirror column default settings."""
+input MirrorColumnDefaultsInput {
+  """
+  Relation column IDs to enable (e.g. board_relation_xxx). Each listed column is treated as enabled.
+  """
+  relation_column: [ID!]
+
+  """
+  Array mapping linked boards to the columns to display. Example: [{ board_id, column_ids: ["name", "status"] }].
+  """
+  displayed_linked_columns: [MirrorDisplayedLinkedColumnInput!]
+
+  """Aggregation type for status summaries."""
+  sum_type: MirrorSum
+
+  """Calculation type for linked date aggregation."""
+  calc_type: MirrorCalc
+
+  """Data view column ID within the target schema."""
+  target_column_id: ID
+
+  """Filter configuration for the lookup/mirror column."""
+  filter: ItemsQueryGroup
+}
+
+"""Mapping of a linked board to the columns to display."""
+input MirrorDisplayedLinkedColumnInput {
+  """The unique identifier of the linked board."""
+  board_id: ID!
+
+  """Column IDs to display for this board."""
+  column_ids: [ID!]!
+}
+
+"""Controls which statuses are included when summing mirrored values."""
+enum MirrorSum {
+  """Include only items whose status is considered "Done"."""
+  DONE_ONLY
+
+  """Include items from all statuses."""
+  ALL_STATUSES
 }
 
 """List of required column IDs for a board"""
@@ -15773,6 +16151,11 @@ enum ExternalWidget {
 
   """Table widgets for visualization"""
   TABLE
+
+  """
+  App feature widgets for displaying custom application features. Used to embed and render app-specific functionality within dashboards and views.
+  """
+  APP_FEATURE
 
   """
   ListView widgets for displaying cross-board items in a tabular list format with filtering and sorting.
