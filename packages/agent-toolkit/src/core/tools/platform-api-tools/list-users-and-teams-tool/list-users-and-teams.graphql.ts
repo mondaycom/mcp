@@ -139,19 +139,13 @@ export const listUsersWithTeams = gql`
   }
 `;
 
-// Query for fetching users only (when we don't want teams in response)
+// Query for fetching users only (no team membership data)
 export const listUsersOnly = gql`
   ${userDetailsFragment}
-  ${userTeamMembershipFragment}
 
   query listUsersOnly($userIds: [ID!], $limit: Int = 1000) {
     users(ids: $userIds, limit: $limit) {
       ...UserDetails
-
-      # Team Memberships
-      teams {
-        ...UserTeamMembership
-      }
     }
   }
 `;
