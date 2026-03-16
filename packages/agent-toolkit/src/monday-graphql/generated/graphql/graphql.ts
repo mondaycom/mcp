@@ -10256,7 +10256,7 @@ export type CreateDocMutationVariables = Exact<{
 }>;
 
 
-export type CreateDocMutation = { __typename?: 'Mutation', create_doc?: { __typename?: 'Document', id: string, url?: string | null, name: string } | null };
+export type CreateDocMutation = { __typename?: 'Mutation', create_doc?: { __typename?: 'Document', id: string, object_id: string, url?: string | null, name: string } | null };
 
 export type UpdateDocNameMutationVariables = Exact<{
   docId: Scalars['ID']['input'];

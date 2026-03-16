@@ -21,6 +21,7 @@ export const createDoc = gql`
   mutation createDoc($location: CreateDocInput!) {
     create_doc(location: $location) {
       id
+      object_id
       url
       name
     }
