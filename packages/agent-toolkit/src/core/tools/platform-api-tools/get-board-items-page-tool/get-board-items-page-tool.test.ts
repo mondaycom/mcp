@@ -754,35 +754,35 @@ describe('GetBoardItemsPageTool', () => {
       ],
     };
 
-    it('should include description when includeDescription is true', async () => {
+    it('should include item description when includeItemDescription is true', async () => {
       mocks.setResponse(responseWithDescription);
 
       const args: inputType = {
         boardId: 123456789,
-        includeDescription: true,
+        includeItemDescription: true,
       };
       const parsedResult = await callToolByNameAsync('get_board_items_page', args);
 
       expect(parsedResult.items).toHaveLength(2);
-      expect(parsedResult.items[0].description).toBeDefined();
-      expect(parsedResult.items[0].description.id).toBe('desc_1');
-      expect(parsedResult.items[0].description.blocks).toHaveLength(2);
-      expect(parsedResult.items[0].description.blocks[0].type).toBe('normal text');
-      expect(parsedResult.items[0].description.blocks[1].type).toBe('bulleted list');
-      expect(parsedResult.items[1].description).toBeUndefined();
+      expect(parsedResult.items[0].item_description).toBeDefined();
+      expect(parsedResult.items[0].item_description.id).toBe('desc_1');
+      expect(parsedResult.items[0].item_description.blocks).toHaveLength(2);
+      expect(parsedResult.items[0].item_description.blocks[0].type).toBe('normal text');
+      expect(parsedResult.items[0].item_description.blocks[1].type).toBe('bulleted list');
+      expect(parsedResult.items[1].item_description).toBeUndefined();
     });
 
-    it('should not include description when includeDescription is false', async () => {
+    it('should not include item description when includeItemDescription is false', async () => {
       mocks.setResponse(responseWithDescription);
 
       const args: inputType = {
         boardId: 123456789,
-        includeDescription: false,
+        includeItemDescription: false,
       };
       const parsedResult = await callToolByNameAsync('get_board_items_page', args);
 
-      expect(parsedResult.items[0].description).toBeUndefined();
-      expect(parsedResult.items[1].description).toBeUndefined();
+      expect(parsedResult.items[0].item_description).toBeUndefined();
+      expect(parsedResult.items[1].item_description).toBeUndefined();
     });
 
     it('should filter out null blocks in description', async () => {
@@ -822,12 +822,12 @@ describe('GetBoardItemsPageTool', () => {
 
       const args: inputType = {
         boardId: 123456789,
-        includeDescription: true,
+        includeItemDescription: true,
       };
       const parsedResult = await callToolByNameAsync('get_board_items_page', args);
 
-      expect(parsedResult.items[0].description.blocks).toHaveLength(1);
-      expect(parsedResult.items[0].description.blocks[0].id).toBe('block_1');
+      expect(parsedResult.items[0].item_description.blocks).toHaveLength(1);
+      expect(parsedResult.items[0].item_description.blocks[0].id).toBe('block_1');
     });
   });
 
