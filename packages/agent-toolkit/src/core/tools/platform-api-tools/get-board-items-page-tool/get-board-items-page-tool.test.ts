@@ -789,6 +789,7 @@ describe('GetBoardItemsPageTool', () => {
         cursor: undefined,
         includeColumns: false,
         includeSubItems: true,
+        includeDescription: false,
       });
     });
   });
