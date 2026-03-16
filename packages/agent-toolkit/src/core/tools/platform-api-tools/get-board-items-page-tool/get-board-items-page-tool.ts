@@ -54,6 +54,7 @@ type GetBoardItemsPageResultItem = {
   created_at: any;
   updated_at: any;
   column_values?: Record<string, any>;
+  description?: { id?: string | null; blocks: Array<{ id: string; type?: string | null; content?: any }> };
   subitems?: GetBoardItemsPageResultItem[];
 };
 
@@ -84,6 +85,13 @@ export const getBoardItemsPageToolSchema = {
   includeColumns: z.boolean().optional().default(false).describe(`Whether to include column values in the response.
 PERFORMANCE OPTIMIZATION: Only set this to true when you actually need the column data. Excluding columns significantly reduces token usage and improves response latency. If you only need to count items, get item IDs/names, or check if items exist, keep this false.`),
 
+  includeDescription: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe(
+      'Whether to include the item description (rich-text body) in the response. PERFORMANCE OPTIMIZATION: Only set this to true when you actually need the description content.',
+    ),
   includeSubItems: z
     .boolean()
     .optional()
@@ -136,9 +144,10 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
 
   getDescription(): string {
     return (
-      `Get all items from a monday.com board with pagination support and optional column values. ` +
+      `Get all items from a monday.com board with pagination support and optional column values and item descriptions. ` +
       `Returns structured JSON with item details, creation/update timestamps, and pagination info. ` +
-      `Use the 'nextCursor' parameter from the response to get the next page of results when 'has_more' is true.` +
+      `Use the 'nextCursor' parameter from the response to get the next page of results when 'has_more' is true. ` +
+      `To retrieve an item's description (rich-text body), set 'includeDescription' to true — the response will include the description's document blocks with their content, type, and id. ` +
       `[REQUIRED PRECONDITION]: Before using this tool, if new columns were added to the board or if you are not familiar with the board's structure (column IDs, column types, status labels, etc.), first use get_board_info to understand the board metadata. This is essential for constructing proper filters and knowing which columns are available.`
     );
   }
@@ -173,6 +182,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
       includeColumns: input.includeColumns,
       columnIds: input.columnIds,
       includeSubItems: input.includeSubItems,
+      includeDescription: input.includeDescription,
     };
 
     if (canIncludeFilters && (input.itemIds || input.filters || input.orderBy)) {
@@ -247,6 +257,21 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
       for (const cv of item.column_values) {
         itemResult.column_values[cv.id] = this.getColumnValueData(cv);
       }
+    }
+
+    if (input.includeDescription && 'description' in item && item.description) {
+      const blocks = (item.description.blocks ?? [])
+        .filter((block): block is NonNullable<typeof block> => !!block)
+        .map((block) => ({
+          id: block.id,
+          type: block.type,
+          content: block.content,
+        }));
+
+      itemResult.description = {
+        id: item.description.id,
+        blocks,
+      };
     }
 
     if (input.includeSubItems && 'subitems' in item && item.subitems) {
