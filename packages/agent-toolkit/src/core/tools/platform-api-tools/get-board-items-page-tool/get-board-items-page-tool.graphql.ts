@@ -27,6 +27,14 @@ export const getBoardItemsPage = gql`
         }
       }
     }
+    description @include(if: $includeDescription) {
+      id
+      blocks {
+        id
+        type
+        content
+      }
+    }
   }
 
   query GetBoardItemsPage(
@@ -37,6 +45,7 @@ export const getBoardItemsPage = gql`
     $columnIds: [String!]
     $queryParams: ItemsQuery
     $includeSubItems: Boolean!
+    $includeDescription: Boolean!
   ) {
     boards(ids: [$boardId]) {
       id

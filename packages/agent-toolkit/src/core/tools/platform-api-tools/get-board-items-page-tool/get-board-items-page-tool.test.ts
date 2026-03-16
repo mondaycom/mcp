@@ -162,6 +162,7 @@ describe('GetBoardItemsPageTool', () => {
         cursor: undefined,
         includeColumns: false,
         includeSubItems: false,
+        includeDescription: false,
       });
     });
 
@@ -179,6 +180,7 @@ describe('GetBoardItemsPageTool', () => {
         cursor: undefined,
         includeColumns: false,
         includeSubItems: false,
+        includeDescription: false,
       });
     });
 
@@ -197,6 +199,7 @@ describe('GetBoardItemsPageTool', () => {
         cursor: 'previous_cursor_456',
         includeColumns: false,
         includeSubItems: false,
+        includeDescription: false,
       });
     });
   });
@@ -231,6 +234,7 @@ describe('GetBoardItemsPageTool', () => {
         includeColumns: false,
         queryParams: undefined,
         includeSubItems: false,
+        includeDescription: false,
       });
     });
 
@@ -262,6 +266,7 @@ describe('GetBoardItemsPageTool', () => {
         includeColumns: false,
         columnIds: undefined,
         includeSubItems: false,
+        includeDescription: false,
         queryParams: {
           ids: undefined,
           operator: 'and',
@@ -425,6 +430,7 @@ describe('GetBoardItemsPageTool', () => {
         cursor: undefined,
         includeColumns: true,
         includeSubItems: false,
+        includeDescription: false,
       });
     });
 
@@ -750,6 +756,7 @@ describe('GetBoardItemsPageTool', () => {
           cursor: undefined,
           includeColumns: false,
           includeSubItems: includeSubItems,
+          includeDescription: false,
         });
       },
     );
