@@ -54,7 +54,7 @@ type GetBoardItemsPageResultItem = {
   created_at: any;
   updated_at: any;
   column_values?: Record<string, any>;
-  description?: { id?: string | null; blocks: Array<{ id: string; type?: string | null; content?: any }> };
+  item_description?: { id?: string | null; blocks: Array<{ id: string; type?: string | null; content?: any }> };
   subitems?: GetBoardItemsPageResultItem[];
 };
 
@@ -85,12 +85,12 @@ export const getBoardItemsPageToolSchema = {
   includeColumns: z.boolean().optional().default(false).describe(`Whether to include column values in the response.
 PERFORMANCE OPTIMIZATION: Only set this to true when you actually need the column data. Excluding columns significantly reduces token usage and improves response latency. If you only need to count items, get item IDs/names, or check if items exist, keep this false.`),
 
-  includeDescription: z
+  includeItemDescription: z
     .boolean()
     .optional()
     .default(false)
     .describe(
-      'Whether to include the item description (rich-text body) in the response. PERFORMANCE OPTIMIZATION: Only set this to true when you actually need the description content.',
+      `Whether to include the item's description in the response. The item description is the rich-text body content that appears inside a monday.com item (similar to a task description or issue body). Set this to true when the user asks about an item's description, details, body, or notes. PERFORMANCE OPTIMIZATION: Only set this to true when you actually need the item description content.`,
     ),
   includeSubItems: z
     .boolean()
@@ -147,7 +147,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
       `Get all items from a monday.com board with pagination support and optional column values and item descriptions. ` +
       `Returns structured JSON with item details, creation/update timestamps, and pagination info. ` +
       `Use the 'nextCursor' parameter from the response to get the next page of results when 'has_more' is true. ` +
-      `To retrieve an item's description (rich-text body), set 'includeDescription' to true — the response will include the description's document blocks with their content, type, and id. ` +
+      `To retrieve an item's description (the rich-text body/details of a monday.com item), set 'includeItemDescription' to true — the response will include the item description's document blocks with their content, type, and id. Use this whenever the user asks about an item's description, body, details, or notes. ` +
       `[REQUIRED PRECONDITION]: Before using this tool, if new columns were added to the board or if you are not familiar with the board's structure (column IDs, column types, status labels, etc.), first use get_board_info to understand the board metadata. This is essential for constructing proper filters and knowing which columns are available.`
     );
   }
@@ -182,7 +182,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
       includeColumns: input.includeColumns,
       columnIds: input.columnIds,
       includeSubItems: input.includeSubItems,
-      includeDescription: input.includeDescription,
+      includeDescription: input.includeItemDescription,
     };
 
     if (canIncludeFilters && (input.itemIds || input.filters || input.orderBy)) {
@@ -259,7 +259,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
       }
     }
 
-    if (input.includeDescription && 'description' in item && item.description) {
+    if (input.includeItemDescription && 'description' in item && item.description) {
       const blocks = (item.description.blocks ?? [])
         .filter((block): block is NonNullable<typeof block> => !!block)
         .map((block) => ({
@@ -268,7 +268,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
           content: block.content,
         }));
 
-      itemResult.description = {
+      itemResult.item_description = {
         id: item.description.id,
         blocks,
       };
