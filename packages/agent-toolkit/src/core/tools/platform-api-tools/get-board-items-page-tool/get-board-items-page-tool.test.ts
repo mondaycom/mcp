@@ -711,6 +711,126 @@ describe('GetBoardItemsPageTool', () => {
     });
   });
 
+  describe('Description Functionality', () => {
+    const responseWithDescription: GetBoardItemsPageQuery = {
+      boards: [
+        {
+          id: '123456789',
+          name: 'Test Board',
+          items_page: {
+            items: [
+              {
+                id: 'item1',
+                name: 'First Item',
+                created_at: '2024-01-15T10:30:00Z',
+                updated_at: '2024-01-16T14:20:00Z',
+                description: {
+                  id: 'desc_1',
+                  blocks: [
+                    {
+                      id: 'block_1',
+                      type: 'normal text',
+                      content: { text: 'This is the item description' },
+                    },
+                    {
+                      id: 'block_2',
+                      type: 'bulleted list',
+                      content: { text: 'A bullet point' },
+                    },
+                  ],
+                },
+              },
+              {
+                id: 'item2',
+                name: 'Second Item',
+                created_at: '2024-01-14T09:15:00Z',
+                updated_at: '2024-01-15T16:45:00Z',
+                description: null,
+              },
+            ],
+            cursor: null,
+          },
+        },
+      ],
+    };
+
+    it('should include description when includeDescription is true', async () => {
+      mocks.setResponse(responseWithDescription);
+
+      const args: inputType = {
+        boardId: 123456789,
+        includeDescription: true,
+      };
+      const parsedResult = await callToolByNameAsync('get_board_items_page', args);
+
+      expect(parsedResult.items).toHaveLength(2);
+      expect(parsedResult.items[0].description).toBeDefined();
+      expect(parsedResult.items[0].description.id).toBe('desc_1');
+      expect(parsedResult.items[0].description.blocks).toHaveLength(2);
+      expect(parsedResult.items[0].description.blocks[0].type).toBe('normal text');
+      expect(parsedResult.items[0].description.blocks[1].type).toBe('bulleted list');
+      expect(parsedResult.items[1].description).toBeUndefined();
+    });
+
+    it('should not include description when includeDescription is false', async () => {
+      mocks.setResponse(responseWithDescription);
+
+      const args: inputType = {
+        boardId: 123456789,
+        includeDescription: false,
+      };
+      const parsedResult = await callToolByNameAsync('get_board_items_page', args);
+
+      expect(parsedResult.items[0].description).toBeUndefined();
+      expect(parsedResult.items[1].description).toBeUndefined();
+    });
+
+    it('should filter out null blocks in description', async () => {
+      const responseWithNullBlocks: GetBoardItemsPageQuery = {
+        boards: [
+          {
+            id: '123456789',
+            name: 'Test Board',
+            items_page: {
+              items: [
+                {
+                  id: 'item1',
+                  name: 'Item with null blocks',
+                  created_at: '2024-01-15T10:30:00Z',
+                  updated_at: '2024-01-16T14:20:00Z',
+                  description: {
+                    id: 'desc_1',
+                    blocks: [
+                      null,
+                      {
+                        id: 'block_1',
+                        type: 'normal text',
+                        content: { text: 'Valid block' },
+                      },
+                      null,
+                    ],
+                  },
+                },
+              ],
+              cursor: null,
+            },
+          },
+        ],
+      };
+
+      mocks.setResponse(responseWithNullBlocks);
+
+      const args: inputType = {
+        boardId: 123456789,
+        includeDescription: true,
+      };
+      const parsedResult = await callToolByNameAsync('get_board_items_page', args);
+
+      expect(parsedResult.items[0].description.blocks).toHaveLength(1);
+      expect(parsedResult.items[0].description.blocks[0].id).toBe('block_1');
+    });
+  });
+
   describe('SubItems Functionality', () => {
     // Parameterized test similar to NUnit's [TestCase(true)], [TestCase(false)]
     it.each([[true], [false]])(
