@@ -2,6 +2,7 @@ import { AllMondayApiTool } from './all-monday-api-tool';
 import { BaseMondayApiToolConstructor } from './base-monday-api-tool';
 import { ChangeItemColumnValuesTool } from './change-item-column-values-tool';
 import { CreateBoardTool } from './create-board-tool';
+import { CreateViewTool } from './create-view-tool';
 import { CreateFormTool } from './workforms-tools/create-form-tool';
 import { FormQuestionsEditorTool } from './workforms-tools/form-questions-editor-tool';
 import { UpdateFormTool } from './workforms-tools/update-form-tool';
@@ -96,6 +97,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   UserContextTool,
   UpdateAssetsOnItemTool,
   GetNotetakerMeetingsTool,
+  CreateViewTool,
 ];
 
 export * from './all-monday-api-tool';
@@ -144,6 +146,7 @@ export * from './update-assets-on-item-tool/update-assets-on-item-tool';
 // Notetaker Tools
 export * from './get-notetaker-meetings-tool/get-notetaker-meetings-tool';
 // Dashboard Tools
+export * from './create-view-tool';
 export * from './dashboard-tools';
 // Monday Dev Tools
 export * from '../monday-dev-tools';
