@@ -1,5 +1,5 @@
-import { formatBoardInfo, BoardInfoData } from './helpers';
-import { State, BoardKind, WorkspaceKind } from '../../../../monday-graphql/generated/graphql/graphql';
+import { formatBoardInfo, formatBoardInfoAsJson, BoardInfoData } from './helpers';
+import { BoardViewAccessLevel, State, BoardKind, WorkspaceKind } from '../../../../monday-graphql/generated/graphql/graphql';
 import { NonDeprecatedColumnType } from 'src/utils/types';
 
 describe('formatBoardInfo - Simple Tests', () => {
@@ -317,5 +317,143 @@ describe('formatBoardInfo - Simple Tests', () => {
     const columnsIndex = result.indexOf('## Columns');
     const subItemsColumnsIndex = result.indexOf('## Sub Items Columns');
     expect(columnsIndex).toBeLessThan(subItemsColumnsIndex);
+  });
+});
+
+describe('formatBoardInfoAsJson - views', () => {
+  const baseBoard: BoardInfoData = {
+    id: '123',
+    name: 'Test Board',
+    description: 'desc',
+    state: State.Active,
+    board_kind: BoardKind.Public,
+    permissions: 'write',
+    url: 'https://monday.com/boards/123',
+    updated_at: '2024-01-01',
+    item_terminology: 'items',
+    items_count: 0,
+    items_limit: null,
+    board_folder_id: null,
+    creator: null,
+    workspace: null,
+    owners: [],
+    team_owners: [],
+    groups: [],
+    top_group: null,
+    columns: [],
+    tags: [],
+    views: [],
+  } as unknown as BoardInfoData;
+
+  it('should include views in the JSON response', () => {
+    const board: BoardInfoData = {
+      ...baseBoard,
+      views: [
+        {
+          id: 'view_1',
+          name: 'My Tasks',
+          type: 'TableBoardView',
+          settings_str: '{}',
+          filter: {
+            operator: 'AND',
+            groups: [{ operator: 'AND', rules: [{ column_id: 'person', compare_value: ['assigned_to_me'], operator: 'ANY_OF' }] }],
+          },
+          sort: [],
+          access_level: BoardViewAccessLevel.Edit,
+        },
+      ],
+    } as unknown as BoardInfoData;
+
+    const result = formatBoardInfoAsJson(board, null) as any;
+
+    expect(result.board.views).toHaveLength(1);
+  });
+
+  it('should include view id and name', () => {
+    const board: BoardInfoData = {
+      ...baseBoard,
+      views: [
+        {
+          id: 'view_1',
+          name: 'My Tasks',
+          type: 'TableBoardView',
+          settings_str: '{}',
+          filter: null,
+          sort: [],
+          access_level: BoardViewAccessLevel.Edit,
+        },
+      ],
+    } as unknown as BoardInfoData;
+
+    const result = formatBoardInfoAsJson(board, null) as any;
+
+    expect(result.board.views[0].id).toBe('view_1');
+    expect(result.board.views[0].name).toBe('My Tasks');
+  });
+
+  it('should include the structured filter object from the view', () => {
+    const filter = {
+      operator: 'AND',
+      groups: [{ operator: 'AND', rules: [{ column_id: 'person', compare_value: ['assigned_to_me'], operator: 'ANY_OF' }] }],
+    };
+    const board: BoardInfoData = {
+      ...baseBoard,
+      views: [
+        {
+          id: 'view_1',
+          name: 'Assigned to Me',
+          type: 'TableBoardView',
+          settings_str: '{}',
+          filter,
+          sort: [],
+          access_level: BoardViewAccessLevel.Edit,
+        },
+      ],
+    } as unknown as BoardInfoData;
+
+    const result = formatBoardInfoAsJson(board, null) as any;
+
+    expect(result.board.views[0].filter).toEqual(filter);
+  });
+
+  it('should return null filter for views with no filters applied', () => {
+    const board: BoardInfoData = {
+      ...baseBoard,
+      views: [
+        {
+          id: 'view_2',
+          name: 'All Items',
+          type: 'TableBoardView',
+          settings_str: '{}',
+          filter: null,
+          sort: [],
+          access_level: BoardViewAccessLevel.Edit,
+        },
+      ],
+    } as unknown as BoardInfoData;
+
+    const result = formatBoardInfoAsJson(board, null) as any;
+
+    expect(result.board.views[0].filter).toBeNull();
+  });
+
+  it('should return an empty views array when board has no views', () => {
+    const result = formatBoardInfoAsJson(baseBoard, null) as any;
+
+    expect(result.board.views).toEqual([]);
+  });
+
+  it('should return multiple views', () => {
+    const board: BoardInfoData = {
+      ...baseBoard,
+      views: [
+        { id: 'view_1', name: 'View A', type: 'TableBoardView', settings_str: '{}', filter: null, sort: [], access_level: BoardViewAccessLevel.Edit },
+        { id: 'view_2', name: 'View B', type: 'TableBoardView', settings_str: '{}', filter: null, sort: [], access_level: BoardViewAccessLevel.Edit },
+      ],
+    } as unknown as BoardInfoData;
+
+    const result = formatBoardInfoAsJson(board, null) as any;
+
+    expect(result.board.views).toHaveLength(2);
   });
 });
