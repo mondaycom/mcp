@@ -215,7 +215,7 @@ describe('SearchTool', () => {
         // Should have tried dev endpoint first, then fallen back to GetBoards
         expect(mocks.getMockRequest()).toHaveBeenNthCalledWith(2, expect.stringContaining('query GetBoards'), {
           page: 1,
-          limit: 10000,
+          limit: 1000,
           workspace_ids: undefined,
         });
       });
@@ -691,7 +691,7 @@ describe('SearchTool', () => {
 
         expect(mocks.getMockRequest()).toHaveBeenNthCalledWith(2, expect.stringContaining('query GetDocs'), {
           page: 1,
-          limit: 10000,
+          limit: 1000,
           workspace_ids: undefined,
         });
       });
@@ -940,7 +940,7 @@ describe('SearchTool', () => {
 
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetFolders'), {
           page: 1,
-          limit: 10000,
+          limit: 100,
           workspace_ids: undefined,
         });
       });
@@ -1546,10 +1546,10 @@ describe('SearchTool', () => {
 
       await callToolByNameAsync('search', args);
 
-      // When searchTerm is present, fallback should override to page 1 and limit 10000
+      // When searchTerm is present, fallback should override to page 1 and limit 1000
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetBoards'), {
         page: 1,
-        limit: 10000,
+        limit: 1000,
         workspace_ids: undefined,
       });
     });
