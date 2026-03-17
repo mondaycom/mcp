@@ -18,9 +18,8 @@ import {
 import { normalizeString } from 'src/utils/string.utils';
 import { BOARD_SEARCH_RESULT_TYPENAME, DOC_SEARCH_RESULT_TYPENAME, DataWithFilterInfo, GlobalSearchType, ObjectPrefixes, SearchResult } from './search-tool.types';
 import { LOAD_INTO_MEMORY_LIMIT, SEARCH_LIMIT } from './search-tool.consts';
-import { TIME_IN_MILLISECONDS } from 'src/utils';
 import { SEARCH_TIMEOUT } from 'src/utils/time.utils';
-import { throwIfSearchTimeoutError } from 'src/utils/error.utils';
+import { rethrowWithContext, throwIfSearchTimeoutError } from 'src/utils/error.utils';
 
 export const searchSchema = {
   searchTerm: z.string().optional().describe('The search term to use for the search.'),
@@ -170,6 +169,11 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
       ...this.getPagingParamsForSearch(input),
       workspace_ids: input.workspaceIds?.map((id) => id.toString()),
     };
+    variables.workspace_ids ??= [];
+
+    if(variables.workspace_ids.length === 0) {
+      rethrowWithContext(new Error('Searching for folders require specifying workspace ids'), 'search folders');
+    }
 
     const response = await this.mondayApi.request<GetFoldersQuery>(getFolders, variables);
     const data = this.searchAndVirtuallyPaginate(input, response.folders || [], (folder) => folder!.name);
