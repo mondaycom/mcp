@@ -3,10 +3,13 @@ import {
   ViewKind,
   ItemsQueryOperator,
   ItemsQueryRuleOperator,
-} from '../../../monday-graphql/generated/graphql/graphql';
-import { createView } from '../../../monday-graphql/queries.graphql';
-import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
-import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
+  ItemsOrderByDirection,
+  CreateViewMutation,
+  CreateViewMutationVariables,
+} from '../../../../monday-graphql/generated/graphql/graphql';
+import { createView } from './create-view-tool.graphql';
+import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
+import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 
 export const createViewToolSchema = {
   boardId: z.string().describe('The board ID to create the view on'),
@@ -18,7 +21,7 @@ export const createViewToolSchema = {
         .array(
           z.object({
             column_id: z.string().describe('The column ID to filter by'),
-            compare_value: z.any().describe('The value(s) to compare against'),
+            compare_value: z.any().default([]).describe('The value(s) to compare against'),
             operator: z
               .nativeEnum(ItemsQueryRuleOperator)
               .optional()
@@ -38,19 +41,11 @@ export const createViewToolSchema = {
     .array(
       z.object({
         column_id: z.string().describe('The column ID to sort by'),
-        direction: z.enum(['asc', 'desc']).optional().describe('Sort direction (defaults to asc)'),
+        direction: z.nativeEnum(ItemsOrderByDirection).optional().describe('Sort direction (defaults to asc)'),
       }),
     )
     .optional()
     .describe('Sort configuration for the view'),
-};
-
-type CreateViewResult = {
-  create_view?: {
-    id: string;
-    name: string;
-    type: string;
-  } | null;
 };
 
 export class CreateViewTool extends BaseMondayApiTool<typeof createViewToolSchema, never> {
@@ -85,9 +80,9 @@ Example filter for status column: { "rules": [{ "column_id": "status", "compare_
       name: input.name,
       filter: input.filter,
       sort: input.sort,
-    };
+    } as CreateViewMutationVariables;
 
-    const res = await this.mondayApi.request<CreateViewResult>(createView, variables);
+    const res = await this.mondayApi.request<CreateViewMutation>(createView, variables);
 
     if (!res.create_view) {
       return { content: 'Failed to create view - no response from API' };
