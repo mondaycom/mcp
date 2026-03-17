@@ -572,7 +572,7 @@ describe('Board Insights Tool', () => {
 
       mocks.setResponseOnce(mockResponse);
 
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       const result = await tool.execute({
         boardId: 123456,
@@ -616,7 +616,7 @@ describe('Board Insights Tool', () => {
 
       mocks.setResponseOnce(mockResponse);
 
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       const result = await tool.execute({
         boardId: 123456,
@@ -667,7 +667,7 @@ describe('Board Insights Tool', () => {
 
       mocks.setResponseOnce(mockResponse);
 
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       await tool.execute({
         boardId: 123456,
@@ -689,7 +689,7 @@ describe('Board Insights Tool', () => {
 
       mocks.setResponseOnce(mockResponse);
 
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       const result = await tool.execute({
         boardId: 123456,
@@ -708,7 +708,7 @@ describe('Board Insights Tool', () => {
 
       mocks.setResponseOnce(mockResponse);
 
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       const result = await tool.execute({
         boardId: 123456,
@@ -754,7 +754,7 @@ describe('Board Insights Tool', () => {
 
       mocks.setResponseOnce(mockResponse);
 
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       const result = await tool.execute({
         boardId: 123456,
@@ -798,7 +798,7 @@ describe('Board Insights Tool', () => {
 
       mocks.setResponseOnce(mockResponse);
 
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       const result = await tool.execute({
         boardId: 123456,
@@ -833,7 +833,7 @@ describe('Board Insights Tool', () => {
 
       mocks.setResponseOnce(mockResponse);
 
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       const result = await tool.execute({
         boardId: 123456,
@@ -850,7 +850,7 @@ describe('Board Insights Tool', () => {
     it('should handle API errors', async () => {
       mocks.setError('Board not found');
 
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       await expect(
         tool.execute({
@@ -869,7 +869,7 @@ describe('Board Insights Tool', () => {
       };
       mocks.setError(graphqlError);
 
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       await expect(
         tool.execute({
@@ -907,7 +907,7 @@ describe('Board Insights Tool', () => {
 
       mocks.setResponseOnce(mockResponse);
 
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       const result = await tool.execute({
         boardId: 123456,
@@ -954,7 +954,7 @@ describe('Board Insights Tool', () => {
 
       mocks.setResponseOnce(mockResponse);
 
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       await tool.execute({
         boardId: 123456,
@@ -998,7 +998,7 @@ describe('Board Insights Tool', () => {
 
       mocks.setResponseOnce(mockResponse);
 
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       await tool.execute({
         boardId: 123456,
@@ -1053,7 +1053,7 @@ describe('Board Insights Tool', () => {
 
       mocks.setResponseOnce(mockResponse);
 
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       await tool.execute({
         boardId: 123456,
@@ -1112,7 +1112,7 @@ describe('Board Insights Tool', () => {
 
       mocks.setResponseOnce(mockResponse);
 
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       await tool.execute({
         boardId: 123456,
@@ -1153,7 +1153,7 @@ describe('Board Insights Tool', () => {
 
       mocks.setResponseOnce(mockResponse);
 
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       const result = await tool.execute({
         boardId: 123456,
@@ -1206,7 +1206,7 @@ describe('Board Insights Tool', () => {
 
       mocks.setResponseOnce(mockResponse);
 
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       const result = await tool.execute({
         boardId: 123456,
@@ -1245,7 +1245,7 @@ describe('Board Insights Tool', () => {
     });
 
     it('should have correct metadata', () => {
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       expect(tool.name).toBe('board_insights');
       expect(tool.type).toBe('read');
@@ -1265,7 +1265,7 @@ describe('Board Insights Tool', () => {
   describe('Missing aggregations', () => {
     it('should return error when aggregations is not provided', async () => {
       const mocks = createMockApiClient();
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       const result = await tool.execute({
         boardId: 123456,

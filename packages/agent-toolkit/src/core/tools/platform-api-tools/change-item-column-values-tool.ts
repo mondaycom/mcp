@@ -47,7 +47,7 @@ export class ChangeItemColumnValuesTool extends BaseMondayApiTool<ChangeItemColu
     return changeItemColumnValuesInBoardToolSchema;
   }
 
-  protected async executeInternal(
+  async execute(
     input: ToolInputType<ChangeItemColumnValuesToolInput>,
   ): Promise<ToolOutputType<never>> {
     const boardId =

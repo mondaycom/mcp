@@ -62,7 +62,7 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
     return createItemInBoardToolSchema;
   }
 
-  protected async executeInternal(input: ToolInputType<CreateItemToolInput>): Promise<ToolOutputType<never>> {
+  async execute(input: ToolInputType<CreateItemToolInput>): Promise<ToolOutputType<never>> {
     const boardId = this.context?.boardId ?? (input as ToolInputType<typeof createItemInBoardToolSchema>).boardId;
 
     if (input.duplicateFromItemId && input.parentItemId) {
@@ -108,7 +108,7 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
         name: input.name,
       };
 
-      const changeColumnValuesTool = new ChangeItemColumnValuesTool(this.mondayApi, this.apiToken, {
+      const changeColumnValuesTool = new ChangeItemColumnValuesTool(this.mondayApi, {
         boardId: boardId,
       });
       const updateRes = await changeColumnValuesTool.execute({

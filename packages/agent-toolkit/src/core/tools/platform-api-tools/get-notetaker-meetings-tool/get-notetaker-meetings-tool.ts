@@ -78,7 +78,7 @@ export class GetNotetakerMeetingsTool extends BaseMondayApiTool<typeof getNoteta
     return getNotetakerMeetingsToolSchema;
   }
 
-  protected async executeInternal(
+  async execute(
     input: ToolInputType<typeof getNotetakerMeetingsToolSchema>,
   ): Promise<ToolOutputType<never>> {
     const filters: Record<string, unknown> = {

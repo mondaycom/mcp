@@ -20,7 +20,7 @@ export class CreateAppTool extends BaseMondayAppsTool<typeof createPlainAppSchem
     return createPlainAppSchema.shape;
   }
 
-  protected async executeInternal(
+  async execute(
     input: ToolInputType<typeof createPlainAppSchema.shape>,
   ): Promise<ToolOutputType<CreateAppResponse>> {
     try {

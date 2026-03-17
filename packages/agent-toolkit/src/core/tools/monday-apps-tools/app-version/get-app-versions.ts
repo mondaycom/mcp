@@ -23,7 +23,7 @@ export class GetAppVersionsTool extends BaseMondayAppsTool<
     return getAppVersionsSchema.shape;
   }
 
-  protected async executeInternal(
+  async execute(
     input: ToolInputType<typeof getAppVersionsSchema.shape>,
   ): Promise<ToolOutputType<AppVersionsApiDataResponse>> {
     try {

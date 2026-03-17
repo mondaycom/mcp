@@ -21,7 +21,7 @@ export class PromoteAppTool extends BaseMondayAppsTool<typeof promoteAppSchema.s
     return promoteAppSchema.shape;
   }
 
-  protected async executeInternal(
+  async execute(
     input: ToolInputType<typeof promoteAppSchema.shape>,
   ): Promise<ToolOutputType<PromoteAppResponse>> {
     try {

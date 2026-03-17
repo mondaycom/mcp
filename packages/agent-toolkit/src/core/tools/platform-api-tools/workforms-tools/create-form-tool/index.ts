@@ -25,7 +25,7 @@ export class CreateFormTool extends BaseMondayApiTool<typeof createFormToolSchem
     return createFormToolSchema;
   }
 
-  protected async executeInternal(input: ToolInputType<typeof createFormToolSchema>): Promise<ToolOutputType<never>> {
+  async execute(input: ToolInputType<typeof createFormToolSchema>): Promise<ToolOutputType<never>> {
     const variables: CreateFormMutationVariables = {
       destination_workspace_id: input.destination_workspace_id,
       destination_folder_id: input.destination_folder_id,

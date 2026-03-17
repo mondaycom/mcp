@@ -426,7 +426,7 @@ describe('GetNotetakerMeetingsTool', () => {
 
   describe('Schema Validation', () => {
     it('should have correct tool metadata', () => {
-      const tool = new GetNotetakerMeetingsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new GetNotetakerMeetingsTool(mocks.mockApiClient);
 
       expect(tool.name).toBe('get_notetaker_meetings');
       expect(tool.type).toBe('read');
@@ -437,7 +437,7 @@ describe('GetNotetakerMeetingsTool', () => {
     });
 
     it('should have correct input schema', () => {
-      const tool = new GetNotetakerMeetingsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new GetNotetakerMeetingsTool(mocks.mockApiClient);
       const schema = tool.getInputSchema();
 
       expect(schema.ids).toBeDefined();
@@ -452,7 +452,7 @@ describe('GetNotetakerMeetingsTool', () => {
     });
 
     it('should have correct description', () => {
-      const tool = new GetNotetakerMeetingsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new GetNotetakerMeetingsTool(mocks.mockApiClient);
       const description = tool.getDescription();
 
       expect(description).toContain('notetaker meetings');

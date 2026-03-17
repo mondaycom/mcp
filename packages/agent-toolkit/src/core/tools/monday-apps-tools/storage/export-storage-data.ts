@@ -24,7 +24,7 @@ export class ExportStorageDataTool extends BaseMondayAppsTool<
     return exportStorageDataSchema.shape;
   }
 
-  protected async executeInternal(
+  async execute(
     input: ToolInputType<typeof exportStorageDataSchema.shape>,
   ): Promise<ToolOutputType<ExportStorageDataResponse>> {
     try {

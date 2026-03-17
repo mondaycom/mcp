@@ -40,7 +40,7 @@ Provide a clear question or topic in the query parameter for best results.`;
     return getAppDevelopmentContextSchema.shape;
   }
 
-  protected async executeInternal(
+  async execute(
     input?: ToolInputType<typeof getAppDevelopmentContextSchema.shape>,
   ): Promise<ToolOutputType<AppDevelopmentContextResponse>> {
     if (!input?.query) {

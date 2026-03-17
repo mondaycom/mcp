@@ -50,7 +50,7 @@ Searches recently used boards (up to ${RECENT_BOARDS_LIMIT}). If none found, ask
     return getSprintsBoardsToolSchema;
   }
 
-  protected async executeInternal(
+  async execute(
     input: ToolInputType<typeof getSprintsBoardsToolSchema>,
   ): Promise<ToolOutputType<never>> {
     try {

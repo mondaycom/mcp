@@ -41,7 +41,7 @@ export class CreateTimelineItemTool extends BaseMondayApiTool<typeof createTimel
     return createTimelineItemToolSchema;
   }
 
-  protected async executeInternal(
+  async execute(
     input: ToolInputType<typeof createTimelineItemToolSchema>,
   ): Promise<ToolOutputType<never>> {
     const variables: CreateTimelineItemMutationVariables = {

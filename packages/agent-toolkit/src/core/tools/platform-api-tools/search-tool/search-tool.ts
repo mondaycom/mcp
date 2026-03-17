@@ -68,7 +68,7 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     return searchSchema;
   }
 
-  protected async executeInternal(input: ToolInputType<SearchToolInput>): Promise<ToolOutputType<never>> {
+  async execute(input: ToolInputType<SearchToolInput>): Promise<ToolOutputType<never>> {
     // Try using new "search" field from dev schema for BOARD and DOCUMENTS types
     if (input.searchType !== GlobalSearchType.FOLDERS && input.searchTerm) {
       try {

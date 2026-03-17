@@ -60,7 +60,7 @@ USAGE EXAMPLES:
     return addContentToDocToolSchema;
   }
 
-  protected async executeInternal(
+  async execute(
     input: ToolInputType<typeof addContentToDocToolSchema>,
   ): Promise<ToolOutputType<never>> {
     if (!input.doc_id && !input.object_id) {

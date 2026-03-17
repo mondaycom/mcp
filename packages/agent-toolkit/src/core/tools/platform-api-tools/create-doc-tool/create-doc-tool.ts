@@ -111,7 +111,7 @@ USAGE EXAMPLES:
     return createDocToolSchema;
   }
 
-  protected async executeInternal(input: ToolInputType<typeof createDocToolSchema>): Promise<ToolOutputType<never>> {
+  async execute(input: ToolInputType<typeof createDocToolSchema>): Promise<ToolOutputType<never>> {
     const inputParsingResult = CreateDocLocationSchema.safeParse({
       ...input,
       type: input.location,

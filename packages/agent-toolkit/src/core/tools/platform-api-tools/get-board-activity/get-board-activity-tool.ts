@@ -37,7 +37,7 @@ export class GetBoardActivityTool extends BaseMondayApiTool<typeof getBoardActiv
     return getBoardActivityToolSchema;
   }
 
-  protected async executeInternal(
+  async execute(
     input: ToolInputType<typeof getBoardActivityToolSchema>,
   ): Promise<ToolOutputType<never>> {
     // Calculate default date range (last 30 days)

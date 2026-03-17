@@ -111,7 +111,7 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
     return listUsersAndTeamsToolSchema;
   }
 
-  protected async executeInternal(
+  async execute(
     input: ToolInputType<typeof listUsersAndTeamsToolSchema>,
   ): Promise<ToolOutputType<never>> {
     const hasUserIds = input.userIds && input.userIds.length > 0;

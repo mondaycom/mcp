@@ -70,7 +70,7 @@ USAGE PATTERNS:
     return readDocsToolSchema;
   }
 
-  protected async executeInternal(input: ToolInputType<typeof readDocsToolSchema>): Promise<ToolOutputType<never>> {
+  async execute(input: ToolInputType<typeof readDocsToolSchema>): Promise<ToolOutputType<never>> {
     try {
       // Extract ID values by type (now it's a single object, not an array)
       let ids: string[] | undefined;

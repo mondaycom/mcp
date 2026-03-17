@@ -74,7 +74,7 @@ export class BoardInsightsTool extends BaseMondayApiTool<typeof boardInsightsToo
     return boardInsightsToolSchema;
   }
 
-  protected async executeInternal(
+  async execute(
     input: ToolInputType<typeof boardInsightsToolSchema>,
   ): Promise<ToolOutputType<never>> {
     if (!input.aggregations) {

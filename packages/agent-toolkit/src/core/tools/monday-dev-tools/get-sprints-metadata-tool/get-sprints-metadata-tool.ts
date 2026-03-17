@@ -74,7 +74,7 @@ Requires the Main Sprints board ID of the monday-dev containing your sprints.`;
     return getSprintsMetadataToolSchema;
   }
 
-  protected async executeInternal(
+  async execute(
     input: ToolInputType<typeof getSprintsMetadataToolSchema>,
   ): Promise<ToolOutputType<never>> {
     try {

@@ -32,7 +32,7 @@ export class FormQuestionsEditorTool extends BaseMondayApiTool<typeof formQuesti
     return formQuestionsEditorToolSchema;
   }
 
-  protected async executeInternal(
+  async execute(
     input: ToolInputType<typeof formQuestionsEditorToolSchema>,
   ): Promise<ToolOutputType<never>> {
     const handler = this.actionHandlers.get(input.action);

@@ -39,7 +39,7 @@ export class CreateFolderTool extends BaseMondayApiTool<CreateFolderToolInput> {
     return createFolderToolSchema;
   }
 
-  protected async executeInternal(input: ToolInputType<CreateFolderToolInput>): Promise<ToolOutputType<never>> {
+  async execute(input: ToolInputType<CreateFolderToolInput>): Promise<ToolOutputType<never>> {
     const variables: CreateFolderMutationVariables = {
       workspaceId: input.workspaceId,
       name: input.name,

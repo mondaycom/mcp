@@ -35,7 +35,7 @@ export class UpdateWorkspaceTool extends BaseMondayApiTool<UpdateWorkspaceToolIn
     return updateWorkspaceToolSchema;
   }
 
-  protected async executeInternal(input: ToolInputType<UpdateWorkspaceToolInput>): Promise<ToolOutputType<never>> {
+  async execute(input: ToolInputType<UpdateWorkspaceToolInput>): Promise<ToolOutputType<never>> {
     const variables = {
       id: input.id,
       attributes: {

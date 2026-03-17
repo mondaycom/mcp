@@ -46,7 +46,7 @@ export class GetAppFeatureSchemaToool extends BaseMondayAppsTool<
     return getAppFeatureSchemaSchema.shape;
   }
 
-  protected async executeInternal(
+  async execute(
     input?: ToolInputType<typeof getAppFeatureSchemaSchema.shape>,
   ): Promise<ToolOutputType<GetAppFeatureSchemaResponse>> {
     try {

@@ -28,7 +28,7 @@ export class GetColumnTypeInfoTool extends BaseMondayApiTool<typeof getNonDeprec
     return getNonDeprecatedColumnTypeInfoToolSchema;
   }
 
-  protected async executeInternal(
+  async execute(
     input: ToolInputType<typeof getNonDeprecatedColumnTypeInfoToolSchema>,
   ): Promise<ToolOutputType<never>> {
     const variables = {

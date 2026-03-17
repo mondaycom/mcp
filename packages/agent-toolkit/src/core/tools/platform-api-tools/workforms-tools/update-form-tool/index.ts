@@ -54,7 +54,7 @@ export class UpdateFormTool extends BaseMondayApiTool<typeof updateFormToolSchem
     [FormActions.updateFormHeader, this.helpers.updateFormHeader.bind(this.helpers)],
   ]);
 
-  protected async executeInternal(input: ToolInputType<typeof updateFormToolSchema>): Promise<ToolOutputType<never>> {
+  async execute(input: ToolInputType<typeof updateFormToolSchema>): Promise<ToolOutputType<never>> {
     const handler = this.actionHandlers.get(input.action);
 
     if (!handler) {

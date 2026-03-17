@@ -38,7 +38,7 @@ export class FullBoardDataTool extends BaseMondayApiTool<typeof fullBoardDataToo
     return fullBoardDataToolSchema;
   }
 
-  protected async executeInternal(
+  async execute(
     input: ToolInputType<typeof fullBoardDataToolSchema>,
   ): Promise<ToolOutputType<never>> {
     try {

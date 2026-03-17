@@ -62,7 +62,7 @@ When viewing the section "Completed by Assignee", you'll see user IDs in the for
     return getSprintSummaryToolSchema;
   }
 
-  protected async executeInternal(
+  async execute(
     input: ToolInputType<typeof getSprintSummaryToolSchema>,
   ): Promise<ToolOutputType<never>> {
     try {

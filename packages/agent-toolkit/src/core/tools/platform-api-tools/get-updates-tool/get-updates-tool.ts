@@ -55,7 +55,7 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
     return getUpdatesToolSchema;
   }
 
-  protected async executeInternal(input: ToolInputType<typeof getUpdatesToolSchema>): Promise<ToolOutputType<never>> {
+  async execute(input: ToolInputType<typeof getUpdatesToolSchema>): Promise<ToolOutputType<never>> {
     try {
       const variables = {
         limit: input.limit ?? 25,

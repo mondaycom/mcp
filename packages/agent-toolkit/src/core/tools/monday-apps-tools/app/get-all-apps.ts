@@ -21,7 +21,7 @@ export class GetAllAppsTool extends BaseMondayAppsTool<undefined, AppApiDataResp
     return undefined;
   }
 
-  protected async executeInternal(_input?: ToolInputType<undefined>): Promise<ToolOutputType<AppApiDataResponse>> {
+  async execute(_input?: ToolInputType<undefined>): Promise<ToolOutputType<AppApiDataResponse>> {
     try {
       const response = await this.executeApiRequest<AppApiDataResponse>(HttpMethod.GET, API_ENDPOINTS.APPS.GET_ALL);
 

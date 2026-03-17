@@ -33,7 +33,7 @@ export class CreateCustomActivityTool extends BaseMondayApiTool<typeof createCus
     return createCustomActivityToolSchema;
   }
 
-  protected async executeInternal(
+  async execute(
     input: ToolInputType<typeof createCustomActivityToolSchema>,
   ): Promise<ToolOutputType<never>> {
     const variables: CreateCustomActivityMutationVariables = {

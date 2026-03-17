@@ -27,7 +27,7 @@ export class WorkspaceInfoTool extends BaseMondayApiTool<typeof workspaceInfoToo
     return workspaceInfoToolSchema;
   }
 
-  protected async executeInternal(
+  async execute(
     input: ToolInputType<typeof workspaceInfoToolSchema>,
   ): Promise<ToolOutputType<never>> {
     const variables = {

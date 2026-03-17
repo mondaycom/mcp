@@ -49,7 +49,7 @@ export class CreateDashboardTool extends BaseMondayApiTool<typeof createDashboar
     return createDashboardToolSchema;
   }
 
-  protected async executeInternal(
+  async execute(
     input: ToolInputType<typeof createDashboardToolSchema>,
   ): Promise<ToolOutputType<never>> {
     try {

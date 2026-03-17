@@ -6,8 +6,6 @@ import { Tool, ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { MondayAppsToolCategory } from '../consts/apps.consts';
 import { APPS_MS_TIMEOUT_IN_MS, API_ENDPOINTS } from '../consts/routes.consts';
 import { ToolAnnotations } from '@modelcontextprotocol/sdk/types';
-import { trackEvent } from '../../../../utils/tracking.utils';
-import { extractTokenInfo } from '../../../../utils/token.utils';
 import { API_VERSION } from '../../../../utils/version.utils';
 
 export interface MondayApiResponse {
@@ -43,29 +41,7 @@ export abstract class BaseMondayAppsTool<
   abstract getDescription(): string;
   abstract getInputSchema(): Input;
 
-  /**
-   * Public execute method that automatically tracks execution
-   */
-  async execute(input?: ToolInputType<Input>): Promise<ToolOutputType<Output>> {
-    const startTime = Date.now();
-    let isError = false;
-
-    try {
-      const result = await this.executeInternal(input);
-      return result;
-    } catch (error) {
-      isError = true;
-      throw error;
-    } finally {
-      const executionTimeInMs = Date.now() - startTime;
-      this.trackToolExecution(this.name, executionTimeInMs, isError);
-    }
-  }
-
-  /**
-   * Abstract method that subclasses should implement for their actual logic
-   */
-  protected abstract executeInternal(input?: ToolInputType<Input>): Promise<ToolOutputType<Output>>;
+  abstract execute(input?: ToolInputType<Input>): Promise<ToolOutputType<Output>>;
 
   /**
    * Execute an API request to the monday.com  API
@@ -185,33 +161,5 @@ export abstract class BaseMondayAppsTool<
       }
       throw new Error(`Failed to execute GraphQL query: ${error.message}`);
     }
-  }
-
-  /**
-   * Tracks tool execution with timing and error information
-   * @param toolName - The name of the tool being executed
-   * @param executionTimeInMs - The time taken to execute the tool in milliseconds
-   * @param isError - Whether the execution resulted in an error
-   * @param params - The parameters passed to the tool
-   */
-  private trackToolExecution(
-    toolName: string,
-    executionTimeMs: number,
-    isError: boolean,
-    params?: Record<string, unknown>,
-  ): void {
-    const tokenInfo = this.mondayApiToken ? extractTokenInfo(this.mondayApiToken) : {};
-
-    trackEvent({
-      name: 'monday_apps_mcp_tool_execution',
-      data: {
-        toolName,
-        executionTimeMs,
-        isError,
-        params,
-        toolType: 'monday_apps_tool',
-        ...tokenInfo,
-      },
-    });
   }
 }

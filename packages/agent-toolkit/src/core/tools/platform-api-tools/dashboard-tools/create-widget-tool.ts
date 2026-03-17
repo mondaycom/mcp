@@ -58,7 +58,7 @@ export class CreateWidgetTool extends BaseMondayApiTool<typeof createWidgetToolS
     return createWidgetToolSchema;
   }
 
-  protected async executeInternal(input: ToolInputType<typeof createWidgetToolSchema>): Promise<ToolOutputType<never>> {
+  async execute(input: ToolInputType<typeof createWidgetToolSchema>): Promise<ToolOutputType<never>> {
     if (!input.settings) {
       throw new Error('You must pass the settings parameter');
     }

@@ -45,7 +45,7 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
     return listWorkspaceToolSchema;
   }
 
-  protected async executeInternal(
+  async execute(
     input: ToolInputType<typeof listWorkspaceToolSchema>,
   ): Promise<ToolOutputType<never>> {
     // Due to lack of search capabilities in the API, we filter in memory.

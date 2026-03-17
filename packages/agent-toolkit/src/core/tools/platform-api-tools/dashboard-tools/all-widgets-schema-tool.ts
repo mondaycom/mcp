@@ -37,7 +37,7 @@ export class AllWidgetsSchemaTool extends BaseMondayApiTool<Record<string, never
     return {};
   }
 
-  protected async executeInternal(): Promise<ToolOutputType<never>> {
+  async execute(): Promise<ToolOutputType<never>> {
     try {
       // Execute the GraphQL query (no variables needed)
       const variables: GetAllWidgetsSchemaQueryVariables = {};

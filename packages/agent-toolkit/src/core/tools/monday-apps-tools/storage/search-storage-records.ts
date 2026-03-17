@@ -24,7 +24,7 @@ export class SearchStorageRecordsTool extends BaseMondayAppsTool<
     return searchStorageRecordsSchema.shape;
   }
 
-  protected async executeInternal(
+  async execute(
     input: ToolInputType<typeof searchStorageRecordsSchema.shape>,
   ): Promise<ToolOutputType<StorageRecordsResponse>> {
     try {

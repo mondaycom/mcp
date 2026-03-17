@@ -60,7 +60,7 @@ export class UpdateAssetsOnItemTool extends BaseMondayApiTool<typeof updateAsset
     return updateAssetsOnItemToolSchema;
   }
 
-  protected async executeInternal(
+  async execute(
     input: ToolInputType<typeof updateAssetsOnItemToolSchema>,
   ): Promise<ToolOutputType<never>> {
     const variables: UpdateAssetsOnItemMutationVariables = {

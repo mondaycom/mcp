@@ -30,7 +30,7 @@ export class GetGraphQLSchemaTool extends BaseMondayApiTool<typeof getGraphQLSch
     return getGraphQLSchemaToolSchema;
   }
 
-  protected async executeInternal(
+  async execute(
     input?: ToolInputType<typeof getGraphQLSchemaToolSchema>,
   ): Promise<ToolOutputType<never>> {
     try {

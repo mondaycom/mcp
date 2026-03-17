@@ -147,7 +147,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
     return getBoardItemsPageToolSchema;
   }
 
-  protected async executeInternal(input: ToolInputType<GetBoardItemsPageToolInput>): Promise<ToolOutputType<never>> {
+  async execute(input: ToolInputType<GetBoardItemsPageToolInput>): Promise<ToolOutputType<never>> {
     // Passing filters + cursor returns an error as cursor has them encoded in it
     const canIncludeFilters = !input.cursor;
 

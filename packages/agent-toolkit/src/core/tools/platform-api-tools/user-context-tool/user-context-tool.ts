@@ -33,7 +33,7 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
     return undefined;
   }
 
-  protected async executeInternal(): Promise<ToolOutputType<never>> {
+  async execute(): Promise<ToolOutputType<never>> {
     const { me, favorites, intelligence } = await this.mondayApi.request<GetUserContextQuery>(
       getUserContextQuery,
       {},

@@ -30,7 +30,7 @@ export class MoveItemToGroupTool extends BaseMondayApiTool<typeof moveItemToGrou
     return moveItemToGroupToolSchema;
   }
 
-  protected async executeInternal(
+  async execute(
     input: ToolInputType<typeof moveItemToGroupToolSchema>,
   ): Promise<ToolOutputType<never>> {
     const variables: MoveItemToGroupMutationVariables = {

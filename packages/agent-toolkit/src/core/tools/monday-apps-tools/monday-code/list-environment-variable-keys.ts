@@ -24,7 +24,7 @@ export class ListEnvironmentVariableKeysTool extends BaseMondayAppsTool<
     return listEnvVarKeysSchema.shape;
   }
 
-  protected async executeInternal(
+  async execute(
     input: ToolInputType<typeof listEnvVarKeysSchema.shape>,
   ): Promise<ToolOutputType<EnvVarKeysResponse>> {
     try {

@@ -31,7 +31,7 @@ export class CreateNotificationTool extends BaseMondayApiTool<typeof createNotif
     return createNotificationToolSchema;
   }
 
-  protected async executeInternal(
+  async execute(
     input: ToolInputType<typeof createNotificationToolSchema>,
   ): Promise<ToolOutputType<never>> {
     const variables = {

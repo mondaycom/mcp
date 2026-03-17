@@ -23,7 +23,7 @@ export class CreateAppFeatureTool extends BaseMondayAppsTool<
     return createAppFeatureSchema.shape;
   }
 
-  protected async executeInternal(
+  async execute(
     input: ToolInputType<typeof createAppFeatureSchema.shape>,
   ): Promise<ToolOutputType<CreateAppFeatureResponse>> {
     try {

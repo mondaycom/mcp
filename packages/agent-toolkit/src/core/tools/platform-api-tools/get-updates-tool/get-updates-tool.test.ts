@@ -67,7 +67,7 @@ describe('Get Updates Tool', () => {
 
   it('Successfully gets updates for an item with default parameters', async () => {
     mocks.setResponse(mockItemUpdatesResponse);
-    const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
+    const tool = new GetUpdatesTool(mocks.mockApiClient);
 
     const result = await tool.execute({ objectId: '123', objectType: 'Item' } as any);
 
@@ -94,7 +94,7 @@ describe('Get Updates Tool', () => {
 
   it('Successfully gets board-level updates', async () => {
     mocks.setResponse(mockBoardUpdatesResponse);
-    const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
+    const tool = new GetUpdatesTool(mocks.mockApiClient);
 
     const result = await tool.execute({ objectId: '456', objectType: 'Board' } as any);
 
@@ -120,7 +120,7 @@ describe('Get Updates Tool', () => {
 
   it('Successfully gets updates with custom pagination', async () => {
     mocks.setResponse(mockItemUpdatesResponse);
-    const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
+    const tool = new GetUpdatesTool(mocks.mockApiClient);
 
     const result = await tool.execute({ objectId: '123', objectType: 'Item', limit: 50, page: 2 } as any);
 
@@ -177,7 +177,7 @@ describe('Get Updates Tool', () => {
     };
 
     mocks.setResponse(responseWithReplies);
-    const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
+    const tool = new GetUpdatesTool(mocks.mockApiClient);
 
     const result = await tool.execute({ objectId: '123', objectType: 'Item', includeReplies: true } as any);
 
@@ -228,7 +228,7 @@ describe('Get Updates Tool', () => {
     };
 
     mocks.setResponse(responseWithAssets);
-    const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
+    const tool = new GetUpdatesTool(mocks.mockApiClient);
 
     const result = await tool.execute({ objectId: '123', objectType: 'Item', includeAssets: true } as any);
 
@@ -286,7 +286,7 @@ describe('Get Updates Tool', () => {
     };
 
     mocks.setResponse(fullResponse);
-    const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
+    const tool = new GetUpdatesTool(mocks.mockApiClient);
 
     const result = await tool.execute({
       objectId: '123',
@@ -306,7 +306,7 @@ describe('Get Updates Tool', () => {
     };
 
     mocks.setResponse(emptyResponse);
-    const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
+    const tool = new GetUpdatesTool(mocks.mockApiClient);
 
     const result = await tool.execute({ objectId: '123', objectType: 'Item' } as any);
 
@@ -319,7 +319,7 @@ describe('Get Updates Tool', () => {
     };
 
     mocks.setResponse(noUpdatesResponse);
-    const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
+    const tool = new GetUpdatesTool(mocks.mockApiClient);
 
     const result = await tool.execute({ objectId: '123', objectType: 'Item' } as any);
 
@@ -333,7 +333,7 @@ describe('Get Updates Tool', () => {
       errors: [{ message: 'Item not found' }, { message: 'Insufficient permissions' }],
     };
     mocks.setError(graphqlError);
-    const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
+    const tool = new GetUpdatesTool(mocks.mockApiClient);
 
     await expect(tool.execute({ objectId: '123', objectType: 'Item' } as any)).rejects.toThrow(
       'Failed to get updates: Item not found, Insufficient permissions',
@@ -343,13 +343,13 @@ describe('Get Updates Tool', () => {
   it('Handles network errors', async () => {
     const networkError = new Error('Network request failed');
     mocks.setError(networkError);
-    const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
+    const tool = new GetUpdatesTool(mocks.mockApiClient);
 
     await expect(tool.execute({ objectId: '123', objectType: 'Item' } as any)).rejects.toThrow('Failed to get updates: Network request failed');
   });
 
   it('Has correct schema and tool properties', () => {
-    const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
+    const tool = new GetUpdatesTool(mocks.mockApiClient);
     const schema = tool.getInputSchema();
 
     expect(tool.name).toBe('get_updates');
@@ -368,7 +368,7 @@ describe('Get Updates Tool', () => {
   });
 
   it('Rejects limit values outside valid range', async () => {
-    const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
+    const tool = new GetUpdatesTool(mocks.mockApiClient);
 
     await expect(tool.execute({ itemId: 123, limit: 0 } as any)).rejects.toThrow();
 
@@ -376,7 +376,7 @@ describe('Get Updates Tool', () => {
   });
 
   it('Rejects page values less than 1', async () => {
-    const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
+    const tool = new GetUpdatesTool(mocks.mockApiClient);
 
     await expect(tool.execute({ itemId: 123, page: 0 } as any)).rejects.toThrow();
   });
