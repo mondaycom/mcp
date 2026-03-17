@@ -236,7 +236,7 @@ USAGE EXAMPLES:
       }
 
       return {
-        content: `✅ Document successfully created (id: ${docId}, object_id: ${docObjectId}). ${docUrl ? `\n\nURL: ${docUrl}` : ''}`,
+        content: JSON.stringify({ message: "Document successfully created", doc_id: docId, object_id: docObjectId, doc_url: docUrl }),
       };
     } catch (error) {
       return {

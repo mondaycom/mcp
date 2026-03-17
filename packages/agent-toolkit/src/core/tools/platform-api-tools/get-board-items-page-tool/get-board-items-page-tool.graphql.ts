@@ -4,6 +4,7 @@ export const getBoardItemsPage = gql`
   fragment ItemDataFragment on Item {
     id
     name
+    url
     created_at
     updated_at
     column_values(ids: $columnIds) @include(if: $includeColumns) {

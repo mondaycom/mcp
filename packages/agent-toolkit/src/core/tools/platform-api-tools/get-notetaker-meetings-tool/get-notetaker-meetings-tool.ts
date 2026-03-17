@@ -123,7 +123,7 @@ export class GetNotetakerMeetingsTool extends BaseMondayApiTool<typeof getNoteta
     };
 
     return {
-      content: JSON.stringify(result, null, 2),
+      content: JSON.stringify({ message: "Meetings retrieved", data: result }),
     };
   }
 }

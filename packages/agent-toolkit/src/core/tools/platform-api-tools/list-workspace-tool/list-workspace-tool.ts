@@ -1,12 +1,12 @@
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+import { fetchAccountSlug, buildWorkspaceUrl } from '../utils/account-slug.utils';
 import { listWorkspaces } from './list-workspace.graphql';
 import { DEFAULT_WORKSPACE_LIMIT, MAX_WORKSPACE_LIMIT_FOR_SEARCH } from './list-workspace.consts';
 import {
   filterNullWorkspaces,
   hasMatchingWorkspace,
   filterWorkspacesBySearchTerm,
-  formatWorkspacesList,
 } from './list-workspace.utils';
 import { ListWorkspacesQuery, WorkspaceMembershipKind } from '../../../../monday-graphql/generated/graphql/graphql';
 import { z } from 'zod';
@@ -112,15 +112,22 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
 
     // Naive check to see if there are more pages
     const hasMorePages = filteredWorkspaces.length === input.limit;
-    const workspacesList = formatWorkspacesList(filteredWorkspaces);
-    const memberOnlyNote = !shouldFetchAllWorkspaces ? 'Showing workspaces you are a member of. ' : '';
+
+    const slug = await fetchAccountSlug(this.mondayApi);
+    const workspacesWithUrls = filteredWorkspaces.map(ws => ({
+      id: ws.id,
+      name: ws.name,
+      description: ws.description || undefined,
+      url: slug && ws.id ? buildWorkspaceUrl(slug, ws.id) : undefined,
+    }));
 
     return {
-      content: `
-${shouldIncludeNoFilteringDisclaimer ? 'IMPORTANT: Search term not applied - returning all workspaces. Perform the filtering manually.' : ''}
-${memberOnlyNote}${workspacesList}
-${hasMorePages ? `PAGINATION INFO: More results available - call the tool again with page: ${input.page + 1}` : ''}
-      `,
+      content: JSON.stringify({
+        message: "Workspaces retrieved",
+        ...(shouldIncludeNoFilteringDisclaimer ? { disclaimer: "Search term not applied - returning all workspaces. Perform the filtering manually." } : {}),
+        ...(hasMorePages ? { next_page: input.page + 1 } : {}),
+        data: workspacesWithUrls,
+      }),
     };
   }
 }

@@ -73,12 +73,9 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     if (input.searchType !== GlobalSearchType.FOLDERS && input.searchTerm) {
       try {
         const data = await this.searchWithDevEndpointAsync(input);
-        const response = {
-          results: data.items,
-        };
 
         return {
-          content: JSON.stringify(response, null, 2),
+          content: JSON.stringify({ message: "Search results", data: data.items }),
         };
       } catch (error) {
        throwIfSearchTimeoutError(error);
@@ -98,16 +95,9 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     }
 
     const data = await handler(input);
-    const response = {
-      disclaimer:
-        data.wasFiltered || !input.searchTerm
-          ? undefined
-          : '[IMPORTANT]Items were not filtered. Please perform the filtering.',
-      results: data.items,
-    };
 
     return {
-      content: JSON.stringify(response, null, 2),
+      content: JSON.stringify({ message: "Search results", disclaimer: data.wasFiltered || !input.searchTerm ? undefined : '[IMPORTANT]Items were not filtered. Please perform the filtering.', data: data.items }),
     };
   }
 

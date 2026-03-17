@@ -7,6 +7,7 @@ import {
 import { createWorkspace } from './create-workspace-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+import { fetchAccountSlug, buildWorkspaceUrl } from '../utils/account-slug.utils';
 
 export const createWorkspaceToolSchema = {
   name: z.string().describe('The name of the new workspace to be created'),
@@ -45,8 +46,11 @@ export class CreateWorkspaceTool extends BaseMondayApiTool<CreateWorkspaceToolIn
 
     const res = await this.mondayApi.request<CreateWorkspaceMutation>(createWorkspace, variables);
 
+    const slug = await fetchAccountSlug(this.mondayApi);
+    const workspaceUrl = slug && res.create_workspace?.id ? buildWorkspaceUrl(slug, res.create_workspace.id) : undefined;
+
     return {
-      content: `Workspace ${res.create_workspace?.id} successfully created`,
+      content: JSON.stringify({ message: `Workspace ${res.create_workspace?.id} successfully created`, workspace_id: res.create_workspace?.id, workspace_name: res.create_workspace?.name, workspace_url: workspaceUrl }),
     };
   }
 }

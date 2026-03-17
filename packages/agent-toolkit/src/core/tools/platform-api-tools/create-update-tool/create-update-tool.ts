@@ -87,7 +87,7 @@ export class CreateUpdateTool extends BaseMondayApiTool<typeof createUpdateToolS
       }
 
       return {
-        content: `Update ${res.create_update.id} successfully created on item ${input.itemId}`,
+        content: JSON.stringify({ message: `Update ${res.create_update.id} created on item ${input.itemId}`, update_id: res.create_update.id, item_id: input.itemId }),
       };
     } catch (error) {
       rethrowWithContext(error, 'create update');

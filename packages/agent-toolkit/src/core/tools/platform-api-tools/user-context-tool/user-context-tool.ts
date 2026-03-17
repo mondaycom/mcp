@@ -51,7 +51,7 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
     const relevantPeople = this.extractRelevantPeople(intelligence);
 
     const output = { user: me, favorites: enrichedFavorites, relevantBoards, relevantPeople };
-    return { content: JSON.stringify(output, null, 2) };
+    return { content: JSON.stringify({ message: "User context", ...output }) };
   }
 
   private async fetchFavorites(favorites: NonNullable<GetUserContextQuery['favorites']>): Promise<Favorite[]> {

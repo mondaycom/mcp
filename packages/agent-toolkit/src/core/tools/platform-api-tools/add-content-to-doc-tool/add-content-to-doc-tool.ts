@@ -10,7 +10,7 @@ import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 
 type GetDocByObjectIdQuery = {
-  docs?: Array<{ id: string } | null> | null;
+  docs?: Array<{ id: string; name?: string; url?: string } | null> | null;
 };
 
 export const addContentToDocToolSchema = {
@@ -106,7 +106,11 @@ USAGE EXAMPLES:
 
       const blockCount = block_ids?.length ?? 0;
       return {
-        content: `Successfully added content to document ${docId}. ${blockCount} block${blockCount === 1 ? '' : 's'} created.${block_ids && block_ids.length > 0 ? ` Block IDs: ${block_ids.join(', ')}` : ''}`,
+        content: JSON.stringify({
+          message: `Successfully added content to document ${docId}. ${blockCount} block${blockCount === 1 ? '' : 's'} created.`,
+          doc_id: docId,
+          block_ids: block_ids,
+        }),
       };
     } catch (error) {
       return {

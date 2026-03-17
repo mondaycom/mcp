@@ -48,7 +48,7 @@ export class GetColumnTypeInfoTool extends BaseMondayApiTool<typeof getNonDeprec
     };
 
     return {
-      content: `Column Type Information for "${input.columnType}":\n\n${JSON.stringify(columnTypeInfo, null, 2)}`,
+      content: JSON.stringify({ message: `Column type info for ${input.columnType}`, data: columnTypeInfo }),
     };
   }
 }

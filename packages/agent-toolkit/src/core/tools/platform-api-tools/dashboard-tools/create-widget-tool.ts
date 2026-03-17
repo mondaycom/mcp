@@ -92,16 +92,7 @@ export class CreateWidgetTool extends BaseMondayApiTool<typeof createWidgetToolS
           : `board view ${widget.parent?.id}`;
 
       return {
-        content: `✅ Widget "${widget.name}" successfully created!
-
-**Widget Details:**
-• **ID**: ${widget.id}
-• **Name**: ${widget.name}
-• **Type**: ${widget.kind}
-• **Location**: Placed in ${parentInfo}
-
-**Widget Configuration:**
-• **Settings Applied**: ${JSON.stringify(input.settings, null, 2)}`,
+        content: JSON.stringify({ message: `Widget ${widget.id} created`, widget_id: widget.id, widget_name: widget.name, dashboard_id: widget.parent?.id }),
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);

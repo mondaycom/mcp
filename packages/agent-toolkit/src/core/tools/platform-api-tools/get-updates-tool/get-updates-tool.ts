@@ -126,7 +126,14 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
         return formattedUpdate;
       });
 
+      const entityUrl = input.objectType === UpdateObjectType.Item
+        ? (res as GetItemUpdatesQuery).items?.[0]?.url
+        : (res as GetBoardUpdatesQuery).boards?.[0]?.url;
+
       const result = {
+        message: "Updates retrieved",
+        [`${input.objectType.toLowerCase()}_id`]: input.objectId,
+        url: entityUrl,
         updates: formattedUpdates,
         pagination: {
           page: input.page ?? 1,

@@ -45,7 +45,7 @@ export class CreateNotificationTool extends BaseMondayApiTool<typeof createNotif
       const createResult: CreateNotificationMutation = await this.mondayApi.request(createNotification, variables);
 
       return {
-        content: `Notification successfully sent to user ${input.user_id}: "${input.text}"`,
+        content: JSON.stringify({ message: "Notification sent", user_id: input.user_id, text: input.text }),
       };
     } catch (error) {
       return {

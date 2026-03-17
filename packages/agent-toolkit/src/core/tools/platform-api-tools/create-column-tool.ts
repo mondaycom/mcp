@@ -61,7 +61,7 @@ export class CreateColumnTool extends BaseMondayApiTool<CreateColumnToolInput> {
     const res = await this.mondayApi.request<CreateColumnMutation>(createColumn, variables);
 
     return {
-      content: `Column ${res.create_column?.id} successfully created`,
+      content: JSON.stringify({ message: "Column successfully created", column_id: res.create_column?.id, column_title: res.create_column?.title }),
     };
   }
 }

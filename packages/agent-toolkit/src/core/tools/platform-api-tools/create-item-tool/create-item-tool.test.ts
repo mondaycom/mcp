@@ -56,7 +56,7 @@ describe('Create Item Tool Behaviour', () => {
           groupId: 'group123',
         });
 
-        expect(result.content).toBe('Item 123456789 successfully created');
+        expect(result.content).toBe(JSON.stringify({ message: 'Item 123456789 successfully created', item_id: '123456789', item_name: 'New Item', board_id: 456 }));
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('mutation createItem'), {
           boardId: '456',
           itemName: 'Test Item',
@@ -75,7 +75,7 @@ describe('Create Item Tool Behaviour', () => {
           columnValues: '{"text_column": "Test Value"}',
         });
 
-        expect(result.content).toBe('Item 123456789 successfully created');
+        expect(result.content).toBe(JSON.stringify({ message: 'Item 123456789 successfully created', item_id: '123456789', item_name: 'New Item', board_id: 456 }));
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('mutation createItem'), {
           boardId: '456',
           itemName: 'Test Item',
@@ -95,7 +95,7 @@ describe('Create Item Tool Behaviour', () => {
           columnValues: '{"text_column": "Test Value"}',
         });
 
-        expect(result.content).toBe('Item 123456789 successfully created');
+        expect(result.content).toBe(JSON.stringify({ message: 'Item 123456789 successfully created', item_id: '123456789', item_name: 'New Item', board_id: 789 }));
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('mutation createItem'), {
           boardId: '789',
           itemName: 'Test Item',
@@ -167,7 +167,7 @@ describe('Create Item Tool Behaviour', () => {
           duplicateFromItemId: 123,
         });
 
-        expect(result.content).toBe('Item 987654321 successfully duplicated from 123 and updated');
+        expect(result.content).toBe(JSON.stringify({ message: 'Item 987654321 duplicated from 123', item_id: '987654321', item_name: 'Duplicated Item', board_id: 456 }));
 
         // Verify duplicate call
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('mutation duplicateItem'), {
@@ -276,7 +276,7 @@ describe('Create Item Tool Behaviour', () => {
           duplicateFromItemId: 123,
         });
 
-        expect(result.content).toBe('Item 987654321 successfully duplicated from 123 and updated');
+        expect(result.content).toBe(JSON.stringify({ message: 'Item 987654321 duplicated from 123', item_id: '987654321', item_name: 'Duplicated Item', board_id: 789 }));
 
         // Verify duplicate call uses input boardId
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('mutation duplicateItem'), {
@@ -313,7 +313,7 @@ describe('Create Item Tool Behaviour', () => {
           parentItemId: 123,
         });
 
-        expect(result.content).toBe('Subitem 111222333 successfully created under parent item 123');
+        expect(result.content).toBe(JSON.stringify({ message: 'Subitem 111222333 created under 123', item_id: '111222333', item_name: 'New Subitem' }));
 
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('mutation createSubitem'), {
           parentItemId: '123',

@@ -13,6 +13,7 @@ export const createItem = gql`
     create_item(board_id: $boardId, item_name: $itemName, group_id: $groupId, column_values: $columnValues) {
       id
       name
+      url
     }
   }
 `;
@@ -36,6 +37,8 @@ export const changeItemColumnValues = gql`
   mutation changeItemColumnValues($boardId: ID!, $itemId: ID!, $columnValues: JSON!) {
     change_multiple_column_values(board_id: $boardId, item_id: $itemId, column_values: $columnValues) {
       id
+      name
+      url
     }
   }
 `;
@@ -58,6 +61,8 @@ export const createBoard = gql`
       empty: true
     ) {
       id
+      name
+      url
     }
   }
 `;
@@ -78,6 +83,7 @@ export const createColumn = gql`
       defaults: $columnSettings
     ) {
       id
+      title
     }
   }
 `;

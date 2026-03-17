@@ -123,16 +123,7 @@ USAGE PATTERNS:
 
       const result = await this.enrichDocsWithMarkdown(res.docs, variables);
 
-      // Add pagination suggestion
-      const paginationSuggestion = this.shouldSuggestPagination(
-        res.docs.length,
-        variables.limit || 25,
-        variables.page || 1,
-      );
-
-      return {
-        content: result.content + paginationSuggestion,
-      };
+      return result;
     } catch (error) {
       return {
         content: `Error reading documents: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
@@ -215,16 +206,16 @@ USAGE PATTERNS:
     const hasMorePages = docsCount === limit; // If we got exactly the limit, there might be more
 
     return {
-      content: `Successfully retrieved ${docsInfo.length} document${docsInfo.length === 1 ? '' : 's'}.
-
-PAGINATION INFO:
-- Current page: ${currentPage}
-- Documents per page: ${limit}
-- Documents in this response: ${docsCount}
-- Has more pages: ${hasMorePages ? 'YES - call again with page: ' + (currentPage + 1) : 'NO'}
-
-DOCUMENTS:
-${JSON.stringify(docsInfo, null, 2)}`,
+      content: JSON.stringify({
+        message: `Documents retrieved (${docsInfo.length})`,
+        pagination: {
+          current_page: currentPage,
+          limit,
+          count: docsCount,
+          has_more_pages: hasMorePages,
+        },
+        data: docsInfo,
+      }),
     };
   }
 }

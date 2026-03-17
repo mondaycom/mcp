@@ -52,7 +52,7 @@ export class CreateFolderTool extends BaseMondayApiTool<CreateFolderToolInput> {
     const res = await this.mondayApi.request<CreateFolderMutation>(createFolderTool, variables);
 
     return {
-      content: `Folder ${res.create_folder?.id} successfully created`,
+      content: JSON.stringify({ message: `Folder ${res.create_folder?.id} successfully created`, folder_id: res.create_folder?.id, folder_name: res.create_folder?.name }),
     };
   }
 }
