@@ -45,7 +45,7 @@ export const getUpdatesToolSchema = {
     .default(true)
     .describe(
       'Controls which updates are returned for Board queries. ' +
-      'Defaults to true, returning only board-level updates. ' +
+      'Defaults to true, returning only board discussion. ' +
       'To retrieve all updates on a board — including updates on individual items — explicitly set this to false.',
     ),
 };
@@ -65,7 +65,7 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
       'Get updates (comments/posts) from a monday.com item or board. ' +
       'Specify objectId and objectType (Item or Board) to retrieve updates. ' +
       'For Board queries, you can filter by date range using fromDate and toDate (both required together, ISO8601 format). ' +
-      'By default, Board queries return only board-level updates; set boardUpdatesOnly to false to also include updates on individual items. ' +
+      'By default, Board queries return only board discussion; set boardUpdatesOnly to false to also include updates on individual items. ' +
       'Returns update text, creator info, timestamps, and optionally replies and assets.'
     );
   }
