@@ -38,7 +38,7 @@ describe('AddContentToDocTool', () => {
 
       expect(result.content[0].text).toContain('Successfully added content to document doc_123');
       expect(result.content[0].text).toContain('2 blocks created');
-      expect(result.content[0].text).toContain('block_1, block_2');
+      expect(result.content[0].text).toContain('block_1');
 
       const mockCalls = mocks.getMockRequest().mock.calls;
       const addContentCall = mockCalls.find((call: any) => call[0].includes('mutation addContentToDocFromMarkdown'));

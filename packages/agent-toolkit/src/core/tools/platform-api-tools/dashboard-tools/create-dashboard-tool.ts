@@ -72,14 +72,6 @@ export class CreateDashboardTool extends BaseMondayApiTool<typeof createDashboar
 
       const dashboard = res.create_dashboard;
 
-      // Format success response with dashboard details
-      const folderInfo = dashboard.board_folder_id ? ` in folder ${dashboard.board_folder_id}` : ' in workspace root';
-
-      const visibilityInfo =
-        dashboard.kind === DashboardKind.Public
-          ? '(visible to all workspace members)'
-          : '(private - visible only to invited users)';
-
       return {
         content: JSON.stringify({ message: `Dashboard ${dashboard.id} successfully created`, dashboard_id: dashboard.id, dashboard_name: dashboard.name }),
       };
