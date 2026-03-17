@@ -10,7 +10,7 @@ import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api
 
 export const createViewToolSchema = {
   boardId: z.string().describe('The board ID to create the view on'),
-  type: z.nativeEnum(ViewKind).describe('The type of view to create (TABLE, FORM, DASHBOARD, APP)'),
+  type: z.nativeEnum(ViewKind).default(ViewKind.Table).describe('The type of board view to create. Use TABLE for standard board views.'),
   name: z.string().optional().describe('The name of the view (e.g. "High Priority Items", "My Tasks")'),
   filter: z
     .object({
@@ -64,13 +64,7 @@ export class CreateViewTool extends BaseMondayApiTool<typeof createViewToolSchem
   });
 
   getDescription(): string {
-    return `Create a board view with optional filters and sorting.
-
-Supported view types:
-- TABLE: Standard table view (most common)
-- FORM: Data entry form
-- DASHBOARD: Dashboard display
-- APP: App-specific view
+    return `Create a new board view (tab) with optional filters and sorting. This creates a saved view on a monday.com board that users can switch to.
 
 Filter operators: any_of, not_any_of, is_empty, is_not_empty, greater_than, lower_than, between, contains_text, not_contains_text
 
