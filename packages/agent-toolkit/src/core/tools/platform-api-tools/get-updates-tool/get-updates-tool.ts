@@ -31,6 +31,23 @@ export const getUpdatesToolSchema = {
     .optional()
     .default(false)
     .describe('Include file attachments in the response'),
+  fromDate: z
+    .string()
+    .optional()
+    .describe('Start of date range filter (ISO8601 format, e.g. "2025-01-01"). Must be used together with toDate. Only supported for Board objectType.'),
+  toDate: z
+    .string()
+    .optional()
+    .describe('End of date range filter (ISO8601 format, e.g. "2025-06-01"). Must be used together with fromDate. Only supported for Board objectType.'),
+  boardUpdatesOnly: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe(
+      'Controls which updates are returned for Board queries. ' +
+      'Defaults to true, returning only board-level updates. ' +
+      'To retrieve all updates on a board — including updates on individual items — explicitly set this to false.',
+    ),
 };
 
 export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchema> {
@@ -47,6 +64,8 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
     return (
       'Get updates (comments/posts) from a monday.com item or board. ' +
       'Specify objectId and objectType (Item or Board) to retrieve updates. ' +
+      'For Board queries, you can filter by date range using fromDate and toDate (both required together, ISO8601 format). ' +
+      'By default, Board queries return only board-level updates; set boardUpdatesOnly to false to also include updates on individual items. ' +
       'Returns update text, creator info, timestamps, and optionally replies and assets.'
     );
   }
@@ -57,6 +76,17 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
 
   protected async executeInternal(input: ToolInputType<typeof getUpdatesToolSchema>): Promise<ToolOutputType<never>> {
     try {
+      const hasFromDate = input.fromDate !== undefined;
+      const hasToDate = input.toDate !== undefined;
+
+      if (hasFromDate !== hasToDate) {
+        throw new Error('Both fromDate and toDate must be provided together for date range filtering');
+      }
+
+      if ((hasFromDate || hasToDate) && input.objectType === UpdateObjectType.Item) {
+        throw new Error('Date range filtering (fromDate/toDate) is only supported for Board objectType');
+      }
+
       const variables = {
         limit: input.limit ?? 25,
         page: input.page ?? 1,
@@ -69,7 +99,12 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
       if (input.objectType === UpdateObjectType.Item) {
         res = await this.mondayApi.request<GetItemUpdatesQuery>(getItemUpdates, { ...variables, itemId: input.objectId });
       } else {
-        res = await this.mondayApi.request<GetBoardUpdatesQuery>(getBoardUpdates, { ...variables, boardId: input.objectId });
+        res = await this.mondayApi.request<GetBoardUpdatesQuery>(getBoardUpdates, {
+          ...variables,
+          boardId: input.objectId,
+          boardUpdatesOnly: input.boardUpdatesOnly ?? true,
+          ...(input.fromDate && input.toDate ? { fromDate: input.fromDate, toDate: input.toDate } : {}),
+        });
       }
 
       const updates = input.objectType === UpdateObjectType.Item ? (res as GetItemUpdatesQuery).items?.[0]?.updates : (res as GetBoardUpdatesQuery).boards?.[0]?.updates;
