@@ -115,6 +115,7 @@ export * from './create-item-tool/create-item-tool';
 export * from './create-timeline-item-tool';
 export * from './create-update-tool/create-update-tool';
 export * from './get-updates-tool/get-updates-tool';
+export * from './create-view-tool';
 export * from './delete-column-tool';
 export * from './delete-item-tool';
 export * from './fetch-custom-activity-tool';
@@ -146,7 +147,6 @@ export * from './update-assets-on-item-tool/update-assets-on-item-tool';
 // Notetaker Tools
 export * from './get-notetaker-meetings-tool/get-notetaker-meetings-tool';
 // Dashboard Tools
-export * from './create-view-tool';
 export * from './dashboard-tools';
 // Monday Dev Tools
 export * from '../monday-dev-tools';
