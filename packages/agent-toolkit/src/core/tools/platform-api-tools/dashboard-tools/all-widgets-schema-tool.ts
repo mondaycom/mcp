@@ -5,6 +5,7 @@ import {
 import { getAllWidgetsSchema } from './dashboard-queries.graphql';
 import { ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+import { API_REFERENCE_URL } from '../utils/constants';
 
 export class AllWidgetsSchemaTool extends BaseMondayApiTool<Record<string, never>, never> {
   name = 'all_widgets_schema';
@@ -79,7 +80,7 @@ export class AllWidgetsSchemaTool extends BaseMondayApiTool<Record<string, never
         .join('\n');
 
       return {
-        content: JSON.stringify({ message: "Widgets schema", data: formattedSchemas }),
+        content: JSON.stringify({ message: "Widgets schema", data: formattedSchemas, url: API_REFERENCE_URL }),
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);

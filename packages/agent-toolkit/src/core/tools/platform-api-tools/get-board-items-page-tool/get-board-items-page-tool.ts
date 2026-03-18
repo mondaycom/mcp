@@ -249,7 +249,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
     const itemResult: GetBoardItemsPageResultItem = {
       id: item.id,
       name: item.name,
-      url: (item as any).url,
+      url: item.url,
       created_at: item.created_at,
       updated_at: item.updated_at,
     };

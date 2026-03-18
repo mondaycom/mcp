@@ -1,18 +1,11 @@
-import { gql } from 'graphql-request';
 import { ApiClient } from '@mondaydotcomorg/api';
+import { getAccountSlug } from './account-slug.utils.graphql';
+import { GetAccountSlugQuery } from 'src/monday-graphql/generated/graphql/graphql';
 
-const getAccountSlug = gql`
-  query getAccountSlug {
-    me {
-      account {
-        slug
-      }
-    }
-  }
-`;
+
 
 export async function fetchAccountSlug(mondayApi: ApiClient): Promise<string | null> {
-  const res = await mondayApi.request<{ me?: { account?: { slug?: string } } }>(getAccountSlug);
+  const res = await mondayApi.request<GetAccountSlugQuery>(getAccountSlug);
   return res.me?.account?.slug ?? null;
 }
 
