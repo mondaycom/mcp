@@ -34,11 +34,11 @@ export const getUpdatesToolSchema = {
   fromDate: z
     .string()
     .optional()
-    .describe('Start of date range filter (ISO8601 format, e.g. "2025-01-01"). Must be used together with toDate. Only supported for Board objectType.'),
+    .describe('Start of date range filter (e.g. "2025-01-01" or "2025-01-01T00:00:00Z"). Must be used together with toDate. Only supported for Board objectType.'),
   toDate: z
     .string()
     .optional()
-    .describe('End of date range filter (ISO8601 format, e.g. "2025-06-01"). Must be used together with fromDate. Only supported for Board objectType.'),
+    .describe('End of date range filter (e.g. "2025-06-01" or "2025-06-01T23:59:59Z"). Must be used together with fromDate. Only supported for Board objectType.'),
   includeItemUpdates: z
     .boolean()
     .optional()
@@ -49,6 +49,13 @@ export const getUpdatesToolSchema = {
       'Set to true to retrieve all updates on a board, including updates on individual items.',
     ),
 };
+
+function normalizeToISO8601DateTime(date: string): string {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return `${date}T00:00:00Z`;
+  }
+  return date;
+}
 
 export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchema> {
   name = 'get_updates';
@@ -103,7 +110,7 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
           ...variables,
           boardId: input.objectId,
           boardUpdatesOnly: !(input.includeItemUpdates ?? false),
-          ...(input.fromDate && input.toDate ? { fromDate: input.fromDate, toDate: input.toDate } : {}),
+          ...(input.fromDate && input.toDate ? { fromDate: normalizeToISO8601DateTime(input.fromDate), toDate: normalizeToISO8601DateTime(input.toDate) } : {}),
         });
       }
 

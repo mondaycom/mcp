@@ -409,9 +409,29 @@ describe('Get Updates Tool', () => {
         boardId: '456',
         limit: 25,
         page: 1,
-        fromDate: '2024-01-01',
-        toDate: '2024-01-31',
+        fromDate: '2024-01-01T00:00:00Z',
+        toDate: '2024-01-31T00:00:00Z',
         boardUpdatesOnly: true,
+      }),
+    );
+  });
+
+  it('Passes full ISO8601 datetime strings through without normalization', async () => {
+    mocks.setResponse(mockBoardUpdatesResponse);
+    const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
+
+    await tool.execute({
+      objectId: '456',
+      objectType: 'Board',
+      fromDate: '2024-01-01T08:00:00Z',
+      toDate: '2024-01-31T23:59:59Z',
+    } as any);
+
+    expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+      expect.stringContaining('query GetBoardUpdates'),
+      expect.objectContaining({
+        fromDate: '2024-01-01T08:00:00Z',
+        toDate: '2024-01-31T23:59:59Z',
       }),
     );
   });
