@@ -131,14 +131,6 @@ USAGE PATTERNS:
     }
   }
 
-  // Helper method to determine if the agent should continue paginating
-  private shouldSuggestPagination(docsCount: number, limit: number, currentPage: number): string {
-    if (docsCount === limit) {
-      return `\n\n🔄 PAGINATION SUGGESTION: You received exactly ${limit} documents, which suggests there may be more. Consider calling this tool again with page: ${currentPage + 1} to get additional documents.`;
-    }
-    return '';
-  }
-
   // Convert docs content to markdown string with pagination metadata
   private async enrichDocsWithMarkdown(
     docs: NonNullable<ReadDocsQuery['docs']>,
