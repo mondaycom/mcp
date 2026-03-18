@@ -93,6 +93,7 @@ export class BoardInsightsTool extends BaseMondayApiTool<typeof boardInsightsToo
         group_by: groupByElements,
         limit: input.limit,
       },
+      boardId: String(input.boardId),
     };
 
     const res = await this.mondayApi.request<AggregateBoardInsightsQuery>(boardInsights, variables);
@@ -118,7 +119,12 @@ export class BoardInsightsTool extends BaseMondayApiTool<typeof boardInsightsToo
     }
 
     return {
-      content: `Board insights result (${rows.length} rows):\n${JSON.stringify(rows, null, 2)}`,
+      content: JSON.stringify({
+        message: 'Board insights retrieved',
+        board_name: res.boards?.[0]?.name ?? null,
+        board_url: res.boards?.[0]?.url ?? null,
+        data: rows,
+      }),
     };
   }
 }
