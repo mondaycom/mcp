@@ -56,7 +56,7 @@ USAGE EXAMPLES:
 - Who edited this doc today: { doc_id: "123", since: "2026-03-18T00:00:00Z" }
 - What changed in the last week: { doc_id: "123", since: "2026-03-11T00:00:00Z", include_diff: true }
 
-NOTE: doc_id is the id field from read_docs, not the object_id. When include_diff is true, diffs are fetched for up to ${MAX_DIFF_POINTS} restoring points.`;
+NOTE: doc_id is the id field from read_docs, not the object_id. When include_diff is true, diffs are fetched for up to ${MAX_DIFF_POINTS} restoring points and may be slower due to additional API calls.`;
   }
 
   getInputSchema(): typeof getDocVersionHistoryToolSchema {
@@ -92,21 +92,24 @@ NOTE: doc_id is the id field from read_docs, not the object_id. When include_dif
       const pointsToFetch = restoringPoints.slice(0, MAX_DIFF_POINTS);
       const truncated = restoringPoints.length > MAX_DIFF_POINTS;
 
-      const restoringPointsWithDiffs = await Promise.all(
+      const restoringPointsWithDiffs = await Promise.allSettled(
         pointsToFetch.map(async (point, i) => {
           if (i === pointsToFetch.length - 1 || !point.date) {
             return point;
           }
           const prevPoint = pointsToFetch[i + 1];
+          if (!prevPoint?.date) {
+            return point;
+          }
           const diffVariables: GetDocVersionDiffQueryVariables = {
             docId: doc_id,
             date: point.date,
-            prevDate: prevPoint?.date ?? '',
+            prevDate: prevPoint.date,
           };
           const diffResult = await this.mondayApi.request<GetDocVersionDiffQuery>(getDocVersionDiff, diffVariables);
           return { ...point, diff: diffResult?.doc_version_diff?.blocks ?? [] };
         }),
-      );
+      ).then((results) => results.map((r, i) => (r.status === 'fulfilled' ? r.value : pointsToFetch[i])));
 
       return {
         content: JSON.stringify(

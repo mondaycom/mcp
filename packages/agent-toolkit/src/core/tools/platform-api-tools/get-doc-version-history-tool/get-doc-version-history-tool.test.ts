@@ -165,6 +165,19 @@ describe('GetDocVersionHistoryTool', () => {
       expect(result.total_count).toBe(12);
     });
 
+    it('should return history with partial diffs when a single diff request fails', async () => {
+      mocks.mockRequest
+        .mockResolvedValueOnce(mockHistoryResponse)
+        .mockRejectedValueOnce(new Error('Diff fetch failed'));
+
+      const result = await callToolByNameAsync(TOOL_NAME, { doc_id: DOC_ID, include_diff: true });
+
+      // History is preserved despite the diff failure
+      expect(result.restoring_points).toHaveLength(2);
+      // Failed diff point falls back to the original point without a diff
+      expect(result.restoring_points[0].diff).toBeUndefined();
+    });
+
     it('should skip diff for a restoring point with null date', async () => {
       const pointsWithNullDate = [
         { date: null, user_ids: ['1001'], type: null },
