@@ -39,14 +39,14 @@ export const getUpdatesToolSchema = {
     .string()
     .optional()
     .describe('End of date range filter (ISO8601 format, e.g. "2025-06-01"). Must be used together with fromDate. Only supported for Board objectType.'),
-  boardUpdatesOnly: z
+  includeItemUpdates: z
     .boolean()
     .optional()
-    .default(true)
+    .default(false)
     .describe(
-      'Controls which updates are returned for Board queries. ' +
-      'Defaults to true, returning only board discussion. ' +
-      'To retrieve all updates on a board — including updates on individual items — explicitly set this to false.',
+      'When objectType is Board, also include updates on individual items. ' +
+      'Defaults to false, returning only board discussion. ' +
+      'Set to true to retrieve all updates on a board, including updates on individual items.',
     ),
 };
 
@@ -65,7 +65,7 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
       'Get updates (comments/posts) from a monday.com item or board. ' +
       'Specify objectId and objectType (Item or Board) to retrieve updates. ' +
       'For Board queries, you can filter by date range using fromDate and toDate (both required together, ISO8601 format). ' +
-      'By default, Board queries return only board discussion; set boardUpdatesOnly to false to also include updates on individual items. ' +
+      'By default, Board queries return only board discussion; set includeItemUpdates to true to also include updates on individual items. ' +
       'Returns update text, creator info, timestamps, and optionally replies and assets.'
     );
   }
@@ -102,7 +102,7 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
         res = await this.mondayApi.request<GetBoardUpdatesQuery>(getBoardUpdates, {
           ...variables,
           boardId: input.objectId,
-          boardUpdatesOnly: input.boardUpdatesOnly ?? true,
+          boardUpdatesOnly: !(input.includeItemUpdates ?? false),
           ...(input.fromDate && input.toDate ? { fromDate: input.fromDate, toDate: input.toDate } : {}),
         });
       }

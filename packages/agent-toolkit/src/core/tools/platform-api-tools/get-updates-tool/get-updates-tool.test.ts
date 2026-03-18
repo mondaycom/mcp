@@ -372,7 +372,7 @@ describe('Get Updates Tool', () => {
     expect(() => schema.includeAssets.parse(true)).not.toThrow();
     expect(() => schema.fromDate.parse('2024-01-01')).not.toThrow();
     expect(() => schema.toDate.parse('2024-01-31')).not.toThrow();
-    expect(() => schema.boardUpdatesOnly.parse(true)).not.toThrow();
+    expect(() => schema.includeItemUpdates.parse(true)).not.toThrow();
   });
 
   it('Rejects limit values outside valid range', async () => {
@@ -445,21 +445,21 @@ describe('Get Updates Tool', () => {
     ).rejects.toThrow('Date range filtering (fromDate/toDate) is only supported for Board objectType');
   });
 
-  it('Successfully gets board updates with boardUpdatesOnly set to true', async () => {
+  it('Successfully gets board updates with includeItemUpdates set to true', async () => {
     mocks.setResponse(mockBoardUpdatesResponse);
     const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
 
     await tool.execute({
       objectId: '456',
       objectType: 'Board',
-      boardUpdatesOnly: true,
+      includeItemUpdates: true,
     } as any);
 
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
       expect.stringContaining('query GetBoardUpdates'),
       expect.objectContaining({
         boardId: '456',
-        boardUpdatesOnly: true,
+        boardUpdatesOnly: false,
       }),
     );
   });
