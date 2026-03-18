@@ -400,7 +400,7 @@ describe('Get Updates Tool', () => {
       toDate: '2024-01-31',
     } as any);
 
-    const parsedResult = JSON.parse(result.content);
+    const parsedResult = result.content as any;
     expect(parsedResult.updates).toHaveLength(1);
 
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
