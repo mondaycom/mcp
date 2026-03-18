@@ -111,14 +111,11 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
       const changeColumnValuesTool = new ChangeItemColumnValuesTool(this.mondayApi, this.apiToken, {
         boardId: boardId,
       });
-      const updateRes = await changeColumnValuesTool.execute({
+      
+      await changeColumnValuesTool.execute({
         itemId: parseInt(duplicateRes.duplicate_item.id),
         columnValues: JSON.stringify(columnValuesAndName),
       });
-
-      if (updateRes.content.includes('Error')) {
-        throw new Error('Failed to update duplicated item: ' + updateRes.content);
-      }
 
       return {
         content: JSON.stringify({ message: `Item ${duplicateRes.duplicate_item.id} duplicated from ${input.duplicateFromItemId}`, item_id: duplicateRes.duplicate_item.id, item_name: duplicateRes.duplicate_item.name, item_url: duplicateRes.duplicate_item .url, board_id: boardId }),
