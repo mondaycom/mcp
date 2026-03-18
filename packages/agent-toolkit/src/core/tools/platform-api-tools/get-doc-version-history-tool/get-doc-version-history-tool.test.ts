@@ -1,5 +1,6 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
-import { callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
+import { callToolByNameAsync, callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
+import { GetDocVersionHistoryTool } from './get-doc-version-history-tool';
 
 const TOOL_NAME = 'get_doc_version_history';
 const DOC_ID = 'doc_123';
@@ -16,12 +17,14 @@ const mockHistoryResponse = {
   },
 };
 
+const mockDiffBlocks = [
+  { id: 'b1', type: 'text', summary: 'Added paragraph', changes: { added: true, deleted: false, changed: false } },
+];
+
 const mockDiffResponse = {
   doc_version_diff: {
     doc_id: DOC_ID,
-    blocks: [
-      { id: 'b1', type: 'text', summary: 'Added paragraph', changes: { added: true, deleted: false, changed: false } },
-    ],
+    blocks: mockDiffBlocks,
   },
 };
 
@@ -38,69 +41,148 @@ describe('GetDocVersionHistoryTool', () => {
     jest.restoreAllMocks();
   });
 
-  it('should return formatted version history for a doc', async () => {
-    mocks.setResponse(mockHistoryResponse);
+  describe('Version history (no diff)', () => {
+    it('should return restoring points for a doc', async () => {
+      mocks.setResponse(mockHistoryResponse);
 
-    const result = await callToolByNameRawAsync(TOOL_NAME, { doc_id: DOC_ID });
+      const result = await callToolByNameAsync(TOOL_NAME, { doc_id: DOC_ID });
 
-    expect(result.content[0].text).toContain(DOC_ID);
-    expect(result.content[0].text).toContain('2026-03-18T10:00:00Z');
-    expect(result.content[0].text).toContain('1001');
+      expect(result.doc_id).toBe(DOC_ID);
+      expect(result.restoring_points).toHaveLength(2);
+      expect(result.restoring_points[0].date).toBe('2026-03-18T10:00:00Z');
+      expect(result.restoring_points[0].user_ids).toEqual(['1001', '1002']);
+    });
+
+    it('should include publish type on restoring points', async () => {
+      mocks.setResponse(mockHistoryResponse);
+
+      const result = await callToolByNameAsync(TOOL_NAME, { doc_id: DOC_ID });
+
+      expect(result.restoring_points[1].type).toBe('publish');
+    });
+
+    it('should pass since/until to the API', async () => {
+      mocks.setResponse(mockHistoryResponse);
+
+      await callToolByNameAsync(TOOL_NAME, {
+        doc_id: DOC_ID,
+        since: '2026-03-15T00:00:00Z',
+        until: '2026-03-18T23:59:59Z',
+      });
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query GetDocVersionHistory'),
+        expect.objectContaining({
+          docId: DOC_ID,
+          since: '2026-03-15T00:00:00Z',
+          until: '2026-03-18T23:59:59Z',
+        }),
+      );
+    });
+
+    it('should use default time range when since/until not provided', async () => {
+      mocks.setResponse(mockHistoryResponse);
+
+      await callToolByNameAsync(TOOL_NAME, { doc_id: DOC_ID });
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query GetDocVersionHistory'),
+        expect.objectContaining({ docId: DOC_ID }),
+      );
+    });
   });
 
-  it('should return no history message when no restoring points found', async () => {
-    mocks.setResponse({ doc_version_history: { doc_id: DOC_ID, restoring_points: [] } });
+  describe('Empty results', () => {
+    it('should return no history message when no restoring points found', async () => {
+      mocks.setResponse({ doc_version_history: { doc_id: DOC_ID, restoring_points: [] } });
 
-    const result = await callToolByNameRawAsync(TOOL_NAME, { doc_id: DOC_ID });
+      const result = await callToolByNameRawAsync(TOOL_NAME, { doc_id: DOC_ID });
 
-    expect(result.content[0].text).toContain('No version history found');
-    expect(result.content[0].text).toContain(DOC_ID);
+      expect(result.content[0].text).toContain('No version history found');
+      expect(result.content[0].text).toContain(DOC_ID);
+    });
   });
 
-  it('should include publish label for publish-type restoring points', async () => {
-    mocks.setResponse(mockHistoryResponse);
+  describe('With diffs (include_diff: true)', () => {
+    it('should fetch diffs for consecutive restoring points', async () => {
+      mocks.mockRequest
+        .mockResolvedValueOnce(mockHistoryResponse)
+        .mockResolvedValueOnce(mockDiffResponse);
 
-    const result = await callToolByNameRawAsync(TOOL_NAME, { doc_id: DOC_ID });
+      const result = await callToolByNameAsync(TOOL_NAME, { doc_id: DOC_ID, include_diff: true });
 
-    expect(result.content[0].text).toContain('[Published]');
+      expect(result.restoring_points[0].diff).toEqual(mockDiffBlocks);
+    });
+
+    it('should not attach diff to last restoring point', async () => {
+      mocks.mockRequest
+        .mockResolvedValueOnce(mockHistoryResponse)
+        .mockResolvedValueOnce(mockDiffResponse);
+
+      const result = await callToolByNameAsync(TOOL_NAME, { doc_id: DOC_ID, include_diff: true });
+
+      const lastPoint = result.restoring_points[result.restoring_points.length - 1];
+      expect(lastPoint.diff).toBeUndefined();
+    });
+
+    it('should call GetDocVersionDiff with correct dates', async () => {
+      mocks.mockRequest
+        .mockResolvedValueOnce(mockHistoryResponse)
+        .mockResolvedValueOnce(mockDiffResponse);
+
+      await callToolByNameAsync(TOOL_NAME, { doc_id: DOC_ID, include_diff: true });
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query GetDocVersionDiff'),
+        expect.objectContaining({
+          docId: DOC_ID,
+          date: '2026-03-18T10:00:00Z',
+          prevDate: '2026-03-17T09:00:00Z',
+        }),
+      );
+    });
   });
 
-  it('should include diff details when include_diff is true', async () => {
-    mocks.mockRequest
-      .mockResolvedValueOnce(mockHistoryResponse)
-      .mockResolvedValueOnce(mockDiffResponse);
+  describe('Error handling', () => {
+    it('should return error content on API errors', async () => {
+      mocks.setError('Network error');
 
-    const result = await callToolByNameRawAsync(TOOL_NAME, { doc_id: DOC_ID, include_diff: true });
+      const result = await callToolByNameRawAsync(TOOL_NAME, { doc_id: DOC_ID });
 
-    expect(result.content[0].text).toContain('Added paragraph');
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Network error');
+    });
   });
 
-  it('should use default time range when since/until not provided', async () => {
-    mocks.setResponse(mockHistoryResponse);
+  describe('Schema validation', () => {
+    it('should have correct tool metadata', () => {
+      const tool = new GetDocVersionHistoryTool(mocks.mockApiClient, 'fake_token');
 
-    const result = await callToolByNameRawAsync(TOOL_NAME, { doc_id: DOC_ID });
+      expect(tool.name).toBe('get_doc_version_history');
+      expect(tool.type).toBe('read');
+      expect(tool.annotations.title).toBe('Get Document Version History');
+      expect(tool.annotations.readOnlyHint).toBe(true);
+      expect(tool.annotations.destructiveHint).toBe(false);
+      expect(tool.annotations.idempotentHint).toBe(true);
+    });
 
-    expect(result.content[0].text).toContain(DOC_ID);
-    expect(mocks.mockRequest).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({ docId: DOC_ID }),
-    );
-  });
+    it('should have correct input schema', () => {
+      const tool = new GetDocVersionHistoryTool(mocks.mockApiClient, 'fake_token');
+      const schema = tool.getInputSchema();
 
-  it('should handle API errors gracefully', async () => {
-    mocks.mockRequest.mockRejectedValue(new Error('Network error'));
+      expect(schema.doc_id).toBeDefined();
+      expect(schema.since).toBeDefined();
+      expect(schema.until).toBeDefined();
+      expect(schema.include_diff).toBeDefined();
+    });
 
-    const result = await callToolByNameRawAsync(TOOL_NAME, { doc_id: DOC_ID });
+    it('should have correct description', () => {
+      const tool = new GetDocVersionHistoryTool(mocks.mockApiClient, 'fake_token');
+      const description = tool.getDescription();
 
-    expect(result.content[0].text).toContain('Error fetching version history');
-    expect(result.content[0].text).toContain('Network error');
-  });
-
-  it('should include tip about include_diff when not used', async () => {
-    mocks.setResponse(mockHistoryResponse);
-
-    const result = await callToolByNameRawAsync(TOOL_NAME, { doc_id: DOC_ID, include_diff: false });
-
-    expect(result.content[0].text).toContain('include_diff: true');
+      expect(description).toContain('version history');
+      expect(description).toContain('doc_id');
+      expect(description).toContain('include_diff');
+    });
   });
 });

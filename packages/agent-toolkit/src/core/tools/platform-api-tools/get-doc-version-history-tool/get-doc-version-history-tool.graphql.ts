@@ -1,7 +1,7 @@
 import { gql } from 'graphql-request';
 
 export const getDocVersionHistory = gql`
-  query getDocVersionHistory($docId: ID!, $since: String, $until: String) {
+  query GetDocVersionHistory($docId: ID!, $since: String, $until: String) {
     doc_version_history(doc_id: $docId, since: $since, until: $until) {
       doc_id
       restoring_points {
@@ -14,7 +14,7 @@ export const getDocVersionHistory = gql`
 `;
 
 export const getDocVersionDiff = gql`
-  query getDocVersionDiff($docId: ID!, $date: String!, $prevDate: String!) {
+  query GetDocVersionDiff($docId: ID!, $date: String!, $prevDate: String!) {
     doc_version_diff(doc_id: $docId, date: $date, prev_date: $prevDate) {
       doc_id
       blocks {
