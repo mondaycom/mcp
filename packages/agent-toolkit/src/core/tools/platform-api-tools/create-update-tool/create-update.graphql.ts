@@ -5,6 +5,10 @@ export const createUpdate = gql`
     create_update(body: $body, item_id: $itemId, mentions_list: $mentionsList, parent_id: $parentId) {
       id
       item_id
+      item {
+        name
+        url
+      }
     }
   }
 `;
