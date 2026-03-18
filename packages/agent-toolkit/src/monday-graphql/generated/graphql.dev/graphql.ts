@@ -858,6 +858,8 @@ export type AppFeatureType = {
   id: Scalars['ID']['output'];
   /** The name of the app feature */
   name?: Maybe<Scalars['String']['output']>;
+  /** The reference ID of the app feature */
+  reference_id?: Maybe<Scalars['ID']['output']>;
   /** The type of the app feature */
   type?: Maybe<Scalars['String']['output']>;
   updated_at?: Maybe<Scalars['Date']['output']>;

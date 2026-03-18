@@ -7070,6 +7070,9 @@ type AppFeatureType {
   """The app feature app id"""
   app_id: ID
 
+  """The reference ID of the app feature"""
+  reference_id: ID
+
   """The type of the app feature"""
   type: String
 
