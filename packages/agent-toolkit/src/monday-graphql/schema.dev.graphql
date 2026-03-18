@@ -477,6 +477,44 @@ type Query {
     page: Int
   ): [EntityModel!]
 
+  """
+  Returns a cursor-paginated list of connected boards for the specified board relation columns.
+  """
+  get_connected_boards(
+    """The unique identifier of the board."""
+    board_id: ID!
+
+    """
+    Board relation column identifiers to query connected boards for (max 5).
+    """
+    column_ids: [ID!]!
+
+    """Cursor for pagination. Omit for the first page."""
+    cursor: String
+
+    """Maximum number of results per page (max 50)."""
+    limit: Int!
+  ): PaginatedConnectedBoards
+
+  """
+  Returns a cursor-paginated list of connected columns for the specified mirror columns.
+  """
+  get_connected_columns(
+    """The unique identifier of the board."""
+    board_id: ID!
+
+    """
+    Mirror/lookup column identifiers to query connected columns for (max 10).
+    """
+    column_ids: [ID!]!
+
+    """Cursor for pagination. Omit for the first page."""
+    cursor: String
+
+    """Maximum number of results per page (max 50)."""
+    limit: Int!
+  ): CursorPaginatedConnectedColumnsResult
+
   """Get validations configuration for a board"""
   validations(
     id: ID!
@@ -573,6 +611,42 @@ type Query {
     """Page number, starting from 1."""
     page: Int = 1
   ): [Article]!
+
+  """
+  Retrieves the content diff between two versions of a document. Pass two restoring point dates (from doc_version_history) to see what blocks were added, deleted, or changed. Only blocks with changes are returned.
+  """
+  doc_version_diff(
+    """The ID of the document to get the diff for."""
+    doc_id: ID!
+
+    """
+    The newer restoring point date (ISO 8601 string). Use a date from the doc_version_history restoring_points.
+    """
+    date: String!
+
+    """
+    The older restoring point date (ISO 8601 string). Use a date from the doc_version_history restoring_points.
+    """
+    prev_date: String!
+  ): DocVersionDiff
+
+  """
+  Retrieves the version history of a document. Returns a list of restoring points (snapshots) with timestamps and the users who made changes. Snapshots are grouped in 5-minute intervals. Use the since and until arguments to filter the time range.
+  """
+  doc_version_history(
+    """The ID of the document to retrieve version history for."""
+    doc_id: ID!
+
+    """
+    Optional ISO 8601 date string or timestamp to filter restoring points from. Only restoring points after this date will be returned.
+    """
+    since: String
+
+    """
+    Optional ISO 8601 date string or timestamp to filter restoring points until. Only restoring points before this date will be returned.
+    """
+    until: String
+  ): DocVersionHistory
 
   """
   Converts document content into standard markdown format for external use, backup, or processing. Exports the entire document by default, or specific blocks if block IDs are provided. Use this to extract content for integration with other systems, create backups, generate reports, or process document content with external tools. The output is clean, portable markdown that preserves formatting and structure.
@@ -736,6 +810,9 @@ type Query {
 
   """Get a collection of boards."""
   boards(
+    """A data entity identifier to filter boards by."""
+    account_entity_name: String
+
     """The board's kind (public / private / share)"""
     board_kind: BoardKind
 
@@ -881,32 +958,14 @@ type Query {
     ids: [ID!]
   ): [Team]
 
-  """Get a collection of users."""
+  """Get users."""
   users(
-    """A list of users' emails."""
-    emails: [String]
-
-    """A list of users' unique identifiers."""
+    """Filter by user IDs."""
     ids: [ID!]
 
-    """The kind to search users by (all / non_guests / guests / non_pending)."""
-    kind: UserKind
-
-    """Number of users to get."""
-    limit: Int
-
-    """Allows to fuzzy search by name"""
-    name: String
-
-    """Get the recently created users at the top of the list"""
-    newest_first: Boolean
-
-    """Return non active users in the account."""
-    non_active: Boolean
-
-    """Page number to get, starting at 1."""
-    page: Int
-  ): [User]
+    """Filter by user kind."""
+    user_kind: UserKindFilterInput
+  ): [User!]
 
   """Get a collection of webhooks for the board"""
   webhooks(
@@ -936,6 +995,9 @@ type Query {
 
     """Page number to get, starting at 1."""
     page: Int = 1
+
+    """Parameters to filter workspaces"""
+    query_params: WorkspacesQueryInput
 
     """
     The state of the workspace (all / active / archived / deleted), the default is active.
@@ -1199,20 +1261,6 @@ type Query {
     """Reranking strategy to use for results."""
     reranking_strategy: RerankingStrategy
   ): SearchItemsGraphQlResultsView
-
-  """Search across multiple entity types (items, boards, documents)."""
-  search_v2(
-    """The search query string."""
-    query: String!
-
-    """Maximum number of results to return per entity (max 100)."""
-    limit: Int!
-
-    """
-    Filters specifying which entities to search and their per-entity filters.
-    """
-    filters: SearchFiltersInput!
-  ): [SearchResult!]
 
   """Search across multiple entity types (items, boards, documents)."""
   search(
@@ -2140,6 +2188,26 @@ type Mutation {
     column_id: ID!
   ): AccountEntity
 
+  """Detach boards from their entity models."""
+  detach_boards_from_entity(
+    """The board IDs to detach."""
+    board_ids: [ID!]!
+  ): [BulkDetachBoardResult!]
+
+  """Update columns on an account entity."""
+  update_entity_columns(
+    """The ID of the entity model to update columns on"""
+    entity_id: ID
+
+    """
+    The entity model name to update columns on. Either entity_id or entity_name must be provided.
+    """
+    entity_name: String
+
+    """Array of column updates"""
+    columns: [UpdateEntityColumnInput!]!
+  ): AccountEntity
+
   """Adds connected boards to a board relation column."""
   add_board_relation_connected_boards(
     """The unique identifier of the board containing the column."""
@@ -2538,39 +2606,6 @@ type Mutation {
     List of team IDs to remove from article subscribers. Only applicable when privacy_kind is PRIVATE
     """
     remove_subscriber_team_ids: [ID!]
-  ): ArticleMetadata
-
-  """
-  Converts a document to an article in Knowledge. Requires the Knowledge product to be installed in the account. The original document will be deleted after conversion. Returns the created article metadata.
-  """
-  publish_doc_to_knowledge(
-    """
-    The unique identifier of the article object. Can be used to reference this specific object in queries and mutations. This ID can be found in the article's URL.
-    """
-    object_id: ID!
-
-    """The ID of the workspace containing this article."""
-    workspace_id: ID!
-
-    """
-    The ID of the folder to move the article to. If not specified, the article will remain at its current folder level
-    """
-    folder_id: ID
-
-    """
-    The kind/visibility setting of the article (private, public). Determines who can access it.
-    """
-    privacy_kind: PrivacyKind!
-
-    """
-    List of user IDs to add as subscribers to this article. Only applicable when privacy_kind is PRIVATE
-    """
-    add_subscriber_ids: [ID!]
-
-    """
-    List of team IDs to add as subscribers to this article. Only applicable when privacy_kind is PRIVATE
-    """
-    add_subscriber_team_ids: [ID!]
   ): ArticleMetadata
 
   """
@@ -4540,7 +4575,7 @@ type User {
   """The custom field values of the user profile."""
   custom_field_values: [CustomFieldValue]
 
-  """The user's email."""
+  """The user's email address."""
   email: String!
 
   """Is the user enabled or not."""
@@ -4576,7 +4611,7 @@ type User {
   """The user's mobile phone number."""
   mobile_phone: String
 
-  """The user's name."""
+  """The user's full name."""
   name: String!
 
   """The user's out of office status."""
@@ -4620,6 +4655,33 @@ type User {
 
   """The user’s utc hours difference."""
   utc_hours_diff: Int
+
+  """The unique identifier of the account the user belongs to."""
+  account_id: ID!
+
+  """The kind of the user."""
+  kind: String!
+
+  """The activation status of the user."""
+  status: UserStatus!
+
+  """The method by which the user was added to the account."""
+  invitation_method: InvitationMethod!
+
+  """Whether the user has been soft-deleted."""
+  is_deleted: Boolean!
+
+  """URLs for the user's profile photo in various sizes."""
+  photo_url: PhotoUrl!
+
+  """The date and time when the user became active."""
+  became_active_at: ISO8601DateTime
+
+  """The BigBrain visitor ID associated with the user."""
+  bb_visitor_id: ID!
+
+  """Whether the user has confirmed their email address."""
+  is_email_confirmed: Boolean!
 }
 
 """Result of activating a workflow"""
@@ -5472,6 +5534,11 @@ input UpdateWorkflowInput {
   Variables used within this workflow. To get the accurate JSON schema call the GraphQL query 'get_workflow_variable_schemas'
   """
   workflowVariables: [JSON!]!
+
+  """
+  Optional array of iterator configurations. Iterators enable looping over collections, executing specified workflow blocks once for each item. Currently supports forEach iterators only.
+  """
+  iterators: [WorkflowIteratorInput!]
 }
 
 input UpdateWorkflowMetadataInput {
@@ -5943,6 +6010,15 @@ type BlockEvent {
 
   """Error reason if block failed"""
   errorReason: String
+
+  """Iterator identifier if block is part of a loop"""
+  iterator_id: ID
+
+  """Current iteration number within the loop"""
+  current_iteration: Int
+
+  """Total number of iterations configured for the loop"""
+  max_iterations: Int
 }
 
 """A page of block events"""
@@ -6145,8 +6221,11 @@ type Board {
     type: String
   ): [BoardView]
 
-  """Metadata associated with this board"""
-  metadata: BoardMetadata
+  """Inferred metadata associated with this board"""
+  inferred_metadata: BoardInferredMetadata
+
+  """Manually set metadata associated with this board"""
+  manual_metadata: BoardManualMetadata
 
   """The board's updates."""
   updates(
@@ -6224,11 +6303,21 @@ type Board {
   """The time the board was created at."""
   created_at: ISO8601DateTime
 
+  """
+  The board's source board unique identifier (the board from which this board was created)
+  """
+  created_from_board_id: ID
+
   """The creator of the board."""
   creator: User!
 
   """The board's description."""
   description: String
+
+  """
+  The folder that contains this board, or null if it isn't in any folder.
+  """
+  folder: Folder
 
   """The board's visible groups."""
   groups(
@@ -6598,10 +6687,18 @@ enum ViewMutationKind {
   UPDATE
 }
 
-"""Metadata associated with a board, such as custom terminology settings."""
-type BoardMetadata {
+"""
+Inferred metadata associated with a board, such as custom terminology settings.
+"""
+type BoardInferredMetadata {
   """The custom terminology used for items in this board"""
   item_type: String
+}
+
+"""Manually set metadata associated with a board."""
+type BoardManualMetadata {
+  """Markdown content describing the board"""
+  board_md: String
 }
 
 """An item (table row)."""
@@ -7124,6 +7221,20 @@ type BoardConnection {
 
   """The entity model ID that this board is connected to."""
   entity_id: ID
+}
+
+"""
+Result of a single board detach operation within a bulk detach request.
+"""
+type BulkDetachBoardResult {
+  """The board ID that was detached."""
+  board_id: ID
+
+  """Whether the detach operation succeeded."""
+  success: Boolean
+
+  """Error message if the detach failed."""
+  error: String
 }
 
 """Calculated capability settings for a column"""
@@ -7688,6 +7799,29 @@ input UpdateDropdownLabelInput {
   is_deactivated: Boolean
 }
 
+"""Input for updating an existing column on an entity model"""
+input UpdateEntityColumnInput {
+  """The ID of the column to update"""
+  column_id: ID!
+
+  """The column title"""
+  title: String
+
+  """Optional column description"""
+  description: String
+
+  """Column type-specific settings (labels for status/dropdown, etc.)"""
+  defaults: JSON
+
+  """
+  Whether this column should be opted-out by default on boards. If false or not provided, the column will be automatically included on all boards using this entity (opt-in by default).
+  """
+  opt_out_by_default: Boolean
+
+  """Policy rules controlling what can be done with the column"""
+  policy: ColumnPolicyInput
+}
+
 input UpdateStatusColumnSettingsInput {
   labels: [UpdateStatusLabelInput!]!
 }
@@ -7727,8 +7861,8 @@ type BoardRelationConnectedBoardsResult {
   """The board relation column identifier."""
   column_id: ID
 
-  """The connected board reference."""
-  connected_board: ConnectedBoardRef
+  """The connected board (resolved from the boards subgraph)."""
+  connected_board: Board
 }
 
 """Mapping between source and target columns for a connected board."""
@@ -7749,10 +7883,48 @@ input ConnectedBoardInput {
   mappings: [ConnectedBoardColumnMappingInput!]
 }
 
-"""Reference to a connected board."""
-type ConnectedBoardRef {
-  """The board identifier."""
+"""A connected column entry with board relation context."""
+type ConnectedColumnItem {
+  """The mirror/lookup column identifier."""
+  column_id: ID
+
+  """The board relation column identifier that this mirror references."""
+  board_relation_column_id: ID
+
+  """The connected board (resolved from the boards subgraph)."""
+  connected_board: Board
+
+  """
+  The connected column on the connected board (id, and when available title and type).
+  """
+  connected_column: ConnectedTargetColumn
+}
+
+"""Target column metadata from the data view (mirror target column)."""
+type ConnectedTargetColumn {
+  """The column identifier."""
   id: ID
+
+  """The column title."""
+  title: String
+
+  """The column type."""
+  type: String
+}
+
+"""Cursor-paginated result for connected columns query."""
+type CursorPaginatedConnectedColumnsResult {
+  """Total number of connected columns across all requested columns."""
+  total: Int
+
+  """Cursor for the next page. Null if no more results."""
+  next_cursor: String
+
+  """The current page of connected column entries."""
+  page: [ConnectedColumnItem!]
+
+  """Target schema per group of columns that share the same data view."""
+  target_schema_groups: [TargetSchemaGroup!]
 }
 
 """Controls how mirrored values are aggregated or selected."""
@@ -7808,6 +7980,32 @@ enum MirrorSum {
 
   """Include items from all statuses."""
   ALL_STATUSES
+}
+
+"""Cursor-paginated result for connected boards query."""
+type PaginatedConnectedBoards {
+  """Total number of connected boards across all requested columns."""
+  total: Int
+
+  """Cursor for the next page. Null if no more results."""
+  next_cursor: String
+
+  """The current page of connected board entries."""
+  page: [BoardRelationConnectedBoardsResult!]
+
+  """Target schema per group of columns that share the same data view."""
+  target_schema_groups: [TargetSchemaGroup!]
+}
+
+"""
+Target schema (data view target columns) for a set of columns that share the same data view.
+"""
+type TargetSchemaGroup {
+  """Column ids (board-relation or mirror) that use this target schema."""
+  column_ids: [ID!]
+
+  """Target columns for this schema."""
+  target_columns: [ConnectedTargetColumn!]
 }
 
 """List of required column IDs for a board"""
@@ -8243,6 +8441,22 @@ enum BlockAlignment {
   CENTER
 }
 
+"""
+Describes what type of change occurred to a block between two versions.
+"""
+type BlockChanges {
+  """True if this block was added in the newer version."""
+  added: Boolean
+
+  """
+  True if this block was deleted in the newer version. The content reflects the state before deletion.
+  """
+  deleted: Boolean
+
+  """True if this block content was modified between the two versions."""
+  changed: Boolean
+}
+
 """Abstract union type representing different types of block content"""
 union BlockContent = TextBlockContent | ListBlockContent | NoticeBoxContent | ImageContent | VideoContent | TableContent | LayoutContent | DividerContent | PageBreakContent
 
@@ -8326,6 +8540,31 @@ input CreateBlockInput {
   page_break_block: PageBreakBlockInput
 }
 
+"""
+A document block that was changed between two versions, including its content and what type of change occurred.
+"""
+type DiffBlock {
+  """The unique identifier of the block."""
+  id: ID
+
+  """The type of block (e.g., text, image, list)."""
+  type: String
+
+  """The block content as a JSON string."""
+  content: String
+
+  """
+  A human-readable summary of what changed in this block. For text blocks, shows the added and deleted text. For other block types, describes the change type.
+  """
+  summary: String
+
+  """The parent block ID, or null if the block is at the top level."""
+  parent_block_id: ID
+
+  """The changes that occurred to this block (added, deleted, or changed)."""
+  changes: BlockChanges
+}
+
 """Input for creating divider blocks"""
 input DividerBlockInput {
   """The parent block id to append the created block under."""
@@ -8378,6 +8617,22 @@ enum DocKind {
 
   """Shareable document"""
   share
+}
+
+"""
+A single restoring point (snapshot) in the document version history. Represents a group of changes made within a time window, including which users made changes.
+"""
+type DocRestoringPoint {
+  """The ISO 8601 timestamp of when this restoring point was captured."""
+  date: String
+
+  """The IDs of users who made changes in this restoring point time window."""
+  user_ids: [ID!]
+
+  """
+  The type of restoring point. "publish" indicates the document was published at this point. Null for regular edit snapshots.
+  """
+  type: String
 }
 
 """Column value reference for displaying board item column data"""
@@ -8444,6 +8699,38 @@ type DocumentBlockV2 {
 
   """The block's creator."""
   created_by: User
+}
+
+"""
+Represents the diff between two versions of a document. Contains the blocks that were added, deleted, or changed between two restoring points.
+"""
+type DocVersionDiff {
+  """The ID of the document this diff belongs to."""
+  doc_id: ID
+
+  """The newer version date used for this diff."""
+  date: String
+
+  """The older version date used for this diff."""
+  prev_date: String
+
+  """
+  The list of blocks that have changes between the two versions. Only blocks with actual changes are included.
+  """
+  blocks: [DiffBlock!]
+}
+
+"""
+Represents the version history of a document, including a list of restoring points (snapshots) that capture the state of the document at specific points in time.
+"""
+type DocVersionHistory {
+  """The ID of the document this version history belongs to."""
+  doc_id: ID
+
+  """
+  The list of restoring points (snapshots) for this document, ordered by date descending.
+  """
+  restoring_points: [DocRestoringPoint!]
 }
 
 """Controls what gets copied when duplicating a document"""
@@ -9083,6 +9370,18 @@ type AccountContext {
   active_product_kinds: [String!]
 }
 
+"""A board where the user has item assignments."""
+type AssignedBoard {
+  """Board ID"""
+  board_id: ID
+
+  """Number of items assigned to the user on this board"""
+  assignment_count: Int
+
+  """Board details resolved via federation from the boards subgraph."""
+  board: Board
+}
+
 """Intelligence data."""
 type Intelligence {
   """Top visited boards ranked by relevance (frequency + recency)."""
@@ -9101,6 +9400,15 @@ type Intelligence {
 
   """User and account context information."""
   context: UserContextResponse
+
+  """Boards where the user has item assignments."""
+  assigned_boards(
+    """User ID. Defaults to the authenticated user."""
+    user_id: ID
+
+    """Maximum number of boards to return. Default: 20, Max: 100."""
+    size: Int
+  ): [AssignedBoard!]
 }
 
 """A board ranked by relevance based on visit frequency and recency."""
@@ -10341,7 +10649,9 @@ type Asset {
 
 """The source of the asset"""
 enum AssetsSource {
-  """Assets from file columns and item's files gallery"""
+  """
+  Assets from file columns and item's files gallery. From version 2026-04, also includes assets from updates
+  """
   all
 
   """Assets only from file columns"""
@@ -11795,6 +12105,9 @@ type ItemsResponse {
 
 """Kind of assignee"""
 enum Kind {
+  """Represents an AI agent"""
+  agent
+
   """Represents a person"""
   person
 
@@ -13007,6 +13320,42 @@ type WorkspaceSettings {
 enum WorkspacesOrderBy {
   """The rank order of the workspace creation time (desc)."""
   created_at
+}
+
+"""The account product kinds available for workspaces query."""
+enum WorkspacesQueryAccountProductKind {
+  """monday work management"""
+  core
+
+  """monday CRM"""
+  crm
+
+  """workforms"""
+  forms
+
+  """monday marketer"""
+  marketing
+
+  """monday projects"""
+  project_management
+
+  """monday service"""
+  service
+
+  """monday dev"""
+  software
+
+  """canvas"""
+  whiteboard
+}
+
+"""Parameters to filter workspaces"""
+input WorkspacesQueryInput {
+  """
+  Filter workspaces by account product kind (core / marketing / crm / software /
+  project_management / service / forms / whiteboard)
+  """
+  account_product_kind: WorkspacesQueryAccountProductKind
 }
 
 """The workspace subscriber kind."""
@@ -14956,6 +15305,23 @@ type CrossEntityBoardResult {
   live_data: Board!
 }
 
+"""
+Date range filter applied globally across all entity types in cross-entity search.
+"""
+input CrossEntityDateRangeInput {
+  """Filter results created before this date."""
+  created_before: ISO8601DateTime
+
+  """Filter results created after this date."""
+  created_after: ISO8601DateTime
+
+  """Filter results updated before this date."""
+  updated_before: ISO8601DateTime
+
+  """Filter results updated after this date."""
+  updated_after: ISO8601DateTime
+}
+
 """Contains the results of a doc query."""
 type CrossEntityDocResult {
   """The unique identifier of the document."""
@@ -15305,6 +15671,9 @@ input SearchEntityFilterInput {
 
 """Top-level search filters specifying which entities to search."""
 input SearchFiltersInput {
+  """Global date range filter applied to all entity types."""
+  date_range: CrossEntityDateRangeInput
+
   """
   List of entity filters. Each entry is a tagged-union: set one field (items, boards, docs) to include that entity type.
   """
@@ -16086,6 +16455,128 @@ enum UserRole {
 input UserUpdateInput {
   user_id: ID!
   user_attribute_updates: UserAttributesInput!
+}
+
+"""The method by which a user was added to the account."""
+enum InvitationMethod {
+  """Invited by another user."""
+  USER
+
+  """Provisioned via SCIM."""
+  SCIM
+
+  """Added via single sign-on."""
+  SSO
+
+  """Added via authorized domain."""
+  AUTH_DOMAIN
+
+  """First user who created the account."""
+  FIRST_USER
+
+  """Added via account consolidation."""
+  CONSOLIDATION
+
+  """Added via service portal authorized domain."""
+  SERVICE_PORTAL_AUTH_DOMAIN
+
+  """Invited to monday service portal by another user."""
+  SERVICE_PORTAL_USER_INVITATION
+}
+
+"""URLs for the user's profile photo in various sizes."""
+type PhotoUrl {
+  """The user's photo in original size."""
+  original: String
+
+  """The user's photo in small size (150x150)."""
+  small: String
+
+  """The user's photo in thumbnail size (100x100)."""
+  thumb: String
+
+  """The user's photo in small thumbnail size (50x50)."""
+  thumb_small: String
+
+  """The user's photo in tiny size (30x30)."""
+  tiny: String
+}
+
+"""Filter for user kinds, including kind groups."""
+enum UserKindFilter {
+  """A admin user."""
+  ADMIN
+
+  """A member user."""
+  MEMBER
+
+  """A guest user."""
+  GUEST
+
+  """A view only user."""
+  VIEW_ONLY
+
+  """A portal user."""
+  PORTAL
+
+  """A portfolio api user user."""
+  PORTFOLIO_API_USER
+
+  """A nexus api user user."""
+  NEXUS_API_USER
+
+  """A resource directory api user user."""
+  RESOURCE_DIRECTORY_API_USER
+
+  """A omnichannel api user user."""
+  OMNICHANNEL_API_USER
+
+  """A goals api user user."""
+  GOALS_API_USER
+
+  """A projects api user user."""
+  PROJECTS_API_USER
+
+  """A sprint management api user user."""
+  SPRINT_MANAGEMENT_API_USER
+
+  """A crm commerce api user user."""
+  CRM_COMMERCE_API_USER
+
+  """A campaigns api user user."""
+  CAMPAIGNS_API_USER
+
+  """A data retention api user user."""
+  DATA_RETENTION_API_USER
+
+  """A monday service api user user."""
+  MONDAY_SERVICE_API_USER
+
+  """A group representing admin, member, guest, and view-only users."""
+  BASIC
+}
+
+"""
+Filter users by kind. Supports individual kinds and groups (e.g. BASIC = admin, member, guest, view_only). The not_in values are removed from the expanded in set.
+"""
+input UserKindFilterInput {
+  """Include users matching these kinds or kind groups."""
+  in: [UserKindFilter!]
+
+  """Exclude users matching these kinds or kind groups."""
+  not_in: [UserKindFilter!]
+}
+
+"""The activation status of a user."""
+enum UserStatus {
+  """The user is active."""
+  ACTIVE
+
+  """The user is deactivated."""
+  INACTIVE
+
+  """The user has not yet accepted the invitation."""
+  PENDING
 }
 
 """Aggregates data from one or more boards."""
