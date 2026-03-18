@@ -583,7 +583,7 @@ describe('Board Insights Tool', () => {
         limit: DEFAULT_LIMIT,
       });
 
-      const parsed = JSON.parse(result.content);
+      const parsed = result.content as any;
       expect(parsed.message).toBe('Board insights retrieved');
       expect(parsed.data.length).toBe(2);
       expect(parsed.data[0].status).toBe('Done');
@@ -636,7 +636,7 @@ describe('Board Insights Tool', () => {
         limit: DEFAULT_LIMIT,
       });
 
-      const parsed = JSON.parse(result.content);
+      const parsed = result.content as any;
       expect(parsed.message).toBe('Board insights retrieved');
       expect(parsed.data.length).toBe(1);
       expect(parsed.data[0].COUNT_item_id_0).toBe(10);
@@ -779,7 +779,7 @@ describe('Board Insights Tool', () => {
         limit: DEFAULT_LIMIT,
       });
 
-      const parsed = JSON.parse(result.content);
+      const parsed = result.content as any;
       expect(parsed.data[0].string_col).toBe('text value');
       expect(parsed.data[0].int_col).toBe(42);
       expect(parsed.data[0].float_col).toBe(3.14);
@@ -819,7 +819,7 @@ describe('Board Insights Tool', () => {
         limit: DEFAULT_LIMIT,
       });
 
-      const parsed = JSON.parse(result.content);
+      const parsed = result.content as any;
       expect(parsed.data[0].status).toBeNull();
       expect(parsed.data[0].count).toBe(5);
     });
@@ -856,7 +856,7 @@ describe('Board Insights Tool', () => {
         limit: DEFAULT_LIMIT,
       });
 
-      const parsedResult = JSON.parse(result.content).data;
+      const parsedResult = (result.content as any).data;
       expect(parsedResult[0]).toEqual({ status: 'Done' });
       expect(parsedResult[0]).not.toHaveProperty('');
     });
@@ -937,7 +937,7 @@ describe('Board Insights Tool', () => {
         limit: DEFAULT_LIMIT,
       });
 
-      const parsed = JSON.parse(result.content);
+      const parsed = result.content as any;
       expect(parsed.message).toBe('Board insights retrieved');
       expect(parsed.data.length).toBe(2);
       expect(parsed.data[0].status).toBe('Done');
@@ -1189,7 +1189,7 @@ describe('Board Insights Tool', () => {
         limit: DEFAULT_LIMIT,
       });
 
-      const parsed = JSON.parse(result.content);
+      const parsed = result.content as any;
       expect(parsed.message).toBe('Board insights retrieved');
       expect(parsed.data.length).toBe(1);
       expect(parsed.data[0].COUNT_ITEMS_item_id_0).toBe(42);
@@ -1252,7 +1252,7 @@ describe('Board Insights Tool', () => {
         limit: DEFAULT_LIMIT,
       });
 
-      const parsed = JSON.parse(result.content);
+      const parsed = result.content as any;
       expect(parsed.message).toBe('Board insights retrieved');
       expect(parsed.data.length).toBe(1);
       expect(parsed.data[0].COUNT_ITEMS_item_id_0).toBe(15);
