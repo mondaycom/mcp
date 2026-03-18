@@ -7,7 +7,7 @@ export type ToolInputType<Input extends ZodRawShape | undefined> = Input extends
   : undefined;
 
 export type ToolOutputType<T extends Record<string, unknown>> = {
-  content: string;
+  content: string | Record<string, any>;
   metadata?: T;
 };
 

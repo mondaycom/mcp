@@ -21,6 +21,8 @@ const addDummyWorkspaces = (
   return workspaces;
 };
 
+const mockSlugResponse = { me: { account: { slug: 'test-account' } } };
+
 describe('ListWorkspaceTool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
 
@@ -97,13 +99,13 @@ describe('ListWorkspaceTool', () => {
         ],
       };
 
-      mocks.setResponse(response);
+      mocks.setResponses([response, mockSlugResponse]);
 
       const args: inputType = {};
 
       const result = await callToolByNameRawAsync('list_workspaces', args);
 
-      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
 
       const mockCall = mocks.getMockRequest().mock.calls[0];
       expect(mockCall[0]).toContain('query listWorkspaces');
@@ -113,12 +115,13 @@ describe('ListWorkspaceTool', () => {
         membershipKind: 'member',
       });
 
-      const content = result.content[0].text;
-      expect(content).toContain('Showing workspaces you are a member of.');
-      expect(content).toContain('• **Marketing Team** (ID: 123) - Marketing workspace');
-      expect(content).toContain('• **Sales Team** (ID: 456) - Sales workspace');
-      expect(content).toContain('• **Development** (ID: 789) - Dev workspace');
-      expect(content).not.toContain('PAGINATION INFO');
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed.message).toBe('Workspaces retrieved');
+      expect(parsed.data).toHaveLength(3);
+      expect(parsed.data.find((w: any) => w.id === '123').name).toBe('Marketing Team');
+      expect(parsed.data.find((w: any) => w.id === '456').name).toBe('Sales Team');
+      expect(parsed.data.find((w: any) => w.id === '789').name).toBe('Development');
+      expect(parsed.next_page).toBeUndefined();
     });
 
     it('should list workspaces without descriptions correctly', async () => {
@@ -129,21 +132,21 @@ describe('ListWorkspaceTool', () => {
         ],
       };
 
-      mocks.setResponse(response);
+      mocks.setResponses([response, mockSlugResponse]);
 
       const args: inputType = {};
 
       const result = await callToolByNameRawAsync('list_workspaces', args);
 
-      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
 
-      const content = result.content[0].text;
-      expect(content).toContain('Showing workspaces you are a member of.');
-      expect(content).toContain('• **Workspace One** (ID: 111)');
-      expect(content).toContain('• **Workspace Two** (ID: 222)');
-      // Verify no dash at the end when description is null
-      expect(content).not.toContain('(ID: 111) -');
-      expect(content).not.toContain('(ID: 222) -');
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed.data).toHaveLength(2);
+      expect(parsed.data.find((w: any) => w.id === '111').name).toBe('Workspace One');
+      expect(parsed.data.find((w: any) => w.id === '222').name).toBe('Workspace Two');
+      // Descriptions should be undefined when null
+      expect(parsed.data.find((w: any) => w.id === '111').description).toBeUndefined();
+      expect(parsed.data.find((w: any) => w.id === '222').description).toBeUndefined();
     });
   });
 
@@ -163,7 +166,7 @@ describe('ListWorkspaceTool', () => {
         workspaces,
       };
 
-      mocks.setResponse(response);
+      mocks.setResponses([response, mockSlugResponse]);
 
       const args: inputType = {
         searchTerm: 'Marketing',
@@ -171,8 +174,8 @@ describe('ListWorkspaceTool', () => {
 
       const result = await callToolByNameRawAsync('list_workspaces', args);
 
-      // Only one call because match was found in member workspaces
-      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+      // Two calls: workspaces + slug
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
 
       const mockCall = mocks.getMockRequest().mock.calls[0];
       expect(mockCall[0]).toContain('query listWorkspaces');
@@ -182,14 +185,14 @@ describe('ListWorkspaceTool', () => {
         membershipKind: 'member',
       });
 
-      const content = result.content[0].text;
-      expect(content).toContain('Showing workspaces you are a member of.');
-      expect(content).toContain('• **Marketing Team** (ID: 1)');
-      expect(content).toContain('• **Digital Marketing** (ID: 2)');
-      expect(content).not.toContain('Sales Team');
-      expect(content).not.toContain('Development');
-      expect(content).not.toContain('HR Department');
-      expect(content).not.toContain('IMPORTANT: Search term was not applied');
+      const parsed = JSON.parse(result.content[0].text);
+      const names = parsed.data.map((w: any) => w.name);
+      expect(names).toContain('Marketing Team');
+      expect(names).toContain('Digital Marketing');
+      expect(names).not.toContain('Sales Team');
+      expect(names).not.toContain('Development');
+      expect(names).not.toContain('HR Department');
+      expect(parsed.disclaimer).toBeUndefined();
     });
 
     it('should search with special characters normalized when response has more than DEFAULT_WORKSPACE_LIMIT items', async () => {
@@ -205,7 +208,7 @@ describe('ListWorkspaceTool', () => {
         workspaces,
       };
 
-      mocks.setResponse(response);
+      mocks.setResponses([response, mockSlugResponse]);
 
       const args: inputType = {
         searchTerm: 'Sales & Marketing!',
@@ -213,8 +216,8 @@ describe('ListWorkspaceTool', () => {
 
       const result = await callToolByNameRawAsync('list_workspaces', args);
 
-      // Only one call because match was found in member workspaces
-      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+      // Two calls: workspaces + slug
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
 
       const mockCall = mocks.getMockRequest().mock.calls[0];
       expect(mockCall[0]).toContain('query listWorkspaces');
@@ -224,11 +227,12 @@ describe('ListWorkspaceTool', () => {
         membershipKind: 'member',
       });
 
-      const content = result.content[0].text;
-      expect(content).toContain('• **Sales Marketing** (ID: 1)');
-      expect(content).toContain('• **SalesMarketing** (ID: 2)');
-      expect(content).not.toContain('Development');
-      expect(content).not.toContain('IMPORTANT: Search term was not applied');
+      const parsed = JSON.parse(result.content[0].text);
+      const names = parsed.data.map((w: any) => w.name);
+      expect(names).toContain('Sales Marketing');
+      expect(names).toContain('SalesMarketing');
+      expect(names).not.toContain('Development');
+      expect(parsed.disclaimer).toBeUndefined();
     });
 
     it('should not apply filtering when response has less than or equal to DEFAULT_WORKSPACE_LIMIT items', async () => {
@@ -242,7 +246,7 @@ describe('ListWorkspaceTool', () => {
         ],
       };
 
-      mocks.setResponse(response);
+      mocks.setResponses([response, mockSlugResponse]);
 
       const args: inputType = {
         searchTerm: 'Marketing',
@@ -250,8 +254,8 @@ describe('ListWorkspaceTool', () => {
 
       const result = await callToolByNameRawAsync('list_workspaces', args);
 
-      // Only one call because matches were found in member workspaces
-      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+      // Two calls: workspaces + slug
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
 
       const mockCall = mocks.getMockRequest().mock.calls[0];
       expect(mockCall[0]).toContain('query listWorkspaces');
@@ -261,17 +265,17 @@ describe('ListWorkspaceTool', () => {
         membershipKind: 'member',
       });
 
-      const content = result.content[0].text;
+      const parsed = JSON.parse(result.content[0].text);
       // Should include all workspaces, not just matching ones
-      expect(content).toContain('Showing workspaces you are a member of.');
-      expect(content).toContain('• **Marketing Team** (ID: 1)');
-      expect(content).toContain('• **Digital Marketing** (ID: 2)');
-      expect(content).toContain('• **Sales Team** (ID: 3)');
-      expect(content).toContain('• **Development** (ID: 4)');
-      expect(content).toContain('• **HR Department** (ID: 5)');
+      const names = parsed.data.map((w: any) => w.name);
+      expect(names).toContain('Marketing Team');
+      expect(names).toContain('Digital Marketing');
+      expect(names).toContain('Sales Team');
+      expect(names).toContain('Development');
+      expect(names).toContain('HR Department');
       // Should include disclaimer that filtering was not applied
-      expect(content).toContain(
-        'IMPORTANT: Search term not applied - returning all workspaces. Perform the filtering manually.',
+      expect(parsed.disclaimer).toBe(
+        'Search term not applied - returning all workspaces. Perform the filtering manually.',
       );
     });
 
@@ -290,9 +294,10 @@ describe('ListWorkspaceTool', () => {
       // Add more workspaces to exceed DEFAULT_WORKSPACE_LIMIT (100)
       allWorkspaces = addDummyWorkspaces(allWorkspaces, 'Workspace', 97);
 
-      // First call returns member workspaces (no match for "Engineering")
-      // Second call returns all workspaces (has match for "Engineering")
-      mocks.setResponses([{ workspaces: memberWorkspaces }, { workspaces: allWorkspaces }]);
+      // First call: member workspaces (no match for "Engineering")
+      // Second call: all workspaces (has match for "Engineering")
+      // Third call: fetchAccountSlug
+      mocks.setResponses([{ workspaces: memberWorkspaces }, { workspaces: allWorkspaces }, mockSlugResponse]);
 
       const args: inputType = {
         searchTerm: 'Engineering',
@@ -300,8 +305,8 @@ describe('ListWorkspaceTool', () => {
 
       const result = await callToolByNameRawAsync('list_workspaces', args);
 
-      // Two calls: first member, then all
-      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
+      // Three calls: member, all, slug
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(3);
 
       const firstCall = mocks.getMockRequest().mock.calls[0];
       expect(firstCall[0]).toContain('query listWorkspaces');
@@ -311,13 +316,12 @@ describe('ListWorkspaceTool', () => {
       expect(secondCall[0]).toContain('query listWorkspaces');
       expect(secondCall[1]).toMatchObject({ membershipKind: 'all' });
 
-      const content = result.content[0].text;
-      // Should NOT show member-only note since we fell back to all
-      expect(content).not.toContain('Showing workspaces you are a member of.');
-      expect(content).toContain('• **Engineering Team** (ID: 3)');
-      expect(content).toContain('• **Engineering Infra** (ID: 4)');
-      expect(content).not.toContain('Marketing Team');
-      expect(content).not.toContain('Sales Team');
+      const parsed = JSON.parse(result.content[0].text);
+      const names = parsed.data.map((w: any) => w.name);
+      expect(names).toContain('Engineering Team');
+      expect(names).toContain('Engineering Infra');
+      expect(names).not.toContain('Marketing Team');
+      expect(names).not.toContain('Sales Team');
     });
   });
 

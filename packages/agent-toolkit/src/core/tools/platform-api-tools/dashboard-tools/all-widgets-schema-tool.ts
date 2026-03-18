@@ -5,6 +5,7 @@ import {
 import { getAllWidgetsSchema } from './dashboard-queries.graphql';
 import { ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+import { API_REFERENCE_URL } from '../utils/constants';
 
 export class AllWidgetsSchemaTool extends BaseMondayApiTool<Record<string, never>, never> {
   name = 'all_widgets_schema';
@@ -79,25 +80,7 @@ export class AllWidgetsSchemaTool extends BaseMondayApiTool<Record<string, never
         .join('\n');
 
       return {
-        content: `**Widget Schemas Retrieved Successfully!**
-
-🎯 **Available Widget Types** (${schemaCount} schemas found):
-${schemaOverview}
-
-**Complete JSON Schema 7 Definitions:**
-
-${JSON.stringify(formattedSchemas, null, 2)}
-
-**Schema Compliance Tips:**
-- All required fields MUST be provided in widget settings
-- Enum values must match exactly as specified in the schema
-- Data types must conform to the schema definitions
-- Nested objects must follow the exact structure
-
-⚡ **Next Steps:**
-- Use these schemas to validate widget settings before calling 'create_widget'
-- Reference the schema structure when planning widget configurations
-- Ensure 100% compliance with field requirements and data types`,
+        content: { message: "Widgets schema", data: formattedSchemas, url: API_REFERENCE_URL },
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);

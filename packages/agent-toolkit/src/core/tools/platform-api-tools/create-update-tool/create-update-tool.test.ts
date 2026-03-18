@@ -22,7 +22,7 @@ describe('Create Update Tool', () => {
       body: 'This is a test update',
     });
 
-    expect(result.content).toBe('Update 123456789 successfully created on item 456');
+    expect(result.content).toEqual({ message: 'Update 123456789 created on item 456', update_id: '123456789', item_id: 456, item_name: undefined, item_url: undefined });
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('mutation createUpdate'), {
       itemId: '456',
       body: 'This is a test update',
@@ -41,7 +41,7 @@ describe('Create Update Tool', () => {
       mentionsList: '[{"id": "12345", "type": "User"}, {"id": "456", "type": "Team"}]',
     });
 
-    expect(result.content).toBe('Update 123456789 successfully created on item 789');
+    expect(result.content).toEqual({ message: 'Update 123456789 created on item 789', update_id: '123456789', item_id: 789, item_name: undefined, item_url: undefined });
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('mutation createUpdate'), {
       itemId: '789',
       body: 'Hey, check this out!',
@@ -63,7 +63,7 @@ describe('Create Update Tool', () => {
       parentId: 111222,
     });
 
-    expect(result.content).toBe('Update 123456789 successfully created on item 456');
+    expect(result.content).toEqual({ message: 'Update 123456789 created on item 456', update_id: '123456789', item_id: 456, item_name: undefined, item_url: undefined });
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('mutation createUpdate'), {
       itemId: '456',
       body: 'This is a reply',
@@ -167,7 +167,7 @@ describe('Create Update Tool', () => {
         '[{"id": "1", "type": "User"}, {"id": "2", "type": "Team"}, {"id": "3", "type": "Board"}, {"id": "4", "type": "Project"}]',
     });
 
-    expect(result.content).toBe('Update 123456789 successfully created on item 789');
+    expect(result.content).toEqual({ message: 'Update 123456789 created on item 789', update_id: '123456789', item_id: 789, item_name: undefined, item_url: undefined });
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('mutation createUpdate'), {
       itemId: '789',
       body: 'Test with all types',

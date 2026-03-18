@@ -14,6 +14,7 @@ export const createWorkspace = gql`
       account_product_id: $accountProductId
     ) {
       id
+      name
     }
   }
 `;

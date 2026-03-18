@@ -51,6 +51,7 @@ type GetBoardItemsPageResult = {
 type GetBoardItemsPageResultItem = {
   id: string;
   name: string;
+  url?: string;
   created_at: any;
   updated_at: any;
   column_values?: Record<string, any>;
@@ -207,7 +208,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
     const result = this.mapResult(res, input);
 
     return {
-      content: JSON.stringify(result, null, 2),
+      content: result
     };
   }
 
@@ -249,6 +250,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
     const itemResult: GetBoardItemsPageResultItem = {
       id: item.id,
       name: item.name,
+      url: item.url,
       created_at: item.created_at,
       updated_at: item.updated_at,
     };

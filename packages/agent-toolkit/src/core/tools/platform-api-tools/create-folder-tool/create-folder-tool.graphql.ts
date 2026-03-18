@@ -18,6 +18,7 @@ export const createFolderTool = gql`
       parent_folder_id: $parentFolderId
     ) {
       id
+      name
     }
   }
 `;

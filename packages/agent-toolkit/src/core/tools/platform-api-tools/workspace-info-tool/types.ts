@@ -1,6 +1,7 @@
 export interface OrganizedWorkspaceInfo {
   workspace: {
     id: string;
+    url?: string;
     name: string;
     description: string;
     kind: string;

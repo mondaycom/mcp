@@ -59,7 +59,7 @@ describe('WorkspaceInfoTool', () => {
         ],
       };
 
-      const result = organizeWorkspaceInfoHierarchy(rawResponse);
+      const result = organizeWorkspaceInfoHierarchy(rawResponse, null);
 
       expect(result).toEqual({
         workspace: {
@@ -143,7 +143,7 @@ describe('WorkspaceInfoTool', () => {
         ],
       };
 
-      const result = organizeWorkspaceInfoHierarchy(rawResponse);
+      const result = organizeWorkspaceInfoHierarchy(rawResponse, null);
 
       expect(result.folders).toEqual([
         {

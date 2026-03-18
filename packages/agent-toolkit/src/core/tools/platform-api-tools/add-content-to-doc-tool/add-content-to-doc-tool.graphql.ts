@@ -16,6 +16,18 @@ export const getDocByObjectId = gql`
   query getDocByObjectId($objectId: [ID!]) {
     docs(object_ids: $objectId) {
       id
+      name
+      url
+    }
+  }
+`;
+
+export const getDocById = gql`
+  query getDocById($docId: [ID!]) {
+    docs(ids: $docId) {
+      id
+      name
+      url
     }
   }
 `;

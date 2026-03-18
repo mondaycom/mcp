@@ -4,6 +4,7 @@ export const getItemUpdates = gql`
   query GetItemUpdates($itemId: ID!, $limit: Int, $page: Int, $includeReplies: Boolean!, $includeAssets: Boolean!) {
     items(ids: [$itemId]) {
       id
+      url
       updates(limit: $limit, page: $page) {
         id
         text_body
@@ -38,10 +39,11 @@ export const getItemUpdates = gql`
 `;
 
 export const getBoardUpdates = gql`
-  query GetBoardUpdates($boardId: ID!, $limit: Int, $page: Int, $includeReplies: Boolean!, $includeAssets: Boolean!) {
+  query GetBoardUpdates($boardId: ID!, $limit: Int, $page: Int, $includeReplies: Boolean!, $includeAssets: Boolean!, $fromDate: ISO8601DateTime, $toDate: ISO8601DateTime, $boardUpdatesOnly: Boolean) {
     boards(ids: [$boardId]) {
       id
-      updates(limit: $limit, page: $page, board_updates_only: true) {
+      url
+      updates(limit: $limit, page: $page, board_updates_only: $boardUpdatesOnly, from_date: $fromDate, to_date: $toDate) {
         id
         text_body
         created_at

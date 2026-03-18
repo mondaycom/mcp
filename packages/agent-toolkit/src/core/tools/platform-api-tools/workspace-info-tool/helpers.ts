@@ -1,7 +1,8 @@
 import { GetWorkspaceInfoQuery } from 'src/monday-graphql/generated/graphql/graphql';
 import { OrganizedWorkspaceInfo } from './types';
+import { buildWorkspaceUrl } from '../utils/account-slug.utils';
 
-export function organizeWorkspaceInfoHierarchy(response: GetWorkspaceInfoQuery): OrganizedWorkspaceInfo {
+export function organizeWorkspaceInfoHierarchy(response: GetWorkspaceInfoQuery, slug: string | null): OrganizedWorkspaceInfo {
   const { workspaces, boards, docs, folders } = response;
 
   // Get the workspace info (assuming single workspace)
@@ -55,6 +56,7 @@ export function organizeWorkspaceInfoHierarchy(response: GetWorkspaceInfoQuery):
     workspace: {
       id: workspace.id!,
       name: workspace.name!,
+      url: slug ? buildWorkspaceUrl(slug, workspace.id!) : undefined,
       description: workspace.description || '',
       kind: workspace.kind || '',
       created_at: workspace.created_at || '',
