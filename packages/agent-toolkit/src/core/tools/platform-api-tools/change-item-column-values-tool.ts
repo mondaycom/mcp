@@ -56,6 +56,7 @@ export class ChangeItemColumnValuesTool extends BaseMondayApiTool<ChangeItemColu
       boardId: boardId.toString(),
       itemId: input.itemId.toString(),
       columnValues: input.columnValues,
+      options: { disable_undo: false },
     };
 
     const res = await this.mondayApi.request<ChangeItemColumnValuesMutation>(changeItemColumnValues, variables);
