@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { getDocVersionHistory, getDocVersionDiff } from 'src/monday-graphql/queries.graphql';
+import { getDocVersionHistory, getDocVersionDiff } from './get-doc-version-history-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 
