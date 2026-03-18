@@ -215,7 +215,7 @@ describe('SearchTool', () => {
         // Should have tried dev endpoint first, then fallen back to GetBoards
         expect(mocks.getMockRequest()).toHaveBeenNthCalledWith(2, expect.stringContaining('query GetBoards'), {
           page: 1,
-          limit: 10000,
+          limit: 1000,
           workspace_ids: undefined,
         });
       });
@@ -691,7 +691,7 @@ describe('SearchTool', () => {
 
         expect(mocks.getMockRequest()).toHaveBeenNthCalledWith(2, expect.stringContaining('query GetDocs'), {
           page: 1,
-          limit: 10000,
+          limit: 1000,
           workspace_ids: undefined,
         });
       });
@@ -855,6 +855,7 @@ describe('SearchTool', () => {
 
         const args: inputType = {
           searchType: GlobalSearchType.FOLDERS,
+          workspaceIds: [1],
         };
 
         const parsedResult = await callToolByNameAsync('search', args);
@@ -872,7 +873,7 @@ describe('SearchTool', () => {
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetFolders'), {
           page: 1,
           limit: 100,
-          workspace_ids: undefined,
+          workspace_ids: ['1'],
         });
       });
 
@@ -881,6 +882,7 @@ describe('SearchTool', () => {
 
         const args: inputType = {
           searchType: GlobalSearchType.FOLDERS,
+          workspaceIds: [1],
           limit: 10,
           page: 5,
         };
@@ -891,7 +893,7 @@ describe('SearchTool', () => {
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetFolders'), {
           page: 5,
           limit: 10,
-          workspace_ids: undefined,
+          workspace_ids: ['1'],
         });
       });
 
@@ -927,6 +929,7 @@ describe('SearchTool', () => {
 
         const args: inputType = {
           searchType: GlobalSearchType.FOLDERS,
+          workspaceIds: [1],
           searchTerm: 'Test Folder',
           limit: 2,
           page: 1,
@@ -940,8 +943,8 @@ describe('SearchTool', () => {
 
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetFolders'), {
           page: 1,
-          limit: 10000,
-          workspace_ids: undefined,
+          limit: 100,
+          workspace_ids: ['1'],
         });
       });
 
@@ -954,6 +957,7 @@ describe('SearchTool', () => {
 
         const args: inputType = {
           searchType: GlobalSearchType.FOLDERS,
+          workspaceIds: [1],
         };
 
         const parsedResult = await callToolByNameAsync('search', args);
@@ -970,6 +974,7 @@ describe('SearchTool', () => {
 
         const args: inputType = {
           searchType: GlobalSearchType.FOLDERS,
+          workspaceIds: [1],
         };
 
         const parsedResult = await callToolByNameAsync('search', args);
@@ -982,6 +987,7 @@ describe('SearchTool', () => {
 
         const args: inputType = {
           searchType: GlobalSearchType.FOLDERS,
+          workspaceIds: [1],
         };
 
         const parsedResult = await callToolByNameAsync('search', args);
@@ -996,6 +1002,7 @@ describe('SearchTool', () => {
 
         const args: inputType = {
           searchType: GlobalSearchType.FOLDERS,
+          workspaceIds: [1],
         };
 
         const parsedResult = await callToolByNameAsync('search', args);
@@ -1019,6 +1026,7 @@ describe('SearchTool', () => {
 
         const args: inputType = {
           searchType: GlobalSearchType.FOLDERS,
+          workspaceIds: [1],
           searchTerm: 'Folder',
           limit: 10,
           page: 1,
@@ -1050,6 +1058,7 @@ describe('SearchTool', () => {
 
         const args: inputType = {
           searchType: GlobalSearchType.FOLDERS,
+          workspaceIds: [1],
           searchTerm: 'Archive',
           limit: 20,
           page: 1,
@@ -1072,12 +1081,25 @@ describe('SearchTool', () => {
 
         const args: inputType = {
           searchType: GlobalSearchType.FOLDERS,
+          workspaceIds: [1],
         };
 
         const result = await callToolByNameRawAsync('search', args);
 
         expect(result.content[0].text).toContain('Failed to execute tool search');
         expect(result.content[0].text).toContain(errorMessage);
+      });
+
+      it('should throw error when workspace_ids are not provided for folder search', async () => {
+        const args: inputType = {
+          searchType: GlobalSearchType.FOLDERS,
+        };
+
+        const result = await callToolByNameRawAsync('search', args);
+
+        expect(result.content[0].text).toContain('Failed to execute tool search');
+        expect(result.content[0].text).toContain('Searching for folders require specifying workspace ids');
+        expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
     });
   });
@@ -1400,6 +1422,7 @@ describe('SearchTool', () => {
 
         const args: inputType = {
           searchType: GlobalSearchType.FOLDERS,
+          workspaceIds: [1],
           searchTerm: 'Test',
         };
 
@@ -1546,10 +1569,10 @@ describe('SearchTool', () => {
 
       await callToolByNameAsync('search', args);
 
-      // When searchTerm is present, fallback should override to page 1 and limit 10000
+      // When searchTerm is present, fallback should override to page 1 and limit 1000
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetBoards'), {
         page: 1,
-        limit: 10000,
+        limit: 1000,
         workspace_ids: undefined,
       });
     });
@@ -1860,6 +1883,7 @@ describe('SearchTool', () => {
 
       const args: inputType = {
         searchType: GlobalSearchType.FOLDERS,
+        workspaceIds: [1],
       };
 
       const parsedResult = await callToolByNameAsync('search', args);
