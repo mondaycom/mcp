@@ -2248,6 +2248,9 @@ type Mutation {
 
     """The item's unique identifier."""
     item_id: ID
+
+    """Optional settings for the mutation (e.g. disable_undo)."""
+    options: JSON
   ): Item
 
   """Change an item's column with simple value."""
