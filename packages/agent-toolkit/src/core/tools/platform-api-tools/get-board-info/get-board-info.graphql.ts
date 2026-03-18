@@ -75,6 +75,16 @@ export const getBoardInfo = gql`
       top_group {
         id
       }
+
+      # Board Views (filters, sorts, and display configurations)
+      views {
+        id
+        name
+        type
+        settings
+        filter
+        sort
+      }
     }
   }
 `;

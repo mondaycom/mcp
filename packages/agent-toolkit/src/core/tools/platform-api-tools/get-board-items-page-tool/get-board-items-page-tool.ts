@@ -148,7 +148,8 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
       `Returns structured JSON with item details, creation/update timestamps, and pagination info. ` +
       `Use the 'nextCursor' parameter from the response to get the next page of results when 'has_more' is true. ` +
       `To retrieve an item's description (the rich-text body/details of a monday.com item), set 'includeItemDescription' to true — the response will include the item description's document blocks with their content, type, and id. Use this whenever the user asks about an item's description, body, details, or notes. ` +
-      `[REQUIRED PRECONDITION]: Before using this tool, if new columns were added to the board or if you are not familiar with the board's structure (column IDs, column types, status labels, etc.), first use get_board_info to understand the board metadata. This is essential for constructing proper filters and knowing which columns are available.`
+      `[REQUIRED PRECONDITION]: Before using this tool, if new columns were added to the board or if you are not familiar with the board's structure (column IDs, column types, status labels, etc.), first use get_board_info to understand the board metadata. This is essential for constructing proper filters and knowing which columns are available. ` +
+      `VIEW-BASED FILTERING: If the user refers to a board view by name (e.g. "show me items in the 'Overdue' view"), first call get_board_info to get the board's views, find the matching view by name, then extract its filter field and pass it as the filters argument here.`
     );
   }
 
