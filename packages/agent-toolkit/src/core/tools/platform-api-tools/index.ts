@@ -2,6 +2,7 @@ import { AllMondayApiTool } from './all-monday-api-tool';
 import { BaseMondayApiToolConstructor } from './base-monday-api-tool';
 import { ChangeItemColumnValuesTool } from './change-item-column-values-tool';
 import { CreateBoardTool } from './create-board-tool';
+import { CreateViewTool } from './create-view-tool/create-view-tool';
 import { CreateFormTool } from './workforms-tools/create-form-tool';
 import { FormQuestionsEditorTool } from './workforms-tools/form-questions-editor-tool';
 import { UpdateFormTool } from './workforms-tools/update-form-tool';
@@ -97,8 +98,8 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   UserContextTool,
   UpdateAssetsOnItemTool,
   GetNotetakerMeetingsTool,
-  // Doc Version History
   GetDocVersionHistoryTool,
+  CreateViewTool,
 ];
 
 export * from './all-monday-api-tool';
@@ -116,6 +117,7 @@ export * from './create-item-tool/create-item-tool';
 export * from './create-timeline-item-tool';
 export * from './create-update-tool/create-update-tool';
 export * from './get-updates-tool/get-updates-tool';
+export * from './create-view-tool/create-view-tool';
 export * from './delete-column-tool';
 export * from './delete-item-tool';
 export * from './fetch-custom-activity-tool';
