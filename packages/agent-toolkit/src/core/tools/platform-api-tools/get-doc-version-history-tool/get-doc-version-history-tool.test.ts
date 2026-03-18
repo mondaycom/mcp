@@ -143,13 +143,52 @@ describe('GetDocVersionHistoryTool', () => {
     });
   });
 
+  describe('With diffs — cap and edge cases', () => {
+    it('should cap diffs at 10 restoring points and set truncated flag', async () => {
+      const manyPoints = Array.from({ length: 12 }, (_, i) => ({
+        date: `2026-03-18T${String(i).padStart(2, '0')}:00:00Z`,
+        user_ids: ['1001'],
+        type: null,
+      }));
+      mocks.mockRequest.mockResolvedValueOnce({
+        doc_version_history: { doc_id: DOC_ID, restoring_points: manyPoints },
+      });
+      // 9 diff requests for 10 points (last has no diff)
+      for (let i = 0; i < 9; i++) {
+        mocks.mockRequest.mockResolvedValueOnce(mockDiffResponse);
+      }
+
+      const result = await callToolByNameAsync(TOOL_NAME, { doc_id: DOC_ID, include_diff: true });
+
+      expect(result.restoring_points).toHaveLength(10);
+      expect(result.truncated).toBe(true);
+      expect(result.total_count).toBe(12);
+    });
+
+    it('should skip diff for a restoring point with null date', async () => {
+      const pointsWithNullDate = [
+        { date: null, user_ids: ['1001'], type: null },
+        { date: '2026-03-17T09:00:00Z', user_ids: ['1001'], type: null },
+      ];
+      mocks.mockRequest.mockResolvedValueOnce({
+        doc_version_history: { doc_id: DOC_ID, restoring_points: pointsWithNullDate },
+      });
+
+      const result = await callToolByNameAsync(TOOL_NAME, { doc_id: DOC_ID, include_diff: true });
+
+      // null-date point should be returned as-is, no diff call
+      expect(result.restoring_points[0].diff).toBeUndefined();
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1); // only history call
+    });
+  });
+
   describe('Error handling', () => {
     it('should return error content on API errors', async () => {
       mocks.setError('Network error');
 
       const result = await callToolByNameRawAsync(TOOL_NAME, { doc_id: DOC_ID });
 
-      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error fetching version history');
       expect(result.content[0].text).toContain('Network error');
     });
   });

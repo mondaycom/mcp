@@ -37,6 +37,8 @@ export const getDocVersionHistoryToolSchema = {
     ),
 };
 
+const MAX_DIFF_POINTS = 10;
+
 export class GetDocVersionHistoryTool extends BaseMondayApiTool<typeof getDocVersionHistoryToolSchema> {
   name = 'get_doc_version_history';
   type = ToolType.READ;
@@ -48,12 +50,13 @@ export class GetDocVersionHistoryTool extends BaseMondayApiTool<typeof getDocVer
   });
 
   getDescription(): string {
-    return (
-      'Get the version history of a monday.com document. Returns a timeline of restoring points with timestamps and the users who made edits. ' +
-      'Use since/until to filter by date range (defaults to the last 24 hours). ' +
-      'Set include_diff to true to also fetch what content blocks were added, deleted, or changed between each version. ' +
-      'NOTE: doc_id is the id field from read_docs, not the object_id.'
-    );
+    return `Get the version history of a monday.com document. Returns a timeline of restoring points with timestamps and the users who made edits. Results are limited to the specified time range (defaults to the last 24 hours).
+
+USAGE EXAMPLES:
+- Who edited this doc today: { doc_id: "123", since: "2026-03-18T00:00:00Z" }
+- What changed in the last week: { doc_id: "123", since: "2026-03-11T00:00:00Z", include_diff: true }
+
+NOTE: doc_id is the id field from read_docs, not the object_id. When include_diff is true, diffs are fetched for up to ${MAX_DIFF_POINTS} restoring points.`;
   }
 
   getInputSchema(): typeof getDocVersionHistoryToolSchema {
@@ -68,41 +71,60 @@ export class GetDocVersionHistoryTool extends BaseMondayApiTool<typeof getDocVer
     const since = input.since ?? new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const until = input.until ?? new Date().toISOString();
 
-    const variables: GetDocVersionHistoryQueryVariables = { docId: doc_id, since, until };
-    const historyResult = await this.mondayApi.request<GetDocVersionHistoryQuery>(getDocVersionHistory, variables);
+    try {
+      const variables: GetDocVersionHistoryQueryVariables = { docId: doc_id, since, until };
+      const historyResult = await this.mondayApi.request<GetDocVersionHistoryQuery>(getDocVersionHistory, variables);
 
-    const restoringPoints = historyResult?.doc_version_history?.restoring_points;
+      const restoringPoints = historyResult?.doc_version_history?.restoring_points;
 
-    if (!restoringPoints || restoringPoints.length === 0) {
-      return {
-        content: `No version history found for document ${doc_id} in the specified time range (${since} to ${until}).`,
-      };
-    }
-
-    if (!include_diff) {
-      return {
-        content: JSON.stringify({ doc_id, since, until, restoring_points: restoringPoints }, null, 2),
-      };
-    }
-
-    const restoringPointsWithDiffs = await Promise.all(
-      restoringPoints.map(async (point, i) => {
-        if (i === restoringPoints.length - 1 || !point.date) {
-          return point;
-        }
-        const prevPoint = restoringPoints[i + 1];
-        const diffVariables: GetDocVersionDiffQueryVariables = {
-          docId: doc_id,
-          date: point.date,
-          prevDate: prevPoint?.date ?? '',
+      if (!restoringPoints || restoringPoints.length === 0) {
+        return {
+          content: `No version history found for document ${doc_id} in the specified time range (${since} to ${until}).`,
         };
-        const diffResult = await this.mondayApi.request<GetDocVersionDiffQuery>(getDocVersionDiff, diffVariables);
-        return { ...point, diff: diffResult?.doc_version_diff?.blocks ?? [] };
-      }),
-    );
+      }
 
-    return {
-      content: JSON.stringify({ doc_id, since, until, restoring_points: restoringPointsWithDiffs }, null, 2),
-    };
+      if (!include_diff) {
+        return {
+          content: JSON.stringify({ doc_id, since, until, restoring_points: restoringPoints }, null, 2),
+        };
+      }
+
+      const pointsToFetch = restoringPoints.slice(0, MAX_DIFF_POINTS);
+      const truncated = restoringPoints.length > MAX_DIFF_POINTS;
+
+      const restoringPointsWithDiffs = await Promise.all(
+        pointsToFetch.map(async (point, i) => {
+          if (i === pointsToFetch.length - 1 || !point.date) {
+            return point;
+          }
+          const prevPoint = pointsToFetch[i + 1];
+          const diffVariables: GetDocVersionDiffQueryVariables = {
+            docId: doc_id,
+            date: point.date,
+            prevDate: prevPoint?.date ?? '',
+          };
+          const diffResult = await this.mondayApi.request<GetDocVersionDiffQuery>(getDocVersionDiff, diffVariables);
+          return { ...point, diff: diffResult?.doc_version_diff?.blocks ?? [] };
+        }),
+      );
+
+      return {
+        content: JSON.stringify(
+          {
+            doc_id,
+            since,
+            until,
+            restoring_points: restoringPointsWithDiffs,
+            ...(truncated && { truncated: true, total_count: restoringPoints.length }),
+          },
+          null,
+          2,
+        ),
+      };
+    } catch (error) {
+      return {
+        content: `Error fetching version history for document ${doc_id}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      };
+    }
   }
 }
