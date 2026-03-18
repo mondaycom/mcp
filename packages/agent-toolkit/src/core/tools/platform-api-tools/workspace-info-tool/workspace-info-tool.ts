@@ -43,16 +43,12 @@ export class WorkspaceInfoTool extends BaseMondayApiTool<typeof workspaceInfoToo
       };
     }
 
-    const organizedInfo = organizeWorkspaceInfoHierarchy(res);
     const slug = await fetchAccountSlug(this.mondayApi);
-    const workspaceUrl = slug ? buildWorkspaceUrl(slug, organizedInfo.workspace.id) : undefined;
+    const organizedInfo = organizeWorkspaceInfoHierarchy(res, slug);
 
     return {
       content: JSON.stringify({
         message: "Workspace info retrieved",
-        workspace_id: organizedInfo.workspace.id,
-        workspace_name: organizedInfo.workspace.name,
-        workspace_url: workspaceUrl,
         data: organizedInfo,
       }),
     };
