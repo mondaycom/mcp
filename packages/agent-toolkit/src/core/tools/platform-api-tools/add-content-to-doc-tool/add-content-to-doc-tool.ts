@@ -1,17 +1,21 @@
 import { z } from 'zod';
 
-import { addContentToDocFromMarkdown, getDocByObjectId } from './add-content-to-doc-tool.graphql';
+import { addContentToDocFromMarkdown, getDocById, getDocByObjectId } from './add-content-to-doc-tool.graphql';
 
 import {
   AddContentToDocFromMarkdownMutation,
   AddContentToDocFromMarkdownMutationVariables,
+  GetDocByIdQuery,
+  GetDocByObjectIdQuery,
 } from '../../../../monday-graphql/generated/graphql/graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 
-type GetDocByObjectIdQuery = {
-  docs?: Array<{ id: string; name?: string; url?: string } | null> | null;
-};
+interface Document {
+  id: string;
+  name?: string;
+  url?: string | null;
+}
 
 export const addContentToDocToolSchema = {
   doc_id: z
@@ -68,23 +72,31 @@ USAGE EXAMPLES:
     }
 
     try {
-      let docId = input.doc_id;
+      let doc: Document = null!;
 
       // Resolve object_id to doc_id if needed
-      if (!docId) {
+      if (!input.doc_id) {
         const res = await this.mondayApi.request<GetDocByObjectIdQuery>(getDocByObjectId, {
           objectId: [input.object_id],
         });
 
-        const doc = res.docs?.[0];
-        if (!doc) {
-          return { content: `Error: No document found for object_id ${input.object_id}.` };
-        }
-        docId = doc.id;
+        doc = res.docs?.[0] ?? null!;
+        
+      } else {
+        const res = await this.mondayApi.request<GetDocByIdQuery>(getDocById, {
+          docId: [input.doc_id],
+        });
+
+        doc = res.docs?.[0] ?? null!;
+      }
+
+      if (!doc) {
+        const identifier = input.doc_id ? `doc_id ${input.doc_id}` : `object_id ${input.object_id}`;
+        return { content: `Error: No document found for ${identifier}.` };
       }
 
       const variables: AddContentToDocFromMarkdownMutationVariables = {
-        docId,
+        docId: doc.id,
         markdown: input.markdown,
         afterBlockId: input.after_block_id,
       };
@@ -107,9 +119,11 @@ USAGE EXAMPLES:
       const blockCount = block_ids?.length ?? 0;
       return {
         content: JSON.stringify({
-          message: `Successfully added content to document ${docId}. ${blockCount} block${blockCount === 1 ? '' : 's'} created.`,
-          doc_id: docId,
+          message: `Successfully added content to document ${doc.id}. ${blockCount} block${blockCount === 1 ? '' : 's'} created.`,
+          doc_id: doc.id,
           block_ids: block_ids,
+          doc_name: doc.name,
+          doc_url: doc.url,
         }),
       };
     } catch (error) {
