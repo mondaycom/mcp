@@ -44,7 +44,7 @@ export class CreateBoardTool extends BaseMondayApiTool<typeof createBoardToolSch
     const res = await this.mondayApi.request<CreateBoardMutation>(createBoard, variables);
 
     return {
-      content: JSON.stringify({ message: `Board ${res.create_board?.id} successfully created`, board_id: res.create_board?.id, board_name: res.create_board?.name, board_url: res.create_board?.url }),
+      content: { message: `Board ${res.create_board?.id} successfully created`, board_id: res.create_board?.id, board_name: res.create_board?.name, board_url: res.create_board?.url },
     };
   }
 }

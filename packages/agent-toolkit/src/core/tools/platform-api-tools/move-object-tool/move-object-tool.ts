@@ -88,7 +88,7 @@ export class MoveObjectTool extends BaseMondayApiTool<MoveObjectToolInput> {
     const res = await this.mondayApi.request<UpdateFolderMutation>(updateFolder, variables);
 
     return {
-      content: JSON.stringify({ message: "Object moved", object_id: res.update_folder?.id}),
+      content: { message: "Object moved", object_id: res.update_folder?.id},
     };
   }
 
@@ -127,7 +127,7 @@ export class MoveObjectTool extends BaseMondayApiTool<MoveObjectToolInput> {
 
     return res.update_board_hierarchy?.success
       ? {
-          content: JSON.stringify({ message: "Board position updated", object_id: res.update_board_hierarchy?.board?.id, action_name: "move_board" }),
+          content: { message: "Board position updated", object_id: res.update_board_hierarchy?.board?.id, action_name: "move_board" },
         }
       : {
           content: `Board position update failed: ${res.update_board_hierarchy?.message}`,
@@ -171,7 +171,7 @@ export class MoveObjectTool extends BaseMondayApiTool<MoveObjectToolInput> {
 
     return res.update_overview_hierarchy?.success
       ? {
-          content: JSON.stringify({ message: "Overview position updated", object_id: res.update_overview_hierarchy?.overview?.id }),
+          content: { message: "Overview position updated", object_id: res.update_overview_hierarchy?.overview?.id },
         }
       : {
           content: `Overview position update failed: ${res.update_overview_hierarchy?.message}`,

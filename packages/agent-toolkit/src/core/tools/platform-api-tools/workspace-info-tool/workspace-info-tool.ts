@@ -47,10 +47,10 @@ export class WorkspaceInfoTool extends BaseMondayApiTool<typeof workspaceInfoToo
     const organizedInfo = organizeWorkspaceInfoHierarchy(res, slug);
 
     return {
-      content: JSON.stringify({
+      content: {
         message: "Workspace info retrieved",
         data: organizedInfo,
-      }),
+      },
     };
   }
 }

@@ -53,7 +53,7 @@ export class UpdateWorkspaceTool extends BaseMondayApiTool<UpdateWorkspaceToolIn
     const workspaceUrl = slug ? buildWorkspaceUrl(slug, res.update_workspace?.id) : undefined;
 
     return {
-      content: JSON.stringify({ message: `Workspace ${res.update_workspace?.id} updated`, workspace_id: res.update_workspace?.id, workspace_name: res.update_workspace?.name, workspace_url: workspaceUrl }),
+      content: { message: `Workspace ${res.update_workspace?.id} updated`, workspace_id: res.update_workspace?.id, workspace_name: res.update_workspace?.name, workspace_url: workspaceUrl },
     };
   }
 }

@@ -77,7 +77,7 @@ export class GetBoardActivityTool extends BaseMondayApiTool<typeof getBoardActiv
     const includeData = input.includeData ?? false;
 
     return {
-      content: JSON.stringify({
+      content: {
         message: "Board activity retrieved",
         board_id: input.boardId,
         board_name: board?.name,
@@ -91,7 +91,7 @@ export class GetBoardActivityTool extends BaseMondayApiTool<typeof getBoardActiv
             user_id: log.user_id,
             ...(includeData && log.data ? { data: log.data } : {}),
           })),
-      }),
+      },
     };
   }
 }

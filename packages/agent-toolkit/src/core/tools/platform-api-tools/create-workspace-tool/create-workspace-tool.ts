@@ -50,7 +50,7 @@ export class CreateWorkspaceTool extends BaseMondayApiTool<CreateWorkspaceToolIn
     const workspaceUrl = slug && res.create_workspace?.id ? buildWorkspaceUrl(slug, res.create_workspace.id) : undefined;
 
     return {
-      content: JSON.stringify({ message: `Workspace ${res.create_workspace?.id} successfully created`, workspace_id: res.create_workspace?.id, workspace_name: res.create_workspace?.name, workspace_url: workspaceUrl }),
+      content: { message: `Workspace ${res.create_workspace?.id} successfully created`, workspace_id: res.create_workspace?.id, workspace_name: res.create_workspace?.name, workspace_url: workspaceUrl },
     };
   }
 }

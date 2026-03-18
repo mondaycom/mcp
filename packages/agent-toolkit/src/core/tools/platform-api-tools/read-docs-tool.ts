@@ -198,7 +198,7 @@ USAGE PATTERNS:
     const hasMorePages = docsCount === limit; // If we got exactly the limit, there might be more
 
     return {
-      content: JSON.stringify({
+      content: {
         message: `Documents retrieved (${docsInfo.length})`,
         pagination: {
           current_page: currentPage,
@@ -207,7 +207,7 @@ USAGE PATTERNS:
           has_more_pages: hasMorePages,
         },
         data: docsInfo,
-      }),
+      },
     };
   }
 }

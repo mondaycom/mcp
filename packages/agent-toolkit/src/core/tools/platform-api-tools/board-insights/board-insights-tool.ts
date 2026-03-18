@@ -119,12 +119,12 @@ export class BoardInsightsTool extends BaseMondayApiTool<typeof boardInsightsToo
     }
 
     return {
-      content: JSON.stringify({
+      content: {
         message: 'Board insights retrieved',
         board_name: res.boards?.[0]?.name,
         board_url: res.boards?.[0]?.url,
         data: rows,
-      }),
+      },
     };
   }
 }

@@ -118,13 +118,13 @@ USAGE EXAMPLES:
 
       const blockCount = block_ids?.length ?? 0;
       return {
-        content: JSON.stringify({
+        content: {
           message: `Successfully added content to document ${doc.id}. ${blockCount} block${blockCount === 1 ? '' : 's'} created.`,
           doc_id: doc.id,
           block_ids: block_ids,
           doc_name: doc.name,
           doc_url: doc.url,
-        }),
+        },
       };
     } catch (error) {
       return {

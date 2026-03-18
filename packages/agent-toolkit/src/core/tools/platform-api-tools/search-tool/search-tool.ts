@@ -74,7 +74,7 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
         const data = await this.searchWithDevEndpointAsync(input);
 
         return {
-          content: JSON.stringify({ message: "Search results", data: data.items }),
+          content: { message: "Search results", data: data.items },
         };
       } catch (error) {
        throwIfSearchTimeoutError(error);
@@ -96,7 +96,7 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     const data = await handler(input);
 
     return {
-      content: JSON.stringify({ message: "Search results", disclaimer: data.wasFiltered || !input.searchTerm ? undefined : '[IMPORTANT]Items were not filtered. Please perform the filtering.', data: data.items }),
+      content: { message: "Search results", disclaimer: data.wasFiltered || !input.searchTerm ? undefined : '[IMPORTANT]Items were not filtered. Please perform the filtering.', data: data.items },
     };
   }
 

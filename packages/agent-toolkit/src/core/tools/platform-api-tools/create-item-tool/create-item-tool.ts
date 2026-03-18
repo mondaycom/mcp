@@ -111,14 +111,14 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
       const changeColumnValuesTool = new ChangeItemColumnValuesTool(this.mondayApi, this.apiToken, {
         boardId: boardId,
       });
-      
+
       await changeColumnValuesTool.execute({
         itemId: parseInt(duplicateRes.duplicate_item.id),
         columnValues: JSON.stringify(columnValuesAndName),
       });
 
       return {
-        content: JSON.stringify({ message: `Item ${duplicateRes.duplicate_item.id} duplicated from ${input.duplicateFromItemId}`, item_id: duplicateRes.duplicate_item.id, item_name: duplicateRes.duplicate_item.name, item_url: duplicateRes.duplicate_item .url, board_id: boardId }),
+        content: { message: `Item ${duplicateRes.duplicate_item.id} duplicated from ${input.duplicateFromItemId}`, item_id: duplicateRes.duplicate_item.id, item_name: duplicateRes.duplicate_item.name, item_url: duplicateRes.duplicate_item .url, board_id: boardId },
       };
     } catch (error) {
       rethrowWithContext(error, 'duplicate item');
@@ -139,7 +139,7 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
       }
 
       return {
-        content: JSON.stringify({ message: `Subitem ${res.create_subitem.id} created under ${input.parentItemId}`, item_id: res.create_subitem.id, item_name: res.create_subitem.name, item_url: res.create_subitem.url }),
+        content: { message: `Subitem ${res.create_subitem.id} created under ${input.parentItemId}`, item_id: res.create_subitem.id, item_name: res.create_subitem.name, item_url: res.create_subitem.url },
       };
     } catch (error) {
       rethrowWithContext(error, 'create subitem');
@@ -161,7 +161,7 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
       const res = await this.mondayApi.request<CreateItemMutation>(createItem, variables);
 
       return {
-        content: JSON.stringify({ message: `Item ${res.create_item?.id} successfully created`, item_id: res.create_item?.id, item_name: res.create_item?.name, item_url: res.create_item?.url, board_id: boardId }),
+        content: { message: `Item ${res.create_item?.id} successfully created`, item_id: res.create_item?.id, item_name: res.create_item?.name, item_url: res.create_item?.url, board_id: boardId },
       };
     } catch (error) {
       rethrowWithContext(error, 'create item');

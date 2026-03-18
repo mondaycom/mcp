@@ -207,7 +207,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
     const result = this.mapResult(res, input);
 
     return {
-      content: JSON.stringify(result, null, 2),
+      content: result
     };
   }
 

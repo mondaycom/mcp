@@ -36,7 +36,7 @@ export class GetFormTool extends BaseMondayApiTool<typeof getFormToolSchema, nev
     }
 
     return {
-      content: JSON.stringify({ message: "Form retrieved", form_token: input.formToken, data: res.form }),
+      content: { message: "Form retrieved", form_token: input.formToken, data: res.form },
     };
   }
 }

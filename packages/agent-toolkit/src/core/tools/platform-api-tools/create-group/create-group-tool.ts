@@ -55,7 +55,7 @@ export class CreateGroupTool extends BaseMondayApiTool<typeof createGroupToolSch
     const res = await this.mondayApi.request<CreateGroupMutation>(createGroup, variables);
 
     return {
-      content: JSON.stringify({ message: "Group created successfully", group_id: res.create_group?.id, group_title: res.create_group?.title, board_id: input.boardId, group_name: input.groupName }),
+      content: { message: "Group created successfully", group_id: res.create_group?.id, group_title: res.create_group?.title, board_id: input.boardId, group_name: input.groupName },
     };
   }
 }

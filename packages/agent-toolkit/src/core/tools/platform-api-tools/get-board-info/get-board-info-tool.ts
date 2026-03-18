@@ -50,7 +50,7 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
     const subItemsBoard = await this.getSubItemsBoardAsync(board);
 
     return {
-      content: JSON.stringify(formatBoardInfoAsJson(board, subItemsBoard), null, 2),
+      content: formatBoardInfoAsJson(board, subItemsBoard)
     };
   }
 

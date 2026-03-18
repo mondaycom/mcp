@@ -81,7 +81,7 @@ export class UpdateFolderTool extends BaseMondayApiTool<UpdateFolderToolInput> {
     const res = await this.mondayApi.request<{ update_folder: { id: string; name?: string } }>(updateFolder, variables);
 
     return {
-      content: JSON.stringify({ message: `Folder ${res.update_folder?.id} updated`, folder_id: res.update_folder?.id, folder_name: res.update_folder?.name }),
+      content: { message: `Folder ${res.update_folder?.id} updated`, folder_id: res.update_folder?.id, folder_name: res.update_folder?.name },
     };
   }
 }

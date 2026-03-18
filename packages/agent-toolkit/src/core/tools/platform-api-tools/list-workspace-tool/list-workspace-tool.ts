@@ -122,12 +122,12 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
     }));
 
     return {
-      content: JSON.stringify({
+      content: {
         message: "Workspaces retrieved",
         ...(shouldIncludeNoFilteringDisclaimer ? { disclaimer: "Search term not applied - returning all workspaces. Perform the filtering manually." } : {}),
         ...(hasMorePages ? { next_page: input.page + 1 } : {}),
         data: workspacesWithUrls,
-      }),
+      },
     };
   }
 }

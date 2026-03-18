@@ -148,11 +148,11 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
       const content = formatUsersAndTeams(formattedRes);
       const slug = await fetchAccountSlug(this.mondayApi);
       return {
-        content: JSON.stringify({
+        content: {
           data: content,
           action_name: "Users and teams",
           url: slug ? `https://${slug}.monday.com/teams/all` : undefined,
-        }),
+        },
       };
     }
 
@@ -186,11 +186,11 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
       const contentStr = `Found ${res.users.length} user(s) matching "${input.name}":\n\n${userList}`;
       const slug = await fetchAccountSlug(this.mondayApi);
       return {
-        content: JSON.stringify({
+        content: {
           data: contentStr,
           action_name: "Users and teams",
           url: slug ? `https://${slug}.monday.com/teams/all` : undefined,
-        }),
+        },
       };
     }
 
@@ -263,11 +263,11 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
     const content = formatUsersAndTeams(res);
     const slug = await fetchAccountSlug(this.mondayApi);
     return {
-      content: JSON.stringify({
+      content: {
         data: content,
         action_name: "Users and teams",
         url: slug ? `https://${slug}.monday.com/teams/all` : undefined,
-      }),
+      },
     };
   }
 }

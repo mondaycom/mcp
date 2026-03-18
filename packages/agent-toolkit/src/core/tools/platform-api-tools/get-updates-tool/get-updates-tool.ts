@@ -143,7 +143,7 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
       };
 
       return {
-        content: JSON.stringify(result, null, 2),
+        content: result
       };
     } catch (error) {
       rethrowWithContext(error, 'get updates');
