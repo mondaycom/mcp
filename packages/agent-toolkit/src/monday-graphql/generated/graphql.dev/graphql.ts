@@ -9973,6 +9973,8 @@ export type Query = {
   search_lookup?: Maybe<Array<CrossEntityResult>>;
   /** Get a collection of monday dev sprints */
   sprints?: Maybe<Array<Sprint>>;
+  /** Execute an ANSI SQL query against board data */
+  sql?: Maybe<Scalars['JSON']['output']>;
   /** Get a collection of tags. */
   tags?: Maybe<Array<Maybe<Tag>>>;
   /** Fetch a single task by its ID. */
@@ -10618,6 +10620,12 @@ export type QuerySprintsArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QuerySqlArgs = {
+  query: SqlQueryInput;
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryTagsArgs = {
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
 };
@@ -10691,7 +10699,11 @@ export type QueryUser_ConnectionsArgs = {
 
 /** Root query type for the Dependencies service */
 export type QueryUsersArgs = {
+  emails?: InputMaybe<Array<Scalars['String']['input']>>;
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  page?: InputMaybe<Scalars['Int']['input']>;
   user_kind?: InputMaybe<UserKindFilterInput>;
 };
 
@@ -11346,6 +11358,12 @@ export type SprintTimeline = {
   from?: Maybe<Scalars['Date']['output']>;
   /** user-editable complete date of the monday dev sprint timeline, may be different than the sprint complete date */
   to?: Maybe<Scalars['Date']['output']>;
+};
+
+/** Input for executing an ANSI SQL query against board data */
+export type SqlQueryInput = {
+  /** ANSI SQL query to execute. Use LIMIT/OFFSET in the SQL for pagination. */
+  sql: Scalars['String']['input'];
 };
 
 /** The possible states for a board or item. */
@@ -12802,7 +12820,7 @@ export type User = {
   /** The user's photo in tiny size (30x30). */
   photo_tiny?: Maybe<Scalars['String']['output']>;
   /** URLs for the user's profile photo in various sizes. */
-  photo_url: PhotoUrl;
+  photo_url?: Maybe<PhotoUrl>;
   /** The product to which the user signed up to first. */
   sign_up_product_kind?: Maybe<Scalars['String']['output']>;
   /** The activation status of the user. */
@@ -12899,6 +12917,8 @@ export enum UserKind {
 export enum UserKindFilter {
   /** A admin user. */
   Admin = 'ADMIN',
+  /** A ai platform agent api user user. */
+  AiPlatformAgentApiUser = 'AI_PLATFORM_AGENT_API_USER',
   /** A group representing admin, member, guest, and view-only users. */
   Basic = 'BASIC',
   /** A campaigns api user user. */

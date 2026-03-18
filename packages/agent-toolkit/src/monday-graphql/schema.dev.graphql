@@ -963,8 +963,20 @@ type Query {
     """Filter by user IDs."""
     ids: [ID!]
 
+    """Filter by exact user name."""
+    name: String
+
+    """A list of users' emails."""
+    emails: [String!]
+
     """Filter by user kind."""
     user_kind: UserKindFilterInput
+
+    """Number of items to get, the default is 200. The maximum is 1000."""
+    limit: Int = 200
+
+    """Page number to get, starting at 1."""
+    page: Int = 1
   ): [User!]
 
   """Get a collection of webhooks for the board"""
@@ -1137,6 +1149,12 @@ type Query {
     """The aggregation query to execute"""
     query: AggregateQueryInput!
   ): AggregateQueryResult
+
+  """Execute an ANSI SQL query against board data"""
+  sql(
+    """The SQL query to execute"""
+    query: SqlQueryInput!
+  ): JSON
 
   """
   Retrieve aggregated board data at specific historical dates for point-in-time analysis.
@@ -4672,7 +4690,7 @@ type User {
   is_deleted: Boolean!
 
   """URLs for the user's profile photo in various sizes."""
-  photo_url: PhotoUrl!
+  photo_url: PhotoUrl
 
   """The date and time when the user became active."""
   became_active_at: ISO8601DateTime
@@ -14317,6 +14335,12 @@ enum AggregateSelectFunctionName {
   PHONE_COUNTRY_SHORT_NAME
 }
 
+"""Input for executing an ANSI SQL query against board data"""
+input SqlQueryInput {
+  """ANSI SQL query to execute. Use LIMIT/OFFSET in the SQL for pagination."""
+  sql: String!
+}
+
 """The result of an aggregation function."""
 type AggregateHistoryBasicAggregationResult {
   """The numeric result from the aggregation function."""
@@ -16554,6 +16578,9 @@ enum UserKindFilter {
 
   """A monday service api user user."""
   MONDAY_SERVICE_API_USER
+
+  """A ai platform agent api user user."""
+  AI_PLATFORM_AGENT_API_USER
 
   """A group representing admin, member, guest, and view-only users."""
   BASIC
