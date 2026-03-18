@@ -16,6 +16,10 @@ describe('AddContentToDocTool', () => {
 
   describe('Success Cases', () => {
     it('should add content with doc_id', async () => {
+      const getDocByIdResponse = {
+        docs: [{ id: 'doc_123', name: 'Test Doc', url: 'https://example.com/doc' }],
+      };
+
       const addContentResponse = {
         add_content_to_doc_from_markdown: {
           success: true,
@@ -25,6 +29,9 @@ describe('AddContentToDocTool', () => {
       };
 
       jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+        if (query.includes('query getDocById')) {
+          return Promise.resolve(getDocByIdResponse);
+        }
         if (query.includes('mutation addContentToDocFromMarkdown')) {
           return Promise.resolve(addContentResponse);
         }
@@ -38,9 +45,14 @@ describe('AddContentToDocTool', () => {
 
       expect(result.content[0].text).toContain('Successfully added content to document doc_123');
       expect(result.content[0].text).toContain('2 blocks created');
-      expect(result.content[0].text).toContain('block_1, block_2');
+      expect(result.content[0].text).toContain('block_1');
 
       const mockCalls = mocks.getMockRequest().mock.calls;
+
+      const getDocCall = mockCalls.find((call: any) => call[0].includes('query getDocById'));
+      expect(getDocCall).toBeDefined();
+      expect(getDocCall[1]).toEqual({ docId: ['doc_123'] });
+
       const addContentCall = mockCalls.find((call: any) => call[0].includes('mutation addContentToDocFromMarkdown'));
       expect(addContentCall).toBeDefined();
       expect(addContentCall[1]).toEqual({
@@ -52,7 +64,7 @@ describe('AddContentToDocTool', () => {
 
     it('should resolve object_id and add content', async () => {
       const getDocResponse = {
-        docs: [{ id: 'resolved_doc_456' }],
+        docs: [{ id: 'resolved_doc_456', name: 'Resolved Doc', url: 'https://example.com/resolved-doc' }],
       };
 
       const addContentResponse = {
@@ -97,6 +109,10 @@ describe('AddContentToDocTool', () => {
     });
 
     it('should use doc_id when both doc_id and object_id are provided', async () => {
+      const getDocByIdResponse = {
+        docs: [{ id: 'doc_priority', name: 'Priority Doc', url: 'https://example.com/priority-doc' }],
+      };
+
       const addContentResponse = {
         add_content_to_doc_from_markdown: {
           success: true,
@@ -106,6 +122,9 @@ describe('AddContentToDocTool', () => {
       };
 
       jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+        if (query.includes('query getDocById')) {
+          return Promise.resolve(getDocByIdResponse);
+        }
         if (query.includes('mutation addContentToDocFromMarkdown')) {
           return Promise.resolve(addContentResponse);
         }
@@ -122,7 +141,11 @@ describe('AddContentToDocTool', () => {
 
       const mockCalls = mocks.getMockRequest().mock.calls;
 
-      // No resolution query should be made
+      // getDocById should be called (not getDocByObjectId)
+      const getDocByIdCall = mockCalls.find((call: any) => call[0].includes('query getDocById'));
+      expect(getDocByIdCall).toBeDefined();
+
+      // No object_id resolution query should be made
       const resolveCall = mockCalls.find((call: any) => call[0].includes('query getDocByObjectId'));
       expect(resolveCall).toBeUndefined();
 
@@ -131,6 +154,10 @@ describe('AddContentToDocTool', () => {
     });
 
     it('should pass after_block_id to the mutation', async () => {
+      const getDocByIdResponse = {
+        docs: [{ id: 'doc_123', name: 'Test Doc', url: 'https://example.com/doc' }],
+      };
+
       const addContentResponse = {
         add_content_to_doc_from_markdown: {
           success: true,
@@ -140,6 +167,9 @@ describe('AddContentToDocTool', () => {
       };
 
       jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+        if (query.includes('query getDocById')) {
+          return Promise.resolve(getDocByIdResponse);
+        }
         if (query.includes('mutation addContentToDocFromMarkdown')) {
           return Promise.resolve(addContentResponse);
         }
@@ -164,6 +194,10 @@ describe('AddContentToDocTool', () => {
     });
 
     it('should handle empty block_ids in response', async () => {
+      const getDocByIdResponse = {
+        docs: [{ id: 'doc_123', name: 'Test Doc', url: 'https://example.com/doc' }],
+      };
+
       const addContentResponse = {
         add_content_to_doc_from_markdown: {
           success: true,
@@ -173,6 +207,9 @@ describe('AddContentToDocTool', () => {
       };
 
       jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+        if (query.includes('query getDocById')) {
+          return Promise.resolve(getDocByIdResponse);
+        }
         if (query.includes('mutation addContentToDocFromMarkdown')) {
           return Promise.resolve(addContentResponse);
         }
@@ -189,6 +226,10 @@ describe('AddContentToDocTool', () => {
     });
 
     it('should handle null block_ids in successful response', async () => {
+      const getDocByIdResponse = {
+        docs: [{ id: 'doc_123', name: 'Test Doc', url: 'https://example.com/doc' }],
+      };
+
       const addContentResponse = {
         add_content_to_doc_from_markdown: {
           success: true,
@@ -198,6 +239,9 @@ describe('AddContentToDocTool', () => {
       };
 
       jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+        if (query.includes('query getDocById')) {
+          return Promise.resolve(getDocByIdResponse);
+        }
         if (query.includes('mutation addContentToDocFromMarkdown')) {
           return Promise.resolve(addContentResponse);
         }
@@ -211,12 +255,51 @@ describe('AddContentToDocTool', () => {
 
       expect(result.content[0].text).toContain('Successfully added content to document doc_123');
       expect(result.content[0].text).toContain('0 blocks created');
+      // block_ids is null in JSON — "Block IDs:" is not in the output format
       expect(result.content[0].text).not.toContain('Block IDs:');
+    });
+
+    it('should return doc_name and doc_url in success response', async () => {
+      const getDocByIdResponse = {
+        docs: [{ id: 'doc_123', name: 'My Important Doc', url: 'https://example.com/my-doc' }],
+      };
+
+      const addContentResponse = {
+        add_content_to_doc_from_markdown: {
+          success: true,
+          block_ids: ['block_1'],
+          error: null,
+        },
+      };
+
+      jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+        if (query.includes('query getDocById')) {
+          return Promise.resolve(getDocByIdResponse);
+        }
+        if (query.includes('mutation addContentToDocFromMarkdown')) {
+          return Promise.resolve(addContentResponse);
+        }
+        return Promise.resolve({});
+      });
+
+      const result = await callToolByNameRawAsync('add_content_to_doc', {
+        doc_id: 'doc_123',
+        markdown: 'Content',
+      });
+
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed.doc_name).toBe('My Important Doc');
+      expect(parsed.doc_url).toBe('https://example.com/my-doc');
+      expect(parsed.doc_id).toBe('doc_123');
     });
   });
 
   describe('Error Cases', () => {
     it('should return error when mutation returns success=false with error message', async () => {
+      const getDocByIdResponse = {
+        docs: [{ id: 'doc_123', name: 'Test Doc', url: 'https://example.com/doc' }],
+      };
+
       const addContentResponse = {
         add_content_to_doc_from_markdown: {
           success: false,
@@ -226,6 +309,9 @@ describe('AddContentToDocTool', () => {
       };
 
       jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+        if (query.includes('query getDocById')) {
+          return Promise.resolve(getDocByIdResponse);
+        }
         if (query.includes('mutation addContentToDocFromMarkdown')) {
           return Promise.resolve(addContentResponse);
         }
@@ -242,6 +328,10 @@ describe('AddContentToDocTool', () => {
     });
 
     it('should return error with unknown error fallback when mutation returns success=false without error', async () => {
+      const getDocByIdResponse = {
+        docs: [{ id: 'doc_123', name: 'Test Doc', url: 'https://example.com/doc' }],
+      };
+
       const addContentResponse = {
         add_content_to_doc_from_markdown: {
           success: false,
@@ -251,6 +341,9 @@ describe('AddContentToDocTool', () => {
       };
 
       jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+        if (query.includes('query getDocById')) {
+          return Promise.resolve(getDocByIdResponse);
+        }
         if (query.includes('mutation addContentToDocFromMarkdown')) {
           return Promise.resolve(addContentResponse);
         }
@@ -267,11 +360,18 @@ describe('AddContentToDocTool', () => {
     });
 
     it('should return error when mutation returns null result', async () => {
+      const getDocByIdResponse = {
+        docs: [{ id: 'doc_123', name: 'Test Doc', url: 'https://example.com/doc' }],
+      };
+
       const addContentResponse = {
         add_content_to_doc_from_markdown: null,
       };
 
       jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+        if (query.includes('query getDocById')) {
+          return Promise.resolve(getDocByIdResponse);
+        }
         if (query.includes('mutation addContentToDocFromMarkdown')) {
           return Promise.resolve(addContentResponse);
         }
@@ -326,6 +426,43 @@ describe('AddContentToDocTool', () => {
       });
 
       expect(result.content[0].text).toContain('Error: No document found for object_id obj_null_docs');
+    });
+
+    it('should return error when doc_id resolution finds no documents', async () => {
+      jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+        if (query.includes('query getDocById')) {
+          return Promise.resolve({ docs: [] });
+        }
+        return Promise.resolve({});
+      });
+
+      const result = await callToolByNameRawAsync('add_content_to_doc', {
+        doc_id: 'nonexistent_doc',
+        markdown: 'Content',
+      });
+
+      expect(result.content[0].text).toContain('Error: No document found for doc_id nonexistent_doc');
+
+      // Mutation should not have been called
+      const mockCalls = mocks.getMockRequest().mock.calls;
+      const addContentCall = mockCalls.find((call: any) => call[0].includes('mutation addContentToDocFromMarkdown'));
+      expect(addContentCall).toBeUndefined();
+    });
+
+    it('should handle doc_id resolution returning docs as null', async () => {
+      jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+        if (query.includes('query getDocById')) {
+          return Promise.resolve({ docs: null });
+        }
+        return Promise.resolve({});
+      });
+
+      const result = await callToolByNameRawAsync('add_content_to_doc', {
+        doc_id: 'doc_null_docs',
+        markdown: 'Content',
+      });
+
+      expect(result.content[0].text).toContain('Error: No document found for doc_id doc_null_docs');
     });
 
     it('should handle exception during object_id resolution', async () => {

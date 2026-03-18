@@ -73,18 +73,25 @@ export class GetBoardActivityTool extends BaseMondayApiTool<typeof getBoardActiv
       };
     }
 
+    const board = res.boards?.[0];
     const includeData = input.includeData ?? false;
-    const formattedActivity = activityLogs
-      .filter((log): log is NonNullable<typeof log> => log !== null && log !== undefined)
-      .map((log) => {
-        return `• ${log.created_at}: ${log.event} on ${log.entity} by user ${log.user_id}${includeData && log.data ? ` - Data: ${log.data}` : ''}`;
-      })
-      .join('\n');
 
     return {
-      content: `Activity logs for board ${input.boardId} from ${fromDate} to ${toDate} (${activityLogs.length} entries):
-
-${formattedActivity}`,
+      content: {
+        message: "Board activity retrieved",
+        board_id: input.boardId,
+        board_name: board?.name,
+        board_url: board?.url,
+        data: activityLogs
+          .filter((log): log is NonNullable<typeof log> => log !== null && log !== undefined)
+          .map((log) => ({
+            created_at: log.created_at,
+            event: log.event,
+            entity: log.entity,
+            user_id: log.user_id,
+            ...(includeData && log.data ? { data: log.data } : {}),
+          })),
+      },
     };
   }
 }

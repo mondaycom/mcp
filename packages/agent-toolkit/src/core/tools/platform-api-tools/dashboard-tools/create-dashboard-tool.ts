@@ -72,29 +72,8 @@ export class CreateDashboardTool extends BaseMondayApiTool<typeof createDashboar
 
       const dashboard = res.create_dashboard;
 
-      // Format success response with dashboard details
-      const folderInfo = dashboard.board_folder_id ? ` in folder ${dashboard.board_folder_id}` : ' in workspace root';
-
-      const visibilityInfo =
-        dashboard.kind === DashboardKind.Public
-          ? '(visible to all workspace members)'
-          : '(private - visible only to invited users)';
-
       return {
-        content: `✅ Dashboard "${dashboard.name}" successfully created!
-
-Dashboard Details:
-• ID: ${dashboard.id}
-• Name: ${dashboard.name}
-• Workspace ID: ${dashboard.workspace_id}${folderInfo}
-• Visibility: ${dashboard.kind} ${visibilityInfo}
-• Connected Boards: ${input.board_ids.length} board(s)
-
-Next Steps:
-1. Use 'all_widgets_schema' to understand available widget types
-2. Understand the connected boards structure, columns, and metadata. Map board ids to column ids
-3. Plan Domain-Beneficial Widgets - Strategic widget planning based on real data analysis
-4. Use 'create_widget' to add widgets to the dashboard`,
+        content: { message: `Dashboard ${dashboard.id} successfully created`, dashboard_id: dashboard.id, dashboard_name: dashboard.name },
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);

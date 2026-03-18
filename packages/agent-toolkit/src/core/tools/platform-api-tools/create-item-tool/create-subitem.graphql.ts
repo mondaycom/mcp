@@ -5,6 +5,7 @@ export const createSubitem = gql`
     create_subitem(parent_item_id: $parentItemId, item_name: $itemName, column_values: $columnValues) {
       id
       name
+      url
       parent_item {
         id
       }

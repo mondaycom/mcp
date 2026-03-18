@@ -152,7 +152,7 @@ export class FullBoardDataTool extends BaseMondayApiTool<typeof fullBoardDataToo
       };
 
       return {
-        content: JSON.stringify(result, null, 2),
+        content: result
       };
     } catch (error) {
       rethrowWithContext(error, 'get full board data');

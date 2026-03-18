@@ -10,6 +10,7 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
 import { Tool } from '../core/tool';
 import { MondayAgentToolkitConfig } from '../core/monday-agent-toolkit';
 import { API_VERSION } from 'src/utils/version.utils';
+import { stringifyIfObject } from 'src/utils/object.utils';
 
 export class MondayAgentToolkit {
   private readonly mondayApi: ApiClient;
@@ -96,7 +97,7 @@ export class MondayAgentToolkit {
       return {
         role: 'tool',
         tool_call_id: toolCall.id,
-        content: result.content,
+        content: stringifyIfObject(result.content),
       } as ChatCompletionToolMessageParam;
     } else {
       // Handle tools without input schema
@@ -104,7 +105,7 @@ export class MondayAgentToolkit {
       return {
         role: 'tool',
         tool_call_id: toolCall.id,
-        content: result.content,
+        content: stringifyIfObject(result.content),
       } as ChatCompletionToolMessageParam;
     }
   }

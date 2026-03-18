@@ -10,6 +10,8 @@ export const getBoardAllActivity = gql`
     $includeData: Boolean!
   ) {
     boards(ids: [$boardId]) {
+      name
+      url
       activity_logs(from: $fromDate, to: $toDate, limit: $limit, page: $page) {
         user_id
         entity

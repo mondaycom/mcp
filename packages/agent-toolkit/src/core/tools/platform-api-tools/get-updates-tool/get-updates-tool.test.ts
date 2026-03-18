@@ -71,7 +71,7 @@ describe('Get Updates Tool', () => {
 
     const result = await tool.execute({ objectId: '123', objectType: 'Item' } as any);
 
-    const parsedResult = JSON.parse(result.content);
+    const parsedResult = result.content as any;
     expect(parsedResult.updates).toHaveLength(2);
     expect(parsedResult.updates[0].id).toBe('update_1');
     expect(parsedResult.updates[0].text_body).toBe('This is update 1');
@@ -100,7 +100,7 @@ describe('Get Updates Tool', () => {
 
     const result = await tool.execute({ objectId: '456', objectType: 'Board' } as any);
 
-    const parsedResult = JSON.parse(result.content);
+    const parsedResult = result.content as any;
     expect(parsedResult.updates).toHaveLength(1);
     expect(parsedResult.updates[0].id).toBe('board_update_1');
     expect(parsedResult.updates[0].text_body).toBe('Board-level update');
@@ -129,7 +129,7 @@ describe('Get Updates Tool', () => {
 
     const result = await tool.execute({ objectId: '123', objectType: 'Item', limit: 50, page: 2 } as any);
 
-    const parsedResult = JSON.parse(result.content);
+    const parsedResult = result.content as any;
     expect(parsedResult.pagination).toEqual({
       page: 2,
       limit: 50,
@@ -186,7 +186,7 @@ describe('Get Updates Tool', () => {
 
     const result = await tool.execute({ objectId: '123', objectType: 'Item', includeReplies: true } as any);
 
-    const parsedResult = JSON.parse(result.content);
+    const parsedResult = result.content as any;
     expect(parsedResult.updates[0].replies).toBeDefined();
     expect(parsedResult.updates[0].replies).toHaveLength(1);
     expect(parsedResult.updates[0].replies[0].text_body).toBe('This is a reply');
@@ -237,7 +237,7 @@ describe('Get Updates Tool', () => {
 
     const result = await tool.execute({ objectId: '123', objectType: 'Item', includeAssets: true } as any);
 
-    const parsedResult = JSON.parse(result.content);
+    const parsedResult = result.content as any;
     expect(parsedResult.updates[0].assets).toBeDefined();
     expect(parsedResult.updates[0].assets).toHaveLength(1);
     expect(parsedResult.updates[0].assets[0].name).toBe('document.pdf');
@@ -300,7 +300,7 @@ describe('Get Updates Tool', () => {
       includeAssets: true,
     } as any);
 
-    const parsedResult = JSON.parse(result.content);
+    const parsedResult = result.content as any;
     expect(parsedResult.updates[0].replies).toBeDefined();
     expect(parsedResult.updates[0].assets).toBeDefined();
   });
@@ -400,7 +400,7 @@ describe('Get Updates Tool', () => {
       toDate: '2024-01-31',
     } as any);
 
-    const parsedResult = JSON.parse(result.content);
+    const parsedResult = result.content as any;
     expect(parsedResult.updates).toHaveLength(1);
 
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(

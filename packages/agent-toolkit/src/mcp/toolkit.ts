@@ -9,6 +9,7 @@ import { MondayAgentToolkitConfig } from '../core/monday-agent-toolkit';
 import { ManageToolsTool } from '../core/tools/platform-api-tools/manage-tools-tool';
 import { DynamicToolManager } from './dynamic-tool-manager';
 import { API_VERSION } from 'src/utils/version.utils';
+import { stringifyIfObject } from 'src/utils/object.utils';
 
 export interface GetToolsOptions {
   schemaFormat?: 'zod' | 'json';
@@ -292,12 +293,12 @@ export class MondayAgentToolkit extends McpServer {
           }
           const result = await tool.execute(parsedArgs.data);
           return {
-            content: [{ type: 'text', text: String(result.content) }],
+            content: [{ type: 'text', text: stringifyIfObject(result.content) }],
           };
         } else {
           const result = await tool.execute();
           return {
-            content: [{ type: 'text', text: String(result.content) }],
+            content: [{ type: 'text', text: stringifyIfObject(result.content) }],
           };
         }
       } catch (error) {
@@ -333,9 +334,9 @@ export class MondayAgentToolkit extends McpServer {
   /**
    * Format the tool result into the expected MCP format
    */
-  private formatToolResult(content: string): CallToolResult {
+  private formatToolResult(content: string | Record<string, any>): CallToolResult {
     return {
-      content: [{ type: 'text', text: content }],
+      content: [{ type: 'text', text: stringifyIfObject(content) }],
     };
   }
 

@@ -30,7 +30,7 @@ export class FormQuestionsEditorToolHelpers {
     await this.mondayApi.request<DeleteFormQuestionMutation>(deleteFormQuestion, deleteVariables);
 
     return {
-      content: `Form question with id ${questionId} deleted successfully.`,
+      content: { message: "Question deleted", question_id: questionId, action_name: "delete" },
     };
   }
 
@@ -58,7 +58,7 @@ export class FormQuestionsEditorToolHelpers {
     await this.mondayApi.request<UpdateFormQuestionMutation>(updateFormQuestion, updateVariables);
 
     return {
-      content: `Form question with id ${questionId} updated successfully.`,
+      content: { message: "Question updated", question_id: questionId, action_name: "update" },
     };
   }
 
@@ -87,7 +87,7 @@ export class FormQuestionsEditorToolHelpers {
     const result = await this.mondayApi.request<CreateFormQuestionMutation>(createFormQuestion, createVariables);
 
     return {
-      content: `Form question created successfully. ID: ${result.create_form_question?.id}`,
+      content: { message: "Question created", question_id: result.create_form_question?.id, action_name: "create" },
     };
   }
 }

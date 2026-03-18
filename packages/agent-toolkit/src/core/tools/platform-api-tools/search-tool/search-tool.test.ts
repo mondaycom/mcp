@@ -87,7 +87,7 @@ describe('SearchTool', () => {
 
       const parsedResult = await callToolByNameAsync('search', args);
 
-      expect(parsedResult.results).toBeDefined();
+      expect(parsedResult.data).toBeDefined();
       expect(mocks.getMockRequest()).toHaveBeenCalled();
     });
 
@@ -128,13 +128,13 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.results).toHaveLength(3);
-        expect(parsedResult.results[0]).toEqual({
+        expect(parsedResult.data).toHaveLength(3);
+        expect(parsedResult.data[0]).toEqual({
           id: 'board-123',
           title: 'Test Board 1',
           url: 'https://monday.com/boards/123',
         });
-        expect(parsedResult.results[1]).toEqual({
+        expect(parsedResult.data[1]).toEqual({
           id: 'board-456',
           title: 'Test Board 2',
           url: 'https://monday.com/boards/456',
@@ -158,7 +158,7 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.results).toBeDefined();
+        expect(parsedResult.data).toBeDefined();
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetBoards'), {
           page: 2,
           limit: 50,
@@ -176,7 +176,7 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.results).toBeDefined();
+        expect(parsedResult.data).toBeDefined();
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetBoards'), {
           page: 1,
           limit: 100,
@@ -209,7 +209,7 @@ describe('SearchTool', () => {
         const parsedResult = await callToolByNameAsync('search', args);
 
         // With less than 100 items, no filtering occurs - returns all items
-        expect(parsedResult.results).toHaveLength(4);
+        expect(parsedResult.data).toHaveLength(4);
         expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
 
         // Should have tried dev endpoint first, then fallen back to GetBoards
@@ -233,7 +233,7 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.results).toHaveLength(0);
+        expect(parsedResult.data).toHaveLength(0);
       });
 
       it('should handle null boards response', async () => {
@@ -249,7 +249,7 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.results).toHaveLength(0);
+        expect(parsedResult.data).toHaveLength(0);
       });
 
       it('should properly prefix board IDs', async () => {
@@ -261,9 +261,9 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.results[0].id).toBe(`${ObjectPrefixes.BOARD}123`);
-        expect(parsedResult.results[1].id).toBe(`${ObjectPrefixes.BOARD}456`);
-        expect(parsedResult.results[2].id).toBe(`${ObjectPrefixes.BOARD}789`);
+        expect(parsedResult.data[0].id).toBe(`${ObjectPrefixes.BOARD}123`);
+        expect(parsedResult.data[1].id).toBe(`${ObjectPrefixes.BOARD}456`);
+        expect(parsedResult.data[2].id).toBe(`${ObjectPrefixes.BOARD}789`);
       });
     });
 
@@ -292,7 +292,7 @@ describe('SearchTool', () => {
         const parsedResult = await callToolByNameAsync('search', args);
 
         // With less than 100 items, no filtering occurs - returns all 10 items
-        expect(parsedResult.results).toHaveLength(10);
+        expect(parsedResult.data).toHaveLength(10);
         expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
       });
 
@@ -318,7 +318,7 @@ describe('SearchTool', () => {
         const parsedResult = await callToolByNameAsync('search', args);
 
         // With less than 100 items, no filtering occurs - returns all 10 items
-        expect(parsedResult.results).toHaveLength(10);
+        expect(parsedResult.data).toHaveLength(10);
         expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
       });
 
@@ -344,7 +344,7 @@ describe('SearchTool', () => {
         const parsedResult = await callToolByNameAsync('search', args);
 
         // With less than 100 items, returns all items without filtering
-        expect(parsedResult.results).toHaveLength(3);
+        expect(parsedResult.data).toHaveLength(3);
         expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
       });
 
@@ -373,7 +373,7 @@ describe('SearchTool', () => {
         const parsedResult = await callToolByNameAsync('search', args);
 
         // With less than 100 items, returns all 5 items (no filtering)
-        expect(parsedResult.results).toHaveLength(5);
+        expect(parsedResult.data).toHaveLength(5);
         expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
       });
     });
@@ -403,9 +403,9 @@ describe('SearchTool', () => {
         const parsedResult = await callToolByNameAsync('search', args);
 
         // With more than 100 items, filtering occurs
-        expect(parsedResult.results).toHaveLength(10);
-        expect(parsedResult.results[0].title).toBe('Board 1');
-        expect(parsedResult.results[9].title).toBe('Board 10');
+        expect(parsedResult.data).toHaveLength(10);
+        expect(parsedResult.data[0].title).toBe('Board 1');
+        expect(parsedResult.data[9].title).toBe('Board 10');
         expect(parsedResult.disclaimer).toBeUndefined();
       });
 
@@ -431,9 +431,9 @@ describe('SearchTool', () => {
         const parsedResult = await callToolByNameAsync('search', args);
 
         // Page 2 should contain items 11-20
-        expect(parsedResult.results).toHaveLength(10);
-        expect(parsedResult.results[0].title).toBe('Board 11');
-        expect(parsedResult.results[9].title).toBe('Board 20');
+        expect(parsedResult.data).toHaveLength(10);
+        expect(parsedResult.data[0].title).toBe('Board 11');
+        expect(parsedResult.data[9].title).toBe('Board 20');
         expect(parsedResult.disclaimer).toBeUndefined();
       });
 
@@ -468,11 +468,11 @@ describe('SearchTool', () => {
         const parsedResult = await callToolByNameAsync('search', args);
 
         // Should only return items matching 'Project' (80 total, showing first 20)
-        expect(parsedResult.results).toHaveLength(20);
-        expect(parsedResult.results[0].title).toBe('Project 1');
-        expect(parsedResult.results[19].title).toBe('Project 20');
+        expect(parsedResult.data).toHaveLength(20);
+        expect(parsedResult.data[0].title).toBe('Project 1');
+        expect(parsedResult.data[19].title).toBe('Project 20');
         // Verify no 'Task' items are included
-        parsedResult.results.forEach((result: SearchResult) => {
+        parsedResult.data.forEach((result: SearchResult) => {
           expect(result.title).toContain('Project');
         });
         expect(parsedResult.disclaimer).toBeUndefined();
@@ -502,8 +502,8 @@ describe('SearchTool', () => {
         const parsedResult = await callToolByNameAsync('search', args);
 
         // Should match all case variations
-        expect(parsedResult.results).toHaveLength(15);
-        parsedResult.results.forEach((result: SearchResult) => {
+        expect(parsedResult.data).toHaveLength(15);
+        parsedResult.data.forEach((result: SearchResult) => {
           expect(result.title.toLowerCase()).toContain('test board');
         });
         expect(parsedResult.disclaimer).toBeUndefined();
@@ -530,7 +530,7 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.results).toHaveLength(0);
+        expect(parsedResult.data).toHaveLength(0);
         expect(parsedResult.disclaimer).toBeUndefined();
       });
 
@@ -556,9 +556,9 @@ describe('SearchTool', () => {
         const parsedResult = await callToolByNameAsync('search', args);
 
         // Page 13: items 121-125 (5 items)
-        expect(parsedResult.results).toHaveLength(5);
-        expect(parsedResult.results[0].title).toBe('Board 121');
-        expect(parsedResult.results[4].title).toBe('Board 125');
+        expect(parsedResult.data).toHaveLength(5);
+        expect(parsedResult.data[0].title).toBe('Board 121');
+        expect(parsedResult.data[4].title).toBe('Board 125');
         expect(parsedResult.disclaimer).toBeUndefined();
       });
     });
@@ -605,13 +605,13 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.results).toHaveLength(3);
-        expect(parsedResult.results[0]).toEqual({
+        expect(parsedResult.data).toHaveLength(3);
+        expect(parsedResult.data[0]).toEqual({
           id: 'doc-111',
           title: 'Document 1',
           url: 'https://monday.com/docs/111',
         });
-        expect(parsedResult.results[1]).toEqual({
+        expect(parsedResult.data[1]).toEqual({
           id: 'doc-222',
           title: 'Document 2',
           url: 'https://monday.com/docs/222',
@@ -635,7 +635,7 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.results).toBeDefined();
+        expect(parsedResult.data).toBeDefined();
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetDocs'), {
           page: 3,
           limit: 25,
@@ -653,7 +653,7 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.results).toBeDefined();
+        expect(parsedResult.data).toBeDefined();
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetDocs'), {
           page: 1,
           limit: 100,
@@ -686,7 +686,7 @@ describe('SearchTool', () => {
         const parsedResult = await callToolByNameAsync('search', args);
 
         // With less than 100 items, no filtering occurs - returns all items
-        expect(parsedResult.results).toHaveLength(4);
+        expect(parsedResult.data).toHaveLength(4);
         expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
 
         expect(mocks.getMockRequest()).toHaveBeenNthCalledWith(2, expect.stringContaining('query GetDocs'), {
@@ -709,7 +709,7 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.results).toHaveLength(0);
+        expect(parsedResult.data).toHaveLength(0);
       });
 
       it('should handle null documents response', async () => {
@@ -725,7 +725,7 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.results).toHaveLength(0);
+        expect(parsedResult.data).toHaveLength(0);
       });
 
       it('should properly prefix document IDs', async () => {
@@ -737,9 +737,9 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.results[0].id).toBe(`${ObjectPrefixes.DOCUMENT}111`);
-        expect(parsedResult.results[1].id).toBe(`${ObjectPrefixes.DOCUMENT}222`);
-        expect(parsedResult.results[2].id).toBe(`${ObjectPrefixes.DOCUMENT}333`);
+        expect(parsedResult.data[0].id).toBe(`${ObjectPrefixes.DOCUMENT}111`);
+        expect(parsedResult.data[1].id).toBe(`${ObjectPrefixes.DOCUMENT}222`);
+        expect(parsedResult.data[2].id).toBe(`${ObjectPrefixes.DOCUMENT}333`);
       });
 
       it('should handle documents with null url', async () => {
@@ -758,8 +758,8 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.results[0].url).toBeUndefined();
-        expect(parsedResult.results[1].url).toBeUndefined();
+        expect(parsedResult.data[0].url).toBeUndefined();
+        expect(parsedResult.data[1].url).toBeUndefined();
       });
     });
 
@@ -787,9 +787,9 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.results).toHaveLength(10);
-        expect(parsedResult.results[0].title).toBe('Document 1');
-        expect(parsedResult.results[9].title).toBe('Document 10');
+        expect(parsedResult.data).toHaveLength(10);
+        expect(parsedResult.data[0].title).toBe('Document 1');
+        expect(parsedResult.data[9].title).toBe('Document 10');
         expect(parsedResult.disclaimer).toBeUndefined();
       });
 
@@ -823,8 +823,8 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.results).toHaveLength(15);
-        parsedResult.results.forEach((result: SearchResult) => {
+        expect(parsedResult.data).toHaveLength(15);
+        parsedResult.data.forEach((result: SearchResult) => {
           expect(result.title).toContain('Report');
         });
         expect(parsedResult.disclaimer).toBeUndefined();
@@ -860,12 +860,12 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.results).toHaveLength(3);
-        expect(parsedResult.results[0]).toEqual({
+        expect(parsedResult.data).toHaveLength(3);
+        expect(parsedResult.data[0]).toEqual({
           id: 'folder-100',
           title: 'Folder 1',
         });
-        expect(parsedResult.results[1]).toEqual({
+        expect(parsedResult.data[1]).toEqual({
           id: 'folder-200',
           title: 'Folder 2',
         });
@@ -889,7 +889,7 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.results).toBeDefined();
+        expect(parsedResult.data).toBeDefined();
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetFolders'), {
           page: 5,
           limit: 10,
@@ -907,7 +907,7 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.results).toBeDefined();
+        expect(parsedResult.data).toBeDefined();
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetFolders'), {
           page: 1,
           limit: 100,
@@ -938,7 +938,7 @@ describe('SearchTool', () => {
         const parsedResult = await callToolByNameAsync('search', args);
 
         // With less than 100 items, no filtering occurs - returns all items
-        expect(parsedResult.results).toHaveLength(4);
+        expect(parsedResult.data).toHaveLength(4);
         expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
 
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetFolders'), {
@@ -962,7 +962,7 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.results).toHaveLength(0);
+        expect(parsedResult.data).toHaveLength(0);
       });
 
       it('should handle null folders response', async () => {
@@ -979,7 +979,7 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.results).toHaveLength(0);
+        expect(parsedResult.data).toHaveLength(0);
       });
 
       it('should properly prefix folder IDs', async () => {
@@ -992,9 +992,9 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.results[0].id).toBe(`${ObjectPrefixes.FOLDER}100`);
-        expect(parsedResult.results[1].id).toBe(`${ObjectPrefixes.FOLDER}200`);
-        expect(parsedResult.results[2].id).toBe(`${ObjectPrefixes.FOLDER}300`);
+        expect(parsedResult.data[0].id).toBe(`${ObjectPrefixes.FOLDER}100`);
+        expect(parsedResult.data[1].id).toBe(`${ObjectPrefixes.FOLDER}200`);
+        expect(parsedResult.data[2].id).toBe(`${ObjectPrefixes.FOLDER}300`);
       });
 
       it('should not include url field for folders', async () => {
@@ -1007,9 +1007,9 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.results[0].url).toBeUndefined();
-        expect(parsedResult.results[1].url).toBeUndefined();
-        expect(parsedResult.results[2].url).toBeUndefined();
+        expect(parsedResult.data[0].url).toBeUndefined();
+        expect(parsedResult.data[1].url).toBeUndefined();
+        expect(parsedResult.data[2].url).toBeUndefined();
       });
     });
 
@@ -1034,9 +1034,9 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.results).toHaveLength(10);
-        expect(parsedResult.results[0].title).toBe('Folder 1');
-        expect(parsedResult.results[9].title).toBe('Folder 10');
+        expect(parsedResult.data).toHaveLength(10);
+        expect(parsedResult.data[0].title).toBe('Folder 1');
+        expect(parsedResult.data[9].title).toBe('Folder 10');
         expect(parsedResult.disclaimer).toBeUndefined();
       });
 
@@ -1066,8 +1066,8 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.results).toHaveLength(20);
-        parsedResult.results.forEach((result: SearchResult) => {
+        expect(parsedResult.data).toHaveLength(20);
+        parsedResult.data.forEach((result: SearchResult) => {
           expect(result.title).toContain('Archive');
         });
         expect(parsedResult.disclaimer).toBeUndefined();
@@ -1159,13 +1159,13 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.results).toHaveLength(2);
-        expect(parsedResult.results[0]).toEqual({
+        expect(parsedResult.data).toHaveLength(2);
+        expect(parsedResult.data[0]).toEqual({
           id: 'board-123',
           title: 'Test Board 1',
           url: 'https://monday.com/boards/123',
         });
-        expect(parsedResult.results[1]).toEqual({
+        expect(parsedResult.data[1]).toEqual({
           id: 'board-456',
           title: 'Test Board 2',
           url: 'https://monday.com/boards/456',
@@ -1194,8 +1194,8 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.results[0].id).toBe(`${ObjectPrefixes.BOARD}123`);
-        expect(parsedResult.results[1].id).toBe(`${ObjectPrefixes.BOARD}456`);
+        expect(parsedResult.data[0].id).toBe(`${ObjectPrefixes.BOARD}123`);
+        expect(parsedResult.data[1].id).toBe(`${ObjectPrefixes.BOARD}456`);
       });
 
       it('should pass custom limit to dev endpoint', async () => {
@@ -1263,7 +1263,7 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.results).toHaveLength(0);
+        expect(parsedResult.data).toHaveLength(0);
       });
 
       it('should handle null search results from dev endpoint', async () => {
@@ -1276,7 +1276,7 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.results).toHaveLength(0);
+        expect(parsedResult.data).toHaveLength(0);
       });
     });
 
@@ -1291,12 +1291,12 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.results).toHaveLength(2);
-        expect(parsedResult.results[0]).toEqual({
+        expect(parsedResult.data).toHaveLength(2);
+        expect(parsedResult.data[0]).toEqual({
           id: 'doc-111',
           title: 'Document 1',
         });
-        expect(parsedResult.results[1]).toEqual({
+        expect(parsedResult.data[1]).toEqual({
           id: 'doc-222',
           title: 'Document 2',
         });
@@ -1324,8 +1324,8 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.results[0].id).toBe(`${ObjectPrefixes.DOCUMENT}111`);
-        expect(parsedResult.results[1].id).toBe(`${ObjectPrefixes.DOCUMENT}222`);
+        expect(parsedResult.data[0].id).toBe(`${ObjectPrefixes.DOCUMENT}111`);
+        expect(parsedResult.data[1].id).toBe(`${ObjectPrefixes.DOCUMENT}222`);
       });
 
       it('should not include url field for documents from dev endpoint', async () => {
@@ -1339,8 +1339,8 @@ describe('SearchTool', () => {
         const parsedResult = await callToolByNameAsync('search', args);
 
         // Documents from dev endpoint don't include url in the response
-        expect(parsedResult.results[0].url).toBeUndefined();
-        expect(parsedResult.results[1].url).toBeUndefined();
+        expect(parsedResult.data[0].url).toBeUndefined();
+        expect(parsedResult.data[1].url).toBeUndefined();
       });
     });
 
@@ -1362,7 +1362,7 @@ describe('SearchTool', () => {
           expect.stringContaining('query GetBoards'),
           expect.any(Object),
         );
-        expect(parsedResult.results).toBeDefined();
+        expect(parsedResult.data).toBeDefined();
       });
 
       it('should work normally with page = 1 for dev endpoint', async () => {
@@ -1381,7 +1381,7 @@ describe('SearchTool', () => {
           expect.any(Object),
           expect.objectContaining({ versionOverride: 'dev' })
         );
-        expect(parsedResult.results).toHaveLength(2);
+        expect(parsedResult.data).toHaveLength(2);
       });
     });
 
@@ -1414,7 +1414,7 @@ describe('SearchTool', () => {
         );
 
         // Results should come from fallback
-        expect(parsedResult.results).toBeDefined();
+        expect(parsedResult.data).toBeDefined();
       });
 
       it('should not use dev endpoint for FOLDERS type', async () => {
@@ -1438,7 +1438,7 @@ describe('SearchTool', () => {
           expect.any(Object),
           expect.any(Object),
         );
-        expect(parsedResult.results).toBeDefined();
+        expect(parsedResult.data).toBeDefined();
       });
 
       it('should not use dev endpoint when searchTerm is not provided', async () => {
@@ -1461,7 +1461,7 @@ describe('SearchTool', () => {
           expect.any(Object),
           expect.any(Object),
         );
-        expect(parsedResult.results).toBeDefined();
+        expect(parsedResult.data).toBeDefined();
       });
 
       it('should not use dev endpoint when searchTerm is empty string', async () => {
@@ -1479,7 +1479,7 @@ describe('SearchTool', () => {
           expect.stringContaining('query GetBoards'),
           expect.any(Object),
         );
-        expect(parsedResult.results).toBeDefined();
+        expect(parsedResult.data).toBeDefined();
       });
     });
 
@@ -1515,12 +1515,12 @@ describe('SearchTool', () => {
         const parsedResult = await callToolByNameAsync('search', args);
 
         // Should include all matching results regardless of entity type in response
-        expect(parsedResult.results).toHaveLength(3);
-        expect(parsedResult.results[0].id).toBe('board-100');
-        expect(parsedResult.results[0].url).toBe('https://monday.com/boards/100');
-        expect(parsedResult.results[1].id).toBe('doc-200');
-        expect(parsedResult.results[1].url).toBeUndefined();
-        expect(parsedResult.results[2].id).toBe('board-300');
+        expect(parsedResult.data).toHaveLength(3);
+        expect(parsedResult.data[0].id).toBe('board-100');
+        expect(parsedResult.data[0].url).toBe('https://monday.com/boards/100');
+        expect(parsedResult.data[1].id).toBe('doc-200');
+        expect(parsedResult.data[1].url).toBeUndefined();
+        expect(parsedResult.data[2].id).toBe('board-300');
       });
 
       it('should skip unknown entity types in dev endpoint response', async () => {
@@ -1549,8 +1549,8 @@ describe('SearchTool', () => {
         const parsedResult = await callToolByNameAsync('search', args);
 
         // Should only include the board result, skipping unknown types
-        expect(parsedResult.results).toHaveLength(1);
-        expect(parsedResult.results[0].id).toBe('board-100');
+        expect(parsedResult.data).toHaveLength(1);
+        expect(parsedResult.data[0].id).toBe('board-100');
       });
     });
   });
@@ -1639,7 +1639,7 @@ describe('SearchTool', () => {
       const parsedResult = await callToolByNameAsync('search', args);
 
       // Less than 100 items, returns all without filtering
-      expect(parsedResult.results).toHaveLength(2);
+      expect(parsedResult.data).toHaveLength(2);
       expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
     });
 
@@ -1666,9 +1666,9 @@ describe('SearchTool', () => {
 
       const parsedResult = await callToolByNameAsync('search', args);
 
-      expect(parsedResult.results).toHaveLength(5);
-      expect(parsedResult.results[0].title).toBe('Board 1');
-      expect(parsedResult.results[4].title).toBe('Board 5');
+      expect(parsedResult.data).toHaveLength(5);
+      expect(parsedResult.data[0].title).toBe('Board 1');
+      expect(parsedResult.data[4].title).toBe('Board 5');
       expect(parsedResult.disclaimer).toBeUndefined();
     });
 
@@ -1693,9 +1693,9 @@ describe('SearchTool', () => {
 
       const parsedResult = await callToolByNameAsync('search', args);
 
-      expect(parsedResult.results).toHaveLength(5);
-      expect(parsedResult.results[0].title).toBe('Board 6');
-      expect(parsedResult.results[4].title).toBe('Board 10');
+      expect(parsedResult.data).toHaveLength(5);
+      expect(parsedResult.data[0].title).toBe('Board 6');
+      expect(parsedResult.data[4].title).toBe('Board 10');
       expect(parsedResult.disclaimer).toBeUndefined();
     });
 
@@ -1721,9 +1721,9 @@ describe('SearchTool', () => {
       const parsedResult = await callToolByNameAsync('search', args);
 
       // Page 23: items 111-112 (2 items)
-      expect(parsedResult.results).toHaveLength(2);
-      expect(parsedResult.results[0].title).toBe('Board 111');
-      expect(parsedResult.results[1].title).toBe('Board 112');
+      expect(parsedResult.data).toHaveLength(2);
+      expect(parsedResult.data[0].title).toBe('Board 111');
+      expect(parsedResult.data[1].title).toBe('Board 112');
       expect(parsedResult.disclaimer).toBeUndefined();
     });
 
@@ -1748,7 +1748,7 @@ describe('SearchTool', () => {
 
       const parsedResult = await callToolByNameAsync('search', args);
 
-      expect(parsedResult.results).toHaveLength(0);
+      expect(parsedResult.data).toHaveLength(0);
       expect(parsedResult.disclaimer).toBeUndefined();
     });
 
@@ -1774,7 +1774,7 @@ describe('SearchTool', () => {
       const parsedResult = await callToolByNameAsync('search', args);
 
       // Less than 100 items, returns all
-      expect(parsedResult.results).toHaveLength(3);
+      expect(parsedResult.data).toHaveLength(3);
       expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
     });
 
@@ -1799,7 +1799,7 @@ describe('SearchTool', () => {
       const parsedResult = await callToolByNameAsync('search', args);
 
       // Empty string is falsy, so regular pagination (not virtual) - API returns 2 items
-      expect(parsedResult.results).toHaveLength(2);
+      expect(parsedResult.data).toHaveLength(2);
     });
   });
 
@@ -1853,8 +1853,8 @@ describe('SearchTool', () => {
 
       const parsedResult = await callToolByNameAsync('search', args);
 
-      expect(parsedResult.results).toHaveLength(1);
-      expect(parsedResult.results[0].title).toBeNull();
+      expect(parsedResult.data).toHaveLength(1);
+      expect(parsedResult.data[0].title).toBeNull();
     });
 
     it('should handle documents with null name fields gracefully', async () => {
@@ -1870,8 +1870,8 @@ describe('SearchTool', () => {
 
       const parsedResult = await callToolByNameAsync('search', args);
 
-      expect(parsedResult.results).toHaveLength(1);
-      expect(parsedResult.results[0].title).toBeNull();
+      expect(parsedResult.data).toHaveLength(1);
+      expect(parsedResult.data[0].title).toBeNull();
     });
 
     it('should handle folders with null name fields gracefully', async () => {
@@ -1888,8 +1888,8 @@ describe('SearchTool', () => {
 
       const parsedResult = await callToolByNameAsync('search', args);
 
-      expect(parsedResult.results).toHaveLength(1);
-      expect(parsedResult.results[0].title).toBeNull();
+      expect(parsedResult.data).toHaveLength(1);
+      expect(parsedResult.data[0].title).toBeNull();
     });
 
     it('should handle multiple workspace IDs', async () => {
@@ -1925,7 +1925,7 @@ describe('SearchTool', () => {
 
       const parsedResult = await callToolByNameAsync('search', args);
 
-      expect(parsedResult.results).toHaveLength(1);
+      expect(parsedResult.data).toHaveLength(1);
     });
 
     it('should handle very high page number with less than 100 results - returns all (fallback on page > 1)', async () => {
@@ -1942,7 +1942,7 @@ describe('SearchTool', () => {
       const parsedResult = await callToolByNameAsync('search', args);
 
       // Less than 100 items, no filtering occurs - returns all 3 items
-      expect(parsedResult.results).toHaveLength(3);
+      expect(parsedResult.data).toHaveLength(3);
       expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
     });
   });

@@ -1,0 +1,1 @@
+export const API_REFERENCE_URL = 'https://developer.monday.com/api-reference';

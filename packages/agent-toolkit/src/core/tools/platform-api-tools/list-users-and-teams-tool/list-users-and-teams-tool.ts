@@ -28,6 +28,7 @@ import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-ap
 import { formatUsersAndTeams } from './list-users-and-teams.utils';
 import { FormattedResponse } from './types';
 import { MAX_USER_IDS, MAX_TEAM_IDS, DEFAULT_USER_LIMIT } from './constants';
+import { fetchAccountSlug } from '../utils/account-slug.utils';
 
 export const listUsersAndTeamsToolSchema = {
   userIds: z
@@ -145,7 +146,14 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
       };
 
       const content = formatUsersAndTeams(formattedRes);
-      return { content };
+      const slug = await fetchAccountSlug(this.mondayApi);
+      return {
+        content: {
+          data: content,
+          action_name: "Users and teams",
+          url: slug ? `https://${slug}.monday.com/teams/all` : undefined,
+        },
+      };
     }
 
     // Handle name parameter (standalone search operation)
@@ -175,8 +183,15 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
         .map((user) => `• **${user!.name}** (ID: ${user!.id})${user!.title ? ` - ${user!.title}` : ''}`)
         .join('\n');
 
-      const content = `Found ${res.users.length} user(s) matching "${input.name}":\n\n${userList}`;
-      return { content };
+      const contentStr = `Found ${res.users.length} user(s) matching "${input.name}":\n\n${userList}`;
+      const slug = await fetchAccountSlug(this.mondayApi);
+      return {
+        content: {
+          data: contentStr,
+          action_name: "Users and teams",
+          url: slug ? `https://${slug}.monday.com/teams/all` : undefined,
+        },
+      };
     }
 
     // Validate conflicting flags for regular operations
@@ -246,9 +261,13 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
     }
 
     const content = formatUsersAndTeams(res);
-
+    const slug = await fetchAccountSlug(this.mondayApi);
     return {
-      content,
+      content: {
+        data: content,
+        action_name: "Users and teams",
+        url: slug ? `https://${slug}.monday.com/teams/all` : undefined,
+      },
     };
   }
 }

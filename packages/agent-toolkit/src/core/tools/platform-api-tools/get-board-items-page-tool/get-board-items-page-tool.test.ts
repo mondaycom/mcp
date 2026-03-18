@@ -34,6 +34,7 @@ describe('GetBoardItemsPageTool', () => {
             {
               id: 'item1',
               name: 'First Item',
+              url: 'https://monday.com/boards/123456789/pulses/item1',
               created_at: '2024-01-15T10:30:00Z',
               updated_at: '2024-01-16T14:20:00Z',
               column_values: [
@@ -54,12 +55,14 @@ describe('GetBoardItemsPageTool', () => {
                 {
                   id: 'subitem1',
                   name: 'Subitem 1',
+                  url: 'https://monday.com/boards/123456789/pulses/subitem1',
                   created_at: '2024-01-15T10:30:00Z',
                   updated_at: '2024-01-16T14:20:00Z',
                 },
                 {
                   id: 'subitem2',
                   name: 'Subitem 2',
+                  url: 'https://monday.com/boards/123456789/pulses/subitem2',
                   created_at: '2024-01-15T10:30:00Z',
                   updated_at: '2024-01-16T14:20:00Z',
                 },
@@ -68,6 +71,7 @@ describe('GetBoardItemsPageTool', () => {
             {
               id: 'item2',
               name: 'Second Item',
+              url: 'https://monday.com/boards/123456789/pulses/item2',
               created_at: '2024-01-14T09:15:00Z',
               updated_at: '2024-01-15T16:45:00Z',
               column_values: [
@@ -102,12 +106,14 @@ describe('GetBoardItemsPageTool', () => {
             {
               id: 'item1',
               name: 'First Item',
+              url: 'https://monday.com/boards/123456789/pulses/item1',
               created_at: '2024-01-15T10:30:00Z',
               updated_at: '2024-01-16T14:20:00Z',
             },
             {
               id: 'item2',
               name: 'Second Item',
+              url: 'https://monday.com/boards/123456789/pulses/item2',
               created_at: '2024-01-14T09:15:00Z',
               updated_at: '2024-01-15T16:45:00Z',
             },
@@ -144,12 +150,14 @@ describe('GetBoardItemsPageTool', () => {
       expect(parsedResult.items[0]).toEqual({
         id: 'item1',
         name: 'First Item',
+        url: 'https://monday.com/boards/123456789/pulses/item1',
         created_at: '2024-01-15T10:30:00Z',
         updated_at: '2024-01-16T14:20:00Z',
       });
       expect(parsedResult.items[1]).toEqual({
         id: 'item2',
         name: 'Second Item',
+        url: 'https://monday.com/boards/123456789/pulses/item2',
         created_at: '2024-01-14T09:15:00Z',
         updated_at: '2024-01-15T16:45:00Z',
       });
@@ -406,6 +414,7 @@ describe('GetBoardItemsPageTool', () => {
       expect(parsedResult.items[0]).toEqual({
         id: 'item1',
         name: 'First Item',
+        url: 'https://monday.com/boards/123456789/pulses/item1',
         created_at: '2024-01-15T10:30:00Z',
         updated_at: '2024-01-16T14:20:00Z',
         column_values: {
@@ -416,6 +425,7 @@ describe('GetBoardItemsPageTool', () => {
       expect(parsedResult.items[1]).toEqual({
         id: 'item2',
         name: 'Second Item',
+        url: 'https://monday.com/boards/123456789/pulses/item2',
         created_at: '2024-01-14T09:15:00Z',
         updated_at: '2024-01-15T16:45:00Z',
         column_values: {
@@ -470,6 +480,7 @@ describe('GetBoardItemsPageTool', () => {
       expect(parsedResult.items[0]).toEqual({
         id: 'item1',
         name: 'Item with null columns',
+        url: undefined,
         created_at: '2024-01-15T10:30:00Z',
         updated_at: '2024-01-16T14:20:00Z',
         column_values: {
@@ -523,6 +534,7 @@ describe('GetBoardItemsPageTool', () => {
       expect(parsedResult.items[0]).toEqual({
         id: 'item1',
         name: 'Item with board relation',
+        url: undefined,
         created_at: '2024-01-15T10:30:00Z',
         updated_at: '2024-01-16T14:20:00Z',
         column_values: {
@@ -575,6 +587,7 @@ describe('GetBoardItemsPageTool', () => {
       expect(parsedResult.items[0]).toEqual({
         id: 'item1',
         name: 'Item with formula',
+        url: undefined,
         created_at: '2024-01-15T10:30:00Z',
         updated_at: '2024-01-16T14:20:00Z',
         column_values: {
@@ -623,6 +636,7 @@ describe('GetBoardItemsPageTool', () => {
       expect(parsedResult.items[0]).toEqual({
         id: 'item1',
         name: 'Item with mirror',
+        url: undefined,
         created_at: '2024-01-15T10:30:00Z',
         updated_at: '2024-01-16T14:20:00Z',
         column_values: {
@@ -722,6 +736,7 @@ describe('GetBoardItemsPageTool', () => {
               {
                 id: 'item1',
                 name: 'First Item',
+                url: 'https://monday.com/boards/123456789/pulses/item1',
                 created_at: '2024-01-15T10:30:00Z',
                 updated_at: '2024-01-16T14:20:00Z',
                 description: {
@@ -743,6 +758,7 @@ describe('GetBoardItemsPageTool', () => {
               {
                 id: 'item2',
                 name: 'Second Item',
+                url: 'https://monday.com/boards/123456789/pulses/item2',
                 created_at: '2024-01-14T09:15:00Z',
                 updated_at: '2024-01-15T16:45:00Z',
                 description: null,
@@ -796,6 +812,7 @@ describe('GetBoardItemsPageTool', () => {
                 {
                   id: 'item1',
                   name: 'Item with null blocks',
+                  url: 'https://monday.com/boards/123456789/pulses/item1',
                   created_at: '2024-01-15T10:30:00Z',
                   updated_at: '2024-01-16T14:20:00Z',
                   description: {
@@ -853,12 +870,14 @@ describe('GetBoardItemsPageTool', () => {
           expect(parsedResult.items[0].subitems[0]).toEqual({
             id: 'subitem1',
             name: 'Subitem 1',
+            url: 'https://monday.com/boards/123456789/pulses/subitem1',
             created_at: '2024-01-15T10:30:00Z',
             updated_at: '2024-01-16T14:20:00Z',
           });
           expect(parsedResult.items[0].subitems[1]).toEqual({
             id: 'subitem2',
             name: 'Subitem 2',
+            url: 'https://monday.com/boards/123456789/pulses/subitem2',
             created_at: '2024-01-15T10:30:00Z',
             updated_at: '2024-01-16T14:20:00Z',
           });
@@ -899,6 +918,7 @@ describe('GetBoardItemsPageTool', () => {
       expect(parsedResult.items[0].subitems[0]).toEqual({
         id: 'subitem1',
         name: 'Subitem 1',
+        url: 'https://monday.com/boards/123456789/pulses/subitem1',
         created_at: '2024-01-15T10:30:00Z',
         updated_at: '2024-01-16T14:20:00Z',
       });

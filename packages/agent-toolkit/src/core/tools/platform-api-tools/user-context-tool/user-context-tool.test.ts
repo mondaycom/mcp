@@ -50,6 +50,7 @@ describe('UserContextTool', () => {
     const result = await callToolByNameRawAsync('get_user_context', {});
 
     const expectedOutput = {
+      message: 'User context',
       user: {
         id: '123',
         name: 'John Doe',
@@ -72,7 +73,7 @@ describe('UserContextTool', () => {
       ],
     };
 
-    expect(result.content[0].text).toBe(JSON.stringify(expectedOutput, null, 2));
+    expect(result.content[0].text).toBe(JSON.stringify(expectedOutput));
 
     expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
     expect(mocks.getMockRequest()).toHaveBeenNthCalledWith(
@@ -103,6 +104,7 @@ describe('UserContextTool', () => {
     const result = await callToolByNameRawAsync('get_user_context', {});
 
     const expectedOutput = {
+      message: 'User context',
       user: {
         id: '123',
         name: 'John Doe',
@@ -113,7 +115,7 @@ describe('UserContextTool', () => {
       relevantPeople: [],
     };
 
-    expect(result.content[0].text).toBe(JSON.stringify(expectedOutput, null, 2));
+    expect(result.content[0].text).toBe(JSON.stringify(expectedOutput));
     expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
   });
 
@@ -142,6 +144,7 @@ describe('UserContextTool', () => {
     const result = await callToolByNameRawAsync('get_user_context', {});
 
     const expectedOutput = {
+      message: 'User context',
       user: {
         id: '123',
         name: 'John Doe',
@@ -152,7 +155,7 @@ describe('UserContextTool', () => {
       relevantPeople: [{ id: '400', name: 'Valid Person' }],
     };
 
-    expect(result.content[0].text).toBe(JSON.stringify(expectedOutput, null, 2));
+    expect(result.content[0].text).toBe(JSON.stringify(expectedOutput));
   });
 
   it('should return auth error when user not found', async () => {
