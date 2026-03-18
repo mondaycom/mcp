@@ -353,7 +353,7 @@ describe('formatBoardInfoAsJson - views', () => {
           id: 'view_1',
           name: 'My Tasks',
           type: 'TableBoardView',
-          settings_str: '{}',
+          settings: {},
           filter: {
             operator: 'AND',
             groups: [{ operator: 'AND', rules: [{ column_id: 'person', compare_value: ['assigned_to_me'], operator: 'ANY_OF' }] }],
@@ -377,7 +377,7 @@ describe('formatBoardInfoAsJson - views', () => {
           id: 'view_1',
           name: 'My Tasks',
           type: 'TableBoardView',
-          settings_str: '{}',
+          settings: {},
           filter: null,
           sort: [],
           access_level: BoardViewAccessLevel.Edit,
@@ -403,7 +403,7 @@ describe('formatBoardInfoAsJson - views', () => {
           id: 'view_1',
           name: 'Assigned to Me',
           type: 'TableBoardView',
-          settings_str: '{}',
+          settings: {},
           filter,
           sort: [],
           access_level: BoardViewAccessLevel.Edit,
@@ -424,7 +424,7 @@ describe('formatBoardInfoAsJson - views', () => {
           id: 'view_2',
           name: 'All Items',
           type: 'TableBoardView',
-          settings_str: '{}',
+          settings: {},
           filter: null,
           sort: [],
           access_level: BoardViewAccessLevel.Edit,
@@ -447,8 +447,8 @@ describe('formatBoardInfoAsJson - views', () => {
     const board: BoardInfoData = {
       ...baseBoard,
       views: [
-        { id: 'view_1', name: 'View A', type: 'TableBoardView', settings_str: '{}', filter: null, sort: [], access_level: BoardViewAccessLevel.Edit },
-        { id: 'view_2', name: 'View B', type: 'TableBoardView', settings_str: '{}', filter: null, sort: [], access_level: BoardViewAccessLevel.Edit },
+        { id: 'view_1', name: 'View A', type: 'TableBoardView', settings: {}, filter: null, sort: [], access_level: BoardViewAccessLevel.Edit },
+        { id: 'view_2', name: 'View B', type: 'TableBoardView', settings: {}, filter: null, sort: [], access_level: BoardViewAccessLevel.Edit },
       ],
     } as unknown as BoardInfoData;
 

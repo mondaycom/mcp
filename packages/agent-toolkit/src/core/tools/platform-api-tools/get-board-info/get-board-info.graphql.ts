@@ -81,7 +81,7 @@ export const getBoardInfo = gql`
         id
         name
         type
-        settings_str
+        settings
         filter
         sort
       }
