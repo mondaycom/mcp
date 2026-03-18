@@ -426,6 +426,42 @@ type Query {
   ): [Article]!
 
   """
+  Retrieves the content diff between two versions of a document. Pass two restoring point dates (from doc_version_history) to see what blocks were added, deleted, or changed. Only blocks with changes are returned.
+  """
+  doc_version_diff(
+    """The ID of the document to get the diff for."""
+    doc_id: ID!
+
+    """
+    The newer restoring point date (ISO 8601 string). Use a date from the doc_version_history restoring_points.
+    """
+    date: String!
+
+    """
+    The older restoring point date (ISO 8601 string). Use a date from the doc_version_history restoring_points.
+    """
+    prev_date: String!
+  ): DocVersionDiff
+
+  """
+  Retrieves the version history of a document. Returns a list of restoring points (snapshots) with timestamps and the users who made changes. Snapshots are grouped in 5-minute intervals. Use the since and until arguments to filter the time range.
+  """
+  doc_version_history(
+    """The ID of the document to retrieve version history for."""
+    doc_id: ID!
+
+    """
+    Optional ISO 8601 date string or timestamp to filter restoring points from. Only restoring points after this date will be returned.
+    """
+    since: String
+
+    """
+    Optional ISO 8601 date string or timestamp to filter restoring points until. Only restoring points before this date will be returned.
+    """
+    until: String
+  ): DocVersionHistory
+
+  """
   Converts document content into standard markdown format for external use, backup, or processing. Exports the entire document by default, or specific blocks if block IDs are provided. Use this to extract content for integration with other systems, create backups, generate reports, or process document content with external tools. The output is clean, portable markdown that preserves formatting and structure.
   """
   export_markdown_from_doc(
@@ -784,6 +820,9 @@ type Query {
 
     """Page number to get, starting at 1."""
     page: Int = 1
+
+    """Parameters to filter workspaces"""
+    query_params: WorkspacesQueryInput
 
     """
     The state of the workspace (all / active / archived / deleted), the default is active.
@@ -1820,39 +1859,6 @@ type Mutation {
     List of team IDs to remove from article subscribers. Only applicable when privacy_kind is PRIVATE
     """
     remove_subscriber_team_ids: [ID!]
-  ): ArticleMetadata
-
-  """
-  Converts a document to an article in Knowledge. Requires the Knowledge product to be installed in the account. The original document will be deleted after conversion. Returns the created article metadata.
-  """
-  publish_doc_to_knowledge(
-    """
-    The unique identifier of the article object. Can be used to reference this specific object in queries and mutations. This ID can be found in the article's URL.
-    """
-    object_id: ID!
-
-    """The ID of the workspace containing this article."""
-    workspace_id: ID!
-
-    """
-    The ID of the folder to move the article to. If not specified, the article will remain at its current folder level
-    """
-    folder_id: ID
-
-    """
-    The kind/visibility setting of the article (private, public). Determines who can access it.
-    """
-    privacy_kind: PrivacyKind!
-
-    """
-    List of user IDs to add as subscribers to this article. Only applicable when privacy_kind is PRIVATE
-    """
-    add_subscriber_ids: [ID!]
-
-    """
-    List of team IDs to add as subscribers to this article. Only applicable when privacy_kind is PRIVATE
-    """
-    add_subscriber_team_ids: [ID!]
   ): ArticleMetadata
 
   """
@@ -3817,6 +3823,15 @@ type BlockEvent {
 
   """Error reason if block failed"""
   errorReason: String
+
+  """Iterator identifier if block is part of a loop"""
+  iterator_id: ID
+
+  """Current iteration number within the loop"""
+  current_iteration: Int
+
+  """Total number of iterations configured for the loop"""
+  max_iterations: Int
 }
 
 """A page of block events"""
@@ -4095,11 +4110,21 @@ type Board {
   """The time the board was created at."""
   created_at: ISO8601DateTime
 
+  """
+  The board's source board unique identifier (the board from which this board was created)
+  """
+  created_from_board_id: ID
+
   """The creator of the board."""
   creator: User!
 
   """The board's description."""
   description: String
+
+  """
+  The folder that contains this board, or null if it isn't in any folder.
+  """
+  folder: Folder
 
   """The board's visible groups."""
   groups(
@@ -5675,6 +5700,22 @@ enum BlockAlignment {
   CENTER
 }
 
+"""
+Describes what type of change occurred to a block between two versions.
+"""
+type BlockChanges {
+  """True if this block was added in the newer version."""
+  added: Boolean
+
+  """
+  True if this block was deleted in the newer version. The content reflects the state before deletion.
+  """
+  deleted: Boolean
+
+  """True if this block content was modified between the two versions."""
+  changed: Boolean
+}
+
 """Abstract union type representing different types of block content"""
 union BlockContent = TextBlockContent | ListBlockContent | NoticeBoxContent | ImageContent | VideoContent | TableContent | LayoutContent | DividerContent | PageBreakContent
 
@@ -5758,6 +5799,31 @@ input CreateBlockInput {
   page_break_block: PageBreakBlockInput
 }
 
+"""
+A document block that was changed between two versions, including its content and what type of change occurred.
+"""
+type DiffBlock {
+  """The unique identifier of the block."""
+  id: ID
+
+  """The type of block (e.g., text, image, list)."""
+  type: String
+
+  """The block content as a JSON string."""
+  content: String
+
+  """
+  A human-readable summary of what changed in this block. For text blocks, shows the added and deleted text. For other block types, describes the change type.
+  """
+  summary: String
+
+  """The parent block ID, or null if the block is at the top level."""
+  parent_block_id: ID
+
+  """The changes that occurred to this block (added, deleted, or changed)."""
+  changes: BlockChanges
+}
+
 """Input for creating divider blocks"""
 input DividerBlockInput {
   """The parent block id to append the created block under."""
@@ -5810,6 +5876,22 @@ enum DocKind {
 
   """Shareable document"""
   share
+}
+
+"""
+A single restoring point (snapshot) in the document version history. Represents a group of changes made within a time window, including which users made changes.
+"""
+type DocRestoringPoint {
+  """The ISO 8601 timestamp of when this restoring point was captured."""
+  date: String
+
+  """The IDs of users who made changes in this restoring point time window."""
+  user_ids: [ID!]
+
+  """
+  The type of restoring point. "publish" indicates the document was published at this point. Null for regular edit snapshots.
+  """
+  type: String
 }
 
 """Column value reference for displaying board item column data"""
@@ -5876,6 +5958,38 @@ type DocumentBlockV2 {
 
   """The block's creator."""
   created_by: User
+}
+
+"""
+Represents the diff between two versions of a document. Contains the blocks that were added, deleted, or changed between two restoring points.
+"""
+type DocVersionDiff {
+  """The ID of the document this diff belongs to."""
+  doc_id: ID
+
+  """The newer version date used for this diff."""
+  date: String
+
+  """The older version date used for this diff."""
+  prev_date: String
+
+  """
+  The list of blocks that have changes between the two versions. Only blocks with actual changes are included.
+  """
+  blocks: [DiffBlock!]
+}
+
+"""
+Represents the version history of a document, including a list of restoring points (snapshots) that capture the state of the document at specific points in time.
+"""
+type DocVersionHistory {
+  """The ID of the document this version history belongs to."""
+  doc_id: ID
+
+  """
+  The list of restoring points (snapshots) for this document, ordered by date descending.
+  """
+  restoring_points: [DocRestoringPoint!]
 }
 
 """Controls what gets copied when duplicating a document"""
@@ -6956,6 +7070,9 @@ type AppFeatureType {
   """The app feature app id"""
   app_id: ID
 
+  """The reference ID of the app feature"""
+  reference_id: ID
+
   """The type of the app feature"""
   type: String
 
@@ -7651,7 +7768,9 @@ type Asset {
 
 """The source of the asset"""
 enum AssetsSource {
-  """Assets from file columns and item's files gallery"""
+  """
+  Assets from file columns and item's files gallery. From version 2026-04, also includes assets from updates
+  """
   all
 
   """Assets only from file columns"""
@@ -9094,6 +9213,9 @@ type ItemsResponse {
 
 """Kind of assignee"""
 enum Kind {
+  """Represents an AI agent"""
+  agent
+
   """Represents a person"""
   person
 
@@ -10294,6 +10416,42 @@ type WorkspaceSettings {
 enum WorkspacesOrderBy {
   """The rank order of the workspace creation time (desc)."""
   created_at
+}
+
+"""The account product kinds available for workspaces query."""
+enum WorkspacesQueryAccountProductKind {
+  """monday work management"""
+  core
+
+  """monday CRM"""
+  crm
+
+  """workforms"""
+  forms
+
+  """monday marketer"""
+  marketing
+
+  """monday projects"""
+  project_management
+
+  """monday service"""
+  service
+
+  """monday dev"""
+  software
+
+  """canvas"""
+  whiteboard
+}
+
+"""Parameters to filter workspaces"""
+input WorkspacesQueryInput {
+  """
+  Filter workspaces by account product kind (core / marketing / crm / software /
+  project_management / service / forms / whiteboard)
+  """
+  account_product_kind: WorkspacesQueryAccountProductKind
 }
 
 """The workspace subscriber kind."""
@@ -11885,6 +12043,16 @@ enum ExternalWidget {
   A Gantt chart visualization of board timelines with dependencies, grouping, and coloring capabilities.
   """
   GANTT
+
+  """
+  App feature widgets for displaying custom application features. Used to embed and render app-specific functionality within dashboards and views.
+  """
+  APP_FEATURE
+
+  """
+  ListView widgets for displaying cross-board items in a tabular list format with filtering and sorting.
+  """
+  LISTVIEW
 }
 
 """Data visualization object."""

@@ -2,6 +2,12 @@ import { z } from 'zod';
 import { getDocVersionHistory, getDocVersionDiff } from './get-doc-version-history-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+import {
+  GetDocVersionHistoryQuery,
+  GetDocVersionHistoryQueryVariables,
+  GetDocVersionDiffQuery,
+  GetDocVersionDiffQueryVariables,
+} from '../../../../monday-graphql/generated/graphql/graphql';
 
 export const getDocVersionHistoryToolSchema = {
   doc_id: z
@@ -62,11 +68,8 @@ export class GetDocVersionHistoryTool extends BaseMondayApiTool<typeof getDocVer
     const since = input.since ?? new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const until = input.until ?? new Date().toISOString();
 
-    const historyResult = await this.mondayApi.request<any>(getDocVersionHistory, {
-      docId: doc_id,
-      since,
-      until,
-    });
+    const variables: GetDocVersionHistoryQueryVariables = { docId: doc_id, since, until };
+    const historyResult = await this.mondayApi.request<GetDocVersionHistoryQuery>(getDocVersionHistory, variables);
 
     const restoringPoints = historyResult?.doc_version_history?.restoring_points;
 
@@ -83,16 +86,17 @@ export class GetDocVersionHistoryTool extends BaseMondayApiTool<typeof getDocVer
     }
 
     const restoringPointsWithDiffs = await Promise.all(
-      restoringPoints.map(async (point: any, i: number) => {
-        if (i === restoringPoints.length - 1) {
+      restoringPoints.map(async (point, i) => {
+        if (i === restoringPoints.length - 1 || !point.date) {
           return point;
         }
         const prevPoint = restoringPoints[i + 1];
-        const diffResult = await this.mondayApi.request<any>(getDocVersionDiff, {
+        const diffVariables: GetDocVersionDiffQueryVariables = {
           docId: doc_id,
           date: point.date,
-          prevDate: prevPoint.date,
-        });
+          prevDate: prevPoint?.date ?? '',
+        };
+        const diffResult = await this.mondayApi.request<GetDocVersionDiffQuery>(getDocVersionDiff, diffVariables);
         return { ...point, diff: diffResult?.doc_version_diff?.blocks ?? [] };
       }),
     );
