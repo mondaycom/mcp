@@ -47,6 +47,7 @@ import { CreateUpdateInMondayTool } from './create-update-tool-ui/create-update-
 import { UpdateAssetsOnItemTool } from './update-assets-on-item-tool/update-assets-on-item-tool';
 import { UserContextTool } from './user-context-tool/user-context-tool';
 import { GetNotetakerMeetingsTool } from './get-notetaker-meetings-tool/get-notetaker-meetings-tool';
+import { UndoActionTool } from './undo-action-tool/undo-action-tool';
 
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteItemTool,
@@ -98,6 +99,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   UpdateAssetsOnItemTool,
   GetNotetakerMeetingsTool,
   CreateViewTool,
+  UndoActionTool,
 ];
 
 export * from './all-monday-api-tool';
@@ -146,6 +148,7 @@ export * from './user-context-tool/user-context-tool';
 export * from './update-assets-on-item-tool/update-assets-on-item-tool';
 // Notetaker Tools
 export * from './get-notetaker-meetings-tool/get-notetaker-meetings-tool';
+export * from './undo-action-tool/undo-action-tool';
 // Dashboard Tools
 export * from './dashboard-tools';
 // Monday Dev Tools
