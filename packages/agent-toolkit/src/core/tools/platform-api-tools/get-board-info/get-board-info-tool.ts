@@ -12,6 +12,15 @@ import { NonDeprecatedColumnType } from 'src/utils/types';
 
 export const getBoardInfoToolSchema = {
   boardId: z.number().describe('The id of the board to get information for'),
+  includeViews: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe(
+      'Whether to include board views in the response. Each view contains its id, name, type, and a structured filter object. ' +
+      'Set to true when the user refers to a specific view by name (e.g. "show items in the Overdue view") — ' +
+      'then find the matching view, extract its filter field, and pass it to get_board_items_page.',
+    ),
 };
 
 export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolSchema | undefined> {
@@ -27,7 +36,11 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
   getDescription(): string {
     return (
       'Get comprehensive board information including metadata, structure, owners, and configuration. ' +
-      'Also returns the board\'s views (e.g. table views, filter views) — each view includes its id, name, type, and a structured `filter` object. '
+      'Optionally include board views (e.g. table views, filter views) by setting includeViews: true — ' +
+      'each view contains its id, name, type, and a structured filter object. ' +
+      'WHEN TO USE VIEWS: If the user refers to a specific view by name (e.g. "show items in the \'My Tasks\' view"), ' +
+      'set includeViews: true, find the matching view by name in the views array, ' +
+      'then pass its filter object as the filters argument to get_board_items_page.'
     );
   }
 
@@ -38,6 +51,7 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
   protected async executeInternal(input: ToolInputType<typeof getBoardInfoToolSchema>): Promise<ToolOutputType<never>> {
     const variables: GetBoardInfoQueryVariables = {
       boardId: input.boardId.toString(),
+      includeViews: input.includeViews ?? false,
     };
 
     const res = await this.mondayApi.request<GetBoardInfoQuery>(getBoardInfo, variables);

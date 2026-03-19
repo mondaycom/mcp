@@ -1,7 +1,7 @@
 import { gql } from 'graphql-request';
 
 export const getBoardInfo = gql`
-  query GetBoardInfo($boardId: ID!) {
+  query GetBoardInfo($boardId: ID!, $includeViews: Boolean!) {
     boards(ids: [$boardId]) {
       # Basic Board Metadata
       id
@@ -77,7 +77,7 @@ export const getBoardInfo = gql`
       }
 
       # Board Views (filters, sorts, and display configurations)
-      views {
+      views @include(if: $includeViews) {
         id
         name
         type
