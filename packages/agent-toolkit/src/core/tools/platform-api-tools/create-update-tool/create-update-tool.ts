@@ -22,13 +22,13 @@ export const createUpdateToolSchema = {
   body: z
     .string()
     .describe(
-      'The update text to be created. Do not use @ to mention users, use the mentionsList field instead. use html tags to format the text, dont use markdown.',
+      'The update text to be created. Use html tags to format the text, dont use markdown.',
     ),
   mentionsList: z
     .string()
     .optional()
     .describe(
-      'Optional JSON array of mentions in the format: [{"id": "123", "type": "User"}, {"id": "456", "type": "Team"}]. Valid types are: User, Team, Board, Project',
+      'Optional JSON array of mentions. This field is currently unsupported by monday.com create_update and will return a validation error when provided.',
     ),
   parentId: z
     .number()
@@ -47,7 +47,7 @@ export class CreateUpdateTool extends BaseMondayApiTool<typeof createUpdateToolS
   });
 
   getDescription(): string {
-    return 'Create a new update (comment/post) on a monday.com item. Updates can be used to add comments, notes, or discussions to items. You can optionally mention users, teams, or boards in the update. You can also reply to an existing update by using the parentId parameter.';
+    return 'Create a new update (comment/post) on a monday.com item. Updates can be used to add comments, notes, or discussions to items. You can also reply to an existing update by using the parentId parameter. Note: mentionsList is currently unsupported by the monday.com create_update API.';
   }
 
   getInputSchema(): typeof createUpdateToolSchema {
@@ -70,13 +70,16 @@ export class CreateUpdateTool extends BaseMondayApiTool<typeof createUpdateToolS
       } catch (error) {
         throw new Error(`Invalid mentionsList JSON format: ${(error as Error).message}`);
       }
+
+      if (parsedMentionsList.length > 0) {
+        throw new Error('mentionsList is currently unsupported by the monday.com create_update API');
+      }
     }
 
     try {
       const variables: CreateUpdateMutationVariables = {
         itemId: input.itemId.toString(),
         body: input.body,
-        mentionsList: parsedMentionsList,
         parentId: input.parentId?.toString(),
       };
 
