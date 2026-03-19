@@ -122,6 +122,7 @@ export * from './delete-column-tool';
 export * from './delete-item-tool';
 export * from './fetch-custom-activity-tool';
 export * from './full-board-data-tool/full-board-data-tool';
+export * from './undo-action-tool/undo-action-tool';
 export * from './get-board-items-page-tool';
 export * from './get-board-schema-tool';
 export * from './get-column-type-info/get-column-type-info-tool';
@@ -148,7 +149,6 @@ export * from './user-context-tool/user-context-tool';
 export * from './update-assets-on-item-tool/update-assets-on-item-tool';
 // Notetaker Tools
 export * from './get-notetaker-meetings-tool/get-notetaker-meetings-tool';
-export * from './undo-action-tool/undo-action-tool';
 // Dashboard Tools
 export * from './dashboard-tools';
 // Monday Dev Tools
