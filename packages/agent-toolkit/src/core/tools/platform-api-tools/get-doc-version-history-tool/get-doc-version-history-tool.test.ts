@@ -208,7 +208,7 @@ describe('GetDocVersionHistoryTool', () => {
 
   describe('Schema validation', () => {
     it('should have correct tool metadata', () => {
-      const tool = new GetDocVersionHistoryTool(mocks.mockApiClient, 'fake_token');
+      const tool = new GetDocVersionHistoryTool(mocks.mockApiClient);
 
       expect(tool.name).toBe('get_doc_version_history');
       expect(tool.type).toBe('read');
@@ -219,7 +219,7 @@ describe('GetDocVersionHistoryTool', () => {
     });
 
     it('should have correct input schema', () => {
-      const tool = new GetDocVersionHistoryTool(mocks.mockApiClient, 'fake_token');
+      const tool = new GetDocVersionHistoryTool(mocks.mockApiClient);
       const schema = tool.getInputSchema();
 
       expect(schema.doc_id).toBeDefined();
@@ -229,7 +229,7 @@ describe('GetDocVersionHistoryTool', () => {
     });
 
     it('should have correct description', () => {
-      const tool = new GetDocVersionHistoryTool(mocks.mockApiClient, 'fake_token');
+      const tool = new GetDocVersionHistoryTool(mocks.mockApiClient);
       const description = tool.getDescription();
 
       expect(description).toContain('version history');
