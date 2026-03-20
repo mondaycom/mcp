@@ -38,7 +38,7 @@ export class CreateFormTool extends BaseMondayApiTool<typeof createFormToolSchem
       board_subscriber_teams_ids: input.board_subscriber_teams_ids,
     };
 
-    const res = await this.mondayApi.request<CreateFormMutation>(createForm, variables);
+    const res = await this.mondayApi.request<CreateFormMutation>(createForm, variables, { versionOverride: '2025-10' });
 
     return {
       content: { message: "Form created successfully", board_id: res.create_form?.boardId, form_token: res.create_form?.token },
