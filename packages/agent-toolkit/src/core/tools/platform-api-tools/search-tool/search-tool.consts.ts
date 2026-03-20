@@ -1,2 +1,3 @@
 export const SEARCH_LIMIT = 100;
-export const LOAD_INTO_MEMORY_LIMIT = 10_000;
+export const LOAD_INTO_MEMORY_LIMIT = 1_000;
+export const MAX_FOLDERS_LIMIT = 100;

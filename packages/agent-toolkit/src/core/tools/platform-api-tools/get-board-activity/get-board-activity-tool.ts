@@ -15,6 +15,13 @@ export const getBoardActivityToolSchema = {
     .optional()
     .describe('Start date for activity range (ISO8601DateTime format). Defaults to 30 days ago'),
   toDate: z.string().optional().describe('End date for activity range (ISO8601DateTime format). Defaults to now'),
+  includeData: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe(
+      'Whether to include the raw data payload for each activity entry. The data field contains the full before/after state of changes and can be very large. Only set to true when you need the detailed change data.',
+    ),
 };
 
 export class GetBoardActivityTool extends BaseMondayApiTool<typeof getBoardActivityToolSchema | undefined> {
@@ -53,6 +60,7 @@ export class GetBoardActivityTool extends BaseMondayApiTool<typeof getBoardActiv
       toDate,
       limit: this.defaultLimit,
       page: 1,
+      includeData: input.includeData ?? false,
     };
 
     const res = await this.mondayApi.request<GetBoardAllActivityQuery>(getBoardAllActivity, variables);
@@ -65,17 +73,25 @@ export class GetBoardActivityTool extends BaseMondayApiTool<typeof getBoardActiv
       };
     }
 
-    const formattedActivity = activityLogs
-      .filter((log): log is NonNullable<typeof log> => log !== null && log !== undefined)
-      .map((log) => {
-        return `• ${log.created_at}: ${log.event} on ${log.entity} by user ${log.user_id}${log.data ? ` - Data: ${log.data}` : ''}`;
-      })
-      .join('\n');
+    const board = res.boards?.[0];
+    const includeData = input.includeData ?? false;
 
     return {
-      content: `Activity logs for board ${input.boardId} from ${fromDate} to ${toDate} (${activityLogs.length} entries):
-
-${formattedActivity}`,
+      content: {
+        message: "Board activity retrieved",
+        board_id: input.boardId,
+        board_name: board?.name,
+        board_url: board?.url,
+        data: activityLogs
+          .filter((log): log is NonNullable<typeof log> => log !== null && log !== undefined)
+          .map((log) => ({
+            created_at: log.created_at,
+            event: log.event,
+            entity: log.entity,
+            user_id: log.user_id,
+            ...(includeData && log.data ? { data: log.data } : {}),
+          })),
+      },
     };
   }
 }

@@ -540,6 +540,7 @@ describe('Board Insights Tool', () => {
 
     it('should successfully get basic board insights', async () => {
       const mockResponse = {
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
         aggregate: {
           results: [
             {
@@ -582,11 +583,13 @@ describe('Board Insights Tool', () => {
         limit: DEFAULT_LIMIT,
       });
 
-      expect(result.content).toContain('Board insights result (2 rows)');
-      expect(result.content).toContain('"status": "Done"');
-      expect(result.content).toContain('"COUNT_item_id_0": 5');
-      expect(result.content).toContain('"status": "Working on it"');
-      expect(result.content).toContain('"COUNT_item_id_0": 3');
+      const parsed = result.content as any;
+      expect(parsed.message).toBe('Board insights retrieved');
+      expect(parsed.data.length).toBe(2);
+      expect(parsed.data[0].status).toBe('Done');
+      expect(parsed.data[0].COUNT_item_id_0).toBe(5);
+      expect(parsed.data[1].status).toBe('Working on it');
+      expect(parsed.data[1].COUNT_item_id_0).toBe(3);
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.stringContaining('query aggregateBoardInsights'),
@@ -600,6 +603,7 @@ describe('Board Insights Tool', () => {
 
     it('should handle insights with filters', async () => {
       const mockResponse = {
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
         aggregate: {
           results: [
             {
@@ -632,8 +636,10 @@ describe('Board Insights Tool', () => {
         limit: DEFAULT_LIMIT,
       });
 
-      expect(result.content).toContain('Board insights result (1 rows)');
-      expect(result.content).toContain('"COUNT_item_id_0": 10');
+      const parsed = result.content as any;
+      expect(parsed.message).toBe('Board insights retrieved');
+      expect(parsed.data.length).toBe(1);
+      expect(parsed.data[0].COUNT_item_id_0).toBe(10);
 
       const mockCall = mocks.getMockRequest().mock.calls[0];
       expect(mockCall[1].query.query).toEqual({
@@ -651,6 +657,7 @@ describe('Board Insights Tool', () => {
 
     it('should handle insights with limit', async () => {
       const mockResponse = {
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
         aggregate: {
           results: [
             {
@@ -682,6 +689,7 @@ describe('Board Insights Tool', () => {
 
     it('should handle empty results', async () => {
       const mockResponse = {
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
         aggregate: {
           results: [],
         },
@@ -703,6 +711,7 @@ describe('Board Insights Tool', () => {
 
     it('should handle null aggregate response', async () => {
       const mockResponse = {
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
         aggregate: null,
       };
 
@@ -722,6 +731,7 @@ describe('Board Insights Tool', () => {
 
     it('should handle different value types in results', async () => {
       const mockResponse = {
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
         aggregate: {
           results: [
             {
@@ -769,15 +779,17 @@ describe('Board Insights Tool', () => {
         limit: DEFAULT_LIMIT,
       });
 
-      expect(result.content).toContain('"string_col": "text value"');
-      expect(result.content).toContain('"int_col": 42');
-      expect(result.content).toContain('"float_col": 3.14');
-      expect(result.content).toContain('"bool_col": true');
-      expect(result.content).toContain('"result_col": 100');
+      const parsed = result.content as any;
+      expect(parsed.data[0].string_col).toBe('text value');
+      expect(parsed.data[0].int_col).toBe(42);
+      expect(parsed.data[0].float_col).toBe(3.14);
+      expect(parsed.data[0].bool_col).toBe(true);
+      expect(parsed.data[0].result_col).toBe(100);
     });
 
     it('should handle null values in results', async () => {
       const mockResponse = {
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
         aggregate: {
           results: [
             {
@@ -807,12 +819,14 @@ describe('Board Insights Tool', () => {
         limit: DEFAULT_LIMIT,
       });
 
-      expect(result.content).toContain('"status": null');
-      expect(result.content).toContain('"count": 5');
+      const parsed = result.content as any;
+      expect(parsed.data[0].status).toBeNull();
+      expect(parsed.data[0].count).toBe(5);
     });
 
     it('should handle entries with no alias', async () => {
       const mockResponse = {
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
         aggregate: {
           results: [
             {
@@ -842,7 +856,7 @@ describe('Board Insights Tool', () => {
         limit: DEFAULT_LIMIT,
       });
 
-      const parsedResult = JSON.parse(result.content.split(':\n')[1]);
+      const parsedResult = (result.content as any).data;
       expect(parsedResult[0]).toEqual({ status: 'Done' });
       expect(parsedResult[0]).not.toHaveProperty('');
     });
@@ -883,6 +897,7 @@ describe('Board Insights Tool', () => {
 
     it('should handle complex aggregation with multiple group by columns', async () => {
       const mockResponse = {
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
         aggregate: {
           results: [
             {
@@ -922,18 +937,21 @@ describe('Board Insights Tool', () => {
         limit: DEFAULT_LIMIT,
       });
 
-      expect(result.content).toContain('Board insights result (2 rows)');
-      expect(result.content).toContain('"status": "Done"');
-      expect(result.content).toContain('"priority": "High"');
-      expect(result.content).toContain('"SUM_numbers_0": 150');
-      expect(result.content).toContain('"AVERAGE_numbers_0": 30');
-      expect(result.content).toContain('"priority": "Low"');
-      expect(result.content).toContain('"SUM_numbers_0": 80');
-      expect(result.content).toContain('"AVERAGE_numbers_0": 20');
+      const parsed = result.content as any;
+      expect(parsed.message).toBe('Board insights retrieved');
+      expect(parsed.data.length).toBe(2);
+      expect(parsed.data[0].status).toBe('Done');
+      expect(parsed.data[0].priority).toBe('High');
+      expect(parsed.data[0].SUM_numbers_0).toBe(150);
+      expect(parsed.data[0].AVERAGE_numbers_0).toBe(30);
+      expect(parsed.data[1].priority).toBe('Low');
+      expect(parsed.data[1].SUM_numbers_0).toBe(80);
+      expect(parsed.data[1].AVERAGE_numbers_0).toBe(20);
     });
 
     it('should handle insights with single column orderBy', async () => {
       const mockResponse = {
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
         aggregate: {
           results: [
             {
@@ -983,6 +1001,7 @@ describe('Board Insights Tool', () => {
 
     it('should handle insights with multiple column orderBy', async () => {
       const mockResponse = {
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
         aggregate: {
           results: [
             {
@@ -1039,6 +1058,7 @@ describe('Board Insights Tool', () => {
 
     it('should handle insights with filters and orderBy combined', async () => {
       const mockResponse = {
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
         aggregate: {
           results: [
             {
@@ -1098,6 +1118,7 @@ describe('Board Insights Tool', () => {
 
     it('should handle orderBy with DESC direction', async () => {
       const mockResponse = {
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
         aggregate: {
           results: [
             {
@@ -1137,6 +1158,7 @@ describe('Board Insights Tool', () => {
 
     it('should count items using COUNT_ITEMS function', async () => {
       const mockResponse = {
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
         aggregate: {
           results: [
             {
@@ -1167,8 +1189,10 @@ describe('Board Insights Tool', () => {
         limit: DEFAULT_LIMIT,
       });
 
-      expect(result.content).toContain('Board insights result (1 rows)');
-      expect(result.content).toContain('"COUNT_ITEMS_item_id_0": 42');
+      const parsed = result.content as any;
+      expect(parsed.message).toBe('Board insights retrieved');
+      expect(parsed.data.length).toBe(1);
+      expect(parsed.data[0].COUNT_ITEMS_item_id_0).toBe(42);
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.stringContaining('query aggregateBoardInsights'),
@@ -1190,6 +1214,7 @@ describe('Board Insights Tool', () => {
 
     it('should count items with filters applied', async () => {
       const mockResponse = {
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
         aggregate: {
           results: [
             {
@@ -1227,8 +1252,10 @@ describe('Board Insights Tool', () => {
         limit: DEFAULT_LIMIT,
       });
 
-      expect(result.content).toContain('Board insights result (1 rows)');
-      expect(result.content).toContain('"COUNT_ITEMS_item_id_0": 15');
+      const parsed = result.content as any;
+      expect(parsed.message).toBe('Board insights retrieved');
+      expect(parsed.data.length).toBe(1);
+      expect(parsed.data[0].COUNT_ITEMS_item_id_0).toBe(15);
 
       const mockCall = mocks.getMockRequest().mock.calls[0];
       expect(mockCall[1].query.query).toEqual({

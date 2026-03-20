@@ -125,6 +125,7 @@ USAGE EXAMPLES:
 
     try {
       let docId: string | undefined;
+      let docObjectId: string | undefined;
       let docUrl: string | undefined;
 
       if (parsedInput.type === DocType.enum.workspace) {
@@ -142,6 +143,7 @@ USAGE EXAMPLES:
 
         const res: CreateDocMutation = await this.mondayApi.request(createDocMutation, variables);
         docId = res?.create_doc?.id ?? undefined;
+        docObjectId = res?.create_doc?.object_id ?? undefined;
         docUrl = res?.create_doc?.url ?? undefined;
       } else if (parsedInput.type === DocType.enum.item) {
         // Item-attached document creation
@@ -192,6 +194,7 @@ USAGE EXAMPLES:
 
         const res: CreateDocMutation = await this.mondayApi.request(createDocMutation, itemVariables);
         docId = res.create_doc?.id ?? undefined;
+        docObjectId = res.create_doc?.object_id ?? undefined;
         docUrl = res.create_doc?.url ?? undefined;
 
         // Step 3: Update doc name if provided (item-attached docs don't support name in creation)
@@ -233,7 +236,7 @@ USAGE EXAMPLES:
       }
 
       return {
-        content: `✅ Document successfully created (id: ${docId}). ${docUrl ? `\n\nURL: ${docUrl}` : ''}`,
+        content: { message: "Document successfully created", doc_id: docId, object_id: docObjectId, doc_url: docUrl, doc_name: input.doc_name },
       };
     } catch (error) {
       return {

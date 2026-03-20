@@ -71,7 +71,7 @@ describe('Get Updates Tool', () => {
 
     const result = await tool.execute({ objectId: '123', objectType: 'Item' } as any);
 
-    const parsedResult = JSON.parse(result.content);
+    const parsedResult = result.content as any;
     expect(parsedResult.updates).toHaveLength(2);
     expect(parsedResult.updates[0].id).toBe('update_1');
     expect(parsedResult.updates[0].text_body).toBe('This is update 1');
@@ -88,17 +88,19 @@ describe('Get Updates Tool', () => {
         itemId: '123',
         limit: 25,
         page: 1,
+        includeReplies: false,
+        includeAssets: false,
       }),
     );
   });
 
-  it('Successfully gets board-level updates', async () => {
+  it('Successfully gets board updates with default parameters', async () => {
     mocks.setResponse(mockBoardUpdatesResponse);
     const tool = new GetUpdatesTool(mocks.mockApiClient);
 
     const result = await tool.execute({ objectId: '456', objectType: 'Board' } as any);
 
-    const parsedResult = JSON.parse(result.content);
+    const parsedResult = result.content as any;
     expect(parsedResult.updates).toHaveLength(1);
     expect(parsedResult.updates[0].id).toBe('board_update_1');
     expect(parsedResult.updates[0].text_body).toBe('Board-level update');
@@ -114,6 +116,9 @@ describe('Get Updates Tool', () => {
         boardId: '456',
         limit: 25,
         page: 1,
+        includeReplies: false,
+        includeAssets: false,
+        boardUpdatesOnly: true,
       }),
     );
   });
@@ -124,7 +129,7 @@ describe('Get Updates Tool', () => {
 
     const result = await tool.execute({ objectId: '123', objectType: 'Item', limit: 50, page: 2 } as any);
 
-    const parsedResult = JSON.parse(result.content);
+    const parsedResult = result.content as any;
     expect(parsedResult.pagination).toEqual({
       page: 2,
       limit: 50,
@@ -181,7 +186,7 @@ describe('Get Updates Tool', () => {
 
     const result = await tool.execute({ objectId: '123', objectType: 'Item', includeReplies: true } as any);
 
-    const parsedResult = JSON.parse(result.content);
+    const parsedResult = result.content as any;
     expect(parsedResult.updates[0].replies).toBeDefined();
     expect(parsedResult.updates[0].replies).toHaveLength(1);
     expect(parsedResult.updates[0].replies[0].text_body).toBe('This is a reply');
@@ -232,7 +237,7 @@ describe('Get Updates Tool', () => {
 
     const result = await tool.execute({ objectId: '123', objectType: 'Item', includeAssets: true } as any);
 
-    const parsedResult = JSON.parse(result.content);
+    const parsedResult = result.content as any;
     expect(parsedResult.updates[0].assets).toBeDefined();
     expect(parsedResult.updates[0].assets).toHaveLength(1);
     expect(parsedResult.updates[0].assets[0].name).toBe('document.pdf');
@@ -295,7 +300,7 @@ describe('Get Updates Tool', () => {
       includeAssets: true,
     } as any);
 
-    const parsedResult = JSON.parse(result.content);
+    const parsedResult = result.content as any;
     expect(parsedResult.updates[0].replies).toBeDefined();
     expect(parsedResult.updates[0].assets).toBeDefined();
   });
@@ -365,6 +370,9 @@ describe('Get Updates Tool', () => {
     expect(() => schema.page.parse(2)).not.toThrow();
     expect(() => schema.includeReplies.parse(true)).not.toThrow();
     expect(() => schema.includeAssets.parse(true)).not.toThrow();
+    expect(() => schema.fromDate.parse('2024-01-01')).not.toThrow();
+    expect(() => schema.toDate.parse('2024-01-31')).not.toThrow();
+    expect(() => schema.includeItemUpdates.parse(true)).not.toThrow();
   });
 
   it('Rejects limit values outside valid range', async () => {
@@ -379,5 +387,111 @@ describe('Get Updates Tool', () => {
     const tool = new GetUpdatesTool(mocks.mockApiClient);
 
     await expect(tool.execute({ itemId: 123, page: 0 } as any)).rejects.toThrow();
+  });
+
+  it('Successfully gets board updates with date range filtering', async () => {
+    mocks.setResponse(mockBoardUpdatesResponse);
+    const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
+
+    const result = await tool.execute({
+      objectId: '456',
+      objectType: 'Board',
+      fromDate: '2024-01-01',
+      toDate: '2024-01-31',
+    } as any);
+
+    const parsedResult = result.content as any;
+    expect(parsedResult.updates).toHaveLength(1);
+
+    expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+      expect.stringContaining('query GetBoardUpdates'),
+      expect.objectContaining({
+        boardId: '456',
+        limit: 25,
+        page: 1,
+        fromDate: '2024-01-01T00:00:00Z',
+        toDate: '2024-01-31T00:00:00Z',
+        boardUpdatesOnly: true,
+      }),
+    );
+  });
+
+  it('Passes full ISO8601 datetime strings through without normalization', async () => {
+    mocks.setResponse(mockBoardUpdatesResponse);
+    const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
+
+    await tool.execute({
+      objectId: '456',
+      objectType: 'Board',
+      fromDate: '2024-01-01T08:00:00Z',
+      toDate: '2024-01-31T23:59:59Z',
+    } as any);
+
+    expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+      expect.stringContaining('query GetBoardUpdates'),
+      expect.objectContaining({
+        fromDate: '2024-01-01T08:00:00Z',
+        toDate: '2024-01-31T23:59:59Z',
+      }),
+    );
+  });
+
+  it('Throws error when only fromDate is provided without toDate', async () => {
+    const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
+
+    await expect(
+      tool.execute({ objectId: '456', objectType: 'Board', fromDate: '2024-01-01' } as any),
+    ).rejects.toThrow('Both fromDate and toDate must be provided together');
+  });
+
+  it('Throws error when only toDate is provided without fromDate', async () => {
+    const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
+
+    await expect(
+      tool.execute({ objectId: '456', objectType: 'Board', toDate: '2024-01-31' } as any),
+    ).rejects.toThrow('Both fromDate and toDate must be provided together');
+  });
+
+  it('Throws error when date range is used with Item objectType', async () => {
+    const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
+
+    await expect(
+      tool.execute({
+        objectId: '123',
+        objectType: 'Item',
+        fromDate: '2024-01-01',
+        toDate: '2024-01-31',
+      } as any),
+    ).rejects.toThrow('Date range filtering (fromDate/toDate) is only supported for Board objectType');
+  });
+
+  it('Successfully gets board updates with includeItemUpdates set to true', async () => {
+    mocks.setResponse(mockBoardUpdatesResponse);
+    const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
+
+    await tool.execute({
+      objectId: '456',
+      objectType: 'Board',
+      includeItemUpdates: true,
+    } as any);
+
+    expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+      expect.stringContaining('query GetBoardUpdates'),
+      expect.objectContaining({
+        boardId: '456',
+        boardUpdatesOnly: false,
+      }),
+    );
+  });
+
+  it('Does not include date variables when dates are not provided for board queries', async () => {
+    mocks.setResponse(mockBoardUpdatesResponse);
+    const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
+
+    await tool.execute({ objectId: '456', objectType: 'Board' } as any);
+
+    const callArgs = mocks.getMockRequest().mock.calls[0][1];
+    expect(callArgs).not.toHaveProperty('fromDate');
+    expect(callArgs).not.toHaveProperty('toDate');
   });
 });

@@ -4,6 +4,7 @@ import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-ap
 import { getWorkspaceInfo } from '../../../../monday-graphql/queries.graphql';
 import { organizeWorkspaceInfoHierarchy } from './helpers';
 import { GetWorkspaceInfoQuery } from 'src/monday-graphql/generated/graphql/graphql';
+import { fetchAccountSlug, buildWorkspaceUrl } from '../utils/account-slug.utils';
 
 export const workspaceInfoToolSchema = {
   workspace_id: z.number().describe('The ID of the workspace to get information for'),
@@ -42,39 +43,14 @@ export class WorkspaceInfoTool extends BaseMondayApiTool<typeof workspaceInfoToo
       };
     }
 
-    const organizedInfo = organizeWorkspaceInfoHierarchy(res);
+    const slug = await fetchAccountSlug(this.mondayApi);
+    const organizedInfo = organizeWorkspaceInfoHierarchy(res, slug);
 
     return {
-      content: `Workspace Information:
-
-**Workspace:** ${organizedInfo.workspace.name} (ID: ${organizedInfo.workspace.id})
-- Description: ${organizedInfo.workspace.description || 'No description'}
-- Kind: ${organizedInfo.workspace.kind}
-- State: ${organizedInfo.workspace.state}
-- Default Workspace: ${organizedInfo.workspace.is_default_workspace ? 'Yes' : 'No'}
-- Created: ${organizedInfo.workspace.created_at}
-- Owners/Subscribers: ${organizedInfo.workspace.owners_subscribers.length} users
-
-**Folders (${organizedInfo.folders.length}):**
-${organizedInfo.folders
-  .map(
-    (folder: any) => `
-📁 ${folder.name} (ID: ${folder.id})
-  - Boards (${folder.boards.length}): ${folder.boards.map((b: any) => `${b.name} (${b.id})`).join(', ') || 'None'}
-  - Docs (${folder.docs.length}): ${folder.docs.map((d: any) => `${d.name} (${d.id})`).join(', ') || 'None'}`,
-  )
-  .join('\n')}
-
-**Root Level Items:**
-- Boards (${organizedInfo.root_items.boards.length}): ${organizedInfo.root_items.boards.map((b: any) => `${b.name} (${b.id})`).join(', ') || 'None'}
-- Docs (${organizedInfo.root_items.docs.length}): ${organizedInfo.root_items.docs.map((d: any) => `${d.name} (${d.id})`).join(', ') || 'None'}
-
-**Summary:**
-- Total Folders: ${organizedInfo.folders.length}
-- Total Boards: ${organizedInfo.folders.reduce((sum: number, f: { boards: string | any[] }) => sum + f.boards.length, 0) + organizedInfo.root_items.boards.length}
-- Total Docs: ${organizedInfo.folders.reduce((sum: number, f: { docs: string | any[] }) => sum + f.docs.length, 0) + organizedInfo.root_items.docs.length}
-
-${JSON.stringify(organizedInfo, null, 2)}`,
+      content: {
+        message: "Workspace info retrieved",
+        data: organizedInfo,
+      },
     };
   }
 }

@@ -93,7 +93,7 @@ export class AllMondayApiTool extends BaseMondayApiTool<typeof allMondayApiToolS
 
       const data = await this.mondayApi.request<GraphQLResponse>(query, parsedVariables);
       return {
-        content: JSON.stringify(data),
+        content: data,
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';

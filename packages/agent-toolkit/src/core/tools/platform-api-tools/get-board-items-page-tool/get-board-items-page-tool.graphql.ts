@@ -4,6 +4,7 @@ export const getBoardItemsPage = gql`
   fragment ItemDataFragment on Item {
     id
     name
+    url
     created_at
     updated_at
     column_values(ids: $columnIds) @include(if: $includeColumns) {
@@ -27,6 +28,14 @@ export const getBoardItemsPage = gql`
         }
       }
     }
+    description @include(if: $includeDescription) {
+      id
+      blocks {
+        id
+        type
+        content
+      }
+    }
   }
 
   query GetBoardItemsPage(
@@ -37,6 +46,7 @@ export const getBoardItemsPage = gql`
     $columnIds: [String!]
     $queryParams: ItemsQuery
     $includeSubItems: Boolean!
+    $includeDescription: Boolean!
   ) {
     boards(ids: [$boardId]) {
       id

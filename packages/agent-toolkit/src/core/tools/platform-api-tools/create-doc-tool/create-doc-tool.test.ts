@@ -27,7 +27,8 @@ describe('CreateDocTool', () => {
         const createDocResponse = {
           create_doc: {
             id: 'doc_123',
-            url: 'https://monday.com/docs/doc_123',
+            object_id: 'obj_123',
+            url: 'https://monday.com/docs/obj_123',
             name: 'Test Document',
           },
         };
@@ -61,9 +62,9 @@ describe('CreateDocTool', () => {
 
         const result = await callToolByNameRawAsync('create_doc', args);
 
-        expect(result.content[0].text).toContain('✅ Document successfully created');
+        expect(result.content[0].text).toContain('Document successfully created');
         expect(result.content[0].text).toContain('doc_123');
-        expect(result.content[0].text).toContain('https://monday.com/docs/doc_123');
+        expect(result.content[0].text).toContain('https://monday.com/docs/obj_123');
 
         const mockCalls = mocks.getMockRequest().mock.calls;
         const createDocCall = mockCalls.find((call) => call[0].includes('mutation createDoc'));
@@ -91,7 +92,8 @@ describe('CreateDocTool', () => {
         const createDocResponse = {
           create_doc: {
             id: 'doc_456',
-            url: 'https://monday.com/docs/doc_456',
+            object_id: 'obj_456',
+            url: 'https://monday.com/docs/obj_456',
             name: 'Minimal Doc',
           },
         };
@@ -123,7 +125,7 @@ describe('CreateDocTool', () => {
 
         const result = await callToolByNameRawAsync('create_doc', args);
 
-        expect(result.content[0].text).toContain('✅ Document successfully created');
+        expect(result.content[0].text).toContain('Document successfully created');
         expect(result.content[0].text).toContain('doc_456');
 
         const mockCalls = mocks.getMockRequest().mock.calls;
@@ -142,7 +144,8 @@ describe('CreateDocTool', () => {
           const createDocResponse = {
             create_doc: {
               id: `doc_${kind}`,
-              url: `https://monday.com/docs/doc_${kind}`,
+              object_id: `obj_${kind}`,
+              url: `https://monday.com/docs/obj_${kind}`,
               name: `Doc ${kind}`,
             },
           };
@@ -175,7 +178,7 @@ describe('CreateDocTool', () => {
 
           const result = await callToolByNameRawAsync('create_doc', args);
 
-          expect(result.content[0].text).toContain('✅ Document successfully created');
+          expect(result.content[0].text).toContain('Document successfully created');
 
           const mockCalls = mocks.getMockRequest().mock.calls;
           const createDocCall = mockCalls.find((call) => call[0].includes('mutation createDoc'));
@@ -262,7 +265,8 @@ describe('CreateDocTool', () => {
         const createDocResponse = {
           create_doc: {
             id: 'doc_789',
-            url: 'https://monday.com/docs/doc_789',
+            object_id: 'obj_789',
+            url: 'https://monday.com/docs/obj_789',
             name: 'Test Document',
           },
         };
@@ -339,7 +343,8 @@ describe('CreateDocTool', () => {
         const createDocResponse = {
           create_doc: {
             id: 'doc_item_123',
-            url: 'https://monday.com/docs/doc_item_123',
+            object_id: 'obj_item_123',
+            url: 'https://monday.com/docs/obj_item_123',
             name: null,
           },
         };
@@ -380,7 +385,7 @@ describe('CreateDocTool', () => {
 
         const result = await callToolByNameRawAsync('create_doc', args);
 
-        expect(result.content[0].text).toContain('✅ Document successfully created');
+        expect(result.content[0].text).toContain('Document successfully created');
         expect(result.content[0].text).toContain('doc_item_123');
 
         const mockCalls = mocks.getMockRequest().mock.calls;
@@ -430,7 +435,8 @@ describe('CreateDocTool', () => {
         const createDocResponse = {
           create_doc: {
             id: 'doc_item_456',
-            url: 'https://monday.com/docs/doc_item_456',
+            object_id: 'obj_item_456',
+            url: 'https://monday.com/docs/obj_item_456',
             name: null,
           },
         };
@@ -471,7 +477,7 @@ describe('CreateDocTool', () => {
 
         const result = await callToolByNameRawAsync('create_doc', args);
 
-        expect(result.content[0].text).toContain('✅ Document successfully created');
+        expect(result.content[0].text).toContain('Document successfully created');
 
         const mockCalls = mocks.getMockRequest().mock.calls;
         const createDocCall = mockCalls.find((call) => call[0].includes('mutation createDoc'));
@@ -507,7 +513,8 @@ describe('CreateDocTool', () => {
         const createDocResponse = {
           create_doc: {
             id: 'doc_item_789',
-            url: 'https://monday.com/docs/doc_item_789',
+            object_id: 'obj_item_789',
+            url: 'https://monday.com/docs/obj_item_789',
             name: null,
           },
         };
@@ -551,7 +558,7 @@ describe('CreateDocTool', () => {
 
         const result = await callToolByNameRawAsync('create_doc', args);
 
-        expect(result.content[0].text).toContain('✅ Document successfully created');
+        expect(result.content[0].text).toContain('Document successfully created');
 
         const mockCalls = mocks.getMockRequest().mock.calls;
 
@@ -669,7 +676,8 @@ describe('CreateDocTool', () => {
         const createDocResponse = {
           create_doc: {
             id: 'doc_item_111',
-            url: 'https://monday.com/docs/doc_item_111',
+            object_id: 'obj_item_111',
+            url: 'https://monday.com/docs/obj_item_111',
             name: null,
           },
         };
@@ -709,7 +717,7 @@ describe('CreateDocTool', () => {
         const result = await callToolByNameRawAsync('create_doc', args);
 
         // Document should still be created successfully
-        expect(result.content[0].text).toContain('✅ Document successfully created');
+        expect(result.content[0].text).toContain('Document successfully created');
         expect(result.content[0].text).toContain('doc_item_111');
 
         // Verify console.warn was called
@@ -772,7 +780,8 @@ describe('CreateDocTool', () => {
         const createDocResponse = {
           create_doc: {
             id: 'doc_item_333',
-            url: 'https://monday.com/docs/doc_item_333',
+            object_id: 'obj_item_333',
+            url: 'https://monday.com/docs/obj_item_333',
             name: null,
           },
         };

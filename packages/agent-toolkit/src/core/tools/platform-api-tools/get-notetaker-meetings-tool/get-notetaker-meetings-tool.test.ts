@@ -149,9 +149,9 @@ describe('GetNotetakerMeetingsTool', () => {
 
       const parsedResult = await callToolByNameAsync('get_notetaker_meetings', {});
 
-      expect(parsedResult.meetings).toHaveLength(2);
-      expect(parsedResult.meetings[0].id).toBe('meeting_1');
-      expect(parsedResult.pagination).toEqual({
+      expect(parsedResult.data.meetings).toHaveLength(2);
+      expect(parsedResult.data.meetings[0].id).toBe('meeting_1');
+      expect(parsedResult.data.pagination).toEqual({
         has_next_page: true,
         cursor: 'cursor_abc123',
         count: 2,
@@ -234,9 +234,9 @@ describe('GetNotetakerMeetingsTool', () => {
         include_action_items: true,
       });
 
-      expect(parsedResult.meetings).toHaveLength(2);
-      expect(parsedResult.meetings[0].action_items[0].content).toBe('Fix bug');
-      expect(parsedResult.meetings[1].action_items[0].content).toBe('Write docs');
+      expect(parsedResult.data.meetings).toHaveLength(2);
+      expect(parsedResult.data.meetings[0].action_items[0].content).toBe('Fix bug');
+      expect(parsedResult.data.meetings[1].action_items[0].content).toBe('Write docs');
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.stringContaining('query GetNotetakerMeetings'),
@@ -302,9 +302,9 @@ describe('GetNotetakerMeetingsTool', () => {
         include_summary: true,
       });
 
-      expect(parsedResult.meetings).toHaveLength(1);
-      expect(parsedResult.meetings[0].id).toBe('meeting_42');
-      expect(parsedResult.meetings[0].summary).toBe('Team discussed the new microservices architecture.');
+      expect(parsedResult.data.meetings).toHaveLength(1);
+      expect(parsedResult.data.meetings[0].id).toBe('meeting_42');
+      expect(parsedResult.data.meetings[0].summary).toBe('Team discussed the new microservices architecture.');
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.stringContaining('query GetNotetakerMeetings'),
@@ -331,9 +331,9 @@ describe('GetNotetakerMeetingsTool', () => {
         ids: ['meeting_42', 'meeting_43'],
       });
 
-      expect(parsedResult.meetings).toHaveLength(2);
-      expect(parsedResult.meetings[0].id).toBe('meeting_42');
-      expect(parsedResult.meetings[1].id).toBe('meeting_43');
+      expect(parsedResult.data.meetings).toHaveLength(2);
+      expect(parsedResult.data.meetings[0].id).toBe('meeting_42');
+      expect(parsedResult.data.meetings[1].id).toBe('meeting_43');
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.stringContaining('query GetNotetakerMeetings'),

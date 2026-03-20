@@ -3,6 +3,7 @@ import { updateWorkspace } from './update-workspace-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { WorkspaceKind } from 'src/monday-graphql/generated/graphql/graphql';
+import { fetchAccountSlug, buildWorkspaceUrl } from '../utils/account-slug.utils';
 
 export const updateWorkspaceToolSchema = {
   id: z.string().describe('The ID of the workspace to update'),
@@ -46,10 +47,13 @@ export class UpdateWorkspaceTool extends BaseMondayApiTool<UpdateWorkspaceToolIn
       },
     };
 
-    const res = await this.mondayApi.request<{ update_workspace: { id: string } }>(updateWorkspace, variables);
+    const res = await this.mondayApi.request<{ update_workspace: { id: string; name?: string } }>(updateWorkspace, variables);
+
+    const slug = await fetchAccountSlug(this.mondayApi);
+    const workspaceUrl = slug ? buildWorkspaceUrl(slug, res.update_workspace?.id) : undefined;
 
     return {
-      content: `Workspace ${res.update_workspace?.id} successfully updated`,
+      content: { message: `Workspace ${res.update_workspace?.id} updated`, workspace_id: res.update_workspace?.id, workspace_name: res.update_workspace?.name, workspace_url: workspaceUrl },
     };
   }
 }

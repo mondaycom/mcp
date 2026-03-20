@@ -3,6 +3,7 @@ import { getColumnTypeSchema } from './get-column-type-schema.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { NonDeprecatedColumnType } from 'src/utils/types';
+import { API_REFERENCE_URL } from '../utils/constants';
 
 export const getNonDeprecatedColumnTypeInfoToolSchema = {
   columnType: z
@@ -48,7 +49,7 @@ export class GetColumnTypeInfoTool extends BaseMondayApiTool<typeof getNonDeprec
     };
 
     return {
-      content: `Column Type Information for "${input.columnType}":\n\n${JSON.stringify(columnTypeInfo, null, 2)}`,
+      content: { message: `Column type info for ${input.columnType}`, data: columnTypeInfo, url: API_REFERENCE_URL },
     };
   }
 }

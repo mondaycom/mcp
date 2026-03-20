@@ -123,29 +123,12 @@ USAGE PATTERNS:
 
       const result = await this.enrichDocsWithMarkdown(res.docs, variables);
 
-      // Add pagination suggestion
-      const paginationSuggestion = this.shouldSuggestPagination(
-        res.docs.length,
-        variables.limit || 25,
-        variables.page || 1,
-      );
-
-      return {
-        content: result.content + paginationSuggestion,
-      };
+      return result;
     } catch (error) {
       return {
         content: `Error reading documents: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
       };
     }
-  }
-
-  // Helper method to determine if the agent should continue paginating
-  private shouldSuggestPagination(docsCount: number, limit: number, currentPage: number): string {
-    if (docsCount === limit) {
-      return `\n\n🔄 PAGINATION SUGGESTION: You received exactly ${limit} documents, which suggests there may be more. Consider calling this tool again with page: ${currentPage + 1} to get additional documents.`;
-    }
-    return '';
   }
 
   // Convert docs content to markdown string with pagination metadata
@@ -215,16 +198,16 @@ USAGE PATTERNS:
     const hasMorePages = docsCount === limit; // If we got exactly the limit, there might be more
 
     return {
-      content: `Successfully retrieved ${docsInfo.length} document${docsInfo.length === 1 ? '' : 's'}.
-
-PAGINATION INFO:
-- Current page: ${currentPage}
-- Documents per page: ${limit}
-- Documents in this response: ${docsCount}
-- Has more pages: ${hasMorePages ? 'YES - call again with page: ' + (currentPage + 1) : 'NO'}
-
-DOCUMENTS:
-${JSON.stringify(docsInfo, null, 2)}`,
+      content: {
+        message: `Documents retrieved (${docsInfo.length})`,
+        pagination: {
+          current_page: currentPage,
+          limit,
+          count: docsCount,
+          has_more_pages: hasMorePages,
+        },
+        data: docsInfo,
+      },
     };
   }
 }
