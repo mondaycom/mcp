@@ -2,7 +2,6 @@ import { ApiClient } from '@mondaydotcomorg/api';
 import { ZodRawShape } from 'zod';
 import { ToolAnnotations } from '@modelcontextprotocol/sdk/types';
 import { Tool, ToolInputType, ToolOutputType, ToolType } from '../../tool';
-import { extractTokenInfo } from '../../../utils/token.utils';
 
 export type MondayApiToolContext = {
   // Operational context
