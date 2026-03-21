@@ -10,7 +10,9 @@
     "dev": "turbo dev",
     "build:watch": "turbo watch build",
     "prettier": "turbo prettier",
-    "lint": "turbo lint"
+    "lint": "turbo lint",
+    "mcp:record": "mcp-recorder record-scenarios integration/scenarios.yml --output-dir integration/cassettes",
+    "mcp:verify": "mcp-recorder verify --cassette integration/cassettes/list_tools.json --target-stdio \"node packages/monday-api-mcp/dist/index.js\" --target-env MONDAY_TOKEN=test-token"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.29.0",
