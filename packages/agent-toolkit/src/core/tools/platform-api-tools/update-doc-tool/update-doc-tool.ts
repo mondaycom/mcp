@@ -45,46 +45,27 @@ export class UpdateDocTool extends BaseMondayApiTool<typeof updateDocToolSchema>
   });
 
   getDescription(): string {
-    return `Update an existing monday.com document. Supports renaming, updating block content, creating new blocks, deleting blocks, and replacing blocks (delete + recreate).
+    return `Update an existing monday.com document. Provide doc_id (preferred) or object_id, plus an ordered operations array (executed sequentially, stops on first failure).
 
-IDENTIFICATION: Provide doc_id (preferred, from read_docs) or object_id (from read_docs or doc URL).
-
-OPERATIONS — specify as an ordered array (executed sequentially, stops on first failure):
+OPERATIONS:
 - set_name: Rename the document.
-- add_markdown_content: Convert markdown to blocks and append (or insert after a block). Best for adding new text sections, headings, bullet lists, numbered lists, or simple tables — no block IDs needed.
-- update_block: Replace the text content of an existing text, code, or list_item block in-place. Only these 3 block types are supported — for everything else use replace_block.
-- create_block: Create a new block at a precise position. Supports all creatable types (text, list_item, code, divider, page_break, image, video, notice_box, table, layout). Use parent_block_id to place content inside a table cell, layout cell, or notice_box.
-- delete_block: Permanently remove any block. The ONLY supported operation for BOARD, WIDGET, DOC embed, and GIPHY blocks (those cannot be created or replaced via API).
-- replace_block: Delete a block and immediately create a new one in its place. Use this when update_block is not supported for the block type.
+- add_markdown_content: Append markdown as blocks (or insert after a block). Best for text, headings, lists, simple tables — no block IDs needed.
+- update_block: Update content of an existing text, code, or list_item block in-place.
+- create_block: Create a new block at a precise position. Use parent_block_id to nest inside notice_box, table cell, or layout cell.
+- delete_block: Remove any block. The ONLY option for BOARD, WIDGET, DOC embed, and GIPHY blocks.
+- replace_block: Delete a block and create a new one in its place (use when update_block is not supported).
 
-WHICH OPERATION TO USE — quick reference by block type:
-- text / code / list_item → update_block (change content), or replace_block (change subtype e.g. NORMAL_TEXT→LARGE_TITLE, BULLETED_LIST→CHECK_LIST)
-- divider → replace_block (update_block not supported by API)
-- table → replace_block (update_block not supported by API)
-- image → replace_block (public_url is immutable after creation)
-- video → replace_block (raw_url is immutable after creation)
-- notice_box → replace_block (theme is immutable after creation)
-- layout → replace_block (column structure is immutable)
-- BOARD / WIDGET / DOC embed / GIPHY → delete_block only (no API to create or replace)
+WHEN TO USE EACH OPERATION:
+- text / code / list_item → update_block; use replace_block to change subtype (e.g. NORMAL_TEXT→LARGE_TITLE)
+- divider / table / image / video / notice_box / layout → replace_block (properties immutable after creation)
+- BOARD / WIDGET / DOC / GIPHY → delete_block only
 
-CHOOSING BETWEEN add_markdown_content AND create_block:
-- Use add_markdown_content when adding text, headings, bullets, or simple tables — it's simpler and handles formatting automatically.
-- Use create_block when you need: an image, video, layout, notice_box, or table with specific dimensions; exact positioning using after_block_id; or nesting inside another block via parent_block_id.
+GETTING BLOCK IDs: Call read_docs with include_blocks: true — returns id, type, position, and content per block.
 
-GETTING BLOCK IDs: Call read_docs first — the response includes a blocks array with id, type, position, and content for each block.
-
-BLOCK CONTENT FORMAT for update_block/create_block:
-Last operation in delta_format MUST always be {insert: {text: "\\n"}}.
-
-Examples:
-- Plain text: [{insert: {text: "Hello world"}}, {insert: {text: "\\n"}}]
-- Mixed formatting: [{insert: {text: "Hello "}}, {insert: {text: "bold"}, attributes: {bold: true}}, {insert: {text: " and "}}, {insert: {text: "italic"}, attributes: {italic: true}}, {insert: {text: "\\n"}}]
-- Inline code + link: [{insert: {text: "Run "}}, {insert: {text: "npm install"}, attributes: {code: true}}, {insert: {text: " or see "}}, {insert: {text: "docs"}, attributes: {link: "https://example.com"}}, {insert: {text: "\\n"}}]
-- Multiple attributes: [{insert: {text: "Critical!"}, attributes: {bold: true, italic: true, color: "#ff0000"}}, {insert: {text: "\\n"}}]
-- Strikethrough + underline: [{insert: {text: "old value"}, attributes: {strike: true}}, {insert: {text: " new value"}, attributes: {underline: true}}, {insert: {text: "\\n"}}]
-- Background highlight: [{insert: {text: "highlighted"}, attributes: {background: "#ffff00"}}, {insert: {text: "\\n"}}]
-
-LIMITATIONS: BOARD, WIDGET, DOC embed, and GIPHY blocks cannot be created via the API. Use delete_block to remove them if needed.`;
+BLOCK CONTENT (delta_format): Array of insert ops. Last op MUST be {insert: {text: "\\n"}}.
+- Plain: [{insert: {text: "Hello"}}, {insert: {text: "\\n"}}]
+- Bold: [{insert: {text: "Hi"}, attributes: {bold: true}}, {insert: {text: "\\n"}}]
+- Supported attributes: bold, italic, underline, strike, code, link, color, background`;
   }
 
   getInputSchema(): typeof updateDocToolSchema {

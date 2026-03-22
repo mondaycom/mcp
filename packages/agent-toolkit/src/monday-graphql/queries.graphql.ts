@@ -407,51 +407,7 @@ export const fetchCustomActivity = gql`
 // Documents (Docs) Operations
 // -----------------------------
 
-export const readDocs = gql`
-  query readDocs(
-    $ids: [ID!]
-    $object_ids: [ID!]
-    $limit: Int
-    $order_by: DocsOrderBy
-    $page: Int
-    $workspace_ids: [ID]
-  ) {
-    docs(
-      ids: $ids
-      object_ids: $object_ids
-      limit: $limit
-      order_by: $order_by
-      page: $page
-      workspace_ids: $workspace_ids
-    ) {
-      id
-      object_id
-      name
-      doc_kind
-      created_at
-      created_by {
-        id
-        name
-      }
-      settings
-      url
-      relative_url
-      workspace {
-        id
-        name
-      }
-      workspace_id
-      doc_folder_id
-      blocks {
-        id
-        type
-        parent_block_id
-        position
-        content
-      }
-    }
-  }
-`;
+export { readDocs } from '../core/tools/platform-api-tools/read-docs-tool/read-docs-tool.graphql';
 
 export const exportMarkdownFromDoc = gql`
   query exportMarkdownFromDoc($docId: ID!, $blockIds: [String!]) {

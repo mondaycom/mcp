@@ -1,11 +1,28 @@
 import { gql } from 'graphql-request';
 
-// Reuse from existing tools
-export { updateDocName } from '../create-doc-tool/create-doc-tool.graphql';
-export {
-  addContentToDocFromMarkdown,
-  getDocByObjectId,
-} from '../add-content-to-doc-tool/add-content-to-doc-tool.graphql';
+export const updateDocName = gql`
+  mutation updateDocName($docId: ID!, $name: String!) {
+    update_doc_name(docId: $docId, name: $name)
+  }
+`;
+
+export const addContentToDocFromMarkdown = gql`
+  mutation addContentToDocFromMarkdown($docId: ID!, $markdown: String!, $afterBlockId: String) {
+    add_content_to_doc_from_markdown(docId: $docId, markdown: $markdown, afterBlockId: $afterBlockId) {
+      success
+      block_ids
+      error
+    }
+  }
+`;
+
+export const getDocByObjectId = gql`
+  query getDocByObjectId($objectId: [ID!]) {
+    docs(object_ids: $objectId) {
+      id
+    }
+  }
+`;
 
 // Update an existing block's content
 export const updateDocBlock = gql`
