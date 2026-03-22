@@ -171,7 +171,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
             content: `No items found matching the specified searchTerm`,
           };
         }
-      } catch (error) {
+      } catch(error) {
         throwIfSearchTimeoutError(error);
         input.filters = this.rebuildFiltersWithManualSearch(input.searchTerm, input.filters);
       }
@@ -319,16 +319,12 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
 
     const smartSearchRes = await this.mondayApi.request<SearchItemsDevQuery>(searchItemsDev, smartSearchVariables, {
       versionOverride: 'dev',
-      timeout: SEARCH_TIMEOUT,
-    });
+      timeout: SEARCH_TIMEOUT
+    }); 
 
-    const itemIdsFromSmartSearch =
-      smartSearchRes.search
-        ?.filter(
-          (result): result is Extract<typeof result, { __typename?: typeof ITEM_SEARCH_RESULT_TYPENAME }> =>
-            result.__typename === ITEM_SEARCH_RESULT_TYPENAME,
-        )
-        ?.map((result) => Number(result.data.id)) ?? [];
+    const itemIdsFromSmartSearch = smartSearchRes.search
+      ?.filter((result): result is Extract<typeof result, { __typename?: typeof ITEM_SEARCH_RESULT_TYPENAME }> => result.__typename === ITEM_SEARCH_RESULT_TYPENAME)
+      ?.map((result) => Number(result.data.id)) ?? [];
 
     if (itemIdsFromSmartSearch.length === 0) {
       // TODO: Refactor this once search team implements exception throwing when tool is not enabled

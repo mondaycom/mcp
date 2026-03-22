@@ -1,4 +1,4 @@
-import { BoardSearchResult, DocSearchResult, ItemSearchResult } from 'src/monday-graphql/generated/graphql.dev/graphql';
+import { BoardSearchResult, DocSearchResult, ItemSearchResult } from "src/monday-graphql/generated/graphql.dev/graphql";
 
 export interface SearchResult {
   id: string;

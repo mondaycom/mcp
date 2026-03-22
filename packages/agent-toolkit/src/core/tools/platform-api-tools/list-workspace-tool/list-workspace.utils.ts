@@ -10,7 +10,7 @@ export function filterNullWorkspaces(response: ListWorkspacesQuery): Workspace[]
 }
 
 export function hasMatchingWorkspace(searchTermNormalized: string, workspaces: Workspace[]): boolean {
-  return workspaces.some((workspace) => normalizeString(workspace!.name).includes(searchTermNormalized));
+  return workspaces.some(workspace => normalizeString(workspace!.name).includes(searchTermNormalized));
 }
 
 export function filterWorkspacesBySearchTerm(
@@ -28,13 +28,13 @@ export function filterWorkspacesBySearchTerm(
   const endIndex = startIndex + limit;
 
   return workspaces
-    .filter((workspace) => normalizeString(workspace!.name).includes(searchTermNormalized))
+    .filter(workspace => normalizeString(workspace!.name).includes(searchTermNormalized))
     .slice(startIndex, endIndex);
 }
 
 export function formatWorkspacesList(workspaces: Workspace[]): string {
   return workspaces
-    .map((workspace) => {
+    .map(workspace => {
       const description = workspace!.description ? ` - ${workspace!.description}` : '';
       return `• **${workspace!.name}** (ID: ${workspace!.id})${description}`;
     })

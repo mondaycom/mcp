@@ -10,10 +10,7 @@ const fileInputSchema = z.object({
       'The type of file: "asset" for uploaded files (requires assetId), "doc" for monday docs (requires objectId), "link" for generic links, "google_drive", "dropbox", "box", "onedrive" for cloud storage links (all link types require linkToFile)',
     ),
   name: z.string().describe('File display name'),
-  linkToFile: z
-    .string()
-    .optional()
-    .describe('File link URL. Required for link, google_drive, dropbox, box, and onedrive file types'),
+  linkToFile: z.string().optional().describe('File link URL. Required for link, google_drive, dropbox, box, and onedrive file types'),
   assetId: z.number().optional().describe("The asset's ID. Required when fileType is 'asset'"),
   objectId: z.number().optional().describe("The doc's ID. Required when fileType is 'doc'"),
 });

@@ -82,12 +82,16 @@ describe('UserContextTool', () => {
       {},
       expect.objectContaining({ versionOverride: 'dev' }),
     );
-    expect(mocks.getMockRequest()).toHaveBeenNthCalledWith(2, expect.stringContaining('getFavoriteDetails'), {
-      boardIds: ['1', '2'],
-      folderIds: ['10'],
-      workspaceIds: ['20'],
-      dashboardIds: ['30'],
-    });
+    expect(mocks.getMockRequest()).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining('getFavoriteDetails'),
+      {
+        boardIds: ['1', '2'],
+        folderIds: ['10'],
+        workspaceIds: ['20'],
+        dashboardIds: ['30'],
+      },
+    );
   });
 
   it('should handle empty favorites and no relevant boards', async () => {

@@ -132,7 +132,10 @@ export abstract class BaseMondayAppsTool<
     }
   }
 
-  protected async executeGraphQLQuery<T>(query: string, variables?: Record<string, unknown>): Promise<T> {
+  protected async executeGraphQLQuery<T>(
+    query: string,
+    variables?: Record<string, unknown>,
+  ): Promise<T> {
     if (!this.mondayApiToken) {
       throw new Error('Monday API token is required to execute GraphQL queries');
     }
