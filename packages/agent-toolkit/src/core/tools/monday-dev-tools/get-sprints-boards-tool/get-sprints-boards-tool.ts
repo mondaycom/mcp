@@ -58,7 +58,9 @@ Searches recently used boards (up to ${RECENT_BOARDS_LIMIT}). If none found, ask
         limit: RECENT_BOARDS_LIMIT,
       };
 
-      const res = await this.mondayApi.request<GetRecentBoardsQuery>(getRecentBoards, variables);
+      const res = await this.mondayApi.request<GetRecentBoardsQuery>(getRecentBoards, variables, {
+        versionOverride: 'dev',
+      });
 
       const boards = (res.boards || []).filter((board): board is Board => board !== null);
 
