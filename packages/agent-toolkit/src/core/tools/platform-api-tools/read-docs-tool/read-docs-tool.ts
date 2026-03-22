@@ -93,6 +93,7 @@ MODE: "content" (default) — Fetch documents with their full markdown content.
   - { type: "workspace_ids", ids: ["ws_101"], page: 2 }
 - Supports pagination via page/limit. Check has_more_pages in response.
 - If type "ids" returns no results, automatically retries with object_ids.
+- Response includes a "blocks" array with block IDs, types, positions, and content for use with update_doc (update_block, delete_block, replace_block operations).
 
 MODE: "version_history" — Fetch the edit history of a single document.
 - Requires: doc_id (the id field from content mode, not object_id)
@@ -290,6 +291,15 @@ MODE: "version_history" — Fetch the edit history of a single document.
             workspace_id: doc.workspace_id,
             doc_folder_id: doc.doc_folder_id,
             settings: doc.settings,
+            blocks: (doc.blocks ?? [])
+              .filter((b): b is NonNullable<typeof b> => b != null)
+              .map((b) => ({
+                id: b.id,
+                type: b.type,
+                parent_block_id: b.parent_block_id,
+                position: b.position,
+                content: b.content,
+              })),
             blocks_as_markdown: blocksAsMarkdown,
           };
         }),

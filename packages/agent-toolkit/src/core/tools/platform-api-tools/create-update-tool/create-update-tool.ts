@@ -33,7 +33,9 @@ export const createUpdateToolSchema = {
   parentId: z
     .number()
     .optional()
-    .describe('The ID of the update to reply to. Use this parameter when you want to reply on an existing update leave it empty if you want to create a new update'),
+    .describe(
+      'The ID of the update to reply to. Use this parameter when you want to reply on an existing update leave it empty if you want to create a new update',
+    ),
 };
 
 export class CreateUpdateTool extends BaseMondayApiTool<typeof createUpdateToolSchema> {

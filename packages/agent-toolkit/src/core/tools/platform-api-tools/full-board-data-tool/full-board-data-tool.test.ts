@@ -298,7 +298,9 @@ describe('Full Board Data Tool', () => {
     };
 
     const result = await callToolByNameRawAsync('get_full_board_data', args);
-    expect(result.content[0].text).toContain('Failed to get full board data: Invalid board ID, Insufficient permissions');
+    expect(result.content[0].text).toContain(
+      'Failed to get full board data: Invalid board ID, Insufficient permissions',
+    );
   });
 
   it('Extracts user IDs from people column values', async () => {
@@ -364,5 +366,4 @@ describe('Full Board Data Tool', () => {
     expect(userIdsCall).toContain('user789');
     expect(userIdsCall).not.toContain('team456');
   });
-
 });

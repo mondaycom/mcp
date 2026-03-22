@@ -80,7 +80,8 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
     const memberWorkspaces = filterNullWorkspaces(memberRes);
 
     const shouldFetchAllWorkspaces =
-      !arrayHasElements(memberWorkspaces) || (searchTermNormalized && !hasMatchingWorkspace(searchTermNormalized, memberWorkspaces));
+      !arrayHasElements(memberWorkspaces) ||
+      (searchTermNormalized && !hasMatchingWorkspace(searchTermNormalized, memberWorkspaces));
 
     // Fetch all workspaces only if needed, otherwise use member workspaces
     let workspaces = memberWorkspaces;
@@ -92,7 +93,6 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
       );
       workspaces = filterNullWorkspaces(allWorkspacesRes);
     }
-
 
     if (!arrayHasElements(workspaces)) {
       return {

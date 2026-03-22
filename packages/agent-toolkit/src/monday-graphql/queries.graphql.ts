@@ -442,6 +442,13 @@ export const readDocs = gql`
       }
       workspace_id
       doc_folder_id
+      blocks {
+        id
+        type
+        parent_block_id
+        position
+        content
+      }
     }
   }
 `;

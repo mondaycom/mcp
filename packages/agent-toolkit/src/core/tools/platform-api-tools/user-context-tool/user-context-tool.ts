@@ -115,7 +115,9 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
     return result;
   }
 
-  private groupByType(favorites: NonNullable<GetUserContextQuery['favorites']>): Partial<Record<GraphqlMondayObject, string[]>> {
+  private groupByType(
+    favorites: NonNullable<GetUserContextQuery['favorites']>,
+  ): Partial<Record<GraphqlMondayObject, string[]>> {
     const result: Partial<Record<GraphqlMondayObject, string[]>> = {};
 
     for (const favorite of favorites) {
