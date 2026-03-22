@@ -13,7 +13,7 @@ import {
   MALFORMED_BOARD_RESPONSE,
 } from './get-sprints-metadata-tool-test-data';
 
-export type InputType = Partial<z.infer<z.ZodObject<typeof getSprintsMetadataToolSchema>>> & { sprintsBoardId: number };
+type InputType = Partial<z.infer<z.ZodObject<typeof getSprintsMetadataToolSchema>>> & { sprintsBoardId: number };
 
 describe('GetSprintsMetadataTool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
@@ -62,9 +62,11 @@ describe('GetSprintsMetadataTool', () => {
 
       expect(schemaCall).toBeDefined();
       expect(schemaCall[1]).toEqual({ boardId: '123456789' });
+      expect(schemaCall[2]).toEqual(expect.objectContaining({ versionOverride: 'dev' }));
 
       expect(itemsCall).toBeDefined();
       expect(itemsCall[1]).toEqual({ boardId: '123456789', limit: 25 });
+      expect(itemsCall[2]).toEqual(expect.objectContaining({ versionOverride: 'dev' }));
     });
 
     it('should successfully get sprints metadata with custom limit', async () => {
@@ -85,6 +87,7 @@ describe('GetSprintsMetadataTool', () => {
 
       expect(itemsCall).toBeDefined();
       expect(itemsCall[1]).toEqual({ boardId: '123456789', limit: 50 });
+      expect(itemsCall[2]).toEqual(expect.objectContaining({ versionOverride: 'dev' }));
     });
   });
 

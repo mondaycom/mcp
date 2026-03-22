@@ -95,6 +95,7 @@ Requires the Main Sprints board ID of the monday-dev containing your sprints.`;
       const res = await this.mondayApi.request<GetSprintsBoardItemsWithColumnsQuery>(
         getSprintsBoardItemsWithColumns,
         variables,
+        { versionOverride: 'dev' },
       );
 
       const board = res.boards?.[0];
@@ -127,7 +128,7 @@ Requires the Main Sprints board ID of the monday-dev containing your sprints.`;
         boardId: boardId.toString(),
       };
 
-      const res = await this.mondayApi.request<GetBoardSchemaQuery>(getBoardSchema, variables);
+      const res = await this.mondayApi.request<GetBoardSchemaQuery>(getBoardSchema, variables, { versionOverride: 'dev' });
 
       const board = res.boards?.[0];
       if (!board) {
