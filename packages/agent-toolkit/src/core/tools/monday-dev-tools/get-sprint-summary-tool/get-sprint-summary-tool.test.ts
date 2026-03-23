@@ -59,14 +59,17 @@ describe('GetSprintSummaryTool', () => {
       const sprintCall = calls.find((call) => call[0].includes('query getSprintsByIds'));
       expect(sprintCall).toBeDefined();
       expect(sprintCall[1]).toEqual({ ids: ['1004'] });
+      expect(sprintCall[2]).toEqual(expect.objectContaining({ versionOverride: 'dev' }));
 
       const docCall = calls.find((call) => call[0].includes('query readDocs'));
       expect(docCall).toBeDefined();
       expect(docCall[1]).toEqual({ object_ids: ['doc_obj_summary_1004'], limit: 1 });
+      expect(docCall[2]).toEqual(expect.objectContaining({ versionOverride: 'dev' }));
 
       const exportCall = calls.find((call) => call[0].includes('query exportMarkdownFromDoc'));
       expect(exportCall).toBeDefined();
       expect(exportCall[1]).toEqual({ docId: 'doc_internal_1004', blockIds: [] });
+      expect(exportCall[2]).toEqual(expect.objectContaining({ versionOverride: 'dev' }));
     });
 
     it('should have correct tool metadata', () => {
