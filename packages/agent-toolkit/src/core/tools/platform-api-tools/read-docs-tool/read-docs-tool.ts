@@ -201,18 +201,22 @@ MODE: "version_history" — Fetch the edit history of a single document.
         };
       }
 
-      if (version_history_limit) {
-        restoringPoints = restoringPoints.slice(0, version_history_limit);
-      }
-
       if (!include_diff) {
+        if (version_history_limit) {
+          restoringPoints = restoringPoints.slice(0, version_history_limit);
+        }
         return {
           content: JSON.stringify({ doc_id: objectId, since, until, restoring_points: restoringPoints }, null, 2),
         };
       }
 
-      const pointsToFetch = restoringPoints.slice(0, MAX_DIFF_POINTS);
-      const truncated = restoringPoints.length > MAX_DIFF_POINTS;
+      // Cap at MAX_DIFF_POINTS to limit the number of diff API calls.
+      // Fetch one extra point beyond the user's limit so the oldest visible point
+      // has a "previous" snapshot to diff against — without it the last point
+      // always comes back with no diff.
+      const userLimit = Math.min(version_history_limit ?? MAX_DIFF_POINTS, MAX_DIFF_POINTS);
+      const pointsToFetch = restoringPoints.slice(0, userLimit + 1);
+      const truncated = restoringPoints.length > userLimit;
 
       const restoringPointsWithDiffs = await Promise.allSettled(
         pointsToFetch.map(async (point, i) => {
@@ -233,13 +237,16 @@ MODE: "version_history" — Fetch the edit history of a single document.
         }),
       ).then((results) => results.map((r, i) => (r.status === 'fulfilled' ? r.value : pointsToFetch[i])));
 
+      // Drop the extra context point — it was only needed to compute the last diff.
+      const finalPoints = restoringPointsWithDiffs.slice(0, userLimit);
+
       return {
         content: JSON.stringify(
           {
             doc_id: objectId,
             since,
             until,
-            restoring_points: restoringPointsWithDiffs,
+            restoring_points: finalPoints,
             ...(truncated && { truncated: true, total_count: restoringPoints.length }),
           },
           null,
