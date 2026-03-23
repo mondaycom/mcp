@@ -389,7 +389,7 @@ describe('Get Updates Tool', () => {
     await expect(tool.execute({ itemId: 123, page: 0 } as any)).rejects.toThrow();
   });
 
-  it('Successfully gets board updates with date range filtering', async () => {
+  it('Successfully gets board updates with date-only range filtering', async () => {
     mocks.setResponse(mockBoardUpdatesResponse);
     const tool = new GetUpdatesTool(mocks.mockApiClient);
 
@@ -410,7 +410,7 @@ describe('Get Updates Tool', () => {
         limit: 25,
         page: 1,
         fromDate: '2024-01-01T00:00:00Z',
-        toDate: '2024-01-31T00:00:00Z',
+        toDate: '2024-01-31T23:59:59Z',
         boardUpdatesOnly: true,
       }),
     );

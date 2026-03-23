@@ -50,9 +50,9 @@ export const getUpdatesToolSchema = {
     ),
 };
 
-function normalizeToISO8601DateTime(date: string): string {
+function normalizeToISO8601DateTime(date: string, boundary: 'start' | 'end' = 'start'): string {
   if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-    return `${date}T00:00:00Z`;
+    return boundary === 'end' ? `${date}T23:59:59Z` : `${date}T00:00:00Z`;
   }
   return date;
 }
@@ -110,7 +110,12 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
           ...variables,
           boardId: input.objectId,
           boardUpdatesOnly: !(input.includeItemUpdates ?? false),
-          ...(input.fromDate && input.toDate ? { fromDate: normalizeToISO8601DateTime(input.fromDate), toDate: normalizeToISO8601DateTime(input.toDate) } : {}),
+          ...(input.fromDate && input.toDate
+            ? {
+                fromDate: normalizeToISO8601DateTime(input.fromDate, 'start'),
+                toDate: normalizeToISO8601DateTime(input.toDate, 'end'),
+              }
+            : {}),
         });
       }
 
