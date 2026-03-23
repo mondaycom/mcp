@@ -1,3 +1,5 @@
+import { MondayAgentToolkit } from 'src/mcp/toolkit';
+import { callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
 import { formatUsersAndTeams } from './list-users-and-teams.utils';
 import { FormattedResponse } from './types';
 
@@ -612,5 +614,44 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
       expect(result).toContain('Timezone: America/New_York');
       expect(result).toContain('UTC Hours Diff: -5');
     });
+  });
+});
+
+describe('ListUsersAndTeamsTool - executeInternal', () => {
+  let mocks: ReturnType<typeof createMockApiClient>;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mocks = createMockApiClient();
+    jest.spyOn(MondayAgentToolkit.prototype as any, 'createApiClient').mockReturnValue(mocks.mockApiClient);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('should count only non-null users in name search results', async () => {
+    mocks.setResponses([
+      {
+        users: [
+          null,
+          {
+            id: '1',
+            name: 'Luke Skywalker',
+            title: 'Jedi Knight',
+          },
+        ],
+      },
+      { me: { account: { slug: 'test-account' } } },
+    ]);
+
+    const result = await callToolByNameRawAsync('list_users_and_teams', {
+      name: 'Luke',
+    });
+
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.data).toContain('Found 1 user(s) matching "Luke":');
+    expect(parsed.data).toContain('Luke Skywalker');
+    expect(parsed.url).toBe('https://test-account.monday.com/teams/all');
   });
 });
