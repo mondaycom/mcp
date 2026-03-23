@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { ReadDocsQuery, ReadDocsQueryVariables, DocsOrderBy } from 'src/monday-graphql/generated/graphql/graphql';
-import { readDocs, exportMarkdownFromDoc } from 'src/monday-graphql/queries.graphql';
+import { exportMarkdownFromDoc } from 'src/monday-graphql/queries.graphql';
+import { readDocs } from './read-docs-tool.graphql';
 import {
   GetDocVersionHistoryQuery,
   GetDocVersionHistoryQueryVariables,
@@ -44,6 +45,13 @@ export const readDocsToolSchema = {
     .number()
     .optional()
     .describe('Page number to return (starts at 1). Only used in content mode.'),
+  include_blocks: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe(
+      'If true, includes the blocks array (block IDs, types, positions, content) in the response. Required when you plan to call update_doc. Defaults to false to reduce response size. Only used in content mode.',
+    ),
 
   // --- version_history mode fields ---
   doc_id: z
@@ -88,17 +96,12 @@ export class ReadDocsTool extends BaseMondayApiTool<typeof readDocsToolSchema> {
 
 MODE: "content" (default) — Fetch documents with their full markdown content.
 - Requires: type ("ids" | "object_ids" | "workspace_ids") and ids array
-- Examples:
-  - { type: "ids", ids: ["123"] }
-  - { type: "workspace_ids", ids: ["ws_101"], page: 2 }
 - Supports pagination via page/limit. Check has_more_pages in response.
 - If type "ids" returns no results, automatically retries with object_ids.
+- Set include_blocks: true to include block IDs, types, and positions in the response — required before calling update_doc.
 
 MODE: "version_history" — Fetch the edit history of a single document.
 - Requires: doc_id (the id field from content mode, not object_id)
-- Examples:
-  - { mode: "version_history", doc_id: "123" }
-  - { mode: "version_history", doc_id: "123", since: "2026-03-11T00:00:00Z", include_diff: true }
 - Defaults to the last 24 hours. Use since/until to widen the range.
 - Set include_diff: true to see what content changed between versions (fetches up to ${MAX_DIFF_POINTS} diffs, may be slower).`;
   }
@@ -136,25 +139,28 @@ MODE: "version_history" — Fetch the edit history of a single document.
           break;
       }
 
-      const variables: ReadDocsQueryVariables = {
+      const includeBlocks = input.include_blocks ?? false;
+      const variables: ReadDocsQueryVariables & { includeBlocks: boolean } = {
         ids,
         object_ids,
         limit: input.limit || 25,
         order_by: input.order_by,
         page: input.page,
         workspace_ids,
+        includeBlocks,
       };
 
       let res = await this.mondayApi.request<ReadDocsQuery>(readDocs, variables);
 
       if ((!res.docs || res.docs.length === 0) && ids) {
-        const fallbackVariables: ReadDocsQueryVariables = {
+        const fallbackVariables: ReadDocsQueryVariables & { includeBlocks: boolean } = {
           ids: undefined,
           object_ids: ids,
           limit: input.limit || 25,
           order_by: input.order_by,
           page: input.page,
           workspace_ids,
+          includeBlocks,
         };
         res = await this.mondayApi.request<ReadDocsQuery>(readDocs, fallbackVariables);
       }
@@ -164,7 +170,7 @@ MODE: "version_history" — Fetch the edit history of a single document.
         return { content: `No documents found matching the specified criteria${pageInfo}.` };
       }
 
-      return this.enrichDocsWithMarkdown(res.docs, variables);
+      return this.enrichDocsWithMarkdown(res.docs, variables, includeBlocks);
     } catch (error) {
       return { content: `Error reading documents: ${error instanceof Error ? error.message : 'Unknown error occurred'}` };
     }
@@ -243,6 +249,7 @@ MODE: "version_history" — Fetch the edit history of a single document.
   private async enrichDocsWithMarkdown(
     docs: NonNullable<ReadDocsQuery['docs']>,
     variables: ReadDocsQueryVariables,
+    includeBlocks: boolean,
   ): Promise<ToolOutputType<never>> {
     type ExportMarkdownFromDocMutationVariables = {
       docId: string;
@@ -290,6 +297,17 @@ MODE: "version_history" — Fetch the edit history of a single document.
             workspace_id: doc.workspace_id,
             doc_folder_id: doc.doc_folder_id,
             settings: doc.settings,
+            ...(includeBlocks && {
+              blocks: (doc.blocks ?? [])
+                .filter((b): b is NonNullable<typeof b> => b != null)
+                .map((b) => ({
+                  id: b.id,
+                  type: b.type,
+                  parent_block_id: b.parent_block_id,
+                  position: b.position,
+                  content: b.content,
+                })),
+            }),
             blocks_as_markdown: blocksAsMarkdown,
           };
         }),
