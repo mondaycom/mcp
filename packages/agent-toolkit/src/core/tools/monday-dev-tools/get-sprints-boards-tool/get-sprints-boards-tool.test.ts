@@ -43,6 +43,7 @@ describe('GetSprintsBoardsTool', () => {
       expect(calls.length).toBe(1);
       expect(calls[0][0]).toContain('query GetRecentBoards');
       expect(calls[0][1]).toEqual({ limit: 100 });
+      expect(calls[0][2]).toEqual(expect.objectContaining({ versionOverride: 'dev' }));
     });
 
     it('should successfully find multiple board pairs', async () => {
