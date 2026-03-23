@@ -1,5 +1,52 @@
 import { gql } from 'graphql-request';
 
+export const readDocs = gql`
+  query readDocs(
+    $ids: [ID!]
+    $object_ids: [ID!]
+    $limit: Int
+    $order_by: DocsOrderBy
+    $page: Int
+    $workspace_ids: [ID]
+    $includeBlocks: Boolean = false
+  ) {
+    docs(
+      ids: $ids
+      object_ids: $object_ids
+      limit: $limit
+      order_by: $order_by
+      page: $page
+      workspace_ids: $workspace_ids
+    ) {
+      id
+      object_id
+      name
+      doc_kind
+      created_at
+      created_by {
+        id
+        name
+      }
+      settings
+      url
+      relative_url
+      workspace {
+        id
+        name
+      }
+      workspace_id
+      doc_folder_id
+      blocks @include(if: $includeBlocks) {
+        id
+        type
+        parent_block_id
+        position
+        content
+      }
+    }
+  }
+`;
+
 export const getDocVersionHistory = gql`
   query GetDocVersionHistory($docId: ID!, $since: String, $until: String) {
     doc_version_history(doc_id: $docId, since: $since, until: $until) {
