@@ -20,6 +20,33 @@ export const getDocByObjectId = gql`
   query getDocByObjectId($objectId: [ID!]) {
     docs(object_ids: $objectId) {
       id
+      object_id
+    }
+  }
+`;
+
+// Resolve doc_id → object_id (board ID) when only doc_id is provided
+export const getDocById = gql`
+  query getDocById($docId: [ID!]) {
+    docs(ids: $docId) {
+      id
+      object_id
+    }
+  }
+`;
+
+// Get a file column and an item from a board (for file upload context)
+export const getBoardDataForAsset = gql`
+  query getBoardDataForAsset($objectId: ID!) {
+    boards(ids: [$objectId]) {
+      columns(types: [file]) {
+        id
+      }
+      items_page(limit: 1) {
+        items {
+          id
+        }
+      }
     }
   }
 `;

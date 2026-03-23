@@ -39,7 +39,7 @@ describe('UpdateDocTool', () => {
 
   it('resolves object_id to doc_id before executing operations', async () => {
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
-      if (query.includes('query getDocByObjectId')) return Promise.resolve({ docs: [{ id: 'resolved_doc_789' }] });
+      if (query.includes('query getDocByObjectId')) return Promise.resolve({ docs: [{ id: 'resolved_doc_789', object_id: 'obj_abc' }] });
       if (query.includes('mutation updateDocBlock')) return Promise.resolve({ update_doc_block: { id: 'block_1' } });
       return Promise.resolve({});
     });
@@ -517,9 +517,22 @@ describe('UpdateDocTool', () => {
 
   // ─── add_image_from_file ─────────────────────────────────────────────────
 
-  it('executes add_image_from_file: uploads file and creates image block', async () => {
+  const BOARD_DATA_RESPONSE = {
+    boards: [{
+      columns: [{ id: 'files_col' }],
+      items_page: { items: [{ id: 'item_456' }] },
+    }],
+  };
+
+  it('executes add_image_from_file: resolves board context, uploads file, creates image block', async () => {
     const callOrder: string[] = [];
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocByObjectId'))
+        return Promise.resolve({ docs: [{ id: 'doc_resolved', object_id: 'board_789' }] });
+      if (query.includes('query getBoardDataForAsset')) {
+        callOrder.push('resolve_board');
+        return Promise.resolve(BOARD_DATA_RESPONSE);
+      }
       if (query.includes('mutation addFileToColumn')) {
         callOrder.push('upload');
         return Promise.resolve({
@@ -539,14 +552,12 @@ describe('UpdateDocTool', () => {
 
     const fileBase64 = Buffer.from('fake-image-data').toString('base64');
     const result = await callToolByNameRawAsync('update_doc', {
-      doc_id: 'doc_123',
+      object_id: 'board_789',
       operations: [
         {
           operation_type: 'add_image_from_file',
           file_base64: fileBase64,
           file_name: 'test.png',
-          item_id: 'item_456',
-          column_id: 'files_col',
           after_block_id: 'prev_block',
           width: 800,
         },
@@ -556,41 +567,131 @@ describe('UpdateDocTool', () => {
     expect(result.content[0].text).toContain('[OK] add_image_from_file');
     expect(result.content[0].text).toContain('asset_123');
     expect(result.content[0].text).toContain('img_block_1');
-    expect(callOrder).toEqual(['upload', 'create']);
+    expect(callOrder).toEqual(['resolve_board', 'upload', 'create']);
 
     const calls = mocks.getMockRequest().mock.calls;
+
+    // Board context resolution
+    const boardCall = calls.find((c: any) => c[0].includes('query getBoardDataForAsset'));
+    expect(boardCall[1]).toEqual({ objectId: 'board_789' });
+
+    // File upload — auto-resolved item_id and column_id
     const uploadCall = calls.find((c: any) => c[0].includes('mutation addFileToColumn'));
     expect(uploadCall[1].itemId).toBe('item_456');
     expect(uploadCall[1].columnId).toBe('files_col');
     expect(uploadCall[1].file).toBeInstanceOf(Blob);
     expect(uploadCall[1].file.name).toBe('test.png');
+    expect(uploadCall[1].file.type).toBe('image/png');
 
+    // Image block creation with asset_id
     const createCall = calls.find((c: any) => c[0].includes('mutation createDocBlocks'));
-    expect(createCall[1].docId).toBe('doc_123');
     expect(createCall[1].afterBlockId).toBe('prev_block');
     expect(createCall[1].blocksInput[0].image_block.asset_id).toBe('asset_123');
     expect(createCall[1].blocksInput[0].image_block.public_url).toBeUndefined();
     expect(createCall[1].blocksInput[0].image_block.width).toBe(800);
   });
 
-  it('throws when add_image_from_file file upload returns no asset ID', async () => {
+  it('resolves object_id from doc_id for add_image_from_file', async () => {
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
-      if (query.includes('mutation addFileToColumn')) {
-        return Promise.resolve({ add_file_to_column: null });
-      }
+      if (query.includes('query getDocById'))
+        return Promise.resolve({ docs: [{ id: 'doc_123', object_id: 'board_789' }] });
+      if (query.includes('query getBoardDataForAsset'))
+        return Promise.resolve(BOARD_DATA_RESPONSE);
+      if (query.includes('mutation addFileToColumn'))
+        return Promise.resolve({ add_file_to_column: { id: 'asset_1' } });
+      if (query.includes('mutation createDocBlocks'))
+        return Promise.resolve({
+          create_doc_blocks: [{ id: 'blk_1', type: 'image', parent_block_id: null, created_at: '2024-01-01', content: [] }],
+        });
       return Promise.resolve({});
     });
 
-    const fileBase64 = Buffer.from('fake-image-data').toString('base64');
     const result = await callToolByNameRawAsync('update_doc', {
       doc_id: 'doc_123',
       operations: [
         {
           operation_type: 'add_image_from_file',
-          file_base64: fileBase64,
+          file_base64: Buffer.from('img').toString('base64'),
+          file_name: 'photo.jpg',
+        },
+      ],
+    });
+
+    expect(result.content[0].text).toContain('[OK] add_image_from_file');
+
+    const calls = mocks.getMockRequest().mock.calls;
+    const docCall = calls.find((c: any) => c[0].includes('query getDocById'));
+    expect(docCall[1]).toEqual({ docId: ['doc_123'] });
+    const boardCall = calls.find((c: any) => c[0].includes('query getBoardDataForAsset'));
+    expect(boardCall[1]).toEqual({ objectId: 'board_789' });
+  });
+
+  it('throws when board has no file column', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocByObjectId'))
+        return Promise.resolve({ docs: [{ id: 'doc_1', object_id: 'board_789' }] });
+      if (query.includes('query getBoardDataForAsset'))
+        return Promise.resolve({ boards: [{ columns: [], items_page: { items: [{ id: 'item_1' }] } }] });
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      object_id: 'board_789',
+      operations: [
+        {
+          operation_type: 'add_image_from_file',
+          file_base64: Buffer.from('img').toString('base64'),
           file_name: 'test.png',
-          item_id: 'item_456',
-          column_id: 'files_col',
+        },
+      ],
+    });
+
+    expect(result.content[0].text).toContain('[FAILED] add_image_from_file');
+    expect(result.content[0].text).toContain('No file column found');
+  });
+
+  it('throws when board has no items', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocByObjectId'))
+        return Promise.resolve({ docs: [{ id: 'doc_1', object_id: 'board_789' }] });
+      if (query.includes('query getBoardDataForAsset'))
+        return Promise.resolve({ boards: [{ columns: [{ id: 'files' }], items_page: { items: [] } }] });
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      object_id: 'board_789',
+      operations: [
+        {
+          operation_type: 'add_image_from_file',
+          file_base64: Buffer.from('img').toString('base64'),
+          file_name: 'test.png',
+        },
+      ],
+    });
+
+    expect(result.content[0].text).toContain('[FAILED] add_image_from_file');
+    expect(result.content[0].text).toContain('No items found');
+  });
+
+  it('throws when add_image_from_file file upload returns no asset ID', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocByObjectId'))
+        return Promise.resolve({ docs: [{ id: 'doc_1', object_id: 'board_789' }] });
+      if (query.includes('query getBoardDataForAsset'))
+        return Promise.resolve(BOARD_DATA_RESPONSE);
+      if (query.includes('mutation addFileToColumn'))
+        return Promise.resolve({ add_file_to_column: null });
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      object_id: 'board_789',
+      operations: [
+        {
+          operation_type: 'add_image_from_file',
+          file_base64: Buffer.from('img').toString('base64'),
+          file_name: 'test.png',
         },
       ],
     });
@@ -601,27 +702,24 @@ describe('UpdateDocTool', () => {
 
   it('throws when add_image_from_file file upload succeeds but image block creation fails', async () => {
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
-      if (query.includes('mutation addFileToColumn')) {
-        return Promise.resolve({
-          add_file_to_column: { id: 'asset_123' },
-        });
-      }
-      if (query.includes('mutation createDocBlocks')) {
+      if (query.includes('query getDocByObjectId'))
+        return Promise.resolve({ docs: [{ id: 'doc_1', object_id: 'board_789' }] });
+      if (query.includes('query getBoardDataForAsset'))
+        return Promise.resolve(BOARD_DATA_RESPONSE);
+      if (query.includes('mutation addFileToColumn'))
+        return Promise.resolve({ add_file_to_column: { id: 'asset_123' } });
+      if (query.includes('mutation createDocBlocks'))
         return Promise.resolve({ create_doc_blocks: [] });
-      }
       return Promise.resolve({});
     });
 
-    const fileBase64 = Buffer.from('fake-image-data').toString('base64');
     const result = await callToolByNameRawAsync('update_doc', {
-      doc_id: 'doc_123',
+      object_id: 'board_789',
       operations: [
         {
           operation_type: 'add_image_from_file',
-          file_base64: fileBase64,
+          file_base64: Buffer.from('img').toString('base64'),
           file_name: 'test.png',
-          item_id: 'item_456',
-          column_id: 'files_col',
         },
       ],
     });

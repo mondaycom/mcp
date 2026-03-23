@@ -222,23 +222,13 @@ const AddImageFromFileOperation = z.object({
     .string()
     .min(1)
     .describe(
-      'Base64-encoded image file data. The file will be uploaded to monday.com and inserted as an image block in the document.',
+      'Base64-encoded image file data. The file will be uploaded to monday.com and inserted as an image block in the document. The board context (file column and item) is resolved automatically from the document\'s object_id.',
     ),
   file_name: z
     .string()
     .min(1)
-    .describe('File name with extension (e.g. "screenshot.png", "diagram.jpg"). Used as the uploaded asset name.'),
-  item_id: z
-    .string()
-    .min(1)
     .describe(
-      'The item ID to upload the file to. Must be an item on a board that has a file column. The file is uploaded to this item\'s file column to create an asset, then the asset ID is used to insert the image block.',
-    ),
-  column_id: z
-    .string()
-    .min(1)
-    .describe(
-      'The file column ID on the board to upload the file to. Must be a file-type column on the board that the item belongs to.',
+      'File name with extension (e.g. "screenshot.png", "diagram.jpg"). The extension determines the MIME type for the upload.',
     ),
   after_block_id: z
     .string()
@@ -303,7 +293,7 @@ Operation types:
 - create_block: Create a new block at a specific position (supports text, list_item, code, divider, page_break, image, video, notice_box, table, layout).
 - delete_block: Permanently remove a block. Works for ALL block types including BOARD, WIDGET, DOC embed, GIPHY.
 - replace_block: Delete a block and create a new one in its place. Use for: changing image/video source, table restructure, notice_box theme change.
-- add_image_from_file: Upload an image file (base64) and insert it as an image block. Use this when the image content is a file (not a public URL). Requires item_id and column_id for file upload context.
+- add_image_from_file: Upload an image file (base64) and insert it as an image block. Use this when the image content is a file (not a public URL). The board context is resolved automatically from the document's object_id.
 
 WHEN TO USE WHICH:
 - Adding new text sections → add_markdown_content

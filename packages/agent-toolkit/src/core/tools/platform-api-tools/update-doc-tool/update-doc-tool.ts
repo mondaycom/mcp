@@ -5,6 +5,8 @@ import {
   updateDocName,
   addContentToDocFromMarkdown,
   getDocByObjectId,
+  getDocById,
+  getBoardDataForAsset,
   addFileToColumn,
 } from './update-doc-tool.graphql';
 
@@ -29,8 +31,15 @@ export { updateDocToolSchema };
 
 // ─── Resolve object_id type ──────────────────────────────────────────────────
 
-type GetDocByObjectIdQuery = {
-  docs?: Array<{ id: string } | null> | null;
+type DocQueryResult = {
+  docs?: Array<{ id: string; object_id: string } | null> | null;
+};
+
+type BoardDataForAssetQuery = {
+  boards?: Array<{
+    columns?: Array<{ id: string }> | null;
+    items_page?: { items?: Array<{ id: string }> | null } | null;
+  }> | null;
 };
 
 // ─── Tool class ───────────────────────────────────────────────────────────────
@@ -55,7 +64,7 @@ OPERATIONS:
 - create_block: Create a new block at a precise position. Use parent_block_id to nest inside notice_box, table cell, or layout cell.
 - delete_block: Remove any block. The ONLY option for BOARD, WIDGET, DOC embed, and GIPHY blocks.
 - replace_block: Delete a block and create a new one in its place (use when update_block is not supported).
-- add_image_from_file: Upload an image file (base64) and insert it as an image block. Use when the content to update contains an image provided as a file, NOT a public URL. Requires item_id and column_id for the file upload context.
+- add_image_from_file: Upload an image file (base64) and insert it as an image block. Use when the content to update contains an image provided as a file, NOT a public URL. The board context (file column and item) is resolved automatically from the document's object_id.
 
 WHEN TO USE EACH OPERATION:
 - text / code / list_item → update_block; use replace_block to change subtype (e.g. NORMAL_TEXT→LARGE_TITLE)
@@ -81,17 +90,33 @@ BLOCK CONTENT (delta_format): Array of insert ops. Last op MUST be {insert: {tex
     }
 
     try {
-      // Resolve doc_id from object_id if needed
+      // Resolve doc_id and object_id — we need both for full functionality
       let docId = input.doc_id;
-      if (!docId) {
-        const res = await this.mondayApi.request<GetDocByObjectIdQuery>(getDocByObjectId, {
-          objectId: [input.object_id],
+      let objectId = input.object_id;
+
+      if (!docId && objectId) {
+        // Resolve doc_id from object_id
+        const res = await this.mondayApi.request<DocQueryResult>(getDocByObjectId, {
+          objectId: [objectId],
         });
         const doc = res.docs?.[0];
         if (!doc) {
-          return { content: `Error: No document found for object_id ${input.object_id}.` };
+          return { content: `Error: No document found for object_id ${objectId}.` };
         }
         docId = doc.id;
+      } else if (docId && !objectId) {
+        // Resolve object_id from doc_id (needed for add_image_from_file board context)
+        const hasImageOp = input.operations.some((op) => op.operation_type === 'add_image_from_file');
+        if (hasImageOp) {
+          const res = await this.mondayApi.request<DocQueryResult>(getDocById, {
+            docId: [docId],
+          });
+          const doc = res.docs?.[0];
+          if (!doc?.object_id) {
+            return { content: `Error: Could not resolve board context for doc_id ${docId}. Provide object_id for image upload.` };
+          }
+          objectId = doc.object_id;
+        }
       }
 
       const results: string[] = [];
@@ -100,7 +125,7 @@ BLOCK CONTENT (delta_format): Array of insert ops. Last op MUST be {insert: {tex
       for (let i = 0; i < input.operations.length; i++) {
         const op = input.operations[i];
         try {
-          const result = await this.executeOperation(docId, op);
+          const result = await this.executeOperation(docId!, objectId, op);
           results.push(`- [OK] ${op.operation_type}${result ? `: ${result}` : ''}`);
         } catch (err) {
           const errMsg = err instanceof Error ? err.message : 'Unknown error';
@@ -127,6 +152,7 @@ BLOCK CONTENT (delta_format): Array of insert ops. Last op MUST be {insert: {tex
 
   private async executeOperation(
     docId: string,
+    objectId: string | undefined,
     op: ToolInputType<typeof updateDocToolSchema>['operations'][number],
   ): Promise<string> {
     switch (op.operation_type) {
@@ -151,10 +177,9 @@ BLOCK CONTENT (delta_format): Array of insert ops. Last op MUST be {insert: {tex
       case 'add_image_from_file':
         return this.executeAddImageFromFile(
           docId,
+          objectId,
           op.file_base64,
           op.file_name,
-          op.item_id,
-          op.column_id,
           op.after_block_id,
           op.parent_block_id,
           op.width,
@@ -255,24 +280,50 @@ BLOCK CONTENT (delta_format): Array of insert ops. Last op MUST be {insert: {tex
 
   private async executeAddImageFromFile(
     docId: string,
+    objectId: string | undefined,
     fileBase64: string,
     fileName: string,
-    itemId: string,
-    columnId: string,
     afterBlockId?: string,
     parentBlockId?: string,
     width?: number,
   ): Promise<string> {
+    if (!objectId) {
+      throw new Error(
+        'Cannot upload image: object_id is required to resolve board context. Provide object_id in the tool input.',
+      );
+    }
+
+    // Step 0: Resolve board context — find a file column and an item on the board
+    const boardRes = await this.mondayApi.request<BoardDataForAssetQuery>(getBoardDataForAsset, {
+      objectId,
+    });
+
+    const board = boardRes.boards?.[0];
+    const columnId = board?.columns?.[0]?.id;
+    const itemId = board?.items_page?.items?.[0]?.id;
+
+    if (!columnId) {
+      throw new Error(
+        `No file column found on board ${objectId}. The board must have at least one file-type column to upload images.`,
+      );
+    }
+    if (!itemId) {
+      throw new Error(
+        `No items found on board ${objectId}. The board must have at least one item to upload files to.`,
+      );
+    }
+
     // Step 1: Decode base64 and upload file via add_file_to_column
     const buffer = Buffer.from(fileBase64, 'base64');
-    // File is available natively in Node 20+; for Node 18, construct from Blob
+    const mimeType = this.getMimeType(fileName);
+    // File is available natively in Node 20+; for Node 18, construct from Blob with name
     const file =
       typeof globalThis.File !== 'undefined'
-        ? new File([buffer], fileName)
-        : Object.assign(new Blob([buffer]), { name: fileName });
+        ? new File([buffer], fileName, { type: mimeType })
+        : Object.assign(new Blob([buffer], { type: mimeType }), { name: fileName });
 
     const uploadRes = await this.mondayApi.request<{
-      add_file_to_column?: { id: string; name: string; url: string };
+      add_file_to_column?: { id: string };
     }>(addFileToColumn, { file, itemId, columnId });
 
     const asset = uploadRes.add_file_to_column;
@@ -289,6 +340,20 @@ BLOCK CONTENT (delta_format): Array of insert ops. Last op MUST be {insert: {tex
     );
 
     return `Image uploaded (asset ID: ${asset.id}). ${createResult}`;
+  }
+
+  private getMimeType(fileName: string): string {
+    const ext = fileName.split('.').pop()?.toLowerCase();
+    const mimeTypes: Record<string, string> = {
+      png: 'image/png',
+      jpg: 'image/jpeg',
+      jpeg: 'image/jpeg',
+      gif: 'image/gif',
+      webp: 'image/webp',
+      svg: 'image/svg+xml',
+      bmp: 'image/bmp',
+    };
+    return mimeTypes[ext || ''] || 'application/octet-stream';
   }
 
   private async executeReplaceBlock(
