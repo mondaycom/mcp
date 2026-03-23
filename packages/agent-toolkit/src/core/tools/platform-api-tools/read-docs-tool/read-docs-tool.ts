@@ -139,25 +139,28 @@ MODE: "version_history" — Fetch the edit history of a single document.
           break;
       }
 
-      const variables: ReadDocsQueryVariables = {
+      const includeBlocks = input.include_blocks ?? false;
+      const variables: ReadDocsQueryVariables & { includeBlocks: boolean } = {
         ids,
         object_ids,
         limit: input.limit || 25,
         order_by: input.order_by,
         page: input.page,
         workspace_ids,
+        includeBlocks,
       };
 
       let res = await this.mondayApi.request<ReadDocsQuery>(readDocs, variables);
 
       if ((!res.docs || res.docs.length === 0) && ids) {
-        const fallbackVariables: ReadDocsQueryVariables = {
+        const fallbackVariables: ReadDocsQueryVariables & { includeBlocks: boolean } = {
           ids: undefined,
           object_ids: ids,
           limit: input.limit || 25,
           order_by: input.order_by,
           page: input.page,
           workspace_ids,
+          includeBlocks,
         };
         res = await this.mondayApi.request<ReadDocsQuery>(readDocs, fallbackVariables);
       }
@@ -167,7 +170,7 @@ MODE: "version_history" — Fetch the edit history of a single document.
         return { content: `No documents found matching the specified criteria${pageInfo}.` };
       }
 
-      return this.enrichDocsWithMarkdown(res.docs, variables, input.include_blocks ?? false);
+      return this.enrichDocsWithMarkdown(res.docs, variables, includeBlocks);
     } catch (error) {
       return { content: `Error reading documents: ${error instanceof Error ? error.message : 'Unknown error occurred'}` };
     }

@@ -8,6 +8,7 @@ export const readDocs = gql`
     $order_by: DocsOrderBy
     $page: Int
     $workspace_ids: [ID]
+    $includeBlocks: Boolean!
   ) {
     docs(
       ids: $ids
@@ -35,7 +36,7 @@ export const readDocs = gql`
       }
       workspace_id
       doc_folder_id
-      blocks {
+      blocks @include(if: $includeBlocks) {
         id
         type
         parent_block_id
