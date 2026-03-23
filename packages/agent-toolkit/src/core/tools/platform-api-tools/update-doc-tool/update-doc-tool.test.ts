@@ -515,6 +515,121 @@ describe('UpdateDocTool', () => {
     expect(result.content[0].text).not.toContain('original block is gone');
   });
 
+  // ─── add_image_from_file ─────────────────────────────────────────────────
+
+  it('executes add_image_from_file: uploads file and creates image block', async () => {
+    const callOrder: string[] = [];
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('mutation addFileToColumn')) {
+        callOrder.push('upload');
+        return Promise.resolve({
+          add_file_to_column: { id: 'asset_123' },
+        });
+      }
+      if (query.includes('mutation createDocBlocks')) {
+        callOrder.push('create');
+        return Promise.resolve({
+          create_doc_blocks: [
+            { id: 'img_block_1', type: 'image', parent_block_id: null, created_at: '2024-01-01', content: [] },
+          ],
+        });
+      }
+      return Promise.resolve({});
+    });
+
+    const fileBase64 = Buffer.from('fake-image-data').toString('base64');
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [
+        {
+          operation_type: 'add_image_from_file',
+          file_base64: fileBase64,
+          file_name: 'test.png',
+          item_id: 'item_456',
+          column_id: 'files_col',
+          after_block_id: 'prev_block',
+          width: 800,
+        },
+      ],
+    });
+
+    expect(result.content[0].text).toContain('[OK] add_image_from_file');
+    expect(result.content[0].text).toContain('asset_123');
+    expect(result.content[0].text).toContain('img_block_1');
+    expect(callOrder).toEqual(['upload', 'create']);
+
+    const calls = mocks.getMockRequest().mock.calls;
+    const uploadCall = calls.find((c: any) => c[0].includes('mutation addFileToColumn'));
+    expect(uploadCall[1].itemId).toBe('item_456');
+    expect(uploadCall[1].columnId).toBe('files_col');
+    expect(uploadCall[1].file).toBeInstanceOf(Blob);
+    expect(uploadCall[1].file.name).toBe('test.png');
+
+    const createCall = calls.find((c: any) => c[0].includes('mutation createDocBlocks'));
+    expect(createCall[1].docId).toBe('doc_123');
+    expect(createCall[1].afterBlockId).toBe('prev_block');
+    expect(createCall[1].blocksInput[0].image_block.asset_id).toBe('asset_123');
+    expect(createCall[1].blocksInput[0].image_block.public_url).toBeUndefined();
+    expect(createCall[1].blocksInput[0].image_block.width).toBe(800);
+  });
+
+  it('throws when add_image_from_file file upload returns no asset ID', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('mutation addFileToColumn')) {
+        return Promise.resolve({ add_file_to_column: null });
+      }
+      return Promise.resolve({});
+    });
+
+    const fileBase64 = Buffer.from('fake-image-data').toString('base64');
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [
+        {
+          operation_type: 'add_image_from_file',
+          file_base64: fileBase64,
+          file_name: 'test.png',
+          item_id: 'item_456',
+          column_id: 'files_col',
+        },
+      ],
+    });
+
+    expect(result.content[0].text).toContain('[FAILED] add_image_from_file');
+    expect(result.content[0].text).toContain('no asset ID returned');
+  });
+
+  it('throws when add_image_from_file file upload succeeds but image block creation fails', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('mutation addFileToColumn')) {
+        return Promise.resolve({
+          add_file_to_column: { id: 'asset_123' },
+        });
+      }
+      if (query.includes('mutation createDocBlocks')) {
+        return Promise.resolve({ create_doc_blocks: [] });
+      }
+      return Promise.resolve({});
+    });
+
+    const fileBase64 = Buffer.from('fake-image-data').toString('base64');
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [
+        {
+          operation_type: 'add_image_from_file',
+          file_base64: fileBase64,
+          file_name: 'test.png',
+          item_id: 'item_456',
+          column_id: 'files_col',
+        },
+      ],
+    });
+
+    expect(result.content[0].text).toContain('[FAILED] add_image_from_file');
+    expect(result.content[0].text).toContain('No blocks returned');
+  });
+
   // ─── Multiple operations & fail-fast ─────────────────────────────────────
 
   it('executes multiple operations in order and returns all results', async () => {

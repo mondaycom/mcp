@@ -5,6 +5,7 @@ import {
   updateDocName,
   addContentToDocFromMarkdown,
   getDocByObjectId,
+  addFileToColumn,
 } from './update-doc-tool.graphql';
 
 import {
@@ -54,10 +55,12 @@ OPERATIONS:
 - create_block: Create a new block at a precise position. Use parent_block_id to nest inside notice_box, table cell, or layout cell.
 - delete_block: Remove any block. The ONLY option for BOARD, WIDGET, DOC embed, and GIPHY blocks.
 - replace_block: Delete a block and create a new one in its place (use when update_block is not supported).
+- add_image_from_file: Upload an image file (base64) and insert it as an image block. Use when the content to update contains an image provided as a file, NOT a public URL. Requires item_id and column_id for the file upload context.
 
 WHEN TO USE EACH OPERATION:
 - text / code / list_item → update_block; use replace_block to change subtype (e.g. NORMAL_TEXT→LARGE_TITLE)
-- divider / table / image / video / notice_box / layout → replace_block (properties immutable after creation)
+- divider / table / image (public URL) / video / notice_box / layout → replace_block (properties immutable after creation)
+- image from file (not a public URL) → add_image_from_file (uploads file, then creates image block)
 - BOARD / WIDGET / DOC / GIPHY → delete_block only
 
 GETTING BLOCK IDs: Call read_docs with include_blocks: true — returns id, type, position, and content per block.
@@ -144,6 +147,17 @@ BLOCK CONTENT (delta_format): Array of insert ops. Last op MUST be {insert: {tex
           op.block as CreateBlock,
           op.after_block_id,
           op.parent_block_id,
+        );
+      case 'add_image_from_file':
+        return this.executeAddImageFromFile(
+          docId,
+          op.file_base64,
+          op.file_name,
+          op.item_id,
+          op.column_id,
+          op.after_block_id,
+          op.parent_block_id,
+          op.width,
         );
       default: {
         const unhandled = (op as { operation_type: string }).operation_type;
@@ -237,6 +251,44 @@ BLOCK CONTENT (delta_format): Array of insert ops. Last op MUST be {insert: {tex
       throw new Error('No response from delete_doc_block');
     }
     return `Block ${blockId} deleted`;
+  }
+
+  private async executeAddImageFromFile(
+    docId: string,
+    fileBase64: string,
+    fileName: string,
+    itemId: string,
+    columnId: string,
+    afterBlockId?: string,
+    parentBlockId?: string,
+    width?: number,
+  ): Promise<string> {
+    // Step 1: Decode base64 and upload file via add_file_to_column
+    const buffer = Buffer.from(fileBase64, 'base64');
+    // File is available natively in Node 20+; for Node 18, construct from Blob
+    const file =
+      typeof globalThis.File !== 'undefined'
+        ? new File([buffer], fileName)
+        : Object.assign(new Blob([buffer]), { name: fileName });
+
+    const uploadRes = await this.mondayApi.request<{
+      add_file_to_column?: { id: string; name: string; url: string };
+    }>(addFileToColumn, { file, itemId, columnId });
+
+    const asset = uploadRes.add_file_to_column;
+    if (!asset?.id) {
+      throw new Error('File upload failed — no asset ID returned from add_file_to_column');
+    }
+
+    // Step 2: Create image block in the doc using the uploaded asset's ID
+    const createResult = await this.executeCreateBlock(
+      docId,
+      { block_type: 'image' as const, asset_id: asset.id, width },
+      afterBlockId,
+      parentBlockId,
+    );
+
+    return `Image uploaded (asset ID: ${asset.id}). ${createResult}`;
   }
 
   private async executeReplaceBlock(

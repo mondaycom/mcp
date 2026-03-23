@@ -4303,10 +4303,12 @@ export type HourValue = ColumnValue & {
 
 /** Input for creating image blocks */
 export type ImageBlockInput = {
+  /** The asset ID of an uploaded file (from add_file_to_column). Use this to create an image from an uploaded file. */
+  asset_id?: InputMaybe<Scalars['ID']['input']>;
   /** The parent block id to append the created block under. */
   parent_block_id?: InputMaybe<Scalars['String']['input']>;
-  /** The public URL of the image */
-  public_url: Scalars['String']['input'];
+  /** The public URL of the image. Either public_url or asset_id must be provided. */
+  public_url?: InputMaybe<Scalars['String']['input']>;
   /** The width of the image */
   width?: InputMaybe<Scalars['Int']['input']>;
 };

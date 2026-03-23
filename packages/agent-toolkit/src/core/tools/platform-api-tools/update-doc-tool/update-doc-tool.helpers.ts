@@ -102,13 +102,17 @@ export function buildCreateBlockInput(block: CreateBlock): CreateBlockInput {
       return { divider_block: {} };
     case 'page_break':
       return { page_break_block: {} };
-    case 'image':
+    case 'image': {
+      if (!block.public_url && !block.asset_id) {
+        throw new Error('Image block requires either public_url or asset_id.');
+      }
       return {
         image_block: {
-          public_url: block.public_url,
+          ...(block.asset_id ? { asset_id: block.asset_id } : { public_url: block.public_url }),
           width: block.width,
         },
       };
+    }
     case 'video':
       return {
         video_block: {

@@ -34,7 +34,7 @@
     "fetch:generate": "bash fetch-and-generate.sh"
   },
   "engines": {
-    "node": ">= 16.20.0"
+    "node": ">= 18.0.0"
   },
   "author": "monday.com",
   "license": "MIT",
@@ -48,7 +48,7 @@
     "url": "https://github.com/mondaycom/monday-ai/tree/master/packages/agent-toolkit"
   },
   "dependencies": {
-    "@mondaydotcomorg/api": "^13.0.0",
+    "@mondaydotcomorg/api": "^14.0.0",
     "axios": "^1.10.0",
     "jsonwebtoken": "^9.0.2",
     "zod": "^3.24.2",

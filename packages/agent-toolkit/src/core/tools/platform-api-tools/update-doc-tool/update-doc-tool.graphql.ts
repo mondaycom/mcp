@@ -24,6 +24,15 @@ export const getDocByObjectId = gql`
   }
 `;
 
+// Upload a file to a file column (returns asset ID for use in image blocks)
+export const addFileToColumn = gql`
+  mutation addFileToColumn($file: File!, $itemId: ID!, $columnId: String!) {
+    add_file_to_column(file: $file, item_id: $itemId, column_id: $columnId) {
+      id
+    }
+  }
+`;
+
 // Update an existing block's content
 export const updateDocBlock = gql`
   mutation updateDocBlock($blockId: String!, $content: JSON!) {

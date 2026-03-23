@@ -108,7 +108,17 @@ export const CreateBlockPageBreakSchema = z.object({ block_type: z.literal('page
 
 export const CreateBlockImageSchema = z.object({
   block_type: z.literal('image'),
-  public_url: z.string().url().describe('Publicly accessible image URL.'),
+  public_url: z
+    .string()
+    .url()
+    .optional()
+    .describe('Publicly accessible image URL. Provide either public_url or asset_id.'),
+  asset_id: z
+    .string()
+    .optional()
+    .describe(
+      'Asset ID of an uploaded file (from add_file_to_column). Use this to create an image from an uploaded file instead of a public URL.',
+    ),
   width: z.number().int().min(1).optional().describe('Width in pixels.'),
 });
 
@@ -206,6 +216,41 @@ const DeleteBlockOperation = z.object({
     ),
 });
 
+const AddImageFromFileOperation = z.object({
+  operation_type: z.literal('add_image_from_file'),
+  file_base64: z
+    .string()
+    .min(1)
+    .describe(
+      'Base64-encoded image file data. The file will be uploaded to monday.com and inserted as an image block in the document.',
+    ),
+  file_name: z
+    .string()
+    .min(1)
+    .describe('File name with extension (e.g. "screenshot.png", "diagram.jpg"). Used as the uploaded asset name.'),
+  item_id: z
+    .string()
+    .min(1)
+    .describe(
+      'The item ID to upload the file to. Must be an item on a board that has a file column. The file is uploaded to this item\'s file column to create an asset, then the asset ID is used to insert the image block.',
+    ),
+  column_id: z
+    .string()
+    .min(1)
+    .describe(
+      'The file column ID on the board to upload the file to. Must be a file-type column on the board that the item belongs to.',
+    ),
+  after_block_id: z
+    .string()
+    .optional()
+    .describe('Insert the image block after this block ID. Omit to append at end. Block IDs come from read_docs.'),
+  parent_block_id: z
+    .string()
+    .optional()
+    .describe('Parent block ID for nesting the image inside a container (e.g. notice_box).'),
+  width: z.number().int().min(1).optional().describe('Image width in pixels.'),
+});
+
 const ReplaceBlockOperation = z.object({
   operation_type: z.literal('replace_block'),
   block_id: z.string().describe('ID of the block to delete.'),
@@ -224,6 +269,7 @@ export const OperationSchema = z.discriminatedUnion('operation_type', [
   CreateBlockOperation,
   DeleteBlockOperation,
   ReplaceBlockOperation,
+  AddImageFromFileOperation,
 ]);
 
 export type Operation = z.infer<typeof OperationSchema>;
@@ -257,10 +303,13 @@ Operation types:
 - create_block: Create a new block at a specific position (supports text, list_item, code, divider, page_break, image, video, notice_box, table, layout).
 - delete_block: Permanently remove a block. Works for ALL block types including BOARD, WIDGET, DOC embed, GIPHY.
 - replace_block: Delete a block and create a new one in its place. Use for: changing image/video source, table restructure, notice_box theme change.
+- add_image_from_file: Upload an image file (base64) and insert it as an image block. Use this when the image content is a file (not a public URL). Requires item_id and column_id for file upload context.
 
 WHEN TO USE WHICH:
 - Adding new text sections → add_markdown_content
 - Editing existing text block → update_block
+- Adding an image from a file (not a public URL) → add_image_from_file
+- Adding an image from a public URL → create_block with block_type "image"
 - Changing an image URL → replace_block (image URL is immutable after creation)
 - Changing video URL → replace_block
 - Restructuring a table → replace_block

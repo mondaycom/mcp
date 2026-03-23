@@ -8784,11 +8784,14 @@ type ExportMarkdownResult {
 
 """Input for creating image blocks"""
 input ImageBlockInput {
+  """The asset ID of an uploaded file (from add_file_to_column). Use this to create an image from an uploaded file."""
+  asset_id: ID
+
   """The parent block id to append the created block under."""
   parent_block_id: String
 
-  """The public URL of the image"""
-  public_url: String!
+  """The public URL of the image. Either public_url or asset_id must be provided."""
+  public_url: String
 
   """The width of the image"""
   width: Int
