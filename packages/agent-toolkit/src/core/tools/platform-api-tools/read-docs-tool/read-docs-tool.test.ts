@@ -178,6 +178,30 @@ describe('ReadDocsTool', () => {
       );
     });
 
+    it('should pass undefined since/until when not provided', async () => {
+      mocks.setResponse(mockHistoryResponse);
+
+      await callToolByNameAsync(TOOL_NAME, { mode: 'version_history', ids: [DOC_ID] });
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query GetDocVersionHistory'),
+        expect.objectContaining({ docId: DOC_ID, since: undefined, until: undefined }),
+      );
+    });
+
+    it('should limit restoring points when version_history_limit is set', async () => {
+      mocks.setResponse(mockHistoryResponse); // has 2 restoring points
+
+      const result = await callToolByNameAsync(TOOL_NAME, {
+        mode: 'version_history',
+        ids: [DOC_ID],
+        version_history_limit: 1,
+      });
+
+      expect(result.restoring_points).toHaveLength(1);
+      expect(result.restoring_points[0].date).toBe('2026-03-18T10:00:00Z'); // newest first
+    });
+
     it('should fetch diffs for consecutive restoring points', async () => {
       mocks.mockRequest.mockResolvedValueOnce(mockHistoryResponse).mockResolvedValueOnce(mockDiffResponse);
 
@@ -268,7 +292,7 @@ describe('ReadDocsTool', () => {
       expect(schema.mode).toBeDefined();
       expect(schema.type).toBeDefined();
       expect(schema.ids).toBeDefined();
-      expect(schema.ids).toBeDefined();
+      expect(schema.version_history_limit).toBeDefined();
       expect(schema.since).toBeDefined();
       expect(schema.until).toBeDefined();
       expect(schema.include_diff).toBeDefined();

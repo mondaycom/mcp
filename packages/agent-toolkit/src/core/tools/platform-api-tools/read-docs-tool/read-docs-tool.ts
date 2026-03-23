@@ -46,11 +46,17 @@ export const readDocsToolSchema = {
     .describe('Page number to return (starts at 1). Only used in content mode.'),
 
   // --- version_history mode fields ---
+  version_history_limit: z
+    .number()
+    .optional()
+    .describe(
+      'Maximum number of restoring points to return. Use this when the user asks for "last N changes". Only used in version_history mode.',
+    ),
   since: z
     .string()
     .optional()
     .describe(
-      'ISO 8601 date string to filter version history from (e.g., "2026-03-15T00:00:00Z"). Defaults to 24 hours ago. Only used in version_history mode.',
+      'ISO 8601 date string to filter version history from (e.g., "2026-03-15T00:00:00Z"). If omitted, returns the full history. Only used in version_history mode.',
     ),
   until: z
     .string()
@@ -91,11 +97,12 @@ MODE: "content" (default) — Fetch documents with their full markdown content.
 MODE: "version_history" — Fetch the edit history of a single document.
 - Requires: ids with the document's object_id (use the object_id field from content mode results, NOT the id field).
 - The object_id is the numeric ID visible in the document URL.
+- Returns restoring points sorted newest-first. Use version_history_limit to cap results (e.g., "last 3 changes" → version_history_limit: 3).
+- Use since/until to filter by time range. If omitted, returns full history.
+- Set include_diff: true to see what content changed between versions (fetches up to ${MAX_DIFF_POINTS} diffs, may be slower).
 - Examples:
-  - { mode: "version_history", ids: ["5001466606"] }
-  - { mode: "version_history", ids: ["5001466606"], since: "2026-03-11T00:00:00Z", include_diff: true }
-- Defaults to the last 24 hours. Use since/until to widen the range.
-- Set include_diff: true to see what content changed between versions (fetches up to ${MAX_DIFF_POINTS} diffs, may be slower).`;
+  - { mode: "version_history", ids: ["5001466606"], version_history_limit: 3 }
+  - { mode: "version_history", ids: ["5001466606"], since: "2026-03-11T00:00:00Z", include_diff: true }`;
   }
 
   getInputSchema(): typeof readDocsToolSchema {
@@ -166,26 +173,27 @@ MODE: "version_history" — Fetch the edit history of a single document.
   }
 
   private async executeVersionHistory(input: ToolInputType<typeof readDocsToolSchema>): Promise<ToolOutputType<never>> {
-    const { include_diff } = input;
+    const { include_diff, since, until, version_history_limit } = input;
     const objectId = input.ids?.[0];
 
     if (!objectId) {
       return { content: 'Error: ids is required when mode is "version_history". Provide the document object_id.' };
     }
 
-    const since = input.since ?? new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const until = input.until ?? new Date().toISOString();
-
     try {
       const variables: GetDocVersionHistoryQueryVariables = { docId: objectId, since, until };
       const historyResult = await this.mondayApi.request<GetDocVersionHistoryQuery>(getDocVersionHistory, variables);
 
-      const restoringPoints = historyResult?.doc_version_history?.restoring_points;
+      let restoringPoints = historyResult?.doc_version_history?.restoring_points;
 
       if (!restoringPoints || restoringPoints.length === 0) {
         return {
-          content: `No version history found for document ${objectId} in the specified time range (${since} to ${until}).`,
+          content: `No version history found for document ${objectId}${since ? ` from ${since}` : ''}.`,
         };
+      }
+
+      if (version_history_limit) {
+        restoringPoints = restoringPoints.slice(0, version_history_limit);
       }
 
       if (!include_diff) {
