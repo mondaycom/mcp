@@ -50,7 +50,7 @@ export const readDocsToolSchema = {
     .string()
     .optional()
     .describe(
-      'The document ID to get version history for. This is the id field from content mode (not the object_id). Required when mode is "version_history".',
+      'The document object_id to get version history for. Use the object_id field from content mode results (not the id field). Can also be extracted from the document URL. Required when mode is "version_history".',
     ),
   since: z
     .string()
@@ -95,10 +95,10 @@ MODE: "content" (default) — Fetch documents with their full markdown content.
 - If type "ids" returns no results, automatically retries with object_ids.
 
 MODE: "version_history" — Fetch the edit history of a single document.
-- Requires: doc_id (the id field from content mode, not object_id)
+- Requires: doc_id — the document's object_id (from content mode results or extracted from the doc URL). NOT the id field from content mode.
 - Examples:
-  - { mode: "version_history", doc_id: "123" }
-  - { mode: "version_history", doc_id: "123", since: "2026-03-11T00:00:00Z", include_diff: true }
+  - { mode: "version_history", doc_id: "5001466606" }
+  - { mode: "version_history", doc_id: "5001466606", since: "2026-03-11T00:00:00Z", include_diff: true }
 - Defaults to the last 24 hours. Use since/until to widen the range.
 - Set include_diff: true to see what content changed between versions (fetches up to ${MAX_DIFF_POINTS} diffs, may be slower).`;
   }
@@ -171,10 +171,11 @@ MODE: "version_history" — Fetch the edit history of a single document.
   }
 
   private async executeVersionHistory(input: ToolInputType<typeof readDocsToolSchema>): Promise<ToolOutputType<never>> {
-    const { doc_id, include_diff } = input;
+    const { include_diff } = input;
+    const doc_id = input.doc_id || input.ids?.[0];
 
     if (!doc_id) {
-      return { content: 'Error: doc_id is required when mode is "version_history".' };
+      return { content: 'Error: doc_id is required when mode is "version_history". Provide the document object_id (from content mode results or the doc URL).' };
     }
 
     const since = input.since ?? new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
