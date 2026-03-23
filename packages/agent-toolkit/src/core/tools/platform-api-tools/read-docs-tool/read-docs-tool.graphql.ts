@@ -8,7 +8,7 @@ export const readDocs = gql`
     $order_by: DocsOrderBy
     $page: Int
     $workspace_ids: [ID]
-    $includeBlocks: Boolean!
+    $includeBlocks: Boolean = false
   ) {
     docs(
       ids: $ids
