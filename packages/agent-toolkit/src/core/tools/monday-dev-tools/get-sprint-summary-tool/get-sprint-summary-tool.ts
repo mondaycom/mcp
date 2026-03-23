@@ -106,7 +106,9 @@ When viewing the section "Completed by Assignee", you'll see user IDs in the for
         ids: [String(sprintId)],
       };
 
-      const res = await this.mondayApi.request<GetSprintsByIdsQuery>(getSprintsByIds, variables);
+      const res = await this.mondayApi.request<GetSprintsByIdsQuery>(getSprintsByIds, variables, {
+        versionOverride: 'dev',
+      });
 
       const sprints = res.items || [];
 
@@ -169,7 +171,9 @@ When viewing the section "Completed by Assignee", you'll see user IDs in the for
         limit: DOCS_LIMIT,
       };
 
-      const docsResponse = await this.mondayApi.request<ReadDocsQuery>(readSprintSummaryDocs, readDocsVariables);
+      const docsResponse = await this.mondayApi.request<ReadDocsQuery>(readSprintSummaryDocs, readDocsVariables, {
+        versionOverride: 'dev',
+      });
 
       const docs = docsResponse.docs || [];
       if (docs.length === 0) {
@@ -196,6 +200,7 @@ When viewing the section "Completed by Assignee", you'll see user IDs in the for
       const exportResponse = await this.mondayApi.request<ExportMarkdownFromDocQuery>(
         exportSprintSummaryMarkdown,
         exportVariables,
+        { versionOverride: 'dev' },
       );
 
       if (!exportResponse.export_markdown_from_doc?.success) {
