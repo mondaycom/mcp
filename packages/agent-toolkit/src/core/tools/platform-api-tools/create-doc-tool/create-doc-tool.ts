@@ -204,7 +204,7 @@ USAGE EXAMPLES:
               docId: docId,
               name: input.doc_name,
             };
-            const updateRes: UpdateDocNameMutation = await this.mondayApi.request(updateDocName, updateVariables);
+            await this.mondayApi.request(updateDocName, updateVariables);
           } catch (updateError) {
             // Non-fatal error - doc was created but naming failed
             console.warn('Failed to update doc name:', updateError);
@@ -216,22 +216,38 @@ USAGE EXAMPLES:
         return { content: 'Error: Failed to create document.' };
       }
 
-      // Add markdown content to the doc
-      const contentVariables: AddContentToDocFromMarkdownMutationVariables = {
-        docId,
-        markdown: input.markdown,
-      };
-      const contentRes: AddContentToDocFromMarkdownMutation = await this.mondayApi.request(
-        addContentToDocFromMarkdown,
-        contentVariables,
-      );
+      const createPartialSuccessContent = (markdownContentError: string) => ({
+        message: 'Document created, but failed to add markdown content',
+        doc_id: docId,
+        object_id: docObjectId,
+        doc_url: docUrl,
+        doc_name: input.doc_name,
+        markdown_content_added: false,
+        markdown_content_error: markdownContentError,
+      });
 
-      const success = contentRes?.add_content_to_doc_from_markdown?.success;
-      const errorMsg = contentRes?.add_content_to_doc_from_markdown?.error;
+      try {
+        // Add markdown content to the doc
+        const contentVariables: AddContentToDocFromMarkdownMutationVariables = {
+          docId,
+          markdown: input.markdown,
+        };
+        const contentRes: AddContentToDocFromMarkdownMutation = await this.mondayApi.request(
+          addContentToDocFromMarkdown,
+          contentVariables,
+        );
 
-      if (!success) {
+        const success = contentRes?.add_content_to_doc_from_markdown?.success;
+        const errorMsg = contentRes?.add_content_to_doc_from_markdown?.error;
+
+        if (!success) {
+          return {
+            content: createPartialSuccessContent(errorMsg || 'Unknown error'),
+          };
+        }
+      } catch (error) {
         return {
-          content: `Document ${docId} created, but failed to add markdown content: ${errorMsg || 'Unknown error'}`,
+          content: createPartialSuccessContent(error instanceof Error ? error.message : 'Unknown error'),
         };
       }
 
