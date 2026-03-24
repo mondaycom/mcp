@@ -102,13 +102,15 @@ export function buildCreateBlockInput(block: CreateBlock): CreateBlockInput {
       return { divider_block: {} };
     case 'page_break':
       return { page_break_block: {} };
-    case 'image':
-      return {
-        image_block: {
-          public_url: block.public_url,
-          width: block.width,
-        },
-      };
+    case 'image': {
+      const imageInput: Record<string, unknown> = { width: block.width };
+      if (block.asset_id) {
+        imageInput.asset_id = block.asset_id;
+      } else {
+        imageInput.public_url = block.public_url;
+      }
+      return { image_block: imageInput } as CreateBlockInput;
+    }
     case 'video':
       return {
         video_block: {
