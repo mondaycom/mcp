@@ -223,6 +223,14 @@ describe('GetNotetakerMeetingsTool', () => {
 
       expect(result.content[0].text).toBe('No notetaker meetings found matching the specified criteria.');
     });
+
+    it('should return "No notetaker meetings found" when meetings only contain null entries', async () => {
+      mocks.setResponse({ notetaker: { meetings: { meetings: [null], page_info: { has_next_page: false, cursor: null } } } });
+
+      const result = await callToolByNameRawAsync('get_notetaker_meetings', {});
+
+      expect(result.content[0].text).toBe('No notetaker meetings found matching the specified criteria.');
+    });
   });
 
   describe('Include flags', () => {
