@@ -166,12 +166,12 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     }
 
     const response = await this.mondayApi.request<GetFoldersQuery>(getFolders, variables);
-    const data = this.searchAndVirtuallyPaginate(input, response.folders || [], (folder) => folder!.name);
+    const data = this.searchAndVirtuallyPaginate(input, (response.folders || []).filter(isDefined), (folder) => folder.name);
 
     const result = {
       items: data.items.map((folder) => ({
-        id: ObjectPrefixes.FOLDER + folder!.id,
-        title: folder!.name,
+        id: ObjectPrefixes.FOLDER + folder.id,
+        title: folder.name,
       })),
       wasFiltered: data.wasFiltered,
     };
@@ -186,13 +186,13 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     };
 
     const response = await this.mondayApi.request<GetDocsQuery>(getDocs, variables);
-    const data = this.searchAndVirtuallyPaginate(input, response.docs || [], (doc) => doc!.name);
+    const data = this.searchAndVirtuallyPaginate(input, (response.docs || []).filter(isDefined), (doc) => doc.name);
 
     const result = {
       items: data.items.map((doc) => ({
-        id: ObjectPrefixes.DOCUMENT + doc!.id,
-        title: doc!.name,
-        url: doc!.url || undefined,
+        id: ObjectPrefixes.DOCUMENT + doc.id,
+        title: doc.name,
+        url: doc.url || undefined,
       })),
       wasFiltered: data.wasFiltered,
     };
@@ -207,13 +207,13 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     };
 
     const response = await this.mondayApi.request<GetBoardsQuery>(getBoards, variables);
-    const data = this.searchAndVirtuallyPaginate(input, response.boards || [], (board) => board!.name);
+    const data = this.searchAndVirtuallyPaginate(input, (response.boards || []).filter(isDefined), (board) => board.name);
 
     const result = {
       items: data.items.map((board) => ({
-        id: ObjectPrefixes.BOARD + board!.id,
-        title: board!.name,
-        url: board!.url,
+        id: ObjectPrefixes.BOARD + board.id,
+        title: board.name,
+        url: board.url,
       })),
       wasFiltered: data.wasFiltered,
     };
@@ -247,4 +247,8 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
 
     return { items: filteredItems, wasFiltered: true };
   }
+}
+
+function isDefined<T>(value: T | null | undefined): value is T {
+  return value != null;
 }
