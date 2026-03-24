@@ -152,7 +152,7 @@ MODE: "version_history" — Fetch the edit history of a single document.
 
       let res = await this.mondayApi.request<ReadDocsQuery>(readDocs, variables);
 
-      if ((!res.docs || res.docs.length === 0) && ids) {
+      if (!res.docs?.some((doc) => doc != null) && ids) {
         const fallbackVariables: ReadDocsQueryVariables & { includeBlocks: boolean } = {
           ids: undefined,
           object_ids: ids,
@@ -165,7 +165,7 @@ MODE: "version_history" — Fetch the edit history of a single document.
         res = await this.mondayApi.request<ReadDocsQuery>(readDocs, fallbackVariables);
       }
 
-      if (!res.docs || res.docs.length === 0) {
+      if (!res.docs?.some((doc) => doc != null)) {
         const pageInfo = input.page ? ` (page ${input.page})` : '';
         return { content: `No documents found matching the specified criteria${pageInfo}.` };
       }
