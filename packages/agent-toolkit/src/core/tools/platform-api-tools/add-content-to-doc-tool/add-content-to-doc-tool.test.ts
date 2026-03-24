@@ -259,6 +259,39 @@ describe('AddContentToDocTool', () => {
       expect(result.content[0].text).not.toContain('Block IDs:');
     });
 
+    it('should ignore null entries inside block_ids in successful response', async () => {
+      const getDocByIdResponse = {
+        docs: [{ id: 'doc_123', name: 'Test Doc', url: 'https://example.com/doc' }],
+      };
+
+      const addContentResponse = {
+        add_content_to_doc_from_markdown: {
+          success: true,
+          block_ids: [null, 'block_1'],
+          error: null,
+        },
+      };
+
+      jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+        if (query.includes('query getDocById')) {
+          return Promise.resolve(getDocByIdResponse);
+        }
+        if (query.includes('mutation addContentToDocFromMarkdown')) {
+          return Promise.resolve(addContentResponse);
+        }
+        return Promise.resolve({});
+      });
+
+      const result = await callToolByNameRawAsync('add_content_to_doc', {
+        doc_id: 'doc_123',
+        markdown: 'Content',
+      });
+
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed.message).toContain('1 block created');
+      expect(parsed.block_ids).toEqual(['block_1']);
+    });
+
     it('should return doc_name and doc_url in success response', async () => {
       const getDocByIdResponse = {
         docs: [{ id: 'doc_123', name: 'My Important Doc', url: 'https://example.com/my-doc' }],
