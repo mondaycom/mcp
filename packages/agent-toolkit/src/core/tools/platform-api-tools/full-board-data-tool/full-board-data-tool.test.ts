@@ -5,7 +5,7 @@ import { ZodTypeAny } from 'zod';
 import { FullBoardDataToolSchema } from './full-board-data-tool';
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
 
-export type inputType = z.objectInputType<FullBoardDataToolSchema, ZodTypeAny>;
+type inputType = z.objectInputType<FullBoardDataToolSchema, ZodTypeAny>;
 
 describe('Full Board Data Tool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
@@ -283,6 +283,41 @@ describe('Full Board Data Tool', () => {
     expect(parsedResult.users).toHaveLength(0);
 
     // Should only call board query since no valid creator IDs
+    expect(mocks.mockApiClient.request).toHaveBeenCalledTimes(1);
+  });
+
+  it('Skips null items in items_page before enriching data', async () => {
+    const boardWithNullItem = {
+      boards: [
+        {
+          id: '123456',
+          name: 'Test Board',
+          columns: [],
+          items_page: {
+            items: [
+              null,
+              {
+                id: '111',
+                name: 'Item 1',
+                column_values: [],
+                updates: [],
+              },
+            ],
+          },
+        },
+      ],
+    };
+
+    mocks.setResponse(boardWithNullItem);
+
+    const parsedResult = await callToolByNameAsync('get_full_board_data', {
+      boardId: '123456',
+    });
+
+    expect(parsedResult.board.items).toHaveLength(1);
+    expect(parsedResult.board.items[0].id).toBe('111');
+    expect(parsedResult.stats.total_items).toBe(1);
+    expect(parsedResult.stats.total_updates).toBe(0);
     expect(mocks.mockApiClient.request).toHaveBeenCalledTimes(1);
   });
 
