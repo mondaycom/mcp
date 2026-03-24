@@ -190,9 +190,12 @@ MODE: "version_history" — Fetch the edit history of a single document.
       const variables: GetDocVersionHistoryQueryVariables = { docId: doc_id, since, until };
       const historyResult = await this.mondayApi.request<GetDocVersionHistoryQuery>(getDocVersionHistory, variables);
 
-      const restoringPoints = historyResult?.doc_version_history?.restoring_points;
+      const restoringPoints =
+        historyResult?.doc_version_history?.restoring_points?.filter(
+          (point): point is NonNullable<typeof point> => point !== null,
+        ) || [];
 
-      if (!restoringPoints || restoringPoints.length === 0) {
+      if (restoringPoints.length === 0) {
         return {
           content: `No version history found for document ${doc_id} in the specified time range (${since} to ${until}).`,
         };

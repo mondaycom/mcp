@@ -162,6 +162,15 @@ describe('ReadDocsTool', () => {
       expect(result.content[0].text).toContain(DOC_ID);
     });
 
+    it('should return no history message when restoring points only contain null entries', async () => {
+      mocks.setResponse({ doc_version_history: { doc_id: DOC_ID, restoring_points: [null] } });
+
+      const result = await callToolByNameRawAsync(TOOL_NAME, { mode: 'version_history', doc_id: DOC_ID });
+
+      expect(result.content[0].text).toContain('No version history found');
+      expect(result.content[0].text).toContain(DOC_ID);
+    });
+
     it('should pass since/until to the API', async () => {
       mocks.setResponse(mockHistoryResponse);
 
@@ -235,6 +244,23 @@ describe('ReadDocsTool', () => {
 
       expect(result.restoring_points[0].diff).toBeUndefined();
       expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+    });
+
+    it('should ignore null restoring points before fetching diffs', async () => {
+      const pointsWithNullEntry = [
+        null,
+        { date: '2026-03-18T10:00:00Z', user_ids: ['1001'], type: null },
+        { date: '2026-03-17T09:00:00Z', user_ids: ['1001'], type: null },
+      ];
+      mocks.mockRequest
+        .mockResolvedValueOnce({ doc_version_history: { doc_id: DOC_ID, restoring_points: pointsWithNullEntry } })
+        .mockResolvedValueOnce(mockDiffResponse);
+
+      const result = await callToolByNameAsync(TOOL_NAME, { mode: 'version_history', doc_id: DOC_ID, include_diff: true });
+
+      expect(result.restoring_points).toHaveLength(2);
+      expect(result.restoring_points[0].diff).toEqual(mockDiffBlocks);
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
     });
 
     it('should return error content on API errors', async () => {
