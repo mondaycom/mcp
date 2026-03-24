@@ -395,6 +395,20 @@ describe('UpdateDocTool', () => {
     expect(result.content[0].text).toContain('[FAILED] create_block');
   });
 
+  it('throws when create_doc_blocks only contains null entries', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('mutation createDocBlocks')) return Promise.resolve({ create_doc_blocks: [null] });
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [{ operation_type: 'create_block', block: { block_type: 'divider' } }],
+    });
+
+    expect(result.content[0].text).toContain('[FAILED] create_block');
+  });
+
   // ─── delete_block ────────────────────────────────────────────────────────
 
   it('executes delete_block operation', async () => {
