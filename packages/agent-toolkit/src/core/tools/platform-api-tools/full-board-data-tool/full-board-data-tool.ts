@@ -68,11 +68,12 @@ export class FullBoardDataTool extends BaseMondayApiTool<typeof fullBoardDataToo
       }
 
       const board = boardData.boards[0];
+      const items = board.items_page.items.filter((item): item is NonNullable<typeof item> => item !== null);
 
       // Step 2: Extract unique user IDs from updates and people column values
       const userIds = new Set<string>();
 
-      board.items_page.items.forEach((item) => {
+      items.forEach((item) => {
         // Collect IDs from update creators and reply creators
         item.updates?.forEach((update) => {
           if (update.creator_id) {
@@ -121,7 +122,7 @@ export class FullBoardDataTool extends BaseMondayApiTool<typeof fullBoardDataToo
           id: board.id,
           name: board.name,
           columns: board.columns,
-          items: board.items_page.items.map((item) => ({
+          items: items.map((item) => ({
             id: item.id,
             name: item.name,
             column_values: item.column_values,
@@ -145,8 +146,8 @@ export class FullBoardDataTool extends BaseMondayApiTool<typeof fullBoardDataToo
         },
         users: users,
         stats: {
-          total_items: board.items_page.items.length,
-          total_updates: board.items_page.items.reduce((sum, item) => sum + (item.updates?.length || 0), 0),
+          total_items: items.length,
+          total_updates: items.reduce((sum, item) => sum + (item.updates?.length || 0), 0),
           total_unique_creators: users.length,
         },
       };
