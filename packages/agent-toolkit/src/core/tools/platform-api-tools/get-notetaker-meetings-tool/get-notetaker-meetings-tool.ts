@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { getNotetakerMeetings } from './get-notetaker-meetings-tool.graphql';
+import { GetNotetakerMeetingsQuery } from '../../../../monday-graphql/generated/graphql/graphql';
 
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 100;
@@ -101,24 +102,30 @@ export class GetNotetakerMeetingsTool extends BaseMondayApiTool<typeof getNoteta
       includeTranscript: input.include_transcript,
     };
 
-    const res = await this.mondayApi.request<any>(getNotetakerMeetings, variables, {
+    const res = await this.mondayApi.request<GetNotetakerMeetingsQuery>(getNotetakerMeetings, variables, {
       versionOverride: '2026-04',
     });
 
     const meetingsResponse = res.notetaker?.meetings;
 
-    if (!meetingsResponse?.meetings || meetingsResponse.meetings.length === 0) {
+    const meetings = meetingsResponse?.meetings?.filter(
+      (meeting): meeting is NonNullable<typeof meeting> => meeting !== null,
+    );
+
+    if (!meetings || meetings.length === 0) {
       return {
         content: 'No notetaker meetings found matching the specified criteria.',
       };
     }
 
+    const pageInfo = meetingsResponse?.page_info;
+
     const result = {
-      meetings: meetingsResponse.meetings,
+      meetings,
       pagination: {
-        has_next_page: meetingsResponse.page_info?.has_next_page ?? false,
-        cursor: meetingsResponse.page_info?.cursor ?? null,
-        count: meetingsResponse.meetings.length,
+        has_next_page: pageInfo?.has_next_page ?? false,
+        cursor: pageInfo?.cursor ?? null,
+        count: meetings.length,
       },
     };
 
