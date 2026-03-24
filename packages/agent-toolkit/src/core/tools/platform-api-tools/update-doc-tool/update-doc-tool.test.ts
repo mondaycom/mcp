@@ -524,7 +524,16 @@ describe('UpdateDocTool', () => {
     }],
   };
 
-  it('executes add_image_from_file: resolves board context, uploads file, creates image block', async () => {
+  const TEST_FILE_PATH = '/tmp/test-image.png';
+
+  function mockFs() {
+    const fs = require('fs');
+    jest.spyOn(fs, 'existsSync').mockReturnValue(true);
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(Buffer.from('fake-image-data'));
+  }
+
+  it('executes add_image_from_file: reads file from disk, resolves board context, uploads, creates image block', async () => {
+    mockFs();
     const callOrder: string[] = [];
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
       if (query.includes('query getDocByObjectId'))
@@ -550,14 +559,12 @@ describe('UpdateDocTool', () => {
       return Promise.resolve({});
     });
 
-    const fileBase64 = Buffer.from('fake-image-data').toString('base64');
     const result = await callToolByNameRawAsync('update_doc', {
       object_id: 'board_789',
       operations: [
         {
           operation_type: 'add_image_from_file',
-          file_base64: fileBase64,
-          file_name: 'test.png',
+          file_path: TEST_FILE_PATH,
           after_block_id: 'prev_block',
           width: 800,
         },
@@ -575,12 +582,12 @@ describe('UpdateDocTool', () => {
     const boardCall = calls.find((c: any) => c[0].includes('query getBoardDataForAsset'));
     expect(boardCall[1]).toEqual({ objectId: 'board_789' });
 
-    // File upload — auto-resolved item_id and column_id
+    // File upload — file read from disk, name derived from path
     const uploadCall = calls.find((c: any) => c[0].includes('mutation addFileToColumn'));
     expect(uploadCall[1].itemId).toBe('item_456');
     expect(uploadCall[1].columnId).toBe('files_col');
     expect(uploadCall[1].file).toBeInstanceOf(Blob);
-    expect(uploadCall[1].file.name).toBe('test.png');
+    expect(uploadCall[1].file.name).toBe('test-image.png');
     expect(uploadCall[1].file.type).toBe('image/png');
 
     // Image block creation with asset_id
@@ -592,6 +599,7 @@ describe('UpdateDocTool', () => {
   });
 
   it('resolves object_id from doc_id for add_image_from_file', async () => {
+    mockFs();
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
       if (query.includes('query getDocById'))
         return Promise.resolve({ docs: [{ id: 'doc_123', object_id: 'board_789' }] });
@@ -611,8 +619,7 @@ describe('UpdateDocTool', () => {
       operations: [
         {
           operation_type: 'add_image_from_file',
-          file_base64: Buffer.from('img').toString('base64'),
-          file_name: 'photo.jpg',
+          file_path: '/tmp/photo.jpg',
         },
       ],
     });
@@ -626,7 +633,32 @@ describe('UpdateDocTool', () => {
     expect(boardCall[1]).toEqual({ objectId: 'board_789' });
   });
 
+  it('throws when file does not exist', async () => {
+    const fs = require('fs');
+    jest.spyOn(fs, 'existsSync').mockReturnValue(false);
+
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocByObjectId'))
+        return Promise.resolve({ docs: [{ id: 'doc_1', object_id: 'board_789' }] });
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      object_id: 'board_789',
+      operations: [
+        {
+          operation_type: 'add_image_from_file',
+          file_path: '/tmp/nonexistent.png',
+        },
+      ],
+    });
+
+    expect(result.content[0].text).toContain('[FAILED] add_image_from_file');
+    expect(result.content[0].text).toContain('File not found');
+  });
+
   it('throws when board has no file column', async () => {
+    mockFs();
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
       if (query.includes('query getDocByObjectId'))
         return Promise.resolve({ docs: [{ id: 'doc_1', object_id: 'board_789' }] });
@@ -640,8 +672,7 @@ describe('UpdateDocTool', () => {
       operations: [
         {
           operation_type: 'add_image_from_file',
-          file_base64: Buffer.from('img').toString('base64'),
-          file_name: 'test.png',
+          file_path: TEST_FILE_PATH,
         },
       ],
     });
@@ -651,6 +682,7 @@ describe('UpdateDocTool', () => {
   });
 
   it('throws when board has no items', async () => {
+    mockFs();
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
       if (query.includes('query getDocByObjectId'))
         return Promise.resolve({ docs: [{ id: 'doc_1', object_id: 'board_789' }] });
@@ -664,8 +696,7 @@ describe('UpdateDocTool', () => {
       operations: [
         {
           operation_type: 'add_image_from_file',
-          file_base64: Buffer.from('img').toString('base64'),
-          file_name: 'test.png',
+          file_path: TEST_FILE_PATH,
         },
       ],
     });
@@ -675,6 +706,7 @@ describe('UpdateDocTool', () => {
   });
 
   it('throws when add_image_from_file file upload returns no asset ID', async () => {
+    mockFs();
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
       if (query.includes('query getDocByObjectId'))
         return Promise.resolve({ docs: [{ id: 'doc_1', object_id: 'board_789' }] });
@@ -690,8 +722,7 @@ describe('UpdateDocTool', () => {
       operations: [
         {
           operation_type: 'add_image_from_file',
-          file_base64: Buffer.from('img').toString('base64'),
-          file_name: 'test.png',
+          file_path: TEST_FILE_PATH,
         },
       ],
     });
@@ -701,6 +732,7 @@ describe('UpdateDocTool', () => {
   });
 
   it('throws when add_image_from_file file upload succeeds but image block creation fails', async () => {
+    mockFs();
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
       if (query.includes('query getDocByObjectId'))
         return Promise.resolve({ docs: [{ id: 'doc_1', object_id: 'board_789' }] });
@@ -718,8 +750,7 @@ describe('UpdateDocTool', () => {
       operations: [
         {
           operation_type: 'add_image_from_file',
-          file_base64: Buffer.from('img').toString('base64'),
-          file_name: 'test.png',
+          file_path: TEST_FILE_PATH,
         },
       ],
     });

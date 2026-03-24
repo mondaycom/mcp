@@ -178,8 +178,7 @@ BLOCK CONTENT (delta_format): Array of insert ops. Last op MUST be {insert: {tex
         return this.executeAddImageFromFile(
           docId,
           objectId,
-          op.file_base64,
-          op.file_name,
+          op.file_path,
           op.after_block_id,
           op.parent_block_id,
           op.width,
@@ -281,8 +280,7 @@ BLOCK CONTENT (delta_format): Array of insert ops. Last op MUST be {insert: {tex
   private async executeAddImageFromFile(
     docId: string,
     objectId: string | undefined,
-    fileBase64: string,
-    fileName: string,
+    filePath: string,
     afterBlockId?: string,
     parentBlockId?: string,
     width?: number,
@@ -293,7 +291,18 @@ BLOCK CONTENT (delta_format): Array of insert ops. Last op MUST be {insert: {tex
       );
     }
 
-    // Step 0: Resolve board context — find a file column and an item on the board
+    // Step 0: Read file from disk
+    const fs = await import('fs');
+    const path = await import('path');
+
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`File not found: ${filePath}`);
+    }
+
+    const buffer = fs.readFileSync(filePath);
+    const fileName = path.basename(filePath);
+
+    // Step 1: Resolve board context — find a file column and an item on the board
     const boardRes = await this.mondayApi.request<BoardDataForAssetQuery>(getBoardDataForAsset, {
       objectId,
     });
@@ -313,8 +322,7 @@ BLOCK CONTENT (delta_format): Array of insert ops. Last op MUST be {insert: {tex
       );
     }
 
-    // Step 1: Decode base64 and upload file via add_file_to_column
-    const buffer = Buffer.from(fileBase64, 'base64');
+    // Step 2: Upload file via add_file_to_column
     const mimeType = this.getMimeType(fileName);
     // File is available natively in Node 20+; for Node 18, construct from Blob with name
     const file =
@@ -331,7 +339,7 @@ BLOCK CONTENT (delta_format): Array of insert ops. Last op MUST be {insert: {tex
       throw new Error('File upload failed — no asset ID returned from add_file_to_column');
     }
 
-    // Step 2: Create image block in the doc using the uploaded asset's ID
+    // Step 3: Create image block in the doc using the uploaded asset's ID
     const createResult = await this.executeCreateBlock(
       docId,
       { block_type: 'image' as const, asset_id: asset.id, width },

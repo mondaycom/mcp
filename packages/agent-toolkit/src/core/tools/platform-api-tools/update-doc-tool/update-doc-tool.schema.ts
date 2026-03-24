@@ -218,17 +218,11 @@ const DeleteBlockOperation = z.object({
 
 const AddImageFromFileOperation = z.object({
   operation_type: z.literal('add_image_from_file'),
-  file_base64: z
+  file_path: z
     .string()
     .min(1)
     .describe(
-      'Base64-encoded image file data. The file will be uploaded to monday.com and inserted as an image block in the document. The board context (file column and item) is resolved automatically from the document\'s object_id.',
-    ),
-  file_name: z
-    .string()
-    .min(1)
-    .describe(
-      'File name with extension (e.g. "screenshot.png", "diagram.jpg"). The extension determines the MIME type for the upload.',
+      'Absolute path to the image file on disk (e.g. "/Users/me/images/screenshot.png"). The file will be read from disk, uploaded to monday.com, and inserted as an image block. The file name and MIME type are derived from the path. The board context (file column and item) is resolved automatically from the document\'s object_id.',
     ),
   after_block_id: z
     .string()
