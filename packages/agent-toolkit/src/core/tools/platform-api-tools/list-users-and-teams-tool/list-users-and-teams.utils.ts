@@ -1,4 +1,4 @@
-import { FormattedResponse, isExtendedTeam, UserTeam } from './types';
+import { FormattedResponse, isExtendedTeam } from './types';
 
 // Configuration for optional team member fields: [fieldName, displayLabel]
 const optionalTeamMemberFields: Array<[string, string]> = [
@@ -27,11 +27,13 @@ function formatOptionalUserFields(user: Record<string, any>, prefix = ''): strin
 
 export const formatUsersAndTeams = (data: FormattedResponse): string => {
   const sections: string[] = [];
+  const users = 'users' in data ? data.users?.filter((user) => user != null) : null;
+  const teams = 'teams' in data ? data.teams?.filter((team) => team != null) : null;
 
   // Format Users
-  if ('users' in data && data.users && data.users.length > 0) {
+  if (users && users.length > 0) {
     sections.push('Users:');
-    data.users.forEach((user) => {
+    users.forEach((user) => {
       if (user) {
         sections.push(`  ID: ${user.id}`);
         sections.push(`  Name: ${user.name}`);
@@ -59,9 +61,9 @@ export const formatUsersAndTeams = (data: FormattedResponse): string => {
   }
 
   // Format Teams
-  if ('teams' in data && data.teams && data.teams.length > 0) {
+  if (teams && teams.length > 0) {
     sections.push('Teams:');
-    data.teams.forEach((team) => {
+    teams.forEach((team) => {
       if (team) {
         sections.push(`  ID: ${team.id}`);
         sections.push(`  Name: ${team.name}`);
