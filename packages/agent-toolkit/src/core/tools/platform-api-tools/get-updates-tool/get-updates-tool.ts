@@ -114,9 +114,12 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
         });
       }
 
-      const updates = input.objectType === UpdateObjectType.Item ? (res as GetItemUpdatesQuery).items?.[0]?.updates : (res as GetBoardUpdatesQuery).boards?.[0]?.updates;
+      const rawUpdates = input.objectType === UpdateObjectType.Item
+        ? (res as GetItemUpdatesQuery).items?.[0]?.updates
+        : (res as GetBoardUpdatesQuery).boards?.[0]?.updates;
+      const updates = rawUpdates?.filter((update): update is NonNullable<typeof update> => update != null) || [];
 
-      if (!updates || updates.length === 0) {
+      if (updates.length === 0) {
         return {
           content: `No updates found for ${input.objectType.toLowerCase()} with id ${input.objectId}`,
         };

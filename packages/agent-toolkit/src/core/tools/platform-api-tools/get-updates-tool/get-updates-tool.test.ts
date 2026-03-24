@@ -331,6 +331,19 @@ describe('Get Updates Tool', () => {
     expect(result.content).toBe('No updates found for item with id 123');
   });
 
+  it('Returns message when updates only contain null entries', async () => {
+    const nullUpdatesResponse = {
+      items: [{ id: '123', updates: [null] }],
+    };
+
+    mocks.setResponse(nullUpdatesResponse);
+    const tool = new GetUpdatesTool(mocks.mockApiClient, 'fake_token');
+
+    const result = await tool.execute({ objectId: '123', objectType: 'Item' } as any);
+
+    expect(result.content).toBe('No updates found for item with id 123');
+  });
+
 
   it('Handles GraphQL response errors', async () => {
     const graphqlError = new Error('GraphQL Error');
