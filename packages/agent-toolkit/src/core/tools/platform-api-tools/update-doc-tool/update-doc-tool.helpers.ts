@@ -49,7 +49,7 @@ function mapDeltaFormat(ops: DeltaOperation[]): OperationInput[] {
 function mapDeltaFormatRaw(ops: DeltaOperation[]): Record<string, unknown>[] {
   return ops.map((op) => ({
     insert: op.insert.text,
-    attributes: mapAttributes(op.attributes) ?? null,
+    attributes: mapAttributes(op.attributes),
   }));
 }
 
