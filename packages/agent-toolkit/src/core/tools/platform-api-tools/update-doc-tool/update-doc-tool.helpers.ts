@@ -21,21 +21,35 @@ function mapDirection(d?: string): BlockDirection | undefined {
   return d as BlockDirection;
 }
 
+function mapAttributes(attributes: DeltaOperation['attributes']) {
+  if (!attributes) return undefined;
+  return {
+    bold: attributes.bold,
+    italic: attributes.italic,
+    underline: attributes.underline,
+    strike: attributes.strike,
+    code: attributes.code,
+    link: attributes.link,
+    color: attributes.color,
+    background: attributes.background,
+  };
+}
+
 function mapDeltaFormat(ops: DeltaOperation[]): OperationInput[] {
   return ops.map((op) => ({
     insert: { text: op.insert.text },
-    attributes: op.attributes
-      ? {
-          bold: op.attributes.bold,
-          italic: op.attributes.italic,
-          underline: op.attributes.underline,
-          strike: op.attributes.strike,
-          code: op.attributes.code,
-          link: op.attributes.link,
-          color: op.attributes.color,
-          background: op.attributes.background,
-        }
-      : undefined,
+    attributes: mapAttributes(op.attributes),
+  }));
+}
+
+/**
+ * Maps delta ops to the server-internal format for the update_doc_block path (raw JSON).
+ * Plain text inserts must be bare strings, not wrapped in an object.
+ */
+function mapDeltaFormatRaw(ops: DeltaOperation[]): Record<string, unknown>[] {
+  return ops.map((op) => ({
+    insert: op.insert.text,
+    attributes: mapAttributes(op.attributes),
   }));
 }
 
@@ -47,18 +61,18 @@ export function buildUpdateBlockContent(input: UpdateBlockContent): Record<strin
   switch (input.block_content_type) {
     case 'text':
       return {
-        deltaFormat: mapDeltaFormat(input.delta_format),
+        deltaFormat: mapDeltaFormatRaw(input.delta_format),
         alignment: input.alignment,
         direction: input.direction,
       };
     case 'code':
       return {
-        deltaFormat: mapDeltaFormat(input.delta_format),
+        deltaFormat: mapDeltaFormatRaw(input.delta_format),
         language: input.language,
       };
     case 'list_item':
       return {
-        deltaFormat: mapDeltaFormat(input.delta_format),
+        deltaFormat: mapDeltaFormatRaw(input.delta_format),
         checked: input.checked,
         indentation: input.indentation,
       };
