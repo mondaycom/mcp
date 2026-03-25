@@ -620,6 +620,11 @@ describe('UpdateDocTool', () => {
 
     expect(result.content[0].text).toContain('[OK] replace_block');
     expect(result.content[0].text).toContain('new_img');
+
+    const calls = mocks.getMockRequest().mock.calls;
+    const createCall = calls.find((c: any) => c[0].includes('mutation createDocBlocks'));
+    expect(createCall[1].blocksInput[0].image_block.asset_id).toBe('5555');
+    expect(createCall[1].blocksInput[0].image_block.public_url).toBeUndefined();
   });
 
   // ─── Multiple operations & fail-fast ─────────────────────────────────────
