@@ -681,4 +681,145 @@ describe('UpdateDocTool', () => {
     expect(result.content[0].text).toContain('Name service down');
     expect(deleteCalled).toBe(false);
   });
+
+  // ─── Mention blot (update_block path — raw JSON format) ──────────────────
+
+  it('sends mention blot in raw JSON format for update_block', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('mutation updateDocBlock')) return Promise.resolve({ update_doc_block: { id: 'blk' } });
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [
+        {
+          operation_type: 'update_block',
+          block_id: 'blk',
+          content: {
+            block_content_type: 'text',
+            delta_format: [
+              { insert: { text: 'Hey ' } },
+              { insert: { mention: { id: 12345, type: 'USER' } } },
+              { insert: { text: '\n' } },
+            ],
+          },
+        },
+      ],
+    });
+
+    expect(result.content[0].text).toContain('[OK] update_block');
+
+    const calls = mocks.getMockRequest().mock.calls;
+    const updateCall = calls.find((c: any) => c[0].includes('mutation updateDocBlock'));
+    const content = JSON.parse(updateCall[1].content);
+    expect(content.deltaFormat[0]).toEqual({ insert: 'Hey ' });
+    expect(content.deltaFormat[1]).toEqual({ insert: { mention: { id: 12345, type: 'USER' } } });
+    expect(content.deltaFormat[2]).toEqual({ insert: '\n' });
+  });
+
+  // ─── Mention blot (create_block path — GraphQL BlotInput format) ──────────
+
+  it('sends mention blot with BlotInput wrapper for create_block', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('mutation createDocBlocks')) {
+        return Promise.resolve({
+          create_doc_blocks: [{ id: 'new_blk', type: 'normal_text', parent_block_id: null, created_at: '', content: [] }],
+        });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [
+        {
+          operation_type: 'create_block',
+          block: {
+            block_type: 'text',
+            delta_format: [
+              { insert: { mention: { id: 99, type: 'USER' } } },
+              { insert: { text: ' please review\n' } },
+            ],
+          },
+        },
+      ],
+    });
+
+    expect(result.content[0].text).toContain('[OK] create_block');
+
+    const calls = mocks.getMockRequest().mock.calls;
+    const createCall = calls.find((c: any) => c[0].includes('mutation createDocBlocks'));
+    const deltaFormat = createCall[1].blocksInput[0].text_block.delta_format;
+    expect(deltaFormat[0]).toEqual({ insert: { blot: { mention: { id: '99', type: 'USER' } } } });
+    expect(deltaFormat[1]).toEqual({ insert: { text: ' please review\n' }, attributes: undefined });
+  });
+
+  // ─── Column value blot (create_block path — GraphQL BlotInput format) ─────
+
+  it('sends column_value blot with BlotInput wrapper for create_block', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('mutation createDocBlocks')) {
+        return Promise.resolve({
+          create_doc_blocks: [{ id: 'new_blk', type: 'normal_text', parent_block_id: null, created_at: '', content: [] }],
+        });
+      }
+      return Promise.resolve({});
+    });
+
+    await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [
+        {
+          operation_type: 'create_block',
+          block: {
+            block_type: 'text',
+            delta_format: [
+              { insert: { column_value: { item_id: 111, column_id: 'status' } } },
+              { insert: { text: '\n' } },
+            ],
+          },
+        },
+      ],
+    });
+
+    const calls = mocks.getMockRequest().mock.calls;
+    const createCall = calls.find((c: any) => c[0].includes('mutation createDocBlocks'));
+    const deltaFormat = createCall[1].blocksInput[0].text_block.delta_format;
+    expect(deltaFormat[0]).toEqual({ insert: { blot: { column_value: { item_id: '111', column_id: 'status' } } } });
+  });
+
+  // ─── Column value blot (update_block path — macro format) ─────────────────
+
+  it('sends column_value as macro format for update_block', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('mutation updateDocBlock')) return Promise.resolve({ update_doc_block: { id: 'blk' } });
+      return Promise.resolve({});
+    });
+
+    await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [
+        {
+          operation_type: 'update_block',
+          block_id: 'blk',
+          content: {
+            block_content_type: 'text',
+            delta_format: [
+              { insert: { column_value: { item_id: 222, column_id: 'date4' } } },
+              { insert: { text: '\n' } },
+            ],
+          },
+        },
+      ],
+    });
+
+    const calls = mocks.getMockRequest().mock.calls;
+    const updateCall = calls.find((c: any) => c[0].includes('mutation updateDocBlock'));
+    const content = JSON.parse(updateCall[1].content);
+    const macroOp = content.deltaFormat[0];
+    expect(macroOp.insert.macro.type).toBe('COLUMN_VALUE');
+    expect(macroOp.insert.macro.macroData).toEqual({ itemId: 222, columnId: 'date4' });
+    expect(macroOp.insert.macro.macroId).toBeDefined();
+  });
 });

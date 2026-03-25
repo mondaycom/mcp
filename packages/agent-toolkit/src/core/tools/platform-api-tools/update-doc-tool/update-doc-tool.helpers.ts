@@ -1,7 +1,9 @@
+import { randomUUID } from 'crypto';
 import {
   BlockAlignment,
   BlockDirection,
   CreateBlockInput,
+  DocsMention,
   ListBlock,
   NoticeBoxTheme,
   OperationInput,
@@ -35,22 +37,69 @@ function mapAttributes(attributes: DeltaOperation['attributes']) {
   };
 }
 
+/**
+ * Maps delta ops to GraphQL OperationInput[] for the create_doc_blocks path.
+ * Blot types (mention, column_value) use the BlotInput wrapper required by the typed GraphQL input.
+ */
 function mapDeltaFormat(ops: DeltaOperation[]): OperationInput[] {
-  return ops.map((op) => ({
-    insert: { text: op.insert.text },
-    attributes: mapAttributes(op.attributes),
-  }));
+  return ops.map((op) => {
+    if ('mention' in op.insert) {
+      const numericId = Number(op.insert.mention.id);
+      if (Number.isNaN(numericId)) {
+        throw new Error(`Invalid mention id: "${op.insert.mention.id}" is not a valid numeric ID`);
+      }
+      return {
+        insert: {
+          // GraphQL ID scalar expects a string — validated as numeric above, passed as string here
+          blot: { mention: { id: String(numericId), type: op.insert.mention.type as DocsMention } },
+        },
+      };
+    }
+    if ('column_value' in op.insert) {
+      return {
+        insert: {
+          // GraphQL ID scalar expects a string
+          blot: { column_value: { item_id: String(op.insert.column_value.item_id), column_id: op.insert.column_value.column_id } },
+        },
+      };
+    }
+    return {
+      insert: { text: op.insert.text },
+      attributes: mapAttributes(op.attributes),
+    };
+  });
 }
 
 /**
  * Maps delta ops to the server-internal format for the update_doc_block path (raw JSON).
- * Plain text inserts must be bare strings, not wrapped in an object.
+ * No BlotInput wrapper — blots are embedded directly in the insert value.
  */
 function mapDeltaFormatRaw(ops: DeltaOperation[]): Record<string, unknown>[] {
-  return ops.map((op) => ({
-    insert: op.insert.text,
-    attributes: mapAttributes(op.attributes),
-  }));
+  return ops.map((op) => {
+    if ('mention' in op.insert) {
+      const numericId = Number(op.insert.mention.id);
+      if (Number.isNaN(numericId)) {
+        throw new Error(`Invalid mention id: "${op.insert.mention.id}" is not a valid numeric ID`);
+      }
+      return { insert: { mention: { id: numericId, type: op.insert.mention.type } } };
+    }
+    if ('column_value' in op.insert) {
+      return {
+        insert: {
+          macro: {
+            type: 'COLUMN_VALUE',
+            macroId: randomUUID(),
+            // Raw JSON format expects a numeric itemId (unlike GraphQL ID scalar which uses string)
+            macroData: { itemId: Number(op.insert.column_value.item_id), columnId: op.insert.column_value.column_id },
+          },
+        },
+      };
+    }
+    return {
+      insert: op.insert.text,
+      attributes: mapAttributes(op.attributes),
+    };
+  });
 }
 
 /**
