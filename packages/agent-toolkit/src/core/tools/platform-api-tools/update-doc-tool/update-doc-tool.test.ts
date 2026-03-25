@@ -39,7 +39,7 @@ describe('UpdateDocTool', () => {
 
   it('resolves object_id to doc_id before executing operations', async () => {
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
-      if (query.includes('query getDocByObjectId')) return Promise.resolve({ docs: [{ id: 'resolved_doc_789' }] });
+      if (query.includes('query getDocIdByObjectId')) return Promise.resolve({ docs: [{ id: 'resolved_doc_789' }] });
       if (query.includes('mutation updateDocBlock')) return Promise.resolve({ update_doc_block: { id: 'block_1' } });
       return Promise.resolve({});
     });
@@ -58,14 +58,14 @@ describe('UpdateDocTool', () => {
     expect(result.content[0].text).toContain('Doc ID: resolved_doc_789');
 
     const calls = mocks.getMockRequest().mock.calls;
-    const resolveCall = calls.find((c: any) => c[0].includes('query getDocByObjectId'));
+    const resolveCall = calls.find((c: any) => c[0].includes('query getDocIdByObjectId'));
     expect(resolveCall).toBeDefined();
     expect(resolveCall[1]).toEqual({ objectId: ['obj_abc'] });
   });
 
   it('returns error when object_id resolves to no document', async () => {
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
-      if (query.includes('query getDocByObjectId')) return Promise.resolve({ docs: [] });
+      if (query.includes('query getDocIdByObjectId')) return Promise.resolve({ docs: [] });
       return Promise.resolve({});
     });
 
@@ -517,6 +517,22 @@ describe('UpdateDocTool', () => {
 
   // ─── create_block with asset_id ──────────────────────────────────────────
 
+  it('fails when image block has neither public_url nor asset_id', async () => {
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [
+        {
+          operation_type: 'create_block',
+          block: { block_type: 'image' },
+        },
+      ],
+    });
+
+    expect(result.content[0].text).toContain('[FAILED] create_block');
+    expect(result.content[0].text).toContain('image block requires either asset_id or public_url');
+    expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+  });
+
   it('creates image block with asset_id', async () => {
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
       if (query.includes('mutation createDocBlocks')) {
@@ -544,7 +560,7 @@ describe('UpdateDocTool', () => {
 
     const calls = mocks.getMockRequest().mock.calls;
     const createCall = calls.find((c: any) => c[0].includes('mutation createDocBlocks'));
-    expect(createCall[1].blocksInput[0].image_block.asset_id).toBe(9999);
+    expect(createCall[1].blocksInput[0].image_block.asset_id).toBe('9999');
     expect(createCall[1].blocksInput[0].image_block.width).toBe(400);
     expect(createCall[1].blocksInput[0].image_block.public_url).toBeUndefined();
   });
@@ -575,7 +591,7 @@ describe('UpdateDocTool', () => {
 
     const calls = mocks.getMockRequest().mock.calls;
     const createCall = calls.find((c: any) => c[0].includes('mutation createDocBlocks'));
-    expect(createCall[1].blocksInput[0].image_block.asset_id).toBe(12345);
+    expect(createCall[1].blocksInput[0].image_block.asset_id).toBe('12345');
   });
 
   it('handles replace_block with asset_id image', async () => {

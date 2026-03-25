@@ -117,13 +117,15 @@ export function buildCreateBlockInput(block: CreateBlock): CreateBlockInput {
     case 'page_break':
       return { page_break_block: {} };
     case 'image': {
-      const imageInput: Record<string, unknown> = { width: block.width };
-      if (block.asset_id) {
-        imageInput.asset_id = block.asset_id;
-      } else {
-        imageInput.public_url = block.public_url;
+      if (block.asset_id == null && !block.public_url) {
+        throw new Error('image block requires either asset_id or public_url');
       }
-      return { image_block: imageInput } as CreateBlockInput;
+      return {
+        image_block: {
+          width: block.width,
+          ...(block.asset_id ? { asset_id: String(block.asset_id) } : { public_url: block.public_url }),
+        },
+      };
     }
     case 'video':
       return {
