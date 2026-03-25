@@ -957,6 +957,8 @@ export enum AppFeatureTypeE {
   Product = 'PRODUCT',
   /** PRODUCT_VIEW */
   ProductView = 'PRODUCT_VIEW',
+  /** SKILL */
+  Skill = 'SKILL',
   /** SOLUTION */
   Solution = 'SOLUTION',
   /** SUB_WORKFLOW */
@@ -3914,7 +3916,7 @@ export type DocsColumnValue = {
   /** The ID of the column */
   column_id?: Maybe<Scalars['String']['output']>;
   /** The ID of the board item */
-  item_id?: Maybe<Scalars['Int']['output']>;
+  item_id?: Maybe<Scalars['ID']['output']>;
 };
 
 /** Column value reference for displaying board item column data */
@@ -3922,7 +3924,7 @@ export type DocsColumnValueInput = {
   /** The ID of the column */
   column_id: Scalars['String']['input'];
   /** The ID of the board item */
-  item_id: Scalars['Int']['input'];
+  item_id: Scalars['ID']['input'];
 };
 
 /** Type of mention - user, document, or board */
@@ -4371,6 +4373,8 @@ export enum ExternalWidget {
   Gantt = 'GANTT',
   /** ListView widgets for displaying cross-board items in a tabular list format with filtering and sorting. */
   Listview = 'LISTVIEW',
+  /** Map widgets for geographic data visualization. Displays location-based data on interactive maps. */
+  Map = 'MAP',
   /** Number widgets for displaying numeric metrics such as accumulated sums, averages, counts, totals, percentages. Ideal for showing single-value metrics, counters, calculated aggregations, and key performance indicators in a prominent numeric format. */
   Number = 'NUMBER',
   /** Table widgets for visualization */
@@ -4604,6 +4608,8 @@ export enum FirstDayOfTheWeek {
 /** A workspace folder containing boards, docs, sub folders, etc. */
 export type Folder = {
   __typename?: 'Folder';
+  /** The folder's app feature slug (folders 2.0) */
+  app_feature_slug?: Maybe<Scalars['String']['output']>;
   /** The various items in the folder, not including sub-folders and dashboards. */
   children: Array<Maybe<Board>>;
   /** The folder's color. */
@@ -5514,6 +5520,22 @@ export type GroupBySortSettingsInput = {
   type?: InputMaybe<Scalars['String']['input']>;
 };
 
+/** Input for a group of validation rules with a logical operator */
+export type GroupInput = {
+  /** The group configuration */
+  groups: Array<RuleConstraintInput>;
+  /** The group operator */
+  operator?: InputMaybe<GroupOperator>;
+};
+
+/** The operator for the group */
+export enum GroupOperator {
+  /** All conditions in the group must be met */
+  And = 'AND',
+  /** At least one condition in the group must be met */
+  Or = 'OR'
+}
+
 export type GroupValue = ColumnValue & {
   __typename?: 'GroupValue';
   /** The column that this value belongs to. */
@@ -5583,10 +5605,12 @@ export type HourValue = ColumnValue & {
 
 /** Input for creating image blocks */
 export type ImageBlockInput = {
+  /** The monday.com asset ID of the image */
+  asset_id?: InputMaybe<Scalars['ID']['input']>;
   /** The parent block id to append the created block under. */
   parent_block_id?: InputMaybe<Scalars['String']['input']>;
   /** The public URL of the image */
-  public_url: Scalars['String']['input'];
+  public_url?: InputMaybe<Scalars['String']['input']>;
   /** The width of the image */
   width?: InputMaybe<Scalars['Int']['input']>;
 };
@@ -6582,7 +6606,7 @@ export type MeetingsResponse = {
 export type Mention = {
   __typename?: 'Mention';
   /** The unique identifier of the mentioned entity */
-  id?: Maybe<Scalars['Int']['output']>;
+  id?: Maybe<Scalars['ID']['output']>;
   /** The type of the mentioned entity */
   type?: Maybe<DocsMention>;
 };
@@ -6590,7 +6614,7 @@ export type Mention = {
 /** Mention object for user or document references */
 export type MentionInput = {
   /** The ID of the mentioned user or document */
-  id: Scalars['Int']['input'];
+  id: Scalars['ID']['input'];
   /** The type of mention: user, doc, or board */
   type: DocsMention;
 };
@@ -6877,6 +6901,8 @@ export type Mutation = {
   create_team?: Maybe<Team>;
   create_timeline_item?: Maybe<TimelineItem>;
   create_update?: Maybe<Update>;
+  /** Create a validation rule */
+  create_validation_rule?: Maybe<ValidationRule>;
   /** Create a view */
   create_view?: Maybe<BoardView>;
   /** Create a new table view */
@@ -6955,6 +6981,8 @@ export type Mutation = {
   delete_update?: Maybe<Update>;
   /** Delete users from a workspace. */
   delete_users_from_workspace?: Maybe<Array<Maybe<User>>>;
+  /** Delete a validation rule */
+  delete_validation_rule?: Maybe<ValidationRule>;
   /** Delete an existing board subset/view */
   delete_view?: Maybe<BoardView>;
   /** Delete a new webhook. */
@@ -7122,6 +7150,8 @@ export type Mutation = {
   update_users_board_role?: Maybe<UpdateUsersBoardRoleResponse>;
   /** Updates the role of the specified users. */
   update_users_role?: Maybe<UpdateUsersRoleResult>;
+  /** Update a validation rule */
+  update_validation_rule?: Maybe<ValidationRule>;
   /** Update an existing view */
   update_view?: Maybe<BoardView>;
   /** Update an existing board table view */
@@ -7513,6 +7543,7 @@ export type MutationCreate_BoardArgs = {
   entity_model_id?: InputMaybe<Scalars['String']['input']>;
   folder_id?: InputMaybe<Scalars['ID']['input']>;
   item_nickname?: InputMaybe<ItemNicknameInput>;
+  prompt?: InputMaybe<Scalars['String']['input']>;
   template_id?: InputMaybe<Scalars['ID']['input']>;
   workspace_id?: InputMaybe<Scalars['ID']['input']>;
 };
@@ -7858,6 +7889,14 @@ export type MutationCreate_UpdateArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationCreate_Validation_RuleArgs = {
+  id: Scalars['ID']['input'];
+  rule: ValidationRuleInput;
+  type?: InputMaybe<ValidationsEntityType>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_ViewArgs = {
   board_id: Scalars['ID']['input'];
   context?: InputMaybe<ViewContext>;
@@ -8145,6 +8184,14 @@ export type MutationDelete_UpdateArgs = {
 export type MutationDelete_Users_From_WorkspaceArgs = {
   user_ids: Array<Scalars['ID']['input']>;
   workspace_id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationDelete_Validation_RuleArgs = {
+  id: Scalars['ID']['input'];
+  rule_id: Scalars['ID']['input'];
+  type?: InputMaybe<ValidationsEntityType>;
 };
 
 
@@ -8811,6 +8858,15 @@ export type MutationUpdate_Users_RoleArgs = {
   new_role?: InputMaybe<BaseRoleName>;
   role_id?: InputMaybe<Scalars['ID']['input']>;
   user_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUpdate_Validation_RuleArgs = {
+  id: Scalars['ID']['input'];
+  rule: ValidationRuleInput;
+  rule_id: Scalars['ID']['input'];
+  type?: InputMaybe<ValidationsEntityType>;
 };
 
 
@@ -11043,6 +11099,50 @@ export type RollbackSnapshotMutationResult = {
   status: SnapshotStatus;
 };
 
+/** Input for a single validation rule constraint with operator and definition */
+export type RuleConstraintInput = {
+  /** The column ID */
+  column_id: Scalars['String']['input'];
+  /** The compare attribute */
+  compare_attribute?: InputMaybe<Scalars['String']['input']>;
+  /** The compare values (array of strings or numbers) */
+  compare_value?: InputMaybe<Array<Scalars['CompareValue']['input']>>;
+  /** The validation operator */
+  operator: RuleOperator;
+};
+
+/** Available operators for validation rules */
+export enum RuleOperator {
+  /** Value matches any of the specified values */
+  AnyOf = 'ANY_OF',
+  /** Value is between two specified values */
+  Between = 'BETWEEN',
+  /** Value contains the specified text */
+  ContainsText = 'CONTAINS_TEXT',
+  /** Value equals the specified value */
+  Equals = 'EQUALS',
+  /** Value is greater than the specified value */
+  GreaterThan = 'GREATER_THAN',
+  /** Value is greater than or equal to the specified value */
+  GreaterThanOrEquals = 'GREATER_THAN_OR_EQUALS',
+  /** Value is empty or not set */
+  IsEmpty = 'IS_EMPTY',
+  /** Value is not empty */
+  IsNotEmpty = 'IS_NOT_EMPTY',
+  /** Value is lower than the specified value */
+  LowerThan = 'LOWER_THAN',
+  /** Value is lower than or equal to the specified value */
+  LowerThanOrEqual = 'LOWER_THAN_OR_EQUAL',
+  /** Value does not match any of the specified values */
+  NotAnyOf = 'NOT_ANY_OF',
+  /** Value does not contain the specified text */
+  NotContainsText = 'NOT_CONTAINS_TEXT',
+  /** Value does not equal the specified value */
+  NotEquals = 'NOT_EQUALS',
+  /** Value starts with the specified text */
+  StartsWithText = 'STARTS_WITH_TEXT'
+}
+
 /** Result of saving a workflow as a template */
 export type SaveWorkflowAsTemplateResult = {
   __typename?: 'SaveWorkflowAsTemplateResult';
@@ -13094,6 +13194,25 @@ export type ValidateProjectsAndPortfoliosResult = {
   projects?: Maybe<Scalars['JSON']['output']>;
 };
 
+/** A validation rule with then and optional if conditions */
+export type ValidationRule = {
+  __typename?: 'ValidationRule';
+  /** The unique identifier of the validation rule */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** The optional if condition group */
+  if?: Maybe<Scalars['JSON']['output']>;
+  /** The force condition group */
+  then?: Maybe<Scalars['JSON']['output']>;
+};
+
+/** Input for creating a validation rule with then and optional if conditions */
+export type ValidationRuleInput = {
+  /** Optional conditions that determine if the rule should be applied */
+  if?: InputMaybe<GroupInput>;
+  /** The conditions that must be enforced when the rule applies */
+  then: GroupInput;
+};
+
 export type Validations = {
   __typename?: 'Validations';
   /** Array of required column IDs */
@@ -13363,7 +13482,7 @@ export type Widget = {
   __typename?: 'Widget';
   /** Unique identifier of this widget. */
   id?: Maybe<Scalars['ID']['output']>;
-  /** The type of widget (CHART, NUMBER, BATTERY, CALENDAR, GANTT). */
+  /** The type of widget (CHART, NUMBER, BATTERY, CALENDAR, GANTT, MAP). */
   kind?: Maybe<ExternalWidget>;
   /** Widget label (UTF-8 chars). */
   name?: Maybe<Scalars['String']['output']>;
@@ -13574,7 +13693,7 @@ export type WorkflowIteratorInput = {
   /** List of all node IDs in the loop */
   node_ids: Array<Scalars['Int']['input']>;
   /** Node ID that executes after the iterator completes (null if no post-iterator node) */
-  post_iterator_node_id: Scalars['Int']['input'];
+  post_iterator_node_id?: InputMaybe<Scalars['ID']['input']>;
 };
 
 /** The context where a workflow template can be accessed */

@@ -28,11 +28,12 @@ import { GetGraphQLSchemaTool } from './get-graphql-schema-tool';
 import { GetTypeDetailsTool } from './get-type-details-tool';
 import { ListUsersAndTeamsTool } from './list-users-and-teams-tool/list-users-and-teams-tool';
 import { MoveItemToGroupTool } from './move-item-to-group-tool';
-import { ReadDocsTool } from './read-docs-tool';
+import { ReadDocsTool } from './read-docs-tool/read-docs-tool';
 import { WorkspaceInfoTool } from './workspace-info-tool/workspace-info-tool';
 import { ListWorkspaceTool } from './list-workspace-tool/list-workspace-tool';
 import { CreateDocTool } from './create-doc-tool/create-doc-tool';
 import { AddContentToDocTool } from './add-content-to-doc-tool/add-content-to-doc-tool';
+import { UpdateDocTool } from './update-doc-tool/update-doc-tool';
 import { CreateDashboardTool } from './dashboard-tools/create-dashboard-tool';
 import { AllWidgetsSchemaTool } from './dashboard-tools/all-widgets-schema-tool';
 import { CreateWidgetTool } from './dashboard-tools/create-widget-tool';
@@ -84,6 +85,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   ListWorkspaceTool,
   CreateDocTool,
   AddContentToDocTool,
+  UpdateDocTool,
   UpdateWorkspaceTool,
   UpdateFolderTool,
   CreateWorkspaceTool,
@@ -131,11 +133,12 @@ export * from './get-type-details-tool';
 export * from './list-users-and-teams-tool/list-users-and-teams-tool';
 export * from './manage-tools-tool';
 export * from './move-item-to-group-tool';
-export * from './read-docs-tool';
+export * from './read-docs-tool/read-docs-tool';
 export * from './workspace-info-tool/workspace-info-tool';
 export * from './list-workspace-tool/list-workspace-tool';
 export * from './create-doc-tool/create-doc-tool';
 export * from './add-content-to-doc-tool/add-content-to-doc-tool';
+export * from './update-doc-tool/update-doc-tool';
 export * from './get-board-activity/get-board-activity-tool';
 export * from './get-board-info/get-board-info-tool';
 export * from './update-workspace-tool/update-workspace-tool';
