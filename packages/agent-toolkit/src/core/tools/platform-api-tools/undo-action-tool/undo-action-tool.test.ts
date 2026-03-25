@@ -10,7 +10,7 @@ describe('Undo Action Tool', () => {
   });
 
   it('Successfully undoes an action via batch_undo mutation', async () => {
-    mocks.setResponse({ batch_undo: '{}' });
+    mocks.setResponse({ batch_undo: { success: true } });
     const tool = new UndoActionTool(mocks.mockApiClient, 'fake_token');
 
     const result = await tool.execute({
@@ -29,6 +29,7 @@ describe('Undo Action Tool', () => {
         boardId: '123',
         undoRecordId: 'uuid-abc-123',
       }),
+      expect.objectContaining({ versionOverride: 'dev' }),
     );
   });
 

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { batchUndoMutation } from './undo-action-tool.graphql';
+import { batchUndoMutationDev } from './undo-action-tool.graphql.dev';
 
 export const undoActionToolSchema = {
   boardId: z.number().describe('The id of the board where the action was performed'),
@@ -33,10 +33,10 @@ export class UndoActionTool extends BaseMondayApiTool<typeof undoActionToolSchem
   protected async executeInternal(
     input: ToolInputType<typeof undoActionToolSchema>,
   ): Promise<ToolOutputType<never>> {
-    await this.mondayApi.request(batchUndoMutation, {
+    await this.mondayApi.request(batchUndoMutationDev, {
       boardId: input.boardId.toString(),
       undoRecordId: input.undoRecordId,
-    });
+    }, { versionOverride: 'dev' });
 
     return {
       content: `Successfully undid action "${input.undoRecordId}" on board ${input.boardId}.`,
