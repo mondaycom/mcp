@@ -67,15 +67,7 @@ BLOCK CONTENT (delta_format): Array of insert ops. Last op MUST be {insert: {tex
 - Bold: [{insert: {text: "Hi"}, attributes: {bold: true}}, {insert: {text: "\\n"}}]
 - Supported attributes: bold, italic, underline, strike, code, link, color, background
 
-IMAGE WITH ASSET: To insert an image from a monday.com asset, use create_block operation with block_type "image" and asset_id (instead of public_url).
-
-ADDING CONTENT WITH ASSET IMAGES: add_markdown_content does NOT support asset-based images. When you need to add rich content that includes asset images (e.g. a brief, report, or article with images between sections), split the content into multiple sequential operations:
-1. add_markdown_content — for the text/headings before the first image
-2. create_block — for the image (block_type: "image", asset_id: <id>)
-3. add_markdown_content — for the text between images
-4. create_block — for the next image
-5. ...and so on, alternating text and image operations.
-All operations execute in order within a single update_doc call, so the document will have the correct content flow.`;
+IMAGE WITH ASSET: For asset-based images, use create_block with block_type "image" and asset_id (instead of public_url). add_markdown_content does NOT support asset images — for mixed content, alternate add_markdown_content (text) and create_block (image) operations in sequence.`;
   }
 
   getInputSchema(): typeof updateDocToolSchema {
