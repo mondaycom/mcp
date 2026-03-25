@@ -32,7 +32,7 @@ export const readDocsToolSchema = {
   ids: z
     .array(z.string())
     .optional()
-    .describe('Array of ID values matching the query type. Required when mode is "content".'),
+    .describe('Array of ID values. In content mode: matches the query type (ids/object_ids/workspace_ids). In version_history mode: provide the single document object_id here (e.g., ids: ["5001466606"]).'),
   limit: z
     .number()
     .optional()
@@ -54,17 +54,17 @@ export const readDocsToolSchema = {
     ),
 
   // --- version_history mode fields ---
-  doc_id: z
-    .string()
+  version_history_limit: z
+    .number()
     .optional()
     .describe(
-      'The document ID to get version history for. This is the id field from content mode (not the object_id). Required when mode is "version_history".',
+      'Maximum number of restoring points to return. Use this when the user asks for "last N changes". Only used in version_history mode.',
     ),
   since: z
     .string()
     .optional()
     .describe(
-      'ISO 8601 date string to filter version history from (e.g., "2026-03-15T00:00:00Z"). Defaults to 24 hours ago. Only used in version_history mode.',
+      'ISO 8601 date string to filter version history from (e.g., "2026-03-15T00:00:00Z"). If omitted, returns the full history. Only used in version_history mode.',
     ),
   until: z
     .string()
@@ -101,9 +101,14 @@ MODE: "content" (default) — Fetch documents with their full markdown content.
 - Set include_blocks: true to include block IDs, types, and positions in the response — required before calling update_doc.
 
 MODE: "version_history" — Fetch the edit history of a single document.
-- Requires: doc_id (the id field from content mode, not object_id)
-- Defaults to the last 24 hours. Use since/until to widen the range.
-- Set include_diff: true to see what content changed between versions (fetches up to ${MAX_DIFF_POINTS} diffs, may be slower).`;
+- Requires: ids with the document's object_id (use the object_id field from content mode results, NOT the id field).
+- The object_id is the numeric ID visible in the document URL.
+- Returns restoring points sorted newest-first. Use version_history_limit to cap results (e.g., "last 3 changes" → version_history_limit: 3).
+- Use since/until to filter by time range. If omitted, returns full history.
+- Set include_diff: true to see what content changed between versions (fetches up to ${MAX_DIFF_POINTS} diffs, may be slower).
+- Examples:
+  - { mode: "version_history", ids: ["5001466606"], version_history_limit: 3 }
+  - { mode: "version_history", ids: ["5001466606"], since: "2026-03-11T00:00:00Z", include_diff: true }`;
   }
 
   getInputSchema(): typeof readDocsToolSchema {
@@ -177,35 +182,41 @@ MODE: "version_history" — Fetch the edit history of a single document.
   }
 
   private async executeVersionHistory(input: ToolInputType<typeof readDocsToolSchema>): Promise<ToolOutputType<never>> {
-    const { doc_id, include_diff } = input;
+    const { include_diff, since, until, version_history_limit } = input;
+    const objectId = input.ids?.[0];
 
-    if (!doc_id) {
-      return { content: 'Error: doc_id is required when mode is "version_history".' };
+    if (!objectId) {
+      return { content: 'Error: ids is required when mode is "version_history". Provide the document object_id.' };
     }
 
-    const since = input.since ?? new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const until = input.until ?? new Date().toISOString();
-
     try {
-      const variables: GetDocVersionHistoryQueryVariables = { docId: doc_id, since, until };
+      const variables: GetDocVersionHistoryQueryVariables = { docId: objectId, since, until };
       const historyResult = await this.mondayApi.request<GetDocVersionHistoryQuery>(getDocVersionHistory, variables);
 
-      const restoringPoints = historyResult?.doc_version_history?.restoring_points;
+      let restoringPoints = historyResult?.doc_version_history?.restoring_points;
 
       if (!restoringPoints || restoringPoints.length === 0) {
         return {
-          content: `No version history found for document ${doc_id} in the specified time range (${since} to ${until}).`,
+          content: `No version history found for document ${objectId}${since ? ` from ${since}` : ''}.`,
         };
       }
 
       if (!include_diff) {
+        if (version_history_limit) {
+          restoringPoints = restoringPoints.slice(0, version_history_limit);
+        }
         return {
-          content: JSON.stringify({ doc_id, since, until, restoring_points: restoringPoints }, null, 2),
+          content: JSON.stringify({ doc_id: objectId, since, until, restoring_points: restoringPoints }, null, 2),
         };
       }
 
-      const pointsToFetch = restoringPoints.slice(0, MAX_DIFF_POINTS);
-      const truncated = restoringPoints.length > MAX_DIFF_POINTS;
+      // Cap at MAX_DIFF_POINTS to limit the number of diff API calls.
+      // Fetch one extra point beyond the user's limit so the oldest visible point
+      // has a "previous" snapshot to diff against — without it the last point
+      // always comes back with no diff.
+      const userLimit = Math.min(version_history_limit ?? MAX_DIFF_POINTS, MAX_DIFF_POINTS);
+      const pointsToFetch = restoringPoints.slice(0, userLimit + 1);
+      const truncated = restoringPoints.length > userLimit;
 
       const restoringPointsWithDiffs = await Promise.allSettled(
         pointsToFetch.map(async (point, i) => {
@@ -217,7 +228,7 @@ MODE: "version_history" — Fetch the edit history of a single document.
             return point;
           }
           const diffVariables: GetDocVersionDiffQueryVariables = {
-            docId: doc_id,
+            docId: objectId,
             date: point.date,
             prevDate: prevPoint.date,
           };
@@ -226,13 +237,16 @@ MODE: "version_history" — Fetch the edit history of a single document.
         }),
       ).then((results) => results.map((r, i) => (r.status === 'fulfilled' ? r.value : pointsToFetch[i])));
 
+      // Drop the extra context point — it was only needed to compute the last diff.
+      const finalPoints = restoringPointsWithDiffs.slice(0, userLimit);
+
       return {
         content: JSON.stringify(
           {
-            doc_id,
+            doc_id: objectId,
             since,
             until,
-            restoring_points: restoringPointsWithDiffs,
+            restoring_points: finalPoints,
             ...(truncated && { truncated: true, total_count: restoringPoints.length }),
           },
           null,
@@ -241,7 +255,7 @@ MODE: "version_history" — Fetch the edit history of a single document.
       };
     } catch (error) {
       return {
-        content: `Error fetching version history for document ${doc_id}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        content: `Error fetching version history for document ${objectId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
       };
     }
   }

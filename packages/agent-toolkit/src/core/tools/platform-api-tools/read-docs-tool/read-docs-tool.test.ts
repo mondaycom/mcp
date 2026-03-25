@@ -131,7 +131,7 @@ describe('ReadDocsTool', () => {
     it('should return restoring points for a doc', async () => {
       mocks.setResponse(mockHistoryResponse);
 
-      const result = await callToolByNameAsync(TOOL_NAME, { mode: 'version_history', doc_id: DOC_ID });
+      const result = await callToolByNameAsync(TOOL_NAME, { mode: "version_history", ids: [DOC_ID] });
 
       expect(result.doc_id).toBe(DOC_ID);
       expect(result.restoring_points).toHaveLength(2);
@@ -142,7 +142,7 @@ describe('ReadDocsTool', () => {
     it('should include publish type on restoring points', async () => {
       mocks.setResponse(mockHistoryResponse);
 
-      const result = await callToolByNameAsync(TOOL_NAME, { mode: 'version_history', doc_id: DOC_ID });
+      const result = await callToolByNameAsync(TOOL_NAME, { mode: "version_history", ids: [DOC_ID] });
 
       expect(result.restoring_points[1].type).toBe('publish');
     });
@@ -150,13 +150,13 @@ describe('ReadDocsTool', () => {
     it('should return error when doc_id is missing in version_history mode', async () => {
       const result = await callToolByNameRawAsync(TOOL_NAME, { mode: 'version_history' });
 
-      expect(result.content[0].text).toContain('doc_id is required');
+      expect(result.content[0].text).toContain('ids is required');
     });
 
     it('should return no history message when no restoring points found', async () => {
       mocks.setResponse({ doc_version_history: { doc_id: DOC_ID, restoring_points: [] } });
 
-      const result = await callToolByNameRawAsync(TOOL_NAME, { mode: 'version_history', doc_id: DOC_ID });
+      const result = await callToolByNameRawAsync(TOOL_NAME, { mode: "version_history", ids: [DOC_ID] });
 
       expect(result.content[0].text).toContain('No version history found');
       expect(result.content[0].text).toContain(DOC_ID);
@@ -167,7 +167,7 @@ describe('ReadDocsTool', () => {
 
       await callToolByNameAsync(TOOL_NAME, {
         mode: 'version_history',
-        doc_id: DOC_ID,
+        ids: [DOC_ID],
         since: '2026-03-15T00:00:00Z',
         until: '2026-03-18T23:59:59Z',
       });
@@ -178,10 +178,34 @@ describe('ReadDocsTool', () => {
       );
     });
 
+    it('should pass undefined since/until when not provided', async () => {
+      mocks.setResponse(mockHistoryResponse);
+
+      await callToolByNameAsync(TOOL_NAME, { mode: 'version_history', ids: [DOC_ID] });
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query GetDocVersionHistory'),
+        expect.objectContaining({ docId: DOC_ID, since: undefined, until: undefined }),
+      );
+    });
+
+    it('should limit restoring points when version_history_limit is set', async () => {
+      mocks.setResponse(mockHistoryResponse); // has 2 restoring points
+
+      const result = await callToolByNameAsync(TOOL_NAME, {
+        mode: 'version_history',
+        ids: [DOC_ID],
+        version_history_limit: 1,
+      });
+
+      expect(result.restoring_points).toHaveLength(1);
+      expect(result.restoring_points[0].date).toBe('2026-03-18T10:00:00Z'); // newest first
+    });
+
     it('should fetch diffs for consecutive restoring points', async () => {
       mocks.mockRequest.mockResolvedValueOnce(mockHistoryResponse).mockResolvedValueOnce(mockDiffResponse);
 
-      const result = await callToolByNameAsync(TOOL_NAME, { mode: 'version_history', doc_id: DOC_ID, include_diff: true });
+      const result = await callToolByNameAsync(TOOL_NAME, { mode: "version_history", ids: [DOC_ID], include_diff: true });
 
       expect(result.restoring_points[0].diff).toEqual(mockDiffBlocks);
     });
@@ -189,7 +213,7 @@ describe('ReadDocsTool', () => {
     it('should not attach diff to last restoring point', async () => {
       mocks.mockRequest.mockResolvedValueOnce(mockHistoryResponse).mockResolvedValueOnce(mockDiffResponse);
 
-      const result = await callToolByNameAsync(TOOL_NAME, { mode: 'version_history', doc_id: DOC_ID, include_diff: true });
+      const result = await callToolByNameAsync(TOOL_NAME, { mode: "version_history", ids: [DOC_ID], include_diff: true });
 
       const lastPoint = result.restoring_points[result.restoring_points.length - 1];
       expect(lastPoint.diff).toBeUndefined();
@@ -204,7 +228,7 @@ describe('ReadDocsTool', () => {
       mocks.mockRequest.mockResolvedValueOnce({ doc_version_history: { doc_id: DOC_ID, restoring_points: manyPoints } });
       for (let i = 0; i < 9; i++) mocks.mockRequest.mockResolvedValueOnce(mockDiffResponse);
 
-      const result = await callToolByNameAsync(TOOL_NAME, { mode: 'version_history', doc_id: DOC_ID, include_diff: true });
+      const result = await callToolByNameAsync(TOOL_NAME, { mode: "version_history", ids: [DOC_ID], include_diff: true });
 
       expect(result.restoring_points).toHaveLength(10);
       expect(result.truncated).toBe(true);
@@ -216,7 +240,7 @@ describe('ReadDocsTool', () => {
         .mockResolvedValueOnce(mockHistoryResponse)
         .mockRejectedValueOnce(new Error('Diff fetch failed'));
 
-      const result = await callToolByNameAsync(TOOL_NAME, { mode: 'version_history', doc_id: DOC_ID, include_diff: true });
+      const result = await callToolByNameAsync(TOOL_NAME, { mode: "version_history", ids: [DOC_ID], include_diff: true });
 
       expect(result.restoring_points).toHaveLength(2);
       expect(result.restoring_points[0].diff).toBeUndefined();
@@ -231,7 +255,7 @@ describe('ReadDocsTool', () => {
         doc_version_history: { doc_id: DOC_ID, restoring_points: pointsWithNullDate },
       });
 
-      const result = await callToolByNameAsync(TOOL_NAME, { mode: 'version_history', doc_id: DOC_ID, include_diff: true });
+      const result = await callToolByNameAsync(TOOL_NAME, { mode: "version_history", ids: [DOC_ID], include_diff: true });
 
       expect(result.restoring_points[0].diff).toBeUndefined();
       expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
@@ -240,7 +264,7 @@ describe('ReadDocsTool', () => {
     it('should return error content on API errors', async () => {
       mocks.setError('Network error');
 
-      const result = await callToolByNameRawAsync(TOOL_NAME, { mode: 'version_history', doc_id: DOC_ID });
+      const result = await callToolByNameRawAsync(TOOL_NAME, { mode: "version_history", ids: [DOC_ID] });
 
       expect(result.content[0].text).toContain('Error fetching version history');
       expect(result.content[0].text).toContain('Network error');
@@ -268,7 +292,7 @@ describe('ReadDocsTool', () => {
       expect(schema.mode).toBeDefined();
       expect(schema.type).toBeDefined();
       expect(schema.ids).toBeDefined();
-      expect(schema.doc_id).toBeDefined();
+      expect(schema.version_history_limit).toBeDefined();
       expect(schema.since).toBeDefined();
       expect(schema.until).toBeDefined();
       expect(schema.include_diff).toBeDefined();
@@ -280,7 +304,7 @@ describe('ReadDocsTool', () => {
 
       expect(description).toContain('content');
       expect(description).toContain('version_history');
-      expect(description).toContain('doc_id');
+      expect(description).toContain('object_id');
       expect(description).toContain('include_diff');
     });
   });
