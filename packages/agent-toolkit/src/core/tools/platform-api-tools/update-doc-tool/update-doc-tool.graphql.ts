@@ -81,7 +81,6 @@ export const createDocBlocks = gql`
           indentation
         }
         ... on ImageContent {
-          public_url
           width
           alignment
         }

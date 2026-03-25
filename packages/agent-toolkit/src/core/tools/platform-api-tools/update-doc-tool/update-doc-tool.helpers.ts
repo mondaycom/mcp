@@ -116,13 +116,16 @@ export function buildCreateBlockInput(block: CreateBlock): CreateBlockInput {
       return { divider_block: {} };
     case 'page_break':
       return { page_break_block: {} };
-    case 'image':
+    case 'image': {
+      if (block.asset_id == null && !block.public_url) {
+        throw new Error('image block requires either asset_id or public_url');
+      }
       return {
-        image_block: {
-          public_url: block.public_url,
-          width: block.width,
-        },
+        image_block: block.asset_id != null
+          ? { asset_id: String(block.asset_id), width: block.width }
+          : { public_url: block.public_url!, width: block.width },
       };
+    }
     case 'video':
       return {
         video_block: {

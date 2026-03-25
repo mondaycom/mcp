@@ -515,6 +515,118 @@ describe('UpdateDocTool', () => {
     expect(result.content[0].text).not.toContain('original block is gone');
   });
 
+  // ─── create_block with asset_id ──────────────────────────────────────────
+
+  it('fails when image block has neither public_url nor asset_id', async () => {
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [
+        {
+          operation_type: 'create_block',
+          block: { block_type: 'image' },
+        },
+      ],
+    });
+
+    expect(result.content[0].text).toContain('[FAILED] create_block');
+    expect(result.content[0].text).toContain('image block requires either asset_id or public_url');
+    expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+  });
+
+  it('creates image block with asset_id', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('mutation createDocBlocks')) {
+        return Promise.resolve({
+          create_doc_blocks: [
+            { id: 'img_block_1', type: 'image', parent_block_id: null, created_at: '2024-01-01' },
+          ],
+        });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [
+        {
+          operation_type: 'create_block',
+          block: { block_type: 'image', asset_id: 9999, width: 400 },
+        },
+      ],
+    });
+
+    expect(result.content[0].text).toContain('[OK] create_block');
+    expect(result.content[0].text).toContain('img_block_1');
+
+    const calls = mocks.getMockRequest().mock.calls;
+    const createCall = calls.find((c: any) => c[0].includes('mutation createDocBlocks'));
+    expect(createCall[1].blocksInput[0].image_block.asset_id).toBe('9999');
+    expect(createCall[1].blocksInput[0].image_block.width).toBe(400);
+    expect(createCall[1].blocksInput[0].image_block.public_url).toBeUndefined();
+  });
+
+  it('creates image block with asset_id passed as string', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('mutation createDocBlocks')) {
+        return Promise.resolve({
+          create_doc_blocks: [
+            { id: 'img_block_2', type: 'image', parent_block_id: null, created_at: '2024-01-01' },
+          ],
+        });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [
+        {
+          operation_type: 'create_block',
+          block: { block_type: 'image', asset_id: '12345' },
+        },
+      ],
+    });
+
+    expect(result.content[0].text).toContain('[OK] create_block');
+
+    const calls = mocks.getMockRequest().mock.calls;
+    const createCall = calls.find((c: any) => c[0].includes('mutation createDocBlocks'));
+    expect(createCall[1].blocksInput[0].image_block.asset_id).toBe('12345');
+  });
+
+  it('handles replace_block with asset_id image', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('mutation deleteDocBlock')) {
+        return Promise.resolve({ delete_doc_block: { id: 'old_img' } });
+      }
+      if (query.includes('mutation createDocBlocks')) {
+        return Promise.resolve({
+          create_doc_blocks: [{ id: 'new_img', type: 'image', parent_block_id: null, created_at: '2024-01-01' }],
+        });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [
+        {
+          operation_type: 'replace_block',
+          block_id: 'old_img',
+          block: { block_type: 'image', asset_id: 5555 },
+        },
+      ],
+    });
+
+    expect(result.content[0].text).toContain('[OK] replace_block');
+    expect(result.content[0].text).toContain('new_img');
+
+    const calls = mocks.getMockRequest().mock.calls;
+    const createCall = calls.find((c: any) => c[0].includes('mutation createDocBlocks'));
+    expect(createCall[1].blocksInput[0].image_block.asset_id).toBe('5555');
+    expect(createCall[1].blocksInput[0].image_block.public_url).toBeUndefined();
+  });
+
   // ─── Multiple operations & fail-fast ─────────────────────────────────────
 
   it('executes multiple operations in order and returns all results', async () => {

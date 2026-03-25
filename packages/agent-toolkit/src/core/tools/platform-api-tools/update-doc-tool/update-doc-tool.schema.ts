@@ -108,7 +108,17 @@ export const CreateBlockPageBreakSchema = z.object({ block_type: z.literal('page
 
 export const CreateBlockImageSchema = z.object({
   block_type: z.literal('image'),
-  public_url: z.string().url().describe('Publicly accessible image URL.'),
+  public_url: z
+    .string()
+    .url()
+    .optional()
+    .describe('Publicly accessible image URL. Provide either public_url or asset_id.'),
+  asset_id: z
+    .union([z.number().int(), z.string().regex(/^\d+$/).transform(Number)])
+    .optional()
+    .describe(
+      'monday.com asset ID for the image. The image block will reference the asset directly. Provide either public_url or asset_id.',
+    ),
   width: z.number().int().min(1).optional().describe('Width in pixels.'),
 });
 
@@ -260,6 +270,8 @@ Operation types:
 
 WHEN TO USE WHICH:
 - Adding new text sections → add_markdown_content
+- Adding asset-based images → create_block with block_type "image" and asset_id (add_markdown_content does NOT support asset images)
+- Mixed content with asset images → alternate add_markdown_content (for text) and create_block (for each image) in sequence
 - Editing existing text block → update_block
 - Changing an image URL → replace_block (image URL is immutable after creation)
 - Changing video URL → replace_block
