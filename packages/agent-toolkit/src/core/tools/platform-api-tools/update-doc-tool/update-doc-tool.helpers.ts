@@ -120,11 +120,11 @@ export function buildCreateBlockInput(block: CreateBlock): CreateBlockInput {
       if (block.asset_id == null && !block.public_url) {
         throw new Error('image block requires either asset_id or public_url');
       }
-      if (block.asset_id != null) {
-        // asset_id is not yet in the generated ImageBlockInput type, so we cast
-        return { image_block: { asset_id: String(block.asset_id), width: block.width } } as unknown as CreateBlockInput;
-      }
-      return { image_block: { public_url: block.public_url!, width: block.width } };
+      return {
+        image_block: block.asset_id != null
+          ? { asset_id: String(block.asset_id), width: block.width }
+          : { public_url: block.public_url!, width: block.width },
+      };
     }
     case 'video':
       return {

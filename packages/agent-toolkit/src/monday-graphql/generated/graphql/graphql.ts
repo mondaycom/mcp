@@ -506,6 +506,8 @@ export enum AppFeatureTypeE {
   Product = 'PRODUCT',
   /** PRODUCT_VIEW */
   ProductView = 'PRODUCT_VIEW',
+  /** SKILL */
+  Skill = 'SKILL',
   /** SOLUTION */
   Solution = 'SOLUTION',
   /** SUB_WORKFLOW */
@@ -1449,27 +1451,6 @@ export type BoardRelationValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
-/** Filters for board search. */
-export type BoardSearchFilterInput = {
-  /** Filter boards to specific workspace IDs. */
-  workspace_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
-};
-
-/** Contains the results of a board query. */
-export type BoardSearchResult = {
-  __typename?: 'BoardSearchResult';
-  /** Board data for the search results. */
-  data: IndexedBoard;
-  /** The type of entity. */
-  entity_type: SearchableEntity;
-  /** The unique identifier of the board. */
-  id: Scalars['ID']['output'];
-  /** Latest board data for the search results. Requires additional GraphQL federation calls. */
-  live_data: Board;
-  /** The relevance score of the search result. */
-  score: Scalars['Float']['output'];
-};
-
 /** The board subscriber kind. */
 export enum BoardSubscriberKind {
   /** Board owner. */
@@ -2306,18 +2287,6 @@ export type CreationLogValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
-/** Date range filter applied globally across all entity types in cross-entity search. */
-export type CrossEntityDateRangeInput = {
-  /** Filter results created after this date. */
-  created_after?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
-  /** Filter results created before this date. */
-  created_before?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
-  /** Filter results updated after this date. */
-  updated_after?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
-  /** Filter results updated before this date. */
-  updated_before?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
-};
-
 export type CustomActivity = {
   __typename?: 'CustomActivity';
   color?: Maybe<CustomActivityColor>;
@@ -2646,13 +2615,6 @@ export type DependencyValueInput = {
   removed_pulse?: InputMaybe<Array<UpdateDependencyColumnInput>>;
 };
 
-/** Deprecated board object. */
-export type DeprecatedBoard = {
-  __typename?: 'DeprecatedBoard';
-  /** Board ID. */
-  id: Scalars['ID']['output'];
-};
-
 /** A document block that was changed between two versions, including its content and what type of change occurred. */
 export type DiffBlock = {
   __typename?: 'DiffBlock';
@@ -2823,27 +2785,6 @@ export type DocRestoringPoint = {
   user_ids?: Maybe<Array<Scalars['ID']['output']>>;
 };
 
-/** Filters for document search. */
-export type DocSearchFilterInput = {
-  /** Filter documents to specific workspace IDs. */
-  workspace_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
-};
-
-/** Contains the results of a doc query. */
-export type DocSearchResult = {
-  __typename?: 'DocSearchResult';
-  /** Document data for the search results. */
-  data: IndexedDoc;
-  /** The type of entity. */
-  entity_type: SearchableEntity;
-  /** The unique identifier of the document. */
-  id: Scalars['ID']['output'];
-  /** Latest document data for the search results. Requires additional GraphQL federation calls. */
-  live_data: Document;
-  /** The relevance score of the search result. */
-  score: Scalars['Float']['output'];
-};
-
 export type DocValue = ColumnValue & {
   __typename?: 'DocValue';
   /** The column that this value belongs to. */
@@ -2890,7 +2831,7 @@ export type DocsColumnValue = {
   /** The ID of the column */
   column_id?: Maybe<Scalars['String']['output']>;
   /** The ID of the board item */
-  item_id?: Maybe<Scalars['Int']['output']>;
+  item_id?: Maybe<Scalars['ID']['output']>;
 };
 
 /** Column value reference for displaying board item column data */
@@ -2898,7 +2839,7 @@ export type DocsColumnValueInput = {
   /** The ID of the column */
   column_id: Scalars['String']['input'];
   /** The ID of the board item */
-  item_id: Scalars['Int']['input'];
+  item_id: Scalars['ID']['input'];
 };
 
 /** Type of mention - user, document, or board */
@@ -3151,23 +3092,6 @@ export type EmailValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
-/** Item's column values */
-export type EnrichedColumnValues = {
-  __typename?: 'EnrichedColumnValues';
-  /** List of user IDs allowed to view this column */
-  allowed_users: Array<Scalars['String']['output']>;
-  /** Column title. */
-  col_title?: Maybe<Scalars['String']['output']>;
-  /** Column type. */
-  col_type: Scalars['String']['output'];
-  /** Column ID. */
-  id: Scalars['ID']['output'];
-  /** Whether the column is publicly visible. */
-  is_public: Scalars['Boolean']['output'];
-  /** Column value. */
-  value: Scalars['String']['output'];
-};
-
 /** Input for enrolling multiple items to a single sequence */
 export type EnrollToSequenceInput = {
   /** The ID of the board containing the items */
@@ -3408,6 +3332,8 @@ export enum FirstDayOfTheWeek {
 /** A workspace folder containing boards, docs, sub folders, etc. */
 export type Folder = {
   __typename?: 'Folder';
+  /** The folder's app feature slug (folders 2.0) */
+  app_feature_slug?: Maybe<Scalars['String']['output']>;
   /** The various items in the folder, not including sub-folders and dashboards. */
   children: Array<Maybe<Board>>;
   /** The folder's color. */
@@ -4303,10 +4229,12 @@ export type HourValue = ColumnValue & {
 
 /** Input for creating image blocks */
 export type ImageBlockInput = {
+  /** The monday.com asset ID of the image */
+  asset_id?: InputMaybe<Scalars['ID']['input']>;
   /** The parent block id to append the created block under. */
   parent_block_id?: InputMaybe<Scalars['String']['input']>;
   /** The public URL of the image */
-  public_url: Scalars['String']['input'];
+  public_url?: InputMaybe<Scalars['String']['input']>;
   /** The width of the image */
   width?: InputMaybe<Scalars['Int']['input']>;
 };
@@ -4333,96 +4261,6 @@ export type ImportDocFromHtmlResult = {
   error?: Maybe<Scalars['String']['output']>;
   /** True if HTML was successfully converted and imported as a new document */
   success: Scalars['Boolean']['output'];
-};
-
-/** Board data present in the search index. */
-export type IndexedBoard = {
-  __typename?: 'IndexedBoard';
-  /** Board kind classification. */
-  board_kind: Scalars['String']['output'];
-  /** ISO timestamp when the board was created. */
-  created_at: Scalars['String']['output'];
-  /** Board description. */
-  description?: Maybe<Scalars['String']['output']>;
-  /** Board ID. */
-  id: Scalars['ID']['output'];
-  /** Board kind (e.g., public, private). */
-  kind: Scalars['String']['output'];
-  /** Board name. */
-  name: Scalars['String']['output'];
-  /** ID of the board owner. */
-  owner_id: Scalars['ID']['output'];
-  /** Board state flag. */
-  state: Scalars['Int']['output'];
-  /** Board type. */
-  type: Scalars['String']['output'];
-  /** ISO timestamp when the board was last updated. */
-  updated_at: Scalars['String']['output'];
-  /** URL to view this board. */
-  url: Scalars['String']['output'];
-  /** ID of the workspace containing this board. */
-  workspace_id?: Maybe<Scalars['ID']['output']>;
-};
-
-/** Document data present in the search index. */
-export type IndexedDoc = {
-  __typename?: 'IndexedDoc';
-  /** Document content. */
-  content: Scalars['String']['output'];
-  /** ISO timestamp when the document was created. */
-  created_at: Scalars['String']['output'];
-  /** Document ID. */
-  id: Scalars['ID']['output'];
-  /** Document name. */
-  name: Scalars['String']['output'];
-  /** ISO timestamp when the document was last updated. */
-  updated_at: Scalars['String']['output'];
-};
-
-/** Item data present in the search index. */
-export type IndexedItem = {
-  __typename?: 'IndexedItem';
-  /**
-   * Board containing this item.
-   * @deprecated Use board_id field instead or live_data if you need more board data.
-   */
-  board: DeprecatedBoard;
-  /** ID of the board containing this item. */
-  board_id: Scalars['ID']['output'];
-  /** Board kind (e.g., public, private). */
-  board_kind: Scalars['String']['output'];
-  /** Name of the board containing this item. */
-  board_name: Scalars['String']['output'];
-  /** The item's column values. */
-  column_values: Array<EnrichedColumnValues>;
-  /** ISO timestamp when the item was created. */
-  created_at: Scalars['String']['output'];
-  /** Item description. */
-  description?: Maybe<Scalars['String']['output']>;
-  /** ID of the group containing this item. */
-  group_id: Scalars['ID']['output'];
-  /** Name of the group containing this item. */
-  group_name: Scalars['String']['output'];
-  /** Item ID. */
-  id: Scalars['ID']['output'];
-  /** Item kind classification. */
-  kind: Scalars['String']['output'];
-  /** Item name. */
-  name: Scalars['String']['output'];
-  /** ID of the item owner. */
-  owner_id: Scalars['ID']['output'];
-  /** Item state flag. */
-  state: Scalars['Int']['output'];
-  /** List of tags associated with the item. */
-  tags: Array<Scalars['String']['output']>;
-  /** Item type (e.g., Project). */
-  type: Scalars['String']['output'];
-  /** ISO timestamp when the item was last updated. */
-  updated_at: Scalars['String']['output'];
-  /** URL to view this item. */
-  url: Scalars['String']['output'];
-  /** ID of the workspace containing this item. */
-  workspace_id?: Maybe<Scalars['ID']['output']>;
 };
 
 /** Content inserted in delta operations */
@@ -4612,29 +4450,6 @@ export type ItemNicknameInput = {
   preset_type?: InputMaybe<Scalars['String']['input']>;
   /** The singular form of the item nickname */
   singular?: InputMaybe<Scalars['String']['input']>;
-};
-
-/** Filters for item search. */
-export type ItemSearchFilterInput = {
-  /** Filter items to specific board IDs. */
-  board_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
-  /** Filter items to specific workspace IDs. */
-  workspace_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
-};
-
-/** Contains the results of an item query. */
-export type ItemSearchResult = {
-  __typename?: 'ItemSearchResult';
-  /** Item data for the search results. */
-  data: IndexedItem;
-  /** The type of entity. */
-  entity_type: SearchableEntity;
-  /** The unique identifier of the item. */
-  id: Scalars['ID']['output'];
-  /** Latest item data for the search results. Requires additional GraphQL federation calls. */
-  live_data: Item;
-  /** The relevance score of the search result. */
-  score: Scalars['Float']['output'];
 };
 
 /** Sort direction */
@@ -5180,7 +4995,7 @@ export type MeetingsResponse = {
 export type Mention = {
   __typename?: 'Mention';
   /** The unique identifier of the mentioned entity */
-  id?: Maybe<Scalars['Int']['output']>;
+  id?: Maybe<Scalars['ID']['output']>;
   /** The type of the mentioned entity */
   type?: Maybe<DocsMention>;
 };
@@ -5188,7 +5003,7 @@ export type Mention = {
 /** Mention object for user or document references */
 export type MentionInput = {
   /** The ID of the mentioned user or document */
-  id: Scalars['Int']['input'];
+  id: Scalars['ID']['input'];
   /** The type of mention: user, doc, or board */
   type: DocsMention;
 };
@@ -5910,6 +5725,7 @@ export type MutationCreate_BoardArgs = {
   empty?: InputMaybe<Scalars['Boolean']['input']>;
   folder_id?: InputMaybe<Scalars['ID']['input']>;
   item_nickname?: InputMaybe<ItemNicknameInput>;
+  prompt?: InputMaybe<Scalars['String']['input']>;
   template_id?: InputMaybe<Scalars['ID']['input']>;
   workspace_id?: InputMaybe<Scalars['ID']['input']>;
 };
@@ -7795,8 +7611,6 @@ export type Query = {
   platform_api?: Maybe<PlatformApi>;
   /** Get a collection of replies filtered by board IDs and date range. */
   replies?: Maybe<Array<Reply>>;
-  /** Search across multiple entity types (items, boards, documents). */
-  search?: Maybe<Array<SearchResult>>;
   /** Get a collection of monday dev sprints */
   sprints?: Maybe<Array<Sprint>>;
   /** Get a collection of tags. */
@@ -8243,14 +8057,6 @@ export type QueryRepliesArgs = {
 
 
 /** Root query type for the Dependencies service */
-export type QuerySearchArgs = {
-  filters: SearchFiltersInput;
-  limit: Scalars['Int']['input'];
-  query: Scalars['String']['input'];
-};
-
-
-/** Root query type for the Dependencies service */
 export type QuerySprintsArgs = {
   ids: Array<Scalars['ID']['input']>;
 };
@@ -8513,37 +8319,6 @@ export type ResponseForm = {
 export enum ScopeType {
   AccountNewUserDefaults = 'AccountNewUserDefaults',
   User = 'User'
-}
-
-/** Tagged-union input: set exactly one field to indicate the entity type and its filters. */
-export type SearchEntityFilterInput = {
-  /** Include boards in the search. */
-  boards?: InputMaybe<BoardSearchFilterInput>;
-  /** Include documents in the search. */
-  docs?: InputMaybe<DocSearchFilterInput>;
-  /** Include items in the search with optional item-specific filters. */
-  items?: InputMaybe<ItemSearchFilterInput>;
-};
-
-/** Top-level search filters specifying which entities to search. */
-export type SearchFiltersInput = {
-  /** Global date range filter applied to all entity types. */
-  date_range?: InputMaybe<CrossEntityDateRangeInput>;
-  /** List of entity filters. Each entry is a tagged-union: set one field (items, boards, docs) to include that entity type. */
-  entities: Array<SearchEntityFilterInput>;
-};
-
-/** Union type representing different searchable entity types returned from search. */
-export type SearchResult = BoardSearchResult | DocSearchResult | ItemSearchResult;
-
-/** Supported entity types to search for. */
-export enum SearchableEntity {
-  /** Board entity type for searching boards. */
-  Board = 'BOARD',
-  /** Document entity type for searching documents. */
-  Document = 'DOCUMENT',
-  /** Item entity type for searching board items. */
-  Item = 'ITEM'
 }
 
 /** A sequence that can be used to automate email outreach */
@@ -10157,7 +9932,7 @@ export type Widget = {
   __typename?: 'Widget';
   /** Unique identifier of this widget. */
   id?: Maybe<Scalars['ID']['output']>;
-  /** The type of widget (CHART, NUMBER, BATTERY, CALENDAR, GANTT). */
+  /** The type of widget (CHART, NUMBER, BATTERY, CALENDAR, GANTT, MAP). */
   kind?: Maybe<ExternalWidget>;
   /** Widget label (UTF-8 chars). */
   name?: Maybe<Scalars['String']['output']>;
@@ -10925,6 +10700,19 @@ export type UpdateOverviewHierarchyMutationVariables = Exact<{
 
 export type UpdateOverviewHierarchyMutation = { __typename?: 'Mutation', update_overview_hierarchy?: { __typename?: 'UpdateOverviewHierarchy', success: boolean, message: string, overview?: { __typename?: 'Overview', id: string } | null } | null };
 
+export type ReadDocsQueryVariables = Exact<{
+  ids?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+  object_ids?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<DocsOrderBy>;
+  page?: InputMaybe<Scalars['Int']['input']>;
+  workspace_ids?: InputMaybe<Array<InputMaybe<Scalars['ID']['input']>> | InputMaybe<Scalars['ID']['input']>>;
+  includeBlocks?: InputMaybe<Scalars['Boolean']['input']>;
+}>;
+
+
+export type ReadDocsQuery = { __typename?: 'Query', docs?: Array<{ __typename?: 'Document', id: string, object_id: string, name: string, doc_kind: BoardKind, created_at?: any | null, settings?: any | null, url?: string | null, relative_url?: string | null, workspace_id?: string | null, doc_folder_id?: string | null, created_by?: { __typename?: 'User', id: string, name: string } | null, workspace?: { __typename?: 'Workspace', id?: string | null, name: string } | null, blocks?: Array<{ __typename?: 'DocumentBlock', id: string, type?: string | null, parent_block_id?: string | null, position?: number | null, content?: any | null } | null> | null } | null> | null };
+
 export type GetDocVersionHistoryQueryVariables = Exact<{
   docId: Scalars['ID']['input'];
   since?: InputMaybe<Scalars['String']['input']>;
@@ -10980,6 +10768,13 @@ export type UpdateAssetsOnItemMutationVariables = Exact<{
 
 export type UpdateAssetsOnItemMutation = { __typename?: 'Mutation', update_assets_on_item?: { __typename?: 'Item', id: string, name: string } | null };
 
+export type GetDocIdByObjectIdQueryVariables = Exact<{
+  objectId?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+}>;
+
+
+export type GetDocIdByObjectIdQuery = { __typename?: 'Query', docs?: Array<{ __typename?: 'Document', id: string } | null> | null };
+
 export type UpdateDocBlockMutationVariables = Exact<{
   blockId: Scalars['String']['input'];
   content: Scalars['JSON']['input'];
@@ -11002,7 +10797,7 @@ export type CreateDocBlocksMutationVariables = Exact<{
 }>;
 
 
-export type CreateDocBlocksMutation = { __typename?: 'Mutation', create_doc_blocks?: Array<{ __typename?: 'DocumentBlockV2', id: string, type?: string | null, parent_block_id?: string | null, created_at?: string | null, content: Array<{ __typename?: 'DividerContent', alignment?: BlockAlignment | null, direction?: BlockDirection | null } | { __typename?: 'ImageContent', public_url: string, width?: number | null, alignment?: BlockAlignment | null } | { __typename?: 'LayoutContent', cells?: Array<{ __typename?: 'Cell', block_id: string }> | null } | { __typename?: 'ListBlockContent', alignment?: BlockAlignment | null, direction?: BlockDirection | null, indentation?: number | null, delta_format: Array<{ __typename?: 'Operation', insert?: { __typename?: 'InsertOps', text?: string | null } | null, attributes?: { __typename?: 'Attributes', bold?: boolean | null, italic?: boolean | null } | null }> } | { __typename?: 'NoticeBoxContent', theme: NoticeBoxTheme, alignment?: BlockAlignment | null, direction?: BlockDirection | null } | { __typename?: 'PageBreakContent' } | { __typename?: 'TableContent', cells?: Array<{ __typename?: 'TableRow', row_cells: Array<{ __typename?: 'Cell', block_id: string }> }> | null } | { __typename?: 'TextBlockContent', alignment?: BlockAlignment | null, direction?: BlockDirection | null, delta_format: Array<{ __typename?: 'Operation', insert?: { __typename?: 'InsertOps', text?: string | null } | null, attributes?: { __typename?: 'Attributes', bold?: boolean | null, italic?: boolean | null } | null }> } | { __typename?: 'VideoContent', url: string, width?: number | null, alignment?: BlockAlignment | null } | null> }> | null };
+export type CreateDocBlocksMutation = { __typename?: 'Mutation', create_doc_blocks?: Array<{ __typename?: 'DocumentBlockV2', id: string, type?: string | null, parent_block_id?: string | null, created_at?: string | null, content: Array<{ __typename?: 'DividerContent', alignment?: BlockAlignment | null, direction?: BlockDirection | null } | { __typename?: 'ImageContent', width?: number | null, alignment?: BlockAlignment | null } | { __typename?: 'LayoutContent', cells?: Array<{ __typename?: 'Cell', block_id: string }> | null } | { __typename?: 'ListBlockContent', alignment?: BlockAlignment | null, direction?: BlockDirection | null, indentation?: number | null, delta_format: Array<{ __typename?: 'Operation', insert?: { __typename?: 'InsertOps', text?: string | null } | null, attributes?: { __typename?: 'Attributes', bold?: boolean | null, italic?: boolean | null } | null }> } | { __typename?: 'NoticeBoxContent', theme: NoticeBoxTheme, alignment?: BlockAlignment | null, direction?: BlockDirection | null } | { __typename?: 'PageBreakContent' } | { __typename?: 'TableContent', cells?: Array<{ __typename?: 'TableRow', row_cells: Array<{ __typename?: 'Cell', block_id: string }> }> | null } | { __typename?: 'TextBlockContent', alignment?: BlockAlignment | null, direction?: BlockDirection | null, delta_format: Array<{ __typename?: 'Operation', insert?: { __typename?: 'InsertOps', text?: string | null } | null, attributes?: { __typename?: 'Attributes', bold?: boolean | null, italic?: boolean | null } | null }> } | { __typename?: 'VideoContent', url: string, width?: number | null, alignment?: BlockAlignment | null } | null> }> | null };
 
 export type UpdateFolderMutationVariables = Exact<{
   folderId: Scalars['ID']['input'];
@@ -11337,18 +11132,6 @@ export type FetchCustomActivityQueryVariables = Exact<{ [key: string]: never; }>
 
 export type FetchCustomActivityQuery = { __typename?: 'Query', custom_activity?: Array<{ __typename?: 'CustomActivity', color?: CustomActivityColor | null, icon_id?: CustomActivityIcon | null, id?: string | null, name?: string | null, type?: string | null }> | null };
 
-export type ReadDocsQueryVariables = Exact<{
-  ids?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
-  object_ids?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  order_by?: InputMaybe<DocsOrderBy>;
-  page?: InputMaybe<Scalars['Int']['input']>;
-  workspace_ids?: InputMaybe<Array<InputMaybe<Scalars['ID']['input']>> | InputMaybe<Scalars['ID']['input']>>;
-}>;
-
-
-export type ReadDocsQuery = { __typename?: 'Query', docs?: Array<{ __typename?: 'Document', id: string, object_id: string, name: string, doc_kind: BoardKind, created_at?: any | null, settings?: any | null, url?: string | null, relative_url?: string | null, workspace_id?: string | null, doc_folder_id?: string | null, created_by?: { __typename?: 'User', id: string, name: string } | null, workspace?: { __typename?: 'Workspace', id?: string | null, name: string } | null, blocks?: Array<{ __typename?: 'DocumentBlock', id: string, type?: string | null, parent_block_id?: string | null, position?: number | null, content?: any | null } | null> | null } | null> | null };
-
 export type ExportMarkdownFromDocQueryVariables = Exact<{
   docId: Scalars['ID']['input'];
   blockIds?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
@@ -11425,15 +11208,17 @@ export const GetCurrentUserDocument = {"kind":"Document","definitions":[{"kind":
 export const ListWorkspacesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"listWorkspaces"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"page"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"membershipKind"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"WorkspaceMembershipKind"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"workspaces"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"page"},"value":{"kind":"Variable","name":{"kind":"Name","value":"page"}}},{"kind":"Argument","name":{"kind":"Name","value":"membership_kind"},"value":{"kind":"Variable","name":{"kind":"Name","value":"membershipKind"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}}]}}]} as unknown as DocumentNode<ListWorkspacesQuery, ListWorkspacesQueryVariables>;
 export const UpdateBoardHierarchyDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"updateBoardHierarchy"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"attributes"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateBoardHierarchyAttributesInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"update_board_hierarchy"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"board_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}},{"kind":"Argument","name":{"kind":"Name","value":"attributes"},"value":{"kind":"Variable","name":{"kind":"Name","value":"attributes"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"board"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]}}]} as unknown as DocumentNode<UpdateBoardHierarchyMutation, UpdateBoardHierarchyMutationVariables>;
 export const UpdateOverviewHierarchyDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"updateOverviewHierarchy"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"overviewId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"attributes"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateOverviewHierarchyAttributesInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"update_overview_hierarchy"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"overview_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"overviewId"}}},{"kind":"Argument","name":{"kind":"Name","value":"attributes"},"value":{"kind":"Variable","name":{"kind":"Name","value":"attributes"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"overview"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]}}]} as unknown as DocumentNode<UpdateOverviewHierarchyMutation, UpdateOverviewHierarchyMutationVariables>;
+export const ReadDocsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"readDocs"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"ids"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"object_ids"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"order_by"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"DocsOrderBy"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"page"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspace_ids"}},"type":{"kind":"ListType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"includeBlocks"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}},"defaultValue":{"kind":"BooleanValue","value":false}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"docs"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"ids"}}},{"kind":"Argument","name":{"kind":"Name","value":"object_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"object_ids"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"order_by"},"value":{"kind":"Variable","name":{"kind":"Name","value":"order_by"}}},{"kind":"Argument","name":{"kind":"Name","value":"page"},"value":{"kind":"Variable","name":{"kind":"Name","value":"page"}}},{"kind":"Argument","name":{"kind":"Name","value":"workspace_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspace_ids"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"object_id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"doc_kind"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"created_by"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"settings"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"relative_url"}},{"kind":"Field","name":{"kind":"Name","value":"workspace"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"workspace_id"}},{"kind":"Field","name":{"kind":"Name","value":"doc_folder_id"}},{"kind":"Field","name":{"kind":"Name","value":"blocks"},"directives":[{"kind":"Directive","name":{"kind":"Name","value":"include"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"if"},"value":{"kind":"Variable","name":{"kind":"Name","value":"includeBlocks"}}}]}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"parent_block_id"}},{"kind":"Field","name":{"kind":"Name","value":"position"}},{"kind":"Field","name":{"kind":"Name","value":"content"}}]}}]}}]}}]} as unknown as DocumentNode<ReadDocsQuery, ReadDocsQueryVariables>;
 export const GetDocVersionHistoryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetDocVersionHistory"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"docId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"since"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"until"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"doc_version_history"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"doc_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"docId"}}},{"kind":"Argument","name":{"kind":"Name","value":"since"},"value":{"kind":"Variable","name":{"kind":"Name","value":"since"}}},{"kind":"Argument","name":{"kind":"Name","value":"until"},"value":{"kind":"Variable","name":{"kind":"Name","value":"until"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"doc_id"}},{"kind":"Field","name":{"kind":"Name","value":"restoring_points"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"date"}},{"kind":"Field","name":{"kind":"Name","value":"user_ids"}},{"kind":"Field","name":{"kind":"Name","value":"type"}}]}}]}}]}}]} as unknown as DocumentNode<GetDocVersionHistoryQuery, GetDocVersionHistoryQueryVariables>;
 export const GetDocVersionDiffDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetDocVersionDiff"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"docId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"date"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"prevDate"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"doc_version_diff"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"doc_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"docId"}}},{"kind":"Argument","name":{"kind":"Name","value":"date"},"value":{"kind":"Variable","name":{"kind":"Name","value":"date"}}},{"kind":"Argument","name":{"kind":"Name","value":"prev_date"},"value":{"kind":"Variable","name":{"kind":"Name","value":"prevDate"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"doc_id"}},{"kind":"Field","name":{"kind":"Name","value":"blocks"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"summary"}},{"kind":"Field","name":{"kind":"Name","value":"changes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"added"}},{"kind":"Field","name":{"kind":"Name","value":"deleted"}},{"kind":"Field","name":{"kind":"Name","value":"changed"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetDocVersionDiffQuery, GetDocVersionDiffQueryVariables>;
 export const GetBoardsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetBoards"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"page"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspace_ids"}},"type":{"kind":"ListType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"boards"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"page"},"value":{"kind":"Variable","name":{"kind":"Name","value":"page"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"workspace_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspace_ids"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"url"}}]}}]}}]} as unknown as DocumentNode<GetBoardsQuery, GetBoardsQueryVariables>;
 export const GetDocsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetDocs"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"page"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspace_ids"}},"type":{"kind":"ListType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"docs"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"page"},"value":{"kind":"Variable","name":{"kind":"Name","value":"page"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"workspace_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspace_ids"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"url"}}]}}]}}]} as unknown as DocumentNode<GetDocsQuery, GetDocsQueryVariables>;
 export const GetFoldersDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetFolders"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"page"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspace_ids"}},"type":{"kind":"ListType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"folders"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"page"},"value":{"kind":"Variable","name":{"kind":"Name","value":"page"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"workspace_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspace_ids"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]} as unknown as DocumentNode<GetFoldersQuery, GetFoldersQueryVariables>;
 export const UpdateAssetsOnItemDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"updateAssetsOnItem"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"itemId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"files"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"FileInput"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"update_assets_on_item"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"board_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}},{"kind":"Argument","name":{"kind":"Name","value":"item_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"itemId"}}},{"kind":"Argument","name":{"kind":"Name","value":"column_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}}},{"kind":"Argument","name":{"kind":"Name","value":"files"},"value":{"kind":"Variable","name":{"kind":"Name","value":"files"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]} as unknown as DocumentNode<UpdateAssetsOnItemMutation, UpdateAssetsOnItemMutationVariables>;
+export const GetDocIdByObjectIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getDocIdByObjectId"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"objectId"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"docs"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"object_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"objectId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<GetDocIdByObjectIdQuery, GetDocIdByObjectIdQueryVariables>;
 export const UpdateDocBlockDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"updateDocBlock"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"blockId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"content"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"JSON"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"update_doc_block"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"block_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"blockId"}}},{"kind":"Argument","name":{"kind":"Name","value":"content"},"value":{"kind":"Variable","name":{"kind":"Name","value":"content"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}}]}}]}}]} as unknown as DocumentNode<UpdateDocBlockMutation, UpdateDocBlockMutationVariables>;
 export const DeleteDocBlockDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"deleteDocBlock"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"blockId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"delete_doc_block"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"block_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"blockId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<DeleteDocBlockMutation, DeleteDocBlockMutationVariables>;
-export const CreateDocBlocksDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"createDocBlocks"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"docId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"afterBlockId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"blocksInput"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateBlockInput"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"create_doc_blocks"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"docId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"docId"}}},{"kind":"Argument","name":{"kind":"Name","value":"afterBlockId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"afterBlockId"}}},{"kind":"Argument","name":{"kind":"Name","value":"blocksInput"},"value":{"kind":"Variable","name":{"kind":"Name","value":"blocksInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"parent_block_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"content"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"TextBlockContent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"delta_format"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"insert"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"text"}}]}},{"kind":"Field","name":{"kind":"Name","value":"attributes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"bold"}},{"kind":"Field","name":{"kind":"Name","value":"italic"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"alignment"}},{"kind":"Field","name":{"kind":"Name","value":"direction"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ListBlockContent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"delta_format"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"insert"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"text"}}]}},{"kind":"Field","name":{"kind":"Name","value":"attributes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"bold"}},{"kind":"Field","name":{"kind":"Name","value":"italic"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"alignment"}},{"kind":"Field","name":{"kind":"Name","value":"direction"}},{"kind":"Field","name":{"kind":"Name","value":"indentation"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ImageContent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"public_url"}},{"kind":"Field","name":{"kind":"Name","value":"width"}},{"kind":"Field","name":{"kind":"Name","value":"alignment"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"VideoContent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"width"}},{"kind":"Field","name":{"kind":"Name","value":"alignment"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"TableContent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"cells"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"row_cells"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"block_id"}}]}}]}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"LayoutContent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"cells"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"block_id"}}]}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"NoticeBoxContent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"theme"}},{"kind":"Field","name":{"kind":"Name","value":"alignment"}},{"kind":"Field","name":{"kind":"Name","value":"direction"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"DividerContent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"alignment"}},{"kind":"Field","name":{"kind":"Name","value":"direction"}}]}}]}}]}}]}}]} as unknown as DocumentNode<CreateDocBlocksMutation, CreateDocBlocksMutationVariables>;
+export const CreateDocBlocksDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"createDocBlocks"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"docId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"afterBlockId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"blocksInput"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateBlockInput"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"create_doc_blocks"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"docId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"docId"}}},{"kind":"Argument","name":{"kind":"Name","value":"afterBlockId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"afterBlockId"}}},{"kind":"Argument","name":{"kind":"Name","value":"blocksInput"},"value":{"kind":"Variable","name":{"kind":"Name","value":"blocksInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"parent_block_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"content"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"TextBlockContent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"delta_format"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"insert"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"text"}}]}},{"kind":"Field","name":{"kind":"Name","value":"attributes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"bold"}},{"kind":"Field","name":{"kind":"Name","value":"italic"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"alignment"}},{"kind":"Field","name":{"kind":"Name","value":"direction"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ListBlockContent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"delta_format"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"insert"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"text"}}]}},{"kind":"Field","name":{"kind":"Name","value":"attributes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"bold"}},{"kind":"Field","name":{"kind":"Name","value":"italic"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"alignment"}},{"kind":"Field","name":{"kind":"Name","value":"direction"}},{"kind":"Field","name":{"kind":"Name","value":"indentation"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ImageContent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"width"}},{"kind":"Field","name":{"kind":"Name","value":"alignment"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"VideoContent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"width"}},{"kind":"Field","name":{"kind":"Name","value":"alignment"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"TableContent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"cells"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"row_cells"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"block_id"}}]}}]}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"LayoutContent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"cells"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"block_id"}}]}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"NoticeBoxContent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"theme"}},{"kind":"Field","name":{"kind":"Name","value":"alignment"}},{"kind":"Field","name":{"kind":"Name","value":"direction"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"DividerContent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"alignment"}},{"kind":"Field","name":{"kind":"Name","value":"direction"}}]}}]}}]}}]}}]} as unknown as DocumentNode<CreateDocBlocksMutation, CreateDocBlocksMutationVariables>;
 export const UpdateFolderDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"updateFolder"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"folderId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"name"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"color"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"FolderColor"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"fontWeight"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"FolderFontWeight"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"customIcon"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"FolderCustomIcon"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"parentFolderId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"accountProductId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"position"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"DynamicPosition"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"update_folder"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"folder_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"folderId"}}},{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"name"}}},{"kind":"Argument","name":{"kind":"Name","value":"color"},"value":{"kind":"Variable","name":{"kind":"Name","value":"color"}}},{"kind":"Argument","name":{"kind":"Name","value":"font_weight"},"value":{"kind":"Variable","name":{"kind":"Name","value":"fontWeight"}}},{"kind":"Argument","name":{"kind":"Name","value":"custom_icon"},"value":{"kind":"Variable","name":{"kind":"Name","value":"customIcon"}}},{"kind":"Argument","name":{"kind":"Name","value":"parent_folder_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"parentFolderId"}}},{"kind":"Argument","name":{"kind":"Name","value":"workspace_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}}},{"kind":"Argument","name":{"kind":"Name","value":"account_product_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"accountProductId"}}},{"kind":"Argument","name":{"kind":"Name","value":"position"},"value":{"kind":"Variable","name":{"kind":"Name","value":"position"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]} as unknown as DocumentNode<UpdateFolderMutation, UpdateFolderMutationVariables>;
 export const UpdateWorkspaceDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"updateWorkspace"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"attributes"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateWorkspaceAttributesInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"update_workspace"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"attributes"},"value":{"kind":"Variable","name":{"kind":"Name","value":"attributes"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]} as unknown as DocumentNode<UpdateWorkspaceMutation, UpdateWorkspaceMutationVariables>;
 export const GetFavoriteDetailsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getFavoriteDetails"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"folderIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"dashboardIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"boards"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"folders"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"folderIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"workspaces"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","alias":{"kind":"Name","value":"dashboards"},"name":{"kind":"Name","value":"boards"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"dashboardIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]} as unknown as DocumentNode<GetFavoriteDetailsQuery, GetFavoriteDetailsQueryVariables>;
@@ -11471,6 +11256,5 @@ export const GetTypeDetailsDocument = {"kind":"Document","definitions":[{"kind":
 export const CreateCustomActivityDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"createCustomActivity"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"color"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CustomActivityColor"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"icon_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CustomActivityIcon"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"name"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"create_custom_activity"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"color"},"value":{"kind":"Variable","name":{"kind":"Name","value":"color"}}},{"kind":"Argument","name":{"kind":"Name","value":"icon_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"icon_id"}}},{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"name"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"color"}},{"kind":"Field","name":{"kind":"Name","value":"icon_id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]} as unknown as DocumentNode<CreateCustomActivityMutation, CreateCustomActivityMutationVariables>;
 export const CreateTimelineItemDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"createTimelineItem"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"item_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"custom_activity_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"title"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"summary"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"content"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"timestamp"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ISO8601DateTime"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"time_range"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"TimelineItemTimeRange"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"location"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"phone"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"url"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"create_timeline_item"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"item_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"item_id"}}},{"kind":"Argument","name":{"kind":"Name","value":"custom_activity_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"custom_activity_id"}}},{"kind":"Argument","name":{"kind":"Name","value":"title"},"value":{"kind":"Variable","name":{"kind":"Name","value":"title"}}},{"kind":"Argument","name":{"kind":"Name","value":"summary"},"value":{"kind":"Variable","name":{"kind":"Name","value":"summary"}}},{"kind":"Argument","name":{"kind":"Name","value":"content"},"value":{"kind":"Variable","name":{"kind":"Name","value":"content"}}},{"kind":"Argument","name":{"kind":"Name","value":"timestamp"},"value":{"kind":"Variable","name":{"kind":"Name","value":"timestamp"}}},{"kind":"Argument","name":{"kind":"Name","value":"time_range"},"value":{"kind":"Variable","name":{"kind":"Name","value":"time_range"}}},{"kind":"Argument","name":{"kind":"Name","value":"location"},"value":{"kind":"Variable","name":{"kind":"Name","value":"location"}}},{"kind":"Argument","name":{"kind":"Name","value":"phone"},"value":{"kind":"Variable","name":{"kind":"Name","value":"phone"}}},{"kind":"Argument","name":{"kind":"Name","value":"url"},"value":{"kind":"Variable","name":{"kind":"Name","value":"url"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"custom_activity_id"}},{"kind":"Field","name":{"kind":"Name","value":"type"}}]}}]}}]} as unknown as DocumentNode<CreateTimelineItemMutation, CreateTimelineItemMutationVariables>;
 export const FetchCustomActivityDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"fetchCustomActivity"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"custom_activity"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"color"}},{"kind":"Field","name":{"kind":"Name","value":"icon_id"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"type"}}]}}]}}]} as unknown as DocumentNode<FetchCustomActivityQuery, FetchCustomActivityQueryVariables>;
-export const ReadDocsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"readDocs"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"ids"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"object_ids"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"order_by"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"DocsOrderBy"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"page"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspace_ids"}},"type":{"kind":"ListType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"docs"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"ids"}}},{"kind":"Argument","name":{"kind":"Name","value":"object_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"object_ids"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"order_by"},"value":{"kind":"Variable","name":{"kind":"Name","value":"order_by"}}},{"kind":"Argument","name":{"kind":"Name","value":"page"},"value":{"kind":"Variable","name":{"kind":"Name","value":"page"}}},{"kind":"Argument","name":{"kind":"Name","value":"workspace_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspace_ids"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"object_id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"doc_kind"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"created_by"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"settings"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"relative_url"}},{"kind":"Field","name":{"kind":"Name","value":"workspace"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"workspace_id"}},{"kind":"Field","name":{"kind":"Name","value":"doc_folder_id"}},{"kind":"Field","name":{"kind":"Name","value":"blocks"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"parent_block_id"}},{"kind":"Field","name":{"kind":"Name","value":"position"}},{"kind":"Field","name":{"kind":"Name","value":"content"}}]}}]}}]}}]} as unknown as DocumentNode<ReadDocsQuery, ReadDocsQueryVariables>;
 export const ExportMarkdownFromDocDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"exportMarkdownFromDoc"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"docId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"blockIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"export_markdown_from_doc"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"docId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"docId"}}},{"kind":"Argument","name":{"kind":"Name","value":"blockIds"},"value":{"kind":"Variable","name":{"kind":"Name","value":"blockIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"markdown"}},{"kind":"Field","name":{"kind":"Name","value":"error"}}]}}]}}]} as unknown as DocumentNode<ExportMarkdownFromDocQuery, ExportMarkdownFromDocQueryVariables>;
 export const GetWorkspaceInfoDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getWorkspaceInfo"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspace_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"workspaces"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"ListValue","values":[{"kind":"Variable","name":{"kind":"Name","value":"workspace_id"}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"is_default_workspace"}},{"kind":"Field","name":{"kind":"Name","value":"owners_subscribers"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"email"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"boards"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"workspace_ids"},"value":{"kind":"ListValue","values":[{"kind":"Variable","name":{"kind":"Name","value":"workspace_id"}}]}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"100"}},{"kind":"Argument","name":{"kind":"Name","value":"order_by"},"value":{"kind":"EnumValue","value":"used_at"}},{"kind":"Argument","name":{"kind":"Name","value":"state"},"value":{"kind":"EnumValue","value":"active"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"board_folder_id"}}]}},{"kind":"Field","name":{"kind":"Name","value":"docs"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"workspace_ids"},"value":{"kind":"ListValue","values":[{"kind":"Variable","name":{"kind":"Name","value":"workspace_id"}}]}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"100"}},{"kind":"Argument","name":{"kind":"Name","value":"order_by"},"value":{"kind":"EnumValue","value":"used_at"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"doc_folder_id"}}]}},{"kind":"Field","name":{"kind":"Name","value":"folders"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"workspace_ids"},"value":{"kind":"ListValue","values":[{"kind":"Variable","name":{"kind":"Name","value":"workspace_id"}}]}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"100"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]} as unknown as DocumentNode<GetWorkspaceInfoQuery, GetWorkspaceInfoQueryVariables>;
