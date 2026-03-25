@@ -65,7 +65,9 @@ GETTING BLOCK IDs: Call read_docs with include_blocks: true — returns id, type
 BLOCK CONTENT (delta_format): Array of insert ops. Last op MUST be {insert: {text: "\\n"}}.
 - Plain: [{insert: {text: "Hello"}}, {insert: {text: "\\n"}}]
 - Bold: [{insert: {text: "Hi"}, attributes: {bold: true}}, {insert: {text: "\\n"}}]
-- Supported attributes: bold, italic, underline, strike, code, link, color, background
+- Mention user/doc/board: [{insert: {text: "Hey "}}, {insert: {mention: {id: 12345, type: "USER"}}}, {insert: {text: "\\n"}}] — type is USER, DOC, or BOARD; id is numeric (user IDs from list_users_and_teams)
+- Inline column value: [{insert: {column_value: {item_id: 111, column_id: "status"}}}, {insert: {text: "\\n"}}]
+- Supported attributes: bold, italic, underline, strike, code, link, color, background (not applicable to mention/column_value ops)
 
 IMAGE WITH ASSET: For asset-based images, use create_block with block_type "image" and asset_id (instead of public_url). add_markdown_content does NOT support asset images — for mixed content, alternate add_markdown_content (text) and create_block (image) operations in sequence.`;
   }

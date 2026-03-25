@@ -15,12 +15,32 @@ const AttributesSchema = z
   })
   .optional();
 
+const MentionInsertSchema = z.object({
+  mention: z
+    .object({
+      id: z.union([z.string(), z.number()]).describe('User, doc, or board ID. Get user IDs from list_users_and_teams.'),
+      type: z.enum(['USER', 'DOC', 'BOARD']).default('USER').describe('Mention type. USER is most common.'),
+    })
+    .describe('Mention blot — tags a user, doc, or board inline. Do not set attributes on mention ops.'),
+});
+
+const ColumnValueInsertSchema = z.object({
+  column_value: z
+    .object({
+      item_id: z.union([z.string(), z.number()]).describe('The board item ID.'),
+      column_id: z.string().describe('The column ID (e.g. "status", "date4"). Get column IDs from get_board_schema.'),
+    })
+    .describe('Column value blot — embeds a live board column value inline in the doc.'),
+});
+
 export const DeltaOperationSchema = z.object({
   insert: z
-    .object({ text: z.string() })
-    .describe('Text content to insert. The last operation in the array must insert "\\n".'),
+    .union([z.object({ text: z.string() }), MentionInsertSchema, ColumnValueInsertSchema])
+    .describe(
+      'Content to insert. Use {text: "..."} for plain text, {mention: {id, type}} to tag a user/doc/board, or {column_value: {item_id, column_id}} to embed a live column value. The last operation in the array must be {text: "\\n"}.',
+    ),
   attributes: AttributesSchema.describe(
-    'Optional formatting: bold, italic, underline, strike, code, link, color, background.',
+    'Optional formatting: bold, italic, underline, strike, code, link, color, background. Not applicable to mention or column_value ops.',
   ),
 });
 
