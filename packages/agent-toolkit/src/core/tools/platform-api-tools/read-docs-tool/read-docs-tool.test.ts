@@ -271,6 +271,165 @@ describe('ReadDocsTool', () => {
     });
   });
 
+  // ─── include_comments ──────────────────────────────────────────────────────
+
+  describe('include_comments', () => {
+    const mockCommentsResponse = {
+      boards: [
+        {
+          items_page: {
+            items: [
+              {
+                id: 'item_1',
+                name: 'Doc Section 1',
+                updates: [
+                  {
+                    id: 'update_1',
+                    text_body: 'Great section!',
+                    body: '<p>Great section!</p>',
+                    created_at: '2026-03-25T10:00:00Z',
+                    creator: { id: '1', name: 'Alice' },
+                    replies: [
+                      {
+                        id: 'reply_1',
+                        text_body: 'Thanks!',
+                        body: '<p>Thanks!</p>',
+                        created_at: '2026-03-25T11:00:00Z',
+                        creator: { id: '2', name: 'Bob' },
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                id: 'item_2',
+                name: 'Doc Section 2',
+                updates: [],
+              },
+            ],
+          },
+        },
+      ],
+    };
+
+    it('should include comments when include_comments is true', async () => {
+      mocks.mockRequest
+        .mockResolvedValueOnce(mockDocsResponse)
+        .mockResolvedValueOnce(mockMarkdownResponse)
+        .mockResolvedValueOnce(mockCommentsResponse);
+
+      const result = await callToolByNameAsync(TOOL_NAME, {
+        type: 'ids',
+        ids: [DOC_ID],
+        include_comments: true,
+      });
+
+      expect(result.data[0].comments).toBeDefined();
+      expect(result.data[0].comments).toHaveLength(1);
+      expect(result.data[0].comments[0].id).toBe('update_1');
+      expect(result.data[0].comments[0].text_body).toBe('Great section!');
+      expect(result.data[0].comments[0].item_id).toBe('item_1');
+      expect(result.data[0].comments[0].item_name).toBe('Doc Section 1');
+      expect(result.data[0].comments[0].creator).toEqual({ id: '1', name: 'Alice' });
+    });
+
+    it('should include replies in comments', async () => {
+      mocks.mockRequest
+        .mockResolvedValueOnce(mockDocsResponse)
+        .mockResolvedValueOnce(mockMarkdownResponse)
+        .mockResolvedValueOnce(mockCommentsResponse);
+
+      const result = await callToolByNameAsync(TOOL_NAME, {
+        type: 'ids',
+        ids: [DOC_ID],
+        include_comments: true,
+      });
+
+      const replies = result.data[0].comments[0].replies;
+      expect(replies).toHaveLength(1);
+      expect(replies[0].id).toBe('reply_1');
+      expect(replies[0].text_body).toBe('Thanks!');
+      expect(replies[0].creator).toEqual({ id: '2', name: 'Bob' });
+    });
+
+    it('should not include comments when include_comments is false', async () => {
+      mocks.mockRequest
+        .mockResolvedValueOnce(mockDocsResponse)
+        .mockResolvedValueOnce(mockMarkdownResponse);
+
+      const result = await callToolByNameAsync(TOOL_NAME, {
+        type: 'ids',
+        ids: [DOC_ID],
+        include_comments: false,
+      });
+
+      expect(result.data[0].comments).toBeUndefined();
+    });
+
+    it('should not include comments by default', async () => {
+      mocks.mockRequest
+        .mockResolvedValueOnce(mockDocsResponse)
+        .mockResolvedValueOnce(mockMarkdownResponse);
+
+      const result = await callToolByNameAsync(TOOL_NAME, {
+        type: 'ids',
+        ids: [DOC_ID],
+      });
+
+      expect(result.data[0].comments).toBeUndefined();
+    });
+
+    it('should pass comments_limit to the GraphQL query', async () => {
+      mocks.mockRequest
+        .mockResolvedValueOnce(mockDocsResponse)
+        .mockResolvedValueOnce(mockMarkdownResponse)
+        .mockResolvedValueOnce(mockCommentsResponse);
+
+      await callToolByNameAsync(TOOL_NAME, {
+        type: 'ids',
+        ids: [DOC_ID],
+        include_comments: true,
+        comments_limit: 10,
+      });
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('GetDocComments'),
+        expect.objectContaining({ boardId: 'obj_456', updatesLimit: 10 }),
+      );
+    });
+
+    it('should skip items with no updates', async () => {
+      mocks.mockRequest
+        .mockResolvedValueOnce(mockDocsResponse)
+        .mockResolvedValueOnce(mockMarkdownResponse)
+        .mockResolvedValueOnce(mockCommentsResponse);
+
+      const result = await callToolByNameAsync(TOOL_NAME, {
+        type: 'ids',
+        ids: [DOC_ID],
+        include_comments: true,
+      });
+
+      // item_2 has empty updates, should not produce any comments
+      expect(result.data[0].comments).toHaveLength(1);
+    });
+
+    it('should handle comment fetch errors gracefully', async () => {
+      mocks.mockRequest
+        .mockResolvedValueOnce(mockDocsResponse)
+        .mockResolvedValueOnce(mockMarkdownResponse)
+        .mockRejectedValueOnce(new Error('Comments API error'));
+
+      const result = await callToolByNameAsync(TOOL_NAME, {
+        type: 'ids',
+        ids: [DOC_ID],
+        include_comments: true,
+      });
+
+      expect(result.data[0].comments).toContain('Error fetching comments');
+    });
+  });
+
   // ─── schema validation ──────────────────────────────────────────────────────
 
   describe('schema validation', () => {
@@ -296,6 +455,8 @@ describe('ReadDocsTool', () => {
       expect(schema.since).toBeDefined();
       expect(schema.until).toBeDefined();
       expect(schema.include_diff).toBeDefined();
+      expect(schema.include_comments).toBeDefined();
+      expect(schema.comments_limit).toBeDefined();
     });
 
     it('should have correct description', () => {
@@ -306,6 +467,7 @@ describe('ReadDocsTool', () => {
       expect(description).toContain('version_history');
       expect(description).toContain('object_id');
       expect(description).toContain('include_diff');
+      expect(description).toContain('include_comments');
     });
   });
 });
