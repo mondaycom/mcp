@@ -8,8 +8,6 @@ import {
 } from './update-doc-tool.graphql';
 
 import {
-  UpdateDocBlockMutation,
-  UpdateDocBlockMutationVariables,
   DeleteDocBlockMutation,
   DeleteDocBlockMutationVariables,
   CreateDocBlocksMutation,
@@ -181,8 +179,12 @@ BLOCK CONTENT (delta_format): Array of insert ops. Last op MUST be {insert: {tex
 
   private async executeUpdateBlock(blockId: string, content: UpdateBlockContent): Promise<string> {
     const rawContent = buildUpdateBlockContent(content);
-    const variables: UpdateDocBlockMutationVariables = { blockId, content: JSON.stringify(rawContent) };
-    const res = await this.mondayApi.request<UpdateDocBlockMutation>(updateDocBlock, variables);
+    // docs-api update_doc_block takes content as String! and applies resolveAttributionEntityId
+    // so the correct agent appFeatureReferenceId is forwarded to the documents service.
+    const res = await this.mondayApi.request<{ update_doc_block: unknown }>(updateDocBlock, {
+      blockId,
+      content: JSON.stringify(rawContent),
+    });
 
     if (!res?.update_doc_block) {
       throw new Error('No response from update_doc_block');
