@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { ReadDocsQuery, ReadDocsQueryVariables, DocsOrderBy } from 'src/monday-graphql/generated/graphql/graphql';
 import { exportMarkdownFromDoc } from 'src/monday-graphql/queries.graphql';
-import { readDocs } from './read-docs-tool.graphql';
+import { readDocs, getDocComments } from './read-docs-tool.graphql';
 import {
   GetDocVersionHistoryQuery,
   GetDocVersionHistoryQueryVariables,
@@ -11,6 +11,49 @@ import {
 import { getDocVersionHistory, getDocVersionDiff } from './read-docs-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+
+// Types for the GetDocComments query (manually defined as codegen has a pre-existing conflict)
+type GetDocCommentsQueryVariables = {
+  boardId: string;
+  itemsLimit?: number;
+  updatesLimit?: number;
+};
+
+type DocCommentCreator = {
+  id: string;
+  name: string;
+};
+
+type DocCommentReply = {
+  id: string;
+  text_body?: string | null;
+  body: string;
+  created_at?: string | null;
+  creator?: DocCommentCreator | null;
+};
+
+type DocCommentUpdate = {
+  id: string;
+  text_body?: string | null;
+  body: string;
+  created_at?: string | null;
+  creator?: DocCommentCreator | null;
+  replies?: DocCommentReply[] | null;
+};
+
+type DocCommentItem = {
+  id: string;
+  name: string;
+  updates?: DocCommentUpdate[] | null;
+};
+
+type GetDocCommentsQuery = {
+  boards?: Array<{
+    items_page?: {
+      items?: DocCommentItem[] | null;
+    } | null;
+  }> | null;
+};
 
 const QueryByIdEnum = z.enum(['ids', 'object_ids', 'workspace_ids']);
 
@@ -51,6 +94,20 @@ export const readDocsToolSchema = {
     .default(false)
     .describe(
       'If true, includes the blocks array (block IDs, types, positions, content) in the response. Required when you plan to call update_doc. Defaults to false to reduce response size. Only used in content mode.',
+    ),
+  include_comments: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe(
+      'If true, fetches all comments and replies on the document. Comments are stored at the item level within the doc backing board. Defaults to false. Only used in content mode.',
+    ),
+  comments_limit: z
+    .number()
+    .optional()
+    .default(50)
+    .describe(
+      'Maximum number of comments (updates) to fetch per item when include_comments is true. Defaults to 50. Only used in content mode.',
     ),
 
   // --- version_history mode fields ---
@@ -99,6 +156,7 @@ MODE: "content" (default) — Fetch documents with their full markdown content.
 - Supports pagination via page/limit. Check has_more_pages in response.
 - If type "ids" returns no results, automatically retries with object_ids.
 - Set include_blocks: true to include block IDs, types, and positions in the response — required before calling update_doc.
+- Set include_comments: true to fetch all comments and replies on the document. Use comments_limit to control how many comments per item (default 50).
 
 MODE: "version_history" — Fetch the edit history of a single document.
 - Requires: ids with the document's object_id (use the object_id field from content mode results, NOT the id field).
@@ -175,7 +233,10 @@ MODE: "version_history" — Fetch the edit history of a single document.
         return { content: `No documents found matching the specified criteria${pageInfo}.` };
       }
 
-      return this.enrichDocsWithMarkdown(res.docs, variables, includeBlocks);
+      const includeComments = input.include_comments ?? false;
+      const commentsLimit = input.comments_limit ?? 50;
+
+      return this.enrichDocsWithMarkdown(res.docs, variables, includeBlocks, includeComments, commentsLimit);
     } catch (error) {
       return { content: `Error reading documents: ${error instanceof Error ? error.message : 'Unknown error occurred'}` };
     }
@@ -260,10 +321,71 @@ MODE: "version_history" — Fetch the edit history of a single document.
     }
   }
 
+  private async fetchDocComments(objectId: string, commentsLimit: number) {
+    try {
+      const variables: GetDocCommentsQueryVariables = {
+        boardId: objectId,
+        itemsLimit: 100,
+        updatesLimit: commentsLimit,
+      };
+
+      const res = await this.mondayApi.request<GetDocCommentsQuery>(getDocComments, variables);
+      const items = res.boards?.[0]?.items_page?.items;
+
+      if (!items) return [];
+
+      const comments: Array<{
+        id: string;
+        text_body?: string | null;
+        body: string;
+        created_at?: string | null;
+        creator: { id: string; name: string } | null;
+        item_id: string;
+        item_name: string;
+        replies: Array<{
+          id: string;
+          text_body?: string | null;
+          body: string;
+          created_at?: string | null;
+          creator: { id: string; name: string } | null;
+        }>;
+      }> = [];
+
+      for (const item of items) {
+        if (!item.updates || item.updates.length === 0) continue;
+
+        for (const update of item.updates) {
+          comments.push({
+            id: update.id,
+            text_body: update.text_body,
+            body: update.body,
+            created_at: update.created_at,
+            creator: update.creator ? { id: update.creator.id, name: update.creator.name } : null,
+            item_id: item.id,
+            item_name: item.name,
+            replies: (update.replies ?? []).map((reply) => ({
+              id: reply.id,
+              text_body: reply.text_body,
+              body: reply.body,
+              created_at: reply.created_at,
+              creator: reply.creator ? { id: reply.creator.id, name: reply.creator.name } : null,
+            })),
+          });
+        }
+      }
+
+      return comments;
+    } catch (error) {
+      return `Error fetching comments: ${error instanceof Error ? error.message : 'Unknown error'}`;
+    }
+  }
+
   private async enrichDocsWithMarkdown(
     docs: NonNullable<ReadDocsQuery['docs']>,
     variables: ReadDocsQueryVariables,
     includeBlocks: boolean,
+    includeComments: boolean = false,
+    commentsLimit: number = 50,
   ): Promise<ToolOutputType<never>> {
     type ExportMarkdownFromDocMutationVariables = {
       docId: string;
@@ -298,6 +420,11 @@ MODE: "version_history" — Fetch the edit history of a single document.
             blocksAsMarkdown = `Error getting markdown: ${error instanceof Error ? error.message : 'Unknown error'}`;
           }
 
+          let comments: Awaited<ReturnType<ReadDocsTool['fetchDocComments']>> | undefined;
+          if (includeComments && doc.object_id) {
+            comments = await this.fetchDocComments(doc.object_id, commentsLimit);
+          }
+
           return {
             id: doc.id,
             object_id: doc.object_id,
@@ -323,6 +450,7 @@ MODE: "version_history" — Fetch the edit history of a single document.
                 })),
             }),
             blocks_as_markdown: blocksAsMarkdown,
+            ...(includeComments && { comments }),
           };
         }),
     );
