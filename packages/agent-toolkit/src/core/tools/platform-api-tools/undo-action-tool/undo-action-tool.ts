@@ -18,7 +18,7 @@ export class UndoActionTool extends BaseMondayApiTool<typeof undoActionToolSchem
   annotations = createMondayApiAnnotations({
     title: 'Undo Action',
     readOnlyHint: false,
-    destructiveHint: false,
+    destructiveHint: true,
     idempotentHint: false,
   });
 
