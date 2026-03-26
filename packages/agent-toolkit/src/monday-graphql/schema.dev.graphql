@@ -1366,7 +1366,22 @@ type Query {
 }
 
 """Root mutation type for the Dependencies service"""
+type BatchUndoResult {
+  """Whether the undo operation completed successfully"""
+  success: Boolean!
+}
+
 type Mutation {
+  """Undo a batch action on a board"""
+  batch_undo(
+    """The board's unique identifier"""
+    board_id: ID!
+    """The undo record identifier"""
+    undo_record_id: ID!
+    """Whether to prevent undo settings from being created"""
+    prevent_undo_settings: Boolean
+  ): BatchUndoResult
+
   """Namespace for all vibe-related mutations"""
   vibe: VibeMutations
 
