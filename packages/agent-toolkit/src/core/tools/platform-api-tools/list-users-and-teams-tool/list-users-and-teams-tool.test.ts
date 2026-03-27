@@ -218,6 +218,28 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
       expect(result).toBe('No users or teams found with the specified filters.');
     });
 
+    it('should treat users arrays with only null entries as empty', () => {
+      const mockData = {
+        users: [null],
+        teams: null,
+      } as unknown as FormattedResponse;
+
+      const result = formatUsersAndTeams(mockData);
+
+      expect(result).toBe('No users or teams found with the specified filters.');
+    });
+
+    it('should treat teams arrays with only null entries as empty', () => {
+      const mockData = {
+        users: null,
+        teams: [null],
+      } as unknown as FormattedResponse;
+
+      const result = formatUsersAndTeams(mockData);
+
+      expect(result).toBe('No users or teams found with the specified filters.');
+    });
+
     it('should handle multiple users and teams', () => {
       const mockData: FormattedResponse = {
         users: [
