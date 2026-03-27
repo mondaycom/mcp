@@ -65,9 +65,11 @@ export class GetBoardActivityTool extends BaseMondayApiTool<typeof getBoardActiv
 
     const res = await this.mondayApi.request<GetBoardAllActivityQuery>(getBoardAllActivity, variables);
 
-    const activityLogs = res.boards?.[0]?.activity_logs;
+    const activityLogs = res.boards?.[0]?.activity_logs?.filter(
+      (log): log is NonNullable<typeof log> => log !== null && log !== undefined,
+    ) || [];
 
-    if (!activityLogs || activityLogs.length === 0) {
+    if (activityLogs.length === 0) {
       return {
         content: `No activity found for board ${input.boardId} in the specified time range (${fromDate} to ${toDate}).`,
       };
@@ -82,9 +84,7 @@ export class GetBoardActivityTool extends BaseMondayApiTool<typeof getBoardActiv
         board_id: input.boardId,
         board_name: board?.name,
         board_url: board?.url,
-        data: activityLogs
-          .filter((log): log is NonNullable<typeof log> => log !== null && log !== undefined)
-          .map((log) => ({
+        data: activityLogs.map((log) => ({
             created_at: log.created_at,
             event: log.event,
             entity: log.entity,
