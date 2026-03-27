@@ -98,7 +98,9 @@ export class BoardInsightsTool extends BaseMondayApiTool<typeof boardInsightsToo
 
     const res = await this.mondayApi.request<AggregateBoardInsightsQuery>(boardInsights, variables);
 
-    const rows = (res.aggregate?.results ?? []).map((resultSet) => {
+    const rows = (res.aggregate?.results ?? [])
+      .filter((resultSet): resultSet is NonNullable<typeof resultSet> => resultSet !== null)
+      .map((resultSet) => {
       const row: Record<string, string | number | boolean | null> = {};
       (resultSet.entries ?? []).forEach((entry) => {
         const alias = entry.alias ?? '';
