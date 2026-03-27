@@ -1,7 +1,41 @@
+import { MondayAgentToolkit } from 'src/mcp/toolkit';
+import { callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
 import { organizeWorkspaceInfoHierarchy } from './helpers';
 import { WorkspaceKind, State } from '../../../../monday-graphql/generated/graphql/graphql';
 
 describe('WorkspaceInfoTool', () => {
+  let mocks: ReturnType<typeof createMockApiClient>;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mocks = createMockApiClient();
+    jest.spyOn(MondayAgentToolkit.prototype as any, 'createApiClient').mockReturnValue(mocks.mockApiClient);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  describe('executeInternal', () => {
+    it('should return a no-workspace message when the API returns only null workspaces', async () => {
+      mocks.setResponses([
+        {
+          workspaces: [null],
+          boards: [],
+          docs: [],
+          folders: [],
+        },
+      ]);
+
+      const result = await callToolByNameRawAsync('workspace_info', {
+        workspace_id: 123,
+      });
+
+      expect(result.content[0].text).toBe('No workspace found with ID 123');
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('organizeWorkspaceInfoHierarchy', () => {
     it('should organize workspace data with proper hierarchy', () => {
       const rawResponse = {
