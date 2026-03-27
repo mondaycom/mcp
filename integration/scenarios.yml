@@ -1,0 +1,13 @@
+schema_version: "1.0"
+
+target:
+  command: "node"
+  args: ["packages/monday-api-mcp/dist/index.js"]
+  env:
+    MONDAY_TOKEN: "test-token"
+
+scenarios:
+  list_tools:
+    description: "Capture all tool schemas, descriptions, and annotations"
+    actions:
+      - list_tools
