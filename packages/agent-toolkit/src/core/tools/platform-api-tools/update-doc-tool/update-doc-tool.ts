@@ -225,8 +225,8 @@ IMAGE WITH ASSET: For asset-based images, use create_block with block_type "imag
     };
     const res = await this.mondayApi.request<CreateDocBlocksMutation>(createDocBlocks, variables);
 
-    const created = res?.create_doc_blocks;
-    if (!created || created.length === 0) {
+    const created = res?.create_doc_blocks?.filter((block): block is NonNullable<typeof block> => block != null) || [];
+    if (created.length === 0) {
       throw new Error('No blocks returned from create_doc_blocks');
     }
     const createdIds = created.map((b) => b.id).join(', ');
