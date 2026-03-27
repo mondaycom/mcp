@@ -28,6 +28,7 @@ const mockMarkdownResponse = {
 
 const mockDocsResponse = { docs: [mockDoc] };
 const mockEmptyDocsResponse = { docs: [] };
+const mockNullDocsResponse = { docs: [null] };
 
 const mockRestoringPoints = [
   { date: '2026-03-18T10:00:00Z', user_ids: ['1001', '1002'], type: null },
@@ -107,8 +108,28 @@ describe('ReadDocsTool', () => {
       expect(mocks.getMockRequest()).toHaveBeenCalledTimes(3);
     });
 
+    it('should fall back to object_ids when ids returns only null docs', async () => {
+      mocks.mockRequest
+        .mockResolvedValueOnce(mockNullDocsResponse)
+        .mockResolvedValueOnce(mockDocsResponse)
+        .mockResolvedValueOnce(mockMarkdownResponse);
+
+      const result = await callToolByNameAsync(TOOL_NAME, { type: 'ids', ids: [DOC_ID] });
+
+      expect(result.data).toHaveLength(1);
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(3);
+    });
+
     it('should return no documents message when nothing found', async () => {
       mocks.mockRequest.mockResolvedValueOnce(mockEmptyDocsResponse).mockResolvedValueOnce(mockEmptyDocsResponse);
+
+      const result = await callToolByNameRawAsync(TOOL_NAME, { type: 'ids', ids: ['nonexistent'] });
+
+      expect(result.content[0].text).toContain('No documents found');
+    });
+
+    it('should return no documents message when docs only contain null entries', async () => {
+      mocks.mockRequest.mockResolvedValueOnce(mockNullDocsResponse).mockResolvedValueOnce(mockNullDocsResponse);
 
       const result = await callToolByNameRawAsync(TOOL_NAME, { type: 'ids', ids: ['nonexistent'] });
 
