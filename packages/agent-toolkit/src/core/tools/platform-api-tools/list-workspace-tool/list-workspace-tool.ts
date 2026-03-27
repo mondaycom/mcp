@@ -110,8 +110,7 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
       };
     }
 
-    // Naive check to see if there are more pages
-    const hasMorePages = filteredWorkspaces.length === input.limit;
+    const hasMorePages = !shouldIncludeNoFilteringDisclaimer && filteredWorkspaces.length === input.limit;
 
     const slug = await fetchAccountSlug(this.mondayApi);
     const workspacesWithUrls = filteredWorkspaces.map(ws => ({
