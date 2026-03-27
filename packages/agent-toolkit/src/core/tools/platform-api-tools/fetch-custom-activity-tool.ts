@@ -27,14 +27,15 @@ export class FetchCustomActivityTool extends BaseMondayApiTool<typeof fetchCusto
     input: ToolInputType<typeof fetchCustomActivityToolSchema>,
   ): Promise<ToolOutputType<never>> {
     const res = await this.mondayApi.request<FetchCustomActivityQuery>(fetchCustomActivity);
+    const activities = res.custom_activity?.filter((activity): activity is NonNullable<typeof activity> => activity !== null) || [];
 
-    if (!res.custom_activity || res.custom_activity.length === 0) {
+    if (activities.length === 0) {
       return {
         content: 'No custom activities found',
       };
     }
 
-    const activities = res.custom_activity.map((activity) => {
+    const formattedActivities = activities.map((activity) => {
       return {
         id: activity.id,
         name: activity.name,
@@ -45,7 +46,7 @@ export class FetchCustomActivityTool extends BaseMondayApiTool<typeof fetchCusto
     });
 
     return {
-      content: `Found ${activities.length} custom activities: ${JSON.stringify(activities, null, 2)}`,
+      content: `Found ${formattedActivities.length} custom activities: ${JSON.stringify(formattedActivities, null, 2)}`,
     };
   }
 }
