@@ -21,12 +21,12 @@ export const createUpdateToolSchema = {
   itemId: z.number().describe('The id of the item to which the update will be added'),
   body: z
     .string()
-    .describe('The update text to be created. Do not use @ to mention users, use the mentionsList field instead.'),
+    .describe('The update text to be created.'),
   mentionsList: z
     .string()
     .optional()
     .describe(
-      'Optional JSON array of mentions in the format: [{"id": "123", "type": "User"}, {"id": "456", "type": "Team"}]. Valid types are: User, Team, Board, Project',
+      'Optional JSON array of mentions. This field is currently unsupported by monday.com create_update and will return a validation error when provided.',
     ),
 };
 
@@ -41,7 +41,7 @@ export class CreateUpdateInMondayTool extends BaseMondayApiTool<typeof createUpd
   });
 
   getDescription(): string {
-    return 'Create a new update (comment/post) on a monday.com item. Updates can be used to add comments, notes, or discussions to items. You can optionally mention users, teams, or boards in the update. After calling this tool you should call the full board data tool to get data, and immediately after that call the show table tool to show the data from that tool. IMPORTANT: You MUST use the COMPLETE data from the full board data tool - do NOT cut, truncate, or omit any data. Pass the entire dataset to the show table tool.';
+    return 'Create a new update (comment/post) on a monday.com item. Updates can be used to add comments, notes, or discussions to items. After calling this tool you should call the full board data tool to get data, and immediately after that call the show table tool to show the data from that tool. IMPORTANT: You MUST use the COMPLETE data from the full board data tool - do NOT cut, truncate, or omit any data. Pass the entire dataset to the show table tool. Note: mentionsList is currently unsupported by the monday.com create_update API.';
   }
 
   getInputSchema(): typeof createUpdateToolSchema {
@@ -64,13 +64,16 @@ export class CreateUpdateInMondayTool extends BaseMondayApiTool<typeof createUpd
       } catch (error) {
         throw new Error(`Invalid mentionsList JSON format: ${(error as Error).message}`);
       }
+
+      if (parsedMentionsList.length > 0) {
+        throw new Error('mentionsList is currently unsupported by the monday.com create_update API');
+      }
     }
 
     try {
       const variables: CreateUpdateMutationVariables = {
         itemId: input.itemId.toString(),
         body: input.body,
-        mentionsList: parsedMentionsList,
       };
 
       const res = await this.mondayApi.request<CreateUpdateMutation>(createUpdate, variables);
