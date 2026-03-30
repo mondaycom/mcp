@@ -54,7 +54,9 @@ export const getDocObjectIdByDocId = gql`
   }
 `;
 
-// Get the single item from a doc's backing board (object_id = board ID)
+// Get the first item from a doc's backing board (object_id = board ID).
+// mf-docs always uses items[0] as the comment container; items_page returns
+// items in board order, so limit: 1 gives us the correct one.
 export const getDocBoardItem = gql`
   query getDocBoardItem($boardId: ID!) {
     boards(ids: [$boardId]) {
@@ -63,6 +65,16 @@ export const getDocBoardItem = gql`
           id
         }
       }
+    }
+  }
+`;
+
+// Create a default "Comments" item on a doc's backing board when none exists,
+// mirroring mf-docs' createDefaultDocItemIfNeeded behaviour.
+export const createDocBoardItem = gql`
+  mutation createDocBoardItem($boardId: ID!, $itemName: String!) {
+    create_item(board_id: $boardId, item_name: $itemName) {
+      id
     }
   }
 `;

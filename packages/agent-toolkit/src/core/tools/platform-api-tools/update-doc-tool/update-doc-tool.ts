@@ -7,6 +7,7 @@ import {
   getDocByObjectId,
   getDocObjectIdByDocId,
   getDocBoardItem,
+  createDocBoardItem,
   createDocComment,
 } from './update-doc-tool.graphql';
 
@@ -46,6 +47,10 @@ type GetDocBoardItemQuery = {
       items?: Array<{ id: string }> | null;
     } | null;
   }> | null;
+};
+
+type CreateDocBoardItemMutation = {
+  create_item?: { id: string } | null;
 };
 
 type CreateDocCommentMutation = {
@@ -286,15 +291,25 @@ COMMENTS:
     return doc.object_id;
   }
 
+  // Follows mf-docs logic: comments always live on the first board item (items[0]).
+  // If no item exists, a default "Comments" item is created — mirroring
+  // mf-docs' createDefaultDocItemIfNeeded behaviour.
   private async resolveDocItemId(objectId: string): Promise<string> {
     const res = await this.mondayApi.request<GetDocBoardItemQuery>(getDocBoardItem, {
       boardId: objectId,
     });
     const itemId = res.boards?.[0]?.items_page?.items?.[0]?.id;
-    if (!itemId) {
-      throw new Error(`No item found on the document backing board (object_id: ${objectId})`);
+    if (itemId) return itemId;
+
+    const createRes = await this.mondayApi.request<CreateDocBoardItemMutation>(createDocBoardItem, {
+      boardId: objectId,
+      itemName: 'Comments',
+    });
+    const createdId = createRes.create_item?.id;
+    if (!createdId) {
+      throw new Error(`No item found on the document backing board and failed to create one (object_id: ${objectId})`);
     }
-    return itemId;
+    return createdId;
   }
 
   private async executeAddComment(

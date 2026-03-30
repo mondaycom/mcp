@@ -848,13 +848,49 @@ describe('UpdateDocTool', () => {
     expect(commentCall[1]).toEqual({ itemId: '88001', body: '<p>Reply here</p>', parentId: '42' });
   });
 
-  it('fails when no item found on backing board', async () => {
+  it('creates a default item when backing board has no items', async () => {
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
       if (query.includes('query getDocObjectIdByDocId')) {
         return Promise.resolve({ docs: [{ id: 'doc_123', object_id: 'board_999' }] });
       }
       if (query.includes('query getDocBoardItem')) {
         return Promise.resolve({ boards: [{ items_page: { items: [] } }] });
+      }
+      if (query.includes('mutation createDocBoardItem')) {
+        return Promise.resolve({ create_item: { id: 'new_item_1' } });
+      }
+      if (query.includes('mutation createDocComment')) {
+        return Promise.resolve({ create_update: { id: 'upd_fallback', body: 'Test', created_at: '2024-01-01' } });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [{ operation_type: 'add_comment', body: '<p>Test</p>' }],
+    });
+
+    expect(result.content[0].text).toContain('[OK] add_comment');
+    expect(result.content[0].text).toContain('upd_fallback');
+
+    const calls = mocks.getMockRequest().mock.calls;
+    const createItemCall = calls.find((c: any) => c[0].includes('mutation createDocBoardItem'));
+    expect(createItemCall[1]).toEqual({ boardId: 'board_999', itemName: 'Comments' });
+
+    const commentCall = calls.find((c: any) => c[0].includes('mutation createDocComment'));
+    expect(commentCall[1].itemId).toBe('new_item_1');
+  });
+
+  it('fails when no item exists and default item creation fails', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocObjectIdByDocId')) {
+        return Promise.resolve({ docs: [{ id: 'doc_123', object_id: 'board_999' }] });
+      }
+      if (query.includes('query getDocBoardItem')) {
+        return Promise.resolve({ boards: [{ items_page: { items: [] } }] });
+      }
+      if (query.includes('mutation createDocBoardItem')) {
+        return Promise.resolve({ create_item: null });
       }
       return Promise.resolve({});
     });
@@ -865,7 +901,7 @@ describe('UpdateDocTool', () => {
     });
 
     expect(result.content[0].text).toContain('[FAILED] add_comment');
-    expect(result.content[0].text).toContain('No item found');
+    expect(result.content[0].text).toContain('failed to create one');
   });
 
   it('fails when object_id cannot be resolved from doc_id', async () => {
