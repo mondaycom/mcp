@@ -44,6 +44,43 @@ export const deleteDocBlock = gql`
   }
 `;
 
+// Get object_id (board ID) from a doc's internal ID
+export const getDocObjectIdByDocId = gql`
+  query getDocObjectIdByDocId($docId: [ID!]) {
+    docs(ids: $docId) {
+      id
+      object_id
+    }
+  }
+`;
+
+// Get the first item from a doc's backing board (object_id = board ID).
+// mf-docs always uses items[0] as the comment container; items_page returns
+// items in board order, so limit: 1 gives us the correct one.
+export const getDocBoardItem = gql`
+  query getDocBoardItem($boardId: ID!) {
+    boards(ids: [$boardId]) {
+      items_page(limit: 1) {
+        items {
+          id
+        }
+      }
+    }
+  }
+`;
+
+
+// Create an update (comment/reply) on a doc's backing item
+export const createDocComment = gql`
+  mutation createDocComment($itemId: ID!, $body: String!, $parentId: ID, $mentionsList: [UpdateMention]) {
+    create_update(body: $body, item_id: $itemId, parent_id: $parentId, mentions_list: $mentionsList) {
+      id
+      body
+      created_at
+    }
+  }
+`;
+
 // Create one or more blocks in a document
 export const createDocBlocks = gql`
   mutation createDocBlocks($docId: ID!, $afterBlockId: String, $blocksInput: [CreateBlockInput!]!) {
