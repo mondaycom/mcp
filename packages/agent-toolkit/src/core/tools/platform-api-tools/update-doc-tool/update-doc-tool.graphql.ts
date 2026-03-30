@@ -69,15 +69,6 @@ export const getDocBoardItem = gql`
   }
 `;
 
-// Create a default "Comments" item on a doc's backing board when none exists,
-// mirroring mf-docs' createDefaultDocItemIfNeeded behaviour.
-export const createDocBoardItem = gql`
-  mutation createDocBoardItem($boardId: ID!, $itemName: String!) {
-    create_item(board_id: $boardId, item_name: $itemName) {
-      id
-    }
-  }
-`;
 
 // Create an update (comment/reply) on a doc's backing item
 export const createDocComment = gql`
