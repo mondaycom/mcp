@@ -65,6 +65,39 @@ export const getDocVersionHistory = gql`
   }
 `;
 
+export const getDocComments = gql`
+  query GetDocComments($boardId: ID!, $itemsLimit: Int, $updatesLimit: Int) {
+    boards(ids: [$boardId]) {
+      items_page(limit: $itemsLimit) {
+        items {
+          id
+          name
+          updates(limit: $updatesLimit) {
+            id
+            text_body
+            body
+            created_at
+            creator {
+              id
+              name
+            }
+            replies {
+              id
+              text_body
+              body
+              created_at
+              creator {
+                id
+                name
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
 export const getDocVersionDiff = gql`
   query GetDocVersionDiff($docId: ID!, $date: String!, $prevDate: String!) {
     doc_version_diff(doc_id: $docId, date: $date, prev_date: $prevDate) {
