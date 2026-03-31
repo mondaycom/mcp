@@ -318,18 +318,23 @@ COMMENTS:
     return itemId;
   }
 
-  private async fetchBlockContent(
-    docId: string,
-    blockId: string,
-  ): Promise<{ id: string; type: string; content: Record<string, unknown> }> {
+  private async fetchAllBlockContent(docId: string): Promise<Array<{ id: string; type: string; content: Record<string, unknown> }>> {
     const res = await this.mondayApi.request<GetDocBlockContentQuery>(getDocBlockContent, { docId: [docId] });
-    const block = res.docs?.[0]?.blocks?.find((b) => b.id === blockId);
-    if (!block) {
-      throw new Error(`Block ${blockId} not found in doc ${docId}`);
-    }
-    // GraphQL JSON scalar may return content as a string — parse it
-    const content = typeof block.content === 'string' ? JSON.parse(block.content) : block.content;
-    return { ...block, content };
+    const blocks = res.docs?.[0]?.blocks ?? [];
+    return blocks.map((block) => {
+      // GraphQL JSON scalar may return content as a string — parse it
+      let content: Record<string, unknown>;
+      if (typeof block.content === 'string') {
+        try {
+          content = JSON.parse(block.content);
+        } catch {
+          throw new Error(`Failed to parse content of block ${block.id} in doc ${docId} as JSON`);
+        }
+      } else {
+        content = block.content;
+      }
+      return { ...block, content };
+    });
   }
 
   private async executeAddComment(
@@ -344,6 +349,10 @@ COMMENTS:
   ): Promise<string> {
     if ((selectionFrom != null || selectionLength != null) && !blockId) {
       throw new Error('selection_from and selection_length require block_id');
+    }
+
+    if ((selectionFrom != null) !== (selectionLength != null)) {
+      throw new Error('selection_from and selection_length must both be provided together');
     }
 
     const blockIds = blockId ? (Array.isArray(blockId) ? blockId : [blockId]) : [];
@@ -387,35 +396,73 @@ COMMENTS:
     const numericPostId = Number(postId);
     const action = parentUpdateId ? `Reply to update ${parentUpdateId}` : 'Comment';
 
-    for (const id of blockIds) {
-      const block = await this.fetchBlockContent(docId, id);
-
-      const deltaFormat = block.content.deltaFormat as Record<string, unknown>[] | undefined;
-      if (!deltaFormat) {
+    if (blockIds.length > 0) {
+      if (Number.isNaN(numericPostId)) {
         throw new Error(
-          `Block ${id} has no deltaFormat — comments are only supported for text, code, and list_item blocks`,
+          `${action} created (update ID: ${postId}) but block annotation aborted: comment ID is not numeric and cannot be used as a delta reference`,
         );
       }
 
-      let updatedContent: Record<string, unknown>;
+      // Fetch all block content once before mutating any block
+      const allBlocks = await this.fetchAllBlockContent(docId);
 
-      if (selectionFrom != null && selectionLength != null) {
-        updatedContent = {
-          ...block.content,
-          deltaFormat: applyCommentToDelta(deltaFormat, numericPostId, selectionFrom, selectionLength),
-        };
-      } else {
+      for (const id of blockIds) {
+        const block = allBlocks.find((b) => b.id === id);
+        if (!block) {
+          throw new Error(
+            `${action} created (update ID: ${postId}) but block annotation failed: block ${id} not found in doc ${docId}`,
+          );
+        }
+
+        const deltaFormat = block.content.deltaFormat as Record<string, unknown>[] | undefined;
+        if (!deltaFormat) {
+          throw new Error(
+            `${action} created (update ID: ${postId}) but block annotation failed: block ${id} has no deltaFormat — only text, code, and list_item blocks are supported`,
+          );
+        }
+
         let totalLen = 0;
         for (const op of deltaFormat) {
           totalLen += typeof op.insert === 'string' ? (op.insert as string).length : 1;
         }
-        updatedContent = {
-          ...block.content,
-          deltaFormat: applyCommentToDelta(deltaFormat, numericPostId, 0, totalLen),
-        };
-      }
+        if (totalLen === 0) {
+          throw new Error(
+            `${action} created (update ID: ${postId}) but block annotation failed: block ${id} has an empty deltaFormat and cannot be annotated`,
+          );
+        }
 
-      await this.mondayApi.request(updateDocBlock, { blockId: id, content: JSON.stringify(updatedContent) });
+        const annotationFrom = selectionFrom ?? 0;
+        const annotationLength = selectionLength ?? totalLen;
+
+        if (annotationFrom + annotationLength > totalLen) {
+          throw new Error(
+            `${action} created (update ID: ${postId}) but block annotation failed: ` +
+              `selection [${annotationFrom}, ${annotationFrom + annotationLength}) is out of range for block ${id} (total length ${totalLen})`,
+          );
+        }
+
+        let annotatedDelta: Record<string, unknown>[];
+        try {
+          annotatedDelta = applyCommentToDelta(deltaFormat, numericPostId, annotationFrom, annotationLength);
+        } catch (err) {
+          const errMsg = err instanceof Error ? err.message : String(err);
+          throw new Error(
+            `${action} created (update ID: ${postId}) but delta annotation failed for block ${id}: ${errMsg}`,
+          );
+        }
+
+        const updatedContent: Record<string, unknown> = { ...block.content, deltaFormat: annotatedDelta };
+
+        const annotationRes = await this.mondayApi.request<UpdateDocBlockMutation>(updateDocBlock, {
+          blockId: id,
+          content: JSON.stringify(updatedContent),
+        });
+        if (!annotationRes?.update_doc_block) {
+          throw new Error(
+            `${action} created (update ID: ${postId}) but block annotation write returned no confirmation for block ${id}`,
+          );
+        }
+      }
     }
 
     const blockCount = blockIds.length;

@@ -143,6 +143,7 @@ function addCommentToOp(op: Record<string, unknown>, postId: string | number): R
  * the character range [from, from+length). Text ops are split at boundaries
  * so only the selected characters are annotated. Blot ops (non-string insert)
  * are treated as length 1 and annotated as a whole when inside the range.
+ * Throws if an op has a null or missing insert — delta ops must have an insert value.
  */
 export function applyCommentToDelta(
   deltaFormat: Record<string, unknown>[],
@@ -156,6 +157,12 @@ export function applyCommentToDelta(
 
   for (const op of deltaFormat) {
     const insert = op.insert;
+    if (insert == null) {
+      throw new Error(
+        `Unexpected delta op at position ${cursor}: op has no 'insert' field. ` +
+          `Block content may be from an unsupported block type.`,
+      );
+    }
     const opLen = typeof insert === 'string' ? insert.length : 1;
     const opStart = cursor;
     const opEnd = opStart + opLen;

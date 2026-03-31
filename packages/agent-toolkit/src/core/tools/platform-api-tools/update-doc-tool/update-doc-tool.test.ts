@@ -981,7 +981,7 @@ describe('UpdateDocTool', () => {
         return Promise.resolve({ boards: [{ items_page: { items: [{ id: '88001' }] } }] });
       }
       if (query.includes('mutation createDocComment')) {
-        return Promise.resolve({ create_update: { id: 'upd_x', body: 'Hi', created_at: '2024-01-01' } });
+        return Promise.resolve({ create_update: { id: '111000', body: 'Hi', created_at: '2024-01-01' } });
       }
       if (query.includes('query getDocBlockContent')) {
         return Promise.resolve({ docs: [{ blocks: [] }] });
@@ -995,7 +995,8 @@ describe('UpdateDocTool', () => {
     });
 
     expect(result.content[0].text).toContain('[FAILED] add_comment');
-    expect(result.content[0].text).toContain('missing_blk not found');
+    expect(result.content[0].text).toContain('block annotation failed');
+    expect(result.content[0].text).toContain('missing_blk');
   });
 
   it('handles block content returned as JSON string (GraphQL JSON scalar)', async () => {
@@ -1378,7 +1379,7 @@ describe('UpdateDocTool', () => {
         return Promise.resolve({ boards: [{ items_page: { items: [{ id: '88001' }] } }] });
       }
       if (query.includes('mutation createDocComment')) {
-        return Promise.resolve({ create_update: { id: 'upd_y', body: 'Hi', created_at: '2024-01-01' } });
+        return Promise.resolve({ create_update: { id: '222000', body: 'Hi', created_at: '2024-01-01' } });
       }
       if (query.includes('query getDocBlockContent')) {
         return Promise.resolve({ docs: [{ blocks: [{ id: 'blk_img', type: 'image', content: { url: 'http://img.png' } }] }] });
@@ -1392,7 +1393,8 @@ describe('UpdateDocTool', () => {
     });
 
     expect(result.content[0].text).toContain('[FAILED] add_comment');
-    expect(result.content[0].text).toContain('no deltaFormat');
+    expect(result.content[0].text).toContain('block annotation failed');
+    expect(result.content[0].text).toContain('deltaFormat');
   });
 
   // ─── Multi-block comments ────────────────────────────────────────────────────
@@ -1472,6 +1474,190 @@ describe('UpdateDocTool', () => {
 
     expect(result.content[0].text).toContain('[FAILED] add_comment');
     expect(result.content[0].text).toContain('single block_id');
+  });
+
+  it('surfaces update ID in error when block annotation fails after comment is created', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocObjectIdByDocId')) {
+        return Promise.resolve({ docs: [{ id: 'doc_123', object_id: 'board_777' }] });
+      }
+      if (query.includes('query getDocBoardItem')) {
+        return Promise.resolve({ boards: [{ items_page: { items: [{ id: '88001' }] } }] });
+      }
+      if (query.includes('mutation createDocComment')) {
+        return Promise.resolve({ create_update: { id: '333000', body: 'Hi', created_at: '2024-01-01' } });
+      }
+      if (query.includes('query getDocBlockContent')) {
+        return Promise.resolve({ docs: [{ blocks: [] }] }); // block not found
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [{ operation_type: 'add_comment', body: '<p>Hi</p>', block_id: 'blk_gone' }],
+    });
+
+    // Error must surface the update ID so the caller knows the comment exists
+    expect(result.content[0].text).toContain('[FAILED] add_comment');
+    expect(result.content[0].text).toContain('333000');
+    expect(result.content[0].text).toContain('block annotation failed');
+  });
+
+  it('fails when updateDocBlock returns null during block annotation', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocObjectIdByDocId')) {
+        return Promise.resolve({ docs: [{ id: 'doc_123', object_id: 'board_777' }] });
+      }
+      if (query.includes('query getDocBoardItem')) {
+        return Promise.resolve({ boards: [{ items_page: { items: [{ id: '88001' }] } }] });
+      }
+      if (query.includes('mutation createDocComment')) {
+        return Promise.resolve({ create_update: { id: '444000', body: 'Hi', created_at: '2024-01-01' } });
+      }
+      if (query.includes('query getDocBlockContent')) {
+        return Promise.resolve({
+          docs: [{ blocks: [{ id: 'blk_1', type: 'normal_text', content: { deltaFormat: [{ insert: 'Hi\n' }] } }] }],
+        });
+      }
+      if (query.includes('mutation updateDocBlock')) {
+        return Promise.resolve({ update_doc_block: null }); // server returns null
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [{ operation_type: 'add_comment', body: '<p>Hi</p>', block_id: 'blk_1' }],
+    });
+
+    expect(result.content[0].text).toContain('[FAILED] add_comment');
+    expect(result.content[0].text).toContain('444000');
+    expect(result.content[0].text).toContain('no confirmation');
+  });
+
+  it('fails when selection_from provided without selection_length', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocObjectIdByDocId')) {
+        return Promise.resolve({ docs: [{ id: 'doc_123', object_id: 'board_777' }] });
+      }
+      if (query.includes('query getDocBoardItem')) {
+        return Promise.resolve({ boards: [{ items_page: { items: [{ id: '88001' }] } }] });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [{ operation_type: 'add_comment', body: '<p>Hi</p>', block_id: 'blk_1', selection_from: 0 }],
+    });
+
+    expect(result.content[0].text).toContain('[FAILED] add_comment');
+    expect(result.content[0].text).toContain('selection_from and selection_length must both be provided together');
+  });
+
+  it('fails when block-level comment targets a block with empty deltaFormat', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocObjectIdByDocId')) {
+        return Promise.resolve({ docs: [{ id: 'doc_123', object_id: 'board_777' }] });
+      }
+      if (query.includes('query getDocBoardItem')) {
+        return Promise.resolve({ boards: [{ items_page: { items: [{ id: '88001' }] } }] });
+      }
+      if (query.includes('mutation createDocComment')) {
+        return Promise.resolve({ create_update: { id: '555001', body: 'Hi', created_at: '2024-01-01' } });
+      }
+      if (query.includes('query getDocBlockContent')) {
+        return Promise.resolve({
+          docs: [{ blocks: [{ id: 'blk_empty', type: 'normal_text', content: { deltaFormat: [] } }] }],
+        });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [{ operation_type: 'add_comment', body: '<p>Comment</p>', block_id: 'blk_empty' }],
+    });
+
+    expect(result.content[0].text).toContain('[FAILED] add_comment');
+    expect(result.content[0].text).toContain('555001');
+    expect(result.content[0].text).toContain('empty deltaFormat');
+  });
+
+  it('fails when non-numeric postId is returned from createDocComment (NaN guard)', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocObjectIdByDocId')) {
+        return Promise.resolve({ docs: [{ id: 'doc_123', object_id: 'board_777' }] });
+      }
+      if (query.includes('query getDocBoardItem')) {
+        return Promise.resolve({ boards: [{ items_page: { items: [{ id: '88001' }] } }] });
+      }
+      if (query.includes('mutation createDocComment')) {
+        return Promise.resolve({ create_update: { id: 'not-a-number', body: 'Hi', created_at: '2024-01-01' } });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [{ operation_type: 'add_comment', body: '<p>Comment</p>', block_id: 'blk_1' }],
+    });
+
+    expect(result.content[0].text).toContain('[FAILED] add_comment');
+    expect(result.content[0].text).toContain('not-a-number');
+    expect(result.content[0].text).toContain('not numeric');
+  });
+
+  it('fails when selection_length provided without selection_from', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocObjectIdByDocId')) {
+        return Promise.resolve({ docs: [{ id: 'doc_123', object_id: 'board_777' }] });
+      }
+      if (query.includes('query getDocBoardItem')) {
+        return Promise.resolve({ boards: [{ items_page: { items: [{ id: '88001' }] } }] });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [{ operation_type: 'add_comment', body: '<p>Hi</p>', block_id: 'blk_1', selection_length: 5 }],
+    });
+
+    expect(result.content[0].text).toContain('[FAILED] add_comment');
+    expect(result.content[0].text).toContain('selection_from and selection_length must both be provided together');
+  });
+
+  it('fails when selection range is out of bounds for the block', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocObjectIdByDocId')) {
+        return Promise.resolve({ docs: [{ id: 'doc_123', object_id: 'board_777' }] });
+      }
+      if (query.includes('query getDocBoardItem')) {
+        return Promise.resolve({ boards: [{ items_page: { items: [{ id: '88001' }] } }] });
+      }
+      if (query.includes('mutation createDocComment')) {
+        return Promise.resolve({ create_update: { id: '666002', body: 'Hi', created_at: '2024-01-01' } });
+      }
+      if (query.includes('query getDocBlockContent')) {
+        return Promise.resolve({
+          docs: [{ blocks: [{ id: 'blk_short', type: 'normal_text', content: { deltaFormat: [{ insert: 'Hi\n' }] } }] }],
+        });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [
+        { operation_type: 'add_comment', body: '<p>Hi</p>', block_id: 'blk_short', selection_from: 100, selection_length: 5 },
+      ],
+    });
+
+    expect(result.content[0].text).toContain('[FAILED] add_comment');
+    expect(result.content[0].text).toContain('666002');
+    expect(result.content[0].text).toContain('out of range');
   });
 
   // ─── Column value blot (update_block path — macro format) ─────────────────
