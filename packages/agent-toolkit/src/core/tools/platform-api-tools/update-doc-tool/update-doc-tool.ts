@@ -8,6 +8,7 @@ import {
   getDocObjectIdByDocId,
   getDocBoardItem,
   createDocComment,
+  getDocBlockContent,
 } from './update-doc-tool.graphql';
 
 import {
@@ -24,7 +25,7 @@ import {
 } from '../../../../monday-graphql/generated/graphql/graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { buildUpdateBlockContent, buildCreateBlockInput } from './update-doc-tool.helpers';
+import { buildUpdateBlockContent, buildCreateBlockInput, applyCommentToDelta } from './update-doc-tool.helpers';
 import { updateDocToolSchema, UpdateBlockContent, CreateBlock } from './update-doc-tool.schema';
 import { mentionsListSchema } from '../create-update-tool/create-update-tool';
 
@@ -54,6 +55,12 @@ type CreateDocCommentMutation = {
     body: string;
     created_at?: string | null;
   } | null;
+};
+
+type GetDocBlockContentQuery = {
+  docs?: Array<{
+    blocks?: Array<{ id: string; type: string; content: Record<string, unknown> }> | null;
+  }> | null;
 };
 
 // ─── Tool class ───────────────────────────────────────────────────────────────
@@ -96,7 +103,11 @@ BLOCK CONTENT (delta_format): Array of insert ops. Last op MUST be {insert: {tex
 IMAGE WITH ASSET: For asset-based images, use create_block with block_type "image" and asset_id (instead of public_url). add_markdown_content does NOT support asset images — for mixed content, alternate add_markdown_content (text) and create_block (image) operations in sequence.
 
 COMMENTS:
-- add_comment: Create a new comment or reply on the document. Documents have a backing board with a single item where comments live. The tool automatically resolves the item ID from the doc's object_id (board ID). Use parent_update_id to reply to an existing comment. Format text with HTML, not markdown. Use mentions_list for @mentions.`;
+- add_comment: Create a new comment or reply on the document. Three scopes:
+  - Doc-level (no block_id): comment appears on the doc as a whole.
+  - Block-level (block_id only): comment is anchored to a specific block; the block shows a comment indicator in the UI.
+  - Text-selection (block_id + selection_from + selection_length): comment is anchored to a specific character range inside a text/code/list_item block; that text is highlighted with a comment marker.
+  Get block IDs from read_docs with include_blocks: true. Format body with HTML, not markdown. Use mentions_list for @mentions.`;
   }
 
   getInputSchema(): typeof updateDocToolSchema {
@@ -178,7 +189,16 @@ COMMENTS:
           op.parent_block_id,
         );
       case 'add_comment':
-        return this.executeAddComment(docId, objectId, op.body, op.parent_update_id, op.mentions_list);
+        return this.executeAddComment(
+          docId,
+          objectId,
+          op.body,
+          op.parent_update_id,
+          op.mentions_list,
+          op.block_id,
+          op.selection_from,
+          op.selection_length,
+        );
       default: {
         const unhandled = (op as { operation_type: string }).operation_type;
         throw new Error(`Unsupported operation type: "${unhandled}"`);
@@ -298,13 +318,40 @@ COMMENTS:
     return itemId;
   }
 
+  private async fetchBlockContent(
+    docId: string,
+    blockId: string,
+  ): Promise<{ id: string; type: string; content: Record<string, unknown> }> {
+    const res = await this.mondayApi.request<GetDocBlockContentQuery>(getDocBlockContent, { docId: [docId] });
+    const block = res.docs?.[0]?.blocks?.find((b) => b.id === blockId);
+    if (!block) {
+      throw new Error(`Block ${blockId} not found in doc ${docId}`);
+    }
+    // GraphQL JSON scalar may return content as a string — parse it
+    const content = typeof block.content === 'string' ? JSON.parse(block.content) : block.content;
+    return { ...block, content };
+  }
+
   private async executeAddComment(
     docId: string,
     objectId: string | undefined,
     body: string,
     parentUpdateId?: number,
     mentionsList?: string,
+    blockId?: string | string[],
+    selectionFrom?: number,
+    selectionLength?: number,
   ): Promise<string> {
+    if ((selectionFrom != null || selectionLength != null) && !blockId) {
+      throw new Error('selection_from and selection_length require block_id');
+    }
+
+    const blockIds = blockId ? (Array.isArray(blockId) ? blockId : [blockId]) : [];
+
+    if ((selectionFrom != null || selectionLength != null) && blockIds.length > 1) {
+      throw new Error('selection_from and selection_length are only supported with a single block_id');
+    }
+
     const resolvedObjectId = await this.resolveObjectId(docId, objectId);
     const itemId = await this.resolveDocItemId(resolvedObjectId);
 
@@ -336,8 +383,44 @@ COMMENTS:
       throw new Error('Failed to create comment: no update returned');
     }
 
+    const postId = res.create_update.id;
+    const numericPostId = Number(postId);
     const action = parentUpdateId ? `Reply to update ${parentUpdateId}` : 'Comment';
-    return `${action} created (update ID: ${res.create_update.id})`;
+
+    for (const id of blockIds) {
+      const block = await this.fetchBlockContent(docId, id);
+
+      const deltaFormat = block.content.deltaFormat as Record<string, unknown>[] | undefined;
+      if (!deltaFormat) {
+        throw new Error(
+          `Block ${id} has no deltaFormat — comments are only supported for text, code, and list_item blocks`,
+        );
+      }
+
+      let updatedContent: Record<string, unknown>;
+
+      if (selectionFrom != null && selectionLength != null) {
+        updatedContent = {
+          ...block.content,
+          deltaFormat: applyCommentToDelta(deltaFormat, numericPostId, selectionFrom, selectionLength),
+        };
+      } else {
+        let totalLen = 0;
+        for (const op of deltaFormat) {
+          totalLen += typeof op.insert === 'string' ? (op.insert as string).length : 1;
+        }
+        updatedContent = {
+          ...block.content,
+          deltaFormat: applyCommentToDelta(deltaFormat, numericPostId, 0, totalLen),
+        };
+      }
+
+      await this.mondayApi.request(updateDocBlock, { blockId: id, content: JSON.stringify(updatedContent) });
+    }
+
+    const blockCount = blockIds.length;
+    const blockSuffix = blockCount > 1 ? ` across ${blockCount} blocks` : blockCount === 1 ? ' on block' : '';
+    return `${action} created${blockSuffix} (update ID: ${postId})`;
   }
 
   private async executeReplaceBlock(

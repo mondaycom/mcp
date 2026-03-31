@@ -267,6 +267,28 @@ const AddCommentOperation = z.object({
     .describe(
       'Optional JSON array of mentions: [{"id": "123", "type": "User"}, {"id": "456", "type": "Team"}]. Valid types: User, Team, Board, Project.',
     ),
+  block_id: z
+    .union([z.string(), z.array(z.string()).min(1)])
+    .optional()
+    .describe(
+      'Block ID (string) or array of block IDs to anchor the comment to. When an array is provided, the same comment highlights all specified blocks. Get block IDs from read_docs with include_blocks: true. Omit to create a general doc-level comment. Pair with selection_from + selection_length (single block_id only) to comment on a specific text range.',
+    ),
+  selection_from: z
+    .number()
+    .int()
+    .min(0)
+    .optional()
+    .describe(
+      'Start character offset (0-indexed) of the selected text within the block. Requires block_id. Omit to comment on the entire block.',
+    ),
+  selection_length: z
+    .number()
+    .int()
+    .min(1)
+    .optional()
+    .describe(
+      'Number of characters in the text selection. Requires block_id and selection_from. Only works for text, code, and list_item blocks that have a delta format.',
+    ),
 });
 
 export const OperationSchema = z.discriminatedUnion('operation_type', [

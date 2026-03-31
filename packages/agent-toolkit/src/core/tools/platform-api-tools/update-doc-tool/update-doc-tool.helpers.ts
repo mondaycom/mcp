@@ -132,6 +132,56 @@ export function buildUpdateBlockContent(input: UpdateBlockContent): Record<strin
   }
 }
 
+function addCommentToOp(op: Record<string, unknown>, postId: string | number): Record<string, unknown> {
+  const attrs = (op.attributes as Record<string, unknown>) || {};
+  const prevComments = (attrs.comments as Array<string | number>) || [];
+  return { ...op, attributes: { ...attrs, comments: [...prevComments, postId] } };
+}
+
+/**
+ * Injects `postId` into the `comments` attribute of delta ops that overlap
+ * the character range [from, from+length). Text ops are split at boundaries
+ * so only the selected characters are annotated. Blot ops (non-string insert)
+ * are treated as length 1 and annotated as a whole when inside the range.
+ */
+export function applyCommentToDelta(
+  deltaFormat: Record<string, unknown>[],
+  postId: string | number,
+  from: number,
+  length: number,
+): Record<string, unknown>[] {
+  const selEnd = from + length;
+  let cursor = 0;
+  const result: Record<string, unknown>[] = [];
+
+  for (const op of deltaFormat) {
+    const insert = op.insert;
+    const opLen = typeof insert === 'string' ? insert.length : 1;
+    const opStart = cursor;
+    const opEnd = opStart + opLen;
+    const overlapStart = Math.max(opStart, from);
+    const overlapEnd = Math.min(opEnd, selEnd);
+
+    if (overlapStart >= overlapEnd) {
+      result.push(op);
+    } else if (typeof insert !== 'string') {
+      result.push(addCommentToOp(op, postId));
+    } else {
+      if (overlapStart > opStart) {
+        result.push({ ...op, insert: insert.slice(0, overlapStart - opStart) });
+      }
+      result.push(addCommentToOp({ ...op, insert: insert.slice(overlapStart - opStart, overlapEnd - opStart) }, postId));
+      if (overlapEnd < opEnd) {
+        result.push({ ...op, insert: insert.slice(overlapEnd - opStart) });
+      }
+    }
+
+    cursor = opEnd;
+  }
+
+  return result;
+}
+
 /**
  * Translates the typed CreateBlock union to a GraphQL CreateBlockInput object.
  */
