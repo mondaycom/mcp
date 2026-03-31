@@ -107,6 +107,7 @@ COMMENTS:
   - Doc-level (no block_id): comment appears on the doc as a whole.
   - Block-level (block_id only): comment is anchored to a specific block; the block shows a comment indicator in the UI.
   - Text-selection (block_id + selection_from + selection_length): comment is anchored to a specific character range inside a text/code/list_item block; that text is highlighted with a comment marker.
+  Block-level and text-selection comments only work on blocks with text content (text, code, list_item, title, quote). They do NOT work on: divider, page_break, table, layout, notice_box, image, video, or giphy blocks.
   Get block IDs from read_docs with include_blocks: true. Format body with HTML, not markdown. Use mentions_list for @mentions.`;
   }
 

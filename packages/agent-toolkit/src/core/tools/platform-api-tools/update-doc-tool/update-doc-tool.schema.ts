@@ -271,7 +271,7 @@ const AddCommentOperation = z.object({
     .union([z.string(), z.array(z.string()).min(1)])
     .optional()
     .describe(
-      'Block ID (string) or array of block IDs to anchor the comment to. When an array is provided, the same comment highlights all specified blocks. Get block IDs from read_docs with include_blocks: true. Omit to create a general doc-level comment. Pair with selection_from + selection_length (single block_id only) to comment on a specific text range.',
+      'Block ID (string) or array of block IDs to anchor the comment to. When an array is provided, the same comment highlights all specified blocks. Only works on text-content blocks (text, code, list_item, title, quote) — not on divider, table, layout, notice_box, image, video, or giphy. Get block IDs from read_docs with include_blocks: true. Omit to create a general doc-level comment. Pair with selection_from + selection_length (single block_id only) to comment on a specific text range.',
     ),
   selection_from: z
     .number()
