@@ -103,6 +103,15 @@ COMMENTS:
     return updateDocToolSchema;
   }
 
+  protected getExecutionTrackingData(input?: ToolInputType<typeof updateDocToolSchema>) {
+    return {
+      docId: input?.doc_id,
+      objectId: input?.object_id,
+      operationTypes: input?.operations?.map((op) => op.operation_type),
+      operationCount: input?.operations?.length ?? 0,
+    };
+  }
+
   protected async executeInternal(input: ToolInputType<typeof updateDocToolSchema>): Promise<ToolOutputType<never>> {
     if (!input.doc_id && !input.object_id) {
       return { content: 'Error: Either doc_id or object_id must be provided.' };

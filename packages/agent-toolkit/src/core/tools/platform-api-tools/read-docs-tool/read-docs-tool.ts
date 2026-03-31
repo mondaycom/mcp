@@ -173,6 +173,13 @@ MODE: "version_history" — Fetch the edit history of a single document.
     return readDocsToolSchema;
   }
 
+  protected getExecutionTrackingData(input?: ToolInputType<typeof readDocsToolSchema>) {
+    return {
+      mode: input?.mode ?? 'content',
+      includeComments: input?.include_comments ?? false,
+    };
+  }
+
   protected async executeInternal(input: ToolInputType<typeof readDocsToolSchema>): Promise<ToolOutputType<never>> {
     if (input.mode === 'version_history') {
       return this.executeVersionHistory(input);
