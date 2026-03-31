@@ -537,9 +537,7 @@ describe('UpdateDocTool', () => {
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
       if (query.includes('mutation createDocBlocks')) {
         return Promise.resolve({
-          create_doc_blocks: [
-            { id: 'img_block_1', type: 'image', parent_block_id: null, created_at: '2024-01-01' },
-          ],
+          create_doc_blocks: [{ id: 'img_block_1', type: 'image', parent_block_id: null, created_at: '2024-01-01' }],
         });
       }
       return Promise.resolve({});
@@ -569,9 +567,7 @@ describe('UpdateDocTool', () => {
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
       if (query.includes('mutation createDocBlocks')) {
         return Promise.resolve({
-          create_doc_blocks: [
-            { id: 'img_block_2', type: 'image', parent_block_id: null, created_at: '2024-01-01' },
-          ],
+          create_doc_blocks: [{ id: 'img_block_2', type: 'image', parent_block_id: null, created_at: '2024-01-01' }],
         });
       }
       return Promise.resolve({});
@@ -724,7 +720,9 @@ describe('UpdateDocTool', () => {
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
       if (query.includes('mutation createDocBlocks')) {
         return Promise.resolve({
-          create_doc_blocks: [{ id: 'new_blk', type: 'normal_text', parent_block_id: null, created_at: '', content: [] }],
+          create_doc_blocks: [
+            { id: 'new_blk', type: 'normal_text', parent_block_id: null, created_at: '', content: [] },
+          ],
         });
       }
       return Promise.resolve({});
@@ -737,10 +735,7 @@ describe('UpdateDocTool', () => {
           operation_type: 'create_block',
           block: {
             block_type: 'text',
-            delta_format: [
-              { insert: { mention: { id: 99, type: 'USER' } } },
-              { insert: { text: ' please review\n' } },
-            ],
+            delta_format: [{ insert: { mention: { id: 99, type: 'USER' } } }, { insert: { text: ' please review\n' } }],
           },
         },
       ],
@@ -761,7 +756,9 @@ describe('UpdateDocTool', () => {
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
       if (query.includes('mutation createDocBlocks')) {
         return Promise.resolve({
-          create_doc_blocks: [{ id: 'new_blk', type: 'normal_text', parent_block_id: null, created_at: '', content: [] }],
+          create_doc_blocks: [
+            { id: 'new_blk', type: 'normal_text', parent_block_id: null, created_at: '', content: [] },
+          ],
         });
       }
       return Promise.resolve({});
@@ -919,9 +916,7 @@ describe('UpdateDocTool', () => {
     const updateBlockCall = calls.find((c: any) => c[0].includes('mutation updateDocBlock'));
     expect(updateBlockCall).toBeDefined();
     const updatedContent = JSON.parse(updateBlockCall[1].content);
-    expect(updatedContent.deltaFormat).toEqual([
-      { insert: 'Hello\n', attributes: { comments: [100999] } },
-    ]);
+    expect(updatedContent.deltaFormat).toEqual([{ insert: 'Hello\n', attributes: { comments: [100999] } }]);
   });
 
   it('anchors comment to selected text in a block by annotating delta ops', async () => {
@@ -937,7 +932,9 @@ describe('UpdateDocTool', () => {
         return Promise.resolve({ create_update: { id: '200111', body: 'Selected', created_at: '2024-01-01' } });
       }
       if (query.includes('query getDocBlockContent')) {
-        return Promise.resolve({ docs: [{ blocks: [{ id: 'blk_2', type: 'normal_text', content: { deltaFormat: blockDelta } }] }] });
+        return Promise.resolve({
+          docs: [{ blocks: [{ id: 'blk_2', type: 'normal_text', content: { deltaFormat: blockDelta } }] }],
+        });
       }
       if (query.includes('mutation updateDocBlock')) {
         return Promise.resolve({ update_doc_block: { id: 'blk_2' } });
@@ -1014,13 +1011,17 @@ describe('UpdateDocTool', () => {
       }
       if (query.includes('query getDocBlockContent')) {
         return Promise.resolve({
-          docs: [{
-            blocks: [{
-              id: 'blk_str',
-              type: 'normal_text',
-              content: '{"deltaFormat":[{"insert":"Hello\\n"}]}',
-            }],
-          }],
+          docs: [
+            {
+              blocks: [
+                {
+                  id: 'blk_str',
+                  type: 'normal_text',
+                  content: '{"deltaFormat":[{"insert":"Hello\\n"}]}',
+                },
+              ],
+            },
+          ],
         });
       }
       if (query.includes('mutation updateDocBlock')) {
@@ -1031,9 +1032,7 @@ describe('UpdateDocTool', () => {
 
     const result = await callToolByNameRawAsync('update_doc', {
       doc_id: 'doc_123',
-      operations: [
-        { operation_type: 'add_comment', body: '<p>Comment on stringy block</p>', block_id: 'blk_str' },
-      ],
+      operations: [{ operation_type: 'add_comment', body: '<p>Comment on stringy block</p>', block_id: 'blk_str' }],
     });
 
     expect(result.content[0].text).toContain('[OK] add_comment');
@@ -1041,9 +1040,7 @@ describe('UpdateDocTool', () => {
     const calls = mocks.getMockRequest().mock.calls;
     const updateBlockCall = calls.find((c: any) => c[0].includes('mutation updateDocBlock'));
     const updatedContent = JSON.parse(updateBlockCall[1].content);
-    expect(updatedContent.deltaFormat).toEqual([
-      { insert: 'Hello\n', attributes: { comments: [300222] } },
-    ]);
+    expect(updatedContent.deltaFormat).toEqual([{ insert: 'Hello\n', attributes: { comments: [300222] } }]);
   });
 
   it('text-selection comment with content returned as JSON string', async () => {
@@ -1061,13 +1058,17 @@ describe('UpdateDocTool', () => {
       }
       if (query.includes('query getDocBlockContent')) {
         return Promise.resolve({
-          docs: [{
-            blocks: [{
-              id: 'blk_sel_str',
-              type: 'normal_text',
-              content: '{"deltaFormat":[{"insert":"Hello world\\n"}]}',
-            }],
-          }],
+          docs: [
+            {
+              blocks: [
+                {
+                  id: 'blk_sel_str',
+                  type: 'normal_text',
+                  content: '{"deltaFormat":[{"insert":"Hello world\\n"}]}',
+                },
+              ],
+            },
+          ],
         });
       }
       if (query.includes('mutation updateDocBlock')) {
@@ -1116,17 +1117,19 @@ describe('UpdateDocTool', () => {
       }
       if (query.includes('query getDocBlockContent')) {
         return Promise.resolve({
-          docs: [{
-            blocks: [{
-              id: 'blk_existing',
-              type: 'normal_text',
-              content: {
-                deltaFormat: [
-                  { insert: 'Hello\n', attributes: { comments: [111111] } },
-                ],
-              },
-            }],
-          }],
+          docs: [
+            {
+              blocks: [
+                {
+                  id: 'blk_existing',
+                  type: 'normal_text',
+                  content: {
+                    deltaFormat: [{ insert: 'Hello\n', attributes: { comments: [111111] } }],
+                  },
+                },
+              ],
+            },
+          ],
         });
       }
       if (query.includes('mutation updateDocBlock')) {
@@ -1137,9 +1140,7 @@ describe('UpdateDocTool', () => {
 
     const result = await callToolByNameRawAsync('update_doc', {
       doc_id: 'doc_123',
-      operations: [
-        { operation_type: 'add_comment', body: '<p>New comment</p>', block_id: 'blk_existing' },
-      ],
+      operations: [{ operation_type: 'add_comment', body: '<p>New comment</p>', block_id: 'blk_existing' }],
     });
 
     expect(result.content[0].text).toContain('[OK] add_comment');
@@ -1147,9 +1148,7 @@ describe('UpdateDocTool', () => {
     const calls = mocks.getMockRequest().mock.calls;
     const updateBlockCall = calls.find((c: any) => c[0].includes('mutation updateDocBlock'));
     const updatedContent = JSON.parse(updateBlockCall[1].content);
-    expect(updatedContent.deltaFormat).toEqual([
-      { insert: 'Hello\n', attributes: { comments: [111111, 500444] } },
-    ]);
+    expect(updatedContent.deltaFormat).toEqual([{ insert: 'Hello\n', attributes: { comments: [111111, 500444] } }]);
   });
 
   it('preserves existing text op comments when adding text-selection comment', async () => {
@@ -1167,18 +1166,19 @@ describe('UpdateDocTool', () => {
       }
       if (query.includes('query getDocBlockContent')) {
         return Promise.resolve({
-          docs: [{
-            blocks: [{
-              id: 'blk_prev',
-              type: 'normal_text',
-              content: {
-                deltaFormat: [
-                  { insert: 'Hello', attributes: { comments: [333333] } },
-                  { insert: ' world\n' },
-                ],
-              },
-            }],
-          }],
+          docs: [
+            {
+              blocks: [
+                {
+                  id: 'blk_prev',
+                  type: 'normal_text',
+                  content: {
+                    deltaFormat: [{ insert: 'Hello', attributes: { comments: [333333] } }, { insert: ' world\n' }],
+                  },
+                },
+              ],
+            },
+          ],
         });
       }
       if (query.includes('mutation updateDocBlock')) {
@@ -1223,19 +1223,23 @@ describe('UpdateDocTool', () => {
       }
       if (query.includes('query getDocBlockContent')) {
         return Promise.resolve({
-          docs: [{
-            blocks: [{
-              id: 'blk_multi',
-              type: 'normal_text',
-              content: {
-                deltaFormat: [
-                  { insert: 'Hello ' },
-                  { insert: 'beautiful ', attributes: { bold: true } },
-                  { insert: 'world\n' },
-                ],
-              },
-            }],
-          }],
+          docs: [
+            {
+              blocks: [
+                {
+                  id: 'blk_multi',
+                  type: 'normal_text',
+                  content: {
+                    deltaFormat: [
+                      { insert: 'Hello ' },
+                      { insert: 'beautiful ', attributes: { bold: true } },
+                      { insert: 'world\n' },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
         });
       }
       if (query.includes('mutation updateDocBlock')) {
@@ -1315,19 +1319,23 @@ describe('UpdateDocTool', () => {
       }
       if (query.includes('query getDocBlockContent')) {
         return Promise.resolve({
-          docs: [{
-            blocks: [{
-              id: 'blk_blot',
-              type: 'normal_text',
-              content: {
-                deltaFormat: [
-                  { insert: 'Hi ' },
-                  { insert: { mention: { id: 123, type: 'USER' } } },
-                  { insert: ' bye\n' },
-                ],
-              },
-            }],
-          }],
+          docs: [
+            {
+              blocks: [
+                {
+                  id: 'blk_blot',
+                  type: 'normal_text',
+                  content: {
+                    deltaFormat: [
+                      { insert: 'Hi ' },
+                      { insert: { mention: { id: 123, type: 'USER' } } },
+                      { insert: ' bye\n' },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
         });
       }
       if (query.includes('mutation updateDocBlock')) {
@@ -1382,14 +1390,24 @@ describe('UpdateDocTool', () => {
         return Promise.resolve({ create_update: { id: '222000', body: 'Hi', created_at: '2024-01-01' } });
       }
       if (query.includes('query getDocBlockContent')) {
-        return Promise.resolve({ docs: [{ blocks: [{ id: 'blk_img', type: 'image', content: { url: 'http://img.png' } }] }] });
+        return Promise.resolve({
+          docs: [{ blocks: [{ id: 'blk_img', type: 'image', content: { url: 'http://img.png' } }] }],
+        });
       }
       return Promise.resolve({});
     });
 
     const result = await callToolByNameRawAsync('update_doc', {
       doc_id: 'doc_123',
-      operations: [{ operation_type: 'add_comment', body: '<p>Hi</p>', block_id: 'blk_img', selection_from: 0, selection_length: 3 }],
+      operations: [
+        {
+          operation_type: 'add_comment',
+          body: '<p>Hi</p>',
+          block_id: 'blk_img',
+          selection_from: 0,
+          selection_length: 3,
+        },
+      ],
     });
 
     expect(result.content[0].text).toContain('[FAILED] add_comment');
@@ -1429,23 +1447,17 @@ describe('UpdateDocTool', () => {
 
     const result = await callToolByNameRawAsync('update_doc', {
       doc_id: 'doc_123',
-      operations: [
-        { operation_type: 'add_comment', body: '<p>Multi-block</p>', block_id: ['blk_a', 'blk_b'] },
-      ],
+      operations: [{ operation_type: 'add_comment', body: '<p>Multi-block</p>', block_id: ['blk_a', 'blk_b'] }],
     });
 
     expect(result.content[0].text).toContain('across 2 blocks');
     expect(updateBlockCalls).toHaveLength(2);
 
     const contentA = JSON.parse(updateBlockCalls[0].content);
-    expect(contentA.deltaFormat).toEqual([
-      { insert: 'Block A\n', attributes: { comments: [900888] } },
-    ]);
+    expect(contentA.deltaFormat).toEqual([{ insert: 'Block A\n', attributes: { comments: [900888] } }]);
 
     const contentB = JSON.parse(updateBlockCalls[1].content);
-    expect(contentB.deltaFormat).toEqual([
-      { insert: 'Block B\n', attributes: { comments: [900888] } },
-    ]);
+    expect(contentB.deltaFormat).toEqual([{ insert: 'Block B\n', attributes: { comments: [900888] } }]);
   });
 
   it('rejects selection_from/selection_length with multiple block_ids', async () => {
@@ -1642,7 +1654,9 @@ describe('UpdateDocTool', () => {
       }
       if (query.includes('query getDocBlockContent')) {
         return Promise.resolve({
-          docs: [{ blocks: [{ id: 'blk_short', type: 'normal_text', content: { deltaFormat: [{ insert: 'Hi\n' }] } }] }],
+          docs: [
+            { blocks: [{ id: 'blk_short', type: 'normal_text', content: { deltaFormat: [{ insert: 'Hi\n' }] } }] },
+          ],
         });
       }
       return Promise.resolve({});
@@ -1651,7 +1665,13 @@ describe('UpdateDocTool', () => {
     const result = await callToolByNameRawAsync('update_doc', {
       doc_id: 'doc_123',
       operations: [
-        { operation_type: 'add_comment', body: '<p>Hi</p>', block_id: 'blk_short', selection_from: 100, selection_length: 5 },
+        {
+          operation_type: 'add_comment',
+          body: '<p>Hi</p>',
+          block_id: 'blk_short',
+          selection_from: 100,
+          selection_length: 5,
+        },
       ],
     });
 

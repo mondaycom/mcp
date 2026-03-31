@@ -69,7 +69,6 @@ export const getDocBoardItem = gql`
   }
 `;
 
-
 // Fetch all blocks of a doc (with raw JSON content) to read current block state before modifying it
 export const getDocBlockContent = gql`
   query getDocBlockContent($docId: [ID!]) {

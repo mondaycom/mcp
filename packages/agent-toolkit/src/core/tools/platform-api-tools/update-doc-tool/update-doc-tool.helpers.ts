@@ -59,7 +59,12 @@ function mapDeltaFormat(ops: DeltaOperation[]): OperationInput[] {
       return {
         insert: {
           // GraphQL ID scalar expects a string
-          blot: { column_value: { item_id: String(op.insert.column_value.item_id), column_id: op.insert.column_value.column_id } },
+          blot: {
+            column_value: {
+              item_id: String(op.insert.column_value.item_id),
+              column_id: op.insert.column_value.column_id,
+            },
+          },
         },
       };
     }
@@ -177,7 +182,9 @@ export function applyCommentToDelta(
       if (overlapStart > opStart) {
         result.push({ ...op, insert: insert.slice(0, overlapStart - opStart) });
       }
-      result.push(addCommentToOp({ ...op, insert: insert.slice(overlapStart - opStart, overlapEnd - opStart) }, postId));
+      result.push(
+        addCommentToOp({ ...op, insert: insert.slice(overlapStart - opStart, overlapEnd - opStart) }, postId),
+      );
       if (overlapEnd < opEnd) {
         result.push({ ...op, insert: insert.slice(overlapEnd - opStart) });
       }
@@ -227,9 +234,10 @@ export function buildCreateBlockInput(block: CreateBlock): CreateBlockInput {
         throw new Error('image block requires either asset_id or public_url');
       }
       return {
-        image_block: block.asset_id != null
-          ? { asset_id: String(block.asset_id), width: block.width }
-          : { public_url: block.public_url!, width: block.width },
+        image_block:
+          block.asset_id != null
+            ? { asset_id: String(block.asset_id), width: block.width }
+            : { public_url: block.public_url!, width: block.width },
       };
     }
     case 'video':

@@ -318,7 +318,9 @@ COMMENTS:
     return itemId;
   }
 
-  private async fetchAllBlockContent(docId: string): Promise<Array<{ id: string; type: string; content: Record<string, unknown> }>> {
+  private async fetchAllBlockContent(
+    docId: string,
+  ): Promise<Array<{ id: string; type: string; content: Record<string, unknown> }>> {
     const res = await this.mondayApi.request<GetDocBlockContentQuery>(getDocBlockContent, { docId: [docId] });
     const blocks = res.docs?.[0]?.blocks ?? [];
     return blocks.map((block) => {
