@@ -14,6 +14,10 @@ export type MondayApiToolContext = {
   agentType?: string;
   agentClientName?: string;
   clientRedirectUris?: string[];
+
+  // Per-execution metadata — tools can enrich this during executeInternal
+  // and it flows automatically into tracking events via the context spread.
+  metadata?: Record<string, unknown>;
 };
 
 export type BaseMondayApiToolConstructor = new (api: ApiClient, token?: string) => BaseMondayApiTool<any>;
@@ -60,8 +64,7 @@ export abstract class BaseMondayApiTool<
       throw error;
     } finally {
       const executionTimeInMs = Date.now() - startTime;
-      const trackingData = this.getExecutionTrackingData(input);
-      this.trackToolExecution(this.name, executionTimeInMs, isError, trackingData);
+      this.trackToolExecution(this.name, executionTimeInMs, isError);
     }
   }
 
@@ -69,14 +72,6 @@ export abstract class BaseMondayApiTool<
    * Abstract method that subclasses should implement for their actual logic
    */
   protected abstract executeInternal(input?: ToolInputType<Input>): Promise<ToolOutputType<Output>>;
-
-  /**
-   * Override in subclasses to provide tool-specific metadata for tracking events.
-   * Called after executeInternal completes (success or failure).
-   */
-  protected getExecutionTrackingData(_input?: ToolInputType<Input>): Record<string, unknown> | undefined {
-    return undefined;
-  }
 
   /**
    * Tracks tool execution with timing and error information
