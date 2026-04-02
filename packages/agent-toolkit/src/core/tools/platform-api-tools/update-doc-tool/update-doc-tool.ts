@@ -5,6 +5,9 @@ import {
   updateDocName,
   addContentToDocFromMarkdown,
   getDocByObjectId,
+  getDocObjectIdByDocId,
+  getDocBoardItem,
+  createDocComment,
 } from './update-doc-tool.graphql';
 
 import {
@@ -23,6 +26,7 @@ import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { buildUpdateBlockContent, buildCreateBlockInput } from './update-doc-tool.helpers';
 import { updateDocToolSchema, UpdateBlockContent, CreateBlock } from './update-doc-tool.schema';
+import { mentionsListSchema } from '../create-update-tool/create-update-tool';
 
 export { updateDocToolSchema };
 
@@ -30,6 +34,26 @@ export { updateDocToolSchema };
 
 type GetDocByObjectIdQuery = {
   docs?: Array<{ id: string } | null> | null;
+};
+
+type GetDocObjectIdByDocIdQuery = {
+  docs?: Array<{ id: string; object_id: string } | null> | null;
+};
+
+type GetDocBoardItemQuery = {
+  boards?: Array<{
+    items_page?: {
+      items?: Array<{ id: string }> | null;
+    } | null;
+  }> | null;
+};
+
+type CreateDocCommentMutation = {
+  create_update?: {
+    id: string;
+    body: string;
+    created_at?: string | null;
+  } | null;
 };
 
 // ─── Tool class ───────────────────────────────────────────────────────────────
@@ -69,7 +93,10 @@ BLOCK CONTENT (delta_format): Array of insert ops. Last op MUST be {insert: {tex
 - Inline column value: [{insert: {column_value: {item_id: 111, column_id: "status"}}}, {insert: {text: "\\n"}}]
 - Supported attributes: bold, italic, underline, strike, code, link, color, background (not applicable to mention/column_value ops)
 
-IMAGE WITH ASSET: For asset-based images, use create_block with block_type "image" and asset_id (instead of public_url). add_markdown_content does NOT support asset images — for mixed content, alternate add_markdown_content (text) and create_block (image) operations in sequence.`;
+IMAGE WITH ASSET: For asset-based images, use create_block with block_type "image" and asset_id (instead of public_url). add_markdown_content does NOT support asset images — for mixed content, alternate add_markdown_content (text) and create_block (image) operations in sequence.
+
+COMMENTS:
+- add_comment: Create a new comment or reply on the document. Documents have a backing board with a single item where comments live. The tool automatically resolves the item ID from the doc's object_id (board ID). Use parent_update_id to reply to an existing comment. Format text with HTML, not markdown. Use mentions_list for @mentions.`;
   }
 
   getInputSchema(): typeof updateDocToolSchema {
@@ -101,7 +128,7 @@ IMAGE WITH ASSET: For asset-based images, use create_block with block_type "imag
       for (let i = 0; i < input.operations.length; i++) {
         const op = input.operations[i];
         try {
-          const result = await this.executeOperation(docId, op);
+          const result = await this.executeOperation(docId, op, input.object_id);
           results.push(`- [OK] ${op.operation_type}${result ? `: ${result}` : ''}`);
         } catch (err) {
           const errMsg = err instanceof Error ? err.message : 'Unknown error';
@@ -129,6 +156,7 @@ IMAGE WITH ASSET: For asset-based images, use create_block with block_type "imag
   private async executeOperation(
     docId: string,
     op: ToolInputType<typeof updateDocToolSchema>['operations'][number],
+    objectId?: string,
   ): Promise<string> {
     switch (op.operation_type) {
       case 'set_name':
@@ -149,6 +177,8 @@ IMAGE WITH ASSET: For asset-based images, use create_block with block_type "imag
           op.after_block_id,
           op.parent_block_id,
         );
+      case 'add_comment':
+        return this.executeAddComment(docId, objectId, op.body, op.parent_update_id, op.mentions_list);
       default: {
         const unhandled = (op as { operation_type: string }).operation_type;
         throw new Error(`Unsupported operation type: "${unhandled}"`);
@@ -241,6 +271,73 @@ IMAGE WITH ASSET: For asset-based images, use create_block with block_type "imag
       throw new Error('No response from delete_doc_block');
     }
     return `Block ${blockId} deleted`;
+  }
+
+  private async resolveObjectId(docId: string, objectId?: string): Promise<string> {
+    if (objectId) return objectId;
+
+    const res = await this.mondayApi.request<GetDocObjectIdByDocIdQuery>(getDocObjectIdByDocId, {
+      docId: [docId],
+    });
+    const doc = res.docs?.[0];
+    if (!doc?.object_id) {
+      throw new Error(`Could not resolve object_id for doc ${docId}`);
+    }
+    return doc.object_id;
+  }
+
+  // Follows mf-docs logic: comments always live on the first board item (items[0]).
+  private async resolveDocItemId(objectId: string): Promise<string> {
+    const res = await this.mondayApi.request<GetDocBoardItemQuery>(getDocBoardItem, {
+      boardId: objectId,
+    });
+    const itemId = res.boards?.[0]?.items_page?.items?.[0]?.id;
+    if (!itemId) {
+      throw new Error(`No item found on the document backing board (object_id: ${objectId})`);
+    }
+    return itemId;
+  }
+
+  private async executeAddComment(
+    docId: string,
+    objectId: string | undefined,
+    body: string,
+    parentUpdateId?: number,
+    mentionsList?: string,
+  ): Promise<string> {
+    const resolvedObjectId = await this.resolveObjectId(docId, objectId);
+    const itemId = await this.resolveDocItemId(resolvedObjectId);
+
+    let parsedMentionsList: Array<{ id: string; type: string }> | undefined;
+    if (mentionsList) {
+      const parsedJson = JSON.parse(mentionsList);
+      const validationResult = mentionsListSchema.safeParse(parsedJson);
+      if (!validationResult.success) {
+        throw new Error(`Invalid mentions_list format: ${validationResult.error.message}`);
+      }
+      parsedMentionsList = validationResult.data;
+    }
+
+    const variables: {
+      itemId: string;
+      body: string;
+      parentId?: string;
+      mentionsList?: Array<{ id: string; type: string }>;
+    } = {
+      itemId,
+      body,
+      parentId: parentUpdateId?.toString(),
+      mentionsList: parsedMentionsList,
+    };
+
+    const res = await this.mondayApi.request<CreateDocCommentMutation>(createDocComment, variables);
+
+    if (!res.create_update?.id) {
+      throw new Error('Failed to create comment: no update returned');
+    }
+
+    const action = parentUpdateId ? `Reply to update ${parentUpdateId}` : 'Comment';
+    return `${action} created (update ID: ${res.create_update.id})`;
   }
 
   private async executeReplaceBlock(
