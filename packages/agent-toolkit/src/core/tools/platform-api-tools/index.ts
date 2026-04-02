@@ -46,6 +46,7 @@ import { BoardInsightsTool } from './board-insights/board-insights-tool';
 import { SearchTool } from './search-tool/search-tool';
 import { CreateUpdateInMondayTool } from './create-update-tool-ui/create-update-ui-tool';
 import { UpdateAssetsOnItemTool } from './update-assets-on-item-tool/update-assets-on-item-tool';
+import { GetAssetsTool } from './get-assets-tool/get-assets-tool';
 import { UserContextTool } from './user-context-tool/user-context-tool';
 import { GetNotetakerMeetingsTool } from './get-notetaker-meetings-tool/get-notetaker-meetings-tool';
 import { UndoActionTool } from './undo-action-tool/undo-action-tool';
@@ -99,6 +100,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   SearchTool,
   UserContextTool,
   UpdateAssetsOnItemTool,
+  GetAssetsTool,
   GetNotetakerMeetingsTool,
   CreateViewTool,
   UndoActionTool,
@@ -150,6 +152,7 @@ export * from './board-insights/board-insights-tool';
 export * from './search-tool/search-tool';
 export * from './user-context-tool/user-context-tool';
 export * from './update-assets-on-item-tool/update-assets-on-item-tool';
+export * from './get-assets-tool/get-assets-tool';
 // Notetaker Tools
 export * from './get-notetaker-meetings-tool/get-notetaker-meetings-tool';
 // Dashboard Tools
