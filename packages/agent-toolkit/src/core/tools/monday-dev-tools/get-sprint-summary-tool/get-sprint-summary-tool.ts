@@ -87,7 +87,12 @@ When viewing the section "Completed by Assignee", you'll see user IDs in the for
       }
 
       return {
-        content: documentContent.content!,
+        content: {
+          message: 'Sprint summary retrieved',
+          sprint_id: input.sprintId,
+          sprint_name: sprintMetadata.sprintName,
+          markdown: documentContent.content!,
+        },
       };
     } catch (error) {
       return {

@@ -11,14 +11,9 @@ import {
   INVALID_BOARDS_RESPONSE,
   NO_BOARDS_RESPONSE,
   REGULAR_BOARDS_RESPONSE,
-  EXPECTED_SINGLE_PAIR_OUTPUT,
-  EXPECTED_MULTIPLE_PAIRS_OUTPUT,
-  EXPECTED_SPRINTS_BOARD_ONLY_OUTPUT,
-  EXPECTED_TASKS_BOARD_ONLY_OUTPUT,
   EXPECTED_NO_BOARDS_ERROR,
-  EXPECTED_NO_VALID_PAIRS_MESSAGE,
-  EXPECTED_BOARDS_WITHOUT_WORKSPACE_OUTPUT,
   EXPECTED_GRAPHQL_ERROR,
+  TECHNICAL_REFERENCE,
 } from './get-sprints-boards-tool-test-data';
 
 describe('GetSprintsBoardsTool', () => {
@@ -35,9 +30,20 @@ describe('GetSprintsBoardsTool', () => {
       mocks.setResponse(VALID_BOARD_PAIR_RESPONSE);
 
       const result = await callToolByNameRawAsync('get_monday_dev_sprints_boards', {});
-      const content = result.content[0].text;
+      const parsed = JSON.parse(result.content[0].text);
 
-      expect(content).toBe(EXPECTED_SINGLE_PAIR_OUTPUT);
+      expect(parsed.message).toBe('Found 1 matched pair(s)');
+      expect(parsed.pairs).toHaveLength(1);
+      expect(parsed.pairs[0].sprints_board.id).toBe('1001');
+      expect(parsed.pairs[0].sprints_board.name).toBe('Sprints Board');
+      expect(parsed.pairs[0].sprints_board.workspace_id).toBe('ws_1');
+      expect(parsed.pairs[0].sprints_board.workspace_name).toBe('Development Team');
+      expect(parsed.pairs[0].tasks_board.id).toBe('2001');
+      expect(parsed.pairs[0].tasks_board.name).toBe('Tasks Board');
+      expect(parsed.pairs[0].tasks_board.workspace_id).toBe('ws_1');
+      expect(parsed.pairs[0].tasks_board.workspace_name).toBe('Development Team');
+      expect(parsed.technical_reference).toBe(TECHNICAL_REFERENCE);
+      expect(parsed.warning).toBeUndefined();
 
       const calls = mocks.getMockRequest().mock.calls;
       expect(calls.length).toBe(1);
@@ -49,9 +55,15 @@ describe('GetSprintsBoardsTool', () => {
       mocks.setResponse(MULTIPLE_BOARD_PAIRS_RESPONSE);
 
       const result = await callToolByNameRawAsync('get_monday_dev_sprints_boards', {});
-      const content = result.content[0].text;
+      const parsed = JSON.parse(result.content[0].text);
 
-      expect(content).toBe(EXPECTED_MULTIPLE_PAIRS_OUTPUT);
+      expect(parsed.message).toBe('Found 2 matched pair(s)');
+      expect(parsed.pairs).toHaveLength(2);
+      expect(parsed.warning).toBe('Multiple board pairs detected. Confirm with user which pair and workspace to use before any operation.');
+      expect(parsed.pairs[0].sprints_board.id).toBe('1001');
+      expect(parsed.pairs[0].sprints_board.name).toBe('Frontend Sprints');
+      expect(parsed.pairs[1].sprints_board.id).toBe('1002');
+      expect(parsed.pairs[1].sprints_board.name).toBe('Backend Sprints');
     });
 
     it('should have correct tool metadata', () => {
@@ -71,37 +83,62 @@ describe('GetSprintsBoardsTool', () => {
       mocks.setResponse(SPRINTS_BOARD_ONLY_RESPONSE);
 
       const result = await callToolByNameRawAsync('get_monday_dev_sprints_boards', {});
-      const content = result.content[0].text;
+      const parsed = JSON.parse(result.content[0].text);
 
-      expect(content).toBe(EXPECTED_SPRINTS_BOARD_ONLY_OUTPUT);
+      expect(parsed.message).toBe('Found 1 matched pair(s)');
+      expect(parsed.pairs).toHaveLength(1);
+      expect(parsed.pairs[0].sprints_board.id).toBe('1001');
+      expect(parsed.pairs[0].sprints_board.name).toBe('Sprints Board');
+      expect(parsed.pairs[0].sprints_board.workspace_id).toBe('ws_1');
+      // tasks board not in recent list - uses fallback name and unknown workspace
+      expect(parsed.pairs[0].tasks_board.id).toBe('2001');
+      expect(parsed.pairs[0].tasks_board.name).toBe('Tasks Board 2001');
+      expect(parsed.pairs[0].tasks_board.workspace_id).toBe('unknown');
+      expect(parsed.pairs[0].tasks_board.workspace_name).toBe('Unknown');
     });
 
     it('should find pair when only tasks board is in recent list', async () => {
       mocks.setResponse(TASKS_BOARD_ONLY_RESPONSE);
 
       const result = await callToolByNameRawAsync('get_monday_dev_sprints_boards', {});
-      const content = result.content[0].text;
+      const parsed = JSON.parse(result.content[0].text);
 
-      expect(content).toBe(EXPECTED_TASKS_BOARD_ONLY_OUTPUT);
+      expect(parsed.message).toBe('Found 1 matched pair(s)');
+      expect(parsed.pairs).toHaveLength(1);
+      // sprints board not in recent list - uses fallback name and unknown workspace
+      expect(parsed.pairs[0].sprints_board.id).toBe('1001');
+      expect(parsed.pairs[0].sprints_board.name).toBe('Sprints Board 1001');
+      expect(parsed.pairs[0].sprints_board.workspace_id).toBe('unknown');
+      expect(parsed.pairs[0].tasks_board.id).toBe('2001');
+      expect(parsed.pairs[0].tasks_board.name).toBe('Tasks Board');
+      expect(parsed.pairs[0].tasks_board.workspace_id).toBe('ws_1');
     });
 
     it('should handle alternative settings format (boardId instead of boardIds)', async () => {
       mocks.setResponse(ALTERNATIVE_SETTINGS_FORMAT_RESPONSE);
 
       const result = await callToolByNameRawAsync('get_monday_dev_sprints_boards', {});
-      const content = result.content[0].text;
+      const parsed = JSON.parse(result.content[0].text);
 
-      // Uses boardId instead of boardIds, but produces same output format
-      expect(content).toBe(EXPECTED_SINGLE_PAIR_OUTPUT);
+      // Uses boardId instead of boardIds, but produces same output structure
+      expect(parsed.message).toBe('Found 1 matched pair(s)');
+      expect(parsed.pairs).toHaveLength(1);
+      expect(parsed.pairs[0].sprints_board.id).toBe('1001');
+      expect(parsed.pairs[0].tasks_board.id).toBe('2001');
     });
 
     it('should handle boards without workspace information', async () => {
       mocks.setResponse(BOARDS_WITHOUT_WORKSPACE_RESPONSE);
 
       const result = await callToolByNameRawAsync('get_monday_dev_sprints_boards', {});
-      const content = result.content[0].text;
+      const parsed = JSON.parse(result.content[0].text);
 
-      expect(content).toBe(EXPECTED_BOARDS_WITHOUT_WORKSPACE_OUTPUT);
+      expect(parsed.message).toBe('Found 1 matched pair(s)');
+      expect(parsed.pairs).toHaveLength(1);
+      expect(parsed.pairs[0].sprints_board.workspace_id).toBe('unknown');
+      expect(parsed.pairs[0].sprints_board.workspace_name).toBe('Unknown');
+      expect(parsed.pairs[0].tasks_board.workspace_id).toBe('unknown');
+      expect(parsed.pairs[0].tasks_board.workspace_name).toBe('Unknown');
     });
   });
 
@@ -119,20 +156,23 @@ describe('GetSprintsBoardsTool', () => {
       mocks.setResponse(REGULAR_BOARDS_RESPONSE);
 
       const result = await callToolByNameRawAsync('get_monday_dev_sprints_boards', {});
-      const content = result.content[0].text;
+      const parsed = JSON.parse(result.content[0].text);
 
-      expect(content).toBe(EXPECTED_NO_VALID_PAIRS_MESSAGE);
+      expect(parsed.message).toBe('No monday-dev sprints board pairs found');
+      expect(parsed.pairs).toEqual([]);
+      expect(parsed.boards_checked).toBe(2);
     });
 
     it('should handle boards with missing required columns', async () => {
       mocks.setResponse(INVALID_BOARDS_RESPONSE);
 
       const result = await callToolByNameRawAsync('get_monday_dev_sprints_boards', {});
-      const content = result.content[0].text;
+      const parsed = JSON.parse(result.content[0].text);
 
       // Boards don't have all required columns, so no pairs should be found
-      expect(content).toContain('No Monday-Dev Sprints Board Pairs Found');
-      expect(content).toContain('**Boards Checked:** 2');
+      expect(parsed.message).toBe('No monday-dev sprints board pairs found');
+      expect(parsed.pairs).toEqual([]);
+      expect(parsed.boards_checked).toBe(2);
     });
   });
 

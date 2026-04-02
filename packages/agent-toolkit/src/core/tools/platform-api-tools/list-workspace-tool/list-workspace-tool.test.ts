@@ -50,7 +50,9 @@ describe('ListWorkspaceTool', () => {
 
       const result = await callToolByNameRawAsync('list_workspaces', args);
 
-      expect(result.content[0].text).toBe('No workspaces found.');
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed.message).toBe('No workspaces found.');
+      expect(parsed.data).toEqual([]);
       // Two calls: first member (empty), then all (also empty)
       expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
 
@@ -75,7 +77,9 @@ describe('ListWorkspaceTool', () => {
 
       const result = await callToolByNameRawAsync('list_workspaces', args);
 
-      expect(result.content[0].text).toBe('No workspaces found.');
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed.message).toBe('No workspaces found.');
+      expect(parsed.data).toEqual([]);
       // Two calls: first member (empty), then all (also empty)
       expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
 
@@ -365,9 +369,9 @@ describe('ListWorkspaceTool', () => {
 
       const result = await callToolByNameRawAsync('list_workspaces', args);
 
-      expect(result.content[0].text).toBe(
-        'No workspaces found matching the search term. Try using the tool without a search term',
-      );
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed.message).toBe('No workspaces found matching the search term. Try using the tool without a search term');
+      expect(parsed.data).toEqual([]);
       // Two calls: first member (no match), then all (still no match)
       expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
 
