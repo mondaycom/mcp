@@ -1,5 +1,5 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
-import { callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
+import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '../test-utils/mock-api-client';
 
 describe('AddContentToDocTool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
@@ -287,7 +287,7 @@ describe('AddContentToDocTool', () => {
         markdown: 'Content',
       });
 
-      const parsed = JSON.parse(result.content[0].text);
+      const parsed = parseToolResult(result);
       expect(parsed.doc_name).toBe('My Important Doc');
       expect(parsed.doc_url).toBe('https://example.com/my-doc');
       expect(parsed.doc_id).toBe('doc_123');

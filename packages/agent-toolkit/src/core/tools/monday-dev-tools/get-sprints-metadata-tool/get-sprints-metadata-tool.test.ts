@@ -1,5 +1,5 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
-import { callToolByNameRawAsync, createMockApiClient } from '../../platform-api-tools/test-utils/mock-api-client';
+import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '../../platform-api-tools/test-utils/mock-api-client';
 import { GetSprintsMetadataTool, getSprintsMetadataToolSchema } from './get-sprints-metadata-tool';
 import { z } from 'zod';
 import { ERROR_PREFIXES } from '../shared';
@@ -38,7 +38,7 @@ describe('GetSprintsMetadataTool', () => {
       const args: InputType = { sprintsBoardId: 123456789 };
       const result = await callToolByNameRawAsync('get_sprints_metadata', args);
 
-      const parsed = JSON.parse(result.content[0].text);
+      const parsed = parseToolResult(result);
       expect(parsed.message).toBe('Sprints metadata retrieved');
       expect(parsed.board_id).toBe(123456789);
       expect(parsed.total).toBe(5);
@@ -76,7 +76,7 @@ describe('GetSprintsMetadataTool', () => {
       const args: InputType = { sprintsBoardId: 123456789, limit: 50 };
       const result = await callToolByNameRawAsync('get_sprints_metadata', args);
 
-      const parsed = JSON.parse(result.content[0].text);
+      const parsed = parseToolResult(result);
       expect(parsed.message).toBe('Sprints metadata retrieved');
       expect(parsed.total).toBe(5);
 
@@ -136,7 +136,7 @@ describe('GetSprintsMetadataTool', () => {
       const args: InputType = { sprintsBoardId: 123456789 };
       const result = await callToolByNameRawAsync('get_sprints_metadata', args);
 
-      const parsed = JSON.parse(result.content[0].text);
+      const parsed = parseToolResult(result);
       expect(parsed.message).toBe('Sprints metadata retrieved');
       expect(parsed.total).toBe(0);
       expect(parsed.data).toEqual([]);
@@ -151,7 +151,7 @@ describe('GetSprintsMetadataTool', () => {
       const args: InputType = { sprintsBoardId: 123456789 };
       const result = await callToolByNameRawAsync('get_sprints_metadata', args);
 
-      const parsed = JSON.parse(result.content[0].text);
+      const parsed = parseToolResult(result);
       expect(parsed.message).toBe('Sprints metadata retrieved');
       expect(parsed.total).toBe(1);
       expect(parsed.data[0].timeline).toBeNull();

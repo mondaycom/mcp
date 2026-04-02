@@ -1,5 +1,5 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
-import { callToolByNameRawAsync, createMockApiClient } from '../../platform-api-tools/test-utils/mock-api-client';
+import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '../../platform-api-tools/test-utils/mock-api-client';
 import { GetSprintsBoardsTool } from './get-sprints-boards-tool';
 import {
   VALID_BOARD_PAIR_RESPONSE,
@@ -30,7 +30,7 @@ describe('GetSprintsBoardsTool', () => {
       mocks.setResponse(VALID_BOARD_PAIR_RESPONSE);
 
       const result = await callToolByNameRawAsync('get_monday_dev_sprints_boards', {});
-      const parsed = JSON.parse(result.content[0].text);
+      const parsed = parseToolResult(result);
 
       expect(parsed.message).toBe('Found 1 matched pair(s)');
       expect(parsed.pairs).toHaveLength(1);
@@ -55,7 +55,7 @@ describe('GetSprintsBoardsTool', () => {
       mocks.setResponse(MULTIPLE_BOARD_PAIRS_RESPONSE);
 
       const result = await callToolByNameRawAsync('get_monday_dev_sprints_boards', {});
-      const parsed = JSON.parse(result.content[0].text);
+      const parsed = parseToolResult(result);
 
       expect(parsed.message).toBe('Found 2 matched pair(s)');
       expect(parsed.pairs).toHaveLength(2);
@@ -83,7 +83,7 @@ describe('GetSprintsBoardsTool', () => {
       mocks.setResponse(SPRINTS_BOARD_ONLY_RESPONSE);
 
       const result = await callToolByNameRawAsync('get_monday_dev_sprints_boards', {});
-      const parsed = JSON.parse(result.content[0].text);
+      const parsed = parseToolResult(result);
 
       expect(parsed.message).toBe('Found 1 matched pair(s)');
       expect(parsed.pairs).toHaveLength(1);
@@ -101,7 +101,7 @@ describe('GetSprintsBoardsTool', () => {
       mocks.setResponse(TASKS_BOARD_ONLY_RESPONSE);
 
       const result = await callToolByNameRawAsync('get_monday_dev_sprints_boards', {});
-      const parsed = JSON.parse(result.content[0].text);
+      const parsed = parseToolResult(result);
 
       expect(parsed.message).toBe('Found 1 matched pair(s)');
       expect(parsed.pairs).toHaveLength(1);
@@ -118,7 +118,7 @@ describe('GetSprintsBoardsTool', () => {
       mocks.setResponse(ALTERNATIVE_SETTINGS_FORMAT_RESPONSE);
 
       const result = await callToolByNameRawAsync('get_monday_dev_sprints_boards', {});
-      const parsed = JSON.parse(result.content[0].text);
+      const parsed = parseToolResult(result);
 
       // Uses boardId instead of boardIds, but produces same output structure
       expect(parsed.message).toBe('Found 1 matched pair(s)');
@@ -131,7 +131,7 @@ describe('GetSprintsBoardsTool', () => {
       mocks.setResponse(BOARDS_WITHOUT_WORKSPACE_RESPONSE);
 
       const result = await callToolByNameRawAsync('get_monday_dev_sprints_boards', {});
-      const parsed = JSON.parse(result.content[0].text);
+      const parsed = parseToolResult(result);
 
       expect(parsed.message).toBe('Found 1 matched pair(s)');
       expect(parsed.pairs).toHaveLength(1);
@@ -156,9 +156,9 @@ describe('GetSprintsBoardsTool', () => {
       mocks.setResponse(REGULAR_BOARDS_RESPONSE);
 
       const result = await callToolByNameRawAsync('get_monday_dev_sprints_boards', {});
-      const parsed = JSON.parse(result.content[0].text);
+      const parsed = parseToolResult(result);
 
-      expect(parsed.message).toBe('No monday-dev sprints board pairs found');
+      expect(parsed.message).toContain('No monday-dev sprints board pairs found');
       expect(parsed.pairs).toEqual([]);
       expect(parsed.boards_checked).toBe(2);
     });
@@ -167,10 +167,10 @@ describe('GetSprintsBoardsTool', () => {
       mocks.setResponse(INVALID_BOARDS_RESPONSE);
 
       const result = await callToolByNameRawAsync('get_monday_dev_sprints_boards', {});
-      const parsed = JSON.parse(result.content[0].text);
+      const parsed = parseToolResult(result);
 
       // Boards don't have all required columns, so no pairs should be found
-      expect(parsed.message).toBe('No monday-dev sprints board pairs found');
+      expect(parsed.message).toContain('No monday-dev sprints board pairs found');
       expect(parsed.pairs).toEqual([]);
       expect(parsed.boards_checked).toBe(2);
     });

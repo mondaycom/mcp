@@ -1,5 +1,5 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
-import { callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
+import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '../test-utils/mock-api-client';
 import { listWorkspaceToolSchema } from './list-workspace-tool';
 import { z, ZodTypeAny } from 'zod';
 
@@ -50,7 +50,7 @@ describe('ListWorkspaceTool', () => {
 
       const result = await callToolByNameRawAsync('list_workspaces', args);
 
-      const parsed = JSON.parse(result.content[0].text);
+      const parsed = parseToolResult(result);
       expect(parsed.message).toBe('No workspaces found.');
       expect(parsed.data).toEqual([]);
       // Two calls: first member (empty), then all (also empty)
@@ -77,7 +77,7 @@ describe('ListWorkspaceTool', () => {
 
       const result = await callToolByNameRawAsync('list_workspaces', args);
 
-      const parsed = JSON.parse(result.content[0].text);
+      const parsed = parseToolResult(result);
       expect(parsed.message).toBe('No workspaces found.');
       expect(parsed.data).toEqual([]);
       // Two calls: first member (empty), then all (also empty)
@@ -119,7 +119,7 @@ describe('ListWorkspaceTool', () => {
         membershipKind: 'member',
       });
 
-      const parsed = JSON.parse(result.content[0].text);
+      const parsed = parseToolResult(result);
       expect(parsed.message).toBe('Workspaces retrieved');
       expect(parsed.data).toHaveLength(3);
       expect(parsed.data.find((w: any) => w.id === '123').name).toBe('Marketing Team');
@@ -144,7 +144,7 @@ describe('ListWorkspaceTool', () => {
 
       expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
 
-      const parsed = JSON.parse(result.content[0].text);
+      const parsed = parseToolResult(result);
       expect(parsed.data).toHaveLength(2);
       expect(parsed.data.find((w: any) => w.id === '111').name).toBe('Workspace One');
       expect(parsed.data.find((w: any) => w.id === '222').name).toBe('Workspace Two');
@@ -189,7 +189,7 @@ describe('ListWorkspaceTool', () => {
         membershipKind: 'member',
       });
 
-      const parsed = JSON.parse(result.content[0].text);
+      const parsed = parseToolResult(result);
       const names = parsed.data.map((w: any) => w.name);
       expect(names).toContain('Marketing Team');
       expect(names).toContain('Digital Marketing');
@@ -231,7 +231,7 @@ describe('ListWorkspaceTool', () => {
         membershipKind: 'member',
       });
 
-      const parsed = JSON.parse(result.content[0].text);
+      const parsed = parseToolResult(result);
       const names = parsed.data.map((w: any) => w.name);
       expect(names).toContain('Sales Marketing');
       expect(names).toContain('SalesMarketing');
@@ -269,7 +269,7 @@ describe('ListWorkspaceTool', () => {
         membershipKind: 'member',
       });
 
-      const parsed = JSON.parse(result.content[0].text);
+      const parsed = parseToolResult(result);
       // Should include all workspaces, not just matching ones
       const names = parsed.data.map((w: any) => w.name);
       expect(names).toContain('Marketing Team');
@@ -320,7 +320,7 @@ describe('ListWorkspaceTool', () => {
       expect(secondCall[0]).toContain('query listWorkspaces');
       expect(secondCall[1]).toMatchObject({ membershipKind: 'all' });
 
-      const parsed = JSON.parse(result.content[0].text);
+      const parsed = parseToolResult(result);
       const names = parsed.data.map((w: any) => w.name);
       expect(names).toContain('Engineering Team');
       expect(names).toContain('Engineering Infra');
@@ -369,7 +369,7 @@ describe('ListWorkspaceTool', () => {
 
       const result = await callToolByNameRawAsync('list_workspaces', args);
 
-      const parsed = JSON.parse(result.content[0].text);
+      const parsed = parseToolResult(result);
       expect(parsed.message).toBe('No workspaces found matching the search term. Try using the tool without a search term');
       expect(parsed.data).toEqual([]);
       // Two calls: first member (no match), then all (still no match)
