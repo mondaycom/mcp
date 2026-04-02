@@ -1,5 +1,5 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
-import { callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
+import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '../test-utils/mock-api-client';
 import { UserContextTool } from './user-context-tool';
 import { GraphqlMondayObject, GetFavoriteDetailsQuery } from 'src/monday-graphql/generated/graphql/graphql';
 import { GetUserContextQuery } from 'src/monday-graphql/generated/graphql.dev/graphql';
@@ -73,7 +73,8 @@ describe('UserContextTool', () => {
       ],
     };
 
-    expect(result.content[0].text).toBe(JSON.stringify(expectedOutput));
+    const parsed = parseToolResult(result);
+    expect(parsed).toEqual(expectedOutput);
 
     expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
     expect(mocks.getMockRequest()).toHaveBeenNthCalledWith(
@@ -115,7 +116,8 @@ describe('UserContextTool', () => {
       relevantPeople: [],
     };
 
-    expect(result.content[0].text).toBe(JSON.stringify(expectedOutput));
+    const parsed = parseToolResult(result);
+    expect(parsed).toEqual(expectedOutput);
     expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
   });
 
@@ -155,7 +157,8 @@ describe('UserContextTool', () => {
       relevantPeople: [{ id: '400', name: 'Valid Person' }],
     };
 
-    expect(result.content[0].text).toBe(JSON.stringify(expectedOutput));
+    const parsed = parseToolResult(result);
+    expect(parsed).toEqual(expectedOutput);
   });
 
   it('should return auth error when user not found', async () => {

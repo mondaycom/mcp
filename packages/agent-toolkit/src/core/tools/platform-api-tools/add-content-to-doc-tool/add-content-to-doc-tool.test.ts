@@ -43,9 +43,10 @@ describe('AddContentToDocTool', () => {
         markdown: '# Hello World\n\nNew content here.',
       });
 
-      expect(result.content[0].text).toContain('Successfully added content to document doc_123');
-      expect(result.content[0].text).toContain('2 blocks created');
-      expect(result.content[0].text).toContain('block_1');
+      const parsed = parseToolResult(result);
+      expect(parsed.message).toContain('Successfully added content to document doc_123');
+      expect(parsed.message).toContain('2 blocks created');
+      expect(parsed.block_ids).toContain('block_1');
 
       const mockCalls = mocks.getMockRequest().mock.calls;
 
@@ -90,8 +91,9 @@ describe('AddContentToDocTool', () => {
         markdown: 'Some content',
       });
 
-      expect(result.content[0].text).toContain('Successfully added content to document resolved_doc_456');
-      expect(result.content[0].text).toContain('1 block created');
+      const parsed = parseToolResult(result);
+      expect(parsed.message).toContain('Successfully added content to document resolved_doc_456');
+      expect(parsed.message).toContain('1 block created');
 
       const mockCalls = mocks.getMockRequest().mock.calls;
 
@@ -137,7 +139,8 @@ describe('AddContentToDocTool', () => {
         markdown: 'Content',
       });
 
-      expect(result.content[0].text).toContain('Successfully added content to document doc_priority');
+      const parsed = parseToolResult(result);
+      expect(parsed.message).toContain('Successfully added content to document doc_priority');
 
       const mockCalls = mocks.getMockRequest().mock.calls;
 
@@ -182,7 +185,8 @@ describe('AddContentToDocTool', () => {
         after_block_id: 'block_existing',
       });
 
-      expect(result.content[0].text).toContain('Successfully added content to document doc_123');
+      const parsed = parseToolResult(result);
+      expect(parsed.message).toContain('Successfully added content to document doc_123');
 
       const mockCalls = mocks.getMockRequest().mock.calls;
       const addContentCall = mockCalls.find((call: any) => call[0].includes('mutation addContentToDocFromMarkdown'));
@@ -221,8 +225,9 @@ describe('AddContentToDocTool', () => {
         markdown: 'Content',
       });
 
-      expect(result.content[0].text).toContain('Successfully added content to document doc_123');
-      expect(result.content[0].text).toContain('0 blocks created');
+      const parsed = parseToolResult(result);
+      expect(parsed.message).toContain('Successfully added content to document doc_123');
+      expect(parsed.message).toContain('0 blocks created');
     });
 
     it('should handle null block_ids in successful response', async () => {
@@ -253,10 +258,10 @@ describe('AddContentToDocTool', () => {
         markdown: 'Content',
       });
 
-      expect(result.content[0].text).toContain('Successfully added content to document doc_123');
-      expect(result.content[0].text).toContain('0 blocks created');
-      // block_ids is null in JSON — "Block IDs:" is not in the output format
-      expect(result.content[0].text).not.toContain('Block IDs:');
+      const parsed = parseToolResult(result);
+      expect(parsed.message).toContain('Successfully added content to document doc_123');
+      expect(parsed.message).toContain('0 blocks created');
+      expect(parsed.block_ids).toBeNull();
     });
 
     it('should return doc_name and doc_url in success response', async () => {
