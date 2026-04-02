@@ -7,6 +7,7 @@ export type ToolInputType<Input extends ZodRawShape | undefined> = Input extends
   : undefined;
 
 export type ToolOutputType<T extends Record<string, unknown>> = {
+  /** @deprecated Return a structured object instead of a string to enable structuredContent in MCP responses. */
   content: string | Record<string, any>;
   metadata?: T;
 };
