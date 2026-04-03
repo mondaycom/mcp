@@ -2,7 +2,7 @@ import { gql } from 'graphql-request';
 
 export const searchDev = gql`
   query SearchDev($query: String!, $limit: Int!, $filters: SearchFiltersInput!) {
-    search(query: $query, limit: $limit, filters: $filters) {
+    cross_entity_search(query: $query, limit: $limit, filters: $filters) {
       __typename
       ... on BoardSearchResult {
         entity_type
