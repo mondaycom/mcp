@@ -339,7 +339,7 @@ export class MondayAgentToolkit extends McpServer {
     
     return {
       structuredContent: content,
-      content: []
+      content: [{ type: 'text', text: JSON.stringify(content) }]
     };
   }
 
