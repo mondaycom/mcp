@@ -50,6 +50,10 @@ export class MondayAgentToolkit {
     return filteredToolInstances;
   }
 
+  private sanitizeToolDescription(description: string): string {
+    return description.replaceAll(';', ',').replaceAll('`', "'");
+  }
+
   /**
    * Returns the tools that are available to be used in the OpenAI API.
    *
@@ -62,7 +66,7 @@ export class MondayAgentToolkit {
         type: 'function',
         function: {
           name: tool.name,
-          description: tool.getDescription(),
+          description: this.sanitizeToolDescription(tool.getDescription()),
           parameters: inputSchema ? zodToJsonSchema(z.object(inputSchema)) : undefined,
         },
       };
