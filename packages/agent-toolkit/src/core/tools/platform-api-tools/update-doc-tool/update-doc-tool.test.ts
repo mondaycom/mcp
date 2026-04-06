@@ -39,7 +39,7 @@ describe('UpdateDocTool', () => {
 
   it('resolves object_id to doc_id before executing operations', async () => {
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
-      if (query.includes('query getDocByObjectId')) return Promise.resolve({ docs: [{ id: 'resolved_doc_789' }] });
+      if (query.includes('query getDocIdByObjectId')) return Promise.resolve({ docs: [{ id: 'resolved_doc_789' }] });
       if (query.includes('mutation updateDocBlock')) return Promise.resolve({ update_doc_block: { id: 'block_1' } });
       return Promise.resolve({});
     });
@@ -58,14 +58,14 @@ describe('UpdateDocTool', () => {
     expect(result.content[0].text).toContain('Doc ID: resolved_doc_789');
 
     const calls = mocks.getMockRequest().mock.calls;
-    const resolveCall = calls.find((c: any) => c[0].includes('query getDocByObjectId'));
+    const resolveCall = calls.find((c: any) => c[0].includes('query getDocIdByObjectId'));
     expect(resolveCall).toBeDefined();
     expect(resolveCall[1]).toEqual({ objectId: ['obj_abc'] });
   });
 
   it('returns error when object_id resolves to no document', async () => {
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
-      if (query.includes('query getDocByObjectId')) return Promise.resolve({ docs: [] });
+      if (query.includes('query getDocIdByObjectId')) return Promise.resolve({ docs: [] });
       return Promise.resolve({});
     });
 
@@ -537,9 +537,7 @@ describe('UpdateDocTool', () => {
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
       if (query.includes('mutation createDocBlocks')) {
         return Promise.resolve({
-          create_doc_blocks: [
-            { id: 'img_block_1', type: 'image', parent_block_id: null, created_at: '2024-01-01' },
-          ],
+          create_doc_blocks: [{ id: 'img_block_1', type: 'image', parent_block_id: null, created_at: '2024-01-01' }],
         });
       }
       return Promise.resolve({});
@@ -569,9 +567,7 @@ describe('UpdateDocTool', () => {
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
       if (query.includes('mutation createDocBlocks')) {
         return Promise.resolve({
-          create_doc_blocks: [
-            { id: 'img_block_2', type: 'image', parent_block_id: null, created_at: '2024-01-01' },
-          ],
+          create_doc_blocks: [{ id: 'img_block_2', type: 'image', parent_block_id: null, created_at: '2024-01-01' }],
         });
       }
       return Promise.resolve({});
@@ -724,7 +720,9 @@ describe('UpdateDocTool', () => {
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
       if (query.includes('mutation createDocBlocks')) {
         return Promise.resolve({
-          create_doc_blocks: [{ id: 'new_blk', type: 'normal_text', parent_block_id: null, created_at: '', content: [] }],
+          create_doc_blocks: [
+            { id: 'new_blk', type: 'normal_text', parent_block_id: null, created_at: '', content: [] },
+          ],
         });
       }
       return Promise.resolve({});
@@ -737,10 +735,7 @@ describe('UpdateDocTool', () => {
           operation_type: 'create_block',
           block: {
             block_type: 'text',
-            delta_format: [
-              { insert: { mention: { id: 99, type: 'USER' } } },
-              { insert: { text: ' please review\n' } },
-            ],
+            delta_format: [{ insert: { mention: { id: 99, type: 'USER' } } }, { insert: { text: ' please review\n' } }],
           },
         },
       ],
@@ -761,7 +756,9 @@ describe('UpdateDocTool', () => {
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
       if (query.includes('mutation createDocBlocks')) {
         return Promise.resolve({
-          create_doc_blocks: [{ id: 'new_blk', type: 'normal_text', parent_block_id: null, created_at: '', content: [] }],
+          create_doc_blocks: [
+            { id: 'new_blk', type: 'normal_text', parent_block_id: null, created_at: '', content: [] },
+          ],
         });
       }
       return Promise.resolve({});
@@ -793,7 +790,7 @@ describe('UpdateDocTool', () => {
 
   it('creates a new comment on a document using object_id', async () => {
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
-      if (query.includes('query getDocByObjectId')) return Promise.resolve({ docs: [{ id: 'doc_resolved' }] });
+      if (query.includes('query getDocIdByObjectId')) return Promise.resolve({ docs: [{ id: 'doc_resolved' }] });
       if (query.includes('query getDocBoardItem')) {
         return Promise.resolve({ boards: [{ items_page: { items: [{ id: '99001' }] } }] });
       }
@@ -883,6 +880,804 @@ describe('UpdateDocTool', () => {
 
     expect(result.content[0].text).toContain('[FAILED] add_comment');
     expect(result.content[0].text).toContain('Could not resolve object_id');
+  });
+
+  it('anchors comment to a block (block-level) by adding postId to content.comments', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocObjectIdByDocId')) {
+        return Promise.resolve({ docs: [{ id: 'doc_123', object_id: 'board_777' }] });
+      }
+      if (query.includes('query getDocBoardItem')) {
+        return Promise.resolve({ boards: [{ items_page: { items: [{ id: '88001' }] } }] });
+      }
+      if (query.includes('mutation createDocComment')) {
+        return Promise.resolve({ create_update: { id: '100999', body: 'Hi block', created_at: '2024-01-01' } });
+      }
+      if (query.includes('query getDocBlockContent')) {
+        return Promise.resolve({
+          docs: [{ blocks: [{ id: 'blk_1', type: 'normal_text', content: { deltaFormat: [{ insert: 'Hello\n' }] } }] }],
+        });
+      }
+      if (query.includes('mutation updateDocBlock')) {
+        return Promise.resolve({ update_doc_block: { id: 'blk_1' } });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [{ operation_type: 'add_comment', body: '<p>Block comment</p>', block_id: 'blk_1' }],
+    });
+
+    expect(result.content[0].text).toContain('[OK] add_comment');
+    expect(result.content[0].text).toContain('100999');
+
+    const calls = mocks.getMockRequest().mock.calls;
+    const updateBlockCall = calls.find((c: any) => c[0].includes('mutation updateDocBlock'));
+    expect(updateBlockCall).toBeDefined();
+    const updatedContent = JSON.parse(updateBlockCall[1].content);
+    expect(updatedContent.deltaFormat).toEqual([{ insert: 'Hello\n', attributes: { comments: [100999] } }]);
+  });
+
+  it('anchors comment to selected text in a block by annotating delta ops', async () => {
+    const blockDelta = [{ insert: 'Hello world\n' }];
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocObjectIdByDocId')) {
+        return Promise.resolve({ docs: [{ id: 'doc_123', object_id: 'board_777' }] });
+      }
+      if (query.includes('query getDocBoardItem')) {
+        return Promise.resolve({ boards: [{ items_page: { items: [{ id: '88001' }] } }] });
+      }
+      if (query.includes('mutation createDocComment')) {
+        return Promise.resolve({ create_update: { id: '200111', body: 'Selected', created_at: '2024-01-01' } });
+      }
+      if (query.includes('query getDocBlockContent')) {
+        return Promise.resolve({
+          docs: [{ blocks: [{ id: 'blk_2', type: 'normal_text', content: { deltaFormat: blockDelta } }] }],
+        });
+      }
+      if (query.includes('mutation updateDocBlock')) {
+        return Promise.resolve({ update_doc_block: { id: 'blk_2' } });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [
+        {
+          operation_type: 'add_comment',
+          body: '<p>Text comment</p>',
+          block_id: 'blk_2',
+          selection_from: 6,
+          selection_length: 5,
+        },
+      ],
+    });
+
+    expect(result.content[0].text).toContain('[OK] add_comment');
+
+    const calls = mocks.getMockRequest().mock.calls;
+    const updateBlockCall = calls.find((c: any) => c[0].includes('mutation updateDocBlock'));
+    expect(updateBlockCall).toBeDefined();
+    const updatedContent = JSON.parse(updateBlockCall[1].content);
+    // "Hello " (0-5), "world" (6-10) annotated, "\n" (11) not annotated
+    expect(updatedContent.deltaFormat).toEqual([
+      { insert: 'Hello ' },
+      { insert: 'world', attributes: { comments: [200111] } },
+      { insert: '\n' },
+    ]);
+  });
+
+  it('fails when block_id not found in doc for block-level comment', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocObjectIdByDocId')) {
+        return Promise.resolve({ docs: [{ id: 'doc_123', object_id: 'board_777' }] });
+      }
+      if (query.includes('query getDocBoardItem')) {
+        return Promise.resolve({ boards: [{ items_page: { items: [{ id: '88001' }] } }] });
+      }
+      if (query.includes('mutation createDocComment')) {
+        return Promise.resolve({ create_update: { id: '111000', body: 'Hi', created_at: '2024-01-01' } });
+      }
+      if (query.includes('query getDocBlockContent')) {
+        return Promise.resolve({ docs: [{ blocks: [] }] });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [{ operation_type: 'add_comment', body: '<p>Hi</p>', block_id: 'missing_blk' }],
+    });
+
+    expect(result.content[0].text).toContain('[FAILED] add_comment');
+    expect(result.content[0].text).toContain('block annotation failed');
+    expect(result.content[0].text).toContain('missing_blk');
+  });
+
+  it('handles block content returned as JSON string (GraphQL JSON scalar)', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocObjectIdByDocId')) {
+        return Promise.resolve({ docs: [{ id: 'doc_123', object_id: 'board_777' }] });
+      }
+      if (query.includes('query getDocBoardItem')) {
+        return Promise.resolve({ boards: [{ items_page: { items: [{ id: '88001' }] } }] });
+      }
+      if (query.includes('mutation createDocComment')) {
+        return Promise.resolve({
+          create_update: { id: '300222', body: 'Hi', created_at: '2024-01-01' },
+        });
+      }
+      if (query.includes('query getDocBlockContent')) {
+        return Promise.resolve({
+          docs: [
+            {
+              blocks: [
+                {
+                  id: 'blk_str',
+                  type: 'normal_text',
+                  content: '{"deltaFormat":[{"insert":"Hello\\n"}]}',
+                },
+              ],
+            },
+          ],
+        });
+      }
+      if (query.includes('mutation updateDocBlock')) {
+        return Promise.resolve({ update_doc_block: { id: 'blk_str' } });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [{ operation_type: 'add_comment', body: '<p>Comment on stringy block</p>', block_id: 'blk_str' }],
+    });
+
+    expect(result.content[0].text).toContain('[OK] add_comment');
+
+    const calls = mocks.getMockRequest().mock.calls;
+    const updateBlockCall = calls.find((c: any) => c[0].includes('mutation updateDocBlock'));
+    const updatedContent = JSON.parse(updateBlockCall[1].content);
+    expect(updatedContent.deltaFormat).toEqual([{ insert: 'Hello\n', attributes: { comments: [300222] } }]);
+  });
+
+  it('text-selection comment with content returned as JSON string', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocObjectIdByDocId')) {
+        return Promise.resolve({ docs: [{ id: 'doc_123', object_id: 'board_777' }] });
+      }
+      if (query.includes('query getDocBoardItem')) {
+        return Promise.resolve({ boards: [{ items_page: { items: [{ id: '88001' }] } }] });
+      }
+      if (query.includes('mutation createDocComment')) {
+        return Promise.resolve({
+          create_update: { id: '400333', body: 'sel', created_at: '2024-01-01' },
+        });
+      }
+      if (query.includes('query getDocBlockContent')) {
+        return Promise.resolve({
+          docs: [
+            {
+              blocks: [
+                {
+                  id: 'blk_sel_str',
+                  type: 'normal_text',
+                  content: '{"deltaFormat":[{"insert":"Hello world\\n"}]}',
+                },
+              ],
+            },
+          ],
+        });
+      }
+      if (query.includes('mutation updateDocBlock')) {
+        return Promise.resolve({ update_doc_block: { id: 'blk_sel_str' } });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [
+        {
+          operation_type: 'add_comment',
+          body: '<p>Selected text comment</p>',
+          block_id: 'blk_sel_str',
+          selection_from: 6,
+          selection_length: 5,
+        },
+      ],
+    });
+
+    expect(result.content[0].text).toContain('[OK] add_comment');
+
+    const calls = mocks.getMockRequest().mock.calls;
+    const updateBlockCall = calls.find((c: any) => c[0].includes('mutation updateDocBlock'));
+    const updatedContent = JSON.parse(updateBlockCall[1].content);
+    expect(updatedContent.deltaFormat).toEqual([
+      { insert: 'Hello ' },
+      { insert: 'world', attributes: { comments: [400333] } },
+      { insert: '\n' },
+    ]);
+  });
+
+  it('preserves existing delta op comments when adding a new block-level comment', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocObjectIdByDocId')) {
+        return Promise.resolve({ docs: [{ id: 'doc_123', object_id: 'board_777' }] });
+      }
+      if (query.includes('query getDocBoardItem')) {
+        return Promise.resolve({ boards: [{ items_page: { items: [{ id: '88001' }] } }] });
+      }
+      if (query.includes('mutation createDocComment')) {
+        return Promise.resolve({
+          create_update: { id: '500444', body: 'new', created_at: '2024-01-01' },
+        });
+      }
+      if (query.includes('query getDocBlockContent')) {
+        return Promise.resolve({
+          docs: [
+            {
+              blocks: [
+                {
+                  id: 'blk_existing',
+                  type: 'normal_text',
+                  content: {
+                    deltaFormat: [{ insert: 'Hello\n', attributes: { comments: [111111] } }],
+                  },
+                },
+              ],
+            },
+          ],
+        });
+      }
+      if (query.includes('mutation updateDocBlock')) {
+        return Promise.resolve({ update_doc_block: { id: 'blk_existing' } });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [{ operation_type: 'add_comment', body: '<p>New comment</p>', block_id: 'blk_existing' }],
+    });
+
+    expect(result.content[0].text).toContain('[OK] add_comment');
+
+    const calls = mocks.getMockRequest().mock.calls;
+    const updateBlockCall = calls.find((c: any) => c[0].includes('mutation updateDocBlock'));
+    const updatedContent = JSON.parse(updateBlockCall[1].content);
+    expect(updatedContent.deltaFormat).toEqual([{ insert: 'Hello\n', attributes: { comments: [111111, 500444] } }]);
+  });
+
+  it('preserves existing text op comments when adding text-selection comment', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocObjectIdByDocId')) {
+        return Promise.resolve({ docs: [{ id: 'doc_123', object_id: 'board_777' }] });
+      }
+      if (query.includes('query getDocBoardItem')) {
+        return Promise.resolve({ boards: [{ items_page: { items: [{ id: '88001' }] } }] });
+      }
+      if (query.includes('mutation createDocComment')) {
+        return Promise.resolve({
+          create_update: { id: '600555', body: 'new', created_at: '2024-01-01' },
+        });
+      }
+      if (query.includes('query getDocBlockContent')) {
+        return Promise.resolve({
+          docs: [
+            {
+              blocks: [
+                {
+                  id: 'blk_prev',
+                  type: 'normal_text',
+                  content: {
+                    deltaFormat: [{ insert: 'Hello', attributes: { comments: [333333] } }, { insert: ' world\n' }],
+                  },
+                },
+              ],
+            },
+          ],
+        });
+      }
+      if (query.includes('mutation updateDocBlock')) {
+        return Promise.resolve({ update_doc_block: { id: 'blk_prev' } });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [
+        {
+          operation_type: 'add_comment',
+          body: '<p>Overlap</p>',
+          block_id: 'blk_prev',
+          selection_from: 0,
+          selection_length: 5,
+        },
+      ],
+    });
+
+    expect(result.content[0].text).toContain('[OK] add_comment');
+
+    const calls = mocks.getMockRequest().mock.calls;
+    const updateBlockCall = calls.find((c: any) => c[0].includes('mutation updateDocBlock'));
+    const updatedContent = JSON.parse(updateBlockCall[1].content);
+    expect(updatedContent.deltaFormat[0].attributes.comments).toEqual([333333, 600555]);
+  });
+
+  it('selection spanning multiple delta ops annotates each overlapping op', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocObjectIdByDocId')) {
+        return Promise.resolve({ docs: [{ id: 'doc_123', object_id: 'board_777' }] });
+      }
+      if (query.includes('query getDocBoardItem')) {
+        return Promise.resolve({ boards: [{ items_page: { items: [{ id: '88001' }] } }] });
+      }
+      if (query.includes('mutation createDocComment')) {
+        return Promise.resolve({
+          create_update: { id: '700666', body: 'multi', created_at: '2024-01-01' },
+        });
+      }
+      if (query.includes('query getDocBlockContent')) {
+        return Promise.resolve({
+          docs: [
+            {
+              blocks: [
+                {
+                  id: 'blk_multi',
+                  type: 'normal_text',
+                  content: {
+                    deltaFormat: [
+                      { insert: 'Hello ' },
+                      { insert: 'beautiful ', attributes: { bold: true } },
+                      { insert: 'world\n' },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
+        });
+      }
+      if (query.includes('mutation updateDocBlock')) {
+        return Promise.resolve({ update_doc_block: { id: 'blk_multi' } });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [
+        {
+          operation_type: 'add_comment',
+          body: '<p>Multi-op selection</p>',
+          block_id: 'blk_multi',
+          selection_from: 3,
+          selection_length: 14,
+        },
+      ],
+    });
+
+    expect(result.content[0].text).toContain('[OK] add_comment');
+
+    const calls = mocks.getMockRequest().mock.calls;
+    const updateBlockCall = calls.find((c: any) => c[0].includes('mutation updateDocBlock'));
+    const updatedContent = JSON.parse(updateBlockCall[1].content);
+    // "Hel" (0-2) not annotated, "lo " (3-5) annotated, "beautiful " (6-15) annotated,
+    // "w" (16) annotated (selEnd=17), "orld\n" (17+) not annotated
+    expect(updatedContent.deltaFormat).toEqual([
+      { insert: 'Hel' },
+      { insert: 'lo ', attributes: { comments: [700666] } },
+      { insert: 'beautiful ', attributes: { bold: true, comments: [700666] } },
+      { insert: 'w', attributes: { comments: [700666] } },
+      { insert: 'orld\n' },
+    ]);
+  });
+
+  it('fails when selection_from provided without block_id', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocObjectIdByDocId')) {
+        return Promise.resolve({ docs: [{ id: 'doc_123', object_id: 'board_777' }] });
+      }
+      if (query.includes('query getDocBoardItem')) {
+        return Promise.resolve({ boards: [{ items_page: { items: [{ id: '88001' }] } }] });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [
+        {
+          operation_type: 'add_comment',
+          body: '<p>No block</p>',
+          selection_from: 0,
+          selection_length: 5,
+        },
+      ],
+    });
+
+    expect(result.content[0].text).toContain('[FAILED] add_comment');
+    expect(result.content[0].text).toContain('selection_from and selection_length require block_id');
+  });
+
+  it('annotates blot op (mention) as a whole when inside selection', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocObjectIdByDocId')) {
+        return Promise.resolve({ docs: [{ id: 'doc_123', object_id: 'board_777' }] });
+      }
+      if (query.includes('query getDocBoardItem')) {
+        return Promise.resolve({ boards: [{ items_page: { items: [{ id: '88001' }] } }] });
+      }
+      if (query.includes('mutation createDocComment')) {
+        return Promise.resolve({
+          create_update: { id: '800777', body: 'blot', created_at: '2024-01-01' },
+        });
+      }
+      if (query.includes('query getDocBlockContent')) {
+        return Promise.resolve({
+          docs: [
+            {
+              blocks: [
+                {
+                  id: 'blk_blot',
+                  type: 'normal_text',
+                  content: {
+                    deltaFormat: [
+                      { insert: 'Hi ' },
+                      { insert: { mention: { id: 123, type: 'USER' } } },
+                      { insert: ' bye\n' },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
+        });
+      }
+      if (query.includes('mutation updateDocBlock')) {
+        return Promise.resolve({ update_doc_block: { id: 'blk_blot' } });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [
+        {
+          operation_type: 'add_comment',
+          body: '<p>Comment on mention</p>',
+          block_id: 'blk_blot',
+          selection_from: 2,
+          selection_length: 3,
+        },
+      ],
+    });
+
+    expect(result.content[0].text).toContain('[OK] add_comment');
+
+    const calls = mocks.getMockRequest().mock.calls;
+    const updateBlockCall = calls.find((c: any) => c[0].includes('mutation updateDocBlock'));
+    const updatedContent = JSON.parse(updateBlockCall[1].content);
+    // "Hi" (0-1) not annotated, " " (2) annotated, mention (pos 3, len 1) annotated,
+    // " " (pos 4, inside selection end=5) annotated, "bye\n" (pos 5+) not annotated
+    expect(updatedContent.deltaFormat[0]).toEqual({ insert: 'Hi' });
+    expect(updatedContent.deltaFormat[1]).toEqual({
+      insert: ' ',
+      attributes: { comments: [800777] },
+    });
+    expect(updatedContent.deltaFormat[2].insert).toEqual({ mention: { id: 123, type: 'USER' } });
+    expect(updatedContent.deltaFormat[2].attributes.comments).toEqual([800777]);
+    expect(updatedContent.deltaFormat[3]).toEqual({
+      insert: ' ',
+      attributes: { comments: [800777] },
+    });
+    expect(updatedContent.deltaFormat[4]).toEqual({ insert: 'bye\n' });
+  });
+
+  it('fails when selection params are given for a block without deltaFormat', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocObjectIdByDocId')) {
+        return Promise.resolve({ docs: [{ id: 'doc_123', object_id: 'board_777' }] });
+      }
+      if (query.includes('query getDocBoardItem')) {
+        return Promise.resolve({ boards: [{ items_page: { items: [{ id: '88001' }] } }] });
+      }
+      if (query.includes('mutation createDocComment')) {
+        return Promise.resolve({ create_update: { id: '222000', body: 'Hi', created_at: '2024-01-01' } });
+      }
+      if (query.includes('query getDocBlockContent')) {
+        return Promise.resolve({
+          docs: [{ blocks: [{ id: 'blk_img', type: 'image', content: { url: 'http://img.png' } }] }],
+        });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [
+        {
+          operation_type: 'add_comment',
+          body: '<p>Hi</p>',
+          block_id: 'blk_img',
+          selection_from: 0,
+          selection_length: 3,
+        },
+      ],
+    });
+
+    expect(result.content[0].text).toContain('[FAILED] add_comment');
+    expect(result.content[0].text).toContain('block annotation failed');
+    expect(result.content[0].text).toContain('deltaFormat');
+  });
+
+  // ─── Multi-block comments ────────────────────────────────────────────────────
+
+  it('annotates multiple blocks when block_id is an array', async () => {
+    const updateBlockCalls: { blockId: string; content: string }[] = [];
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string, vars: any) => {
+      if (query.includes('query getDocObjectIdByDocId')) {
+        return Promise.resolve({ docs: [{ id: 'doc_123', object_id: 'board_777' }] });
+      }
+      if (query.includes('query getDocBoardItem')) {
+        return Promise.resolve({ boards: [{ items_page: { items: [{ id: '88001' }] } }] });
+      }
+      if (query.includes('mutation createDocComment')) {
+        return Promise.resolve({
+          create_update: { id: '900888', body: 'multi', created_at: '2024-01-01' },
+        });
+      }
+      if (query.includes('query getDocBlockContent')) {
+        const blocks = [
+          { id: 'blk_a', type: 'normal_text', content: { deltaFormat: [{ insert: 'Block A\n' }] } },
+          { id: 'blk_b', type: 'normal_text', content: { deltaFormat: [{ insert: 'Block B\n' }] } },
+        ];
+        return Promise.resolve({ docs: [{ blocks }] });
+      }
+      if (query.includes('mutation updateDocBlock')) {
+        updateBlockCalls.push({ blockId: vars.blockId, content: vars.content });
+        return Promise.resolve({ update_doc_block: { id: vars.blockId } });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [{ operation_type: 'add_comment', body: '<p>Multi-block</p>', block_id: ['blk_a', 'blk_b'] }],
+    });
+
+    expect(result.content[0].text).toContain('across 2 blocks');
+    expect(updateBlockCalls).toHaveLength(2);
+
+    const contentA = JSON.parse(updateBlockCalls[0].content);
+    expect(contentA.deltaFormat).toEqual([{ insert: 'Block A\n', attributes: { comments: [900888] } }]);
+
+    const contentB = JSON.parse(updateBlockCalls[1].content);
+    expect(contentB.deltaFormat).toEqual([{ insert: 'Block B\n', attributes: { comments: [900888] } }]);
+  });
+
+  it('rejects selection_from/selection_length with multiple block_ids', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocObjectIdByDocId')) {
+        return Promise.resolve({ docs: [{ id: 'doc_123', object_id: 'board_777' }] });
+      }
+      if (query.includes('query getDocBoardItem')) {
+        return Promise.resolve({ boards: [{ items_page: { items: [{ id: '88001' }] } }] });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [
+        {
+          operation_type: 'add_comment',
+          body: '<p>Bad</p>',
+          block_id: ['blk_a', 'blk_b'],
+          selection_from: 0,
+          selection_length: 3,
+        },
+      ],
+    });
+
+    expect(result.content[0].text).toContain('[FAILED] add_comment');
+    expect(result.content[0].text).toContain('single block_id');
+  });
+
+  it('surfaces update ID in error when block annotation fails after comment is created', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocObjectIdByDocId')) {
+        return Promise.resolve({ docs: [{ id: 'doc_123', object_id: 'board_777' }] });
+      }
+      if (query.includes('query getDocBoardItem')) {
+        return Promise.resolve({ boards: [{ items_page: { items: [{ id: '88001' }] } }] });
+      }
+      if (query.includes('mutation createDocComment')) {
+        return Promise.resolve({ create_update: { id: '333000', body: 'Hi', created_at: '2024-01-01' } });
+      }
+      if (query.includes('query getDocBlockContent')) {
+        return Promise.resolve({ docs: [{ blocks: [] }] }); // block not found
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [{ operation_type: 'add_comment', body: '<p>Hi</p>', block_id: 'blk_gone' }],
+    });
+
+    // Error must surface the update ID so the caller knows the comment exists
+    expect(result.content[0].text).toContain('[FAILED] add_comment');
+    expect(result.content[0].text).toContain('333000');
+    expect(result.content[0].text).toContain('block annotation failed');
+  });
+
+  it('fails when updateDocBlock returns null during block annotation', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocObjectIdByDocId')) {
+        return Promise.resolve({ docs: [{ id: 'doc_123', object_id: 'board_777' }] });
+      }
+      if (query.includes('query getDocBoardItem')) {
+        return Promise.resolve({ boards: [{ items_page: { items: [{ id: '88001' }] } }] });
+      }
+      if (query.includes('mutation createDocComment')) {
+        return Promise.resolve({ create_update: { id: '444000', body: 'Hi', created_at: '2024-01-01' } });
+      }
+      if (query.includes('query getDocBlockContent')) {
+        return Promise.resolve({
+          docs: [{ blocks: [{ id: 'blk_1', type: 'normal_text', content: { deltaFormat: [{ insert: 'Hi\n' }] } }] }],
+        });
+      }
+      if (query.includes('mutation updateDocBlock')) {
+        return Promise.resolve({ update_doc_block: null }); // server returns null
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [{ operation_type: 'add_comment', body: '<p>Hi</p>', block_id: 'blk_1' }],
+    });
+
+    expect(result.content[0].text).toContain('[FAILED] add_comment');
+    expect(result.content[0].text).toContain('444000');
+    expect(result.content[0].text).toContain('no confirmation');
+  });
+
+  it('fails when selection_from provided without selection_length', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocObjectIdByDocId')) {
+        return Promise.resolve({ docs: [{ id: 'doc_123', object_id: 'board_777' }] });
+      }
+      if (query.includes('query getDocBoardItem')) {
+        return Promise.resolve({ boards: [{ items_page: { items: [{ id: '88001' }] } }] });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [{ operation_type: 'add_comment', body: '<p>Hi</p>', block_id: 'blk_1', selection_from: 0 }],
+    });
+
+    expect(result.content[0].text).toContain('[FAILED] add_comment');
+    expect(result.content[0].text).toContain('selection_from and selection_length must both be provided together');
+  });
+
+  it('fails when block-level comment targets a block with empty deltaFormat', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocObjectIdByDocId')) {
+        return Promise.resolve({ docs: [{ id: 'doc_123', object_id: 'board_777' }] });
+      }
+      if (query.includes('query getDocBoardItem')) {
+        return Promise.resolve({ boards: [{ items_page: { items: [{ id: '88001' }] } }] });
+      }
+      if (query.includes('mutation createDocComment')) {
+        return Promise.resolve({ create_update: { id: '555001', body: 'Hi', created_at: '2024-01-01' } });
+      }
+      if (query.includes('query getDocBlockContent')) {
+        return Promise.resolve({
+          docs: [{ blocks: [{ id: 'blk_empty', type: 'normal_text', content: { deltaFormat: [] } }] }],
+        });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [{ operation_type: 'add_comment', body: '<p>Comment</p>', block_id: 'blk_empty' }],
+    });
+
+    expect(result.content[0].text).toContain('[FAILED] add_comment');
+    expect(result.content[0].text).toContain('555001');
+    expect(result.content[0].text).toContain('empty deltaFormat');
+  });
+
+  it('fails when non-numeric postId is returned from createDocComment (NaN guard)', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocObjectIdByDocId')) {
+        return Promise.resolve({ docs: [{ id: 'doc_123', object_id: 'board_777' }] });
+      }
+      if (query.includes('query getDocBoardItem')) {
+        return Promise.resolve({ boards: [{ items_page: { items: [{ id: '88001' }] } }] });
+      }
+      if (query.includes('mutation createDocComment')) {
+        return Promise.resolve({ create_update: { id: 'not-a-number', body: 'Hi', created_at: '2024-01-01' } });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [{ operation_type: 'add_comment', body: '<p>Comment</p>', block_id: 'blk_1' }],
+    });
+
+    expect(result.content[0].text).toContain('[FAILED] add_comment');
+    expect(result.content[0].text).toContain('not-a-number');
+    expect(result.content[0].text).toContain('not numeric');
+  });
+
+  it('fails when selection_length provided without selection_from', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocObjectIdByDocId')) {
+        return Promise.resolve({ docs: [{ id: 'doc_123', object_id: 'board_777' }] });
+      }
+      if (query.includes('query getDocBoardItem')) {
+        return Promise.resolve({ boards: [{ items_page: { items: [{ id: '88001' }] } }] });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [{ operation_type: 'add_comment', body: '<p>Hi</p>', block_id: 'blk_1', selection_length: 5 }],
+    });
+
+    expect(result.content[0].text).toContain('[FAILED] add_comment');
+    expect(result.content[0].text).toContain('selection_from and selection_length must both be provided together');
+  });
+
+  it('fails when selection range is out of bounds for the block', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocObjectIdByDocId')) {
+        return Promise.resolve({ docs: [{ id: 'doc_123', object_id: 'board_777' }] });
+      }
+      if (query.includes('query getDocBoardItem')) {
+        return Promise.resolve({ boards: [{ items_page: { items: [{ id: '88001' }] } }] });
+      }
+      if (query.includes('mutation createDocComment')) {
+        return Promise.resolve({ create_update: { id: '666002', body: 'Hi', created_at: '2024-01-01' } });
+      }
+      if (query.includes('query getDocBlockContent')) {
+        return Promise.resolve({
+          docs: [
+            { blocks: [{ id: 'blk_short', type: 'normal_text', content: { deltaFormat: [{ insert: 'Hi\n' }] } }] },
+          ],
+        });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [
+        {
+          operation_type: 'add_comment',
+          body: '<p>Hi</p>',
+          block_id: 'blk_short',
+          selection_from: 100,
+          selection_length: 5,
+        },
+      ],
+    });
+
+    expect(result.content[0].text).toContain('[FAILED] add_comment');
+    expect(result.content[0].text).toContain('666002');
+    expect(result.content[0].text).toContain('out of range');
   });
 
   // ─── Column value blot (update_block path — macro format) ─────────────────
