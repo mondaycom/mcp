@@ -19,7 +19,7 @@ export class UpdateFormQuestionTool extends BaseMondayApiTool<typeof updateFormQ
   });
 
   getDescription(): string {
-    return "Update an existing question in a monday.com form. The question object acts as a patch — only the fields you provide will be updated. Use this to change a question's title, description, visibility, required status, type, or type-specific settings.";
+    return 'Update an existing question in a monday.com form.';
   }
 
   getInputSchema(): typeof updateFormQuestionToolSchema {

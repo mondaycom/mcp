@@ -18,7 +18,7 @@ export class CreateFormQuestionTool extends BaseMondayApiTool<typeof createFormQ
   });
 
   getDescription(): string {
-    return 'Create a new question in a monday.com form. Supports all question types: ShortText, LongText, Email, Phone, Number, Date, Rating, Boolean, SingleSelect, MultiSelect, Location, Link, File, Signature, Name, Country. For SingleSelect and MultiSelect questions, provide options as an array of {label} objects. Use the settings object for type-specific configuration (e.g., includeTime for Date, checkedByDefault for Boolean, display mode for Select types).';
+    return 'Create a new question in a monday.com form.';
   }
 
   getInputSchema(): typeof createFormQuestionToolSchema {

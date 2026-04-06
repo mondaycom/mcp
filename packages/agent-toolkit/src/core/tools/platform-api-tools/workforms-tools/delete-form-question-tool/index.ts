@@ -18,7 +18,7 @@ export class DeleteFormQuestionTool extends BaseMondayApiTool<typeof deleteFormQ
   });
 
   getDescription(): string {
-    return 'Delete a question from a monday.com form. This permanently removes the question and its associated data. The question is identified by its questionId, which can be obtained from the get_form tool.';
+    return 'Delete a question from a monday.com form.';
   }
 
   getInputSchema(): typeof deleteFormQuestionToolSchema {
