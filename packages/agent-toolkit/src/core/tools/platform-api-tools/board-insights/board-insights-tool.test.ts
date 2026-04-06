@@ -729,6 +729,28 @@ describe('Board Insights Tool', () => {
       expect(result.content).toBe('No board insights found for the given query.');
     });
 
+    it('should handle aggregate results containing only null entries', async () => {
+      const mockResponse = {
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
+        aggregate: {
+          results: [null],
+        },
+      };
+
+      mocks.setResponseOnce(mockResponse);
+
+      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+
+      const result = await tool.execute({
+        boardId: 123456,
+        aggregations: [{ columnId: 'status' }],
+        filtersOperator: ItemsQueryOperator.And,
+        limit: DEFAULT_LIMIT,
+      });
+
+      expect(result.content).toBe('No board insights found for the given query.');
+    });
+
     it('should handle different value types in results', async () => {
       const mockResponse = {
         boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
