@@ -116,12 +116,13 @@ USAGE EXAMPLES:
         return { content: `Error adding content to document: ${error || 'Unknown error'}` };
       }
 
-      const blockCount = block_ids?.length ?? 0;
+      const filteredBlockIds = block_ids?.filter((blockId): blockId is NonNullable<typeof blockId> => blockId != null) ?? [];
+      const blockCount = filteredBlockIds.length;
       return {
         content: {
           message: `Successfully added content to document ${doc.id}. ${blockCount} block${blockCount === 1 ? '' : 's'} created.`,
           doc_id: doc.id,
-          block_ids: block_ids,
+          block_ids: filteredBlockIds.length > 0 ? filteredBlockIds : null,
           doc_name: doc.name,
           doc_url: doc.url,
         },
