@@ -1,5 +1,5 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
-import { callToolByNameRawAsync, createMockApiClient } from '../../test-utils/mock-api-client';
+import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '../../test-utils/mock-api-client';
 import { updateFormToolSchema, FormActions } from './schema';
 import { z, ZodTypeAny } from 'zod';
 import { BackgroundType, Direction, Format, Alignment, LogoPosition, LogoSize, FontSize } from '../workforms.types';
@@ -40,7 +40,7 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Form successfully activated');
+        expect(result.structuredContent.message).toContain('Form successfully activated');
         expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -89,7 +89,8 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Form successfully deactivated');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Form successfully deactivated');
         expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -136,7 +137,8 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Form URL successfully shortened');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Form URL successfully shortened');
         expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -186,7 +188,8 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Form password successfully set');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Form password successfully set');
         expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -218,7 +221,8 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Form password successfully set');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Form password successfully set');
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].input.password).toBe('newPassword456');
@@ -286,9 +290,10 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Tag successfully added');
-        expect(result.content[0].text).toContain('tag_123');
-        expect(result.content[0].text).toContain('utm_source');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Tag successfully added');
+        expect(parsed.data.id).toBe('tag_123');
+        expect(parsed.data.name).toBe('utm_source');
         expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -324,8 +329,9 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Tag successfully added');
-        expect(result.content[0].text).toContain('campaign');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Tag successfully added');
+        expect(parsed.data.name).toBe('campaign');
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].tag.name).toBe('campaign');
@@ -405,7 +411,8 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Tag deleted');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Tag deleted');
         expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -433,7 +440,8 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Tag deleted');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Tag deleted');
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].tagId).toBe('another_tag_id');
@@ -516,7 +524,8 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Tag updated');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Tag updated');
         expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -553,7 +562,8 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Tag updated');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Tag updated');
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].tagId).toBe('tag_456');
@@ -726,8 +736,9 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Appearance successfully updated');
-        expect(result.content[0].text).toContain('#ffffff');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Appearance successfully updated');
+        expect(parsed.data.background.value).toBe('#ffffff');
         expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -761,7 +772,8 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Appearance successfully updated');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Appearance successfully updated');
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].appearance.primaryColor).toBe('#ff0000');
@@ -797,7 +809,8 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Appearance successfully updated');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Appearance successfully updated');
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].appearance.background.type).toBe(BackgroundType.Image);
@@ -889,8 +902,9 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Accessibility successfully updated');
-        expect(result.content[0].text).toContain('Company Logo');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Accessibility successfully updated');
+        expect(parsed.data.logoAltText).toBe('Company Logo');
         expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -927,7 +941,8 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Accessibility successfully updated');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Accessibility successfully updated');
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].accessibility.language).toBe('es');
@@ -1037,7 +1052,8 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Features successfully updated');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Features successfully updated');
         expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -1074,7 +1090,7 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Features successfully updated');
+        expect(parseToolResult(result).message).toContain('Features successfully updated');
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].features.closeDate.enabled).toBe(true);
@@ -1108,7 +1124,7 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Features successfully updated');
+        expect(parseToolResult(result).message).toContain('Features successfully updated');
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].features.password.enabled).toBe(false);
@@ -1143,7 +1159,7 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Features successfully updated');
+        expect(parseToolResult(result).message).toContain('Features successfully updated');
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].features.requireLogin.enabled).toBe(true);
@@ -1179,7 +1195,7 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Features successfully updated');
+        expect(parseToolResult(result).message).toContain('Features successfully updated');
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].features.responseLimit.enabled).toBe(true);
@@ -1223,7 +1239,7 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Features successfully updated');
+        expect(parseToolResult(result).message).toContain('Features successfully updated');
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].features.preSubmissionView.enabled).toBe(true);
@@ -1263,7 +1279,7 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Features successfully updated');
+        expect(parseToolResult(result).message).toContain('Features successfully updated');
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].features.monday.itemGroupId).toBe('group_123');
@@ -1293,7 +1309,7 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Features successfully updated');
+        expect(parseToolResult(result).message).toContain('Features successfully updated');
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].features.reCaptchaChallenge).toBe(true);
@@ -1381,8 +1397,9 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Question order successfully updated');
-        expect(result.content[0].text).toContain('question_3');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Question order successfully updated');
+        expect(parsed.data).toEqual(expect.arrayContaining([expect.objectContaining({ id: 'question_3' })]));
         expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -1412,7 +1429,7 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Question order successfully updated');
+        expect(parseToolResult(result).message).toContain('Question order successfully updated');
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].questions).toHaveLength(4);
@@ -1500,8 +1517,9 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Form header updated');
-        expect(result.content[0].text).toContain('New Form Title');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Form header updated');
+        expect(parsed.data.title).toBe('New Form Title');
         expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -1535,7 +1553,7 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Form header updated');
+        expect(parseToolResult(result).message).toContain('Form header updated');
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].title).toBe('Updated Title');
@@ -1564,7 +1582,7 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Form header updated');
+        expect(parseToolResult(result).message).toContain('Form header updated');
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].title).toBeUndefined();
@@ -1756,7 +1774,7 @@ describe('UpdateFormTool', () => {
 
       const result = await callToolByNameRawAsync('update_form', args);
 
-      expect(result.content[0].text).toContain('Appearance successfully updated');
+      expect(parseToolResult(result).message).toContain('Appearance successfully updated');
       expect(mocks.getMockRequest()).toHaveBeenCalled();
     });
   });

@@ -72,89 +72,30 @@ Searches recently used boards (up to ${RECENT_BOARDS_LIMIT}). If none found, ask
 
       if (pairs.length === 0) {
         return {
-          content: this.generateNotFoundMessage(boards.length),
+          content: {
+            message: 'No monday-dev sprints board pairs found. ### Possible Reasons:\n1. Boards exist but not accessed recently by your account\n2. Missing access permissions to sprint/task boards\n3. Monday-dev product was not set up in account\n### Next Steps:\n1. Ask user to access monday-dev boards in UI to refresh recent boards list\n2. Ask user to verify permissions to view sprint and task boards\n3. Ask user to provide board IDs manually if known`;',
+            boards_checked: boards.length,
+            pairs: [],
+          },
         };
       }
 
-      const report = this.generateReport(pairs);
-
       return {
-        content: report,
+        content: {
+          message: `Found ${pairs.length} matched pair(s)`,
+          ...(pairs.length > 1 ? { warning: 'Multiple board pairs detected. Confirm with user which pair and workspace to use before any operation.' } : {}),
+          pairs: pairs.map((pair) => ({
+            sprints_board: { id: pair.sprintsBoard.id, name: pair.sprintsBoard.name, workspace_id: pair.sprintsBoard.workspaceId, workspace_name: pair.sprintsBoard.workspaceName },
+            tasks_board: { id: pair.tasksBoard.id, name: pair.tasksBoard.name, workspace_id: pair.tasksBoard.workspaceId, workspace_name: pair.tasksBoard.workspaceName },
+          })),
+          technical_reference: 'Sprint Operations (all require correct board pair): Add to Sprint: Update `task_sprint` column with sprint item ID. Remove from Sprint: Clear `task_sprint` column (set to null). Search in Sprint: Filter where `task_sprint` equals sprint item ID. Move Between Sprints: Update `task_sprint` with new sprint item ID. Backlog Tasks: `task_sprint` is empty/null. Critical: `task_sprint` column references ONLY its paired sprints board. Cross-pair operations WILL FAIL.',
+        },
       };
     } catch (error) {
       return {
         content: `${ERROR_PREFIXES.INTERNAL_ERROR} Error retrieving sprints boards: ${error instanceof Error ? error.message : 'Unknown error'}`,
       };
     }
-  }
-
-  private generateMultiplePairsWarning(pairsCount: number): string {
-    return `## ⚠️ Multiple SprintsBoard Detected
-**${pairsCount}** different board pairs found. Each pair is isolated and workspace-specific.
-**AI Agent - REQUIRED:** Before ANY operation, confirm with user which pair and workspace to use.
----
-`;
-  }
-
-  private generatePairDetails(pair: SprintsBoardPair, index: number): string {
-    return `### Pair ${index + 1}
-**Sprints Board:**
-- ID: \`${pair.sprintsBoard.id}\`
-- Name: ${pair.sprintsBoard.name}
-- Workspace: ${pair.sprintsBoard.workspaceName} (ID: ${pair.sprintsBoard.workspaceId})
-
-**Tasks Board:**
-- ID: \`${pair.tasksBoard.id}\`
-- Name: ${pair.tasksBoard.name}
-- Workspace: ${pair.tasksBoard.workspaceName} (ID: ${pair.tasksBoard.workspaceId})
----
-
-`;
-  }
-
-  private generateTechnicalReference(): string {
-    return `## 📋 Technical Reference
-
-**Sprint Operations** (all require correct board pair):
-• Add to Sprint: Update \`task_sprint\` column with sprint item ID
-• Remove from Sprint: Clear \`task_sprint\` column (set to null)
-• Search in Sprint: Filter where \`task_sprint\` equals sprint item ID
-• Move Between Sprints: Update \`task_sprint\` with new sprint item ID
-• Backlog Tasks: \`task_sprint\` is empty/null
-
-**Critical:** \`task_sprint\` column references ONLY its paired sprints board. Cross-pair operations WILL FAIL.`;
-  }
-
-  private generateReport(pairs: SprintsBoardPair[]): string {
-    const multiplePairsWarning = pairs.length > 1 ? this.generateMultiplePairsWarning(pairs.length) : '';
-    const pairDetails = pairs.map((pair, index) => this.generatePairDetails(pair, index)).join('');
-    const technicalReference = this.generateTechnicalReference();
-
-    return `# Monday-Dev Sprints Boards Discovery
-
-${multiplePairsWarning}## Boards
-
-Found **${pairs.length}** matched pair(s):
-
-${pairDetails}${technicalReference}`;
-  }
-
-  private generateNotFoundMessage(boardsChecked: number): string {
-    return `## No Monday-Dev Sprints Board Pairs Found
-
-**Boards Checked:** ${boardsChecked} (recently used)
-
-No board pairs with sprint relationships found in your recent boards.
-
-### Possible Reasons:
-1. Boards exist but not accessed recently by your account
-2. Missing access permissions to sprint/task boards
-3. Monday-dev product was not set up in account
-
-### Next Steps:
-1. Ask user to access monday-dev boards in UI to refresh recent boards list
-2. Ask user to verify permissions to view sprint and task boards
-3. Ask user to provide board IDs manually if known`;
   }
 
   private createBoardInfo(
