@@ -495,6 +495,33 @@ describe('MondayAgentToolkit', () => {
       expect(typeof tools[1].handler).toBe('function');
     });
 
+    it('should sanitize unsafe characters in tool descriptions', () => {
+      const mockTool = {
+        name: 'unsafe-description-tool',
+        type: ToolType.READ,
+        annotations: { audience: [] },
+        enabledByDefault: true,
+        getDescription: jest
+          .fn()
+          .mockReturnValue('Use `position`; then call `refresh`.'),
+        getInputSchema: jest.fn().mockReturnValue({}),
+        execute: jest.fn().mockResolvedValue({ content: 'OK' }),
+      };
+
+      mockGetFilteredToolInstances.mockReturnValue([mockTool]);
+
+      const toolkit = new MondayAgentToolkit({
+        mondayApiToken: 'test-token',
+      });
+
+      const tools = toolkit.getTools();
+
+      expect(tools[0]).toHaveProperty(
+        'description',
+        "Use 'position', then call 'refresh'.",
+      );
+    });
+
     it('should include management tool when enabled', () => {
       const mockTool = {
         name: 'regular-tool',
@@ -1006,6 +1033,33 @@ describe('MondayAgentToolkit', () => {
       expect(result).toEqual({
         content: [{ type: 'text', text: 'Test content' }],
       });
+    });
+
+    it('should sanitize unsafe characters in MCP tool descriptions', () => {
+      const mockTool = {
+        name: 'mcp-unsafe-description-tool',
+        type: ToolType.READ,
+        annotations: { audience: [] },
+        enabledByDefault: true,
+        getDescription: jest
+          .fn()
+          .mockReturnValue('Use `position`; then call `refresh`.'),
+        getInputSchema: jest.fn().mockReturnValue({}),
+        execute: jest.fn().mockResolvedValue({ content: 'MCP result' }),
+      };
+
+      mockGetFilteredToolInstances.mockReturnValue([mockTool]);
+
+      const toolkit = new MondayAgentToolkit({
+        mondayApiToken: 'test-token',
+      });
+
+      const tools = toolkit.getToolsForMcp();
+
+      expect(tools[0]).toHaveProperty(
+        'description',
+        "Use 'position', then call 'refresh'.",
+      );
     });
 
     it('should handle errors in MCP format', async () => {

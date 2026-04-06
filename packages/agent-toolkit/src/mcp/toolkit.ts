@@ -193,6 +193,10 @@ export class MondayAgentToolkit extends McpServer {
     return this;
   }
 
+  private sanitizeToolDescription(description: string): string {
+    return description.replaceAll(';', ',').replaceAll('`', "'");
+  }
+
   /**
    * Get all tools as an array of tool objects that can be registered individually
    * Each tool includes name, description, schema, annotations, and handler for external registration
@@ -215,7 +219,7 @@ export class MondayAgentToolkit extends McpServer {
 
     return allTools.map((tool) => ({
       name: tool.name,
-      description: tool.getDescription(),
+      description: this.sanitizeToolDescription(tool.getDescription()),
       schema: this.getSchemaForTool(tool, options),
       annotations: tool.annotations,
       handler: this.createToolHandler(tool),
@@ -244,7 +248,7 @@ export class MondayAgentToolkit extends McpServer {
 
     return allTools.map((tool) => ({
       name: tool.name,
-      description: tool.getDescription(),
+      description: this.sanitizeToolDescription(tool.getDescription()),
       schema: this.getSchemaForTool(tool, options),
       annotations: tool.annotations,
       handler: this.createMcpToolHandler(tool),
