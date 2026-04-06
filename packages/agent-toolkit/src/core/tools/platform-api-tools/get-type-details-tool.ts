@@ -47,81 +47,20 @@ export class GetTypeDetailsTool extends BaseMondayApiTool<typeof getTypeDetailsT
         };
       }
 
-      let formattedResponse = `## Type: ${res.__type.name || 'Unnamed'} ${input.typeName === res.__type.name ? '' : `(queried: ${input.typeName})`}
-Kind: ${res.__type.kind}
-${res.__type.description ? `Description: ${res.__type.description}` : ''}
-
-`;
-
-      // Format fields
-      if (res.__type.fields && res.__type.fields.length > 0) {
-        formattedResponse += `## Fields\n`;
-        res.__type.fields.forEach((field) => {
-          const typeName = formatTypeName(field.type);
-          formattedResponse += `- ${field.name}: ${typeName}${field.description ? ` - ${field.description}` : ''}\n`;
-
-          // If field has arguments, list them
-          if (field.args && field.args.length > 0) {
-            formattedResponse += `  Arguments:\n`;
-            field.args.forEach((arg) => {
-              const argTypeName = formatTypeName(arg.type);
-              formattedResponse += `  - ${arg.name}: ${argTypeName}${arg.description ? ` - ${arg.description}` : ''}${arg.defaultValue ? ` (default: ${arg.defaultValue})` : ''}\n`;
-            });
-          }
-        });
-        formattedResponse += '\n';
-      }
-
-      // Format input fields
-      if (res.__type.inputFields && res.__type.inputFields.length > 0) {
-        formattedResponse += `## Input Fields\n`;
-        res.__type.inputFields.forEach((field) => {
-          const typeName = formatTypeName(field.type);
-          formattedResponse += `- ${field.name}: ${typeName}${field.description ? ` - ${field.description}` : ''}${field.defaultValue ? ` (default: ${field.defaultValue})` : ''}\n`;
-        });
-        formattedResponse += '\n';
-      }
-
-      // Format interfaces
-      if (res.__type.interfaces && res.__type.interfaces.length > 0) {
-        formattedResponse += `## Implements\n`;
-        res.__type.interfaces.forEach((iface) => {
-          formattedResponse += `- ${iface.name}\n`;
-        });
-        formattedResponse += '\n';
-      }
-
-      // Format enum values
-      if (res.__type.enumValues && res.__type.enumValues.length > 0) {
-        formattedResponse += `## Enum Values\n`;
-        res.__type.enumValues.forEach((value) => {
-          formattedResponse += `- ${value.name}${value.description ? ` - ${value.description}` : ''}\n`;
-        });
-        formattedResponse += '\n';
-      }
-
-      // Format possible types (for interfaces and unions)
-      if (res.__type.possibleTypes && res.__type.possibleTypes.length > 0) {
-        formattedResponse += `## Possible Types\n`;
-        res.__type.possibleTypes.forEach((type) => {
-          formattedResponse += `- ${type.name}\n`;
-        });
-      }
-
-      // Add usage examples
-      formattedResponse += `
-## Usage Examples
-If this is a Query or Mutation field, you can use it in the all_monday_api tool.
-
-Example for query:
-all_monday_api(operation: "query", name: "getTypeData", variables: "{\\"typeName\\": \\"${res.__type.name}\\"}")
-
-Example for object field access:
-When querying objects that have this type, include these fields in your query.
-`;
-
       return {
-        content: formattedResponse,
+        content: {
+          message: 'Type details retrieved',
+          data: {
+            name: res.__type.name,
+            kind: res.__type.kind,
+            description: res.__type.description ?? null,
+            fields: res.__type.fields ?? [],
+            inputFields: res.__type.inputFields ?? [],
+            interfaces: res.__type.interfaces ?? [],
+            enumValues: res.__type.enumValues ?? [],
+            possibleTypes: res.__type.possibleTypes ?? [],
+          },
+        },
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -138,17 +77,3 @@ When querying objects that have this type, include these fields in your query.
   }
 }
 
-// Helper function to format type names
-function formatTypeName(type: any): string {
-  if (!type) return 'unknown';
-
-  if (type.kind === 'NON_NULL') {
-    return `${formatTypeName(type.ofType)}!`;
-  }
-
-  if (type.kind === 'LIST') {
-    return `[${formatTypeName(type.ofType)}]`;
-  }
-
-  return type.name || 'unknown';
-}

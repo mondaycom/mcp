@@ -789,6 +789,102 @@ describe('UpdateDocTool', () => {
     expect(deltaFormat[0]).toEqual({ insert: { blot: { column_value: { item_id: '111', column_id: 'status' } } } });
   });
 
+  // ─── add_comment ─────────────────────────────────────────────────────────
+
+  it('creates a new comment on a document using object_id', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocByObjectId')) return Promise.resolve({ docs: [{ id: 'doc_resolved' }] });
+      if (query.includes('query getDocBoardItem')) {
+        return Promise.resolve({ boards: [{ items_page: { items: [{ id: '99001' }] } }] });
+      }
+      if (query.includes('mutation createDocComment')) {
+        return Promise.resolve({ create_update: { id: 'upd_123', body: 'Hello', created_at: '2024-01-01' } });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      object_id: 'obj_board_555',
+      operations: [{ operation_type: 'add_comment', body: '<p>Hello world</p>' }],
+    });
+
+    expect(result.content[0].text).toContain('[OK] add_comment');
+    expect(result.content[0].text).toContain('Comment created');
+    expect(result.content[0].text).toContain('upd_123');
+
+    const calls = mocks.getMockRequest().mock.calls;
+    const boardItemCall = calls.find((c: any) => c[0].includes('query getDocBoardItem'));
+    expect(boardItemCall[1]).toEqual({ boardId: 'obj_board_555' });
+
+    const commentCall = calls.find((c: any) => c[0].includes('mutation createDocComment'));
+    expect(commentCall[1]).toEqual({ itemId: '99001', body: '<p>Hello world</p>', parentId: undefined });
+  });
+
+  it('creates a reply comment using parent_update_id', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocObjectIdByDocId')) {
+        return Promise.resolve({ docs: [{ id: 'doc_123', object_id: 'board_777' }] });
+      }
+      if (query.includes('query getDocBoardItem')) {
+        return Promise.resolve({ boards: [{ items_page: { items: [{ id: '88001' }] } }] });
+      }
+      if (query.includes('mutation createDocComment')) {
+        return Promise.resolve({ create_update: { id: 'reply_456', body: 'Reply', created_at: '2024-01-01' } });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [{ operation_type: 'add_comment', body: '<p>Reply here</p>', parent_update_id: 42 }],
+    });
+
+    expect(result.content[0].text).toContain('[OK] add_comment');
+    expect(result.content[0].text).toContain('Reply to update 42');
+    expect(result.content[0].text).toContain('reply_456');
+
+    const calls = mocks.getMockRequest().mock.calls;
+    const commentCall = calls.find((c: any) => c[0].includes('mutation createDocComment'));
+    expect(commentCall[1]).toEqual({ itemId: '88001', body: '<p>Reply here</p>', parentId: '42' });
+  });
+
+  it('fails when no item found on backing board', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocObjectIdByDocId')) {
+        return Promise.resolve({ docs: [{ id: 'doc_123', object_id: 'board_999' }] });
+      }
+      if (query.includes('query getDocBoardItem')) {
+        return Promise.resolve({ boards: [{ items_page: { items: [] } }] });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [{ operation_type: 'add_comment', body: '<p>Test</p>' }],
+    });
+
+    expect(result.content[0].text).toContain('[FAILED] add_comment');
+    expect(result.content[0].text).toContain('No item found');
+  });
+
+  it('fails when object_id cannot be resolved from doc_id', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query getDocObjectIdByDocId')) {
+        return Promise.resolve({ docs: [] });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_unknown',
+      operations: [{ operation_type: 'add_comment', body: '<p>Test</p>' }],
+    });
+
+    expect(result.content[0].text).toContain('[FAILED] add_comment');
+    expect(result.content[0].text).toContain('Could not resolve object_id');
+  });
+
   // ─── Column value blot (update_block path — macro format) ─────────────────
 
   it('sends column_value as macro format for update_block', async () => {
