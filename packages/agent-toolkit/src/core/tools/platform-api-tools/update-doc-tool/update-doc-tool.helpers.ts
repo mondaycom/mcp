@@ -1,7 +1,9 @@
+import { randomUUID } from 'crypto';
 import {
   BlockAlignment,
   BlockDirection,
   CreateBlockInput,
+  DocsMention,
   ListBlock,
   NoticeBoxTheme,
   OperationInput,
@@ -21,22 +23,83 @@ function mapDirection(d?: string): BlockDirection | undefined {
   return d as BlockDirection;
 }
 
+function mapAttributes(attributes: DeltaOperation['attributes']) {
+  if (!attributes) return undefined;
+  return {
+    bold: attributes.bold,
+    italic: attributes.italic,
+    underline: attributes.underline,
+    strike: attributes.strike,
+    code: attributes.code,
+    link: attributes.link,
+    color: attributes.color,
+    background: attributes.background,
+  };
+}
+
+/**
+ * Maps delta ops to GraphQL OperationInput[] for the create_doc_blocks path.
+ * Blot types (mention, column_value) use the BlotInput wrapper required by the typed GraphQL input.
+ */
 function mapDeltaFormat(ops: DeltaOperation[]): OperationInput[] {
-  return ops.map((op) => ({
-    insert: { text: op.insert.text },
-    attributes: op.attributes
-      ? {
-          bold: op.attributes.bold,
-          italic: op.attributes.italic,
-          underline: op.attributes.underline,
-          strike: op.attributes.strike,
-          code: op.attributes.code,
-          link: op.attributes.link,
-          color: op.attributes.color,
-          background: op.attributes.background,
-        }
-      : undefined,
-  }));
+  return ops.map((op) => {
+    if ('mention' in op.insert) {
+      const numericId = Number(op.insert.mention.id);
+      if (Number.isNaN(numericId)) {
+        throw new Error(`Invalid mention id: "${op.insert.mention.id}" is not a valid numeric ID`);
+      }
+      return {
+        insert: {
+          // GraphQL ID scalar expects a string — validated as numeric above, passed as string here
+          blot: { mention: { id: String(numericId), type: op.insert.mention.type as DocsMention } },
+        },
+      };
+    }
+    if ('column_value' in op.insert) {
+      return {
+        insert: {
+          // GraphQL ID scalar expects a string
+          blot: { column_value: { item_id: String(op.insert.column_value.item_id), column_id: op.insert.column_value.column_id } },
+        },
+      };
+    }
+    return {
+      insert: { text: op.insert.text },
+      attributes: mapAttributes(op.attributes),
+    };
+  });
+}
+
+/**
+ * Maps delta ops to the server-internal format for the update_doc_block path (raw JSON).
+ * No BlotInput wrapper — blots are embedded directly in the insert value.
+ */
+function mapDeltaFormatRaw(ops: DeltaOperation[]): Record<string, unknown>[] {
+  return ops.map((op) => {
+    if ('mention' in op.insert) {
+      const numericId = Number(op.insert.mention.id);
+      if (Number.isNaN(numericId)) {
+        throw new Error(`Invalid mention id: "${op.insert.mention.id}" is not a valid numeric ID`);
+      }
+      return { insert: { mention: { id: numericId, type: op.insert.mention.type } } };
+    }
+    if ('column_value' in op.insert) {
+      return {
+        insert: {
+          macro: {
+            type: 'COLUMN_VALUE',
+            macroId: randomUUID(),
+            // Raw JSON format expects a numeric itemId (unlike GraphQL ID scalar which uses string)
+            macroData: { itemId: Number(op.insert.column_value.item_id), columnId: op.insert.column_value.column_id },
+          },
+        },
+      };
+    }
+    return {
+      insert: op.insert.text,
+      attributes: mapAttributes(op.attributes),
+    };
+  });
 }
 
 /**
@@ -47,18 +110,18 @@ export function buildUpdateBlockContent(input: UpdateBlockContent): Record<strin
   switch (input.block_content_type) {
     case 'text':
       return {
-        deltaFormat: mapDeltaFormat(input.delta_format),
+        deltaFormat: mapDeltaFormatRaw(input.delta_format),
         alignment: input.alignment,
         direction: input.direction,
       };
     case 'code':
       return {
-        deltaFormat: mapDeltaFormat(input.delta_format),
+        deltaFormat: mapDeltaFormatRaw(input.delta_format),
         language: input.language,
       };
     case 'list_item':
       return {
-        deltaFormat: mapDeltaFormat(input.delta_format),
+        deltaFormat: mapDeltaFormatRaw(input.delta_format),
         checked: input.checked,
         indentation: input.indentation,
       };
@@ -102,13 +165,16 @@ export function buildCreateBlockInput(block: CreateBlock): CreateBlockInput {
       return { divider_block: {} };
     case 'page_break':
       return { page_break_block: {} };
-    case 'image':
+    case 'image': {
+      if (block.asset_id == null && !block.public_url) {
+        throw new Error('image block requires either asset_id or public_url');
+      }
       return {
-        image_block: {
-          public_url: block.public_url,
-          width: block.width,
-        },
+        image_block: block.asset_id != null
+          ? { asset_id: String(block.asset_id), width: block.width }
+          : { public_url: block.public_url!, width: block.width },
       };
+    }
     case 'video':
       return {
         video_block: {

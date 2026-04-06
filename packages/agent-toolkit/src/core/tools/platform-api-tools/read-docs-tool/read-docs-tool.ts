@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { ReadDocsQuery, ReadDocsQueryVariables, DocsOrderBy } from 'src/monday-graphql/generated/graphql/graphql';
 import { exportMarkdownFromDoc } from 'src/monday-graphql/queries.graphql';
-import { readDocs } from './read-docs-tool.graphql';
+import { readDocs, getDocComments } from './read-docs-tool.graphql';
 import {
   GetDocVersionHistoryQuery,
   GetDocVersionHistoryQueryVariables,
@@ -11,6 +11,49 @@ import {
 import { getDocVersionHistory, getDocVersionDiff } from './read-docs-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+
+// Types for the GetDocComments query (manually defined as codegen has a pre-existing conflict)
+type GetDocCommentsQueryVariables = {
+  boardId: string;
+  itemsLimit?: number;
+  updatesLimit?: number;
+};
+
+type DocCommentCreator = {
+  id: string;
+  name: string;
+};
+
+type DocCommentReply = {
+  id: string;
+  text_body?: string | null;
+  body: string;
+  created_at?: string | null;
+  creator?: DocCommentCreator | null;
+};
+
+type DocCommentUpdate = {
+  id: string;
+  text_body?: string | null;
+  body: string;
+  created_at?: string | null;
+  creator?: DocCommentCreator | null;
+  replies?: DocCommentReply[] | null;
+};
+
+type DocCommentItem = {
+  id: string;
+  name: string;
+  updates?: DocCommentUpdate[] | null;
+};
+
+type GetDocCommentsQuery = {
+  boards?: Array<{
+    items_page?: {
+      items?: DocCommentItem[] | null;
+    } | null;
+  }> | null;
+};
 
 const QueryByIdEnum = z.enum(['ids', 'object_ids', 'workspace_ids']);
 
@@ -32,7 +75,7 @@ export const readDocsToolSchema = {
   ids: z
     .array(z.string())
     .optional()
-    .describe('Array of ID values matching the query type. Required when mode is "content".'),
+    .describe('Array of ID values. In content mode: matches the query type (ids/object_ids/workspace_ids). In version_history mode: provide the single document object_id here (e.g., ids: ["5001466606"]).'),
   limit: z
     .number()
     .optional()
@@ -52,19 +95,33 @@ export const readDocsToolSchema = {
     .describe(
       'If true, includes the blocks array (block IDs, types, positions, content) in the response. Required when you plan to call update_doc. Defaults to false to reduce response size. Only used in content mode.',
     ),
+  include_comments: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe(
+      'If true, fetches all comments and replies on the document. Comments are stored at the item level within the doc backing board. Defaults to false. Only used in content mode.',
+    ),
+  comments_limit: z
+    .number()
+    .optional()
+    .default(50)
+    .describe(
+      'Maximum number of comments (updates) to fetch per item when include_comments is true. Defaults to 50. Only used in content mode.',
+    ),
 
   // --- version_history mode fields ---
-  doc_id: z
-    .string()
+  version_history_limit: z
+    .number()
     .optional()
     .describe(
-      'The document ID to get version history for. This is the id field from content mode (not the object_id). Required when mode is "version_history".',
+      'Maximum number of restoring points to return. Use this when the user asks for "last N changes". Only used in version_history mode.',
     ),
   since: z
     .string()
     .optional()
     .describe(
-      'ISO 8601 date string to filter version history from (e.g., "2026-03-15T00:00:00Z"). Defaults to 24 hours ago. Only used in version_history mode.',
+      'ISO 8601 date string to filter version history from (e.g., "2026-03-15T00:00:00Z"). If omitted, returns the full history. Only used in version_history mode.',
     ),
   until: z
     .string()
@@ -99,11 +156,17 @@ MODE: "content" (default) — Fetch documents with their full markdown content.
 - Supports pagination via page/limit. Check has_more_pages in response.
 - If type "ids" returns no results, automatically retries with object_ids.
 - Set include_blocks: true to include block IDs, types, and positions in the response — required before calling update_doc.
+- Set include_comments: true to fetch all comments and replies on the document. Use comments_limit to control how many comments per item (default 50).
 
 MODE: "version_history" — Fetch the edit history of a single document.
-- Requires: doc_id (the id field from content mode, not object_id)
-- Defaults to the last 24 hours. Use since/until to widen the range.
-- Set include_diff: true to see what content changed between versions (fetches up to ${MAX_DIFF_POINTS} diffs, may be slower).`;
+- Requires: ids with the document's object_id (use the object_id field from content mode results, NOT the id field).
+- The object_id is the numeric ID visible in the document URL.
+- Returns restoring points sorted newest-first. Use version_history_limit to cap results (e.g., "last 3 changes" → version_history_limit: 3).
+- Use since/until to filter by time range. If omitted, returns full history.
+- Set include_diff: true to see what content changed between versions (fetches up to ${MAX_DIFF_POINTS} diffs, may be slower).
+- Examples:
+  - { mode: "version_history", ids: ["5001466606"], version_history_limit: 3 }
+  - { mode: "version_history", ids: ["5001466606"], since: "2026-03-11T00:00:00Z", include_diff: true }`;
   }
 
   getInputSchema(): typeof readDocsToolSchema {
@@ -170,42 +233,51 @@ MODE: "version_history" — Fetch the edit history of a single document.
         return { content: `No documents found matching the specified criteria${pageInfo}.` };
       }
 
-      return this.enrichDocsWithMarkdown(res.docs, variables, includeBlocks);
+      const includeComments = input.include_comments ?? false;
+      const commentsLimit = input.comments_limit ?? 50;
+
+      return this.enrichDocsWithMarkdown(res.docs, variables, includeBlocks, includeComments, commentsLimit);
     } catch (error) {
       return { content: `Error reading documents: ${error instanceof Error ? error.message : 'Unknown error occurred'}` };
     }
   }
 
   private async executeVersionHistory(input: ToolInputType<typeof readDocsToolSchema>): Promise<ToolOutputType<never>> {
-    const { doc_id, include_diff } = input;
+    const { include_diff, since, until, version_history_limit } = input;
+    const objectId = input.ids?.[0];
 
-    if (!doc_id) {
-      return { content: 'Error: doc_id is required when mode is "version_history".' };
+    if (!objectId) {
+      return { content: 'Error: ids is required when mode is "version_history". Provide the document object_id.' };
     }
 
-    const since = input.since ?? new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const until = input.until ?? new Date().toISOString();
-
     try {
-      const variables: GetDocVersionHistoryQueryVariables = { docId: doc_id, since, until };
+      const variables: GetDocVersionHistoryQueryVariables = { docId: objectId, since, until };
       const historyResult = await this.mondayApi.request<GetDocVersionHistoryQuery>(getDocVersionHistory, variables);
 
-      const restoringPoints = historyResult?.doc_version_history?.restoring_points;
+      let restoringPoints = historyResult?.doc_version_history?.restoring_points;
 
       if (!restoringPoints || restoringPoints.length === 0) {
         return {
-          content: `No version history found for document ${doc_id} in the specified time range (${since} to ${until}).`,
+          content: `No version history found for document ${objectId}${since ? ` from ${since}` : ''}.`,
         };
       }
 
       if (!include_diff) {
+        if (version_history_limit) {
+          restoringPoints = restoringPoints.slice(0, version_history_limit);
+        }
         return {
-          content: JSON.stringify({ doc_id, since, until, restoring_points: restoringPoints }, null, 2),
+          content: { doc_id: objectId, since, until, restoring_points: restoringPoints },
         };
       }
 
-      const pointsToFetch = restoringPoints.slice(0, MAX_DIFF_POINTS);
-      const truncated = restoringPoints.length > MAX_DIFF_POINTS;
+      // Cap at MAX_DIFF_POINTS to limit the number of diff API calls.
+      // Fetch one extra point beyond the user's limit so the oldest visible point
+      // has a "previous" snapshot to diff against — without it the last point
+      // always comes back with no diff.
+      const userLimit = Math.min(version_history_limit ?? MAX_DIFF_POINTS, MAX_DIFF_POINTS);
+      const pointsToFetch = restoringPoints.slice(0, userLimit + 1);
+      const truncated = restoringPoints.length > userLimit;
 
       const restoringPointsWithDiffs = await Promise.allSettled(
         pointsToFetch.map(async (point, i) => {
@@ -217,7 +289,7 @@ MODE: "version_history" — Fetch the edit history of a single document.
             return point;
           }
           const diffVariables: GetDocVersionDiffQueryVariables = {
-            docId: doc_id,
+            docId: objectId,
             date: point.date,
             prevDate: prevPoint.date,
           };
@@ -226,23 +298,81 @@ MODE: "version_history" — Fetch the edit history of a single document.
         }),
       ).then((results) => results.map((r, i) => (r.status === 'fulfilled' ? r.value : pointsToFetch[i])));
 
+      // Drop the extra context point — it was only needed to compute the last diff.
+      const finalPoints = restoringPointsWithDiffs.slice(0, userLimit);
+
       return {
-        content: JSON.stringify(
-          {
-            doc_id,
-            since,
-            until,
-            restoring_points: restoringPointsWithDiffs,
-            ...(truncated && { truncated: true, total_count: restoringPoints.length }),
-          },
-          null,
-          2,
-        ),
+        content: {
+          doc_id: objectId,
+          since,
+          until,
+          restoring_points: finalPoints,
+          ...(truncated && { truncated: true, total_count: restoringPoints.length }),
+        },
       };
     } catch (error) {
       return {
-        content: `Error fetching version history for document ${doc_id}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        content: `Error fetching version history for document ${objectId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
       };
+    }
+  }
+
+  private async fetchDocComments(objectId: string, commentsLimit: number) {
+    try {
+      const variables: GetDocCommentsQueryVariables = {
+        boardId: objectId,
+        itemsLimit: 100,
+        updatesLimit: commentsLimit,
+      };
+
+      const res = await this.mondayApi.request<GetDocCommentsQuery>(getDocComments, variables);
+      const items = res.boards?.[0]?.items_page?.items;
+
+      if (!items) return [];
+
+      const comments: Array<{
+        id: string;
+        text_body?: string | null;
+        body: string;
+        created_at?: string | null;
+        creator: { id: string; name: string } | null;
+        item_id: string;
+        item_name: string;
+        replies: Array<{
+          id: string;
+          text_body?: string | null;
+          body: string;
+          created_at?: string | null;
+          creator: { id: string; name: string } | null;
+        }>;
+      }> = [];
+
+      for (const item of items) {
+        if (!item.updates || item.updates.length === 0) continue;
+
+        for (const update of item.updates) {
+          comments.push({
+            id: update.id,
+            text_body: update.text_body,
+            body: update.body,
+            created_at: update.created_at,
+            creator: update.creator ? { id: update.creator.id, name: update.creator.name } : null,
+            item_id: item.id,
+            item_name: item.name,
+            replies: (update.replies ?? []).map((reply) => ({
+              id: reply.id,
+              text_body: reply.text_body,
+              body: reply.body,
+              created_at: reply.created_at,
+              creator: reply.creator ? { id: reply.creator.id, name: reply.creator.name } : null,
+            })),
+          });
+        }
+      }
+
+      return comments;
+    } catch (error) {
+      return `Error fetching comments: ${error instanceof Error ? error.message : 'Unknown error'}`;
     }
   }
 
@@ -250,6 +380,8 @@ MODE: "version_history" — Fetch the edit history of a single document.
     docs: NonNullable<ReadDocsQuery['docs']>,
     variables: ReadDocsQueryVariables,
     includeBlocks: boolean,
+    includeComments: boolean = false,
+    commentsLimit: number = 50,
   ): Promise<ToolOutputType<never>> {
     type ExportMarkdownFromDocMutationVariables = {
       docId: string;
@@ -284,6 +416,11 @@ MODE: "version_history" — Fetch the edit history of a single document.
             blocksAsMarkdown = `Error getting markdown: ${error instanceof Error ? error.message : 'Unknown error'}`;
           }
 
+          let comments: Awaited<ReturnType<ReadDocsTool['fetchDocComments']>> | undefined;
+          if (includeComments && doc.object_id) {
+            comments = await this.fetchDocComments(doc.object_id, commentsLimit);
+          }
+
           return {
             id: doc.id,
             object_id: doc.object_id,
@@ -309,6 +446,7 @@ MODE: "version_history" — Fetch the edit history of a single document.
                 })),
             }),
             blocks_as_markdown: blocksAsMarkdown,
+            ...(includeComments && { comments }),
           };
         }),
     );

@@ -957,6 +957,8 @@ export enum AppFeatureTypeE {
   Product = 'PRODUCT',
   /** PRODUCT_VIEW */
   ProductView = 'PRODUCT_VIEW',
+  /** SKILL */
+  Skill = 'SKILL',
   /** SOLUTION */
   Solution = 'SOLUTION',
   /** SUB_WORKFLOW */
@@ -1546,6 +1548,13 @@ export type BatchExtendTrialPeriod = {
   /** Reason of an error */
   reason?: Maybe<Scalars['String']['output']>;
   /** Result of a batch operation */
+  success: Scalars['Boolean']['output'];
+};
+
+/** Root mutation type for the Dependencies service */
+export type BatchUndoResult = {
+  __typename?: 'BatchUndoResult';
+  /** Whether the undo operation completed successfully */
   success: Scalars['Boolean']['output'];
 };
 
@@ -3914,7 +3923,7 @@ export type DocsColumnValue = {
   /** The ID of the column */
   column_id?: Maybe<Scalars['String']['output']>;
   /** The ID of the board item */
-  item_id?: Maybe<Scalars['Int']['output']>;
+  item_id?: Maybe<Scalars['ID']['output']>;
 };
 
 /** Column value reference for displaying board item column data */
@@ -3922,7 +3931,7 @@ export type DocsColumnValueInput = {
   /** The ID of the column */
   column_id: Scalars['String']['input'];
   /** The ID of the board item */
-  item_id: Scalars['Int']['input'];
+  item_id: Scalars['ID']['input'];
 };
 
 /** Type of mention - user, document, or board */
@@ -4371,6 +4380,8 @@ export enum ExternalWidget {
   Gantt = 'GANTT',
   /** ListView widgets for displaying cross-board items in a tabular list format with filtering and sorting. */
   Listview = 'LISTVIEW',
+  /** Map widgets for geographic data visualization. Displays location-based data on interactive maps. */
+  Map = 'MAP',
   /** Number widgets for displaying numeric metrics such as accumulated sums, averages, counts, totals, percentages. Ideal for showing single-value metrics, counters, calculated aggregations, and key performance indicators in a prominent numeric format. */
   Number = 'NUMBER',
   /** Table widgets for visualization */
@@ -4604,6 +4615,8 @@ export enum FirstDayOfTheWeek {
 /** A workspace folder containing boards, docs, sub folders, etc. */
 export type Folder = {
   __typename?: 'Folder';
+  /** The folder's app feature slug (folders 2.0) */
+  app_feature_slug?: Maybe<Scalars['String']['output']>;
   /** The various items in the folder, not including sub-folders and dashboards. */
   children: Array<Maybe<Board>>;
   /** The folder's color. */
@@ -5514,6 +5527,22 @@ export type GroupBySortSettingsInput = {
   type?: InputMaybe<Scalars['String']['input']>;
 };
 
+/** Input for a group of validation rules with a logical operator */
+export type GroupInput = {
+  /** The group configuration */
+  groups: Array<RuleConstraintInput>;
+  /** The group operator */
+  operator?: InputMaybe<GroupOperator>;
+};
+
+/** The operator for the group */
+export enum GroupOperator {
+  /** All conditions in the group must be met */
+  And = 'AND',
+  /** At least one condition in the group must be met */
+  Or = 'OR'
+}
+
 export type GroupValue = ColumnValue & {
   __typename?: 'GroupValue';
   /** The column that this value belongs to. */
@@ -5583,10 +5612,12 @@ export type HourValue = ColumnValue & {
 
 /** Input for creating image blocks */
 export type ImageBlockInput = {
+  /** The monday.com asset ID of the image */
+  asset_id?: InputMaybe<Scalars['ID']['input']>;
   /** The parent block id to append the created block under. */
   parent_block_id?: InputMaybe<Scalars['String']['input']>;
   /** The public URL of the image */
-  public_url: Scalars['String']['input'];
+  public_url?: InputMaybe<Scalars['String']['input']>;
   /** The width of the image */
   width?: InputMaybe<Scalars['Int']['input']>;
 };
@@ -6582,7 +6613,7 @@ export type MeetingsResponse = {
 export type Mention = {
   __typename?: 'Mention';
   /** The unique identifier of the mentioned entity */
-  id?: Maybe<Scalars['Int']['output']>;
+  id?: Maybe<Scalars['ID']['output']>;
   /** The type of the mentioned entity */
   type?: Maybe<DocsMention>;
 };
@@ -6590,7 +6621,7 @@ export type Mention = {
 /** Mention object for user or document references */
 export type MentionInput = {
   /** The ID of the mentioned user or document */
-  id: Scalars['Int']['input'];
+  id: Scalars['ID']['input'];
   /** The type of mention: user, doc, or board */
   type: DocsMention;
 };
@@ -6702,7 +6733,6 @@ export type MirroredItem = {
 /** Represents a mirrored value (column value, group, or board). */
 export type MirroredValue = BatteryValue | Board | BoardRelationValue | ButtonValue | CheckboxValue | ColorPickerValue | CountryValue | CreationLogValue | DateValue | DependencyValue | DirectDocValue | DocValue | DropdownValue | EmailValue | FileValue | FormulaValue | Group | GroupValue | HourValue | IntegrationValue | ItemIdValue | LastUpdatedValue | LinkValue | LocationValue | LongTextValue | MirrorValue | NumbersValue | PeopleValue | PersonValue | PhoneValue | ProgressValue | RatingValue | StatusValue | SubtasksValue | TagsValue | TeamValue | TextValue | TimeTrackingValue | TimelineValue | UnsupportedValue | VoteValue | WeekValue | WorldClockValue;
 
-/** Root mutation type for the Dependencies service */
 export type Mutation = {
   __typename?: 'Mutation';
   /** Activate a form to make it visible to users and accept new submissions. */
@@ -6764,6 +6794,8 @@ export type Mutation = {
   attach_status_managed_column?: Maybe<Column>;
   /** Extends trial period of an application to selected accounts */
   batch_extend_trial_period?: Maybe<BatchExtendTrialPeriod>;
+  /** Undo a batch action on a board */
+  batch_undo?: Maybe<BatchUndoResult>;
   /** Batch update the dependency column values in a board. Limited to 50 items per batch. */
   batch_update_dependency_column: Scalars['JSON']['output'];
   /** Initialize bulk import for a board and group. Returns import ID and upload URL to begin the process. */
@@ -6877,6 +6909,8 @@ export type Mutation = {
   create_team?: Maybe<Team>;
   create_timeline_item?: Maybe<TimelineItem>;
   create_update?: Maybe<Update>;
+  /** Create a validation rule */
+  create_validation_rule?: Maybe<ValidationRule>;
   /** Create a view */
   create_view?: Maybe<BoardView>;
   /** Create a new table view */
@@ -6955,6 +6989,8 @@ export type Mutation = {
   delete_update?: Maybe<Update>;
   /** Delete users from a workspace. */
   delete_users_from_workspace?: Maybe<Array<Maybe<User>>>;
+  /** Delete a validation rule */
+  delete_validation_rule?: Maybe<ValidationRule>;
   /** Delete an existing board subset/view */
   delete_view?: Maybe<BoardView>;
   /** Delete a new webhook. */
@@ -7122,6 +7158,8 @@ export type Mutation = {
   update_users_board_role?: Maybe<UpdateUsersBoardRoleResponse>;
   /** Updates the role of the specified users. */
   update_users_role?: Maybe<UpdateUsersRoleResult>;
+  /** Update a validation rule */
+  update_validation_rule?: Maybe<ValidationRule>;
   /** Update an existing view */
   update_view?: Maybe<BoardView>;
   /** Update an existing board table view */
@@ -7137,45 +7175,38 @@ export type Mutation = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationActivate_FormArgs = {
   formToken: Scalars['String']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationActivate_Live_WorkflowArgs = {
   id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationActivate_Managed_ColumnArgs = {
   id: Scalars['String']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationActivate_UsersArgs = {
   user_ids: Array<Scalars['ID']['input']>;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationAdd_Allocated_ResourcesArgs = {
   planner_id: Scalars['ID']['input'];
   resources: Array<AllocatedResourceInput>;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationAdd_Allocations_To_ResourcesArgs = {
   allocations: Array<AllocationToResourceInput>;
   planner_id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationAdd_Board_Relation_Connected_BoardsArgs = {
   board_id: Scalars['ID']['input'];
   column_id: Scalars['ID']['input'];
@@ -7183,7 +7214,6 @@ export type MutationAdd_Board_Relation_Connected_BoardsArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationAdd_Content_To_Doc_From_MarkdownArgs = {
   afterBlockId?: InputMaybe<Scalars['String']['input']>;
   docId: Scalars['ID']['input'];
@@ -7191,7 +7221,6 @@ export type MutationAdd_Content_To_Doc_From_MarkdownArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationAdd_File_To_ColumnArgs = {
   column_id: Scalars['String']['input'];
   file: Scalars['File']['input'];
@@ -7199,14 +7228,12 @@ export type MutationAdd_File_To_ColumnArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationAdd_File_To_UpdateArgs = {
   file: Scalars['File']['input'];
   update_id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationAdd_Required_ColumnArgs = {
   column_id: Scalars['String']['input'];
   id: Scalars['ID']['input'];
@@ -7214,7 +7241,6 @@ export type MutationAdd_Required_ColumnArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationAdd_Subscribers_To_BoardArgs = {
   board_id: Scalars['ID']['input'];
   kind?: InputMaybe<BoardSubscriberKind>;
@@ -7222,7 +7248,6 @@ export type MutationAdd_Subscribers_To_BoardArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationAdd_Subscribers_To_ObjectArgs = {
   id: Scalars['ID']['input'];
   kind?: InputMaybe<SubscriberKind>;
@@ -7230,7 +7255,6 @@ export type MutationAdd_Subscribers_To_ObjectArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationAdd_Teams_To_BoardArgs = {
   board_id: Scalars['ID']['input'];
   kind?: InputMaybe<BoardSubscriberKind>;
@@ -7238,7 +7262,6 @@ export type MutationAdd_Teams_To_BoardArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationAdd_Teams_To_WorkspaceArgs = {
   kind?: InputMaybe<WorkspaceSubscriberKind>;
   team_ids: Array<Scalars['ID']['input']>;
@@ -7246,7 +7269,6 @@ export type MutationAdd_Teams_To_WorkspaceArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationAdd_Users_To_BoardArgs = {
   board_id: Scalars['ID']['input'];
   kind?: InputMaybe<BoardSubscriberKind>;
@@ -7254,14 +7276,12 @@ export type MutationAdd_Users_To_BoardArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationAdd_Users_To_TeamArgs = {
   team_id: Scalars['ID']['input'];
   user_ids: Array<Scalars['ID']['input']>;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationAdd_Users_To_WorkspaceArgs = {
   kind?: InputMaybe<WorkspaceSubscriberKind>;
   user_ids: Array<Scalars['ID']['input']>;
@@ -7269,53 +7289,45 @@ export type MutationAdd_Users_To_WorkspaceArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationArchive_BoardArgs = {
   board_id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationArchive_GroupArgs = {
   board_id: Scalars['ID']['input'];
   group_id: Scalars['String']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationArchive_ItemArgs = {
   item_id?: InputMaybe<Scalars['ID']['input']>;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationArchive_ObjectArgs = {
   id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationAssign_Department_MembersArgs = {
   department_id: Scalars['ID']['input'];
   user_ids: Array<Scalars['ID']['input']>;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationAssign_Department_OwnerArgs = {
   department_id: Scalars['ID']['input'];
   user_id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationAssign_Team_OwnersArgs = {
   team_id: Scalars['ID']['input'];
   user_ids: Array<Scalars['ID']['input']>;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationAttach_Dropdown_Managed_ColumnArgs = {
   after_column_id?: InputMaybe<Scalars['ID']['input']>;
   board_id: Scalars['ID']['input'];
@@ -7326,7 +7338,6 @@ export type MutationAttach_Dropdown_Managed_ColumnArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationAttach_Status_Managed_ColumnArgs = {
   after_column_id?: InputMaybe<Scalars['ID']['input']>;
   board_id: Scalars['ID']['input'];
@@ -7336,7 +7347,6 @@ export type MutationAttach_Status_Managed_ColumnArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationBatch_Extend_Trial_PeriodArgs = {
   account_slugs: Array<Scalars['String']['input']>;
   app_id: Scalars['ID']['input'];
@@ -7345,7 +7355,13 @@ export type MutationBatch_Extend_Trial_PeriodArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
+export type MutationBatch_UndoArgs = {
+  board_id: Scalars['ID']['input'];
+  prevent_undo_settings?: InputMaybe<Scalars['Boolean']['input']>;
+  undo_record_id: Scalars['ID']['input'];
+};
+
+
 export type MutationBatch_Update_Dependency_ColumnArgs = {
   boardId: Scalars['String']['input'];
   columnId: Scalars['String']['input'];
@@ -7353,7 +7369,6 @@ export type MutationBatch_Update_Dependency_ColumnArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationBulk_Import_ItemsArgs = {
   board_id: Scalars['ID']['input'];
   group_id: Scalars['ID']['input'];
@@ -7361,7 +7376,6 @@ export type MutationBulk_Import_ItemsArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationChange_Column_MetadataArgs = {
   board_id: Scalars['ID']['input'];
   column_id: Scalars['String']['input'];
@@ -7370,7 +7384,6 @@ export type MutationChange_Column_MetadataArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationChange_Column_TitleArgs = {
   board_id: Scalars['ID']['input'];
   column_id: Scalars['String']['input'];
@@ -7378,7 +7391,6 @@ export type MutationChange_Column_TitleArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationChange_Column_ValueArgs = {
   board_id: Scalars['ID']['input'];
   column_id: Scalars['String']['input'];
@@ -7388,7 +7400,6 @@ export type MutationChange_Column_ValueArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationChange_Item_PositionArgs = {
   group_id?: InputMaybe<Scalars['ID']['input']>;
   group_top?: InputMaybe<Scalars['Boolean']['input']>;
@@ -7398,7 +7409,6 @@ export type MutationChange_Item_PositionArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationChange_Live_Workflow_OwnerArgs = {
   id: Scalars['ID']['input'];
   notify_users?: InputMaybe<Scalars['Boolean']['input']>;
@@ -7406,7 +7416,6 @@ export type MutationChange_Live_Workflow_OwnerArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationChange_Multiple_Column_ValuesArgs = {
   board_id: Scalars['ID']['input'];
   column_values: Scalars['JSON']['input'];
@@ -7415,7 +7424,6 @@ export type MutationChange_Multiple_Column_ValuesArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationChange_Simple_Column_ValueArgs = {
   board_id: Scalars['ID']['input'];
   column_id: Scalars['String']['input'];
@@ -7425,19 +7433,16 @@ export type MutationChange_Simple_Column_ValueArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationClear_Item_UpdatesArgs = {
   item_id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationClear_Users_DepartmentArgs = {
   user_ids: Array<Scalars['ID']['input']>;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationConnect_Board_To_EntityArgs = {
   board_id: Scalars['ID']['input'];
   entity_id?: InputMaybe<Scalars['ID']['input']>;
@@ -7445,7 +7450,6 @@ export type MutationConnect_Board_To_EntityArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationConnect_Migration_JobArgs = {
   migrationJobId: Scalars['String']['input'];
   sourceAccountId: Scalars['Int']['input'];
@@ -7454,33 +7458,28 @@ export type MutationConnect_Migration_JobArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationConnect_Project_To_PortfolioArgs = {
   portfolioBoardId: Scalars['ID']['input'];
   projectBoardId: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationConvert_Board_To_ProjectArgs = {
   input: ConvertBoardToProjectInput;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_Account_EntityArgs = {
   name: Scalars['String']['input'];
   parent_id?: InputMaybe<Scalars['ID']['input']>;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_AppArgs = {
   input: CreateAppInput;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_App_FeatureArgs = {
   app_id: Scalars['ID']['input'];
   app_version_id?: InputMaybe<Scalars['ID']['input']>;
@@ -7492,7 +7491,6 @@ export type MutationCreate_App_FeatureArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_ArticleArgs = {
   folder_id?: InputMaybe<Scalars['ID']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
@@ -7500,7 +7498,6 @@ export type MutationCreate_ArticleArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_BoardArgs = {
   board_kind: BoardKind;
   board_name: Scalars['String']['input'];
@@ -7513,12 +7510,12 @@ export type MutationCreate_BoardArgs = {
   entity_model_id?: InputMaybe<Scalars['String']['input']>;
   folder_id?: InputMaybe<Scalars['ID']['input']>;
   item_nickname?: InputMaybe<ItemNicknameInput>;
+  prompt?: InputMaybe<Scalars['String']['input']>;
   template_id?: InputMaybe<Scalars['ID']['input']>;
   workspace_id?: InputMaybe<Scalars['ID']['input']>;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_Board_Relation_ColumnArgs = {
   after_column_id?: InputMaybe<Scalars['ID']['input']>;
   board_id: Scalars['ID']['input'];
@@ -7529,7 +7526,6 @@ export type MutationCreate_Board_Relation_ColumnArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_ColumnArgs = {
   after_column_id?: InputMaybe<Scalars['ID']['input']>;
   board_id: Scalars['ID']['input'];
@@ -7542,7 +7538,6 @@ export type MutationCreate_ColumnArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_Custom_ActivityArgs = {
   color: CustomActivityColor;
   icon_id: CustomActivityIcon;
@@ -7550,7 +7545,6 @@ export type MutationCreate_Custom_ActivityArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_DashboardArgs = {
   board_folder_id?: InputMaybe<Scalars['ID']['input']>;
   board_ids: Array<Scalars['ID']['input']>;
@@ -7562,19 +7556,16 @@ export type MutationCreate_DashboardArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_DepartmentArgs = {
   data: CreateDepartmentDataInput;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_DocArgs = {
   location: CreateDocInput;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_Doc_BlockArgs = {
   after_block_id?: InputMaybe<Scalars['String']['input']>;
   content: Scalars['JSON']['input'];
@@ -7584,7 +7575,6 @@ export type MutationCreate_Doc_BlockArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_Doc_BlocksArgs = {
   afterBlockId?: InputMaybe<Scalars['String']['input']>;
   blocksInput: Array<CreateBlockInput>;
@@ -7592,7 +7582,6 @@ export type MutationCreate_Doc_BlocksArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_Dropdown_ColumnArgs = {
   after_column_id?: InputMaybe<Scalars['ID']['input']>;
   board_id: Scalars['ID']['input'];
@@ -7603,7 +7592,6 @@ export type MutationCreate_Dropdown_ColumnArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_Dropdown_Managed_ColumnArgs = {
   description?: InputMaybe<Scalars['String']['input']>;
   settings?: InputMaybe<CreateDropdownColumnSettingsInput>;
@@ -7611,7 +7599,6 @@ export type MutationCreate_Dropdown_Managed_ColumnArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_Entity_ColumnsArgs = {
   columns: Array<CreateEntityColumnInput>;
   entity_id?: InputMaybe<Scalars['ID']['input']>;
@@ -7619,7 +7606,6 @@ export type MutationCreate_Entity_ColumnsArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_Entity_SnapshotArgs = {
   entity: Scalars['String']['input'];
   includeDescendants?: InputMaybe<Scalars['Boolean']['input']>;
@@ -7627,13 +7613,11 @@ export type MutationCreate_Entity_SnapshotArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_FavoriteArgs = {
   input: CreateFavoriteInput;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_FolderArgs = {
   color?: InputMaybe<FolderColor>;
   custom_icon?: InputMaybe<FolderCustomIcon>;
@@ -7644,7 +7628,6 @@ export type MutationCreate_FolderArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_FormArgs = {
   board_kind?: InputMaybe<BoardKind>;
   board_owner_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
@@ -7658,21 +7641,18 @@ export type MutationCreate_FormArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_Form_QuestionArgs = {
   formToken: Scalars['String']['input'];
   question: CreateQuestionInput;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_Form_TagArgs = {
   formToken: Scalars['String']['input'];
   tag: CreateFormTagInput;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_GroupArgs = {
   board_id: Scalars['ID']['input'];
   group_color?: InputMaybe<Scalars['String']['input']>;
@@ -7683,7 +7663,6 @@ export type MutationCreate_GroupArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_ItemArgs = {
   board_id: Scalars['ID']['input'];
   column_values?: InputMaybe<Scalars['JSON']['input']>;
@@ -7695,19 +7674,16 @@ export type MutationCreate_ItemArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_Live_WorkflowArgs = {
   workflow: WorkflowInput;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_Live_Workflow_From_TemplateArgs = {
   input: CreateWorkflowFromTemplateInput;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_Marketplace_App_DiscountArgs = {
   account_slug: Scalars['String']['input'];
   app_id: Scalars['ID']['input'];
@@ -7715,7 +7691,6 @@ export type MutationCreate_Marketplace_App_DiscountArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_Migration_JobArgs = {
   targetAccountApiToken?: InputMaybe<Scalars['String']['input']>;
   targetAccountId: Scalars['Int']['input'];
@@ -7723,7 +7698,6 @@ export type MutationCreate_Migration_JobArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_Mirror_ColumnArgs = {
   after_column_id?: InputMaybe<Scalars['ID']['input']>;
   board_id: Scalars['ID']['input'];
@@ -7734,7 +7708,6 @@ export type MutationCreate_Mirror_ColumnArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_NotificationArgs = {
   target_id: Scalars['ID']['input'];
   target_type: NotificationTargetType;
@@ -7743,7 +7716,6 @@ export type MutationCreate_NotificationArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_ObjectArgs = {
   description?: InputMaybe<Scalars['String']['input']>;
   folder_id?: InputMaybe<Scalars['ID']['input']>;
@@ -7760,21 +7732,18 @@ export type MutationCreate_ObjectArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_Object_RelationsArgs = {
   relations: Array<ObjectRelationInput>;
   source_object_id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_Or_Get_TagArgs = {
   board_id?: InputMaybe<Scalars['ID']['input']>;
   tag_name?: InputMaybe<Scalars['String']['input']>;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_PortfolioArgs = {
   boardName: Scalars['String']['input'];
   boardPrivacy: Scalars['String']['input'];
@@ -7782,13 +7751,11 @@ export type MutationCreate_PortfolioArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_ProjectArgs = {
   input: CreateProjectInput;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_Status_ColumnArgs = {
   after_column_id?: InputMaybe<Scalars['ID']['input']>;
   board_id: Scalars['ID']['input'];
@@ -7800,7 +7767,6 @@ export type MutationCreate_Status_ColumnArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_Status_Managed_ColumnArgs = {
   description?: InputMaybe<Scalars['String']['input']>;
   settings?: InputMaybe<CreateStatusColumnSettingsInput>;
@@ -7808,7 +7774,6 @@ export type MutationCreate_Status_Managed_ColumnArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_SubitemArgs = {
   column_values?: InputMaybe<Scalars['JSON']['input']>;
   create_labels_if_missing?: InputMaybe<Scalars['Boolean']['input']>;
@@ -7817,20 +7782,17 @@ export type MutationCreate_SubitemArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_TaskArgs = {
   input: CreateTaskInput;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_TeamArgs = {
   input: CreateTeamAttributesInput;
   options?: InputMaybe<CreateTeamOptionsInput>;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_Timeline_ItemArgs = {
   content?: InputMaybe<Scalars['String']['input']>;
   custom_activity_id: Scalars['String']['input'];
@@ -7846,7 +7808,6 @@ export type MutationCreate_Timeline_ItemArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_UpdateArgs = {
   body: Scalars['String']['input'];
   item_id?: InputMaybe<Scalars['ID']['input']>;
@@ -7857,7 +7818,13 @@ export type MutationCreate_UpdateArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
+export type MutationCreate_Validation_RuleArgs = {
+  id: Scalars['ID']['input'];
+  rule: ValidationRuleInput;
+  type?: InputMaybe<ValidationsEntityType>;
+};
+
+
 export type MutationCreate_ViewArgs = {
   board_id: Scalars['ID']['input'];
   context?: InputMaybe<ViewContext>;
@@ -7872,7 +7839,6 @@ export type MutationCreate_ViewArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_View_TableArgs = {
   board_id: Scalars['ID']['input'];
   context?: InputMaybe<ViewContext>;
@@ -7886,7 +7852,6 @@ export type MutationCreate_View_TableArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_WebhookArgs = {
   board_id: Scalars['ID']['input'];
   config?: InputMaybe<Scalars['JSON']['input']>;
@@ -7895,7 +7860,6 @@ export type MutationCreate_WebhookArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_WidgetArgs = {
   filter?: InputMaybe<ItemsQueryGroup>;
   kind: ExternalWidget;
@@ -7905,7 +7869,6 @@ export type MutationCreate_WidgetArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationCreate_WorkspaceArgs = {
   account_product_id?: InputMaybe<Scalars['ID']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
@@ -7914,7 +7877,6 @@ export type MutationCreate_WorkspaceArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDeactivate_Entity_ColumnArgs = {
   column_id: Scalars['ID']['input'];
   entity_id?: InputMaybe<Scalars['ID']['input']>;
@@ -7922,100 +7884,84 @@ export type MutationDeactivate_Entity_ColumnArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDeactivate_FormArgs = {
   formToken: Scalars['String']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDeactivate_Live_WorkflowArgs = {
   id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDeactivate_Managed_ColumnArgs = {
   id: Scalars['String']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDeactivate_UsersArgs = {
   user_ids: Array<Scalars['ID']['input']>;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_Account_EntityArgs = {
   id?: InputMaybe<Scalars['ID']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_AllocationArgs = {
   allocation_id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_App_Lifecycle_SubscriptionArgs = {
   entity_identifier: Scalars['ID']['input'];
   entity_type: Scalars['String']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_ArticleArgs = {
   object_id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_BoardArgs = {
   board_id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_ColumnArgs = {
   board_id: Scalars['ID']['input'];
   column_id: Scalars['String']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_Custom_ActivityArgs = {
   id: Scalars['String']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_DashboardArgs = {
   id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_DepartmentArgs = {
   department_id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_DocArgs = {
   docId: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_Doc_BlockArgs = {
   block_id: Scalars['String']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_Entity_Id_MappingsArgs = {
   entityType: Scalars['String']['input'];
   migrationJobId: Scalars['String']['input'];
@@ -8023,19 +7969,16 @@ export type MutationDelete_Entity_Id_MappingsArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_FavoriteArgs = {
   input: DeleteFavoriteInput;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_FolderArgs = {
   folder_id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_Form_TagArgs = {
   formToken: Scalars['String']['input'];
   options?: InputMaybe<DeleteFormTagInput>;
@@ -8043,143 +7986,128 @@ export type MutationDelete_Form_TagArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_GroupArgs = {
   board_id: Scalars['ID']['input'];
   group_id: Scalars['String']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_ItemArgs = {
   item_id?: InputMaybe<Scalars['ID']['input']>;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_Live_WorkflowArgs = {
   id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_Managed_ColumnArgs = {
   id: Scalars['String']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_Marketplace_App_DiscountArgs = {
   account_slug: Scalars['String']['input'];
   app_id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_ObjectArgs = {
   id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_Object_RelationArgs = {
   relation_id?: InputMaybe<Scalars['ID']['input']>;
   source_object_id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_Planner_ResourceArgs = {
   planner_id: Scalars['ID']['input'];
   resource_id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_QuestionArgs = {
   formToken: Scalars['String']['input'];
   questionId: Scalars['String']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_Subscribers_From_BoardArgs = {
   board_id: Scalars['ID']['input'];
   user_ids: Array<Scalars['ID']['input']>;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_TeamArgs = {
   team_id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_Teams_From_BoardArgs = {
   board_id: Scalars['ID']['input'];
   team_ids: Array<Scalars['ID']['input']>;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_Teams_From_WorkspaceArgs = {
   team_ids: Array<Scalars['ID']['input']>;
   workspace_id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_Timeline_ItemArgs = {
   id: Scalars['String']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_UpdateArgs = {
   id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_Users_From_WorkspaceArgs = {
   user_ids: Array<Scalars['ID']['input']>;
   workspace_id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
+export type MutationDelete_Validation_RuleArgs = {
+  id: Scalars['ID']['input'];
+  rule_id: Scalars['ID']['input'];
+  type?: InputMaybe<ValidationsEntityType>;
+};
+
+
 export type MutationDelete_ViewArgs = {
   board_id: Scalars['ID']['input'];
   view_id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_WebhookArgs = {
   id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_WidgetArgs = {
   id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_WorkspaceArgs = {
   workspace_id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDetach_Boards_From_EntityArgs = {
   board_ids: Array<Scalars['ID']['input']>;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDuplicate_BoardArgs = {
   board_id: Scalars['ID']['input'];
   board_name?: InputMaybe<Scalars['String']['input']>;
@@ -8190,14 +8118,12 @@ export type MutationDuplicate_BoardArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDuplicate_DocArgs = {
   docId: Scalars['ID']['input'];
   duplicateType?: InputMaybe<DuplicateType>;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDuplicate_GroupArgs = {
   add_to_top?: InputMaybe<Scalars['Boolean']['input']>;
   board_id: Scalars['ID']['input'];
@@ -8206,7 +8132,6 @@ export type MutationDuplicate_GroupArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationDuplicate_ItemArgs = {
   board_id: Scalars['ID']['input'];
   item_id?: InputMaybe<Scalars['ID']['input']>;
@@ -8214,27 +8139,23 @@ export type MutationDuplicate_ItemArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationEdit_UpdateArgs = {
   body: Scalars['String']['input'];
   id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationEnroll_Items_To_SequenceArgs = {
   input: EnrollToSequenceInput;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationExecute_Integration_BlockArgs = {
   block_instance_id: Scalars['ID']['input'];
   inbound_field_values: Scalars['JSON']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationGrant_Marketplace_App_DiscountArgs = {
   account_slug: Scalars['String']['input'];
   app_id: Scalars['ID']['input'];
@@ -8242,7 +8163,6 @@ export type MutationGrant_Marketplace_App_DiscountArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationImport_Doc_From_HtmlArgs = {
   folderId?: InputMaybe<Scalars['ID']['input']>;
   html: Scalars['String']['input'];
@@ -8252,14 +8172,12 @@ export type MutationImport_Doc_From_HtmlArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationIncrease_App_Subscription_OperationsArgs = {
   increment_by?: InputMaybe<Scalars['Int']['input']>;
   kind?: InputMaybe<Scalars['String']['input']>;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationInvite_UsersArgs = {
   emails: Array<Scalars['String']['input']>;
   product?: InputMaybe<Product>;
@@ -8267,14 +8185,12 @@ export type MutationInvite_UsersArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationLike_UpdateArgs = {
   reaction_type?: InputMaybe<Scalars['String']['input']>;
   update_id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationMove_Item_To_BoardArgs = {
   board_id: Scalars['ID']['input'];
   columns_mapping?: InputMaybe<Array<ColumnMappingInput>>;
@@ -8284,27 +8200,23 @@ export type MutationMove_Item_To_BoardArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationMove_Item_To_GroupArgs = {
   group_id: Scalars['String']['input'];
   item_id?: InputMaybe<Scalars['ID']['input']>;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationPin_To_TopArgs = {
   id: Scalars['ID']['input'];
   item_id?: InputMaybe<Scalars['ID']['input']>;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationProcess_EventsArgs = {
   input: ProcessEventsInput;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationPublish_ArticleArgs = {
   add_subscriber_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   add_subscriber_team_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
@@ -8316,13 +8228,11 @@ export type MutationPublish_ArticleArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationPublish_ObjectArgs = {
   id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationRemove_Board_Relation_Connected_BoardsArgs = {
   board_id: Scalars['ID']['input'];
   column_id: Scalars['ID']['input'];
@@ -8330,14 +8240,12 @@ export type MutationRemove_Board_Relation_Connected_BoardsArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationRemove_Mock_App_SubscriptionArgs = {
   app_id: Scalars['ID']['input'];
   partial_signing_secret: Scalars['String']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationRemove_Required_ColumnArgs = {
   column_id: Scalars['String']['input'];
   id: Scalars['ID']['input'];
@@ -8345,21 +8253,18 @@ export type MutationRemove_Required_ColumnArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationRemove_Team_OwnersArgs = {
   team_id: Scalars['ID']['input'];
   user_ids: Array<Scalars['ID']['input']>;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationRemove_Users_From_TeamArgs = {
   team_id: Scalars['ID']['input'];
   user_ids: Array<Scalars['ID']['input']>;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationRestore_EntityArgs = {
   entity: Scalars['String']['input'];
   migrationJobId: Scalars['String']['input'];
@@ -8367,41 +8272,35 @@ export type MutationRestore_EntityArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationRollback_SnapshotArgs = {
   migration_job_id: Scalars['ID']['input'];
   snapshot_id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationSave_Workflow_As_TemplateArgs = {
   workflow_template_data: WorkflowTemplateInput;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationSet_Board_PermissionArgs = {
   basic_role_name: BoardBasicRoleName;
   board_id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationSet_Form_PasswordArgs = {
   formToken: Scalars['String']['input'];
   input: SetFormPasswordInput;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationSet_Item_Description_ContentArgs = {
   item_id: Scalars['ID']['input'];
   markdown: Scalars['String']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationSet_Mock_App_SubscriptionArgs = {
   app_id: Scalars['ID']['input'];
   billing_period?: InputMaybe<Scalars['String']['input']>;
@@ -8414,39 +8313,33 @@ export type MutationSet_Mock_App_SubscriptionArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationShorten_Form_UrlArgs = {
   formToken: Scalars['String']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUnassign_Department_OwnersArgs = {
   department_id: Scalars['ID']['input'];
   user_ids: Array<Scalars['ID']['input']>;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUnlike_UpdateArgs = {
   update_id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUnpin_From_TopArgs = {
   id: Scalars['ID']['input'];
   item_id?: InputMaybe<Scalars['ID']['input']>;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUnpublish_ObjectArgs = {
   id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Account_EntityArgs = {
   id: Scalars['ID']['input'];
   parent_id?: InputMaybe<Scalars['ID']['input']>;
@@ -8454,28 +8347,24 @@ export type MutationUpdate_Account_EntityArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_AllocationsArgs = {
   planner_id: Scalars['ID']['input'];
   updates: Array<AllocationUpdateInput>;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_AppArgs = {
   id: Scalars['ID']['input'];
   input: UpdateAppInput;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_App_FeatureArgs = {
   id: Scalars['ID']['input'];
   input: UpdateAppFeatureInput;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_App_Lifecycle_SubscriptionArgs = {
   entity_identifier: Scalars['ID']['input'];
   entity_type: Scalars['String']['input'];
@@ -8483,14 +8372,12 @@ export type MutationUpdate_App_Lifecycle_SubscriptionArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Article_BlockArgs = {
   block_id: Scalars['String']['input'];
   content: Scalars['JSON']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Assets_On_ItemArgs = {
   board_id: Scalars['ID']['input'];
   column_id: Scalars['String']['input'];
@@ -8499,7 +8386,6 @@ export type MutationUpdate_Assets_On_ItemArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_BoardArgs = {
   board_attribute: BoardAttributes;
   board_id: Scalars['ID']['input'];
@@ -8507,14 +8393,12 @@ export type MutationUpdate_BoardArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Board_HierarchyArgs = {
   attributes: UpdateBoardHierarchyAttributesInput;
   board_id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Board_Relation_ColumnArgs = {
   board_id: Scalars['ID']['input'];
   description?: InputMaybe<Scalars['String']['input']>;
@@ -8526,7 +8410,6 @@ export type MutationUpdate_Board_Relation_ColumnArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Board_Relation_Source_MappingsArgs = {
   board_id: Scalars['ID']['input'];
   column_id: Scalars['ID']['input'];
@@ -8534,7 +8417,6 @@ export type MutationUpdate_Board_Relation_Source_MappingsArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_ColumnArgs = {
   board_id: Scalars['ID']['input'];
   capabilities?: InputMaybe<ColumnCapabilitiesInput>;
@@ -8548,7 +8430,6 @@ export type MutationUpdate_ColumnArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_DashboardArgs = {
   board_folder_id?: InputMaybe<Scalars['ID']['input']>;
   id: Scalars['ID']['input'];
@@ -8558,14 +8439,12 @@ export type MutationUpdate_DashboardArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_DepartmentArgs = {
   data?: InputMaybe<UpdateDepartmentOptionsInput>;
   department_id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Dependency_ColumnArgs = {
   boardId: Scalars['String']['input'];
   columnId: Scalars['String']['input'];
@@ -8575,7 +8454,6 @@ export type MutationUpdate_Dependency_ColumnArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Directory_Resources_AttributesArgs = {
   attribute: DirectoryResourceAttribute;
   resource_ids: Array<Scalars['ID']['input']>;
@@ -8583,21 +8461,18 @@ export type MutationUpdate_Directory_Resources_AttributesArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Doc_BlockArgs = {
   block_id: Scalars['String']['input'];
   content: Scalars['JSON']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Doc_NameArgs = {
   docId: Scalars['ID']['input'];
   name: Scalars['String']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Dropdown_ColumnArgs = {
   board_id: Scalars['ID']['input'];
   description?: InputMaybe<Scalars['String']['input']>;
@@ -8609,7 +8484,6 @@ export type MutationUpdate_Dropdown_ColumnArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Dropdown_Managed_ColumnArgs = {
   description?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['String']['input'];
@@ -8619,13 +8493,11 @@ export type MutationUpdate_Dropdown_Managed_ColumnArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Email_DomainArgs = {
   input: UpdateEmailDomainAttributesInput;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Entity_ColumnsArgs = {
   columns: Array<UpdateEntityColumnInput>;
   entity_id?: InputMaybe<Scalars['ID']['input']>;
@@ -8633,13 +8505,11 @@ export type MutationUpdate_Entity_ColumnsArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Favorite_PositionArgs = {
   input: UpdateObjectHierarchyPositionInput;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_FolderArgs = {
   account_product_id?: InputMaybe<Scalars['ID']['input']>;
   color?: InputMaybe<FolderColor>;
@@ -8653,14 +8523,12 @@ export type MutationUpdate_FolderArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_FormArgs = {
   formToken: Scalars['String']['input'];
   input: UpdateFormInput;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Form_QuestionArgs = {
   formToken: Scalars['String']['input'];
   question: UpdateQuestionInput;
@@ -8668,14 +8536,12 @@ export type MutationUpdate_Form_QuestionArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Form_SettingsArgs = {
   formToken: Scalars['String']['input'];
   settings: UpdateFormSettingsInput;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Form_TagArgs = {
   formToken: Scalars['String']['input'];
   tag: UpdateFormTagInput;
@@ -8683,7 +8549,6 @@ export type MutationUpdate_Form_TagArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_GroupArgs = {
   board_id: Scalars['ID']['input'];
   group_attribute: GroupAttributes;
@@ -8692,25 +8557,21 @@ export type MutationUpdate_GroupArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Live_WorkflowArgs = {
   workflow: UpdateWorkflowInput;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Live_Workflow_From_TemplateArgs = {
   input: UpdateWorkflowFromTemplateInput;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Live_Workflow_MetadataArgs = {
   workflow: UpdateWorkflowMetadataInput;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Mirror_ColumnArgs = {
   board_id: Scalars['ID']['input'];
   description?: InputMaybe<Scalars['String']['input']>;
@@ -8722,7 +8583,6 @@ export type MutationUpdate_Mirror_ColumnArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Multiple_UsersArgs = {
   bypass_confirmation_for_claimed_domains?: InputMaybe<Scalars['Boolean']['input']>;
   use_async_mode?: InputMaybe<Scalars['Boolean']['input']>;
@@ -8730,7 +8590,6 @@ export type MutationUpdate_Multiple_UsersArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Mute_Board_SettingsArgs = {
   board_id: Scalars['String']['input'];
   enabled?: InputMaybe<Array<CustomizableBoardSettings>>;
@@ -8738,7 +8597,6 @@ export type MutationUpdate_Mute_Board_SettingsArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Notification_SettingArgs = {
   channel: ChannelType;
   enabled: Scalars['Boolean']['input'];
@@ -8748,27 +8606,23 @@ export type MutationUpdate_Notification_SettingArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_ObjectArgs = {
   id: Scalars['String']['input'];
   input: UpdateObjectInput;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Overview_HierarchyArgs = {
   attributes: UpdateOverviewHierarchyAttributesInput;
   overview_id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Priority_PromptArgs = {
   priority_prompt: Scalars['String']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Status_ColumnArgs = {
   board_id: Scalars['ID']['input'];
   capabilities?: InputMaybe<StatusColumnCapabilitiesInput>;
@@ -8781,7 +8635,6 @@ export type MutationUpdate_Status_ColumnArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Status_Managed_ColumnArgs = {
   description?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['String']['input'];
@@ -8791,14 +8644,12 @@ export type MutationUpdate_Status_Managed_ColumnArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_TaskArgs = {
   input: UpdateTaskInput;
   task_id: Scalars['ID']['input'];
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Users_Board_RoleArgs = {
   board_id: Scalars['ID']['input'];
   role_name: BoardBasicRoleName;
@@ -8806,7 +8657,6 @@ export type MutationUpdate_Users_Board_RoleArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Users_RoleArgs = {
   new_role?: InputMaybe<BaseRoleName>;
   role_id?: InputMaybe<Scalars['ID']['input']>;
@@ -8814,7 +8664,14 @@ export type MutationUpdate_Users_RoleArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
+export type MutationUpdate_Validation_RuleArgs = {
+  id: Scalars['ID']['input'];
+  rule: ValidationRuleInput;
+  rule_id: Scalars['ID']['input'];
+  type?: InputMaybe<ValidationsEntityType>;
+};
+
+
 export type MutationUpdate_ViewArgs = {
   board_id: Scalars['ID']['input'];
   context?: InputMaybe<ViewContext>;
@@ -8830,7 +8687,6 @@ export type MutationUpdate_ViewArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_View_TableArgs = {
   board_id: Scalars['ID']['input'];
   context?: InputMaybe<ViewContext>;
@@ -8845,14 +8701,12 @@ export type MutationUpdate_View_TableArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_WorkspaceArgs = {
   attributes: UpdateWorkspaceAttributesInput;
   id?: InputMaybe<Scalars['ID']['input']>;
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUpsert_Entity_Id_MappingsArgs = {
   entityType: Scalars['String']['input'];
   mappings: Array<EntityIdMappingInput>;
@@ -8860,7 +8714,6 @@ export type MutationUpsert_Entity_Id_MappingsArgs = {
 };
 
 
-/** Root mutation type for the Dependencies service */
 export type MutationUse_TemplateArgs = {
   board_kind?: InputMaybe<BoardKind>;
   board_owner_ids?: InputMaybe<Array<InputMaybe<Scalars['Int']['input']>>>;
@@ -11043,6 +10896,50 @@ export type RollbackSnapshotMutationResult = {
   status: SnapshotStatus;
 };
 
+/** Input for a single validation rule constraint with operator and definition */
+export type RuleConstraintInput = {
+  /** The column ID */
+  column_id: Scalars['String']['input'];
+  /** The compare attribute */
+  compare_attribute?: InputMaybe<Scalars['String']['input']>;
+  /** The compare values (array of strings or numbers) */
+  compare_value?: InputMaybe<Array<Scalars['CompareValue']['input']>>;
+  /** The validation operator */
+  operator: RuleOperator;
+};
+
+/** Available operators for validation rules */
+export enum RuleOperator {
+  /** Value matches any of the specified values */
+  AnyOf = 'ANY_OF',
+  /** Value is between two specified values */
+  Between = 'BETWEEN',
+  /** Value contains the specified text */
+  ContainsText = 'CONTAINS_TEXT',
+  /** Value equals the specified value */
+  Equals = 'EQUALS',
+  /** Value is greater than the specified value */
+  GreaterThan = 'GREATER_THAN',
+  /** Value is greater than or equal to the specified value */
+  GreaterThanOrEquals = 'GREATER_THAN_OR_EQUALS',
+  /** Value is empty or not set */
+  IsEmpty = 'IS_EMPTY',
+  /** Value is not empty */
+  IsNotEmpty = 'IS_NOT_EMPTY',
+  /** Value is lower than the specified value */
+  LowerThan = 'LOWER_THAN',
+  /** Value is lower than or equal to the specified value */
+  LowerThanOrEqual = 'LOWER_THAN_OR_EQUAL',
+  /** Value does not match any of the specified values */
+  NotAnyOf = 'NOT_ANY_OF',
+  /** Value does not contain the specified text */
+  NotContainsText = 'NOT_CONTAINS_TEXT',
+  /** Value does not equal the specified value */
+  NotEquals = 'NOT_EQUALS',
+  /** Value starts with the specified text */
+  StartsWithText = 'STARTS_WITH_TEXT'
+}
+
 /** Result of saving a workflow as a template */
 export type SaveWorkflowAsTemplateResult = {
   __typename?: 'SaveWorkflowAsTemplateResult';
@@ -13094,6 +12991,25 @@ export type ValidateProjectsAndPortfoliosResult = {
   projects?: Maybe<Scalars['JSON']['output']>;
 };
 
+/** A validation rule with then and optional if conditions */
+export type ValidationRule = {
+  __typename?: 'ValidationRule';
+  /** The unique identifier of the validation rule */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** The optional if condition group */
+  if?: Maybe<Scalars['JSON']['output']>;
+  /** The force condition group */
+  then?: Maybe<Scalars['JSON']['output']>;
+};
+
+/** Input for creating a validation rule with then and optional if conditions */
+export type ValidationRuleInput = {
+  /** Optional conditions that determine if the rule should be applied */
+  if?: InputMaybe<GroupInput>;
+  /** The conditions that must be enforced when the rule applies */
+  then: GroupInput;
+};
+
 export type Validations = {
   __typename?: 'Validations';
   /** Array of required column IDs */
@@ -13363,7 +13279,7 @@ export type Widget = {
   __typename?: 'Widget';
   /** Unique identifier of this widget. */
   id?: Maybe<Scalars['ID']['output']>;
-  /** The type of widget (CHART, NUMBER, BATTERY, CALENDAR, GANTT). */
+  /** The type of widget (CHART, NUMBER, BATTERY, CALENDAR, GANTT, MAP). */
   kind?: Maybe<ExternalWidget>;
   /** Widget label (UTF-8 chars). */
   name?: Maybe<Scalars['String']['output']>;
@@ -13574,7 +13490,7 @@ export type WorkflowIteratorInput = {
   /** List of all node IDs in the loop */
   node_ids: Array<Scalars['Int']['input']>;
   /** Node ID that executes after the iterator completes (null if no post-iterator node) */
-  post_iterator_node_id: Scalars['Int']['input'];
+  post_iterator_node_id?: InputMaybe<Scalars['ID']['input']>;
 };
 
 /** The context where a workflow template can be accessed */
@@ -13820,6 +13736,14 @@ export type SearchDevQueryVariables = Exact<{
 
 export type SearchDevQuery = { __typename?: 'Query', search?: Array<{ __typename: 'BoardSearchResult', entity_type: SearchableEntity, data: { __typename?: 'IndexedBoard', id: string, name: string, url: string } } | { __typename: 'DocSearchResult', entity_type: SearchableEntity, data: { __typename?: 'IndexedDoc', id: string, name: string } } | { __typename: 'ItemSearchResult' }> | null };
 
+export type BatchUndoMutationVariables = Exact<{
+  boardId: Scalars['ID']['input'];
+  undoRecordId: Scalars['ID']['input'];
+}>;
+
+
+export type BatchUndoMutation = { __typename?: 'Mutation', batch_undo?: { __typename?: 'BatchUndoResult', success: boolean } | null };
+
 export type GetUserContextQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -13828,4 +13752,5 @@ export type GetUserContextQuery = { __typename?: 'Query', me?: { __typename?: 'U
 
 export const SearchItemsDevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchItemsDev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filters"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SearchFiltersInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"filters"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filters"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ItemSearchResult"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchItemsDevQuery, SearchItemsDevQueryVariables>;
 export const SearchDevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchDev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filters"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SearchFiltersInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"filters"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filters"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BoardSearchResult"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"entity_type"}},{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"url"}}]}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"DocSearchResult"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"entity_type"}},{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchDevQuery, SearchDevQueryVariables>;
+export const BatchUndoDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"BatchUndo"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"undoRecordId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"batch_undo"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"board_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}},{"kind":"Argument","name":{"kind":"Name","value":"undo_record_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"undoRecordId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<BatchUndoMutation, BatchUndoMutationVariables>;
 export const GetUserContextDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getUserContext"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"me"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}},{"kind":"Field","name":{"kind":"Name","value":"favorites"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"object"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"type"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"intelligence"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"relevant_boards"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"10"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"board"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"relevant_people"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"10"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetUserContextQuery, GetUserContextQueryVariables>;
