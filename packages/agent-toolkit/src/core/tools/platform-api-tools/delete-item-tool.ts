@@ -34,7 +34,10 @@ export class DeleteItemTool extends BaseMondayApiTool<typeof deleteItemToolSchem
     const res = await this.mondayApi.request<DeleteItemMutation>(deleteItem, variables);
 
     return {
-      content: `Item ${res.delete_item?.id} successfully deleted`,
+      content: {
+        message: `Item ${res.delete_item?.id} successfully deleted`,
+        item_id: res.delete_item?.id,
+      },
     };
   }
 }
