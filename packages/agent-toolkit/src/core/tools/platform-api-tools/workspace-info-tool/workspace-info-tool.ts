@@ -37,7 +37,7 @@ export class WorkspaceInfoTool extends BaseMondayApiTool<typeof workspaceInfoToo
 
     const res = await this.mondayApi.request<GetWorkspaceInfoQuery>(getWorkspaceInfo, variables);
 
-    if (!res.workspaces || res.workspaces.length === 0) {
+    if (!res.workspaces?.some((workspace) => workspace != null)) {
       return {
         content: `No workspace found with ID ${input.workspace_id}`,
       };
