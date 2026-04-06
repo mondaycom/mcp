@@ -6,7 +6,7 @@ import { GetBoardsQuery, GetDocsQuery, GetFoldersQuery } from 'src/monday-graphq
 import { SearchDevQuery, SearchableEntity } from 'src/monday-graphql/generated/graphql.dev/graphql';
 import { GlobalSearchType, ObjectPrefixes, SearchResult, BOARD_SEARCH_RESULT_TYPENAME, DOC_SEARCH_RESULT_TYPENAME } from './search-tool.types';
 
-export type inputType = z.objectInputType<typeof searchSchema, ZodTypeAny>;
+type inputType = z.objectInputType<typeof searchSchema, ZodTypeAny>;
 
 describe('SearchTool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
@@ -250,6 +250,29 @@ describe('SearchTool', () => {
         const parsedResult = await callToolByNameAsync('search', args);
 
         expect(parsedResult.data).toHaveLength(0);
+      });
+
+      it('should ignore null board entries', async () => {
+        const responseWithNullBoard: GetBoardsQuery = {
+          boards: [
+            { id: '123', name: 'Test Board 1', url: 'https://monday.com/boards/123' },
+            null as any,
+            { id: '456', name: 'Test Board 2', url: 'https://monday.com/boards/456' },
+          ],
+        };
+
+        mocks.setResponse(responseWithNullBoard);
+
+        const args: inputType = {
+          searchType: GlobalSearchType.BOARD,
+        };
+
+        const parsedResult = await callToolByNameAsync('search', args);
+
+        expect(parsedResult.data).toEqual([
+          { id: 'board-123', title: 'Test Board 1', url: 'https://monday.com/boards/123' },
+          { id: 'board-456', title: 'Test Board 2', url: 'https://monday.com/boards/456' },
+        ]);
       });
 
       it('should properly prefix board IDs', async () => {
@@ -728,6 +751,29 @@ describe('SearchTool', () => {
         expect(parsedResult.data).toHaveLength(0);
       });
 
+      it('should ignore null document entries', async () => {
+        const responseWithNullDoc: GetDocsQuery = {
+          docs: [
+            { id: '111', name: 'Document 1', url: 'https://monday.com/docs/111' },
+            null as any,
+            { id: '222', name: 'Document 2', url: 'https://monday.com/docs/222' },
+          ],
+        };
+
+        mocks.setResponse(responseWithNullDoc);
+
+        const args: inputType = {
+          searchType: GlobalSearchType.DOCUMENTS,
+        };
+
+        const parsedResult = await callToolByNameAsync('search', args);
+
+        expect(parsedResult.data).toEqual([
+          { id: 'doc-111', title: 'Document 1', url: 'https://monday.com/docs/111' },
+          { id: 'doc-222', title: 'Document 2', url: 'https://monday.com/docs/222' },
+        ]);
+      });
+
       it('should properly prefix document IDs', async () => {
         mocks.setResponse(mockDocsResponse);
 
@@ -980,6 +1026,30 @@ describe('SearchTool', () => {
         const parsedResult = await callToolByNameAsync('search', args);
 
         expect(parsedResult.data).toHaveLength(0);
+      });
+
+      it('should ignore null folder entries', async () => {
+        const responseWithNullFolder: GetFoldersQuery = {
+          folders: [
+            { id: '100', name: 'Folder 1' },
+            null as any,
+            { id: '200', name: 'Folder 2' },
+          ],
+        };
+
+        mocks.setResponse(responseWithNullFolder);
+
+        const args: inputType = {
+          searchType: GlobalSearchType.FOLDERS,
+          workspaceIds: [1],
+        };
+
+        const parsedResult = await callToolByNameAsync('search', args);
+
+        expect(parsedResult.data).toEqual([
+          { id: 'folder-100', title: 'Folder 1' },
+          { id: 'folder-200', title: 'Folder 2' },
+        ]);
       });
 
       it('should properly prefix folder IDs', async () => {
