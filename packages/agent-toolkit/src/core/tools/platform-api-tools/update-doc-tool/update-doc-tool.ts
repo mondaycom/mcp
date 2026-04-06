@@ -22,6 +22,7 @@ import {
   UpdateDocNameMutationVariables,
   AddContentToDocFromMarkdownMutation,
   AddContentToDocFromMarkdownMutationVariables,
+  GetDocBlockContentQuery,
 } from '../../../../monday-graphql/generated/graphql/graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
@@ -55,12 +56,6 @@ type CreateDocCommentMutation = {
     body: string;
     created_at?: string | null;
   } | null;
-};
-
-type GetDocBlockContentQuery = {
-  docs?: Array<{
-    blocks?: Array<{ id: string; type: string; content: Record<string, unknown> }> | null;
-  }> | null;
 };
 
 // ─── Tool class ───────────────────────────────────────────────────────────────
@@ -323,7 +318,7 @@ COMMENTS:
     docId: string,
   ): Promise<Array<{ id: string; type: string; content: Record<string, unknown> }>> {
     const res = await this.mondayApi.request<GetDocBlockContentQuery>(getDocBlockContent, { docId: [docId] });
-    const blocks = res.docs?.[0]?.blocks ?? [];
+    const blocks = (res.docs?.[0]?.blocks ?? []).filter((b): b is NonNullable<typeof b> => b != null);
     return blocks.map((block) => {
       // GraphQL JSON scalar may return content as a string — parse it
       let content: Record<string, unknown>;
@@ -334,9 +329,9 @@ COMMENTS:
           throw new Error(`Failed to parse content of block ${block.id} in doc ${docId} as JSON`);
         }
       } else {
-        content = block.content;
+        content = (block.content as Record<string, unknown>) ?? {};
       }
-      return { ...block, content };
+      return { id: block.id ?? '', type: block.type ?? '', content };
     });
   }
 

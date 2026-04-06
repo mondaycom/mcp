@@ -17,7 +17,7 @@ export const addContentToDocFromMarkdown = gql`
 `;
 
 export const getDocByObjectId = gql`
-  query getDocByObjectId($objectId: [ID!]) {
+  query getDocIdByObjectId($objectId: [ID!]) {
     docs(object_ids: $objectId) {
       id
     }

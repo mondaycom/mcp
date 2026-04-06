@@ -39,7 +39,7 @@ describe('UpdateDocTool', () => {
 
   it('resolves object_id to doc_id before executing operations', async () => {
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
-      if (query.includes('query getDocByObjectId')) return Promise.resolve({ docs: [{ id: 'resolved_doc_789' }] });
+      if (query.includes('query getDocIdByObjectId')) return Promise.resolve({ docs: [{ id: 'resolved_doc_789' }] });
       if (query.includes('mutation updateDocBlock')) return Promise.resolve({ update_doc_block: { id: 'block_1' } });
       return Promise.resolve({});
     });
@@ -58,14 +58,14 @@ describe('UpdateDocTool', () => {
     expect(result.content[0].text).toContain('Doc ID: resolved_doc_789');
 
     const calls = mocks.getMockRequest().mock.calls;
-    const resolveCall = calls.find((c: any) => c[0].includes('query getDocByObjectId'));
+    const resolveCall = calls.find((c: any) => c[0].includes('query getDocIdByObjectId'));
     expect(resolveCall).toBeDefined();
     expect(resolveCall[1]).toEqual({ objectId: ['obj_abc'] });
   });
 
   it('returns error when object_id resolves to no document', async () => {
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
-      if (query.includes('query getDocByObjectId')) return Promise.resolve({ docs: [] });
+      if (query.includes('query getDocIdByObjectId')) return Promise.resolve({ docs: [] });
       return Promise.resolve({});
     });
 
@@ -790,7 +790,7 @@ describe('UpdateDocTool', () => {
 
   it('creates a new comment on a document using object_id', async () => {
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
-      if (query.includes('query getDocByObjectId')) return Promise.resolve({ docs: [{ id: 'doc_resolved' }] });
+      if (query.includes('query getDocIdByObjectId')) return Promise.resolve({ docs: [{ id: 'doc_resolved' }] });
       if (query.includes('query getDocBoardItem')) {
         return Promise.resolve({ boards: [{ items_page: { items: [{ id: '99001' }] } }] });
       }
