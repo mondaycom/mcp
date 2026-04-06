@@ -267,7 +267,7 @@ MODE: "version_history" — Fetch the edit history of a single document.
           restoringPoints = restoringPoints.slice(0, version_history_limit);
         }
         return {
-          content: JSON.stringify({ doc_id: objectId, since, until, restoring_points: restoringPoints }, null, 2),
+          content: { doc_id: objectId, since, until, restoring_points: restoringPoints },
         };
       }
 
@@ -302,17 +302,13 @@ MODE: "version_history" — Fetch the edit history of a single document.
       const finalPoints = restoringPointsWithDiffs.slice(0, userLimit);
 
       return {
-        content: JSON.stringify(
-          {
-            doc_id: objectId,
-            since,
-            until,
-            restoring_points: finalPoints,
-            ...(truncated && { truncated: true, total_count: restoringPoints.length }),
-          },
-          null,
-          2,
-        ),
+        content: {
+          doc_id: objectId,
+          since,
+          until,
+          restoring_points: finalPoints,
+          ...(truncated && { truncated: true, total_count: restoringPoints.length }),
+        },
       };
     } catch (error) {
       return {

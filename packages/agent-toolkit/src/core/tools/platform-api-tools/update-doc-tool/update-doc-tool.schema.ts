@@ -247,6 +247,28 @@ const ReplaceBlockOperation = z.object({
   block: CreateBlockSchema.describe('The new block to create in place of the deleted one.'),
 });
 
+const AddCommentOperation = z.object({
+  operation_type: z.literal('add_comment'),
+  body: z
+    .string()
+    .min(1)
+    .describe(
+      'The comment text. Use HTML tags for formatting (not markdown). Do not use @ to mention users — use mentions_list instead.',
+    ),
+  parent_update_id: z
+    .number()
+    .optional()
+    .describe(
+      'The ID of an existing comment (update) to reply to. Omit to create a new top-level comment. Get comment IDs from read_docs with include_comments: true.',
+    ),
+  mentions_list: z
+    .string()
+    .optional()
+    .describe(
+      'Optional JSON array of mentions: [{"id": "123", "type": "User"}, {"id": "456", "type": "Team"}]. Valid types: User, Team, Board, Project.',
+    ),
+});
+
 export const OperationSchema = z.discriminatedUnion('operation_type', [
   SetNameOperation,
   AddMarkdownContentOperation,
@@ -254,6 +276,7 @@ export const OperationSchema = z.discriminatedUnion('operation_type', [
   CreateBlockOperation,
   DeleteBlockOperation,
   ReplaceBlockOperation,
+  AddCommentOperation,
 ]);
 
 export type Operation = z.infer<typeof OperationSchema>;
@@ -287,6 +310,7 @@ Operation types:
 - create_block: Create a new block at a specific position (supports text, list_item, code, divider, page_break, image, video, notice_box, table, layout).
 - delete_block: Permanently remove a block. Works for ALL block types including BOARD, WIDGET, DOC embed, GIPHY.
 - replace_block: Delete a block and create a new one in its place. Use for: changing image/video source, table restructure, notice_box theme change.
+- add_comment: Create a new comment or reply on the document. Use parent_update_id to reply to an existing comment. Format text with HTML. Uses the doc's backing board item.
 
 WHEN TO USE WHICH:
 - Adding new text sections → add_markdown_content

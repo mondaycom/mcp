@@ -30,7 +30,10 @@ export class FetchCustomActivityTool extends BaseMondayApiTool<typeof fetchCusto
 
     if (!res.custom_activity || res.custom_activity.length === 0) {
       return {
-        content: 'No custom activities found',
+        content: {
+          message: 'No custom activities found',
+          data: [],
+        },
       };
     }
 
@@ -45,7 +48,10 @@ export class FetchCustomActivityTool extends BaseMondayApiTool<typeof fetchCusto
     });
 
     return {
-      content: `Found ${activities.length} custom activities: ${JSON.stringify(activities, null, 2)}`,
+      content: {
+        message: `Found ${activities.length} custom activities`,
+        data: activities,
+      },
     };
   }
 }
