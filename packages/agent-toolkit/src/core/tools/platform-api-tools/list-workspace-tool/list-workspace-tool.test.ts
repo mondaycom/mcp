@@ -3,7 +3,7 @@ import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '..
 import { listWorkspaceToolSchema } from './list-workspace-tool';
 import { z, ZodTypeAny } from 'zod';
 
-export type inputType = z.objectInputType<typeof listWorkspaceToolSchema, ZodTypeAny>;
+type inputType = z.objectInputType<typeof listWorkspaceToolSchema, ZodTypeAny>;
 
 const addDummyWorkspaces = (
   workspaces: { id: string; name: string; description: string }[],
@@ -174,6 +174,7 @@ describe('ListWorkspaceTool', () => {
 
       const args: inputType = {
         searchTerm: 'Marketing',
+        limit: 5,
       };
 
       const result = await callToolByNameRawAsync('list_workspaces', args);
@@ -281,6 +282,7 @@ describe('ListWorkspaceTool', () => {
       expect(parsed.disclaimer).toBe(
         'Search term not applied - returning all workspaces. Perform the filtering manually.',
       );
+      expect(parsed.next_page).toBeUndefined();
     });
 
     it('should fallback to all workspaces when search term not found in member workspaces', async () => {
