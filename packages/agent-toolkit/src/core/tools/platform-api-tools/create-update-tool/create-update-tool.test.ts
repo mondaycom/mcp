@@ -26,31 +26,22 @@ describe('Create Update Tool', () => {
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('mutation createUpdate'), {
       itemId: '456',
       body: 'This is a test update',
-      mentionsList: undefined,
       parentId: undefined,
     });
   });
 
-  it('Successfully creates an update with mentions', async () => {
-    mocks.setResponse(successfulResponse);
+  it('Throws error when mentionsList is provided', async () => {
     const tool = new CreateUpdateTool(mocks.mockApiClient, 'fake_token');
 
-    const result = await tool.execute({
-      itemId: 789,
-      body: 'Hey, check this out!',
-      mentionsList: '[{"id": "12345", "type": "User"}, {"id": "456", "type": "Team"}]',
-    });
+    await expect(
+      tool.execute({
+        itemId: 789,
+        body: 'Hey, check this out!',
+        mentionsList: '[{"id": "12345", "type": "User"}, {"id": "456", "type": "Team"}]',
+      }),
+    ).rejects.toThrow('mentionsList is currently unsupported by the monday.com create_update API');
 
-    expect(result.content).toEqual({ message: 'Update 123456789 created on item 789', update_id: '123456789', item_id: 789, item_name: undefined, item_url: undefined });
-    expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('mutation createUpdate'), {
-      itemId: '789',
-      body: 'Hey, check this out!',
-      mentionsList: [
-        { id: '12345', type: 'User' },
-        { id: '456', type: 'Team' },
-      ],
-      parentId: undefined,
-    });
+    expect(mocks.getMockRequest()).not.toHaveBeenCalled();
   });
 
   it('Successfully creates a reply to an existing update using parentId', async () => {
@@ -67,7 +58,6 @@ describe('Create Update Tool', () => {
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('mutation createUpdate'), {
       itemId: '456',
       body: 'This is a reply',
-      mentionsList: undefined,
       parentId: '111222',
     });
   });
@@ -156,29 +146,19 @@ describe('Create Update Tool', () => {
     ).rejects.toThrow(/Invalid mentionsList format/);
   });
 
-  it('Successfully validates all valid mention types', async () => {
-    mocks.setResponse(successfulResponse);
+  it('Rejects valid mention payloads because monday create_update does not support mentionsList', async () => {
     const tool = new CreateUpdateTool(mocks.mockApiClient, 'fake_token');
 
-    const result = await tool.execute({
-      itemId: 789,
-      body: 'Test with all types',
-      mentionsList:
-        '[{"id": "1", "type": "User"}, {"id": "2", "type": "Team"}, {"id": "3", "type": "Board"}, {"id": "4", "type": "Project"}]',
-    });
+    await expect(
+      tool.execute({
+        itemId: 789,
+        body: 'Test with all types',
+        mentionsList:
+          '[{"id": "1", "type": "User"}, {"id": "2", "type": "Team"}, {"id": "3", "type": "Board"}, {"id": "4", "type": "Project"}]',
+      }),
+    ).rejects.toThrow('mentionsList is currently unsupported by the monday.com create_update API');
 
-    expect(result.content).toEqual({ message: 'Update 123456789 created on item 789', update_id: '123456789', item_id: 789, item_name: undefined, item_url: undefined });
-    expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('mutation createUpdate'), {
-      itemId: '789',
-      body: 'Test with all types',
-      mentionsList: [
-        { id: '1', type: 'User' },
-        { id: '2', type: 'Team' },
-        { id: '3', type: 'Board' },
-        { id: '4', type: 'Project' },
-      ],
-      parentId: undefined,
-    });
+    expect(mocks.getMockRequest()).not.toHaveBeenCalled();
   });
 
   it('Handles GraphQL response errors', async () => {
