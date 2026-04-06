@@ -179,6 +179,11 @@ export const GraphQLDescriptions = {
     },
   },
   question: {
+    actions: {
+      type: 'The type of operation to perform on the question. Can delete, update, or create. When updating or deleting a question, the questionId is required. When creating or updating a question, the question object is required. When updating, the question is a patch object, meaning that only the fields that are provided will be updated.',
+      question:
+        'The question object containing all properties for creation or update. When creating a question, the title is required.',
+    },
     operations: {
       createQuestion:
         'The question object to create. Must include type and title. For SingleSelect and MultiSelect questions, provide options as an array of {label} objects. Use settings for type-specific configuration.',

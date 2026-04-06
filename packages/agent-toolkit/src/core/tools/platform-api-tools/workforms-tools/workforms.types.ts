@@ -457,3 +457,9 @@ export interface Form {
   };
   tags: Tag[];
 }
+
+export enum FormQuestionActions {
+  Delete = 'delete',
+  Update = 'update',
+  Create = 'create',
+}
