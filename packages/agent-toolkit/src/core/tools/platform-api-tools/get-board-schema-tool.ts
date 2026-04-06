@@ -39,7 +39,6 @@ export class GetBoardSchemaTool extends BaseMondayApiTool<typeof getBoardSchemaT
     };
 
     const res = await this.mondayApi.request<GetBoardSchemaQuery>(getBoardSchema, variables);
-
     return {
       content: {
         message: 'Board schema retrieved',
