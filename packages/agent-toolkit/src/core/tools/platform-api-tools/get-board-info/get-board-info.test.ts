@@ -443,6 +443,18 @@ describe('formatBoardInfoAsJson - views', () => {
     expect(result.board.views).toEqual([]);
   });
 
+  it('should handle null columns without throwing', () => {
+    const board: BoardInfoData = {
+      ...baseBoard,
+      columns: null,
+    } as unknown as BoardInfoData;
+
+    const result = formatBoardInfoAsJson(board, null) as any;
+
+    expect(result.board.columns).toBeNull();
+    expect(result.filteringGuidelines).toBe('');
+  });
+
   it('should return multiple views', () => {
     const board: BoardInfoData = {
       ...baseBoard,

@@ -19,12 +19,14 @@ export const formatBoardInfoAsJson = (
   board: BoardInfoData,
   subItemsBoard: BoardInfoJustColumnsData | null,
 ): BoardInfoResponse => {
+  const baseColumns = board.columns?.filter(isBaseColumnInfo) ?? [];
+
   return {
     board: {
       ...board,
       subItemColumns: subItemsBoard?.columns ?? undefined,
     },
-    filteringGuidelines: getColumnFilteringGuidelines(board.columns!.filter(isBaseColumnInfo) as BaseColumnInfo[]),
+    filteringGuidelines: getColumnFilteringGuidelines(baseColumns as BaseColumnInfo[]),
     aggregationGuidelines: getColumnAggregationGuidelines(),
   };
 };
