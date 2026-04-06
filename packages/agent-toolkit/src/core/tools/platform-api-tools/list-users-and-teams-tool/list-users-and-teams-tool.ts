@@ -171,19 +171,21 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
 
       const res = await this.mondayApi.request<GetUserByNameQuery>(getUserByName, variables);
 
-      if (!res.users || res.users.length === 0) {
+      const users =
+        res.users?.filter((user): user is NonNullable<typeof user> => user !== null) || [];
+
+      if (users.length === 0) {
         return {
           content: `NAME_SEARCH_EMPTY: No users found matching "${input.name}". Try broader search terms or verify user exists in account.`,
         };
       }
 
       // Convert basic user search response to simplified format
-      const userList = res.users
-        .filter((user) => user !== null)
-        .map((user) => `• **${user!.name}** (ID: ${user!.id})${user!.title ? ` - ${user!.title}` : ''}`)
+      const userList = users
+        .map((user) => `• **${user.name}** (ID: ${user.id})${user.title ? ` - ${user.title}` : ''}`)
         .join('\n');
 
-      const contentStr = `Found ${res.users.length} user(s) matching "${input.name}":\n\n${userList}`;
+      const contentStr = `Found ${users.length} user(s) matching "${input.name}":\n\n${userList}`;
       const slug = await fetchAccountSlug(this.mondayApi);
       return {
         content: {
