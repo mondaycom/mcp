@@ -2,7 +2,7 @@ import { GetBoardSchemaTool } from './get-board-schema-tool';
 import { createMockApiClient } from './test-utils/mock-api-client';
 
 describe('GetBoardSchemaTool', () => {
-  it('should handle null columns and groups without rendering undefined', async () => {
+  it('should return empty arrays when columns and groups are null', async () => {
     const mocks = createMockApiClient();
     mocks.setResponse({
       boards: [
@@ -16,9 +16,11 @@ describe('GetBoardSchemaTool', () => {
     const tool = new GetBoardSchemaTool(mocks.mockApiClient, 'fake_token');
     const result = await tool.execute({ boardId: 123 });
 
-    expect(result.content).toContain('The current schema of the board 123 is:');
-    expect(result.content).toContain('Columns:');
-    expect(result.content).toContain('Groups:');
-    expect(result.content).not.toContain('undefined');
+    expect(result.content).toEqual({
+      message: 'Board schema retrieved',
+      board_id: 123,
+      columns: [],
+      groups: [],
+    });
   });
 });

@@ -52,6 +52,16 @@ export function createMockApiClient() {
 }
 
 /**
+ * Extracts and parses the content from a raw tool result, supporting both legacy string content and structured content formats.
+ */
+export function parseToolResult(result: any): any {
+  if (result.structuredContent !== undefined) {
+    return result.structuredContent;
+  }
+  return JSON.parse(result.content[0].text);
+}
+
+/**
  * Calls a tool by name and returns the parsed result. It's suggested to mock the API client and set the response before calling this function.
  * @param toolName - The name of the tool to call
  * @param args - The arguments to pass to the tool
@@ -64,8 +74,7 @@ export async function callToolByNameAsync(
 ): Promise<any> {
   const result = await callToolByNameRawAsync(toolName, args, config);
 
-  const parsedResult = JSON.parse(result.content[0].text);
-  return parsedResult;
+  return parseToolResult(result);
 }
 
 /**

@@ -96,7 +96,7 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
 
     if (!arrayHasElements(workspaces)) {
       return {
-        content: 'No workspaces found.',
+        content: { message: 'No workspaces found.', data: [] },
       };
     }
 
@@ -106,7 +106,7 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
 
     if (!arrayHasElements(filteredWorkspaces)) {
       return {
-        content: 'No workspaces found matching the search term. Try using the tool without a search term',
+        content: { message: 'No workspaces found matching the search term. Try using the tool without a search term', data: [] },
       };
     }
 

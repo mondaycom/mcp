@@ -50,9 +50,11 @@ describe('GetSprintSummaryTool', () => {
 
       const args: InputType = { sprintId: 1004 };
       const result = await callToolByNameRawAsync('get_sprint_summary', args);
-      const content = result.content[0].text;
 
-      expect(content).toContain(validMarkdownExportResponse.export_markdown_from_doc!.markdown);
+      const parsed = result.structuredContent;
+      expect(parsed.message).toBe('Sprint summary retrieved');
+      expect(parsed.sprint_id).toBe(1004);
+      expect(parsed.markdown).toBe(validMarkdownExportResponse.export_markdown_from_doc!.markdown);
 
       const calls = mocks.getMockRequest().mock.calls;
 
