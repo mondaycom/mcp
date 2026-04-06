@@ -5,7 +5,7 @@ import { BoardKind } from 'src/monday-graphql/generated/graphql/graphql';
 import { z, ZodTypeAny } from 'zod';
 import { NonDeprecatedColumnType } from 'src/utils/types';
 
-export type inputType = z.objectInputType<typeof createDocToolSchema, ZodTypeAny>;
+type inputType = z.objectInputType<typeof createDocToolSchema, ZodTypeAny>;
 
 describe('CreateDocTool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
@@ -301,9 +301,55 @@ describe('CreateDocTool', () => {
 
         const result = await callToolByNameRawAsync('create_doc', args);
 
-        expect(result.content[0].text).toContain('Document doc_789 created');
-        expect(result.content[0].text).toContain('failed to add markdown content');
-        expect(result.content[0].text).toContain('Invalid markdown format');
+        expect(JSON.parse(result.content[0].text)).toMatchObject({
+          message: 'Document created, but failed to add markdown content',
+          doc_id: 'doc_789',
+          object_id: 'obj_789',
+          doc_url: 'https://monday.com/docs/obj_789',
+          doc_name: 'Test Document',
+          markdown_content_added: false,
+          markdown_content_error: 'Invalid markdown format',
+        });
+      });
+
+      it('should return partial success when addContentToDocFromMarkdown throws after document creation', async () => {
+        const createDocResponse = {
+          create_doc: {
+            id: 'doc_790',
+            object_id: 'obj_790',
+            url: 'https://monday.com/docs/obj_790',
+            name: 'Test Document',
+          },
+        };
+
+        jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+          if (query.includes('mutation createDoc')) {
+            return Promise.resolve(createDocResponse);
+          }
+          if (query.includes('mutation addContentToDocFromMarkdown')) {
+            return Promise.reject(new Error('Network error while importing markdown'));
+          }
+          return Promise.resolve({});
+        });
+
+        const args: inputType = {
+          location: 'workspace',
+          workspace_id: 12345,
+          doc_name: 'Test Document',
+          markdown: 'Valid content',
+        };
+
+        const result = await callToolByNameRawAsync('create_doc', args);
+
+        expect(JSON.parse(result.content[0].text)).toMatchObject({
+          message: 'Document created, but failed to add markdown content',
+          doc_id: 'doc_790',
+          object_id: 'obj_790',
+          doc_url: 'https://monday.com/docs/obj_790',
+          doc_name: 'Test Document',
+          markdown_content_added: false,
+          markdown_content_error: 'Network error while importing markdown',
+        });
       });
 
       it('should handle GraphQL request exception', async () => {
@@ -829,9 +875,15 @@ describe('CreateDocTool', () => {
 
         const result = await callToolByNameRawAsync('create_doc', args);
 
-        expect(result.content[0].text).toContain('Document doc_item_333 created');
-        expect(result.content[0].text).toContain('failed to add markdown content');
-        expect(result.content[0].text).toContain('Markdown parsing error');
+        expect(JSON.parse(result.content[0].text)).toMatchObject({
+          message: 'Document created, but failed to add markdown content',
+          doc_id: 'doc_item_333',
+          object_id: 'obj_item_333',
+          doc_url: 'https://monday.com/docs/obj_item_333',
+          doc_name: 'Test Document',
+          markdown_content_added: false,
+          markdown_content_error: 'Markdown parsing error',
+        });
       });
     });
   });
