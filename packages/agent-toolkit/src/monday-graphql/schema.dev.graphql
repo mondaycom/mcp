@@ -1294,6 +1294,20 @@ type Query {
     filters: SearchFiltersInput!
   ): [SearchResult!]
 
+  """Search across multiple entity types (items, boards, documents)."""
+  cross_entity_search(
+    """The search query string."""
+    query: String!
+
+    """Maximum number of results to return per entity (max 100)."""
+    limit: Int!
+
+    """
+    Filters specifying which entities to search and their per-entity filters.
+    """
+    filters: SearchFiltersInput!
+  ): [SearchResult!]
+
   """Lookup a single entity type by name or other relevant properties."""
   search_lookup(
     """The search query string."""
