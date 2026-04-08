@@ -72,7 +72,7 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
       'Get updates (comments/posts) from a monday.com item or board. ' +
       'Specify objectId and objectType (Item or Board) to retrieve updates. ' +
       'For Board queries, you can filter by date range using fromDate and toDate (both required together, ISO8601 format). ' +
-      'By default, Board queries return only board discussion; set includeItemUpdates to true to also include updates on individual items. ' +
+      'By default, Board queries return only board discussion. Set includeItemUpdates to true to also include updates on individual items. ' +
       'Returns update text, creator info, timestamps, and optionally replies and assets.'
     );
   }
