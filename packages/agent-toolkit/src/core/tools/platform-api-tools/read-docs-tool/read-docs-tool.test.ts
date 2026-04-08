@@ -434,7 +434,7 @@ describe('ReadDocsTool', () => {
 
   describe('schema validation', () => {
     it('should have correct tool metadata', () => {
-      const tool = new ReadDocsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new ReadDocsTool(mocks.mockApiClient);
 
       expect(tool.name).toBe('read_docs');
       expect(tool.type).toBe('read');
@@ -445,7 +445,7 @@ describe('ReadDocsTool', () => {
     });
 
     it('should have correct input schema', () => {
-      const tool = new ReadDocsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new ReadDocsTool(mocks.mockApiClient);
       const schema = tool.getInputSchema();
 
       expect(schema.mode).toBeDefined();
@@ -460,7 +460,7 @@ describe('ReadDocsTool', () => {
     });
 
     it('should have correct description', () => {
-      const tool = new ReadDocsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new ReadDocsTool(mocks.mockApiClient);
       const description = tool.getDescription();
 
       expect(description).toContain('content');
