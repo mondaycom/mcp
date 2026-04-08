@@ -506,6 +506,8 @@ export enum AppFeatureTypeE {
   Product = 'PRODUCT',
   /** PRODUCT_VIEW */
   ProductView = 'PRODUCT_VIEW',
+  /** SKILL */
+  Skill = 'SKILL',
   /** SOLUTION */
   Solution = 'SOLUTION',
   /** SUB_WORKFLOW */
@@ -916,46 +918,11 @@ export type AssignTeamOwnersResult = {
   team?: Maybe<Team>;
 };
 
-/** Text formatting attributes (bold, italic, links, colors, etc.) */
-export type Attributes = {
-  __typename?: 'Attributes';
-  /** Background color for text highlighting (hex, rgb, or named color) */
-  background?: Maybe<Scalars['String']['output']>;
-  /** Apply bold formatting to the text */
-  bold?: Maybe<Scalars['Boolean']['output']>;
-  /** Apply inline code formatting to the text */
-  code?: Maybe<Scalars['Boolean']['output']>;
-  /** Text color (hex, rgb, or named color) */
-  color?: Maybe<Scalars['String']['output']>;
-  /** Apply italic formatting to the text */
-  italic?: Maybe<Scalars['Boolean']['output']>;
-  /** URL to create a hyperlink */
-  link?: Maybe<Scalars['String']['output']>;
-  /** Apply strikethrough formatting to the text */
-  strike?: Maybe<Scalars['Boolean']['output']>;
-  /** Apply underline formatting to the text */
-  underline?: Maybe<Scalars['Boolean']['output']>;
-};
-
-/** Text formatting attributes (bold, italic, links, colors, etc.) */
-export type AttributesInput = {
-  /** Background color for text highlighting (hex, rgb, or named color) */
-  background?: InputMaybe<Scalars['String']['input']>;
-  /** Apply bold formatting to the text */
-  bold?: InputMaybe<Scalars['Boolean']['input']>;
-  /** Apply inline code formatting to the text */
-  code?: InputMaybe<Scalars['Boolean']['input']>;
-  /** Text color (hex, rgb, or named color) */
-  color?: InputMaybe<Scalars['String']['input']>;
-  /** Apply italic formatting to the text */
-  italic?: InputMaybe<Scalars['Boolean']['input']>;
-  /** URL to create a hyperlink */
-  link?: InputMaybe<Scalars['String']['input']>;
-  /** Apply strikethrough formatting to the text */
-  strike?: InputMaybe<Scalars['Boolean']['input']>;
-  /** Apply underline formatting to the text */
-  underline?: InputMaybe<Scalars['Boolean']['input']>;
-};
+/** The type of entity that a reaction is attributed to. */
+export enum AttributionEntity {
+  /** An AI agent */
+  Agent = 'AGENT'
+}
 
 export type AuditEventCatalogueEntry = {
   __typename?: 'AuditEventCatalogueEntry';
@@ -1045,13 +1012,6 @@ export type BatteryValueItem = {
   key: Scalars['ID']['output'];
 };
 
-/** Alignment options for blocks */
-export enum BlockAlignment {
-  Center = 'CENTER',
-  Left = 'LEFT',
-  Right = 'RIGHT'
-}
-
 /** Describes what type of change occurred to a block between two versions. */
 export type BlockChanges = {
   __typename?: 'BlockChanges';
@@ -1062,15 +1022,6 @@ export type BlockChanges = {
   /** True if this block was deleted in the newer version. The content reflects the state before deletion. */
   deleted?: Maybe<Scalars['Boolean']['output']>;
 };
-
-/** Abstract union type representing different types of block content */
-export type BlockContent = DividerContent | ImageContent | LayoutContent | ListBlockContent | NoticeBoxContent | PageBreakContent | TableContent | TextBlockContent | VideoContent;
-
-/** Text direction options for blocks */
-export enum BlockDirection {
-  Ltr = 'LTR',
-  Rtl = 'RTL'
-}
 
 /** Automation block execution event */
 export type BlockEvent = {
@@ -1124,17 +1075,6 @@ export type BlockEventsPage = {
   __typename?: 'BlockEventsPage';
   /** List of block events in the current page */
   blockEvents?: Maybe<Array<BlockEvent>>;
-};
-
-/** Object representing structured data within a text block */
-export type BlotContent = DocsColumnValue | Mention;
-
-/** Object representing structured data within a text block */
-export type BlotInput = {
-  /** Column value blot data */
-  column_value?: InputMaybe<DocsColumnValueInput>;
-  /** Mention blot data */
-  mention?: InputMaybe<MentionInput>;
 };
 
 /** A monday.com board. */
@@ -1449,27 +1389,6 @@ export type BoardRelationValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
-/** Filters for board search. */
-export type BoardSearchFilterInput = {
-  /** Filter boards to specific workspace IDs. */
-  workspace_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
-};
-
-/** Contains the results of a board query. */
-export type BoardSearchResult = {
-  __typename?: 'BoardSearchResult';
-  /** Board data for the search results. */
-  data: IndexedBoard;
-  /** The type of entity. */
-  entity_type: SearchableEntity;
-  /** The unique identifier of the board. */
-  id: Scalars['ID']['output'];
-  /** Latest board data for the search results. Requires additional GraphQL federation calls. */
-  live_data: Board;
-  /** The relevance score of the search result. */
-  score: Scalars['Float']['output'];
-};
-
 /** The board subscriber kind. */
 export enum BoardSubscriberKind {
   /** Board owner. */
@@ -1533,83 +1452,6 @@ export enum BoardsOrderBy {
   UsedAt = 'used_at'
 }
 
-/** Reason for failure when status is Rejected or Failed */
-export enum BulkImportFailureReason {
-  /** The account item capacity was exceeded. */
-  AccountCapacityExceeded = 'ACCOUNT_CAPACITY_EXCEEDED',
-  /** The authorization failed. */
-  AuthorizationFailed = 'AUTHORIZATION_FAILED',
-  /** The board capacity exceeded. */
-  BoardCapacityExceeded = 'BOARD_CAPACITY_EXCEEDED',
-  /** An internal error occurred. */
-  InternalError = 'INTERNAL_ERROR',
-  /** The upload is invalid. */
-  InvalidUpload = 'INVALID_UPLOAD',
-  /** The permission was denied. */
-  PermissionDenied = 'PERMISSION_DENIED'
-}
-
-/** Initialization response for bulk import containing import ID and upload URL */
-export type BulkImportInit = {
-  __typename?: 'BulkImportInit';
-  /** The unique identifier of the bulk import operation */
-  import_id?: Maybe<Scalars['ID']['output']>;
-  /** The URL where the file should be uploaded for processing */
-  upload_url?: Maybe<Scalars['String']['output']>;
-};
-
-/** Item counts for a bulk import process */
-export type BulkImportItemCounts = {
-  __typename?: 'BulkImportItemCounts';
-  /** Number of items that have been created */
-  created?: Maybe<Scalars['Int']['output']>;
-  /** Number of valid items that failed during import execution */
-  failed?: Maybe<Scalars['Int']['output']>;
-  /** Number of items that failed validation */
-  invalid?: Maybe<Scalars['Int']['output']>;
-  /** Number of items that were skipped */
-  skipped?: Maybe<Scalars['Int']['output']>;
-  /** Total number of items submitted for import */
-  submitted?: Maybe<Scalars['Int']['output']>;
-  /** Number of items that have been updated */
-  updated?: Maybe<Scalars['Int']['output']>;
-};
-
-/** Current state of the import process */
-export enum BulkImportState {
-  /** The import is completed. */
-  Completed = 'COMPLETED',
-  /** The import is failed. */
-  Failed = 'FAILED',
-  /** The import is processing. */
-  Processing = 'PROCESSING',
-  /** The import is rejected. */
-  Rejected = 'REJECTED',
-  /** The upload is pending. */
-  UploadPending = 'UPLOAD_PENDING'
-}
-
-/** Status information for a bulk import process */
-export type BulkImportStatus = {
-  __typename?: 'BulkImportStatus';
-  /** Item counts breakdown for the import process */
-  counts?: Maybe<BulkImportItemCounts>;
-  /** User-friendly error message explaining why the import failed or was rejected */
-  failure_message?: Maybe<Scalars['String']['output']>;
-  /** Reason for failure when status is Rejected or Failed */
-  failure_reason?: Maybe<BulkImportFailureReason>;
-  /** Indicates if the upload is completely done */
-  fully_imported?: Maybe<Scalars['Boolean']['output']>;
-  /** Progress percentage (0-100) of the import process */
-  progress_percentage?: Maybe<Scalars['Int']['output']>;
-  /** Indicates if a report file has been generated */
-  report_created?: Maybe<Scalars['Boolean']['output']>;
-  /** URL to download the import report, valid for 10 minutes */
-  report_url?: Maybe<Scalars['String']['output']>;
-  /** Current state of the import process */
-  status?: Maybe<BulkImportState>;
-};
-
 export type ButtonValue = ColumnValue & {
   __typename?: 'ButtonValue';
   /** The button's color in hex value. */
@@ -1659,13 +1501,6 @@ export enum CalculatedFunction {
   /** Calculate the sum of all values */
   Sum = 'SUM'
 }
-
-/** A cell containing a reference to a block */
-export type Cell = {
-  __typename?: 'Cell';
-  /** The ID of the block representing the cell (parent block of all the content blocks in the cell) */
-  block_id: Scalars['String']['output'];
-};
 
 /** The result of adding users to / removing users from a team. */
 export type ChangeTeamMembershipsResult = {
@@ -1808,19 +1643,6 @@ export type ColumnPropertyInput = {
 };
 
 export type ColumnSettings = DropdownColumnSettings | StatusColumnSettings;
-
-/** Column style configuration */
-export type ColumnStyle = {
-  __typename?: 'ColumnStyle';
-  /** The width percentage of the column */
-  width: Scalars['Int']['output'];
-};
-
-/** Column style configuration input */
-export type ColumnStyleInput = {
-  /** The width percentage of the column */
-  width: Scalars['Int']['input'];
-};
 
 /** Types of columns supported by the API */
 export enum ColumnType {
@@ -2066,34 +1888,6 @@ export type CreateAppResponse = {
   signing_secret?: Maybe<Scalars['String']['output']>;
 };
 
-/**
- *   Choose one specific block type to create.
- *
- * 💡 TIP: Before using table_block, consider add_content_to_doc_from_markdown for tables with data.
- *
- * table_block creates empty structure requiring manual cell population.
- */
-export type CreateBlockInput = {
-  /** Create a divider block */
-  divider_block?: InputMaybe<DividerBlockInput>;
-  /** Create an image block */
-  image_block?: InputMaybe<ImageBlockInput>;
-  /** Create a layout block. Capture its returned ID; nest child blocks by setting parentBlockId to that ID and use afterBlockId for sibling ordering. */
-  layout_block?: InputMaybe<LayoutBlockInput>;
-  /** Create a list block (bulleted, numbered, checklist) */
-  list_block?: InputMaybe<ListBlockInput>;
-  /** The notice-box's own ID must be captured.  Every block that should appear inside it must be created with parentBlockId = that ID (and can still use afterBlockId for ordering among siblings). */
-  notice_box_block?: InputMaybe<NoticeBoxBlockInput>;
-  /** Create a page break block */
-  page_break_block?: InputMaybe<PageBreakBlockInput>;
-  /** Create a table block. Capture its returned ID; nest child blocks by setting parentBlockId to that ID and use afterBlockId for sibling ordering. */
-  table_block?: InputMaybe<TableBlockInput>;
-  /** Create a text block (normal text, titles) */
-  text_block?: InputMaybe<TextBlockInput>;
-  /** Create a video block */
-  video_block?: InputMaybe<VideoBlockInput>;
-};
-
 /** Data for creating a department. */
 export type CreateDepartmentDataInput = {
   /** The name of the department. */
@@ -2304,18 +2098,6 @@ export type CreationLogValue = ColumnValue & {
   type: ColumnType;
   /** The column's raw value in JSON format. */
   value?: Maybe<Scalars['JSON']['output']>;
-};
-
-/** Date range filter applied globally across all entity types in cross-entity search. */
-export type CrossEntityDateRangeInput = {
-  /** Filter results created after this date. */
-  created_after?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
-  /** Filter results created before this date. */
-  created_before?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
-  /** Filter results updated after this date. */
-  updated_after?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
-  /** Filter results updated before this date. */
-  updated_before?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
 };
 
 export type CustomActivity = {
@@ -2646,13 +2428,6 @@ export type DependencyValueInput = {
   removed_pulse?: InputMaybe<Array<UpdateDependencyColumnInput>>;
 };
 
-/** Deprecated board object. */
-export type DeprecatedBoard = {
-  __typename?: 'DeprecatedBoard';
-  /** Board ID. */
-  id: Scalars['ID']['output'];
-};
-
 /** A document block that was changed between two versions, including its content and what type of change occurred. */
 export type DiffBlock = {
   __typename?: 'DiffBlock';
@@ -2732,29 +2507,6 @@ export enum DiscountPeriod {
   Yearly = 'YEARLY'
 }
 
-/** Input for creating divider blocks */
-export type DividerBlockInput = {
-  /** The parent block id to append the created block under. */
-  parent_block_id?: InputMaybe<Scalars['String']['input']>;
-};
-
-/** Content for a divider block */
-export type DividerContent = DocBaseBlockContent & {
-  __typename?: 'DividerContent';
-  /** The alignment of the block content */
-  alignment?: Maybe<BlockAlignment>;
-  /** The text direction of the block content */
-  direction?: Maybe<BlockDirection>;
-};
-
-/** Base interface for all block content types */
-export type DocBaseBlockContent = {
-  /** The alignment of the block content */
-  alignment?: Maybe<BlockAlignment>;
-  /** The text direction of the block content */
-  direction?: Maybe<BlockDirection>;
-};
-
 /** Various documents blocks types, such as text. */
 export enum DocBlockContentType {
   /** Bulleted list block */
@@ -2815,33 +2567,14 @@ export enum DocKind {
 /** A single restoring point (snapshot) in the document version history. Represents a group of changes made within a time window, including which users made changes. */
 export type DocRestoringPoint = {
   __typename?: 'DocRestoringPoint';
+  /** AI agents that contributed changes in this restoring point time window. */
+  agent_attributions?: Maybe<Array<RestoringPointAgentAttribution>>;
   /** The ISO 8601 timestamp of when this restoring point was captured. */
   date?: Maybe<Scalars['String']['output']>;
   /** The type of restoring point. "publish" indicates the document was published at this point. Null for regular edit snapshots. */
   type?: Maybe<Scalars['String']['output']>;
   /** The IDs of users who made changes in this restoring point time window. */
   user_ids?: Maybe<Array<Scalars['ID']['output']>>;
-};
-
-/** Filters for document search. */
-export type DocSearchFilterInput = {
-  /** Filter documents to specific workspace IDs. */
-  workspace_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
-};
-
-/** Contains the results of a doc query. */
-export type DocSearchResult = {
-  __typename?: 'DocSearchResult';
-  /** Document data for the search results. */
-  data: IndexedDoc;
-  /** The type of entity. */
-  entity_type: SearchableEntity;
-  /** The unique identifier of the document. */
-  id: Scalars['ID']['output'];
-  /** Latest document data for the search results. Requires additional GraphQL federation calls. */
-  live_data: Document;
-  /** The relevance score of the search result. */
-  score: Scalars['Float']['output'];
 };
 
 export type DocValue = ColumnValue & {
@@ -2883,33 +2616,6 @@ export type DocVersionHistory = {
   /** The list of restoring points (snapshots) for this document, ordered by date descending. */
   restoring_points?: Maybe<Array<DocRestoringPoint>>;
 };
-
-/** Column value reference for displaying board item column data */
-export type DocsColumnValue = {
-  __typename?: 'DocsColumnValue';
-  /** The ID of the column */
-  column_id?: Maybe<Scalars['String']['output']>;
-  /** The ID of the board item */
-  item_id?: Maybe<Scalars['Int']['output']>;
-};
-
-/** Column value reference for displaying board item column data */
-export type DocsColumnValueInput = {
-  /** The ID of the column */
-  column_id: Scalars['String']['input'];
-  /** The ID of the board item */
-  item_id: Scalars['Int']['input'];
-};
-
-/** Type of mention - user, document, or board */
-export enum DocsMention {
-  /** Mention of a board */
-  Board = 'BOARD',
-  /** Mention of a document */
-  Doc = 'DOC',
-  /** Mention of a user */
-  User = 'USER'
-}
 
 /** Options to order by. */
 export enum DocsOrderBy {
@@ -3008,29 +2714,6 @@ export type DocumentBlockIdOnly = {
   __typename?: 'DocumentBlockIdOnly';
   /** The block's unique identifier. */
   id: Scalars['String']['output'];
-};
-
-/** Represents a content block — the fundamental building unit of a monday.com document. Each block encapsulates its structured content, hierarchical relationships, and associated metadata. */
-export type DocumentBlockV2 = {
-  __typename?: 'DocumentBlockV2';
-  /** The block's content as an array of structured content blocks. */
-  content: Array<Maybe<BlockContent>>;
-  /** The block's creation date. */
-  created_at?: Maybe<Scalars['String']['output']>;
-  /** The block's creator. */
-  created_by?: Maybe<User>;
-  /** The block's document unique identifier. */
-  doc_id?: Maybe<Scalars['ID']['output']>;
-  /** The block's unique identifier. */
-  id: Scalars['ID']['output'];
-  /** The block's parent block unique identifier. Used for nesting (e.g., content inside table cells, layout columns, or notice boxes). Null for top-level blocks. */
-  parent_block_id?: Maybe<Scalars['String']['output']>;
-  /** The block's position on the document (auto-generated). Higher numbers appear later in document. Use afterBlockId in mutations to control ordering. */
-  position?: Maybe<Scalars['Float']['output']>;
-  /** The block content type. */
-  type?: Maybe<Scalars['String']['output']>;
-  /** The block's last updated date. */
-  updated_at?: Maybe<Scalars['String']['output']>;
 };
 
 export type DropdownColumnSettings = {
@@ -3149,23 +2832,6 @@ export type EmailValue = ColumnValue & {
   updated_at?: Maybe<Scalars['Date']['output']>;
   /** The column's raw value in JSON format. */
   value?: Maybe<Scalars['JSON']['output']>;
-};
-
-/** Item's column values */
-export type EnrichedColumnValues = {
-  __typename?: 'EnrichedColumnValues';
-  /** List of user IDs allowed to view this column */
-  allowed_users: Array<Scalars['String']['output']>;
-  /** Column title. */
-  col_title?: Maybe<Scalars['String']['output']>;
-  /** Column type. */
-  col_type: Scalars['String']['output'];
-  /** Column ID. */
-  id: Scalars['ID']['output'];
-  /** Whether the column is publicly visible. */
-  is_public: Scalars['Boolean']['output'];
-  /** Column value. */
-  value: Scalars['String']['output'];
 };
 
 /** Input for enrolling multiple items to a single sequence */
@@ -3408,6 +3074,8 @@ export enum FirstDayOfTheWeek {
 /** A workspace folder containing boards, docs, sub folders, etc. */
 export type Folder = {
   __typename?: 'Folder';
+  /** The folder's app feature slug (folders 2.0) */
+  app_feature_slug?: Maybe<Scalars['String']['output']>;
   /** The various items in the folder, not including sub-folders and dashboards. */
   children: Array<Maybe<Board>>;
   /** The folder's color. */
@@ -3709,6 +3377,7 @@ export enum FormFontSize {
   Small = 'Small'
 }
 
+/** String specifying the form display format. Can be a step by step form or a classic one page form. */
 export enum FormFormat {
   Classic = 'Classic',
   OneByOne = 'OneByOne'
@@ -3843,6 +3512,7 @@ export type FormQuestion = {
   /** Boolean indicating if the question must be answered before form submission. */
   required: Scalars['Boolean']['output'];
   settings?: Maybe<FormQuestionSettings>;
+  /** Conditional logic rules that control when this question is displayed based on other question answers. */
   showIfRules?: Maybe<Scalars['JSON']['output']>;
   /** The question text displayed to respondents. Must be at least 1 character long and clearly indicate the expected response. */
   title: Scalars['String']['output'];
@@ -4301,29 +3971,6 @@ export type HourValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
-/** Input for creating image blocks */
-export type ImageBlockInput = {
-  /** The parent block id to append the created block under. */
-  parent_block_id?: InputMaybe<Scalars['String']['input']>;
-  /** The public URL of the image */
-  public_url: Scalars['String']['input'];
-  /** The width of the image */
-  width?: InputMaybe<Scalars['Int']['input']>;
-};
-
-/** Content for an image block */
-export type ImageContent = DocBaseBlockContent & {
-  __typename?: 'ImageContent';
-  /** The alignment of the block content */
-  alignment?: Maybe<BlockAlignment>;
-  /** The text direction of the block content */
-  direction?: Maybe<BlockDirection>;
-  /** The public URL of the image */
-  public_url: Scalars['String']['output'];
-  /** The width of the image */
-  width?: Maybe<Scalars['Int']['output']>;
-};
-
 /** Response from importing an HTML document. Contains success status and the ID of the newly created document. */
 export type ImportDocFromHtmlResult = {
   __typename?: 'ImportDocFromHtmlResult';
@@ -4333,113 +3980,6 @@ export type ImportDocFromHtmlResult = {
   error?: Maybe<Scalars['String']['output']>;
   /** True if HTML was successfully converted and imported as a new document */
   success: Scalars['Boolean']['output'];
-};
-
-/** Board data present in the search index. */
-export type IndexedBoard = {
-  __typename?: 'IndexedBoard';
-  /** Board kind classification. */
-  board_kind: Scalars['String']['output'];
-  /** ISO timestamp when the board was created. */
-  created_at: Scalars['String']['output'];
-  /** Board description. */
-  description?: Maybe<Scalars['String']['output']>;
-  /** Board ID. */
-  id: Scalars['ID']['output'];
-  /** Board kind (e.g., public, private). */
-  kind: Scalars['String']['output'];
-  /** Board name. */
-  name: Scalars['String']['output'];
-  /** ID of the board owner. */
-  owner_id: Scalars['ID']['output'];
-  /** Board state flag. */
-  state: Scalars['Int']['output'];
-  /** Board type. */
-  type: Scalars['String']['output'];
-  /** ISO timestamp when the board was last updated. */
-  updated_at: Scalars['String']['output'];
-  /** URL to view this board. */
-  url: Scalars['String']['output'];
-  /** ID of the workspace containing this board. */
-  workspace_id?: Maybe<Scalars['ID']['output']>;
-};
-
-/** Document data present in the search index. */
-export type IndexedDoc = {
-  __typename?: 'IndexedDoc';
-  /** Document content. */
-  content: Scalars['String']['output'];
-  /** ISO timestamp when the document was created. */
-  created_at: Scalars['String']['output'];
-  /** Document ID. */
-  id: Scalars['ID']['output'];
-  /** Document name. */
-  name: Scalars['String']['output'];
-  /** ISO timestamp when the document was last updated. */
-  updated_at: Scalars['String']['output'];
-};
-
-/** Item data present in the search index. */
-export type IndexedItem = {
-  __typename?: 'IndexedItem';
-  /**
-   * Board containing this item.
-   * @deprecated Use board_id field instead or live_data if you need more board data.
-   */
-  board: DeprecatedBoard;
-  /** ID of the board containing this item. */
-  board_id: Scalars['ID']['output'];
-  /** Board kind (e.g., public, private). */
-  board_kind: Scalars['String']['output'];
-  /** Name of the board containing this item. */
-  board_name: Scalars['String']['output'];
-  /** The item's column values. */
-  column_values: Array<EnrichedColumnValues>;
-  /** ISO timestamp when the item was created. */
-  created_at: Scalars['String']['output'];
-  /** Item description. */
-  description?: Maybe<Scalars['String']['output']>;
-  /** ID of the group containing this item. */
-  group_id: Scalars['ID']['output'];
-  /** Name of the group containing this item. */
-  group_name: Scalars['String']['output'];
-  /** Item ID. */
-  id: Scalars['ID']['output'];
-  /** Item kind classification. */
-  kind: Scalars['String']['output'];
-  /** Item name. */
-  name: Scalars['String']['output'];
-  /** ID of the item owner. */
-  owner_id: Scalars['ID']['output'];
-  /** Item state flag. */
-  state: Scalars['Int']['output'];
-  /** List of tags associated with the item. */
-  tags: Array<Scalars['String']['output']>;
-  /** Item type (e.g., Project). */
-  type: Scalars['String']['output'];
-  /** ISO timestamp when the item was last updated. */
-  updated_at: Scalars['String']['output'];
-  /** URL to view this item. */
-  url: Scalars['String']['output'];
-  /** ID of the workspace containing this item. */
-  workspace_id?: Maybe<Scalars['ID']['output']>;
-};
-
-/** Content inserted in delta operations */
-export type InsertOps = {
-  __typename?: 'InsertOps';
-  /** Object representing structured data within a text block */
-  blot?: Maybe<BlotContent>;
-  /** Plain text content */
-  text?: Maybe<Scalars['String']['output']>;
-};
-
-/** Content to insert in delta operations */
-export type InsertOpsInput = {
-  /** Object representing structured data within a text block */
-  blot?: InputMaybe<BlotInput>;
-  /** Plain text content */
-  text?: InputMaybe<Scalars['String']['input']>;
 };
 
 /** Result of executing an integration block */
@@ -4614,29 +4154,6 @@ export type ItemNicknameInput = {
   singular?: InputMaybe<Scalars['String']['input']>;
 };
 
-/** Filters for item search. */
-export type ItemSearchFilterInput = {
-  /** Filter items to specific board IDs. */
-  board_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
-  /** Filter items to specific workspace IDs. */
-  workspace_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
-};
-
-/** Contains the results of an item query. */
-export type ItemSearchResult = {
-  __typename?: 'ItemSearchResult';
-  /** Item data for the search results. */
-  data: IndexedItem;
-  /** The type of entity. */
-  entity_type: SearchableEntity;
-  /** The unique identifier of the item. */
-  id: Scalars['ID']['output'];
-  /** Latest item data for the search results. Requires additional GraphQL federation calls. */
-  live_data: Item;
-  /** The relevance score of the search result. */
-  score: Scalars['Float']['output'];
-};
-
 /** Sort direction */
 export enum ItemsOrderByDirection {
   /** Ascending order */
@@ -4786,48 +4303,6 @@ export type LastUpdatedValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
-/**
- * Input for creating layout blocks.
- *
- * Behaviour:
- * • When a layout is created the system automatically generates
- *   column_count child "cell" blocks (one per column).
- * • The layout block itself is just a container; each generated cell block has
- *   parentBlockId === <layout-block-id> and acts as the direct parent for any
- *   content you want to insert into that column.
- * • The creation response already contains the ordered list of generated cell
- *   IDs under `content[0].cells` (1-D array from left to right).
- * • To populate a layout:
- *     1. Create the layout and capture its ID.
- *     2. Obtain the cell block IDs either by inspecting `content[0].cells`
- *        in the response **or** by querying the document for children of the
- *        layout block.
- *     3. Create your content blocks (textBlock, imageBlock, tableBlock, etc.)
- *        with parentBlockId set to the specific cell block ID.
- * • Use afterBlockId only to order siblings *within* the same cell.
- */
-export type LayoutBlockInput = {
-  /** The number of columns in the layout */
-  column_count: Scalars['Int']['input'];
-  /** The column style configuration */
-  column_style?: InputMaybe<Array<ColumnStyleInput>>;
-  /** The parent block id to append the created block under. */
-  parent_block_id?: InputMaybe<Scalars['String']['input']>;
-};
-
-/** Content for a layout block */
-export type LayoutContent = DocBaseBlockContent & {
-  __typename?: 'LayoutContent';
-  /** The alignment of the block content */
-  alignment?: Maybe<BlockAlignment>;
-  /** 1-D array of cells (columns). Each cell carries a blockId reference. */
-  cells?: Maybe<Array<Cell>>;
-  /** The column style configuration */
-  column_style?: Maybe<Array<ColumnStyle>>;
-  /** The text direction of the block content */
-  direction?: Maybe<BlockDirection>;
-};
-
 /** Input for a single lifecycle event subscription */
 export type LifecycleEventInput = {
   /** The lifecycle event type (e.g., "AppFeatureColumn:create") */
@@ -4861,6 +4336,10 @@ export type LifecycleSubscriptionKind = {
 
 export type Like = {
   __typename?: 'Like';
+  /** The reference identifier of the entity that created this reaction on behalf of the user, who this reaction should be attributed to (e.g. agent_{agentId}). */
+  attribution_entity_ref?: Maybe<Scalars['String']['output']>;
+  /** The type of entity that created this reaction. */
+  attribution_entity_type?: Maybe<AttributionEntity>;
   created_at?: Maybe<Scalars['Date']['output']>;
   creator?: Maybe<User>;
   creator_id?: Maybe<Scalars['String']['output']>;
@@ -4888,40 +4367,6 @@ export type LinkValue = ColumnValue & {
   url_text?: Maybe<Scalars['String']['output']>;
   /** The column's raw value in JSON format. */
   value?: Maybe<Scalars['JSON']['output']>;
-};
-
-/** Specific types of list blocks */
-export enum ListBlock {
-  BulletedList = 'BULLETED_LIST',
-  CheckList = 'CHECK_LIST',
-  NumberedList = 'NUMBERED_LIST'
-}
-
-/** Content for a list block (bulleted, numbered, todo) */
-export type ListBlockContent = DocBaseBlockContent & {
-  __typename?: 'ListBlockContent';
-  /** The alignment of the block content */
-  alignment?: Maybe<BlockAlignment>;
-  /** The text content in delta format - array of operations with insert content and optional attributes */
-  delta_format: Array<Operation>;
-  /** The text direction of the block content */
-  direction?: Maybe<BlockDirection>;
-  /** The indentation level of the list item */
-  indentation?: Maybe<Scalars['Int']['output']>;
-};
-
-/** Input for creating list blocks (bulleted, numbered, todo) */
-export type ListBlockInput = {
-  alignment?: InputMaybe<BlockAlignment>;
-  /** The text content in delta format - array of operations with insert content and optional attributes */
-  delta_format: Array<OperationInput>;
-  direction?: InputMaybe<BlockDirection>;
-  /** The indentation level of the list item */
-  indentation?: InputMaybe<Scalars['Int']['input']>;
-  /** The specific type of list block (defaults to bulleted list) */
-  list_block_type?: InputMaybe<ListBlock>;
-  /** The parent block id to append the created block under. */
-  parent_block_id?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type LocationValue = ColumnValue & {
@@ -5176,23 +4621,6 @@ export type MeetingsResponse = {
   page_info?: Maybe<PageInfo>;
 };
 
-/** Mention object for user or document references */
-export type Mention = {
-  __typename?: 'Mention';
-  /** The unique identifier of the mentioned entity */
-  id?: Maybe<Scalars['Int']['output']>;
-  /** The type of the mentioned entity */
-  type?: Maybe<DocsMention>;
-};
-
-/** Mention object for user or document references */
-export type MentionInput = {
-  /** The ID of the mentioned user or document */
-  id: Scalars['Int']['input'];
-  /** The type of mention: user, doc, or board */
-  type: DocsMention;
-};
-
 /** The type of the mention. */
 export enum MentionType {
   /** Mention an AI agent */
@@ -5304,8 +4732,6 @@ export type Mutation = {
   batch_extend_trial_period?: Maybe<BatchExtendTrialPeriod>;
   /** Batch update the dependency column values in a board. Limited to 50 items per batch. */
   batch_update_dependency_column: Scalars['JSON']['output'];
-  /** Initialize bulk import for a board and group. Returns import ID and upload URL to begin the process. */
-  bulk_import_items?: Maybe<BulkImportInit>;
   /** Change a column's properties */
   change_column_metadata?: Maybe<Column>;
   /** Change a column's title */
@@ -5347,8 +4773,6 @@ export type Mutation = {
   create_doc?: Maybe<Document>;
   /** Create new document block */
   create_doc_block?: Maybe<DocumentBlock>;
-  /** Creates multiple document blocks in a single operation for efficient content creation. Use this when adding substantial content like importing documents, creating structured content (articles, reports, guides), or building complex document sections. Supports all block types including text paragraphs, headers, bullet/numbered lists, images, tables, code blocks, and more. Much faster than creating blocks individually. Perfect for content migration, template creation, or generating documents from external data. Maximum 25 blocks per request. */
-  create_doc_blocks?: Maybe<Array<DocumentBlockV2>>;
   /** Creates a new dropdown column with strongly typed settings. Dropdown columns allow users to select from a predefined list of options. This mutation is specifically for dropdown columns and provides type-safe creation with dropdown options configuration. */
   create_dropdown_column?: Maybe<Column>;
   /** Create managed column of type dropdown mutation. */
@@ -5784,14 +5208,6 @@ export type MutationBatch_Update_Dependency_ColumnArgs = {
 
 
 /** Root mutation type for the Dependencies service */
-export type MutationBulk_Import_ItemsArgs = {
-  board_id: Scalars['ID']['input'];
-  group_id: Scalars['ID']['input'];
-  on_match?: InputMaybe<OnMatchInput>;
-};
-
-
-/** Root mutation type for the Dependencies service */
 export type MutationChange_Column_MetadataArgs = {
   board_id: Scalars['ID']['input'];
   column_id: Scalars['String']['input'];
@@ -5910,6 +5326,7 @@ export type MutationCreate_BoardArgs = {
   empty?: InputMaybe<Scalars['Boolean']['input']>;
   folder_id?: InputMaybe<Scalars['ID']['input']>;
   item_nickname?: InputMaybe<ItemNicknameInput>;
+  prompt?: InputMaybe<Scalars['String']['input']>;
   template_id?: InputMaybe<Scalars['ID']['input']>;
   workspace_id?: InputMaybe<Scalars['ID']['input']>;
 };
@@ -5965,14 +5382,6 @@ export type MutationCreate_Doc_BlockArgs = {
   doc_id: Scalars['ID']['input'];
   parent_block_id?: InputMaybe<Scalars['String']['input']>;
   type: DocBlockContentType;
-};
-
-
-/** Root mutation type for the Dependencies service */
-export type MutationCreate_Doc_BlocksArgs = {
-  afterBlockId?: InputMaybe<Scalars['String']['input']>;
-  blocksInput: Array<CreateBlockInput>;
-  docId: Scalars['ID']['input'];
 };
 
 
@@ -7028,32 +6437,6 @@ export type NotetakerQueriesMeetingsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
-/** The notice-box's own ID must be captured.  Every block that should appear inside it must be created with parentBlockId = that ID (and can still use afterBlockId for ordering among siblings). */
-export type NoticeBoxBlockInput = {
-  /** The parent block id to append the created block under. */
-  parent_block_id?: InputMaybe<Scalars['String']['input']>;
-  theme: NoticeBoxTheme;
-};
-
-/** Content for a notice box block */
-export type NoticeBoxContent = DocBaseBlockContent & {
-  __typename?: 'NoticeBoxContent';
-  /** The alignment of the block content */
-  alignment?: Maybe<BlockAlignment>;
-  /** The text direction of the block content */
-  direction?: Maybe<BlockDirection>;
-  /** The theme of the notice box */
-  theme: NoticeBoxTheme;
-};
-
-/** Theme options for notice box blocks */
-export enum NoticeBoxTheme {
-  General = 'GENERAL',
-  Info = 'INFO',
-  Tips = 'TIPS',
-  Warning = 'WARNING'
-}
-
 /** A notification. */
 export type Notification = {
   __typename?: 'Notification';
@@ -7257,39 +6640,6 @@ export type ObjectTypeUniqueKey = {
   object_type_unique_key?: Maybe<Scalars['String']['output']>;
 };
 
-/** Strategy for handling matching items during import */
-export enum OnMatchBehaviour {
-  /** Skip if a matching item exists */
-  Skip = 'SKIP',
-  /** Update if a matching item exists, otherwise create a new item */
-  Upsert = 'UPSERT'
-}
-
-/** Configuration for how to handle matching items during import */
-export type OnMatchInput = {
-  /** Strategy for handling matching items */
-  behaviour: OnMatchBehaviour;
-  /** The column ID to use for matching (e.g., email, phone number). When importing items, this column value will be used to identify matches. */
-  match_column_id: Scalars['String']['input'];
-};
-
-/** A delta operation with insert content and optional formatting attributes */
-export type Operation = {
-  __typename?: 'Operation';
-  /** Optional formatting attributes (bold, italic, underline, strike, code, link, color, background) */
-  attributes?: Maybe<Attributes>;
-  /** Content to insert - either text or blot object */
-  insert?: Maybe<InsertOps>;
-};
-
-/** A delta operation with insert content and optional formatting attributes */
-export type OperationInput = {
-  /** Optional formatting attributes (bold, italic, underline, strike, code, link, color, background) */
-  attributes?: InputMaybe<AttributesInput>;
-  /** Content to insert - either text or blot object */
-  insert: InsertOpsInput;
-};
-
 /** Defines the sorting order for returned objects in the objects query. */
 export enum OrderBy {
   /** Sort objects by their creation date, from newest to oldest. */
@@ -7334,21 +6684,6 @@ export type Overview = {
   updated_at?: Maybe<Scalars['ISO8601DateTime']['output']>;
   /** The overview's workspace unique identifier. */
   workspace_id?: Maybe<Scalars['ID']['output']>;
-};
-
-/** Input for creating page break blocks */
-export type PageBreakBlockInput = {
-  /** The parent block id to append the created block under. */
-  parent_block_id?: InputMaybe<Scalars['String']['input']>;
-};
-
-/** Content for a page break block */
-export type PageBreakContent = DocBaseBlockContent & {
-  __typename?: 'PageBreakContent';
-  /** The alignment of the block content */
-  alignment?: Maybe<BlockAlignment>;
-  /** The text direction of the block content */
-  direction?: Maybe<BlockDirection>;
 };
 
 /** Pagination metadata for cursor-based pagination. */
@@ -7707,8 +7042,6 @@ export type Query = {
   board_candidates?: Maybe<Array<Board>>;
   /** Get a collection of boards. */
   boards?: Maybe<Array<Maybe<Board>>>;
-  /** Get the status of a bulk import items process */
-  bulk_import_items_status: BulkImportStatus;
   /** Get the complexity data of your queries. */
   complexity?: Maybe<Complexity>;
   /** Fetch a single connection by its unique ID. */
@@ -7795,8 +7128,6 @@ export type Query = {
   platform_api?: Maybe<PlatformApi>;
   /** Get a collection of replies filtered by board IDs and date range. */
   replies?: Maybe<Array<Reply>>;
-  /** Search across multiple entity types (items, boards, documents). */
-  search?: Maybe<Array<SearchResult>>;
   /** Get a collection of monday dev sprints */
   sprints?: Maybe<Array<Sprint>>;
   /** Get a collection of tags. */
@@ -7963,12 +7294,6 @@ export type QueryBoardsArgs = {
   page?: InputMaybe<Scalars['Int']['input']>;
   state?: InputMaybe<State>;
   workspace_ids?: InputMaybe<Array<InputMaybe<Scalars['ID']['input']>>>;
-};
-
-
-/** Root query type for the Dependencies service */
-export type QueryBulk_Import_Items_StatusArgs = {
-  import_id: Scalars['ID']['input'];
 };
 
 
@@ -8243,14 +7568,6 @@ export type QueryRepliesArgs = {
 
 
 /** Root query type for the Dependencies service */
-export type QuerySearchArgs = {
-  filters: SearchFiltersInput;
-  limit: Scalars['Int']['input'];
-  query: Scalars['String']['input'];
-};
-
-
-/** Root query type for the Dependencies service */
 export type QuerySprintsArgs = {
   ids: Array<Scalars['ID']['input']>;
 };
@@ -8362,7 +7679,7 @@ export type QueryWorkspacesArgs = {
 };
 
 export type QuestionOptionInput = {
-  /** The label to display for the option */
+  /** The display text for the option shown to respondents. Must be at least 1 character long. */
   label: Scalars['String']['input'];
 };
 
@@ -8509,41 +7826,21 @@ export type ResponseForm = {
   type?: Maybe<Scalars['String']['output']>;
 };
 
+/** An AI agent that contributed changes in this restoring point time window. */
+export type RestoringPointAgentAttribution = {
+  __typename?: 'RestoringPointAgentAttribution';
+  /** The ID of the agent that made changes. */
+  agent_id?: Maybe<Scalars['ID']['output']>;
+  /** The display name of the agent, if available. */
+  agent_name?: Maybe<Scalars['String']['output']>;
+  /** The type of entity (e.g. "agent", "workflow"). */
+  entity_type?: Maybe<Scalars['String']['output']>;
+};
+
 /** notification settings scope types, the options are account user defaults or user private settings */
 export enum ScopeType {
   AccountNewUserDefaults = 'AccountNewUserDefaults',
   User = 'User'
-}
-
-/** Tagged-union input: set exactly one field to indicate the entity type and its filters. */
-export type SearchEntityFilterInput = {
-  /** Include boards in the search. */
-  boards?: InputMaybe<BoardSearchFilterInput>;
-  /** Include documents in the search. */
-  docs?: InputMaybe<DocSearchFilterInput>;
-  /** Include items in the search with optional item-specific filters. */
-  items?: InputMaybe<ItemSearchFilterInput>;
-};
-
-/** Top-level search filters specifying which entities to search. */
-export type SearchFiltersInput = {
-  /** Global date range filter applied to all entity types. */
-  date_range?: InputMaybe<CrossEntityDateRangeInput>;
-  /** List of entity filters. Each entry is a tagged-union: set one field (items, boards, docs) to include that entity type. */
-  entities: Array<SearchEntityFilterInput>;
-};
-
-/** Union type representing different searchable entity types returned from search. */
-export type SearchResult = BoardSearchResult | DocSearchResult | ItemSearchResult;
-
-/** Supported entity types to search for. */
-export enum SearchableEntity {
-  /** Board entity type for searching boards. */
-  Board = 'BOARD',
-  /** Document entity type for searching documents. */
-  Document = 'DOCUMENT',
-  /** Item entity type for searching board items. */
-  Item = 'ITEM'
 }
 
 /** A sequence that can be used to automate email outreach */
@@ -8941,59 +8238,6 @@ export type SubtasksValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
-/**
- * Input for creating table blocks.
- * ⚠️  RECOMMENDATION: Use add_content_to_doc_from_markdown with markdown tables instead for simpler table creation.
- * Behavior:
- * - When a table is created, the system automatically generates `row_count × column_count` child "cell" blocks (one per cell).
- * - The table block is a container. Each generated cell block has `parentBlockId === <table-block-id>` and is used to insert content.
- *
- * Important:
- * - Always use the 2D matrix returned under `content[0].cells` to access cells.
- * - This matrix is row-major: `matrix[rowIndex][columnIndex]`.
- * - Do not rely on the order returned by `docs { blocks { ... } }`, as it's implementation-specific.
- *
- * Recommended workflow:
- * 1. Create the table and capture its ID.
- * 2. Read `content[0].cells` to get the cell ID matrix.
- * 3. Use bulk create blocks to create all the child blocks (e.g. textBlock, imageBlock) with `parentBlockId = matrix[row][col]`.
- *    Use `afterBlockId` only to order siblings within the same cell.
- */
-export type TableBlockInput = {
-  /** The number of columns in the table */
-  column_count: Scalars['Int']['input'];
-  /** The column style configuration */
-  column_style?: InputMaybe<Array<ColumnStyleInput>>;
-  /** The parent block id to append the created block under. */
-  parent_block_id?: InputMaybe<Scalars['String']['input']>;
-  /** The number of rows in the table */
-  row_count: Scalars['Int']['input'];
-  /** The width of the table */
-  width?: InputMaybe<Scalars['Int']['input']>;
-};
-
-/** Content for a table block */
-export type TableContent = DocBaseBlockContent & {
-  __typename?: 'TableContent';
-  /** The alignment of the block content */
-  alignment?: Maybe<BlockAlignment>;
-  /** 2-D array of cells (rows × columns). Each cell contains a blockId reference that represents the parent block for all content blocks within that cell. */
-  cells?: Maybe<Array<TableRow>>;
-  /** The column style configuration */
-  column_style?: Maybe<Array<ColumnStyle>>;
-  /** The text direction of the block content */
-  direction?: Maybe<BlockDirection>;
-  /** The width of the table */
-  width?: Maybe<Scalars['Int']['output']>;
-};
-
-/** A row of cells in a table */
-export type TableRow = {
-  __typename?: 'TableRow';
-  /** The cells in this row */
-  row_cells: Array<Cell>;
-};
-
 /** Settings configuration for table view display options */
 export type TableViewSettingsInput = {
   /** Column visibility configuration for the board view */
@@ -9109,45 +8353,6 @@ export type Template = {
   __typename?: 'Template';
   /** The template process unique identifier for async operations. */
   process_id?: Maybe<Scalars['String']['output']>;
-};
-
-/** Text block formatting types. Controls visual appearance and semantic meaning. */
-export enum TextBlock {
-  /** Code styling */
-  Code = 'CODE',
-  /** Main document title (H1 equivalent) */
-  LargeTitle = 'LARGE_TITLE',
-  /** Section heading (H2 equivalent) */
-  MediumTitle = 'MEDIUM_TITLE',
-  /** Regular paragraph text */
-  NormalText = 'NORMAL_TEXT',
-  /** Indented quote/blockquote styling */
-  Quote = 'QUOTE',
-  /** Subsection heading (H3 equivalent) */
-  SmallTitle = 'SMALL_TITLE'
-}
-
-/** Content for a text block */
-export type TextBlockContent = DocBaseBlockContent & {
-  __typename?: 'TextBlockContent';
-  /** The alignment of the block content */
-  alignment?: Maybe<BlockAlignment>;
-  /** The text content in delta format - array of operations with insert content and optional attributes */
-  delta_format: Array<Operation>;
-  /** The text direction of the block content */
-  direction?: Maybe<BlockDirection>;
-};
-
-/** Input for creating text blocks (normal text, titles, quote, code) */
-export type TextBlockInput = {
-  alignment?: InputMaybe<BlockAlignment>;
-  /** The text content in delta format - array of operations with insert content and optional attributes */
-  delta_format: Array<OperationInput>;
-  direction?: InputMaybe<BlockDirection>;
-  /** The parent block id to append the created block under. */
-  parent_block_id?: InputMaybe<Scalars['String']['input']>;
-  /** The specific type of text block (defaults to normal text) */
-  text_block_type?: InputMaybe<TextBlock>;
 };
 
 export type TextValue = ColumnValue & {
@@ -9999,29 +9204,6 @@ export enum VersionKind {
   ReleaseCandidate = 'release_candidate'
 }
 
-/** Input for creating video blocks */
-export type VideoBlockInput = {
-  /** The parent block id to append the created block under. */
-  parent_block_id?: InputMaybe<Scalars['String']['input']>;
-  /** The raw URL of the video */
-  raw_url: Scalars['String']['input'];
-  /** The width of the video */
-  width?: InputMaybe<Scalars['Int']['input']>;
-};
-
-/** Content for a video block */
-export type VideoContent = DocBaseBlockContent & {
-  __typename?: 'VideoContent';
-  /** The alignment of the block content */
-  alignment?: Maybe<BlockAlignment>;
-  /** The text direction of the block content */
-  direction?: Maybe<BlockDirection>;
-  /** The raw URL of the video */
-  url: Scalars['String']['output'];
-  /** The width of the video */
-  width?: Maybe<Scalars['Int']['output']>;
-};
-
 /** Available view types for board displays */
 export enum ViewKind {
   /** App view for feature-specific display */
@@ -10157,7 +9339,7 @@ export type Widget = {
   __typename?: 'Widget';
   /** Unique identifier of this widget. */
   id?: Maybe<Scalars['ID']['output']>;
-  /** The type of widget (CHART, NUMBER, BATTERY, CALENDAR, GANTT). */
+  /** The type of widget (CHART, NUMBER, BATTERY, CALENDAR, GANTT, MAP). */
   kind?: Maybe<ExternalWidget>;
   /** Widget label (UTF-8 chars). */
   name?: Maybe<Scalars['String']['output']>;

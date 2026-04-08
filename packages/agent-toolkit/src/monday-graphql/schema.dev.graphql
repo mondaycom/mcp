@@ -2680,6 +2680,45 @@ type Mutation {
     type: ValidationsEntityType = board
   ): RequiredColumns
 
+  """Create a validation rule"""
+  create_validation_rule(
+    """The ID of the entity to create the rule for"""
+    id: ID!
+
+    """The type of entity for validations"""
+    type: ValidationsEntityType = board
+
+    """The validation rule to create"""
+    rule: ValidationRuleInput!
+  ): ValidationRule
+
+  """Update a validation rule"""
+  update_validation_rule(
+    """The ID of the entity to update the rule for"""
+    id: ID!
+
+    """The type of entity for validations"""
+    type: ValidationsEntityType = board
+
+    """The ID of the validation rule to update"""
+    rule_id: ID!
+
+    """The updated validation rule"""
+    rule: ValidationRuleInput!
+  ): ValidationRule
+
+  """Delete a validation rule"""
+  delete_validation_rule(
+    """The ID of the entity to delete the rule from"""
+    id: ID!
+
+    """The type of entity for validations"""
+    type: ValidationsEntityType = board
+
+    """The ID of the validation rule to delete"""
+    rule_id: ID!
+  ): ValidationRule
+
   """Assigns members to a department."""
   assign_department_members(
     """The department ID to assign the members to."""
@@ -3401,6 +3440,9 @@ type Mutation {
 
     """Optional item nickname configuration for the board"""
     item_nickname: ItemNicknameInput
+
+    """AI prompt to generate the board structure and content"""
+    prompt: String
 
     """Optional board template id"""
     template_id: ID
@@ -6148,7 +6190,7 @@ input WorkflowIteratorInput {
   """
   Node ID that executes after the iterator completes all iterations. Set to null if no action should follow the loop (workflow ends after the loop). Must NOT be included in node_ids. When not null, the entry node's Routes config must include an exit route targeting this node.
   """
-  post_iterator_node_id: Int!
+  post_iterator_node_id: ID
 
   """
   Workflow variable key referencing the collection to iterate over (forEach). The referenced variable must resolve to an array at runtime. The iterator executes the loop body once per item in the collection.
@@ -8466,10 +8508,113 @@ type TargetSchemaGroup {
   target_columns: [ConnectedTargetColumn!]
 }
 
+"""Input for a group of validation rules with a logical operator"""
+input GroupInput {
+  """The group operator"""
+  operator: GroupOperator = AND
+
+  """The group configuration"""
+  groups: [RuleConstraintInput!]!
+}
+
+"""The operator for the group"""
+enum GroupOperator {
+  """All conditions in the group must be met"""
+  AND
+
+  """At least one condition in the group must be met"""
+  OR
+}
+
 """List of required column IDs for a board"""
 type RequiredColumns {
   """Array of required column IDs"""
   required_column_ids: [String!]!
+}
+
+"""
+Input for a single validation rule constraint with operator and definition
+"""
+input RuleConstraintInput {
+  """The validation operator"""
+  operator: RuleOperator!
+
+  """The column ID"""
+  column_id: String!
+
+  """The compare values (array of strings or numbers)"""
+  compare_value: [CompareValue!]
+
+  """The compare attribute"""
+  compare_attribute: String
+}
+
+"""Available operators for validation rules"""
+enum RuleOperator {
+  """Value matches any of the specified values"""
+  ANY_OF
+
+  """Value does not match any of the specified values"""
+  NOT_ANY_OF
+
+  """Value equals the specified value"""
+  EQUALS
+
+  """Value does not equal the specified value"""
+  NOT_EQUALS
+
+  """Value is empty or not set"""
+  IS_EMPTY
+
+  """Value is not empty"""
+  IS_NOT_EMPTY
+
+  """Value is greater than the specified value"""
+  GREATER_THAN
+
+  """Value is greater than or equal to the specified value"""
+  GREATER_THAN_OR_EQUALS
+
+  """Value is lower than the specified value"""
+  LOWER_THAN
+
+  """Value is lower than or equal to the specified value"""
+  LOWER_THAN_OR_EQUAL
+
+  """Value contains the specified text"""
+  CONTAINS_TEXT
+
+  """Value does not contain the specified text"""
+  NOT_CONTAINS_TEXT
+
+  """Value starts with the specified text"""
+  STARTS_WITH_TEXT
+
+  """Value is between two specified values"""
+  BETWEEN
+}
+
+"""A validation rule with then and optional if conditions"""
+type ValidationRule {
+  """The unique identifier of the validation rule"""
+  id: ID
+
+  """The force condition group"""
+  then: JSON
+
+  """The optional if condition group"""
+  if: JSON
+}
+
+"""
+Input for creating a validation rule with then and optional if conditions
+"""
+input ValidationRuleInput {
+  """The conditions that must be enforced when the rule applies"""
+  then: GroupInput!
+
+  """Optional conditions that determine if the rule should be applied"""
+  if: GroupInput
 }
 
 type Validations {
@@ -9101,7 +9246,7 @@ type DocRestoringPoint {
 """Column value reference for displaying board item column data"""
 type DocsColumnValue {
   """The ID of the board item"""
-  item_id: Int
+  item_id: ID
 
   """The ID of the column"""
   column_id: String
@@ -9110,7 +9255,7 @@ type DocsColumnValue {
 """Column value reference for displaying board item column data"""
 input DocsColumnValueInput {
   """The ID of the board item"""
-  item_id: Int!
+  item_id: ID!
 
   """The ID of the column"""
   column_id: String!
@@ -9126,6 +9271,72 @@ enum DocsMention {
 
   """Mention of a board"""
   BOARD
+}
+
+"""
+Represents a monday.com doc - a rich-text page built from editable blocks (text, files, embeds, etc.).
+  A doc can belong to:
+  (1) a workspace (left-pane doc),
+  (2) an item (doc on column),
+  (3) a board view (doc as a board view).
+"""
+type Document {
+  """
+  Unique document ID returned when the doc is created.
+    Use this ID in every API call that references the doc.
+    How to find it:
+    • Call the docs() GraphQL query with object_ids to map object_id → id
+    • Enable 'Developer Mode' in monday.labs to display it inside the doc.
+  """
+  id: ID!
+
+  """
+  Identifier that appears in the doc's URL.
+    Returned on creation, but DO NOT use it in API routes that expect a document ID.
+  """
+  object_id: ID!
+
+  """The document's content blocks"""
+  blocks(
+    """Number of items to get, the default is 25."""
+    limit: Int = 25
+
+    """Page number to get, starting at 1."""
+    page: Int = 1
+  ): [DocumentBlock]
+
+  """The document's creation date."""
+  created_at: Date
+
+  """The document's creator"""
+  created_by: User
+
+  """The document's folder unique identifier (null for first level)."""
+  doc_folder_id: ID
+
+  """The document's kind (public / private / share)."""
+  doc_kind: BoardKind!
+
+  """The document's name."""
+  name: String!
+
+  """The document's relative url"""
+  relative_url: String
+
+  """The document's settings."""
+  settings: JSON
+
+  """The document's last updated date."""
+  updated_at: Date
+
+  """The document's direct url"""
+  url: String
+
+  """The workspace that contains this document (null for main workspace)."""
+  workspace: Workspace
+
+  """The document's workspace unique identifier (null for main workspace)."""
+  workspace_id: ID
 }
 
 """
@@ -9232,8 +9443,11 @@ input ImageBlockInput {
   """The parent block id to append the created block under."""
   parent_block_id: String
 
+  """The monday.com asset ID of the image"""
+  asset_id: ID
+
   """The public URL of the image"""
-  public_url: String!
+  public_url: String
 
   """The width of the image"""
   width: Int
@@ -9382,7 +9596,7 @@ input ListBlockInput {
 """Mention object for user or document references"""
 type Mention {
   """The unique identifier of the mentioned entity"""
-  id: Int
+  id: ID
 
   """The type of the mentioned entity"""
   type: DocsMention
@@ -9391,7 +9605,7 @@ type Mention {
 """Mention object for user or document references"""
 input MentionInput {
   """The ID of the mentioned user or document"""
-  id: Int!
+  id: ID!
 
   """The type of mention: user, doc, or board"""
   type: DocsMention!
@@ -10663,6 +10877,9 @@ enum AppFeatureTypeE {
   """AI_AGENT_SKILL"""
   AI_AGENT_SKILL
 
+  """SKILL"""
+  SKILL
+
   """VIBE_OBJECT"""
   VIBE_OBJECT
 
@@ -11838,72 +12055,6 @@ enum DocsOrderBy {
   used_at
 }
 
-"""
-Represents a monday.com doc - a rich-text page built from editable blocks (text, files, embeds, etc.).
-  A doc can belong to:
-  (1) a workspace (left-pane doc),
-  (2) an item (doc on column),
-  (3) a board view (doc as a board view).
-"""
-type Document {
-  """The document's content blocks"""
-  blocks(
-    """Number of items to get, the default is 25."""
-    limit: Int = 25
-
-    """Page number to get, starting at 1."""
-    page: Int = 1
-  ): [DocumentBlock]
-
-  """The document's creation date."""
-  created_at: Date
-
-  """The document's creator"""
-  created_by: User
-
-  """The document's folder unique identifier (null for first level)."""
-  doc_folder_id: ID
-
-  """The document's kind (public / private / share)."""
-  doc_kind: BoardKind!
-
-  """
-  Unique document ID returned when the doc is created.
-    Use this ID in every API call that references the doc.
-    How to find it:
-    • Call the docs() GraphQL query with object_ids to map object_id → id
-    • Enable 'Developer Mode' in monday.labs to display it inside the doc.
-  """
-  id: ID!
-
-  """The document's name."""
-  name: String!
-
-  """
-  Identifier that appears in the doc's URL.
-    Returned on creation, but DO NOT use it in API routes that expect a document ID.
-  """
-  object_id: ID!
-
-  """The document's relative url"""
-  relative_url: String
-
-  """The document's settings."""
-  settings: JSON
-
-  """The document's last updated date."""
-  updated_at: Date
-
-  """The document's direct url"""
-  url: String
-
-  """The workspace that contains this document (null for main workspace)."""
-  workspace: Workspace
-
-  """The document's workspace unique identifier (null for main workspace)."""
-  workspace_id: ID
-}
-
 """A monday.com document block."""
 type DocumentBlock {
   """The block's content."""
@@ -12265,6 +12416,9 @@ enum FirstDayOfTheWeek {
 
 """A workspace folder containing boards, docs, sub folders, etc."""
 type Folder {
+  """The folder's app feature slug (folders 2.0)"""
+  app_feature_slug: String
+
   """
   The various items in the folder, not including sub-folders and dashboards.
   """
@@ -17221,6 +17375,11 @@ enum ExternalWidget {
   TABLE
 
   """
+  Map widgets for geographic data visualization. Displays location-based data on interactive maps.
+  """
+  MAP
+
+  """
   App feature widgets for displaying custom application features. Used to embed and render app-specific functionality within dashboards and views.
   """
   APP_FEATURE
@@ -17244,7 +17403,7 @@ type Widget {
   """Parent container where the widget is placed."""
   parent: WidgetParentOutput
 
-  """The type of widget (CHART, NUMBER, BATTERY, CALENDAR, GANTT)."""
+  """The type of widget (CHART, NUMBER, BATTERY, CALENDAR, GANTT, MAP)."""
   kind: ExternalWidget
 
   """Widget label (UTF-8 chars)."""

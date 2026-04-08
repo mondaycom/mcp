@@ -978,6 +978,8 @@ export enum AppFeatureTypeE {
   Product = 'PRODUCT',
   /** PRODUCT_VIEW */
   ProductView = 'PRODUCT_VIEW',
+  /** SKILL */
+  Skill = 'SKILL',
   /** SOLUTION */
   Solution = 'SOLUTION',
   /** SUB_WORKFLOW */
@@ -3960,7 +3962,7 @@ export type DocsColumnValue = {
   /** The ID of the column */
   column_id?: Maybe<Scalars['String']['output']>;
   /** The ID of the board item */
-  item_id?: Maybe<Scalars['Int']['output']>;
+  item_id?: Maybe<Scalars['ID']['output']>;
 };
 
 /** Column value reference for displaying board item column data */
@@ -3968,7 +3970,7 @@ export type DocsColumnValueInput = {
   /** The ID of the column */
   column_id: Scalars['String']['input'];
   /** The ID of the board item */
-  item_id: Scalars['Int']['input'];
+  item_id: Scalars['ID']['input'];
 };
 
 /** Type of mention - user, document, or board */
@@ -4421,6 +4423,8 @@ export enum ExternalWidget {
   Gantt = 'GANTT',
   /** ListView widgets for displaying cross-board items in a tabular list format with filtering and sorting. */
   Listview = 'LISTVIEW',
+  /** Map widgets for geographic data visualization. Displays location-based data on interactive maps. */
+  Map = 'MAP',
   /** Number widgets for displaying numeric metrics such as accumulated sums, averages, counts, totals, percentages. Ideal for showing single-value metrics, counters, calculated aggregations, and key performance indicators in a prominent numeric format. */
   Number = 'NUMBER',
   /** Table widgets for visualization */
@@ -4656,6 +4660,8 @@ export enum FirstDayOfTheWeek {
 /** A workspace folder containing boards, docs, sub folders, etc. */
 export type Folder = {
   __typename?: 'Folder';
+  /** The folder's app feature slug (folders 2.0) */
+  app_feature_slug?: Maybe<Scalars['String']['output']>;
   /** The various items in the folder, not including sub-folders and dashboards. */
   children: Array<Maybe<Board>>;
   /** The folder's color. */
@@ -5665,6 +5671,22 @@ export type GroupBySortSettingsInput = {
   type?: InputMaybe<Scalars['String']['input']>;
 };
 
+/** Input for a group of validation rules with a logical operator */
+export type GroupInput = {
+  /** The group configuration */
+  groups: Array<RuleConstraintInput>;
+  /** The group operator */
+  operator?: InputMaybe<GroupOperator>;
+};
+
+/** The operator for the group */
+export enum GroupOperator {
+  /** All conditions in the group must be met */
+  And = 'AND',
+  /** At least one condition in the group must be met */
+  Or = 'OR'
+}
+
 export type GroupValue = ColumnValue & {
   __typename?: 'GroupValue';
   /** The column that this value belongs to. */
@@ -5734,10 +5756,12 @@ export type HourValue = ColumnValue & {
 
 /** Input for creating image blocks */
 export type ImageBlockInput = {
+  /** The monday.com asset ID of the image */
+  asset_id?: InputMaybe<Scalars['ID']['input']>;
   /** The parent block id to append the created block under. */
   parent_block_id?: InputMaybe<Scalars['String']['input']>;
   /** The public URL of the image */
-  public_url: Scalars['String']['input'];
+  public_url?: InputMaybe<Scalars['String']['input']>;
   /** The width of the image */
   width?: InputMaybe<Scalars['Int']['input']>;
 };
@@ -6782,7 +6806,7 @@ export type MeetingsResponse = {
 export type Mention = {
   __typename?: 'Mention';
   /** The unique identifier of the mentioned entity */
-  id?: Maybe<Scalars['Int']['output']>;
+  id?: Maybe<Scalars['ID']['output']>;
   /** The type of the mentioned entity */
   type?: Maybe<DocsMention>;
 };
@@ -6790,7 +6814,7 @@ export type Mention = {
 /** Mention object for user or document references */
 export type MentionInput = {
   /** The ID of the mentioned user or document */
-  id: Scalars['Int']['input'];
+  id: Scalars['ID']['input'];
   /** The type of mention: user, doc, or board */
   type: DocsMention;
 };
@@ -7083,6 +7107,8 @@ export type Mutation = {
   create_team?: Maybe<Team>;
   create_timeline_item?: Maybe<TimelineItem>;
   create_update?: Maybe<Update>;
+  /** Create a validation rule */
+  create_validation_rule?: Maybe<ValidationRule>;
   /** Create a view */
   create_view?: Maybe<BoardView>;
   /** Create a new table view */
@@ -7163,6 +7189,8 @@ export type Mutation = {
   delete_update?: Maybe<Update>;
   /** Delete users from a workspace. */
   delete_users_from_workspace?: Maybe<Array<Maybe<User>>>;
+  /** Delete a validation rule */
+  delete_validation_rule?: Maybe<ValidationRule>;
   /** Delete an existing board subset/view */
   delete_view?: Maybe<BoardView>;
   /** Delete a new webhook. */
@@ -7342,6 +7370,8 @@ export type Mutation = {
   update_users_board_role?: Maybe<UpdateUsersBoardRoleResponse>;
   /** Updates the role of the specified users. */
   update_users_role?: Maybe<UpdateUsersRoleResult>;
+  /** Update a validation rule */
+  update_validation_rule?: Maybe<ValidationRule>;
   /** Update an existing view */
   update_view?: Maybe<BoardView>;
   /** Update an existing board table view */
@@ -7749,6 +7779,7 @@ export type MutationCreate_BoardArgs = {
   entity_model_id?: InputMaybe<Scalars['String']['input']>;
   folder_id?: InputMaybe<Scalars['ID']['input']>;
   item_nickname?: InputMaybe<ItemNicknameInput>;
+  prompt?: InputMaybe<Scalars['String']['input']>;
   template_id?: InputMaybe<Scalars['ID']['input']>;
   workspace_id?: InputMaybe<Scalars['ID']['input']>;
 };
@@ -11423,6 +11454,50 @@ export type RollbackSnapshotMutationResult = {
   status: SnapshotStatus;
 };
 
+/** Input for a single validation rule constraint with operator and definition */
+export type RuleConstraintInput = {
+  /** The column ID */
+  column_id: Scalars['String']['input'];
+  /** The compare attribute */
+  compare_attribute?: InputMaybe<Scalars['String']['input']>;
+  /** The compare values (array of strings or numbers) */
+  compare_value?: InputMaybe<Array<Scalars['CompareValue']['input']>>;
+  /** The validation operator */
+  operator: RuleOperator;
+};
+
+/** Available operators for validation rules */
+export enum RuleOperator {
+  /** Value matches any of the specified values */
+  AnyOf = 'ANY_OF',
+  /** Value is between two specified values */
+  Between = 'BETWEEN',
+  /** Value contains the specified text */
+  ContainsText = 'CONTAINS_TEXT',
+  /** Value equals the specified value */
+  Equals = 'EQUALS',
+  /** Value is greater than the specified value */
+  GreaterThan = 'GREATER_THAN',
+  /** Value is greater than or equal to the specified value */
+  GreaterThanOrEquals = 'GREATER_THAN_OR_EQUALS',
+  /** Value is empty or not set */
+  IsEmpty = 'IS_EMPTY',
+  /** Value is not empty */
+  IsNotEmpty = 'IS_NOT_EMPTY',
+  /** Value is lower than the specified value */
+  LowerThan = 'LOWER_THAN',
+  /** Value is lower than or equal to the specified value */
+  LowerThanOrEqual = 'LOWER_THAN_OR_EQUAL',
+  /** Value does not match any of the specified values */
+  NotAnyOf = 'NOT_ANY_OF',
+  /** Value does not contain the specified text */
+  NotContainsText = 'NOT_CONTAINS_TEXT',
+  /** Value does not equal the specified value */
+  NotEquals = 'NOT_EQUALS',
+  /** Value starts with the specified text */
+  StartsWithText = 'STARTS_WITH_TEXT'
+}
+
 /** Result of saving a workflow as a template */
 export type SaveWorkflowAsTemplateResult = {
   __typename?: 'SaveWorkflowAsTemplateResult';
@@ -13601,6 +13676,25 @@ export type ValidateProjectsAndPortfoliosResult = {
   projects?: Maybe<Scalars['JSON']['output']>;
 };
 
+/** A validation rule with then and optional if conditions */
+export type ValidationRule = {
+  __typename?: 'ValidationRule';
+  /** The unique identifier of the validation rule */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** The optional if condition group */
+  if?: Maybe<Scalars['JSON']['output']>;
+  /** The force condition group */
+  then?: Maybe<Scalars['JSON']['output']>;
+};
+
+/** Input for creating a validation rule with then and optional if conditions */
+export type ValidationRuleInput = {
+  /** Optional conditions that determine if the rule should be applied */
+  if?: InputMaybe<GroupInput>;
+  /** The conditions that must be enforced when the rule applies */
+  then: GroupInput;
+};
+
 export type Validations = {
   __typename?: 'Validations';
   /** Array of required column IDs */
@@ -13870,7 +13964,7 @@ export type Widget = {
   __typename?: 'Widget';
   /** Unique identifier of this widget. */
   id?: Maybe<Scalars['ID']['output']>;
-  /** The type of widget (CHART, NUMBER, BATTERY, CALENDAR, GANTT). */
+  /** The type of widget (CHART, NUMBER, BATTERY, CALENDAR, GANTT, MAP). */
   kind?: Maybe<ExternalWidget>;
   /** Widget label (UTF-8 chars). */
   name?: Maybe<Scalars['String']['output']>;
@@ -14346,14 +14440,6 @@ export type SearchDevQueryVariables = Exact<{
 
 export type SearchDevQuery = { __typename?: 'Query', cross_entity_search?: Array<{ __typename: 'BoardSearchResult', entity_type: SearchableEntity, data: { __typename?: 'IndexedBoard', id: string, name: string, url: string } } | { __typename: 'DocSearchResult', entity_type: SearchableEntity, data: { __typename?: 'IndexedDoc', id: string, name: string } } | { __typename: 'ItemSearchResult' }> | null };
 
-export type BatchUndoMutationVariables = Exact<{
-  boardId: Scalars['ID']['input'];
-  undoRecordId: Scalars['ID']['input'];
-}>;
-
-
-export type BatchUndoMutation = { __typename?: 'Mutation', batch_undo?: { __typename?: 'BatchUndoResult', success: boolean } | null };
-
 export type GetUserContextQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -14362,5 +14448,4 @@ export type GetUserContextQuery = { __typename?: 'Query', me?: { __typename?: 'U
 
 export const SearchItemsDevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchItemsDev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filters"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SearchFiltersInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"cross_entity_search"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"filters"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filters"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ItemSearchResult"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchItemsDevQuery, SearchItemsDevQueryVariables>;
 export const SearchDevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchDev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filters"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SearchFiltersInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"cross_entity_search"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"filters"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filters"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BoardSearchResult"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"entity_type"}},{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"url"}}]}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"DocSearchResult"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"entity_type"}},{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchDevQuery, SearchDevQueryVariables>;
-export const BatchUndoDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"BatchUndo"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"undoRecordId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"batch_undo"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"board_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}},{"kind":"Argument","name":{"kind":"Name","value":"undo_record_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"undoRecordId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<BatchUndoMutation, BatchUndoMutationVariables>;
 export const GetUserContextDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getUserContext"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"me"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}},{"kind":"Field","name":{"kind":"Name","value":"favorites"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"object"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"type"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"intelligence"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"relevant_boards"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"10"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"board"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"relevant_people"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"10"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetUserContextQuery, GetUserContextQueryVariables>;
