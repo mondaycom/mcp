@@ -94,6 +94,8 @@ export type AccountEntity = {
   created_at?: Maybe<Scalars['Date']['output']>;
   /** The user ID who created this entity. */
   created_by: Scalars['ID']['output'];
+  /** The description for this entity. */
+  description?: Maybe<Scalars['String']['output']>;
   /** The unique identifier of the entity. */
   id: Scalars['ID']['output'];
   /** The name of this entity. */
@@ -224,6 +226,25 @@ export type ActivateWorkflowResult = {
   __typename?: 'ActivateWorkflowResult';
   /** Whether the workflow was successfully activated */
   is_success: Scalars['Boolean']['output'];
+};
+
+/** Represents a single activity log entry */
+export type ActivityLog = {
+  __typename?: 'ActivityLog';
+  /** The account this activity log entry belongs to */
+  account_id?: Maybe<Scalars['ID']['output']>;
+  /** The timestamp when the activity log entry was created */
+  created_at?: Maybe<Scalars['String']['output']>;
+  /** Additional data associated with the event as a JSON string */
+  data?: Maybe<Scalars['String']['output']>;
+  /** The entity type that was affected */
+  entity?: Maybe<Scalars['String']['output']>;
+  /** The type of event that occurred */
+  event?: Maybe<Scalars['String']['output']>;
+  /** The unique identifier of the activity log entry */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** The user who performed the action */
+  user_id?: Maybe<Scalars['ID']['output']>;
 };
 
 /** An activity log event */
@@ -1430,6 +1451,12 @@ export type AttributesInput = {
   underline?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
+/** The type of entity that a reaction is attributed to. */
+export enum AttributionEntity {
+  /** An AI agent */
+  Agent = 'AGENT'
+}
+
 export type AuditEventCatalogueEntry = {
   __typename?: 'AuditEventCatalogueEntry';
   description?: Maybe<Scalars['String']['output']>;
@@ -1516,6 +1543,8 @@ export type BaseFieldType = FieldType & {
   dependencyConfig?: Maybe<DependencyConfig>;
   /** Description of the field type */
   description?: Maybe<Scalars['String']['output']>;
+  /** Indicates whether this field type fetches its options from a remote source */
+  has_remote_options?: Maybe<Scalars['Boolean']['output']>;
   /** Unique identifier for the field type */
   id?: Maybe<Scalars['Int']['output']>;
   /** List of field type implementations */
@@ -1546,6 +1575,13 @@ export type BatchExtendTrialPeriod = {
   /** Reason of an error */
   reason?: Maybe<Scalars['String']['output']>;
   /** Result of a batch operation */
+  success: Scalars['Boolean']['output'];
+};
+
+/** The result of a batch undo operation. */
+export type BatchUndoResult = {
+  __typename?: 'BatchUndoResult';
+  /** Whether the undo operation completed successfully. */
   success: Scalars['Boolean']['output'];
 };
 
@@ -2998,14 +3034,22 @@ export type CreateProjectResult = {
 };
 
 export type CreateQuestionInput = {
+  /** The kind of block to create. Overrides the type field for backwards compatibility. Supports all question types and content blocks. */
+  block_type?: InputMaybe<FormBlockKind>;
   /** Optional explanatory text providing additional context, instructions, or examples for the question. */
   description?: InputMaybe<Scalars['String']['input']>;
+  /** The ID of the question after which the new question should be inserted. If omitted, the question is appended at the end. */
+  insert_after_question_id?: InputMaybe<Scalars['ID']['input']>;
   /** Array of option objects for choice-based questions (single_select, multi_select). Required for select types. */
   options?: InputMaybe<Array<QuestionOptionInput>>;
+  /** The ID of the page block to assign the question to. Required when creating questions in multi-page forms. */
+  page_block_id?: InputMaybe<Scalars['ID']['input']>;
   /** Boolean indicating if the question must be answered before form submission. */
   required?: InputMaybe<Scalars['Boolean']['input']>;
   /** Question-specific configuration object that varies by question type. */
   settings?: InputMaybe<FormQuestionSettingsInput>;
+  /** Conditional logic rules that control when this question is shown based on respondent answers. */
+  show_if_rules?: InputMaybe<Scalars['JSON']['input']>;
   /** The question text displayed to respondents. Must be at least 1 character long and clearly indicate the expected response. */
   title: Scalars['String']['input'];
   /** The question type determining input behavior and validation (e.g., "text", "email", "single_select", "multi_select"). */
@@ -3839,6 +3883,8 @@ export enum DocKind {
 /** A single restoring point (snapshot) in the document version history. Represents a group of changes made within a time window, including which users made changes. */
 export type DocRestoringPoint = {
   __typename?: 'DocRestoringPoint';
+  /** AI agents that contributed changes in this restoring point time window. */
+  agent_attributions?: Maybe<Array<RestoringPointAgentAttribution>>;
   /** The ISO 8601 timestamp of when this restoring point was captured. */
   date?: Maybe<Scalars['String']['output']>;
   /** The type of restoring point. "publish" indicates the document was published at this point. Null for regular edit snapshots. */
@@ -4278,6 +4324,8 @@ export type EntityModel = {
   created_at?: Maybe<Scalars['Date']['output']>;
   /** The user ID who created this entity model. */
   created_by?: Maybe<Scalars['ID']['output']>;
+  /** The description for this entity model. */
+  description?: Maybe<Scalars['String']['output']>;
   /** The unique identifier of the entity model. */
   id?: Maybe<Scalars['ID']['output']>;
   /** The unique name identifier of the entity model. */
@@ -4367,6 +4415,8 @@ export enum ExternalWidget {
   Calendar = 'CALENDAR',
   /** Chart widgets for visual data representation including pie charts, bar charts, line graphs, and column charts. Used to display trends, comparisons, distributions, and relationships between data points over time or categories. */
   Chart = 'CHART',
+  /** Embedded site widgets for displaying external web content within dashboards. Embeds any HTTPS URL (websites, web applications, dashboards) in an iframe, with optional docking support for layout control. */
+  EmbeddedSite = 'EMBEDDED_SITE',
   /** A Gantt chart visualization of board timelines with dependencies, grouping, and coloring capabilities. */
   Gantt = 'GANTT',
   /** ListView widgets for displaying cross-board items in a tabular list format with filtering and sorting. */
@@ -4403,6 +4453,8 @@ export type FieldType = {
   dependencyConfig?: Maybe<DependencyConfig>;
   /** Description of the field type */
   description?: Maybe<Scalars['String']['output']>;
+  /** Indicates whether this field type fetches its options from a remote source */
+  has_remote_options?: Maybe<Scalars['Boolean']['output']>;
   /** Unique identifier for the field type */
   id?: Maybe<Scalars['Int']['output']>;
   /** List of field type implementations */
@@ -4745,6 +4797,19 @@ export type FormAfterSubmissionViewInput = {
   title?: InputMaybe<Scalars['String']['input']>;
 };
 
+/** Object containing AI translation configuration for the form. */
+export type FormAiTranslate = {
+  __typename?: 'FormAiTranslate';
+  /** Boolean enabling AI translation for the form. */
+  enabled: Scalars['Boolean']['output'];
+};
+
+/** Object containing AI translation configuration for the form. */
+export type FormAiTranslateInput = {
+  /** Boolean enabling AI translation for the form. */
+  enabled?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
 export enum FormAlignment {
   Center = 'Center',
   FullLeft = 'FullLeft',
@@ -4817,6 +4882,56 @@ export enum FormBackgrounds {
   None = 'None'
 }
 
+/** The kind of block to create. Supports question types and content blocks. */
+export enum FormBlockKind {
+  /** A yes/no checkbox question. */
+  Boolean = 'BOOLEAN',
+  /** A question that links to items on a connected board. Board configuration must be done through the column settings. */
+  ConnectedBoards = 'CONNECTED_BOARDS',
+  /** A country selection question with a searchable dropdown. */
+  Country = 'COUNTRY',
+  /** A date picker question with optional time selection. */
+  Date = 'DATE',
+  /** A date range question allowing start and end date selection. */
+  DateRange = 'DATE_RANGE',
+  /** A text-only display block for adding instructions or context to a form. */
+  DisplayText = 'DISPLAY_TEXT',
+  /** An email address input question with format validation. */
+  Email = 'EMAIL',
+  /** A file upload question for attachments. */
+  File = 'FILE',
+  /** A URL/link input question with optional format validation. */
+  Link = 'LINK',
+  /** A location/address input question with optional geolocation autofill. */
+  Location = 'LOCATION',
+  /** A multi-line text input question for longer responses. */
+  LongText = 'LONG_TEXT',
+  /** A multiple-choice question allowing several selections. */
+  MultiSelect = 'MULTI_SELECT',
+  /** A name input question mapped to the item name column on the board. */
+  Name = 'NAME',
+  /** A numeric input question. */
+  Number = 'NUMBER',
+  /** A page block that groups questions into a single page. */
+  PageBlock = 'PAGE_BLOCK',
+  /** A people picker question for selecting monday.com users. */
+  People = 'PEOPLE',
+  /** A phone number input question with optional country prefix. */
+  Phone = 'PHONE',
+  /** A rating question with a configurable scale. */
+  Rating = 'RATING',
+  /** A single-line text input question. */
+  ShortText = 'SHORT_TEXT',
+  /** A signature capture question for collecting drawn or uploaded signatures. */
+  Signature = 'SIGNATURE',
+  /** A single-choice question allowing one selection. */
+  SingleSelect = 'SINGLE_SELECT',
+  /** A subitems question that creates sub-items on the board. Sub-items columns must be configured through the board. */
+  Subitems = 'SUBITEMS',
+  /** An updates/comments question mapped to the item updates feed. */
+  Updates = 'UPDATES'
+}
+
 export type FormCloseDate = {
   __typename?: 'FormCloseDate';
   /** ISO timestamp when the form will automatically stop accepting responses. */
@@ -4855,6 +4970,8 @@ export type FormFeatures = {
   __typename?: 'FormFeatures';
   /** Object containing settings for the post-submission user experience. */
   afterSubmissionView?: Maybe<FormAfterSubmissionView>;
+  /** Object containing AI translation configuration for the form. */
+  ai_translate?: Maybe<FormAiTranslate>;
   /** Object containing automatic form closure configuration. */
   closeDate?: Maybe<FormCloseDate>;
   /** Object containing draft saving configuration allowing users to save progress. */
@@ -4881,6 +4998,8 @@ export type FormFeatures = {
 export type FormFeaturesInput = {
   /** Object containing settings for the post-submission user experience. */
   afterSubmissionView?: InputMaybe<FormAfterSubmissionViewInput>;
+  /** Object containing AI translation configuration for the form. */
+  ai_translate?: InputMaybe<FormAiTranslateInput>;
   /** Object containing automatic form closure configuration. */
   closeDate?: InputMaybe<FormCloseDateInput>;
   /** Object containing draft saving configuration allowing users to save progress. */
@@ -4905,6 +5024,7 @@ export enum FormFontSize {
   Small = 'Small'
 }
 
+/** String specifying the form display format. Can be a step by step form or a classic one page form. */
 export enum FormFormat {
   Classic = 'Classic',
   OneByOne = 'OneByOne'
@@ -4917,8 +5037,8 @@ export type FormLayout = {
   alignment?: Maybe<FormAlignment>;
   /** String setting reading direction. */
   direction?: Maybe<FormDirection>;
-  /** String specifying the form display format. Can be a step by step form or a classic one page form. */
-  format?: Maybe<FormFormat>;
+  /** The layout style of the form (Card or Flat). */
+  type?: Maybe<FormLayoutStyle>;
 };
 
 /** Object containing form structure and presentation settings. */
@@ -4929,7 +5049,17 @@ export type FormLayoutInput = {
   direction?: InputMaybe<FormDirection>;
   /** String specifying the form display format. Can be a step by step form or a classic one page form. */
   format?: InputMaybe<FormFormat>;
+  /** The layout style of the form (Card or Flat). */
+  type?: InputMaybe<FormLayoutStyle>;
 };
+
+/** The layout style of the form (Card or Flat). */
+export enum FormLayoutStyle {
+  /** Card layout renders the form inside a bordered card with rounded corners and shadow, where content scrolls within the card. */
+  Card = 'CARD',
+  /** Flat layout renders the form edge-to-edge across the full viewport, where the entire page scrolls. */
+  Flat = 'FLAT'
+}
 
 /** Object containing logo display configuration for form branding. */
 export type FormLogo = {
@@ -5036,22 +5166,33 @@ export type FormQuestion = {
   /** The unique identifier for the question. Used to target specific questions within a form. */
   id: Scalars['String']['output'];
   options?: Maybe<Array<FormQuestionOption>>;
+  /** The ID of the page block this question belongs to. Used in multi-page forms to assign questions to specific pages. */
+  page_block_id?: Maybe<Scalars['ID']['output']>;
   /** Boolean indicating if the question must be answered before form submission. */
   required: Scalars['Boolean']['output'];
   settings?: Maybe<FormQuestionSettings>;
+  /** Conditional logic rules that control when this question is displayed based on other question answers. */
   showIfRules?: Maybe<Scalars['JSON']['output']>;
   /** The question text displayed to respondents. Must be at least 1 character long and clearly indicate the expected response. */
   title: Scalars['String']['output'];
   /** The question type determining input behavior and validation (e.g., "text", "email", "single_select", "multi_select"). */
-  type?: Maybe<FormQuestionType>;
+  type?: Maybe<FormBlockKind>;
   /** Boolean controlling question visibility to respondents. Hidden questions remain in form structure but are not displayed. */
   visible: Scalars['Boolean']['output'];
 };
 
 export type FormQuestionOption = {
   __typename?: 'FormQuestionOption';
+  /** Boolean indicating whether this option is active and available for selection. */
+  active?: Maybe<Scalars['Boolean']['output']>;
   /** The display text for individual option choices in select-type questions. */
   label: Scalars['String']['output'];
+  /** Integer specifying the display order of this option within the question (zero-based). */
+  position?: Maybe<Scalars['Int']['output']>;
+  /** The internal unique identifier for a select option. Used as the option ID in CRUD operations. */
+  value?: Maybe<Scalars['String']['output']>;
+  /** Boolean controlling whether this option is visible to respondents. */
+  visible?: Maybe<Scalars['Boolean']['output']>;
 };
 
 /** Sources for prefilling question values */
@@ -5081,10 +5222,16 @@ export type FormQuestionSettings = {
   checkedByDefault?: Maybe<Scalars['Boolean']['output']>;
   /** Date based questions only: Automatically set the current date as the default value when the form loads. */
   defaultCurrentDate?: Maybe<Scalars['Boolean']['output']>;
+  /** ShortText, LongText, Name, and Link questions only: Pre-filled default value shown to respondents when the form loads. */
+  default_answer?: Maybe<Scalars['String']['output']>;
   /** Single/Multi Select questions only: Controls how the selection options are visually presented to users. */
   display?: Maybe<FormQuestionSelectDisplay>;
   /** Date questions only: Whether to include time selection (hours and minutes) in addition to the date picker. When false, only date selection is available. */
   includeTime?: Maybe<Scalars['Boolean']['output']>;
+  /** Multi Select questions only: Limits the number of options a user can select. */
+  label_limit_count?: Maybe<Scalars['Int']['output']>;
+  /** Multi Select questions only: Boolean enabling the option selection limit. Independent from labelLimitCount — both must be set to enforce a limit. */
+  label_limit_count_enabled?: Maybe<Scalars['Boolean']['output']>;
   /** Rating questions only: Maximum rating value that users can select. */
   limit?: Maybe<Scalars['Int']['output']>;
   /** Location questions only: Automatically detect and fill the user's current location using browser geolocation services, requiring user permission. */
@@ -5107,12 +5254,16 @@ export type FormQuestionSettingsInput = {
   checkedByDefault?: InputMaybe<Scalars['Boolean']['input']>;
   /** Date based questions only: Automatically set the current date as the default value when the form loads. */
   defaultCurrentDate?: InputMaybe<Scalars['Boolean']['input']>;
+  /** ShortText, LongText, Name, and Link questions only: Pre-filled default value shown to respondents when the form loads. */
+  default_answer?: InputMaybe<Scalars['String']['input']>;
   /** Single/Multi Select questions only: Controls how the selection options are visually presented to users. */
   display?: InputMaybe<FormQuestionSelectDisplay>;
   /** Date questions only: Whether to include time selection (hours and minutes) in addition to the date picker. When false, only date selection is available. */
   includeTime?: InputMaybe<Scalars['Boolean']['input']>;
   /** Multi Select questions only: Limits the number of options a user can select. */
   labelLimitCount?: InputMaybe<Scalars['Int']['input']>;
+  /** Multi Select questions only: Boolean enabling the option selection limit. Independent from labelLimitCount — both must be set to enforce a limit. */
+  label_limit_count_enabled?: InputMaybe<Scalars['Boolean']['input']>;
   /** Location questions only: Automatically detect and fill the user's current location using browser geolocation services, requiring user permission. */
   locationAutofilled?: InputMaybe<Scalars['Boolean']['input']>;
   /** Single/Multi Select questions only: Determines the ordering of selection options. */
@@ -5847,6 +5998,8 @@ export type InterfaceInputFieldConfig = InputFieldConfig & {
 
 /** The method by which a user was added to the account. */
 export enum InvitationMethod {
+  /** Created as an API user. */
+  ApiUserCreation = 'API_USER_CREATION',
   /** Added via authorized domain. */
   AuthDomain = 'AUTH_DOMAIN',
   /** Added via account consolidation. */
@@ -5861,6 +6014,8 @@ export enum InvitationMethod {
   ServicePortalUserInvitation = 'SERVICE_PORTAL_USER_INVITATION',
   /** Added via single sign-on. */
   Sso = 'SSO',
+  /** Unknown invitation method. */
+  Unknown = 'UNKNOWN',
   /** Invited by another user. */
   User = 'USER'
 }
@@ -6031,6 +6186,44 @@ export type ItemSearchResult = {
   score: Scalars['Float']['output'];
 };
 
+/** Item counts for an items job process */
+export type ItemsJobItemCounts = {
+  __typename?: 'ItemsJobItemCounts';
+  /** Number of items that have been created */
+  created?: Maybe<Scalars['Int']['output']>;
+  /** Number of valid items that failed during execution */
+  failed?: Maybe<Scalars['Int']['output']>;
+  /** Number of items that failed validation */
+  invalid?: Maybe<Scalars['Int']['output']>;
+  /** Number of items that were skipped */
+  skipped?: Maybe<Scalars['Int']['output']>;
+  /** Total number of items submitted for processing */
+  submitted?: Maybe<Scalars['Int']['output']>;
+  /** Number of items that have been updated */
+  updated?: Maybe<Scalars['Int']['output']>;
+};
+
+/** Status information for an items job process */
+export type ItemsJobStatus = {
+  __typename?: 'ItemsJobStatus';
+  /** Item counts breakdown for the job process */
+  counts?: Maybe<ItemsJobItemCounts>;
+  /** User-friendly error message explaining why the job failed or was rejected */
+  failure_message?: Maybe<Scalars['String']['output']>;
+  /** Reason for failure when status is Rejected or Failed */
+  failure_reason?: Maybe<BulkImportFailureReason>;
+  /** Indicates if the job is completely done */
+  fully_imported?: Maybe<Scalars['Boolean']['output']>;
+  /** Progress percentage (0-100) of the job process */
+  progress_percentage?: Maybe<Scalars['Int']['output']>;
+  /** Indicates if a report file has been generated */
+  report_created?: Maybe<Scalars['Boolean']['output']>;
+  /** URL to download the job report, valid for 10 minutes */
+  report_url?: Maybe<Scalars['String']['output']>;
+  /** Current state of the job process */
+  status?: Maybe<BulkImportState>;
+};
+
 /** Sort direction */
 export enum ItemsOrderByDirection {
   /** Ascending order */
@@ -6139,6 +6332,9 @@ export type ItemsResponse = {
   /** The items associated with the cursor. */
   items: Array<Item>;
 };
+
+/** Status of a job operation. Currently supports items job status for backfill and ingest operations. */
+export type JobStatus = ItemsJobStatus;
 
 /** Kind of assignee */
 export enum Kind {
@@ -6255,6 +6451,10 @@ export type LifecycleSubscriptionKind = {
 
 export type Like = {
   __typename?: 'Like';
+  /** The reference identifier of the entity that created this reaction on behalf of the user, who this reaction should be attributed to (e.g. agent_{agentId}). */
+  attribution_entity_ref?: Maybe<Scalars['String']['output']>;
+  /** The type of entity that created this reaction. */
+  attribution_entity_type?: Maybe<AttributionEntity>;
   created_at?: Maybe<Scalars['Date']['output']>;
   creator?: Maybe<User>;
   creator_id?: Maybe<Scalars['String']['output']>;
@@ -6762,8 +6962,12 @@ export type Mutation = {
   attach_dropdown_managed_column?: Maybe<Column>;
   /** Creates a new status column in a board that is linked to a managed column. The column data and settings are controlled by the managed column. Only title and description can be overridden locally. */
   attach_status_managed_column?: Maybe<Column>;
+  /** Initialize a backfill job for a board and group. Designed for data migrations with no side effects and a 20k row limit. Returns job ID and upload URL to begin the process. */
+  backfill_items?: Maybe<UploadJobInit>;
   /** Extends trial period of an application to selected accounts */
   batch_extend_trial_period?: Maybe<BatchExtendTrialPeriod>;
+  /** Undo a batch action. */
+  batch_undo?: Maybe<BatchUndoResult>;
   /** Batch update the dependency column values in a board. Limited to 50 items per batch. */
   batch_update_dependency_column: Scalars['JSON']['output'];
   /** Initialize bulk import for a board and group. Returns import ID and upload URL to begin the process. */
@@ -6837,6 +7041,8 @@ export type Mutation = {
   create_form?: Maybe<DehydratedFormResponse>;
   /** Create a new question within a form. Returns the created question with auto-generated ID. */
   create_form_question?: Maybe<FormQuestion>;
+  /** Create a new selectable option for a SingleSelect or MultiSelect question. Returns the created option. */
+  create_form_question_option?: Maybe<FormQuestionOption>;
   /** Create a new tag for a form. Tags are used to categorize and track responses. (e.g. UTM tags) */
   create_form_tag?: Maybe<FormTag>;
   /** Creates a new group in a specific board. */
@@ -6924,6 +7130,8 @@ export type Mutation = {
   delete_favorite?: Maybe<DeleteFavoriteInputResultType>;
   /** Deletes a folder in a specific workspace. */
   delete_folder?: Maybe<Folder>;
+  /** Permanently remove a selectable option from a SingleSelect or MultiSelect question. This action cannot be undone. */
+  delete_form_question_option?: Maybe<Scalars['Boolean']['output']>;
   /** Delete a tag from a form */
   delete_form_tag?: Maybe<Scalars['Boolean']['output']>;
   /** Deletes a group in a specific board. */
@@ -6983,6 +7191,8 @@ export type Mutation = {
   import_doc_from_html?: Maybe<ImportDocFromHtmlResult>;
   /** Increase operations counter */
   increase_app_subscription_operations?: Maybe<AppSubscriptionOperationsCounter>;
+  /** Initialize an ingest job for a board and group. Designed for ongoing integrations with full side effects and a 10k row limit. Returns job ID and upload URL to begin the process. */
+  ingest_items?: Maybe<UploadJobInit>;
   /** Invite users to the account. */
   invite_users?: Maybe<InviteUsersResult>;
   like_update?: Maybe<Update>;
@@ -6990,6 +7200,10 @@ export type Mutation = {
   move_item_to_board?: Maybe<Item>;
   /** Move an item to a different group. */
   move_item_to_group?: Maybe<Item>;
+  /** Opt in a column by default on an account entity. */
+  opt_in_entity_column?: Maybe<AccountEntity>;
+  /** Opt out a column by default on an account entity. */
+  opt_out_entity_column?: Maybe<AccountEntity>;
   pin_to_top: Update;
   /** Process an event through the task engine AI. Returns true when accepted. */
   process_events?: Maybe<Scalars['Boolean']['output']>;
@@ -6997,6 +7211,8 @@ export type Mutation = {
   publish_article?: Maybe<ArticleMetadata>;
   /** Publishes object out of draft state. Returns {success: true} on success, {success: false} on failure. */
   publish_object?: Maybe<ObjectOperationResponse>;
+  /** Reactivate a deprecated column on an account entity. */
+  reactivate_entity_column?: Maybe<AccountEntity>;
   /** Reconcile the current user tasks board with latest source item changes. */
   reconcile_with_items?: Maybe<ReconciliationResult>;
   /** Removes connected boards from a board relation column. */
@@ -7009,6 +7225,8 @@ export type Mutation = {
   remove_team_owners?: Maybe<RemoveTeamOwnersResult>;
   /** Remove users from team. */
   remove_users_from_team?: Maybe<ChangeTeamMembershipsResult>;
+  /** Reorder the options of a SingleSelect or MultiSelect question by providing the desired order of option values. Position is inferred from array index. */
+  reorder_form_question_options?: Maybe<Scalars['Boolean']['output']>;
   /** Restore an entity from a migration job */
   restore_entity?: Maybe<RestoreEntityResult>;
   /** Rollback a snapshot to allow creating a new one for the same entity */
@@ -7086,6 +7304,8 @@ export type Mutation = {
   update_form?: Maybe<ResponseForm>;
   /** Update an existing question properties including title, type, or settings. Requires question ID. */
   update_form_question?: Maybe<FormQuestion>;
+  /** Update the label of an existing option on a SingleSelect or MultiSelect question. */
+  update_form_question_option?: Maybe<Scalars['Boolean']['output']>;
   /** Update form configuration including features, appearance, and accessibility options. */
   update_form_settings?: Maybe<ResponseForm>;
   /** Update an existing tag in a form */
@@ -7337,11 +7557,26 @@ export type MutationAttach_Status_Managed_ColumnArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationBackfill_ItemsArgs = {
+  board_id: Scalars['ID']['input'];
+  group_id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationBatch_Extend_Trial_PeriodArgs = {
   account_slugs: Array<Scalars['String']['input']>;
   app_id: Scalars['ID']['input'];
   duration_in_days: Scalars['Int']['input'];
   plan_id: Scalars['String']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationBatch_UndoArgs = {
+  board_id: Scalars['ID']['input'];
+  prevent_undo_settings?: InputMaybe<Scalars['Boolean']['input']>;
+  undo_record_id: Scalars['ID']['input'];
 };
 
 
@@ -7469,6 +7704,7 @@ export type MutationConvert_Board_To_ProjectArgs = {
 
 /** Root mutation type for the Dependencies service */
 export type MutationCreate_Account_EntityArgs = {
+  description?: InputMaybe<Scalars['String']['input']>;
   name: Scalars['String']['input'];
   parent_id?: InputMaybe<Scalars['ID']['input']>;
 };
@@ -7666,6 +7902,15 @@ export type MutationCreate_Form_QuestionArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationCreate_Form_Question_OptionArgs = {
+  form_token: Scalars['String']['input'];
+  label: Scalars['String']['input'];
+  question_id: Scalars['ID']['input'];
+  value: Scalars['String']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_Form_TagArgs = {
   formToken: Scalars['String']['input'];
   tag: CreateFormTagInput;
@@ -7858,6 +8103,14 @@ export type MutationCreate_UpdateArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationCreate_Validation_RuleArgs = {
+  id: Scalars['ID']['input'];
+  rule: ValidationRuleInput;
+  type?: InputMaybe<ValidationsEntityType>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_ViewArgs = {
   board_id: Scalars['ID']['input'];
   context?: InputMaybe<ViewContext>;
@@ -8036,6 +8289,14 @@ export type MutationDelete_FolderArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationDelete_Form_Question_OptionArgs = {
+  form_token: Scalars['String']['input'];
+  option_id: Scalars['ID']['input'];
+  question_id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationDelete_Form_TagArgs = {
   formToken: Scalars['String']['input'];
   options?: InputMaybe<DeleteFormTagInput>;
@@ -8145,6 +8406,14 @@ export type MutationDelete_UpdateArgs = {
 export type MutationDelete_Users_From_WorkspaceArgs = {
   user_ids: Array<Scalars['ID']['input']>;
   workspace_id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationDelete_Validation_RuleArgs = {
+  id: Scalars['ID']['input'];
+  rule_id: Scalars['ID']['input'];
+  type?: InputMaybe<ValidationsEntityType>;
 };
 
 
@@ -8260,6 +8529,14 @@ export type MutationIncrease_App_Subscription_OperationsArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationIngest_ItemsArgs = {
+  board_id: Scalars['ID']['input'];
+  group_id: Scalars['ID']['input'];
+  on_match?: InputMaybe<OnMatchInput>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationInvite_UsersArgs = {
   emails: Array<Scalars['String']['input']>;
   product?: InputMaybe<Product>;
@@ -8292,6 +8569,22 @@ export type MutationMove_Item_To_GroupArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationOpt_In_Entity_ColumnArgs = {
+  column_id: Scalars['ID']['input'];
+  entity_id?: InputMaybe<Scalars['ID']['input']>;
+  entity_name?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationOpt_Out_Entity_ColumnArgs = {
+  column_id: Scalars['ID']['input'];
+  entity_id?: InputMaybe<Scalars['ID']['input']>;
+  entity_name?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationPin_To_TopArgs = {
   id: Scalars['ID']['input'];
   item_id?: InputMaybe<Scalars['ID']['input']>;
@@ -8319,6 +8612,14 @@ export type MutationPublish_ArticleArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationPublish_ObjectArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationReactivate_Entity_ColumnArgs = {
+  column_id: Scalars['ID']['input'];
+  entity_id?: InputMaybe<Scalars['ID']['input']>;
+  entity_name?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -8356,6 +8657,14 @@ export type MutationRemove_Team_OwnersArgs = {
 export type MutationRemove_Users_From_TeamArgs = {
   team_id: Scalars['ID']['input'];
   user_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationReorder_Form_Question_OptionsArgs = {
+  form_token: Scalars['String']['input'];
+  option_ids: Array<Scalars['ID']['input']>;
+  question_id: Scalars['ID']['input'];
 };
 
 
@@ -8448,6 +8757,7 @@ export type MutationUnpublish_ObjectArgs = {
 
 /** Root mutation type for the Dependencies service */
 export type MutationUpdate_Account_EntityArgs = {
+  description?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['ID']['input'];
   parent_id?: InputMaybe<Scalars['ID']['input']>;
   revision: Scalars['Int']['input'];
@@ -8669,6 +8979,15 @@ export type MutationUpdate_Form_QuestionArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationUpdate_Form_Question_OptionArgs = {
+  form_token: Scalars['String']['input'];
+  label: Scalars['String']['input'];
+  option_id: Scalars['ID']['input'];
+  question_id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Form_SettingsArgs = {
   formToken: Scalars['String']['input'];
   settings: UpdateFormSettingsInput;
@@ -8811,6 +9130,15 @@ export type MutationUpdate_Users_RoleArgs = {
   new_role?: InputMaybe<BaseRoleName>;
   role_id?: InputMaybe<Scalars['ID']['input']>;
   user_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUpdate_Validation_RuleArgs = {
+  id: Scalars['ID']['input'];
+  rule: ValidationRuleInput;
+  rule_id: Scalars['ID']['input'];
+  type?: InputMaybe<ValidationsEntityType>;
 };
 
 
@@ -9560,6 +9888,8 @@ export type PrimitiveFieldType = FieldType & {
   dependencyConfig?: Maybe<DependencyConfig>;
   /** Description of the field type */
   description?: Maybe<Scalars['String']['output']>;
+  /** Indicates whether this field type fetches its options from a remote source */
+  has_remote_options?: Maybe<Scalars['Boolean']['output']>;
   /** Unique identifier for the field type */
   id?: Maybe<Scalars['Int']['output']>;
   /** List of field type implementations */
@@ -9857,6 +10187,8 @@ export type Query = {
   export_markdown_from_doc?: Maybe<ExportMarkdownResult>;
   /** Get all personal list items by list ID */
   favorites?: Maybe<Array<GraphqlHierarchyObjectItem>>;
+  /** Get the status of a backfill or ingest job */
+  fetch_job_status: JobStatus;
   /** Get a collection of folders. Note: This query won't return folders from closed workspaces to which you are not subscribed */
   folders?: Maybe<Array<Maybe<Folder>>>;
   /** Fetch a form by its token. The returned form includes all the details of the form such as its settings, questions, title, etc. Use this endpoint when you need to retrieve complete form data for display or processing. Requires that the requesting user has read access to the associated board. */
@@ -9973,6 +10305,10 @@ export type Query = {
   search_items?: Maybe<SearchItemsGraphQlResultsView>;
   /** Lookup a single entity type by name or other relevant properties. */
   search_lookup?: Maybe<Array<CrossEntityResult>>;
+  /** Look up a single board with its metadata and relations for snapshot planning. */
+  snapshottable_board?: Maybe<SnapshottableBoard>;
+  /** Look up a workspace with paginated boards and overviews for snapshot planning. */
+  snapshottable_workspace?: Maybe<SnapshottableWorkspace>;
   /** Get a collection of monday dev sprints */
   sprints?: Maybe<Array<Sprint>>;
   /** Execute an ANSI SQL query against board data */
@@ -10297,6 +10633,12 @@ export type QueryExport_Markdown_From_DocArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QueryFetch_Job_StatusArgs = {
+  job_id: Scalars['ID']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryFoldersArgs = {
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -10582,6 +10924,7 @@ export type QuerySearchArgs = {
   filters: SearchFiltersInput;
   limit: Scalars['Int']['input'];
   query: Scalars['String']['input'];
+  strategy?: InputMaybe<SearchStrategy>;
 };
 
 
@@ -10620,6 +10963,20 @@ export type QuerySearch_LookupArgs = {
   query: Scalars['String']['input'];
   size: Scalars['Int']['input'];
   workspace_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QuerySnapshottable_BoardArgs = {
+  id: Scalars['ID']['input'];
+  migration_job_id: Scalars['ID']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QuerySnapshottable_WorkspaceArgs = {
+  id: Scalars['ID']['input'];
+  migration_job_id: Scalars['ID']['input'];
 };
 
 
@@ -10758,13 +11115,15 @@ export type QueryWorkspacesArgs = {
 };
 
 export type QuestionOptionInput = {
-  /** The label to display for the option */
+  /** The display text for the option shown to respondents. Must be at least 1 character long. */
   label: Scalars['String']['input'];
 };
 
 export type QuestionOrderInput = {
   /** The unique identifier for the question. Used to target specific questions within a form. */
   id: Scalars['String']['input'];
+  /** The ID of the page block to assign the question to. Required when creating questions in multi-page forms. */
+  page_block_id?: InputMaybe<Scalars['ID']['input']>;
 };
 
 export type RatingValue = ColumnValue & {
@@ -11044,6 +11403,17 @@ export enum RestoreStatus {
   Success = 'success'
 }
 
+/** An AI agent that contributed changes in this restoring point time window. */
+export type RestoringPointAgentAttribution = {
+  __typename?: 'RestoringPointAgentAttribution';
+  /** The ID of the agent that made changes. */
+  agent_id?: Maybe<Scalars['ID']['output']>;
+  /** The display name of the agent, if available. */
+  agent_name?: Maybe<Scalars['String']['output']>;
+  /** The type of entity (e.g. "agent", "workflow"). */
+  entity_type?: Maybe<Scalars['String']['output']>;
+};
+
 /** Result of a snapshot rollback operation. */
 export type RollbackSnapshotMutationResult = {
   __typename?: 'RollbackSnapshotMutationResult';
@@ -11157,6 +11527,16 @@ export type SearchItemsQueryResult = {
 /** Union type representing different searchable entity types returned from search. */
 export type SearchResult = BoardSearchResult | DocSearchResult | ItemSearchResult;
 
+/** Controls the trade-off between search quality and response time. */
+export enum SearchStrategy {
+  /** Good search quality with reasonable response time. Default. */
+  Balanced = 'BALANCED',
+  /** Best search quality with higher response time. */
+  Quality = 'QUALITY',
+  /** Faster results with lower search quality. */
+  Speed = 'SPEED'
+}
+
 /** Supported entity types to search for. */
 export enum SearchableEntity {
   /** Board entity type for searching boards. */
@@ -11238,6 +11618,89 @@ export enum SnapshotStatus {
   /** The snapshot completed successfully. */
   Success = 'success'
 }
+
+/** A board that can be snapshotted, with metadata and relations. */
+export type SnapshottableBoard = {
+  __typename?: 'SnapshottableBoard';
+  /** Related boards by relation type. Limited to 1 level of depth. */
+  board_relations?: Maybe<Array<SnapshottableBoard>>;
+  /** The board ID. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Whether this board is a document. */
+  is_doc?: Maybe<Scalars['Boolean']['output']>;
+  /** Whether this board is a managed template instance. */
+  is_managed_template_instance?: Maybe<Scalars['Boolean']['output']>;
+  /** The board name. */
+  name?: Maybe<Scalars['String']['output']>;
+  /** The board owner user ID. */
+  owner?: Maybe<Scalars['ID']['output']>;
+  /** The workspace ID this board belongs to. */
+  workspace_id?: Maybe<Scalars['ID']['output']>;
+};
+
+
+/** A board that can be snapshotted, with metadata and relations. */
+export type SnapshottableBoardBoard_RelationsArgs = {
+  relation_type: Scalars['String']['input'];
+};
+
+/** A paginated connection of snapshottable boards. */
+export type SnapshottableBoardConnection = {
+  __typename?: 'SnapshottableBoardConnection';
+  /** The cursor for the next page. */
+  cursor?: Maybe<Scalars['String']['output']>;
+  /** Whether there are more pages. */
+  has_next_page?: Maybe<Scalars['Boolean']['output']>;
+  /** The list of boards in this page. */
+  items?: Maybe<Array<SnapshottableBoard>>;
+};
+
+/** An overview that can be snapshotted, with connected boards. */
+export type SnapshottableOverview = {
+  __typename?: 'SnapshottableOverview';
+  /** Boards connected to this overview. */
+  connected_boards?: Maybe<Array<SnapshottableBoard>>;
+  /** The overview ID. */
+  id?: Maybe<Scalars['ID']['output']>;
+};
+
+/** A paginated connection of snapshottable overviews. */
+export type SnapshottableOverviewConnection = {
+  __typename?: 'SnapshottableOverviewConnection';
+  /** The cursor for the next page. */
+  cursor?: Maybe<Scalars['String']['output']>;
+  /** Whether there are more pages. */
+  has_next_page?: Maybe<Scalars['Boolean']['output']>;
+  /** The list of overviews in this page. */
+  items?: Maybe<Array<SnapshottableOverview>>;
+};
+
+/** A workspace that can be snapshotted, with paginated boards and overviews. */
+export type SnapshottableWorkspace = {
+  __typename?: 'SnapshottableWorkspace';
+  /** Paginated boards in this workspace. */
+  boards?: Maybe<SnapshottableBoardConnection>;
+  /** The workspace ID. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** The workspace name. */
+  name?: Maybe<Scalars['String']['output']>;
+  /** Paginated overviews in this workspace. */
+  overviews?: Maybe<SnapshottableOverviewConnection>;
+  /** The workspace owner user ID. */
+  owner?: Maybe<Scalars['ID']['output']>;
+};
+
+
+/** A workspace that can be snapshotted, with paginated boards and overviews. */
+export type SnapshottableWorkspaceBoardsArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+/** A workspace that can be snapshotted, with paginated boards and overviews. */
+export type SnapshottableWorkspaceOverviewsArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
+};
 
 /** A knowledge base for monday.com which returns a list of snippet search results containing document content and metadata. */
 export type SnippetSearchResult = {
@@ -11532,6 +11995,8 @@ export type SubfieldsFieldType = FieldType & {
   description?: Maybe<Scalars['String']['output']>;
   /** Indicates if the object field type has remote subfields */
   hasRemoteSubfields?: Maybe<Scalars['Boolean']['output']>;
+  /** Indicates whether this field type fetches its options from a remote source */
+  has_remote_options?: Maybe<Scalars['Boolean']['output']>;
   /** Unique identifier for the field type */
   id?: Maybe<Scalars['Int']['output']>;
   /** List of field type implementations */
@@ -12585,6 +13050,8 @@ export type UpdateQuestionInput = {
   required?: InputMaybe<Scalars['Boolean']['input']>;
   /** Question-specific configuration object that varies by question type. */
   settings?: InputMaybe<FormQuestionSettingsInput>;
+  /** Conditional logic rules that control when this question is shown based on respondent answers. */
+  show_if_rules?: InputMaybe<Scalars['JSON']['input']>;
   /** The question text displayed to respondents. Must be at least 1 character long and clearly indicate the expected response. */
   title?: InputMaybe<Scalars['String']['input']>;
   /** The question type determining input behavior and validation (e.g., "text", "email", "single_select", "multi_select"). */
@@ -12706,7 +13173,7 @@ export type UpdateWorkflowFromTemplateInput = {
 export type UpdateWorkflowInput = {
   /** ID of the workflow to update */
   id: Scalars['ID']['input'];
-  /** Optional array of iterator configurations. Iterators enable looping over collections, executing specified workflow blocks once for each item. Currently supports forEach iterators only. */
+  /** Optional array of iterator (loop) configurations. Currently supports forEach iterators only. Each iterator loops over a collection, executing specified workflow blocks once per item. REQUIRED SETUP per iterator: (1) Add an isLoopEnded workflow variable to workflowVariables with sourceKind "auto_calculated_runtime_data" and sourceMetadata { dataType: "iteratorMetadata", metadata: { iteratorId: <matching_id>, fieldKey: "isLoopEnded" } }. (2) Add a boolean true constant variable with sourceKind "constant", sourceMetadata: {}, config: { value: true }. (3) Configure the entry node with Routes-type nextWorkflowBlocksConfig using conditions that compare isLoopEnded to the true constant to route between continue (internal node) and exit (post_iterator_node_id). Nested iterators are not supported yet. Iterator IDs must be unique across the workflow. */
   iterators?: InputMaybe<Array<WorkflowIteratorInput>>;
   /** New set of workflow blocks to replace existing ones */
   workflowBlocks: Array<WorkflowBlockInput>;
@@ -12743,6 +13210,15 @@ export type UpdateWorkspaceAttributesInput = {
   name?: InputMaybe<Scalars['String']['input']>;
 };
 
+/** Initialization response containing job ID and upload URL */
+export type UploadJobInit = {
+  __typename?: 'UploadJobInit';
+  /** The unique identifier of the job */
+  job_id?: Maybe<Scalars['ID']['output']>;
+  /** The URL where the file should be uploaded for processing */
+  upload_url?: Maybe<Scalars['String']['output']>;
+};
+
 /** The result of upserting entity ID mappings. */
 export type UpsertEntityIdMappingsResult = {
   __typename?: 'UpsertEntityIdMappingsResult';
@@ -12761,6 +13237,8 @@ export type User = {
   account_id: Scalars['ID']['output'];
   /** The products the user is assigned to. */
   account_products?: Maybe<Array<AccountProduct>>;
+  /** Activity log entries for the user */
+  activity_logs?: Maybe<UserActivityLogsPage>;
   /** The BigBrain visitor ID associated with the user. */
   bb_visitor_id: Scalars['ID']['output'];
   /** The date and time when the user became active. */
@@ -12849,8 +13327,27 @@ export type User = {
 
 
 /** A monday.com user. */
+export type UserActivity_LogsArgs = {
+  board_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  from?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  to?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+/** A monday.com user. */
 export type UserTeamsArgs = {
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+};
+
+/** A page of activity log entries with a cursor for fetching the next page */
+export type UserActivityLogsPage = {
+  __typename?: 'UserActivityLogsPage';
+  /** Cursor to pass to fetch the next page, null if this is the last page */
+  cursor?: Maybe<Scalars['String']['output']>;
+  /** The activity log entries for this page */
+  logs?: Maybe<Array<ActivityLog>>;
 };
 
 /** The attributes to update for a user. */
@@ -13429,6 +13926,8 @@ export type Workflow = {
   importance?: Maybe<Scalars['Int']['output']>;
   /** Whether the workflow is currently active */
   is_active: Scalars['Boolean']['output'];
+  /** Optional array of iterator (loop) configurations. Currently supports forEach iterators only. Each iterator loops over a collection, executing specified workflow blocks once per item. REQUIRED SETUP per iterator: (1) Add an isLoopEnded workflow variable to workflowVariables with sourceKind "auto_calculated_runtime_data" and sourceMetadata { dataType: "iteratorMetadata", metadata: { iteratorId: <matching_id>, fieldKey: "isLoopEnded" } }. (2) Add a boolean true constant variable with sourceKind "constant", sourceMetadata: {}, config: { value: true }. (3) Configure the entry node with Routes-type nextWorkflowBlocksConfig using conditions that compare isLoopEnded to the true constant to route between continue (internal node) and exit (post_iterator_node_id). Nested iterators are not supported yet. Iterator IDs must be unique across the workflow. */
+  iterators?: Maybe<Array<WorkflowIterator>>;
   /** Notice/Error message for the workflow */
   notice_message?: Maybe<Scalars['String']['output']>;
   /** Reference ID of the template this workflow was created from, if any */
@@ -13559,7 +14058,7 @@ export type WorkflowInput = {
   customization?: InputMaybe<WorkflowCustomizationInput>;
   /** Detailed description of the workflow */
   description: Scalars['String']['input'];
-  /** Optional array of iterator configurations. Iterators enable looping over collections, executing specified workflow blocks once for each item. Currently supports forEach iterators only. */
+  /** Optional array of iterator (loop) configurations. Currently supports forEach iterators only. Each iterator loops over a collection, executing specified workflow blocks once per item. REQUIRED SETUP per iterator: (1) Add an isLoopEnded workflow variable to workflowVariables with sourceKind "auto_calculated_runtime_data" and sourceMetadata { dataType: "iteratorMetadata", metadata: { iteratorId: <matching_id>, fieldKey: "isLoopEnded" } }. (2) Add a boolean true constant variable with sourceKind "constant", sourceMetadata: {}, config: { value: true }. (3) Configure the entry node with Routes-type nextWorkflowBlocksConfig using conditions that compare isLoopEnded to the true constant to route between continue (internal node) and exit (post_iterator_node_id). Nested iterators are not supported yet. Iterator IDs must be unique across the workflow. */
   iterators?: InputMaybe<Array<WorkflowIteratorInput>>;
   /** Title of the workflow */
   title: Scalars['String']['input'];
@@ -13571,20 +14070,37 @@ export type WorkflowInput = {
   workflowVariables: Array<Scalars['JSON']['input']>;
 };
 
-/** Configuration for a single iterator */
+/** Iterator configuration for looping over collections within a workflow */
+export type WorkflowIterator = {
+  __typename?: 'WorkflowIterator';
+  /** Workflow variable key referencing the collection to iterate over (forEach). The referenced variable must resolve to an array at runtime. The iterator executes the loop body once per item in the collection. */
+  collection_workflow_variable_key: Scalars['ID']['output'];
+  /** The workflow node ID that serves as the loop entry point. Must be included in node_ids. This node's nextWorkflowBlocksConfig MUST use type "Routes" with conditions referencing the isLoopEnded workflow variable: one route to post_iterator_node_id (when isLoopEnded IS equal to true, to exit the loop) and one route to an internal iterator node (when isLoopEnded IS NOT equal to true, to continue the loop). When post_iterator_node_id is not null, an exit route targeting it is required. */
+  entry_node_id: Scalars['ID']['output'];
+  /** Unique positive integer identifier for the iterator. Must be unique across all iterators in the workflow. This ID is referenced by the isLoopEnded workflow variable in its sourceMetadata.metadata.iteratorId field. */
+  iterator_id: Scalars['ID']['output'];
+  /** Optional workflow variable key containing the maximum number of iterations. When provided, the actual iteration count is min(collection length, max iterations value). When omitted, the iterator processes the entire collection. */
+  max_iterations_workflow_variable_key?: Maybe<Scalars['Int']['output']>;
+  /** List of all workflow block node IDs that belong to this loop. Must include entry_node_id. Must NOT include post_iterator_node_id. Every node ID must correspond to a workflowNodeId in the workflow blocks. Nested iterators are not supported: an iterator entry node must not appear in another iterator's node_ids. Terminal nodes within the iterator (those with null nextWorkflowBlocksConfig) are automatically routed back to the entry node. */
+  node_ids: Array<Scalars['ID']['output']>;
+  /** Node ID that executes after the iterator completes all iterations. Set to null if no action should follow the loop (workflow ends after the loop). Must NOT be included in node_ids. When not null, the entry node's Routes config must include an exit route targeting this node. */
+  post_iterator_node_id?: Maybe<Scalars['ID']['output']>;
+};
+
+/** Configuration for a forEach iterator that loops over a collection. REQUIRED WORKFLOW VARIABLES: For each iterator, the workflowVariables array must include: (1) An isLoopEnded variable with sourceKind "auto_calculated_runtime_data" and sourceMetadata { dataType: "iteratorMetadata", metadata: { iteratorId: <matching_iterator_id>, fieldKey: "isLoopEnded" } }. (2) A boolean true constant variable with sourceKind "constant", sourceMetadata: {}, and config: { value: true }. ENTRY NODE SETUP: The entry node must use a Routes-type nextWorkflowBlocksConfig with conditions comparing the isLoopEnded variable key to the true constant variable key: one route with operator "Is" pointing to post_iterator_node_id (exit loop), and one route with operator "IsNot" pointing to an internal iterator node (continue loop). Terminal nodes inside the iterator (with null nextWorkflowBlocksConfig) are automatically routed back to the entry node. */
 export type WorkflowIteratorInput = {
-  /** For FOREACH iterators - workflow variable key containing the collection */
+  /** Workflow variable key referencing the collection to iterate over (forEach). The referenced variable must resolve to an array at runtime. The iterator executes the loop body once per item in the collection. */
   collection_workflow_variable_key: Scalars['Int']['input'];
-  /** Loop entry node ID */
+  /** The workflow node ID that serves as the loop entry point. Must be included in node_ids. This node's nextWorkflowBlocksConfig MUST use type "Routes" with conditions referencing the isLoopEnded workflow variable: one route to post_iterator_node_id (when isLoopEnded IS equal to true, to exit the loop) and one route to an internal iterator node (when isLoopEnded IS NOT equal to true, to continue the loop). When post_iterator_node_id is not null, an exit route targeting it is required. */
   entry_node_id: Scalars['Int']['input'];
-  /** Unique identifier for the iterator */
+  /** Unique positive integer identifier for the iterator. Must be unique across all iterators in the workflow. This ID is referenced by the isLoopEnded workflow variable in its sourceMetadata.metadata.iteratorId field. */
   iterator_id: Scalars['Int']['input'];
-  /** Optional - workflow variable key containing the max iterations limit */
+  /** Optional workflow variable key containing the maximum number of iterations. When provided, the actual iteration count is min(collection length, max iterations value). When omitted, the iterator processes the entire collection. */
   max_iterations_workflow_variable_key?: InputMaybe<Scalars['Int']['input']>;
-  /** List of all node IDs in the loop */
+  /** List of all workflow block node IDs that belong to this loop. Must include entry_node_id. Must NOT include post_iterator_node_id. Every node ID must correspond to a workflowNodeId in the workflow blocks. Nested iterators are not supported: an iterator entry node must not appear in another iterator's node_ids. Terminal nodes within the iterator (those with null nextWorkflowBlocksConfig) are automatically routed back to the entry node. */
   node_ids: Array<Scalars['Int']['input']>;
-  /** Node ID that executes after the iterator completes (null if no post-iterator node) */
-  post_iterator_node_id: Scalars['Int']['input'];
+  /** Node ID that executes after the iterator completes all iterations. Set to null if no action should follow the loop (workflow ends after the loop). Must NOT be included in node_ids. When not null, the entry node's Routes config must include an exit route targeting this node. */
+  post_iterator_node_id?: InputMaybe<Scalars['ID']['input']>;
 };
 
 /** The context where a workflow template can be accessed */
@@ -13819,7 +14335,7 @@ export type SearchItemsDevQueryVariables = Exact<{
 }>;
 
 
-export type SearchItemsDevQuery = { __typename?: 'Query', search?: Array<{ __typename: 'BoardSearchResult' } | { __typename: 'DocSearchResult' } | { __typename: 'ItemSearchResult', data: { __typename?: 'IndexedItem', id: string } }> | null };
+export type SearchItemsDevQuery = { __typename?: 'Query', cross_entity_search?: Array<{ __typename: 'BoardSearchResult' } | { __typename: 'DocSearchResult' } | { __typename: 'ItemSearchResult', data: { __typename?: 'IndexedItem', id: string } }> | null };
 
 export type SearchDevQueryVariables = Exact<{
   query: Scalars['String']['input'];
@@ -13844,7 +14360,7 @@ export type GetUserContextQueryVariables = Exact<{ [key: string]: never; }>;
 export type GetUserContextQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, name: string, title?: string | null } | null, favorites?: Array<{ __typename?: 'GraphqlHierarchyObjectItem', object?: { __typename?: 'HierarchyObjectID', id?: string | null, type?: GraphqlMondayObject | null } | null }> | null, intelligence?: { __typename?: 'Intelligence', relevant_boards?: Array<{ __typename?: 'RelevantBoard', id?: string | null, board?: { __typename?: 'Board', name: string } | null }> | null, relevant_people?: Array<{ __typename?: 'RelevantPerson', id?: string | null, user?: { __typename?: 'User', name: string } | null }> | null } | null };
 
 
-export const SearchItemsDevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchItemsDev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filters"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SearchFiltersInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"filters"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filters"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ItemSearchResult"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchItemsDevQuery, SearchItemsDevQueryVariables>;
+export const SearchItemsDevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchItemsDev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filters"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SearchFiltersInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"cross_entity_search"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"filters"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filters"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ItemSearchResult"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchItemsDevQuery, SearchItemsDevQueryVariables>;
 export const SearchDevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchDev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filters"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SearchFiltersInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"cross_entity_search"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"filters"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filters"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BoardSearchResult"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"entity_type"}},{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"url"}}]}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"DocSearchResult"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"entity_type"}},{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchDevQuery, SearchDevQueryVariables>;
 export const BatchUndoDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"BatchUndo"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"undoRecordId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"batch_undo"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"board_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}},{"kind":"Argument","name":{"kind":"Name","value":"undo_record_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"undoRecordId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<BatchUndoMutation, BatchUndoMutationVariables>;
 export const GetUserContextDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getUserContext"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"me"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}},{"kind":"Field","name":{"kind":"Name","value":"favorites"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"object"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"type"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"intelligence"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"relevant_boards"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"10"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"board"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"relevant_people"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"10"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetUserContextQuery, GetUserContextQueryVariables>;
