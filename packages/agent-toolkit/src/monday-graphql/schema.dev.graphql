@@ -437,6 +437,28 @@ type Query {
     newIds: [String!]
   ): [MigratedEntityIdMappingsResult!]
 
+  """
+  Look up a single board with its metadata and relations for snapshot planning.
+  """
+  snapshottable_board(
+    """The board ID."""
+    id: ID!
+
+    """The migration job ID for authorization."""
+    migration_job_id: ID!
+  ): SnapshottableBoard
+
+  """
+  Look up a workspace with paginated boards and overviews for snapshot planning.
+  """
+  snapshottable_workspace(
+    """The workspace ID."""
+    id: ID!
+
+    """The migration job ID for authorization."""
+    migration_job_id: ID!
+  ): SnapshottableWorkspace
+
   """Get managed column data."""
   managed_column(
     """The managed column ids."""
@@ -737,6 +759,12 @@ type Query {
     """The ID of the import to get status for"""
     import_id: ID!
   ): BulkImportStatus!
+
+  """Get the status of a backfill or ingest job"""
+  fetch_job_status(
+    """The ID of the job to get status for"""
+    job_id: ID!
+  ): JobStatus!
 
   """Get an app by ID or slug."""
   app(
@@ -1245,6 +1273,20 @@ type Query {
     query: String!
   ): SearchAllResult
 
+  """Search across multiple entity types (items, boards, documents)."""
+  cross_entity_search(
+    """The search query string."""
+    query: String!
+
+    """Maximum number of results to return per entity (max 100)."""
+    limit: Int!
+
+    """
+    Filters specifying which entities to search and their per-entity filters.
+    """
+    filters: SearchFiltersInput!
+  ): [SearchResult!]
+
   """Search for items using various search strategies."""
   search_items(
     """The search query string."""
@@ -1292,20 +1334,11 @@ type Query {
     Filters specifying which entities to search and their per-entity filters.
     """
     filters: SearchFiltersInput!
-  ): [SearchResult!]
-
-  """Search across multiple entity types (items, boards, documents)."""
-  cross_entity_search(
-    """The search query string."""
-    query: String!
-
-    """Maximum number of results to return per entity (max 100)."""
-    limit: Int!
 
     """
-    Filters specifying which entities to search and their per-entity filters.
+    Controls the trade-off between search quality and response time. Defaults to balanced.
     """
-    filters: SearchFiltersInput!
+    strategy: SearchStrategy
   ): [SearchResult!]
 
   """Lookup a single entity type by name or other relevant properties."""
@@ -1379,23 +1412,195 @@ type Query {
   ): ResponseForm
 }
 
-"""Root mutation type for the Dependencies service"""
-type BatchUndoResult {
-  """Whether the undo operation completed successfully"""
-  success: Boolean!
+"""Represents a single activity log entry"""
+type ActivityLog {
+  """The unique identifier of the activity log entry"""
+  id: ID
+
+  """The account this activity log entry belongs to"""
+  account_id: ID
+
+  """The user who performed the action"""
+  user_id: ID
+
+  """The type of event that occurred"""
+  event: String
+
+  """The entity type that was affected"""
+  entity: String
+
+  """Additional data associated with the event as a JSON string"""
+  data: String
+
+  """The timestamp when the activity log entry was created"""
+  created_at: String
 }
 
-type Mutation {
-  """Undo a batch action on a board"""
-  batch_undo(
-    """The board's unique identifier"""
-    board_id: ID!
-    """The undo record identifier"""
-    undo_record_id: ID!
-    """Whether to prevent undo settings from being created"""
-    prevent_undo_settings: Boolean
-  ): BatchUndoResult
+"""A monday.com user."""
+type User {
+  """The user's unique identifier."""
+  id: ID!
 
+  """Activity log entries for the user"""
+  activity_logs(
+    from: String
+    to: String
+    board_ids: [ID!]
+    limit: Int
+
+    """Cursor for fetching the next page, obtained from a previous response"""
+    cursor: String
+  ): UserActivityLogsPage
+
+  """The department the user is a member of (if any)"""
+  department: Department
+
+  """The user's account."""
+  account: Account!
+
+  """The products the user is assigned to."""
+  account_products: [AccountProduct!]
+
+  """The user's birthday."""
+  birthday: Date
+
+  """The user's country code."""
+  country_code: String
+
+  """The user's creation date."""
+  created_at: Date
+
+  """The current user's language"""
+  current_language: String
+
+  """The custom field metas of the user profile."""
+  custom_field_metas: [CustomFieldMetas]
+
+  """The custom field values of the user profile."""
+  custom_field_values: [CustomFieldValue]
+
+  """The user's email address."""
+  email: String!
+
+  """Is the user enabled or not."""
+  enabled: Boolean!
+
+  """The token of the user for email to board."""
+  encrypt_api_token: String
+
+  """Is the user an account admin."""
+  is_admin: Boolean
+
+  """Is the user a guest or not."""
+  is_guest: Boolean
+
+  """Is the user a pending user"""
+  is_pending: Boolean
+
+  """Is user verified his email."""
+  is_verified: Boolean
+
+  """Is the user a view only user or not."""
+  is_view_only: Boolean
+
+  """The date the user joined the account."""
+  join_date: Date
+
+  """Last date & time when user was active"""
+  last_activity: Date
+
+  """The user's location."""
+  location: String
+
+  """The user's mobile phone number."""
+  mobile_phone: String
+
+  """The user's full name."""
+  name: String!
+
+  """The user's out of office status."""
+  out_of_office: OutOfOffice
+
+  """The user's phone number."""
+  phone: String
+
+  """The user's photo in the original size."""
+  photo_original: String
+
+  """The user's photo in small size (150x150)."""
+  photo_small: String
+
+  """The user's photo in thumbnail size (100x100)."""
+  photo_thumb: String
+
+  """The user's photo in small thumbnail size (50x50)."""
+  photo_thumb_small: String
+
+  """The user's photo in tiny size (30x30)."""
+  photo_tiny: String
+
+  """The product to which the user signed up to first."""
+  sign_up_product_kind: String
+
+  """The teams the user is a member in."""
+  teams(
+    """A list of teams unique identifiers."""
+    ids: [ID!]
+  ): [Team]
+
+  """The user's timezone identifier."""
+  time_zone_identifier: String
+
+  """The user's title."""
+  title: String
+
+  """The user's profile url."""
+  url: String!
+
+  """The user’s utc hours difference."""
+  utc_hours_diff: Int
+
+  """The unique identifier of the account the user belongs to."""
+  account_id: ID!
+
+  """The kind of the user."""
+  kind: String!
+
+  """The activation status of the user."""
+  status: UserStatus!
+
+  """The method by which the user was added to the account."""
+  invitation_method: InvitationMethod!
+
+  """Whether the user has been soft-deleted."""
+  is_deleted: Boolean!
+
+  """URLs for the user's profile photo in various sizes."""
+  photo_url: PhotoUrl
+
+  """The date and time when the user became active."""
+  became_active_at: ISO8601DateTime
+
+  """The BigBrain visitor ID associated with the user."""
+  bb_visitor_id: ID!
+
+  """Whether the user has confirmed their email address."""
+  is_email_confirmed: Boolean!
+}
+
+"""
+A page of activity log entries with a cursor for fetching the next page
+"""
+type UserActivityLogsPage {
+  """The activity log entries for this page"""
+  logs: [ActivityLog!]
+
+  """Cursor to pass to fetch the next page, null if this is the last page"""
+  cursor: String
+}
+
+"""Root mutation type for the Dependencies service"""
+type Mutation {
   """Namespace for all vibe-related mutations"""
   vibe: VibeMutations
 
@@ -2168,6 +2373,9 @@ type Mutation {
 
     """The ID of the parent entity."""
     parent_id: ID
+
+    """The description for this entity."""
+    description: String
   ): AccountEntity
 
   """Update an account entity."""
@@ -2180,6 +2388,9 @@ type Mutation {
 
     """The ID of the parent entity."""
     parent_id: ID
+
+    """The description for this entity."""
+    description: String
   ): AccountEntity
 
   """
@@ -2235,6 +2446,20 @@ type Mutation {
     column_id: ID!
   ): AccountEntity
 
+  """Reactivate a deprecated column on an account entity."""
+  reactivate_entity_column(
+    """The ID of the entity model"""
+    entity_id: ID
+
+    """
+    The entity model name. Either entity_id or entity_name must be provided.
+    """
+    entity_name: String
+
+    """The ID of the column to reactivate"""
+    column_id: ID!
+  ): AccountEntity
+
   """Detach boards from their entity models."""
   detach_boards_from_entity(
     """The board IDs to detach."""
@@ -2253,6 +2478,30 @@ type Mutation {
 
     """Array of column updates"""
     columns: [UpdateEntityColumnInput!]!
+  ): AccountEntity
+
+  """Opt out a column by default on an account entity."""
+  opt_out_entity_column(
+    """The ID of the entity model"""
+    entity_id: ID
+
+    """The entity model name"""
+    entity_name: String
+
+    """The ID of the column to opt out by default"""
+    column_id: ID!
+  ): AccountEntity
+
+  """Opt in a column by default on an account entity."""
+  opt_in_entity_column(
+    """The ID of the entity model"""
+    entity_id: ID
+
+    """The entity model name"""
+    entity_name: String
+
+    """The ID of the column to opt in by default"""
+    column_id: ID!
   ): AccountEntity
 
   """Adds connected boards to a board relation column."""
@@ -2788,6 +3037,33 @@ type Mutation {
     on_match: OnMatchInput
   ): BulkImportInit
 
+  """
+  Initialize a backfill job for a board and group. Designed for data migrations with no side effects and a 20k row limit. Returns job ID and upload URL to begin the process.
+  """
+  backfill_items(
+    """The ID of the board to import items into"""
+    board_id: ID!
+
+    """The ID of the group to import items into"""
+    group_id: ID!
+  ): UploadJobInit
+
+  """
+  Initialize an ingest job for a board and group. Designed for ongoing integrations with full side effects and a 10k row limit. Returns job ID and upload URL to begin the process.
+  """
+  ingest_items(
+    """The ID of the board to import items into"""
+    board_id: ID!
+
+    """The ID of the group to import items into"""
+    group_id: ID!
+
+    """
+    Configuration for handling matching items. When provided, items will be matched based on the specified column.
+    """
+    on_match: OnMatchInput
+  ): UploadJobInit
+
   """Creates a new app with the specified configuration."""
   create_app(
     """App configuration data"""
@@ -2996,6 +3272,18 @@ type Mutation {
     """The id of a payment plan."""
     plan_id: String!
   ): BatchExtendTrialPeriod
+
+  """Undo a batch action."""
+  batch_undo(
+    """The board's unique identifier."""
+    board_id: ID!
+
+    """Whether to prevent undo settings from being created."""
+    prevent_undo_settings: Boolean
+
+    """The undo record identifier."""
+    undo_record_id: ID!
+  ): BatchUndoResult
 
   """Change a column's properties"""
   change_column_metadata(
@@ -4414,6 +4702,96 @@ type Mutation {
     """The password to set for the form. Must be at least 1 character long."""
     input: SetFormPasswordInput!
   ): ResponseForm
+
+  """
+  Create a new selectable option for a SingleSelect or MultiSelect question. Returns the created option.
+  """
+  create_form_question_option(
+    """
+    The unique identifier token for the form. Required for all form-specific operations.
+    """
+    form_token: String!
+
+    """
+    The unique identifier for the question. Used to target specific questions within a form.
+    """
+    question_id: ID!
+
+    """
+    The display text for the option shown to respondents. Must be at least 1 character long.
+    """
+    label: String!
+
+    """
+    The internal unique identifier for the option. Used as the option ID in update and delete operations.
+    """
+    value: String!
+  ): FormQuestionOption
+
+  """
+  Update the label of an existing option on a SingleSelect or MultiSelect question.
+  """
+  update_form_question_option(
+    """
+    The unique identifier token for the form. Required for all form-specific operations.
+    """
+    form_token: String!
+
+    """
+    The unique identifier for the question. Used to target specific questions within a form.
+    """
+    question_id: ID!
+
+    """
+    The internal ID (value) of the option to target. This is the value field of the option, not the display label.
+    """
+    option_id: ID!
+
+    """
+    The display text for the option shown to respondents. Must be at least 1 character long.
+    """
+    label: String!
+  ): Boolean
+
+  """
+  Permanently remove a selectable option from a SingleSelect or MultiSelect question. This action cannot be undone.
+  """
+  delete_form_question_option(
+    """
+    The unique identifier token for the form. Required for all form-specific operations.
+    """
+    form_token: String!
+
+    """
+    The unique identifier for the question. Used to target specific questions within a form.
+    """
+    question_id: ID!
+
+    """
+    The internal ID (value) of the option to target. This is the value field of the option, not the display label.
+    """
+    option_id: ID!
+  ): Boolean
+
+  """
+  Reorder the options of a SingleSelect or MultiSelect question by providing the desired order of option values. Position is inferred from array index.
+  """
+  reorder_form_question_options(
+    """
+    The unique identifier token for the form. Required for all form-specific operations.
+    """
+    form_token: String!
+
+    """
+    The unique identifier for the question. Used to target specific questions within a form.
+    """
+    question_id: ID!
+
+    """
+    Ordered array of option values defining the new display order. Position is inferred from array index (first item = position 0).
+    """
+    option_ids: [ID!]!
+  ): Boolean
 }
 
 """Response from AI action request"""
@@ -4632,147 +5010,6 @@ type Pagination {
   next_page_number: Int
 }
 
-"""A monday.com user."""
-type User {
-  """The user's unique identifier."""
-  id: ID!
-
-  """The department the user is a member of (if any)"""
-  department: Department
-
-  """The user's account."""
-  account: Account!
-
-  """The products the user is assigned to."""
-  account_products: [AccountProduct!]
-
-  """The user's birthday."""
-  birthday: Date
-
-  """The user's country code."""
-  country_code: String
-
-  """The user's creation date."""
-  created_at: Date
-
-  """The current user's language"""
-  current_language: String
-
-  """The custom field metas of the user profile."""
-  custom_field_metas: [CustomFieldMetas]
-
-  """The custom field values of the user profile."""
-  custom_field_values: [CustomFieldValue]
-
-  """The user's email address."""
-  email: String!
-
-  """Is the user enabled or not."""
-  enabled: Boolean!
-
-  """The token of the user for email to board."""
-  encrypt_api_token: String
-
-  """Is the user an account admin."""
-  is_admin: Boolean
-
-  """Is the user a guest or not."""
-  is_guest: Boolean
-
-  """Is the user a pending user"""
-  is_pending: Boolean
-
-  """Is user verified his email."""
-  is_verified: Boolean
-
-  """Is the user a view only user or not."""
-  is_view_only: Boolean
-
-  """The date the user joined the account."""
-  join_date: Date
-
-  """Last date & time when user was active"""
-  last_activity: Date
-
-  """The user's location."""
-  location: String
-
-  """The user's mobile phone number."""
-  mobile_phone: String
-
-  """The user's full name."""
-  name: String!
-
-  """The user's out of office status."""
-  out_of_office: OutOfOffice
-
-  """The user's phone number."""
-  phone: String
-
-  """The user's photo in the original size."""
-  photo_original: String
-
-  """The user's photo in small size (150x150)."""
-  photo_small: String
-
-  """The user's photo in thumbnail size (100x100)."""
-  photo_thumb: String
-
-  """The user's photo in small thumbnail size (50x50)."""
-  photo_thumb_small: String
-
-  """The user's photo in tiny size (30x30)."""
-  photo_tiny: String
-
-  """The product to which the user signed up to first."""
-  sign_up_product_kind: String
-
-  """The teams the user is a member in."""
-  teams(
-    """A list of teams unique identifiers."""
-    ids: [ID!]
-  ): [Team]
-
-  """The user's timezone identifier."""
-  time_zone_identifier: String
-
-  """The user's title."""
-  title: String
-
-  """The user's profile url."""
-  url: String!
-
-  """The user’s utc hours difference."""
-  utc_hours_diff: Int
-
-  """The unique identifier of the account the user belongs to."""
-  account_id: ID!
-
-  """The kind of the user."""
-  kind: String!
-
-  """The activation status of the user."""
-  status: UserStatus!
-
-  """The method by which the user was added to the account."""
-  invitation_method: InvitationMethod!
-
-  """Whether the user has been soft-deleted."""
-  is_deleted: Boolean!
-
-  """URLs for the user's profile photo in various sizes."""
-  photo_url: PhotoUrl
-
-  """The date and time when the user became active."""
-  became_active_at: ISO8601DateTime
-
-  """The BigBrain visitor ID associated with the user."""
-  bb_visitor_id: ID!
-
-  """Whether the user has confirmed their email address."""
-  is_email_confirmed: Boolean!
-}
-
 """Result of activating a workflow"""
 type ActivateWorkflowResult {
   """Whether the workflow was successfully activated"""
@@ -4854,6 +5091,11 @@ type BaseFieldType implements FieldType {
 
   """List of field type implementations"""
   implement: [FieldTypeImplementation!]
+
+  """
+  Indicates whether this field type fetches its options from a remote source
+  """
+  has_remote_options: Boolean
 }
 
 """A block in the framework"""
@@ -5143,6 +5385,11 @@ interface FieldType {
 
   """List of field type implementations"""
   implement: [FieldTypeImplementation!]
+
+  """
+  Indicates whether this field type fetches its options from a remote source
+  """
+  has_remote_options: Boolean
 }
 
 """Implementation of a field type"""
@@ -5379,6 +5626,11 @@ type PrimitiveFieldType implements FieldType {
   """List of field type implementations"""
   implement: [FieldTypeImplementation!]
 
+  """
+  Indicates whether this field type fetches its options from a remote source
+  """
+  has_remote_options: Boolean
+
   """The primitive type of the field"""
   primitiveType: PrimitiveTypes
 
@@ -5583,6 +5835,11 @@ type SubfieldsFieldType implements FieldType {
   """List of field type implementations"""
   implement: [FieldTypeImplementation!]
 
+  """
+  Indicates whether this field type fetches its options from a remote source
+  """
+  has_remote_options: Boolean
+
   """Indicates if the object field type has remote subfields"""
   hasRemoteSubfields: Boolean
 }
@@ -5625,7 +5882,7 @@ input UpdateWorkflowInput {
   workflowVariables: [JSON!]!
 
   """
-  Optional array of iterator configurations. Iterators enable looping over collections, executing specified workflow blocks once for each item. Currently supports forEach iterators only.
+  Optional array of iterator (loop) configurations. Currently supports forEach iterators only. Each iterator loops over a collection, executing specified workflow blocks once per item. REQUIRED SETUP per iterator: (1) Add an isLoopEnded workflow variable to workflowVariables with sourceKind "auto_calculated_runtime_data" and sourceMetadata { dataType: "iteratorMetadata", metadata: { iteratorId: <matching_id>, fieldKey: "isLoopEnded" } }. (2) Add a boolean true constant variable with sourceKind "constant", sourceMetadata: {}, config: { value: true }. (3) Configure the entry node with Routes-type nextWorkflowBlocksConfig using conditions that compare isLoopEnded to the true constant to route between continue (internal node) and exit (post_iterator_node_id). Nested iterators are not supported yet. Iterator IDs must be unique across the workflow.
   """
   iterators: [WorkflowIteratorInput!]
 }
@@ -5693,6 +5950,11 @@ type Workflow {
 
   """Reference ID of the template this workflow was created from, if any"""
   template_reference_id: ID
+
+  """
+  Optional array of iterator (loop) configurations. Currently supports forEach iterators only. Each iterator loops over a collection, executing specified workflow blocks once per item. REQUIRED SETUP per iterator: (1) Add an isLoopEnded workflow variable to workflowVariables with sourceKind "auto_calculated_runtime_data" and sourceMetadata { dataType: "iteratorMetadata", metadata: { iteratorId: <matching_id>, fieldKey: "isLoopEnded" } }. (2) Add a boolean true constant variable with sourceKind "constant", sourceMetadata: {}, config: { value: true }. (3) Configure the entry node with Routes-type nextWorkflowBlocksConfig using conditions that compare isLoopEnded to the true constant to route between continue (internal node) and exit (post_iterator_node_id). Nested iterators are not supported yet. Iterator IDs must be unique across the workflow.
+  """
+  iterators: [WorkflowIterator!]
 }
 
 type WorkflowBlock {
@@ -5868,33 +6130,76 @@ input WorkflowInput {
   customization: WorkflowCustomizationInput
 
   """
-  Optional array of iterator configurations. Iterators enable looping over collections, executing specified workflow blocks once for each item. Currently supports forEach iterators only.
+  Optional array of iterator (loop) configurations. Currently supports forEach iterators only. Each iterator loops over a collection, executing specified workflow blocks once per item. REQUIRED SETUP per iterator: (1) Add an isLoopEnded workflow variable to workflowVariables with sourceKind "auto_calculated_runtime_data" and sourceMetadata { dataType: "iteratorMetadata", metadata: { iteratorId: <matching_id>, fieldKey: "isLoopEnded" } }. (2) Add a boolean true constant variable with sourceKind "constant", sourceMetadata: {}, config: { value: true }. (3) Configure the entry node with Routes-type nextWorkflowBlocksConfig using conditions that compare isLoopEnded to the true constant to route between continue (internal node) and exit (post_iterator_node_id). Nested iterators are not supported yet. Iterator IDs must be unique across the workflow.
   """
   iterators: [WorkflowIteratorInput!]
 }
 
-"""Configuration for a single iterator"""
-input WorkflowIteratorInput {
-  """Unique identifier for the iterator"""
-  iterator_id: Int!
-
-  """List of all node IDs in the loop"""
-  node_ids: [Int!]!
-
-  """Loop entry node ID"""
-  entry_node_id: Int!
+"""Iterator configuration for looping over collections within a workflow"""
+type WorkflowIterator {
+  """
+  Unique positive integer identifier for the iterator. Must be unique across all iterators in the workflow. This ID is referenced by the isLoopEnded workflow variable in its sourceMetadata.metadata.iteratorId field.
+  """
+  iterator_id: ID!
 
   """
-  Node ID that executes after the iterator completes (null if no post-iterator node)
+  List of all workflow block node IDs that belong to this loop. Must include entry_node_id. Must NOT include post_iterator_node_id. Every node ID must correspond to a workflowNodeId in the workflow blocks. Nested iterators are not supported: an iterator entry node must not appear in another iterator's node_ids. Terminal nodes within the iterator (those with null nextWorkflowBlocksConfig) are automatically routed back to the entry node.
+  """
+  node_ids: [ID!]!
+
+  """
+  The workflow node ID that serves as the loop entry point. Must be included in node_ids. This node's nextWorkflowBlocksConfig MUST use type "Routes" with conditions referencing the isLoopEnded workflow variable: one route to post_iterator_node_id (when isLoopEnded IS equal to true, to exit the loop) and one route to an internal iterator node (when isLoopEnded IS NOT equal to true, to continue the loop). When post_iterator_node_id is not null, an exit route targeting it is required.
+  """
+  entry_node_id: ID!
+
+  """
+  Node ID that executes after the iterator completes all iterations. Set to null if no action should follow the loop (workflow ends after the loop). Must NOT be included in node_ids. When not null, the entry node's Routes config must include an exit route targeting this node.
   """
   post_iterator_node_id: ID
 
   """
-  For FOREACH iterators - workflow variable key containing the collection
+  Workflow variable key referencing the collection to iterate over (forEach). The referenced variable must resolve to an array at runtime. The iterator executes the loop body once per item in the collection.
+  """
+  collection_workflow_variable_key: ID!
+
+  """
+  Optional workflow variable key containing the maximum number of iterations. When provided, the actual iteration count is min(collection length, max iterations value). When omitted, the iterator processes the entire collection.
+  """
+  max_iterations_workflow_variable_key: Int
+}
+
+"""
+Configuration for a forEach iterator that loops over a collection. REQUIRED WORKFLOW VARIABLES: For each iterator, the workflowVariables array must include: (1) An isLoopEnded variable with sourceKind "auto_calculated_runtime_data" and sourceMetadata { dataType: "iteratorMetadata", metadata: { iteratorId: <matching_iterator_id>, fieldKey: "isLoopEnded" } }. (2) A boolean true constant variable with sourceKind "constant", sourceMetadata: {}, and config: { value: true }. ENTRY NODE SETUP: The entry node must use a Routes-type nextWorkflowBlocksConfig with conditions comparing the isLoopEnded variable key to the true constant variable key: one route with operator "Is" pointing to post_iterator_node_id (exit loop), and one route with operator "IsNot" pointing to an internal iterator node (continue loop). Terminal nodes inside the iterator (with null nextWorkflowBlocksConfig) are automatically routed back to the entry node.
+"""
+input WorkflowIteratorInput {
+  """
+  Unique positive integer identifier for the iterator. Must be unique across all iterators in the workflow. This ID is referenced by the isLoopEnded workflow variable in its sourceMetadata.metadata.iteratorId field.
+  """
+  iterator_id: Int!
+
+  """
+  List of all workflow block node IDs that belong to this loop. Must include entry_node_id. Must NOT include post_iterator_node_id. Every node ID must correspond to a workflowNodeId in the workflow blocks. Nested iterators are not supported: an iterator entry node must not appear in another iterator's node_ids. Terminal nodes within the iterator (those with null nextWorkflowBlocksConfig) are automatically routed back to the entry node.
+  """
+  node_ids: [Int!]!
+
+  """
+  The workflow node ID that serves as the loop entry point. Must be included in node_ids. This node's nextWorkflowBlocksConfig MUST use type "Routes" with conditions referencing the isLoopEnded workflow variable: one route to post_iterator_node_id (when isLoopEnded IS equal to true, to exit the loop) and one route to an internal iterator node (when isLoopEnded IS NOT equal to true, to continue the loop). When post_iterator_node_id is not null, an exit route targeting it is required.
+  """
+  entry_node_id: Int!
+
+  """
+  Node ID that executes after the iterator completes all iterations. Set to null if no action should follow the loop (workflow ends after the loop). Must NOT be included in node_ids. When not null, the entry node's Routes config must include an exit route targeting this node.
+  """
+  post_iterator_node_id: ID
+
+  """
+  Workflow variable key referencing the collection to iterate over (forEach). The referenced variable must resolve to an array at runtime. The iterator executes the loop body once per item in the collection.
   """
   collection_workflow_variable_key: Int!
 
-  """Optional - workflow variable key containing the max iterations limit"""
+  """
+  Optional workflow variable key containing the maximum number of iterations. When provided, the actual iteration count is min(collection length, max iterations value). When omitted, the iterator processes the entire collection.
+  """
   max_iterations_workflow_variable_key: Int
 }
 
@@ -6790,6 +7095,12 @@ type BoardManualMetadata {
   board_md: String
 }
 
+"""The type of entity that a reaction is attributed to."""
+enum AttributionEntity {
+  """An AI agent"""
+  AGENT
+}
+
 """An item (table row)."""
 type Item {
   """The item's unique identifier."""
@@ -6888,6 +7199,14 @@ type Like {
   creator_id: String
   creator: User
   reaction_type: String
+
+  """
+  The reference identifier of the entity that created this reaction on behalf of the user, who this reaction should be attributed to (e.g. agent_{agentId}).
+  """
+  attribution_entity_ref: String
+
+  """The type of entity that created this reaction."""
+  attribution_entity_type: AttributionEntity
   created_at: Date
   updated_at: Date
 }
@@ -7260,6 +7579,92 @@ enum SnapshotStatus {
   rollback
 }
 
+"""A board that can be snapshotted, with metadata and relations."""
+type SnapshottableBoard {
+  """The board ID."""
+  id: ID
+
+  """The board name."""
+  name: String
+
+  """The board owner user ID."""
+  owner: ID
+
+  """The workspace ID this board belongs to."""
+  workspace_id: ID
+
+  """Whether this board is a document."""
+  is_doc: Boolean
+
+  """Whether this board is a managed template instance."""
+  is_managed_template_instance: Boolean
+
+  """Related boards by relation type. Limited to 1 level of depth."""
+  board_relations(
+    """The relation type: "BoardRelation" or "SubtasksBoard"."""
+    relation_type: String!
+  ): [SnapshottableBoard!]
+}
+
+"""A paginated connection of snapshottable boards."""
+type SnapshottableBoardConnection {
+  """The list of boards in this page."""
+  items: [SnapshottableBoard!]
+
+  """The cursor for the next page."""
+  cursor: String
+
+  """Whether there are more pages."""
+  has_next_page: Boolean
+}
+
+"""An overview that can be snapshotted, with connected boards."""
+type SnapshottableOverview {
+  """The overview ID."""
+  id: ID
+
+  """Boards connected to this overview."""
+  connected_boards: [SnapshottableBoard!]
+}
+
+"""A paginated connection of snapshottable overviews."""
+type SnapshottableOverviewConnection {
+  """The list of overviews in this page."""
+  items: [SnapshottableOverview!]
+
+  """The cursor for the next page."""
+  cursor: String
+
+  """Whether there are more pages."""
+  has_next_page: Boolean
+}
+
+"""
+A workspace that can be snapshotted, with paginated boards and overviews.
+"""
+type SnapshottableWorkspace {
+  """The workspace ID."""
+  id: ID
+
+  """The workspace name."""
+  name: String
+
+  """The workspace owner user ID."""
+  owner: ID
+
+  """Paginated boards in this workspace."""
+  boards(
+    """Cursor for pagination."""
+    cursor: String
+  ): SnapshottableBoardConnection
+
+  """Paginated overviews in this workspace."""
+  overviews(
+    """Cursor for pagination."""
+    cursor: String
+  ): SnapshottableOverviewConnection
+}
+
 """The result of upserting entity ID mappings."""
 type UpsertEntityIdMappingsResult {
   """Whether the upsert operation was successful."""
@@ -7301,6 +7706,9 @@ type AccountEntity {
 
   """The name of this entity."""
   name: String
+
+  """The description for this entity."""
+  description: String
 }
 
 """Represents a board and its connection to an entity model."""
@@ -7720,6 +8128,9 @@ type EntityModel {
 
   """The columns definition for this entity model as a JSON object."""
   columns: JSON
+
+  """The description for this entity model."""
+  description: String
 
   """The timestamp when this entity model was created or last updated."""
   created_at: Date
@@ -8825,6 +9236,11 @@ type DocRestoringPoint {
   The type of restoring point. "publish" indicates the document was published at this point. Null for regular edit snapshots.
   """
   type: String
+
+  """
+  AI agents that contributed changes in this restoring point time window.
+  """
+  agent_attributions: [RestoringPointAgentAttribution!]
 }
 
 """Column value reference for displaying board item column data"""
@@ -9278,6 +9694,20 @@ enum PrivacyKind {
   Public objects are visible to all users within the account, unless their access is blocked on a higher level in the hierarchy, or by specific object permission.
   """
   PUBLIC
+}
+
+"""
+An AI agent that contributed changes in this restoring point time window.
+"""
+type RestoringPointAgentAttribution {
+  """The ID of the agent that made changes."""
+  agent_id: ID
+
+  """The type of entity (e.g. "agent", "workflow")."""
+  entity_type: String
+
+  """The display name of the agent, if available."""
+  agent_name: String
 }
 
 """
@@ -10140,6 +10570,61 @@ type BulkImportStatus {
   report_url: String
 }
 
+"""Item counts for an items job process"""
+type ItemsJobItemCounts {
+  """Total number of items submitted for processing"""
+  submitted: Int
+
+  """Number of items that failed validation"""
+  invalid: Int
+
+  """Number of items that were skipped"""
+  skipped: Int
+
+  """Number of items that have been created"""
+  created: Int
+
+  """Number of items that have been updated"""
+  updated: Int
+
+  """Number of valid items that failed during execution"""
+  failed: Int
+}
+
+"""Status information for an items job process"""
+type ItemsJobStatus {
+  """Current state of the job process"""
+  status: BulkImportState
+
+  """Item counts breakdown for the job process"""
+  counts: ItemsJobItemCounts
+
+  """Progress percentage (0-100) of the job process"""
+  progress_percentage: Int
+
+  """Reason for failure when status is Rejected or Failed"""
+  failure_reason: BulkImportFailureReason
+
+  """
+  User-friendly error message explaining why the job failed or was rejected
+  """
+  failure_message: String
+
+  """Indicates if the job is completely done"""
+  fully_imported: Boolean
+
+  """Indicates if a report file has been generated"""
+  report_created: Boolean
+
+  """URL to download the job report, valid for 10 minutes"""
+  report_url: String
+}
+
+"""
+Status of a job operation. Currently supports items job status for backfill and ingest operations.
+"""
+union JobStatus = ItemsJobStatus
+
 """Strategy for handling matching items during import"""
 enum OnMatchBehaviour {
   """Update if a matching item exists, otherwise create a new item"""
@@ -10158,6 +10643,15 @@ input OnMatchInput {
 
   """Strategy for handling matching items"""
   behaviour: OnMatchBehaviour!
+}
+
+"""Initialization response containing job ID and upload URL"""
+type UploadJobInit {
+  """The unique identifier of the job"""
+  job_id: ID
+
+  """The URL where the file should be uploaded for processing"""
+  upload_url: String
 }
 
 """Response from querying the apps documentation AI."""
@@ -10937,6 +11431,12 @@ type BatchExtendTrialPeriod {
   reason: String
 
   """Result of a batch operation"""
+  success: Boolean!
+}
+
+"""The result of a batch undo operation."""
+type BatchUndoResult {
+  """Whether the undo operation completed successfully."""
   success: Boolean!
 }
 
@@ -15918,6 +16418,18 @@ Union type representing different searchable entity types returned from search.
 """
 union SearchResult = ItemSearchResult | BoardSearchResult | DocSearchResult
 
+"""Controls the trade-off between search quality and response time."""
+enum SearchStrategy {
+  """Faster results with lower search quality."""
+  SPEED
+
+  """Good search quality with reasonable response time. Default."""
+  BALANCED
+
+  """Best search quality with higher response time."""
+  QUALITY
+}
+
 """Input for enrolling multiple items to a single sequence"""
 input EnrollToSequenceInput {
   """The ID of the sequence to enroll items to"""
@@ -16687,11 +17199,17 @@ enum InvitationMethod {
   """Added via account consolidation."""
   CONSOLIDATION
 
+  """Unknown invitation method."""
+  UNKNOWN
+
   """Added via service portal authorized domain."""
   SERVICE_PORTAL_AUTH_DOMAIN
 
   """Invited to monday service portal by another user."""
   SERVICE_PORTAL_USER_INVITATION
+
+  """Created as an API user."""
+  API_USER_CREATION
 }
 
 """URLs for the user's profile photo in various sizes."""
@@ -16870,6 +17388,11 @@ enum ExternalWidget {
   ListView widgets for displaying cross-board items in a tabular list format with filtering and sorting.
   """
   LISTVIEW
+
+  """
+  Embedded site widgets for displaying external web content within dashboards. Embeds any HTTPS URL (websites, web applications, dashboards) in an iframe, with optional docking support for layout control.
+  """
+  EMBEDDED_SITE
 }
 
 """Data visualization object."""
@@ -16958,6 +17481,16 @@ input CreateQuestionInput {
   settings: FormQuestionSettingsInput
 
   """
+  Conditional logic rules that control when this question is shown based on respondent answers.
+  """
+  show_if_rules: JSON
+
+  """
+  The kind of block to create. Overrides the type field for backwards compatibility. Supports all question types and content blocks.
+  """
+  block_type: FormBlockKind
+
+  """
   The question text displayed to respondents. Must be at least 1 character long and clearly indicate the expected response.
   """
   title: String!
@@ -16966,6 +17499,16 @@ input CreateQuestionInput {
   Array of option objects for choice-based questions (single_select, multi_select). Required for select types.
   """
   options: [QuestionOptionInput!]
+
+  """
+  The ID of the question after which the new question should be inserted. If omitted, the question is appended at the end.
+  """
+  insert_after_question_id: ID
+
+  """
+  The ID of the page block to assign the question to. Required when creating questions in multi-page forms.
+  """
+  page_block_id: ID
 }
 
 type DehydratedFormResponse {
@@ -17058,6 +17601,18 @@ input FormAfterSubmissionViewInput {
 
   """Boolean allowing users to view their submitted responses."""
   allowViewSubmission: Boolean
+}
+
+"""Object containing AI translation configuration for the form."""
+type FormAiTranslate {
+  """Boolean enabling AI translation for the form."""
+  enabled: Boolean!
+}
+
+"""Object containing AI translation configuration for the form."""
+input FormAiTranslateInput {
+  """Boolean enabling AI translation for the form."""
+  enabled: Boolean
 }
 
 enum FormAlignment {
@@ -17156,6 +17711,88 @@ enum FormBackgrounds {
   None
 }
 
+"""
+The kind of block to create. Supports question types and content blocks.
+"""
+enum FormBlockKind {
+  """A yes/no checkbox question."""
+  BOOLEAN
+
+  """
+  A question that links to items on a connected board. Board configuration must be done through the column settings.
+  """
+  CONNECTED_BOARDS
+
+  """A country selection question with a searchable dropdown."""
+  COUNTRY
+
+  """A date picker question with optional time selection."""
+  DATE
+
+  """A date range question allowing start and end date selection."""
+  DATE_RANGE
+
+  """An email address input question with format validation."""
+  EMAIL
+
+  """A file upload question for attachments."""
+  FILE
+
+  """A URL/link input question with optional format validation."""
+  LINK
+
+  """A location/address input question with optional geolocation autofill."""
+  LOCATION
+
+  """A multi-line text input question for longer responses."""
+  LONG_TEXT
+
+  """A multiple-choice question allowing several selections."""
+  MULTI_SELECT
+
+  """A name input question mapped to the item name column on the board."""
+  NAME
+
+  """A numeric input question."""
+  NUMBER
+
+  """A people picker question for selecting monday.com users."""
+  PEOPLE
+
+  """A phone number input question with optional country prefix."""
+  PHONE
+
+  """A rating question with a configurable scale."""
+  RATING
+
+  """A single-line text input question."""
+  SHORT_TEXT
+
+  """
+  A signature capture question for collecting drawn or uploaded signatures.
+  """
+  SIGNATURE
+
+  """A single-choice question allowing one selection."""
+  SINGLE_SELECT
+
+  """
+  A subitems question that creates sub-items on the board. Sub-items columns must be configured through the board.
+  """
+  SUBITEMS
+
+  """An updates/comments question mapped to the item updates feed."""
+  UPDATES
+
+  """
+  A text-only display block for adding instructions or context to a form.
+  """
+  DISPLAY_TEXT
+
+  """A page block that groups questions into a single page."""
+  PAGE_BLOCK
+}
+
 type FormCloseDate {
   """Boolean enabling automatic form closure at a specified date and time."""
   enabled: Boolean!
@@ -17237,6 +17874,9 @@ type FormFeatures {
 
   """Object containing board settings for response handling."""
   monday: FormMonday
+
+  """Object containing AI translation configuration for the form."""
+  ai_translate: FormAiTranslate
 }
 
 """
@@ -17275,6 +17915,9 @@ input FormFeaturesInput {
 
   """Object containing password protection configuration for the form."""
   password: FormPasswordInput
+
+  """Object containing AI translation configuration for the form."""
+  ai_translate: FormAiTranslateInput
 }
 
 enum FormFontSize {
@@ -17283,6 +17926,9 @@ enum FormFontSize {
   Large
 }
 
+"""
+String specifying the form display format. Can be a step by step form or a classic one page form.
+"""
 enum FormFormat {
   OneByOne
   Classic
@@ -17290,10 +17936,8 @@ enum FormFormat {
 
 """Object containing form structure and presentation settings."""
 type FormLayout {
-  """
-  String specifying the form display format. Can be a step by step form or a classic one page form.
-  """
-  format: FormFormat
+  """The layout style of the form (Card or Flat)."""
+  type: FormLayoutStyle
 
   """String controlling text and content alignment."""
   alignment: FormAlignment
@@ -17309,11 +17953,27 @@ input FormLayoutInput {
   """
   format: FormFormat
 
+  """The layout style of the form (Card or Flat)."""
+  type: FormLayoutStyle
+
   """String controlling text and content alignment."""
   alignment: FormAlignment
 
   """String setting reading direction."""
   direction: FormDirection
+}
+
+"""The layout style of the form (Card or Flat)."""
+enum FormLayoutStyle {
+  """
+  Card layout renders the form inside a bordered card with rounded corners and shadow, where content scrolls within the card.
+  """
+  CARD
+
+  """
+  Flat layout renders the form edge-to-edge across the full viewport, where the entire page scrolls.
+  """
+  FLAT
 }
 
 """Object containing logo display configuration for form branding."""
@@ -17473,7 +18133,7 @@ type FormQuestion {
   """
   The question type determining input behavior and validation (e.g., "text", "email", "single_select", "multi_select").
   """
-  type: FormQuestionType
+  type: FormBlockKind
 
   """
   Boolean controlling question visibility to respondents. Hidden questions remain in form structure but are not displayed.
@@ -17496,7 +18156,16 @@ type FormQuestion {
   required: Boolean!
   settings: FormQuestionSettings
   options: [FormQuestionOption!]
+
+  """
+  Conditional logic rules that control when this question is displayed based on other question answers.
+  """
   showIfRules: JSON
+
+  """
+  The ID of the page block this question belongs to. Used in multi-page forms to assign questions to specific pages.
+  """
+  page_block_id: ID
 }
 
 type FormQuestionOption {
@@ -17504,6 +18173,24 @@ type FormQuestionOption {
   The display text for individual option choices in select-type questions.
   """
   label: String!
+
+  """
+  The internal unique identifier for a select option. Used as the option ID in CRUD operations.
+  """
+  value: String
+
+  """
+  Integer specifying the display order of this option within the question (zero-based).
+  """
+  position: Int
+
+  """Boolean controlling whether this option is visible to respondents."""
+  visible: Boolean
+
+  """
+  Boolean indicating whether this option is active and available for selection.
+  """
+  active: Boolean
 }
 
 """Sources for prefilling question values"""
@@ -17580,6 +18267,21 @@ type FormQuestionSettings {
   Link/URL questions only: Whether to skip URL format validation, allowing any text input.
   """
   skipValidation: Boolean
+
+  """
+  Multi Select questions only: Limits the number of options a user can select.
+  """
+  label_limit_count: Int
+
+  """
+  Multi Select questions only: Boolean enabling the option selection limit. Independent from labelLimitCount — both must be set to enforce a limit.
+  """
+  label_limit_count_enabled: Boolean
+
+  """
+  ShortText, LongText, Name, and Link questions only: Pre-filled default value shown to respondents when the form loads.
+  """
+  default_answer: String
 }
 
 """Question-specific configuration object that varies by question type."""
@@ -17638,6 +18340,16 @@ input FormQuestionSettingsInput {
   Link/URL questions only: Whether to skip URL format validation, allowing any text input.
   """
   skipValidation: Boolean
+
+  """
+  Multi Select questions only: Boolean enabling the option selection limit. Independent from labelLimitCount — both must be set to enforce a limit.
+  """
+  label_limit_count_enabled: Boolean
+
+  """
+  ShortText, LongText, Name, and Link questions only: Pre-filled default value shown to respondents when the form loads.
+  """
+  default_answer: String
 }
 
 """The type of the question (ex. text, number, MultiSelect etc.)"""
@@ -17872,7 +18584,9 @@ input PrefillSettingsInput {
 }
 
 input QuestionOptionInput {
-  """The label to display for the option"""
+  """
+  The display text for the option shown to respondents. Must be at least 1 character long.
+  """
   label: String!
 }
 
@@ -17881,6 +18595,11 @@ input QuestionOrderInput {
   The unique identifier for the question. Used to target specific questions within a form.
   """
   id: String!
+
+  """
+  The ID of the page block to assign the question to. Required when creating questions in multi-page forms.
+  """
+  page_block_id: ID
 }
 
 type ResponseForm {
@@ -18015,6 +18734,11 @@ input UpdateQuestionInput {
 
   """Question-specific configuration object that varies by question type."""
   settings: FormQuestionSettingsInput
+
+  """
+  Conditional logic rules that control when this question is shown based on respondent answers.
+  """
+  show_if_rules: JSON
 
   """
   The question text displayed to respondents. Must be at least 1 character long and clearly indicate the expected response.

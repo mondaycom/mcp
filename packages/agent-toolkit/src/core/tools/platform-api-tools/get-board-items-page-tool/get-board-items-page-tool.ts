@@ -322,7 +322,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
       timeout: SEARCH_TIMEOUT
     }); 
 
-    const itemIdsFromSmartSearch = smartSearchRes.search
+    const itemIdsFromSmartSearch = smartSearchRes.cross_entity_search
       ?.filter((result): result is Extract<typeof result, { __typename?: typeof ITEM_SEARCH_RESULT_TYPENAME }> => result.__typename === ITEM_SEARCH_RESULT_TYPENAME)
       ?.map((result) => Number(result.data.id)) ?? [];
 
