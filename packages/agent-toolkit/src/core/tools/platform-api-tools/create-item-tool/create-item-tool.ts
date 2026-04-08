@@ -108,7 +108,7 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
         name: input.name,
       };
 
-      const changeColumnValuesTool = new ChangeItemColumnValuesTool(this.mondayApi, this.apiToken, {
+      const changeColumnValuesTool = new ChangeItemColumnValuesTool(this.mondayApi, {
         boardId: boardId,
       });
 
