@@ -200,7 +200,7 @@ export const GraphQLDescriptions = {
       createdAt: 'ISO timestamp when the question was created.',
       updatedAt: 'ISO timestamp when the question was last modified.',
       selectOptions:
-        'Array of option objects for choice-based questions (single_select, multi_select). Supported on both create and update. When updating, the provided array replaces all existing options (PUT semantics). SingleSelect: max 40 options. MultiSelect: max 500 options. Cannot remove options that are already assigned to board items.',
+        'Array of option objects for choice-based questions (single_select, multi_select). Supported on both create and update. When updating, the provided array replaces all existing options (PUT semantics). Cannot remove options that are already used in board items (existing submissions) — those options must be preserved and must include their value field.',
       selectOptionsLabel: 'The display text for individual option choices in select-type questions.',
       blockType:
         'Block kind extending the standard question types to include content blocks. Use DISPLAY_TEXT to insert a rich-text content block that displays information to respondents but collects no answer. Use PAGE_BLOCK to insert a page divider that splits the form into multiple pages — all questions added after this block appear on a new page. All standard question types (SHORT_TEXT, SINGLE_SELECT, EMAIL, etc.) are also valid values.',
