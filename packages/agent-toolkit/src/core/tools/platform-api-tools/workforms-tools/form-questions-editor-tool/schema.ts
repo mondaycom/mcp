@@ -10,10 +10,7 @@ import {
 } from '../../../../../monday-graphql/generated/graphql.dev/graphql';
 const questionSchema = z.object({
   type: z.nativeEnum(FormQuestionType).describe(GraphQLDescriptions.question.properties.type),
-  block_type: z
-    .nativeEnum(FormBlockKind)
-    .describe(GraphQLDescriptions.question.properties.blockType)
-    .optional(),
+  block_type: z.nativeEnum(FormBlockKind).describe(GraphQLDescriptions.question.properties.blockType).optional(),
   title: z.string().describe(GraphQLDescriptions.question.properties.title).optional(),
   description: z.string().describe(GraphQLDescriptions.question.properties.description).optional(),
   visible: z.boolean().describe(GraphQLDescriptions.question.properties.visible).optional(),
@@ -79,10 +76,7 @@ const questionSchema = z.object({
         .boolean()
         .describe(GraphQLDescriptions.questionSettings.properties.labelLimitCountEnabled)
         .optional(),
-      default_answer: z
-        .string()
-        .describe(GraphQLDescriptions.questionSettings.properties.defaultAnswer)
-        .optional(),
+      default_answer: z.string().describe(GraphQLDescriptions.questionSettings.properties.defaultAnswer).optional(),
       prefill: z
         .object({
           enabled: z.boolean().describe(GraphQLDescriptions.questionSettings.properties.prefillEnabled),
