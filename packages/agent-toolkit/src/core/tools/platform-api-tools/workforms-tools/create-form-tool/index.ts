@@ -6,6 +6,7 @@ import { createForm } from '../workforms.graphql.dev';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../../base-monday-api-tool';
 import { createFormToolSchema } from './schema';
+import { WORKFORMS_GRAPHQL_VERSION } from '../workforms.consts';
 
 export class CreateFormTool extends BaseMondayApiTool<typeof createFormToolSchema, never> {
   name = 'create_form';
@@ -39,7 +40,7 @@ export class CreateFormTool extends BaseMondayApiTool<typeof createFormToolSchem
     };
 
     const res = await this.mondayApi.request<CreateFormMutation>(createForm, variables, {
-      versionOverride: '2026-07',
+      versionOverride: WORKFORMS_GRAPHQL_VERSION,
     });
 
     return {

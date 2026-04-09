@@ -4,6 +4,7 @@ import { getForm } from '../workforms.graphql.dev';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../../base-monday-api-tool';
 import { getFormToolSchema } from './schema';
+import { WORKFORMS_GRAPHQL_VERSION } from '../workforms.consts';
 
 export class GetFormTool extends BaseMondayApiTool<typeof getFormToolSchema, never> {
   name = 'get_form';
@@ -28,7 +29,7 @@ export class GetFormTool extends BaseMondayApiTool<typeof getFormToolSchema, nev
     };
 
     const res = await this.mondayApi.request<GetFormQuery>(getForm, variables, {
-      versionOverride: '2026-07',
+      versionOverride: WORKFORMS_GRAPHQL_VERSION,
     });
 
     if (!res.form) {

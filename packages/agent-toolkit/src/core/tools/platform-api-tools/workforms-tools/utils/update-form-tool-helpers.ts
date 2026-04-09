@@ -45,6 +45,7 @@ import {
 import { ToolInputType, ToolOutputType } from '../../../../tool';
 import { ApiClient } from '@mondaydotcomorg/api';
 import { updateFormToolSchema } from '../update-form-tool/schema';
+import { WORKFORMS_GRAPHQL_VERSION } from '../workforms.consts';
 
 export class UpdateFormToolHelpers {
   constructor(private mondayApi: ApiClient) {}
@@ -63,7 +64,7 @@ export class UpdateFormToolHelpers {
       },
     };
 
-    await this.mondayApi.request<SetFormPasswordMutation>(setFormPassword, variables, { versionOverride: '2026-07' });
+    await this.mondayApi.request<SetFormPasswordMutation>(setFormPassword, variables, { versionOverride: WORKFORMS_GRAPHQL_VERSION });
 
     return {
       content: {
@@ -79,7 +80,7 @@ export class UpdateFormToolHelpers {
       formToken: input.formToken,
     };
 
-    await this.mondayApi.request<ShortenFormUrlMutation>(shortenFormUrl, variables, { versionOverride: '2026-07' });
+    await this.mondayApi.request<ShortenFormUrlMutation>(shortenFormUrl, variables, { versionOverride: WORKFORMS_GRAPHQL_VERSION });
 
     return {
       content: {
@@ -95,7 +96,7 @@ export class UpdateFormToolHelpers {
       formToken: input.formToken,
     };
 
-    await this.mondayApi.request<DeactivateFormMutation>(deactivateForm, variables, { versionOverride: '2026-07' });
+    await this.mondayApi.request<DeactivateFormMutation>(deactivateForm, variables, { versionOverride: WORKFORMS_GRAPHQL_VERSION });
 
     return {
       content: { message: 'Form successfully deactivated', form_token: input.formToken, action_name: 'deactivateForm' },
@@ -107,7 +108,7 @@ export class UpdateFormToolHelpers {
       formToken: input.formToken,
     };
 
-    await this.mondayApi.request<ActivateFormMutation>(activateForm, variables, { versionOverride: '2026-07' });
+    await this.mondayApi.request<ActivateFormMutation>(activateForm, variables, { versionOverride: WORKFORMS_GRAPHQL_VERSION });
 
     return {
       content: { message: 'Form successfully activated', form_token: input.formToken, action_name: 'activateForm' },
@@ -135,7 +136,7 @@ export class UpdateFormToolHelpers {
       },
     };
 
-    const res = await this.mondayApi.request<CreateFormTagMutation>(createFormTag, variables, { versionOverride: '2026-07' });
+    const res = await this.mondayApi.request<CreateFormTagMutation>(createFormTag, variables, { versionOverride: WORKFORMS_GRAPHQL_VERSION });
 
     return {
       content: {
@@ -165,7 +166,7 @@ export class UpdateFormToolHelpers {
       tagId: input.tag.id,
     };
 
-    await this.mondayApi.request<DeleteFormTagMutation>(deleteFormTag, variables, { versionOverride: '2026-07' });
+    await this.mondayApi.request<DeleteFormTagMutation>(deleteFormTag, variables, { versionOverride: WORKFORMS_GRAPHQL_VERSION });
 
     return {
       content: { message: 'Tag deleted', form_token: input.formToken, tag_id: input.tag.id, action_name: 'deleteTag' },
@@ -193,7 +194,7 @@ export class UpdateFormToolHelpers {
       },
     };
 
-    const res = await this.mondayApi.request<UpdateFormTagMutation>(updateFormTag, variables, { versionOverride: '2026-07' });
+    const res = await this.mondayApi.request<UpdateFormTagMutation>(updateFormTag, variables, { versionOverride: WORKFORMS_GRAPHQL_VERSION });
 
     if (!res.update_form_tag) {
       return {
@@ -218,7 +219,7 @@ export class UpdateFormToolHelpers {
       appearance: input.form.appearance as FormAppearanceInput,
     };
 
-    const res = await this.mondayApi.request<UpdateFormAppearanceMutation>(updateFormAppearance, variables, { versionOverride: '2026-07' });
+    const res = await this.mondayApi.request<UpdateFormAppearanceMutation>(updateFormAppearance, variables, { versionOverride: WORKFORMS_GRAPHQL_VERSION });
 
     return {
       content: {
@@ -242,7 +243,7 @@ export class UpdateFormToolHelpers {
       accessibility: input.form.accessibility as FormAccessibilityInput,
     };
 
-    const res = await this.mondayApi.request<UpdateFormAccessibilityMutation>(updateFormAccessibility, variables, { versionOverride: '2026-07' });
+    const res = await this.mondayApi.request<UpdateFormAccessibilityMutation>(updateFormAccessibility, variables, { versionOverride: WORKFORMS_GRAPHQL_VERSION });
 
     return {
       content: {
@@ -266,7 +267,7 @@ export class UpdateFormToolHelpers {
       features: input.form.features as FormFeaturesInput,
     };
 
-    const res = await this.mondayApi.request<UpdateFormFeaturesMutation>(updateFormFeatures, variables, { versionOverride: '2026-07' });
+    const res = await this.mondayApi.request<UpdateFormFeaturesMutation>(updateFormFeatures, variables, { versionOverride: WORKFORMS_GRAPHQL_VERSION });
 
     return {
       content: {
@@ -291,7 +292,7 @@ export class UpdateFormToolHelpers {
       questions: input.form.questions as QuestionOrderInput[],
     };
 
-    const res = await this.mondayApi.request<UpdateFormQuestionOrderMutation>(updateFormQuestionOrder, variables, { versionOverride: '2026-07' });
+    const res = await this.mondayApi.request<UpdateFormQuestionOrderMutation>(updateFormQuestionOrder, variables, { versionOverride: WORKFORMS_GRAPHQL_VERSION });
 
     return {
       content: {
@@ -316,7 +317,7 @@ export class UpdateFormToolHelpers {
       description: input.form.description,
     };
 
-    const res = await this.mondayApi.request<UpdateFormHeaderMutation>(updateFormHeader, variables, { versionOverride: '2026-07' });
+    const res = await this.mondayApi.request<UpdateFormHeaderMutation>(updateFormHeader, variables, { versionOverride: WORKFORMS_GRAPHQL_VERSION });
 
     return {
       content: {

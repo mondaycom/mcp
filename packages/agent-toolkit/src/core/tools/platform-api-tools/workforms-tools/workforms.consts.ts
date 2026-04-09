@@ -1,3 +1,5 @@
+export const WORKFORMS_GRAPHQL_VERSION = '2026-07';
+
 export const GraphQLDescriptions = {
   commonArgs: {
     formToken: 'The unique identifier token for the form. Required for all form-specific operations.',

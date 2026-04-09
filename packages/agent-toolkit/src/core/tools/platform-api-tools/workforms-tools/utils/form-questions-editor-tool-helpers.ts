@@ -10,6 +10,7 @@ import { createFormQuestion, deleteFormQuestion, updateFormQuestion } from '../w
 import { ToolInputType, ToolOutputType } from '../../../../tool';
 import { ApiClient } from '@mondaydotcomorg/api';
 import { formQuestionsEditorToolSchema } from '../form-questions-editor-tool/schema';
+import { WORKFORMS_GRAPHQL_VERSION } from '../workforms.consts';
 
 export class FormQuestionsEditorToolHelpers {
   constructor(private mondayApi: ApiClient) {}
@@ -28,7 +29,7 @@ export class FormQuestionsEditorToolHelpers {
     };
 
     await this.mondayApi.request<DeleteFormQuestionMutation>(deleteFormQuestion, deleteVariables, {
-      versionOverride: '2026-07',
+      versionOverride: WORKFORMS_GRAPHQL_VERSION,
     });
 
     return {
@@ -58,7 +59,7 @@ export class FormQuestionsEditorToolHelpers {
     };
 
     await this.mondayApi.request<UpdateFormQuestionMutation>(updateFormQuestion, updateVariables, {
-      versionOverride: '2026-07',
+      versionOverride: WORKFORMS_GRAPHQL_VERSION,
     });
 
     return {
@@ -89,7 +90,7 @@ export class FormQuestionsEditorToolHelpers {
     };
 
     const result = await this.mondayApi.request<CreateFormQuestionMutation>(createFormQuestion, createVariables, {
-      versionOverride: '2026-07',
+      versionOverride: WORKFORMS_GRAPHQL_VERSION,
     });
 
     return {
