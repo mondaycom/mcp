@@ -2,17 +2,28 @@ import { z } from 'zod';
 import { GraphQLDescriptions } from '../workforms.consts';
 import { FormQuestionActions } from '../workforms.types';
 import {
+  FormBlockKind,
   FormQuestionSelectDisplay,
   FormQuestionSelectOrderByOptions,
   FormQuestionType,
   FormQuestionPrefillSources,
-} from '../../../../../monday-graphql/generated/graphql/graphql';
+} from '../../../../../monday-graphql/generated/graphql.dev/graphql';
 const questionSchema = z.object({
   type: z.nativeEnum(FormQuestionType).describe(GraphQLDescriptions.question.properties.type),
+  block_type: z
+    .nativeEnum(FormBlockKind)
+    .describe(GraphQLDescriptions.question.properties.blockType)
+    .optional(),
   title: z.string().describe(GraphQLDescriptions.question.properties.title).optional(),
   description: z.string().describe(GraphQLDescriptions.question.properties.description).optional(),
   visible: z.boolean().describe(GraphQLDescriptions.question.properties.visible).optional(),
   required: z.boolean().describe(GraphQLDescriptions.question.properties.required).optional(),
+  insert_after_question_id: z
+    .string()
+    .describe(GraphQLDescriptions.question.properties.insertAfterQuestionId)
+    .optional(),
+  page_block_id: z.string().describe(GraphQLDescriptions.question.properties.pageBlockId).optional(),
+  existing_column_id: z.string().describe(GraphQLDescriptions.question.properties.existingColumnId).optional(),
   options: z
     .array(
       z.object({
@@ -59,6 +70,19 @@ const questionSchema = z.object({
         .describe(GraphQLDescriptions.questionSettings.properties.prefixPredefined)
         .optional(),
       skipValidation: z.boolean().describe(GraphQLDescriptions.questionSettings.properties.skipValidation).optional(),
+      labelLimitCount: z
+        .number()
+        .int()
+        .describe(GraphQLDescriptions.questionSettings.properties.labelLimitCount)
+        .optional(),
+      label_limit_count_enabled: z
+        .boolean()
+        .describe(GraphQLDescriptions.questionSettings.properties.labelLimitCountEnabled)
+        .optional(),
+      default_answer: z
+        .string()
+        .describe(GraphQLDescriptions.questionSettings.properties.defaultAnswer)
+        .optional(),
       prefill: z
         .object({
           enabled: z.boolean().describe(GraphQLDescriptions.questionSettings.properties.prefillEnabled),
