@@ -27,7 +27,7 @@ import {
   UpdateFormQuestionOrderMutationVariables,
   UpdateFormTagMutation,
   UpdateFormTagMutationVariables,
-} from '../../../../../monday-graphql/generated/graphql/graphql';
+} from '../../../../../monday-graphql/generated/graphql.dev/graphql';
 import {
   activateForm,
   createFormTag,
@@ -41,7 +41,7 @@ import {
   updateFormHeader,
   updateFormQuestionOrder,
   updateFormTag,
-} from '../workforms.graphql';
+} from '../workforms.graphql.dev';
 import { ToolInputType, ToolOutputType } from '../../../../tool';
 import { ApiClient } from '@mondaydotcomorg/api';
 import { updateFormToolSchema } from '../update-form-tool/schema';
@@ -63,10 +63,14 @@ export class UpdateFormToolHelpers {
       },
     };
 
-    await this.mondayApi.request<SetFormPasswordMutation>(setFormPassword, variables);
+    await this.mondayApi.request<SetFormPasswordMutation>(setFormPassword, variables, { versionOverride: '2026-07' });
 
     return {
-      content: { message: "Form password successfully set", form_token: input.formToken, action_name: "setFormPassword" },
+      content: {
+        message: 'Form password successfully set',
+        form_token: input.formToken,
+        action_name: 'setFormPassword',
+      },
     };
   }
 
@@ -75,10 +79,14 @@ export class UpdateFormToolHelpers {
       formToken: input.formToken,
     };
 
-    await this.mondayApi.request<ShortenFormUrlMutation>(shortenFormUrl, variables);
+    await this.mondayApi.request<ShortenFormUrlMutation>(shortenFormUrl, variables, { versionOverride: '2026-07' });
 
     return {
-      content: { message: "Form URL successfully shortened", form_token: input.formToken, action_name: "shortenFormUrl" },
+      content: {
+        message: 'Form URL successfully shortened',
+        form_token: input.formToken,
+        action_name: 'shortenFormUrl',
+      },
     };
   }
 
@@ -87,10 +95,10 @@ export class UpdateFormToolHelpers {
       formToken: input.formToken,
     };
 
-    await this.mondayApi.request<DeactivateFormMutation>(deactivateForm, variables);
+    await this.mondayApi.request<DeactivateFormMutation>(deactivateForm, variables, { versionOverride: '2026-07' });
 
     return {
-      content: { message: "Form successfully deactivated", form_token: input.formToken, action_name: "deactivateForm" },
+      content: { message: 'Form successfully deactivated', form_token: input.formToken, action_name: 'deactivateForm' },
     };
   }
 
@@ -99,10 +107,10 @@ export class UpdateFormToolHelpers {
       formToken: input.formToken,
     };
 
-    await this.mondayApi.request<ActivateFormMutation>(activateForm, variables);
+    await this.mondayApi.request<ActivateFormMutation>(activateForm, variables, { versionOverride: '2026-07' });
 
     return {
-      content: { message: "Form successfully activated", form_token: input.formToken, action_name: "activateForm" },
+      content: { message: 'Form successfully activated', form_token: input.formToken, action_name: 'activateForm' },
     };
   }
 
@@ -127,10 +135,15 @@ export class UpdateFormToolHelpers {
       },
     };
 
-    const res = await this.mondayApi.request<CreateFormTagMutation>(createFormTag, variables);
+    const res = await this.mondayApi.request<CreateFormTagMutation>(createFormTag, variables, { versionOverride: '2026-07' });
 
     return {
-      content: { message: "Tag successfully added", form_token: input.formToken, action_name: "createTag", data: res.create_form_tag },
+      content: {
+        message: 'Tag successfully added',
+        form_token: input.formToken,
+        action_name: 'createTag',
+        data: res.create_form_tag,
+      },
     };
   }
 
@@ -152,10 +165,10 @@ export class UpdateFormToolHelpers {
       tagId: input.tag.id,
     };
 
-    await this.mondayApi.request<DeleteFormTagMutation>(deleteFormTag, variables);
+    await this.mondayApi.request<DeleteFormTagMutation>(deleteFormTag, variables, { versionOverride: '2026-07' });
 
     return {
-      content: { message: "Tag deleted", form_token: input.formToken, tag_id: input.tag.id, action_name: "deleteTag" },
+      content: { message: 'Tag deleted', form_token: input.formToken, tag_id: input.tag.id, action_name: 'deleteTag' },
     };
   }
 
@@ -180,7 +193,7 @@ export class UpdateFormToolHelpers {
       },
     };
 
-    const res = await this.mondayApi.request<UpdateFormTagMutation>(updateFormTag, variables);
+    const res = await this.mondayApi.request<UpdateFormTagMutation>(updateFormTag, variables, { versionOverride: '2026-07' });
 
     if (!res.update_form_tag) {
       return {
@@ -189,7 +202,7 @@ export class UpdateFormToolHelpers {
     }
 
     return {
-      content: { message: "Tag updated", form_token: input.formToken, tag_id: input.tag.id, action_name: "updateTag" },
+      content: { message: 'Tag updated', form_token: input.formToken, tag_id: input.tag.id, action_name: 'updateTag' },
     };
   }
 
@@ -205,10 +218,15 @@ export class UpdateFormToolHelpers {
       appearance: input.form.appearance as FormAppearanceInput,
     };
 
-    const res = await this.mondayApi.request<UpdateFormAppearanceMutation>(updateFormAppearance, variables);
+    const res = await this.mondayApi.request<UpdateFormAppearanceMutation>(updateFormAppearance, variables, { versionOverride: '2026-07' });
 
     return {
-      content: { message: "Appearance successfully updated", form_token: input.formToken, action_name: "updateAppearance", data: res.update_form_settings?.appearance },
+      content: {
+        message: 'Appearance successfully updated',
+        form_token: input.formToken,
+        action_name: 'updateAppearance',
+        data: res.update_form_settings?.appearance,
+      },
     };
   }
 
@@ -224,10 +242,15 @@ export class UpdateFormToolHelpers {
       accessibility: input.form.accessibility as FormAccessibilityInput,
     };
 
-    const res = await this.mondayApi.request<UpdateFormAccessibilityMutation>(updateFormAccessibility, variables);
+    const res = await this.mondayApi.request<UpdateFormAccessibilityMutation>(updateFormAccessibility, variables, { versionOverride: '2026-07' });
 
     return {
-      content: { message: "Accessibility successfully updated", form_token: input.formToken, action_name: "updateAccessibility", data: res.update_form_settings?.accessibility },
+      content: {
+        message: 'Accessibility successfully updated',
+        form_token: input.formToken,
+        action_name: 'updateAccessibility',
+        data: res.update_form_settings?.accessibility,
+      },
     };
   }
 
@@ -243,10 +266,15 @@ export class UpdateFormToolHelpers {
       features: input.form.features as FormFeaturesInput,
     };
 
-    const res = await this.mondayApi.request<UpdateFormFeaturesMutation>(updateFormFeatures, variables);
+    const res = await this.mondayApi.request<UpdateFormFeaturesMutation>(updateFormFeatures, variables, { versionOverride: '2026-07' });
 
     return {
-      content: { message: "Features successfully updated", form_token: input.formToken, action_name: "updateFeatures", data: res.update_form_settings?.features },
+      content: {
+        message: 'Features successfully updated',
+        form_token: input.formToken,
+        action_name: 'updateFeatures',
+        data: res.update_form_settings?.features,
+      },
     };
   }
 
@@ -263,10 +291,15 @@ export class UpdateFormToolHelpers {
       questions: input.form.questions as QuestionOrderInput[],
     };
 
-    const res = await this.mondayApi.request<UpdateFormQuestionOrderMutation>(updateFormQuestionOrder, variables);
+    const res = await this.mondayApi.request<UpdateFormQuestionOrderMutation>(updateFormQuestionOrder, variables, { versionOverride: '2026-07' });
 
     return {
-      content: { message: "Question order successfully updated", form_token: input.formToken, action_name: "updateQuestionOrder", data: res.update_form?.questions },
+      content: {
+        message: 'Question order successfully updated',
+        form_token: input.formToken,
+        action_name: 'updateQuestionOrder',
+        data: res.update_form?.questions,
+      },
     };
   }
 
@@ -283,10 +316,15 @@ export class UpdateFormToolHelpers {
       description: input.form.description,
     };
 
-    const res = await this.mondayApi.request<UpdateFormHeaderMutation>(updateFormHeader, variables);
+    const res = await this.mondayApi.request<UpdateFormHeaderMutation>(updateFormHeader, variables, { versionOverride: '2026-07' });
 
     return {
-      content: { message: "Form header updated", form_token: input.formToken, action_name: "updateFormHeader", data: res.update_form },
+      content: {
+        message: 'Form header updated',
+        form_token: input.formToken,
+        action_name: 'updateFormHeader',
+        data: res.update_form,
+      },
     };
   }
 }

@@ -71,7 +71,13 @@ export class ManageToolsTool implements Tool<typeof manageToolsSchema> {
 
         if (this.toolkitManager.isToolEnabled(toolName)) {
           return {
-            content: { action: 'enable', tool_name: toolName, success: true, message: `Tool '${toolName}' is already enabled`, enabled: true },
+            content: {
+              action: 'enable',
+              tool_name: toolName,
+              success: true,
+              message: `Tool '${toolName}' is already enabled`,
+              enabled: true,
+            },
           };
         }
 
@@ -81,7 +87,9 @@ export class ManageToolsTool implements Tool<typeof manageToolsSchema> {
             action: 'enable',
             tool_name: toolName,
             success: enableResult,
-            message: enableResult ? `Tool '${toolName}' has been enabled and is now available for use` : `Failed to enable tool '${toolName}' (tool not found)`,
+            message: enableResult
+              ? `Tool '${toolName}' has been enabled and is now available for use`
+              : `Failed to enable tool '${toolName}' (tool not found)`,
             enabled: enableResult,
           },
         };
@@ -97,7 +105,9 @@ export class ManageToolsTool implements Tool<typeof manageToolsSchema> {
             action: 'disable',
             tool_name: toolName,
             success: disableResult,
-            message: disableResult ? `Tool '${toolName}' has been disabled` : `Failed to disable tool '${toolName}' (tool not found)`,
+            message: disableResult
+              ? `Tool '${toolName}' has been disabled`
+              : `Failed to disable tool '${toolName}' (tool not found)`,
             enabled: !disableResult,
           },
         };
@@ -124,7 +134,11 @@ export class ManageToolsTool implements Tool<typeof manageToolsSchema> {
           .map(([name, status]) => ({ name, enabled_by_default: status.enabledByDefault }));
         const inactiveTools = Object.entries(detailedStatus)
           .filter(([, status]) => !status.enabled)
-          .map(([name, status]) => ({ name, enabled_by_default: status.enabledByDefault, activate_hint: `{"action": "enable", "toolName": "${name}"}` }));
+          .map(([name, status]) => ({
+            name,
+            enabled_by_default: status.enabledByDefault,
+            activate_hint: `{"action": "enable", "toolName": "${name}"}`,
+          }));
 
         return {
           content: { action: 'detailed', active_tools: activeTools, inactive_tools: inactiveTools },
@@ -142,7 +156,9 @@ export class ManageToolsTool implements Tool<typeof manageToolsSchema> {
             action: 'reset',
             tool_name: toolName,
             success: resetResult,
-            message: resetResult ? `Tool '${toolName}' has been reset to its default state` : `Failed to reset tool '${toolName}' (tool not found)`,
+            message: resetResult
+              ? `Tool '${toolName}' has been reset to its default state`
+              : `Failed to reset tool '${toolName}' (tool not found)`,
             default_state: defaultState,
           },
         };

@@ -33,7 +33,9 @@ export const createUpdateToolSchema = {
   parentId: z
     .number()
     .optional()
-    .describe('The ID of the update to reply to. Use this parameter when you want to reply on an existing update leave it empty if you want to create a new update'),
+    .describe(
+      'The ID of the update to reply to. Use this parameter when you want to reply on an existing update leave it empty if you want to create a new update',
+    ),
 };
 
 export class CreateUpdateTool extends BaseMondayApiTool<typeof createUpdateToolSchema> {
@@ -87,7 +89,13 @@ export class CreateUpdateTool extends BaseMondayApiTool<typeof createUpdateToolS
       }
 
       return {
-        content: { message: `Update ${res.create_update.id} created on item ${input.itemId}`, update_id: res.create_update.id, item_id: input.itemId, item_name: res.create_update.item?.name, item_url: res.create_update.item?.url },
+        content: {
+          message: `Update ${res.create_update.id} created on item ${input.itemId}`,
+          update_id: res.create_update.id,
+          item_id: input.itemId,
+          item_name: res.create_update.item?.name,
+          item_url: res.create_update.item?.url,
+        },
       };
     } catch (error) {
       rethrowWithContext(error, 'create update');

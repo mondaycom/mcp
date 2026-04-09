@@ -55,7 +55,11 @@ describe('FormQuestionsEditorTool', () => {
 
         const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-        expect(parseToolResult(result)).toEqual({ message: 'Question created', question_id: 'question_123', action_name: 'create' });
+        expect(parseToolResult(result)).toEqual({
+          message: 'Question created',
+          question_id: 'question_123',
+          action_name: 'create',
+        });
         expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -112,7 +116,11 @@ describe('FormQuestionsEditorTool', () => {
 
         const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-        expect(parseToolResult(result)).toEqual({ message: 'Question created', question_id: 'question_456', action_name: 'create' });
+        expect(parseToolResult(result)).toEqual({
+          message: 'Question created',
+          question_id: 'question_456',
+          action_name: 'create',
+        });
         expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -167,7 +175,11 @@ describe('FormQuestionsEditorTool', () => {
 
         const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-        expect(parseToolResult(result)).toEqual({ message: 'Question created', question_id: 'question_789', action_name: 'create' });
+        expect(parseToolResult(result)).toEqual({
+          message: 'Question created',
+          question_id: 'question_789',
+          action_name: 'create',
+        });
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].question.options).toHaveLength(3);
@@ -209,7 +221,11 @@ describe('FormQuestionsEditorTool', () => {
 
         const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-        expect(parseToolResult(result)).toEqual({ message: 'Question created', question_id: 'question_date', action_name: 'create' });
+        expect(parseToolResult(result)).toEqual({
+          message: 'Question created',
+          question_id: 'question_date',
+          action_name: 'create',
+        });
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].question.settings.defaultCurrentDate).toBe(true);
@@ -256,7 +272,11 @@ describe('FormQuestionsEditorTool', () => {
 
         const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-        expect(parseToolResult(result)).toEqual({ message: 'Question created', question_id: 'question_phone', action_name: 'create' });
+        expect(parseToolResult(result)).toEqual({
+          message: 'Question created',
+          question_id: 'question_phone',
+          action_name: 'create',
+        });
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].question.settings.prefixPredefined.enabled).toBe(true);
@@ -407,7 +427,11 @@ describe('FormQuestionsEditorTool', () => {
 
         const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-        expect(parseToolResult(result)).toEqual({ message: 'Question updated', question_id: 'question_123', action_name: 'update' });
+        expect(parseToolResult(result)).toEqual({
+          message: 'Question updated',
+          question_id: 'question_123',
+          action_name: 'update',
+        });
         expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -453,7 +477,11 @@ describe('FormQuestionsEditorTool', () => {
 
         const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-        expect(parseToolResult(result)).toEqual({ message: 'Question updated', question_id: 'question_456', action_name: 'update' });
+        expect(parseToolResult(result)).toEqual({
+          message: 'Question updated',
+          question_id: 'question_456',
+          action_name: 'update',
+        });
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].question).toEqual({
@@ -496,7 +524,11 @@ describe('FormQuestionsEditorTool', () => {
 
         const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-        expect(parseToolResult(result)).toEqual({ message: 'Question updated', question_id: 'question_789', action_name: 'update' });
+        expect(parseToolResult(result)).toEqual({
+          message: 'Question updated',
+          question_id: 'question_789',
+          action_name: 'update',
+        });
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].question.settings).toEqual({
@@ -534,7 +566,11 @@ describe('FormQuestionsEditorTool', () => {
 
         const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-        expect(parseToolResult(result)).toEqual({ message: 'Question updated', question_id: 'question_visible', action_name: 'update' });
+        expect(parseToolResult(result)).toEqual({
+          message: 'Question updated',
+          question_id: 'question_visible',
+          action_name: 'update',
+        });
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].question.visible).toBe(false);
@@ -616,7 +652,11 @@ describe('FormQuestionsEditorTool', () => {
         const result = await callToolByNameRawAsync('form_questions_editor', args);
 
         // The tool should still return success even if the mutation returns null
-        expect(parseToolResult(result)).toEqual({ message: 'Question updated', question_id: 'question_123', action_name: 'update' });
+        expect(parseToolResult(result)).toEqual({
+          message: 'Question updated',
+          question_id: 'question_123',
+          action_name: 'update',
+        });
       });
     });
   });
@@ -638,7 +678,11 @@ describe('FormQuestionsEditorTool', () => {
 
         const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-        expect(parseToolResult(result)).toEqual({ message: 'Question deleted', question_id: 'question_to_delete', action_name: 'delete' });
+        expect(parseToolResult(result)).toEqual({
+          message: 'Question deleted',
+          question_id: 'question_to_delete',
+          action_name: 'delete',
+        });
         expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -664,7 +708,11 @@ describe('FormQuestionsEditorTool', () => {
 
         const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-        expect(parseToolResult(result)).toEqual({ message: 'Question deleted', question_id: 'another_question_id', action_name: 'delete' });
+        expect(parseToolResult(result)).toEqual({
+          message: 'Question deleted',
+          question_id: 'another_question_id',
+          action_name: 'delete',
+        });
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].questionId).toBe('another_question_id');
@@ -735,7 +783,11 @@ describe('FormQuestionsEditorTool', () => {
         const result = await callToolByNameRawAsync('form_questions_editor', args);
 
         // The tool should still return success even if the mutation returns false
-        expect(parseToolResult(result)).toEqual({ message: 'Question deleted', question_id: 'question_to_delete', action_name: 'delete' });
+        expect(parseToolResult(result)).toEqual({
+          message: 'Question deleted',
+          question_id: 'question_to_delete',
+          action_name: 'delete',
+        });
       });
     });
   });
@@ -790,7 +842,11 @@ describe('FormQuestionsEditorTool', () => {
 
       const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-      expect(parseToolResult(result)).toEqual({ message: 'Question created', question_id: 'question_multi', action_name: 'create' });
+      expect(parseToolResult(result)).toEqual({
+        message: 'Question created',
+        question_id: 'question_multi',
+        action_name: 'create',
+      });
 
       const mockCall = mocks.getMockRequest().mock.calls[0];
       expect(mockCall[1].question.type).toBe(FormQuestionType.MultiSelect);
@@ -830,7 +886,11 @@ describe('FormQuestionsEditorTool', () => {
 
       const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-      expect(parseToolResult(result)).toEqual({ message: 'Question created', question_id: 'question_bool', action_name: 'create' });
+      expect(parseToolResult(result)).toEqual({
+        message: 'Question created',
+        question_id: 'question_bool',
+        action_name: 'create',
+      });
 
       const mockCall = mocks.getMockRequest().mock.calls[0];
       expect(mockCall[1].question.type).toBe(FormQuestionType.Boolean);
@@ -869,7 +929,11 @@ describe('FormQuestionsEditorTool', () => {
 
       const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-      expect(parseToolResult(result)).toEqual({ message: 'Question created', question_id: 'question_location', action_name: 'create' });
+      expect(parseToolResult(result)).toEqual({
+        message: 'Question created',
+        question_id: 'question_location',
+        action_name: 'create',
+      });
 
       const mockCall = mocks.getMockRequest().mock.calls[0];
       expect(mockCall[1].question.type).toBe(FormQuestionType.Location);
@@ -908,7 +972,11 @@ describe('FormQuestionsEditorTool', () => {
 
       const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-      expect(parseToolResult(result)).toEqual({ message: 'Question created', question_id: 'question_link', action_name: 'create' });
+      expect(parseToolResult(result)).toEqual({
+        message: 'Question created',
+        question_id: 'question_link',
+        action_name: 'create',
+      });
 
       const mockCall = mocks.getMockRequest().mock.calls[0];
       expect(mockCall[1].question.type).toBe(FormQuestionType.Link);
@@ -944,7 +1012,11 @@ describe('FormQuestionsEditorTool', () => {
 
       const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-      expect(parseToolResult(result)).toEqual({ message: 'Question created', question_id: 'question_longtext', action_name: 'create' });
+      expect(parseToolResult(result)).toEqual({
+        message: 'Question created',
+        question_id: 'question_longtext',
+        action_name: 'create',
+      });
 
       const mockCall = mocks.getMockRequest().mock.calls[0];
       expect(mockCall[1].question.type).toBe(FormQuestionType.LongText);
@@ -977,7 +1049,11 @@ describe('FormQuestionsEditorTool', () => {
 
       const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-      expect(parseToolResult(result)).toEqual({ message: 'Question created', question_id: 'question_number', action_name: 'create' });
+      expect(parseToolResult(result)).toEqual({
+        message: 'Question created',
+        question_id: 'question_number',
+        action_name: 'create',
+      });
 
       const mockCall = mocks.getMockRequest().mock.calls[0];
       expect(mockCall[1].question.type).toBe(FormQuestionType.Number);

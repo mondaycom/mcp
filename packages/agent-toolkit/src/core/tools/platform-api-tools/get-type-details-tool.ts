@@ -76,4 +76,3 @@ export class GetTypeDetailsTool extends BaseMondayApiTool<typeof getTypeDetailsT
     }
   }
 }
-

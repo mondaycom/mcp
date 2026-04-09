@@ -11,12 +11,16 @@ import {
   GetFoldersQuery,
   GetFoldersQueryVariables,
 } from 'src/monday-graphql/generated/graphql/graphql';
-import {
-  SearchDevQuery,
-  SearchDevQueryVariables,
-} from 'src/monday-graphql/generated/graphql.dev/graphql';
+import { SearchDevQuery, SearchDevQueryVariables } from 'src/monday-graphql/generated/graphql.dev/graphql';
 import { normalizeString } from 'src/utils/string.utils';
-import { BOARD_SEARCH_RESULT_TYPENAME, DOC_SEARCH_RESULT_TYPENAME, DataWithFilterInfo, GlobalSearchType, ObjectPrefixes, SearchResult } from './search-tool.types';
+import {
+  BOARD_SEARCH_RESULT_TYPENAME,
+  DOC_SEARCH_RESULT_TYPENAME,
+  DataWithFilterInfo,
+  GlobalSearchType,
+  ObjectPrefixes,
+  SearchResult,
+} from './search-tool.types';
 import { LOAD_INTO_MEMORY_LIMIT, MAX_FOLDERS_LIMIT, SEARCH_LIMIT } from './search-tool.consts';
 import { SEARCH_TIMEOUT } from 'src/utils/time.utils';
 import { rethrowWithContext, throwIfSearchTimeoutError } from 'src/utils/error.utils';
@@ -74,10 +78,10 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
         const data = await this.searchWithDevEndpointAsync(input);
 
         return {
-          content: { message: "Search results", data: data.items },
+          content: { message: 'Search results', data: data.items },
         };
       } catch (error) {
-       throwIfSearchTimeoutError(error);
+        throwIfSearchTimeoutError(error);
       }
     }
 
@@ -96,7 +100,14 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     const data = await handler(input);
 
     return {
-      content: { message: "Search results", disclaimer: data.wasFiltered || !input.searchTerm ? undefined : '[IMPORTANT]Items were not filtered. Please perform the filtering.', data: data.items },
+      content: {
+        message: 'Search results',
+        disclaimer:
+          data.wasFiltered || !input.searchTerm
+            ? undefined
+            : '[IMPORTANT]Items were not filtered. Please perform the filtering.',
+        data: data.items,
+      },
     };
   }
 
@@ -118,7 +129,7 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
       throw new Error(`Unsupported search type for dev endpoint: ${input.searchType}`);
     }
 
-    if(input.page > 1) {
+    if (input.page > 1) {
       throw new Error('Pagination is not supported for search, increase the limit parameter instead');
     }
 
@@ -130,7 +141,7 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
 
     const response = await this.mondayApi.request<SearchDevQuery>(searchDev, variables, {
       versionOverride: 'dev',
-      timeout: SEARCH_TIMEOUT
+      timeout: SEARCH_TIMEOUT,
     });
 
     const results = response.cross_entity_search || [];
@@ -161,7 +172,7 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     };
     variables.workspace_ids ??= [];
 
-    if(variables.workspace_ids.length === 0) {
+    if (variables.workspace_ids.length === 0) {
       rethrowWithContext(new Error('Searching for folders require specifying workspace ids'), 'search folders');
     }
 
@@ -221,7 +232,10 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     return result;
   }
 
-  private getPagingParamsForSearch(input: ToolInputType<SearchToolInput>, maxLimitForEntity: number = LOAD_INTO_MEMORY_LIMIT): { page: number; limit: number } {
+  private getPagingParamsForSearch(
+    input: ToolInputType<SearchToolInput>,
+    maxLimitForEntity: number = LOAD_INTO_MEMORY_LIMIT,
+  ): { page: number; limit: number } {
     return {
       page: input.searchTerm ? 1 : input.page,
       limit: input.searchTerm ? Math.min(LOAD_INTO_MEMORY_LIMIT, maxLimitForEntity) : input.limit,

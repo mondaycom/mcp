@@ -13,7 +13,10 @@ import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-ap
 
 export const createViewToolSchema = {
   boardId: z.string().describe('The board ID to create the view on'),
-  type: z.nativeEnum(ViewKind).default(ViewKind.Table).describe('The type of board view to create. Use TABLE for standard board views.'),
+  type: z
+    .nativeEnum(ViewKind)
+    .default(ViewKind.Table)
+    .describe('The type of board view to create. Use TABLE for standard board views.'),
   name: z.string().optional().describe('The name of the view (e.g. "High Priority Items", "My Tasks")'),
   filter: z
     .object({
@@ -71,9 +74,7 @@ Example filter for status column: { "rules": [{ "column_id": "status", "compare_
     return createViewToolSchema;
   }
 
-  protected async executeInternal(
-    input: ToolInputType<typeof createViewToolSchema>,
-  ): Promise<ToolOutputType<never>> {
+  protected async executeInternal(input: ToolInputType<typeof createViewToolSchema>): Promise<ToolOutputType<never>> {
     const variables = {
       boardId: input.boardId,
       type: input.type,

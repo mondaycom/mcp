@@ -51,7 +51,7 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
     const relevantPeople = this.extractRelevantPeople(intelligence);
 
     const output = { user: me, favorites: enrichedFavorites, relevantBoards, relevantPeople };
-    return { content: { message: "User context", ...output } };
+    return { content: { message: 'User context', ...output } };
   }
 
   private async fetchFavorites(favorites: NonNullable<GetUserContextQuery['favorites']>): Promise<Favorite[]> {
@@ -115,7 +115,9 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
     return result;
   }
 
-  private groupByType(favorites: NonNullable<GetUserContextQuery['favorites']>): Partial<Record<GraphqlMondayObject, string[]>> {
+  private groupByType(
+    favorites: NonNullable<GetUserContextQuery['favorites']>,
+  ): Partial<Record<GraphqlMondayObject, string[]>> {
     const result: Partial<Record<GraphqlMondayObject, string[]>> = {};
 
     for (const favorite of favorites) {

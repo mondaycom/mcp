@@ -3,7 +3,7 @@ import { BaseMondayAppsTool, createMondayAppsAnnotations } from '../base-tool/ba
 import { MondayAppsToolCategory } from '../consts/apps.consts';
 import { AppDevelopmentContextResponse, getAppDevelopmentContextSchema } from './schemas/assistant-schemas';
 import { appsDocumentationQuery } from './get-app-development-context.graphql';
-  import { APP_DEVELOPMENT_SYSTEM_PROMPT } from './prompts/app-development-system-prompt';
+import { APP_DEVELOPMENT_SYSTEM_PROMPT } from './prompts/app-development-system-prompt';
 
 interface AskDeveloperDocsResponse {
   ask_developer_docs: {

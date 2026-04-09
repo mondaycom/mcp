@@ -22,7 +22,9 @@ export const addContentToDocToolSchema = {
     .string()
     .min(1)
     .optional()
-    .describe('The document ID (the id field returned by read_docs). Provide this OR object_id. Takes priority if both are provided.'),
+    .describe(
+      'The document ID (the id field returned by read_docs). Provide this OR object_id. Takes priority if both are provided.',
+    ),
   object_id: z
     .string()
     .min(1)
@@ -34,7 +36,9 @@ export const addContentToDocToolSchema = {
   after_block_id: z
     .string()
     .optional()
-    .describe('Block ID after which to insert the new content. If omitted, content is appended at the end. To insert at the beginning, pass the first block ID from read_docs. Block IDs can be obtained from read_docs or from a previous add_content_to_doc response.'),
+    .describe(
+      'Block ID after which to insert the new content. If omitted, content is appended at the end. To insert at the beginning, pass the first block ID from read_docs. Block IDs can be obtained from read_docs or from a previous add_content_to_doc response.',
+    ),
 };
 
 export class AddContentToDocTool extends BaseMondayApiTool<typeof addContentToDocToolSchema> {
@@ -81,7 +85,6 @@ USAGE EXAMPLES:
         });
 
         doc = res.docs?.[0] ?? null!;
-        
       } else {
         const res = await this.mondayApi.request<GetDocByIdQuery>(getDocById, {
           docId: [input.doc_id],

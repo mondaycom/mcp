@@ -331,15 +331,15 @@ export class MondayAgentToolkit extends McpServer {
    * Format the tool result into the expected MCP format
    */
   private formatToolResult(content: string | Record<string, any>): CallToolResult {
-    if(typeof content === 'string') {
+    if (typeof content === 'string') {
       return {
         content: [{ type: 'text', text: content }],
-      }
+      };
     }
-    
+
     return {
       structuredContent: content,
-      content: [{ type: 'text', text: JSON.stringify(content) }]
+      content: [{ type: 'text', text: JSON.stringify(content) }],
     };
   }
 

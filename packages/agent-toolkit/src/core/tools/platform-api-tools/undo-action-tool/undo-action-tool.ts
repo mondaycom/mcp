@@ -30,13 +30,15 @@ export class UndoActionTool extends BaseMondayApiTool<typeof undoActionToolSchem
     return undoActionToolSchema;
   }
 
-  protected async executeInternal(
-    input: ToolInputType<typeof undoActionToolSchema>,
-  ): Promise<ToolOutputType<never>> {
-    await this.mondayApi.request(batchUndoMutationDev, {
-      boardId: input.boardId.toString(),
-      undoRecordId: input.undoRecordId,
-    }, { versionOverride: 'dev' });
+  protected async executeInternal(input: ToolInputType<typeof undoActionToolSchema>): Promise<ToolOutputType<never>> {
+    await this.mondayApi.request(
+      batchUndoMutationDev,
+      {
+        boardId: input.boardId.toString(),
+        undoRecordId: input.undoRecordId,
+      },
+      { versionOverride: 'dev' },
+    );
 
     return {
       content: `Successfully undid action "${input.undoRecordId}" on board ${input.boardId}.`,

@@ -27,7 +27,7 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
   getDescription(): string {
     return (
       'Get comprehensive board information including metadata, structure, owners, and configuration. ' +
-      'Also returns the board\'s views (e.g. table views, filter views) — each view includes its id, name, type, and a structured filter object. '
+      "Also returns the board's views (e.g. table views, filter views) — each view includes its id, name, type, and a structured `filter` object. "
     );
   }
 
@@ -53,7 +53,7 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
     const subItemsBoard = await this.getSubItemsBoardAsync(board);
 
     return {
-      content: formatBoardInfoAsJson(board, subItemsBoard)
+      content: formatBoardInfoAsJson(board, subItemsBoard),
     };
   }
 

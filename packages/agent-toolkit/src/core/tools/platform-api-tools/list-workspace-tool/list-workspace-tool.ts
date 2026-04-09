@@ -3,11 +3,7 @@ import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-ap
 import { fetchAccountSlug, buildWorkspaceUrl } from '../utils/account-slug.utils';
 import { listWorkspaces } from './list-workspace.graphql';
 import { DEFAULT_WORKSPACE_LIMIT, MAX_WORKSPACE_LIMIT_FOR_SEARCH } from './list-workspace.consts';
-import {
-  filterNullWorkspaces,
-  hasMatchingWorkspace,
-  filterWorkspacesBySearchTerm,
-} from './list-workspace.utils';
+import { filterNullWorkspaces, hasMatchingWorkspace, filterWorkspacesBySearchTerm } from './list-workspace.utils';
 import { ListWorkspacesQuery, WorkspaceMembershipKind } from '../../../../monday-graphql/generated/graphql/graphql';
 import { z } from 'zod';
 import { normalizeString } from 'src/utils/string.utils';
@@ -80,7 +76,8 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
     const memberWorkspaces = filterNullWorkspaces(memberRes);
 
     const shouldFetchAllWorkspaces =
-      !arrayHasElements(memberWorkspaces) || (searchTermNormalized && !hasMatchingWorkspace(searchTermNormalized, memberWorkspaces));
+      !arrayHasElements(memberWorkspaces) ||
+      (searchTermNormalized && !hasMatchingWorkspace(searchTermNormalized, memberWorkspaces));
 
     // Fetch all workspaces only if needed, otherwise use member workspaces
     let workspaces = memberWorkspaces;
@@ -92,7 +89,6 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
       );
       workspaces = filterNullWorkspaces(allWorkspacesRes);
     }
-
 
     if (!arrayHasElements(workspaces)) {
       return {
@@ -106,7 +102,10 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
 
     if (!arrayHasElements(filteredWorkspaces)) {
       return {
-        content: { message: 'No workspaces found matching the search term. Try using the tool without a search term', data: [] },
+        content: {
+          message: 'No workspaces found matching the search term. Try using the tool without a search term',
+          data: [],
+        },
       };
     }
 
@@ -114,7 +113,7 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
     const hasMorePages = filteredWorkspaces.length === input.limit;
 
     const slug = await fetchAccountSlug(this.mondayApi);
-    const workspacesWithUrls = filteredWorkspaces.map(ws => ({
+    const workspacesWithUrls = filteredWorkspaces.map((ws) => ({
       id: ws.id,
       name: ws.name,
       description: ws.description || undefined,
@@ -123,8 +122,10 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
 
     return {
       content: {
-        message: "Workspaces retrieved",
-        ...(shouldIncludeNoFilteringDisclaimer ? { disclaimer: "Search term not applied - returning all workspaces. Perform the filtering manually." } : {}),
+        message: 'Workspaces retrieved',
+        ...(shouldIncludeNoFilteringDisclaimer
+          ? { disclaimer: 'Search term not applied - returning all workspaces. Perform the filtering manually.' }
+          : {}),
         ...(hasMorePages ? { next_page: input.page + 1 } : {}),
         data: workspacesWithUrls,
       },

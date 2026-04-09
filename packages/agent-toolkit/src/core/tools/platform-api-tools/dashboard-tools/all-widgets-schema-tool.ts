@@ -80,7 +80,7 @@ export class AllWidgetsSchemaTool extends BaseMondayApiTool<Record<string, never
         .join('\n');
 
       return {
-        content: { message: "Widgets schema", data: formattedSchemas, url: API_REFERENCE_URL },
+        content: { message: 'Widgets schema', data: formattedSchemas, url: API_REFERENCE_URL },
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);

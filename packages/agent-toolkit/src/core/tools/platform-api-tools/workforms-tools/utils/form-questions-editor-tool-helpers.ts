@@ -5,8 +5,8 @@ import {
   DeleteFormQuestionMutationVariables,
   UpdateFormQuestionMutation,
   UpdateFormQuestionMutationVariables,
-} from '../../../../../monday-graphql/generated/graphql/graphql';
-import { createFormQuestion, deleteFormQuestion, updateFormQuestion } from '../workforms.graphql';
+} from '../../../../../monday-graphql/generated/graphql.dev/graphql';
+import { createFormQuestion, deleteFormQuestion, updateFormQuestion } from '../workforms.graphql.dev';
 import { ToolInputType, ToolOutputType } from '../../../../tool';
 import { ApiClient } from '@mondaydotcomorg/api';
 import { formQuestionsEditorToolSchema } from '../form-questions-editor-tool/schema';
@@ -27,10 +27,12 @@ export class FormQuestionsEditorToolHelpers {
       questionId,
     };
 
-    await this.mondayApi.request<DeleteFormQuestionMutation>(deleteFormQuestion, deleteVariables);
+    await this.mondayApi.request<DeleteFormQuestionMutation>(deleteFormQuestion, deleteVariables, {
+      versionOverride: '2026-07',
+    });
 
     return {
-      content: { message: "Question deleted", question_id: questionId, action_name: "delete" },
+      content: { message: 'Question deleted', question_id: questionId, action_name: 'delete' },
     };
   }
 
@@ -55,10 +57,12 @@ export class FormQuestionsEditorToolHelpers {
       question,
     };
 
-    await this.mondayApi.request<UpdateFormQuestionMutation>(updateFormQuestion, updateVariables);
+    await this.mondayApi.request<UpdateFormQuestionMutation>(updateFormQuestion, updateVariables, {
+      versionOverride: '2026-07',
+    });
 
     return {
-      content: { message: "Question updated", question_id: questionId, action_name: "update" },
+      content: { message: 'Question updated', question_id: questionId, action_name: 'update' },
     };
   }
 
@@ -84,10 +88,12 @@ export class FormQuestionsEditorToolHelpers {
       },
     };
 
-    const result = await this.mondayApi.request<CreateFormQuestionMutation>(createFormQuestion, createVariables);
+    const result = await this.mondayApi.request<CreateFormQuestionMutation>(createFormQuestion, createVariables, {
+      versionOverride: '2026-07',
+    });
 
     return {
-      content: { message: "Question created", question_id: result.create_form_question?.id, action_name: "create" },
+      content: { message: 'Question created', question_id: result.create_form_question?.id, action_name: 'create' },
     };
   }
 }

@@ -1,6 +1,11 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
-import { ViewKind, ItemsQueryRuleOperator, ItemsQueryOperator, ItemsOrderByDirection } from 'src/monday-graphql/generated/graphql/graphql';
+import {
+  ViewKind,
+  ItemsQueryRuleOperator,
+  ItemsQueryOperator,
+  ItemsOrderByDirection,
+} from 'src/monday-graphql/generated/graphql/graphql';
 
 describe('CreateViewTool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;

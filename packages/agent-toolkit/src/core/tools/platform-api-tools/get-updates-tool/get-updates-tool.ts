@@ -12,7 +12,9 @@ export enum UpdateObjectType {
 
 export const getUpdatesToolSchema = {
   objectId: z.string().describe('The ID of the item or board to get updates from'),
-  objectType: z.enum([UpdateObjectType.Item, UpdateObjectType.Board]).describe('Type of object for which objectId was provided'),
+  objectType: z
+    .enum([UpdateObjectType.Item, UpdateObjectType.Board])
+    .describe('Type of object for which objectId was provided'),
   limit: z
     .number()
     .min(1)
@@ -21,32 +23,28 @@ export const getUpdatesToolSchema = {
     .default(25)
     .describe('Number of updates per page (default: 25, max: 100)'),
   page: z.number().min(1).optional().default(1).describe('Page number for pagination (default: 1)'),
-  includeReplies: z
-    .boolean()
-    .optional()
-    .default(false)
-    .describe('Include update replies in the response'),
-  includeAssets: z
-    .boolean()
-    .optional()
-    .default(false)
-    .describe('Include file attachments in the response'),
+  includeReplies: z.boolean().optional().default(false).describe('Include update replies in the response'),
+  includeAssets: z.boolean().optional().default(false).describe('Include file attachments in the response'),
   fromDate: z
     .string()
     .optional()
-    .describe('Start of date range filter (e.g. "2025-01-01" or "2025-01-01T00:00:00Z"). Must be used together with toDate. Only supported for Board objectType.'),
+    .describe(
+      'Start of date range filter (e.g. "2025-01-01" or "2025-01-01T00:00:00Z"). Must be used together with toDate. Only supported for Board objectType.',
+    ),
   toDate: z
     .string()
     .optional()
-    .describe('End of date range filter (e.g. "2025-06-01" or "2025-06-01T23:59:59Z"). Must be used together with fromDate. Only supported for Board objectType.'),
+    .describe(
+      'End of date range filter (e.g. "2025-06-01" or "2025-06-01T23:59:59Z"). Must be used together with fromDate. Only supported for Board objectType.',
+    ),
   includeItemUpdates: z
     .boolean()
     .optional()
     .default(false)
     .describe(
       'When objectType is Board, also include updates on individual items. ' +
-      'Defaults to false, returning only board discussion. ' +
-      'Set to true to retrieve all updates on a board, including updates on individual items.',
+        'Defaults to false, returning only board discussion. ' +
+        'Set to true to retrieve all updates on a board, including updates on individual items.',
     ),
 };
 
@@ -104,17 +102,25 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
       let res: GetItemUpdatesQuery | GetBoardUpdatesQuery;
 
       if (input.objectType === UpdateObjectType.Item) {
-        res = await this.mondayApi.request<GetItemUpdatesQuery>(getItemUpdates, { ...variables, itemId: input.objectId });
+        res = await this.mondayApi.request<GetItemUpdatesQuery>(getItemUpdates, {
+          ...variables,
+          itemId: input.objectId,
+        });
       } else {
         res = await this.mondayApi.request<GetBoardUpdatesQuery>(getBoardUpdates, {
           ...variables,
           boardId: input.objectId,
           boardUpdatesOnly: !(input.includeItemUpdates ?? false),
-          ...(input.fromDate && input.toDate ? { fromDate: normalizeToISO8601DateTime(input.fromDate), toDate: normalizeToISO8601DateTime(input.toDate) } : {}),
+          ...(input.fromDate && input.toDate
+            ? { fromDate: normalizeToISO8601DateTime(input.fromDate), toDate: normalizeToISO8601DateTime(input.toDate) }
+            : {}),
         });
       }
 
-      const updates = input.objectType === UpdateObjectType.Item ? (res as GetItemUpdatesQuery).items?.[0]?.updates : (res as GetBoardUpdatesQuery).boards?.[0]?.updates;
+      const updates =
+        input.objectType === UpdateObjectType.Item
+          ? (res as GetItemUpdatesQuery).items?.[0]?.updates
+          : (res as GetBoardUpdatesQuery).boards?.[0]?.updates;
 
       if (!updates || updates.length === 0) {
         return {
@@ -168,12 +174,13 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
         return formattedUpdate;
       });
 
-      const entityUrl = input.objectType === UpdateObjectType.Item
-        ? (res as GetItemUpdatesQuery).items?.[0]?.url
-        : (res as GetBoardUpdatesQuery).boards?.[0]?.url;
+      const entityUrl =
+        input.objectType === UpdateObjectType.Item
+          ? (res as GetItemUpdatesQuery).items?.[0]?.url
+          : (res as GetBoardUpdatesQuery).boards?.[0]?.url;
 
       const result = {
-        message: "Updates retrieved",
+        message: 'Updates retrieved',
         [`${input.objectType.toLowerCase()}_id`]: input.objectId,
         url: entityUrl,
         updates: formattedUpdates,
@@ -185,7 +192,7 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
       };
 
       return {
-        content: result
+        content: result,
       };
     } catch (error) {
       rethrowWithContext(error, 'get updates');

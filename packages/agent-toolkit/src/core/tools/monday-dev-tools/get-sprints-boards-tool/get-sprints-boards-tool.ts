@@ -73,7 +73,8 @@ Searches recently used boards (up to ${RECENT_BOARDS_LIMIT}). If none found, ask
       if (pairs.length === 0) {
         return {
           content: {
-            message: 'No monday-dev sprints board pairs found. ### Possible Reasons:\n1. Boards exist but not accessed recently by your account\n2. Missing access permissions to sprint/task boards\n3. Monday-dev product was not set up in account\n### Next Steps:\n1. Ask user to access monday-dev boards in UI to refresh recent boards list\n2. Ask user to verify permissions to view sprint and task boards\n3. Ask user to provide board IDs manually if known`;',
+            message:
+              'No monday-dev sprints board pairs found. ### Possible Reasons:\n1. Boards exist but not accessed recently by your account\n2. Missing access permissions to sprint/task boards\n3. Monday-dev product was not set up in account\n### Next Steps:\n1. Ask user to access monday-dev boards in UI to refresh recent boards list\n2. Ask user to verify permissions to view sprint and task boards\n3. Ask user to provide board IDs manually if known`;',
             boards_checked: boards.length,
             pairs: [],
           },
@@ -83,12 +84,28 @@ Searches recently used boards (up to ${RECENT_BOARDS_LIMIT}). If none found, ask
       return {
         content: {
           message: `Found ${pairs.length} matched pair(s)`,
-          ...(pairs.length > 1 ? { warning: 'Multiple board pairs detected. Confirm with user which pair and workspace to use before any operation.' } : {}),
+          ...(pairs.length > 1
+            ? {
+                warning:
+                  'Multiple board pairs detected. Confirm with user which pair and workspace to use before any operation.',
+              }
+            : {}),
           pairs: pairs.map((pair) => ({
-            sprints_board: { id: pair.sprintsBoard.id, name: pair.sprintsBoard.name, workspace_id: pair.sprintsBoard.workspaceId, workspace_name: pair.sprintsBoard.workspaceName },
-            tasks_board: { id: pair.tasksBoard.id, name: pair.tasksBoard.name, workspace_id: pair.tasksBoard.workspaceId, workspace_name: pair.tasksBoard.workspaceName },
+            sprints_board: {
+              id: pair.sprintsBoard.id,
+              name: pair.sprintsBoard.name,
+              workspace_id: pair.sprintsBoard.workspaceId,
+              workspace_name: pair.sprintsBoard.workspaceName,
+            },
+            tasks_board: {
+              id: pair.tasksBoard.id,
+              name: pair.tasksBoard.name,
+              workspace_id: pair.tasksBoard.workspaceId,
+              workspace_name: pair.tasksBoard.workspaceName,
+            },
           })),
-          technical_reference: 'Sprint Operations (all require correct board pair): Add to Sprint: Update `task_sprint` column with sprint item ID. Remove from Sprint: Clear `task_sprint` column (set to null). Search in Sprint: Filter where `task_sprint` equals sprint item ID. Move Between Sprints: Update `task_sprint` with new sprint item ID. Backlog Tasks: `task_sprint` is empty/null. Critical: `task_sprint` column references ONLY its paired sprints board. Cross-pair operations WILL FAIL.',
+          technical_reference:
+            'Sprint Operations (all require correct board pair): Add to Sprint: Update `task_sprint` column with sprint item ID. Remove from Sprint: Clear `task_sprint` column (set to null). Search in Sprint: Filter where `task_sprint` equals sprint item ID. Move Between Sprints: Update `task_sprint` with new sprint item ID. Backlog Tasks: `task_sprint` is empty/null. Critical: `task_sprint` column references ONLY its paired sprints board. Cross-pair operations WILL FAIL.',
         },
       };
     } catch (error) {

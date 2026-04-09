@@ -75,19 +75,15 @@ export const readDocsToolSchema = {
   ids: z
     .array(z.string())
     .optional()
-    .describe('Array of ID values. In content mode: matches the query type (ids/object_ids/workspace_ids). In version_history mode: provide the single document object_id here (e.g., ids: ["5001466606"]).'),
-  limit: z
-    .number()
-    .optional()
-    .describe('Number of docs per page (default: 25). Only used in content mode.'),
+    .describe(
+      'Array of ID values. In content mode: matches the query type (ids/object_ids/workspace_ids). In version_history mode: provide the single document object_id here (e.g., ids: ["5001466606"]).',
+    ),
+  limit: z.number().optional().describe('Number of docs per page (default: 25). Only used in content mode.'),
   order_by: z
     .nativeEnum(DocsOrderBy)
     .optional()
     .describe('Order in which to retrieve docs. Only used in content mode.'),
-  page: z
-    .number()
-    .optional()
-    .describe('Page number to return (starts at 1). Only used in content mode.'),
+  page: z.number().optional().describe('Page number to return (starts at 1). Only used in content mode.'),
   include_blocks: z
     .boolean()
     .optional()
@@ -238,7 +234,9 @@ MODE: "version_history" — Fetch the edit history of a single document.
 
       return this.enrichDocsWithMarkdown(res.docs, variables, includeBlocks, includeComments, commentsLimit);
     } catch (error) {
-      return { content: `Error reading documents: ${error instanceof Error ? error.message : 'Unknown error occurred'}` };
+      return {
+        content: `Error reading documents: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
+      };
     }
   }
 

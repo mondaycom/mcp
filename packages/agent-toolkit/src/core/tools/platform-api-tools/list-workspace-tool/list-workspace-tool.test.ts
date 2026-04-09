@@ -370,7 +370,9 @@ describe('ListWorkspaceTool', () => {
       const result = await callToolByNameRawAsync('list_workspaces', args);
 
       const parsed = parseToolResult(result);
-      expect(parsed.message).toBe('No workspaces found matching the search term. Try using the tool without a search term');
+      expect(parsed.message).toBe(
+        'No workspaces found matching the search term. Try using the tool without a search term',
+      );
       expect(parsed.data).toEqual([]);
       // Two calls: first member (no match), then all (still no match)
       expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);

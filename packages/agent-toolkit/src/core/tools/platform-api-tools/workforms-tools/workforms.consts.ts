@@ -198,8 +198,16 @@ export const GraphQLDescriptions = {
       createdAt: 'ISO timestamp when the question was created.',
       updatedAt: 'ISO timestamp when the question was last modified.',
       selectOptions:
-        'Array of option objects for choice-based questions (single_select, multi_select). Required when creating select type questions. Can only be provided when creating a question, not yet supported for updating a question.',
+        'Array of option objects for choice-based questions (single_select, multi_select). Supported on both create and update. When updating, the provided array replaces all existing options (PUT semantics). SingleSelect: max 40 options. MultiSelect: max 500 options. Cannot remove options that are already assigned to board items.',
       selectOptionsLabel: 'The display text for individual option choices in select-type questions.',
+      blockType:
+        'Block kind extending the standard question types to include content blocks. Use DISPLAY_TEXT to insert a rich-text content block that displays information to respondents but collects no answer. Use PAGE_BLOCK to insert a page divider that splits the form into multiple pages — all questions added after this block appear on a new page. All standard question types (SHORT_TEXT, SINGLE_SELECT, EMAIL, etc.) are also valid values.',
+      insertAfterQuestionId:
+        'ID of the existing question or block after which to insert the new question. The new question is placed immediately after the referenced question in the form. If omitted, the question is appended at the end of the form (or the end of its page, if pageBlockId is provided).',
+      pageBlockId:
+        'ID of the page block this question belongs to. Groups the question within a specific page in a multi-page form. Required when creating questions inside a page block.',
+      existingColumnId:
+        'ID of an existing board column to link this question to instead of creating a new column. Use when the board already has a column for this data type.',
     },
     inputs: {
       question: 'Complete question object containing all properties for creation or update.',
@@ -239,6 +247,12 @@ export const GraphQLDescriptions = {
         "Location questions only: Automatically detect and fill the user's current location using browser geolocation services, requiring user permission.",
       limit: 'Rating questions only: Maximum rating value that users can select.',
       skipValidation: 'Link/URL questions only: Whether to skip URL format validation, allowing any text input.',
+      labelLimitCount:
+        'Multi Select questions only: Maximum number of options a respondent can select. Must be set together with labelLimitCountEnabled to take effect.',
+      labelLimitCountEnabled:
+        'Multi Select questions only: Whether to enforce an option selection limit. Set labelLimitCount to specify the limit.',
+      defaultAnswer:
+        'ShortText, LongText, Name, and Link questions only: Pre-filled default value shown to respondents when the form loads. Respondents can clear or change it before submitting.',
     },
     inputs: {
       settings: 'Question-specific configuration object that varies by question type.',

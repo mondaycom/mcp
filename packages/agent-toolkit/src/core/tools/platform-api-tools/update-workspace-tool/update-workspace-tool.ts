@@ -47,13 +47,21 @@ export class UpdateWorkspaceTool extends BaseMondayApiTool<UpdateWorkspaceToolIn
       },
     };
 
-    const res = await this.mondayApi.request<{ update_workspace: { id: string; name?: string } }>(updateWorkspace, variables);
+    const res = await this.mondayApi.request<{ update_workspace: { id: string; name?: string } }>(
+      updateWorkspace,
+      variables,
+    );
 
     const slug = await fetchAccountSlug(this.mondayApi);
     const workspaceUrl = slug ? buildWorkspaceUrl(slug, res.update_workspace?.id) : undefined;
 
     return {
-      content: { message: `Workspace ${res.update_workspace?.id} updated`, workspace_id: res.update_workspace?.id, workspace_name: res.update_workspace?.name, workspace_url: workspaceUrl },
+      content: {
+        message: `Workspace ${res.update_workspace?.id} updated`,
+        workspace_id: res.update_workspace?.id,
+        workspace_name: res.update_workspace?.name,
+        workspace_url: workspaceUrl,
+      },
     };
   }
 }

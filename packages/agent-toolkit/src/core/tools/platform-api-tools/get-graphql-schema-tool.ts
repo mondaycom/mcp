@@ -41,12 +41,14 @@ export class GetGraphQLSchemaTool extends BaseMondayApiTool<typeof getGraphQLSch
 
       const queryFieldsData =
         operationType !== 'write'
-          ? (res.queryType?.fields?.map((field) => ({ name: field.name, description: field.description ?? null })) ?? [])
+          ? (res.queryType?.fields?.map((field) => ({ name: field.name, description: field.description ?? null })) ??
+            [])
           : undefined;
 
       const mutationFieldsData =
         operationType !== 'read'
-          ? (res.mutationType?.fields?.map((field) => ({ name: field.name, description: field.description ?? null })) ?? [])
+          ? (res.mutationType?.fields?.map((field) => ({ name: field.name, description: field.description ?? null })) ??
+            [])
           : undefined;
 
       const typesData =

@@ -331,7 +331,6 @@ describe('Get Updates Tool', () => {
     expect(result.content).toBe('No updates found for item with id 123');
   });
 
-
   it('Handles GraphQL response errors', async () => {
     const graphqlError = new Error('GraphQL Error');
     (graphqlError as any).response = {
@@ -350,7 +349,9 @@ describe('Get Updates Tool', () => {
     mocks.setError(networkError);
     const tool = new GetUpdatesTool(mocks.mockApiClient);
 
-    await expect(tool.execute({ objectId: '123', objectType: 'Item' } as any)).rejects.toThrow('Failed to get updates: Network request failed');
+    await expect(tool.execute({ objectId: '123', objectType: 'Item' } as any)).rejects.toThrow(
+      'Failed to get updates: Network request failed',
+    );
   });
 
   it('Has correct schema and tool properties', () => {
@@ -439,17 +440,17 @@ describe('Get Updates Tool', () => {
   it('Throws error when only fromDate is provided without toDate', async () => {
     const tool = new GetUpdatesTool(mocks.mockApiClient);
 
-    await expect(
-      tool.execute({ objectId: '456', objectType: 'Board', fromDate: '2024-01-01' } as any),
-    ).rejects.toThrow('Both fromDate and toDate must be provided together');
+    await expect(tool.execute({ objectId: '456', objectType: 'Board', fromDate: '2024-01-01' } as any)).rejects.toThrow(
+      'Both fromDate and toDate must be provided together',
+    );
   });
 
   it('Throws error when only toDate is provided without fromDate', async () => {
     const tool = new GetUpdatesTool(mocks.mockApiClient);
 
-    await expect(
-      tool.execute({ objectId: '456', objectType: 'Board', toDate: '2024-01-31' } as any),
-    ).rejects.toThrow('Both fromDate and toDate must be provided together');
+    await expect(tool.execute({ objectId: '456', objectType: 'Board', toDate: '2024-01-31' } as any)).rejects.toThrow(
+      'Both fromDate and toDate must be provided together',
+    );
   });
 
   it('Throws error when date range is used with Item objectType', async () => {

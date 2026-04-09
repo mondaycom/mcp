@@ -4,7 +4,13 @@ import { SearchTool, searchSchema } from './search-tool';
 import { z, ZodTypeAny } from 'zod';
 import { GetBoardsQuery, GetDocsQuery, GetFoldersQuery } from 'src/monday-graphql/generated/graphql/graphql';
 import { SearchDevQuery, SearchableEntity } from 'src/monday-graphql/generated/graphql.dev/graphql';
-import { GlobalSearchType, ObjectPrefixes, SearchResult, BOARD_SEARCH_RESULT_TYPENAME, DOC_SEARCH_RESULT_TYPENAME } from './search-tool.types';
+import {
+  GlobalSearchType,
+  ObjectPrefixes,
+  SearchResult,
+  BOARD_SEARCH_RESULT_TYPENAME,
+  DOC_SEARCH_RESULT_TYPENAME,
+} from './search-tool.types';
 
 export type inputType = z.objectInputType<typeof searchSchema, ZodTypeAny>;
 
@@ -195,7 +201,8 @@ describe('SearchTool', () => {
         };
 
         // Dev endpoint fails, then fallback succeeds
-        mocks.getMockRequest()
+        mocks
+          .getMockRequest()
           .mockRejectedValueOnce(new Error('Dev endpoint unavailable'))
           .mockResolvedValueOnce(largeBoardsResponse);
 
@@ -278,7 +285,8 @@ describe('SearchTool', () => {
         };
 
         // Dev endpoint fails, then fallback succeeds
-        mocks.getMockRequest()
+        mocks
+          .getMockRequest()
           .mockRejectedValueOnce(new Error('Dev endpoint unavailable'))
           .mockResolvedValueOnce(manyBoardsResponse);
 
@@ -332,7 +340,8 @@ describe('SearchTool', () => {
         };
 
         // Dev endpoint fails, then fallback succeeds
-        mocks.getMockRequest()
+        mocks
+          .getMockRequest()
           .mockRejectedValueOnce(new Error('Dev endpoint unavailable'))
           .mockResolvedValueOnce(boardsResponse);
 
@@ -360,7 +369,8 @@ describe('SearchTool', () => {
         };
 
         // Dev endpoint fails, then fallback succeeds
-        mocks.getMockRequest()
+        mocks
+          .getMockRequest()
           .mockRejectedValueOnce(new Error('Dev endpoint unavailable'))
           .mockResolvedValueOnce(boardsResponse);
 
@@ -389,7 +399,8 @@ describe('SearchTool', () => {
         };
 
         // Dev endpoint fails, then fallback succeeds
-        mocks.getMockRequest()
+        mocks
+          .getMockRequest()
           .mockRejectedValueOnce(new Error('Dev endpoint unavailable'))
           .mockResolvedValueOnce(largeBoardsResponse);
 
@@ -454,7 +465,8 @@ describe('SearchTool', () => {
         };
 
         // Dev endpoint fails, then fallback succeeds
-        mocks.getMockRequest()
+        mocks
+          .getMockRequest()
           .mockRejectedValueOnce(new Error('Dev endpoint unavailable'))
           .mockResolvedValueOnce(largeBoardsResponse);
 
@@ -488,7 +500,8 @@ describe('SearchTool', () => {
         };
 
         // Dev endpoint fails, then fallback succeeds
-        mocks.getMockRequest()
+        mocks
+          .getMockRequest()
           .mockRejectedValueOnce(new Error('Dev endpoint unavailable'))
           .mockResolvedValueOnce(largeBoardsResponse);
 
@@ -672,7 +685,8 @@ describe('SearchTool', () => {
         };
 
         // Dev endpoint fails, then fallback succeeds
-        mocks.getMockRequest()
+        mocks
+          .getMockRequest()
           .mockRejectedValueOnce(new Error('Dev endpoint unavailable'))
           .mockResolvedValueOnce(largeDocsResponse);
 
@@ -774,7 +788,8 @@ describe('SearchTool', () => {
         };
 
         // Dev endpoint fails, then fallback succeeds
-        mocks.getMockRequest()
+        mocks
+          .getMockRequest()
           .mockRejectedValueOnce(new Error('Dev endpoint unavailable'))
           .mockResolvedValueOnce(largeDocs);
 
@@ -810,7 +825,8 @@ describe('SearchTool', () => {
         };
 
         // Dev endpoint fails, then fallback succeeds
-        mocks.getMockRequest()
+        mocks
+          .getMockRequest()
           .mockRejectedValueOnce(new Error('Dev endpoint unavailable'))
           .mockResolvedValueOnce(largeDocs);
 
@@ -1379,7 +1395,7 @@ describe('SearchTool', () => {
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(
           expect.stringContaining('query SearchDev'),
           expect.any(Object),
-          expect.objectContaining({ versionOverride: 'dev' })
+          expect.objectContaining({ versionOverride: 'dev' }),
         );
         expect(parsedResult.data).toHaveLength(2);
       });
@@ -1388,7 +1404,8 @@ describe('SearchTool', () => {
     describe('Fallback Behavior', () => {
       it('should fall back to old implementation when dev endpoint throws error', async () => {
         // First call throws an error, second call succeeds with old implementation
-        mocks.getMockRequest()
+        mocks
+          .getMockRequest()
           .mockRejectedValueOnce(new Error('Dev endpoint unavailable'))
           .mockResolvedValueOnce(mockBoardsResponse);
 
@@ -1405,7 +1422,7 @@ describe('SearchTool', () => {
           1,
           expect.stringContaining('query SearchDev'),
           expect.any(Object),
-          expect.objectContaining({ versionOverride: 'dev' })
+          expect.objectContaining({ versionOverride: 'dev' }),
         );
         expect(mocks.getMockRequest()).toHaveBeenNthCalledWith(
           2,
@@ -1490,7 +1507,12 @@ describe('SearchTool', () => {
             {
               __typename: BOARD_SEARCH_RESULT_TYPENAME,
               entity_type: SearchableEntity.Board,
-              data: { __typename: 'IndexedBoard', id: '100', name: 'Board Result', url: 'https://monday.com/boards/100' },
+              data: {
+                __typename: 'IndexedBoard',
+                id: '100',
+                name: 'Board Result',
+                url: 'https://monday.com/boards/100',
+              },
             },
             {
               __typename: DOC_SEARCH_RESULT_TYPENAME,
@@ -1500,7 +1522,12 @@ describe('SearchTool', () => {
             {
               __typename: BOARD_SEARCH_RESULT_TYPENAME,
               entity_type: SearchableEntity.Board,
-              data: { __typename: 'IndexedBoard', id: '300', name: 'Another Board', url: 'https://monday.com/boards/300' },
+              data: {
+                __typename: 'IndexedBoard',
+                id: '300',
+                name: 'Another Board',
+                url: 'https://monday.com/boards/300',
+              },
             },
           ],
         };
@@ -1529,7 +1556,12 @@ describe('SearchTool', () => {
             {
               __typename: BOARD_SEARCH_RESULT_TYPENAME,
               entity_type: SearchableEntity.Board,
-              data: { __typename: 'IndexedBoard', id: '100', name: 'Board Result', url: 'https://monday.com/boards/100' },
+              data: {
+                __typename: 'IndexedBoard',
+                id: '100',
+                name: 'Board Result',
+                url: 'https://monday.com/boards/100',
+              },
             },
             // ItemSearchResult would be skipped as it's not handled
             {
@@ -1626,7 +1658,8 @@ describe('SearchTool', () => {
       };
 
       // Dev endpoint fails, then fallback succeeds
-      mocks.getMockRequest()
+      mocks
+        .getMockRequest()
         .mockRejectedValueOnce(new Error('Dev endpoint unavailable'))
         .mockResolvedValueOnce(smallResponse);
 
@@ -1653,7 +1686,8 @@ describe('SearchTool', () => {
       };
 
       // Dev endpoint fails, then fallback succeeds
-      mocks.getMockRequest()
+      mocks
+        .getMockRequest()
         .mockRejectedValueOnce(new Error('Dev endpoint unavailable'))
         .mockResolvedValueOnce(largeResponse);
 
@@ -1762,7 +1796,8 @@ describe('SearchTool', () => {
       };
 
       // Dev endpoint fails, then fallback succeeds
-      mocks.getMockRequest()
+      mocks
+        .getMockRequest()
         .mockRejectedValueOnce(new Error('Dev endpoint unavailable'))
         .mockResolvedValueOnce(boardsResponse);
 

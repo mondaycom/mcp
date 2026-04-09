@@ -1,5 +1,9 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
-import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '../../platform-api-tools/test-utils/mock-api-client';
+import {
+  callToolByNameRawAsync,
+  createMockApiClient,
+  parseToolResult,
+} from '../../platform-api-tools/test-utils/mock-api-client';
 import { GetSprintsBoardsTool } from './get-sprints-boards-tool';
 import {
   VALID_BOARD_PAIR_RESPONSE,
@@ -59,7 +63,9 @@ describe('GetSprintsBoardsTool', () => {
 
       expect(parsed.message).toBe('Found 2 matched pair(s)');
       expect(parsed.pairs).toHaveLength(2);
-      expect(parsed.warning).toBe('Multiple board pairs detected. Confirm with user which pair and workspace to use before any operation.');
+      expect(parsed.warning).toBe(
+        'Multiple board pairs detected. Confirm with user which pair and workspace to use before any operation.',
+      );
       expect(parsed.pairs[0].sprints_board.id).toBe('1001');
       expect(parsed.pairs[0].sprints_board.name).toBe('Frontend Sprints');
       expect(parsed.pairs[1].sprints_board.id).toBe('1002');

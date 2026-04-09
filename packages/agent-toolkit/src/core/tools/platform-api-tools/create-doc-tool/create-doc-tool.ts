@@ -236,7 +236,13 @@ USAGE EXAMPLES:
       }
 
       return {
-        content: { message: "Document successfully created", doc_id: docId, object_id: docObjectId, doc_url: docUrl, doc_name: input.doc_name },
+        content: {
+          message: 'Document successfully created',
+          doc_id: docId,
+          object_id: docObjectId,
+          doc_url: docUrl,
+          doc_name: input.doc_name,
+        },
       };
     } catch (error) {
       return {

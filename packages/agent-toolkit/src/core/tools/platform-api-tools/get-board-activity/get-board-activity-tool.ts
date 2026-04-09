@@ -78,7 +78,7 @@ export class GetBoardActivityTool extends BaseMondayApiTool<typeof getBoardActiv
 
     return {
       content: {
-        message: "Board activity retrieved",
+        message: 'Board activity retrieved',
         board_id: input.boardId,
         board_name: board?.name,
         board_url: board?.url,

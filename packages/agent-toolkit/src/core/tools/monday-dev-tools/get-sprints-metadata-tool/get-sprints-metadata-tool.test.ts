@@ -1,5 +1,9 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
-import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '../../platform-api-tools/test-utils/mock-api-client';
+import {
+  callToolByNameRawAsync,
+  createMockApiClient,
+  parseToolResult,
+} from '../../platform-api-tools/test-utils/mock-api-client';
 import { GetSprintsMetadataTool, getSprintsMetadataToolSchema } from './get-sprints-metadata-tool';
 import { z } from 'zod';
 import { ERROR_PREFIXES } from '../shared';

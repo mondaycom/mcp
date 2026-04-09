@@ -73,7 +73,11 @@ export class CreateDashboardTool extends BaseMondayApiTool<typeof createDashboar
       const dashboard = res.create_dashboard;
 
       return {
-        content: { message: `Dashboard ${dashboard.id} successfully created`, dashboard_id: dashboard.id, dashboard_name: dashboard.name },
+        content: {
+          message: `Dashboard ${dashboard.id} successfully created`,
+          dashboard_id: dashboard.id,
+          dashboard_name: dashboard.name,
+        },
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);

@@ -92,7 +92,12 @@ export class CreateWidgetTool extends BaseMondayApiTool<typeof createWidgetToolS
           : `board view ${widget.parent?.id}`;
 
       return {
-        content: { message: `Widget ${widget.id} created`, widget_id: widget.id, widget_name: widget.name, dashboard_id: widget.parent?.id },
+        content: {
+          message: `Widget ${widget.id} created`,
+          widget_id: widget.id,
+          widget_name: widget.name,
+          dashboard_id: widget.parent?.id,
+        },
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);

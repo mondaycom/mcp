@@ -123,7 +123,7 @@ export class GetNotetakerMeetingsTool extends BaseMondayApiTool<typeof getNoteta
     };
 
     return {
-      content: { message: "Meetings retrieved", data: result },
+      content: { message: 'Meetings retrieved', data: result },
     };
   }
 }

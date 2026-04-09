@@ -2,7 +2,10 @@ import { GetWorkspaceInfoQuery } from 'src/monday-graphql/generated/graphql/grap
 import { OrganizedWorkspaceInfo } from './types';
 import { buildWorkspaceUrl } from '../utils/account-slug.utils';
 
-export function organizeWorkspaceInfoHierarchy(response: GetWorkspaceInfoQuery, slug: string | null): OrganizedWorkspaceInfo {
+export function organizeWorkspaceInfoHierarchy(
+  response: GetWorkspaceInfoQuery,
+  slug: string | null,
+): OrganizedWorkspaceInfo {
   const { workspaces, boards, docs, folders } = response;
 
   // Get the workspace info (assuming single workspace)

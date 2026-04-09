@@ -152,7 +152,7 @@ export class FullBoardDataTool extends BaseMondayApiTool<typeof fullBoardDataToo
       };
 
       return {
-        content: result
+        content: result,
       };
     } catch (error) {
       rethrowWithContext(error, 'get full board data');

@@ -1,5 +1,10 @@
 import { formatBoardInfo, formatBoardInfoAsJson, BoardInfoData } from './helpers';
-import { BoardViewAccessLevel, State, BoardKind, WorkspaceKind } from '../../../../monday-graphql/generated/graphql/graphql';
+import {
+  BoardViewAccessLevel,
+  State,
+  BoardKind,
+  WorkspaceKind,
+} from '../../../../monday-graphql/generated/graphql/graphql';
 import { NonDeprecatedColumnType } from 'src/utils/types';
 
 describe('formatBoardInfo - Simple Tests', () => {
@@ -356,7 +361,12 @@ describe('formatBoardInfoAsJson - views', () => {
           settings: {},
           filter: {
             operator: 'AND',
-            groups: [{ operator: 'AND', rules: [{ column_id: 'person', compare_value: ['assigned_to_me'], operator: 'ANY_OF' }] }],
+            groups: [
+              {
+                operator: 'AND',
+                rules: [{ column_id: 'person', compare_value: ['assigned_to_me'], operator: 'ANY_OF' }],
+              },
+            ],
           },
           sort: [],
           access_level: BoardViewAccessLevel.Edit,
@@ -394,7 +404,9 @@ describe('formatBoardInfoAsJson - views', () => {
   it('should include the structured filter object from the view', () => {
     const filter = {
       operator: 'AND',
-      groups: [{ operator: 'AND', rules: [{ column_id: 'person', compare_value: ['assigned_to_me'], operator: 'ANY_OF' }] }],
+      groups: [
+        { operator: 'AND', rules: [{ column_id: 'person', compare_value: ['assigned_to_me'], operator: 'ANY_OF' }] },
+      ],
     };
     const board: BoardInfoData = {
       ...baseBoard,
@@ -447,8 +459,24 @@ describe('formatBoardInfoAsJson - views', () => {
     const board: BoardInfoData = {
       ...baseBoard,
       views: [
-        { id: 'view_1', name: 'View A', type: 'TableBoardView', settings: {}, filter: null, sort: [], access_level: BoardViewAccessLevel.Edit },
-        { id: 'view_2', name: 'View B', type: 'TableBoardView', settings: {}, filter: null, sort: [], access_level: BoardViewAccessLevel.Edit },
+        {
+          id: 'view_1',
+          name: 'View A',
+          type: 'TableBoardView',
+          settings: {},
+          filter: null,
+          sort: [],
+          access_level: BoardViewAccessLevel.Edit,
+        },
+        {
+          id: 'view_2',
+          name: 'View B',
+          type: 'TableBoardView',
+          settings: {},
+          filter: null,
+          sort: [],
+          access_level: BoardViewAccessLevel.Edit,
+        },
       ],
     } as unknown as BoardInfoData;
 

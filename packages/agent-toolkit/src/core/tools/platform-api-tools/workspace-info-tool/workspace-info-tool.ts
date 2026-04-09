@@ -48,7 +48,7 @@ export class WorkspaceInfoTool extends BaseMondayApiTool<typeof workspaceInfoToo
 
     return {
       content: {
-        message: "Workspace info retrieved",
+        message: 'Workspace info retrieved',
         data: organizedInfo,
       },
     };
