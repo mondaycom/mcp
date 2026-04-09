@@ -17,8 +17,8 @@ const questionSchema = z.object({
   required: z.boolean().describe(GraphQLDescriptions.question.properties.required).optional(),
   insert_after_question_id: z
     .string()
-    .describe(GraphQLDescriptions.question.properties.insertAfterQuestionId)
-    .optional(),
+    .nullish()
+    .describe(GraphQLDescriptions.question.properties.insertAfterQuestionId),
   page_block_id: z.string().nullish().describe(GraphQLDescriptions.question.properties.pageBlockId),
   existing_column_id: z.string().describe(GraphQLDescriptions.question.properties.existingColumnId).optional(),
   options: z
