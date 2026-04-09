@@ -202,8 +202,7 @@ export const GraphQLDescriptions = {
       selectOptions:
         'Array of option objects for choice-based questions (single_select, multi_select). Supported on both create and update. When updating, the provided array replaces all existing options (PUT semantics). Cannot remove options that are already used in board items (existing submissions) — those options must be preserved and must include their value field.',
       selectOptionsLabel: 'Display label for the option shown to respondents.',
-      blockType:
-        'Block kind for the new question. Supports all standard question types plus DISPLAY_TEXT (informational text block, no answer collected) and PAGE_BLOCK (page divider for multi-page forms).',
+      blockType: 'The kind of block to create. Includes all question types and content block types.',
       insertAfterQuestionId: 'Insert the new question after this question ID. Omit to append at the end.',
       pageBlockId: 'Page block this question belongs to. Required for questions inside a page block.',
       existingColumnId: 'Link to an existing board column instead of creating a new one.',
