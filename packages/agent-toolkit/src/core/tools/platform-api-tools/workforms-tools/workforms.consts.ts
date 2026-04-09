@@ -201,15 +201,12 @@ export const GraphQLDescriptions = {
       updatedAt: 'ISO timestamp when the question was last modified.',
       selectOptions:
         'Array of option objects for choice-based questions (single_select, multi_select). Supported on both create and update. When updating, the provided array replaces all existing options (PUT semantics). Cannot remove options that are already used in board items (existing submissions) — those options must be preserved and must include their value field.',
-      selectOptionsLabel: 'The display text for individual option choices in select-type questions.',
+      selectOptionsLabel: 'Display label for the option shown to respondents.',
       blockType:
-        'Block kind extending the standard question types to include content blocks. Use DISPLAY_TEXT to insert a rich-text content block that displays information to respondents but collects no answer. Use PAGE_BLOCK to insert a page divider that splits the form into multiple pages — all questions added after this block appear on a new page. All standard question types (SHORT_TEXT, SINGLE_SELECT, EMAIL, etc.) are also valid values.',
-      insertAfterQuestionId:
-        'ID of the existing question or block after which to insert the new question. The new question is placed immediately after the referenced question in the form. If omitted, the question is appended at the end of the form (or the end of its page, if pageBlockId is provided).',
-      pageBlockId:
-        'ID of the page block this question belongs to. Groups the question within a specific page in a multi-page form. Required when creating questions inside a page block.',
-      existingColumnId:
-        'ID of an existing board column to link this question to instead of creating a new column. Use when the board already has a column for this data type.',
+        'Block kind for the new question. Supports all standard question types plus DISPLAY_TEXT (informational text block, no answer collected) and PAGE_BLOCK (page divider for multi-page forms).',
+      insertAfterQuestionId: 'Insert the new question after this question ID. Omit to append at the end.',
+      pageBlockId: 'Page block this question belongs to. Required for questions inside a page block.',
+      existingColumnId: 'Link to an existing board column instead of creating a new one.',
     },
     inputs: {
       question: 'Complete question object containing all properties for creation or update.',
