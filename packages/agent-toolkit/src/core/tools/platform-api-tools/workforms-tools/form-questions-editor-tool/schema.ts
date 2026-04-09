@@ -1,13 +1,12 @@
 import { z } from 'zod';
 import { GraphQLDescriptions } from '../workforms.consts';
-import { FormQuestionActions } from '../workforms.types';
+import { FormBlockKind, FormQuestionActions } from '../workforms.types';
 import {
-  FormBlockKind,
   FormQuestionSelectDisplay,
   FormQuestionSelectOrderByOptions,
   FormQuestionType,
   FormQuestionPrefillSources,
-} from '../../../../../monday-graphql/generated/graphql.dev/graphql';
+} from '../../../../../monday-graphql/generated/graphql/graphql';
 const questionSchema = z.object({
   type: z.nativeEnum(FormQuestionType).describe(GraphQLDescriptions.question.properties.type),
   block_type: z.nativeEnum(FormBlockKind).describe(GraphQLDescriptions.question.properties.blockType).optional(),

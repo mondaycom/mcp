@@ -1,12 +1,11 @@
 import {
   CreateFormMutation,
   CreateFormMutationVariables,
-} from '../../../../../monday-graphql/generated/graphql.dev/graphql';
-import { createForm } from '../workforms.graphql.dev';
+} from '../../../../../monday-graphql/generated/graphql/graphql';
+import { createForm } from '../workforms.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../../base-monday-api-tool';
 import { createFormToolSchema } from './schema';
-import { WORKFORMS_GRAPHQL_VERSION } from '../workforms.consts';
 
 export class CreateFormTool extends BaseMondayApiTool<typeof createFormToolSchema, never> {
   name = 'create_form';
@@ -39,9 +38,7 @@ export class CreateFormTool extends BaseMondayApiTool<typeof createFormToolSchem
       board_subscriber_teams_ids: input.board_subscriber_teams_ids,
     };
 
-    const res = await this.mondayApi.request<CreateFormMutation>(createForm, variables, {
-      versionOverride: WORKFORMS_GRAPHQL_VERSION,
-    });
+    const res = await this.mondayApi.request<CreateFormMutation>(createForm, variables);
 
     return {
       content: {
