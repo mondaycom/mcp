@@ -19,7 +19,7 @@ const questionSchema = z.object({
     .string()
     .describe(GraphQLDescriptions.question.properties.insertAfterQuestionId)
     .optional(),
-  page_block_id: z.string().describe(GraphQLDescriptions.question.properties.pageBlockId).optional(),
+  page_block_id: z.string().nullish().describe(GraphQLDescriptions.question.properties.pageBlockId),
   existing_column_id: z.string().describe(GraphQLDescriptions.question.properties.existingColumnId).optional(),
   options: z
     .array(
