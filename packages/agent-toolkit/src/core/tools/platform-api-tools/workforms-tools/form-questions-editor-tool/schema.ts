@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import { GraphQLDescriptions } from '../workforms.consts';
-import { FormBlockKind, FormQuestionActions } from '../workforms.types';
+import { FormQuestionActions } from '../workforms.types';
 import {
+  FormBlockKind,
   FormQuestionSelectDisplay,
   FormQuestionSelectOrderByOptions,
   FormQuestionType,
