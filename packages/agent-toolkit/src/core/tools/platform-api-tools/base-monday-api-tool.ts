@@ -1,6 +1,7 @@
 import { ApiClient } from '@mondaydotcomorg/api';
 import { ZodRawShape } from 'zod';
 import { ToolAnnotations } from '@modelcontextprotocol/sdk/types';
+import { SessionContext } from '../../executable';
 import { Tool, ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { trackEvent } from '../../../utils/tracking.utils';
 import { extractTokenInfo } from '../../../utils/token.utils';
@@ -14,10 +15,6 @@ export type MondayApiToolContext = {
   agentType?: string;
   agentClientName?: string;
   clientRedirectUris?: string[];
-
-  // Per-execution metadata — tools can enrich this during executeInternal
-  // and it flows automatically into tracking events via the context spread.
-  metadata?: Record<string, unknown>;
 };
 
 export type BaseMondayApiToolConstructor = new (api: ApiClient, token?: string) => BaseMondayApiTool<any>;
@@ -33,12 +30,13 @@ export function createMondayApiAnnotations(annotations: ToolAnnotations): ToolAn
 export abstract class BaseMondayApiTool<
   Input extends ZodRawShape | undefined,
   Output extends Record<string, unknown> = never,
-> implements Tool<Input, Output>
-{
+> implements Tool<Input, Output> {
   abstract name: string;
   abstract type: ToolType;
   abstract annotations: ToolAnnotations;
   enabledByDefault?: boolean;
+
+  protected sessionContext: SessionContext = {};
 
   constructor(
     protected readonly mondayApi: ApiClient,
@@ -50,11 +48,14 @@ export abstract class BaseMondayApiTool<
   abstract getInputSchema(): Input;
 
   /**
-   * Public execute method that automatically tracks execution
+   * Public execute method that automatically tracks execution.
+   * Accepts an optional sessionContext that tools can enrich with metadata
+   * during executeInternal — the metadata flows into tracking events automatically.
    */
-  async execute(input?: ToolInputType<Input>): Promise<ToolOutputType<Output>> {
+  async execute(input?: ToolInputType<Input>, sessionContext?: SessionContext): Promise<ToolOutputType<Output>> {
     const startTime = Date.now();
     let isError = false;
+    this.sessionContext = sessionContext || {};
 
     try {
       const result = await this.executeInternal(input);
@@ -97,6 +98,7 @@ export abstract class BaseMondayApiTool<
         params,
         toolType: 'monday_api_tool',
         ...(this.context || {}),
+        ...(this.sessionContext?.metadata || {}),
         ...tokenInfo,
       },
     });

@@ -291,12 +291,12 @@ export class MondayAgentToolkit extends McpServer {
           if (!parsedArgs.success) {
             throw new Error(`Invalid arguments: ${parsedArgs.error.message}`);
           }
-          const result = await tool.execute(parsedArgs.data);
+          const result = await tool.execute(parsedArgs.data, extra);
           return {
             content: [{ type: 'text', text: stringifyIfObject(result.content) }],
           };
         } else {
-          const result = await tool.execute();
+          const result = await tool.execute(undefined, extra);
           return {
             content: [{ type: 'text', text: stringifyIfObject(result.content) }],
           };

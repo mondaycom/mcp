@@ -319,7 +319,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
 
     const smartSearchRes = await this.mondayApi.request<SearchItemsDevQuery>(searchItemsDev, smartSearchVariables, {
       versionOverride: 'dev',
-      timeout: SEARCH_TIMEOUT
+      timeoutMs: SEARCH_TIMEOUT
     }); 
 
     const itemIdsFromSmartSearch = smartSearchRes.search

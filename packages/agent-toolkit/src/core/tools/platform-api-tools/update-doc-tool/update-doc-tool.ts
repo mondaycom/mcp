@@ -104,13 +104,11 @@ COMMENTS:
   }
 
   protected async executeInternal(input: ToolInputType<typeof updateDocToolSchema>): Promise<ToolOutputType<never>> {
-    if (this.context) {
-      this.context.metadata = {
-        ...this.context.metadata,
-        operationTypes: input.operations?.map((op) => op.operation_type),
-        operationCount: input.operations?.length ?? 0,
-      };
-    }
+    this.sessionContext.metadata = {
+      ...this.sessionContext.metadata,
+      operationTypes: input.operations?.map((op) => op.operation_type),
+      operationCount: input.operations?.length ?? 0,
+    };
 
     if (!input.doc_id && !input.object_id) {
       return { content: 'Error: Either doc_id or object_id must be provided.' };
