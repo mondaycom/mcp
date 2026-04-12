@@ -25,6 +25,8 @@ const questionSchema = z.object({
     .array(
       z.object({
         label: z.string().describe(GraphQLDescriptions.question.properties.selectOptionsLabel),
+        value: z.string().optional().describe(GraphQLDescriptions.question.properties.selectOptionsValue),
+        visible: z.boolean().optional().describe(GraphQLDescriptions.question.properties.selectOptionsVisible),
       }),
     )
     .describe(GraphQLDescriptions.question.properties.selectOptions)
