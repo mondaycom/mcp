@@ -13405,6 +13405,7 @@ export type User = {
 export type UserActivity_LogsArgs = {
   board_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   cursor?: InputMaybe<Scalars['String']['input']>;
+  event_types?: InputMaybe<Array<Scalars['String']['input']>>;
   from?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   to?: InputMaybe<Scalars['String']['input']>;
@@ -13509,6 +13510,8 @@ export enum UserKindFilter {
   CrmCommerceApiUser = 'CRM_COMMERCE_API_USER',
   /** A data retention api user user. */
   DataRetentionApiUser = 'DATA_RETENTION_API_USER',
+  /** A dependencies api user user. */
+  DependenciesApiUser = 'DEPENDENCIES_API_USER',
   /** A goals api user user. */
   GoalsApiUser = 'GOALS_API_USER',
   /** A guest user. */
@@ -13612,6 +13615,8 @@ export type UtilizationReportGrouped = {
   groups?: Maybe<Array<UtilizationReportGroup>>;
   /** Headers for each time period in the report. */
   time_period_headers?: Maybe<Array<TimePeriodHeader>>;
+  /** Total number of attribute groups across all pages (before pagination). */
+  total_group_count?: Maybe<Scalars['Int']['output']>;
 };
 
 /** Input for the utilization report query: time range, effort kinds, optional grouping and filters. */
@@ -13622,8 +13627,10 @@ export type UtilizationReportInput = {
   group_by_attribute?: InputMaybe<GroupByResourceAttribute>;
   /** When true, include project breakdown in the response. Defaults to false. */
   include_project_breakdown?: InputMaybe<Scalars['Boolean']['input']>;
-  /** Max resources when no resource_ids provided (default 25). Used for "all resources" case. */
+  /** Maximum number of groups per page (1–25, default 25). Applied when grouped by attribute. */
   limit?: InputMaybe<Scalars['Int']['input']>;
+  /** Page number for pagination when grouped by attribute (1-based, default 1). Paginates at the attribute group level. */
+  page?: InputMaybe<Scalars['Int']['input']>;
   /** Optional list of resource IDs to filter by. If not provided, all resources are included (subject to limit). */
   resource_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   /** Time range and granularity for the report. */

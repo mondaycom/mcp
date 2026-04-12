@@ -959,6 +959,12 @@ export type AttributesInput = {
   underline?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
+/** The type of entity that a reaction is attributed to. */
+export enum AttributionEntity {
+  /** An AI agent */
+  Agent = 'AGENT'
+}
+
 export type AuditEventCatalogueEntry = {
   __typename?: 'AuditEventCatalogueEntry';
   description?: Maybe<Scalars['String']['output']>;
@@ -1172,6 +1178,8 @@ export type Board = {
   hierarchy_type?: Maybe<BoardHierarchy>;
   /** The unique identifier of the board. */
   id: Scalars['ID']['output'];
+  /** Inferred metadata associated with this board */
+  inferred_metadata?: Maybe<BoardInferredMetadata>;
   /** The Board's item nickname, one of a predefined set of values, or a custom user value */
   item_terminology?: Maybe<Scalars['String']['output']>;
   /** The number of items on the board */
@@ -1180,6 +1188,8 @@ export type Board = {
   items_limit?: Maybe<Scalars['Int']['output']>;
   /** The board's items (rows). */
   items_page: ItemsResponse;
+  /** Manually set metadata associated with this board */
+  manual_metadata?: Maybe<BoardManualMetadata>;
   /** The board's name. */
   name: Scalars['String']['output'];
   /** The Board's object type unique key */
@@ -1373,6 +1383,13 @@ export enum BoardHierarchy {
   MultiLevel = 'multi_level'
 }
 
+/** Inferred metadata associated with a board, such as custom terminology settings. */
+export type BoardInferredMetadata = {
+  __typename?: 'BoardInferredMetadata';
+  /** The custom terminology used for items in this board */
+  item_type?: Maybe<Scalars['String']['output']>;
+};
+
 /** The board kinds available. */
 export enum BoardKind {
   /** Private boards. */
@@ -1382,6 +1399,13 @@ export enum BoardKind {
   /** Shareable boards. */
   Share = 'share'
 }
+
+/** Manually set metadata associated with a board. */
+export type BoardManualMetadata = {
+  __typename?: 'BoardManualMetadata';
+  /** Markdown content describing the board */
+  board_md?: Maybe<Scalars['String']['output']>;
+};
 
 export type BoardMuteSettings = {
   __typename?: 'BoardMuteSettings';
@@ -1530,32 +1554,6 @@ export enum BulkImportFailureReason {
   PermissionDenied = 'PERMISSION_DENIED'
 }
 
-/** Initialization response for bulk import containing import ID and upload URL */
-export type BulkImportInit = {
-  __typename?: 'BulkImportInit';
-  /** The unique identifier of the bulk import operation */
-  import_id?: Maybe<Scalars['ID']['output']>;
-  /** The URL where the file should be uploaded for processing */
-  upload_url?: Maybe<Scalars['String']['output']>;
-};
-
-/** Item counts for a bulk import process */
-export type BulkImportItemCounts = {
-  __typename?: 'BulkImportItemCounts';
-  /** Number of items that have been created */
-  created?: Maybe<Scalars['Int']['output']>;
-  /** Number of valid items that failed during import execution */
-  failed?: Maybe<Scalars['Int']['output']>;
-  /** Number of items that failed validation */
-  invalid?: Maybe<Scalars['Int']['output']>;
-  /** Number of items that were skipped */
-  skipped?: Maybe<Scalars['Int']['output']>;
-  /** Total number of items submitted for import */
-  submitted?: Maybe<Scalars['Int']['output']>;
-  /** Number of items that have been updated */
-  updated?: Maybe<Scalars['Int']['output']>;
-};
-
 /** Current state of the import process */
 export enum BulkImportState {
   /** The import is completed. */
@@ -1569,27 +1567,6 @@ export enum BulkImportState {
   /** The upload is pending. */
   UploadPending = 'UPLOAD_PENDING'
 }
-
-/** Status information for a bulk import process */
-export type BulkImportStatus = {
-  __typename?: 'BulkImportStatus';
-  /** Item counts breakdown for the import process */
-  counts?: Maybe<BulkImportItemCounts>;
-  /** User-friendly error message explaining why the import failed or was rejected */
-  failure_message?: Maybe<Scalars['String']['output']>;
-  /** Reason for failure when status is Rejected or Failed */
-  failure_reason?: Maybe<BulkImportFailureReason>;
-  /** Indicates if the upload is completely done */
-  fully_imported?: Maybe<Scalars['Boolean']['output']>;
-  /** Progress percentage (0-100) of the import process */
-  progress_percentage?: Maybe<Scalars['Int']['output']>;
-  /** Indicates if a report file has been generated */
-  report_created?: Maybe<Scalars['Boolean']['output']>;
-  /** URL to download the import report, valid for 10 minutes */
-  report_url?: Maybe<Scalars['String']['output']>;
-  /** Current state of the import process */
-  status?: Maybe<BulkImportState>;
-};
 
 export type ButtonValue = ColumnValue & {
   __typename?: 'ButtonValue';
@@ -2777,6 +2754,8 @@ export enum DocKind {
 /** A single restoring point (snapshot) in the document version history. Represents a group of changes made within a time window, including which users made changes. */
 export type DocRestoringPoint = {
   __typename?: 'DocRestoringPoint';
+  /** AI agents that contributed changes in this restoring point time window. */
+  agent_attributions?: Maybe<Array<RestoringPointAgentAttribution>>;
   /** The ISO 8601 timestamp of when this restoring point was captured. */
   date?: Maybe<Scalars['String']['output']>;
   /** The type of restoring point. "publish" indicates the document was published at this point. Null for regular edit snapshots. */
@@ -3635,6 +3614,7 @@ export enum FormFontSize {
   Small = 'Small'
 }
 
+/** String specifying the form display format. Can be a step by step form or a classic one page form. */
 export enum FormFormat {
   Classic = 'Classic',
   OneByOne = 'OneByOne'
@@ -3769,6 +3749,7 @@ export type FormQuestion = {
   /** Boolean indicating if the question must be answered before form submission. */
   required: Scalars['Boolean']['output'];
   settings?: Maybe<FormQuestionSettings>;
+  /** Conditional logic rules that control when this question is displayed based on other question answers. */
   showIfRules?: Maybe<Scalars['JSON']['output']>;
   /** The question text displayed to respondents. Must be at least 1 character long and clearly indicate the expected response. */
   title: Scalars['String']['output'];
@@ -4169,6 +4150,22 @@ export type GroupBySortSettingsInput = {
   type?: InputMaybe<Scalars['String']['input']>;
 };
 
+/** Input for a group of validation rules with a logical operator */
+export type GroupInput = {
+  /** The group configuration */
+  groups: Array<RuleConstraintInput>;
+  /** The group operator */
+  operator?: InputMaybe<GroupOperator>;
+};
+
+/** The operator for the group */
+export enum GroupOperator {
+  /** All conditions in the group must be met */
+  And = 'AND',
+  /** At least one condition in the group must be met */
+  Or = 'OR'
+}
+
 export type GroupValue = ColumnValue & {
   __typename?: 'GroupValue';
   /** The column that this value belongs to. */
@@ -4308,6 +4305,30 @@ export type IntegrationValue = ColumnValue & {
   /** The column's raw value in JSON format. */
   value?: Maybe<Scalars['JSON']['output']>;
 };
+
+/** The method by which a user was added to the account. */
+export enum InvitationMethod {
+  /** Created as an API user. */
+  ApiUserCreation = 'API_USER_CREATION',
+  /** Added via authorized domain. */
+  AuthDomain = 'AUTH_DOMAIN',
+  /** Added via account consolidation. */
+  Consolidation = 'CONSOLIDATION',
+  /** First user who created the account. */
+  FirstUser = 'FIRST_USER',
+  /** Provisioned via SCIM. */
+  Scim = 'SCIM',
+  /** Added via service portal authorized domain. */
+  ServicePortalAuthDomain = 'SERVICE_PORTAL_AUTH_DOMAIN',
+  /** Invited to monday service portal by another user. */
+  ServicePortalUserInvitation = 'SERVICE_PORTAL_USER_INVITATION',
+  /** Added via single sign-on. */
+  Sso = 'SSO',
+  /** Unknown invitation method. */
+  Unknown = 'UNKNOWN',
+  /** Invited by another user. */
+  User = 'USER'
+}
 
 /** Error that occurred while inviting users */
 export type InviteUsersError = {
@@ -4452,6 +4473,44 @@ export type ItemNicknameInput = {
   singular?: InputMaybe<Scalars['String']['input']>;
 };
 
+/** Item counts for an items job process */
+export type ItemsJobItemCounts = {
+  __typename?: 'ItemsJobItemCounts';
+  /** Number of items that have been created */
+  created?: Maybe<Scalars['Int']['output']>;
+  /** Number of valid items that failed during execution */
+  failed?: Maybe<Scalars['Int']['output']>;
+  /** Number of items that failed validation */
+  invalid?: Maybe<Scalars['Int']['output']>;
+  /** Number of items that were skipped */
+  skipped?: Maybe<Scalars['Int']['output']>;
+  /** Total number of items submitted for processing */
+  submitted?: Maybe<Scalars['Int']['output']>;
+  /** Number of items that have been updated */
+  updated?: Maybe<Scalars['Int']['output']>;
+};
+
+/** Status information for an items job process */
+export type ItemsJobStatus = {
+  __typename?: 'ItemsJobStatus';
+  /** Item counts breakdown for the job process */
+  counts?: Maybe<ItemsJobItemCounts>;
+  /** User-friendly error message explaining why the job failed or was rejected */
+  failure_message?: Maybe<Scalars['String']['output']>;
+  /** Reason for failure when status is Rejected or Failed */
+  failure_reason?: Maybe<BulkImportFailureReason>;
+  /** Indicates if the job is completely done */
+  fully_imported?: Maybe<Scalars['Boolean']['output']>;
+  /** Progress percentage (0-100) of the job process */
+  progress_percentage?: Maybe<Scalars['Int']['output']>;
+  /** Indicates if a report file has been generated */
+  report_created?: Maybe<Scalars['Boolean']['output']>;
+  /** URL to download the job report, valid for 10 minutes */
+  report_url?: Maybe<Scalars['String']['output']>;
+  /** Current state of the job process */
+  status?: Maybe<BulkImportState>;
+};
+
 /** Sort direction */
 export enum ItemsOrderByDirection {
   /** Ascending order */
@@ -4560,6 +4619,9 @@ export type ItemsResponse = {
   /** The items associated with the cursor. */
   items: Array<Item>;
 };
+
+/** Status of a job operation. Currently supports items job status for backfill and ingest operations. */
+export type JobStatus = ItemsJobStatus;
 
 /** Kind of assignee */
 export enum Kind {
@@ -4676,6 +4738,10 @@ export type LifecycleSubscriptionKind = {
 
 export type Like = {
   __typename?: 'Like';
+  /** The reference identifier of the entity that created this reaction on behalf of the user, who this reaction should be attributed to (e.g. agent_{agentId}). */
+  attribution_entity_ref?: Maybe<Scalars['String']['output']>;
+  /** The type of entity that created this reaction. */
+  attribution_entity_type?: Maybe<AttributionEntity>;
   created_at?: Maybe<Scalars['Date']['output']>;
   creator?: Maybe<User>;
   creator_id?: Maybe<Scalars['String']['output']>;
@@ -5115,12 +5181,12 @@ export type Mutation = {
   attach_dropdown_managed_column?: Maybe<Column>;
   /** Creates a new status column in a board that is linked to a managed column. The column data and settings are controlled by the managed column. Only title and description can be overridden locally. */
   attach_status_managed_column?: Maybe<Column>;
+  /** Initialize a backfill job for a board and group. Designed for data migrations with no side effects and a 20k row limit. Returns job ID and upload URL to begin the process. */
+  backfill_items?: Maybe<UploadJobInit>;
   /** Extends trial period of an application to selected accounts */
   batch_extend_trial_period?: Maybe<BatchExtendTrialPeriod>;
   /** Batch update the dependency column values in a board. Limited to 50 items per batch. */
   batch_update_dependency_column: Scalars['JSON']['output'];
-  /** Initialize bulk import for a board and group. Returns import ID and upload URL to begin the process. */
-  bulk_import_items?: Maybe<BulkImportInit>;
   /** Change a column's properties */
   change_column_metadata?: Maybe<Column>;
   /** Change a column's title */
@@ -5206,6 +5272,8 @@ export type Mutation = {
   create_team?: Maybe<Team>;
   create_timeline_item?: Maybe<TimelineItem>;
   create_update?: Maybe<Update>;
+  /** Create a validation rule */
+  create_validation_rule?: Maybe<ValidationRule>;
   /** Create a view */
   create_view?: Maybe<BoardView>;
   /** Create a new table view */
@@ -5270,6 +5338,8 @@ export type Mutation = {
   delete_update?: Maybe<Update>;
   /** Delete users from a workspace. */
   delete_users_from_workspace?: Maybe<Array<Maybe<User>>>;
+  /** Delete a validation rule */
+  delete_validation_rule?: Maybe<ValidationRule>;
   /** Delete an existing board subset/view */
   delete_view?: Maybe<BoardView>;
   /** Delete a new webhook. */
@@ -5296,6 +5366,8 @@ export type Mutation = {
   import_doc_from_html?: Maybe<ImportDocFromHtmlResult>;
   /** Increase operations counter */
   increase_app_subscription_operations?: Maybe<AppSubscriptionOperationsCounter>;
+  /** Initialize an ingest job for a board and group. Designed for ongoing integrations with full side effects and a 10k row limit. Returns job ID and upload URL to begin the process. */
+  ingest_items?: Maybe<UploadJobInit>;
   /** Invite users to the account. */
   invite_users?: Maybe<InviteUsersResult>;
   like_update?: Maybe<Update>;
@@ -5399,6 +5471,8 @@ export type Mutation = {
   update_status_managed_column?: Maybe<StatusManagedColumn>;
   /** Updates the role of the specified users. */
   update_users_role?: Maybe<UpdateUsersRoleResult>;
+  /** Update a validation rule */
+  update_validation_rule?: Maybe<ValidationRule>;
   /** Update an existing view */
   update_view?: Maybe<BoardView>;
   /** Update an existing board table view */
@@ -5582,6 +5656,13 @@ export type MutationAttach_Status_Managed_ColumnArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationBackfill_ItemsArgs = {
+  board_id: Scalars['ID']['input'];
+  group_id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationBatch_Extend_Trial_PeriodArgs = {
   account_slugs: Array<Scalars['String']['input']>;
   app_id: Scalars['ID']['input'];
@@ -5595,14 +5676,6 @@ export type MutationBatch_Update_Dependency_ColumnArgs = {
   boardId: Scalars['String']['input'];
   columnId: Scalars['String']['input'];
   values: Array<DependencyPulseValueInput>;
-};
-
-
-/** Root mutation type for the Dependencies service */
-export type MutationBulk_Import_ItemsArgs = {
-  board_id: Scalars['ID']['input'];
-  group_id: Scalars['ID']['input'];
-  on_match?: InputMaybe<OnMatchInput>;
 };
 
 
@@ -6005,6 +6078,14 @@ export type MutationCreate_UpdateArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationCreate_Validation_RuleArgs = {
+  id: Scalars['ID']['input'];
+  rule: ValidationRuleInput;
+  type?: InputMaybe<ValidationsEntityType>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_ViewArgs = {
   board_id: Scalars['ID']['input'];
   filter?: InputMaybe<ItemsQueryGroup>;
@@ -6246,6 +6327,14 @@ export type MutationDelete_Users_From_WorkspaceArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationDelete_Validation_RuleArgs = {
+  id: Scalars['ID']['input'];
+  rule_id: Scalars['ID']['input'];
+  type?: InputMaybe<ValidationsEntityType>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationDelete_ViewArgs = {
   board_id: Scalars['ID']['input'];
   view_id: Scalars['ID']['input'];
@@ -6347,6 +6436,14 @@ export type MutationImport_Doc_From_HtmlArgs = {
 export type MutationIncrease_App_Subscription_OperationsArgs = {
   increment_by?: InputMaybe<Scalars['Int']['input']>;
   kind?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationIngest_ItemsArgs = {
+  board_id: Scalars['ID']['input'];
+  group_id: Scalars['ID']['input'];
+  on_match?: InputMaybe<OnMatchInput>;
 };
 
 
@@ -6773,6 +6870,15 @@ export type MutationUpdate_Users_RoleArgs = {
   new_role?: InputMaybe<BaseRoleName>;
   role_id?: InputMaybe<Scalars['ID']['input']>;
   user_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUpdate_Validation_RuleArgs = {
+  id: Scalars['ID']['input'];
+  rule: ValidationRuleInput;
+  rule_id: Scalars['ID']['input'];
+  type?: InputMaybe<ValidationsEntityType>;
 };
 
 
@@ -7300,6 +7406,21 @@ export type PhoneValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
+/** URLs for the user's profile photo in various sizes. */
+export type PhotoUrl = {
+  __typename?: 'PhotoUrl';
+  /** The user's photo in original size. */
+  original?: Maybe<Scalars['String']['output']>;
+  /** The user's photo in small size (150x150). */
+  small?: Maybe<Scalars['String']['output']>;
+  /** The user's photo in thumbnail size (100x100). */
+  thumb?: Maybe<Scalars['String']['output']>;
+  /** The user's photo in small thumbnail size (50x50). */
+  thumb_small?: Maybe<Scalars['String']['output']>;
+  /** The user's photo in tiny size (30x30). */
+  tiny?: Maybe<Scalars['String']['output']>;
+};
+
 /** A payment plan. */
 export type Plan = {
   __typename?: 'Plan';
@@ -7523,8 +7644,6 @@ export type Query = {
   board_candidates?: Maybe<Array<Board>>;
   /** Get a collection of boards. */
   boards?: Maybe<Array<Maybe<Board>>>;
-  /** Get the status of a bulk import items process */
-  bulk_import_items_status: BulkImportStatus;
   /** Get the complexity data of your queries. */
   complexity?: Maybe<Complexity>;
   /** Fetch a single connection by its unique ID. */
@@ -7557,6 +7676,8 @@ export type Query = {
   export_markdown_from_doc?: Maybe<ExportMarkdownResult>;
   /** Get all personal list items by list ID */
   favorites?: Maybe<Array<GraphqlHierarchyObjectItem>>;
+  /** Get the status of a backfill or ingest job */
+  fetch_job_status: JobStatus;
   /** Get a collection of folders. Note: This query won't return folders from closed workspaces to which you are not subscribed */
   folders?: Maybe<Array<Maybe<Folder>>>;
   /** Fetch a form by its token. The returned form includes all the details of the form such as its settings, questions, title, etc. Use this endpoint when you need to retrieve complete form data for display or processing. Requires that the requesting user has read access to the associated board. */
@@ -7629,8 +7750,8 @@ export type Query = {
   updates?: Maybe<Array<Update>>;
   /** Returns connections that belong to the authenticated user. */
   user_connections?: Maybe<Array<Connection>>;
-  /** Get a collection of users. */
-  users?: Maybe<Array<Maybe<User>>>;
+  /** Get users. */
+  users?: Maybe<Array<User>>;
   /** Get validations configuration for a board */
   validations?: Maybe<Validations>;
   /** Get the API version in use */
@@ -7781,12 +7902,6 @@ export type QueryBoardsArgs = {
 
 
 /** Root query type for the Dependencies service */
-export type QueryBulk_Import_Items_StatusArgs = {
-  import_id: Scalars['ID']['input'];
-};
-
-
-/** Root query type for the Dependencies service */
 export type QueryConnectionArgs = {
   id: Scalars['Int']['input'];
 };
@@ -7885,6 +8000,12 @@ export type QueryExport_GraphArgs = {
 export type QueryExport_Markdown_From_DocArgs = {
   blockIds?: InputMaybe<Array<Scalars['String']['input']>>;
   docId: Scalars['ID']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryFetch_Job_StatusArgs = {
+  job_id: Scalars['ID']['input'];
 };
 
 
@@ -8130,14 +8251,12 @@ export type QueryUser_ConnectionsArgs = {
 
 /** Root query type for the Dependencies service */
 export type QueryUsersArgs = {
-  emails?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  emails?: InputMaybe<Array<Scalars['String']['input']>>;
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
-  kind?: InputMaybe<UserKind>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
-  newest_first?: InputMaybe<Scalars['Boolean']['input']>;
-  non_active?: InputMaybe<Scalars['Boolean']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
+  user_kind?: InputMaybe<UserKindFilterInput>;
 };
 
 
@@ -8168,7 +8287,7 @@ export type QueryWorkspacesArgs = {
 };
 
 export type QuestionOptionInput = {
-  /** The label to display for the option */
+  /** The display text for the option shown to respondents. Must be at least 1 character long. */
   label: Scalars['String']['input'];
 };
 
@@ -8314,6 +8433,61 @@ export type ResponseForm = {
   /** The category or classification of the form for organizational purposes. */
   type?: Maybe<Scalars['String']['output']>;
 };
+
+/** An AI agent that contributed changes in this restoring point time window. */
+export type RestoringPointAgentAttribution = {
+  __typename?: 'RestoringPointAgentAttribution';
+  /** The ID of the agent that made changes. */
+  agent_id?: Maybe<Scalars['ID']['output']>;
+  /** The display name of the agent, if available. */
+  agent_name?: Maybe<Scalars['String']['output']>;
+  /** The type of entity (e.g. "agent", "workflow"). */
+  entity_type?: Maybe<Scalars['String']['output']>;
+};
+
+/** Input for a single validation rule constraint with operator and definition */
+export type RuleConstraintInput = {
+  /** The column ID */
+  column_id: Scalars['String']['input'];
+  /** The compare attribute */
+  compare_attribute?: InputMaybe<Scalars['String']['input']>;
+  /** The compare values (array of strings or numbers) */
+  compare_value?: InputMaybe<Array<Scalars['CompareValue']['input']>>;
+  /** The validation operator */
+  operator: RuleOperator;
+};
+
+/** Available operators for validation rules */
+export enum RuleOperator {
+  /** Value matches any of the specified values */
+  AnyOf = 'ANY_OF',
+  /** Value is between two specified values */
+  Between = 'BETWEEN',
+  /** Value contains the specified text */
+  ContainsText = 'CONTAINS_TEXT',
+  /** Value equals the specified value */
+  Equals = 'EQUALS',
+  /** Value is greater than the specified value */
+  GreaterThan = 'GREATER_THAN',
+  /** Value is greater than or equal to the specified value */
+  GreaterThanOrEquals = 'GREATER_THAN_OR_EQUALS',
+  /** Value is empty or not set */
+  IsEmpty = 'IS_EMPTY',
+  /** Value is not empty */
+  IsNotEmpty = 'IS_NOT_EMPTY',
+  /** Value is lower than the specified value */
+  LowerThan = 'LOWER_THAN',
+  /** Value is lower than or equal to the specified value */
+  LowerThanOrEqual = 'LOWER_THAN_OR_EQUAL',
+  /** Value does not match any of the specified values */
+  NotAnyOf = 'NOT_ANY_OF',
+  /** Value does not contain the specified text */
+  NotContainsText = 'NOT_CONTAINS_TEXT',
+  /** Value does not equal the specified value */
+  NotEquals = 'NOT_EQUALS',
+  /** Value starts with the specified text */
+  StartsWithText = 'STARTS_WITH_TEXT'
+}
 
 /** notification settings scope types, the options are account user defaults or user private settings */
 export enum ScopeType {
@@ -9601,13 +9775,28 @@ export type UpdateWorkspaceAttributesInput = {
   name?: InputMaybe<Scalars['String']['input']>;
 };
 
+/** Initialization response containing job ID and upload URL */
+export type UploadJobInit = {
+  __typename?: 'UploadJobInit';
+  /** The unique identifier of the job */
+  job_id?: Maybe<Scalars['ID']['output']>;
+  /** The URL where the file should be uploaded for processing */
+  upload_url?: Maybe<Scalars['String']['output']>;
+};
+
 /** A monday.com user. */
 export type User = {
   __typename?: 'User';
   /** The user's account. */
   account: Account;
+  /** The unique identifier of the account the user belongs to. */
+  account_id: Scalars['ID']['output'];
   /** The products the user is assigned to. */
   account_products?: Maybe<Array<AccountProduct>>;
+  /** The BigBrain visitor ID associated with the user. */
+  bb_visitor_id: Scalars['ID']['output'];
+  /** The date and time when the user became active. */
+  became_active_at?: Maybe<Scalars['ISO8601DateTime']['output']>;
   /** The user's birthday. */
   birthday?: Maybe<Scalars['Date']['output']>;
   /** The user's country code. */
@@ -9622,7 +9811,7 @@ export type User = {
   custom_field_values?: Maybe<Array<Maybe<CustomFieldValue>>>;
   /** The department the user is a member of (if any) */
   department?: Maybe<Department>;
-  /** The user's email. */
+  /** The user's email address. */
   email: Scalars['String']['output'];
   /** Is the user enabled or not. */
   enabled: Scalars['Boolean']['output'];
@@ -9630,8 +9819,14 @@ export type User = {
   encrypt_api_token?: Maybe<Scalars['String']['output']>;
   /** The user's unique identifier. */
   id: Scalars['ID']['output'];
+  /** The method by which the user was added to the account. */
+  invitation_method: InvitationMethod;
   /** Is the user an account admin. */
   is_admin?: Maybe<Scalars['Boolean']['output']>;
+  /** Whether the user has been soft-deleted. */
+  is_deleted: Scalars['Boolean']['output'];
+  /** Whether the user has confirmed their email address. */
+  is_email_confirmed: Scalars['Boolean']['output'];
   /** Is the user a guest or not. */
   is_guest?: Maybe<Scalars['Boolean']['output']>;
   /** Is the user a pending user */
@@ -9642,13 +9837,15 @@ export type User = {
   is_view_only?: Maybe<Scalars['Boolean']['output']>;
   /** The date the user joined the account. */
   join_date?: Maybe<Scalars['Date']['output']>;
+  /** The kind of the user. */
+  kind: Scalars['String']['output'];
   /** Last date & time when user was active */
   last_activity?: Maybe<Scalars['Date']['output']>;
   /** The user's location. */
   location?: Maybe<Scalars['String']['output']>;
   /** The user's mobile phone number. */
   mobile_phone?: Maybe<Scalars['String']['output']>;
-  /** The user's name. */
+  /** The user's full name. */
   name: Scalars['String']['output'];
   /** The user's out of office status. */
   out_of_office?: Maybe<OutOfOffice>;
@@ -9664,8 +9861,12 @@ export type User = {
   photo_thumb_small?: Maybe<Scalars['String']['output']>;
   /** The user's photo in tiny size (30x30). */
   photo_tiny?: Maybe<Scalars['String']['output']>;
+  /** URLs for the user's profile photo in various sizes. */
+  photo_url?: Maybe<PhotoUrl>;
   /** The product to which the user signed up to first. */
   sign_up_product_kind?: Maybe<Scalars['String']['output']>;
+  /** The activation status of the user. */
+  status: UserStatus;
   /** The teams the user is a member in. */
   teams?: Maybe<Array<Maybe<Team>>>;
   /** The user's timezone identifier. */
@@ -9718,6 +9919,56 @@ export enum UserKind {
   NonPending = 'non_pending'
 }
 
+/** Filter for user kinds, including kind groups. */
+export enum UserKindFilter {
+  /** A admin user. */
+  Admin = 'ADMIN',
+  /** A ai platform agent api user user. */
+  AiPlatformAgentApiUser = 'AI_PLATFORM_AGENT_API_USER',
+  /** A group representing admin, member, guest, and view-only users. */
+  Basic = 'BASIC',
+  /** A campaigns api user user. */
+  CampaignsApiUser = 'CAMPAIGNS_API_USER',
+  /** A crm commerce api user user. */
+  CrmCommerceApiUser = 'CRM_COMMERCE_API_USER',
+  /** A data retention api user user. */
+  DataRetentionApiUser = 'DATA_RETENTION_API_USER',
+  /** A dependencies api user user. */
+  DependenciesApiUser = 'DEPENDENCIES_API_USER',
+  /** A goals api user user. */
+  GoalsApiUser = 'GOALS_API_USER',
+  /** A guest user. */
+  Guest = 'GUEST',
+  /** A member user. */
+  Member = 'MEMBER',
+  /** A monday service api user user. */
+  MondayServiceApiUser = 'MONDAY_SERVICE_API_USER',
+  /** A nexus api user user. */
+  NexusApiUser = 'NEXUS_API_USER',
+  /** A omnichannel api user user. */
+  OmnichannelApiUser = 'OMNICHANNEL_API_USER',
+  /** A portal user. */
+  Portal = 'PORTAL',
+  /** A portfolio api user user. */
+  PortfolioApiUser = 'PORTFOLIO_API_USER',
+  /** A projects api user user. */
+  ProjectsApiUser = 'PROJECTS_API_USER',
+  /** A resource directory api user user. */
+  ResourceDirectoryApiUser = 'RESOURCE_DIRECTORY_API_USER',
+  /** A sprint management api user user. */
+  SprintManagementApiUser = 'SPRINT_MANAGEMENT_API_USER',
+  /** A view only user. */
+  ViewOnly = 'VIEW_ONLY'
+}
+
+/** Filter users by kind. Supports individual kinds and groups (e.g. BASIC = admin, member, guest, view_only). The not_in values are removed from the expanded in set. */
+export type UserKindFilterInput = {
+  /** Include users matching these kinds or kind groups. */
+  in?: InputMaybe<Array<UserKindFilter>>;
+  /** Exclude users matching these kinds or kind groups. */
+  not_in?: InputMaybe<Array<UserKindFilter>>;
+};
+
 /** The role of the user. */
 export enum UserRole {
   Admin = 'ADMIN',
@@ -9726,9 +9977,38 @@ export enum UserRole {
   ViewOnly = 'VIEW_ONLY'
 }
 
+/** The activation status of a user. */
+export enum UserStatus {
+  /** The user is active. */
+  Active = 'ACTIVE',
+  /** The user is deactivated. */
+  Inactive = 'INACTIVE',
+  /** The user has not yet accepted the invitation. */
+  Pending = 'PENDING'
+}
+
 export type UserUpdateInput = {
   user_attribute_updates: UserAttributesInput;
   user_id: Scalars['ID']['input'];
+};
+
+/** A validation rule with then and optional if conditions */
+export type ValidationRule = {
+  __typename?: 'ValidationRule';
+  /** The unique identifier of the validation rule */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** The optional if condition group */
+  if?: Maybe<Scalars['JSON']['output']>;
+  /** The force condition group */
+  then?: Maybe<Scalars['JSON']['output']>;
+};
+
+/** Input for creating a validation rule with then and optional if conditions */
+export type ValidationRuleInput = {
+  /** Optional conditions that determine if the rule should be applied */
+  if?: InputMaybe<GroupInput>;
+  /** The conditions that must be enforced when the rule applies */
+  then: GroupInput;
 };
 
 export type Validations = {
@@ -10519,7 +10799,7 @@ export type GetUsersByIdsQueryVariables = Exact<{
 }>;
 
 
-export type GetUsersByIdsQuery = { __typename?: 'Query', users?: Array<{ __typename?: 'User', id: string, name: string, photo_tiny?: string | null } | null> | null };
+export type GetUsersByIdsQuery = { __typename?: 'Query', users?: Array<{ __typename?: 'User', id: string, name: string, photo_tiny?: string | null }> | null };
 
 export type GetBoardAllActivityQueryVariables = Exact<{
   boardId: Scalars['ID']['input'];
@@ -10630,7 +10910,7 @@ export type ListUsersWithTeamsQueryVariables = Exact<{
 }>;
 
 
-export type ListUsersWithTeamsQuery = { __typename?: 'Query', users?: Array<{ __typename?: 'User', id: string, name: string, title?: string | null, email: string, enabled: boolean, is_admin?: boolean | null, is_guest?: boolean | null, is_pending?: boolean | null, is_verified?: boolean | null, is_view_only?: boolean | null, join_date?: any | null, last_activity?: any | null, location?: string | null, mobile_phone?: string | null, phone?: string | null, photo_thumb?: string | null, time_zone_identifier?: string | null, utc_hours_diff?: number | null, teams?: Array<{ __typename?: 'Team', id: string, name: string, is_guest?: boolean | null, picture_url?: string | null } | null> | null } | null> | null };
+export type ListUsersWithTeamsQuery = { __typename?: 'Query', users?: Array<{ __typename?: 'User', id: string, name: string, title?: string | null, email: string, enabled: boolean, is_admin?: boolean | null, is_guest?: boolean | null, is_pending?: boolean | null, is_verified?: boolean | null, is_view_only?: boolean | null, join_date?: any | null, last_activity?: any | null, location?: string | null, mobile_phone?: string | null, phone?: string | null, photo_thumb?: string | null, time_zone_identifier?: string | null, utc_hours_diff?: number | null, teams?: Array<{ __typename?: 'Team', id: string, name: string, is_guest?: boolean | null, picture_url?: string | null } | null> | null }> | null };
 
 export type ListUsersOnlyQueryVariables = Exact<{
   userIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
@@ -10638,7 +10918,7 @@ export type ListUsersOnlyQueryVariables = Exact<{
 }>;
 
 
-export type ListUsersOnlyQuery = { __typename?: 'Query', users?: Array<{ __typename?: 'User', id: string, name: string, title?: string | null, email: string, enabled: boolean, is_admin?: boolean | null, is_guest?: boolean | null, is_pending?: boolean | null, is_verified?: boolean | null, is_view_only?: boolean | null, join_date?: any | null, last_activity?: any | null, location?: string | null, mobile_phone?: string | null, phone?: string | null, photo_thumb?: string | null, time_zone_identifier?: string | null, utc_hours_diff?: number | null } | null> | null };
+export type ListUsersOnlyQuery = { __typename?: 'Query', users?: Array<{ __typename?: 'User', id: string, name: string, title?: string | null, email: string, enabled: boolean, is_admin?: boolean | null, is_guest?: boolean | null, is_pending?: boolean | null, is_verified?: boolean | null, is_view_only?: boolean | null, join_date?: any | null, last_activity?: any | null, location?: string | null, mobile_phone?: string | null, phone?: string | null, photo_thumb?: string | null, time_zone_identifier?: string | null, utc_hours_diff?: number | null }> | null };
 
 export type ListUsersAndTeamsQueryVariables = Exact<{
   userIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
@@ -10647,7 +10927,7 @@ export type ListUsersAndTeamsQueryVariables = Exact<{
 }>;
 
 
-export type ListUsersAndTeamsQuery = { __typename?: 'Query', users?: Array<{ __typename?: 'User', id: string, name: string, title?: string | null, email: string, enabled: boolean, is_admin?: boolean | null, is_guest?: boolean | null, is_pending?: boolean | null, is_verified?: boolean | null, is_view_only?: boolean | null, join_date?: any | null, last_activity?: any | null, location?: string | null, mobile_phone?: string | null, phone?: string | null, photo_thumb?: string | null, time_zone_identifier?: string | null, utc_hours_diff?: number | null, teams?: Array<{ __typename?: 'Team', id: string, name: string, is_guest?: boolean | null } | null> | null } | null> | null, teams?: Array<{ __typename?: 'Team', is_guest?: boolean | null, picture_url?: string | null, id: string, name: string, owners: Array<{ __typename?: 'User', id: string, name: string, email: string }>, users?: Array<{ __typename?: 'User', id: string, name: string, email: string, title?: string | null, is_admin?: boolean | null, is_guest?: boolean | null } | null> | null } | null> | null };
+export type ListUsersAndTeamsQuery = { __typename?: 'Query', users?: Array<{ __typename?: 'User', id: string, name: string, title?: string | null, email: string, enabled: boolean, is_admin?: boolean | null, is_guest?: boolean | null, is_pending?: boolean | null, is_verified?: boolean | null, is_view_only?: boolean | null, join_date?: any | null, last_activity?: any | null, location?: string | null, mobile_phone?: string | null, phone?: string | null, photo_thumb?: string | null, time_zone_identifier?: string | null, utc_hours_diff?: number | null, teams?: Array<{ __typename?: 'Team', id: string, name: string, is_guest?: boolean | null } | null> | null }> | null, teams?: Array<{ __typename?: 'Team', is_guest?: boolean | null, picture_url?: string | null, id: string, name: string, owners: Array<{ __typename?: 'User', id: string, name: string, email: string }>, users?: Array<{ __typename?: 'User', id: string, name: string, email: string, title?: string | null, is_admin?: boolean | null, is_guest?: boolean | null } | null> | null } | null> | null };
 
 export type ListTeamsOnlyQueryVariables = Exact<{
   teamIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
@@ -10668,7 +10948,7 @@ export type GetUserByNameQueryVariables = Exact<{
 }>;
 
 
-export type GetUserByNameQuery = { __typename?: 'Query', users?: Array<{ __typename?: 'User', id: string, name: string, title?: string | null, email: string, enabled: boolean, is_admin?: boolean | null, is_guest?: boolean | null, is_pending?: boolean | null, is_verified?: boolean | null, is_view_only?: boolean | null, join_date?: any | null, last_activity?: any | null, location?: string | null, mobile_phone?: string | null, phone?: string | null, photo_thumb?: string | null, time_zone_identifier?: string | null, utc_hours_diff?: number | null, teams?: Array<{ __typename?: 'Team', id: string, name: string, is_guest?: boolean | null, picture_url?: string | null } | null> | null } | null> | null };
+export type GetUserByNameQuery = { __typename?: 'Query', users?: Array<{ __typename?: 'User', id: string, name: string, title?: string | null, email: string, enabled: boolean, is_admin?: boolean | null, is_guest?: boolean | null, is_pending?: boolean | null, is_verified?: boolean | null, is_view_only?: boolean | null, join_date?: any | null, last_activity?: any | null, location?: string | null, mobile_phone?: string | null, phone?: string | null, photo_thumb?: string | null, time_zone_identifier?: string | null, utc_hours_diff?: number | null, teams?: Array<{ __typename?: 'Team', id: string, name: string, is_guest?: boolean | null, picture_url?: string | null } | null> | null }> | null };
 
 export type GetCurrentUserQueryVariables = Exact<{ [key: string]: never; }>;
 
