@@ -271,7 +271,9 @@ COMMENTS:
       afterBlockId,
       blocksInput: [blockInput],
     };
-    const res = await this.mondayApi.request<CreateDocBlocksMutation>(createDocBlocks, variables, { versionOverride: 'dev' });
+    const res = await this.mondayApi.request<CreateDocBlocksMutation>(createDocBlocks, variables, {
+      versionOverride: 'dev',
+    });
 
     const created = res?.create_doc_blocks;
     if (!created || created.length === 0) {
