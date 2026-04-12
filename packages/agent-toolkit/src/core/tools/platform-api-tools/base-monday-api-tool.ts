@@ -3,7 +3,6 @@ import { ZodRawShape } from 'zod';
 import { ToolAnnotations } from '@modelcontextprotocol/sdk/types';
 import { SessionContext } from '../../executable';
 import { Tool, ToolInputType, ToolOutputType, ToolType } from '../../tool';
-import { trackEvent } from '../../../utils/tracking.utils';
 
 export type MondayApiToolContext = {
   // Operational context
@@ -45,50 +44,10 @@ export abstract class BaseMondayApiTool<
   abstract getDescription(): string;
   abstract getInputSchema(): Input;
 
-  /**
-   * Public execute method that automatically tracks execution.
-   * Accepts an optional sessionContext that tools can enrich with metadata
-   * during executeInternal — the metadata flows into tracking events automatically.
-   */
   async execute(input?: ToolInputType<Input>, sessionContext?: SessionContext): Promise<ToolOutputType<Output>> {
-    const startTime = Date.now();
-    let isError = false;
     this.sessionContext = sessionContext || {};
-
-    try {
-      const result = await this.executeInternal(input);
-      return result;
-    } catch (error) {
-      isError = true;
-      throw error;
-    } finally {
-      const executionTimeInMs = Date.now() - startTime;
-      this.trackToolExecution(this.name, executionTimeInMs, isError);
-    }
+    return this.executeInternal(input);
   }
 
-  /**
-   * Abstract method that subclasses should implement for their actual logic
-   */
   protected abstract executeInternal(input?: ToolInputType<Input>): Promise<ToolOutputType<Output>>;
-
-  private trackToolExecution(
-    toolName: string,
-    executionTimeMs: number,
-    isError: boolean,
-    params?: Record<string, unknown>,
-  ): void {
-    trackEvent({
-      name: 'monday_mcp_tool_execution',
-      data: {
-        toolName,
-        executionTimeMs,
-        isError,
-        params,
-        toolType: 'monday_api_tool',
-        ...(this.context || {}),
-        ...(this.sessionContext?.metadata || {}),
-      },
-    });
-  }
 }
