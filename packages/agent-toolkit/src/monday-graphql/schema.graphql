@@ -12517,6 +12517,16 @@ input CreateQuestionInput {
   settings: FormQuestionSettingsInput
 
   """
+  Conditional logic rules that control when this question is shown based on respondent answers.
+  """
+  show_if_rules: JSON
+
+  """
+  The kind of block to create. Overrides the type field for backwards compatibility. Supports all question types and content blocks.
+  """
+  block_type: FormBlockKind
+
+  """
   The question text displayed to respondents. Must be at least 1 character long and clearly indicate the expected response.
   """
   title: String!
@@ -12525,6 +12535,21 @@ input CreateQuestionInput {
   Array of option objects for choice-based questions (single_select, multi_select). Required for select types.
   """
   options: [QuestionOptionInput!]
+
+  """
+  The ID of an existing board column to map this question to, instead of creating a new column. Useful when the board already has a matching column.
+  """
+  existing_column_id: ID
+
+  """
+  The ID of the question after which the new question should be inserted. If omitted, the question is appended at the end.
+  """
+  insert_after_question_id: ID
+
+  """
+  The ID of the page block to assign the question to. Required when creating questions in multi-page forms.
+  """
+  page_block_id: ID
 }
 
 type DehydratedFormResponse {
@@ -12617,6 +12642,18 @@ input FormAfterSubmissionViewInput {
 
   """Boolean allowing users to view their submitted responses."""
   allowViewSubmission: Boolean
+}
+
+"""Object containing AI translation configuration for the form."""
+type FormAiTranslate {
+  """Boolean enabling AI translation for the form."""
+  enabled: Boolean!
+}
+
+"""Object containing AI translation configuration for the form."""
+input FormAiTranslateInput {
+  """Boolean enabling AI translation for the form."""
+  enabled: Boolean
 }
 
 enum FormAlignment {
@@ -12715,6 +12752,88 @@ enum FormBackgrounds {
   None
 }
 
+"""
+The kind of block to create. Supports question types and content blocks.
+"""
+enum FormBlockKind {
+  """A yes/no checkbox question."""
+  BOOLEAN
+
+  """
+  A question that links to items on a connected board. Board configuration must be done through the column settings.
+  """
+  CONNECTED_BOARDS
+
+  """A country selection question with a searchable dropdown."""
+  COUNTRY
+
+  """A date picker question with optional time selection."""
+  DATE
+
+  """A date range question allowing start and end date selection."""
+  DATE_RANGE
+
+  """An email address input question with format validation."""
+  EMAIL
+
+  """A file upload question for attachments."""
+  FILE
+
+  """A URL/link input question with optional format validation."""
+  LINK
+
+  """A location/address input question with optional geolocation autofill."""
+  LOCATION
+
+  """A multi-line text input question for longer responses."""
+  LONG_TEXT
+
+  """A multiple-choice question allowing several selections."""
+  MULTI_SELECT
+
+  """A name input question mapped to the item name column on the board."""
+  NAME
+
+  """A numeric input question."""
+  NUMBER
+
+  """A people picker question for selecting monday.com users."""
+  PEOPLE
+
+  """A phone number input question with optional country prefix."""
+  PHONE
+
+  """A rating question with a configurable scale."""
+  RATING
+
+  """A single-line text input question."""
+  SHORT_TEXT
+
+  """
+  A signature capture question for collecting drawn or uploaded signatures.
+  """
+  SIGNATURE
+
+  """A single-choice question allowing one selection."""
+  SINGLE_SELECT
+
+  """
+  A subitems question that creates sub-items on the board. Sub-items columns must be configured through the board.
+  """
+  SUBITEMS
+
+  """An updates/comments question mapped to the item updates feed."""
+  UPDATES
+
+  """
+  A text-only display block for adding instructions or context to a form.
+  """
+  DISPLAY_TEXT
+
+  """A page block that groups questions into a single page."""
+  PAGE_BLOCK
+}
+
 type FormCloseDate {
   """Boolean enabling automatic form closure at a specified date and time."""
   enabled: Boolean!
@@ -12796,6 +12915,9 @@ type FormFeatures {
 
   """Object containing board settings for response handling."""
   monday: FormMonday
+
+  """Object containing AI translation configuration for the form."""
+  ai_translate: FormAiTranslate
 }
 
 """
@@ -12834,6 +12956,9 @@ input FormFeaturesInput {
 
   """Object containing password protection configuration for the form."""
   password: FormPasswordInput
+
+  """Object containing AI translation configuration for the form."""
+  ai_translate: FormAiTranslateInput
 }
 
 enum FormFontSize {
@@ -12857,6 +12982,9 @@ type FormLayout {
   """
   format: FormFormat
 
+  """The layout style of the form (Card or Flat)."""
+  type: FormLayoutStyle
+
   """String controlling text and content alignment."""
   alignment: FormAlignment
 
@@ -12871,11 +12999,27 @@ input FormLayoutInput {
   """
   format: FormFormat
 
+  """The layout style of the form (Card or Flat)."""
+  type: FormLayoutStyle
+
   """String controlling text and content alignment."""
   alignment: FormAlignment
 
   """String setting reading direction."""
   direction: FormDirection
+}
+
+"""The layout style of the form (Card or Flat)."""
+enum FormLayoutStyle {
+  """
+  Card layout renders the form inside a bordered card with rounded corners and shadow, where content scrolls within the card.
+  """
+  CARD
+
+  """
+  Flat layout renders the form edge-to-edge across the full viewport, where the entire page scrolls.
+  """
+  FLAT
 }
 
 """Object containing logo display configuration for form branding."""
@@ -12976,6 +13120,11 @@ input FormMondayInput {
   Boolean synchronizing form question titles with board column names. When true, the form question titles will be synchronized with the board column names.
   """
   syncQuestionAndColumnsTitles: Boolean
+
+  """
+  Boolean showing a "Create Item" button on the board that opens this form. When enabled, board members can create new board items by filling out this form directly from the board.
+  """
+  allow_create_item: Boolean
 }
 
 type FormPassword {
@@ -13035,7 +13184,7 @@ type FormQuestion {
   """
   The question type determining input behavior and validation (e.g., "text", "email", "single_select", "multi_select").
   """
-  type: FormQuestionType
+  type: FormBlockKind
 
   """
   Boolean controlling question visibility to respondents. Hidden questions remain in form structure but are not displayed.
@@ -13063,6 +13212,11 @@ type FormQuestion {
   Conditional logic rules that control when this question is displayed based on other question answers.
   """
   showIfRules: JSON
+
+  """
+  The ID of the page block this question belongs to. Used in multi-page forms to assign questions to specific pages.
+  """
+  page_block_id: ID
 }
 
 type FormQuestionOption {
@@ -13070,6 +13224,24 @@ type FormQuestionOption {
   The display text for individual option choices in select-type questions.
   """
   label: String!
+
+  """
+  The internal unique identifier for a select option. Used as the option ID in CRUD operations.
+  """
+  value: String
+
+  """
+  Integer specifying the display order of this option within the question (zero-based).
+  """
+  position: Int
+
+  """Boolean controlling whether this option is visible to respondents."""
+  visible: Boolean
+
+  """
+  Boolean indicating whether this option is active and available for selection.
+  """
+  active: Boolean
 }
 
 """Sources for prefilling question values"""
@@ -13146,6 +13318,21 @@ type FormQuestionSettings {
   Link/URL questions only: Whether to skip URL format validation, allowing any text input.
   """
   skipValidation: Boolean
+
+  """
+  Multi Select questions only: Limits the number of options a user can select.
+  """
+  label_limit_count: Int
+
+  """
+  Multi Select questions only: Boolean enabling the option selection limit. Independent from labelLimitCount — both must be set to enforce a limit.
+  """
+  label_limit_count_enabled: Boolean
+
+  """
+  ShortText, LongText, Name, and Link questions only: Pre-filled default value shown to respondents when the form loads.
+  """
+  default_answer: String
 }
 
 """Question-specific configuration object that varies by question type."""
@@ -13204,6 +13391,16 @@ input FormQuestionSettingsInput {
   Link/URL questions only: Whether to skip URL format validation, allowing any text input.
   """
   skipValidation: Boolean
+
+  """
+  Multi Select questions only: Boolean enabling the option selection limit. Independent from labelLimitCount — both must be set to enforce a limit.
+  """
+  label_limit_count_enabled: Boolean
+
+  """
+  ShortText, LongText, Name, and Link questions only: Pre-filled default value shown to respondents when the form loads.
+  """
+  default_answer: String
 }
 
 """The type of the question (ex. text, number, MultiSelect etc.)"""
@@ -13442,6 +13639,14 @@ input QuestionOptionInput {
   The display text for the option shown to respondents. Must be at least 1 character long.
   """
   label: String!
+
+  """
+  The internal unique identifier for the option. Used as the option ID in update and delete operations.
+  """
+  value: String
+
+  """Whether this option is visible to respondents. Defaults to true."""
+  visible: Boolean
 }
 
 input QuestionOrderInput {
@@ -13449,6 +13654,11 @@ input QuestionOrderInput {
   The unique identifier for the question. Used to target specific questions within a form.
   """
   id: String!
+
+  """
+  The ID of the page block to assign the question to. Required when creating questions in multi-page forms.
+  """
+  page_block_id: ID
 }
 
 type ResponseForm {
@@ -13553,6 +13763,11 @@ input UpdateFormSettingsInput {
   Object containing accessibility options such as language, alt text, etc.
   """
   accessibility: FormAccessibilityInput
+
+  """
+  Boolean enabling anonymous response collection. When true, respondent identity is not captured or stored with form submissions.
+  """
+  is_anonymous: Boolean
 }
 
 input UpdateFormTagInput {
@@ -13585,9 +13800,19 @@ input UpdateQuestionInput {
   settings: FormQuestionSettingsInput
 
   """
+  Conditional logic rules that control when this question is shown based on respondent answers.
+  """
+  show_if_rules: JSON
+
+  """
   The question text displayed to respondents. Must be at least 1 character long and clearly indicate the expected response.
   """
   title: String
+
+  """
+  Array of option objects for choice-based questions (single_select, multi_select). Required for select types.
+  """
+  options: [QuestionOptionInput!]
 }
 
 scalar policy__Policy

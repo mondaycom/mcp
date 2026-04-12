@@ -2705,6 +2705,16 @@ export type ConnectedBoardInput = {
   mappings?: InputMaybe<Array<ConnectedBoardColumnMappingInput>>;
 };
 
+/** A single connected item answer (for connected boards questions). */
+export type ConnectedBoardsAnswerInput = {
+  /** The board ID the connected item belongs to. */
+  board_id: Scalars['Int']['input'];
+  /** The connected item ID. */
+  id: Scalars['Int']['input'];
+  /** The connected item name. */
+  name: Scalars['String']['input'];
+};
+
 /** A connected column entry with board relation context. */
 export type ConnectedColumnItem = {
   __typename?: 'ConnectedColumnItem';
@@ -2774,6 +2784,14 @@ export type Country = {
   code: Scalars['String']['output'];
   /** The country's name. */
   name: Scalars['String']['output'];
+};
+
+/** Answer for a country question. */
+export type CountryAnswerInput = {
+  /** The ISO 3166-1 alpha-2 country code (e.g. "US"). */
+  country_code: Scalars['String']['input'];
+  /** The full country name (e.g. "United States"). */
+  country_name: Scalars['String']['input'];
 };
 
 export type CountryValue = ColumnValue & {
@@ -3040,6 +3058,8 @@ export type CreateQuestionInput = {
   block_type?: InputMaybe<FormBlockKind>;
   /** Optional explanatory text providing additional context, instructions, or examples for the question. */
   description?: InputMaybe<Scalars['String']['input']>;
+  /** The ID of an existing board column to map this question to, instead of creating a new column. Useful when the board already has a matching column. */
+  existing_column_id?: InputMaybe<Scalars['ID']['input']>;
   /** The ID of the question after which the new question should be inserted. If omitted, the question is appended at the end. */
   insert_after_question_id?: InputMaybe<Scalars['ID']['input']>;
   /** Array of option objects for choice-based questions (single_select, multi_select). Required for select types. */
@@ -3440,6 +3460,22 @@ export enum DashboardKind {
   Private = 'PRIVATE',
   Public = 'PUBLIC'
 }
+
+/** Answer for a date question. */
+export type DateAnswerInput = {
+  /** The date in YYYY-MM-DD format. */
+  date: Scalars['String']['input'];
+  /** UTC offset in minutes. */
+  zone_diff?: InputMaybe<Scalars['Int']['input']>;
+};
+
+/** Answer for a date range question. */
+export type DateRangeAnswerInput = {
+  /** Start date in YYYY-MM-DD format. */
+  from: Scalars['String']['input'];
+  /** End date in YYYY-MM-DD format. */
+  to: Scalars['String']['input'];
+};
 
 /** Date range filter (inclusive) */
 export type DateRangeInput = {
@@ -4502,6 +4538,18 @@ export enum FieldTypeState {
   Deleted = 'DELETED'
 }
 
+/** A single uploaded file answer. */
+export type FileAnswerInput = {
+  /** File extension (e.g. "pdf"). */
+  extension?: InputMaybe<Scalars['String']['input']>;
+  /** The file ID returned by the workforms upload endpoint. */
+  id: Scalars['String']['input'];
+  /** Whether the file is an image. */
+  is_image?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Original file name (e.g. "image.png"). */
+  name: Scalars['String']['input'];
+};
+
 /** A file with an invalid or missing asset. */
 export type FileAssetInvalidValue = {
   __typename?: 'FileAssetInvalidValue';
@@ -4824,6 +4872,54 @@ export enum FormAlignment {
   Right = 'Right'
 }
 
+/** An answer to a single form question. Set question_id and exactly one answer field matching the question type. */
+export type FormAnswerInput = {
+  /** Answer for boolean questions. */
+  boolean?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Answer for connected boards questions — list of connected items. */
+  connected_boards?: InputMaybe<Array<ConnectedBoardsAnswerInput>>;
+  /** Answer for country questions. */
+  country?: InputMaybe<CountryAnswerInput>;
+  /** Answer for date questions. */
+  date?: InputMaybe<DateAnswerInput>;
+  /** Answer for date range questions. */
+  date_range?: InputMaybe<DateRangeAnswerInput>;
+  /** Answer for email questions. */
+  email?: InputMaybe<Scalars['String']['input']>;
+  /** Answer for file questions — list of uploaded files. */
+  file?: InputMaybe<Array<FileAnswerInput>>;
+  /** Answer for link questions. */
+  link?: InputMaybe<Scalars['String']['input']>;
+  /** Answer for location questions. */
+  location?: InputMaybe<LocationAnswerInput>;
+  /** Answer for long text questions. */
+  long_text?: InputMaybe<Scalars['String']['input']>;
+  /** Answer for multi-select questions — list of selected option IDs. */
+  multi_select?: InputMaybe<Array<Scalars['Int']['input']>>;
+  /** Answer for name questions. */
+  name?: InputMaybe<Scalars['String']['input']>;
+  /** Answer for number questions. */
+  number?: InputMaybe<Scalars['Float']['input']>;
+  /** Answer for people questions — list of user IDs. */
+  people?: InputMaybe<Array<Scalars['Int']['input']>>;
+  /** Answer for phone questions. */
+  phone?: InputMaybe<PhoneAnswerInput>;
+  /** The ID of the question being answered. */
+  question_id: Scalars['ID']['input'];
+  /** Answer for rating questions. */
+  rating?: InputMaybe<Scalars['Float']['input']>;
+  /** Answer for short text questions. */
+  short_text?: InputMaybe<Scalars['String']['input']>;
+  /** Answer for signature questions — a single uploaded file. */
+  signature?: InputMaybe<FileAnswerInput>;
+  /** Answer for single-select questions — the selected option ID. */
+  single_select?: InputMaybe<Scalars['String']['input']>;
+  /** Answer for subitems questions — each subitem is its own set of answers. */
+  subitems?: InputMaybe<Array<SubitemAnswerInput>>;
+  /** Answer for updates questions. */
+  updates?: InputMaybe<Scalars['String']['input']>;
+};
+
 /** Object containing visual styling including colors, layout, fonts, and branding elements. */
 export type FormAppearance = {
   __typename?: 'FormAppearance';
@@ -5119,6 +5215,8 @@ export type FormMonday = {
 
 /** Object containing board settings for response handling. */
 export type FormMondayInput = {
+  /** Boolean showing a "Create Item" button on the board that opens this form. When enabled, board members can create new board items by filling out this form directly from the board. */
+  allow_create_item?: InputMaybe<Scalars['Boolean']['input']>;
   /** Boolean adding a name question to the form. This is a special question type that represents the name column from the associated monday board */
   includeNameQuestion?: InputMaybe<Scalars['Boolean']['input']>;
   /** Boolean adding an update/comment field to the form. This is a special question type that represents the updates from the associated item of the submission on the monday board.  */
@@ -5375,6 +5473,13 @@ export type FormStartButton = {
 export type FormStartButtonInput = {
   /** Custom text for the button that begins the form experience. */
   text?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** The result of a successful form submission. */
+export type FormSubmissionResult = {
+  __typename?: 'FormSubmissionResult';
+  /** The unique identifier of the created submission. */
+  id: Scalars['ID']['output'];
 };
 
 /** Object containing submit button styling and text configuration. */
@@ -6542,6 +6647,58 @@ export type ListBlockInput = {
   parent_block_id?: InputMaybe<Scalars['String']['input']>;
 };
 
+/** Answer for a location question. */
+export type LocationAnswerInput = {
+  /** Full formatted address. */
+  address: Scalars['String']['input'];
+  /** City name components. */
+  city: LocationCityInput;
+  /** Country name components. */
+  country: LocationCountryInput;
+  /** Latitude. */
+  lat: Scalars['Float']['input'];
+  /** Longitude. */
+  lng: Scalars['Float']['input'];
+  /** Google Maps place ID. */
+  place_id: Scalars['String']['input'];
+  /** Street name components. */
+  street: LocationStreetInput;
+  /** Street number components. */
+  street_number: LocationStreetNumberInput;
+};
+
+/** City name components for a location answer. */
+export type LocationCityInput = {
+  /** Full city name. */
+  long_name: Scalars['String']['input'];
+  /** Abbreviated city name. */
+  short_name: Scalars['String']['input'];
+};
+
+/** Country name components for a location answer. */
+export type LocationCountryInput = {
+  /** Full country name. */
+  long_name: Scalars['String']['input'];
+  /** ISO 3166-1 alpha-2 country code. */
+  short_name: Scalars['String']['input'];
+};
+
+/** Street name components for a location answer. */
+export type LocationStreetInput = {
+  /** Full street name. */
+  long_name: Scalars['String']['input'];
+  /** Abbreviated street name. */
+  short_name: Scalars['String']['input'];
+};
+
+/** Street number components for a location answer. */
+export type LocationStreetNumberInput = {
+  /** Full street number. */
+  long_name: Scalars['String']['input'];
+  /** Abbreviated street number. */
+  short_name: Scalars['String']['input'];
+};
+
 export type LocationValue = ColumnValue & {
   __typename?: 'LocationValue';
   /** Address */
@@ -7065,8 +7222,8 @@ export type Mutation = {
   create_form?: Maybe<DehydratedFormResponse>;
   /** Create a new question within a form. Returns the created question with auto-generated ID. */
   create_form_question?: Maybe<FormQuestion>;
-  /** Create a new selectable option for a SingleSelect or MultiSelect question. Returns the created option. */
-  create_form_question_option?: Maybe<FormQuestionOption>;
+  /** Submit answers to a form. Open to authenticated and anonymous users — authorization is handled by the form settings (user restrictions, etc.). Note: forms with reCAPTCHA enabled cannot be submitted via GraphQL — use the UI instead. */
+  create_form_submission?: Maybe<FormSubmissionResult>;
   /** Create a new tag for a form. Tags are used to categorize and track responses. (e.g. UTM tags) */
   create_form_tag?: Maybe<FormTag>;
   /** Creates a new group in a specific board. */
@@ -7156,8 +7313,6 @@ export type Mutation = {
   delete_favorite?: Maybe<DeleteFavoriteInputResultType>;
   /** Deletes a folder in a specific workspace. */
   delete_folder?: Maybe<Folder>;
-  /** Permanently remove a selectable option from a SingleSelect or MultiSelect question. This action cannot be undone. */
-  delete_form_question_option?: Maybe<Scalars['Boolean']['output']>;
   /** Delete a tag from a form */
   delete_form_tag?: Maybe<Scalars['Boolean']['output']>;
   /** Deletes a group in a specific board. */
@@ -7253,8 +7408,6 @@ export type Mutation = {
   remove_team_owners?: Maybe<RemoveTeamOwnersResult>;
   /** Remove users from team. */
   remove_users_from_team?: Maybe<ChangeTeamMembershipsResult>;
-  /** Reorder the options of a SingleSelect or MultiSelect question by providing the desired order of option values. Position is inferred from array index. */
-  reorder_form_question_options?: Maybe<Scalars['Boolean']['output']>;
   /** Restore an entity from a migration job */
   restore_entity?: Maybe<RestoreEntityResult>;
   /** Rollback a snapshot to allow creating a new one for the same entity */
@@ -7332,8 +7485,6 @@ export type Mutation = {
   update_form?: Maybe<ResponseForm>;
   /** Update an existing question properties including title, type, or settings. Requires question ID. */
   update_form_question?: Maybe<FormQuestion>;
-  /** Update the label of an existing option on a SingleSelect or MultiSelect question. */
-  update_form_question_option?: Maybe<Scalars['Boolean']['output']>;
   /** Update form configuration including features, appearance, and accessibility options. */
   update_form_settings?: Maybe<ResponseForm>;
   /** Update an existing tag in a form */
@@ -7933,11 +8084,13 @@ export type MutationCreate_Form_QuestionArgs = {
 
 
 /** Root mutation type for the Dependencies service */
-export type MutationCreate_Form_Question_OptionArgs = {
+export type MutationCreate_Form_SubmissionArgs = {
+  answers: Array<FormAnswerInput>;
+  form_timezone_offset: Scalars['Int']['input'];
   form_token: Scalars['String']['input'];
-  label: Scalars['String']['input'];
-  question_id: Scalars['ID']['input'];
-  value: Scalars['String']['input'];
+  group_id?: InputMaybe<Scalars['ID']['input']>;
+  password?: InputMaybe<Scalars['String']['input']>;
+  tags?: InputMaybe<Array<TagInput>>;
 };
 
 
@@ -8320,14 +8473,6 @@ export type MutationDelete_FolderArgs = {
 
 
 /** Root mutation type for the Dependencies service */
-export type MutationDelete_Form_Question_OptionArgs = {
-  form_token: Scalars['String']['input'];
-  option_id: Scalars['ID']['input'];
-  question_id: Scalars['ID']['input'];
-};
-
-
-/** Root mutation type for the Dependencies service */
 export type MutationDelete_Form_TagArgs = {
   formToken: Scalars['String']['input'];
   options?: InputMaybe<DeleteFormTagInput>;
@@ -8692,14 +8837,6 @@ export type MutationRemove_Users_From_TeamArgs = {
 
 
 /** Root mutation type for the Dependencies service */
-export type MutationReorder_Form_Question_OptionsArgs = {
-  form_token: Scalars['String']['input'];
-  option_ids: Array<Scalars['ID']['input']>;
-  question_id: Scalars['ID']['input'];
-};
-
-
-/** Root mutation type for the Dependencies service */
 export type MutationRestore_EntityArgs = {
   entity: Scalars['String']['input'];
   migrationJobId: Scalars['String']['input'];
@@ -9006,15 +9143,6 @@ export type MutationUpdate_Form_QuestionArgs = {
   formToken: Scalars['String']['input'];
   question: UpdateQuestionInput;
   questionId: Scalars['String']['input'];
-};
-
-
-/** Root mutation type for the Dependencies service */
-export type MutationUpdate_Form_Question_OptionArgs = {
-  form_token: Scalars['String']['input'];
-  label: Scalars['String']['input'];
-  option_id: Scalars['ID']['input'];
-  question_id: Scalars['ID']['input'];
 };
 
 
@@ -9759,6 +9887,14 @@ export type PersonsInput = {
   person_names?: InputMaybe<Array<Scalars['String']['input']>>;
   /** List of team IDs to filter by */
   team_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+};
+
+/** Answer for a phone question. */
+export type PhoneAnswerInput = {
+  /** The ISO 3166-1 alpha-2 country code (e.g. "US"). */
+  country_short_name: Scalars['String']['input'];
+  /** The phone number. */
+  phone: Scalars['String']['input'];
 };
 
 /** Phone questions only: Configuration for setting a specific predefined phone country prefix that will be pre-selected for users. */
@@ -11148,6 +11284,10 @@ export type QueryWorkspacesArgs = {
 export type QuestionOptionInput = {
   /** The display text for the option shown to respondents. Must be at least 1 character long. */
   label: Scalars['String']['input'];
+  /** The internal unique identifier for the option. Used as the option ID in update and delete operations. */
+  value?: InputMaybe<Scalars['String']['input']>;
+  /** Whether this option is visible to respondents. Defaults to true. */
+  visible?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export type QuestionOrderInput = {
@@ -12086,6 +12226,12 @@ export type SubfieldsFieldType = FieldType & {
   uniqueKey?: Maybe<Scalars['String']['output']>;
 };
 
+/** A single subitem answer, containing answers for each of the subitem's questions. */
+export type SubitemAnswerInput = {
+  /** The answers for this subitem's questions. */
+  answers: Array<FormAnswerInput>;
+};
+
 /** Defines the type of the user's role as members of the object */
 export enum SubscriberKind {
   /** User will be added as an owner of the object, granting them full control permissions. */
@@ -12228,6 +12374,14 @@ export type Tag = {
   id: Scalars['ID']['output'];
   /** The tag's name. */
   name: Scalars['String']['output'];
+};
+
+/** A form tag — metadata submitted alongside answers and mapped to a board column. */
+export type TagInput = {
+  /** The column ID this tag maps to. */
+  column_id: Scalars['String']['input'];
+  /** The tag value to submit. */
+  value: Scalars['String']['input'];
 };
 
 export type TagsValue = ColumnValue & {
@@ -13041,6 +13195,8 @@ export type UpdateFormSettingsInput = {
   appearance?: InputMaybe<FormAppearanceInput>;
   /** Object containing form features including but not limited to password protection, response limits, login requirements, etc. */
   features?: InputMaybe<FormFeaturesInput>;
+  /** Boolean enabling anonymous response collection. When true, respondent identity is not captured or stored with form submissions. */
+  is_anonymous?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export type UpdateFormTagInput = {
@@ -13121,6 +13277,8 @@ export type UpdatePriorityPromptResponse = {
 export type UpdateQuestionInput = {
   /** Optional explanatory text providing additional context, instructions, or examples for the question. */
   description?: InputMaybe<Scalars['String']['input']>;
+  /** Array of option objects for choice-based questions (single_select, multi_select). Required for select types. */
+  options?: InputMaybe<Array<QuestionOptionInput>>;
   /** Boolean indicating if the question must be answered before form submission. */
   required?: InputMaybe<Scalars['Boolean']['input']>;
   /** Question-specific configuration object that varies by question type. */
