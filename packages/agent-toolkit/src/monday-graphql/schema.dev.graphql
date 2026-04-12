@@ -4501,33 +4501,6 @@ type Mutation {
   ): Boolean
 
   """
-  Submit answers to a form. Open to authenticated and anonymous users — authorization is handled by the form settings (user restrictions, etc.). Note: forms with reCAPTCHA enabled cannot be submitted via GraphQL — use the UI instead.
-  """
-  create_form_submission(
-    """The unique token identifying the form to submit to."""
-    form_token: String!
-
-    """
-    The answers to submit. Each entry specifies a question ID and the answer for that question.
-    """
-    answers: [FormAnswerInput!]!
-
-    """The timezone offset of the submitter in minutes (e.g. -120 for UTC-2)."""
-    form_timezone_offset: Int!
-
-    """The password for the form. Required if the form is password-protected."""
-    password: String
-
-    """The board group ID to submit the response into."""
-    group_id: ID
-
-    """
-    Tags to attach to the submission — metadata mapped to specific board columns.
-    """
-    tags: [TagInput!]
-  ): FormSubmissionResult
-
-  """
   Update form properties including title, description, or question order.
   """
   update_form(
@@ -4732,6 +4705,96 @@ type Mutation {
     """The password to set for the form. Must be at least 1 character long."""
     input: SetFormPasswordInput!
   ): ResponseForm
+
+  """
+  Create a new selectable option for a SingleSelect or MultiSelect question. Returns the created option.
+  """
+  create_form_question_option(
+    """
+    The unique identifier token for the form. Required for all form-specific operations.
+    """
+    form_token: String!
+
+    """
+    The unique identifier for the question. Used to target specific questions within a form.
+    """
+    question_id: ID!
+
+    """
+    The display text for the option shown to respondents. Must be at least 1 character long.
+    """
+    label: String!
+
+    """
+    The internal unique identifier for the option. Used as the option ID in update and delete operations.
+    """
+    value: String!
+  ): FormQuestionOption
+
+  """
+  Update the label of an existing option on a SingleSelect or MultiSelect question.
+  """
+  update_form_question_option(
+    """
+    The unique identifier token for the form. Required for all form-specific operations.
+    """
+    form_token: String!
+
+    """
+    The unique identifier for the question. Used to target specific questions within a form.
+    """
+    question_id: ID!
+
+    """
+    The internal ID (value) of the option to target. This is the value field of the option, not the display label.
+    """
+    option_id: ID!
+
+    """
+    The display text for the option shown to respondents. Must be at least 1 character long.
+    """
+    label: String!
+  ): Boolean
+
+  """
+  Permanently remove a selectable option from a SingleSelect or MultiSelect question. This action cannot be undone.
+  """
+  delete_form_question_option(
+    """
+    The unique identifier token for the form. Required for all form-specific operations.
+    """
+    form_token: String!
+
+    """
+    The unique identifier for the question. Used to target specific questions within a form.
+    """
+    question_id: ID!
+
+    """
+    The internal ID (value) of the option to target. This is the value field of the option, not the display label.
+    """
+    option_id: ID!
+  ): Boolean
+
+  """
+  Reorder the options of a SingleSelect or MultiSelect question by providing the desired order of option values. Position is inferred from array index.
+  """
+  reorder_form_question_options(
+    """
+    The unique identifier token for the form. Required for all form-specific operations.
+    """
+    form_token: String!
+
+    """
+    The unique identifier for the question. Used to target specific questions within a form.
+    """
+    question_id: ID!
+
+    """
+    Ordered array of option values defining the new display order. Position is inferred from array index (first item = position 0).
+    """
+    option_ids: [ID!]!
+  ): Boolean
 }
 
 """Response from AI action request"""
@@ -17399,27 +17462,6 @@ type WidgetSchemaInfo {
   schema: JSON
 }
 
-"""A single connected item answer (for connected boards questions)."""
-input ConnectedBoardsAnswerInput {
-  """The connected item ID."""
-  id: Int!
-
-  """The connected item name."""
-  name: String!
-
-  """The board ID the connected item belongs to."""
-  board_id: Int!
-}
-
-"""Answer for a country question."""
-input CountryAnswerInput {
-  """The full country name (e.g. "United States")."""
-  country_name: String!
-
-  """The ISO 3166-1 alpha-2 country code (e.g. "US")."""
-  country_code: String!
-}
-
 input CreateFormTagInput {
   """The name of the tag. Must be unique within the form and not reserved."""
   name: String!
@@ -17473,11 +17515,6 @@ input CreateQuestionInput {
   options: [QuestionOptionInput!]
 
   """
-  The ID of an existing board column to map this question to, instead of creating a new column. Useful when the board already has a matching column.
-  """
-  existing_column_id: ID
-
-  """
   The ID of the question after which the new question should be inserted. If omitted, the question is appended at the end.
   """
   insert_after_question_id: ID
@@ -17486,24 +17523,6 @@ input CreateQuestionInput {
   The ID of the page block to assign the question to. Required when creating questions in multi-page forms.
   """
   page_block_id: ID
-}
-
-"""Answer for a date question."""
-input DateAnswerInput {
-  """The date in YYYY-MM-DD format."""
-  date: String!
-
-  """UTC offset in minutes."""
-  zone_diff: Int
-}
-
-"""Answer for a date range question."""
-input DateRangeAnswerInput {
-  """Start date in YYYY-MM-DD format."""
-  from: String!
-
-  """End date in YYYY-MM-DD format."""
-  to: String!
 }
 
 type DehydratedFormResponse {
@@ -17521,21 +17540,6 @@ type DehydratedFormResponse {
 input DeleteFormTagInput {
   """Options for deleting the tag"""
   deleteAssociatedColumn: Boolean
-}
-
-"""A single uploaded file answer."""
-input FileAnswerInput {
-  """The file ID returned by the workforms upload endpoint."""
-  id: String!
-
-  """Original file name (e.g. "image.png")."""
-  name: String!
-
-  """File extension (e.g. "pdf")."""
-  extension: String
-
-  """Whether the file is an image."""
-  is_image: Boolean
 }
 
 """
@@ -17631,79 +17635,6 @@ enum FormAlignment {
   Center
   Right
   FullRight
-}
-
-"""
-An answer to a single form question. Set question_id and exactly one answer field matching the question type.
-"""
-input FormAnswerInput {
-  """The ID of the question being answered."""
-  question_id: ID!
-
-  """Answer for name questions."""
-  name: String
-
-  """Answer for email questions."""
-  email: String
-
-  """Answer for short text questions."""
-  short_text: String
-
-  """Answer for long text questions."""
-  long_text: String
-
-  """Answer for link questions."""
-  link: String
-
-  """Answer for updates questions."""
-  updates: String
-
-  """Answer for boolean questions."""
-  boolean: Boolean
-
-  """Answer for number questions."""
-  number: Float
-
-  """Answer for rating questions."""
-  rating: Float
-
-  """Answer for single-select questions — the selected option ID."""
-  single_select: String
-
-  """Answer for multi-select questions — list of selected option IDs."""
-  multi_select: [Int!]
-
-  """Answer for phone questions."""
-  phone: PhoneAnswerInput
-
-  """Answer for country questions."""
-  country: CountryAnswerInput
-
-  """Answer for date questions."""
-  date: DateAnswerInput
-
-  """Answer for date range questions."""
-  date_range: DateRangeAnswerInput
-
-  """Answer for location questions."""
-  location: LocationAnswerInput
-
-  """Answer for file questions — list of uploaded files."""
-  file: [FileAnswerInput!]
-
-  """Answer for signature questions — a single uploaded file."""
-  signature: FileAnswerInput
-
-  """Answer for people questions — list of user IDs."""
-  people: [Int!]
-
-  """Answer for connected boards questions — list of connected items."""
-  connected_boards: [ConnectedBoardsAnswerInput!]
-
-  """
-  Answer for subitems questions — each subitem is its own set of answers.
-  """
-  subitems: [SubitemAnswerInput!]
 }
 
 """
@@ -18157,11 +18088,6 @@ input FormMondayInput {
   Boolean synchronizing form question titles with board column names. When true, the form question titles will be synchronized with the board column names.
   """
   syncQuestionAndColumnsTitles: Boolean
-
-  """
-  Boolean showing a "Create Item" button on the board that opens this form. When enabled, board members can create new board items by filling out this form directly from the board.
-  """
-  allow_create_item: Boolean
 }
 
 type FormPassword {
@@ -18551,12 +18477,6 @@ input FormStartButtonInput {
   text: String
 }
 
-"""The result of a successful form submission."""
-type FormSubmissionResult {
-  """The unique identifier of the created submission."""
-  id: ID!
-}
-
 """Object containing submit button styling and text configuration."""
 type FormSubmitButton {
   """Custom text displayed on the form submission button."""
@@ -18605,78 +18525,6 @@ input FormTextInput {
 
   """String or number specifying the base font size for form text."""
   size: FormFontSize
-}
-
-"""Answer for a location question."""
-input LocationAnswerInput {
-  """Latitude."""
-  lat: Float!
-
-  """Longitude."""
-  lng: Float!
-
-  """Google Maps place ID."""
-  place_id: String!
-
-  """Full formatted address."""
-  address: String!
-
-  """Country name components."""
-  country: LocationCountryInput!
-
-  """City name components."""
-  city: LocationCityInput!
-
-  """Street name components."""
-  street: LocationStreetInput!
-
-  """Street number components."""
-  street_number: LocationStreetNumberInput!
-}
-
-"""City name components for a location answer."""
-input LocationCityInput {
-  """Full city name."""
-  long_name: String!
-
-  """Abbreviated city name."""
-  short_name: String!
-}
-
-"""Country name components for a location answer."""
-input LocationCountryInput {
-  """Full country name."""
-  long_name: String!
-
-  """ISO 3166-1 alpha-2 country code."""
-  short_name: String!
-}
-
-"""Street name components for a location answer."""
-input LocationStreetInput {
-  """Full street name."""
-  long_name: String!
-
-  """Abbreviated street name."""
-  short_name: String!
-}
-
-"""Street number components for a location answer."""
-input LocationStreetNumberInput {
-  """Full street number."""
-  long_name: String!
-
-  """Abbreviated street number."""
-  short_name: String!
-}
-
-"""Answer for a phone question."""
-input PhoneAnswerInput {
-  """The phone number."""
-  phone: String!
-
-  """The ISO 3166-1 alpha-2 country code (e.g. "US")."""
-  country_short_name: String!
 }
 
 """
@@ -18754,14 +18602,6 @@ input QuestionOptionInput {
   The display text for the option shown to respondents. Must be at least 1 character long.
   """
   label: String!
-
-  """
-  The internal unique identifier for the option. Used as the option ID in update and delete operations.
-  """
-  value: String
-
-  """Whether this option is visible to respondents. Defaults to true."""
-  visible: Boolean
 }
 
 input QuestionOrderInput {
@@ -18850,25 +18690,6 @@ input SetFormPasswordInput {
   password: String!
 }
 
-"""
-A single subitem answer, containing answers for each of the subitem's questions.
-"""
-input SubitemAnswerInput {
-  """The answers for this subitem's questions."""
-  answers: [FormAnswerInput!]!
-}
-
-"""
-A form tag — metadata submitted alongside answers and mapped to a board column.
-"""
-input TagInput {
-  """The column ID this tag maps to."""
-  column_id: String!
-
-  """The tag value to submit."""
-  value: String!
-}
-
 input UpdateFormInput {
   """The title text for the form. Must be at least 1 character long."""
   title: String
@@ -18897,11 +18718,6 @@ input UpdateFormSettingsInput {
   Object containing accessibility options such as language, alt text, etc.
   """
   accessibility: FormAccessibilityInput
-
-  """
-  Boolean enabling anonymous response collection. When true, respondent identity is not captured or stored with form submissions.
-  """
-  is_anonymous: Boolean
 }
 
 input UpdateFormTagInput {
@@ -18942,11 +18758,6 @@ input UpdateQuestionInput {
   The question text displayed to respondents. Must be at least 1 character long and clearly indicate the expected response.
   """
   title: String
-
-  """
-  Array of option objects for choice-based questions (single_select, multi_select). Required for select types.
-  """
-  options: [QuestionOptionInput!]
 }
 
 scalar policy__Policy
