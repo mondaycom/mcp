@@ -8,7 +8,7 @@ import {
   NoticeBoxTheme,
   OperationInput,
   TextBlock,
-} from '../../../../monday-graphql/generated/graphql/graphql';
+} from '../../../../monday-graphql/generated/graphql.dev/graphql';
 import { DeltaOperation, UpdateBlockContent, CreateBlock } from './update-doc-tool.schema';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

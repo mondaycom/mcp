@@ -1,7 +1,6 @@
 import {
   updateDocBlock,
   deleteDocBlock,
-  createDocBlocks,
   updateDocName,
   addContentToDocFromMarkdown,
   getDocByObjectId,
@@ -10,20 +9,23 @@ import {
   createDocComment,
   getDocBlockContent,
 } from './update-doc-tool.graphql';
+import { createDocBlocks } from './update-doc-tool.graphql.dev';
 
 import {
   UpdateDocBlockMutation,
   UpdateDocBlockMutationVariables,
   DeleteDocBlockMutation,
   DeleteDocBlockMutationVariables,
-  CreateDocBlocksMutation,
-  CreateDocBlocksMutationVariables,
   UpdateDocNameMutation,
   UpdateDocNameMutationVariables,
   AddContentToDocFromMarkdownMutation,
   AddContentToDocFromMarkdownMutationVariables,
   GetDocBlockContentQuery,
 } from '../../../../monday-graphql/generated/graphql/graphql';
+import {
+  CreateDocBlocksMutation,
+  CreateDocBlocksMutationVariables,
+} from '../../../../monday-graphql/generated/graphql.dev/graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { buildUpdateBlockContent, buildCreateBlockInput, applyCommentToDelta } from './update-doc-tool.helpers';
@@ -269,7 +271,7 @@ COMMENTS:
       afterBlockId,
       blocksInput: [blockInput],
     };
-    const res = await this.mondayApi.request<CreateDocBlocksMutation>(createDocBlocks, variables);
+    const res = await this.mondayApi.request<CreateDocBlocksMutation>(createDocBlocks, variables, { versionOverride: 'dev' });
 
     const created = res?.create_doc_blocks;
     if (!created || created.length === 0) {
