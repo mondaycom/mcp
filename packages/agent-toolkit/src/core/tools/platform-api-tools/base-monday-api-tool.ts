@@ -28,7 +28,8 @@ export function createMondayApiAnnotations(annotations: ToolAnnotations): ToolAn
 export abstract class BaseMondayApiTool<
   Input extends ZodRawShape | undefined,
   Output extends Record<string, unknown> = never,
-> implements Tool<Input, Output> {
+> implements Tool<Input, Output>
+{
   abstract name: string;
   abstract type: ToolType;
   abstract annotations: ToolAnnotations;
@@ -44,10 +45,16 @@ export abstract class BaseMondayApiTool<
   abstract getDescription(): string;
   abstract getInputSchema(): Input;
 
+  /**
+   * Public execute method
+   */
   async execute(input?: ToolInputType<Input>, sessionContext?: SessionContext): Promise<ToolOutputType<Output>> {
     this.sessionContext = sessionContext || {};
     return this.executeInternal(input);
   }
 
+  /**
+   * Abstract method that subclasses should implement for their actual logic
+   */
   protected abstract executeInternal(input?: ToolInputType<Input>): Promise<ToolOutputType<Output>>;
 }
