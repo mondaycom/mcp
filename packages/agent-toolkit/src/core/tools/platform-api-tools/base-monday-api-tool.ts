@@ -4,7 +4,6 @@ import { ToolAnnotations } from '@modelcontextprotocol/sdk/types';
 import { SessionContext } from '../../executable';
 import { Tool, ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { trackEvent } from '../../../utils/tracking.utils';
-import { extractTokenInfo } from '../../../utils/token.utils';
 
 export type MondayApiToolContext = {
   // Operational context
@@ -17,7 +16,7 @@ export type MondayApiToolContext = {
   clientRedirectUris?: string[];
 };
 
-export type BaseMondayApiToolConstructor = new (api: ApiClient, token?: string) => BaseMondayApiTool<any>;
+export type BaseMondayApiToolConstructor = new (api: ApiClient) => BaseMondayApiTool<any>;
 
 // Helper function to merge annotations with default openWorldHint
 export function createMondayApiAnnotations(annotations: ToolAnnotations): ToolAnnotations {
@@ -40,7 +39,6 @@ export abstract class BaseMondayApiTool<
 
   constructor(
     protected readonly mondayApi: ApiClient,
-    protected readonly apiToken?: string,
     protected readonly context?: MondayApiToolContext,
   ) {}
 
@@ -74,21 +72,12 @@ export abstract class BaseMondayApiTool<
    */
   protected abstract executeInternal(input?: ToolInputType<Input>): Promise<ToolOutputType<Output>>;
 
-  /**
-   * Tracks tool execution with timing and error information
-   * @param toolName - The name of the tool being executed
-   * @param executionTimeInMs - The time taken to execute the tool in milliseconds
-   * @param isError - Whether the execution resulted in an error
-   * @param params - The parameters passed to the tool
-   */
   private trackToolExecution(
     toolName: string,
     executionTimeMs: number,
     isError: boolean,
     params?: Record<string, unknown>,
   ): void {
-    const tokenInfo = this.apiToken ? extractTokenInfo(this.apiToken) : {};
-
     trackEvent({
       name: 'monday_mcp_tool_execution',
       data: {
@@ -99,7 +88,6 @@ export abstract class BaseMondayApiTool<
         toolType: 'monday_api_tool',
         ...(this.context || {}),
         ...(this.sessionContext?.metadata || {}),
-        ...tokenInfo,
       },
     });
   }

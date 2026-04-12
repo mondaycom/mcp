@@ -8,6 +8,7 @@ import {
   getDocObjectIdByDocId,
   getDocBoardItem,
   createDocComment,
+  getDocBlockContent,
 } from './update-doc-tool.graphql';
 
 import {
@@ -21,10 +22,11 @@ import {
   UpdateDocNameMutationVariables,
   AddContentToDocFromMarkdownMutation,
   AddContentToDocFromMarkdownMutationVariables,
+  GetDocBlockContentQuery,
 } from '../../../../monday-graphql/generated/graphql/graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { buildUpdateBlockContent, buildCreateBlockInput } from './update-doc-tool.helpers';
+import { buildUpdateBlockContent, buildCreateBlockInput, applyCommentToDelta } from './update-doc-tool.helpers';
 import { updateDocToolSchema, UpdateBlockContent, CreateBlock } from './update-doc-tool.schema';
 import { mentionsListSchema } from '../create-update-tool/create-update-tool';
 
@@ -80,7 +82,7 @@ OPERATIONS:
 - replace_block: Delete a block and create a new one in its place (use when update_block is not supported).
 
 WHEN TO USE EACH OPERATION:
-- text / code / list_item → update_block; use replace_block to change subtype (e.g. NORMAL_TEXT→LARGE_TITLE)
+- text / code / list_item → update_block. Use replace_block to change subtype (e.g. NORMAL_TEXT→LARGE_TITLE)
 - divider / table / image / video / notice_box / layout → replace_block (properties immutable after creation)
 - BOARD / WIDGET / DOC / GIPHY → delete_block only
 
@@ -89,14 +91,19 @@ GETTING BLOCK IDs: Call read_docs with include_blocks: true — returns id, type
 BLOCK CONTENT (delta_format): Array of insert ops. Last op MUST be {insert: {text: "\\n"}}.
 - Plain: [{insert: {text: "Hello"}}, {insert: {text: "\\n"}}]
 - Bold: [{insert: {text: "Hi"}, attributes: {bold: true}}, {insert: {text: "\\n"}}]
-- Mention user/doc/board: [{insert: {text: "Hey "}}, {insert: {mention: {id: 12345, type: "USER"}}}, {insert: {text: "\\n"}}] — type is USER, DOC, or BOARD; id is numeric (user IDs from list_users_and_teams)
+- Mention user/doc/board: [{insert: {text: "Hey "}}, {insert: {mention: {id: 12345, type: "USER"}}}, {insert: {text: "\\n"}}] — type is USER, DOC, or BOARD. id is numeric (user IDs from list_users_and_teams)
 - Inline column value: [{insert: {column_value: {item_id: 111, column_id: "status"}}}, {insert: {text: "\\n"}}]
 - Supported attributes: bold, italic, underline, strike, code, link, color, background (not applicable to mention/column_value ops)
 
 IMAGE WITH ASSET: For asset-based images, use create_block with block_type "image" and asset_id (instead of public_url). add_markdown_content does NOT support asset images — for mixed content, alternate add_markdown_content (text) and create_block (image) operations in sequence.
 
 COMMENTS:
-- add_comment: Create a new comment or reply on the document. Documents have a backing board with a single item where comments live. The tool automatically resolves the item ID from the doc's object_id (board ID). Use parent_update_id to reply to an existing comment. Format text with HTML, not markdown. Use mentions_list for @mentions.`;
+- add_comment: Create a new comment or reply on the document. Three scopes:
+  - Doc-level (no block_id): comment appears on the doc as a whole.
+  - Block-level (block_id only): comment is anchored to a specific block. The block shows a comment indicator in the UI.
+  - Text-selection (block_id + selection_from + selection_length): comment is anchored to a specific character range inside a text/code/list_item block. That text is highlighted with a comment marker.
+  Block-level and text-selection comments only work on blocks with text content (text, code, list_item, title, quote). They do NOT work on: divider, page_break, table, layout, notice_box, image, video, or giphy blocks.
+  Get block IDs from read_docs with include_blocks: true. Format body with HTML, not markdown. Use mentions_list for @mentions.`;
   }
 
   getInputSchema(): typeof updateDocToolSchema {
@@ -184,7 +191,16 @@ COMMENTS:
           op.parent_block_id,
         );
       case 'add_comment':
-        return this.executeAddComment(docId, objectId, op.body, op.parent_update_id, op.mentions_list);
+        return this.executeAddComment(
+          docId,
+          objectId,
+          op.body,
+          op.parent_update_id,
+          op.mentions_list,
+          op.block_id,
+          op.selection_from,
+          op.selection_length,
+        );
       default: {
         const unhandled = (op as { operation_type: string }).operation_type;
         throw new Error(`Unsupported operation type: "${unhandled}"`);
@@ -304,13 +320,51 @@ COMMENTS:
     return itemId;
   }
 
+  private async fetchAllBlockContent(
+    docId: string,
+  ): Promise<Array<{ id: string; type: string; content: Record<string, unknown> }>> {
+    const res = await this.mondayApi.request<GetDocBlockContentQuery>(getDocBlockContent, { docId: [docId] });
+    const blocks = (res.docs?.[0]?.blocks ?? []).filter((b): b is NonNullable<typeof b> => b != null);
+    return blocks.map((block) => {
+      // GraphQL JSON scalar may return content as a string — parse it
+      let content: Record<string, unknown>;
+      if (typeof block.content === 'string') {
+        try {
+          content = JSON.parse(block.content);
+        } catch {
+          throw new Error(`Failed to parse content of block ${block.id} in doc ${docId} as JSON`);
+        }
+      } else {
+        content = (block.content as Record<string, unknown>) ?? {};
+      }
+      return { id: block.id ?? '', type: block.type ?? '', content };
+    });
+  }
+
   private async executeAddComment(
     docId: string,
     objectId: string | undefined,
     body: string,
     parentUpdateId?: number,
     mentionsList?: string,
+    blockId?: string | string[],
+    selectionFrom?: number,
+    selectionLength?: number,
   ): Promise<string> {
+    if ((selectionFrom != null || selectionLength != null) && !blockId) {
+      throw new Error('selection_from and selection_length require block_id');
+    }
+
+    if ((selectionFrom != null) !== (selectionLength != null)) {
+      throw new Error('selection_from and selection_length must both be provided together');
+    }
+
+    const blockIds = blockId ? (Array.isArray(blockId) ? blockId : [blockId]) : [];
+
+    if ((selectionFrom != null || selectionLength != null) && blockIds.length > 1) {
+      throw new Error('selection_from and selection_length are only supported with a single block_id');
+    }
+
     const resolvedObjectId = await this.resolveObjectId(docId, objectId);
     const itemId = await this.resolveDocItemId(resolvedObjectId);
 
@@ -342,8 +396,82 @@ COMMENTS:
       throw new Error('Failed to create comment: no update returned');
     }
 
+    const postId = res.create_update.id;
+    const numericPostId = Number(postId);
     const action = parentUpdateId ? `Reply to update ${parentUpdateId}` : 'Comment';
-    return `${action} created (update ID: ${res.create_update.id})`;
+
+    if (blockIds.length > 0) {
+      if (Number.isNaN(numericPostId)) {
+        throw new Error(
+          `${action} created (update ID: ${postId}) but block annotation aborted: comment ID is not numeric and cannot be used as a delta reference`,
+        );
+      }
+
+      // Fetch all block content once before mutating any block
+      const allBlocks = await this.fetchAllBlockContent(docId);
+
+      for (const id of blockIds) {
+        const block = allBlocks.find((b) => b.id === id);
+        if (!block) {
+          throw new Error(
+            `${action} created (update ID: ${postId}) but block annotation failed: block ${id} not found in doc ${docId}`,
+          );
+        }
+
+        const deltaFormat = block.content.deltaFormat as Record<string, unknown>[] | undefined;
+        if (!deltaFormat) {
+          throw new Error(
+            `${action} created (update ID: ${postId}) but block annotation failed: block ${id} has no deltaFormat — only text, code, and list_item blocks are supported`,
+          );
+        }
+
+        let totalLen = 0;
+        for (const op of deltaFormat) {
+          totalLen += typeof op.insert === 'string' ? (op.insert as string).length : 1;
+        }
+        if (totalLen === 0) {
+          throw new Error(
+            `${action} created (update ID: ${postId}) but block annotation failed: block ${id} has an empty deltaFormat and cannot be annotated`,
+          );
+        }
+
+        const annotationFrom = selectionFrom ?? 0;
+        const annotationLength = selectionLength ?? totalLen;
+
+        if (annotationFrom + annotationLength > totalLen) {
+          throw new Error(
+            `${action} created (update ID: ${postId}) but block annotation failed: ` +
+              `selection [${annotationFrom}, ${annotationFrom + annotationLength}) is out of range for block ${id} (total length ${totalLen})`,
+          );
+        }
+
+        let annotatedDelta: Record<string, unknown>[];
+        try {
+          annotatedDelta = applyCommentToDelta(deltaFormat, numericPostId, annotationFrom, annotationLength);
+        } catch (err) {
+          const errMsg = err instanceof Error ? err.message : String(err);
+          throw new Error(
+            `${action} created (update ID: ${postId}) but delta annotation failed for block ${id}: ${errMsg}`,
+          );
+        }
+
+        const updatedContent: Record<string, unknown> = { ...block.content, deltaFormat: annotatedDelta };
+
+        const annotationRes = await this.mondayApi.request<UpdateDocBlockMutation>(updateDocBlock, {
+          blockId: id,
+          content: JSON.stringify(updatedContent),
+        });
+        if (!annotationRes?.update_doc_block) {
+          throw new Error(
+            `${action} created (update ID: ${postId}) but block annotation write returned no confirmation for block ${id}`,
+          );
+        }
+      }
+    }
+
+    const blockCount = blockIds.length;
+    const blockSuffix = blockCount > 1 ? ` across ${blockCount} blocks` : blockCount === 1 ? ' on block' : '';
+    return `${action} created${blockSuffix} (update ID: ${postId})`;
   }
 
   private async executeReplaceBlock(

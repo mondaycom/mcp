@@ -1,5 +1,5 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
-import { callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
+import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '../test-utils/mock-api-client';
 import { createDocToolSchema } from './create-doc-tool';
 import { BoardKind } from 'src/monday-graphql/generated/graphql/graphql';
 import { z, ZodTypeAny } from 'zod';
@@ -62,9 +62,10 @@ describe('CreateDocTool', () => {
 
         const result = await callToolByNameRawAsync('create_doc', args);
 
-        expect(result.content[0].text).toContain('Document successfully created');
-        expect(result.content[0].text).toContain('doc_123');
-        expect(result.content[0].text).toContain('https://monday.com/docs/obj_123');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Document successfully created');
+        expect(parsed.doc_id).toBe('doc_123');
+        expect(parsed.doc_url).toBe('https://monday.com/docs/obj_123');
 
         const mockCalls = mocks.getMockRequest().mock.calls;
         const createDocCall = mockCalls.find((call) => call[0].includes('mutation createDoc'));
@@ -125,8 +126,9 @@ describe('CreateDocTool', () => {
 
         const result = await callToolByNameRawAsync('create_doc', args);
 
-        expect(result.content[0].text).toContain('Document successfully created');
-        expect(result.content[0].text).toContain('doc_456');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Document successfully created');
+        expect(parsed.doc_id).toBe('doc_456');
 
         const mockCalls = mocks.getMockRequest().mock.calls;
         const createDocCall = mockCalls.find((call) => call[0].includes('mutation createDoc'));
@@ -178,7 +180,8 @@ describe('CreateDocTool', () => {
 
           const result = await callToolByNameRawAsync('create_doc', args);
 
-          expect(result.content[0].text).toContain('Document successfully created');
+          const parsed = parseToolResult(result);
+          expect(parsed.message).toContain('Document successfully created');
 
           const mockCalls = mocks.getMockRequest().mock.calls;
           const createDocCall = mockCalls.find((call) => call[0].includes('mutation createDoc'));
@@ -385,8 +388,9 @@ describe('CreateDocTool', () => {
 
         const result = await callToolByNameRawAsync('create_doc', args);
 
-        expect(result.content[0].text).toContain('Document successfully created');
-        expect(result.content[0].text).toContain('doc_item_123');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Document successfully created');
+        expect(parsed.doc_id).toBe('doc_item_123');
 
         const mockCalls = mocks.getMockRequest().mock.calls;
 
@@ -477,7 +481,8 @@ describe('CreateDocTool', () => {
 
         const result = await callToolByNameRawAsync('create_doc', args);
 
-        expect(result.content[0].text).toContain('Document successfully created');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Document successfully created');
 
         const mockCalls = mocks.getMockRequest().mock.calls;
         const createDocCall = mockCalls.find((call) => call[0].includes('mutation createDoc'));
@@ -558,7 +563,8 @@ describe('CreateDocTool', () => {
 
         const result = await callToolByNameRawAsync('create_doc', args);
 
-        expect(result.content[0].text).toContain('Document successfully created');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Document successfully created');
 
         const mockCalls = mocks.getMockRequest().mock.calls;
 
@@ -717,8 +723,9 @@ describe('CreateDocTool', () => {
         const result = await callToolByNameRawAsync('create_doc', args);
 
         // Document should still be created successfully
-        expect(result.content[0].text).toContain('Document successfully created');
-        expect(result.content[0].text).toContain('doc_item_111');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Document successfully created');
+        expect(parsed.doc_id).toBe('doc_item_111');
 
         // Verify console.warn was called
         expect(console.warn).toHaveBeenCalledWith('Failed to update doc name:', expect.any(Error));

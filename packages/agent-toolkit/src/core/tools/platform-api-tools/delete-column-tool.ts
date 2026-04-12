@@ -48,7 +48,10 @@ export class DeleteColumnTool extends BaseMondayApiTool<DeleteColumnToolInput> {
     const res = await this.mondayApi.request<DeleteColumnMutation>(deleteColumn, variables);
 
     return {
-      content: `Column ${res.delete_column?.id} successfully deleted`,
+      content: {
+        message: `Column ${res.delete_column?.id} successfully deleted`,
+        column_id: res.delete_column?.id,
+      },
     };
   }
 }

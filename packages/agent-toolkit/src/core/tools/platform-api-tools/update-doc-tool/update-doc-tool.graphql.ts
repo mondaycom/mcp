@@ -17,7 +17,7 @@ export const addContentToDocFromMarkdown = gql`
 `;
 
 export const getDocByObjectId = gql`
-  query getDocByObjectId($objectId: [ID!]) {
+  query getDocIdByObjectId($objectId: [ID!]) {
     docs(object_ids: $objectId) {
       id
     }
@@ -69,6 +69,18 @@ export const getDocBoardItem = gql`
   }
 `;
 
+// Fetch all blocks of a doc (with raw JSON content) to read current block state before modifying it
+export const getDocBlockContent = gql`
+  query getDocBlockContent($docId: [ID!]) {
+    docs(ids: $docId) {
+      blocks {
+        id
+        type
+        content
+      }
+    }
+  }
+`;
 
 // Create an update (comment/reply) on a doc's backing item
 export const createDocComment = gql`

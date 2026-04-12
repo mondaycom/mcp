@@ -11,7 +11,7 @@ describe('Undo Action Tool', () => {
 
   it('Successfully undoes an action via batch_undo mutation', async () => {
     mocks.setResponse({ batch_undo: { success: true } });
-    const tool = new UndoActionTool(mocks.mockApiClient, 'fake_token');
+    const tool = new UndoActionTool(mocks.mockApiClient);
 
     const result = await tool.execute({
       boardId: 123,
@@ -35,7 +35,7 @@ describe('Undo Action Tool', () => {
 
   it('Propagates API errors', async () => {
     mocks.getMockRequest().mockRejectedValueOnce(new Error('Board not found'));
-    const tool = new UndoActionTool(mocks.mockApiClient, 'fake_token');
+    const tool = new UndoActionTool(mocks.mockApiClient);
 
     await expect(
       tool.execute({
@@ -46,7 +46,7 @@ describe('Undo Action Tool', () => {
   });
 
   it('Has correct schema and tool properties', () => {
-    const tool = new UndoActionTool(mocks.mockApiClient, 'fake_token');
+    const tool = new UndoActionTool(mocks.mockApiClient);
     const schema = tool.getInputSchema();
 
     expect(tool.name).toBe('undo_action');

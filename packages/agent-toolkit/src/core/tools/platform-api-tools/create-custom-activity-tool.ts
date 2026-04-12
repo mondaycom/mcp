@@ -42,10 +42,15 @@ export class CreateCustomActivityTool extends BaseMondayApiTool<typeof createCus
       name: input.name,
     };
 
-    const res = await this.mondayApi.request<CreateCustomActivityMutation>(createCustomActivity, variables);
+    await this.mondayApi.request<CreateCustomActivityMutation>(createCustomActivity, variables);
 
     return {
-      content: `Custom activity '${input.name}' with color ${input.color} and icon ${input.icon_id} successfully created`,
+      content: {
+        message: `Custom activity '${input.name}' with color ${input.color} and icon ${input.icon_id} successfully created`,
+        name: input.name,
+        color: input.color,
+        icon_id: input.icon_id,
+      },
     };
   }
 }

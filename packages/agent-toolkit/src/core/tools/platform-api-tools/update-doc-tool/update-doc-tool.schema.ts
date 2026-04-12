@@ -161,7 +161,7 @@ export const CreateBlockTableSchema = z.object({
   column_style: z
     .array(z.object({ width: z.number().int() }))
     .optional()
-    .describe('Column widths. Array length must match column_count; widths must sum to 100.'),
+    .describe('Column widths. Array length must match column_count. Widths must sum to 100.'),
 });
 
 export const CreateBlockLayoutSchema = z.object({
@@ -170,7 +170,7 @@ export const CreateBlockLayoutSchema = z.object({
   column_style: z
     .array(z.object({ width: z.number().int() }))
     .optional()
-    .describe('Column widths. Array length must match column_count; widths must sum to 100.'),
+    .describe('Column widths. Array length must match column_count. Widths must sum to 100.'),
 });
 
 export const CreateBlockSchema = z.discriminatedUnion('block_type', [
@@ -267,6 +267,28 @@ const AddCommentOperation = z.object({
     .describe(
       'Optional JSON array of mentions: [{"id": "123", "type": "User"}, {"id": "456", "type": "Team"}]. Valid types: User, Team, Board, Project.',
     ),
+  block_id: z
+    .union([z.string(), z.array(z.string()).min(1)])
+    .optional()
+    .describe(
+      'Block ID (string) or array of block IDs to anchor the comment to. When an array is provided, the same comment highlights all specified blocks. Only works on text-content blocks (text, code, list_item, title, quote) — not on divider, table, layout, notice_box, image, video, or giphy. Get block IDs from read_docs with include_blocks: true. Omit to create a general doc-level comment. Pair with selection_from + selection_length (single block_id only) to comment on a specific text range.',
+    ),
+  selection_from: z
+    .number()
+    .int()
+    .min(0)
+    .optional()
+    .describe(
+      'Start character offset (0-indexed) of the selected text within the block. Requires block_id. Omit to comment on the entire block.',
+    ),
+  selection_length: z
+    .number()
+    .int()
+    .min(1)
+    .optional()
+    .describe(
+      'Number of characters in the text selection. Requires block_id and selection_from. Only works for text, code, and list_item blocks that have a delta format.',
+    ),
 });
 
 export const OperationSchema = z.discriminatedUnion('operation_type', [
@@ -301,7 +323,7 @@ export const updateDocToolSchema = {
     .min(1)
     .max(25)
     .describe(
-      `Ordered list of operations to perform. Executed sequentially; stops at first failure.
+      `Ordered list of operations to perform. Executed sequentially. Stops at first failure.
 
 Operation types:
 - set_name: Rename the document.
