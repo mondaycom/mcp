@@ -100,11 +100,16 @@ Requires the Main Sprints board ID of the monday-dev containing your sprints.`;
       const board = res.boards?.[0];
       const sprints = board?.items_page?.items || [];
 
-      // Step 3: Generate comprehensive sprints metadata report
-      const report = this.generateSprintsMetadataReport(sprints);
+      // Step 3: Build structured sprints metadata
+      const sprintsData = this.buildSprintsMetadata(sprints);
 
       return {
-        content: report,
+        content: {
+          message: 'Sprints metadata retrieved',
+          board_id: input.sprintsBoardId,
+          total: sprints.length,
+          data: sprintsData,
+        },
       };
     } catch (error) {
       return {
@@ -173,17 +178,8 @@ Requires the Main Sprints board ID of the monday-dev containing your sprints.`;
     return { isValid: true, errorMessage: '' };
   }
 
-  private generateSprintsMetadataReport(sprints: Sprint[]): string {
-    let report = `# Sprints Metadata Report\n\n`;
-    report += `**Total Sprints:** ${sprints.length}\n\n`;
-    report += `| Sprint Name | Sprint ID | Status | Timeline (Planned) | Start Date (Actual) | End Date (Actual) | Completion | Summary Document ObjectID |\n`;
-    report += `|-------------|-----------|--------|--------------------|---------------------|-------------------|------------|---------------------------|\n`;
-
-    sprints.forEach((sprint) => {
-      const sprintName = sprint.name || 'Unknown';
-      const sprintId = sprint.id;
-
-      // Get typed column values using helpers
+  private buildSprintsMetadata(sprints: Sprint[]): Array<Record<string, unknown>> {
+    return sprints.map((sprint) => {
       const isActivated = getCheckboxValue(sprint, ALL_SPRINT_COLUMNS.SPRINT_ACTIVATION);
       const isCompleted = getCheckboxValue(sprint, ALL_SPRINT_COLUMNS.SPRINT_COMPLETION);
       const startDate = getDateValue(sprint, ALL_SPRINT_COLUMNS.SPRINT_START_DATE);
@@ -191,7 +187,6 @@ Requires the Main Sprints board ID of the monday-dev containing your sprints.`;
       const timeline = getTimelineValue(sprint, ALL_SPRINT_COLUMNS.SPRINT_TIMELINE);
       const documentObjectId = getDocValue(sprint, ALL_SPRINT_COLUMNS.SPRINT_SUMMARY);
 
-      // Determine status
       let status: string = SPRINT_STATUS.Planned;
       if (isCompleted) {
         status = SPRINT_STATUS.Completed;
@@ -199,23 +194,16 @@ Requires the Main Sprints board ID of the monday-dev containing your sprints.`;
         status = SPRINT_STATUS.Active;
       }
 
-      // Format timeline
-      const timelineText = timeline ? `${timeline.from} to ${timeline.to}` : 'Not set';
-
-      // Format dates
-      const startDateText = startDate || 'Not started';
-      const endDateText = endDate || 'Not ended';
-      const completionText = isCompleted ? 'Yes' : 'No';
-      const documentObjectIdText = documentObjectId || 'No document';
-
-      report += `| ${sprintName} | ${sprintId} | ${status} | ${timelineText} | ${startDateText} | ${endDateText} | ${completionText} | ${documentObjectIdText} |\n`;
+      return {
+        id: sprint.id,
+        name: sprint.name || 'Unknown',
+        status,
+        timeline: timeline ? { from: timeline.from, to: timeline.to } : null,
+        start_date: startDate || null,
+        end_date: endDate || null,
+        is_completed: isCompleted,
+        document_object_id: documentObjectId || null,
+      };
     });
-
-    report += `\n## Status Definitions:\n`;
-    report += `- **${SPRINT_STATUS.Planned}**: Sprint not yet started (no activation, no start date)\n`;
-    report += `- **${SPRINT_STATUS.Active}**: Sprint is active (activated but not completed)\n`;
-    report += `- **${SPRINT_STATUS.Completed}**: Sprint is finished\n\n`;
-
-    return report;
   }
 }

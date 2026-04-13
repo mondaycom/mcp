@@ -68,7 +68,7 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
   }
 
   protected async executeInternal(input: ToolInputType<SearchToolInput>): Promise<ToolOutputType<never>> {
-    // Try using new "search" field from dev schema for BOARD and DOCUMENTS types
+    // Try using "cross_entity_search" field from dev schema for BOARD and DOCUMENTS types
     if (input.searchType !== GlobalSearchType.FOLDERS && input.searchTerm) {
       try {
         const data = await this.searchWithDevEndpointAsync(input);
@@ -133,7 +133,7 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
       timeout: SEARCH_TIMEOUT
     });
 
-    const results = response.search || [];
+    const results = response.cross_entity_search || [];
     const items: SearchResult[] = [];
 
     for (const result of results) {
