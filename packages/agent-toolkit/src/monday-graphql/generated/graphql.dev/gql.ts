@@ -14,6 +14,7 @@ import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/
  * Learn more about it here: https://the-guild.dev/graphql/codegen/plugins/presets/preset-client#reducing-bundle-size
  */
 type Documents = {
+    "\n  mutation CreateAccountEntity($name: String!, $parentId: ID, $description: String) {\n    create_account_entity(name: $name, parent_id: $parentId, description: $description) {\n      id\n      name\n      description\n      parent_id\n    }\n  }\n": typeof types.CreateAccountEntityDocument,
     "\n  query SearchItemsDev($query: String!, $limit: Int!, $filters: SearchFiltersInput!) {\n    cross_entity_search(query: $query, limit: $limit, filters: $filters) {\n      __typename\n      ... on ItemSearchResult {\n        data {\n          id\n        }\n      }\n    }\n  }\n": typeof types.SearchItemsDevDocument,
     "\n  query SearchDev($query: String!, $limit: Int!, $filters: SearchFiltersInput!) {\n    cross_entity_search(query: $query, limit: $limit, filters: $filters) {\n      __typename\n      ... on BoardSearchResult {\n        entity_type\n        data {\n          id\n          name\n          url\n        }\n      }\n      ... on DocSearchResult {\n        entity_type\n        data {\n          id\n          name\n        }\n      }\n    }\n  }\n": typeof types.SearchDevDocument,
     "\n  mutation BatchUndo($boardId: ID!, $undoRecordId: ID!) {\n    batch_undo(board_id: $boardId, undo_record_id: $undoRecordId) {\n      success\n    }\n  }\n": typeof types.BatchUndoDocument,
@@ -21,6 +22,7 @@ type Documents = {
     "\n  mutation CreateFormSubmission(\n    $form_token: String!\n    $answers: [FormAnswerInput!]!\n    $form_timezone_offset: Int!\n    $password: String\n    $tags: [TagInput!]\n  ) {\n    create_form_submission(\n      form_token: $form_token\n      answers: $answers\n      form_timezone_offset: $form_timezone_offset\n      password: $password\n      tags: $tags\n    ) {\n      id\n    }\n  }\n": typeof types.CreateFormSubmissionDocument,
 };
 const documents: Documents = {
+    "\n  mutation CreateAccountEntity($name: String!, $parentId: ID, $description: String) {\n    create_account_entity(name: $name, parent_id: $parentId, description: $description) {\n      id\n      name\n      description\n      parent_id\n    }\n  }\n": types.CreateAccountEntityDocument,
     "\n  query SearchItemsDev($query: String!, $limit: Int!, $filters: SearchFiltersInput!) {\n    cross_entity_search(query: $query, limit: $limit, filters: $filters) {\n      __typename\n      ... on ItemSearchResult {\n        data {\n          id\n        }\n      }\n    }\n  }\n": types.SearchItemsDevDocument,
     "\n  query SearchDev($query: String!, $limit: Int!, $filters: SearchFiltersInput!) {\n    cross_entity_search(query: $query, limit: $limit, filters: $filters) {\n      __typename\n      ... on BoardSearchResult {\n        entity_type\n        data {\n          id\n          name\n          url\n        }\n      }\n      ... on DocSearchResult {\n        entity_type\n        data {\n          id\n          name\n        }\n      }\n    }\n  }\n": types.SearchDevDocument,
     "\n  mutation BatchUndo($boardId: ID!, $undoRecordId: ID!) {\n    batch_undo(board_id: $boardId, undo_record_id: $undoRecordId) {\n      success\n    }\n  }\n": types.BatchUndoDocument,
@@ -42,6 +44,10 @@ const documents: Documents = {
  */
 export function graphql(source: string): unknown;
 
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation CreateAccountEntity($name: String!, $parentId: ID, $description: String) {\n    create_account_entity(name: $name, parent_id: $parentId, description: $description) {\n      id\n      name\n      description\n      parent_id\n    }\n  }\n"): (typeof documents)["\n  mutation CreateAccountEntity($name: String!, $parentId: ID, $description: String) {\n    create_account_entity(name: $name, parent_id: $parentId, description: $description) {\n      id\n      name\n      description\n      parent_id\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

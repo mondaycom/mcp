@@ -1,6 +1,7 @@
 import { AllMondayApiTool } from './all-monday-api-tool';
 import { BaseMondayApiToolConstructor } from './base-monday-api-tool';
 import { ChangeItemColumnValuesTool } from './change-item-column-values-tool';
+import { CreateAccountEntityTool } from './create-account-entity-tool/create-account-entity-tool';
 import { CreateBoardTool } from './create-board-tool';
 import { CreateViewTool } from './create-view-tool/create-view-tool';
 import { CreateFormTool } from './workforms-tools/create-form-tool';
@@ -106,9 +107,11 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   GetNotetakerMeetingsTool,
   CreateViewTool,
   UndoActionTool,
+  CreateAccountEntityTool,
 ];
 
 export * from './all-monday-api-tool';
+export * from './create-account-entity-tool/create-account-entity-tool';
 export * from './change-item-column-values-tool';
 export * from './create-board-tool';
 export * from './workforms-tools/create-form-tool';
