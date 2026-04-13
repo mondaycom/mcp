@@ -76,7 +76,6 @@ export class CreateSubmissionTool extends BaseMondayApiTool<typeof createSubmiss
       answers: input.answers,
       form_timezone_offset: input.form_timezone_offset,
       password: input.password,
-      group_id: input.group_id,
       tags: input.tags,
     };
 

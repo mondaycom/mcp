@@ -95,10 +95,6 @@ export const createSubmissionToolSchema = {
     .string()
     .optional()
     .describe('The password for the WorkForm. Only required if the WorkForm has password protection enabled (check features.password.enabled from get_form). If required, ask the user for the password before submitting.'),
-  group_id: z
-    .string()
-    .optional()
-    .describe("The board group ID to submit the response into. Defaults to the form's configured group."),
   tags: z
     .array(
       z.object({

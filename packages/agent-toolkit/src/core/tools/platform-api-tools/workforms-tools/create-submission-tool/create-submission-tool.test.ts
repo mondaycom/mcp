@@ -110,19 +110,18 @@ describe('CreateSubmissionTool', () => {
       expect(parsed.submission_id).toBe('sub_42');
     });
 
-    it('should pass optional password and group_id to the API', async () => {
+    it('should pass optional password to the API', async () => {
       mocks.setResponse({ create_form_submission: { id: 'sub_1' } });
 
       const args: inputType = {
         ...BASE_ARGS,
         password: 'secret',
-        group_id: 'group_99',
       };
 
       await callToolByNameRawAsync('create_form_submission', args);
 
       const mockCall = mocks.getMockRequest().mock.calls[0];
-      expect(mockCall[1]).toMatchObject({ password: 'secret', group_id: 'group_99' });
+      expect(mockCall[1]).toMatchObject({ password: 'secret' });
     });
   });
 
