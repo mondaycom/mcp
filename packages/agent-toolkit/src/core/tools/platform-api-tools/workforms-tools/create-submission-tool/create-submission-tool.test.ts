@@ -82,7 +82,7 @@ describe('CreateSubmissionTool', () => {
 
       const result = await callToolByNameRawAsync('create_form_submission', args);
 
-      expect(result.content[0].text).toContain('Could not resolve a form token');
+      expect(result.content[0].text).toContain('Could not resolve a WorkForm token');
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
 
@@ -94,7 +94,7 @@ describe('CreateSubmissionTool', () => {
 
       const result = await callToolByNameRawAsync('create_form_submission', args);
 
-      expect(result.content[0].text).toContain('Could not resolve a form token');
+      expect(result.content[0].text).toContain('Could not resolve a WorkForm token');
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
   });
@@ -106,7 +106,7 @@ describe('CreateSubmissionTool', () => {
       const result = await callToolByNameRawAsync('create_form_submission', BASE_ARGS);
       const parsed = parseToolResult(result);
 
-      expect(parsed.message).toBe('Form submitted successfully');
+      expect(parsed.message).toBe('WorkForm submitted successfully');
       expect(parsed.submission_id).toBe('sub_42');
     });
 
