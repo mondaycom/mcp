@@ -80,6 +80,7 @@ OPERATIONS:
 - create_block: Create a new block at a precise position. Use parent_block_id to nest inside notice_box, table cell, or layout cell.
 - delete_block: Remove any block. The ONLY option for BOARD, WIDGET, DOC embed, and GIPHY blocks.
 - replace_block: Delete a block and create a new one in its place (use when update_block is not supported).
+- add_comment: Create a new comment or reply on the document (doc-level, block-level, or text-selection).
 
 WHEN TO USE EACH OPERATION:
 - text / code / list_item → update_block. Use replace_block to change subtype (e.g. NORMAL_TEXT→LARGE_TITLE)
