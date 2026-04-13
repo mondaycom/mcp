@@ -16,39 +16,41 @@ const MAX_ITEM_IDS_PER_QUERY = 100;
 const FETCH_PAGE_SIZE = 200;
 
 /**
- * Skill-style tool documentation: when/how to use, workflow, and excerpts aligned with
- * link_board_items (v1) design (cardinality, link direction, exact match, scale, errors).
+ * Skill-style tool documentation: when/how to use, workflow (cardinality, link direction, exact match, scale, errors).
+ * Stresses correct pagination (not only multi-pair writes).
  */
 const LINK_BOARD_ITEMS_V2_DOCUMENTATION = `
-# Link Board Items (v2) — guided workflow and batch write
+# Link Board Items — guided fetch workflow and relation writes
 
 ## Purpose
 
-Link items across two monday.com boards by **board-relation** columns. This tool **only applies writes** for explicit \`(sourceItemId, targetItemId)\` pairs you supply. You perform discovery, pagination, and matching using other tools (\`get_board_items_page\`, \`get_board_info\`, etc.); this tool encodes **how** that work should be done so linking stays correct, bounded, and reviewable.
+Link items across two monday.com boards by **board-relation** columns. This tool **only applies writes** for explicit \`(sourceItemId, targetItemId)\` pairs you supply — **one pair or many**. The main value is the **documented way to fetch and match**: use \`get_board_items_page\` (and related tools) so you **do not treat the first page as the whole board**, narrow scope with filters and \`columnIds\`, then match with clear rules before writing.
 
-**Cardinality (same as v1 design):** many sources may each link to **at most one** target per run — **not** one source → multiple targets in a single call. Many sources may share the same target. If a source could match several targets, **do not guess**; narrow the dataset and re-match until there is a single confident target or leave that source unmatched.
+You perform discovery, pagination, and matching yourself; this description tells you **how** so linking stays correct, bounded, and reviewable.
 
-Common use cases: invoices → vendors, contacts → accounts, orders → customers, sub-items → parent projects (domain-agnostic).
+**Cardinality:** each source links to **at most one** target per call — **not** one source → multiple targets in a single call. Many sources may share the same target. If a source could match several targets, **do not guess**; narrow the dataset and re-match until there is a single confident target or leave that source unmatched.
+
+Common use cases: invoices → vendors, contacts → accounts, orders → customers, sub-items → parent projects (domain-agnostic). A **single** new invoice row that needs its vendor resolved once is in scope: still follow the fetch steps, then pass a \`pairs\` array of length 1.
 
 ## When to use this tool
 
-- You need to persist **multiple** board-relation links in one coherent batch after you have already decided each pair.
-- You want a **documented workflow** (below) so fetching does not stop after one page, columns stay minimal, and ambiguous matches are resolved before any write.
+- You are linking **one or more** source rows to targets and want the **fetch workflow** (page through \`has_more\`, narrow with filters/\`itemIds\`, minimal columns) so you do not miss items after the first page or pull unnecessary data.
+- You have finished matching and want a **consistent** write path for the board-relation column (same payload shape as \`change_item_column_values\`), whether that is one write or several.
 - The relation column may live on **either** board; you know \`linkSide\` and \`linkColumnId\`.
 
 ## When not to use this tool
 
-- You already have the correct IDs and only need **one** item updated — use \`change_item_column_values\` directly.
-- You want the platform to fetch all items, match internally, and batch-write without you paging — that is the intent of \`link_board_items\` (v1), not v2.
+- You **already** have both item IDs and the correct relation value and **did not** need paged discovery — \`change_item_column_values\` alone is enough.
+- You expect fetch, match, and write to run automatically inside one opaque API call without you paging boards yourself — this tool only persists the \`pairs\` you pass after **you** complete discovery and matching.
 
 ## Core principles
 
 1. **No guessing on ambiguity** — If more than one target item plausibly matches a source, do not call this tool with an arbitrary pick. Refine \`filters\`, \`itemIds\`, \`searchTerm\`, or compare columns until exactly one target remains or skip that source.
-2. **Page to completion** — For each board you read from, repeat \`get_board_items_page\` using \`pagination.nextCursor\` until \`has_more\` is false. A single page is often not the full board.
+2. **Page to completion — do not stop after one page** — For each board you read from, repeat \`get_board_items_page\` using \`pagination.nextCursor\` until \`has_more\` is false. **Giving up after the first page is a common mistake** and causes missed matches when the item you need is on page 2 or later.
 3. **Narrow before you fetch** — Prefer server-side \`filters\`, \`itemIds\` (max **100** IDs per request per \`ItemsQuery\`), \`searchTerm\` for vague cross-field phrases, and \`columnIds\` with \`includeColumns: true\` only for columns you need (match fields + link column if you must read existing links). Use \`is_empty\` on the link column to limit to unlinked rows when appropriate.
-4. **Exact match baseline** — Align with v1 **exact** mode: case-insensitive equality on **one** column id per side (\`matchColumnIds\`-style), or on **item name** if you deliberately compare names only. Trim and normalize before comparing. For fuzzy or meaning-based ties, resolve in your reasoning **before** building \`pairs\` (v1 semantic mode is LLM-in-tool; here **you** are the matcher).
+4. **Exact match baseline** — Prefer deterministic matching: case-insensitive equality on **one** column id per side, or on **item name** if you deliberately compare names only. Trim and normalize before comparing. For fuzzy or meaning-based ties, resolve in your reasoning **before** building \`pairs\` — **you** are the matcher.
 
-## Link column direction (from v1 design)
+## Link column direction
 
 Like a foreign key: the board-relation column lives on **exactly one** side.
 
@@ -57,7 +59,7 @@ Like a foreign key: the board-relation column lives on **exactly one** side.
 
 ## Scale awareness
 
-When paging without a hard stop in your own logic, remember large boards: v1 design assumes on the order of **200 items per page** and a **finite** cap per board if you scanned everything (roughly **2,000** items in the full v1 tool). Prefer **filters** and **itemIds** so you never rely on loading an entire huge board into context. Split **more than 100** explicit IDs across multiple \`get_board_items_page\` calls.
+When paging without narrowing, boards can be large: \`get_board_items_page\` returns a **page** at a time (often on the order of tens to a few hundred items per request depending on \`limit\`). Prefer **filters** and **itemIds** so you do not load more into context than necessary. Split **more than 100** explicit IDs across multiple \`get_board_items_page\` calls (GraphQL \`ItemsQuery.ids\` limit).
 
 ## Workflow (follow in order)
 
@@ -70,7 +72,7 @@ When paging without a hard stop in your own logic, remember large boards: v1 des
 ### Step 2 — Define what “equal” means for matching
 
 - **Name-only:** compare item \`name\` strings (normalized).
-- **Column-to-column:** one column id on the source board vs one on the target board (same semantics as v1 exact mode with a single id per side).
+- **Column-to-column:** one column id on the source board vs one on the target board (single compare field per side).
 - Do not submit \`pairs\` until the rule is fixed and applied consistently.
 
 ### Step 3 — Fetch sources with discipline
@@ -91,7 +93,7 @@ When paging without a hard stop in your own logic, remember large boards: v1 des
 
 ### Step 6 — Verify and call \`link_board_items_v2\`
 
-- Build \`pairs: [{ sourceItemId, targetItemId }, ...]\` from Step 5 only.
+- Build \`pairs: [{ sourceItemId, targetItemId }, ...]\` from Step 5 only (length 1 is fine).
 - Ensure each \`sourceItemId\` appears **at most once** (duplicate identical pairs are deduped by the tool).
 - Invoke this tool with \`sourceBoardId\`, \`targetBoardId\`, \`linkSide\`, \`linkColumnId\`, and \`pairs\`.
 
@@ -129,7 +131,7 @@ export const linkBoardItemsV2ToolSchema = {
   linkSide: z
     .enum(['source', 'target'])
     .describe(
-      'Which board **owns** the board-relation column: `"source"` = column on `sourceBoardId` (each source row points at one target). `"target"` = column on `targetBoardId` (each target row holds many source links; this tool merges new IDs with existing). Matches v1 design: exactly one side stores the relation.',
+      'Which board **owns** the board-relation column: `"source"` = column on `sourceBoardId` (each source row points at one target). `"target"` = column on `targetBoardId` (each target row holds many source links; this tool merges new IDs with existing). Exactly one side stores the relation.',
     ),
   linkColumnId: z
     .string()
@@ -151,7 +153,7 @@ export const linkBoardItemsV2ToolSchema = {
     )
     .min(1)
     .describe(
-      'Verified pairs to write. Build only after Steps 1–5 in the tool description (pagination complete, ambiguity resolved). Duplicate identical pairs are deduped; the same source with two different targets is rejected.',
+      'One or more verified pairs to write (a single-element array is valid). Build only after Steps 1–5 in the tool description: pagination through has_more finished on every board you relied on, ambiguity resolved. Duplicate identical pairs are deduped; the same source with two different targets is rejected.',
     ),
 };
 
@@ -163,7 +165,7 @@ export class LinkBoardItemsV2Tool extends BaseMondayApiTool<LinkBoardItemsV2Tool
   name = 'link_board_items_v2';
   type = ToolType.WRITE;
   annotations = createMondayApiAnnotations({
-    title: 'Link Board Items (v2)',
+    title: 'Link Board Items',
     readOnlyHint: false,
     destructiveHint: false,
     idempotentHint: true,
@@ -171,7 +173,7 @@ export class LinkBoardItemsV2Tool extends BaseMondayApiTool<LinkBoardItemsV2Tool
 
   getDescription(): string {
     return (
-      'Use when you need to **batch-write** board-relation links between two boards after **you** fetch, match, and de-duplicate with `get_board_items_page` (and related tools). Does not discover items or match internally — it applies a skill-like workflow (when/not to use, cardinality, link side, scale, steps, examples) then persists `pairs` via the same relation payload as `change_item_column_values`.\n\n' +
+      'Use when linking items across boards with a **board-relation** column and you want a clear workflow for **fetching items correctly** — especially paging with `get_board_items_page` until `has_more` is false, not stopping after the first page. Applies to **one source row or many**: you match, then this tool writes explicit `pairs` (same relation payload as `change_item_column_values`). It does not fetch or match for you; read the sections below before building `pairs`.\n\n' +
       LINK_BOARD_ITEMS_V2_DOCUMENTATION
     );
   }
