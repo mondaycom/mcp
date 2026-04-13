@@ -55,15 +55,18 @@ type GetDocCommentsQuery = {
   }> | null;
 };
 
+const CONTENT_MODE = 'content' as const;
+const VERSION_HISTORY_MODE = 'version_history' as const;
+
 const QueryByIdEnum = z.enum(['ids', 'object_ids', 'workspace_ids']);
 
 const MAX_DIFF_POINTS = 10;
 
 export const readDocsToolSchema = {
   mode: z
-    .enum(['content', 'version_history'])
+    .enum([CONTENT_MODE, VERSION_HISTORY_MODE])
     .optional()
-    .default('content')
+    .default(CONTENT_MODE)
     .describe(
       'The operation mode. "content" (default) fetches documents with their markdown content. "version_history" fetches the edit history of a single document.',
     ),
@@ -174,14 +177,7 @@ MODE: "version_history" — Fetch the edit history of a single document.
   }
 
   protected async executeInternal(input: ToolInputType<typeof readDocsToolSchema>): Promise<ToolOutputType<never>> {
-    this.sessionContext.metadata = {
-      ...this.sessionContext.metadata,
-      mode: input.mode ?? 'content',
-      includeComments: input.include_comments ?? false,
-      includeBlocks: input.include_blocks ?? false,
-    };
-
-    if (input.mode === 'version_history') {
+    if (input.mode === VERSION_HISTORY_MODE) {
       return this.executeVersionHistory(input);
     }
     return this.executeContent(input);
@@ -243,6 +239,15 @@ MODE: "version_history" — Fetch the edit history of a single document.
       const includeComments = input.include_comments ?? false;
       const commentsLimit = input.comments_limit ?? 50;
 
+      this.sessionContext.metadata = {
+        ...this.sessionContext.metadata,
+        mode: input.mode ?? CONTENT_MODE,
+        include_comments: input.include_comments ?? false,
+        include_blocks: input.include_blocks ?? false,
+        doc_ids: res.docs.flatMap((d) => d ? [d.id] : []),
+        object_ids: res.docs.flatMap((d) => d?.object_id ? [d.object_id] : []),
+      };
+
       return this.enrichDocsWithMarkdown(res.docs, variables, includeBlocks, includeComments, commentsLimit);
     } catch (error) {
       return { content: `Error reading documents: ${error instanceof Error ? error.message : 'Unknown error occurred'}` };
@@ -264,6 +269,11 @@ MODE: "version_history" — Fetch the edit history of a single document.
       let restoringPoints = historyResult?.doc_version_history?.restoring_points;
 
       if (!restoringPoints || restoringPoints.length === 0) {
+        this.sessionContext.metadata = {
+          ...this.sessionContext.metadata,
+          mode: VERSION_HISTORY_MODE,
+          object_ids: [objectId],
+        };
         return {
           content: `No version history found for document ${objectId}${since ? ` from ${since}` : ''}.`,
         };
@@ -273,6 +283,11 @@ MODE: "version_history" — Fetch the edit history of a single document.
         if (version_history_limit) {
           restoringPoints = restoringPoints.slice(0, version_history_limit);
         }
+        this.sessionContext.metadata = {
+          ...this.sessionContext.metadata,
+          mode: VERSION_HISTORY_MODE,
+          object_ids: [objectId],
+        };
         return {
           content: { doc_id: objectId, since, until, restoring_points: restoringPoints },
         };
@@ -307,6 +322,12 @@ MODE: "version_history" — Fetch the edit history of a single document.
 
       // Drop the extra context point — it was only needed to compute the last diff.
       const finalPoints = restoringPointsWithDiffs.slice(0, userLimit);
+
+      this.sessionContext.metadata = {
+        ...this.sessionContext.metadata,
+        mode: VERSION_HISTORY_MODE,
+        object_ids: [objectId],
+      };
 
       return {
         content: {

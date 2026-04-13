@@ -111,12 +111,6 @@ COMMENTS:
   }
 
   protected async executeInternal(input: ToolInputType<typeof updateDocToolSchema>): Promise<ToolOutputType<never>> {
-    this.sessionContext.metadata = {
-      ...this.sessionContext.metadata,
-      operationTypes: input.operations?.map((op) => op.operation_type),
-      operationCount: input.operations?.length ?? 0,
-    };
-
     if (!input.doc_id && !input.object_id) {
       return { content: 'Error: Either doc_id or object_id must be provided.' };
     }
@@ -154,6 +148,14 @@ COMMENTS:
       const completed = failedAt !== null ? failedAt : input.operations.length;
       const total = input.operations.length;
       const summary = `Completed ${completed}/${total} operation${total === 1 ? '' : 's'} on doc ${docId}.`;
+
+      this.sessionContext.metadata = {
+        ...this.sessionContext.metadata,
+        operation_types: input.operations?.map((op) => op.operation_type),
+        operation_count: input.operations?.length ?? 0,
+        doc_id: docId,
+        ...(input.object_id && { object_id: input.object_id }),
+      };
 
       return {
         content: `${summary}\n\nResults:\n${results.join('\n')}\n\nDoc ID: ${docId}`,
