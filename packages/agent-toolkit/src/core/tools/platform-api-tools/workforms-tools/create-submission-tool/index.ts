@@ -25,6 +25,7 @@ export class CreateSubmissionTool extends BaseMondayApiTool<typeof createSubmiss
       '- Inspect each question\'s showIfRules to determine which questions are conditionally shown based on previous answers.\n' +
       '- Inspect each question\'s settings for any answer constraints (e.g. rating limits, select options, label limits).\n' +
       '- Take note of any titles, descriptions, and content blocks to present the form naturally as you walk the user through it.\n' +
+      '- Take note of pages and question order to present questions in the correct sequence.\n' +
       'Gather all answers upfront before calling this tool — do not submit one question at a time. ' +
       'Accepts a bare form token, a full WorkForm URL (e.g. https://forms.monday.com/forms/{form_token}?r=use1), or a shortened wkf.ms URL ' +
       '(e.g. https://wkf.ms/4tqP28t) — shortened URLs are automatically resolved by following the redirect. ' +
