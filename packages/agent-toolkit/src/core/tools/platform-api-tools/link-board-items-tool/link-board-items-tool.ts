@@ -5,10 +5,16 @@ import {
   GetLinkCandidateItemsQuery,
   GetLinkCandidateItemsQueryVariables,
   ItemsOrderByDirection,
+  ItemsQueryRuleOperator,
   ItemsQuery,
 } from '../../../../monday-graphql/generated/graphql/graphql';
+import { SearchItemsDevQuery, SearchItemsDevQueryVariables } from '../../../../monday-graphql/generated/graphql.dev/graphql';
 import { filterRulesSchema, filtersOperatorSchema } from '../get-board-items-page-tool/items-filter-schema';
 import { getLinkCandidateItems } from './link-board-items-tool.graphql';
+import { searchItemsDev } from '../get-board-items-page-tool/get-board-items-page-tool.graphql.dev';
+import { ITEM_SEARCH_RESULT_TYPENAME } from '../search-tool/search-tool.types';
+import { SEARCH_TIMEOUT } from '../../../../utils/time.utils';
+import { throwIfSearchTimeoutError } from '../../../../utils/error.utils';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 
@@ -79,6 +85,17 @@ const boardConfigSchema = (side: 'source' | 'target') =>
         `Column IDs on the ${side} board used for matching. ` +
           `In "exact" mode: omit or use [] on both boards to compare item names; or provide exactly one id per side to compare those two column values (case-insensitive). At most one id per side in exact mode. ` +
           `In "semantic" mode: provide one or more ids per side (both sides non-empty); the LLM uses all of them together — e.g. ["category", "owner", "description"].`,
+      ),
+    searchTerm: z
+      .string()
+      .optional()
+      .describe(
+        `Optional full-text search term to narrow which ${side} board items are fetched. ` +
+          `Searches across multiple fields server-side (name, text columns, notes, etc.) — unlike filters, ` +
+          `which require knowing the exact column ID and value. ` +
+          `Use this when the agent has a vague or cross-field term (e.g. "Acme", "Q4 campaign"). ` +
+          `For exact column comparisons, prefer filters instead. ` +
+          `Can be combined with itemIds and filters — results are intersected.`,
       ),
     itemIds: z
       .array(z.union([z.string(), z.number()]))
@@ -194,6 +211,13 @@ export class LinkBoardItemsTool extends BaseMondayApiTool<LinkBoardItemsToolInpu
 
   protected async executeInternal(input: ToolInputType<LinkBoardItemsToolInput>): Promise<ToolOutputType<never>> {
     this.validateInput(input);
+
+    // Resolve searchTerm → itemIds for each side before building query params.
+    // Done in parallel since the two boards are independent.
+    await Promise.all([
+      this.resolveSearchTerm(input.source),
+      this.resolveSearchTerm(input.target),
+    ]);
 
     const linkSide = input.source.linkColumnId ? 'source' : 'target';
     const linkColumnId = (input.source.linkColumnId ?? input.target.linkColumnId)!;
@@ -319,6 +343,54 @@ export class LinkBoardItemsTool extends BaseMondayApiTool<LinkBoardItemsToolInpu
       if (first) ids.push(first);
     }
     return [...new Set(ids)];
+  }
+
+  /**
+   * If `searchTerm` is set, calls the smart search API to resolve it into item IDs,
+   * then intersects with any caller-provided `itemIds`. Falls back to a `name ContainsText`
+   * filter on timeout or if smart search is not enabled.
+   * Mutates `boardInput` in place (same pattern as GetBoardItemsPageTool).
+   */
+  private async resolveSearchTerm(
+    boardInput: ToolInputType<LinkBoardItemsToolInput>['source'],
+  ): Promise<void> {
+    if (!boardInput.searchTerm) return;
+
+    try {
+      const variables: SearchItemsDevQueryVariables = {
+        query: boardInput.searchTerm,
+        limit: MAX_ITEM_IDS_PER_QUERY,
+        filters: { entities: [{ items: { board_ids: [boardInput.boardId.toString()] } }] },
+      };
+
+      const res = await this.mondayApi.request<SearchItemsDevQuery>(searchItemsDev, variables, {
+        versionOverride: 'dev',
+        timeout: SEARCH_TIMEOUT,
+      });
+
+      const foundIds = res.search
+        ?.filter(
+          (r): r is Extract<typeof r, { __typename?: typeof ITEM_SEARCH_RESULT_TYPENAME }> =>
+            r.__typename === ITEM_SEARCH_RESULT_TYPENAME,
+        )
+        .map((r) => r.data.id) ?? [];
+
+      if (foundIds.length === 0) {
+        throw new Error('No items found for search term or smart search is not enabled for this account');
+      }
+
+      const callerIds = boardInput.itemIds?.map(String);
+      boardInput.itemIds = callerIds?.length
+        ? foundIds.filter((id) => callerIds.includes(id))
+        : foundIds;
+    } catch (error) {
+      throwIfSearchTimeoutError(error);
+      // Fall back to a name filter so the fetch still runs
+      boardInput.filters = [
+        ...(boardInput.filters ?? []).filter((f) => f.columnId !== 'name'),
+        { columnId: 'name', operator: ItemsQueryRuleOperator.ContainsText, compareValue: boardInput.searchTerm! },
+      ];
+    }
   }
 
   private buildQueryParams(boardInput: ToolInputType<LinkBoardItemsToolInput>['source'] | undefined): ItemsQuery | undefined {
