@@ -12,6 +12,8 @@ import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-ap
 
 const FETCH_PAGE_SIZE = 200;
 const MAX_PAGES = 10;
+/** `ItemsQuery.ids` — monday API caps how many item IDs can be passed in one query. */
+const MAX_ITEM_IDS_PER_QUERY = 100;
 
 type CandidateItem = {
   id: string;
@@ -76,6 +78,14 @@ const boardConfigSchema = (side: 'source' | 'target') =>
           `In "exact" mode: omit or use [] on both boards to compare item names; or provide exactly one id per side to compare those two column values (case-insensitive). At most one id per side in exact mode. ` +
           `In "semantic" mode: provide one or more ids per side (both sides non-empty); the LLM uses all of them together — e.g. ["category", "owner", "description"].`,
       ),
+    itemIds: z
+      .array(z.union([z.string(), z.number()]))
+      .max(MAX_ITEM_IDS_PER_QUERY)
+      .optional()
+      .describe(
+        `Optional monday item IDs to include for this board only (sent as ItemsQuery.ids — server-side). ` +
+          `At most ${MAX_ITEM_IDS_PER_QUERY} IDs per side per GraphQL contract. Combine with filters when useful. Omit to fetch items by pagination rules only (subject to page cap).`,
+      ),
     filters: filterRulesSchema.describe(
       `Optional filters to narrow which ${side} board items are fetched. ` +
         `Use get_board_info on the ${side} board to find column IDs and valid filter values. ` +
@@ -90,7 +100,8 @@ const boardConfigSchema = (side: 'source' | 'target') =>
 
 export const linkBoardItemsToolSchema = {
   source: boardConfigSchema('source').describe(
-    'Configuration for the source board — the board whose items will be linked to the target.',
+    'Configuration for the source board — the board whose items will be linked to the target. ' +
+      'Each source item is matched to at most one target per run; not for many-to-many (one source → multiple targets in one pass).',
   ),
   target: boardConfigSchema('target').describe(
     'Configuration for the target board — the board containing the items to link to.',
@@ -136,8 +147,11 @@ export class LinkBoardItemsTool extends BaseMondayApiTool<LinkBoardItemsToolInpu
   getDescription(): string {
     return (
       'Automatically links items across two monday.com boards by matching them using exact or semantic (LLM-powered) matching. ' +
+      'Each source item is matched to at most one target per run (many sources may point to the same target). ' +
+      'Not for many-to-many: if a source item must link to several targets in one pass, use a different approach — ambiguous multiple targets for one source is an error. ' +
       'Useful for connecting any cross-board relationship — invoices to vendors, contacts to accounts, orders to customers, and so on. ' +
       'Handles the full flow: fetches items from both boards, computes matches internally, then batch-writes the link column values. ' +
+      'Optional source.itemIds / target.itemIds (up to 100 per side) narrow the fetch to known IDs instead of scanning the whole board. ' +
       'The board-relation column can live on either the source board (source.linkColumnId) or the target board (target.linkColumnId) — exactly one must be provided. ' +
       'When the link column is on the target side, multiple source matches for the same target item are merged rather than overwritten. ' +
       '\n\nMATCH MODES:\n' +
@@ -145,7 +159,7 @@ export class LinkBoardItemsTool extends BaseMondayApiTool<LinkBoardItemsToolInpu
       '- semantic: LLM reasons across multiple columns — handles typos, abbreviations, synonyms, and meaning-based relationships.\n\n' +
       'ERROR BEHAVIOR:\n' +
       '- If a source item matches more than one target, an error is raised listing all conflicting matches — the tool will not guess.\n' +
-      '- If the board has more items than can be fetched (10 pages × 200 items), an error is raised. Use filters to narrow the dataset.\n\n' +
+      '- If the board has more items than can be fetched (10 pages × 200 items), an error is raised. Use filters and/or itemIds to narrow the dataset.\n\n' +
       'RECOMMENDED WORKFLOW:\n' +
       '1. Call with dryRun=true to inspect proposed matches and the unmatched list.\n' +
       '2. For unmatched items, consider switching matchMode or adjusting which columns are passed.\n' +
@@ -186,6 +200,12 @@ export class LinkBoardItemsTool extends BaseMondayApiTool<LinkBoardItemsToolInpu
         this.fetchAllItems(input.source.boardId, sourceColumnIds, this.buildQueryParams(input.source)),
         this.fetchAllItems(input.target.boardId, targetColumnIds, this.buildQueryParams(input.target)),
       ]);
+    }
+
+    if (sourceItems.length !== 1) {
+      throw new Error(
+        `Phase 1 requires exactly one source item; source.itemIds has one id but the API returned ${sourceItems.length} row(s).`,
+      );
     }
 
     const matches = await this.computeMatches(sourceItems, targetItems, input);
@@ -231,6 +251,11 @@ export class LinkBoardItemsTool extends BaseMondayApiTool<LinkBoardItemsToolInpu
   }
 
   private validateInput(input: ToolInputType<LinkBoardItemsToolInput>): void {
+    const sourceIds = input.source.itemIds;
+    if (!sourceIds || sourceIds.length !== 1) {
+      throw new Error('Exactly one id is required in source.itemIds.');
+    }
+
     const hasSourceLink = !!input.source.linkColumnId;
     const hasTargetLink = !!input.target.linkColumnId;
 
@@ -276,17 +301,26 @@ export class LinkBoardItemsTool extends BaseMondayApiTool<LinkBoardItemsToolInpu
     return [...new Set(ids)];
   }
 
-  private buildQueryParams(boardInput: { filters?: Array<any>; filtersOperator?: any } | undefined): ItemsQuery | undefined {
-    if (!boardInput?.filters?.length) return undefined;
-    return {
-      operator: boardInput.filtersOperator,
-      rules: boardInput.filters.map((f) => ({
+  private buildQueryParams(boardInput: ToolInputType<LinkBoardItemsToolInput>['source'] | undefined): ItemsQuery | undefined {
+    if (!boardInput) return undefined;
+    const rulesFromFilters =
+      boardInput.filters?.map((f) => ({
         column_id: f.columnId.toString(),
         compare_value: Array.isArray(f.compareValue) ? f.compareValue.map(String) : [String(f.compareValue)],
         operator: f.operator,
         compare_attribute: f.compareAttribute,
-      })),
-    };
+      })) ?? [];
+    const ids = boardInput.itemIds?.map((id) => String(id));
+
+    if (!ids?.length && rulesFromFilters.length === 0) return undefined;
+
+    const query: ItemsQuery = {};
+    if (ids?.length) query.ids = ids;
+    if (rulesFromFilters.length > 0) {
+      query.operator = boardInput.filtersOperator;
+      query.rules = rulesFromFilters;
+    }
+    return query;
   }
 
   /**
@@ -318,7 +352,7 @@ export class LinkBoardItemsTool extends BaseMondayApiTool<LinkBoardItemsToolInpu
       if (cursor && pagesLoaded >= MAX_PAGES) {
         throw new Error(
           `Board ${boardId} has more than ${MAX_PAGES * FETCH_PAGE_SIZE} items. ` +
-            `Add filters to narrow the dataset before running this tool.`,
+            `Add filters or itemIds to narrow the dataset before running this tool.`,
         );
       }
     } while (cursor);
@@ -372,7 +406,7 @@ export class LinkBoardItemsTool extends BaseMondayApiTool<LinkBoardItemsToolInpu
       if (cursor && pagesLoaded >= MAX_PAGES) {
         throw new Error(
           `Board ${boardId} has more than ${MAX_PAGES * FETCH_PAGE_SIZE} items. ` +
-            `Add filters to narrow the dataset before running this tool.`,
+            `Add filters or itemIds to narrow the dataset before running this tool.`,
         );
       }
     } while (cursor);
