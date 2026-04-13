@@ -99,4 +99,13 @@ export const createSubmissionToolSchema = {
     .string()
     .optional()
     .describe("The board group ID to submit the response into. Defaults to the form's configured group."),
+  tags: z
+    .array(
+      z.object({
+        column_id: z.string().describe('The column ID this tag maps to.'),
+        value: z.string().describe('The tag value to submit.'),
+      }),
+    )
+    .optional()
+    .describe('Tags to attach to the submission — each tag maps a value to a specific board column.'),
 };
