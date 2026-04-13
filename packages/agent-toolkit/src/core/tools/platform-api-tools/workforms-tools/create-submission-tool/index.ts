@@ -13,7 +13,7 @@ export class CreateSubmissionTool extends BaseMondayApiTool<typeof createSubmiss
   name = 'create_form_submission';
   type = ToolType.WRITE;
   annotations = createMondayApiAnnotations({
-    title: 'Create Form Submission',
+    title: 'Create WorkForm Submission',
     readOnlyHint: false,
     destructiveHint: false,
     idempotentHint: false,
@@ -21,10 +21,10 @@ export class CreateSubmissionTool extends BaseMondayApiTool<typeof createSubmiss
 
   getDescription(): string {
     return (
-      'Submit a response to a monday.com form. Accepts a bare form token, a full form URL ' +
+      'Submit a response to a monday.com WorkForm. Accepts a bare form token, a full WorkForm URL ' +
       '(e.g. https://forms.monday.com/forms/{form_token}?r=use1), or a shortened wkf.ms URL ' +
       '(e.g. https://wkf.ms/4tqP28t) — shortened URLs are automatically resolved by following the redirect. ' +
-      'Use get_form to retrieve the form and its question IDs before submitting. Returns the submission ID.'
+      'Use get_form to retrieve the WorkForm and its question IDs before submitting. Returns the submission ID.'
     );
   }
 
@@ -61,8 +61,8 @@ export class CreateSubmissionTool extends BaseMondayApiTool<typeof createSubmiss
     if (!formToken) {
       return {
         content:
-          `Could not resolve a form token from "${input.form_token}". ` +
-          `Please provide a valid form token or full form URL (e.g. https://forms.monday.com/forms/abc123).`,
+          `Could not resolve a WorkForm token from "${input.form_token}". ` +
+          `Please provide a valid WorkForm token or full WorkForm URL (e.g. https://forms.monday.com/forms/abc123).`,
       };
     }
 
@@ -84,20 +84,20 @@ export class CreateSubmissionTool extends BaseMondayApiTool<typeof createSubmiss
       if (!res.create_form_submission) {
         return {
           content:
-            `Form with token ${formToken} was not found or is not accepting submissions. ` +
-            `Verify the form token is correct, the form is active, and any required password was provided.`,
+            `WorkForm with token ${formToken} was not found or is not accepting submissions. ` +
+            `Verify the WorkForm token is correct, the WorkForm is active, and any required password was provided.`,
         };
       }
 
       if (!res.create_form_submission.id) {
         return {
-          content: 'Form submission was recorded but no submission ID was returned. Contact support if this persists.',
+          content: 'WorkForm submission was recorded but no submission ID was returned. Contact support if this persists.',
         };
       }
 
       return {
         content: {
-          message: 'Form submitted successfully',
+          message: 'WorkForm submitted successfully',
           submission_id: res.create_form_submission.id,
         },
       };

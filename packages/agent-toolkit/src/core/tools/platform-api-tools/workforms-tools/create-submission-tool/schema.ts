@@ -80,7 +80,7 @@ export const createSubmissionToolSchema = {
   form_token: z
     .string()
     .describe(
-      'The unique token identifying the form. Can be a bare token, a full form URL (e.g. https://forms.monday.com/forms/abc123?r=use1), or a shortened wkf.ms URL (e.g. https://wkf.ms/4tqP28t). Shortened URLs are automatically resolved by following the redirect.',
+      'The unique token identifying the WorkForm. Can be a bare token, a full WorkForm URL (e.g. https://forms.monday.com/forms/abc123?r=use1), or a shortened wkf.ms URL (e.g. https://wkf.ms/4tqP28t). Shortened URLs are automatically resolved by following the redirect.',
     ),
   answers: z
     .array(formAnswerInputSchema)
