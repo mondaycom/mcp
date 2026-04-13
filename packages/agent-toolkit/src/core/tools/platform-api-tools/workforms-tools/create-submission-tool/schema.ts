@@ -94,7 +94,7 @@ export const createSubmissionToolSchema = {
   password: z
     .string()
     .optional()
-    .describe('The password for the form. Required only if the form is password-protected.'),
+    .describe('The password for the WorkForm. Only required if the WorkForm has password protection enabled (check features.password.enabled from get_form). If required, ask the user for the password before submitting.'),
   group_id: z
     .string()
     .optional()
