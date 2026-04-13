@@ -2,8 +2,7 @@ import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameAsync, callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
 import {
   GetBoardItemsPageTool,
-  GetBoardItemsPageToolInput,
-  getBoardItemsPageToolSchema,
+  GetBoardItemsPageToolInput
 } from './get-board-items-page-tool';
 import { z, ZodTypeAny } from 'zod';
 import {
@@ -302,7 +301,7 @@ describe('GetBoardItemsPageTool', () => {
       // Arrange
       const smartSearchItemIds = [111, 222, 333];
       const smartSearchResults = {
-        search: smartSearchItemIds.map((id) => ({ __typename: 'ItemSearchResult', data: { id: id.toString() } })),
+        cross_entity_search: smartSearchItemIds.map((id) => ({ __typename: 'ItemSearchResult', data: { id: id.toString() } })),
       };
 
       // Mock the smart search request
@@ -335,7 +334,7 @@ describe('GetBoardItemsPageTool', () => {
       const initialItemIds = [222, 444];
       const expectedIds = [222];
       const smartSearchResults = {
-        search: smartSearchItemIds.map((id) => ({ __typename: 'ItemSearchResult', data: { id: id.toString() } })),
+        cross_entity_search: smartSearchItemIds.map((id) => ({ __typename: 'ItemSearchResult', data: { id: id.toString() } })),
       };
 
       // Mock the smart search request
@@ -364,7 +363,7 @@ describe('GetBoardItemsPageTool', () => {
     it('should build manual name filter in queryParams.rules if smart search returns no itemIds', async () => {
       // Arrange
       const smartSearchResults = {
-        search: [],
+        cross_entity_search: [],
       };
 
       // Mock the smart search request
@@ -714,7 +713,7 @@ describe('GetBoardItemsPageTool', () => {
 
   describe('Schema Validation', () => {
     it('should have correct tool metadata', () => {
-      const tool = new GetBoardItemsPageTool(mocks.mockApiClient, 'fake_token');
+      const tool = new GetBoardItemsPageTool(mocks.mockApiClient);
 
       expect(tool.name).toBe('get_board_items_page');
       expect(tool.type).toBe('read');

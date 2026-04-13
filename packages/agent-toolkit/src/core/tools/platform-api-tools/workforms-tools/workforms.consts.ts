@@ -198,8 +198,14 @@ export const GraphQLDescriptions = {
       createdAt: 'ISO timestamp when the question was created.',
       updatedAt: 'ISO timestamp when the question was last modified.',
       selectOptions:
-        'Array of option objects for choice-based questions (single_select, multi_select). Required when creating select type questions. Can only be provided when creating a question, not yet supported for updating a question.',
-      selectOptionsLabel: 'The display text for individual option choices in select-type questions.',
+        'Array of option objects for choice-based questions (single_select, multi_select). Supported on both create and update. When updating, the provided array replaces all existing options (PUT semantics). SingleSelect: max 40 options. MultiSelect: max 500 options. Cannot remove options that are already used in board items (existing submissions) — those options must be preserved and must include their value field.',
+      selectOptionsLabel: 'Display label for the option shown to respondents.',
+      selectOptionsValue: 'Internal identifier for the option. Required when updating options that are already assigned to board items — omitting it will cause those options to be removed.',
+      selectOptionsVisible: 'Whether the option is visible to respondents. Defaults to true.',
+      blockType: 'The kind of block to create. Includes all question types and content block types.',
+      insertAfterQuestionId: 'Insert the new question after this question ID. Omit to append at the end. Pass null to place it first in the form.',
+      pageBlockId: 'Page block this question belongs to. Required for questions inside a page block. Pass null to remove the page block association.',
+      existingColumnId: 'Link to an existing board column instead of creating a new one.',
     },
     inputs: {
       question: 'Complete question object containing all properties for creation or update.',
@@ -239,6 +245,12 @@ export const GraphQLDescriptions = {
         "Location questions only: Automatically detect and fill the user's current location using browser geolocation services, requiring user permission.",
       limit: 'Rating questions only: Maximum rating value that users can select.',
       skipValidation: 'Link/URL questions only: Whether to skip URL format validation, allowing any text input.',
+      labelLimitCount:
+        'Multi Select questions only: Maximum number of options a respondent can select. Must be set together with labelLimitCountEnabled to take effect.',
+      labelLimitCountEnabled:
+        'Multi Select questions only: Whether to enforce an option selection limit. Set labelLimitCount to specify the limit.',
+      defaultAnswer:
+        'ShortText, LongText, Name, and Link questions only: Pre-filled default value shown to respondents when the form loads. Respondents can clear or change it before submitting.',
     },
     inputs: {
       settings: 'Question-specific configuration object that varies by question type.',

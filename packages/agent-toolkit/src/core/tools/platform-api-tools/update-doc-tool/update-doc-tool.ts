@@ -82,7 +82,7 @@ OPERATIONS:
 - replace_block: Delete a block and create a new one in its place (use when update_block is not supported).
 
 WHEN TO USE EACH OPERATION:
-- text / code / list_item → update_block; use replace_block to change subtype (e.g. NORMAL_TEXT→LARGE_TITLE)
+- text / code / list_item → update_block. Use replace_block to change subtype (e.g. NORMAL_TEXT→LARGE_TITLE)
 - divider / table / image / video / notice_box / layout → replace_block (properties immutable after creation)
 - BOARD / WIDGET / DOC / GIPHY → delete_block only
 
@@ -91,7 +91,7 @@ GETTING BLOCK IDs: Call read_docs with include_blocks: true — returns id, type
 BLOCK CONTENT (delta_format): Array of insert ops. Last op MUST be {insert: {text: "\\n"}}.
 - Plain: [{insert: {text: "Hello"}}, {insert: {text: "\\n"}}]
 - Bold: [{insert: {text: "Hi"}, attributes: {bold: true}}, {insert: {text: "\\n"}}]
-- Mention user/doc/board: [{insert: {text: "Hey "}}, {insert: {mention: {id: 12345, type: "USER"}}}, {insert: {text: "\\n"}}] — type is USER, DOC, or BOARD; id is numeric (user IDs from list_users_and_teams)
+- Mention user/doc/board: [{insert: {text: "Hey "}}, {insert: {mention: {id: 12345, type: "USER"}}}, {insert: {text: "\\n"}}] — type is USER, DOC, or BOARD. id is numeric (user IDs from list_users_and_teams)
 - Inline column value: [{insert: {column_value: {item_id: 111, column_id: "status"}}}, {insert: {text: "\\n"}}]
 - Supported attributes: bold, italic, underline, strike, code, link, color, background (not applicable to mention/column_value ops)
 
@@ -100,8 +100,8 @@ IMAGE WITH ASSET: For asset-based images, use create_block with block_type "imag
 COMMENTS:
 - add_comment: Create a new comment or reply on the document. Three scopes:
   - Doc-level (no block_id): comment appears on the doc as a whole.
-  - Block-level (block_id only): comment is anchored to a specific block; the block shows a comment indicator in the UI.
-  - Text-selection (block_id + selection_from + selection_length): comment is anchored to a specific character range inside a text/code/list_item block; that text is highlighted with a comment marker.
+  - Block-level (block_id only): comment is anchored to a specific block. The block shows a comment indicator in the UI.
+  - Text-selection (block_id + selection_from + selection_length): comment is anchored to a specific character range inside a text/code/list_item block. That text is highlighted with a comment marker.
   Block-level and text-selection comments only work on blocks with text content (text, code, list_item, title, quote). They do NOT work on: divider, page_break, table, layout, notice_box, image, video, or giphy blocks.
   Get block IDs from read_docs with include_blocks: true. Format body with HTML, not markdown. Use mentions_list for @mentions.`;
   }

@@ -72,7 +72,7 @@ describe('GetSprintSummaryTool', () => {
     });
 
     it('should have correct tool metadata', () => {
-      const tool = new GetSprintSummaryTool(mocks.mockApiClient, 'fake_token');
+      const tool = new GetSprintSummaryTool(mocks.mockApiClient);
 
       expect(tool.name).toBe('get_sprint_summary');
       expect(tool.type).toBe('read');

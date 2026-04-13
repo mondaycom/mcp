@@ -161,7 +161,7 @@ export const CreateBlockTableSchema = z.object({
   column_style: z
     .array(z.object({ width: z.number().int() }))
     .optional()
-    .describe('Column widths. Array length must match column_count; widths must sum to 100.'),
+    .describe('Column widths. Array length must match column_count. Widths must sum to 100.'),
 });
 
 export const CreateBlockLayoutSchema = z.object({
@@ -170,7 +170,7 @@ export const CreateBlockLayoutSchema = z.object({
   column_style: z
     .array(z.object({ width: z.number().int() }))
     .optional()
-    .describe('Column widths. Array length must match column_count; widths must sum to 100.'),
+    .describe('Column widths. Array length must match column_count. Widths must sum to 100.'),
 });
 
 export const CreateBlockSchema = z.discriminatedUnion('block_type', [
@@ -323,7 +323,7 @@ export const updateDocToolSchema = {
     .min(1)
     .max(25)
     .describe(
-      `Ordered list of operations to perform. Executed sequentially; stops at first failure.
+      `Ordered list of operations to perform. Executed sequentially. Stops at first failure.
 
 Operation types:
 - set_name: Rename the document.
