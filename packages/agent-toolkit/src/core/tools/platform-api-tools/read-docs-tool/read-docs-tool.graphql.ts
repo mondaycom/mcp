@@ -55,6 +55,11 @@ export const getDocVersionHistory = gql`
         date
         user_ids
         type
+        agent_attributions {
+          agent_id
+          entity_type
+          agent_name
+        }
       }
     }
   }

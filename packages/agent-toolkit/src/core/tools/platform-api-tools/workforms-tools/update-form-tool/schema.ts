@@ -150,6 +150,7 @@ const featuresSchema = z.object({
 
 const dehydratedQuestionSchema = z.object({
   id: z.string().describe(GraphQLDescriptions.form.inputs.questionId),
+  page_block_id: z.string().describe(GraphQLDescriptions.question.properties.pageBlockId).optional(),
 });
 
 const formSchema = z.object({
