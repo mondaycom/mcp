@@ -21,6 +21,10 @@ export const getLinkCandidateItems = gql`
             text
             value
 
+            ... on FormulaValue {
+              display_value
+            }
+
             ... on BoardRelationValue {
               linked_item_ids
             }

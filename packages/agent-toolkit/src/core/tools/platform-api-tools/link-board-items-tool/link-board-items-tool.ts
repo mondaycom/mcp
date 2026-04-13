@@ -1,8 +1,10 @@
 import { z } from 'zod';
 import { gql } from 'graphql-request';
 import {
+  FormulaValue,
   GetLinkCandidateItemsQuery,
   GetLinkCandidateItemsQueryVariables,
+  ItemsOrderByDirection,
   ItemsQuery,
 } from '../../../../monday-graphql/generated/graphql/graphql';
 import { filterRulesSchema, filtersOperatorSchema } from '../get-board-items-page-tool/items-filter-schema';
@@ -96,6 +98,24 @@ const boardConfigSchema = (side: 'source' | 'target') =>
         `TIP: To skip items that are already linked, add a filter with operator "is_empty" on the linkColumnId — this filters server-side before transfer.`,
     ),
     filtersOperator: filtersOperatorSchema,
+    orderBy: z
+      .array(
+        z.object({
+          columnId: z.string().describe('The ID of the column to order by'),
+          direction: z
+            .nativeEnum(ItemsOrderByDirection)
+            .optional()
+            .default(ItemsOrderByDirection.Asc)
+            .describe('The direction to order by'),
+        }),
+      )
+      .optional()
+      .describe(
+        `Optional sort order for items fetched from the ${side} board. ` +
+          `Useful when item position matters — e.g. sort by creation date ascending to pick the earliest item, ` +
+          `or sort by a priority column to process high-priority items first. ` +
+          `Use get_board_info to find sortable column IDs.`,
+      ),
   });
 
 export const linkBoardItemsToolSchema = {
@@ -312,7 +332,9 @@ export class LinkBoardItemsTool extends BaseMondayApiTool<LinkBoardItemsToolInpu
       })) ?? [];
     const ids = boardInput.itemIds?.map((id) => String(id));
 
-    if (!ids?.length && rulesFromFilters.length === 0) return undefined;
+    const orderBy = boardInput.orderBy?.map((o) => ({ column_id: o.columnId, direction: o.direction }));
+
+    if (!ids?.length && rulesFromFilters.length === 0 && !orderBy?.length) return undefined;
 
     const query: ItemsQuery = {};
     if (ids?.length) query.ids = ids;
@@ -320,6 +342,7 @@ export class LinkBoardItemsTool extends BaseMondayApiTool<LinkBoardItemsToolInpu
       query.operator = boardInput.filtersOperator;
       query.rules = rulesFromFilters;
     }
+    if (orderBy?.length) query.order_by = orderBy;
     return query;
   }
 
@@ -425,7 +448,7 @@ export class LinkBoardItemsTool extends BaseMondayApiTool<LinkBoardItemsToolInpu
         if ('linked_item_ids' in cv && Array.isArray(cv.linked_item_ids)) {
           existingLinkedItemIds.push(...cv.linked_item_ids);
         }
-        columnValues[cv.id] = cv.text ?? '';
+        columnValues[cv.id] = cv.text || ('display_value' in cv ? (cv as FormulaValue).display_value ?? '' : '') || '';
       }
       result.push({ id: item.id, name: item.name, columnValues, existingLinkedItemIds });
     }

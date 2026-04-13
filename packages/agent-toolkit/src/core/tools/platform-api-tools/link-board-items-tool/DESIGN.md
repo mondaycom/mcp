@@ -54,6 +54,7 @@ Registered as an MCP tool: `link_board_items`
 | `itemIds`         | (string \| number)[] | no                   | If set, only these monday item IDs are fetched for that board (`ItemsQuery.ids`, server-side). **Max 100** per side (GraphQL limit). Combine with `filters` when useful. Omit to use pagination over the board (subject to page cap). **More than one `source.itemIds` entry, or omitting `source.itemIds` and matching / backfilling across many source rows in one run: (out of scope for Phase 1).** |
 | `filters`         | array                | no                   | Narrow which items are fetched server-side                                                                                                                                                                                            |
 | `filtersOperator` | enum                 | no                   | AND/OR operator for filters                                                                                                                                                                                                           |
+| `orderBy`         | array                | no                   | Sort order for fetched items. Each entry: `{ columnId, direction: "asc" \| "desc" }`. Applied server-side. Useful when item position matters — e.g. pick the earliest item by creation date, or process highest-priority items first. |
 
 
 ---
@@ -201,6 +202,7 @@ Two stubs exist: `callLlmForSemanticMatching()` and `callLlmToFilterCandidates()
 
 - Fetch uses `columnIds` to request only the columns needed.
 - `source.filters` / `target.filters` and optional `source.itemIds` / `target.itemIds` narrow the fetch server-side before transfer (`itemIds` capped at 100 per request, per `ItemsQuery`).
+- `source.orderBy` / `target.orderBy` control fetch order server-side — useful when item position matters (e.g. pick the earliest by creation date).
 - To skip already-linked items: add an `is_empty` filter on the `linkColumnId`.
 - Paginated with cursor, 200 items per page, max 10 pages (2,000 items) per board. Exceeding this raises an error.
 - For semantic mode: target board is streamed page by page — the LLM filters each page down to relevant candidates before the next page loads. Memory is bounded to the retained candidates, not the full board.
