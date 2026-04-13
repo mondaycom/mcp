@@ -21,10 +21,11 @@ export class CreateSubmissionTool extends BaseMondayApiTool<typeof createSubmiss
 
   getDescription(): string {
     return (
-      'Submit a response to a monday.com WorkForm. Accepts a bare form token, a full WorkForm URL ' +
-      '(e.g. https://forms.monday.com/forms/{form_token}?r=use1), or a shortened wkf.ms URL ' +
+      'Submit a response to a monday.com WorkForm. Use get_form first to retrieve the WorkForm and collect ALL question IDs and their types. ' +
+      'Gather all answers upfront before calling this tool — do not submit one question at a time. ' +
+      'Accepts a bare form token, a full WorkForm URL (e.g. https://forms.monday.com/forms/{form_token}?r=use1), or a shortened wkf.ms URL ' +
       '(e.g. https://wkf.ms/4tqP28t) — shortened URLs are automatically resolved by following the redirect. ' +
-      'Use get_form to retrieve the WorkForm and its question IDs before submitting. Returns the submission ID.'
+      'Returns the submission ID.'
     );
   }
 
