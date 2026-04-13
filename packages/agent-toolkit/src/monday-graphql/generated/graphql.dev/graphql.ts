@@ -830,6 +830,15 @@ export enum AllowedFileMime {
   ImageWebp = 'IMAGE_WEBP'
 }
 
+/** Response object for app deletion operations */
+export type AppDeletionResponse = {
+  __typename?: 'AppDeletionResponse';
+  /** Deletion result message */
+  message?: Maybe<Scalars['String']['output']>;
+  /** Whether the deletion was successful */
+  success?: Maybe<Scalars['Boolean']['output']>;
+};
+
 /** Response from querying the apps documentation AI. */
 export type AppDocumentationAiResponse = {
   __typename?: 'AppDocumentationAiResponse';
@@ -1811,6 +1820,8 @@ export type Board = {
   updated_at?: Maybe<Scalars['ISO8601DateTime']['output']>;
   /** The board's updates. */
   updates?: Maybe<Array<Update>>;
+  /** The board's updates with cursor-based pagination. */
+  updates_page?: Maybe<UpdatesPage>;
   /** The Board's url */
   url: Scalars['String']['output'];
   /** The board's views. */
@@ -1880,6 +1891,13 @@ export type BoardUpdatesArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
   to_date?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
+};
+
+
+/** A monday.com board. */
+export type BoardUpdates_PageArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 
@@ -2776,6 +2794,14 @@ export type Country = {
   name: Scalars['String']['output'];
 };
 
+/** Answer for a country question. */
+export type CountryAnswerInput = {
+  /** The ISO 3166-1 alpha-2 country code (e.g. "US"). */
+  country_code: Scalars['String']['input'];
+  /** The full country name (e.g. "United States"). */
+  country_name: Scalars['String']['input'];
+};
+
 export type CountryValue = ColumnValue & {
   __typename?: 'CountryValue';
   /** The column that this value belongs to. */
@@ -3040,6 +3066,8 @@ export type CreateQuestionInput = {
   block_type?: InputMaybe<FormBlockKind>;
   /** Optional explanatory text providing additional context, instructions, or examples for the question. */
   description?: InputMaybe<Scalars['String']['input']>;
+  /** The ID of an existing board column to map this question to, instead of creating a new column. Useful when the board already has a matching column. */
+  existing_column_id?: InputMaybe<Scalars['ID']['input']>;
   /** The ID of the question after which the new question should be inserted. If omitted, the question is appended at the end. */
   insert_after_question_id?: InputMaybe<Scalars['ID']['input']>;
   /** Array of option objects for choice-based questions (single_select, multi_select). Required for select types. */
@@ -3440,6 +3468,22 @@ export enum DashboardKind {
   Private = 'PRIVATE',
   Public = 'PUBLIC'
 }
+
+/** Answer for a date question. */
+export type DateAnswerInput = {
+  /** The date in YYYY-MM-DD format. */
+  date: Scalars['String']['input'];
+  /** UTC offset in minutes. */
+  zone_diff?: InputMaybe<Scalars['Int']['input']>;
+};
+
+/** Answer for a date range question. */
+export type DateRangeAnswerInput = {
+  /** Start date in YYYY-MM-DD format. */
+  from: Scalars['String']['input'];
+  /** End date in YYYY-MM-DD format. */
+  to: Scalars['String']['input'];
+};
 
 /** Date range filter (inclusive) */
 export type DateRangeInput = {
@@ -4502,6 +4546,18 @@ export enum FieldTypeState {
   Deleted = 'DELETED'
 }
 
+/** A single uploaded file answer. */
+export type FileAnswerInput = {
+  /** File extension (e.g. "pdf"). */
+  extension?: InputMaybe<Scalars['String']['input']>;
+  /** The file ID returned by the workforms upload endpoint. */
+  id: Scalars['String']['input'];
+  /** Whether the file is an image. */
+  is_image?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Original file name (e.g. "image.png"). */
+  name: Scalars['String']['input'];
+};
+
 /** A file with an invalid or missing asset. */
 export type FileAssetInvalidValue = {
   __typename?: 'FileAssetInvalidValue';
@@ -4824,6 +4880,54 @@ export enum FormAlignment {
   Right = 'Right'
 }
 
+/** An answer to a single form question. Set question_id and exactly one answer field matching the question type. */
+export type FormAnswerInput = {
+  /** Answer for boolean questions. */
+  boolean?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Answer for connected boards questions — list of connected item IDs. */
+  connected_boards?: InputMaybe<Array<Scalars['ID']['input']>>;
+  /** Answer for country questions. */
+  country?: InputMaybe<CountryAnswerInput>;
+  /** Answer for date questions. */
+  date?: InputMaybe<DateAnswerInput>;
+  /** Answer for date range questions. */
+  date_range?: InputMaybe<DateRangeAnswerInput>;
+  /** Answer for email questions. */
+  email?: InputMaybe<Scalars['String']['input']>;
+  /** Answer for file questions — list of uploaded files. */
+  file?: InputMaybe<Array<FileAnswerInput>>;
+  /** Answer for link questions. */
+  link?: InputMaybe<Scalars['String']['input']>;
+  /** Answer for location questions. */
+  location?: InputMaybe<LocationAnswerInput>;
+  /** Answer for long text questions. */
+  long_text?: InputMaybe<Scalars['String']['input']>;
+  /** Answer for multi-select questions — list of selected option IDs. */
+  multi_select?: InputMaybe<Array<Scalars['Int']['input']>>;
+  /** Answer for name questions. */
+  name?: InputMaybe<Scalars['String']['input']>;
+  /** Answer for number questions. */
+  number?: InputMaybe<Scalars['Float']['input']>;
+  /** Answer for people questions — list of user IDs. */
+  people?: InputMaybe<Array<Scalars['ID']['input']>>;
+  /** Answer for phone questions. */
+  phone?: InputMaybe<PhoneAnswerInput>;
+  /** The ID of the question being answered. */
+  question_id: Scalars['ID']['input'];
+  /** Answer for rating questions. */
+  rating?: InputMaybe<Scalars['Float']['input']>;
+  /** Answer for short text questions. */
+  short_text?: InputMaybe<Scalars['String']['input']>;
+  /** Answer for signature questions — a single uploaded file. */
+  signature?: InputMaybe<FileAnswerInput>;
+  /** Answer for single-select questions — the selected option ID. */
+  single_select?: InputMaybe<Scalars['String']['input']>;
+  /** Answer for subitems questions — each subitem is its own set of answers. */
+  subitems?: InputMaybe<Array<SubitemAnswerInput>>;
+  /** Answer for updates questions. */
+  updates?: InputMaybe<Scalars['String']['input']>;
+};
+
 /** Object containing visual styling including colors, layout, fonts, and branding elements. */
 export type FormAppearance = {
   __typename?: 'FormAppearance';
@@ -5119,6 +5223,8 @@ export type FormMonday = {
 
 /** Object containing board settings for response handling. */
 export type FormMondayInput = {
+  /** Boolean showing a "Create Item" button on the board that opens this form. When enabled, board members can create new board items by filling out this form directly from the board. */
+  allow_create_item?: InputMaybe<Scalars['Boolean']['input']>;
   /** Boolean adding a name question to the form. This is a special question type that represents the name column from the associated monday board */
   includeNameQuestion?: InputMaybe<Scalars['Boolean']['input']>;
   /** Boolean adding an update/comment field to the form. This is a special question type that represents the updates from the associated item of the submission on the monday board.  */
@@ -5375,6 +5481,13 @@ export type FormStartButton = {
 export type FormStartButtonInput = {
   /** Custom text for the button that begins the form experience. */
   text?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** The result of a successful form submission. */
+export type FormSubmissionResult = {
+  __typename?: 'FormSubmissionResult';
+  /** The unique identifier of the created submission. */
+  id: Scalars['ID']['output'];
 };
 
 /** Object containing submit button styling and text configuration. */
@@ -5932,6 +6045,23 @@ export type InsertOpsInput = {
   text?: InputMaybe<Scalars['String']['input']>;
 };
 
+/** Input for installing an app on the current account. */
+export type InstallAppInput = {
+  /** The app identifier (numeric ID or slug) */
+  app_identifier: Scalars['ID']['input'];
+  /** Optional list of workspace IDs to restrict app access to specific workspaces */
+  permitted_workspaces?: InputMaybe<Array<Scalars['ID']['input']>>;
+};
+
+/** Response object for app installation */
+export type InstallAppResponse = {
+  __typename?: 'InstallAppResponse';
+  /** The installed app identifier */
+  app_id?: Maybe<Scalars['ID']['output']>;
+  /** Whether a new install was created (false if app was already installed) */
+  created?: Maybe<Scalars['Boolean']['output']>;
+};
+
 /** Result of executing an integration block */
 export type IntegrationExecutionResult = {
   __typename?: 'IntegrationExecutionResult';
@@ -6110,6 +6240,8 @@ export type Item = {
   updated_at?: Maybe<Scalars['Date']['output']>;
   /** The item's updates. */
   updates?: Maybe<Array<Update>>;
+  /** The item's updates with cursor-based pagination. */
+  updates_page?: Maybe<UpdatesPage>;
   /** The item's link */
   url: Scalars['String']['output'];
 };
@@ -6142,6 +6274,13 @@ export type ItemUpdatesArgs = {
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** An item (table row). */
+export type ItemUpdates_PageArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** An item description. */
@@ -6540,6 +6679,58 @@ export type ListBlockInput = {
   list_block_type?: InputMaybe<ListBlock>;
   /** The parent block id to append the created block under. */
   parent_block_id?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** Answer for a location question. */
+export type LocationAnswerInput = {
+  /** Full formatted address. */
+  address: Scalars['String']['input'];
+  /** City name components. */
+  city: LocationCityInput;
+  /** Country name components. */
+  country: LocationCountryInput;
+  /** Latitude. */
+  lat: Scalars['Float']['input'];
+  /** Longitude. */
+  lng: Scalars['Float']['input'];
+  /** Google Maps place ID. */
+  place_id: Scalars['String']['input'];
+  /** Street name components. */
+  street: LocationStreetInput;
+  /** Street number components. */
+  street_number: LocationStreetNumberInput;
+};
+
+/** City name components for a location answer. */
+export type LocationCityInput = {
+  /** Full city name. */
+  long_name: Scalars['String']['input'];
+  /** Abbreviated city name. */
+  short_name: Scalars['String']['input'];
+};
+
+/** Country name components for a location answer. */
+export type LocationCountryInput = {
+  /** Full country name. */
+  long_name: Scalars['String']['input'];
+  /** ISO 3166-1 alpha-2 country code. */
+  short_name: Scalars['String']['input'];
+};
+
+/** Street name components for a location answer. */
+export type LocationStreetInput = {
+  /** Full street name. */
+  long_name: Scalars['String']['input'];
+  /** Abbreviated street name. */
+  short_name: Scalars['String']['input'];
+};
+
+/** Street number components for a location answer. */
+export type LocationStreetNumberInput = {
+  /** Full street number. */
+  long_name: Scalars['String']['input'];
+  /** Abbreviated street number. */
+  short_name: Scalars['String']['input'];
 };
 
 export type LocationValue = ColumnValue & {
@@ -7065,8 +7256,8 @@ export type Mutation = {
   create_form?: Maybe<DehydratedFormResponse>;
   /** Create a new question within a form. Returns the created question with auto-generated ID. */
   create_form_question?: Maybe<FormQuestion>;
-  /** Create a new selectable option for a SingleSelect or MultiSelect question. Returns the created option. */
-  create_form_question_option?: Maybe<FormQuestionOption>;
+  /** Submit answers to a form. Open to authenticated and anonymous users — authorization is handled by the form settings (user restrictions, etc.). Note: forms with reCAPTCHA enabled cannot be submitted via GraphQL — use the UI instead. */
+  create_form_submission?: Maybe<FormSubmissionResult>;
   /** Create a new tag for a form. Tags are used to categorize and track responses. (e.g. UTM tags) */
   create_form_tag?: Maybe<FormTag>;
   /** Creates a new group in a specific board. */
@@ -7150,14 +7341,14 @@ export type Mutation = {
   delete_doc?: Maybe<Scalars['JSON']['output']>;
   /** Delete a document block */
   delete_doc_block?: Maybe<DocumentBlockIdOnly>;
+  /** Delete columns from an account or global entity. Only allowed when no boards are connected to the entity. */
+  delete_entity_columns?: Maybe<AccountEntity>;
   /** Delete entity ID mappings by old IDs for a migration job. */
   delete_entity_id_mappings?: Maybe<DeleteEntityIdMappingsResult>;
   /** Remove an object from favorites */
   delete_favorite?: Maybe<DeleteFavoriteInputResultType>;
   /** Deletes a folder in a specific workspace. */
   delete_folder?: Maybe<Folder>;
-  /** Permanently remove a selectable option from a SingleSelect or MultiSelect question. This action cannot be undone. */
-  delete_form_question_option?: Maybe<Scalars['Boolean']['output']>;
   /** Delete a tag from a form */
   delete_form_tag?: Maybe<Scalars['Boolean']['output']>;
   /** Deletes a group in a specific board. */
@@ -7221,6 +7412,8 @@ export type Mutation = {
   increase_app_subscription_operations?: Maybe<AppSubscriptionOperationsCounter>;
   /** Initialize an ingest job for a board and group. Designed for ongoing integrations with full side effects and a 10k row limit. Returns job ID and upload URL to begin the process. */
   ingest_items?: Maybe<UploadJobInit>;
+  /** Installs an app on the current account. Requires account admin permission. */
+  install_app?: Maybe<InstallAppResponse>;
   /** Invite users to the account. */
   invite_users?: Maybe<InviteUsersResult>;
   like_update?: Maybe<Update>;
@@ -7253,8 +7446,6 @@ export type Mutation = {
   remove_team_owners?: Maybe<RemoveTeamOwnersResult>;
   /** Remove users from team. */
   remove_users_from_team?: Maybe<ChangeTeamMembershipsResult>;
-  /** Reorder the options of a SingleSelect or MultiSelect question by providing the desired order of option values. Position is inferred from array index. */
-  reorder_form_question_options?: Maybe<Scalars['Boolean']['output']>;
   /** Restore an entity from a migration job */
   restore_entity?: Maybe<RestoreEntityResult>;
   /** Rollback a snapshot to allow creating a new one for the same entity */
@@ -7276,6 +7467,8 @@ export type Mutation = {
   shorten_form_url?: Maybe<FormShortenedLink>;
   /** Unassigns owners from a department. */
   unassign_department_owners?: Maybe<UnassignDepartmentOwnerResult>;
+  /** Uninstalls an app from the current account. Requires account admin permission. */
+  uninstall_app?: Maybe<AppDeletionResponse>;
   unlike_update: Update;
   unpin_from_top: Update;
   /** Unpublishes object from public state back to draft state. Returns {success: true} on success, {success: false} on failure. */
@@ -7332,8 +7525,6 @@ export type Mutation = {
   update_form?: Maybe<ResponseForm>;
   /** Update an existing question properties including title, type, or settings. Requires question ID. */
   update_form_question?: Maybe<FormQuestion>;
-  /** Update the label of an existing option on a SingleSelect or MultiSelect question. */
-  update_form_question_option?: Maybe<Scalars['Boolean']['output']>;
   /** Update form configuration including features, appearance, and accessibility options. */
   update_form_settings?: Maybe<ResponseForm>;
   /** Update an existing tag in a form */
@@ -7933,11 +8124,13 @@ export type MutationCreate_Form_QuestionArgs = {
 
 
 /** Root mutation type for the Dependencies service */
-export type MutationCreate_Form_Question_OptionArgs = {
+export type MutationCreate_Form_SubmissionArgs = {
+  answers: Array<FormAnswerInput>;
+  form_timezone_offset: Scalars['Int']['input'];
   form_token: Scalars['String']['input'];
-  label: Scalars['String']['input'];
-  question_id: Scalars['ID']['input'];
-  value: Scalars['String']['input'];
+  group_id?: InputMaybe<Scalars['ID']['input']>;
+  password?: InputMaybe<Scalars['String']['input']>;
+  tags?: InputMaybe<Array<TagInput>>;
 };
 
 
@@ -8300,6 +8493,14 @@ export type MutationDelete_Doc_BlockArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationDelete_Entity_ColumnsArgs = {
+  column_ids: Array<Scalars['ID']['input']>;
+  entity_id?: InputMaybe<Scalars['ID']['input']>;
+  entity_name?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationDelete_Entity_Id_MappingsArgs = {
   entityType: Scalars['String']['input'];
   migrationJobId: Scalars['String']['input'];
@@ -8316,14 +8517,6 @@ export type MutationDelete_FavoriteArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationDelete_FolderArgs = {
   folder_id: Scalars['ID']['input'];
-};
-
-
-/** Root mutation type for the Dependencies service */
-export type MutationDelete_Form_Question_OptionArgs = {
-  form_token: Scalars['String']['input'];
-  option_id: Scalars['ID']['input'];
-  question_id: Scalars['ID']['input'];
 };
 
 
@@ -8568,6 +8761,12 @@ export type MutationIngest_ItemsArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationInstall_AppArgs = {
+  input: InstallAppInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationInvite_UsersArgs = {
   emails: Array<Scalars['String']['input']>;
   product?: InputMaybe<Product>;
@@ -8692,14 +8891,6 @@ export type MutationRemove_Users_From_TeamArgs = {
 
 
 /** Root mutation type for the Dependencies service */
-export type MutationReorder_Form_Question_OptionsArgs = {
-  form_token: Scalars['String']['input'];
-  option_ids: Array<Scalars['ID']['input']>;
-  question_id: Scalars['ID']['input'];
-};
-
-
-/** Root mutation type for the Dependencies service */
 export type MutationRestore_EntityArgs = {
   entity: Scalars['String']['input'];
   migrationJobId: Scalars['String']['input'];
@@ -8764,6 +8955,12 @@ export type MutationShorten_Form_UrlArgs = {
 export type MutationUnassign_Department_OwnersArgs = {
   department_id: Scalars['ID']['input'];
   user_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUninstall_AppArgs = {
+  app_identifier: Scalars['ID']['input'];
 };
 
 
@@ -9006,15 +9203,6 @@ export type MutationUpdate_Form_QuestionArgs = {
   formToken: Scalars['String']['input'];
   question: UpdateQuestionInput;
   questionId: Scalars['String']['input'];
-};
-
-
-/** Root mutation type for the Dependencies service */
-export type MutationUpdate_Form_Question_OptionArgs = {
-  form_token: Scalars['String']['input'];
-  label: Scalars['String']['input'];
-  option_id: Scalars['ID']['input'];
-  question_id: Scalars['ID']['input'];
 };
 
 
@@ -9761,6 +9949,14 @@ export type PersonsInput = {
   team_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
 };
 
+/** Answer for a phone question. */
+export type PhoneAnswerInput = {
+  /** The ISO 3166-1 alpha-2 country code (e.g. "US"). */
+  country_short_name: Scalars['String']['input'];
+  /** The phone number. */
+  phone: Scalars['String']['input'];
+};
+
 /** Phone questions only: Configuration for setting a specific predefined phone country prefix that will be pre-selected for users. */
 export type PhonePrefixPredefined = {
   __typename?: 'PhonePrefixPredefined';
@@ -9877,6 +10073,28 @@ export type PlatformApiDailyAnalyticsByUser = {
 export type PolicyMessagesInput = {
   /** Structured reasons for disabled actions */
   disabled_reason?: InputMaybe<DisabledReasonInput>;
+};
+
+/** Input for portfolio utilization report. Extends utilization report with portfolio context — resolves portfolio to board IDs automatically. */
+export type PortfolioUtilizationReportInput = {
+  /** Effort kinds to include (e.g. ALLOCATED, PLANNED, SPENT, AVAILABLE). */
+  effort_types: Array<EffortKind>;
+  /** Optional attribute to group results by (TEAMS, LOCATION, SKILLS, JOB_ROLE, RESOURCE_MANAGER only). */
+  group_by_attribute?: InputMaybe<GroupByResourceAttribute>;
+  /** When true, include project breakdown in the response. Defaults to false. */
+  include_project_breakdown?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Maximum number of groups per page (1–25, default 25). Applied when grouped by attribute. */
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  /** Page number for pagination when grouped by attribute (1-based, default 1). Paginates at the attribute group level. */
+  page?: InputMaybe<Scalars['Int']['input']>;
+  /** The portfolio ID to scope the report to. Board IDs are resolved from the portfolio. */
+  portfolio_id: Scalars['ID']['input'];
+  /** Optional list of resource IDs to filter by. If not provided, all resources are included (subject to limit). */
+  resource_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  /** Time range and granularity for the report. */
+  time_range: TimeRangeInput;
+  /** Denominator for utilization ratio. Defaults to AVAILABLE (utilization = effort / available). */
+  utilization_denominator?: InputMaybe<UtilizationDenominator>;
 };
 
 /** The position relative method. */
@@ -10310,6 +10528,8 @@ export type Query = {
   objects?: Maybe<Array<Object>>;
   /** Platform API data. */
   platform_api?: Maybe<PlatformApi>;
+  /** Returns utilization report scoped to a portfolio. Resolves portfolio to board IDs, then returns the same report shape as utilization_report. */
+  portfolio_utilization_report?: Maybe<UtilizationReport>;
   /** Get the current user's priority prompt. */
   priority_prompt?: Maybe<PriorityPromptResponse>;
   /**
@@ -10326,8 +10546,8 @@ export type Query = {
   replies?: Maybe<Array<Reply>>;
   /** A test query for resource allocation functionality. */
   resource_allocation_test?: Maybe<Scalars['String']['output']>;
-  /** Search across multiple entity types (items, boards, documents). */
-  search?: Maybe<Array<SearchResult>>;
+  /** Search API. Each field searches a single entity type with tailored filters. */
+  search: SearchNamespace;
   /** A query to search across all boards in the account. Returns raw json results. */
   search_benchmark?: Maybe<SearchBenchmarkResults>;
   /** A query to search across all boards in the account. Returns raw json results. */
@@ -10583,6 +10803,7 @@ export type QueryCross_Entity_SearchArgs = {
   filters: SearchFiltersInput;
   limit: Scalars['Int']['input'];
   query: Scalars['String']['input'];
+  strategy?: InputMaybe<SearchStrategy>;
 };
 
 
@@ -10653,6 +10874,7 @@ export type QueryExport_EventsArgs = {
 /** Root query type for the Dependencies service */
 export type QueryExport_GraphArgs = {
   boardId: Scalars['String']['input'];
+  redis_key?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -10935,6 +11157,12 @@ export type QueryObjectsArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QueryPortfolio_Utilization_ReportArgs = {
+  input: PortfolioUtilizationReportInput;
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryRemote_OptionsArgs = {
   input: RemoteOptionsInput;
 };
@@ -10947,15 +11175,6 @@ export type QueryRepliesArgs = {
   created_at_to?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
-};
-
-
-/** Root query type for the Dependencies service */
-export type QuerySearchArgs = {
-  filters: SearchFiltersInput;
-  limit: Scalars['Int']['input'];
-  query: Scalars['String']['input'];
-  strategy?: InputMaybe<SearchStrategy>;
 };
 
 
@@ -11148,6 +11367,10 @@ export type QueryWorkspacesArgs = {
 export type QuestionOptionInput = {
   /** The display text for the option shown to respondents. Must be at least 1 character long. */
   label: Scalars['String']['input'];
+  /** The internal unique identifier for the option. Used as the option ID in update and delete operations. */
+  value?: InputMaybe<Scalars['String']['input']>;
+  /** Whether this option is visible to respondents. Defaults to true. */
+  visible?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export type QuestionOrderInput = {
@@ -11533,6 +11756,24 @@ export type SearchBenchmarkResults = {
   data?: Maybe<Scalars['String']['output']>;
 };
 
+/** A single board search result with indexed and live data. */
+export type SearchBoardResult = {
+  __typename?: 'SearchBoardResult';
+  /** Unique identifier of the board. */
+  id: Scalars['ID']['output'];
+  /** Board data from the search index. */
+  indexed_data: SearchIndexedBoard;
+  /** Live board data via federation. */
+  live_data: Board;
+};
+
+/** Wrapper for a list of board search results. */
+export type SearchBoardResults = {
+  __typename?: 'SearchBoardResults';
+  /** List of board search results. */
+  results: Array<SearchBoardResult>;
+};
+
 /** Date range filter for search queries */
 export type SearchDateRangeInput = {
   /** Filter items with a date column having a value after this date */
@@ -11561,6 +11802,24 @@ export type SearchDateRangeLegacyInput = {
   updatedBefore?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
 };
 
+/** A single doc search result with indexed and live data. */
+export type SearchDocResult = {
+  __typename?: 'SearchDocResult';
+  /** Unique identifier of the doc. */
+  id: Scalars['ID']['output'];
+  /** Doc data from the search index. */
+  indexed_data: SearchIndexedDoc;
+  /** Live doc data via federation. */
+  live_data: Document;
+};
+
+/** Wrapper for a list of doc search results. */
+export type SearchDocResults = {
+  __typename?: 'SearchDocResults';
+  /** List of doc search results. */
+  results: Array<SearchDocResult>;
+};
+
 /** Tagged-union input: set exactly one field to indicate the entity type and its filters. */
 export type SearchEntityFilterInput = {
   /** Include boards in the search. */
@@ -11577,6 +11836,65 @@ export type SearchFiltersInput = {
   date_range?: InputMaybe<CrossEntityDateRangeInput>;
   /** List of entity filters. Each entry is a tagged-union: set one field (items, boards, docs) to include that entity type. */
   entities: Array<SearchEntityFilterInput>;
+};
+
+/** Board data stored in the search index. */
+export type SearchIndexedBoard = {
+  __typename?: 'SearchIndexedBoard';
+  /** Board description. */
+  description?: Maybe<Scalars['String']['output']>;
+  /** Board ID. */
+  id: Scalars['ID']['output'];
+  /** Board name. */
+  name: Scalars['String']['output'];
+  /** URL to view this board. */
+  url: Scalars['String']['output'];
+  /** ID of the workspace containing this board. */
+  workspace_id?: Maybe<Scalars['ID']['output']>;
+};
+
+/** Document data stored in the search index. */
+export type SearchIndexedDoc = {
+  __typename?: 'SearchIndexedDoc';
+  /** Document ID. */
+  id: Scalars['ID']['output'];
+  /** Document name. */
+  name: Scalars['String']['output'];
+  /** ID of the workspace containing this document. */
+  workspace_id?: Maybe<Scalars['ID']['output']>;
+};
+
+/** Item data stored in the search index. */
+export type SearchIndexedItem = {
+  __typename?: 'SearchIndexedItem';
+  /** ID of the board containing this item. */
+  board_id?: Maybe<Scalars['ID']['output']>;
+  /** Item ID. */
+  id: Scalars['ID']['output'];
+  /** Item name. */
+  name: Scalars['String']['output'];
+  /** URL to view this item. */
+  url: Scalars['String']['output'];
+  /** ID of the workspace containing this item. */
+  workspace_id?: Maybe<Scalars['ID']['output']>;
+};
+
+/** A single item search result with indexed and live data. */
+export type SearchItemResult = {
+  __typename?: 'SearchItemResult';
+  /** Unique identifier of the item. */
+  id: Scalars['ID']['output'];
+  /** Item data from the search index. */
+  indexed_data: SearchIndexedItem;
+  /** Live item data via federation. */
+  live_data: Item;
+};
+
+/** Wrapper for a list of item search results. */
+export type SearchItemResults = {
+  __typename?: 'SearchItemResults';
+  /** List of item search results. */
+  results: Array<SearchItemResult>;
 };
 
 /** Response of the search request. */
@@ -11597,6 +11915,48 @@ export type SearchItemsQueryResult = {
   live_data: Item;
   /** The relevance score of the search result. */
   score: Scalars['Float']['output'];
+};
+
+/** Per-entity search namespace. Each field searches a single entity type. */
+export type SearchNamespace = {
+  __typename?: 'SearchNamespace';
+  /** Search for boards. */
+  boards: SearchBoardResults;
+  /** Search for documents. */
+  docs: SearchDocResults;
+  /** Search for items. */
+  items: SearchItemResults;
+};
+
+
+/** Per-entity search namespace. Each field searches a single entity type. */
+export type SearchNamespaceBoardsArgs = {
+  date_range?: InputMaybe<CrossEntityDateRangeInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  query: Scalars['String']['input'];
+  strategy?: InputMaybe<SearchStrategy>;
+  workspace_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+};
+
+
+/** Per-entity search namespace. Each field searches a single entity type. */
+export type SearchNamespaceDocsArgs = {
+  date_range?: InputMaybe<CrossEntityDateRangeInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  query: Scalars['String']['input'];
+  strategy?: InputMaybe<SearchStrategy>;
+  workspace_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+};
+
+
+/** Per-entity search namespace. Each field searches a single entity type. */
+export type SearchNamespaceItemsArgs = {
+  board_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  date_range?: InputMaybe<CrossEntityDateRangeInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  query: Scalars['String']['input'];
+  strategy?: InputMaybe<SearchStrategy>;
+  workspace_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
 };
 
 /** Union type representing different searchable entity types returned from search. */
@@ -12086,6 +12446,12 @@ export type SubfieldsFieldType = FieldType & {
   uniqueKey?: Maybe<Scalars['String']['output']>;
 };
 
+/** A single subitem answer, containing answers for each of the subitem's questions. */
+export type SubitemAnswerInput = {
+  /** The answers for this subitem's questions. */
+  answers: Array<FormAnswerInput>;
+};
+
 /** Defines the type of the user's role as members of the object */
 export enum SubscriberKind {
   /** User will be added as an owner of the object, granting them full control permissions. */
@@ -12228,6 +12594,14 @@ export type Tag = {
   id: Scalars['ID']['output'];
   /** The tag's name. */
   name: Scalars['String']['output'];
+};
+
+/** A form tag — metadata submitted alongside answers and mapped to a board column. */
+export type TagInput = {
+  /** The column ID this tag maps to. */
+  column_id: Scalars['String']['input'];
+  /** The tag value to submit. */
+  value: Scalars['String']['input'];
 };
 
 export type TagsValue = ColumnValue & {
@@ -13041,6 +13415,8 @@ export type UpdateFormSettingsInput = {
   appearance?: InputMaybe<FormAppearanceInput>;
   /** Object containing form features including but not limited to password protection, response limits, login requirements, etc. */
   features?: InputMaybe<FormFeaturesInput>;
+  /** Boolean enabling anonymous response collection. When true, respondent identity is not captured or stored with form submissions. */
+  is_anonymous?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export type UpdateFormTagInput = {
@@ -13121,6 +13497,8 @@ export type UpdatePriorityPromptResponse = {
 export type UpdateQuestionInput = {
   /** Optional explanatory text providing additional context, instructions, or examples for the question. */
   description?: InputMaybe<Scalars['String']['input']>;
+  /** Array of option objects for choice-based questions (single_select, multi_select). Required for select types. */
+  options?: InputMaybe<Array<QuestionOptionInput>>;
   /** Boolean indicating if the question must be answered before form submission. */
   required?: InputMaybe<Scalars['Boolean']['input']>;
   /** Question-specific configuration object that varies by question type. */
@@ -13283,6 +13661,15 @@ export type UpdateWorkspaceAttributesInput = {
   kind?: InputMaybe<WorkspaceKind>;
   /** The name of the workspace to update */
   name?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** Paginated updates response with cursor. */
+export type UpdatesPage = {
+  __typename?: 'UpdatesPage';
+  /** Opaque cursor for the next page. Null when no more data. */
+  cursor?: Maybe<Scalars['String']['output']>;
+  /** The list of updates. */
+  updates: Array<Update>;
 };
 
 /** Initialization response containing job ID and upload URL */
@@ -13621,6 +14008,8 @@ export type UtilizationReportGrouped = {
 
 /** Input for the utilization report query: time range, effort kinds, optional grouping and filters. */
 export type UtilizationReportInput = {
+  /** Optional list of board IDs to scope effort data to specific boards. */
+  board_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   /** Effort kinds to include (e.g. ALLOCATED, PLANNED, SPENT, AVAILABLE). */
   effort_types: Array<EffortKind>;
   /** Optional attribute to group results by (TEAMS, LOCATION, SKILLS, JOB_ROLE, RESOURCE_MANAGER only). */
@@ -14460,8 +14849,21 @@ export type GetUserContextQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type GetUserContextQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, name: string, title?: string | null } | null, favorites?: Array<{ __typename?: 'GraphqlHierarchyObjectItem', object?: { __typename?: 'HierarchyObjectID', id?: string | null, type?: GraphqlMondayObject | null } | null }> | null, intelligence?: { __typename?: 'Intelligence', relevant_boards?: Array<{ __typename?: 'RelevantBoard', id?: string | null, board?: { __typename?: 'Board', name: string } | null }> | null, relevant_people?: Array<{ __typename?: 'RelevantPerson', id?: string | null, user?: { __typename?: 'User', name: string } | null }> | null } | null };
 
+export type CreateFormSubmissionMutationVariables = Exact<{
+  form_token: Scalars['String']['input'];
+  answers: Array<FormAnswerInput> | FormAnswerInput;
+  form_timezone_offset: Scalars['Int']['input'];
+  password?: InputMaybe<Scalars['String']['input']>;
+  group_id?: InputMaybe<Scalars['ID']['input']>;
+  tags?: InputMaybe<Array<TagInput> | TagInput>;
+}>;
+
+
+export type CreateFormSubmissionMutation = { __typename?: 'Mutation', create_form_submission?: { __typename?: 'FormSubmissionResult', id: string } | null };
+
 
 export const SearchItemsDevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchItemsDev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filters"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SearchFiltersInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"cross_entity_search"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"filters"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filters"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ItemSearchResult"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchItemsDevQuery, SearchItemsDevQueryVariables>;
 export const SearchDevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchDev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filters"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SearchFiltersInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"cross_entity_search"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"filters"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filters"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BoardSearchResult"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"entity_type"}},{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"url"}}]}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"DocSearchResult"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"entity_type"}},{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchDevQuery, SearchDevQueryVariables>;
 export const BatchUndoDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"BatchUndo"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"undoRecordId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"batch_undo"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"board_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}},{"kind":"Argument","name":{"kind":"Name","value":"undo_record_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"undoRecordId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<BatchUndoMutation, BatchUndoMutationVariables>;
 export const GetUserContextDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getUserContext"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"me"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}},{"kind":"Field","name":{"kind":"Name","value":"favorites"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"object"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"type"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"intelligence"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"relevant_boards"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"10"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"board"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"relevant_people"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"10"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetUserContextQuery, GetUserContextQueryVariables>;
+export const CreateFormSubmissionDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateFormSubmission"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"form_token"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"answers"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"FormAnswerInput"}}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"form_timezone_offset"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"password"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"group_id"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"tags"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"TagInput"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"create_form_submission"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"form_token"},"value":{"kind":"Variable","name":{"kind":"Name","value":"form_token"}}},{"kind":"Argument","name":{"kind":"Name","value":"answers"},"value":{"kind":"Variable","name":{"kind":"Name","value":"answers"}}},{"kind":"Argument","name":{"kind":"Name","value":"form_timezone_offset"},"value":{"kind":"Variable","name":{"kind":"Name","value":"form_timezone_offset"}}},{"kind":"Argument","name":{"kind":"Name","value":"password"},"value":{"kind":"Variable","name":{"kind":"Name","value":"password"}}},{"kind":"Argument","name":{"kind":"Name","value":"group_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"group_id"}}},{"kind":"Argument","name":{"kind":"Name","value":"tags"},"value":{"kind":"Variable","name":{"kind":"Name","value":"tags"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateFormSubmissionMutation, CreateFormSubmissionMutationVariables>;
