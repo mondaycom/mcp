@@ -46,6 +46,8 @@ const locationAnswerSchema = z.object({
 const fileAnswerSchema = z.object({
   id: z.string().describe('The file ID returned by the workforms upload endpoint.'),
   name: z.string().describe('Original file name (e.g. "image.png").'),
+  extension: z.string().optional().describe('File extension (e.g. "pdf", "png").'),
+  is_image: z.boolean().optional().describe('Whether the file is an image.'),
 });
 
 const formAnswerInputSchema = z
