@@ -80,6 +80,7 @@ OPERATIONS:
 - create_block: Create a new block at a precise position. Use parent_block_id to nest inside notice_box, table cell, or layout cell.
 - delete_block: Remove any block. The ONLY option for BOARD, WIDGET, DOC embed, and GIPHY blocks.
 - replace_block: Delete a block and create a new one in its place (use when update_block is not supported).
+- add_comment: Create a new comment or reply on the document (doc-level, block-level, or text-selection).
 
 WHEN TO USE EACH OPERATION:
 - text / code / list_item → update_block. Use replace_block to change subtype (e.g. NORMAL_TEXT→LARGE_TITLE)
@@ -115,6 +116,13 @@ COMMENTS:
       return { content: 'Error: Either doc_id or object_id must be provided.' };
     }
 
+    this.sessionContext.metadata = {
+      ...this.sessionContext.metadata,
+      operation_types: input.operations?.map((op) => op.operation_type),
+      operation_count: input.operations?.length ?? 0,
+      ...(input.object_id && { object_id: input.object_id }),
+    };
+
     try {
       // Resolve doc_id from object_id if needed
       let docId = input.doc_id;
@@ -148,6 +156,11 @@ COMMENTS:
       const completed = failedAt !== null ? failedAt : input.operations.length;
       const total = input.operations.length;
       const summary = `Completed ${completed}/${total} operation${total === 1 ? '' : 's'} on doc ${docId}.`;
+
+      this.sessionContext.metadata = {
+        ...this.sessionContext.metadata,
+        doc_id: docId,
+      };
 
       return {
         content: `${summary}\n\nResults:\n${results.join('\n')}\n\nDoc ID: ${docId}`,

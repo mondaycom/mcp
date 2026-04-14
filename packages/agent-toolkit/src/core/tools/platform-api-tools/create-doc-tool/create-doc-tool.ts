@@ -235,6 +235,13 @@ USAGE EXAMPLES:
         };
       }
 
+      this.sessionContext.metadata = {
+        ...this.sessionContext.metadata,
+        location: input.location,
+        ...(docId && { doc_id: docId }),
+        ...(docObjectId && { object_id: docObjectId }),
+      };
+
       return {
         content: { message: "Document successfully created", doc_id: docId, object_id: docObjectId, doc_url: docUrl, doc_name: input.doc_name },
       };
