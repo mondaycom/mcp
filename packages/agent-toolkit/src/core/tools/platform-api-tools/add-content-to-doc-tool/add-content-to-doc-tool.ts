@@ -95,6 +95,12 @@ USAGE EXAMPLES:
         return { content: `Error: No document found for ${identifier}.` };
       }
 
+      this.sessionContext.metadata = {
+        ...this.sessionContext.metadata,
+        doc_id: doc.id,
+        ...(input.object_id && { object_id: input.object_id }),
+      };
+
       const variables: AddContentToDocFromMarkdownMutationVariables = {
         docId: doc.id,
         markdown: input.markdown,

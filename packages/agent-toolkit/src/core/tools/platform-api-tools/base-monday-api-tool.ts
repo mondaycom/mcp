@@ -1,6 +1,7 @@
 import { ApiClient } from '@mondaydotcomorg/api';
 import { ZodRawShape } from 'zod';
 import { ToolAnnotations } from '@modelcontextprotocol/sdk/types';
+import { SessionContext } from '../../executable';
 import { Tool, ToolInputType, ToolOutputType, ToolType } from '../../tool';
 
 export type MondayApiToolContext = {
@@ -34,6 +35,8 @@ export abstract class BaseMondayApiTool<
   abstract annotations: ToolAnnotations;
   enabledByDefault?: boolean;
 
+  protected sessionContext: SessionContext = {};
+
   constructor(
     protected readonly mondayApi: ApiClient,
     protected readonly context?: MondayApiToolContext,
@@ -45,7 +48,8 @@ export abstract class BaseMondayApiTool<
   /**
    * Public execute method
    */
-  execute(input?: ToolInputType<Input>): Promise<ToolOutputType<Output>> {
+  async execute(input?: ToolInputType<Input>, sessionContext?: SessionContext): Promise<ToolOutputType<Output>> {
+    this.sessionContext = sessionContext || {};
     return this.executeInternal(input);
   }
 
