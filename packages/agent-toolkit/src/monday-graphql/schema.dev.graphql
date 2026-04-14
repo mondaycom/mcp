@@ -555,6 +555,11 @@ type Query {
   export_graph(
     """The ID of the board to export the graph for"""
     boardId: String!
+
+    """
+    A direct Redis key to fetch the graph by. When provided, boardId is ignored and the graph is fetched using this key directly. Must include the boardId (format: graph:dependencies:<boardId>[...]).
+    """
+    redis_key: String
   ): BoardGraphExport
 
   """Fetch dependency column configuration for a board"""
@@ -1252,6 +1257,16 @@ type Query {
   ): UtilizationReport
 
   """
+  Returns utilization report scoped to a portfolio. Resolves portfolio to board IDs, then returns the same report shape as utilization_report.
+  """
+  portfolio_utilization_report(
+    """
+    Portfolio ID, time range, effort types, optional groupBy, filters, and options.
+    """
+    input: PortfolioUtilizationReportInput!
+  ): UtilizationReport
+
+  """
   A query to search across all boards in the account. Returns raw json results.
   """
   search_benchmark(
@@ -1285,6 +1300,11 @@ type Query {
     Filters specifying which entities to search and their per-entity filters.
     """
     filters: SearchFiltersInput!
+
+    """
+    Controls the trade-off between search quality and response time. Defaults to balanced.
+    """
+    strategy: SearchStrategy
   ): [SearchResult!]
 
   """Search for items using various search strategies."""
@@ -1322,24 +1342,10 @@ type Query {
     reranking_strategy: RerankingStrategy
   ): SearchItemsGraphQlResultsView
 
-  """Search across multiple entity types (items, boards, documents)."""
-  search(
-    """The search query string."""
-    query: String!
-
-    """Maximum number of results to return per entity (max 100)."""
-    limit: Int!
-
-    """
-    Filters specifying which entities to search and their per-entity filters.
-    """
-    filters: SearchFiltersInput!
-
-    """
-    Controls the trade-off between search quality and response time. Defaults to balanced.
-    """
-    strategy: SearchStrategy
-  ): [SearchResult!]
+  """
+  Search API. Each field searches a single entity type with tailored filters.
+  """
+  search: SearchNamespace!
 
   """Lookup a single entity type by name or other relevant properties."""
   search_lookup(
@@ -2507,6 +2513,22 @@ type Mutation {
     column_id: ID!
   ): AccountEntity
 
+  """
+  Delete columns from an account or global entity. Only allowed when no boards are connected to the entity.
+  """
+  delete_entity_columns(
+    """The ID of the entity model to delete columns from."""
+    entity_id: ID
+
+    """
+    The entity model name. Either entity_id or entity_name must be provided.
+    """
+    entity_name: String
+
+    """The IDs of the columns to delete."""
+    column_ids: [ID!]!
+  ): AccountEntity
+
   """Adds connected boards to a board relation column."""
   add_board_relation_connected_boards(
     """The unique identifier of the board containing the column."""
@@ -3149,6 +3171,22 @@ type Mutation {
     """Entity type enum (currently only "appFeature" is supported)"""
     entity_type: String!
   ): Boolean
+
+  """
+  Installs an app on the current account. Requires account admin permission.
+  """
+  install_app(
+    """App installation configuration"""
+    input: InstallAppInput!
+  ): InstallAppResponse
+
+  """
+  Uninstalls an app from the current account. Requires account admin permission.
+  """
+  uninstall_app(
+    """The app identifier (numeric ID or slug)"""
+    app_identifier: ID!
+  ): AppDeletionResponse
 
   """Add a file to a column value."""
   add_file_to_column(
@@ -4501,6 +4539,33 @@ type Mutation {
   ): Boolean
 
   """
+  Submit answers to a form. Open to authenticated and anonymous users — authorization is handled by the form settings (user restrictions, etc.). Note: forms with reCAPTCHA enabled cannot be submitted via GraphQL — use the UI instead.
+  """
+  create_form_submission(
+    """The unique token identifying the form to submit to."""
+    form_token: String!
+
+    """
+    The answers to submit. Each entry specifies a question ID and the answer for that question.
+    """
+    answers: [FormAnswerInput!]!
+
+    """The timezone offset of the submitter in minutes (e.g. -120 for UTC-2)."""
+    form_timezone_offset: Int!
+
+    """The password for the form. Required if the form is password-protected."""
+    password: String
+
+    """The board group ID to submit the response into."""
+    group_id: ID
+
+    """
+    Tags to attach to the submission — metadata mapped to specific board columns.
+    """
+    tags: [TagInput!]
+  ): FormSubmissionResult
+
+  """
   Update form properties including title, description, or question order.
   """
   update_form(
@@ -4705,96 +4770,6 @@ type Mutation {
     """The password to set for the form. Must be at least 1 character long."""
     input: SetFormPasswordInput!
   ): ResponseForm
-
-  """
-  Create a new selectable option for a SingleSelect or MultiSelect question. Returns the created option.
-  """
-  create_form_question_option(
-    """
-    The unique identifier token for the form. Required for all form-specific operations.
-    """
-    form_token: String!
-
-    """
-    The unique identifier for the question. Used to target specific questions within a form.
-    """
-    question_id: ID!
-
-    """
-    The display text for the option shown to respondents. Must be at least 1 character long.
-    """
-    label: String!
-
-    """
-    The internal unique identifier for the option. Used as the option ID in update and delete operations.
-    """
-    value: String!
-  ): FormQuestionOption
-
-  """
-  Update the label of an existing option on a SingleSelect or MultiSelect question.
-  """
-  update_form_question_option(
-    """
-    The unique identifier token for the form. Required for all form-specific operations.
-    """
-    form_token: String!
-
-    """
-    The unique identifier for the question. Used to target specific questions within a form.
-    """
-    question_id: ID!
-
-    """
-    The internal ID (value) of the option to target. This is the value field of the option, not the display label.
-    """
-    option_id: ID!
-
-    """
-    The display text for the option shown to respondents. Must be at least 1 character long.
-    """
-    label: String!
-  ): Boolean
-
-  """
-  Permanently remove a selectable option from a SingleSelect or MultiSelect question. This action cannot be undone.
-  """
-  delete_form_question_option(
-    """
-    The unique identifier token for the form. Required for all form-specific operations.
-    """
-    form_token: String!
-
-    """
-    The unique identifier for the question. Used to target specific questions within a form.
-    """
-    question_id: ID!
-
-    """
-    The internal ID (value) of the option to target. This is the value field of the option, not the display label.
-    """
-    option_id: ID!
-  ): Boolean
-
-  """
-  Reorder the options of a SingleSelect or MultiSelect question by providing the desired order of option values. Position is inferred from array index.
-  """
-  reorder_form_question_options(
-    """
-    The unique identifier token for the form. Required for all form-specific operations.
-    """
-    form_token: String!
-
-    """
-    The unique identifier for the question. Used to target specific questions within a form.
-    """
-    question_id: ID!
-
-    """
-    Ordered array of option values defining the new display order. Position is inferred from array index (first item = position 0).
-    """
-    option_ids: [ID!]!
-  ): Boolean
 }
 
 """Response from AI action request"""
@@ -6641,6 +6616,15 @@ type Board {
     to_date: ISO8601DateTime
   ): [Update!]
 
+  """The board's updates with cursor-based pagination."""
+  updates_page(
+    """Number of items to get, the default is 25."""
+    limit: Int = 25
+
+    """Opaque cursor from a previous updates_page response."""
+    cursor: String
+  ): UpdatesPage
+
   """The board's visible columns."""
   columns(
     """A list of column unique identifiers."""
@@ -7109,6 +7093,15 @@ type Item {
   """The item's unique identifier."""
   id: ID!
 
+  """The item's updates with cursor-based pagination."""
+  updates_page(
+    """Number of items to get, the default is 25."""
+    limit: Int = 25
+
+    """Opaque cursor from a previous updates_page response."""
+    cursor: String
+  ): UpdatesPage
+
   """The item's updates."""
   updates(
     """Number of items to get, the default is 25."""
@@ -7328,6 +7321,15 @@ input UpdateMention {
 """The pin to top data of the update."""
 type UpdatePin {
   item_id: ID!
+}
+
+"""Paginated updates response with cursor."""
+type UpdatesPage {
+  """The list of updates."""
+  updates: [Update!]!
+
+  """Opaque cursor for the next page. Null when no more data."""
+  cursor: String
 }
 
 """The viewer of the update."""
@@ -10657,6 +10659,15 @@ type UploadJobInit {
   upload_url: String
 }
 
+"""Response object for app deletion operations"""
+type AppDeletionResponse {
+  """Whether the deletion was successful"""
+  success: Boolean
+
+  """Deletion result message"""
+  message: String
+}
+
 """Response from querying the apps documentation AI."""
 type AppDocumentationAiResponse {
   """Unique identifier for this query response."""
@@ -11084,6 +11095,26 @@ type CreateAppResponse {
 
   """The app's signing secret used for webhook signature verification"""
   signing_secret: String
+}
+
+"""Input for installing an app on the current account."""
+input InstallAppInput {
+  """The app identifier (numeric ID or slug)"""
+  app_identifier: ID!
+
+  """
+  Optional list of workspace IDs to restrict app access to specific workspaces
+  """
+  permitted_workspaces: [ID!]
+}
+
+"""Response object for app installation"""
+type InstallAppResponse {
+  """The installed app identifier"""
+  app_id: ID
+
+  """Whether a new install was created (false if app was already installed)"""
+  created: Boolean
 }
 
 """Input for a single lifecycle event subscription"""
@@ -15759,6 +15790,52 @@ enum GroupByResourceAttribute {
   RESOURCE_MANAGER
 }
 
+"""
+Input for portfolio utilization report. Extends utilization report with portfolio context — resolves portfolio to board IDs automatically.
+"""
+input PortfolioUtilizationReportInput {
+  """Time range and granularity for the report."""
+  time_range: TimeRangeInput!
+
+  """Effort kinds to include (e.g. ALLOCATED, PLANNED, SPENT, AVAILABLE)."""
+  effort_types: [EffortKind!]!
+
+  """
+  Optional attribute to group results by (TEAMS, LOCATION, SKILLS, JOB_ROLE, RESOURCE_MANAGER only).
+  """
+  group_by_attribute: GroupByResourceAttribute
+
+  """
+  Optional list of resource IDs to filter by. If not provided, all resources are included (subject to limit).
+  """
+  resource_ids: [ID!]
+
+  """
+  When true, include project breakdown in the response. Defaults to false.
+  """
+  include_project_breakdown: Boolean
+
+  """
+  Maximum number of groups per page (1–25, default 25). Applied when grouped by attribute.
+  """
+  limit: Int = 25
+
+  """
+  Page number for pagination when grouped by attribute (1-based, default 1). Paginates at the attribute group level.
+  """
+  page: Int = 1
+
+  """
+  Denominator for utilization ratio. Defaults to AVAILABLE (utilization = effort / available).
+  """
+  utilization_denominator: UtilizationDenominator
+
+  """
+  The portfolio ID to scope the report to. Board IDs are resolved from the portfolio.
+  """
+  portfolio_id: ID!
+}
+
 """Effort and utilization for a single time bucket."""
 type TimeBucket {
   """Label for this bucket (e.g. week or month)."""
@@ -15913,6 +15990,9 @@ input UtilizationReportInput {
   Denominator for utilization ratio. Defaults to AVAILABLE (utilization = effort / available).
   """
   utilization_denominator: UtilizationDenominator
+
+  """Optional list of board IDs to scope effort data to specific boards."""
+  board_ids: [ID!]
 }
 
 """Utilization breakdown per project for a resource."""
@@ -16340,6 +16420,24 @@ enum SearchableEntity {
   DOCUMENT
 }
 
+"""A single board search result with indexed and live data."""
+type SearchBoardResult {
+  """Unique identifier of the board."""
+  id: ID!
+
+  """Board data from the search index."""
+  indexed_data: SearchIndexedBoard!
+
+  """Live board data via federation."""
+  live_data: Board!
+}
+
+"""Wrapper for a list of board search results."""
+type SearchBoardResults {
+  """List of board search results."""
+  results: [SearchBoardResult!]!
+}
+
 """Date range filter for search queries"""
 input SearchDateRangeInput {
   """Filter items created before this date"""
@@ -16376,6 +16474,24 @@ input SearchDateRangeLegacyInput {
   updatedAfter: ISO8601DateTime
 }
 
+"""A single doc search result with indexed and live data."""
+type SearchDocResult {
+  """Unique identifier of the doc."""
+  id: ID!
+
+  """Doc data from the search index."""
+  indexed_data: SearchIndexedDoc!
+
+  """Live doc data via federation."""
+  live_data: Document!
+}
+
+"""Wrapper for a list of doc search results."""
+type SearchDocResults {
+  """List of doc search results."""
+  results: [SearchDocResult!]!
+}
+
 """
 Tagged-union input: set exactly one field to indicate the entity type and its filters.
 """
@@ -16401,6 +16517,72 @@ input SearchFiltersInput {
   entities: [SearchEntityFilterInput!]!
 }
 
+"""Board data stored in the search index."""
+type SearchIndexedBoard {
+  """Board ID."""
+  id: ID!
+
+  """Board name."""
+  name: String!
+
+  """Board description."""
+  description: String
+
+  """ID of the workspace containing this board."""
+  workspace_id: ID
+
+  """URL to view this board."""
+  url: String!
+}
+
+"""Document data stored in the search index."""
+type SearchIndexedDoc {
+  """Document ID."""
+  id: ID!
+
+  """Document name."""
+  name: String!
+
+  """ID of the workspace containing this document."""
+  workspace_id: ID
+}
+
+"""Item data stored in the search index."""
+type SearchIndexedItem {
+  """Item ID."""
+  id: ID!
+
+  """Item name."""
+  name: String!
+
+  """URL to view this item."""
+  url: String!
+
+  """ID of the board containing this item."""
+  board_id: ID
+
+  """ID of the workspace containing this item."""
+  workspace_id: ID
+}
+
+"""A single item search result with indexed and live data."""
+type SearchItemResult {
+  """Unique identifier of the item."""
+  id: ID!
+
+  """Item data from the search index."""
+  indexed_data: SearchIndexedItem!
+
+  """Live item data via federation."""
+  live_data: Item!
+}
+
+"""Wrapper for a list of item search results."""
+type SearchItemResults {
+  """List of item search results."""
+  results: [SearchItemResult!]!
+}
+
 """Response of the search request."""
 type SearchItemsGraphQlResultsView {
   """The results of the items search."""
@@ -16422,6 +16604,72 @@ type SearchItemsQueryResult {
   Latest item data for the search results. Requires additional GraphQL federation calls.
   """
   live_data: Item!
+}
+
+"""Per-entity search namespace. Each field searches a single entity type."""
+type SearchNamespace {
+  """Search for items."""
+  items(
+    """The search query string."""
+    query: String!
+
+    """Maximum number of results to return (default 10, max 20)."""
+    limit: Int = 10
+
+    """Date range filter."""
+    date_range: CrossEntityDateRangeInput
+
+    """
+    Controls the trade-off between search quality and response time. Defaults to balanced.
+    """
+    strategy: SearchStrategy
+
+    """Filter items to specific board IDs."""
+    board_ids: [ID!]
+
+    """Filter items to specific workspace IDs."""
+    workspace_ids: [ID!]
+  ): SearchItemResults!
+
+  """Search for boards."""
+  boards(
+    """The search query string."""
+    query: String!
+
+    """Maximum number of results to return (default 10, max 20)."""
+    limit: Int = 10
+
+    """Date range filter."""
+    date_range: CrossEntityDateRangeInput
+
+    """
+    Controls the trade-off between search quality and response time. Defaults to balanced.
+    """
+    strategy: SearchStrategy
+
+    """Filter boards to specific workspace IDs."""
+    workspace_ids: [ID!]
+  ): SearchBoardResults!
+
+  """Search for documents."""
+  docs(
+    """The search query string."""
+    query: String!
+
+    """Maximum number of results to return (default 10, max 20)."""
+    limit: Int = 10
+
+    """Date range filter."""
+    date_range: CrossEntityDateRangeInput
+
+    """
+    Controls the trade-off between search quality and response time. Defaults to balanced.
+    """
+    strategy: SearchStrategy
+
+    """Filter documents to specific workspace IDs."""
+    workspace_ids: [ID!]
+  ): SearchDocResults!
 }
 
 """
@@ -17462,6 +17710,15 @@ type WidgetSchemaInfo {
   schema: JSON
 }
 
+"""Answer for a country question."""
+input CountryAnswerInput {
+  """The full country name (e.g. "United States")."""
+  country_name: String!
+
+  """The ISO 3166-1 alpha-2 country code (e.g. "US")."""
+  country_code: String!
+}
+
 input CreateFormTagInput {
   """The name of the tag. Must be unique within the form and not reserved."""
   name: String!
@@ -17515,6 +17772,11 @@ input CreateQuestionInput {
   options: [QuestionOptionInput!]
 
   """
+  The ID of an existing board column to map this question to, instead of creating a new column. Useful when the board already has a matching column.
+  """
+  existing_column_id: ID
+
+  """
   The ID of the question after which the new question should be inserted. If omitted, the question is appended at the end.
   """
   insert_after_question_id: ID
@@ -17523,6 +17785,24 @@ input CreateQuestionInput {
   The ID of the page block to assign the question to. Required when creating questions in multi-page forms.
   """
   page_block_id: ID
+}
+
+"""Answer for a date question."""
+input DateAnswerInput {
+  """The date in YYYY-MM-DD format."""
+  date: String!
+
+  """UTC offset in minutes."""
+  zone_diff: Int
+}
+
+"""Answer for a date range question."""
+input DateRangeAnswerInput {
+  """Start date in YYYY-MM-DD format."""
+  from: String!
+
+  """End date in YYYY-MM-DD format."""
+  to: String!
 }
 
 type DehydratedFormResponse {
@@ -17540,6 +17820,21 @@ type DehydratedFormResponse {
 input DeleteFormTagInput {
   """Options for deleting the tag"""
   deleteAssociatedColumn: Boolean
+}
+
+"""A single uploaded file answer."""
+input FileAnswerInput {
+  """The file ID returned by the workforms upload endpoint."""
+  id: String!
+
+  """Original file name (e.g. "image.png")."""
+  name: String!
+
+  """File extension (e.g. "pdf")."""
+  extension: String
+
+  """Whether the file is an image."""
+  is_image: Boolean
 }
 
 """
@@ -17635,6 +17930,79 @@ enum FormAlignment {
   Center
   Right
   FullRight
+}
+
+"""
+An answer to a single form question. Set question_id and exactly one answer field matching the question type.
+"""
+input FormAnswerInput {
+  """The ID of the question being answered."""
+  question_id: ID!
+
+  """Answer for name questions."""
+  name: String
+
+  """Answer for email questions."""
+  email: String
+
+  """Answer for short text questions."""
+  short_text: String
+
+  """Answer for long text questions."""
+  long_text: String
+
+  """Answer for link questions."""
+  link: String
+
+  """Answer for updates questions."""
+  updates: String
+
+  """Answer for boolean questions."""
+  boolean: Boolean
+
+  """Answer for number questions."""
+  number: Float
+
+  """Answer for rating questions."""
+  rating: Float
+
+  """Answer for single-select questions — the selected option ID."""
+  single_select: String
+
+  """Answer for multi-select questions — list of selected option IDs."""
+  multi_select: [Int!]
+
+  """Answer for phone questions."""
+  phone: PhoneAnswerInput
+
+  """Answer for country questions."""
+  country: CountryAnswerInput
+
+  """Answer for date questions."""
+  date: DateAnswerInput
+
+  """Answer for date range questions."""
+  date_range: DateRangeAnswerInput
+
+  """Answer for location questions."""
+  location: LocationAnswerInput
+
+  """Answer for file questions — list of uploaded files."""
+  file: [FileAnswerInput!]
+
+  """Answer for signature questions — a single uploaded file."""
+  signature: FileAnswerInput
+
+  """Answer for people questions — list of user IDs."""
+  people: [ID!]
+
+  """Answer for connected boards questions — list of connected item IDs."""
+  connected_boards: [ID!]
+
+  """
+  Answer for subitems questions — each subitem is its own set of answers.
+  """
+  subitems: [SubitemAnswerInput!]
 }
 
 """
@@ -18088,6 +18456,11 @@ input FormMondayInput {
   Boolean synchronizing form question titles with board column names. When true, the form question titles will be synchronized with the board column names.
   """
   syncQuestionAndColumnsTitles: Boolean
+
+  """
+  Boolean showing a "Create Item" button on the board that opens this form. When enabled, board members can create new board items by filling out this form directly from the board.
+  """
+  allow_create_item: Boolean
 }
 
 type FormPassword {
@@ -18477,6 +18850,12 @@ input FormStartButtonInput {
   text: String
 }
 
+"""The result of a successful form submission."""
+type FormSubmissionResult {
+  """The unique identifier of the created submission."""
+  id: ID!
+}
+
 """Object containing submit button styling and text configuration."""
 type FormSubmitButton {
   """Custom text displayed on the form submission button."""
@@ -18525,6 +18904,78 @@ input FormTextInput {
 
   """String or number specifying the base font size for form text."""
   size: FormFontSize
+}
+
+"""Answer for a location question."""
+input LocationAnswerInput {
+  """Latitude."""
+  lat: Float!
+
+  """Longitude."""
+  lng: Float!
+
+  """Google Maps place ID."""
+  place_id: String!
+
+  """Full formatted address."""
+  address: String!
+
+  """Country name components."""
+  country: LocationCountryInput!
+
+  """City name components."""
+  city: LocationCityInput!
+
+  """Street name components."""
+  street: LocationStreetInput!
+
+  """Street number components."""
+  street_number: LocationStreetNumberInput!
+}
+
+"""City name components for a location answer."""
+input LocationCityInput {
+  """Full city name."""
+  long_name: String!
+
+  """Abbreviated city name."""
+  short_name: String!
+}
+
+"""Country name components for a location answer."""
+input LocationCountryInput {
+  """Full country name."""
+  long_name: String!
+
+  """ISO 3166-1 alpha-2 country code."""
+  short_name: String!
+}
+
+"""Street name components for a location answer."""
+input LocationStreetInput {
+  """Full street name."""
+  long_name: String!
+
+  """Abbreviated street name."""
+  short_name: String!
+}
+
+"""Street number components for a location answer."""
+input LocationStreetNumberInput {
+  """Full street number."""
+  long_name: String!
+
+  """Abbreviated street number."""
+  short_name: String!
+}
+
+"""Answer for a phone question."""
+input PhoneAnswerInput {
+  """The phone number."""
+  phone: String!
+
+  """The ISO 3166-1 alpha-2 country code (e.g. "US")."""
+  country_short_name: String!
 }
 
 """
@@ -18602,6 +19053,14 @@ input QuestionOptionInput {
   The display text for the option shown to respondents. Must be at least 1 character long.
   """
   label: String!
+
+  """
+  The internal unique identifier for the option. Used as the option ID in update and delete operations.
+  """
+  value: String
+
+  """Whether this option is visible to respondents. Defaults to true."""
+  visible: Boolean
 }
 
 input QuestionOrderInput {
@@ -18690,6 +19149,25 @@ input SetFormPasswordInput {
   password: String!
 }
 
+"""
+A single subitem answer, containing answers for each of the subitem's questions.
+"""
+input SubitemAnswerInput {
+  """The answers for this subitem's questions."""
+  answers: [FormAnswerInput!]!
+}
+
+"""
+A form tag — metadata submitted alongside answers and mapped to a board column.
+"""
+input TagInput {
+  """The column ID this tag maps to."""
+  column_id: String!
+
+  """The tag value to submit."""
+  value: String!
+}
+
 input UpdateFormInput {
   """The title text for the form. Must be at least 1 character long."""
   title: String
@@ -18718,6 +19196,11 @@ input UpdateFormSettingsInput {
   Object containing accessibility options such as language, alt text, etc.
   """
   accessibility: FormAccessibilityInput
+
+  """
+  Boolean enabling anonymous response collection. When true, respondent identity is not captured or stored with form submissions.
+  """
+  is_anonymous: Boolean
 }
 
 input UpdateFormTagInput {
@@ -18758,6 +19241,11 @@ input UpdateQuestionInput {
   The question text displayed to respondents. Must be at least 1 character long and clearly indicate the expected response.
   """
   title: String
+
+  """
+  Array of option objects for choice-based questions (single_select, multi_select). Required for select types.
+  """
+  options: [QuestionOptionInput!]
 }
 
 scalar policy__Policy
