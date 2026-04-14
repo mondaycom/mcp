@@ -1448,6 +1448,9 @@ type User {
     board_ids: [ID!]
     limit: Int
 
+    """Filter by event types (e.g. "create_pulse", "delete_pulse")"""
+    event_types: [String!]
+
     """Cursor for fetching the next page, obtained from a previous response"""
     cursor: String
   ): UserActivityLogsPage
@@ -15866,6 +15869,9 @@ type UtilizationReportGrouped {
 
   """Aggregates per attribute value."""
   groups: [UtilizationReportGroup!]
+
+  """Total number of attribute groups across all pages (before pagination)."""
+  total_group_count: Int
 }
 
 """
@@ -15894,9 +15900,14 @@ input UtilizationReportInput {
   include_project_breakdown: Boolean
 
   """
-  Max resources when no resource_ids provided (default 25). Used for "all resources" case.
+  Maximum number of groups per page (1–25, default 25). Applied when grouped by attribute.
   """
-  limit: Int
+  limit: Int = 25
+
+  """
+  Page number for pagination when grouped by attribute (1-based, default 1). Paginates at the attribute group level.
+  """
+  page: Int = 1
 
   """
   Denominator for utilization ratio. Defaults to AVAILABLE (utilization = effort / available).
@@ -17282,6 +17293,9 @@ enum UserKindFilter {
 
   """A ai platform agent api user user."""
   AI_PLATFORM_AGENT_API_USER
+
+  """A dependencies api user user."""
+  DEPENDENCIES_API_USER
 
   """A group representing admin, member, guest, and view-only users."""
   BASIC

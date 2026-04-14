@@ -23,3 +23,22 @@ jobs:
 
       - name: Test packages
         run: yarn test
+
+  codegen:
+    name: Validate GraphQL codegen
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.18.1'
+      - name: Install Yarn
+        run: npm install -g yarn@1.22.21
+      - run: yarn install
+
+      - name: Run codegen
+        working-directory: packages/agent-toolkit
+        run: yarn codegen
