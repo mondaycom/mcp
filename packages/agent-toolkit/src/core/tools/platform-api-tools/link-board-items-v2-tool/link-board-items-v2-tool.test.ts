@@ -3,33 +3,6 @@ import { callToolByNameAsync, callToolByNameRawAsync, createMockApiClient } from
 
 const TOOL_NAME = 'link_board_items_v2';
 
-const makeLinkCandidateResponse = (
-  items: Array<{ id: string; linkedItemIds?: string[] }>,
-) => ({
-  boards: [
-    {
-      id: '1',
-      name: 'Target Board',
-      items_page: {
-        items: items.map((item) => ({
-          id: item.id,
-          name: 'n',
-          column_values: [
-            {
-              id: 'link_col',
-              type: 'board_relation',
-              text: '',
-              value: null,
-              linked_item_ids: item.linkedItemIds ?? [],
-            },
-          ],
-        })),
-        cursor: null,
-      },
-    },
-  ],
-});
-
 describe('LinkBoardItemsV2Tool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
 
@@ -73,11 +46,8 @@ describe('LinkBoardItemsV2Tool', () => {
     expect(mocks.mockRequest).toHaveBeenCalledTimes(2);
   });
 
-  it('merges existing links when writing on the target side', async () => {
-    mocks.setResponses([
-      makeLinkCandidateResponse([{ id: 'tgt1', linkedItemIds: ['old_s'] }]),
-      {},
-    ]);
+  it('writes target-side links with replace semantics (one mutation per target)', async () => {
+    mocks.setResponses([{}]);
 
     const result = await callToolByNameAsync(TOOL_NAME, {
       sourceBoardId: 10,
@@ -88,8 +58,8 @@ describe('LinkBoardItemsV2Tool', () => {
     });
 
     expect(result.succeeded).toHaveLength(1);
-    expect(mocks.mockRequest).toHaveBeenCalledTimes(2);
-    const writeCall = mocks.mockRequest.mock.calls[1][0];
+    expect(mocks.mockRequest).toHaveBeenCalledTimes(1);
+    const writeCall = mocks.mockRequest.mock.calls[0][0];
     expect(String(writeCall)).toContain('change_multiple_column_values');
   });
 });

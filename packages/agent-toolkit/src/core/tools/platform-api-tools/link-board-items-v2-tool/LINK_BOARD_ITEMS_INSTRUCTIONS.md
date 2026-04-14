@@ -47,7 +47,7 @@ Common use cases: invoices → vendors, contacts → accounts, orders → custom
 Like a foreign key: the board-relation column lives on **exactly one** side.
 
 - **Source side (`linkSide: "source"`)** — Each **source** row stores a reference to **one** target item. This tool issues one write per pair on `sourceBoardId`.
-- **Target side (`linkSide: "target"`)** — Each **target** row stores references to **multiple** source items. This tool **merges** new source IDs with any existing `linked_item_ids` on that target row, then writes once per distinct `targetItemId`.
+- **Target side (`linkSide: "target"`)** — Each **target** row stores references to **multiple** source items. This tool writes `item_ids` once per distinct `targetItemId` using only the `sourceItemId`s from your `pairs` for that target (deduped). Same **replace** semantics as `change_item_column_values`: it does not read or preserve links that are not in this call.
 
 ## Workflow (follow in order)
 
@@ -102,5 +102,5 @@ Like a foreign key: the board-relation column lives on **exactly one** side.
 
 - Relation column is on the **vendor** board; each vendor row links to many invoices.
 - After matching, two invoices `s1`, `s2` map to the same vendor `t9`.
-- Call: `linkSide: "target"`, `targetBoardId` = vendor board id, `sourceBoardId` = invoice board id, `linkColumnId` on the vendor board, `pairs: [{ sourceItemId: "s1", targetItemId: "t9" }, { sourceItemId: "s2", targetItemId: "t9" }]`. The tool merges `s1` and `s2` with any existing linked invoice ids on `t9`.
+- Call: `linkSide: "target"`, `targetBoardId` = vendor board id, `sourceBoardId` = invoice board id, `linkColumnId` on the vendor board, `pairs: [{ sourceItemId: "s1", targetItemId: "t9" }, { sourceItemId: "s2", targetItemId: "t9" }]`. Vendor `t9` gets `item_ids: ["s1","s2"]` only; any other links on that cell are replaced unless you include those IDs in `pairs`.
 
