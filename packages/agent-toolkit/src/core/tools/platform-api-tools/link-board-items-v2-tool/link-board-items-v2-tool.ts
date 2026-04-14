@@ -24,7 +24,7 @@ const LINK_BOARD_ITEMS_V2_DOCUMENTATION = `
 
 ## Purpose
 
-Link items across two monday.com boards by **board-relation** columns. This tool **only applies writes** for explicit \`(sourceItemId, targetItemId)\` pairs you supply. The main value is the **documented way to fetch and match** on large boards without loading every row: use \`get_board_items_page\` (and related tools), narrow with filters and \`itemIds\`, fetch compare values with \`includeColumns: true\` and a tight \`columnIds\` list, match in bounded chunks, then write with clear rules.
+Link items across two monday.com boards by **board-relation** columns. This tool **only applies writes** for explicit \`(sourceItemId, targetItemId)\` pairs you supply. **Before you call it**, list and match rows using \`get_board_items_page\` with **\`limit: 100\`** and **\`nextCursor\`** until \`has_more\` is false on each board, narrow with \`filters\` / \`itemIds\` / \`searchTerm\`, request compare values with \`includeColumns: true\` and a tight \`columnIds\` list when you are not matching on item name alone, then build \`pairs\`.
 
 You perform discovery, pagination, and matching yourself; this description tells you **how** so linking stays correct, bounded, and reviewable.
 
@@ -34,7 +34,7 @@ Common use cases: invoices → vendors, contacts → accounts, orders → custom
 
 ## When to use this tool
 
-- You are linking **one or more** source rows to targets and want the **fetch workflow** (page through \`has_more\`, narrow with filters/\`itemIds\`, request only the compare \`columnIds\` you need) so you do not miss items after the first page or pull unnecessary data.
+- You are linking **one or more** source rows to targets and will follow the **fetch workflow**: \`get_board_items_page\` with **\`limit: 100\`** and \`nextCursor\` until \`has_more\` is false, narrow with filters/\`itemIds\`, request only the compare \`columnIds\` you need, discard non-candidates between pages.
 - You have finished matching and want a **consistent** write path for the board-relation column (same payload shape as \`change_item_column_values\`), whether that is one write or several.
 - The relation column may live on **either** board; you know \`linkSide\` and \`linkColumnId\`.
 
@@ -46,7 +46,7 @@ Common use cases: invoices → vendors, contacts → accounts, orders → custom
 ## Core principles
 
 1. **No guessing on ambiguity** — If more than one target item plausibly matches a source, do not call this tool with an arbitrary pick. Acceptable outcomes: refine \`filters\`, \`itemIds\`, \`searchTerm\`, or compare columns and try again; **omit that source from \`pairs\` and do not link it**; or **ask the user** which target (or what to do) — all are better than guessing.
-2. **Large boards — page, match, discard, cap** — You cannot load **all** items from a huge board into context. Still, **do not assume the first page is the whole board** (the match may be on page 2+). Work **one page at a time** with \`get_board_items_page\` and \`nextCursor\`: match sources against the current window, **drop** rows that clearly cannot match before pulling the next page, and keep server-side \`filters\` / \`itemIds\` / \`searchTerm\` tight. Use a **budget** so work stays bounded — for example stop loading further pages for a pass once you hold about **500** items in memory across the boards you are joining **or** after about **10** pages on a side (whichever you hit first), then narrow the query, write partial \`pairs\`, split the job, or ask the user — do not grow context without limit.
+2. **Page, match, discard, cap** — Use \`get_board_items_page\` with **\`limit: 100\`** per request and **\`nextCursor\`** until \`has_more\` is false so you never treat the first page as the full board. After each page, match against the window and **drop** rows that cannot match before fetching again; keep \`filters\` / \`itemIds\` / \`searchTerm\` tight. Cap how many rows you **keep in memory** across boards while matching (on the order of **~500** total, or **~10** pages per side): then narrow, write partial \`pairs\`, split the job, or ask the user. Each fetch stays at **100** rows per call; raising \`limit\` toward the API maximum to load a board in one shot usually increases GraphQL cost and often fails—if a page errors on complexity, retry with **\`limit: 50\`**, then **25**, and drop optional payload (\`includeSubItems\`, unneeded \`columnIds\`).
 3. **Narrow before you fetch** — Prefer server-side \`filters\`, \`itemIds\` (max **100** IDs per request), and \`searchTerm\` for vague cross-field phrases. **Comparing on board columns requires those values** — use \`includeColumns: true\` and list each compare column in \`columnIds\`; add \`linkColumnId\` there only if you need that column's value (e.g. \`is_empty\`, existing links). The **only** case where you skip \`includeColumns\` is **name-only** matching (compare item \`name\` only — names are returned without column payloads). Use \`is_empty\` on the link column when appropriate.
 4. **Exact match baseline** — Prefer deterministic matching: case-insensitive equality on **one** column id per side, or on **item name** if you deliberately compare names only. Trim and normalize before comparing. For fuzzy or meaning-based ties, resolve in your reasoning **before** building \`pairs\` — **you** are the matcher.
 
@@ -56,10 +56,6 @@ Like a foreign key: the board-relation column lives on **exactly one** side.
 
 - **Source side (\`linkSide: "source"\`)** — Each **source** row stores a reference to **one** target item. This tool issues one write per pair on \`sourceBoardId\`.
 - **Target side (\`linkSide: "target"\`)** — Each **target** row stores references to **multiple** source items. This tool **merges** new source IDs with any existing \`linked_item_ids\` on that target row, then writes once per distinct \`targetItemId\`.
-
-## Scale awareness
-
-\`get_board_items_page\` returns a **page** at a time (size depends on \`limit\`). Prefer **filters** and **itemIds** so each page is relevant. Split **more than 100** explicit IDs across multiple calls. Combine with the **~500 items in memory / ~10 pages per side** budget in principle 2 — paging until \`has_more\` is false is ideal only when the narrowed set is small enough; otherwise work in capped passes.
 
 ## Workflow (follow in order)
 
@@ -77,12 +73,12 @@ Like a foreign key: the board-relation column lives on **exactly one** side.
 
 ### Step 3 — Fetch sources with discipline
 
-- Call \`get_board_items_page\` for \`sourceBoardId\` with narrowing params. For column-to-column matching: \`includeColumns: true\` and \`columnIds\` = compare columns; include \`linkColumnId\` in \`columnIds\` only if you need that column's value. For name-only: \`includeColumns\` can stay false.
-- Page with \`nextCursor\` while you still need coverage and you are **under** your memory/page budget (principle 2). Between pages, **discard** source rows already matched or ruled out so the working set stays small.
+- Call \`get_board_items_page\` on \`sourceBoardId\` with **\`limit: 100\`**, your narrowing params, and **\`nextCursor\`** until \`has_more\` is false. For column-to-column matching: \`includeColumns: true\` and \`columnIds\` = compare columns; include \`linkColumnId\` in \`columnIds\` only if you need that column's value. For name-only: \`includeColumns\` can stay false. If the API rejects a page for complexity, lower \`limit\` (**50**, then **25**) and trim optional fields, then continue paging.
+- While you still need coverage, stay **under** the working-set budget in principle 2. Between pages, **discard** source rows already matched or ruled out.
 
 ### Step 4 — Fetch targets with discipline
 
-- Same \`includeColumns\`, \`columnIds\`, paging, discard, and **budget** rules as Step 3 for \`targetBoardId\`.
+- Same as Step 3 on \`targetBoardId\`: **\`limit: 100\`**, **\`nextCursor\`**, same \`includeColumns\` / \`columnIds\` rules, discard non-candidates, same budget and complexity handling.
 - If the target board is large, narrow first (\`searchTerm\`, \`filters\`, \`itemIds\`) so each page is a relevant slice.
 
 ### Step 5 — Build candidate matches; handle ambiguity without guessing
@@ -173,7 +169,7 @@ export class LinkBoardItemsV2Tool extends BaseMondayApiTool<LinkBoardItemsV2Tool
 
   getDescription(): string {
     return (
-      'Use when linking items across boards with a **board-relation** column and you want a workflow for **fetching and matching on large boards** without loading every row: page with `get_board_items_page`, drop non-candidates between pages, and respect a memory/page budget (see below). You match, then this tool writes explicit `pairs` (same relation payload as `change_item_column_values`). It does not fetch or match for you; read the sections below before building `pairs`.\n\n' +
+      'Use when linking items across boards with a **board-relation** column. **Before calling:** use `get_board_items_page` with **`limit: 100`** and `nextCursor` until `has_more` is false, narrow with filters/`itemIds`/tight `columnIds` when comparing columns, match and drop non-candidates between pages, then call this tool with explicit `pairs` (same relation payload as `change_item_column_values`). This tool only writes `pairs`; it does not fetch or match. Workflow and rules are below.\n\n' +
       LINK_BOARD_ITEMS_V2_DOCUMENTATION
     );
   }
