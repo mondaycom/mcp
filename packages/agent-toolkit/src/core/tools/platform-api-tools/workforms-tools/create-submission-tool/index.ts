@@ -94,12 +94,6 @@ export class CreateSubmissionTool extends BaseMondayApiTool<typeof createSubmiss
         };
       }
 
-      if (!res.create_form_submission.id) {
-        return {
-          content: 'WorkForm submission was recorded but no submission ID was returned. Contact support if this persists.',
-        };
-      }
-
       return {
         content: {
           message: 'WorkForm submitted successfully',

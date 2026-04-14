@@ -6,7 +6,6 @@ export const createSubmissionMutationDev = gql`
     $answers: [FormAnswerInput!]!
     $form_timezone_offset: Int!
     $password: String
-    $group_id: ID
     $tags: [TagInput!]
   ) {
     create_form_submission(
@@ -14,7 +13,6 @@ export const createSubmissionMutationDev = gql`
       answers: $answers
       form_timezone_offset: $form_timezone_offset
       password: $password
-      group_id: $group_id
       tags: $tags
     ) {
       id

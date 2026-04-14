@@ -52,7 +52,7 @@ const formAnswerInputSchema = z
   .object({
     question_id: z.string().describe('The ID of the question being answered.'),
     name: z.string().optional().describe('Answer for name questions.'),
-    email: z.string().email().optional().describe('Answer for email questions.'),
+    email: z.string().optional().describe('Answer for email questions.'),
     short_text: z.string().optional().describe('Answer for short text questions.'),
     long_text: z.string().optional().describe('Answer for long text questions.'),
     link: z.string().optional().describe('Answer for link questions.'),
