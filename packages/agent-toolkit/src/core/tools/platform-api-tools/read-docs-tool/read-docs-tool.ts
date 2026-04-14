@@ -189,6 +189,13 @@ MODE: "version_history" — Fetch the edit history of a single document.
         return { content: 'Error: type and ids are required when mode is "content".' };
       }
 
+      this.sessionContext.metadata = {
+        ...this.sessionContext.metadata,
+        mode: input.mode ?? CONTENT_MODE,
+        include_comments: input.include_comments ?? false,
+        include_blocks: input.include_blocks ?? false,
+      };
+
       let ids: string[] | undefined;
       let object_ids: string[] | undefined;
       let workspace_ids: string[] | undefined;
@@ -241,9 +248,6 @@ MODE: "version_history" — Fetch the edit history of a single document.
 
       this.sessionContext.metadata = {
         ...this.sessionContext.metadata,
-        mode: input.mode ?? CONTENT_MODE,
-        include_comments: input.include_comments ?? false,
-        include_blocks: input.include_blocks ?? false,
         doc_ids: res.docs.flatMap((d) => d ? [d.id] : []),
         object_ids: res.docs.flatMap((d) => d?.object_id ? [d.object_id] : []),
       };
@@ -262,6 +266,12 @@ MODE: "version_history" — Fetch the edit history of a single document.
       return { content: 'Error: ids is required when mode is "version_history". Provide the document object_id.' };
     }
 
+    this.sessionContext.metadata = {
+      ...this.sessionContext.metadata,
+      mode: VERSION_HISTORY_MODE,
+      object_ids: [objectId],
+    };
+
     try {
       const variables: GetDocVersionHistoryQueryVariables = { docId: objectId, since, until };
       const historyResult = await this.mondayApi.request<GetDocVersionHistoryQuery>(getDocVersionHistory, variables);
@@ -269,11 +279,6 @@ MODE: "version_history" — Fetch the edit history of a single document.
       let restoringPoints = historyResult?.doc_version_history?.restoring_points;
 
       if (!restoringPoints || restoringPoints.length === 0) {
-        this.sessionContext.metadata = {
-          ...this.sessionContext.metadata,
-          mode: VERSION_HISTORY_MODE,
-          object_ids: [objectId],
-        };
         return {
           content: `No version history found for document ${objectId}${since ? ` from ${since}` : ''}.`,
         };
@@ -283,11 +288,6 @@ MODE: "version_history" — Fetch the edit history of a single document.
         if (version_history_limit) {
           restoringPoints = restoringPoints.slice(0, version_history_limit);
         }
-        this.sessionContext.metadata = {
-          ...this.sessionContext.metadata,
-          mode: VERSION_HISTORY_MODE,
-          object_ids: [objectId],
-        };
         return {
           content: { doc_id: objectId, since, until, restoring_points: restoringPoints },
         };
@@ -322,12 +322,6 @@ MODE: "version_history" — Fetch the edit history of a single document.
 
       // Drop the extra context point — it was only needed to compute the last diff.
       const finalPoints = restoringPointsWithDiffs.slice(0, userLimit);
-
-      this.sessionContext.metadata = {
-        ...this.sessionContext.metadata,
-        mode: VERSION_HISTORY_MODE,
-        object_ids: [objectId],
-      };
 
       return {
         content: {

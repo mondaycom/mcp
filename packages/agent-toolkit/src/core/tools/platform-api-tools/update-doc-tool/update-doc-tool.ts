@@ -116,6 +116,13 @@ COMMENTS:
       return { content: 'Error: Either doc_id or object_id must be provided.' };
     }
 
+    this.sessionContext.metadata = {
+      ...this.sessionContext.metadata,
+      operation_types: input.operations?.map((op) => op.operation_type),
+      operation_count: input.operations?.length ?? 0,
+      ...(input.object_id && { object_id: input.object_id }),
+    };
+
     try {
       // Resolve doc_id from object_id if needed
       let docId = input.doc_id;
@@ -152,10 +159,7 @@ COMMENTS:
 
       this.sessionContext.metadata = {
         ...this.sessionContext.metadata,
-        operation_types: input.operations?.map((op) => op.operation_type),
-        operation_count: input.operations?.length ?? 0,
         doc_id: docId,
-        ...(input.object_id && { object_id: input.object_id }),
       };
 
       return {
