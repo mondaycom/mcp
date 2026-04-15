@@ -1,7 +1,7 @@
 import { createMockApiClient } from '../test-utils/mock-api-client';
-import { CreateAccountEntityTool } from './create-account-entity-tool';
+import { CreateSchemaTool } from './create-schema-tool';
 
-describe('CreateAccountEntityTool', () => {
+describe('CreateSchemaTool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
 
   beforeEach(() => {
@@ -9,26 +9,26 @@ describe('CreateAccountEntityTool', () => {
     jest.clearAllMocks();
   });
 
-  it('successfully creates an account entity', async () => {
+  it('successfully creates a schema', async () => {
     mocks.setResponse({
-      create_account_entity: { id: '42', name: 'my_entity', description: 'A test entity', parent_id: null },
+      create_schema: { id: '42', name: 'my_schema', description: 'A test schema', parent_id: null },
     });
-    const tool = new CreateAccountEntityTool(mocks.mockApiClient);
+    const tool = new CreateSchemaTool(mocks.mockApiClient);
 
-    const result = await tool.execute({ name: 'my_entity', description: 'A test entity' });
+    const result = await tool.execute({ name: 'my_schema', description: 'A test schema' });
 
     expect(result.content).toEqual({
-      message: 'Account entity "my_entity" successfully created',
+      message: 'Schema "my_schema" successfully created',
       entity_id: '42',
-      entity_name: 'my_entity',
+      entity_name: 'my_schema',
     });
   });
 
   it('passes versionOverride dev to API request', async () => {
     mocks.setResponse({
-      create_account_entity: { id: '1', name: 'test', description: null, parent_id: null },
+      create_schema: { id: '1', name: 'test', description: null, parent_id: null },
     });
-    const tool = new CreateAccountEntityTool(mocks.mockApiClient);
+    const tool = new CreateSchemaTool(mocks.mockApiClient);
 
     await tool.execute({ name: 'test' });
 
@@ -41,9 +41,9 @@ describe('CreateAccountEntityTool', () => {
 
   it('passes optional parentId and description', async () => {
     mocks.setResponse({
-      create_account_entity: { id: '5', name: 'child', description: 'desc', parent_id: '3' },
+      create_schema: { id: '5', name: 'child', description: 'desc', parent_id: '3' },
     });
-    const tool = new CreateAccountEntityTool(mocks.mockApiClient);
+    const tool = new CreateSchemaTool(mocks.mockApiClient);
 
     await tool.execute({ name: 'child', parentId: '3', description: 'desc' });
 
@@ -56,16 +56,16 @@ describe('CreateAccountEntityTool', () => {
 
   it('propagates API errors', async () => {
     mocks.getMockRequest().mockRejectedValueOnce(new Error('Unauthorized'));
-    const tool = new CreateAccountEntityTool(mocks.mockApiClient);
+    const tool = new CreateSchemaTool(mocks.mockApiClient);
 
     await expect(tool.execute({ name: 'test' })).rejects.toThrow('Unauthorized');
   });
 
   it('has correct tool properties', () => {
-    const tool = new CreateAccountEntityTool(mocks.mockApiClient);
+    const tool = new CreateSchemaTool(mocks.mockApiClient);
 
-    expect(tool.name).toBe('create_account_entity');
+    expect(tool.name).toBe('create_schema');
     expect(tool.type).toBe('write');
-    expect(tool.getDescription()).toContain('account-level entity');
+    expect(tool.getDescription()).toContain('schema');
   });
 });
