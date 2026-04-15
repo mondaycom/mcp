@@ -3,6 +3,7 @@ import { ZodRawShape } from 'zod';
 import { ToolAnnotations } from '@modelcontextprotocol/sdk/types';
 import { SessionContext } from '../../executable';
 import { Tool, ToolInputType, ToolOutputType, ToolType } from '../../tool';
+import { trackEvent } from '../../../utils/tracking.utils';
 
 export type MondayApiToolContext = {
   // Operational context
@@ -46,11 +47,36 @@ export abstract class BaseMondayApiTool<
   abstract getInputSchema(): Input;
 
   /**
-   * Public execute method
+   * Public execute method that automatically tracks SLI events
    */
   async execute(input?: ToolInputType<Input>, sessionContext?: SessionContext): Promise<ToolOutputType<Output>> {
     this.sessionContext = sessionContext || {};
-    return this.executeInternal(input);
+    const startTime = Date.now();
+
+    trackEvent({
+      name: `mcp_sli_${this.name}_request`,
+      data: { toolName: this.name },
+    });
+
+    try {
+      const result = await this.executeInternal(input);
+
+      trackEvent({
+        name: `mcp_sli_${this.name}_success`,
+        data: { toolName: this.name, executionTimeMs: Date.now() - startTime },
+      });
+
+      return result;
+    } catch (error) {
+      trackEvent({
+        name: `mcp_sli_${this.name}_failure`,
+        data: {
+          toolName: this.name,
+          executionTimeMs: Date.now() - startTime,
+        },
+      });
+      throw error;
+    }
   }
 
   /**

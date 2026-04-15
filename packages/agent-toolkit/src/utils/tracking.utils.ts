@@ -20,7 +20,7 @@ export const trackEvent = ({ name, data }: { name: string; data: Record<string, 
         },
       },
     )
-    .catch(() => {
+    ?.catch(() => {
       // ignore errors in tracking
     });
 };
