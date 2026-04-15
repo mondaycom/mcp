@@ -8,18 +8,14 @@ import {
 import { deleteSchemaColumnsMutationDev } from './delete-schema-columns-tool.graphql.dev';
 
 export const deleteSchemaColumnsToolSchema = {
-  entityId: z
+  schemaId: z
     .string()
     .optional()
-    .describe(
-      'The ID of the schema (entity) to delete columns from. Either entityId or entityName must be provided.',
-    ),
-  entityName: z
+    .describe('The ID of the schema to delete columns from. Either schemaId or schemaName must be provided.'),
+  schemaName: z
     .string()
     .optional()
-    .describe(
-      'The name of the schema (entity) to delete columns from. Either entityId or entityName must be provided.',
-    ),
+    .describe('The name of the schema to delete columns from. Either schemaId or schemaName must be provided.'),
   columnIds: z
     .array(z.string())
     .describe(
@@ -49,8 +45,8 @@ export class DeleteSchemaColumnsTool extends BaseMondayApiTool<typeof deleteSche
     input: ToolInputType<typeof deleteSchemaColumnsToolSchema>,
   ): Promise<ToolOutputType<never>> {
     const variables: DeleteSchemaColumnsMutationVariables = {
-      entityId: input.entityId,
-      entityName: input.entityName,
+      entityId: input.schemaId,
+      entityName: input.schemaName,
       columnIds: input.columnIds,
     };
 

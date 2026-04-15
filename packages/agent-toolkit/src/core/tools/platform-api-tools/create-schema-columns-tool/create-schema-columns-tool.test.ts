@@ -43,7 +43,7 @@ describe('CreateSchemaColumnsTool', () => {
     );
   });
 
-  it('passes columns array with default policy when omitted', async () => {
+  it('omits policy when not provided', async () => {
     mocks.setResponse({
       create_schema_columns: { id: '1', name: 'test', description: null, parent_id: null, revision: 1 },
     });
@@ -55,7 +55,7 @@ describe('CreateSchemaColumnsTool', () => {
       expect.anything(),
       expect.objectContaining({
         columns: expect.arrayContaining([
-          expect.objectContaining({ type: 'numbers', title: 'Score', policy: { can_override: [], cannot_delete: false } }),
+          expect.objectContaining({ type: 'numbers', title: 'Score', policy: undefined }),
         ]),
       }),
       expect.objectContaining({ versionOverride: 'dev' }),

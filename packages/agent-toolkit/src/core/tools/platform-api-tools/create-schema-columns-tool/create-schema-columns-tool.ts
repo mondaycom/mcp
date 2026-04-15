@@ -75,7 +75,7 @@ export class CreateSchemaColumnsTool extends BaseMondayApiTool<typeof createSche
   protected async executeInternal(
     input: ToolInputType<typeof createSchemaColumnsToolSchema>,
   ): Promise<ToolOutputType<never>> {
-    const columns: CreateEntityColumnInput[] = input.columns.map((col) => ({
+    const columns = input.columns.map((col) => ({
       type: col.type as ColumnType,
       title: col.title,
       description: col.description,
@@ -86,13 +86,13 @@ export class CreateSchemaColumnsTool extends BaseMondayApiTool<typeof createSche
             can_override: (col.policy.can_override ?? []) as CanOverrideField[],
             cannot_delete: col.policy.cannot_delete ?? false,
           }
-        : { can_override: [] as CanOverrideField[], cannot_delete: false },
+        : undefined,
     }));
 
     const variables: CreateSchemaColumnsMutationVariables = {
       schemaId: input.schemaId,
       schemaName: input.schemaName,
-      columns,
+      columns: columns as CreateEntityColumnInput[],
     };
 
     const res = await this.mondayApi.request<CreateSchemaColumnsMutation>(

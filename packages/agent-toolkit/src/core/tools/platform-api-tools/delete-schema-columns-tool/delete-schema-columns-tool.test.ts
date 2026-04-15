@@ -15,7 +15,7 @@ describe('DeleteSchemaColumnsTool', () => {
     });
     const tool = new DeleteSchemaColumnsTool(mocks.mockApiClient);
 
-    const result = await tool.execute({ entityId: '42', columnIds: ['col-1', 'col-2'] });
+    const result = await tool.execute({ schemaId: '42', columnIds: ['col-1', 'col-2'] });
 
     expect((result.content as { message: string }).message).toContain('2 column(s)');
     expect((result.content as { message: string }).message).toContain('deleted');
@@ -27,7 +27,7 @@ describe('DeleteSchemaColumnsTool', () => {
     });
     const tool = new DeleteSchemaColumnsTool(mocks.mockApiClient);
 
-    await tool.execute({ entityId: '1', columnIds: ['col-1'] });
+    await tool.execute({ schemaId: '1', columnIds: ['col-1'] });
 
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
       expect.anything(),
@@ -36,13 +36,13 @@ describe('DeleteSchemaColumnsTool', () => {
     );
   });
 
-  it('accepts entityName instead of entityId', async () => {
+  it('accepts schemaName instead of schemaId', async () => {
     mocks.setResponse({
       delete_entity_columns: { id: '5', name: 'my_schema', description: null, parent_id: null, revision: 3 },
     });
     const tool = new DeleteSchemaColumnsTool(mocks.mockApiClient);
 
-    await tool.execute({ entityName: 'my_schema', columnIds: ['col-1'] });
+    await tool.execute({ schemaName: 'my_schema', columnIds: ['col-1'] });
 
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
       expect.anything(),
@@ -55,7 +55,7 @@ describe('DeleteSchemaColumnsTool', () => {
     mocks.getMockRequest().mockRejectedValueOnce(new Error('Unauthorized'));
     const tool = new DeleteSchemaColumnsTool(mocks.mockApiClient);
 
-    await expect(tool.execute({ entityId: '1', columnIds: ['col-1'] })).rejects.toThrow('Unauthorized');
+    await expect(tool.execute({ schemaId: '1', columnIds: ['col-1'] })).rejects.toThrow('Unauthorized');
   });
 
   it('has correct tool properties', () => {
