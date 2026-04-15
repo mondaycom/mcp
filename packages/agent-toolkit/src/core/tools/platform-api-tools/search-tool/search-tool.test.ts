@@ -43,7 +43,7 @@ describe('SearchTool', () => {
 
   describe('Tool Metadata', () => {
     it('should have correct tool metadata', () => {
-      const tool = new SearchTool(mocks.mockApiClient, 'fake_token');
+      const tool = new SearchTool(mocks.mockApiClient);
 
       expect(tool.name).toBe('search');
       expect(tool.type).toBe('read');
@@ -54,7 +54,7 @@ describe('SearchTool', () => {
     });
 
     it('should have correct description', () => {
-      const tool = new SearchTool(mocks.mockApiClient, 'fake_token');
+      const tool = new SearchTool(mocks.mockApiClient);
       const description = tool.getDescription();
 
       expect(description).toContain('Search within monday.com platform');
@@ -1119,7 +1119,7 @@ describe('SearchTool', () => {
 
   describe('Dev Endpoint Search (searchWithDevEndpointAsync)', () => {
     const mockDevBoardsResponse: SearchDevQuery = {
-      search: [
+      cross_entity_search: [
         {
           __typename: BOARD_SEARCH_RESULT_TYPENAME,
           entity_type: SearchableEntity.Board,
@@ -1134,7 +1134,7 @@ describe('SearchTool', () => {
     };
 
     const mockDevDocsResponse: SearchDevQuery = {
-      search: [
+      cross_entity_search: [
         {
           __typename: DOC_SEARCH_RESULT_TYPENAME,
           entity_type: SearchableEntity.Document,
@@ -1254,7 +1254,7 @@ describe('SearchTool', () => {
       });
 
       it('should handle empty results from dev endpoint', async () => {
-        mocks.setResponse({ search: [] });
+        mocks.setResponse({ cross_entity_search: [] });
 
         const args: inputType = {
           searchType: GlobalSearchType.BOARD,
@@ -1267,7 +1267,7 @@ describe('SearchTool', () => {
       });
 
       it('should handle null search results from dev endpoint', async () => {
-        mocks.setResponse({ search: null });
+        mocks.setResponse({ cross_entity_search: null });
 
         const args: inputType = {
           searchType: GlobalSearchType.BOARD,
@@ -1486,7 +1486,7 @@ describe('SearchTool', () => {
     describe('Mixed Entity Types in Response', () => {
       it('should correctly parse mixed board and doc results from dev endpoint', async () => {
         const mixedResponse: SearchDevQuery = {
-          search: [
+          cross_entity_search: [
             {
               __typename: BOARD_SEARCH_RESULT_TYPENAME,
               entity_type: SearchableEntity.Board,
@@ -1525,7 +1525,7 @@ describe('SearchTool', () => {
 
       it('should skip unknown entity types in dev endpoint response', async () => {
         const responseWithUnknownType: SearchDevQuery = {
-          search: [
+          cross_entity_search: [
             {
               __typename: BOARD_SEARCH_RESULT_TYPENAME,
               entity_type: SearchableEntity.Board,

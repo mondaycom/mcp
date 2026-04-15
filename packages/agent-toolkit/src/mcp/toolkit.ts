@@ -291,15 +291,11 @@ export class MondayAgentToolkit extends McpServer {
           if (!parsedArgs.success) {
             throw new Error(`Invalid arguments: ${parsedArgs.error.message}`);
           }
-          const result = await tool.execute(parsedArgs.data);
-          return {
-            content: [{ type: 'text', text: stringifyIfObject(result.content) }],
-          };
+          const result = await tool.execute(parsedArgs.data, extra);
+          return this.formatToolResult(result.content);
         } else {
-          const result = await tool.execute();
-          return {
-            content: [{ type: 'text', text: stringifyIfObject(result.content) }],
-          };
+          const result = await tool.execute(undefined, extra);
+          return this.formatToolResult(result.content);
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
@@ -335,8 +331,15 @@ export class MondayAgentToolkit extends McpServer {
    * Format the tool result into the expected MCP format
    */
   private formatToolResult(content: string | Record<string, any>): CallToolResult {
+    if(typeof content === 'string') {
+      return {
+        content: [{ type: 'text', text: content }],
+      }
+    }
+    
     return {
-      content: [{ type: 'text', text: stringifyIfObject(content) }],
+      structuredContent: content,
+      content: [{ type: 'text', text: JSON.stringify(content) }]
     };
   }
 

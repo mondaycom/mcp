@@ -80,7 +80,12 @@ export class CreateUpdateInMondayTool extends BaseMondayApiTool<typeof createUpd
       }
 
       return {
-        content: `Update ${res.create_update.id} successfully created on item ${input.itemId}. Now we want to show the updated data, so call the full board data tool to get data, and then immediately after that call the show table tool to show the data from that tool. CRITICAL: You MUST pass the COMPLETE and FULL data from the full board data tool to the show table tool - do NOT cut, summarize, truncate, or omit ANY data. Use the entire dataset exactly as received.`,
+        content: {
+          message: `Update ${res.create_update.id} successfully created on item ${input.itemId}`,
+          update_id: res.create_update.id,
+          item_id: input.itemId,
+          next_steps: 'Now call the full board data tool to get data, then immediately call the show table tool to show that data. CRITICAL: You MUST pass the COMPLETE and FULL data from the full board data tool to the show table tool - do NOT cut, summarize, truncate, or omit ANY data. Use the entire dataset exactly as received.',
+        },
       };
     } catch (error) {
       rethrowWithContext(error, 'create update');

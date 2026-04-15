@@ -48,6 +48,6 @@ export const exportStorageDataSchema = z.object({
     .enum(['JSON', 'CSV'])
     .optional()
     .describe(
-      'The desired export format. JSON preserves data structure and is best for re-importing; CSV is easier to view in spreadsheet applications. Defaults to JSON if not specified',
+      'The desired export format. JSON preserves data structure and is best for re-importing. CSV is easier to view in spreadsheet applications. Defaults to JSON if not specified',
     ),
 });

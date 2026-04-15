@@ -13,6 +13,7 @@ const QuestionBasicFragment = gql`
     description
     visible
     required
+    page_block_id
   }
 `;
 
@@ -47,6 +48,9 @@ const QuestionSettingsFragment = gql`
       locationAutofilled
       limit
       skipValidation
+      label_limit_count
+      label_limit_count_enabled
+      default_answer
     }
   }
 `;
@@ -127,7 +131,7 @@ const FormAppearanceFragment = gql`
     showProgressBar
     primaryColor
     layout {
-      format
+      type
       alignment
       direction
     }
@@ -173,7 +177,7 @@ const FormTagFragment = gql`
 // QUERIES AND MUTATIONS
 // ============================================================================
 
-// Create a new monday form (API version 2025-10)
+// Create a new monday form (API version 2026-07)
 export const createForm = gql`
   mutation createForm(
     $destination_workspace_id: ID!
@@ -391,6 +395,7 @@ export const updateFormQuestionOrder = gql`
     update_form(formToken: $formToken, input: { questions: $questions }) {
       questions {
         id
+        page_block_id
       }
     }
   }
