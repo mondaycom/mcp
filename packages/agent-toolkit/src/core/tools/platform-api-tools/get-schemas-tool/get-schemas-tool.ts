@@ -5,7 +5,7 @@ import {
   GetSchemasQuery,
   GetSchemasQueryVariables,
 } from '../../../../monday-graphql/generated/graphql.dev/graphql';
-import { getSchemasMutationDev } from './get-schemas-tool.graphql.dev';
+import { getSchemasQueryDev } from './get-schemas-tool.graphql.dev';
 
 export const getSchemasToolSchema = {
   ids: z
@@ -48,7 +48,7 @@ export class GetSchemasTool extends BaseMondayApiTool<typeof getSchemasToolSchem
       page: input.page,
     };
 
-    const res = await this.mondayApi.request<GetSchemasQuery>(getSchemasMutationDev, variables, {
+    const res = await this.mondayApi.request<GetSchemasQuery>(getSchemasQueryDev, variables, {
       versionOverride: 'dev',
     });
 

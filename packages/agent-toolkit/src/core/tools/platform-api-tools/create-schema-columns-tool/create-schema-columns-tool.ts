@@ -19,11 +19,7 @@ const policyInputSchema = z
     cannot_delete: z.boolean().optional().describe('If true, the column cannot be deleted from boards.'),
   })
   .optional()
-<<<<<<< HEAD
-  .describe('Controls board-level permissions for this column. If omitted, defaults to: no field overrides allowed, column can be deleted by boards.');
-=======
   .describe('Policy rules controlling what boards can do with this column. Omit to use permissive defaults.');
->>>>>>> 770d725 (feat(agent-toolkit): add data-structure schema management tools (v5.2.0))
 
 const columnInputSchema = z.object({
   type: z
@@ -79,43 +75,24 @@ export class CreateSchemaColumnsTool extends BaseMondayApiTool<typeof createSche
   protected async executeInternal(
     input: ToolInputType<typeof createSchemaColumnsToolSchema>,
   ): Promise<ToolOutputType<never>> {
-<<<<<<< HEAD
-    if (!input.schemaId && !input.schemaName) {
-      throw new Error('Either schemaId or schemaName must be provided');
-    }
-
     const columns = input.columns.map((col) => ({
-=======
-    const columns: CreateEntityColumnInput[] = input.columns.map((col) => ({
->>>>>>> 770d725 (feat(agent-toolkit): add data-structure schema management tools (v5.2.0))
       type: col.type as ColumnType,
       title: col.title,
       description: col.description,
       defaults: col.defaults,
       opt_out_by_default: col.opt_out_by_default,
-<<<<<<< HEAD
-      policy: {
-        can_override: (col.policy?.can_override ?? []) as CanOverrideField[],
-        cannot_delete: col.policy?.cannot_delete ?? false,
-      },
-=======
       policy: col.policy
         ? {
             can_override: (col.policy.can_override ?? []) as CanOverrideField[],
             cannot_delete: col.policy.cannot_delete ?? false,
           }
-        : { can_override: [] as CanOverrideField[], cannot_delete: false },
->>>>>>> 770d725 (feat(agent-toolkit): add data-structure schema management tools (v5.2.0))
+        : undefined,
     }));
 
     const variables: CreateSchemaColumnsMutationVariables = {
       schemaId: input.schemaId,
       schemaName: input.schemaName,
-<<<<<<< HEAD
       columns: columns as CreateEntityColumnInput[],
-=======
-      columns,
->>>>>>> 770d725 (feat(agent-toolkit): add data-structure schema management tools (v5.2.0))
     };
 
     const res = await this.mondayApi.request<CreateSchemaColumnsMutation>(
@@ -127,13 +104,8 @@ export class CreateSchemaColumnsTool extends BaseMondayApiTool<typeof createSche
     return {
       content: {
         message: `Columns successfully added to schema "${res.create_schema_columns?.name}"`,
-<<<<<<< HEAD
-        schema_id: res.create_schema_columns?.id,
-        schema_name: res.create_schema_columns?.name,
-=======
         entity_id: res.create_schema_columns?.id,
         entity_name: res.create_schema_columns?.name,
->>>>>>> 770d725 (feat(agent-toolkit): add data-structure schema management tools (v5.2.0))
         revision: res.create_schema_columns?.revision,
       },
     };

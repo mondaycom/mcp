@@ -15,11 +15,7 @@ describe('DeleteSchemaColumnsTool', () => {
     });
     const tool = new DeleteSchemaColumnsTool(mocks.mockApiClient);
 
-<<<<<<< HEAD
     const result = await tool.execute({ schemaId: '42', columnIds: ['col-1', 'col-2'] });
-=======
-    const result = await tool.execute({ entityId: '42', columnIds: ['col-1', 'col-2'] });
->>>>>>> 770d725 (feat(agent-toolkit): add data-structure schema management tools (v5.2.0))
 
     expect((result.content as { message: string }).message).toContain('2 column(s)');
     expect((result.content as { message: string }).message).toContain('deleted');
@@ -31,11 +27,7 @@ describe('DeleteSchemaColumnsTool', () => {
     });
     const tool = new DeleteSchemaColumnsTool(mocks.mockApiClient);
 
-<<<<<<< HEAD
     await tool.execute({ schemaId: '1', columnIds: ['col-1'] });
-=======
-    await tool.execute({ entityId: '1', columnIds: ['col-1'] });
->>>>>>> 770d725 (feat(agent-toolkit): add data-structure schema management tools (v5.2.0))
 
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
       expect.anything(),
@@ -44,21 +36,13 @@ describe('DeleteSchemaColumnsTool', () => {
     );
   });
 
-<<<<<<< HEAD
   it('accepts schemaName instead of schemaId', async () => {
-=======
-  it('accepts entityName instead of entityId', async () => {
->>>>>>> 770d725 (feat(agent-toolkit): add data-structure schema management tools (v5.2.0))
     mocks.setResponse({
       delete_entity_columns: { id: '5', name: 'my_schema', description: null, parent_id: null, revision: 3 },
     });
     const tool = new DeleteSchemaColumnsTool(mocks.mockApiClient);
 
-<<<<<<< HEAD
     await tool.execute({ schemaName: 'my_schema', columnIds: ['col-1'] });
-=======
-    await tool.execute({ entityName: 'my_schema', columnIds: ['col-1'] });
->>>>>>> 770d725 (feat(agent-toolkit): add data-structure schema management tools (v5.2.0))
 
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
       expect.anything(),
@@ -71,21 +55,13 @@ describe('DeleteSchemaColumnsTool', () => {
     mocks.getMockRequest().mockRejectedValueOnce(new Error('Unauthorized'));
     const tool = new DeleteSchemaColumnsTool(mocks.mockApiClient);
 
-<<<<<<< HEAD
     await expect(tool.execute({ schemaId: '1', columnIds: ['col-1'] })).rejects.toThrow('Unauthorized');
-=======
-    await expect(tool.execute({ entityId: '1', columnIds: ['col-1'] })).rejects.toThrow('Unauthorized');
->>>>>>> 770d725 (feat(agent-toolkit): add data-structure schema management tools (v5.2.0))
   });
 
   it('has correct tool properties', () => {
     const tool = new DeleteSchemaColumnsTool(mocks.mockApiClient);
 
-<<<<<<< HEAD
-    expect(tool.name).toBe('delete_schema_columns');
-=======
     expect(tool.name).toBe('delete_entity_columns');
->>>>>>> 770d725 (feat(agent-toolkit): add data-structure schema management tools (v5.2.0))
     expect(tool.type).toBe('write');
     expect(tool.getDescription()).toContain('schema');
   });
