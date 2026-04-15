@@ -22,8 +22,13 @@ describe('UpdateSchemaColumnsTool', () => {
 
     expect(result.content).toEqual({
       message: 'Columns successfully updated on schema "my_schema"',
+<<<<<<< HEAD
       schema_id: '42',
       schema_name: 'my_schema',
+=======
+      entity_id: '42',
+      entity_name: 'my_schema',
+>>>>>>> 770d725 (feat(agent-toolkit): add data-structure schema management tools (v5.2.0))
       revision: 3,
     });
   });

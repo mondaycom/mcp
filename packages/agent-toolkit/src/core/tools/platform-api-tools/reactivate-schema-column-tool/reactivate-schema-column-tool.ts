@@ -40,10 +40,13 @@ export class ReactivateSchemaColumnTool extends BaseMondayApiTool<typeof reactiv
   protected async executeInternal(
     input: ToolInputType<typeof reactivateSchemaColumnToolSchema>,
   ): Promise<ToolOutputType<never>> {
+<<<<<<< HEAD
     if (!input.schemaId && !input.schemaName) {
       throw new Error('Either schemaId or schemaName must be provided');
     }
 
+=======
+>>>>>>> 770d725 (feat(agent-toolkit): add data-structure schema management tools (v5.2.0))
     const variables: ReactivateSchemaColumnMutationVariables = {
       schemaId: input.schemaId,
       schemaName: input.schemaName,
@@ -59,8 +62,13 @@ export class ReactivateSchemaColumnTool extends BaseMondayApiTool<typeof reactiv
     return {
       content: {
         message: `Column "${input.columnId}" successfully reactivated on schema "${res.reactivate_schema_column?.name}"`,
+<<<<<<< HEAD
         schema_id: res.reactivate_schema_column?.id,
         schema_name: res.reactivate_schema_column?.name,
+=======
+        entity_id: res.reactivate_schema_column?.id,
+        entity_name: res.reactivate_schema_column?.name,
+>>>>>>> 770d725 (feat(agent-toolkit): add data-structure schema management tools (v5.2.0))
         revision: res.reactivate_schema_column?.revision,
       },
     };

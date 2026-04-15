@@ -5,7 +5,11 @@ import {
   GetSchemasQuery,
   GetSchemasQueryVariables,
 } from '../../../../monday-graphql/generated/graphql.dev/graphql';
+<<<<<<< HEAD
 import { getSchemasQueryDev } from './get-schemas-tool.graphql.dev';
+=======
+import { getSchemasMutationDev } from './get-schemas-tool.graphql.dev';
+>>>>>>> 770d725 (feat(agent-toolkit): add data-structure schema management tools (v5.2.0))
 
 export const getSchemasToolSchema = {
   ids: z
@@ -31,7 +35,11 @@ export class GetSchemasTool extends BaseMondayApiTool<typeof getSchemasToolSchem
   });
 
   getDescription(): string {
+<<<<<<< HEAD
     return 'Retrieve account-level schemas by their IDs or names. Schemas define the structure and columns of boards. Provide ids or names to filter specific schemas. Omit both to list all schemas (paginated).';
+=======
+    return 'Retrieve account-level schemas by their IDs or names. Schemas define the structure and columns of boards. Provide ids or names to filter specific schemas; omit both to list all schemas (paginated).';
+>>>>>>> 770d725 (feat(agent-toolkit): add data-structure schema management tools (v5.2.0))
   }
 
   getInputSchema(): typeof getSchemasToolSchema {
@@ -48,7 +56,11 @@ export class GetSchemasTool extends BaseMondayApiTool<typeof getSchemasToolSchem
       page: input.page,
     };
 
+<<<<<<< HEAD
     const res = await this.mondayApi.request<GetSchemasQuery>(getSchemasQueryDev, variables, {
+=======
+    const res = await this.mondayApi.request<GetSchemasQuery>(getSchemasMutationDev, variables, {
+>>>>>>> 770d725 (feat(agent-toolkit): add data-structure schema management tools (v5.2.0))
       versionOverride: 'dev',
     });
 

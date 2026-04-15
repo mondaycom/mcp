@@ -56,10 +56,13 @@ export class UpdateSchemaColumnsTool extends BaseMondayApiTool<typeof updateSche
   protected async executeInternal(
     input: ToolInputType<typeof updateSchemaColumnsToolSchema>,
   ): Promise<ToolOutputType<never>> {
+<<<<<<< HEAD
     if (!input.schemaId && !input.schemaName) {
       throw new Error('Either schemaId or schemaName must be provided');
     }
 
+=======
+>>>>>>> 770d725 (feat(agent-toolkit): add data-structure schema management tools (v5.2.0))
     const variables: UpdateSchemaColumnsMutationVariables = {
       schemaId: input.schemaId,
       schemaName: input.schemaName,
@@ -75,8 +78,13 @@ export class UpdateSchemaColumnsTool extends BaseMondayApiTool<typeof updateSche
     return {
       content: {
         message: `Columns successfully updated on schema "${res.update_schema_columns?.name}"`,
+<<<<<<< HEAD
         schema_id: res.update_schema_columns?.id,
         schema_name: res.update_schema_columns?.name,
+=======
+        entity_id: res.update_schema_columns?.id,
+        entity_name: res.update_schema_columns?.name,
+>>>>>>> 770d725 (feat(agent-toolkit): add data-structure schema management tools (v5.2.0))
         revision: res.update_schema_columns?.revision,
       },
     };

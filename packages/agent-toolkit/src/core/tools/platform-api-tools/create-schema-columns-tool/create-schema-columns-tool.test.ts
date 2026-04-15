@@ -22,8 +22,13 @@ describe('CreateSchemaColumnsTool', () => {
 
     expect(result.content).toEqual({
       message: 'Columns successfully added to schema "my_schema"',
+<<<<<<< HEAD
       schema_id: '42',
       schema_name: 'my_schema',
+=======
+      entity_id: '42',
+      entity_name: 'my_schema',
+>>>>>>> 770d725 (feat(agent-toolkit): add data-structure schema management tools (v5.2.0))
       revision: 2,
     });
   });
@@ -43,7 +48,11 @@ describe('CreateSchemaColumnsTool', () => {
     );
   });
 
+<<<<<<< HEAD
   it('applies default policy when not provided', async () => {
+=======
+  it('passes columns array with default policy when omitted', async () => {
+>>>>>>> 770d725 (feat(agent-toolkit): add data-structure schema management tools (v5.2.0))
     mocks.setResponse({
       create_schema_columns: { id: '1', name: 'test', description: null, parent_id: null, revision: 1 },
     });
