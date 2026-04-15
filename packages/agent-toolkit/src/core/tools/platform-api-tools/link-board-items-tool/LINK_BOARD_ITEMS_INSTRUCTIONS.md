@@ -1,8 +1,8 @@
 # Link board items — agent instructions
 
-Human-readable copy of the workflow embedded in the `link_board_items_v2` MCP tool description.
+Human-readable copy of the workflow embedded in the `link_board_items` MCP tool description.
 
-**Keeping in sync:** The published package ships only compiled JS (`dist/`). The tool still exposes this text via a string in `link-board-items-v2-tool.ts`. When you change instructions, update **both** this file and `LINK_BOARD_ITEMS_V2_DOCUMENTATION` in that file (or vice versa). TypeScript does **not** import this `.md` at build or runtime without extra Rollup plugins and shipping assets.
+**Keeping in sync:** The published package ships only compiled JS (`dist/`). The tool still exposes this text via a string in `link-board-items-tool.ts`. When you change instructions, update **both** this file and `LINK_BOARD_ITEMS_DOCUMENTATION` in that file (or vice versa). TypeScript does **not** import this `.md` at build or runtime without extra Rollup plugins and shipping assets.
 
 ---
 
@@ -74,7 +74,7 @@ Like a foreign key: the board-relation column lives on **exactly one** side.
 
 - Per source: **zero or one** target by Step 2. **Zero** → omit from `pairs` (or report unmatched). **Several** plausible matches at once → **do not** write that source; widen or change the query, omit, or ask the user (principle **3**).
 
-### Step 6 — Verify and call `link_board_items_v2`
+### Step 6 — Verify and call `link_board_items`
 
 - `pairs` from Step 5; each `sourceItemId` **at most once** (tool dedupes identical pairs). Pass `sourceBoardId`, `targetBoardId`, `linkSide`, `linkColumnId`, `pairs`.
 
@@ -98,5 +98,5 @@ Like a foreign key: the board-relation column lives on **exactly one** side.
 **Example C — Large board (illustrative)**
 
 - Name-match task **"react upgrade"** to one epic: e.g. `searchTerm` on a token from the task name, **or** chunked `itemIds` if you already have candidates, **or** `filters` plus `nextCursor` — any path is fine if it respects principles **1–4**.
-- Call `link_board_items_v2` with one `pair` once exactly one epic matches your Step 2 rule.
+- Call `link_board_items` with one `pair` once exactly one epic matches your Step 2 rule.
 

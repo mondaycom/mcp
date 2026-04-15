@@ -10,7 +10,7 @@ import {
 import { changeItemColumnValues } from '../../../../monday-graphql/queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { getLinkCandidateItems } from '../link-board-items-tool/link-board-items-tool.graphql';
+import { getLinkCandidateItems } from './link-board-items-tool.graphql';
 
 const MAX_ITEM_IDS_PER_QUERY = 100;
 const FETCH_PAGE_SIZE = 200;
@@ -19,7 +19,7 @@ const FETCH_PAGE_SIZE = 200;
  * Skill-style tool documentation: when/how to use, workflow (cardinality, link direction, scale, errors).
  * Stresses minimal columnIds, agent-chosen discovery (search/filter/ids/paging), and bounded paging.
  */
-const LINK_BOARD_ITEMS_V2_DOCUMENTATION = `
+const LINK_BOARD_ITEMS_DOCUMENTATION = `
 # Link Board Items — guided fetch workflow and relation writes
 
 ## Purpose
@@ -82,7 +82,7 @@ Like a foreign key: the board-relation column lives on **exactly one** side.
 
 - Per source: **zero or one** target by Step 2. **Zero** → omit from \`pairs\` (or report unmatched). **Several** plausible matches at once → **do not** write that source; widen or change the query, omit, or ask the user (principle **3**).
 
-### Step 6 — Verify and call \`link_board_items_v2\`
+### Step 6 — Verify and call \`link_board_items\`
 
 - \`pairs\` from Step 5; each \`sourceItemId\` **at most once** (tool dedupes identical pairs). Pass \`sourceBoardId\`, \`targetBoardId\`, \`linkSide\`, \`linkColumnId\`, \`pairs\`.
 
@@ -106,10 +106,10 @@ Like a foreign key: the board-relation column lives on **exactly one** side.
 **Example C — Large board (illustrative)**
 
 - Name-match task **"react upgrade"** to one epic: e.g. \`searchTerm\` on a token from the task name, **or** chunked \`itemIds\` if you already have candidates, **or** \`filters\` plus \`nextCursor\` — any path is fine if it respects principles **1–4**.
-- Call \`link_board_items_v2\` with one \`pair\` once exactly one epic matches your Step 2 rule.
+- Call \`link_board_items\` with one \`pair\` once exactly one epic matches your Step 2 rule.
 `.trim();
 
-export const linkBoardItemsV2ToolSchema = {
+export const linkBoardItemsToolSchema = {
   sourceBoardId: z
     .number()
     .describe(
@@ -149,12 +149,12 @@ export const linkBoardItemsV2ToolSchema = {
     ),
 };
 
-export type LinkBoardItemsV2ToolInput = typeof linkBoardItemsV2ToolSchema;
+export type LinkBoardItemsToolInput = typeof linkBoardItemsToolSchema;
 
 type NormalizedPair = { sourceItemId: string; targetItemId: string };
 
-export class LinkBoardItemsV2Tool extends BaseMondayApiTool<LinkBoardItemsV2ToolInput> {
-  name = 'link_board_items_v2';
+export class LinkBoardItemsTool extends BaseMondayApiTool<LinkBoardItemsToolInput> {
+  name = 'link_board_items';
   type = ToolType.WRITE;
   annotations = createMondayApiAnnotations({
     title: 'Link Board Items',
@@ -166,16 +166,16 @@ export class LinkBoardItemsV2Tool extends BaseMondayApiTool<LinkBoardItemsV2Tool
   getDescription(): string {
     return (
       'Use when linking across boards via **board-relation**: **you** fetch and match (bounded), with **minimal `columnIds`** when columns matter, then this tool writes `pairs` (same payload shape as `change_item_column_values`). Details below.\n\n' +
-      LINK_BOARD_ITEMS_V2_DOCUMENTATION
+      LINK_BOARD_ITEMS_DOCUMENTATION
     );
   }
 
-  getInputSchema(): LinkBoardItemsV2ToolInput {
-    return linkBoardItemsV2ToolSchema;
+  getInputSchema(): LinkBoardItemsToolInput {
+    return linkBoardItemsToolSchema;
   }
 
   protected async executeInternal(
-    input: ToolInputType<LinkBoardItemsV2ToolInput>,
+    input: ToolInputType<LinkBoardItemsToolInput>,
   ): Promise<ToolOutputType<never>> {
     const pairs = this.normalizeAndDedupePairs(input.pairs);
     this.assertSingleTargetPerSource(pairs);
@@ -236,7 +236,7 @@ export class LinkBoardItemsV2Tool extends BaseMondayApiTool<LinkBoardItemsV2Tool
   }
 
   private normalizeAndDedupePairs(
-    raw: ToolInputType<LinkBoardItemsV2ToolInput>['pairs'],
+    raw: ToolInputType<LinkBoardItemsToolInput>['pairs'],
   ): NormalizedPair[] {
     const seen = new Set<string>();
     const out: NormalizedPair[] = [];

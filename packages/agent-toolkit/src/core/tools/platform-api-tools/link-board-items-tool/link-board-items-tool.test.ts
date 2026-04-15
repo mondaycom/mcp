@@ -1,7 +1,7 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameAsync, callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
 
-const TOOL_NAME = 'link_board_items_v2';
+const TOOL_NAME = 'link_board_items';
 
 const makeLinkCandidateResponse = (
   items: Array<{ id: string; linkedItemIds?: string[] }>,
@@ -30,7 +30,7 @@ const makeLinkCandidateResponse = (
   ],
 });
 
-describe('LinkBoardItemsV2Tool', () => {
+describe('LinkBoardItemsTool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
 
   beforeEach(() => {
