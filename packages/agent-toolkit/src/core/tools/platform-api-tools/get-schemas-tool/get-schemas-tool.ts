@@ -31,7 +31,7 @@ export class GetSchemasTool extends BaseMondayApiTool<typeof getSchemasToolSchem
   });
 
   getDescription(): string {
-    return 'Retrieve account-level schemas by their IDs or names. Schemas define the structure and columns of boards. Provide ids or names to filter specific schemas; omit both to list all schemas (paginated).';
+    return 'Retrieve account-level schemas by their IDs or names. Schemas define the structure and columns of boards. Provide ids or names to filter specific schemas. Omit both to list all schemas (paginated).';
   }
 
   getInputSchema(): typeof getSchemasToolSchema {
