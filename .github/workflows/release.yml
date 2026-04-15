@@ -8,6 +8,7 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    environment: prod
     permissions:
       contents: write
       pull-requests: read
@@ -15,7 +16,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.RELEASE_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -34,7 +35,7 @@ jobs:
         id: bumpr
         uses: haya14busa/action-bumpr@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.RELEASE_TOKEN }}
           default_bump_level: 'patch'
           tag_as_user: 'github-actions[bot]'
           tag_as_email: 'github-actions[bot]@users.noreply.github.com'
@@ -81,7 +82,7 @@ jobs:
         if: ${{ !steps.bumpr.outputs.skip }}
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         with:
           tag_name: ${{ steps.bumpr.outputs.next_version }}
           release_name: Release ${{ steps.bumpr.outputs.next_version }}
