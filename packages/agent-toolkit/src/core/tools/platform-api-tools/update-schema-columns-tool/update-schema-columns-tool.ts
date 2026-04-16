@@ -71,8 +71,8 @@ export class UpdateSchemaColumnsTool extends BaseMondayApiTool<typeof updateSche
     return {
       content: {
         message: `Columns successfully updated on schema "${res.update_schema_columns?.name}"`,
-        entity_id: res.update_schema_columns?.id,
-        entity_name: res.update_schema_columns?.name,
+        schema_id: res.update_schema_columns?.id,
+        schema_name: res.update_schema_columns?.name,
         revision: res.update_schema_columns?.revision,
       },
     };

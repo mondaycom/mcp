@@ -17,8 +17,8 @@ describe('DeleteSchemaTool', () => {
 
     expect(result.content).toEqual({
       message: 'Schema "my_schema" successfully deleted',
-      entity_id: '42',
-      entity_name: 'my_schema',
+      schema_id: '42',
+      schema_name: 'my_schema',
     });
   });
 

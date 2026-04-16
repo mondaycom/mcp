@@ -53,8 +53,8 @@ export class OptOutSchemaColumnTool extends BaseMondayApiTool<typeof optOutSchem
     return {
       content: {
         message: `Column "${input.columnId}" set to opt-out by default on schema "${res.opt_out_schema_column?.name}"`,
-        entity_id: res.opt_out_schema_column?.id,
-        entity_name: res.opt_out_schema_column?.name,
+        schema_id: res.opt_out_schema_column?.id,
+        schema_name: res.opt_out_schema_column?.name,
         revision: res.opt_out_schema_column?.revision,
       },
     };

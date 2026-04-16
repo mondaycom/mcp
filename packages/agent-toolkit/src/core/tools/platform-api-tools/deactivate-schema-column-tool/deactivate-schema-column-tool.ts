@@ -55,8 +55,8 @@ export class DeactivateSchemaColumnTool extends BaseMondayApiTool<typeof deactiv
     return {
       content: {
         message: `Column "${input.columnId}" successfully deactivated on schema "${res.deactivate_schema_column?.name}"`,
-        entity_id: res.deactivate_schema_column?.id,
-        entity_name: res.deactivate_schema_column?.name,
+        schema_id: res.deactivate_schema_column?.id,
+        schema_name: res.deactivate_schema_column?.name,
         revision: res.deactivate_schema_column?.revision,
       },
     };

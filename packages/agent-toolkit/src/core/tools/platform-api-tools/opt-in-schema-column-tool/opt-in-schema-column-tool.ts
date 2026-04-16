@@ -53,8 +53,8 @@ export class OptInSchemaColumnTool extends BaseMondayApiTool<typeof optInSchemaC
     return {
       content: {
         message: `Column "${input.columnId}" set to opt-in by default on schema "${res.opt_in_schema_column?.name}"`,
-        entity_id: res.opt_in_schema_column?.id,
-        entity_name: res.opt_in_schema_column?.name,
+        schema_id: res.opt_in_schema_column?.id,
+        schema_name: res.opt_in_schema_column?.name,
         revision: res.opt_in_schema_column?.revision,
       },
     };

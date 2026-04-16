@@ -22,8 +22,8 @@ describe('UpdateSchemaColumnsTool', () => {
 
     expect(result.content).toEqual({
       message: 'Columns successfully updated on schema "my_schema"',
-      entity_id: '42',
-      entity_name: 'my_schema',
+      schema_id: '42',
+      schema_name: 'my_schema',
       revision: 3,
     });
   });

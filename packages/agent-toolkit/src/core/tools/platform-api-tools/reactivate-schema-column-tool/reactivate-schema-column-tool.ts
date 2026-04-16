@@ -55,8 +55,8 @@ export class ReactivateSchemaColumnTool extends BaseMondayApiTool<typeof reactiv
     return {
       content: {
         message: `Column "${input.columnId}" successfully reactivated on schema "${res.reactivate_schema_column?.name}"`,
-        entity_id: res.reactivate_schema_column?.id,
-        entity_name: res.reactivate_schema_column?.name,
+        schema_id: res.reactivate_schema_column?.id,
+        schema_name: res.reactivate_schema_column?.name,
         revision: res.reactivate_schema_column?.revision,
       },
     };

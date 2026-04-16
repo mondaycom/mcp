@@ -49,8 +49,8 @@ export class CreateSchemaTool extends BaseMondayApiTool<typeof createSchemaToolS
     return {
       content: {
         message: `Schema "${res.create_schema?.name}" successfully created`,
-        entity_id: res.create_schema?.id,
-        entity_name: res.create_schema?.name,
+        schema_id: res.create_schema?.id,
+        schema_name: res.create_schema?.name,
       },
     };
   }

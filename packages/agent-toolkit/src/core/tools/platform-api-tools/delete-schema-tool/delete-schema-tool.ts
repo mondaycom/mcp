@@ -45,8 +45,8 @@ export class DeleteSchemaTool extends BaseMondayApiTool<typeof deleteSchemaToolS
     return {
       content: {
         message: `Schema "${res.delete_schema?.name}" successfully deleted`,
-        entity_id: res.delete_schema?.id,
-        entity_name: res.delete_schema?.name,
+        schema_id: res.delete_schema?.id,
+        schema_name: res.delete_schema?.name,
       },
     };
   }

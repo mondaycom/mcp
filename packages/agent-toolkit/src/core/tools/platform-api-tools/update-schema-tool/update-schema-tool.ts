@@ -52,8 +52,8 @@ export class UpdateSchemaTool extends BaseMondayApiTool<typeof updateSchemaToolS
     return {
       content: {
         message: `Schema "${res.update_schema?.name}" successfully updated`,
-        entity_id: res.update_schema?.id,
-        entity_name: res.update_schema?.name,
+        schema_id: res.update_schema?.id,
+        schema_name: res.update_schema?.name,
         revision: res.update_schema?.revision,
       },
     };

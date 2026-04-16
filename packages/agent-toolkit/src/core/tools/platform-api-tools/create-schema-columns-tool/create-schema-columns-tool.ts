@@ -102,8 +102,8 @@ export class CreateSchemaColumnsTool extends BaseMondayApiTool<typeof createSche
     return {
       content: {
         message: `Columns successfully added to schema "${res.create_schema_columns?.name}"`,
-        entity_id: res.create_schema_columns?.id,
-        entity_name: res.create_schema_columns?.name,
+        schema_id: res.create_schema_columns?.id,
+        schema_name: res.create_schema_columns?.name,
         revision: res.create_schema_columns?.revision,
       },
     };
