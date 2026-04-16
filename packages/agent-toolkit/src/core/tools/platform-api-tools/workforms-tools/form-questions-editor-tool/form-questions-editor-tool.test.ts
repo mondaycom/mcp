@@ -3,6 +3,7 @@ import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '..
 import { formQuestionsEditorToolSchema } from './schema';
 import { FormQuestionActions } from '../workforms.types';
 import {
+  ConditionOperator,
   FormQuestionType,
   FormQuestionPrefillSources,
   FormQuestionSelectDisplay,
@@ -981,6 +982,155 @@ describe('FormQuestionsEditorTool', () => {
 
       const mockCall = mocks.getMockRequest().mock.calls[0];
       expect(mockCall[1].question.type).toBe(FormQuestionType.Number);
+    });
+  });
+
+  describe('Show If Rules (Conditional Logic)', () => {
+    it('should create a question with show_if_rules', async () => {
+      const createQuestionResponse = {
+        create_form_question: {
+          id: 'question_conditional',
+          type: FormQuestionType.ShortText,
+          title: 'Other details',
+          visible: true,
+          required: false,
+        },
+      };
+
+      mocks.setResponse(createQuestionResponse);
+
+      const args: inputType = {
+        action: FormQuestionActions.Create,
+        formToken: 'form_token_123',
+        question: {
+          type: FormQuestionType.ShortText,
+          title: 'Other details',
+          show_if_rules: {
+            operator: ConditionOperator.Or,
+            rules: [
+              {
+                operator: ConditionOperator.Or,
+                conditions: [
+                  {
+                    building_block_id: 'source_question_id',
+                    operator: ConditionOperator.Or,
+                    values: ['Other'],
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      };
+
+      const result = await callToolByNameRawAsync('form_questions_editor', args);
+
+      expect(parseToolResult(result).message).toBe('Question created');
+      expect(parseToolResult(result).question_id).toBe('question_conditional');
+
+      const mockCall = mocks.getMockRequest().mock.calls[0];
+      expect(mockCall[1].question.show_if_rules.operator).toBe('OR');
+      expect(mockCall[1].question.show_if_rules.rules[0].conditions[0].building_block_id).toBe('source_question_id');
+      expect(mockCall[1].question.show_if_rules.rules[0].conditions[0].values).toEqual(['Other']);
+    });
+
+    it('should update a question with show_if_rules', async () => {
+      const updateQuestionResponse = {
+        update_form_question: {
+          id: 'question_123',
+          type: FormQuestionType.LongText,
+          title: 'Tell us more',
+          visible: true,
+          required: false,
+        },
+      };
+
+      mocks.setResponse(updateQuestionResponse);
+
+      const args: inputType = {
+        action: FormQuestionActions.Update,
+        formToken: 'form_token_123',
+        questionId: 'question_123',
+        question: {
+          type: FormQuestionType.LongText,
+          show_if_rules: {
+            operator: ConditionOperator.Or,
+            rules: [
+              {
+                operator: ConditionOperator.Or,
+                conditions: [
+                  {
+                    building_block_id: 'dropdown_q_id',
+                    operator: ConditionOperator.Or,
+                    values: ['Forms', 'Automations'],
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      };
+
+      const result = await callToolByNameRawAsync('form_questions_editor', args);
+
+      expect(parseToolResult(result).message).toBe('Question updated');
+
+      const mockCall = mocks.getMockRequest().mock.calls[0];
+      expect(mockCall[1].question.show_if_rules.operator).toBe('OR');
+      expect(mockCall[1].question.show_if_rules.rules[0].conditions[0].values).toEqual(['Forms', 'Automations']);
+    });
+
+    it('should create a question with multiple conditions in show_if_rules', async () => {
+      const createQuestionResponse = {
+        create_form_question: {
+          id: 'question_multi_cond',
+          type: FormQuestionType.ShortText,
+          title: 'Conditional question',
+          visible: true,
+          required: false,
+        },
+      };
+
+      mocks.setResponse(createQuestionResponse);
+
+      const args: inputType = {
+        action: FormQuestionActions.Create,
+        formToken: 'form_token_123',
+        question: {
+          type: FormQuestionType.ShortText,
+          title: 'Conditional question',
+          show_if_rules: {
+            operator: ConditionOperator.Or,
+            rules: [
+              {
+                operator: ConditionOperator.Or,
+                conditions: [
+                  {
+                    building_block_id: 'q1',
+                    operator: ConditionOperator.Or,
+                    values: ['Yes'],
+                  },
+                  {
+                    building_block_id: 'q2',
+                    operator: ConditionOperator.Or,
+                    values: ['Option A', 'Option B'],
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      };
+
+      const result = await callToolByNameRawAsync('form_questions_editor', args);
+
+      expect(parseToolResult(result).message).toBe('Question created');
+
+      const mockCall = mocks.getMockRequest().mock.calls[0];
+      const conditions = mockCall[1].question.show_if_rules.rules[0].conditions;
+      expect(conditions).toHaveLength(2);
+      expect(conditions[0].building_block_id).toBe('q1');
+      expect(conditions[1].values).toEqual(['Option A', 'Option B']);
     });
   });
 
