@@ -87,6 +87,7 @@ const mondaySchema = z.object({
     .boolean()
     .describe(GraphQLDescriptions.formSettings.properties.syncQuestionAndColumnsTitles)
     .optional(),
+  allow_create_item: z.boolean().describe(GraphQLDescriptions.formSettings.properties.allowCreateItem).optional(),
 });
 
 const passwordSchema = z.object({
@@ -130,10 +131,15 @@ const accessibilitySchema = z.object({
   logoAltText: z.string().describe(GraphQLDescriptions.formSettings.properties.logoAltText).optional(),
 });
 
+const aiTranslateSchema = z.object({
+  enabled: z.boolean().describe(GraphQLDescriptions.formSettings.properties.aiTranslateEnabled).optional(),
+});
+
 const featuresSchema = z.object({
   afterSubmissionView: afterSubmissionViewSchema
     .describe(GraphQLDescriptions.formSettings.properties.afterSubmissionView)
     .optional(),
+  ai_translate: aiTranslateSchema.describe(GraphQLDescriptions.formSettings.properties.aiTranslate).optional(),
   closeDate: closeDateSchema.describe(GraphQLDescriptions.formSettings.properties.closeDate).optional(),
   draftSubmission: draftSubmissionSchema
     .describe(GraphQLDescriptions.formSettings.properties.draftSubmission)
@@ -146,6 +152,7 @@ const featuresSchema = z.object({
   reCaptchaChallenge: z.boolean().describe(GraphQLDescriptions.formSettings.properties.reCaptchaChallenge).optional(),
   requireLogin: requireLoginSchema.describe(GraphQLDescriptions.formSettings.properties.requireLogin).optional(),
   responseLimit: responseLimitSchema.describe(GraphQLDescriptions.formSettings.properties.responseLimit).optional(),
+  is_anonymous: z.boolean().describe(GraphQLDescriptions.form.properties.isAnonymous).optional(),
 });
 
 const dehydratedQuestionSchema = z.object({

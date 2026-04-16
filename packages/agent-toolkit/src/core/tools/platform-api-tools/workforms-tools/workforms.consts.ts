@@ -143,6 +143,8 @@ export const GraphQLDescriptions = {
         'Boolean adding an update/comment field to the form. This is a special question type that represents the updates from the associated item of the submission on the monday board. ',
       syncQuestionAndColumnsTitles:
         'Boolean synchronizing form question titles with board column names. When true, the form question titles will be synchronized with the board column names.',
+      allowCreateItem:
+        'Boolean showing a "Create Item" button on the board that opens this form. When enabled, board members can create new board items by filling out this form directly from the board.',
       hideBranding: 'Boolean hiding monday branding from the form display.',
       showProgressBar: 'Boolean displaying a progress indicator showing form completion progress bar.',
       primaryColor: 'Hex color code for the primary theme color used throughout the form.',
@@ -207,6 +209,14 @@ export const GraphQLDescriptions = {
       pageBlockId: 'Page block this question belongs to. Required for questions inside a page block. Pass null to remove the page block association.',
       existingColumnId: 'Link to an existing board column instead of creating a new one.',
     },
+    showIfRules:
+      'Conditional visibility rules for this question. The question is shown when any rule is satisfied (OR between rules). Each rule contains conditions that must all be met (AND within a rule). Structure: { operator, rules: [{ operator, conditions: [{ building_block_id, operator, values }] }] }.',
+    showIfRulesOperator:
+      'Logical operator for combining rules or conditions. Use "OR" at the top level (show if any rule matches) and "OR" within conditions (match if any value matches).',
+    showIfConditionBuildingBlockId:
+      'The ID of the question whose answer is evaluated by this condition.',
+    showIfConditionValues:
+      'The expected answer values. The condition is met if the question answer matches any of these values.',
     inputs: {
       question: 'Complete question object containing all properties for creation or update.',
       questionData: 'Question configuration including type, title, and type-specific settings.',

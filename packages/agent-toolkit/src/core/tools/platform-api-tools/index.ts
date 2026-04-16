@@ -1,12 +1,26 @@
 import { AllMondayApiTool } from './all-monday-api-tool';
 import { BaseMondayApiToolConstructor } from './base-monday-api-tool';
 import { ChangeItemColumnValuesTool } from './change-item-column-values-tool';
+import { CreateSchemaTool } from './create-schema-tool/create-schema-tool';
+import { GetSchemasTool } from './get-schemas-tool/get-schemas-tool';
+import { UpdateSchemaTool } from './update-schema-tool/update-schema-tool';
+import { DeleteSchemaTool } from './delete-schema-tool/delete-schema-tool';
+import { ConnectBoardToSchemaTool } from './connect-board-to-schema-tool/connect-board-to-schema-tool';
+import { DetachBoardsFromSchemaTool } from './detach-boards-from-schema-tool/detach-boards-from-schema-tool';
+import { CreateSchemaColumnsTool } from './create-schema-columns-tool/create-schema-columns-tool';
+import { UpdateSchemaColumnsTool } from './update-schema-columns-tool/update-schema-columns-tool';
+import { DeactivateSchemaColumnTool } from './deactivate-schema-column-tool/deactivate-schema-column-tool';
+import { ReactivateSchemaColumnTool } from './reactivate-schema-column-tool/reactivate-schema-column-tool';
+import { OptOutSchemaColumnTool } from './opt-out-schema-column-tool/opt-out-schema-column-tool';
+import { OptInSchemaColumnTool } from './opt-in-schema-column-tool/opt-in-schema-column-tool';
+import { DeleteSchemaColumnsTool } from './delete-schema-columns-tool/delete-schema-columns-tool';
 import { CreateBoardTool } from './create-board-tool';
 import { CreateViewTool } from './create-view-tool/create-view-tool';
 import { CreateFormTool } from './workforms-tools/create-form-tool';
 import { FormQuestionsEditorTool } from './workforms-tools/form-questions-editor-tool';
 import { UpdateFormTool } from './workforms-tools/update-form-tool';
 import { GetFormTool } from './workforms-tools/get-form-tool';
+import { CreateSubmissionTool } from './workforms-tools/create-submission-tool';
 import { CreateColumnTool } from './create-column-tool';
 import { CreateCustomActivityTool } from './create-custom-activity-tool';
 import { CreateNotificationTool } from './create-notification-tool/create-notification-tool';
@@ -46,6 +60,7 @@ import { BoardInsightsTool } from './board-insights/board-insights-tool';
 import { SearchTool } from './search-tool/search-tool';
 import { CreateUpdateInMondayTool } from './create-update-tool-ui/create-update-ui-tool';
 import { UpdateAssetsOnItemTool } from './update-assets-on-item-tool/update-assets-on-item-tool';
+import { GetAssetsTool } from './get-assets-tool/get-assets-tool';
 import { UserContextTool } from './user-context-tool/user-context-tool';
 import { GetNotetakerMeetingsTool } from './get-notetaker-meetings-tool/get-notetaker-meetings-tool';
 import { UndoActionTool } from './undo-action-tool/undo-action-tool';
@@ -69,6 +84,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   UpdateFormTool,
   GetFormTool,
   FormQuestionsEditorTool,
+  CreateSubmissionTool,
   CreateColumnTool,
   CreateGroupTool,
   DeleteColumnTool,
@@ -99,18 +115,46 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   SearchTool,
   UserContextTool,
   UpdateAssetsOnItemTool,
+  GetAssetsTool,
   GetNotetakerMeetingsTool,
   CreateViewTool,
   UndoActionTool,
+  CreateSchemaTool,
+  GetSchemasTool,
+  UpdateSchemaTool,
+  DeleteSchemaTool,
+  ConnectBoardToSchemaTool,
+  DetachBoardsFromSchemaTool,
+  CreateSchemaColumnsTool,
+  UpdateSchemaColumnsTool,
+  DeactivateSchemaColumnTool,
+  ReactivateSchemaColumnTool,
+  OptOutSchemaColumnTool,
+  OptInSchemaColumnTool,
+  DeleteSchemaColumnsTool,
 ];
 
 export * from './all-monday-api-tool';
+export * from './create-schema-tool/create-schema-tool';
+export * from './get-schemas-tool/get-schemas-tool';
+export * from './update-schema-tool/update-schema-tool';
+export * from './delete-schema-tool/delete-schema-tool';
+export * from './connect-board-to-schema-tool/connect-board-to-schema-tool';
+export * from './detach-boards-from-schema-tool/detach-boards-from-schema-tool';
+export * from './create-schema-columns-tool/create-schema-columns-tool';
+export * from './update-schema-columns-tool/update-schema-columns-tool';
+export * from './deactivate-schema-column-tool/deactivate-schema-column-tool';
+export * from './reactivate-schema-column-tool/reactivate-schema-column-tool';
+export * from './opt-out-schema-column-tool/opt-out-schema-column-tool';
+export * from './opt-in-schema-column-tool/opt-in-schema-column-tool';
+export * from './delete-schema-columns-tool/delete-schema-columns-tool';
 export * from './change-item-column-values-tool';
 export * from './create-board-tool';
 export * from './workforms-tools/create-form-tool';
 export * from './workforms-tools/update-form-tool';
 export * from './workforms-tools/get-form-tool';
 export * from './workforms-tools/form-questions-editor-tool';
+export * from './workforms-tools/create-submission-tool';
 export * from './create-column-tool';
 export * from './create-group/create-group-tool';
 export * from './create-custom-activity-tool';
@@ -150,6 +194,7 @@ export * from './board-insights/board-insights-tool';
 export * from './search-tool/search-tool';
 export * from './user-context-tool/user-context-tool';
 export * from './update-assets-on-item-tool/update-assets-on-item-tool';
+export * from './get-assets-tool/get-assets-tool';
 // Notetaker Tools
 export * from './get-notetaker-meetings-tool/get-notetaker-meetings-tool';
 // Dashboard Tools

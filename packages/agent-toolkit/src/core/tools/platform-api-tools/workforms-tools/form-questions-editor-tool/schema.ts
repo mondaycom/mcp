@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { GraphQLDescriptions } from '../workforms.consts';
 import { FormQuestionActions } from '../workforms.types';
 import {
-  FormBlockKind,
+  ConditionOperator,
   FormQuestionSelectDisplay,
   FormQuestionSelectOrderByOptions,
   FormQuestionType,
@@ -10,7 +10,6 @@ import {
 } from '../../../../../monday-graphql/generated/graphql/graphql';
 const questionSchema = z.object({
   type: z.nativeEnum(FormQuestionType).describe(GraphQLDescriptions.question.properties.type),
-  block_type: z.nativeEnum(FormBlockKind).describe(GraphQLDescriptions.question.properties.blockType).optional(),
   title: z.string().describe(GraphQLDescriptions.question.properties.title).optional(),
   description: z.string().describe(GraphQLDescriptions.question.properties.description).optional(),
   visible: z.boolean().describe(GraphQLDescriptions.question.properties.visible).optional(),
@@ -21,6 +20,28 @@ const questionSchema = z.object({
     .describe(GraphQLDescriptions.question.properties.insertAfterQuestionId),
   page_block_id: z.string().nullish().describe(GraphQLDescriptions.question.properties.pageBlockId),
   existing_column_id: z.string().describe(GraphQLDescriptions.question.properties.existingColumnId).optional(),
+  show_if_rules: z
+    .object({
+      operator: z.nativeEnum(ConditionOperator).describe(GraphQLDescriptions.question.showIfRulesOperator),
+      rules: z.array(
+        z.object({
+          operator: z.nativeEnum(ConditionOperator).describe(GraphQLDescriptions.question.showIfRulesOperator),
+          conditions: z.array(
+            z.object({
+              building_block_id: z
+                .string()
+                .describe(GraphQLDescriptions.question.showIfConditionBuildingBlockId),
+              operator: z
+                .nativeEnum(ConditionOperator)
+                .describe(GraphQLDescriptions.question.showIfRulesOperator),
+              values: z.array(z.string()).describe(GraphQLDescriptions.question.showIfConditionValues),
+            }),
+          ),
+        }),
+      ),
+    })
+    .describe(GraphQLDescriptions.question.showIfRules)
+    .optional(),
   options: z
     .array(
       z.object({
