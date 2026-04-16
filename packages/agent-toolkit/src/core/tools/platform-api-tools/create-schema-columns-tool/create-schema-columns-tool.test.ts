@@ -55,7 +55,7 @@ describe('CreateSchemaColumnsTool', () => {
       expect.anything(),
       expect.objectContaining({
         columns: expect.arrayContaining([
-          expect.objectContaining({ type: 'numbers', title: 'Score', policy: { can_override: [], cannot_delete: true } }),
+          expect.objectContaining({ type: 'numbers', title: 'Score', policy: { can_override: [], cannot_delete: false } }),
         ]),
       }),
       expect.objectContaining({ versionOverride: 'dev' }),
