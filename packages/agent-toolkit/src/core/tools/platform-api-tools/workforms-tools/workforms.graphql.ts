@@ -22,6 +22,9 @@ const QuestionOptionsFragment = gql`
   fragment QuestionOptions on FormQuestion {
     options {
       label
+      value
+      visible
+      active
     }
   }
 `;
