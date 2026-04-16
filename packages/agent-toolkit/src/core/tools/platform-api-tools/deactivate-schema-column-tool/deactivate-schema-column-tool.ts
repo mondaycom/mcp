@@ -40,6 +40,10 @@ export class DeactivateSchemaColumnTool extends BaseMondayApiTool<typeof deactiv
   protected async executeInternal(
     input: ToolInputType<typeof deactivateSchemaColumnToolSchema>,
   ): Promise<ToolOutputType<never>> {
+    if (!input.schemaId && !input.schemaName) {
+      throw new Error('Either schemaId or schemaName must be provided');
+    }
+
     const variables: DeactivateSchemaColumnMutationVariables = {
       schemaId: input.schemaId,
       schemaName: input.schemaName,

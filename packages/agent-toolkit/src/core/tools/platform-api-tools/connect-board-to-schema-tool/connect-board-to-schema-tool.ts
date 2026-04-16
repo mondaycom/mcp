@@ -40,13 +40,10 @@ export class ConnectBoardToSchemaTool extends BaseMondayApiTool<typeof connectBo
   protected async executeInternal(
     input: ToolInputType<typeof connectBoardToSchemaToolSchema>,
   ): Promise<ToolOutputType<never>> {
-<<<<<<< HEAD
     if (!input.schemaId && !input.schemaName) {
       throw new Error('Either schemaId or schemaName must be provided');
     }
 
-=======
->>>>>>> 770d725 (feat(agent-toolkit): add data-structure schema management tools (v5.2.0))
     const variables: ConnectBoardToSchemaMutationVariables = {
       boardId: input.boardId,
       schemaId: input.schemaId,
