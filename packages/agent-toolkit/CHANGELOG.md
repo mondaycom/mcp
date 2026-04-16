@@ -1,6 +1,6 @@
 # Changelog
 
-## 5.4.0
+## 5.3.1
 
 ### Workforms tools — return full option data from GraphQL queries
 
