@@ -3,8 +3,8 @@ import { callToolByNameAsync, callToolByNameRawAsync, createMockApiClient } from
 import { SearchTool, searchSchema } from './search-tool';
 import { z, ZodTypeAny } from 'zod';
 import { GetBoardsQuery, GetDocsQuery, GetFoldersQuery } from 'src/monday-graphql/generated/graphql/graphql';
-import { SearchDevQuery, SearchableEntity } from 'src/monday-graphql/generated/graphql.dev/graphql';
-import { GlobalSearchType, ObjectPrefixes, SearchResult, BOARD_SEARCH_RESULT_TYPENAME, DOC_SEARCH_RESULT_TYPENAME } from './search-tool.types';
+import { SearchBoardsDevQuery, SearchDocsDevQuery } from 'src/monday-graphql/generated/graphql.dev/graphql';
+import { GlobalSearchType, ObjectPrefixes, SearchResult } from './search-tool.types';
 
 export type inputType = z.objectInputType<typeof searchSchema, ZodTypeAny>;
 
@@ -1117,35 +1117,27 @@ describe('SearchTool', () => {
     });
   });
 
-  describe('Dev Endpoint Search (searchWithDevEndpointAsync)', () => {
-    const mockDevBoardsResponse: SearchDevQuery = {
-      cross_entity_search: [
-        {
-          __typename: BOARD_SEARCH_RESULT_TYPENAME,
-          entity_type: SearchableEntity.Board,
-          data: { __typename: 'IndexedBoard', id: '123', name: 'Test Board 1', url: 'https://monday.com/boards/123' },
+  describe('Dev Endpoint Search (per-entity namespace)', () => {
+    const mockDevBoardsResponse: SearchBoardsDevQuery = {
+      search: {
+        boards: {
+          results: [
+            { id: '123', indexed_data: { id: '123', name: 'Test Board 1', url: 'https://monday.com/boards/123' } },
+            { id: '456', indexed_data: { id: '456', name: 'Test Board 2', url: 'https://monday.com/boards/456' } },
+          ],
         },
-        {
-          __typename: BOARD_SEARCH_RESULT_TYPENAME,
-          entity_type: SearchableEntity.Board,
-          data: { __typename: 'IndexedBoard', id: '456', name: 'Test Board 2', url: 'https://monday.com/boards/456' },
-        },
-      ],
+      },
     };
 
-    const mockDevDocsResponse: SearchDevQuery = {
-      cross_entity_search: [
-        {
-          __typename: DOC_SEARCH_RESULT_TYPENAME,
-          entity_type: SearchableEntity.Document,
-          data: { __typename: 'IndexedDoc', id: '111', name: 'Document 1' },
+    const mockDevDocsResponse: SearchDocsDevQuery = {
+      search: {
+        docs: {
+          results: [
+            { id: '111', indexed_data: { id: '111', name: 'Document 1' } },
+            { id: '222', indexed_data: { id: '222', name: 'Document 2' } },
+          ],
         },
-        {
-          __typename: DOC_SEARCH_RESULT_TYPENAME,
-          entity_type: SearchableEntity.Document,
-          data: { __typename: 'IndexedDoc', id: '222', name: 'Document 2' },
-        },
-      ],
+      },
     };
 
     describe('Board Search via Dev Endpoint', () => {
@@ -1172,13 +1164,11 @@ describe('SearchTool', () => {
         });
 
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query SearchDev'),
+          expect.stringContaining('query SearchBoardsDev'),
           {
             query: 'Test',
             limit: 100,
-            filters: {
-              entities: [{ boards: { workspace_ids: undefined } }],
-            },
+            workspaceIds: undefined,
           },
           expect.objectContaining({ versionOverride: 'dev' }),
         );
@@ -1210,7 +1200,7 @@ describe('SearchTool', () => {
         await callToolByNameAsync('search', args);
 
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query SearchDev'),
+          expect.stringContaining('query SearchBoardsDev'),
           expect.objectContaining({
             limit: 50,
           }),
@@ -1230,11 +1220,9 @@ describe('SearchTool', () => {
         await callToolByNameAsync('search', args);
 
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query SearchDev'),
+          expect.stringContaining('query SearchBoardsDev'),
           expect.objectContaining({
-            filters: {
-              entities: [{ boards: { workspace_ids: ['12345', '67890'] } }],
-            },
+            workspaceIds: ['12345', '67890'],
           }),
           expect.objectContaining({ versionOverride: 'dev' }),
         );
@@ -1254,24 +1242,11 @@ describe('SearchTool', () => {
       });
 
       it('should handle empty results from dev endpoint', async () => {
-        mocks.setResponse({ cross_entity_search: [] });
+        mocks.setResponse({ search: { boards: { results: [] } } });
 
         const args: inputType = {
           searchType: GlobalSearchType.BOARD,
           searchTerm: 'NonExistent',
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        expect(parsedResult.data).toHaveLength(0);
-      });
-
-      it('should handle null search results from dev endpoint', async () => {
-        mocks.setResponse({ cross_entity_search: null });
-
-        const args: inputType = {
-          searchType: GlobalSearchType.BOARD,
-          searchTerm: 'Test',
         };
 
         const parsedResult = await callToolByNameAsync('search', args);
@@ -1302,13 +1277,11 @@ describe('SearchTool', () => {
         });
 
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query SearchDev'),
+          expect.stringContaining('query SearchDocsDev'),
           {
             query: 'Document',
             limit: 100,
-            filters: {
-              entities: [{ docs: { workspace_ids: undefined } }],
-            },
+            workspaceIds: undefined,
           },
           expect.objectContaining({ versionOverride: 'dev' }),
         );
@@ -1377,7 +1350,7 @@ describe('SearchTool', () => {
         const parsedResult = await callToolByNameAsync('search', args);
 
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query SearchDev'),
+          expect.stringContaining('query SearchBoardsDev'),
           expect.any(Object),
           expect.objectContaining({ versionOverride: 'dev' })
         );
@@ -1403,7 +1376,7 @@ describe('SearchTool', () => {
         expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
         expect(mocks.getMockRequest()).toHaveBeenNthCalledWith(
           1,
-          expect.stringContaining('query SearchDev'),
+          expect.stringContaining('query SearchBoardsDev'),
           expect.any(Object),
           expect.objectContaining({ versionOverride: 'dev' })
         );
@@ -1428,14 +1401,9 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        // Should use GetFolders query, not SearchDev
+        // Should use GetFolders query, not per-entity search
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(
           expect.stringContaining('query GetFolders'),
-          expect.any(Object),
-        );
-        expect(mocks.getMockRequest()).not.toHaveBeenCalledWith(
-          expect.stringContaining('query SearchDev'),
-          expect.any(Object),
           expect.any(Object),
         );
         expect(parsedResult.data).toBeDefined();
@@ -1451,14 +1419,9 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        // Should use GetBoards query directly, not SearchDev
+        // Should use GetBoards query directly
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(
           expect.stringContaining('query GetBoards'),
-          expect.any(Object),
-        );
-        expect(mocks.getMockRequest()).not.toHaveBeenCalledWith(
-          expect.stringContaining('query SearchDev'),
-          expect.any(Object),
           expect.any(Object),
         );
         expect(parsedResult.data).toBeDefined();
@@ -1480,77 +1443,6 @@ describe('SearchTool', () => {
           expect.any(Object),
         );
         expect(parsedResult.data).toBeDefined();
-      });
-    });
-
-    describe('Mixed Entity Types in Response', () => {
-      it('should correctly parse mixed board and doc results from dev endpoint', async () => {
-        const mixedResponse: SearchDevQuery = {
-          cross_entity_search: [
-            {
-              __typename: BOARD_SEARCH_RESULT_TYPENAME,
-              entity_type: SearchableEntity.Board,
-              data: { __typename: 'IndexedBoard', id: '100', name: 'Board Result', url: 'https://monday.com/boards/100' },
-            },
-            {
-              __typename: DOC_SEARCH_RESULT_TYPENAME,
-              entity_type: SearchableEntity.Document,
-              data: { __typename: 'IndexedDoc', id: '200', name: 'Doc Result' },
-            },
-            {
-              __typename: BOARD_SEARCH_RESULT_TYPENAME,
-              entity_type: SearchableEntity.Board,
-              data: { __typename: 'IndexedBoard', id: '300', name: 'Another Board', url: 'https://monday.com/boards/300' },
-            },
-          ],
-        };
-
-        mocks.setResponse(mixedResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.BOARD,
-          searchTerm: 'Result',
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        // Should include all matching results regardless of entity type in response
-        expect(parsedResult.data).toHaveLength(3);
-        expect(parsedResult.data[0].id).toBe('board-100');
-        expect(parsedResult.data[0].url).toBe('https://monday.com/boards/100');
-        expect(parsedResult.data[1].id).toBe('doc-200');
-        expect(parsedResult.data[1].url).toBeUndefined();
-        expect(parsedResult.data[2].id).toBe('board-300');
-      });
-
-      it('should skip unknown entity types in dev endpoint response', async () => {
-        const responseWithUnknownType: SearchDevQuery = {
-          cross_entity_search: [
-            {
-              __typename: BOARD_SEARCH_RESULT_TYPENAME,
-              entity_type: SearchableEntity.Board,
-              data: { __typename: 'IndexedBoard', id: '100', name: 'Board Result', url: 'https://monday.com/boards/100' },
-            },
-            // ItemSearchResult would be skipped as it's not handled
-            {
-              __typename: 'ItemSearchResult' as any,
-              entity_type: SearchableEntity.Item as any,
-            },
-          ],
-        };
-
-        mocks.setResponse(responseWithUnknownType);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.BOARD,
-          searchTerm: 'Result',
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        // Should only include the board result, skipping unknown types
-        expect(parsedResult.data).toHaveLength(1);
-        expect(parsedResult.data[0].id).toBe('board-100');
       });
     });
   });

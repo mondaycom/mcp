@@ -1,22 +1,32 @@
 import { gql } from 'graphql-request';
 
-export const searchDev = gql`
-  query SearchDev($query: String!, $limit: Int!, $filters: SearchFiltersInput!) {
-    cross_entity_search(query: $query, limit: $limit, filters: $filters) {
-      __typename
-      ... on BoardSearchResult {
-        entity_type
-        data {
+export const searchBoardsDev = gql`
+  query SearchBoardsDev($query: String!, $limit: Int, $workspaceIds: [ID!]) {
+    search {
+      boards(query: $query, limit: $limit, workspace_ids: $workspaceIds) {
+        results {
           id
-          name
-          url
+          indexed_data {
+            id
+            name
+            url
+          }
         }
       }
-      ... on DocSearchResult {
-        entity_type
-        data {
+    }
+  }
+`;
+
+export const searchDocsDev = gql`
+  query SearchDocsDev($query: String!, $limit: Int, $workspaceIds: [ID!]) {
+    search {
+      docs(query: $query, limit: $limit, workspace_ids: $workspaceIds) {
+        results {
           id
-          name
+          indexed_data {
+            id
+            name
+          }
         }
       }
     }
