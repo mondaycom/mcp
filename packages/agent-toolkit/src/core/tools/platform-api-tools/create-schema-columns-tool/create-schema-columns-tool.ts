@@ -19,7 +19,7 @@ const policyInputSchema = z
     cannot_delete: z.boolean().optional().describe('If true, the column cannot be deleted from boards.'),
   })
   .optional()
-  .describe('Policy rules controlling what boards can do with this column. Omit to use permissive defaults.');
+  .describe('Policy rules controlling what boards can do with this column. If omitted, defaults to no field overrides allowed and column cannot be deleted from boards.');
 
 const columnInputSchema = z.object({
   type: z
@@ -81,12 +81,10 @@ export class CreateSchemaColumnsTool extends BaseMondayApiTool<typeof createSche
       description: col.description,
       defaults: col.defaults,
       opt_out_by_default: col.opt_out_by_default,
-      policy: col.policy
-        ? {
-            can_override: (col.policy.can_override ?? []) as CanOverrideField[],
-            cannot_delete: col.policy.cannot_delete ?? false,
-          }
-        : undefined,
+      policy: {
+        can_override: (col.policy?.can_override ?? []) as CanOverrideField[],
+        cannot_delete: col.policy?.cannot_delete ?? true,
+      },
     }));
 
     const variables: CreateSchemaColumnsMutationVariables = {
