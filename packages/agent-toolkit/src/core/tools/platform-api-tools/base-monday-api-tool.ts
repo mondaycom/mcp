@@ -47,7 +47,7 @@ export abstract class BaseMondayApiTool<
   abstract getInputSchema(): Input;
 
   /**
-   * Public execute method that automatically tracks SLI events
+   * Public execute method
    */
   async execute(input?: ToolInputType<Input>, sessionContext?: SessionContext): Promise<ToolOutputType<Output>> {
     this.sessionContext = sessionContext || {};
