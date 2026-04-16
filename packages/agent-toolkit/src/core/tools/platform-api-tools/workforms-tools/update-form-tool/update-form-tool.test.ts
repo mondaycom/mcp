@@ -1314,6 +1314,121 @@ describe('UpdateFormTool', () => {
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].features.reCaptchaChallenge).toBe(true);
       });
+
+      it('should update features with ai_translate', async () => {
+        const updateFeaturesResponse = {
+          update_form_settings: {
+            features: {
+              ai_translate: { enabled: true },
+            },
+          },
+        };
+
+        mocks.setResponse(updateFeaturesResponse);
+
+        const args: inputType = {
+          action: FormActions.updateFeatures,
+          formToken: 'token_123',
+          form: {
+            features: {
+              ai_translate: { enabled: true },
+            },
+          },
+        };
+
+        const result = await callToolByNameRawAsync('update_form', args);
+
+        expect(parseToolResult(result).message).toContain('Features successfully updated');
+
+        const mockCall = mocks.getMockRequest().mock.calls[0];
+        expect(mockCall[1].features.ai_translate.enabled).toBe(true);
+      });
+
+      it('should update features with monday allow_create_item', async () => {
+        const updateFeaturesResponse = {
+          update_form_settings: {
+            features: {
+              monday: { allow_create_item: true },
+            },
+          },
+        };
+
+        mocks.setResponse(updateFeaturesResponse);
+
+        const args: inputType = {
+          action: FormActions.updateFeatures,
+          formToken: 'token_123',
+          form: {
+            features: {
+              monday: { allow_create_item: true },
+            },
+          },
+        };
+
+        const result = await callToolByNameRawAsync('update_form', args);
+
+        expect(parseToolResult(result).message).toContain('Features successfully updated');
+
+        const mockCall = mocks.getMockRequest().mock.calls[0];
+        expect(mockCall[1].features.monday.allow_create_item).toBe(true);
+      });
+
+      it('should extract is_anonymous from features and pass at settings root', async () => {
+        const updateFeaturesResponse = {
+          update_form_settings: {
+            features: {},
+          },
+        };
+
+        mocks.setResponse(updateFeaturesResponse);
+
+        const args: inputType = {
+          action: FormActions.updateFeatures,
+          formToken: 'token_123',
+          form: {
+            features: {
+              is_anonymous: true,
+              reCaptchaChallenge: false,
+            },
+          },
+        };
+
+        const result = await callToolByNameRawAsync('update_form', args);
+
+        expect(parseToolResult(result).message).toContain('Features successfully updated');
+
+        const mockCall = mocks.getMockRequest().mock.calls[0];
+        expect(mockCall[1].is_anonymous).toBe(true);
+        expect(mockCall[1].features.reCaptchaChallenge).toBe(false);
+        expect(mockCall[1].features.is_anonymous).toBeUndefined();
+      });
+
+      it('should pass is_anonymous alone inside features', async () => {
+        const updateFeaturesResponse = {
+          update_form_settings: {
+            features: {},
+          },
+        };
+
+        mocks.setResponse(updateFeaturesResponse);
+
+        const args: inputType = {
+          action: FormActions.updateFeatures,
+          formToken: 'token_123',
+          form: {
+            features: {
+              is_anonymous: false,
+            },
+          },
+        };
+
+        const result = await callToolByNameRawAsync('update_form', args);
+
+        expect(parseToolResult(result).message).toContain('Features successfully updated');
+
+        const mockCall = mocks.getMockRequest().mock.calls[0];
+        expect(mockCall[1].is_anonymous).toBe(false);
+      });
     });
 
     describe('Validation Errors', () => {
