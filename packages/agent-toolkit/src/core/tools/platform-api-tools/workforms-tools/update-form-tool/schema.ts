@@ -152,6 +152,7 @@ const featuresSchema = z.object({
   reCaptchaChallenge: z.boolean().describe(GraphQLDescriptions.formSettings.properties.reCaptchaChallenge).optional(),
   requireLogin: requireLoginSchema.describe(GraphQLDescriptions.formSettings.properties.requireLogin).optional(),
   responseLimit: responseLimitSchema.describe(GraphQLDescriptions.formSettings.properties.responseLimit).optional(),
+  is_anonymous: z.boolean().describe(GraphQLDescriptions.form.properties.isAnonymous).optional(),
 });
 
 const dehydratedQuestionSchema = z.object({
@@ -163,7 +164,6 @@ const formSchema = z.object({
   appearance: appearanceSchema.describe(GraphQLDescriptions.form.inputs.form.appearance).optional(),
   accessibility: accessibilitySchema.describe(GraphQLDescriptions.form.inputs.form.accessibility).optional(),
   features: featuresSchema.describe(GraphQLDescriptions.form.inputs.form.features).optional(),
-  is_anonymous: z.boolean().describe(GraphQLDescriptions.form.properties.isAnonymous).optional(),
   title: z.string().describe(GraphQLDescriptions.form.inputs.title).optional(),
   description: z.string().describe(GraphQLDescriptions.form.inputs.description).optional(),
   questions: z.array(dehydratedQuestionSchema).describe(GraphQLDescriptions.form.inputs.questions).optional(),

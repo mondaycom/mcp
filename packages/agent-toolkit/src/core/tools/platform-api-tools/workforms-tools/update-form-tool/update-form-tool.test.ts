@@ -1373,7 +1373,7 @@ describe('UpdateFormTool', () => {
         expect(mockCall[1].features.monday.allow_create_item).toBe(true);
       });
 
-      it('should pass is_anonymous at settings root alongside features', async () => {
+      it('should extract is_anonymous from features and pass at settings root', async () => {
         const updateFeaturesResponse = {
           update_form_settings: {
             features: {},
@@ -1386,8 +1386,8 @@ describe('UpdateFormTool', () => {
           action: FormActions.updateFeatures,
           formToken: 'token_123',
           form: {
-            is_anonymous: true,
             features: {
+              is_anonymous: true,
               reCaptchaChallenge: false,
             },
           },
@@ -1400,9 +1400,10 @@ describe('UpdateFormTool', () => {
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].is_anonymous).toBe(true);
         expect(mockCall[1].features.reCaptchaChallenge).toBe(false);
+        expect(mockCall[1].features.is_anonymous).toBeUndefined();
       });
 
-      it('should update is_anonymous without features', async () => {
+      it('should pass is_anonymous alone inside features', async () => {
         const updateFeaturesResponse = {
           update_form_settings: {
             features: {},
@@ -1415,7 +1416,9 @@ describe('UpdateFormTool', () => {
           action: FormActions.updateFeatures,
           formToken: 'token_123',
           form: {
-            is_anonymous: false,
+            features: {
+              is_anonymous: false,
+            },
           },
         };
 
@@ -1441,7 +1444,7 @@ describe('UpdateFormTool', () => {
         const result = await callToolByNameRawAsync('update_form', args);
 
         expect(result.content[0].text).toBe(
-          'Features or is_anonymous is required for the action "updateFeatures" in the update form tool.',
+          'Features is required for the action "updateFeatures" in the update form tool.',
         );
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
@@ -1456,7 +1459,7 @@ describe('UpdateFormTool', () => {
         const result = await callToolByNameRawAsync('update_form', args);
 
         expect(result.content[0].text).toBe(
-          'Features or is_anonymous is required for the action "updateFeatures" in the update form tool.',
+          'Features is required for the action "updateFeatures" in the update form tool.',
         );
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
