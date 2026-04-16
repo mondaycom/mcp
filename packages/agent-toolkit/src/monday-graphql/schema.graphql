@@ -328,6 +328,25 @@ type Query {
     type: ColumnType!
   ): JSON
 
+  """
+  Retrieve active account schemas by their IDs or names. Only returns account-level schemas (not global). Schemas define the structure and columns of boards. If no parameters are provided, all account schemas are returned. Results are paginated using page and limit parameters.
+  """
+  get_schemas(
+    """A list of schema IDs to retrieve."""
+    ids: [ID!]
+
+    """A list of schema names to retrieve. Names are unique identifiers."""
+    names: [String!]
+
+    """
+    The number of schemas to return per page. Default is 25, maximum is 100.
+    """
+    limit: Int
+
+    """The page number to retrieve. Pages are 1-indexed. Default is 1."""
+    page: Int
+  ): [AccountEntity!]
+
   """Get validations configuration for a board"""
   validations(
     id: ID!
@@ -779,6 +798,15 @@ type Query {
     """Filter by user kind."""
     user_kind: UserKindFilterInput
 
+    """Sort users by one or more fields and directions."""
+    sort: [UsersSortInput!]
+
+    """Filter by visibility."""
+    visibility: String
+
+    """Filter by user status. Defaults to [ACTIVE, PENDING] if not provided."""
+    status: [UserStatus!]
+
     """Number of items to get, the default is 200. The maximum is 1000."""
     limit: Int = 200
 
@@ -977,6 +1005,15 @@ type Query {
   """Get all roles for the account"""
   account_roles: [AccountRole!]
 
+  """Get all user configs for the account."""
+  user_configs(
+    """Filter by kinds."""
+    kinds: [String!]
+
+    """Filter by visibility."""
+    visibility: String
+  ): [UserConfig!]
+
   """
   Returns all available widget schemas for documentation and validation purposes
   """
@@ -993,10 +1030,48 @@ type Query {
   ): ResponseForm
 }
 
+"""Represents a single activity log entry"""
+type ActivityLog {
+  """The unique identifier of the activity log entry"""
+  id: ID
+
+  """The account this activity log entry belongs to"""
+  account_id: ID
+
+  """The user who performed the action"""
+  user_id: ID
+
+  """The type of event that occurred"""
+  event: String
+
+  """The entity type that was affected"""
+  entity: String
+
+  """Additional data associated with the event as a JSON string"""
+  data: String
+
+  """The timestamp when the activity log entry was created"""
+  created_at: String
+}
+
 """A monday.com user."""
 type User {
   """The user's unique identifier."""
   id: ID!
+
+  """Activity log entries for the user"""
+  activity_logs(
+    from: String
+    to: String
+    board_ids: [ID!]
+    limit: Int
+
+    """Filter by event types (e.g. "create_pulse", "delete_pulse")"""
+    event_types: [String!]
+
+    """Cursor for fetching the next page, obtained from a previous response"""
+    cursor: String
+  ): UserActivityLogsPage
 
   """The department the user is a member of (if any)"""
   department: Department
@@ -1008,7 +1083,7 @@ type User {
   account_products: [AccountProduct!]
 
   """The user's birthday."""
-  birthday: Date
+  birthday: String
 
   """The user's country code."""
   country_code: String
@@ -1103,8 +1178,8 @@ type User {
   """The user's profile url."""
   url: String!
 
-  """The user’s utc hours difference."""
-  utc_hours_diff: Int
+  """The user's utc hours difference."""
+  utc_hours_diff: Float
 
   """The unique identifier of the account the user belongs to."""
   account_id: ID!
@@ -1132,6 +1207,20 @@ type User {
 
   """Whether the user has confirmed their email address."""
   is_email_confirmed: Boolean!
+
+  """The user's config based on their kind."""
+  user_config: UserConfig!
+}
+
+"""
+A page of activity log entries with a cursor for fetching the next page
+"""
+type UserActivityLogsPage {
+  """The activity log entries for this page"""
+  logs: [ActivityLog!]
+
+  """Cursor to pass to fetch the next page, null if this is the last page"""
+  cursor: String
 }
 
 """Root mutation type for the Dependencies service"""
@@ -1754,6 +1843,140 @@ type Mutation {
     settings: DropdownSettingsOverridesInput
   ): Column
 
+  """Create a new account schema."""
+  create_schema(
+    """A unique human-readable name for this schema."""
+    name: String!
+
+    """The ID of the parent schema."""
+    parent_id: ID
+
+    """The description for this schema."""
+    description: String
+  ): AccountEntity
+
+  """Update an account schema."""
+  update_schema(
+    """The ID of the schema to update."""
+    id: ID!
+
+    """The current revision number for optimistic locking."""
+    revision: Int!
+
+    """The ID of the parent schema."""
+    parent_id: ID
+
+    """The description for this schema."""
+    description: String
+  ): AccountEntity
+
+  """
+  Delete an account schema. Can only delete if there are no boards attached to the schema. Schemas define the structure and columns of boards.
+  """
+  delete_schema(
+    """The schema ID to delete."""
+    id: ID
+
+    """The schema name to delete."""
+    name: String
+  ): AccountEntity
+
+  """Connect a board to a schema."""
+  connect_board_to_schema(
+    """The board ID to connect."""
+    board_id: ID!
+
+    """The schema ID to connect the board to."""
+    schema_id: ID
+
+    """
+    The schema name (slug) to connect the board to. Either schema_id or schema_name must be provided.
+    """
+    schema_name: String
+  ): BoardConnection
+
+  """Create columns on an account schema."""
+  create_schema_columns(
+    """The ID of the schema to add columns to"""
+    schema_id: ID
+
+    """
+    The schema name to add columns to. Either schema_id or schema_name must be provided.
+    """
+    schema_name: String
+
+    """Array of columns to create"""
+    columns: [CreateEntityColumnInput!]!
+  ): AccountEntity
+
+  """Deprecate a column on an account schema."""
+  deactivate_schema_column(
+    """The ID of the schema"""
+    schema_id: ID
+
+    """The schema name. Either schema_id or schema_name must be provided."""
+    schema_name: String
+
+    """The ID of the column to deprecate"""
+    column_id: ID!
+  ): AccountEntity
+
+  """Reactivate a deprecated column on an account schema."""
+  reactivate_schema_column(
+    """The ID of the schema"""
+    schema_id: ID
+
+    """The schema name. Either schema_id or schema_name must be provided."""
+    schema_name: String
+
+    """The ID of the column to reactivate"""
+    column_id: ID!
+  ): AccountEntity
+
+  """Detach boards from their schemas."""
+  detach_boards_from_schema(
+    """The board IDs to detach."""
+    board_ids: [ID!]!
+  ): [BulkDetachBoardResult!]
+
+  """Update columns on an account schema."""
+  update_schema_columns(
+    """The ID of the schema to update columns on"""
+    schema_id: ID
+
+    """
+    The schema name to update columns on. Either schema_id or schema_name must be provided.
+    """
+    schema_name: String
+
+    """Array of column updates"""
+    columns: [UpdateEntityColumnInput!]!
+  ): AccountEntity
+
+  """Opt out a column by default on an account schema."""
+  opt_out_schema_column(
+    """The ID of the schema"""
+    schema_id: ID
+
+    """The schema name"""
+    schema_name: String
+
+    """The ID of the column to opt out by default"""
+    column_id: ID!
+  ): AccountEntity
+
+  """Opt in a column by default on an account schema."""
+  opt_in_schema_column(
+    """The ID of the schema"""
+    schema_id: ID
+
+    """The schema name"""
+    schema_name: String
+
+    """The ID of the column to opt in by default"""
+    column_id: ID!
+  ): AccountEntity
+
   """Add a required column to a board"""
   add_required_column(
     id: ID!
@@ -2222,6 +2445,22 @@ type Mutation {
     """Entity type enum (currently only "appFeature" is supported)"""
     entity_type: String!
   ): Boolean
+
+  """
+  Installs an app on the current account. Requires account admin permission.
+  """
+  install_app(
+    """App installation configuration"""
+    input: InstallAppInput!
+  ): InstallAppResponse
+
+  """
+  Uninstalls an app from the current account. Requires account admin permission.
+  """
+  uninstall_app(
+    """The app identifier (numeric ID or slug)"""
+    app_identifier: ID!
+  ): AppDeletionResponse
 
   """Add a file to a column value."""
   add_file_to_column(
@@ -4131,6 +4370,15 @@ type Board {
     to_date: ISO8601DateTime
   ): [Update!]
 
+  """The board's updates with cursor-based pagination."""
+  updates_page(
+    """Number of items to get, the default is 25."""
+    limit: Int = 25
+
+    """Opaque cursor from a previous updates_page response."""
+    cursor: String
+  ): UpdatesPage
+
   """The board's visible columns."""
   columns(
     """A list of column unique identifiers."""
@@ -4584,6 +4832,15 @@ type Item {
   """The item's unique identifier."""
   id: ID!
 
+  """The item's updates with cursor-based pagination."""
+  updates_page(
+    """Number of items to get, the default is 25."""
+    limit: Int = 25
+
+    """Opaque cursor from a previous updates_page response."""
+    cursor: String
+  ): UpdatesPage
+
   """The item's updates."""
   updates(
     """Number of items to get, the default is 25."""
@@ -4805,6 +5062,15 @@ type UpdatePin {
   item_id: ID!
 }
 
+"""Paginated updates response with cursor."""
+type UpdatesPage {
+  """The list of updates."""
+  updates: [Update!]!
+
+  """Opaque cursor for the next page. Null when no more data."""
+  cursor: String
+}
+
 """The viewer of the update."""
 type Watcher {
   user_id: ID!
@@ -4912,6 +5178,62 @@ type TimelineResponse {
   ): TimelineItemsPage!
 }
 
+"""Represents an account-level schema that can be customized per account."""
+type AccountEntity {
+  """The unique identifier of the schema."""
+  id: ID!
+
+  """The account ID this schema belongs to."""
+  account_id: ID!
+
+  """The user ID who created this schema."""
+  created_by: ID!
+
+  """The revision number for optimistic locking."""
+  revision: Int!
+
+  """The date and time of creation."""
+  created_at: Date
+
+  """The date and time of the last update."""
+  updated_at: Date
+
+  """The columns defined in this schema."""
+  columns: [SchemaColumn!]!
+
+  """The ID of the parent schema (typically a global schema)."""
+  parent_id: ID
+
+  """The name of this schema."""
+  name: String
+
+  """The description for this schema."""
+  description: String
+}
+
+"""Represents a board and its connection to a schema."""
+type BoardConnection {
+  """The unique identifier of the board."""
+  id: ID
+
+  """The schema ID that this board is connected to."""
+  entity_id: ID
+}
+
+"""
+Result of a single board detach operation within a bulk detach request.
+"""
+type BulkDetachBoardResult {
+  """The board ID that was detached."""
+  board_id: ID
+
+  """Whether the detach operation succeeded."""
+  success: Boolean
+
+  """Error message if the detach failed."""
+  error: String
+}
+
 """Calculated capability settings for a column"""
 type CalculatedCapability {
   """Function to calculate the parent values"""
@@ -4948,6 +5270,18 @@ enum CalculatedFunction {
 
   """Count the number of labels"""
   COUNT_KEYS
+}
+
+"""Fields that can be overridden in a column policy"""
+enum CanOverrideField {
+  """Allow overriding column settings"""
+  settings
+
+  """Allow overriding column title"""
+  title
+
+  """Allow overriding column description"""
+  description
 }
 
 type Column {
@@ -5008,6 +5342,18 @@ enum ColumnCapability {
 
   """Capability to mark column as hidden"""
   VISIBILITY
+}
+
+"""Policy rules that control what actions can be performed on a column"""
+input ColumnPolicyInput {
+  """User-facing messages explaining why certain actions are disabled"""
+  messages: PolicyMessagesInput
+
+  """List of fields that can be overridden"""
+  can_override: [CanOverrideField!]!
+
+  """Whether the column cannot be deleted"""
+  cannot_delete: Boolean!
 }
 
 union ColumnSettings = StatusColumnSettings | DropdownColumnSettings
@@ -5158,6 +5504,31 @@ input CreateDropdownLabelInput {
   label: String!
 }
 
+"""Input for creating a new column on a schema"""
+input CreateEntityColumnInput {
+  """The column type (e.g., "status", "dropdown", "text", "date")"""
+  type: ColumnType!
+
+  """The column title"""
+  title: String!
+
+  """Optional column description"""
+  description: String
+
+  """
+  Type-specific configuration object containing column defaults and settings. Use get_column_type_schema query to see available properties and validation rules. Examples: status column labels, dropdown options, number formatting rules, date display preferences.
+  """
+  defaults: JSON
+
+  """
+  Whether this column should be opted-out by default on boards. If false or not provided, the column will be automatically included on all boards using this schema (opt-in by default).
+  """
+  opt_out_by_default: Boolean
+
+  """Policy rules controlling what can be done with the column"""
+  policy: ColumnPolicyInput!
+}
+
 input CreateStatusColumnSettingsInput {
   labels: [CreateStatusLabelInput!]!
 }
@@ -5168,6 +5539,27 @@ input CreateStatusLabelInput {
   index: Int!
   description: String
   is_done: Boolean
+}
+
+"""Reasons why specific actions are disabled on a column"""
+input DisabledReasonInput {
+  """Reason why the column cannot be deleted"""
+  delete: String
+
+  """Reason why the column title cannot be edited"""
+  edit_title: String
+
+  """Reason why the column labels cannot be edited"""
+  edit_labels: String
+
+  """Reason why the column settings cannot be edited"""
+  edit_settings: String
+
+  """Reason why the column description cannot be edited"""
+  edit_description: String
+
+  """Reason why the column label positions cannot be edited"""
+  edit_labels_positions_v2: String
 }
 
 type DropdownColumnSettings {
@@ -5239,6 +5631,67 @@ enum ManagedColumnState {
 enum ManagedColumnTypes {
   status
   dropdown
+}
+
+"""
+Policy messages that explain why certain actions are disabled on a column
+"""
+input PolicyMessagesInput {
+  """Structured reasons for disabled actions"""
+  disabled_reason: DisabledReasonInput
+}
+
+"""A column definition within a schema."""
+type SchemaColumn {
+  """The unique identifier of the column."""
+  id: ID
+
+  """The column's title."""
+  title: String!
+
+  """The column's type."""
+  type: ColumnType
+
+  """The column's description."""
+  description: String
+
+  """The column's settings in a JSON form."""
+  settings: JSON
+
+  """Policy rules for this column."""
+  policy: SchemaColumnPolicy
+
+  """Tags indicating column status (deprecated, inherited, etc.)."""
+  tags: SchemaColumnTags
+}
+
+"""Policy rules governing how a schema column can be modified."""
+type SchemaColumnPolicy {
+  """
+  List of column properties that can be overridden by board-level columns.
+  """
+  can_override: [String!]!
+
+  """Whether this column is protected from deletion."""
+  cannot_delete: Boolean!
+
+  """Whether this column is read-only."""
+  read_only: Boolean!
+
+  """Policy-related messages, such as disabled reasons."""
+  messages: JSON
+}
+
+"""Tags applied to a schema column indicating its status or behavior."""
+type SchemaColumnTags {
+  """Deprecation info with a start timestamp, if the column is deprecated."""
+  deprecated: JSON
+
+  """Opt-in by default info with an optional end timestamp."""
+  opt_in_by_default: JSON
+
+  """Whether this column is inherited from a parent schema."""
+  inherited: Boolean
 }
 
 """
@@ -5359,6 +5812,31 @@ input UpdateDropdownLabelInput {
   label: String!
   id: Int
   is_deactivated: Boolean
+}
+
+"""Input for updating an existing column on a schema"""
+input UpdateEntityColumnInput {
+  """The ID of the column to update"""
+  column_id: ID!
+
+  """The column title"""
+  title: String
+
+  """Optional column description"""
+  description: String
+
+  """
+  Type-specific configuration object containing column defaults and settings. Use get_column_type_schema query to see available properties and validation rules. Examples: status column labels, dropdown options, number formatting rules, date display preferences.
+  """
+  defaults: JSON
+
+  """
+  Whether this column should be opted-out by default on boards. If false or not provided, the column will be automatically included on all boards using this schema (opt-in by default).
+  """
+  opt_out_by_default: Boolean
+
+  """Policy rules controlling what can be done with the column"""
+  policy: ColumnPolicyInput
 }
 
 input UpdateStatusColumnSettingsInput {
@@ -7317,6 +7795,15 @@ type UploadJobInit {
   upload_url: String
 }
 
+"""Response object for app deletion operations"""
+type AppDeletionResponse {
+  """Whether the deletion was successful"""
+  success: Boolean
+
+  """Deletion result message"""
+  message: String
+}
+
 """Response from querying the apps documentation AI."""
 type AppDocumentationAiResponse {
   """Unique identifier for this query response."""
@@ -7744,6 +8231,26 @@ type CreateAppResponse {
 
   """The app's signing secret used for webhook signature verification"""
   signing_secret: String
+}
+
+"""Input for installing an app on the current account."""
+input InstallAppInput {
+  """The app identifier (numeric ID or slug)"""
+  app_identifier: ID!
+
+  """
+  Optional list of workspace IDs to restrict app access to specific workspaces
+  """
+  permitted_workspaces: [ID!]
+}
+
+"""Response object for app installation"""
+type InstallAppResponse {
+  """The installed app identifier"""
+  app_id: ID
+
+  """Whether a new install was created (false if app was already installed)"""
+  created: Boolean
 }
 
 """Input for a single lifecycle event subscription"""
@@ -12251,6 +12758,9 @@ enum InvitationMethod {
   """Added via account consolidation."""
   CONSOLIDATION
 
+  """Created by internal flow."""
+  INTERNAL_CREATION
+
   """Unknown invitation method."""
   UNKNOWN
 
@@ -12280,6 +12790,18 @@ type PhotoUrl {
 
   """The user's photo in tiny size (30x30)."""
   tiny: String
+}
+
+"""User config of a user kind within the account."""
+type UserConfig {
+  """The user kind for the user config."""
+  kind: String!
+
+  """The role ID associated with this user config."""
+  role_id: ID!
+
+  """The visibility for this user config."""
+  visibility: [String!]!
 }
 
 """Filter for user kinds, including kind groups."""
@@ -12338,6 +12860,9 @@ enum UserKindFilter {
   """A dependencies api user user."""
   DEPENDENCIES_API_USER
 
+  """A historical tracking backfill api user user."""
+  HISTORICAL_TRACKING_BACKFILL_API_USER
+
   """A group representing admin, member, guest, and view-only users."""
   BASIC
 }
@@ -12351,6 +12876,30 @@ input UserKindFilterInput {
 
   """Exclude users matching these kinds or kind groups."""
   not_in: [UserKindFilter!]
+}
+
+"""The direction to sort users."""
+enum UsersSortDirection {
+  """Sort in ascending order."""
+  ASC
+
+  """Sort in descending order."""
+  DESC
+}
+
+"""The field to sort users by."""
+enum UsersSortField {
+  """Sort by the date the user was created."""
+  CREATED_AT
+}
+
+"""Input for sorting users."""
+input UsersSortInput {
+  """The field to sort by."""
+  field: UsersSortField!
+
+  """The sort direction."""
+  direction: UsersSortDirection!
 }
 
 """The activation status of a user."""
@@ -12484,6 +13033,17 @@ type WidgetSchemaInfo {
   schema: JSON
 }
 
+"""
+Logical operator for combining rules or conditions. Currently always OR — the question is shown if any rule is satisfied.
+"""
+enum ConditionOperator {
+  """Logical AND — all conditions must be met."""
+  AND
+
+  """Logical OR — any condition being met is sufficient."""
+  OR
+}
+
 input CreateFormTagInput {
   """The name of the tag. Must be unique within the form and not reserved."""
   name: String!
@@ -12519,12 +13079,7 @@ input CreateQuestionInput {
   """
   Conditional logic rules that control when this question is shown based on respondent answers.
   """
-  show_if_rules: JSON
-
-  """
-  The kind of block to create. Overrides the type field for backwards compatibility. Supports all question types and content blocks.
-  """
-  block_type: FormBlockKind
+  show_if_rules: ShowIfRulesInput
 
   """
   The question text displayed to respondents. Must be at least 1 character long and clearly indicate the expected response.
@@ -12750,88 +13305,6 @@ enum FormBackgrounds {
   Image
   Color
   None
-}
-
-"""
-The kind of block to create. Supports question types and content blocks.
-"""
-enum FormBlockKind {
-  """A yes/no checkbox question."""
-  BOOLEAN
-
-  """
-  A question that links to items on a connected board. Board configuration must be done through the column settings.
-  """
-  CONNECTED_BOARDS
-
-  """A country selection question with a searchable dropdown."""
-  COUNTRY
-
-  """A date picker question with optional time selection."""
-  DATE
-
-  """A date range question allowing start and end date selection."""
-  DATE_RANGE
-
-  """An email address input question with format validation."""
-  EMAIL
-
-  """A file upload question for attachments."""
-  FILE
-
-  """A URL/link input question with optional format validation."""
-  LINK
-
-  """A location/address input question with optional geolocation autofill."""
-  LOCATION
-
-  """A multi-line text input question for longer responses."""
-  LONG_TEXT
-
-  """A multiple-choice question allowing several selections."""
-  MULTI_SELECT
-
-  """A name input question mapped to the item name column on the board."""
-  NAME
-
-  """A numeric input question."""
-  NUMBER
-
-  """A people picker question for selecting monday.com users."""
-  PEOPLE
-
-  """A phone number input question with optional country prefix."""
-  PHONE
-
-  """A rating question with a configurable scale."""
-  RATING
-
-  """A single-line text input question."""
-  SHORT_TEXT
-
-  """
-  A signature capture question for collecting drawn or uploaded signatures.
-  """
-  SIGNATURE
-
-  """A single-choice question allowing one selection."""
-  SINGLE_SELECT
-
-  """
-  A subitems question that creates sub-items on the board. Sub-items columns must be configured through the board.
-  """
-  SUBITEMS
-
-  """An updates/comments question mapped to the item updates feed."""
-  UPDATES
-
-  """
-  A text-only display block for adding instructions or context to a form.
-  """
-  DISPLAY_TEXT
-
-  """A page block that groups questions into a single page."""
-  PAGE_BLOCK
 }
 
 type FormCloseDate {
@@ -13184,7 +13657,7 @@ type FormQuestion {
   """
   The question type determining input behavior and validation (e.g., "text", "email", "single_select", "multi_select").
   """
-  type: FormBlockKind
+  type: FormQuestionType
 
   """
   Boolean controlling question visibility to respondents. Hidden questions remain in form structure but are not displayed.
@@ -13405,27 +13878,82 @@ input FormQuestionSettingsInput {
 
 """The type of the question (ex. text, number, MultiSelect etc.)"""
 enum FormQuestionType {
+  """A yes/no checkbox question."""
   Boolean
+
+  """
+  A question that links to items on a connected board. Board configuration must be done through the column settings.
+  """
   ConnectedBoards
+
+  """A country selection question with a searchable dropdown."""
   Country
+
+  """A date picker question with optional time selection."""
   Date
+
+  """A date range question allowing start and end date selection."""
   DateRange
+
+  """An email address input question with format validation."""
   Email
+
+  """A file upload question for attachments."""
   File
+
+  """A URL/link input question with optional format validation."""
   Link
+
+  """A location/address input question with optional geolocation autofill."""
   Location
+
+  """A multi-line text input question for longer responses."""
   LongText
+
+  """A multiple-choice question allowing several selections."""
   MultiSelect
+
+  """A name input question mapped to the item name column on the board."""
   Name
+
+  """A numeric input question."""
   Number
+
+  """A people picker question for selecting monday.com users."""
   People
+
+  """A phone number input question with optional country prefix."""
   Phone
+
+  """A rating question with a configurable scale."""
   Rating
+
+  """A single-line text input question."""
   ShortText
+
+  """
+  A signature capture question for collecting drawn or uploaded signatures.
+  """
   Signature
+
+  """A single-choice question allowing one selection."""
   SingleSelect
+
+  """
+  A subitems question that creates sub-items on the board. Sub-items columns must be configured through the board.
+  """
   Subitems
+
+  """An updates/comments question mapped to the item updates feed."""
   Updates
+
+  """
+  A text-only display block for adding instructions or context to a form.
+  """
+  DISPLAY_TEXT
+
+  """A page block that groups questions into a single page."""
+  PAGE_BLOCK
 }
 
 type FormRedirectAfterSubmission {
@@ -13735,6 +14263,56 @@ input SetFormPasswordInput {
   password: String!
 }
 
+"""
+A condition that evaluates a specific question answer against expected values.
+"""
+input ShowIfConditionInput {
+  """
+  The ID of the question (building block) whose answer is evaluated by this condition.
+  """
+  building_block_id: ID!
+
+  """
+  Logical operator for combining rules or conditions. Currently always OR — the question is shown if any rule is satisfied.
+  """
+  operator: ConditionOperator!
+
+  """
+  The expected answer values. The condition is met if the question answer matches any of these values (acts as "is one of").
+  """
+  values: [String!]!
+}
+
+"""
+A rule grouping one or more conditions. All conditions within a rule must be met for the rule to be satisfied.
+"""
+input ShowIfRuleInput {
+  """
+  Logical operator for combining rules or conditions. Currently always OR — the question is shown if any rule is satisfied.
+  """
+  operator: ConditionOperator!
+
+  """
+  A condition that evaluates a specific question answer against expected values.
+  """
+  conditions: [ShowIfConditionInput!]!
+}
+
+"""
+Conditional visibility rules for this question. The question is shown when any rule is satisfied (OR between rules). Each rule contains conditions that must all be met (AND within a rule). Structure: { operator, rules: [{ operator, conditions: [{ building_block_id, operator, values }] }] }.
+"""
+input ShowIfRulesInput {
+  """
+  Logical operator for combining rules or conditions. Currently always OR — the question is shown if any rule is satisfied.
+  """
+  operator: ConditionOperator!
+
+  """
+  A rule grouping one or more conditions. All conditions within a rule must be met for the rule to be satisfied.
+  """
+  rules: [ShowIfRuleInput!]!
+}
+
 input UpdateFormInput {
   """The title text for the form. Must be at least 1 character long."""
   title: String
@@ -13802,7 +14380,7 @@ input UpdateQuestionInput {
   """
   Conditional logic rules that control when this question is shown based on respondent answers.
   """
-  show_if_rules: JSON
+  show_if_rules: ShowIfRulesInput
 
   """
   The question text displayed to respondents. Must be at least 1 character long and clearly indicate the expected response.

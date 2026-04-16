@@ -2,17 +2,11 @@ import { z } from 'zod';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { getAssets } from './get-assets.graphql';
-import { Asset } from 'src/monday-graphql/generated/graphql/graphql';
+import { GetAssetsQuery } from 'src/monday-graphql/generated/graphql/graphql';
 
 export const getAssetsToolSchema = {
   ids: z.array(z.string()).min(1).describe('Array of asset IDs to fetch'),
 };
-
-interface GetAssetsQuery {
-  assets?: (Pick<Asset, 'id' | 'name' | 'file_extension' | 'file_size' | 'public_url' | 'url' | 'url_thumbnail' | 'created_at' | 'original_geometry'> & {
-    uploaded_by: Pick<Asset['uploaded_by'], 'id' | 'name'>;
-  } | null)[] | null;
-}
 
 export class GetAssetsTool extends BaseMondayApiTool<typeof getAssetsToolSchema, never> {
   name = 'get_assets';
