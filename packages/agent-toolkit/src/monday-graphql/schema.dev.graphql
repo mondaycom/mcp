@@ -1487,7 +1487,7 @@ type User {
   account_products: [AccountProduct!]
 
   """The user's birthday."""
-  birthday: String
+  birthday: Date
 
   """The user's country code."""
   country_code: String
@@ -1582,8 +1582,8 @@ type User {
   """The user's profile url."""
   url: String!
 
-  """The user's utc hours difference."""
-  utc_hours_diff: Float
+  """The user’s utc hours difference."""
+  utc_hours_diff: Int
 
   """The unique identifier of the account the user belongs to."""
   account_id: ID!
@@ -2526,6 +2526,22 @@ type Mutation {
 
     """The ID of the column to opt in by default"""
     column_id: ID!
+  ): AccountEntity
+
+  """
+  Delete columns from an account or global entity. Only allowed when no boards are connected to the entity.
+  """
+  delete_entity_columns(
+    """The ID of the entity model to delete columns from."""
+    entity_id: ID
+
+    """
+    The entity model name. Either entity_id or entity_name must be provided.
+    """
+    entity_name: String
+
+    """The IDs of the columns to delete."""
+    column_ids: [ID!]!
   ): AccountEntity
 
   """
@@ -4710,6 +4726,9 @@ type Mutation {
 
     """The unique identifier for the tag"""
     tagId: String!
+
+    """The tag data to create"""
+    tag: UpdateFormTagInput!
   ): Boolean
 
   """Delete a tag from a form"""
@@ -5112,21 +5131,6 @@ type Block {
 
   """Configuration for output fields"""
   outputFieldsConfig: [OutputFieldConfig!]
-
-  """Context-specific data for the block, organized by context name"""
-  context_data: BlockContextData
-}
-
-"""Context-specific data for a block, organized by context name"""
-type BlockContextData {
-  """Context data for the workflow builder"""
-  workflow_builder: WorkflowBuilderContextData
-
-  """Context data for the lite builder"""
-  lite_builder: LiteBuilderContextData
-
-  """Context data for Monday agents"""
-  monday_agents: MondayAgentsContextData
 }
 
 """Result of a blocks query"""
@@ -5529,39 +5533,6 @@ type InterfaceInputFieldConfig implements InputFieldConfig {
 
   """Constraints applied to the field"""
   constraints: InputFieldConstraints
-}
-
-"""
-Context data for the lite builder, including sentence configuration and field source mappings
-"""
-type LiteBuilderContextData {
-  """Sentence template parts (array of strings and sentence part objects)"""
-  sentence: JSON
-
-  """Mapping of inbound field keys to their source configuration"""
-  source_config: JSON
-
-  """Category for the block in the lite builder menu"""
-  menu_category: String
-
-  """
-  Configuration for sentence part views (container type, content, header)
-  """
-  sentence_part_configurations: JSON
-
-  """
-  Overrides for inbound field display properties (title, placeholder, header)
-  """
-  inbound_field_overrides: JSON
-}
-
-"""Context data for Monday agents"""
-type MondayAgentsContextData {
-  """Display name of the block in the agents context"""
-  block_name: String
-
-  """Keys of fields that should be hidden in the agents context"""
-  hidden_field_keys: [String!]
 }
 
 """Data required to request the next page of remote options"""
@@ -6108,12 +6079,6 @@ type WorkflowBlockNextMappingSchema {
 
   """JSON schema for this workflow block next mapping kind"""
   schema: JSON
-}
-
-"""Context data for the workflow builder"""
-type WorkflowBuilderContextData {
-  """Keys of input fields that should be hidden in the workflow builder"""
-  hidden_input_fields_keys: [String!]
 }
 
 """Customization settings for the workflow"""
@@ -17834,17 +17799,6 @@ type WidgetSchemaInfo {
   schema: JSON
 }
 
-"""
-Logical operator for combining rules or conditions. Currently always OR — the question is shown if any rule is satisfied.
-"""
-enum ConditionOperator {
-  """Logical AND — all conditions must be met."""
-  AND
-
-  """Logical OR — any condition being met is sufficient."""
-  OR
-}
-
 """Answer for a country question."""
 input CountryAnswerInput {
   """The full country name (e.g. "United States")."""
@@ -17857,6 +17811,9 @@ input CountryAnswerInput {
 input CreateFormTagInput {
   """The name of the tag. Must be unique within the form and not reserved."""
   name: String!
+
+  """The value of the tag"""
+  value: String
 }
 
 input CreateQuestionInput {
@@ -17886,7 +17843,12 @@ input CreateQuestionInput {
   """
   Conditional logic rules that control when this question is shown based on respondent answers.
   """
-  show_if_rules: ShowIfRulesInput
+  show_if_rules: JSON
+
+  """
+  The kind of block to create. Overrides the type field for backwards compatibility. Supports all question types and content blocks.
+  """
+  block_type: FormBlockKind
 
   """
   The question text displayed to respondents. Must be at least 1 character long and clearly indicate the expected response.
@@ -18220,6 +18182,88 @@ enum FormBackgrounds {
   None
 }
 
+"""
+The kind of block to create. Supports question types and content blocks.
+"""
+enum FormBlockKind {
+  """A yes/no checkbox question."""
+  BOOLEAN
+
+  """
+  A question that links to items on a connected board. Board configuration must be done through the column settings.
+  """
+  CONNECTED_BOARDS
+
+  """A country selection question with a searchable dropdown."""
+  COUNTRY
+
+  """A date picker question with optional time selection."""
+  DATE
+
+  """A date range question allowing start and end date selection."""
+  DATE_RANGE
+
+  """An email address input question with format validation."""
+  EMAIL
+
+  """A file upload question for attachments."""
+  FILE
+
+  """A URL/link input question with optional format validation."""
+  LINK
+
+  """A location/address input question with optional geolocation autofill."""
+  LOCATION
+
+  """A multi-line text input question for longer responses."""
+  LONG_TEXT
+
+  """A multiple-choice question allowing several selections."""
+  MULTI_SELECT
+
+  """A name input question mapped to the item name column on the board."""
+  NAME
+
+  """A numeric input question."""
+  NUMBER
+
+  """A people picker question for selecting monday.com users."""
+  PEOPLE
+
+  """A phone number input question with optional country prefix."""
+  PHONE
+
+  """A rating question with a configurable scale."""
+  RATING
+
+  """A single-line text input question."""
+  SHORT_TEXT
+
+  """
+  A signature capture question for collecting drawn or uploaded signatures.
+  """
+  SIGNATURE
+
+  """A single-choice question allowing one selection."""
+  SINGLE_SELECT
+
+  """
+  A subitems question that creates sub-items on the board. Sub-items columns must be configured through the board.
+  """
+  SUBITEMS
+
+  """An updates/comments question mapped to the item updates feed."""
+  UPDATES
+
+  """
+  A text-only display block for adding instructions or context to a form.
+  """
+  DISPLAY_TEXT
+
+  """A page block that groups questions into a single page."""
+  PAGE_BLOCK
+}
+
 type FormCloseDate {
   """Boolean enabling automatic form closure at a specified date and time."""
   enabled: Boolean!
@@ -18353,6 +18397,14 @@ enum FormFontSize {
   Large
 }
 
+"""
+String specifying the form display format. Can be a step by step form or a classic one page form.
+"""
+enum FormFormat {
+  OneByOne
+  Classic
+}
+
 """Object containing form structure and presentation settings."""
 type FormLayout {
   """The layout style of the form (Card or Flat)."""
@@ -18367,6 +18419,11 @@ type FormLayout {
 
 """Object containing form structure and presentation settings."""
 input FormLayoutInput {
+  """
+  String specifying the form display format. Can be a step by step form or a classic one page form.
+  """
+  format: FormFormat
+
   """The layout style of the form (Card or Flat)."""
   type: FormLayoutStyle
 
@@ -18552,7 +18609,7 @@ type FormQuestion {
   """
   The question type determining input behavior and validation (e.g., "text", "email", "single_select", "multi_select").
   """
-  type: FormQuestionType
+  type: FormBlockKind
 
   """
   Boolean controlling question visibility to respondents. Hidden questions remain in form structure but are not displayed.
@@ -18579,7 +18636,7 @@ type FormQuestion {
   """
   Conditional logic rules that control when this question is displayed based on other question answers.
   """
-  show_if_rules: JSON
+  showIfRules: JSON
 
   """
   The ID of the page block this question belongs to. Used in multi-page forms to assign questions to specific pages.
@@ -18773,82 +18830,27 @@ input FormQuestionSettingsInput {
 
 """The type of the question (ex. text, number, MultiSelect etc.)"""
 enum FormQuestionType {
-  """A yes/no checkbox question."""
   Boolean
-
-  """
-  A question that links to items on a connected board. Board configuration must be done through the column settings.
-  """
   ConnectedBoards
-
-  """A country selection question with a searchable dropdown."""
   Country
-
-  """A date picker question with optional time selection."""
   Date
-
-  """A date range question allowing start and end date selection."""
   DateRange
-
-  """An email address input question with format validation."""
   Email
-
-  """A file upload question for attachments."""
   File
-
-  """A URL/link input question with optional format validation."""
   Link
-
-  """A location/address input question with optional geolocation autofill."""
   Location
-
-  """A multi-line text input question for longer responses."""
   LongText
-
-  """A multiple-choice question allowing several selections."""
   MultiSelect
-
-  """A name input question mapped to the item name column on the board."""
   Name
-
-  """A numeric input question."""
   Number
-
-  """A people picker question for selecting monday.com users."""
   People
-
-  """A phone number input question with optional country prefix."""
   Phone
-
-  """A rating question with a configurable scale."""
   Rating
-
-  """A single-line text input question."""
   ShortText
-
-  """
-  A signature capture question for collecting drawn or uploaded signatures.
-  """
   Signature
-
-  """A single-choice question allowing one selection."""
   SingleSelect
-
-  """
-  A subitems question that creates sub-items on the board. Sub-items columns must be configured through the board.
-  """
   Subitems
-
-  """An updates/comments question mapped to the item updates feed."""
   Updates
-
-  """
-  A text-only display block for adding instructions or context to a form.
-  """
-  DISPLAY_TEXT
-
-  """A page block that groups questions into a single page."""
-  PAGE_BLOCK
 }
 
 type FormRedirectAfterSubmission {
@@ -18961,6 +18963,9 @@ type FormTag {
 
   """The name of the tag"""
   name: String!
+
+  """The value of the tag"""
+  value: String
 
   """The ID of the column this tag is associated with"""
   columnId: String!
@@ -19234,56 +19239,6 @@ input SetFormPasswordInput {
 }
 
 """
-A condition that evaluates a specific question answer against expected values.
-"""
-input ShowIfConditionInput {
-  """
-  The ID of the question (building block) whose answer is evaluated by this condition.
-  """
-  building_block_id: ID!
-
-  """
-  Logical operator for combining rules or conditions. Currently always OR — the question is shown if any rule is satisfied.
-  """
-  operator: ConditionOperator!
-
-  """
-  The expected answer values. The condition is met if the question answer matches any of these values (acts as "is one of").
-  """
-  values: [String!]!
-}
-
-"""
-A rule grouping one or more conditions. All conditions within a rule must be met for the rule to be satisfied.
-"""
-input ShowIfRuleInput {
-  """
-  Logical operator for combining rules or conditions. Currently always OR — the question is shown if any rule is satisfied.
-  """
-  operator: ConditionOperator!
-
-  """
-  A condition that evaluates a specific question answer against expected values.
-  """
-  conditions: [ShowIfConditionInput!]!
-}
-
-"""
-Conditional visibility rules for this question. The question is shown when any rule is satisfied (OR between rules). Each rule contains conditions that must all be met (AND within a rule). Structure: { operator, rules: [{ operator, conditions: [{ building_block_id, operator, values }] }] }.
-"""
-input ShowIfRulesInput {
-  """
-  Logical operator for combining rules or conditions. Currently always OR — the question is shown if any rule is satisfied.
-  """
-  operator: ConditionOperator!
-
-  """
-  A rule grouping one or more conditions. All conditions within a rule must be met for the rule to be satisfied.
-  """
-  rules: [ShowIfRuleInput!]!
-}
-
-"""
 A single subitem answer, containing answers for each of the subitem's questions.
 """
 input SubitemAnswerInput {
@@ -19337,6 +19292,11 @@ input UpdateFormSettingsInput {
   is_anonymous: Boolean
 }
 
+input UpdateFormTagInput {
+  """The value of the tag"""
+  value: String
+}
+
 input UpdateQuestionInput {
   """
   The question type determining input behavior and validation (e.g., "text", "email", "single_select", "multi_select").
@@ -19364,7 +19324,7 @@ input UpdateQuestionInput {
   """
   Conditional logic rules that control when this question is shown based on respondent answers.
   """
-  show_if_rules: ShowIfRulesInput
+  show_if_rules: JSON
 
   """
   The question text displayed to respondents. Must be at least 1 character long and clearly indicate the expected response.
