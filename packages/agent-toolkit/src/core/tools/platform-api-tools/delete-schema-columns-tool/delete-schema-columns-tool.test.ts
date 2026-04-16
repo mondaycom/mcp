@@ -61,7 +61,7 @@ describe('DeleteSchemaColumnsTool', () => {
   it('has correct tool properties', () => {
     const tool = new DeleteSchemaColumnsTool(mocks.mockApiClient);
 
-    expect(tool.name).toBe('delete_entity_columns');
+    expect(tool.name).toBe('delete_schema_columns');
     expect(tool.type).toBe('write');
     expect(tool.getDescription()).toContain('schema');
   });

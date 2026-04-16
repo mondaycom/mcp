@@ -24,7 +24,7 @@ export const deleteSchemaColumnsToolSchema = {
 };
 
 export class DeleteSchemaColumnsTool extends BaseMondayApiTool<typeof deleteSchemaColumnsToolSchema> {
-  name = 'delete_entity_columns';
+  name = 'delete_schema_columns';
   type = ToolType.WRITE;
   annotations = createMondayApiAnnotations({
     title: 'Delete Schema Columns',
