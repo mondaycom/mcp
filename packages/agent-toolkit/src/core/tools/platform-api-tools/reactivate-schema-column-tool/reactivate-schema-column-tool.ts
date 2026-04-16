@@ -40,6 +40,10 @@ export class ReactivateSchemaColumnTool extends BaseMondayApiTool<typeof reactiv
   protected async executeInternal(
     input: ToolInputType<typeof reactivateSchemaColumnToolSchema>,
   ): Promise<ToolOutputType<never>> {
+    if (!input.schemaId && !input.schemaName) {
+      throw new Error('Either schemaId or schemaName must be provided');
+    }
+
     const variables: ReactivateSchemaColumnMutationVariables = {
       schemaId: input.schemaId,
       schemaName: input.schemaName,

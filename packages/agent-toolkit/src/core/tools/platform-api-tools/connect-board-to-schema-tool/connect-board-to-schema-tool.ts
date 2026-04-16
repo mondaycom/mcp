@@ -40,6 +40,10 @@ export class ConnectBoardToSchemaTool extends BaseMondayApiTool<typeof connectBo
   protected async executeInternal(
     input: ToolInputType<typeof connectBoardToSchemaToolSchema>,
   ): Promise<ToolOutputType<never>> {
+    if (!input.schemaId && !input.schemaName) {
+      throw new Error('Either schemaId or schemaName must be provided');
+    }
+
     const variables: ConnectBoardToSchemaMutationVariables = {
       boardId: input.boardId,
       schemaId: input.schemaId,

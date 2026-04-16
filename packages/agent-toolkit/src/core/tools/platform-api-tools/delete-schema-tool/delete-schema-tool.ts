@@ -33,6 +33,10 @@ export class DeleteSchemaTool extends BaseMondayApiTool<typeof deleteSchemaToolS
   protected async executeInternal(
     input: ToolInputType<typeof deleteSchemaToolSchema>,
   ): Promise<ToolOutputType<never>> {
+    if (!input.id && !input.name) {
+      throw new Error('Either id or name must be provided');
+    }
+
     const variables: DeleteSchemaMutationVariables = {
       id: input.id,
       name: input.name,

@@ -40,6 +40,10 @@ export class OptInSchemaColumnTool extends BaseMondayApiTool<typeof optInSchemaC
   protected async executeInternal(
     input: ToolInputType<typeof optInSchemaColumnToolSchema>,
   ): Promise<ToolOutputType<never>> {
+    if (!input.schemaId && !input.schemaName) {
+      throw new Error('Either schemaId or schemaName must be provided');
+    }
+
     const variables: OptInSchemaColumnMutationVariables = {
       schemaId: input.schemaId,
       schemaName: input.schemaName,

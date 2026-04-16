@@ -44,6 +44,10 @@ export class DeleteSchemaColumnsTool extends BaseMondayApiTool<typeof deleteSche
   protected async executeInternal(
     input: ToolInputType<typeof deleteSchemaColumnsToolSchema>,
   ): Promise<ToolOutputType<never>> {
+    if (!input.schemaId && !input.schemaName) {
+      throw new Error('Either schemaId or schemaName must be provided');
+    }
+
     const variables: DeleteSchemaColumnsMutationVariables = {
       entityId: input.schemaId,
       entityName: input.schemaName,

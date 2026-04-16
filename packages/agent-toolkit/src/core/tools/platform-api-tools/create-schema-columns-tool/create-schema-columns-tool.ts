@@ -75,6 +75,10 @@ export class CreateSchemaColumnsTool extends BaseMondayApiTool<typeof createSche
   protected async executeInternal(
     input: ToolInputType<typeof createSchemaColumnsToolSchema>,
   ): Promise<ToolOutputType<never>> {
+    if (!input.schemaId && !input.schemaName) {
+      throw new Error('Either schemaId or schemaName must be provided');
+    }
+
     const columns = input.columns.map((col) => ({
       type: col.type as ColumnType,
       title: col.title,

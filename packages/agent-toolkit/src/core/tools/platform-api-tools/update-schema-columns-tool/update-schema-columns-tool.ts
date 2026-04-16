@@ -56,6 +56,10 @@ export class UpdateSchemaColumnsTool extends BaseMondayApiTool<typeof updateSche
   protected async executeInternal(
     input: ToolInputType<typeof updateSchemaColumnsToolSchema>,
   ): Promise<ToolOutputType<never>> {
+    if (!input.schemaId && !input.schemaName) {
+      throw new Error('Either schemaId or schemaName must be provided');
+    }
+
     const variables: UpdateSchemaColumnsMutationVariables = {
       schemaId: input.schemaId,
       schemaName: input.schemaName,
