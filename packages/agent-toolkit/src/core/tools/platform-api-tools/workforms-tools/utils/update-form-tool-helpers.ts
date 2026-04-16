@@ -255,15 +255,17 @@ export class UpdateFormToolHelpers {
   }
 
   async updateFeatures(input: ToolInputType<typeof updateFormToolSchema>): Promise<ToolOutputType<never>> {
-    if (!input.form?.features) {
+    if (!input.form?.features && input.form?.is_anonymous === undefined) {
       return {
-        content: 'Features is required for the action "updateFeatures" in the update form tool.',
+        content:
+          'Features or is_anonymous is required for the action "updateFeatures" in the update form tool.',
       };
     }
 
     const variables: UpdateFormFeaturesMutationVariables = {
       formToken: input.formToken,
-      features: input.form.features as FormFeaturesInput,
+      features: (input.form?.features ?? {}) as FormFeaturesInput,
+      is_anonymous: input.form?.is_anonymous,
     };
 
     const res = await this.mondayApi.request<UpdateFormFeaturesMutation>(updateFormFeatures, variables);
