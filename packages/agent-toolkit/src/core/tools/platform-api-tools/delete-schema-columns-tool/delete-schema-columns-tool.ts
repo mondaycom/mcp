@@ -59,8 +59,8 @@ export class DeleteSchemaColumnsTool extends BaseMondayApiTool<typeof deleteSche
     return {
       content: {
         message: `${input.columnIds.length} column(s) successfully deleted from schema "${res.delete_entity_columns?.name}"`,
-        entity_id: res.delete_entity_columns?.id,
-        entity_name: res.delete_entity_columns?.name,
+        schema_id: res.delete_entity_columns?.id,
+        schema_name: res.delete_entity_columns?.name,
         revision: res.delete_entity_columns?.revision,
       },
     };

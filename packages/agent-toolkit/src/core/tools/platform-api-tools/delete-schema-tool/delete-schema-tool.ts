@@ -33,13 +33,6 @@ export class DeleteSchemaTool extends BaseMondayApiTool<typeof deleteSchemaToolS
   protected async executeInternal(
     input: ToolInputType<typeof deleteSchemaToolSchema>,
   ): Promise<ToolOutputType<never>> {
-<<<<<<< HEAD
-    if (!input.id && !input.name) {
-      throw new Error('Either id or name must be provided');
-    }
-
-=======
->>>>>>> 770d725 (feat(agent-toolkit): add data-structure schema management tools (v5.2.0))
     const variables: DeleteSchemaMutationVariables = {
       id: input.id,
       name: input.name,
@@ -52,13 +45,8 @@ export class DeleteSchemaTool extends BaseMondayApiTool<typeof deleteSchemaToolS
     return {
       content: {
         message: `Schema "${res.delete_schema?.name}" successfully deleted`,
-<<<<<<< HEAD
         schema_id: res.delete_schema?.id,
         schema_name: res.delete_schema?.name,
-=======
-        entity_id: res.delete_schema?.id,
-        entity_name: res.delete_schema?.name,
->>>>>>> 770d725 (feat(agent-toolkit): add data-structure schema management tools (v5.2.0))
       },
     };
   }

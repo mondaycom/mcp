@@ -40,13 +40,6 @@ export class DeactivateSchemaColumnTool extends BaseMondayApiTool<typeof deactiv
   protected async executeInternal(
     input: ToolInputType<typeof deactivateSchemaColumnToolSchema>,
   ): Promise<ToolOutputType<never>> {
-<<<<<<< HEAD
-    if (!input.schemaId && !input.schemaName) {
-      throw new Error('Either schemaId or schemaName must be provided');
-    }
-
-=======
->>>>>>> 770d725 (feat(agent-toolkit): add data-structure schema management tools (v5.2.0))
     const variables: DeactivateSchemaColumnMutationVariables = {
       schemaId: input.schemaId,
       schemaName: input.schemaName,
@@ -62,13 +55,8 @@ export class DeactivateSchemaColumnTool extends BaseMondayApiTool<typeof deactiv
     return {
       content: {
         message: `Column "${input.columnId}" successfully deactivated on schema "${res.deactivate_schema_column?.name}"`,
-<<<<<<< HEAD
         schema_id: res.deactivate_schema_column?.id,
         schema_name: res.deactivate_schema_column?.name,
-=======
-        entity_id: res.deactivate_schema_column?.id,
-        entity_name: res.deactivate_schema_column?.name,
->>>>>>> 770d725 (feat(agent-toolkit): add data-structure schema management tools (v5.2.0))
         revision: res.deactivate_schema_column?.revision,
       },
     };
