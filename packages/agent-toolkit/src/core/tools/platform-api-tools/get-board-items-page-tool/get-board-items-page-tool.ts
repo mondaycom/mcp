@@ -17,6 +17,7 @@ import { SearchItemsDevQuery, SearchItemsDevQueryVariables } from 'src/monday-gr
 import { searchItemsDev } from './get-board-items-page-tool.graphql.dev';
 import { SEARCH_TIMEOUT } from 'src/utils/time.utils';
 import { throwIfSearchTimeoutError } from 'src/utils/error.utils';
+import { SEARCH_LIMIT } from '../search-tool/search-tool.consts';
 
 const COLUMN_VALUE_NOT_SUPPORTED_MESSAGE = 'Column value type is not supported';
 
@@ -310,7 +311,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
   private async getItemIdsFromSmartSearchAsync(input: ToolInputType<GetBoardItemsPageToolInput>): Promise<number[]> {
     const variables: SearchItemsDevQueryVariables = {
       query: input.searchTerm!,
-      limit: 20,
+      limit: SEARCH_LIMIT,
       boardIds: [input.boardId.toString()],
     };
 

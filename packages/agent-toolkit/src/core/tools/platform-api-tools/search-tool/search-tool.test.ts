@@ -91,10 +91,10 @@ describe('SearchTool', () => {
       expect(mocks.getMockRequest()).toHaveBeenCalled();
     });
 
-    it('should validate limit does not exceed SEARCH_LIMIT (100)', async () => {
+    it('should validate limit does not exceed SEARCH_LIMIT (20)', async () => {
       const args: Partial<inputType> = {
         searchType: GlobalSearchType.BOARD,
-        limit: 101, // exceeds max
+        limit: 21, // exceeds max
       };
 
       const result = await callToolByNameRawAsync('search', args);
@@ -103,12 +103,12 @@ describe('SearchTool', () => {
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
 
-    it('should accept limit at exactly SEARCH_LIMIT (100)', async () => {
+    it('should accept limit at exactly SEARCH_LIMIT (20)', async () => {
       mocks.setResponse(mockBoardsResponse);
 
       const args: inputType = {
         searchType: GlobalSearchType.BOARD,
-        limit: 100,
+        limit: 20,
       };
 
       await callToolByNameAsync('search', args);
@@ -142,7 +142,7 @@ describe('SearchTool', () => {
 
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetBoards'), {
           page: 1,
-          limit: 100,
+          limit: 20,
           workspace_ids: undefined,
         });
       });
@@ -152,7 +152,7 @@ describe('SearchTool', () => {
 
         const args: inputType = {
           searchType: GlobalSearchType.BOARD,
-          limit: 50,
+          limit: 15,
           page: 2,
         };
 
@@ -161,7 +161,7 @@ describe('SearchTool', () => {
         expect(parsedResult.data).toBeDefined();
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetBoards'), {
           page: 2,
-          limit: 50,
+          limit: 15,
           workspace_ids: undefined,
         });
       });
@@ -179,12 +179,12 @@ describe('SearchTool', () => {
         expect(parsedResult.data).toBeDefined();
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetBoards'), {
           page: 1,
-          limit: 100,
+          limit: 20,
           workspace_ids: ['12345', '67890'],
         });
       });
 
-      it('should search boards with searchTerm but NOT filter when less than 100 items (fallback path)', async () => {
+      it('should search boards with searchTerm but NOT filter when less than SEARCH_LIMIT items (fallback path)', async () => {
         const largeBoardsResponse: GetBoardsQuery = {
           boards: [
             { id: '1', name: 'Test Board Alpha', url: 'https://monday.com/boards/1' },
@@ -208,7 +208,7 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        // With less than 100 items, no filtering occurs - returns all items
+        // With less than SEARCH_LIMIT items, no filtering occurs - returns all items
         expect(parsedResult.data).toHaveLength(4);
         expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
 
@@ -268,7 +268,7 @@ describe('SearchTool', () => {
     });
 
     describe('Virtual Pagination with Search Term - Fallback Path (Less than 100 items)', () => {
-      it('should NOT filter when less than 100 items - returns all items', async () => {
+      it('should NOT filter when less than SEARCH_LIMIT items - returns all items', async () => {
         const manyBoardsResponse: GetBoardsQuery = {
           boards: Array.from({ length: 10 }, (_, i) => ({
             id: `${i + 1}`,
@@ -291,12 +291,12 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        // With less than 100 items, no filtering occurs - returns all 10 items
+        // With less than SEARCH_LIMIT items, no filtering occurs - returns all 10 items
         expect(parsedResult.data).toHaveLength(10);
         expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
       });
 
-      it('should NOT filter when less than 100 items even with different page (fallback on page > 1)', async () => {
+      it('should NOT filter when less than SEARCH_LIMIT items even with different page (fallback on page > 1)', async () => {
         const manyBoardsResponse: GetBoardsQuery = {
           boards: Array.from({ length: 10 }, (_, i) => ({
             id: `${i + 1}`,
@@ -317,12 +317,12 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        // With less than 100 items, no filtering occurs - returns all 10 items
+        // With less than SEARCH_LIMIT items, no filtering occurs - returns all 10 items
         expect(parsedResult.data).toHaveLength(10);
         expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
       });
 
-      it('should NOT filter when less than 100 items with mixed names', async () => {
+      it('should NOT filter when less than SEARCH_LIMIT items with mixed names', async () => {
         const boardsResponse: GetBoardsQuery = {
           boards: [
             { id: '1', name: 'TEST Board', url: 'https://monday.com/boards/1' },
@@ -343,12 +343,12 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        // With less than 100 items, returns all items without filtering
+        // With less than SEARCH_LIMIT items, returns all items without filtering
         expect(parsedResult.data).toHaveLength(3);
         expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
       });
 
-      it('should NOT filter when less than 100 items even with non-matching search term', async () => {
+      it('should NOT filter when less than SEARCH_LIMIT items even with non-matching search term', async () => {
         const boardsResponse: GetBoardsQuery = {
           boards: [
             { id: '1', name: 'Project Alpha', url: 'https://monday.com/boards/1' },
@@ -372,14 +372,14 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        // With less than 100 items, returns all 5 items (no filtering)
+        // With less than SEARCH_LIMIT items, returns all 5 items (no filtering)
         expect(parsedResult.data).toHaveLength(5);
         expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
       });
     });
 
-    describe('Virtual Pagination with Filtering - Fallback Path (More than 100 items)', () => {
-      it('should filter and paginate when more than 100 items - page 1', async () => {
+    describe('Virtual Pagination with Filtering - Fallback Path (More than SEARCH_LIMIT items)', () => {
+      it('should filter and paginate when more than SEARCH_LIMIT items - page 1', async () => {
         const largeBoardsResponse: GetBoardsQuery = {
           boards: Array.from({ length: 150 }, (_, i) => ({
             id: `${i + 1}`,
@@ -402,14 +402,14 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        // With more than 100 items, filtering occurs
+        // With more than SEARCH_LIMIT items, filtering occurs
         expect(parsedResult.data).toHaveLength(10);
         expect(parsedResult.data[0].title).toBe('Board 1');
         expect(parsedResult.data[9].title).toBe('Board 10');
         expect(parsedResult.disclaimer).toBeUndefined();
       });
 
-      it('should filter and paginate when more than 100 items - page 2 (fallback on page > 1)', async () => {
+      it('should filter and paginate when more than SEARCH_LIMIT items - page 2 (fallback on page > 1)', async () => {
         const largeBoardsResponse: GetBoardsQuery = {
           boards: Array.from({ length: 150 }, (_, i) => ({
             id: `${i + 1}`,
@@ -437,7 +437,7 @@ describe('SearchTool', () => {
         expect(parsedResult.disclaimer).toBeUndefined();
       });
 
-      it('should filter out non-matching items when more than 100 items', async () => {
+      it('should filter out non-matching items when more than SEARCH_LIMIT items', async () => {
         const largeBoardsResponse: GetBoardsQuery = {
           boards: [
             ...Array.from({ length: 80 }, (_, i) => ({
@@ -478,7 +478,7 @@ describe('SearchTool', () => {
         expect(parsedResult.disclaimer).toBeUndefined();
       });
 
-      it('should handle case-insensitive filtering when more than 100 items', async () => {
+      it('should handle case-insensitive filtering when more than SEARCH_LIMIT items', async () => {
         const largeBoardsResponse: GetBoardsQuery = {
           boards: Array.from({ length: 150 }, (_, i) => ({
             id: `${i + 1}`,
@@ -534,7 +534,7 @@ describe('SearchTool', () => {
         expect(parsedResult.disclaimer).toBeUndefined();
       });
 
-      it('should handle partial last page when more than 100 items (fallback on page > 1)', async () => {
+      it('should handle partial last page when more than SEARCH_LIMIT items (fallback on page > 1)', async () => {
         const largeBoardsResponse: GetBoardsQuery = {
           boards: Array.from({ length: 125 }, (_, i) => ({
             id: `${i + 1}`,
@@ -619,7 +619,7 @@ describe('SearchTool', () => {
 
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetDocs'), {
           page: 1,
-          limit: 100,
+          limit: 20,
           workspace_ids: undefined,
         });
       });
@@ -629,7 +629,7 @@ describe('SearchTool', () => {
 
         const args: inputType = {
           searchType: GlobalSearchType.DOCUMENTS,
-          limit: 25,
+          limit: 15,
           page: 3,
         };
 
@@ -638,7 +638,7 @@ describe('SearchTool', () => {
         expect(parsedResult.data).toBeDefined();
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetDocs'), {
           page: 3,
-          limit: 25,
+          limit: 15,
           workspace_ids: undefined,
         });
       });
@@ -656,12 +656,12 @@ describe('SearchTool', () => {
         expect(parsedResult.data).toBeDefined();
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetDocs'), {
           page: 1,
-          limit: 100,
+          limit: 20,
           workspace_ids: ['11111', '22222'],
         });
       });
 
-      it('should search documents with searchTerm but NOT filter when less than 100 items (fallback path)', async () => {
+      it('should search documents with searchTerm but NOT filter when less than SEARCH_LIMIT items (fallback path)', async () => {
         const largeDocsResponse: GetDocsQuery = {
           docs: [
             { id: '1', name: 'Test Document Alpha', url: 'https://monday.com/docs/1' },
@@ -685,7 +685,7 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        // With less than 100 items, no filtering occurs - returns all items
+        // With less than SEARCH_LIMIT items, no filtering occurs - returns all items
         expect(parsedResult.data).toHaveLength(4);
         expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
 
@@ -763,8 +763,8 @@ describe('SearchTool', () => {
       });
     });
 
-    describe('Virtual Pagination with Filtering - Fallback Path (More than 100 items)', () => {
-      it('should filter and paginate documents when more than 100 items', async () => {
+    describe('Virtual Pagination with Filtering - Fallback Path (More than SEARCH_LIMIT items)', () => {
+      it('should filter and paginate documents when more than SEARCH_LIMIT items', async () => {
         const largeDocs: GetDocsQuery = {
           docs: Array.from({ length: 150 }, (_, i) => ({
             id: `${i + 1}`,
@@ -793,7 +793,7 @@ describe('SearchTool', () => {
         expect(parsedResult.disclaimer).toBeUndefined();
       });
 
-      it('should filter out non-matching documents when more than 100 items', async () => {
+      it('should filter out non-matching documents when more than SEARCH_LIMIT items', async () => {
         const largeDocs: GetDocsQuery = {
           docs: [
             ...Array.from({ length: 90 }, (_, i) => ({
@@ -872,7 +872,7 @@ describe('SearchTool', () => {
 
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetFolders'), {
           page: 1,
-          limit: 100,
+          limit: 20,
           workspace_ids: ['1'],
         });
       });
@@ -910,12 +910,12 @@ describe('SearchTool', () => {
         expect(parsedResult.data).toBeDefined();
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetFolders'), {
           page: 1,
-          limit: 100,
+          limit: 20,
           workspace_ids: ['99999'],
         });
       });
 
-      it('should search folders with searchTerm but NOT filter when less than 100 items', async () => {
+      it('should search folders with searchTerm but NOT filter when less than SEARCH_LIMIT items', async () => {
         const largeFoldersResponse: GetFoldersQuery = {
           folders: [
             { id: '1', name: 'Test Folder Alpha' },
@@ -937,13 +937,13 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        // With less than 100 items, no filtering occurs - returns all items
+        // With less than SEARCH_LIMIT items, no filtering occurs - returns all items
         expect(parsedResult.data).toHaveLength(4);
         expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
 
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetFolders'), {
           page: 1,
-          limit: 100,
+          limit: 100, // MAX_FOLDERS_LIMIT, not SEARCH_LIMIT
           workspace_ids: ['1'],
         });
       });
@@ -1013,8 +1013,8 @@ describe('SearchTool', () => {
       });
     });
 
-    describe('Virtual Pagination with Filtering (More than 100 items)', () => {
-      it('should filter and paginate folders when more than 100 items', async () => {
+    describe('Virtual Pagination with Filtering (More than SEARCH_LIMIT items)', () => {
+      it('should filter and paginate folders when more than SEARCH_LIMIT items', async () => {
         const largeFolders: GetFoldersQuery = {
           folders: Array.from({ length: 150 }, (_, i) => ({
             id: `${i + 1}`,
@@ -1040,7 +1040,7 @@ describe('SearchTool', () => {
         expect(parsedResult.disclaimer).toBeUndefined();
       });
 
-      it('should filter out non-matching folders when more than 100 items', async () => {
+      it('should filter out non-matching folders when more than SEARCH_LIMIT items', async () => {
         const largeFolders: GetFoldersQuery = {
           folders: [
             ...Array.from({ length: 85 }, (_, i) => ({
@@ -1167,7 +1167,7 @@ describe('SearchTool', () => {
           expect.stringContaining('query SearchBoardsDev'),
           {
             query: 'Test',
-            limit: 100,
+            limit: 20,
             workspaceIds: undefined,
           },
           expect.objectContaining({ versionOverride: 'dev' }),
@@ -1194,7 +1194,7 @@ describe('SearchTool', () => {
         const args: inputType = {
           searchType: GlobalSearchType.BOARD,
           searchTerm: 'Test',
-          limit: 50,
+          limit: 15,
         };
 
         await callToolByNameAsync('search', args);
@@ -1202,7 +1202,7 @@ describe('SearchTool', () => {
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(
           expect.stringContaining('query SearchBoardsDev'),
           expect.objectContaining({
-            limit: 50,
+            limit: 15,
           }),
           expect.objectContaining({ versionOverride: 'dev' }),
         );
@@ -1280,7 +1280,7 @@ describe('SearchTool', () => {
           expect.stringContaining('query SearchDocsDev'),
           {
             query: 'Document',
-            limit: 100,
+            limit: 20,
             workspaceIds: undefined,
           },
           expect.objectContaining({ versionOverride: 'dev' }),
@@ -1455,7 +1455,7 @@ describe('SearchTool', () => {
       const args: inputType = {
         searchType: GlobalSearchType.BOARD,
         searchTerm: 'test',
-        limit: 50,
+        limit: 15,
         page: 3,
       };
 
@@ -1474,7 +1474,7 @@ describe('SearchTool', () => {
 
       const args: inputType = {
         searchType: GlobalSearchType.BOARD,
-        limit: 50,
+        limit: 15,
         page: 3,
       };
 
@@ -1482,7 +1482,7 @@ describe('SearchTool', () => {
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetBoards'), {
         page: 3,
-        limit: 50,
+        limit: 15,
         workspace_ids: undefined,
       });
     });
@@ -1493,7 +1493,7 @@ describe('SearchTool', () => {
       const args: inputType = {
         searchType: GlobalSearchType.BOARD,
         searchTerm: '',
-        limit: 50,
+        limit: 15,
         page: 3,
       };
 
@@ -1502,7 +1502,7 @@ describe('SearchTool', () => {
       // Empty string is falsy, so should use original page and limit
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetBoards'), {
         page: 3,
-        limit: 50,
+        limit: 15,
         workspace_ids: undefined,
       });
     });
@@ -1535,7 +1535,7 @@ describe('SearchTool', () => {
       expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
     });
 
-    it('should slice results correctly for page 1 when more than 100 items', async () => {
+    it('should slice results correctly for page 1 when more than SEARCH_LIMIT items', async () => {
       const largeResponse: GetBoardsQuery = {
         boards: Array.from({ length: 120 }, (_, i) => ({
           id: `${i + 1}`,
@@ -1564,7 +1564,7 @@ describe('SearchTool', () => {
       expect(parsedResult.disclaimer).toBeUndefined();
     });
 
-    it('should slice results correctly for page 2 when more than 100 items (fallback on page > 1)', async () => {
+    it('should slice results correctly for page 2 when more than SEARCH_LIMIT items (fallback on page > 1)', async () => {
       const largeResponse: GetBoardsQuery = {
         boards: Array.from({ length: 120 }, (_, i) => ({
           id: `${i + 1}`,
@@ -1591,7 +1591,7 @@ describe('SearchTool', () => {
       expect(parsedResult.disclaimer).toBeUndefined();
     });
 
-    it('should slice results correctly for last partial page when more than 100 items (fallback on page > 1)', async () => {
+    it('should slice results correctly for last partial page when more than SEARCH_LIMIT items (fallback on page > 1)', async () => {
       const largeResponse: GetBoardsQuery = {
         boards: Array.from({ length: 112 }, (_, i) => ({
           id: `${i + 1}`,
@@ -1619,7 +1619,7 @@ describe('SearchTool', () => {
       expect(parsedResult.disclaimer).toBeUndefined();
     });
 
-    it('should return empty array when page exceeds available results with more than 100 items (fallback on page > 1)', async () => {
+    it('should return empty array when page exceeds available results with more than SEARCH_LIMIT items (fallback on page > 1)', async () => {
       const largeResponse: GetBoardsQuery = {
         boards: Array.from({ length: 115 }, (_, i) => ({
           id: `${i + 1}`,
@@ -1644,7 +1644,7 @@ describe('SearchTool', () => {
       expect(parsedResult.disclaimer).toBeUndefined();
     });
 
-    it('should handle special characters in search term when less than 100 items', async () => {
+    it('should handle special characters in search term when less than SEARCH_LIMIT items', async () => {
       const boardsResponse: GetBoardsQuery = {
         boards: [
           { id: '1', name: 'Board (Test)', url: 'https://monday.com/boards/1' },
@@ -1696,7 +1696,7 @@ describe('SearchTool', () => {
   });
 
   describe('Default Values', () => {
-    it('should use default limit of 100 when not specified', async () => {
+    it('should use default limit of 20 when not specified', async () => {
       mocks.setResponse(mockBoardsResponse);
 
       const args: Partial<inputType> = {
@@ -1708,7 +1708,7 @@ describe('SearchTool', () => {
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.stringContaining('query GetBoards'),
         expect.objectContaining({
-          limit: 100,
+          limit: 20,
         }),
       );
     });
@@ -1820,7 +1820,7 @@ describe('SearchTool', () => {
       expect(parsedResult.data).toHaveLength(1);
     });
 
-    it('should handle very high page number with less than 100 results - returns all (fallback on page > 1)', async () => {
+    it('should handle very high page number with less than SEARCH_LIMIT results - returns all (fallback on page > 1)', async () => {
       // page > 1 causes dev endpoint to throw, falls back to old implementation
       mocks.setResponse(mockBoardsResponse);
 
