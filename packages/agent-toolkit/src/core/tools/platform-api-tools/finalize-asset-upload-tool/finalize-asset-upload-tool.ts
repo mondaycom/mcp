@@ -6,6 +6,7 @@ import { updateAssetsOnItem } from '../update-assets-on-item-tool/update-assets-
 
 export const finalizeAssetUploadSchema = {
   uploadId: z.string().describe('The upload_id returned by get_asset_upload_url'),
+  etag: z.string().describe('The ETag header value from the PUT response when uploading to the presigned URL'),
   boardId: z.string().describe("The board's unique identifier"),
   itemId: z.string().describe("The item's unique identifier to attach the file to"),
   columnId: z.string().describe("The file column's unique identifier on the board"),
@@ -43,6 +44,7 @@ export class FinalizeAssetUploadTool extends BaseMondayApiTool<typeof finalizeAs
     return (
       "Finalize a file upload and attach it to an item's file column. " +
       'Call this after uploading the file to the presigned URL from get_asset_upload_url. ' +
+      'Requires the etag value from the PUT response headers. ' +
       'This completes the upload, creates the asset, and sets it on the specified file column.'
     );
   }
@@ -54,7 +56,6 @@ export class FinalizeAssetUploadTool extends BaseMondayApiTool<typeof finalizeAs
   protected async executeInternal(
     input: ToolInputType<typeof finalizeAssetUploadSchema>,
   ): Promise<ToolOutputType<never>> {
-    // Step 1: Complete the upload (dummy ETag for test scenario #1)
     const completeRes = await this.mondayApi.request<CompleteUploadMutation>(
       completeUploadMutationDev,
       {
@@ -62,7 +63,7 @@ export class FinalizeAssetUploadTool extends BaseMondayApiTool<typeof finalizeAs
           upload_id: input.uploadId,
           holder: { type: 'ITEM', id: input.itemId },
           board_id: input.boardId,
-          parts: [{ part_number: 1, etag: '0' }],
+          parts: [{ part_number: 1, etag: input.etag }],
         },
       },
       { versionOverride: 'dev' },

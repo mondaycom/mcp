@@ -31,11 +31,13 @@ export class GetAssetUploadUrlTool extends BaseMondayApiTool<typeof getAssetUplo
   getDescription(): string {
     return (
       'Get a presigned URL to upload a file to monday.com. Returns an upload_id and upload_url.\n\n' +
-      'After calling this tool, upload the file to the returned URL using an HTTP PUT request:\n\n' +
-      'curl -X PUT "<upload_url>" \\\n' +
+      'After calling this tool, upload the file to the returned URL using an HTTP PUT request ' +
+      'and capture the ETag header from the response:\n\n' +
+      'curl -i -X PUT "<upload_url>" \\\n' +
       '  -H "Content-Type: <the contentType you provided>" \\\n' +
       '  --data-binary @<local_file_path>\n\n' +
-      'Then call finalize_asset_upload with the upload_id, board_id, item_id, column_id, and fileName ' +
+      'The response includes an ETag header (e.g. ETag: "abc123...") — save this value.\n\n' +
+      'Then call finalize_asset_upload with the upload_id, etag, board_id, item_id, column_id, and fileName ' +
       "to complete the upload and attach the file to an item's file column.\n\n" +
       'Max file size: 500MB.'
     );

@@ -27,6 +27,7 @@ describe('FinalizeAssetUploadTool', () => {
     const tool = new FinalizeAssetUploadTool(mocks.mockApiClient);
     const result = await tool.execute({
       uploadId: 'uuid-upload-123',
+      etag: '"abc123etag"',
       boardId: '100',
       itemId: '42',
       columnId: 'files',
@@ -43,7 +44,6 @@ describe('FinalizeAssetUploadTool', () => {
       }),
     );
 
-    // Verify complete_upload call (dev override, dummy etag)
     expect(mocks.mockRequest).toHaveBeenNthCalledWith(
       1,
       expect.anything(),
@@ -52,7 +52,7 @@ describe('FinalizeAssetUploadTool', () => {
           upload_id: 'uuid-upload-123',
           holder: { type: 'ITEM', id: '42' },
           board_id: '100',
-          parts: [{ part_number: 1, etag: '0' }],
+          parts: [{ part_number: 1, etag: '"abc123etag"' }],
         },
       },
       expect.objectContaining({ versionOverride: 'dev' }),
@@ -72,7 +72,7 @@ describe('FinalizeAssetUploadTool', () => {
     const tool = new FinalizeAssetUploadTool(mocks.mockApiClient);
 
     await expect(
-      tool.execute({ uploadId: 'bad', boardId: '100', itemId: '42', columnId: 'files', fileName: 'f.pdf' }),
+      tool.execute({ uploadId: 'bad', etag: '"etag"', boardId: '100', itemId: '42', columnId: 'files', fileName: 'f.pdf' }),
     ).rejects.toThrow('Upload not found');
   });
 
@@ -84,7 +84,7 @@ describe('FinalizeAssetUploadTool', () => {
     const tool = new FinalizeAssetUploadTool(mocks.mockApiClient);
 
     await expect(
-      tool.execute({ uploadId: 'uuid-123', boardId: '100', itemId: '42', columnId: 'bad', fileName: 'f.pdf' }),
+      tool.execute({ uploadId: 'uuid-123', etag: '"etag"', boardId: '100', itemId: '42', columnId: 'bad', fileName: 'f.pdf' }),
     ).rejects.toThrow('Column not found');
   });
 

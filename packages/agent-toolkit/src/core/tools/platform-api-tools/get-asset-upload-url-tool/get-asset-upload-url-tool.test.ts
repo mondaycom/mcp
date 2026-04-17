@@ -61,6 +61,7 @@ describe('GetAssetUploadUrlTool', () => {
     expect(tool.name).toBe('get_asset_upload_url');
     expect(tool.type).toBe('write');
     expect(tool.getDescription()).toContain('curl');
+    expect(tool.getDescription()).toContain('ETag');
     expect(tool.getDescription()).toContain('finalize_asset_upload');
   });
 });
