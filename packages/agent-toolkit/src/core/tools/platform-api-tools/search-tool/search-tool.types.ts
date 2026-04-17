@@ -1,5 +1,3 @@
-import { BoardSearchResult, DocSearchResult, ItemSearchResult } from "src/monday-graphql/generated/graphql.dev/graphql";
-
 export interface SearchResult {
   id: string;
   title: string;
@@ -30,7 +28,3 @@ export enum GlobalSearchType {
   // ITEMS = 'ITEMS', // already supported by get_board_items_page tool
   // GROUPS = 'GROUPS', // already supported by get_board_info tool
 }
-
-export const BOARD_SEARCH_RESULT_TYPENAME = 'BoardSearchResult' satisfies BoardSearchResult['__typename'];
-export const DOC_SEARCH_RESULT_TYPENAME = 'DocSearchResult' satisfies DocSearchResult['__typename'];
-export const ITEM_SEARCH_RESULT_TYPENAME = 'ItemSearchResult' satisfies ItemSearchResult['__typename'];
