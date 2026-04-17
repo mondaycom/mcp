@@ -64,6 +64,8 @@ import { GetAssetsTool } from './get-assets-tool/get-assets-tool';
 import { UserContextTool } from './user-context-tool/user-context-tool';
 import { GetNotetakerMeetingsTool } from './get-notetaker-meetings-tool/get-notetaker-meetings-tool';
 import { UndoActionTool } from './undo-action-tool/undo-action-tool';
+import { GetAssetUploadUrlTool } from './get-asset-upload-url-tool/get-asset-upload-url-tool';
+import { FinalizeAssetUploadTool } from './finalize-asset-upload-tool/finalize-asset-upload-tool';
 
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteItemTool,
@@ -132,6 +134,8 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   OptOutSchemaColumnTool,
   OptInSchemaColumnTool,
   DeleteSchemaColumnsTool,
+  GetAssetUploadUrlTool,
+  FinalizeAssetUploadTool,
 ];
 
 export * from './all-monday-api-tool';
@@ -195,6 +199,8 @@ export * from './search-tool/search-tool';
 export * from './user-context-tool/user-context-tool';
 export * from './update-assets-on-item-tool/update-assets-on-item-tool';
 export * from './get-assets-tool/get-assets-tool';
+export * from './get-asset-upload-url-tool/get-asset-upload-url-tool';
+export * from './finalize-asset-upload-tool/finalize-asset-upload-tool';
 // Notetaker Tools
 export * from './get-notetaker-meetings-tool/get-notetaker-meetings-tool';
 // Dashboard Tools
