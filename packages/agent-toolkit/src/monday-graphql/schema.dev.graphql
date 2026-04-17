@@ -16430,6 +16430,159 @@ enum SearchStrategy {
   QUALITY
 }
 
+"""Per-entity search namespace. Each field searches a single entity type."""
+type SearchNamespace {
+  """Search for items."""
+  items(
+    """The search query string."""
+    query: String!
+
+    """Maximum number of results to return (default 10, max 20)."""
+    limit: Int = 10
+
+    """Date range filter."""
+    date_range: CrossEntityDateRangeInput
+
+    """Controls the trade-off between search quality and response time. Defaults to balanced."""
+    strategy: SearchStrategy
+
+    """Filter items to specific board IDs."""
+    board_ids: [ID!]
+
+    """Filter items to specific workspace IDs."""
+    workspace_ids: [ID!]
+  ): SearchItemResults!
+
+  """Search for boards."""
+  boards(
+    """The search query string."""
+    query: String!
+
+    """Maximum number of results to return (default 10, max 20)."""
+    limit: Int = 10
+
+    """Date range filter."""
+    date_range: CrossEntityDateRangeInput
+
+    """Controls the trade-off between search quality and response time. Defaults to balanced."""
+    strategy: SearchStrategy
+
+    """Filter boards to specific workspace IDs."""
+    workspace_ids: [ID!]
+  ): SearchBoardResults!
+
+  """Search for documents."""
+  docs(
+    """The search query string."""
+    query: String!
+
+    """Maximum number of results to return (default 10, max 20)."""
+    limit: Int = 10
+
+    """Date range filter."""
+    date_range: CrossEntityDateRangeInput
+
+    """Controls the trade-off between search quality and response time. Defaults to balanced."""
+    strategy: SearchStrategy
+
+    """Filter documents to specific workspace IDs."""
+    workspace_ids: [ID!]
+  ): SearchDocResults!
+}
+
+"""Wrapper for a list of item search results."""
+type SearchItemResults {
+  """List of item search results."""
+  results: [SearchItemResult!]!
+}
+
+"""A single item search result with indexed data."""
+type SearchItemResult {
+  """Unique identifier of the item."""
+  id: ID!
+
+  """Item data from the search index."""
+  indexed_data: SearchIndexedItem!
+}
+
+"""Item data stored in the search index."""
+type SearchIndexedItem {
+  """Item ID."""
+  id: ID!
+
+  """Item name."""
+  name: String!
+
+  """URL to view this item."""
+  url: String!
+
+  """ID of the board containing this item."""
+  board_id: ID
+
+  """ID of the workspace containing this item."""
+  workspace_id: ID
+}
+
+"""Wrapper for a list of board search results."""
+type SearchBoardResults {
+  """List of board search results."""
+  results: [SearchBoardResult!]!
+}
+
+"""A single board search result with indexed data."""
+type SearchBoardResult {
+  """Unique identifier of the board."""
+  id: ID!
+
+  """Board data from the search index."""
+  indexed_data: SearchIndexedBoard!
+}
+
+"""Board data stored in the search index."""
+type SearchIndexedBoard {
+  """Board ID."""
+  id: ID!
+
+  """Board name."""
+  name: String!
+
+  """Board description."""
+  description: String
+
+  """ID of the workspace containing this board."""
+  workspace_id: ID
+
+  """URL to view this board."""
+  url: String!
+}
+
+"""Wrapper for a list of document search results."""
+type SearchDocResults {
+  """List of document search results."""
+  results: [SearchDocResult!]!
+}
+
+"""A single document search result with indexed data."""
+type SearchDocResult {
+  """Unique identifier of the document."""
+  id: ID!
+
+  """Document data from the search index."""
+  indexed_data: SearchIndexedDoc!
+}
+
+"""Document data stored in the search index."""
+type SearchIndexedDoc {
+  """Document ID."""
+  id: ID!
+
+  """Document name."""
+  name: String!
+
+  """ID of the workspace containing this document."""
+  workspace_id: ID
+}
+
 """Input for enrolling multiple items to a single sequence"""
 input EnrollToSequenceInput {
   """The ID of the sequence to enroll items to"""

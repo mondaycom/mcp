@@ -297,17 +297,22 @@ describe('GetBoardItemsPageTool', () => {
   });
 
   describe('getItemIdsFromSmartSearchAsync integration', () => {
+    const createSmartSearchResponse = (itemIds: number[]) => ({
+      search: {
+        items: {
+          results: itemIds.map((id) => ({ id: id.toString() })),
+        },
+      },
+    });
+
     it('should call mockRequest with itemIds from smart search when no initial itemIds are provided', async () => {
       // Arrange
       const smartSearchItemIds = [111, 222, 333];
-      const smartSearchResults = {
-        cross_entity_search: smartSearchItemIds.map((id) => ({ __typename: 'ItemSearchResult', data: { id: id.toString() } })),
-      };
 
       // Mock the smart search request
       jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string, variables: any) => {
         if (query.includes('query SearchItemsDev')) {
-          return Promise.resolve(smartSearchResults);
+          return Promise.resolve(createSmartSearchResponse(smartSearchItemIds));
         }
         // For the main getBoardItemsPage query, just return a dummy response
         return Promise.resolve(successfulResponseWithItems);
@@ -333,14 +338,11 @@ describe('GetBoardItemsPageTool', () => {
       const smartSearchItemIds = [111, 222, 333];
       const initialItemIds = [222, 444];
       const expectedIds = [222];
-      const smartSearchResults = {
-        cross_entity_search: smartSearchItemIds.map((id) => ({ __typename: 'ItemSearchResult', data: { id: id.toString() } })),
-      };
 
       // Mock the smart search request
       jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string, variables: any) => {
         if (query.includes('query SearchItemsDev')) {
-          return Promise.resolve(smartSearchResults);
+          return Promise.resolve(createSmartSearchResponse(smartSearchItemIds));
         }
         // For the main getBoardItemsPage query, just return a dummy response
         return Promise.resolve(successfulResponseWithItems);
@@ -361,15 +363,10 @@ describe('GetBoardItemsPageTool', () => {
     });
 
     it('should build manual name filter in queryParams.rules if smart search returns no itemIds', async () => {
-      // Arrange
-      const smartSearchResults = {
-        cross_entity_search: [],
-      };
-
       // Mock the smart search request
       jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string, variables: any) => {
         if (query.includes('query SearchItemsDev')) {
-          return Promise.resolve(smartSearchResults);
+          return Promise.resolve(createSmartSearchResponse([]));
         }
         // For the main getBoardItemsPage query, just return a dummy response
         return Promise.resolve(successfulResponseWithItems);
