@@ -479,25 +479,23 @@ type Query {
   ): JSON
 
   """
-  Retrieve active account entity models by their IDs or names. Only returns account-level entities (not global). Entity models define the structure and columns of boards. If no parameters are provided, all account entities are returned. Results are paginated using page and limit parameters.
+  Retrieve active account schemas by their IDs or names. Only returns account-level schemas (not global). Schemas define the structure and columns of boards. If no parameters are provided, all account schemas are returned. Results are paginated using page and limit parameters.
   """
-  account_entities(
-    """A list of entity model IDs to retrieve."""
+  get_schemas(
+    """A list of schema IDs to retrieve."""
     ids: [ID!]
 
-    """
-    A list of entity model names to retrieve. Names are unique identifiers.
-    """
+    """A list of schema names to retrieve. Names are unique identifiers."""
     names: [String!]
 
     """
-    The number of entity models to return per page. Default is 25, maximum is 100.
+    The number of schemas to return per page. Default is 25, maximum is 100.
     """
     limit: Int
 
     """The page number to retrieve. Pages are 1-indexed. Default is 1."""
     page: Int
-  ): [EntityModel!]
+  ): [AccountEntity!]
 
   """
   Returns a cursor-paginated list of connected boards for the specified board relation columns.
@@ -555,6 +553,11 @@ type Query {
   export_graph(
     """The ID of the board to export the graph for"""
     boardId: String!
+
+    """
+    A direct Redis key to fetch the graph by. When provided, boardId is ignored and the graph is fetched using this key directly. Must include the boardId (format: graph:dependencies:<boardId>[...]).
+    """
+    redis_key: String
   ): BoardGraphExport
 
   """Fetch dependency column configuration for a board"""
@@ -1000,6 +1003,15 @@ type Query {
     """Filter by user kind."""
     user_kind: UserKindFilterInput
 
+    """Sort users by one or more fields and directions."""
+    sort: [UsersSortInput!]
+
+    """Filter by visibility."""
+    visibility: String
+
+    """Filter by user status. Defaults to [ACTIVE, PENDING] if not provided."""
+    status: [UserStatus!]
+
     """Number of items to get, the default is 200. The maximum is 1000."""
     limit: Int = 200
 
@@ -1252,6 +1264,16 @@ type Query {
   ): UtilizationReport
 
   """
+  Returns utilization report scoped to a portfolio. Resolves portfolio to board IDs, then returns the same report shape as utilization_report.
+  """
+  portfolio_utilization_report(
+    """
+    Portfolio ID, time range, effort types, optional groupBy, filters, and options.
+    """
+    input: PortfolioUtilizationReportInput!
+  ): UtilizationReport
+
+  """
   A query to search across all boards in the account. Returns raw json results.
   """
   search_benchmark(
@@ -1285,6 +1307,11 @@ type Query {
     Filters specifying which entities to search and their per-entity filters.
     """
     filters: SearchFiltersInput!
+
+    """
+    Controls the trade-off between search quality and response time. Defaults to balanced.
+    """
+    strategy: SearchStrategy
   ): [SearchResult!]
 
   """Search for items using various search strategies."""
@@ -1322,24 +1349,10 @@ type Query {
     reranking_strategy: RerankingStrategy
   ): SearchItemsGraphQlResultsView
 
-  """Search across multiple entity types (items, boards, documents)."""
-  search(
-    """The search query string."""
-    query: String!
-
-    """Maximum number of results to return per entity (max 100)."""
-    limit: Int!
-
-    """
-    Filters specifying which entities to search and their per-entity filters.
-    """
-    filters: SearchFiltersInput!
-
-    """
-    Controls the trade-off between search quality and response time. Defaults to balanced.
-    """
-    strategy: SearchStrategy
-  ): [SearchResult!]
+  """
+  Search API. Each field searches a single entity type with tailored filters.
+  """
+  search: SearchNamespace!
 
   """Lookup a single entity type by name or other relevant properties."""
   search_lookup(
@@ -1395,6 +1408,15 @@ type Query {
 
   """Get all roles for the account"""
   account_roles: [AccountRole!]
+
+  """Get all user configs for the account."""
+  user_configs(
+    """Filter by kinds."""
+    kinds: [String!]
+
+    """Filter by visibility."""
+    visibility: String
+  ): [UserConfig!]
 
   """
   Returns all available widget schemas for documentation and validation purposes
@@ -1589,6 +1611,9 @@ type User {
 
   """Whether the user has confirmed their email address."""
   is_email_confirmed: Boolean!
+
+  """The user's config based on their kind."""
+  user_config: UserConfig!
 }
 
 """
@@ -2369,89 +2394,145 @@ type Mutation {
     settings: DropdownSettingsOverridesInput
   ): Column
 
-  """Create a new account entity."""
-  create_account_entity(
-    """A unique human-readable name for this entity."""
+  """Create a new account schema."""
+  create_schema(
+    """A unique human-readable name for this schema."""
     name: String!
 
-    """The ID of the parent entity."""
+    """The ID of the parent schema."""
     parent_id: ID
 
-    """The description for this entity."""
+    """The description for this schema."""
     description: String
   ): AccountEntity
 
-  """Update an account entity."""
-  update_account_entity(
-    """The ID of the entity to update."""
+  """Update an account schema."""
+  update_schema(
+    """The ID of the schema to update."""
     id: ID!
 
     """The current revision number for optimistic locking."""
     revision: Int!
 
-    """The ID of the parent entity."""
+    """The ID of the parent schema."""
     parent_id: ID
 
-    """The description for this entity."""
+    """The description for this schema."""
     description: String
   ): AccountEntity
 
   """
-  Delete an account entity model. Can only delete if there are no boards attached to the entity model. Entity models define the structure and columns of boards.
+  Delete an account schema. Can only delete if there are no boards attached to the schema. Schemas define the structure and columns of boards.
   """
-  delete_account_entity(
-    """The entity model ID to delete."""
+  delete_schema(
+    """The schema ID to delete."""
     id: ID
 
-    """The entity model name to delete."""
+    """The schema name to delete."""
     name: String
-  ): EntityModel
+  ): AccountEntity
 
-  """Connect a board to an entity model."""
-  connect_board_to_entity(
+  """Connect a board to a schema."""
+  connect_board_to_schema(
     """The board ID to connect."""
     board_id: ID!
 
-    """The entity model ID to connect the board to."""
-    entity_id: ID
+    """The schema ID to connect the board to."""
+    schema_id: ID
 
     """
-    The entity model name (slug) to connect the board to. Either entity_id or entity_name must be provided.
+    The schema name (slug) to connect the board to. Either schema_id or schema_name must be provided.
     """
-    entity_name: String
+    schema_name: String
   ): BoardConnection
 
-  """Create columns on an account entity."""
-  create_entity_columns(
-    """The ID of the entity model to add columns to"""
-    entity_id: ID
+  """Create columns on an account schema."""
+  create_schema_columns(
+    """The ID of the schema to add columns to"""
+    schema_id: ID
 
     """
-    The entity model name to add columns to. Either entity_id or entity_name must be provided.
+    The schema name to add columns to. Either schema_id or schema_name must be provided.
     """
-    entity_name: String
+    schema_name: String
 
     """Array of columns to create"""
     columns: [CreateEntityColumnInput!]!
   ): AccountEntity
 
-  """Deprecate a column on an account entity."""
-  deactivate_entity_column(
-    """The ID of the entity model"""
-    entity_id: ID
+  """Deprecate a column on an account schema."""
+  deactivate_schema_column(
+    """The ID of the schema"""
+    schema_id: ID
 
-    """
-    The entity model name. Either entity_id or entity_name must be provided.
-    """
-    entity_name: String
+    """The schema name. Either schema_id or schema_name must be provided."""
+    schema_name: String
 
     """The ID of the column to deprecate"""
     column_id: ID!
   ): AccountEntity
 
-  """Reactivate a deprecated column on an account entity."""
-  reactivate_entity_column(
-    """The ID of the entity model"""
+  """Reactivate a deprecated column on an account schema."""
+  reactivate_schema_column(
+    """The ID of the schema"""
+    schema_id: ID
+
+    """The schema name. Either schema_id or schema_name must be provided."""
+    schema_name: String
+
+    """The ID of the column to reactivate"""
+    column_id: ID!
+  ): AccountEntity
+
+  """Detach boards from their schemas."""
+  detach_boards_from_schema(
+    """The board IDs to detach."""
+    board_ids: [ID!]!
+  ): [BulkDetachBoardResult!]
+
+  """Update columns on an account schema."""
+  update_schema_columns(
+    """The ID of the schema to update columns on"""
+    schema_id: ID
+
+    """
+    The schema name to update columns on. Either schema_id or schema_name must be provided.
+    """
+    schema_name: String
+
+    """Array of column updates"""
+    columns: [UpdateEntityColumnInput!]!
+  ): AccountEntity
+
+  """Opt out a column by default on an account schema."""
+  opt_out_schema_column(
+    """The ID of the schema"""
+    schema_id: ID
+
+    """The schema name"""
+    schema_name: String
+
+    """The ID of the column to opt out by default"""
+    column_id: ID!
+  ): AccountEntity
+
+  """Opt in a column by default on an account schema."""
+  opt_in_schema_column(
+    """The ID of the schema"""
+    schema_id: ID
+
+    """The schema name"""
+    schema_name: String
+
+    """The ID of the column to opt in by default"""
+    column_id: ID!
+  ): AccountEntity
+
+  """
+  Delete columns from an account or global entity. Only allowed when no boards are connected to the entity.
+  """
+  delete_entity_columns(
+    """The ID of the entity model to delete columns from."""
     entity_id: ID
 
     """
@@ -2459,52 +2540,24 @@ type Mutation {
     """
     entity_name: String
 
-    """The ID of the column to reactivate"""
-    column_id: ID!
+    """The IDs of the columns to delete."""
+    column_ids: [ID!]!
   ): AccountEntity
 
-  """Detach boards from their entity models."""
-  detach_boards_from_entity(
-    """The board IDs to detach."""
-    board_ids: [ID!]!
-  ): [BulkDetachBoardResult!]
-
-  """Update columns on an account entity."""
-  update_entity_columns(
-    """The ID of the entity model to update columns on"""
+  """
+  Delete columns from an account or global entity. Only allowed when no boards are connected to the entity.
+  """
+  delete_entity_columns(
+    """The ID of the entity model to delete columns from."""
     entity_id: ID
 
     """
-    The entity model name to update columns on. Either entity_id or entity_name must be provided.
+    The entity model name. Either entity_id or entity_name must be provided.
     """
     entity_name: String
 
-    """Array of column updates"""
-    columns: [UpdateEntityColumnInput!]!
-  ): AccountEntity
-
-  """Opt out a column by default on an account entity."""
-  opt_out_entity_column(
-    """The ID of the entity model"""
-    entity_id: ID
-
-    """The entity model name"""
-    entity_name: String
-
-    """The ID of the column to opt out by default"""
-    column_id: ID!
-  ): AccountEntity
-
-  """Opt in a column by default on an account entity."""
-  opt_in_entity_column(
-    """The ID of the entity model"""
-    entity_id: ID
-
-    """The entity model name"""
-    entity_name: String
-
-    """The ID of the column to opt in by default"""
-    column_id: ID!
+    """The IDs of the columns to delete."""
+    column_ids: [ID!]!
   ): AccountEntity
 
   """Adds connected boards to a board relation column."""
@@ -3149,6 +3202,22 @@ type Mutation {
     """Entity type enum (currently only "appFeature" is supported)"""
     entity_type: String!
   ): Boolean
+
+  """
+  Installs an app on the current account. Requires account admin permission.
+  """
+  install_app(
+    """App installation configuration"""
+    input: InstallAppInput!
+  ): InstallAppResponse
+
+  """
+  Uninstalls an app from the current account. Requires account admin permission.
+  """
+  uninstall_app(
+    """The app identifier (numeric ID or slug)"""
+    app_identifier: ID!
+  ): AppDeletionResponse
 
   """Add a file to a column value."""
   add_file_to_column(
@@ -4501,6 +4570,33 @@ type Mutation {
   ): Boolean
 
   """
+  Submit answers to a form. Open to authenticated and anonymous users — authorization is handled by the form settings (user restrictions, etc.). Note: forms with reCAPTCHA enabled cannot be submitted via GraphQL — use the UI instead.
+  """
+  create_form_submission(
+    """The unique token identifying the form to submit to."""
+    form_token: String!
+
+    """
+    The answers to submit. Each entry specifies a question ID and the answer for that question.
+    """
+    answers: [FormAnswerInput!]!
+
+    """The timezone offset of the submitter in minutes (e.g. -120 for UTC-2)."""
+    form_timezone_offset: Int!
+
+    """The password for the form. Required if the form is password-protected."""
+    password: String
+
+    """The board group ID to submit the response into."""
+    group_id: ID
+
+    """
+    Tags to attach to the submission — metadata mapped to specific board columns.
+    """
+    tags: [TagInput!]
+  ): FormSubmissionResult
+
+  """
   Update form properties including title, description, or question order.
   """
   update_form(
@@ -4705,96 +4801,6 @@ type Mutation {
     """The password to set for the form. Must be at least 1 character long."""
     input: SetFormPasswordInput!
   ): ResponseForm
-
-  """
-  Create a new selectable option for a SingleSelect or MultiSelect question. Returns the created option.
-  """
-  create_form_question_option(
-    """
-    The unique identifier token for the form. Required for all form-specific operations.
-    """
-    form_token: String!
-
-    """
-    The unique identifier for the question. Used to target specific questions within a form.
-    """
-    question_id: ID!
-
-    """
-    The display text for the option shown to respondents. Must be at least 1 character long.
-    """
-    label: String!
-
-    """
-    The internal unique identifier for the option. Used as the option ID in update and delete operations.
-    """
-    value: String!
-  ): FormQuestionOption
-
-  """
-  Update the label of an existing option on a SingleSelect or MultiSelect question.
-  """
-  update_form_question_option(
-    """
-    The unique identifier token for the form. Required for all form-specific operations.
-    """
-    form_token: String!
-
-    """
-    The unique identifier for the question. Used to target specific questions within a form.
-    """
-    question_id: ID!
-
-    """
-    The internal ID (value) of the option to target. This is the value field of the option, not the display label.
-    """
-    option_id: ID!
-
-    """
-    The display text for the option shown to respondents. Must be at least 1 character long.
-    """
-    label: String!
-  ): Boolean
-
-  """
-  Permanently remove a selectable option from a SingleSelect or MultiSelect question. This action cannot be undone.
-  """
-  delete_form_question_option(
-    """
-    The unique identifier token for the form. Required for all form-specific operations.
-    """
-    form_token: String!
-
-    """
-    The unique identifier for the question. Used to target specific questions within a form.
-    """
-    question_id: ID!
-
-    """
-    The internal ID (value) of the option to target. This is the value field of the option, not the display label.
-    """
-    option_id: ID!
-  ): Boolean
-
-  """
-  Reorder the options of a SingleSelect or MultiSelect question by providing the desired order of option values. Position is inferred from array index.
-  """
-  reorder_form_question_options(
-    """
-    The unique identifier token for the form. Required for all form-specific operations.
-    """
-    form_token: String!
-
-    """
-    The unique identifier for the question. Used to target specific questions within a form.
-    """
-    question_id: ID!
-
-    """
-    Ordered array of option values defining the new display order. Position is inferred from array index (first item = position 0).
-    """
-    option_ids: [ID!]!
-  ): Boolean
 }
 
 """Response from AI action request"""
@@ -6641,6 +6647,15 @@ type Board {
     to_date: ISO8601DateTime
   ): [Update!]
 
+  """The board's updates with cursor-based pagination."""
+  updates_page(
+    """Number of items to get, the default is 25."""
+    limit: Int = 25
+
+    """Opaque cursor from a previous updates_page response."""
+    cursor: String
+  ): UpdatesPage
+
   """The board's visible columns."""
   columns(
     """A list of column unique identifiers."""
@@ -7109,6 +7124,15 @@ type Item {
   """The item's unique identifier."""
   id: ID!
 
+  """The item's updates with cursor-based pagination."""
+  updates_page(
+    """Number of items to get, the default is 25."""
+    limit: Int = 25
+
+    """Opaque cursor from a previous updates_page response."""
+    cursor: String
+  ): UpdatesPage
+
   """The item's updates."""
   updates(
     """Number of items to get, the default is 25."""
@@ -7328,6 +7352,15 @@ input UpdateMention {
 """The pin to top data of the update."""
 type UpdatePin {
   item_id: ID!
+}
+
+"""Paginated updates response with cursor."""
+type UpdatesPage {
+  """The list of updates."""
+  updates: [Update!]!
+
+  """Opaque cursor for the next page. Null when no more data."""
+  cursor: String
 }
 
 """The viewer of the update."""
@@ -7677,17 +7710,15 @@ type UpsertEntityIdMappingsResult {
   count: Int
 }
 
-"""
-Represents an account-level entity model that can be customized per account.
-"""
+"""Represents an account-level schema that can be customized per account."""
 type AccountEntity {
-  """The unique identifier of the entity."""
+  """The unique identifier of the schema."""
   id: ID!
 
-  """The account ID this entity belongs to."""
+  """The account ID this schema belongs to."""
   account_id: ID!
 
-  """The user ID who created this entity."""
+  """The user ID who created this schema."""
   created_by: ID!
 
   """The revision number for optimistic locking."""
@@ -7699,27 +7730,25 @@ type AccountEntity {
   """The date and time of the last update."""
   updated_at: Date
 
-  """
-  Map of columns keyed by column ID. Each value contains full structure (id, model, policy, tags).
-  """
-  columns: JSON!
+  """The columns defined in this schema."""
+  columns: [SchemaColumn!]!
 
-  """The ID of the parent entity (typically a global entity)."""
+  """The ID of the parent schema (typically a global schema)."""
   parent_id: ID
 
-  """The name of this entity."""
+  """The name of this schema."""
   name: String
 
-  """The description for this entity."""
+  """The description for this schema."""
   description: String
 }
 
-"""Represents a board and its connection to an entity model."""
+"""Represents a board and its connection to a schema."""
 type BoardConnection {
   """The unique identifier of the board."""
   id: ID
 
-  """The entity model ID that this board is connected to."""
+  """The schema ID that this board is connected to."""
   entity_id: ID
 }
 
@@ -8007,7 +8036,7 @@ input CreateDropdownLabelInput {
   label: String!
 }
 
-"""Input for creating a new column on an entity model"""
+"""Input for creating a new column on a schema"""
 input CreateEntityColumnInput {
   """The column type (e.g., "status", "dropdown", "text", "date")"""
   type: ColumnType!
@@ -8018,11 +8047,13 @@ input CreateEntityColumnInput {
   """Optional column description"""
   description: String
 
-  """Column type-specific settings (labels for status/dropdown, etc.)"""
+  """
+  Type-specific configuration object containing column defaults and settings. Use get_column_type_schema query to see available properties and validation rules. Examples: status column labels, dropdown options, number formatting rules, date display preferences.
+  """
   defaults: JSON
 
   """
-  Whether this column should be opted-out by default on boards. If false or not provided, the column will be automatically included on all boards using this entity (opt-in by default).
+  Whether this column should be opted-out by default on boards. If false or not provided, the column will be automatically included on all boards using this schema (opt-in by default).
   """
   opt_out_by_default: Boolean
 
@@ -8105,43 +8136,6 @@ input DropdownSettingsOverridesInput {
   label_limit_count: Int
 }
 
-"""
-Represents an entity model that defines the structure and columns of a board. Only active entity models are returned.
-"""
-type EntityModel {
-  """The unique identifier of the entity model."""
-  id: ID
-
-  """The unique name identifier of the entity model."""
-  name: String
-
-  """The revision number of the entity model."""
-  revision: Int
-
-  """
-  The ID of the parent entity model, if this entity model inherits from another.
-  """
-  parent_id: ID
-
-  """The account ID that owns this entity model."""
-  account_id: ID
-
-  """The user ID who created this entity model."""
-  created_by: ID
-
-  """The columns definition for this entity model as a JSON object."""
-  columns: JSON
-
-  """The description for this entity model."""
-  description: String
-
-  """The timestamp when this entity model was created or last updated."""
-  created_at: Date
-
-  """The timestamp when this entity model was created or last updated."""
-  updated_at: Date
-}
-
 type ManagedColumn {
   id: String
   title: String
@@ -8177,6 +8171,59 @@ Policy messages that explain why certain actions are disabled on a column
 input PolicyMessagesInput {
   """Structured reasons for disabled actions"""
   disabled_reason: DisabledReasonInput
+}
+
+"""A column definition within a schema."""
+type SchemaColumn {
+  """The unique identifier of the column."""
+  id: ID
+
+  """The column's title."""
+  title: String!
+
+  """The column's type."""
+  type: ColumnType
+
+  """The column's description."""
+  description: String
+
+  """The column's settings in a JSON form."""
+  settings: JSON
+
+  """Policy rules for this column."""
+  policy: SchemaColumnPolicy
+
+  """Tags indicating column status (deprecated, inherited, etc.)."""
+  tags: SchemaColumnTags
+}
+
+"""Policy rules governing how a schema column can be modified."""
+type SchemaColumnPolicy {
+  """
+  List of column properties that can be overridden by board-level columns.
+  """
+  can_override: [String!]!
+
+  """Whether this column is protected from deletion."""
+  cannot_delete: Boolean!
+
+  """Whether this column is read-only."""
+  read_only: Boolean!
+
+  """Policy-related messages, such as disabled reasons."""
+  messages: JSON
+}
+
+"""Tags applied to a schema column indicating its status or behavior."""
+type SchemaColumnTags {
+  """Deprecation info with a start timestamp, if the column is deprecated."""
+  deprecated: JSON
+
+  """Opt-in by default info with an optional end timestamp."""
+  opt_in_by_default: JSON
+
+  """Whether this column is inherited from a parent schema."""
+  inherited: Boolean
 }
 
 """
@@ -8302,7 +8349,7 @@ input UpdateDropdownLabelInput {
   is_deactivated: Boolean
 }
 
-"""Input for updating an existing column on an entity model"""
+"""Input for updating an existing column on a schema"""
 input UpdateEntityColumnInput {
   """The ID of the column to update"""
   column_id: ID!
@@ -8313,11 +8360,13 @@ input UpdateEntityColumnInput {
   """Optional column description"""
   description: String
 
-  """Column type-specific settings (labels for status/dropdown, etc.)"""
+  """
+  Type-specific configuration object containing column defaults and settings. Use get_column_type_schema query to see available properties and validation rules. Examples: status column labels, dropdown options, number formatting rules, date display preferences.
+  """
   defaults: JSON
 
   """
-  Whether this column should be opted-out by default on boards. If false or not provided, the column will be automatically included on all boards using this entity (opt-in by default).
+  Whether this column should be opted-out by default on boards. If false or not provided, the column will be automatically included on all boards using this schema (opt-in by default).
   """
   opt_out_by_default: Boolean
 
@@ -10657,6 +10706,15 @@ type UploadJobInit {
   upload_url: String
 }
 
+"""Response object for app deletion operations"""
+type AppDeletionResponse {
+  """Whether the deletion was successful"""
+  success: Boolean
+
+  """Deletion result message"""
+  message: String
+}
+
 """Response from querying the apps documentation AI."""
 type AppDocumentationAiResponse {
   """Unique identifier for this query response."""
@@ -11084,6 +11142,26 @@ type CreateAppResponse {
 
   """The app's signing secret used for webhook signature verification"""
   signing_secret: String
+}
+
+"""Input for installing an app on the current account."""
+input InstallAppInput {
+  """The app identifier (numeric ID or slug)"""
+  app_identifier: ID!
+
+  """
+  Optional list of workspace IDs to restrict app access to specific workspaces
+  """
+  permitted_workspaces: [ID!]
+}
+
+"""Response object for app installation"""
+type InstallAppResponse {
+  """The installed app identifier"""
+  app_id: ID
+
+  """Whether a new install was created (false if app was already installed)"""
+  created: Boolean
 }
 
 """Input for a single lifecycle event subscription"""
@@ -15759,6 +15837,52 @@ enum GroupByResourceAttribute {
   RESOURCE_MANAGER
 }
 
+"""
+Input for portfolio utilization report. Extends utilization report with portfolio context — resolves portfolio to board IDs automatically.
+"""
+input PortfolioUtilizationReportInput {
+  """Time range and granularity for the report."""
+  time_range: TimeRangeInput!
+
+  """Effort kinds to include (e.g. ALLOCATED, PLANNED, SPENT, AVAILABLE)."""
+  effort_types: [EffortKind!]!
+
+  """
+  Optional attribute to group results by (TEAMS, LOCATION, SKILLS, JOB_ROLE, RESOURCE_MANAGER only).
+  """
+  group_by_attribute: GroupByResourceAttribute
+
+  """
+  Optional list of resource IDs to filter by. If not provided, all resources are included (subject to limit).
+  """
+  resource_ids: [ID!]
+
+  """
+  When true, include project breakdown in the response. Defaults to false.
+  """
+  include_project_breakdown: Boolean
+
+  """
+  Maximum number of groups per page (1–25, default 25). Applied when grouped by attribute.
+  """
+  limit: Int = 25
+
+  """
+  Page number for pagination when grouped by attribute (1-based, default 1). Paginates at the attribute group level.
+  """
+  page: Int = 1
+
+  """
+  Denominator for utilization ratio. Defaults to AVAILABLE (utilization = effort / available).
+  """
+  utilization_denominator: UtilizationDenominator
+
+  """
+  The portfolio ID to scope the report to. Board IDs are resolved from the portfolio.
+  """
+  portfolio_id: ID!
+}
+
 """Effort and utilization for a single time bucket."""
 type TimeBucket {
   """Label for this bucket (e.g. week or month)."""
@@ -15913,6 +16037,9 @@ input UtilizationReportInput {
   Denominator for utilization ratio. Defaults to AVAILABLE (utilization = effort / available).
   """
   utilization_denominator: UtilizationDenominator
+
+  """Optional list of board IDs to scope effort data to specific boards."""
+  board_ids: [ID!]
 }
 
 """Utilization breakdown per project for a resource."""
@@ -16340,6 +16467,24 @@ enum SearchableEntity {
   DOCUMENT
 }
 
+"""A single board search result with indexed and live data."""
+type SearchBoardResult {
+  """Unique identifier of the board."""
+  id: ID!
+
+  """Board data from the search index."""
+  indexed_data: SearchIndexedBoard!
+
+  """Live board data via federation."""
+  live_data: Board!
+}
+
+"""Wrapper for a list of board search results."""
+type SearchBoardResults {
+  """List of board search results."""
+  results: [SearchBoardResult!]!
+}
+
 """Date range filter for search queries"""
 input SearchDateRangeInput {
   """Filter items created before this date"""
@@ -16376,6 +16521,24 @@ input SearchDateRangeLegacyInput {
   updatedAfter: ISO8601DateTime
 }
 
+"""A single doc search result with indexed and live data."""
+type SearchDocResult {
+  """Unique identifier of the doc."""
+  id: ID!
+
+  """Doc data from the search index."""
+  indexed_data: SearchIndexedDoc!
+
+  """Live doc data via federation."""
+  live_data: Document!
+}
+
+"""Wrapper for a list of doc search results."""
+type SearchDocResults {
+  """List of doc search results."""
+  results: [SearchDocResult!]!
+}
+
 """
 Tagged-union input: set exactly one field to indicate the entity type and its filters.
 """
@@ -16401,6 +16564,72 @@ input SearchFiltersInput {
   entities: [SearchEntityFilterInput!]!
 }
 
+"""Board data stored in the search index."""
+type SearchIndexedBoard {
+  """Board ID."""
+  id: ID!
+
+  """Board name."""
+  name: String!
+
+  """Board description."""
+  description: String
+
+  """ID of the workspace containing this board."""
+  workspace_id: ID
+
+  """URL to view this board."""
+  url: String!
+}
+
+"""Document data stored in the search index."""
+type SearchIndexedDoc {
+  """Document ID."""
+  id: ID!
+
+  """Document name."""
+  name: String!
+
+  """ID of the workspace containing this document."""
+  workspace_id: ID
+}
+
+"""Item data stored in the search index."""
+type SearchIndexedItem {
+  """Item ID."""
+  id: ID!
+
+  """Item name."""
+  name: String!
+
+  """URL to view this item."""
+  url: String!
+
+  """ID of the board containing this item."""
+  board_id: ID
+
+  """ID of the workspace containing this item."""
+  workspace_id: ID
+}
+
+"""A single item search result with indexed and live data."""
+type SearchItemResult {
+  """Unique identifier of the item."""
+  id: ID!
+
+  """Item data from the search index."""
+  indexed_data: SearchIndexedItem!
+
+  """Live item data via federation."""
+  live_data: Item!
+}
+
+"""Wrapper for a list of item search results."""
+type SearchItemResults {
+  """List of item search results."""
+  results: [SearchItemResult!]!
+}
+
 """Response of the search request."""
 type SearchItemsGraphQlResultsView {
   """The results of the items search."""
@@ -16424,6 +16653,72 @@ type SearchItemsQueryResult {
   live_data: Item!
 }
 
+"""Per-entity search namespace. Each field searches a single entity type."""
+type SearchNamespace {
+  """Search for items."""
+  items(
+    """The search query string."""
+    query: String!
+
+    """Maximum number of results to return (default 10, max 20)."""
+    limit: Int = 10
+
+    """Date range filter."""
+    date_range: CrossEntityDateRangeInput
+
+    """
+    Controls the trade-off between search quality and response time. Defaults to balanced.
+    """
+    strategy: SearchStrategy
+
+    """Filter items to specific board IDs."""
+    board_ids: [ID!]
+
+    """Filter items to specific workspace IDs."""
+    workspace_ids: [ID!]
+  ): SearchItemResults!
+
+  """Search for boards."""
+  boards(
+    """The search query string."""
+    query: String!
+
+    """Maximum number of results to return (default 10, max 20)."""
+    limit: Int = 10
+
+    """Date range filter."""
+    date_range: CrossEntityDateRangeInput
+
+    """
+    Controls the trade-off between search quality and response time. Defaults to balanced.
+    """
+    strategy: SearchStrategy
+
+    """Filter boards to specific workspace IDs."""
+    workspace_ids: [ID!]
+  ): SearchBoardResults!
+
+  """Search for documents."""
+  docs(
+    """The search query string."""
+    query: String!
+
+    """Maximum number of results to return (default 10, max 20)."""
+    limit: Int = 10
+
+    """Date range filter."""
+    date_range: CrossEntityDateRangeInput
+
+    """
+    Controls the trade-off between search quality and response time. Defaults to balanced.
+    """
+    strategy: SearchStrategy
+
+    """Filter documents to specific workspace IDs."""
+    workspace_ids: [ID!]
+  ): SearchDocResults!
+}
+
 """
 Union type representing different searchable entity types returned from search.
 """
@@ -16439,6 +16734,159 @@ enum SearchStrategy {
 
   """Best search quality with higher response time."""
   QUALITY
+}
+
+"""Per-entity search namespace. Each field searches a single entity type."""
+type SearchNamespace {
+  """Search for items."""
+  items(
+    """The search query string."""
+    query: String!
+
+    """Maximum number of results to return (default 10, max 20)."""
+    limit: Int = 10
+
+    """Date range filter."""
+    date_range: CrossEntityDateRangeInput
+
+    """Controls the trade-off between search quality and response time. Defaults to balanced."""
+    strategy: SearchStrategy
+
+    """Filter items to specific board IDs."""
+    board_ids: [ID!]
+
+    """Filter items to specific workspace IDs."""
+    workspace_ids: [ID!]
+  ): SearchItemResults!
+
+  """Search for boards."""
+  boards(
+    """The search query string."""
+    query: String!
+
+    """Maximum number of results to return (default 10, max 20)."""
+    limit: Int = 10
+
+    """Date range filter."""
+    date_range: CrossEntityDateRangeInput
+
+    """Controls the trade-off between search quality and response time. Defaults to balanced."""
+    strategy: SearchStrategy
+
+    """Filter boards to specific workspace IDs."""
+    workspace_ids: [ID!]
+  ): SearchBoardResults!
+
+  """Search for documents."""
+  docs(
+    """The search query string."""
+    query: String!
+
+    """Maximum number of results to return (default 10, max 20)."""
+    limit: Int = 10
+
+    """Date range filter."""
+    date_range: CrossEntityDateRangeInput
+
+    """Controls the trade-off between search quality and response time. Defaults to balanced."""
+    strategy: SearchStrategy
+
+    """Filter documents to specific workspace IDs."""
+    workspace_ids: [ID!]
+  ): SearchDocResults!
+}
+
+"""Wrapper for a list of item search results."""
+type SearchItemResults {
+  """List of item search results."""
+  results: [SearchItemResult!]!
+}
+
+"""A single item search result with indexed data."""
+type SearchItemResult {
+  """Unique identifier of the item."""
+  id: ID!
+
+  """Item data from the search index."""
+  indexed_data: SearchIndexedItem!
+}
+
+"""Item data stored in the search index."""
+type SearchIndexedItem {
+  """Item ID."""
+  id: ID!
+
+  """Item name."""
+  name: String!
+
+  """URL to view this item."""
+  url: String!
+
+  """ID of the board containing this item."""
+  board_id: ID
+
+  """ID of the workspace containing this item."""
+  workspace_id: ID
+}
+
+"""Wrapper for a list of board search results."""
+type SearchBoardResults {
+  """List of board search results."""
+  results: [SearchBoardResult!]!
+}
+
+"""A single board search result with indexed data."""
+type SearchBoardResult {
+  """Unique identifier of the board."""
+  id: ID!
+
+  """Board data from the search index."""
+  indexed_data: SearchIndexedBoard!
+}
+
+"""Board data stored in the search index."""
+type SearchIndexedBoard {
+  """Board ID."""
+  id: ID!
+
+  """Board name."""
+  name: String!
+
+  """Board description."""
+  description: String
+
+  """ID of the workspace containing this board."""
+  workspace_id: ID
+
+  """URL to view this board."""
+  url: String!
+}
+
+"""Wrapper for a list of document search results."""
+type SearchDocResults {
+  """List of document search results."""
+  results: [SearchDocResult!]!
+}
+
+"""A single document search result with indexed data."""
+type SearchDocResult {
+  """Unique identifier of the document."""
+  id: ID!
+
+  """Document data from the search index."""
+  indexed_data: SearchIndexedDoc!
+}
+
+"""Document data stored in the search index."""
+type SearchIndexedDoc {
+  """Document ID."""
+  id: ID!
+
+  """Document name."""
+  name: String!
+
+  """ID of the workspace containing this document."""
+  workspace_id: ID
 }
 
 """Input for enrolling multiple items to a single sequence"""
@@ -17210,6 +17658,9 @@ enum InvitationMethod {
   """Added via account consolidation."""
   CONSOLIDATION
 
+  """Created by internal flow."""
+  INTERNAL_CREATION
+
   """Unknown invitation method."""
   UNKNOWN
 
@@ -17239,6 +17690,18 @@ type PhotoUrl {
 
   """The user's photo in tiny size (30x30)."""
   tiny: String
+}
+
+"""User config of a user kind within the account."""
+type UserConfig {
+  """The user kind for the user config."""
+  kind: String!
+
+  """The role ID associated with this user config."""
+  role_id: ID!
+
+  """The visibility for this user config."""
+  visibility: [String!]!
 }
 
 """Filter for user kinds, including kind groups."""
@@ -17297,6 +17760,9 @@ enum UserKindFilter {
   """A dependencies api user user."""
   DEPENDENCIES_API_USER
 
+  """A historical tracking backfill api user user."""
+  HISTORICAL_TRACKING_BACKFILL_API_USER
+
   """A group representing admin, member, guest, and view-only users."""
   BASIC
 }
@@ -17310,6 +17776,30 @@ input UserKindFilterInput {
 
   """Exclude users matching these kinds or kind groups."""
   not_in: [UserKindFilter!]
+}
+
+"""The direction to sort users."""
+enum UsersSortDirection {
+  """Sort in ascending order."""
+  ASC
+
+  """Sort in descending order."""
+  DESC
+}
+
+"""The field to sort users by."""
+enum UsersSortField {
+  """Sort by the date the user was created."""
+  CREATED_AT
+}
+
+"""Input for sorting users."""
+input UsersSortInput {
+  """The field to sort by."""
+  field: UsersSortField!
+
+  """The sort direction."""
+  direction: UsersSortDirection!
 }
 
 """The activation status of a user."""
@@ -17462,6 +17952,15 @@ type WidgetSchemaInfo {
   schema: JSON
 }
 
+"""Answer for a country question."""
+input CountryAnswerInput {
+  """The full country name (e.g. "United States")."""
+  country_name: String!
+
+  """The ISO 3166-1 alpha-2 country code (e.g. "US")."""
+  country_code: String!
+}
+
 input CreateFormTagInput {
   """The name of the tag. Must be unique within the form and not reserved."""
   name: String!
@@ -17515,6 +18014,11 @@ input CreateQuestionInput {
   options: [QuestionOptionInput!]
 
   """
+  The ID of an existing board column to map this question to, instead of creating a new column. Useful when the board already has a matching column.
+  """
+  existing_column_id: ID
+
+  """
   The ID of the question after which the new question should be inserted. If omitted, the question is appended at the end.
   """
   insert_after_question_id: ID
@@ -17523,6 +18027,24 @@ input CreateQuestionInput {
   The ID of the page block to assign the question to. Required when creating questions in multi-page forms.
   """
   page_block_id: ID
+}
+
+"""Answer for a date question."""
+input DateAnswerInput {
+  """The date in YYYY-MM-DD format."""
+  date: String!
+
+  """UTC offset in minutes."""
+  zone_diff: Int
+}
+
+"""Answer for a date range question."""
+input DateRangeAnswerInput {
+  """Start date in YYYY-MM-DD format."""
+  from: String!
+
+  """End date in YYYY-MM-DD format."""
+  to: String!
 }
 
 type DehydratedFormResponse {
@@ -17540,6 +18062,21 @@ type DehydratedFormResponse {
 input DeleteFormTagInput {
   """Options for deleting the tag"""
   deleteAssociatedColumn: Boolean
+}
+
+"""A single uploaded file answer."""
+input FileAnswerInput {
+  """The file ID returned by the workforms upload endpoint."""
+  id: String!
+
+  """Original file name (e.g. "image.png")."""
+  name: String!
+
+  """File extension (e.g. "pdf")."""
+  extension: String
+
+  """Whether the file is an image."""
+  is_image: Boolean
 }
 
 """
@@ -17635,6 +18172,79 @@ enum FormAlignment {
   Center
   Right
   FullRight
+}
+
+"""
+An answer to a single form question. Set question_id and exactly one answer field matching the question type.
+"""
+input FormAnswerInput {
+  """The ID of the question being answered."""
+  question_id: ID!
+
+  """Answer for name questions."""
+  name: String
+
+  """Answer for email questions."""
+  email: String
+
+  """Answer for short text questions."""
+  short_text: String
+
+  """Answer for long text questions."""
+  long_text: String
+
+  """Answer for link questions."""
+  link: String
+
+  """Answer for updates questions."""
+  updates: String
+
+  """Answer for boolean questions."""
+  boolean: Boolean
+
+  """Answer for number questions."""
+  number: Float
+
+  """Answer for rating questions."""
+  rating: Float
+
+  """Answer for single-select questions — the selected option ID."""
+  single_select: String
+
+  """Answer for multi-select questions — list of selected option IDs."""
+  multi_select: [Int!]
+
+  """Answer for phone questions."""
+  phone: PhoneAnswerInput
+
+  """Answer for country questions."""
+  country: CountryAnswerInput
+
+  """Answer for date questions."""
+  date: DateAnswerInput
+
+  """Answer for date range questions."""
+  date_range: DateRangeAnswerInput
+
+  """Answer for location questions."""
+  location: LocationAnswerInput
+
+  """Answer for file questions — list of uploaded files."""
+  file: [FileAnswerInput!]
+
+  """Answer for signature questions — a single uploaded file."""
+  signature: FileAnswerInput
+
+  """Answer for people questions — list of user IDs."""
+  people: [ID!]
+
+  """Answer for connected boards questions — list of connected item IDs."""
+  connected_boards: [ID!]
+
+  """
+  Answer for subitems questions — each subitem is its own set of answers.
+  """
+  subitems: [SubitemAnswerInput!]
 }
 
 """
@@ -18088,6 +18698,11 @@ input FormMondayInput {
   Boolean synchronizing form question titles with board column names. When true, the form question titles will be synchronized with the board column names.
   """
   syncQuestionAndColumnsTitles: Boolean
+
+  """
+  Boolean showing a "Create Item" button on the board that opens this form. When enabled, board members can create new board items by filling out this form directly from the board.
+  """
+  allow_create_item: Boolean
 }
 
 type FormPassword {
@@ -18477,6 +19092,12 @@ input FormStartButtonInput {
   text: String
 }
 
+"""The result of a successful form submission."""
+type FormSubmissionResult {
+  """The unique identifier of the created submission."""
+  id: ID!
+}
+
 """Object containing submit button styling and text configuration."""
 type FormSubmitButton {
   """Custom text displayed on the form submission button."""
@@ -18525,6 +19146,78 @@ input FormTextInput {
 
   """String or number specifying the base font size for form text."""
   size: FormFontSize
+}
+
+"""Answer for a location question."""
+input LocationAnswerInput {
+  """Latitude."""
+  lat: Float!
+
+  """Longitude."""
+  lng: Float!
+
+  """Google Maps place ID."""
+  place_id: String!
+
+  """Full formatted address."""
+  address: String!
+
+  """Country name components."""
+  country: LocationCountryInput!
+
+  """City name components."""
+  city: LocationCityInput!
+
+  """Street name components."""
+  street: LocationStreetInput!
+
+  """Street number components."""
+  street_number: LocationStreetNumberInput!
+}
+
+"""City name components for a location answer."""
+input LocationCityInput {
+  """Full city name."""
+  long_name: String!
+
+  """Abbreviated city name."""
+  short_name: String!
+}
+
+"""Country name components for a location answer."""
+input LocationCountryInput {
+  """Full country name."""
+  long_name: String!
+
+  """ISO 3166-1 alpha-2 country code."""
+  short_name: String!
+}
+
+"""Street name components for a location answer."""
+input LocationStreetInput {
+  """Full street name."""
+  long_name: String!
+
+  """Abbreviated street name."""
+  short_name: String!
+}
+
+"""Street number components for a location answer."""
+input LocationStreetNumberInput {
+  """Full street number."""
+  long_name: String!
+
+  """Abbreviated street number."""
+  short_name: String!
+}
+
+"""Answer for a phone question."""
+input PhoneAnswerInput {
+  """The phone number."""
+  phone: String!
+
+  """The ISO 3166-1 alpha-2 country code (e.g. "US")."""
+  country_short_name: String!
 }
 
 """
@@ -18602,6 +19295,14 @@ input QuestionOptionInput {
   The display text for the option shown to respondents. Must be at least 1 character long.
   """
   label: String!
+
+  """
+  The internal unique identifier for the option. Used as the option ID in update and delete operations.
+  """
+  value: String
+
+  """Whether this option is visible to respondents. Defaults to true."""
+  visible: Boolean
 }
 
 input QuestionOrderInput {
@@ -18690,6 +19391,25 @@ input SetFormPasswordInput {
   password: String!
 }
 
+"""
+A single subitem answer, containing answers for each of the subitem's questions.
+"""
+input SubitemAnswerInput {
+  """The answers for this subitem's questions."""
+  answers: [FormAnswerInput!]!
+}
+
+"""
+A form tag — metadata submitted alongside answers and mapped to a board column.
+"""
+input TagInput {
+  """The column ID this tag maps to."""
+  column_id: String!
+
+  """The tag value to submit."""
+  value: String!
+}
+
 input UpdateFormInput {
   """The title text for the form. Must be at least 1 character long."""
   title: String
@@ -18718,6 +19438,11 @@ input UpdateFormSettingsInput {
   Object containing accessibility options such as language, alt text, etc.
   """
   accessibility: FormAccessibilityInput
+
+  """
+  Boolean enabling anonymous response collection. When true, respondent identity is not captured or stored with form submissions.
+  """
+  is_anonymous: Boolean
 }
 
 input UpdateFormTagInput {
@@ -18758,6 +19483,11 @@ input UpdateQuestionInput {
   The question text displayed to respondents. Must be at least 1 character long and clearly indicate the expected response.
   """
   title: String
+
+  """
+  Array of option objects for choice-based questions (single_select, multi_select). Required for select types.
+  """
+  options: [QuestionOptionInput!]
 }
 
 scalar policy__Policy

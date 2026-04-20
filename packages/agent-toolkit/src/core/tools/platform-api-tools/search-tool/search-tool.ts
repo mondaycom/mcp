@@ -2,7 +2,7 @@ import { ToolInputType, ToolOutputType, ToolType } from 'src/core/tool';
 import { z } from 'zod';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { getBoards, getDocs, getFolders } from './search-tool.graphql';
-import { searchDev } from './search-tool.graphql.dev';
+import { searchBoardsDev, searchDocsDev } from './search-tool.graphql.dev';
 import {
   GetBoardsQuery,
   GetBoardsQueryVariables,
@@ -12,11 +12,13 @@ import {
   GetFoldersQueryVariables,
 } from 'src/monday-graphql/generated/graphql/graphql';
 import {
-  SearchDevQuery,
-  SearchDevQueryVariables,
+  SearchBoardsDevQuery,
+  SearchBoardsDevQueryVariables,
+  SearchDocsDevQuery,
+  SearchDocsDevQueryVariables,
 } from 'src/monday-graphql/generated/graphql.dev/graphql';
 import { normalizeString } from 'src/utils/string.utils';
-import { BOARD_SEARCH_RESULT_TYPENAME, DOC_SEARCH_RESULT_TYPENAME, DataWithFilterInfo, GlobalSearchType, ObjectPrefixes, SearchResult } from './search-tool.types';
+import { DataWithFilterInfo, GlobalSearchType, ObjectPrefixes, SearchResult } from './search-tool.types';
 import { LOAD_INTO_MEMORY_LIMIT, MAX_FOLDERS_LIMIT, SEARCH_LIMIT } from './search-tool.consts';
 import { SEARCH_TIMEOUT } from 'src/utils/time.utils';
 import { rethrowWithContext, throwIfSearchTimeoutError } from 'src/utils/error.utils';
@@ -103,53 +105,60 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
   private async searchWithDevEndpointAsync(
     input: ToolInputType<SearchToolInput>,
   ): Promise<DataWithFilterInfo<SearchResult>> {
-    const entityFilterMap: Record<GlobalSearchType, SearchDevQueryVariables['filters'] | undefined> = {
-      [GlobalSearchType.BOARD]: {
-        entities: [{ boards: { workspace_ids: input.workspaceIds?.map((id) => id.toString()) } }],
-      },
-      [GlobalSearchType.DOCUMENTS]: {
-        entities: [{ docs: { workspace_ids: input.workspaceIds?.map((id) => id.toString()) } }],
-      },
-      [GlobalSearchType.FOLDERS]: undefined,
-    };
-
-    const filters = entityFilterMap[input.searchType];
-    if (!filters) {
-      throw new Error(`Unsupported search type for dev endpoint: ${input.searchType}`);
-    }
-
     if(input.page > 1) {
       throw new Error('Pagination is not supported for search, increase the limit parameter instead');
     }
 
-    const variables: SearchDevQueryVariables = {
-      query: input.searchTerm!,
-      limit: input.limit,
-      filters,
-    };
+    const workspaceIds = input.workspaceIds?.map((id) => id.toString());
 
-    const response = await this.mondayApi.request<SearchDevQuery>(searchDev, variables, {
+    if (input.searchType === GlobalSearchType.BOARD) {
+      return this.searchBoardsWithDevEndpointAsync(input.searchTerm!, input.limit, workspaceIds);
+    }
+
+    if (input.searchType === GlobalSearchType.DOCUMENTS) {
+      return this.searchDocsWithDevEndpointAsync(input.searchTerm!, input.limit, workspaceIds);
+    }
+
+    throw new Error(`Unsupported search type for dev endpoint: ${input.searchType}`);
+  }
+
+  private async searchBoardsWithDevEndpointAsync(
+    query: string,
+    limit: number,
+    workspaceIds?: string[],
+  ): Promise<DataWithFilterInfo<SearchResult>> {
+    const variables: SearchBoardsDevQueryVariables = { query, limit, workspaceIds };
+
+    const response = await this.mondayApi.request<SearchBoardsDevQuery>(searchBoardsDev, variables, {
       versionOverride: 'dev',
-      timeout: SEARCH_TIMEOUT
+      timeout: SEARCH_TIMEOUT,
     });
 
-    const results = response.cross_entity_search || [];
-    const items: SearchResult[] = [];
+    const items = response.search.boards.results.map((result) => ({
+      id: ObjectPrefixes.BOARD + result.indexed_data.id,
+      title: result.indexed_data.name,
+      url: result.indexed_data.url,
+    }));
 
-    for (const result of results) {
-      if (result.__typename === BOARD_SEARCH_RESULT_TYPENAME) {
-        items.push({
-          id: ObjectPrefixes.BOARD + result.data.id,
-          title: result.data.name,
-          url: result.data.url,
-        });
-      } else if (result.__typename === DOC_SEARCH_RESULT_TYPENAME) {
-        items.push({
-          id: ObjectPrefixes.DOCUMENT + result.data.id,
-          title: result.data.name,
-        });
-      }
-    }
+    return { items, wasFiltered: true };
+  }
+
+  private async searchDocsWithDevEndpointAsync(
+    query: string,
+    limit: number,
+    workspaceIds?: string[],
+  ): Promise<DataWithFilterInfo<SearchResult>> {
+    const variables: SearchDocsDevQueryVariables = { query, limit, workspaceIds };
+
+    const response = await this.mondayApi.request<SearchDocsDevQuery>(searchDocsDev, variables, {
+      versionOverride: 'dev',
+      timeout: SEARCH_TIMEOUT,
+    });
+
+    const items = response.search.docs.results.map((result) => ({
+      id: ObjectPrefixes.DOCUMENT + result.indexed_data.id,
+      title: result.indexed_data.name,
+    }));
 
     return { items, wasFiltered: true };
   }
