@@ -3,6 +3,7 @@ import { ZodRawShape } from 'zod';
 import { ToolAnnotations } from '@modelcontextprotocol/sdk/types';
 import { SessionContext } from '../../executable';
 import { Tool, ToolInputType, ToolOutputType, ToolType } from '../../tool';
+import { trackEvent } from '../../../utils/tracking.utils';
 
 export type MondayApiToolContext = {
   // Operational context
@@ -45,16 +46,39 @@ export abstract class BaseMondayApiTool<
   abstract getDescription(): string;
   abstract getInputSchema(): Input;
 
-  /**
-   * Public execute method
-   */
   async execute(input?: ToolInputType<Input>, sessionContext?: SessionContext): Promise<ToolOutputType<Output>> {
     this.sessionContext = sessionContext || {};
-    return this.executeInternal(input);
+
+    const startTime = Date.now();
+    let isError = false;
+
+    try {
+      const result = await this.executeInternal(input);
+      return result;
+    } catch (error) {
+      isError = true;
+      throw error;
+    } finally {
+      const executionTimeMs = Date.now() - startTime;
+      this.trackToolExecution(this.name, executionTimeMs, isError);
+    }
   }
 
-  /**
-   * Abstract method that subclasses should implement for their actual logic
-   */
   protected abstract executeInternal(input?: ToolInputType<Input>): Promise<ToolOutputType<Output>>;
+
+  private trackToolExecution(toolName: string, executionTimeMs: number, isError: boolean): void {
+    try {
+      trackEvent({
+        name: 'monday_api_mcp_tool_execution',
+        data: {
+          toolName,
+          executionTimeMs,
+          isError,
+          toolType: 'monday_api_tool',
+        },
+      });
+    } catch {
+      // ignore tracking errors
+    }
+  }
 }
