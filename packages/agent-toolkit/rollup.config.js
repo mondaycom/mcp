@@ -37,7 +37,7 @@ const subpathConfigs = subPaths.map((dir) => ({
     json(),
     terser(),
   ].filter(Boolean),
-  external: ['@mondaydotcomorg/api', 'zod', 'zod-to-json-schema'],
+  external: ['@mondaydotcomorg/api', 'zod', 'zod-to-json-schema', 'mammoth', 'unpdf', 'xlsx'],
 }));
 
 // Subpath types
