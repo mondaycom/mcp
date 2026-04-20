@@ -261,9 +261,12 @@ export class UpdateFormToolHelpers {
       };
     }
 
+    const { is_anonymous, ...features } = input.form.features;
+
     const variables: UpdateFormFeaturesMutationVariables = {
       formToken: input.formToken,
-      features: input.form.features as FormFeaturesInput,
+      features: features as FormFeaturesInput,
+      is_anonymous,
     };
 
     const res = await this.mondayApi.request<UpdateFormFeaturesMutation>(updateFormFeatures, variables);

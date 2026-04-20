@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.3.1
+
+### Workforms tools — return full option data from GraphQL queries
+
+- Added `value`, `visible`, and `active` fields to the `QuestionOptionsFragment` GraphQL fragment
+- `get_form`, `create_form_question`, and `update_form_question` now return complete option data
+- Previously only `label` was returned, preventing safe updates on questions with existing submissions
+
 ## 5.1.1
 
 ### Workforms tools — options schema and description updates

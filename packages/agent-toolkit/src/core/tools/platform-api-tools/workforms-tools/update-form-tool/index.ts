@@ -16,7 +16,7 @@ export class UpdateFormTool extends BaseMondayApiTool<typeof updateFormToolSchem
   private helpers = new UpdateFormToolHelpers(this.mondayApi);
 
   getDescription(): string {
-    return `Update a monday.com form. Handles the following form update actions that can only be done one at a time using the correct "action" input: 
+    return `Update a monday.com form. Handles the following form update actions that can only be done one at a time using the correct "action" input:
     - update form's feature settings with the action "updateFeatures",
     - update form's appearance settings with the action "updateAppearance",
     - update form's accessibility settings with the action "updateAccessibility",

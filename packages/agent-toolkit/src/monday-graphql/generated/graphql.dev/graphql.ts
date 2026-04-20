@@ -83,24 +83,24 @@ export type AccountContext = {
   sub_sector?: Maybe<Scalars['String']['output']>;
 };
 
-/** Represents an account-level entity model that can be customized per account. */
+/** Represents an account-level schema that can be customized per account. */
 export type AccountEntity = {
   __typename?: 'AccountEntity';
-  /** The account ID this entity belongs to. */
+  /** The account ID this schema belongs to. */
   account_id: Scalars['ID']['output'];
-  /** Map of columns keyed by column ID. Each value contains full structure (id, model, policy, tags). */
-  columns: Scalars['JSON']['output'];
+  /** The columns defined in this schema. */
+  columns: Array<SchemaColumn>;
   /** The date and time of creation. */
   created_at?: Maybe<Scalars['Date']['output']>;
-  /** The user ID who created this entity. */
+  /** The user ID who created this schema. */
   created_by: Scalars['ID']['output'];
-  /** The description for this entity. */
+  /** The description for this schema. */
   description?: Maybe<Scalars['String']['output']>;
-  /** The unique identifier of the entity. */
+  /** The unique identifier of the schema. */
   id: Scalars['ID']['output'];
-  /** The name of this entity. */
+  /** The name of this schema. */
   name?: Maybe<Scalars['String']['output']>;
-  /** The ID of the parent entity (typically a global entity). */
+  /** The ID of the parent schema (typically a global schema). */
   parent_id?: Maybe<Scalars['ID']['output']>;
   /** The revision number for optimistic locking. */
   revision: Scalars['Int']['output'];
@@ -1943,10 +1943,10 @@ export enum BoardBasicRoleName {
   Viewer = 'viewer'
 }
 
-/** Represents a board and its connection to an entity model. */
+/** Represents a board and its connection to a schema. */
 export type BoardConnection = {
   __typename?: 'BoardConnection';
-  /** The entity model ID that this board is connected to. */
+  /** The schema ID that this board is connected to. */
   entity_id?: Maybe<Scalars['ID']['output']>;
   /** The unique identifier of the board. */
   id?: Maybe<Scalars['ID']['output']>;
@@ -2926,13 +2926,13 @@ export type CreateDropdownLabelInput = {
   label: Scalars['String']['input'];
 };
 
-/** Input for creating a new column on an entity model */
+/** Input for creating a new column on a schema */
 export type CreateEntityColumnInput = {
-  /** Column type-specific settings (labels for status/dropdown, etc.) */
+  /** Type-specific configuration object containing column defaults and settings. Use get_column_type_schema query to see available properties and validation rules. Examples: status column labels, dropdown options, number formatting rules, date display preferences. */
   defaults?: InputMaybe<Scalars['JSON']['input']>;
   /** Optional column description */
   description?: InputMaybe<Scalars['String']['input']>;
-  /** Whether this column should be opted-out by default on boards. If false or not provided, the column will be automatically included on all boards using this entity (opt-in by default). */
+  /** Whether this column should be opted-out by default on boards. If false or not provided, the column will be automatically included on all boards using this schema (opt-in by default). */
   opt_out_by_default?: InputMaybe<Scalars['Boolean']['input']>;
   /** Policy rules controlling what can be done with the column */
   policy: ColumnPolicyInput;
@@ -4357,31 +4357,6 @@ export type EntityIdMappingInput = {
   newId: Scalars['String']['input'];
   /** The old ID of the entity. */
   oldId: Scalars['String']['input'];
-};
-
-/** Represents an entity model that defines the structure and columns of a board. Only active entity models are returned. */
-export type EntityModel = {
-  __typename?: 'EntityModel';
-  /** The account ID that owns this entity model. */
-  account_id?: Maybe<Scalars['ID']['output']>;
-  /** The columns definition for this entity model as a JSON object. */
-  columns?: Maybe<Scalars['JSON']['output']>;
-  /** The timestamp when this entity model was created or last updated. */
-  created_at?: Maybe<Scalars['Date']['output']>;
-  /** The user ID who created this entity model. */
-  created_by?: Maybe<Scalars['ID']['output']>;
-  /** The description for this entity model. */
-  description?: Maybe<Scalars['String']['output']>;
-  /** The unique identifier of the entity model. */
-  id?: Maybe<Scalars['ID']['output']>;
-  /** The unique name identifier of the entity model. */
-  name?: Maybe<Scalars['String']['output']>;
-  /** The ID of the parent entity model, if this entity model inherits from another. */
-  parent_id?: Maybe<Scalars['ID']['output']>;
-  /** The revision number of the entity model. */
-  revision?: Maybe<Scalars['Int']['output']>;
-  /** The timestamp when this entity model was created or last updated. */
-  updated_at?: Maybe<Scalars['Date']['output']>;
 };
 
 /** User-facing error with code and optional path */
@@ -6160,6 +6135,8 @@ export enum InvitationMethod {
   Consolidation = 'CONSOLIDATION',
   /** First user who created the account. */
   FirstUser = 'FIRST_USER',
+  /** Created by internal flow. */
+  InternalCreation = 'INTERNAL_CREATION',
   /** Provisioned via SCIM. */
   Scim = 'SCIM',
   /** Added via service portal authorized domain. */
@@ -7207,16 +7184,14 @@ export type Mutation = {
   clear_users_department?: Maybe<ClearUsersDepartmentResult>;
   /** Get the complexity data of your mutations. */
   complexity?: Maybe<Complexity>;
-  /** Connect a board to an entity model. */
-  connect_board_to_entity?: Maybe<BoardConnection>;
+  /** Connect a board to a schema. */
+  connect_board_to_schema?: Maybe<BoardConnection>;
   /** Connect a migration job from a source account to the target account */
   connect_migration_job?: Maybe<ConnectMigrationJobResult>;
   /** Connect project to portfolio */
   connect_project_to_portfolio?: Maybe<ConnectProjectResult>;
   /** Convert an existing monday.com board into a project with enhanced project management capabilities. This mutation transforms a regular board by applying project-specific features and configurations through column mappings that define how existing board columns should be interpreted in the project context. The conversion process is asynchronous and returns a process_id for tracking completion. Optionally accepts a callback URL for notification when the conversion completes. Use this when you have an existing board with data that needs to be upgraded to a full project with advanced project management features like Resource Planner integration. */
   convert_board_to_project?: Maybe<ConvertBoardToProjectResult>;
-  /** Create a new account entity. */
-  create_account_entity?: Maybe<AccountEntity>;
   /** Creates a new app with the specified configuration. */
   create_app?: Maybe<CreateAppResponse>;
   /** Create a new app feature. */
@@ -7244,8 +7219,6 @@ export type Mutation = {
   create_dropdown_column?: Maybe<Column>;
   /** Create managed column of type dropdown mutation. */
   create_dropdown_managed_column?: Maybe<DropdownManagedColumn>;
-  /** Create columns on an account entity. */
-  create_entity_columns?: Maybe<AccountEntity>;
   /** Create a snapshot for a given entity in a migration job */
   create_entity_snapshot?: Maybe<CreateEntitySnapshotResult>;
   /** Add workspace object to favorites */
@@ -7286,6 +7259,10 @@ export type Mutation = {
   create_portfolio?: Maybe<CreatePortfolioResult>;
   /** Create a new project in monday.com from scratch. This mutation initiates asynchronous project creation with comprehensive customization options including: privacy settings (private/public - share is currently not supported), optional companions like Resource Planner for enhanced project management capabilities, workspace assignment for organizational structure, folder placement for better organization, and template selection for predefined project structures. Since project creation is asynchronous, you can optionally provide a callback_url where the project ID will be sent via POST request once creation completes. The callback will receive: { is_success: boolean, process_id: string, project_id?: number }. Returns a process_id for tracking the creation request. */
   create_project?: Maybe<CreateProjectResult>;
+  /** Create a new account schema. */
+  create_schema?: Maybe<AccountEntity>;
+  /** Create columns on an account schema. */
+  create_schema_columns?: Maybe<AccountEntity>;
   /** Creates a new status column with strongly typed settings. Status columns allow users to track item progress through customizable labels (e.g., "Working on it", "Done", "Stuck"). This mutation is specifically for status/color columns and provides type-safe creation with label configuration. */
   create_status_column?: Maybe<Column>;
   /** Create managed column of type status mutation. */
@@ -7310,18 +7287,16 @@ export type Mutation = {
   create_widget?: Maybe<Widget>;
   /** Create a new workspace. */
   create_workspace?: Maybe<Workspace>;
-  /** Deprecate a column on an account entity. */
-  deactivate_entity_column?: Maybe<AccountEntity>;
   /** Deactivate a form to hide it from users and stop accepting submissions. Form data is preserved. */
   deactivate_form?: Maybe<Scalars['Boolean']['output']>;
   /** Deactivate a live workflow */
   deactivate_live_workflow?: Maybe<DeactivateWorkflowResult>;
   /** Deactivate managed column mutation. */
   deactivate_managed_column?: Maybe<ManagedColumn>;
+  /** Deprecate a column on an account schema. */
+  deactivate_schema_column?: Maybe<AccountEntity>;
   /** Deactivates the specified users. */
   deactivate_users?: Maybe<DeactivateUsersResult>;
-  /** Delete an account entity model. Can only delete if there are no boards attached to the entity model. Entity models define the structure and columns of boards. */
-  delete_account_entity?: Maybe<EntityModel>;
   /** Delete an allocation by its ID */
   delete_allocation?: Maybe<DeleteAllocationResponse>;
   /** Delete all lifecycle subscriptions for an entity. Returns true if deleted successfully or if no subscriptions exist. */
@@ -7368,6 +7343,8 @@ export type Mutation = {
   delete_planner_resource?: Maybe<DeletePlannerResourceResponse>;
   /** Permanently remove a question from a form. This action cannot be undone. */
   delete_question?: Maybe<Scalars['Boolean']['output']>;
+  /** Delete an account schema. Can only delete if there are no boards attached to the schema. Schemas define the structure and columns of boards. */
+  delete_schema?: Maybe<AccountEntity>;
   /** Remove subscribers from the board. */
   delete_subscribers_from_board?: Maybe<Array<Maybe<User>>>;
   /** Deletes the specified team. */
@@ -7390,8 +7367,8 @@ export type Mutation = {
   delete_widget?: Maybe<Scalars['Boolean']['output']>;
   /** Delete workspace. */
   delete_workspace?: Maybe<Workspace>;
-  /** Detach boards from their entity models. */
-  detach_boards_from_entity?: Maybe<Array<BulkDetachBoardResult>>;
+  /** Detach boards from their schemas. */
+  detach_boards_from_schema?: Maybe<Array<BulkDetachBoardResult>>;
   /** Duplicate a board. */
   duplicate_board?: Maybe<BoardDuplication>;
   /** Creates an exact copy of an existing document, including all content, structure, and formatting. Use this to create templates, backup documents before major changes, or create variations of existing documents. The duplicated document will have a new unique ID and can be modified independently. Returns the new document's ID on success. */
@@ -7421,10 +7398,10 @@ export type Mutation = {
   move_item_to_board?: Maybe<Item>;
   /** Move an item to a different group. */
   move_item_to_group?: Maybe<Item>;
-  /** Opt in a column by default on an account entity. */
-  opt_in_entity_column?: Maybe<AccountEntity>;
-  /** Opt out a column by default on an account entity. */
-  opt_out_entity_column?: Maybe<AccountEntity>;
+  /** Opt in a column by default on an account schema. */
+  opt_in_schema_column?: Maybe<AccountEntity>;
+  /** Opt out a column by default on an account schema. */
+  opt_out_schema_column?: Maybe<AccountEntity>;
   pin_to_top: Update;
   /** Process an event through the task engine AI. Returns true when accepted. */
   process_events?: Maybe<Scalars['Boolean']['output']>;
@@ -7432,8 +7409,8 @@ export type Mutation = {
   publish_article?: Maybe<ArticleMetadata>;
   /** Publishes object out of draft state. Returns {success: true} on success, {success: false} on failure. */
   publish_object?: Maybe<ObjectOperationResponse>;
-  /** Reactivate a deprecated column on an account entity. */
-  reactivate_entity_column?: Maybe<AccountEntity>;
+  /** Reactivate a deprecated column on an account schema. */
+  reactivate_schema_column?: Maybe<AccountEntity>;
   /** Reconcile the current user tasks board with latest source item changes. */
   reconcile_with_items?: Maybe<ReconciliationResult>;
   /** Removes connected boards from a board relation column. */
@@ -7473,8 +7450,6 @@ export type Mutation = {
   unpin_from_top: Update;
   /** Unpublishes object from public state back to draft state. Returns {success: true} on success, {success: false} on failure. */
   unpublish_object?: Maybe<ObjectOperationResponse>;
-  /** Update an account entity. */
-  update_account_entity?: Maybe<AccountEntity>;
   /** Update multiple allocations in a single batch operation. Returns per-item results. */
   update_allocations?: Maybe<Array<UpdateAllocationResult>>;
   /** Updates an existing app. If the app latest version is live, a new draft version is automatically created and updated. */
@@ -7515,8 +7490,6 @@ export type Mutation = {
   update_dropdown_managed_column?: Maybe<DropdownManagedColumn>;
   /** Updates the email domain for the specified users. */
   update_email_domain?: Maybe<UpdateEmailDomainResult>;
-  /** Update columns on an account entity. */
-  update_entity_columns?: Maybe<AccountEntity>;
   /** Update the position of an object in favorites */
   update_favorite_position?: Maybe<UpdateFavoriteResultType>;
   /** Updates a folder. */
@@ -7551,6 +7524,10 @@ export type Mutation = {
   update_overview_hierarchy?: Maybe<UpdateOverviewHierarchy>;
   /** Update the current user's priority prompt for task prioritization. */
   update_priority_prompt?: Maybe<UpdatePriorityPromptResponse>;
+  /** Update an account schema. */
+  update_schema?: Maybe<AccountEntity>;
+  /** Update columns on an account schema. */
+  update_schema_columns?: Maybe<AccountEntity>;
   /** Updates a status column's properties including title, description, and status label settings. Status columns allow users to track item progress through customizable labels (e.g., "Working on it", "Done", "Stuck"). This mutation is specifically for status/color columns and provides type-safe updates. */
   update_status_column?: Maybe<Column>;
   /** Update managed column of type status mutation. */
@@ -7894,10 +7871,10 @@ export type MutationClear_Users_DepartmentArgs = {
 
 
 /** Root mutation type for the Dependencies service */
-export type MutationConnect_Board_To_EntityArgs = {
+export type MutationConnect_Board_To_SchemaArgs = {
   board_id: Scalars['ID']['input'];
-  entity_id?: InputMaybe<Scalars['ID']['input']>;
-  entity_name?: InputMaybe<Scalars['String']['input']>;
+  schema_id?: InputMaybe<Scalars['ID']['input']>;
+  schema_name?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -7920,14 +7897,6 @@ export type MutationConnect_Project_To_PortfolioArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationConvert_Board_To_ProjectArgs = {
   input: ConvertBoardToProjectInput;
-};
-
-
-/** Root mutation type for the Dependencies service */
-export type MutationCreate_Account_EntityArgs = {
-  description?: InputMaybe<Scalars['String']['input']>;
-  name: Scalars['String']['input'];
-  parent_id?: InputMaybe<Scalars['ID']['input']>;
 };
 
 
@@ -8066,14 +8035,6 @@ export type MutationCreate_Dropdown_Managed_ColumnArgs = {
   description?: InputMaybe<Scalars['String']['input']>;
   settings?: InputMaybe<CreateDropdownColumnSettingsInput>;
   title: Scalars['String']['input'];
-};
-
-
-/** Root mutation type for the Dependencies service */
-export type MutationCreate_Entity_ColumnsArgs = {
-  columns: Array<CreateEntityColumnInput>;
-  entity_id?: InputMaybe<Scalars['ID']['input']>;
-  entity_name?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -8258,6 +8219,22 @@ export type MutationCreate_ProjectArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationCreate_SchemaArgs = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  name: Scalars['String']['input'];
+  parent_id?: InputMaybe<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationCreate_Schema_ColumnsArgs = {
+  columns: Array<CreateEntityColumnInput>;
+  schema_id?: InputMaybe<Scalars['ID']['input']>;
+  schema_name?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_Status_ColumnArgs = {
   after_column_id?: InputMaybe<Scalars['ID']['input']>;
   board_id: Scalars['ID']['input'];
@@ -8392,14 +8369,6 @@ export type MutationCreate_WorkspaceArgs = {
 
 
 /** Root mutation type for the Dependencies service */
-export type MutationDeactivate_Entity_ColumnArgs = {
-  column_id: Scalars['ID']['input'];
-  entity_id?: InputMaybe<Scalars['ID']['input']>;
-  entity_name?: InputMaybe<Scalars['String']['input']>;
-};
-
-
-/** Root mutation type for the Dependencies service */
 export type MutationDeactivate_FormArgs = {
   formToken: Scalars['String']['input'];
 };
@@ -8418,15 +8387,16 @@ export type MutationDeactivate_Managed_ColumnArgs = {
 
 
 /** Root mutation type for the Dependencies service */
-export type MutationDeactivate_UsersArgs = {
-  user_ids: Array<Scalars['ID']['input']>;
+export type MutationDeactivate_Schema_ColumnArgs = {
+  column_id: Scalars['ID']['input'];
+  schema_id?: InputMaybe<Scalars['ID']['input']>;
+  schema_name?: InputMaybe<Scalars['String']['input']>;
 };
 
 
 /** Root mutation type for the Dependencies service */
-export type MutationDelete_Account_EntityArgs = {
-  id?: InputMaybe<Scalars['ID']['input']>;
-  name?: InputMaybe<Scalars['String']['input']>;
+export type MutationDeactivate_UsersArgs = {
+  user_ids: Array<Scalars['ID']['input']>;
 };
 
 
@@ -8588,6 +8558,13 @@ export type MutationDelete_QuestionArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationDelete_SchemaArgs = {
+  id?: InputMaybe<Scalars['ID']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationDelete_Subscribers_From_BoardArgs = {
   board_id: Scalars['ID']['input'];
   user_ids: Array<Scalars['ID']['input']>;
@@ -8667,7 +8644,7 @@ export type MutationDelete_WorkspaceArgs = {
 
 
 /** Root mutation type for the Dependencies service */
-export type MutationDetach_Boards_From_EntityArgs = {
+export type MutationDetach_Boards_From_SchemaArgs = {
   board_ids: Array<Scalars['ID']['input']>;
 };
 
@@ -8799,18 +8776,18 @@ export type MutationMove_Item_To_GroupArgs = {
 
 
 /** Root mutation type for the Dependencies service */
-export type MutationOpt_In_Entity_ColumnArgs = {
+export type MutationOpt_In_Schema_ColumnArgs = {
   column_id: Scalars['ID']['input'];
-  entity_id?: InputMaybe<Scalars['ID']['input']>;
-  entity_name?: InputMaybe<Scalars['String']['input']>;
+  schema_id?: InputMaybe<Scalars['ID']['input']>;
+  schema_name?: InputMaybe<Scalars['String']['input']>;
 };
 
 
 /** Root mutation type for the Dependencies service */
-export type MutationOpt_Out_Entity_ColumnArgs = {
+export type MutationOpt_Out_Schema_ColumnArgs = {
   column_id: Scalars['ID']['input'];
-  entity_id?: InputMaybe<Scalars['ID']['input']>;
-  entity_name?: InputMaybe<Scalars['String']['input']>;
+  schema_id?: InputMaybe<Scalars['ID']['input']>;
+  schema_name?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -8846,10 +8823,10 @@ export type MutationPublish_ObjectArgs = {
 
 
 /** Root mutation type for the Dependencies service */
-export type MutationReactivate_Entity_ColumnArgs = {
+export type MutationReactivate_Schema_ColumnArgs = {
   column_id: Scalars['ID']['input'];
-  entity_id?: InputMaybe<Scalars['ID']['input']>;
-  entity_name?: InputMaybe<Scalars['String']['input']>;
+  schema_id?: InputMaybe<Scalars['ID']['input']>;
+  schema_name?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -8980,15 +8957,6 @@ export type MutationUnpin_From_TopArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationUnpublish_ObjectArgs = {
   id: Scalars['ID']['input'];
-};
-
-
-/** Root mutation type for the Dependencies service */
-export type MutationUpdate_Account_EntityArgs = {
-  description?: InputMaybe<Scalars['String']['input']>;
-  id: Scalars['ID']['input'];
-  parent_id?: InputMaybe<Scalars['ID']['input']>;
-  revision: Scalars['Int']['input'];
 };
 
 
@@ -9164,14 +9132,6 @@ export type MutationUpdate_Email_DomainArgs = {
 
 
 /** Root mutation type for the Dependencies service */
-export type MutationUpdate_Entity_ColumnsArgs = {
-  columns: Array<UpdateEntityColumnInput>;
-  entity_id?: InputMaybe<Scalars['ID']['input']>;
-  entity_name?: InputMaybe<Scalars['String']['input']>;
-};
-
-
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Favorite_PositionArgs = {
   input: UpdateObjectHierarchyPositionInput;
 };
@@ -9303,6 +9263,23 @@ export type MutationUpdate_Overview_HierarchyArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationUpdate_Priority_PromptArgs = {
   priority_prompt: Scalars['String']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUpdate_SchemaArgs = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  id: Scalars['ID']['input'];
+  parent_id?: InputMaybe<Scalars['ID']['input']>;
+  revision: Scalars['Int']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUpdate_Schema_ColumnsArgs = {
+  columns: Array<UpdateEntityColumnInput>;
+  schema_id?: InputMaybe<Scalars['ID']['input']>;
+  schema_name?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -10285,8 +10262,6 @@ export type Query = {
   account?: Maybe<Account>;
   /** Returns all connections for the account. Requires admin privileges. */
   account_connections?: Maybe<Array<Connection>>;
-  /** Retrieve active account entity models by their IDs or names. Only returns account-level entities (not global). Entity models define the structure and columns of boards. If no parameters are provided, all account entities are returned. Results are paginated using page and limit parameters. */
-  account_entities?: Maybe<Array<EntityModel>>;
   /** Get all roles for the account */
   account_roles?: Maybe<Array<AccountRole>>;
   /** Get aggregated automation runs statistics in the account */
@@ -10471,6 +10446,8 @@ export type Query = {
   get_resource_attributes?: Maybe<GetAttributesResponse>;
   /** Get the entity restores */
   get_restores?: Maybe<Array<GetRestoresQueryResults>>;
+  /** Retrieve active account schemas by their IDs or names. Only returns account-level schemas (not global). Schemas define the structure and columns of boards. If no parameters are provided, all account schemas are returned. Results are paginated using page and limit parameters. */
+  get_schemas?: Maybe<Array<AccountEntity>>;
   /** Get the changelog of decisions that were made for a task by the My Tasks agent. */
   get_task_changelog?: Maybe<Array<TaskDecisionChangelogEvent>>;
   /**
@@ -10580,6 +10557,8 @@ export type Query = {
   /** List trigger events with optional filters */
   trigger_events?: Maybe<TriggerEventsPage>;
   updates?: Maybe<Array<Update>>;
+  /** Get all user configs for the account. */
+  user_configs?: Maybe<Array<UserConfig>>;
   /** Returns connections that belong to the authenticated user. */
   user_connections?: Maybe<Array<Connection>>;
   /** Get users. */
@@ -10609,15 +10588,6 @@ export type QueryAccount_ConnectionsArgs = {
   pagination?: InputMaybe<PaginationInput>;
   withAutomations?: InputMaybe<Scalars['Boolean']['input']>;
   withStateValidation?: InputMaybe<Scalars['Boolean']['input']>;
-};
-
-
-/** Root query type for the Dependencies service */
-export type QueryAccount_EntitiesArgs = {
-  ids?: InputMaybe<Array<Scalars['ID']['input']>>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  names?: InputMaybe<Array<Scalars['String']['input']>>;
-  page?: InputMaybe<Scalars['Int']['input']>;
 };
 
 
@@ -11012,6 +10982,15 @@ export type QueryGet_RestoresArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QueryGet_SchemasArgs = {
+  ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  names?: InputMaybe<Array<Scalars['String']['input']>>;
+  page?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryGet_Task_ChangelogArgs = {
   task_id: Scalars['ID']['input'];
 };
@@ -11304,6 +11283,13 @@ export type QueryUpdatesArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QueryUser_ConfigsArgs = {
+  kinds?: InputMaybe<Array<Scalars['String']['input']>>;
+  visibility?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryUser_ConnectionsArgs = {
   order?: InputMaybe<Scalars['String']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
@@ -11321,7 +11307,10 @@ export type QueryUsersArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<Array<UsersSortInput>>;
+  status?: InputMaybe<Array<UserStatus>>;
   user_kind?: InputMaybe<UserKindFilterInput>;
+  visibility?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -11728,6 +11717,49 @@ export type SaveWorkflowAsTemplateResult = {
   template_reference_id: Scalars['ID']['output'];
 };
 
+/** A column definition within a schema. */
+export type SchemaColumn = {
+  __typename?: 'SchemaColumn';
+  /** The column's description. */
+  description?: Maybe<Scalars['String']['output']>;
+  /** The unique identifier of the column. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Policy rules for this column. */
+  policy?: Maybe<SchemaColumnPolicy>;
+  /** The column's settings in a JSON form. */
+  settings?: Maybe<Scalars['JSON']['output']>;
+  /** Tags indicating column status (deprecated, inherited, etc.). */
+  tags?: Maybe<SchemaColumnTags>;
+  /** The column's title. */
+  title: Scalars['String']['output'];
+  /** The column's type. */
+  type?: Maybe<ColumnType>;
+};
+
+/** Policy rules governing how a schema column can be modified. */
+export type SchemaColumnPolicy = {
+  __typename?: 'SchemaColumnPolicy';
+  /** List of column properties that can be overridden by board-level columns. */
+  can_override: Array<Scalars['String']['output']>;
+  /** Whether this column is protected from deletion. */
+  cannot_delete: Scalars['Boolean']['output'];
+  /** Policy-related messages, such as disabled reasons. */
+  messages?: Maybe<Scalars['JSON']['output']>;
+  /** Whether this column is read-only. */
+  read_only: Scalars['Boolean']['output'];
+};
+
+/** Tags applied to a schema column indicating its status or behavior. */
+export type SchemaColumnTags = {
+  __typename?: 'SchemaColumnTags';
+  /** Deprecation info with a start timestamp, if the column is deprecated. */
+  deprecated?: Maybe<Scalars['JSON']['output']>;
+  /** Whether this column is inherited from a parent schema. */
+  inherited?: Maybe<Scalars['Boolean']['output']>;
+  /** Opt-in by default info with an optional end timestamp. */
+  opt_in_by_default?: Maybe<Scalars['JSON']['output']>;
+};
+
 /** notification settings scope types, the options are account user defaults or user private settings */
 export enum ScopeType {
   AccountNewUserDefaults = 'AccountNewUserDefaults',
@@ -11756,7 +11788,7 @@ export type SearchBenchmarkResults = {
   data?: Maybe<Scalars['String']['output']>;
 };
 
-/** A single board search result with indexed and live data. */
+/** A single board search result with indexed data. */
 export type SearchBoardResult = {
   __typename?: 'SearchBoardResult';
   /** Unique identifier of the board. */
@@ -11802,21 +11834,21 @@ export type SearchDateRangeLegacyInput = {
   updatedBefore?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
 };
 
-/** A single doc search result with indexed and live data. */
+/** A single document search result with indexed data. */
 export type SearchDocResult = {
   __typename?: 'SearchDocResult';
-  /** Unique identifier of the doc. */
+  /** Unique identifier of the document. */
   id: Scalars['ID']['output'];
-  /** Doc data from the search index. */
+  /** Document data from the search index. */
   indexed_data: SearchIndexedDoc;
   /** Live doc data via federation. */
   live_data: Document;
 };
 
-/** Wrapper for a list of doc search results. */
+/** Wrapper for a list of document search results. */
 export type SearchDocResults = {
   __typename?: 'SearchDocResults';
-  /** List of doc search results. */
+  /** List of document search results. */
   results: Array<SearchDocResult>;
 };
 
@@ -11879,7 +11911,7 @@ export type SearchIndexedItem = {
   workspace_id?: Maybe<Scalars['ID']['output']>;
 };
 
-/** A single item search result with indexed and live data. */
+/** A single item search result with indexed data. */
 export type SearchItemResult = {
   __typename?: 'SearchItemResult';
   /** Unique identifier of the item. */
@@ -13376,15 +13408,15 @@ export type UpdateEmailDomainResult = {
   updated_users?: Maybe<Array<User>>;
 };
 
-/** Input for updating an existing column on an entity model */
+/** Input for updating an existing column on a schema */
 export type UpdateEntityColumnInput = {
   /** The ID of the column to update */
   column_id: Scalars['ID']['input'];
-  /** Column type-specific settings (labels for status/dropdown, etc.) */
+  /** Type-specific configuration object containing column defaults and settings. Use get_column_type_schema query to see available properties and validation rules. Examples: status column labels, dropdown options, number formatting rules, date display preferences. */
   defaults?: InputMaybe<Scalars['JSON']['input']>;
   /** Optional column description */
   description?: InputMaybe<Scalars['String']['input']>;
-  /** Whether this column should be opted-out by default on boards. If false or not provided, the column will be automatically included on all boards using this entity (opt-in by default). */
+  /** Whether this column should be opted-out by default on boards. If false or not provided, the column will be automatically included on all boards using this schema (opt-in by default). */
   opt_out_by_default?: InputMaybe<Scalars['Boolean']['input']>;
   /** Policy rules controlling what can be done with the column */
   policy?: InputMaybe<ColumnPolicyInput>;
@@ -13783,6 +13815,8 @@ export type User = {
   title?: Maybe<Scalars['String']['output']>;
   /** The user's profile url. */
   url: Scalars['String']['output'];
+  /** The user's config based on their kind. */
+  user_config: UserConfig;
   /** The user’s utc hours difference. */
   utc_hours_diff?: Maybe<Scalars['Int']['output']>;
 };
@@ -13833,6 +13867,17 @@ export type UserAttributesInput = {
   phone?: InputMaybe<Scalars['String']['input']>;
   /** The title of the user. */
   title?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** User config of a user kind within the account. */
+export type UserConfig = {
+  __typename?: 'UserConfig';
+  /** The user kind for the user config. */
+  kind: Scalars['String']['output'];
+  /** The role ID associated with this user config. */
+  role_id: Scalars['ID']['output'];
+  /** The visibility for this user config. */
+  visibility: Array<Scalars['String']['output']>;
 };
 
 /** User context information. */
@@ -13903,6 +13948,8 @@ export enum UserKindFilter {
   GoalsApiUser = 'GOALS_API_USER',
   /** A guest user. */
   Guest = 'GUEST',
+  /** A historical tracking backfill api user user. */
+  HistoricalTrackingBackfillApiUser = 'HISTORICAL_TRACKING_BACKFILL_API_USER',
   /** A member user. */
   Member = 'MEMBER',
   /** A monday service api user user. */
@@ -13954,6 +14001,28 @@ export enum UserStatus {
 export type UserUpdateInput = {
   user_attribute_updates: UserAttributesInput;
   user_id: Scalars['ID']['input'];
+};
+
+/** The direction to sort users. */
+export enum UsersSortDirection {
+  /** Sort in ascending order. */
+  Asc = 'ASC',
+  /** Sort in descending order. */
+  Desc = 'DESC'
+}
+
+/** The field to sort users by. */
+export enum UsersSortField {
+  /** Sort by the date the user was created. */
+  CreatedAt = 'CREATED_AT'
+}
+
+/** Input for sorting users. */
+export type UsersSortInput = {
+  /** The sort direction. */
+  direction: UsersSortDirection;
+  /** The field to sort by. */
+  field: UsersSortField;
 };
 
 /** Denominator for utilization ratio (e.g., utilization = effort / available). Determines what value is used as the denominator. */
@@ -14818,23 +14887,129 @@ export type WorldClockValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
+export type ConnectBoardToSchemaMutationVariables = Exact<{
+  boardId: Scalars['ID']['input'];
+  schemaId?: InputMaybe<Scalars['ID']['input']>;
+  schemaName?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type ConnectBoardToSchemaMutation = { __typename?: 'Mutation', connect_board_to_schema?: { __typename?: 'BoardConnection', id?: string | null, entity_id?: string | null } | null };
+
+export type CreateSchemaColumnsMutationVariables = Exact<{
+  schemaId?: InputMaybe<Scalars['ID']['input']>;
+  schemaName?: InputMaybe<Scalars['String']['input']>;
+  columns: Array<CreateEntityColumnInput> | CreateEntityColumnInput;
+}>;
+
+
+export type CreateSchemaColumnsMutation = { __typename?: 'Mutation', create_schema_columns?: { __typename?: 'AccountEntity', id: string, name?: string | null, description?: string | null, parent_id?: string | null, revision: number } | null };
+
+export type CreateSchemaMutationVariables = Exact<{
+  name: Scalars['String']['input'];
+  parentId?: InputMaybe<Scalars['ID']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type CreateSchemaMutation = { __typename?: 'Mutation', create_schema?: { __typename?: 'AccountEntity', id: string, name?: string | null, description?: string | null, parent_id?: string | null } | null };
+
+export type DeactivateSchemaColumnMutationVariables = Exact<{
+  schemaId?: InputMaybe<Scalars['ID']['input']>;
+  schemaName?: InputMaybe<Scalars['String']['input']>;
+  columnId: Scalars['ID']['input'];
+}>;
+
+
+export type DeactivateSchemaColumnMutation = { __typename?: 'Mutation', deactivate_schema_column?: { __typename?: 'AccountEntity', id: string, name?: string | null, description?: string | null, parent_id?: string | null, revision: number } | null };
+
+export type DeleteSchemaColumnsMutationVariables = Exact<{
+  entityId?: InputMaybe<Scalars['ID']['input']>;
+  entityName?: InputMaybe<Scalars['String']['input']>;
+  columnIds: Array<Scalars['ID']['input']> | Scalars['ID']['input'];
+}>;
+
+
+export type DeleteSchemaColumnsMutation = { __typename?: 'Mutation', delete_entity_columns?: { __typename?: 'AccountEntity', id: string, name?: string | null, description?: string | null, parent_id?: string | null, revision: number } | null };
+
+export type DeleteSchemaMutationVariables = Exact<{
+  id?: InputMaybe<Scalars['ID']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type DeleteSchemaMutation = { __typename?: 'Mutation', delete_schema?: { __typename?: 'AccountEntity', id: string, name?: string | null } | null };
+
+export type DetachBoardsFromSchemaMutationVariables = Exact<{
+  boardIds: Array<Scalars['ID']['input']> | Scalars['ID']['input'];
+}>;
+
+
+export type DetachBoardsFromSchemaMutation = { __typename?: 'Mutation', detach_boards_from_schema?: Array<{ __typename?: 'BulkDetachBoardResult', board_id?: string | null, success?: boolean | null, error?: string | null }> | null };
+
 export type SearchItemsDevQueryVariables = Exact<{
   query: Scalars['String']['input'];
-  limit: Scalars['Int']['input'];
-  filters: SearchFiltersInput;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  boardIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
 }>;
 
 
-export type SearchItemsDevQuery = { __typename?: 'Query', cross_entity_search?: Array<{ __typename: 'BoardSearchResult' } | { __typename: 'DocSearchResult' } | { __typename: 'ItemSearchResult', data: { __typename?: 'IndexedItem', id: string } }> | null };
+export type SearchItemsDevQuery = { __typename?: 'Query', search: { __typename?: 'SearchNamespace', items: { __typename?: 'SearchItemResults', results: Array<{ __typename?: 'SearchItemResult', id: string }> } } };
 
-export type SearchDevQueryVariables = Exact<{
+export type GetSchemasQueryVariables = Exact<{
+  ids?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+  names?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  page?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type GetSchemasQuery = { __typename?: 'Query', get_schemas?: Array<{ __typename?: 'AccountEntity', id: string, name?: string | null, description?: string | null, parent_id?: string | null, revision: number, account_id: string }> | null };
+
+export type OptInSchemaColumnMutationVariables = Exact<{
+  schemaId?: InputMaybe<Scalars['ID']['input']>;
+  schemaName?: InputMaybe<Scalars['String']['input']>;
+  columnId: Scalars['ID']['input'];
+}>;
+
+
+export type OptInSchemaColumnMutation = { __typename?: 'Mutation', opt_in_schema_column?: { __typename?: 'AccountEntity', id: string, name?: string | null, description?: string | null, parent_id?: string | null, revision: number } | null };
+
+export type OptOutSchemaColumnMutationVariables = Exact<{
+  schemaId?: InputMaybe<Scalars['ID']['input']>;
+  schemaName?: InputMaybe<Scalars['String']['input']>;
+  columnId: Scalars['ID']['input'];
+}>;
+
+
+export type OptOutSchemaColumnMutation = { __typename?: 'Mutation', opt_out_schema_column?: { __typename?: 'AccountEntity', id: string, name?: string | null, description?: string | null, parent_id?: string | null, revision: number } | null };
+
+export type ReactivateSchemaColumnMutationVariables = Exact<{
+  schemaId?: InputMaybe<Scalars['ID']['input']>;
+  schemaName?: InputMaybe<Scalars['String']['input']>;
+  columnId: Scalars['ID']['input'];
+}>;
+
+
+export type ReactivateSchemaColumnMutation = { __typename?: 'Mutation', reactivate_schema_column?: { __typename?: 'AccountEntity', id: string, name?: string | null, description?: string | null, parent_id?: string | null, revision: number } | null };
+
+export type SearchBoardsDevQueryVariables = Exact<{
   query: Scalars['String']['input'];
-  limit: Scalars['Int']['input'];
-  filters: SearchFiltersInput;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  workspaceIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
 }>;
 
 
-export type SearchDevQuery = { __typename?: 'Query', cross_entity_search?: Array<{ __typename: 'BoardSearchResult', entity_type: SearchableEntity, data: { __typename?: 'IndexedBoard', id: string, name: string, url: string } } | { __typename: 'DocSearchResult', entity_type: SearchableEntity, data: { __typename?: 'IndexedDoc', id: string, name: string } } | { __typename: 'ItemSearchResult' }> | null };
+export type SearchBoardsDevQuery = { __typename?: 'Query', search: { __typename?: 'SearchNamespace', boards: { __typename?: 'SearchBoardResults', results: Array<{ __typename?: 'SearchBoardResult', id: string, indexed_data: { __typename?: 'SearchIndexedBoard', id: string, name: string, url: string } }> } } };
+
+export type SearchDocsDevQueryVariables = Exact<{
+  query: Scalars['String']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  workspaceIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+}>;
+
+
+export type SearchDocsDevQuery = { __typename?: 'Query', search: { __typename?: 'SearchNamespace', docs: { __typename?: 'SearchDocResults', results: Array<{ __typename?: 'SearchDocResult', id: string, indexed_data: { __typename?: 'SearchIndexedDoc', id: string, name: string } }> } } };
 
 export type BatchUndoMutationVariables = Exact<{
   boardId: Scalars['ID']['input'];
@@ -14843,6 +15018,25 @@ export type BatchUndoMutationVariables = Exact<{
 
 
 export type BatchUndoMutation = { __typename?: 'Mutation', batch_undo?: { __typename?: 'BatchUndoResult', success: boolean } | null };
+
+export type UpdateSchemaColumnsMutationVariables = Exact<{
+  schemaId?: InputMaybe<Scalars['ID']['input']>;
+  schemaName?: InputMaybe<Scalars['String']['input']>;
+  columns: Array<UpdateEntityColumnInput> | UpdateEntityColumnInput;
+}>;
+
+
+export type UpdateSchemaColumnsMutation = { __typename?: 'Mutation', update_schema_columns?: { __typename?: 'AccountEntity', id: string, name?: string | null, description?: string | null, parent_id?: string | null, revision: number } | null };
+
+export type UpdateSchemaMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  revision: Scalars['Int']['input'];
+  parentId?: InputMaybe<Scalars['ID']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type UpdateSchemaMutation = { __typename?: 'Mutation', update_schema?: { __typename?: 'AccountEntity', id: string, name?: string | null, description?: string | null, parent_id?: string | null, revision: number } | null };
 
 export type GetUserContextQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -14854,7 +15048,6 @@ export type CreateFormSubmissionMutationVariables = Exact<{
   answers: Array<FormAnswerInput> | FormAnswerInput;
   form_timezone_offset: Scalars['Int']['input'];
   password?: InputMaybe<Scalars['String']['input']>;
-  group_id?: InputMaybe<Scalars['ID']['input']>;
   tags?: InputMaybe<Array<TagInput> | TagInput>;
 }>;
 
@@ -14862,8 +15055,22 @@ export type CreateFormSubmissionMutationVariables = Exact<{
 export type CreateFormSubmissionMutation = { __typename?: 'Mutation', create_form_submission?: { __typename?: 'FormSubmissionResult', id: string } | null };
 
 
-export const SearchItemsDevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchItemsDev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filters"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SearchFiltersInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"cross_entity_search"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"filters"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filters"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ItemSearchResult"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchItemsDevQuery, SearchItemsDevQueryVariables>;
-export const SearchDevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchDev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filters"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SearchFiltersInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"cross_entity_search"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"filters"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filters"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BoardSearchResult"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"entity_type"}},{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"url"}}]}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"DocSearchResult"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"entity_type"}},{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchDevQuery, SearchDevQueryVariables>;
+export const ConnectBoardToSchemaDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ConnectBoardToSchema"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"schemaId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"schemaName"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"connect_board_to_schema"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"board_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}},{"kind":"Argument","name":{"kind":"Name","value":"schema_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"schemaId"}}},{"kind":"Argument","name":{"kind":"Name","value":"schema_name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"schemaName"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"entity_id"}}]}}]}}]} as unknown as DocumentNode<ConnectBoardToSchemaMutation, ConnectBoardToSchemaMutationVariables>;
+export const CreateSchemaColumnsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateSchemaColumns"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"schemaId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"schemaName"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columns"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateEntityColumnInput"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"create_schema_columns"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"schema_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"schemaId"}}},{"kind":"Argument","name":{"kind":"Name","value":"schema_name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"schemaName"}}},{"kind":"Argument","name":{"kind":"Name","value":"columns"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columns"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"parent_id"}},{"kind":"Field","name":{"kind":"Name","value":"revision"}}]}}]}}]} as unknown as DocumentNode<CreateSchemaColumnsMutation, CreateSchemaColumnsMutationVariables>;
+export const CreateSchemaDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateSchema"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"name"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"parentId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"description"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"create_schema"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"name"}}},{"kind":"Argument","name":{"kind":"Name","value":"parent_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"parentId"}}},{"kind":"Argument","name":{"kind":"Name","value":"description"},"value":{"kind":"Variable","name":{"kind":"Name","value":"description"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"parent_id"}}]}}]}}]} as unknown as DocumentNode<CreateSchemaMutation, CreateSchemaMutationVariables>;
+export const DeactivateSchemaColumnDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeactivateSchemaColumn"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"schemaId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"schemaName"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deactivate_schema_column"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"schema_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"schemaId"}}},{"kind":"Argument","name":{"kind":"Name","value":"schema_name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"schemaName"}}},{"kind":"Argument","name":{"kind":"Name","value":"column_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"parent_id"}},{"kind":"Field","name":{"kind":"Name","value":"revision"}}]}}]}}]} as unknown as DocumentNode<DeactivateSchemaColumnMutation, DeactivateSchemaColumnMutationVariables>;
+export const DeleteSchemaColumnsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteSchemaColumns"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"entityId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"entityName"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnIds"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"delete_entity_columns"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"entity_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"entityId"}}},{"kind":"Argument","name":{"kind":"Name","value":"entity_name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"entityName"}}},{"kind":"Argument","name":{"kind":"Name","value":"column_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"parent_id"}},{"kind":"Field","name":{"kind":"Name","value":"revision"}}]}}]}}]} as unknown as DocumentNode<DeleteSchemaColumnsMutation, DeleteSchemaColumnsMutationVariables>;
+export const DeleteSchemaDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteSchema"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"name"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"delete_schema"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"name"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]} as unknown as DocumentNode<DeleteSchemaMutation, DeleteSchemaMutationVariables>;
+export const DetachBoardsFromSchemaDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DetachBoardsFromSchema"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardIds"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"detach_boards_from_schema"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"board_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"board_id"}},{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"error"}}]}}]}}]} as unknown as DocumentNode<DetachBoardsFromSchemaMutation, DetachBoardsFromSchemaMutationVariables>;
+export const SearchItemsDevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchItemsDev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"board_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"results"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchItemsDevQuery, SearchItemsDevQueryVariables>;
+export const GetSchemasDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetSchemas"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"ids"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"names"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"page"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"get_schemas"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"ids"}}},{"kind":"Argument","name":{"kind":"Name","value":"names"},"value":{"kind":"Variable","name":{"kind":"Name","value":"names"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"page"},"value":{"kind":"Variable","name":{"kind":"Name","value":"page"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"parent_id"}},{"kind":"Field","name":{"kind":"Name","value":"revision"}},{"kind":"Field","name":{"kind":"Name","value":"account_id"}}]}}]}}]} as unknown as DocumentNode<GetSchemasQuery, GetSchemasQueryVariables>;
+export const OptInSchemaColumnDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"OptInSchemaColumn"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"schemaId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"schemaName"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"opt_in_schema_column"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"schema_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"schemaId"}}},{"kind":"Argument","name":{"kind":"Name","value":"schema_name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"schemaName"}}},{"kind":"Argument","name":{"kind":"Name","value":"column_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"parent_id"}},{"kind":"Field","name":{"kind":"Name","value":"revision"}}]}}]}}]} as unknown as DocumentNode<OptInSchemaColumnMutation, OptInSchemaColumnMutationVariables>;
+export const OptOutSchemaColumnDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"OptOutSchemaColumn"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"schemaId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"schemaName"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"opt_out_schema_column"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"schema_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"schemaId"}}},{"kind":"Argument","name":{"kind":"Name","value":"schema_name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"schemaName"}}},{"kind":"Argument","name":{"kind":"Name","value":"column_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"parent_id"}},{"kind":"Field","name":{"kind":"Name","value":"revision"}}]}}]}}]} as unknown as DocumentNode<OptOutSchemaColumnMutation, OptOutSchemaColumnMutationVariables>;
+export const ReactivateSchemaColumnDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ReactivateSchemaColumn"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"schemaId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"schemaName"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"reactivate_schema_column"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"schema_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"schemaId"}}},{"kind":"Argument","name":{"kind":"Name","value":"schema_name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"schemaName"}}},{"kind":"Argument","name":{"kind":"Name","value":"column_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"parent_id"}},{"kind":"Field","name":{"kind":"Name","value":"revision"}}]}}]}}]} as unknown as DocumentNode<ReactivateSchemaColumnMutation, ReactivateSchemaColumnMutationVariables>;
+export const SearchBoardsDevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchBoardsDev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"boards"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"workspace_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"results"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"indexed_data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"url"}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchBoardsDevQuery, SearchBoardsDevQueryVariables>;
+export const SearchDocsDevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchDocsDev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"docs"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"workspace_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"results"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"indexed_data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchDocsDevQuery, SearchDocsDevQueryVariables>;
 export const BatchUndoDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"BatchUndo"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"undoRecordId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"batch_undo"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"board_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}},{"kind":"Argument","name":{"kind":"Name","value":"undo_record_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"undoRecordId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<BatchUndoMutation, BatchUndoMutationVariables>;
+export const UpdateSchemaColumnsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateSchemaColumns"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"schemaId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"schemaName"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columns"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateEntityColumnInput"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"update_schema_columns"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"schema_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"schemaId"}}},{"kind":"Argument","name":{"kind":"Name","value":"schema_name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"schemaName"}}},{"kind":"Argument","name":{"kind":"Name","value":"columns"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columns"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"parent_id"}},{"kind":"Field","name":{"kind":"Name","value":"revision"}}]}}]}}]} as unknown as DocumentNode<UpdateSchemaColumnsMutation, UpdateSchemaColumnsMutationVariables>;
+export const UpdateSchemaDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateSchema"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"revision"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"parentId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"description"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"update_schema"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"revision"},"value":{"kind":"Variable","name":{"kind":"Name","value":"revision"}}},{"kind":"Argument","name":{"kind":"Name","value":"parent_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"parentId"}}},{"kind":"Argument","name":{"kind":"Name","value":"description"},"value":{"kind":"Variable","name":{"kind":"Name","value":"description"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"parent_id"}},{"kind":"Field","name":{"kind":"Name","value":"revision"}}]}}]}}]} as unknown as DocumentNode<UpdateSchemaMutation, UpdateSchemaMutationVariables>;
 export const GetUserContextDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getUserContext"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"me"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}},{"kind":"Field","name":{"kind":"Name","value":"favorites"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"object"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"type"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"intelligence"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"relevant_boards"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"10"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"board"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"relevant_people"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"10"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetUserContextQuery, GetUserContextQueryVariables>;
-export const CreateFormSubmissionDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateFormSubmission"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"form_token"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"answers"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"FormAnswerInput"}}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"form_timezone_offset"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"password"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"group_id"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"tags"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"TagInput"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"create_form_submission"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"form_token"},"value":{"kind":"Variable","name":{"kind":"Name","value":"form_token"}}},{"kind":"Argument","name":{"kind":"Name","value":"answers"},"value":{"kind":"Variable","name":{"kind":"Name","value":"answers"}}},{"kind":"Argument","name":{"kind":"Name","value":"form_timezone_offset"},"value":{"kind":"Variable","name":{"kind":"Name","value":"form_timezone_offset"}}},{"kind":"Argument","name":{"kind":"Name","value":"password"},"value":{"kind":"Variable","name":{"kind":"Name","value":"password"}}},{"kind":"Argument","name":{"kind":"Name","value":"group_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"group_id"}}},{"kind":"Argument","name":{"kind":"Name","value":"tags"},"value":{"kind":"Variable","name":{"kind":"Name","value":"tags"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateFormSubmissionMutation, CreateFormSubmissionMutationVariables>;
+export const CreateFormSubmissionDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateFormSubmission"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"form_token"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"answers"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"FormAnswerInput"}}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"form_timezone_offset"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"password"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"tags"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"TagInput"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"create_form_submission"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"form_token"},"value":{"kind":"Variable","name":{"kind":"Name","value":"form_token"}}},{"kind":"Argument","name":{"kind":"Name","value":"answers"},"value":{"kind":"Variable","name":{"kind":"Name","value":"answers"}}},{"kind":"Argument","name":{"kind":"Name","value":"form_timezone_offset"},"value":{"kind":"Variable","name":{"kind":"Name","value":"form_timezone_offset"}}},{"kind":"Argument","name":{"kind":"Name","value":"password"},"value":{"kind":"Variable","name":{"kind":"Name","value":"password"}}},{"kind":"Argument","name":{"kind":"Name","value":"tags"},"value":{"kind":"Variable","name":{"kind":"Name","value":"tags"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<CreateFormSubmissionMutation, CreateFormSubmissionMutationVariables>;

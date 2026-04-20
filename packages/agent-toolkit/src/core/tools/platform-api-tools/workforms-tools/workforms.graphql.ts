@@ -22,6 +22,9 @@ const QuestionOptionsFragment = gql`
   fragment QuestionOptions on FormQuestion {
     options {
       label
+      value
+      visible
+      active
     }
   }
 `;
@@ -120,6 +123,9 @@ const FormFeaturesFragment = gql`
       includeNameQuestion
       includeUpdateQuestion
       syncQuestionAndColumnsTitles
+    }
+    ai_translate {
+      enabled
     }
   }
 `;
@@ -380,8 +386,8 @@ export const updateFormAccessibility = gql`
 `;
 
 export const updateFormFeatures = gql`
-  mutation updateFormFeatures($formToken: String!, $features: FormFeaturesInput!) {
-    update_form_settings(formToken: $formToken, settings: { features: $features }) {
+  mutation updateFormFeatures($formToken: String!, $features: FormFeaturesInput!, $is_anonymous: Boolean) {
+    update_form_settings(formToken: $formToken, settings: { features: $features, is_anonymous: $is_anonymous }) {
       features {
         ...FormFeatures
       }
