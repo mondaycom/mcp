@@ -360,22 +360,24 @@ type Query {
     user_id: ID!
   ): DependencyColumnConfigResult
 
-  """Export events with optional filters and pagination"""
+  """
+  Export events for a board within a date range. Requires a valid X-Tool-Execution-Secret header.
+  """
   export_events(
     """Filter events by board ID"""
     board_id: ID
-
-    """Filter events by state(s)"""
-    state: [String!]
-
-    """Filter events by type(s)"""
-    type: [String!]
 
     """Filter events created after this date (ISO format)"""
     start_date: String
 
     """Filter events created before this date (ISO format)"""
     end_date: String
+
+    """Filter events by state(s)"""
+    state: [String!]
+
+    """Filter events by type(s)"""
+    type: [String!]
 
     """Maximum number of events to return (default: 100, max: 1000)"""
     limit: Int
@@ -1010,7 +1012,7 @@ type User {
   """The user's birthday."""
   birthday: Date
 
-  """The user's country code."""
+  """The user’s country code."""
   country_code: String
 
   """The user's creation date."""
@@ -1029,33 +1031,33 @@ type User {
   email: String!
 
   """Is the user enabled or not."""
-  enabled: Boolean!
+  enabled: Boolean! @deprecated(reason: "This field is deprecated. Please use status instead.")
 
   """The token of the user for email to board."""
-  encrypt_api_token: String
+  encrypt_api_token: String @deprecated(reason: "This field is deprecated and will be removed in later versions.")
 
   """Is the user an account admin."""
-  is_admin: Boolean
+  is_admin: Boolean @deprecated(reason: "This field is deprecated. Please use kind instead.")
 
   """Is the user a guest or not."""
-  is_guest: Boolean
+  is_guest: Boolean @deprecated(reason: "This field is deprecated. Please use kind instead.")
 
   """Is the user a pending user"""
-  is_pending: Boolean
+  is_pending: Boolean @deprecated(reason: "This field is deprecated. Please use status instead.")
 
   """Is user verified his email."""
-  is_verified: Boolean
+  is_verified: Boolean @deprecated(reason: "This field is deprecated. Please use is_email_confirmed instead.")
 
   """Is the user a view only user or not."""
-  is_view_only: Boolean
+  is_view_only: Boolean @deprecated(reason: "This field is deprecated. Please use kind instead.")
 
   """The date the user joined the account."""
-  join_date: Date
+  join_date: Date @deprecated(reason: "This field is deprecated. Please use became_active_at instead.")
 
   """Last date & time when user was active"""
   last_activity: Date
 
-  """The user's location."""
+  """The user’s location."""
   location: String
 
   """The user's mobile phone number."""
@@ -1071,22 +1073,22 @@ type User {
   phone: String
 
   """The user's photo in the original size."""
-  photo_original: String
+  photo_original: String @deprecated(reason: "This field is deprecated. Please use photo_url.original instead.")
 
   """The user's photo in small size (150x150)."""
-  photo_small: String
+  photo_small: String @deprecated(reason: "This field is deprecated. Please use photo_url.small instead.")
 
   """The user's photo in thumbnail size (100x100)."""
-  photo_thumb: String
+  photo_thumb: String @deprecated(reason: "This field is deprecated. Please use photo_url.thumb instead.")
 
   """The user's photo in small thumbnail size (50x50)."""
-  photo_thumb_small: String
+  photo_thumb_small: String @deprecated(reason: "This field is deprecated. Please use photo_url.thumb_small instead.")
 
   """The user's photo in tiny size (30x30)."""
-  photo_tiny: String
+  photo_tiny: String @deprecated(reason: "This field is deprecated. Please use photo_url.tiny instead.")
 
   """The product to which the user signed up to first."""
-  sign_up_product_kind: String
+  sign_up_product_kind: String @deprecated(reason: "This field is deprecated and will be removed in later versions.")
 
   """The teams the user is a member in."""
   teams(
@@ -1094,7 +1096,7 @@ type User {
     ids: [ID!]
   ): [Team]
 
-  """The user's timezone identifier."""
+  """The user’s timezone identifier."""
   time_zone_identifier: String
 
   """The user's title."""
@@ -2767,7 +2769,7 @@ type Mutation {
     contributor (can edit content only), viewer (read-only access). Note:
     assigned_contributor is not yet supported.
     """
-    basic_role_name: BoardBasicRoleName!
+    basic_role_name: BoardBasicRoleName
 
     """The board's unique identifier"""
     board_id: ID!
@@ -12115,26 +12117,73 @@ input FormQuestionSettingsInput {
 
 """The type of the question (ex. text, number, MultiSelect etc.)"""
 enum FormQuestionType {
+  """A yes/no checkbox question."""
   Boolean
+
+  """
+  A question that links to items on a connected board. Board configuration must be done through the column settings.
+  """
   ConnectedBoards
+
+  """A country selection question with a searchable dropdown."""
   Country
+
+  """A date picker question with optional time selection."""
   Date
+
+  """A date range question allowing start and end date selection."""
   DateRange
+
+  """An email address input question with format validation."""
   Email
+
+  """A file upload question for attachments."""
   File
+
+  """A URL/link input question with optional format validation."""
   Link
+
+  """A location/address input question with optional geolocation autofill."""
   Location
+
+  """A multi-line text input question for longer responses."""
   LongText
+
+  """A multiple-choice question allowing several selections."""
   MultiSelect
+
+  """A name input question mapped to the item name column on the board."""
   Name
+
+  """A numeric input question."""
   Number
+
+  """A people picker question for selecting monday.com users."""
   People
+
+  """A phone number input question with optional country prefix."""
   Phone
+
+  """A rating question with a configurable scale."""
   Rating
+
+  """A single-line text input question."""
   ShortText
+
+  """
+  A signature capture question for collecting drawn or uploaded signatures.
+  """
   Signature
+
+  """A single-choice question allowing one selection."""
   SingleSelect
+
+  """
+  A subitems question that creates sub-items on the board. Sub-items columns must be configured through the board.
+  """
   Subitems
+
+  """An updates/comments question mapped to the item updates feed."""
   Updates
 }
 

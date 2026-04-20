@@ -3603,26 +3603,47 @@ export type FormQuestionSettingsInput = {
 
 /** The type of the question (ex. text, number, MultiSelect etc.) */
 export enum FormQuestionType {
+  /** A yes/no checkbox question. */
   Boolean = 'Boolean',
+  /** A question that links to items on a connected board. Board configuration must be done through the column settings. */
   ConnectedBoards = 'ConnectedBoards',
+  /** A country selection question with a searchable dropdown. */
   Country = 'Country',
+  /** A date picker question with optional time selection. */
   Date = 'Date',
+  /** A date range question allowing start and end date selection. */
   DateRange = 'DateRange',
+  /** An email address input question with format validation. */
   Email = 'Email',
+  /** A file upload question for attachments. */
   File = 'File',
+  /** A URL/link input question with optional format validation. */
   Link = 'Link',
+  /** A location/address input question with optional geolocation autofill. */
   Location = 'Location',
+  /** A multi-line text input question for longer responses. */
   LongText = 'LongText',
+  /** A multiple-choice question allowing several selections. */
   MultiSelect = 'MultiSelect',
+  /** A name input question mapped to the item name column on the board. */
   Name = 'Name',
+  /** A numeric input question. */
   Number = 'Number',
+  /** A people picker question for selecting monday.com users. */
   People = 'People',
+  /** A phone number input question with optional country prefix. */
   Phone = 'Phone',
+  /** A rating question with a configurable scale. */
   Rating = 'Rating',
+  /** A single-line text input question. */
   ShortText = 'ShortText',
+  /** A signature capture question for collecting drawn or uploaded signatures. */
   Signature = 'Signature',
+  /** A single-choice question allowing one selection. */
   SingleSelect = 'SingleSelect',
+  /** A subitems question that creates sub-items on the board. Sub-items columns must be configured through the board. */
   Subitems = 'Subitems',
+  /** An updates/comments question mapped to the item updates feed. */
   Updates = 'Updates'
 }
 
@@ -6031,7 +6052,7 @@ export type MutationRemove_Users_From_TeamArgs = {
 
 /** Root mutation type for the Dependencies service */
 export type MutationSet_Board_PermissionArgs = {
-  basic_role_name: BoardBasicRoleName;
+  basic_role_name?: InputMaybe<BoardBasicRoleName>;
   board_id: Scalars['ID']['input'];
 };
 
@@ -7066,7 +7087,7 @@ export type Query = {
    * This can be replaced with actual queries as the service evolves.
    */
   empty?: Maybe<Scalars['String']['output']>;
-  /** Export events with optional filters and pagination */
+  /** Export events for a board within a date range. Requires a valid X-Tool-Execution-Secret header. */
   export_events?: Maybe<EventsExport>;
   /** Export the dependency graph for a specific board */
   export_graph?: Maybe<BoardGraphExport>;
@@ -9040,7 +9061,7 @@ export type User = {
   account_products?: Maybe<Array<AccountProduct>>;
   /** The user's birthday. */
   birthday?: Maybe<Scalars['Date']['output']>;
-  /** The user's country code. */
+  /** The user’s country code. */
   country_code?: Maybe<Scalars['String']['output']>;
   /** The user's creation date. */
   created_at?: Maybe<Scalars['Date']['output']>;
@@ -9054,27 +9075,51 @@ export type User = {
   department?: Maybe<Department>;
   /** The user's email. */
   email: Scalars['String']['output'];
-  /** Is the user enabled or not. */
+  /**
+   * Is the user enabled or not.
+   * @deprecated This field is deprecated. Please use status instead.
+   */
   enabled: Scalars['Boolean']['output'];
-  /** The token of the user for email to board. */
+  /**
+   * The token of the user for email to board.
+   * @deprecated This field is deprecated and will be removed in later versions.
+   */
   encrypt_api_token?: Maybe<Scalars['String']['output']>;
   /** The user's unique identifier. */
   id: Scalars['ID']['output'];
-  /** Is the user an account admin. */
+  /**
+   * Is the user an account admin.
+   * @deprecated This field is deprecated. Please use kind instead.
+   */
   is_admin?: Maybe<Scalars['Boolean']['output']>;
-  /** Is the user a guest or not. */
+  /**
+   * Is the user a guest or not.
+   * @deprecated This field is deprecated. Please use kind instead.
+   */
   is_guest?: Maybe<Scalars['Boolean']['output']>;
-  /** Is the user a pending user */
+  /**
+   * Is the user a pending user
+   * @deprecated This field is deprecated. Please use status instead.
+   */
   is_pending?: Maybe<Scalars['Boolean']['output']>;
-  /** Is user verified his email. */
+  /**
+   * Is user verified his email.
+   * @deprecated This field is deprecated. Please use is_email_confirmed instead.
+   */
   is_verified?: Maybe<Scalars['Boolean']['output']>;
-  /** Is the user a view only user or not. */
+  /**
+   * Is the user a view only user or not.
+   * @deprecated This field is deprecated. Please use kind instead.
+   */
   is_view_only?: Maybe<Scalars['Boolean']['output']>;
-  /** The date the user joined the account. */
+  /**
+   * The date the user joined the account.
+   * @deprecated This field is deprecated. Please use became_active_at instead.
+   */
   join_date?: Maybe<Scalars['Date']['output']>;
   /** Last date & time when user was active */
   last_activity?: Maybe<Scalars['Date']['output']>;
-  /** The user's location. */
+  /** The user’s location. */
   location?: Maybe<Scalars['String']['output']>;
   /** The user's mobile phone number. */
   mobile_phone?: Maybe<Scalars['String']['output']>;
@@ -9084,21 +9129,39 @@ export type User = {
   out_of_office?: Maybe<OutOfOffice>;
   /** The user's phone number. */
   phone?: Maybe<Scalars['String']['output']>;
-  /** The user's photo in the original size. */
+  /**
+   * The user's photo in the original size.
+   * @deprecated This field is deprecated. Please use photo_url.original instead.
+   */
   photo_original?: Maybe<Scalars['String']['output']>;
-  /** The user's photo in small size (150x150). */
+  /**
+   * The user's photo in small size (150x150).
+   * @deprecated This field is deprecated. Please use photo_url.small instead.
+   */
   photo_small?: Maybe<Scalars['String']['output']>;
-  /** The user's photo in thumbnail size (100x100). */
+  /**
+   * The user's photo in thumbnail size (100x100).
+   * @deprecated This field is deprecated. Please use photo_url.thumb instead.
+   */
   photo_thumb?: Maybe<Scalars['String']['output']>;
-  /** The user's photo in small thumbnail size (50x50). */
+  /**
+   * The user's photo in small thumbnail size (50x50).
+   * @deprecated This field is deprecated. Please use photo_url.thumb_small instead.
+   */
   photo_thumb_small?: Maybe<Scalars['String']['output']>;
-  /** The user's photo in tiny size (30x30). */
+  /**
+   * The user's photo in tiny size (30x30).
+   * @deprecated This field is deprecated. Please use photo_url.tiny instead.
+   */
   photo_tiny?: Maybe<Scalars['String']['output']>;
-  /** The product to which the user signed up to first. */
+  /**
+   * The product to which the user signed up to first.
+   * @deprecated This field is deprecated and will be removed in later versions.
+   */
   sign_up_product_kind?: Maybe<Scalars['String']['output']>;
   /** The teams the user is a member in. */
   teams?: Maybe<Array<Maybe<Team>>>;
-  /** The user's timezone identifier. */
+  /** The user’s timezone identifier. */
   time_zone_identifier?: Maybe<Scalars['String']['output']>;
   /** The user's title. */
   title?: Maybe<Scalars['String']['output']>;
