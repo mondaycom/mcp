@@ -3,17 +3,10 @@ import { z } from 'zod';
 import {
   ChangeItemColumnValuesMutation,
   ChangeItemColumnValuesMutationVariables,
-  GetLinkCandidateItemsQuery,
-  GetLinkCandidateItemsQueryVariables,
-  ItemsQuery,
 } from '../../../../monday-graphql/generated/graphql/graphql';
-import { changeItemColumnValues } from '../../../../monday-graphql/queries.graphql';
+import { changeItemColumnValues } from '../../../../monday-graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { getLinkCandidateItems } from './link-board-items-tool.graphql';
-
-const MAX_ITEM_IDS_PER_QUERY = 100;
-const FETCH_PAGE_SIZE = 200;
 
 const LINK_BOARD_ITEMS_DOCUMENTATION = `
 Apply **board-relation** links you have already matched: pass explicit 'pairs' of 'sourceItemId' + 'targetItemId'. The full description below also explains how to fetch and match items properly before you invoke this tool.
@@ -62,7 +55,7 @@ Ask the user only for **ambiguity** (a true tie: two or more fetched rows each f
 Like a foreign key: the board-relation column lives on **exactly one** side.
 
 - **Source side ('linkSide: "source"')** — Each **source** row stores a reference to **one** target item. This tool issues one write per pair on 'sourceBoardId'.
-- **Target side ('linkSide: "target"')** — Each **target** row stores references to **multiple** source items. This tool **merges** new source IDs with any existing 'linked_item_ids' on that target row, then writes once per distinct 'targetItemId'.
+- **Target side ('linkSide: "target"')** — Each **target** row stores references to **multiple** source items. This tool sets 'linked_item_ids' to exactly the source IDs from your 'pairs' for that target (one write per distinct 'targetItemId'); previous links on that row for this column are **replaced**, not merged.
 
 ## Workflow (follow in order)
 
@@ -102,7 +95,7 @@ Like a foreign key: the board-relation column lives on **exactly one** side.
 
 ### Step 6 — Verify and call 'link_board_items'
 
-- 'pairs' from Step 5; each 'sourceItemId' **at most once**. Pass 'sourceBoardId', 'targetBoardId', 'linkSide', 'linkColumnId', 'pairs'.
+- 'pairs' from Step 5; prefer one row per source. Pass 'sourceBoardId', 'targetBoardId', 'linkSide', 'linkColumnId', 'pairs'.
 
 ### Step 7 — Interpret the result and recover
 
@@ -118,7 +111,7 @@ Like a foreign key: the board-relation column lives on **exactly one** side.
 
 **Example B — Link column on target board**
 
-- Relation on **vendor** board; invoices "1001", "1002" → vendor "2001". Tool merges with existing links on "2001".
+- Relation on **vendor** board; invoices "1001", "1002" → vendor "2001". One write on "2001" sets the column to those source IDs (replaces prior links on that column for that row).
 - 'linkSide: "target"', boards + 'linkColumnId' as appropriate, 'pairs: [{ sourceItemId: "1001", targetItemId: "2001" }, { sourceItemId: "1002", targetItemId: "2001" }]'.
 
 **Example C — Large board (illustrative)**
@@ -142,7 +135,7 @@ export const linkBoardItemsToolSchema = {
   linkSide: z
     .enum(['source', 'target'])
     .describe(
-      'Which board **owns** the board-relation column: `"source"` = column on `sourceBoardId` (each source row points at one target). `"target"` = column on `targetBoardId` (each target row holds many source links; this tool merges new IDs with existing). Exactly one side stores the relation.',
+      'Which board **owns** the board-relation column: `"source"` = column on `sourceBoardId` (each source row points at one target). `"target"` = column on `targetBoardId` (each target row holds many source links; writes **replace** that column’s links for the row with the source IDs from your `pairs` for that target). Exactly one side stores the relation.',
     ),
   linkColumnId: z
     .string()
@@ -166,7 +159,7 @@ export const linkBoardItemsToolSchema = {
     )
     .min(1)
     .describe(
-      'Verified pairs to write from Steps 1–5 for this call. Omit ambiguous sources until resolved (see "Involving the user"). The same source with two different targets is rejected.',
+      'Verified pairs to write from Steps 1–5 for this call. Omit ambiguous sources until resolved (see "Involving the user").',
     ),
 };
 
@@ -194,7 +187,6 @@ export class LinkBoardItemsTool extends BaseMondayApiTool<LinkBoardItemsToolInpu
 
   protected async executeInternal(input: ToolInputType<LinkBoardItemsToolInput>): Promise<ToolOutputType<never>> {
     const pairs = input.pairs;
-    this.assertSingleTargetPerSource(pairs);
 
     const succeeded: ItemIdPair[] = [];
     const failed: Array<ItemIdPair & { error: string }> = [];
@@ -212,20 +204,24 @@ export class LinkBoardItemsTool extends BaseMondayApiTool<LinkBoardItemsToolInpu
       }
     } else {
       const byTarget = new Map<string, string[]>();
+
       for (const p of pairs) {
-        if (!byTarget.has(p.targetItemId)) byTarget.set(p.targetItemId, []);
+        if (!byTarget.has(p.targetItemId)) {
+          byTarget.set(p.targetItemId, []);
+        }
+
         byTarget.get(p.targetItemId)!.push(p.sourceItemId);
       }
+
       const targetIds = [...byTarget.keys()];
-      const existing = await this.fetchExistingLinkedIds(input.targetBoardId, input.linkColumnId, targetIds);
 
       for (const targetId of targetIds) {
         const newSourceIds = byTarget.get(targetId)!;
-        const prior = existing.get(targetId) ?? [];
-        const merged = [...new Set([...prior, ...newSourceIds])];
+        const itemIds = [...new Set(newSourceIds)];
         const pairsForTarget = newSourceIds.map((sourceItemId) => ({ sourceItemId, targetItemId: targetId }));
+        
         try {
-          await this.changeLinkColumn(input.targetBoardId, targetId, input.linkColumnId, { item_ids: merged });
+          await this.changeLinkColumn(input.targetBoardId, targetId, input.linkColumnId, { item_ids: itemIds });
           succeeded.push(...pairsForTarget);
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
@@ -251,19 +247,6 @@ export class LinkBoardItemsTool extends BaseMondayApiTool<LinkBoardItemsToolInpu
     };
   }
 
-  private assertSingleTargetPerSource(pairs: ItemIdPair[]): void {
-    const map = new Map<string, string>();
-    for (const p of pairs) {
-      const prev = map.get(p.sourceItemId);
-      if (prev !== undefined && prev !== p.targetItemId) {
-        throw new Error(
-          `Each sourceItemId may map to only one targetItemId per call. Source ${p.sourceItemId} was given targets ${prev} and ${p.targetItemId}.`,
-        );
-      }
-      map.set(p.sourceItemId, p.targetItemId);
-    }
-  }
-
   private async changeLinkColumn(
     boardId: number,
     itemId: string,
@@ -277,41 +260,5 @@ export class LinkBoardItemsTool extends BaseMondayApiTool<LinkBoardItemsToolInpu
       columnValues,
     };
     await this.mondayApi.request<ChangeItemColumnValuesMutation>(changeItemColumnValues, variables);
-  }
-
-  private async fetchExistingLinkedIds(
-    boardId: number,
-    linkColumnId: string,
-    itemIds: string[],
-  ): Promise<Map<string, string[]>> {
-    const result = new Map<string, string[]>();
-    for (let i = 0; i < itemIds.length; i += MAX_ITEM_IDS_PER_QUERY) {
-      const chunk = itemIds.slice(i, i + MAX_ITEM_IDS_PER_QUERY);
-      const queryParams: ItemsQuery = { ids: chunk };
-      const variables: GetLinkCandidateItemsQueryVariables = {
-        boardId: String(boardId),
-        limit: FETCH_PAGE_SIZE,
-        columnIds: [linkColumnId],
-        queryParams,
-      };
-      const res = await this.mondayApi.request<GetLinkCandidateItemsQuery>(getLinkCandidateItems, variables);
-      const items = res.boards?.[0]?.items_page?.items ?? [];
-      for (const item of items) {
-        if (!item) continue;
-        let linked: string[] | undefined;
-        for (const cv of item.column_values ?? []) {
-          if (!cv || cv.id !== linkColumnId) continue;
-          if ('linked_item_ids' in cv && Array.isArray(cv.linked_item_ids)) {
-            linked = cv.linked_item_ids.map(String);
-            break;
-          }
-        }
-        result.set(item.id, linked ?? []);
-      }
-    }
-    for (const id of itemIds) {
-      if (!result.has(id)) result.set(id, []);
-    }
-    return result;
   }
 }

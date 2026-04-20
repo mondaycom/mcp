@@ -1,34 +1,7 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
-import { callToolByNameAsync, callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
+import { callToolByNameAsync, createMockApiClient } from '../test-utils/mock-api-client';
 
 const TOOL_NAME = 'link_board_items';
-
-const makeLinkCandidateResponse = (
-  items: Array<{ id: string; linkedItemIds?: string[] }>,
-) => ({
-  boards: [
-    {
-      id: '1',
-      name: 'Target Board',
-      items_page: {
-        items: items.map((item) => ({
-          id: item.id,
-          name: 'n',
-          column_values: [
-            {
-              id: 'link_col',
-              type: 'board_relation',
-              text: '',
-              value: null,
-              linked_item_ids: item.linkedItemIds ?? [],
-            },
-          ],
-        })),
-        cursor: null,
-      },
-    },
-  ],
-});
 
 describe('LinkBoardItemsTool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
@@ -39,8 +12,10 @@ describe('LinkBoardItemsTool', () => {
     jest.spyOn(MondayAgentToolkit.prototype as any, 'createApiClient').mockReturnValue(mocks.mockApiClient);
   });
 
-  it('rejects the same source mapped to two different targets', async () => {
-    const result = await callToolByNameRawAsync(TOOL_NAME, {
+  it('runs one mutation per pair when the same source appears twice on the source side', async () => {
+    mocks.setResponses([{}, {}]);
+
+    const result = await callToolByNameAsync(TOOL_NAME, {
       sourceBoardId: 1,
       targetBoardId: 2,
       linkSide: 'source',
@@ -50,8 +25,11 @@ describe('LinkBoardItemsTool', () => {
         { sourceItemId: '1', targetItemId: '20' },
       ],
     });
-    expect(result.isError).toBe(true);
-    expect(result.content[0].text).toContain('Each sourceItemId may map to only one targetItemId');
+
+    expect(result.succeeded).toHaveLength(2);
+    expect(mocks.mockRequest).toHaveBeenCalledTimes(2);
+    const lastVariables = mocks.mockRequest.mock.calls[1][1];
+    expect(JSON.parse(lastVariables.columnValues).link_col.item_ids).toEqual(['20']);
   });
 
   it('writes source-side links with one mutation per pair', async () => {
@@ -73,23 +51,22 @@ describe('LinkBoardItemsTool', () => {
     expect(mocks.mockRequest).toHaveBeenCalledTimes(2);
   });
 
-  it('merges existing links when writing on the target side', async () => {
-    mocks.setResponses([
-      makeLinkCandidateResponse([{ id: '1', linkedItemIds: ['old_s'] }]),
-      {},
-    ]);
+  it('writes target-side links with one mutation per distinct target', async () => {
+    mocks.setResponses([{}]);
 
     const result = await callToolByNameAsync(TOOL_NAME, {
       sourceBoardId: 10,
       targetBoardId: 20,
       linkSide: 'target',
       linkColumnId: 'link_col',
-      pairs: [{ sourceItemId: '2', targetItemId: '1' }],
+      pairs: [
+        { sourceItemId: '1001', targetItemId: '2001' },
+        { sourceItemId: '1002', targetItemId: '2001' },
+      ],
     });
 
-    expect(result.succeeded).toHaveLength(1);
-    expect(mocks.mockRequest).toHaveBeenCalledTimes(2);
-    const writeCall = mocks.mockRequest.mock.calls[1][0];
-    expect(String(writeCall)).toContain('change_multiple_column_values');
+    expect(result.succeeded).toHaveLength(2);
+    expect(mocks.mockRequest).toHaveBeenCalledTimes(1);
+    expect(String(mocks.mockRequest.mock.calls[0][0])).toContain('change_multiple_column_values');
   });
 });
