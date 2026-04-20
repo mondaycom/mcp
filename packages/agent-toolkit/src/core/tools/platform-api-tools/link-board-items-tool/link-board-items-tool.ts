@@ -102,7 +102,7 @@ Like a foreign key: the board-relation column lives on **exactly one** side.
 
 ### Step 6 — Verify and call 'link_board_items'
 
-- 'pairs' from Step 5; each 'sourceItemId' **at most once** (tool dedupes identical pairs). Pass 'sourceBoardId', 'targetBoardId', 'linkSide', 'linkColumnId', 'pairs'.
+- 'pairs' from Step 5; each 'sourceItemId' **at most once**. Pass 'sourceBoardId', 'targetBoardId', 'linkSide', 'linkColumnId', 'pairs'.
 
 ### Step 7 — Interpret the result and recover
 
@@ -118,8 +118,8 @@ Like a foreign key: the board-relation column lives on **exactly one** side.
 
 **Example B — Link column on target board**
 
-- Relation on **vendor** board; invoices 's1', 's2' → vendor 't9'. Tool merges with existing links on 't9'.
-- 'linkSide: "target"', boards + 'linkColumnId' as appropriate, 'pairs: [{ sourceItemId: "s1", targetItemId: "t9" }, { sourceItemId: "s2", targetItemId: "t9" }]'.
+- Relation on **vendor** board; invoices "1001", "1002" → vendor "2001". Tool merges with existing links on "2001".
+- 'linkSide: "target"', boards + 'linkColumnId' as appropriate, 'pairs: [{ sourceItemId: "1001", targetItemId: "2001" }, { sourceItemId: "1002", targetItemId: "2001" }]'.
 
 **Example C — Large board (illustrative)**
 
@@ -153,12 +153,12 @@ export const linkBoardItemsToolSchema = {
     .array(
       z.object({
         sourceItemId: z
-          .union([z.string(), z.number()])
+          .string()
           .describe(
             'monday item ID on **sourceBoardId**. After following the workflow: one row per source at most in this array.',
           ),
         targetItemId: z
-          .union([z.string(), z.number()])
+          .string()
           .describe(
             'monday item ID on **targetBoardId** — the single chosen counterpart for this source in this call.',
           ),
@@ -166,13 +166,13 @@ export const linkBoardItemsToolSchema = {
     )
     .min(1)
     .describe(
-      'Verified pairs to write from Steps 1–5 for this call. Omit ambiguous sources until resolved (see "Involving the user"). Duplicate identical pairs are deduped; the same source with two different targets is rejected.',
+      'Verified pairs to write from Steps 1–5 for this call. Omit ambiguous sources until resolved (see "Involving the user"). The same source with two different targets is rejected.',
     ),
 };
 
 export type LinkBoardItemsToolInput = typeof linkBoardItemsToolSchema;
 
-type NormalizedPair = { sourceItemId: string; targetItemId: string };
+type ItemIdPair = { sourceItemId: string; targetItemId: string };
 
 export class LinkBoardItemsTool extends BaseMondayApiTool<LinkBoardItemsToolInput> {
   name = 'link_board_items';
@@ -193,11 +193,11 @@ export class LinkBoardItemsTool extends BaseMondayApiTool<LinkBoardItemsToolInpu
   }
 
   protected async executeInternal(input: ToolInputType<LinkBoardItemsToolInput>): Promise<ToolOutputType<never>> {
-    const pairs = this.normalizeAndDedupePairs(input.pairs);
+    const pairs = input.pairs;
     this.assertSingleTargetPerSource(pairs);
 
-    const succeeded: NormalizedPair[] = [];
-    const failed: Array<NormalizedPair & { error: string }> = [];
+    const succeeded: ItemIdPair[] = [];
+    const failed: Array<ItemIdPair & { error: string }> = [];
 
     if (input.linkSide === 'source') {
       for (const p of pairs) {
@@ -251,21 +251,7 @@ export class LinkBoardItemsTool extends BaseMondayApiTool<LinkBoardItemsToolInpu
     };
   }
 
-  private normalizeAndDedupePairs(raw: ToolInputType<LinkBoardItemsToolInput>['pairs']): NormalizedPair[] {
-    const seen = new Set<string>();
-    const out: NormalizedPair[] = [];
-    for (const row of raw) {
-      const sourceItemId = String(row.sourceItemId);
-      const targetItemId = String(row.targetItemId);
-      const key = `${sourceItemId}:${targetItemId}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      out.push({ sourceItemId, targetItemId });
-    }
-    return out;
-  }
-
-  private assertSingleTargetPerSource(pairs: NormalizedPair[]): void {
+  private assertSingleTargetPerSource(pairs: ItemIdPair[]): void {
     const map = new Map<string, string>();
     for (const p of pairs) {
       const prev = map.get(p.sourceItemId);

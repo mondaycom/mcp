@@ -46,8 +46,8 @@ describe('LinkBoardItemsTool', () => {
       linkSide: 'source',
       linkColumnId: 'link_col',
       pairs: [
-        { sourceItemId: 's1', targetItemId: 't1' },
-        { sourceItemId: 's1', targetItemId: 't2' },
+        { sourceItemId: '1', targetItemId: '10' },
+        { sourceItemId: '1', targetItemId: '20' },
       ],
     });
     expect(result.isError).toBe(true);
@@ -63,8 +63,8 @@ describe('LinkBoardItemsTool', () => {
       linkSide: 'source',
       linkColumnId: 'link_col',
       pairs: [
-        { sourceItemId: 's1', targetItemId: 't1' },
-        { sourceItemId: 's2', targetItemId: 't2' },
+        { sourceItemId: '1', targetItemId: '10' },
+        { sourceItemId: '2', targetItemId: '20' },
       ],
     });
 
@@ -75,7 +75,7 @@ describe('LinkBoardItemsTool', () => {
 
   it('merges existing links when writing on the target side', async () => {
     mocks.setResponses([
-      makeLinkCandidateResponse([{ id: 'tgt1', linkedItemIds: ['old_s'] }]),
+      makeLinkCandidateResponse([{ id: '1', linkedItemIds: ['old_s'] }]),
       {},
     ]);
 
@@ -84,7 +84,7 @@ describe('LinkBoardItemsTool', () => {
       targetBoardId: 20,
       linkSide: 'target',
       linkColumnId: 'link_col',
-      pairs: [{ sourceItemId: 'new_s', targetItemId: 'tgt1' }],
+      pairs: [{ sourceItemId: '2', targetItemId: '1' }],
     });
 
     expect(result.succeeded).toHaveLength(1);
