@@ -9,8 +9,7 @@ export const completeUploadMutationDev = gql`
       file_size
       url
       created_at
-      is_image
-      url_thumb
+      filelink
     }
   }
 `;

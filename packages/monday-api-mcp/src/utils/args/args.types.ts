@@ -15,6 +15,7 @@ export interface ParsedArgs {
 export interface ValidatedArgs {
   token: string;
   version?: string;
+  apiUrl?: string;
   readOnlyMode: boolean;
   mode: ToolMode;
   enableDynamicApiTools: boolean | 'only';
