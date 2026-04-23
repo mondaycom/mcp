@@ -22,6 +22,11 @@ export const getFilteredToolInstances = (
       return toolInstance.type !== ToolType.ALL_API;
     }
 
+    // When an explicit include list is provided, it is the sole authority
+    if (config.include) {
+      return config.include.includes(toolInstance.name);
+    }
+
     if (config.mode === ToolMode.API) {
       if (config.enableDynamicApiTools === 'only') {
         return toolInstance.type === ToolType.ALL_API;
@@ -35,10 +40,8 @@ export const getFilteredToolInstances = (
     if (config.readOnlyMode) {
       shouldFilter = shouldFilter || toolInstance.type !== ToolType.READ;
     }
-    if (config.include) {
-      shouldFilter = shouldFilter || !config.include?.includes(toolInstance.name);
-    } else if (config.exclude) {
-      shouldFilter = shouldFilter || config.exclude?.includes(toolInstance.name);
+    if (config.exclude) {
+      shouldFilter = shouldFilter || config.exclude.includes(toolInstance.name);
     }
     return !shouldFilter;
   });
