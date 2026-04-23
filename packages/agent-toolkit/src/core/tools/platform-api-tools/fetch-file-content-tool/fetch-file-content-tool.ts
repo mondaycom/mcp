@@ -4,6 +4,7 @@ import * as XLSX from 'xlsx';
 import { getDocumentProxy, extractText } from 'unpdf';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+import { getItemAssets } from './fetch-file-content-tool.graphql';
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 const MAX_TEXT_LENGTH = 50_000;
@@ -13,18 +14,6 @@ const PDF_EXTENSIONS = new Set(['.pdf']);
 const WORD_EXTENSIONS = new Set(['.doc', '.docx']);
 const EXCEL_EXTENSIONS = new Set(['.xlsx', '.xls']);
 const TEXT_EXTENSIONS = new Set(['.txt', '.md', '.csv', '.json']);
-
-const GET_ITEM_ASSETS_QUERY = `
-  query GetItemAssets($itemId: [ID!]!, $columnId: [String!]!) {
-    items(ids: $itemId) {
-      assets(column_ids: $columnId) {
-        public_url
-        name
-        file_extension
-      }
-    }
-  }
-`;
 
 interface Asset {
   public_url: string;
@@ -178,7 +167,7 @@ When NOT to use:
   ): Promise<ToolOutputType<never>> {
     const { item_id, column_id, file_name } = input;
 
-    const response = await this.mondayApi.request<GetItemAssetsResponse>(GET_ITEM_ASSETS_QUERY, {
+    const response = await this.mondayApi.request<GetItemAssetsResponse>(getItemAssets, {
       itemId: [item_id],
       columnId: [column_id],
     });
