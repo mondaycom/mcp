@@ -156,12 +156,12 @@ export const GraphQLDescriptions = {
   },
   question: {
     actions: {
-      type: 'Operation: create, update, or delete. questionId required for update/delete. question required for create/update. Update is patch — only provided fields are changed.',
-      question: 'Question to create/update. title required when creating. type required when creating OR when updating options/settings (backend needs it to validate the type-specific shape).',
+      type: 'Operation: create, update, or delete. questionId required for update/delete. question required for create/update. Update is patch — only provided fields are changed, except type which is always required.',
+      question: 'Question to create/update. type is always required (even in patch updates). title required when creating.',
     },
     properties: {
       title: 'Question text. Required when creating.',
-      type: 'Question type. Required when creating. Also required in updates if options or settings are included.',
+      type: 'Question type. Always required — even in patch updates.',
       visible: '',
       required: '',
       position: 'Integer specifying the display order of the question within the form (zero-based).',
