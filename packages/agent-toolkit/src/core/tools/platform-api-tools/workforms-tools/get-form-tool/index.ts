@@ -15,7 +15,7 @@ export class GetFormTool extends BaseMondayApiTool<typeof getFormToolSchema, nev
   });
 
   getDescription(): string {
-    return 'Get a monday.com form by formToken. Returns the full form structure including questions, settings, and appearance. formToken is the unique identifier for a form, found in the form URL after /forms/.';
+    return "Get a monday.com form by its form token. Form tokens can be extracted from the form's url. Given a form url, such as https://forms.monday.com/forms/abc123def456ghi789?r=use1, the token is the alphanumeric string that appears right after /forms/ and before the ?. In the example, the token is abc123def456ghi789.";
   }
 
   getInputSchema(): typeof getFormToolSchema {
