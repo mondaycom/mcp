@@ -18,7 +18,8 @@ export class GetAccountContextTool extends BaseMondayApiTool<undefined> {
       "Fetch the current user's account information including account identity, plan details, active products, and configuration. " +
       'Use this tool when you need to: ' +
       'identify which account the user belongs to (id, name, slug), ' +
-      "check the account's plan tier, billing period, or user limits, " +
+      "check the account's plan tier, billing period, or user limits (max_users), " +
+      'count how many people/members are in the account (returns active_members_count — PREFERRED over listing users when only the count is needed), ' +
       'discover which products are active (core, CRM, software, service, marketing, forms, whiteboard), ' +
       'determine trial status (is_during_trial, is_trial_expired), ' +
       'or get account-level settings (first_day_of_the_week, show_timeline_weekends, country_code).'
