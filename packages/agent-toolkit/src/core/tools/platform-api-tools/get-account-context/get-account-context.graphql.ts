@@ -14,7 +14,6 @@ export const getAccountContextQuery = gql`
         active_members_count
         is_during_trial
         is_trial_expired
-        logo
         show_timeline_weekends
         sign_up_product_kind
         plan {

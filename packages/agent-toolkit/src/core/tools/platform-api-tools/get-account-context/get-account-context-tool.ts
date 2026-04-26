@@ -2,7 +2,6 @@ import { ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { getAccountContextQuery } from './get-account-context.graphql';
 import { GetAccountContextQuery } from '../../../../monday-graphql/generated/graphql/graphql';
-import { formatAccountContext } from './helpers';
 
 export class GetAccountContextTool extends BaseMondayApiTool<undefined> {
   name = 'get_account_context';
@@ -39,13 +38,8 @@ export class GetAccountContextTool extends BaseMondayApiTool<undefined> {
       };
     }
 
-    const output = formatAccountContext(me.account);
-
     return {
-      content: {
-        message: 'Account context',
-        ...output,
-      },
+      content: me.account,
     };
   }
 }

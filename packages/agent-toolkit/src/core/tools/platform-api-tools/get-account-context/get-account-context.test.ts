@@ -24,7 +24,6 @@ describe('GetAccountContextTool', () => {
         active_members_count: 150,
         is_during_trial: false,
         is_trial_expired: false,
-        logo: 'https://example.com/logo.png',
         show_timeline_weekends: false,
         sign_up_product_kind: 'core',
         plan: {
@@ -48,17 +47,17 @@ describe('GetAccountContextTool', () => {
     const result = await callToolByNameRawAsync('get_account_context', {});
     const parsed = parseToolResult(result);
 
-    expect(parsed.message).toBe('Account context');
-    expect(parsed.account.id).toBe('12345');
-    expect(parsed.account.name).toBe('Acme Corp');
-    expect(parsed.account.slug).toBe('acme-corp');
-    expect(parsed.account.tier).toBe('enterprise');
-    expect(parsed.account.plan.tier).toBe('enterprise');
-    expect(parsed.account.plan.period).toBe('yearly');
-    expect(parsed.account.plan.max_users).toBe(500);
+    expect(parsed.id).toBe('12345');
+    expect(parsed.name).toBe('Acme Corp');
+    expect(parsed.slug).toBe('acme-corp');
+    expect(parsed.tier).toBe('enterprise');
+    expect(parsed.plan.tier).toBe('enterprise');
+    expect(parsed.plan.period).toBe('yearly');
+    expect(parsed.plan.max_users).toBe(500);
     expect(parsed.products).toEqual([
       { id: '1', kind: 'core', tier: 'enterprise', default_workspace_id: '100' },
       { id: '2', kind: 'crm', tier: 'enterprise', default_workspace_id: '200' },
+      null,
     ]);
   });
 
@@ -76,7 +75,6 @@ describe('GetAccountContextTool', () => {
           active_members_count: null,
           is_during_trial: null,
           is_trial_expired: null,
-          logo: null,
           show_timeline_weekends: true,
           sign_up_product_kind: null,
           plan: null,
@@ -90,36 +88,10 @@ describe('GetAccountContextTool', () => {
     const result = await callToolByNameRawAsync('get_account_context', {});
     const parsed = parseToolResult(result);
 
-    expect(parsed.message).toBe('Account context');
-    expect(parsed.account.id).toBe('99999');
-    expect(parsed.account.name).toBe('Minimal Co');
-    expect(parsed.account.plan).toBeNull();
-    expect(parsed.products).toEqual([]);
-  });
-
-  it('should filter null entries from products array', async () => {
-    const responseWithNullProducts: GetAccountContextQuery = {
-      me: {
-        account: {
-          ...fullAccountResponse.me!.account,
-          products: [
-            null,
-            { id: '1', kind: 'core', tier: 'pro', default_workspace_id: null },
-            null,
-            { id: null, kind: 'crm', tier: null, default_workspace_id: null },
-          ],
-        },
-      },
-    };
-
-    mocks.setResponse(responseWithNullProducts);
-
-    const result = await callToolByNameRawAsync('get_account_context', {});
-    const parsed = parseToolResult(result);
-
-    expect(parsed.products).toEqual([
-      { id: '1', kind: 'core', tier: 'pro', default_workspace_id: null },
-    ]);
+    expect(parsed.id).toBe('99999');
+    expect(parsed.name).toBe('Minimal Co');
+    expect(parsed.plan).toBeNull();
+    expect(parsed.products).toBeNull();
   });
 
   it('should return auth error when me is null', async () => {
