@@ -22,18 +22,14 @@ const questionSchema = z.object({
   existing_column_id: z.string().describe(GraphQLDescriptions.question.properties.existingColumnId).optional(),
   show_if_rules: z
     .object({
-      operator: z.nativeEnum(ConditionOperator).describe(GraphQLDescriptions.question.showIfRulesOperator),
+      operator: z.nativeEnum(ConditionOperator),
       rules: z.array(
         z.object({
-          operator: z.nativeEnum(ConditionOperator).describe(GraphQLDescriptions.question.showIfRulesOperator),
+          operator: z.nativeEnum(ConditionOperator),
           conditions: z.array(
             z.object({
-              building_block_id: z
-                .string()
-                .describe(GraphQLDescriptions.question.showIfConditionBuildingBlockId),
-              operator: z
-                .nativeEnum(ConditionOperator)
-                .describe(GraphQLDescriptions.question.showIfRulesOperator),
+              building_block_id: z.string().describe(GraphQLDescriptions.question.showIfConditionBuildingBlockId),
+              operator: z.nativeEnum(ConditionOperator),
               values: z.array(z.string()).describe(GraphQLDescriptions.question.showIfConditionValues),
             }),
           ),
@@ -104,20 +100,18 @@ const questionSchema = z.object({
         .object({
           enabled: z.boolean(),
           lookup: z.string().describe(GraphQLDescriptions.questionSettings.properties.prefillLookup).optional(),
-          source: z
-            .nativeEnum(FormQuestionPrefillSources)
-            .describe(GraphQLDescriptions.questionSettings.properties.prefillSource)
-            .optional(),
+          source: z.nativeEnum(FormQuestionPrefillSources).optional(),
         })
         .describe(GraphQLDescriptions.questionSettings.properties.prefill)
         .optional(),
     })
+    .describe('Type-specific question settings. Check each field description to see which question type it applies to.')
     .optional(),
 });
 
 export const formQuestionsEditorToolSchema = {
   action: z.nativeEnum(FormQuestionActions).describe(GraphQLDescriptions.question.actions.type),
-  formToken: z.string().describe(GraphQLDescriptions.commonArgs.formToken),
+  formToken: z.string(),
   questionId: z.string().describe(GraphQLDescriptions.commonArgs.questionId).optional(),
   question: questionSchema.describe(GraphQLDescriptions.question.actions.question).optional(),
 };

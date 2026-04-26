@@ -1,6 +1,5 @@
 export const GraphQLDescriptions = {
   commonArgs: {
-    formToken: 'Form token.',
     questionId: 'Question ID. Required for update/delete.',
   },
   form: {
@@ -8,7 +7,7 @@ export const GraphQLDescriptions = {
       createForm: 'Create a new form with specified configuration. Returns the created form with its unique token.',
       updateForm: {
         action:
-          'One of: activate, deactivate, shortenFormUrl, setFormPassword, createTag, deleteTag, updateTag, updateAppearance, updateAccessibility, updateFeatures, updateQuestionOrder, updateFormHeader.',
+          'Action to execute on the form. Each action requires different fields — check field descriptions to know what to include.',
       },
       activateForm: 'Activate a form to make it visible to users and accept new submissions.',
       deactivateForm: 'Deactivate a form to hide it from users and stop accepting submissions. Form data is preserved.',
@@ -57,14 +56,7 @@ export const GraphQLDescriptions = {
       },
     },
     args: {
-      formToken: 'Destination workspace ID.',
-      destinationWorkspaceId: 'Destination workspace ID.',
-      destinationFolderId: 'Folder ID for placement.',
-      destinationFolderName: 'Folder name for placement.',
-      boardKind: 'Board visibility (private/public/share).',
-      destinationName: 'Board name for responses.',
-      boardOwnerIds: 'User IDs with owner permissions.',
-      boardOwnerTeamIds: 'Team IDs with owner permissions.',
+      destinationName: 'Board name (stores form responses).',
       boardSubscriberIds: 'User IDs to notify on board activity.',
       boardSubscriberTeamsIds: 'Team IDs to notify on board activity.',
     },
@@ -98,27 +90,31 @@ export const GraphQLDescriptions = {
   },
   question: {
     actions: {
-      type: 'Operation: create, update, or delete. questionId required for update/delete. question required for create/update. Update is patch — only provided fields are changed, except type which is always required.',
-      question: 'Question to create/update. type is always required (even in patch updates). title required when creating.',
+      type: 'Action to perform on the question of a form. create requires question. update requires questionId and question with type always included. delete requires questionId.',
+      question:
+        'The question to create or update. Always include type, then only the fields you want to set or change.',
     },
     properties: {
       title: 'Question text. Required when creating.',
-      type: 'Question type. Always required — even in patch updates.',
+      type: 'Question type. Always required. Cannot be changed after creation — always send the existing type when updating.',
       position: 'Integer specifying the display order of the question within the form (zero-based).',
       description: 'Help text shown under the question.',
       placeholder: 'Optional placeholder text shown in input fields to guide user input.',
       createdAt: 'ISO timestamp when the question was created.',
       updatedAt: 'ISO timestamp when the question was last modified.',
       selectOptions:
-        'Options for select questions. PUT semantics — replaces all. Preserve value for options used in existing submissions.',
-      selectOptionsValue: 'Internal ID. Required for options used in existing submissions.',
+        'Options for select questions. Always include all options — omitting an existing option will delete it. To update safely, call get_form first to retrieve existing option values, then include all options you want to keep with their original value fields.',
+      selectOptionsValue:
+        'Unique identifier for the option. If this option was used in existing submissions, it must keep its original value to preserve data integrity.',
       blockType: 'The kind of block to create. Includes all question types and content block types.',
       insertAfterQuestionId: 'ID to insert after. Omit to append. Null for first position.',
-      pageBlockId: 'Page block ID. Null to remove.',
-      existingColumnId: 'Link to existing board column.',
+      pageBlockId:
+        'Page block ID to group this question within. Set to null to remove from page block. Omit to leave unchanged.',
+      existingColumnId:
+        'Links this question to an existing board column instead of creating a new one. Omit to auto-create a column. Only send when explicitly asked.',
     },
     showIfRules: 'Conditional visibility. OR between rules, AND between conditions within a rule.',
-    showIfRulesOperator: 'AND or OR',
+
     showIfConditionBuildingBlockId: 'Question ID to evaluate.',
     showIfConditionValues: 'Answer values that satisfy the condition.',
     inputs: {
@@ -131,13 +127,13 @@ export const GraphQLDescriptions = {
     properties: {
       validation: 'Validation rules applied to the question response',
       prefill: 'Auto-populates from account data or URL query params.',
-      prefillSource: 'Account or QueryParam.',
+
       prefillLookup: "Field name (e.g. 'email') or URL param name.",
       prefixAutofilled: 'Phone only. Auto-detects country prefix.',
       prefixPredefined: 'Phone only. Sets a default country prefix.',
       prefixPredefinedPrefix: "Country code, e.g. 'US', 'IL'.",
-      checkedByDefault: 'Boolean only.',
-      defaultCurrentDate: 'Date only.',
+      checkedByDefault: 'Boolean question type only.',
+      defaultCurrentDate: 'Date question type only.',
       includeTime: 'Date only. Adds time picker.',
       display: 'SingleSelect/MultiSelect only.',
       optionsOrder: 'SingleSelect/MultiSelect only.',

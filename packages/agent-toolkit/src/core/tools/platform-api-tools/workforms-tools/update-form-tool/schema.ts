@@ -162,7 +162,7 @@ const formSchema = z.object({
 });
 
 export const updateFormToolSchema = {
-  formToken: z.string().describe(GraphQLDescriptions.commonArgs.formToken),
+  formToken: z.string(),
   action: z.nativeEnum(FormActions).describe(GraphQLDescriptions.form.operations.updateForm.action),
   formPassword: z.string().describe(GraphQLDescriptions.formSettings.operations.setFormPassword).optional(),
   tag: tagSchema.describe(GraphQLDescriptions.form.inputs.tag).optional(),
