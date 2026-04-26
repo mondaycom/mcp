@@ -11,7 +11,7 @@ const MAX_TEXT_LENGTH = 50_000;
 
 const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.ico']);
 const PDF_EXTENSIONS = new Set(['.pdf']);
-const WORD_EXTENSIONS = new Set(['.doc', '.docx']);
+const WORD_EXTENSIONS = new Set(['.docx']);
 const EXCEL_EXTENSIONS = new Set(['.xlsx', '.xls']);
 const TEXT_EXTENSIONS = new Set(['.txt', '.md', '.csv', '.json']);
 
@@ -62,8 +62,10 @@ function resolveExtension(asset: Asset, fileNameHint?: string): string {
   return getExtension(asset.name);
 }
 
+const DOWNLOAD_TIMEOUT_MS = 30_000;
+
 async function downloadWithSizeLimit(url: string): Promise<Buffer> {
-  const response = await fetch(url);
+  const response = await fetch(url, { signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS) });
   if (!response.ok) {
     throw new Error(`Failed to download file: HTTP ${response.status}`);
   }
@@ -123,7 +125,6 @@ function extractTextFromExcel(buffer: Buffer): string {
   return parts.join('\n\n');
 }
 
-
 export class FetchFileContentTool extends BaseMondayApiTool<typeof fetchFileContentToolSchema, never> {
   name = 'fetch_file_content';
   type = ToolType.READ;
@@ -143,7 +144,7 @@ PROACTIVE USE: If you retrieve board items and notice a files column with a non-
 
 Supported file types and what is returned:
 - Text files (.txt, .md, .csv, .json): raw text content
-- Word documents (.doc, .docx): extracted text content
+- Word documents (.docx): extracted text content
 - PDF files (.pdf): extracted text content
 - Excel files (.xlsx, .xls): extracted text content per sheet
 - Images (.png, .jpg, .gif, .webp, .svg, .bmp, .ico): returns the public URL so you can view or analyze the image directly
@@ -215,7 +216,6 @@ When NOT to use:
         text = buffer.toString('utf-8');
         contentType = 'text';
       } else {
-        // Unknown — attempt UTF-8 decoding
         text = buffer.toString('utf-8');
         contentType = 'unknown';
       }

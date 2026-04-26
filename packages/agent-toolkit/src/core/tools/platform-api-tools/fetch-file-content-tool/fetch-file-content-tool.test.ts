@@ -364,6 +364,18 @@ describe('FetchFileContentTool', () => {
     expect(String(toolContentObject(result.content).message)).toContain('10 MB');
   });
 
+  it('returns failure message when fetch times out', async () => {
+    mocks.setResponse(assetsGraphqlResponse([baseAsset]));
+    const abortError = Object.assign(new Error('The operation was aborted'), { name: 'AbortError' });
+    fetchMock.mockRejectedValue(abortError);
+
+    const tool = new FetchFileContentTool(mocks.mockApiClient);
+    const result = await tool.execute({ item_id: '1', column_id: 'files' });
+
+    expect(String(toolContentObject(result.content).message)).toContain('Failed to fetch file content');
+    expect(String(toolContentObject(result.content).message)).toContain('aborted');
+  });
+
   it('returns failure message when extraction throws', async () => {
     mocks.setResponse(assetsGraphqlResponse([baseAsset]));
     fetchMock.mockResolvedValue(
