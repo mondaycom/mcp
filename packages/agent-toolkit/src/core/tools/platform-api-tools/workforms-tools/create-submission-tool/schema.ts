@@ -61,18 +61,40 @@ const formAnswerInputSchema = z
     updates: z.string().optional().describe('Answer for updates questions.'),
     boolean: z.boolean().optional().describe('Answer for boolean questions.'),
     number: z.number().optional().describe('Answer for number questions.'),
-    rating: z.number().positive().optional().describe('Answer for rating questions. Must be a positive number within the question\'s configured limit.'),
+    rating: z
+      .number()
+      .positive()
+      .optional()
+      .describe("Answer for rating questions. Must be a positive number within the question's configured limit."),
     single_select: z.string().optional().describe('Answer for single-select questions — the selected option ID.'),
-    multi_select: z.array(z.number()).optional().describe('Answer for multi-select questions — list of selected option IDs.'),
-    people: z.array(z.string()).optional().describe('Answer for people questions — list of user IDs. Obtain user IDs via the list_users_and_teams tool.'),
-    connected_boards: z.array(z.string()).optional().describe('Answer for connected boards questions — list of connected item IDs.'),
+    multi_select: z
+      .array(z.number())
+      .optional()
+      .describe('Answer for multi-select questions — list of selected option IDs.'),
+    people: z
+      .array(z.string())
+      .optional()
+      .describe('Answer for people questions — list of user IDs. Obtain user IDs via the list_users_and_teams tool.'),
+    connected_boards: z
+      .array(z.string())
+      .optional()
+      .describe('Answer for connected boards questions — list of connected item IDs.'),
     phone: phoneAnswerSchema.optional().describe('Answer for phone questions.'),
     country: countryAnswerSchema.optional().describe('Answer for country questions.'),
     date: dateAnswerSchema.optional().describe('Answer for date questions.'),
     date_range: dateRangeAnswerSchema.optional().describe('Answer for date range questions.'),
-    location: locationAnswerSchema.optional().describe('Answer for location questions. Requires a Google Maps place ID and structured address components.'),
-    file: z.array(fileAnswerSchema).optional().describe('Answer for file questions. Each file must be uploaded first to obtain a file ID. Up to the question\'s configured limit.'),
-    signature: fileAnswerSchema.optional().describe('Answer for signature questions. The file must be uploaded first to obtain a file ID.'),
+    location: locationAnswerSchema
+      .optional()
+      .describe('Answer for location questions. Requires a Google Maps place ID and structured address components.'),
+    file: z
+      .array(fileAnswerSchema)
+      .optional()
+      .describe(
+        "Answer for file questions. Each file must be uploaded first to obtain a file ID. Up to the question's configured limit.",
+      ),
+    signature: fileAnswerSchema
+      .optional()
+      .describe('Answer for signature questions. The file must be uploaded first to obtain a file ID.'),
   })
   .describe(
     'An answer for a single form question. Set question_id and exactly one answer field matching the question type. Subitems questions are not supported.',
@@ -96,7 +118,9 @@ export const createSubmissionToolSchema = {
   password: z
     .string()
     .optional()
-    .describe('The password for the WorkForm. Only required if the WorkForm has password protection enabled (check features.password.enabled from get_form). If required, ask the user for the password before submitting.'),
+    .describe(
+      'The password for the WorkForm. Only required if the WorkForm has password protection enabled (check features.password.enabled from get_form). If required, ask the user for the password before submitting.',
+    ),
   tags: z
     .array(
       z.object({
