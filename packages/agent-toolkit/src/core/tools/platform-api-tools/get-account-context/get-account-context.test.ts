@@ -103,4 +103,10 @@ describe('GetAccountContextTool', () => {
       'AUTHENTICATION_ERROR: Unable to fetch account context. Verify API token and user permissions.',
     );
   });
+
+  it('should handle GraphQL error', async () => {
+    mocks.setError('Unauthorized');
+    const result = await callToolByNameRawAsync('get_account_context', {});
+    expect(result.content[0].text).toBe('Failed to execute tool get_account_context: Unauthorized');
+  });
 });
