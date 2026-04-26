@@ -36,7 +36,10 @@ export class ChangeItemColumnValuesTool extends BaseMondayApiTool<ChangeItemColu
   });
 
   getDescription(): string {
-    return 'Change the column values of an item in a monday.com board';
+    return (
+      'Change the column values of an item in a monday.com board. ' +
+      '[REQUIRED PRECONDITION]: For board-relation linking tasks, call link_board_items_workflow before using this tool.'
+    );
   }
 
   getInputSchema(): ChangeItemColumnValuesToolInput {

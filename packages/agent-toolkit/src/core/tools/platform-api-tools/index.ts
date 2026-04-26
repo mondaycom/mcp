@@ -64,7 +64,7 @@ import { GetAssetsTool } from './get-assets-tool/get-assets-tool';
 import { UserContextTool } from './user-context-tool/user-context-tool';
 import { GetNotetakerMeetingsTool } from './get-notetaker-meetings-tool/get-notetaker-meetings-tool';
 import { UndoActionTool } from './undo-action-tool/undo-action-tool';
-import { LinkBoardItemsTool } from './link-board-items-tool/link-board-items-tool';
+import { LinkBoardItemsWorkflowTool } from './link-board-items-workflow-tool/link-board-items-workflow-tool';
 
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteItemTool,
@@ -120,7 +120,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   GetNotetakerMeetingsTool,
   CreateViewTool,
   UndoActionTool,
-  LinkBoardItemsTool,
+  LinkBoardItemsWorkflowTool,
   CreateSchemaTool,
   GetSchemasTool,
   UpdateSchemaTool,
@@ -174,6 +174,7 @@ export * from './undo-action-tool/undo-action-tool';
 export * from './get-board-items-page-tool';
 export * from './get-board-schema-tool';
 export * from './get-column-type-info/get-column-type-info-tool';
+export * from './get-items-discovery-instructions-tool/get-items-discovery-instructions-tool';
 export * from './get-graphql-schema-tool';
 export * from './get-type-details-tool';
 export * from './list-users-and-teams-tool/list-users-and-teams-tool';
@@ -197,10 +198,10 @@ export * from './search-tool/search-tool';
 export * from './user-context-tool/user-context-tool';
 export * from './update-assets-on-item-tool/update-assets-on-item-tool';
 export * from './get-assets-tool/get-assets-tool';
+export * from './link-board-items-workflow-tool/link-board-items-workflow-tool';
 // Notetaker Tools
 export * from './get-notetaker-meetings-tool/get-notetaker-meetings-tool';
 // Dashboard Tools
 export * from './dashboard-tools';
-export * from './link-board-items-tool';
 // Monday Dev Tools
 export * from '../monday-dev-tools';
