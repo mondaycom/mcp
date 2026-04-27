@@ -67,7 +67,10 @@ describe('CreateSubmissionTool', () => {
 
       await callToolByNameRawAsync('create_form_submission', args);
 
-      expect(mockAxiosHead).toHaveBeenCalledWith('https://wkf.ms/4tqP28t', expect.objectContaining({ maxRedirects: 0 }));
+      expect(mockAxiosHead).toHaveBeenCalledWith(
+        'https://wkf.ms/4tqP28t',
+        expect.objectContaining({ maxRedirects: 0 }),
+      );
       const mockCall = mocks.getMockRequest().mock.calls[0];
       expect(mockCall[1]).toMatchObject({ form_token: 'test_form_token' });
     });

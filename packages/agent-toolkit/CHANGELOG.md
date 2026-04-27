@@ -1,5 +1,16 @@
 # Changelog
 
+## 5.3.3
+
+### Workforms tools — trim MCP tool descriptions by ~79% to reduce token cost
+
+- Removed descriptions that restate the field name, type, or enum values
+- Removed container object descriptions (`"Object containing X configuration"`)
+- Rewrote remaining descriptions to be terse and actionable
+- Added non-obvious constraints: type immutability on update, safe option update workflow (call `get_form` first), `page_block_id` null vs omit distinction, `existing_column_id` usage guidance
+- `update_form` action description now explains each action requires different fields — check field descriptions
+- Net result: ~4,591 → ~963 tokens per request across all 4 form tools
+
 ## 5.3.1
 
 ### Workforms tools — return full option data from GraphQL queries
