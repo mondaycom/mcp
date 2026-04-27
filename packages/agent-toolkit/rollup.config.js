@@ -1,3 +1,4 @@
+import { createRequire } from 'module';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import typescript from '@rollup/plugin-typescript';
@@ -5,6 +6,14 @@ import terser from '@rollup/plugin-terser';
 import json from '@rollup/plugin-json';
 import del from 'rollup-plugin-delete';
 import dts from 'rollup-plugin-dts';
+
+const require = createRequire(import.meta.url);
+const pkg = require('./package.json');
+
+const external = [
+  ...Object.keys(pkg.dependencies || {}),
+  ...Object.keys(pkg.peerDependencies || {}),
+];
 
 const subPaths = ['mcp', 'core', 'openai'];
 
@@ -37,7 +46,7 @@ const subpathConfigs = subPaths.map((dir) => ({
     json(),
     terser(),
   ].filter(Boolean),
-  external: ['@mondaydotcomorg/api', 'zod', 'zod-to-json-schema', 'mammoth', 'unpdf', 'xlsx'],
+  external,
 }));
 
 // Subpath types
