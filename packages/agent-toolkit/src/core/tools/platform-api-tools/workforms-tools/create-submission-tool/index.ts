@@ -22,8 +22,8 @@ export class CreateSubmissionTool extends BaseMondayApiTool<typeof createSubmiss
   getDescription(): string {
     return (
       'Submit a response to a monday.com WorkForm. Use get_form first to retrieve the WorkForm, then:\n' +
-      '- Inspect each question\'s showIfRules to determine which questions are conditionally shown based on previous answers.\n' +
-      '- Inspect each question\'s settings for any answer constraints (e.g. rating limits, select options, label limits).\n' +
+      "- Inspect each question's showIfRules to determine which questions are conditionally shown based on previous answers.\n" +
+      "- Inspect each question's settings for any answer constraints (e.g. rating limits, select options, label limits).\n" +
       '- Take note of any titles, descriptions, and content blocks to present the form naturally as you walk the user through it.\n' +
       '- Take note of pages and question order to present questions in the correct sequence.\n' +
       'Gather all answers upfront before calling this tool — do not submit one question at a time. ' +
@@ -60,7 +60,9 @@ export class CreateSubmissionTool extends BaseMondayApiTool<typeof createSubmiss
     return formTokenOrUrl;
   }
 
-  protected async executeInternal(input: ToolInputType<typeof createSubmissionToolSchema>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(
+    input: ToolInputType<typeof createSubmissionToolSchema>,
+  ): Promise<ToolOutputType<never>> {
     const formToken = await this.resolveFormToken(input.form_token);
 
     if (!formToken) {
@@ -80,11 +82,9 @@ export class CreateSubmissionTool extends BaseMondayApiTool<typeof createSubmiss
     };
 
     try {
-      const res = await this.mondayApi.request<CreateFormSubmissionMutation>(
-        createSubmissionMutationDev,
-        variables,
-        { versionOverride: 'dev' },
-      );
+      const res = await this.mondayApi.request<CreateFormSubmissionMutation>(createSubmissionMutationDev, variables, {
+        versionOverride: 'dev',
+      });
 
       if (!res.create_form_submission) {
         return {
