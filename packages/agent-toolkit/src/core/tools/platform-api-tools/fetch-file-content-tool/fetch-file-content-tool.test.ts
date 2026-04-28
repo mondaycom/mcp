@@ -44,6 +44,14 @@ function toolContentObject(content: string | Record<string, any>): Record<string
   return content;
 }
 
+function firstFile(content: string | Record<string, any>): Record<string, any> {
+  const obj = toolContentObject(content);
+  if (!Array.isArray(obj.files) || obj.files.length === 0) {
+    throw new Error('Expected files array in content');
+  }
+  return obj.files[0];
+}
+
 /** Minimal `fetch` response shape for `downloadWithSizeLimit` (Jest Node may not define `Response`) */
 function createMockFetchResponse(init: {
   status?: number;
@@ -166,7 +174,7 @@ describe('FetchFileContentTool', () => {
     const tool = new FetchFileContentTool(mocks.mockApiClient);
     const result = await tool.execute({ item_id: '1', column_id: 'files' });
 
-    expect(result.content).toMatchObject({
+    expect(firstFile(result.content)).toMatchObject({
       content_type: 'image',
       public_url: 'https://cdn.example.com/pic.png',
       file_extension: '.png',
@@ -188,7 +196,7 @@ describe('FetchFileContentTool', () => {
     const tool = new FetchFileContentTool(mocks.mockApiClient);
     const result = await tool.execute({ item_id: '1', column_id: 'files', file_name: 'photo.jpeg' });
 
-    expect(result.content).toMatchObject({
+    expect(firstFile(result.content)).toMatchObject({
       content_type: 'image',
       file_extension: '.jpeg',
     });
@@ -210,7 +218,7 @@ describe('FetchFileContentTool', () => {
     const tool = new FetchFileContentTool(mocks.mockApiClient);
     const result = await tool.execute({ item_id: '1', column_id: 'files' });
 
-    expect(result.content).toMatchObject({
+    expect(firstFile(result.content)).toMatchObject({
       content_type: 'text',
       text: '# hello',
       file_extension: '.md',
@@ -224,7 +232,7 @@ describe('FetchFileContentTool', () => {
     const tool = new FetchFileContentTool(mocks.mockApiClient);
     const result = await tool.execute({ item_id: '1', column_id: 'files' });
 
-    expect(result.content).toMatchObject({
+    expect(firstFile(result.content)).toMatchObject({
       content_type: 'text',
       text: 'plain text',
       file_extension: '.txt',
@@ -242,7 +250,7 @@ describe('FetchFileContentTool', () => {
     const tool = new FetchFileContentTool(mocks.mockApiClient);
     const result = await tool.execute({ item_id: '1', column_id: 'files' });
 
-    expect(result.content).toMatchObject({
+    expect(firstFile(result.content)).toMatchObject({
       content_type: 'pdf',
       text: 'extracted pdf',
     });
@@ -262,7 +270,7 @@ describe('FetchFileContentTool', () => {
     const tool = new FetchFileContentTool(mocks.mockApiClient);
     const result = await tool.execute({ item_id: '1', column_id: 'files' });
 
-    expect(result.content).toMatchObject({
+    expect(firstFile(result.content)).toMatchObject({
       content_type: 'word',
       text: 'word body',
     });
@@ -284,12 +292,12 @@ describe('FetchFileContentTool', () => {
     const tool = new FetchFileContentTool(mocks.mockApiClient);
     const result = await tool.execute({ item_id: '1', column_id: 'files' });
 
-    expect(result.content).toMatchObject({
+    expect(firstFile(result.content)).toMatchObject({
       content_type: 'excel',
       file_extension: '.xlsx',
     });
-    expect(String(toolContentObject(result.content).text)).toContain('=== Sheet: Sheet1 ===');
-    expect(String(toolContentObject(result.content).text)).toContain('col_a');
+    expect(String(firstFile(result.content).text)).toContain('=== Sheet: Sheet1 ===');
+    expect(String(firstFile(result.content).text)).toContain('col_a');
   });
 
   it('treats unknown extensions as utf-8 with content_type unknown', async () => {
@@ -301,7 +309,7 @@ describe('FetchFileContentTool', () => {
     const tool = new FetchFileContentTool(mocks.mockApiClient);
     const result = await tool.execute({ item_id: '1', column_id: 'files' });
 
-    expect(result.content).toMatchObject({
+    expect(firstFile(result.content)).toMatchObject({
       content_type: 'unknown',
       text: 'raw',
     });
@@ -322,7 +330,7 @@ describe('FetchFileContentTool', () => {
     const tool = new FetchFileContentTool(mocks.mockApiClient);
     const result = await tool.execute({ item_id: '1', column_id: 'files' });
 
-    const truncated = toolContentObject(result.content).text;
+    const truncated = firstFile(result.content).text;
     expect(String(truncated).length).toBeLessThanOrEqual(50_000 + 120);
     expect(String(truncated)).toContain('[Content truncated');
     expect(String(truncated)).toContain('60000');
@@ -335,11 +343,11 @@ describe('FetchFileContentTool', () => {
     const tool = new FetchFileContentTool(mocks.mockApiClient);
     const result = await tool.execute({ item_id: '1', column_id: 'files' });
 
-    expect(result.content).toMatchObject({
+    expect(firstFile(result.content)).toMatchObject({
       message: expect.stringContaining('Failed to fetch file content'),
       file_name: 'report.pdf',
     });
-    expect(String(toolContentObject(result.content).message)).toContain('HTTP 404');
+    expect(String(firstFile(result.content).message)).toContain('HTTP 404');
   });
 
   it('rejects download when Content-Length exceeds 10 MB', async () => {
@@ -350,7 +358,7 @@ describe('FetchFileContentTool', () => {
     const tool = new FetchFileContentTool(mocks.mockApiClient);
     const result = await tool.execute({ item_id: '1', column_id: 'files' });
 
-    expect(String(toolContentObject(result.content).message)).toContain('10 MB');
+    expect(String(firstFile(result.content).message)).toContain('10 MB');
   });
 
   it('rejects download when streamed body exceeds 10 MB', async () => {
@@ -361,7 +369,7 @@ describe('FetchFileContentTool', () => {
     const tool = new FetchFileContentTool(mocks.mockApiClient);
     const result = await tool.execute({ item_id: '1', column_id: 'files' });
 
-    expect(String(toolContentObject(result.content).message)).toContain('10 MB');
+    expect(String(firstFile(result.content).message)).toContain('10 MB');
   });
 
   it('returns failure message when fetch times out', async () => {
@@ -372,8 +380,28 @@ describe('FetchFileContentTool', () => {
     const tool = new FetchFileContentTool(mocks.mockApiClient);
     const result = await tool.execute({ item_id: '1', column_id: 'files' });
 
-    expect(String(toolContentObject(result.content).message)).toContain('Failed to fetch file content');
-    expect(String(toolContentObject(result.content).message)).toContain('aborted');
+    expect(String(firstFile(result.content).message)).toContain('Failed to fetch file content');
+    expect(String(firstFile(result.content).message)).toContain('aborted');
+  });
+
+  it('processes all files when multiple assets are attached', async () => {
+    mocks.setResponse(
+      assetsGraphqlResponse([
+        { public_url: 'https://x/a.txt', name: 'a.txt', file_extension: 'txt' },
+        { public_url: 'https://x/b.txt', name: 'b.txt', file_extension: 'txt' },
+      ]),
+    );
+    fetchMock
+      .mockResolvedValueOnce(createMockFetchResponse({ body: 'first', contentLength: '5' }))
+      .mockResolvedValueOnce(createMockFetchResponse({ body: 'second', contentLength: '6' }));
+
+    const tool = new FetchFileContentTool(mocks.mockApiClient);
+    const result = await tool.execute({ item_id: '1', column_id: 'files' });
+
+    const { files } = toolContentObject(result.content);
+    expect(files).toHaveLength(2);
+    expect(files[0]).toMatchObject({ file_name: 'a.txt', text: 'first' });
+    expect(files[1]).toMatchObject({ file_name: 'b.txt', text: 'second' });
   });
 
   it('returns failure message when extraction throws', async () => {
@@ -386,7 +414,7 @@ describe('FetchFileContentTool', () => {
     const tool = new FetchFileContentTool(mocks.mockApiClient);
     const result = await tool.execute({ item_id: '1', column_id: 'files' });
 
-    expect(String(toolContentObject(result.content).message)).toContain('bad pdf');
+    expect(String(firstFile(result.content).message)).toContain('bad pdf');
   });
 
   describe('tool metadata', () => {

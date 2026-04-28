@@ -125,6 +125,57 @@ function extractTextFromExcel(buffer: Buffer): string {
   return parts.join('\n\n');
 }
 
+async function processAsset(asset: Asset, fileNameHint?: string): Promise<Record<string, unknown>> {
+  const ext = resolveExtension(asset, fileNameHint);
+  try {
+    if (IMAGE_EXTENSIONS.has(ext)) {
+      return {
+        file_name: asset.name,
+        file_extension: ext,
+        content_type: 'image',
+        public_url: asset.public_url,
+        message: 'Image file — use the public_url to view or analyze its content.',
+      };
+    }
+
+    const buffer = await downloadWithSizeLimit(asset.public_url);
+
+    let text: string;
+    let contentType: string;
+
+    if (PDF_EXTENSIONS.has(ext)) {
+      text = await extractTextFromPdf(buffer);
+      contentType = 'pdf';
+    } else if (WORD_EXTENSIONS.has(ext)) {
+      text = await extractTextFromWord(buffer);
+      contentType = 'word';
+    } else if (EXCEL_EXTENSIONS.has(ext)) {
+      text = extractTextFromExcel(buffer);
+      contentType = 'excel';
+    } else if (TEXT_EXTENSIONS.has(ext)) {
+      text = buffer.toString('utf-8');
+      contentType = 'text';
+    } else {
+      text = buffer.toString('utf-8');
+      contentType = 'unknown';
+    }
+
+    return {
+      file_name: asset.name,
+      file_extension: ext,
+      content_type: contentType,
+      text: truncateText(text),
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return {
+      message: `Failed to fetch file content: ${message}`,
+      file_name: asset.name,
+      file_extension: ext,
+    };
+  }
+}
+
 export class FetchFileContentTool extends BaseMondayApiTool<typeof fetchFileContentToolSchema, never> {
   name = 'fetch_file_content';
   type = ToolType.READ;
@@ -182,61 +233,8 @@ When NOT to use:
       };
     }
 
-    const asset = assets[0];
-    const ext = resolveExtension(asset, file_name);
+    const files = await Promise.all(assets.map((asset) => processAsset(asset, file_name)));
 
-    try {
-      if (IMAGE_EXTENSIONS.has(ext)) {
-        return {
-          content: {
-            file_name: asset.name,
-            file_extension: ext,
-            content_type: 'image',
-            public_url: asset.public_url,
-            message: 'Image file — use the public_url to view or analyze its content.',
-          },
-        };
-      }
-
-      const buffer = await downloadWithSizeLimit(asset.public_url);
-
-      let text: string;
-      let contentType: string;
-
-      if (PDF_EXTENSIONS.has(ext)) {
-        text = await extractTextFromPdf(buffer);
-        contentType = 'pdf';
-      } else if (WORD_EXTENSIONS.has(ext)) {
-        text = await extractTextFromWord(buffer);
-        contentType = 'word';
-      } else if (EXCEL_EXTENSIONS.has(ext)) {
-        text = extractTextFromExcel(buffer);
-        contentType = 'excel';
-      } else if (TEXT_EXTENSIONS.has(ext)) {
-        text = buffer.toString('utf-8');
-        contentType = 'text';
-      } else {
-        text = buffer.toString('utf-8');
-        contentType = 'unknown';
-      }
-
-      return {
-        content: {
-          file_name: asset.name,
-          file_extension: ext,
-          content_type: contentType,
-          text: truncateText(text),
-        },
-      };
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      return {
-        content: {
-          message: `Failed to fetch file content: ${message}`,
-          file_name: asset.name,
-          file_extension: ext,
-        },
-      };
-    }
+    return { content: { files } };
   }
 }
