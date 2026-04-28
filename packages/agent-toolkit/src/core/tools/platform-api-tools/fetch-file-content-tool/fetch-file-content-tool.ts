@@ -38,12 +38,15 @@ export const fetchFileContentToolSchema = {
     .describe(
       'Optional file name hint used to determine the file type when the asset name is ambiguous. Include the extension (e.g. "report.pdf").',
     ),
+  offset: z
+    .number()
+    .int()
+    .min(0)
+    .optional()
+    .describe(
+      'Character offset to start reading from. Use when a previous response indicated the content was truncated (has_more: true). Defaults to 0.',
+    ),
 };
-
-function truncateText(text: string): string {
-  if (text.length <= MAX_TEXT_LENGTH) return text;
-  return `${text.slice(0, MAX_TEXT_LENGTH)}[Content truncated — original length: ${text.length} characters]`;
-}
 
 function getExtension(filename: string): string {
   const dot = filename.lastIndexOf('.');
@@ -125,7 +128,7 @@ function extractTextFromExcel(buffer: Buffer): string {
   return parts.join('\n\n');
 }
 
-async function processAsset(asset: Asset, fileNameHint?: string): Promise<Record<string, unknown>> {
+async function processAsset(asset: Asset, offset: number, fileNameHint?: string): Promise<Record<string, unknown>> {
   const ext = resolveExtension(asset, fileNameHint);
   try {
     if (IMAGE_EXTENSIONS.has(ext)) {
@@ -160,11 +163,17 @@ async function processAsset(asset: Asset, fileNameHint?: string): Promise<Record
       contentType = 'unknown';
     }
 
+    const chunk = text.slice(offset, offset + MAX_TEXT_LENGTH);
+    const hasMore = text.length > offset + MAX_TEXT_LENGTH;
+
     return {
       file_name: asset.name,
       file_extension: ext,
       content_type: contentType,
-      text: truncateText(text),
+      text: chunk,
+      total_length: text.length,
+      ...(PDF_EXTENSIONS.has(ext) && { public_url: asset.public_url }),
+      ...(hasMore && { has_more: true, next_offset: offset + MAX_TEXT_LENGTH }),
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -200,6 +209,8 @@ Supported file types and what is returned:
 - Excel files (.xlsx, .xls): extracted text content per sheet
 - Images (.png, .jpg, .gif, .webp, .svg, .bmp, .ico): returns the public URL so you can view or analyze the image directly
 
+Text responses include a total_length field. If has_more is true, call again with the returned next_offset to fetch the next chunk.
+
 When to use:
 - User asks to summarize, read, or analyze the content of a file in a files column
 - User asks questions about what is inside a file (e.g., "what does the PDF say?")
@@ -217,7 +228,7 @@ When NOT to use:
   protected async executeInternal(
     input: ToolInputType<typeof fetchFileContentToolSchema>,
   ): Promise<ToolOutputType<never>> {
-    const { item_id, column_id, file_name } = input;
+    const { item_id, column_id, file_name, offset = 0 } = input;
 
     const response = await this.mondayApi.request<GetItemAssetsResponse>(getItemAssets, {
       itemId: [item_id],
@@ -233,7 +244,7 @@ When NOT to use:
       };
     }
 
-    const files = await Promise.all(assets.map((asset) => processAsset(asset, file_name)));
+    const files = await Promise.all(assets.map((asset) => processAsset(asset, offset, file_name)));
 
     return { content: { files } };
   }

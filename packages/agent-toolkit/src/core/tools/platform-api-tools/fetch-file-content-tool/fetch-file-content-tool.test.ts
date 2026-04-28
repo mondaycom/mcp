@@ -315,7 +315,7 @@ describe('FetchFileContentTool', () => {
     });
   });
 
-  it('truncates text longer than 50k characters', async () => {
+  it('returns first chunk and pagination metadata when text exceeds 50k characters', async () => {
     mocks.setResponse(
       assetsGraphqlResponse([{ public_url: 'https://x/huge.txt', name: 'huge.txt', file_extension: 'txt' }]),
     );
@@ -330,10 +330,32 @@ describe('FetchFileContentTool', () => {
     const tool = new FetchFileContentTool(mocks.mockApiClient);
     const result = await tool.execute({ item_id: '1', column_id: 'files' });
 
-    const truncated = firstFile(result.content).text;
-    expect(String(truncated).length).toBeLessThanOrEqual(50_000 + 120);
-    expect(String(truncated)).toContain('[Content truncated');
-    expect(String(truncated)).toContain('60000');
+    const file = firstFile(result.content);
+    expect(String(file.text).length).toBe(50_000);
+    expect(file.has_more).toBe(true);
+    expect(file.next_offset).toBe(50_000);
+    expect(file.total_length).toBe(60_000);
+  });
+
+  it('returns remaining chunk when offset is provided', async () => {
+    mocks.setResponse(
+      assetsGraphqlResponse([{ public_url: 'https://x/huge.txt', name: 'huge.txt', file_extension: 'txt' }]),
+    );
+    const longText = 'x'.repeat(60_000);
+    fetchMock.mockResolvedValue(
+      createMockFetchResponse({
+        body: longText,
+        contentLength: String(Buffer.byteLength(longText, 'utf8')),
+      }),
+    );
+
+    const tool = new FetchFileContentTool(mocks.mockApiClient);
+    const result = await tool.execute({ item_id: '1', column_id: 'files', offset: 50_000 });
+
+    const file = firstFile(result.content);
+    expect(String(file.text).length).toBe(10_000);
+    expect(file.has_more).toBeUndefined();
+    expect(file.total_length).toBe(60_000);
   });
 
   it('returns a failure message when download returns non-OK', async () => {
