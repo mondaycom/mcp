@@ -209,7 +209,7 @@ Supported file types and what is returned:
 - Excel files (.xlsx, .xls): extracted text content per sheet
 - Images (.png, .jpg, .gif, .webp, .svg, .bmp, .ico): returns the public URL so you can view or analyze the image directly
 
-Text responses include a total_length field. If has_more is true, call again with the returned next_offset to fetch the next chunk.
+Text responses include a total_length field. If has_more is true, the content was truncated — you can call this tool again with next_offset if you need the remaining content.
 
 When to use:
 - User asks to summarize, read, or analyze the content of a file in a files column
