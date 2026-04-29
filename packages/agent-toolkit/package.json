@@ -1,6 +1,8 @@
 {
   "name": "@mondaydotcomorg/agent-toolkit",
-  "version": "5.4.0",
+  "version": "5.5.0",
+
+
   "description": "monday.com agent toolkit",
   "exports": {
     "./mcp": {
@@ -51,6 +53,9 @@
     "@mondaydotcomorg/api": "^13.0.0",
     "axios": "^1.10.0",
     "jsonwebtoken": "^9.0.2",
+    "mammoth": "^1.12.0",
+    "unpdf": "^1.6.0",
+    "xlsx": "^0.18.5",
     "zod": "^3.24.2",
     "zod-to-json-schema": "^3.24.5"
   },
