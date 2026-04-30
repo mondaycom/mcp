@@ -2,12 +2,14 @@ import { z } from 'zod';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { completeUploadMutationDev } from './finalize-asset-upload.graphql.dev';
+import { changeColumnValue } from './change-column-value.graphql';
 
 export const finalizeAssetUploadSchema = {
   uploadId: z.string().describe('The upload_id returned by get_asset_upload_url'),
   etag: z.string().describe('The ETag header value from the PUT response when uploading to the presigned URL'),
   boardId: z.string().describe("The board's unique identifier"),
   itemId: z.string().describe("The item's unique identifier"),
+  columnId: z.string().describe("The file or doc column's unique identifier to attach the uploaded asset to"),
 };
 
 interface CompleteUploadMutation {
@@ -20,6 +22,10 @@ interface CompleteUploadMutation {
     created_at: string;
     filelink: string;
   };
+}
+
+interface ChangeColumnValueMutation {
+  change_column_value?: { id: string };
 }
 
 export class FinalizeAssetUploadTool extends BaseMondayApiTool<typeof finalizeAssetUploadSchema, never> {
@@ -37,8 +43,8 @@ export class FinalizeAssetUploadTool extends BaseMondayApiTool<typeof finalizeAs
       'Finalize a file upload and create the asset on monday.com. ' +
       'Call this after uploading the file to the presigned URL from get_asset_upload_url. ' +
       'Requires the etag value from the PUT response headers. ' +
-      'Returns the created asset_id. ' +
-      'To attach the asset to a file column on an item, call update_assets_on_item with the returned asset_id.'
+      'Automatically attaches the uploaded asset to the specified file column on the item. ' +
+      'Returns the created asset_id.'
     );
   }
 
@@ -63,6 +69,21 @@ export class FinalizeAssetUploadTool extends BaseMondayApiTool<typeof finalizeAs
     );
 
     const asset = completeRes.complete_upload;
+
+    const value = JSON.stringify({
+      added_file: {
+        fileType: 'ASSET',
+        name: asset.filename,
+        assetId: String(asset.id),
+      },
+    });
+
+    await this.mondayApi.request<ChangeColumnValueMutation>(changeColumnValue, {
+      boardId: input.boardId,
+      itemId: input.itemId,
+      columnId: input.columnId,
+      value,
+    });
 
     return {
       content: {
