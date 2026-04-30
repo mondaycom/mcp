@@ -1,19 +1,14 @@
 import { AllMondayApiTool } from './all-monday-api-tool';
 import { BaseMondayApiToolConstructor } from './base-monday-api-tool';
 import { ChangeItemColumnValuesTool } from './change-item-column-values-tool';
-import { CreateSchemaTool } from './create-schema-tool/create-schema-tool';
-import { GetSchemasTool } from './get-schemas-tool/get-schemas-tool';
-import { UpdateSchemaTool } from './update-schema-tool/update-schema-tool';
-import { DeleteSchemaTool } from './delete-schema-tool/delete-schema-tool';
-import { ConnectBoardToSchemaTool } from './connect-board-to-schema-tool/connect-board-to-schema-tool';
-import { DetachBoardsFromSchemaTool } from './detach-boards-from-schema-tool/detach-boards-from-schema-tool';
-import { CreateSchemaColumnsTool } from './create-schema-columns-tool/create-schema-columns-tool';
-import { UpdateSchemaColumnsTool } from './update-schema-columns-tool/update-schema-columns-tool';
-import { DeactivateSchemaColumnTool } from './deactivate-schema-column-tool/deactivate-schema-column-tool';
-import { ReactivateSchemaColumnTool } from './reactivate-schema-column-tool/reactivate-schema-column-tool';
-import { OptOutSchemaColumnTool } from './opt-out-schema-column-tool/opt-out-schema-column-tool';
-import { OptInSchemaColumnTool } from './opt-in-schema-column-tool/opt-in-schema-column-tool';
-import { DeleteSchemaColumnsTool } from './delete-schema-columns-tool/delete-schema-columns-tool';
+import { GetObjectSchemasTool } from './get-object-schemas-tool/get-object-schemas-tool';
+import { CreateObjectSchemaTool } from './create-object-schema-tool/create-object-schema-tool';
+import { UpdateObjectSchemaTool } from './update-object-schema-tool/update-object-schema-tool';
+import { DeleteObjectSchemaTool } from './delete-object-schema-tool/delete-object-schema-tool';
+import { DeleteObjectSchemaColumnsTool } from './delete-object-schema-columns-tool/delete-object-schema-columns-tool';
+import { ManageObjectSchemaBoardConnectionTool } from './manage-object-schema-board-connection-tool/manage-object-schema-board-connection-tool';
+import { ManageObjectSchemaColumnsTool } from './manage-object-schema-columns-tool/manage-object-schema-columns-tool';
+import { SetObjectSchemaColumnActiveStateTool } from './set-object-schema-column-active-state-tool/set-object-schema-column-active-state-tool';
 import { CreateBoardTool } from './create-board-tool';
 import { CreateViewTool } from './create-view-tool/create-view-tool';
 import { CreateFormTool } from './workforms-tools/create-form-tool';
@@ -119,35 +114,25 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   GetNotetakerMeetingsTool,
   CreateViewTool,
   UndoActionTool,
-  CreateSchemaTool,
-  GetSchemasTool,
-  UpdateSchemaTool,
-  DeleteSchemaTool,
-  ConnectBoardToSchemaTool,
-  DetachBoardsFromSchemaTool,
-  CreateSchemaColumnsTool,
-  UpdateSchemaColumnsTool,
-  DeactivateSchemaColumnTool,
-  ReactivateSchemaColumnTool,
-  OptOutSchemaColumnTool,
-  OptInSchemaColumnTool,
-  DeleteSchemaColumnsTool,
+  GetObjectSchemasTool,
+  CreateObjectSchemaTool,
+  UpdateObjectSchemaTool,
+  DeleteObjectSchemaTool,
+  DeleteObjectSchemaColumnsTool,
+  ManageObjectSchemaBoardConnectionTool,
+  ManageObjectSchemaColumnsTool,
+  SetObjectSchemaColumnActiveStateTool,
 ];
 
 export * from './all-monday-api-tool';
-export * from './create-schema-tool/create-schema-tool';
-export * from './get-schemas-tool/get-schemas-tool';
-export * from './update-schema-tool/update-schema-tool';
-export * from './delete-schema-tool/delete-schema-tool';
-export * from './connect-board-to-schema-tool/connect-board-to-schema-tool';
-export * from './detach-boards-from-schema-tool/detach-boards-from-schema-tool';
-export * from './create-schema-columns-tool/create-schema-columns-tool';
-export * from './update-schema-columns-tool/update-schema-columns-tool';
-export * from './deactivate-schema-column-tool/deactivate-schema-column-tool';
-export * from './reactivate-schema-column-tool/reactivate-schema-column-tool';
-export * from './opt-out-schema-column-tool/opt-out-schema-column-tool';
-export * from './opt-in-schema-column-tool/opt-in-schema-column-tool';
-export * from './delete-schema-columns-tool/delete-schema-columns-tool';
+export * from './get-object-schemas-tool/get-object-schemas-tool';
+export * from './create-object-schema-tool/create-object-schema-tool';
+export * from './update-object-schema-tool/update-object-schema-tool';
+export * from './delete-object-schema-tool/delete-object-schema-tool';
+export * from './delete-object-schema-columns-tool/delete-object-schema-columns-tool';
+export * from './manage-object-schema-board-connection-tool/manage-object-schema-board-connection-tool';
+export * from './manage-object-schema-columns-tool/manage-object-schema-columns-tool';
+export * from './set-object-schema-column-active-state-tool/set-object-schema-column-active-state-tool';
 export * from './change-item-column-values-tool';
 export * from './create-board-tool';
 export * from './workforms-tools/create-form-tool';
