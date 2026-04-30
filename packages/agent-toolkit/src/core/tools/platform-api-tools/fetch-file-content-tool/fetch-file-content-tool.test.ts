@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import mammoth from 'mammoth';
 import { getDocumentProxy, extractText } from 'unpdf';
 import { createMockApiClient } from '../test-utils/mock-api-client';
@@ -26,14 +26,12 @@ function assetsGraphqlResponse(assets: Array<{ public_url: string; name: string;
   };
 }
 
-function makeXlsxBuffer(): Buffer {
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.aoa_to_sheet([
-    ['col_a', 'col_b'],
-    [1, 2],
-  ]);
-  XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
-  return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+async function makeXlsxBuffer(): Promise<Buffer> {
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet('Sheet1');
+  sheet.addRow(['col_a', 'col_b']);
+  sheet.addRow([1, 2]);
+  return Buffer.from(await workbook.xlsx.writeBuffer());
 }
 
 /** ToolOutputType content is `string | Record<string, any>` — narrow for field access in tests */
@@ -278,7 +276,7 @@ describe('FetchFileContentTool', () => {
   });
 
   it('extracts text from Excel per sheet', async () => {
-    const xlsxBuf = makeXlsxBuffer();
+    const xlsxBuf = await makeXlsxBuffer();
     mocks.setResponse(
       assetsGraphqlResponse([{ public_url: 'https://x/t.xlsx', name: 't.xlsx', file_extension: 'xlsx' }]),
     );

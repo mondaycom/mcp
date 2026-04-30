@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import mammoth from 'mammoth';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { getDocumentProxy, extractText } from 'unpdf';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
@@ -12,7 +12,8 @@ const MAX_TEXT_LENGTH = 50_000;
 const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.ico']);
 const PDF_EXTENSIONS = new Set(['.pdf']);
 const WORD_EXTENSIONS = new Set(['.docx']);
-const EXCEL_EXTENSIONS = new Set(['.xlsx', '.xls']);
+const EXCEL_EXTENSIONS = new Set(['.xlsx']);
+const LEGACY_EXCEL_EXTENSIONS = new Set(['.xls']);
 const TEXT_EXTENSIONS = new Set(['.txt', '.md', '.csv', '.json']);
 
 interface Asset {
@@ -117,14 +118,30 @@ async function extractTextFromWord(buffer: Buffer): Promise<string> {
   return result.value;
 }
 
-function extractTextFromExcel(buffer: Buffer): string {
-  const workbook = XLSX.read(buffer, { type: 'buffer' });
-  const parts: string[] = [];
-  for (const sheetName of workbook.SheetNames) {
-    const sheet = workbook.Sheets[sheetName];
-    const csv = XLSX.utils.sheet_to_csv(sheet);
-    parts.push(`=== Sheet: ${sheetName} ===\n${csv}`);
+function cellToString(value: ExcelJS.CellValue): string {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'string') return String(value);
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === 'object') {
+    if ('result' in value) return cellToString((value as ExcelJS.CellFormulaValue).result as ExcelJS.CellValue);
+    if ('richText' in value) return (value as ExcelJS.CellRichTextValue).richText.map((r) => r.text).join('');
+    if ('hyperlink' in value) return (value as ExcelJS.CellHyperlinkValue).text ?? '';
   }
+  return '';
+}
+
+async function extractTextFromExcel(buffer: Buffer): Promise<string> {
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(buffer);
+  const parts: string[] = [];
+  workbook.eachSheet((sheet) => {
+    const rows: string[] = [];
+    sheet.eachRow((row) => {
+      const values = (row.values as ExcelJS.CellValue[]).slice(1);
+      rows.push(values.map(cellToString).join(','));
+    });
+    parts.push(`=== Sheet: ${sheet.name} ===\n${rows.join('\n')}`);
+  });
   return parts.join('\n\n');
 }
 
@@ -141,6 +158,14 @@ async function processAsset(asset: Asset, offset: number, fileNameHint?: string)
       };
     }
 
+    if (LEGACY_EXCEL_EXTENSIONS.has(ext)) {
+      return {
+        file_name: asset.name,
+        file_extension: ext,
+        message: 'Legacy .xls format is not supported. Please convert the file to .xlsx and re-upload.',
+      };
+    }
+
     const buffer = await downloadWithSizeLimit(asset.public_url);
 
     let text: string;
@@ -153,7 +178,7 @@ async function processAsset(asset: Asset, offset: number, fileNameHint?: string)
       text = await extractTextFromWord(buffer);
       contentType = 'word';
     } else if (EXCEL_EXTENSIONS.has(ext)) {
-      text = extractTextFromExcel(buffer);
+      text = await extractTextFromExcel(buffer);
       contentType = 'excel';
     } else if (TEXT_EXTENSIONS.has(ext)) {
       text = buffer.toString('utf-8');
