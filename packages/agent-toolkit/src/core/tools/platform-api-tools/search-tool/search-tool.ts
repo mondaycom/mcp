@@ -57,7 +57,8 @@ export class SearchTool extends BaseMondayApiTool<SearchToolInput> {
 
   getDescription(): string {
     return `Search within monday.com platform. Can search for boards, documents, forms, folders.
-For users and teams, use list_users_and_teams tool.
+For searching/listing specific users and teams, use list_users_and_teams tool.
+For account-level info (plan, member count, products), use get_user_context tool.
 For workspaces, use list_workspaces tool.
 For items and groups, use get_board_items_page tool.
 For groups, use get_board_info tool.

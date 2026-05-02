@@ -62,7 +62,6 @@ import { CreateUpdateInMondayTool } from './create-update-tool-ui/create-update-
 import { UpdateAssetsOnItemTool } from './update-assets-on-item-tool/update-assets-on-item-tool';
 import { GetAssetsTool } from './get-assets-tool/get-assets-tool';
 import { UserContextTool } from './user-context-tool/user-context-tool';
-import { GetAccountContextTool } from './get-account-context/get-account-context-tool';
 import { GetNotetakerMeetingsTool } from './get-notetaker-meetings-tool/get-notetaker-meetings-tool';
 import { UndoActionTool } from './undo-action-tool/undo-action-tool';
 
@@ -115,7 +114,6 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   BoardInsightsTool,
   SearchTool,
   UserContextTool,
-  GetAccountContextTool,
   UpdateAssetsOnItemTool,
   GetAssetsTool,
   GetNotetakerMeetingsTool,
@@ -195,7 +193,6 @@ export * from './move-object-tool/move-object-tool';
 export * from './board-insights/board-insights-tool';
 export * from './search-tool/search-tool';
 export * from './user-context-tool/user-context-tool';
-export * from './get-account-context/get-account-context-tool';
 export * from './update-assets-on-item-tool/update-assets-on-item-tool';
 export * from './get-assets-tool/get-assets-tool';
 // Notetaker Tools
