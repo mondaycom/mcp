@@ -13,7 +13,21 @@ describe('UserContextTool', () => {
   });
 
   const mockUserContextResponse: GetUserContextQuery = {
-    me: { id: '123', name: 'John Doe', title: 'Product Manager' },
+    me: {
+      id: '123',
+      name: 'John Doe',
+      title: 'Product Manager',
+      account: {
+        tier: 'enterprise',
+        active_members_count: 150,
+        is_during_trial: false,
+        products: [
+          { kind: 'core', tier: 'enterprise' },
+          { kind: 'crm', tier: 'enterprise' },
+          null,
+        ],
+      },
+    },
     favorites: [
       { object: { id: '1', type: GraphqlMondayObject.Board } },
       { object: { id: '2', type: GraphqlMondayObject.Board } },
@@ -56,6 +70,15 @@ describe('UserContextTool', () => {
         name: 'John Doe',
         title: 'Product Manager',
       },
+      account: {
+        tier: 'enterprise',
+        active_members_count: 150,
+        is_during_trial: false,
+        products: [
+          { kind: 'core', tier: 'enterprise' },
+          { kind: 'crm', tier: 'enterprise' },
+        ],
+      },
       favorites: [
         { id: '1', name: 'Marketing Board', type: 'Board' },
         { id: '2', name: 'Sprint Planning', type: 'Board' },
@@ -97,7 +120,7 @@ describe('UserContextTool', () => {
 
   it('should handle empty favorites and no relevant boards', async () => {
     mocks.setResponseOnce({
-      me: { id: '123', name: 'John Doe', title: null },
+      me: { id: '123', name: 'John Doe', title: null, account: { tier: 'free', active_members_count: 1, is_during_trial: true, products: [] } },
       favorites: [],
       intelligence: null,
     });
@@ -111,6 +134,12 @@ describe('UserContextTool', () => {
         name: 'John Doe',
         title: null,
       },
+      account: {
+        tier: 'free',
+        active_members_count: 1,
+        is_during_trial: true,
+        products: [],
+      },
       favorites: [],
       relevantBoards: [],
       relevantPeople: [],
@@ -123,7 +152,7 @@ describe('UserContextTool', () => {
 
   it('should filter out null items from details response', async () => {
     mocks.setResponseOnce({
-      me: { id: '123', name: 'John Doe', title: 'Dev' },
+      me: { id: '123', name: 'John Doe', title: 'Dev', account: { tier: 'pro', active_members_count: 50, is_during_trial: false, products: [{ kind: 'core', tier: 'pro' }] } },
       favorites: [{ object: { id: '1', type: GraphqlMondayObject.Board } }],
       intelligence: {
         relevant_boards: [
@@ -152,6 +181,12 @@ describe('UserContextTool', () => {
         name: 'John Doe',
         title: 'Dev',
       },
+      account: {
+        tier: 'pro',
+        active_members_count: 50,
+        is_during_trial: false,
+        products: [{ kind: 'core', tier: 'pro' }],
+      },
       favorites: [{ id: '1', name: 'Valid Board', type: 'Board' }],
       relevantBoards: [{ id: '200', name: 'Active Board' }],
       relevantPeople: [{ id: '400', name: 'Valid Person' }],
@@ -162,7 +197,7 @@ describe('UserContextTool', () => {
   });
 
   it('should return auth error when user not found', async () => {
-    mocks.setResponseOnce({ me: null, favorites: [] });
+    mocks.setResponseOnce({ me: null, favorites: [], intelligence: null });
     const result = await callToolByNameRawAsync('get_user_context', {});
     expect(result.content[0].text).toBe(
       'AUTHENTICATION_ERROR: Unable to fetch current user. Verify API token and user permissions.',

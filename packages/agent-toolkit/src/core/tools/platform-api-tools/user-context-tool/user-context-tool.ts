@@ -18,10 +18,12 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
   });
 
   getDescription(): string {
-    return `Fetch current user information and their relevant items (boards, folders, workspaces, dashboards).
-    
-    Use this tool at the beginning of conversations to:
+    return `Fetch current user information, account context, and their relevant items (boards, folders, workspaces, dashboards).
+
+    Use this tool to:
     - Get context about who the current user is (id, name, title)
+    - Get account info: plan tier, active member count, trial status, and active products
+    - Count how many people/members are in the account (returns active_members_count — PREFERRED over listing users when only the count is needed)
     - Discover user's favorite boards, folders, workspaces, and dashboards
     - Get user's most relevant boards based on visit frequency and recency
     - Get user's most relevant people based on interaction frequency and recency
@@ -50,7 +52,15 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
     const relevantBoards = this.extractRelevantBoards(intelligence);
     const relevantPeople = this.extractRelevantPeople(intelligence);
 
-    const output = { user: me, favorites: enrichedFavorites, relevantBoards, relevantPeople };
+    const { account, ...user } = me;
+    const accountContext = account ? {
+      tier: account.tier,
+      active_members_count: account.active_members_count,
+      is_during_trial: account.is_during_trial,
+      products: account.products?.filter(Boolean).map(p => ({ kind: p!.kind, tier: p!.tier })) ?? [],
+    } : null;
+
+    const output = { user, account: accountContext, favorites: enrichedFavorites, relevantBoards, relevantPeople };
     return { content: { message: "User context", ...output } };
   }
 
