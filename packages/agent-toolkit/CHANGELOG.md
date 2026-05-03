@@ -1,5 +1,14 @@
 # Changelog
 
+## 5.7.0
+
+### Add account context to get_user_context tool
+
+- Extended `get_user_context` to include account-level data: plan tier, active member count, trial status, and active products
+- Added account fields to the getUserContext GraphQL query (dev API version)
+- Updated search tool routing hints to direct account-level queries to `get_user_context`
+- Removed standalone `get_account_context` tool (functionality merged into `get_user_context`)
+
 ## 5.3.3
 
 ### Workforms tools — trim MCP tool descriptions by ~79% to reduce token cost
