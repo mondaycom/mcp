@@ -44,7 +44,13 @@ export class GetBoardSchemaTool extends BaseMondayApiTool<typeof getBoardSchemaT
       content: {
         message: 'Board schema retrieved',
         board_id: boardId,
-        columns: res.boards?.[0]?.columns?.map((column) => ({ id: column?.id, title: column?.title, type: column?.type })) ?? [],
+        columns:
+          res.boards?.[0]?.columns?.map((column) => ({
+            id: column?.id,
+            title: column?.title,
+            type: column?.type,
+            revision: column?.revision,
+          })) ?? [],
         groups: res.boards?.[0]?.groups?.map((group) => ({ id: group?.id, title: group?.title })) ?? [],
       },
     };

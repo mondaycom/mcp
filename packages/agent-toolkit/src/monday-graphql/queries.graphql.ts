@@ -28,6 +28,7 @@ export const getBoardSchema = gql`
         id
         type
         title
+        revision
       }
     }
   }
@@ -92,6 +93,32 @@ export const deleteColumn = gql`
   mutation deleteColumn($boardId: ID!, $columnId: String!) {
     delete_column(board_id: $boardId, column_id: $columnId) {
       id
+    }
+  }
+`;
+
+export const updateColumn = gql`
+  mutation updateColumn(
+    $boardId: ID!
+    $columnId: String!
+    $columnType: ColumnType!
+    $revision: String!
+    $columnTitle: String
+    $columnDescription: String
+    $columnSettings: JSON
+  ) {
+    update_column(
+      board_id: $boardId
+      id: $columnId
+      column_type: $columnType
+      revision: $revision
+      title: $columnTitle
+      description: $columnDescription
+      settings: $columnSettings
+    ) {
+      id
+      title
+      revision
     }
   }
 `;
