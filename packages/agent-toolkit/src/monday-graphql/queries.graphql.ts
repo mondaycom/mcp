@@ -34,8 +34,18 @@ export const getBoardSchema = gql`
 `;
 
 export const changeItemColumnValues = gql`
-  mutation changeItemColumnValues($boardId: ID!, $itemId: ID!, $columnValues: JSON!) {
-    change_multiple_column_values(board_id: $boardId, item_id: $itemId, column_values: $columnValues) {
+  mutation changeItemColumnValues(
+    $boardId: ID!
+    $itemId: ID!
+    $columnValues: JSON!
+    $createLabelsIfMissing: Boolean
+  ) {
+    change_multiple_column_values(
+      board_id: $boardId
+      item_id: $itemId
+      column_values: $columnValues
+      create_labels_if_missing: $createLabelsIfMissing
+    ) {
       id
       name
       url
