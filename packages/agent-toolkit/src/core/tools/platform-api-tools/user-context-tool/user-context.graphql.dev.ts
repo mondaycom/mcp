@@ -6,6 +6,15 @@ export const getUserContextQuery = gql`
       id
       name
       title
+      account {
+        tier
+        active_members_count
+        is_during_trial
+        products {
+          kind
+          tier
+        }
+      }
     }
     favorites {
       object {
