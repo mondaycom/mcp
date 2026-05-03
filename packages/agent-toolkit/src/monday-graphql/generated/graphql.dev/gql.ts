@@ -14,6 +14,12 @@ import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/
  * Learn more about it here: https://the-guild.dev/graphql/codegen/plugins/presets/preset-client#reducing-bundle-size
  */
 type Documents = {
+    "\n  fragment AgentFields on Agent {\n    id\n    kind\n    state\n    profile {\n      name\n      role\n      role_description\n      avatar_url\n      background_color\n    }\n    goal\n    plan\n    user_prompt\n    version_id\n    created_at\n    updated_at\n  }\n": typeof types.AgentFieldsFragmentDoc,
+    "\n  \n\n  query getAgent($id: ID!) {\n    agent(id: $id) {\n      ...AgentFields\n    }\n  }\n": typeof types.GetAgentDocument,
+    "\n  \n\n  query listAgents {\n    agents {\n      ...AgentFields\n    }\n  }\n": typeof types.ListAgentsDocument,
+    "\n  \n\n  mutation createAgent($input: CreateAgentInput!) {\n    create_agent(input: $input) {\n      ...AgentFields\n    }\n  }\n": typeof types.CreateAgentDocument,
+    "\n  \n\n  mutation createBlankAgent($input: CreateBlankAgentInput) {\n    create_blank_agent(input: $input) {\n      ...AgentFields\n    }\n  }\n": typeof types.CreateBlankAgentDocument,
+    "\n  \n\n  mutation deleteAgent($id: ID!) {\n    delete_agent(id: $id) {\n      ...AgentFields\n    }\n  }\n": typeof types.DeleteAgentDocument,
     "\n  mutation DeleteObjectSchemaColumns($objectSchemaId: ID, $objectSchemaName: String, $columnIds: [ID!]!) {\n    delete_object_schema_columns(object_schema_id: $objectSchemaId, object_schema_name: $objectSchemaName, column_ids: $columnIds) {\n      id\n      name\n      description\n      parent_id\n      revision\n    }\n  }\n": typeof types.DeleteObjectSchemaColumnsDocument,
     "\n  query SearchItemsDev($query: String!, $limit: Int, $boardIds: [ID!]) {\n    search {\n      items(query: $query, limit: $limit, board_ids: $boardIds) {\n        results {\n          id\n        }\n      }\n    }\n  }\n": typeof types.SearchItemsDevDocument,
     "\n  query SearchBoardsDev($query: String!, $limit: Int, $workspaceIds: [ID!]) {\n    search {\n      boards(query: $query, limit: $limit, workspace_ids: $workspaceIds) {\n        results {\n          id\n          indexed_data {\n            id\n            name\n            url\n          }\n        }\n      }\n    }\n  }\n": typeof types.SearchBoardsDevDocument,
@@ -23,6 +29,12 @@ type Documents = {
     "\n  mutation CreateFormSubmission(\n    $form_token: String!\n    $answers: [FormAnswerInput!]!\n    $form_timezone_offset: Int!\n    $password: String\n    $tags: [TagInput!]\n  ) {\n    create_form_submission(\n      form_token: $form_token\n      answers: $answers\n      form_timezone_offset: $form_timezone_offset\n      password: $password\n      tags: $tags\n    ) {\n      id\n    }\n  }\n": typeof types.CreateFormSubmissionDocument,
 };
 const documents: Documents = {
+    "\n  fragment AgentFields on Agent {\n    id\n    kind\n    state\n    profile {\n      name\n      role\n      role_description\n      avatar_url\n      background_color\n    }\n    goal\n    plan\n    user_prompt\n    version_id\n    created_at\n    updated_at\n  }\n": types.AgentFieldsFragmentDoc,
+    "\n  \n\n  query getAgent($id: ID!) {\n    agent(id: $id) {\n      ...AgentFields\n    }\n  }\n": types.GetAgentDocument,
+    "\n  \n\n  query listAgents {\n    agents {\n      ...AgentFields\n    }\n  }\n": types.ListAgentsDocument,
+    "\n  \n\n  mutation createAgent($input: CreateAgentInput!) {\n    create_agent(input: $input) {\n      ...AgentFields\n    }\n  }\n": types.CreateAgentDocument,
+    "\n  \n\n  mutation createBlankAgent($input: CreateBlankAgentInput) {\n    create_blank_agent(input: $input) {\n      ...AgentFields\n    }\n  }\n": types.CreateBlankAgentDocument,
+    "\n  \n\n  mutation deleteAgent($id: ID!) {\n    delete_agent(id: $id) {\n      ...AgentFields\n    }\n  }\n": types.DeleteAgentDocument,
     "\n  mutation DeleteObjectSchemaColumns($objectSchemaId: ID, $objectSchemaName: String, $columnIds: [ID!]!) {\n    delete_object_schema_columns(object_schema_id: $objectSchemaId, object_schema_name: $objectSchemaName, column_ids: $columnIds) {\n      id\n      name\n      description\n      parent_id\n      revision\n    }\n  }\n": types.DeleteObjectSchemaColumnsDocument,
     "\n  query SearchItemsDev($query: String!, $limit: Int, $boardIds: [ID!]) {\n    search {\n      items(query: $query, limit: $limit, board_ids: $boardIds) {\n        results {\n          id\n        }\n      }\n    }\n  }\n": types.SearchItemsDevDocument,
     "\n  query SearchBoardsDev($query: String!, $limit: Int, $workspaceIds: [ID!]) {\n    search {\n      boards(query: $query, limit: $limit, workspace_ids: $workspaceIds) {\n        results {\n          id\n          indexed_data {\n            id\n            name\n            url\n          }\n        }\n      }\n    }\n  }\n": types.SearchBoardsDevDocument,
@@ -46,6 +58,30 @@ const documents: Documents = {
  */
 export function graphql(source: string): unknown;
 
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  fragment AgentFields on Agent {\n    id\n    kind\n    state\n    profile {\n      name\n      role\n      role_description\n      avatar_url\n      background_color\n    }\n    goal\n    plan\n    user_prompt\n    version_id\n    created_at\n    updated_at\n  }\n"): (typeof documents)["\n  fragment AgentFields on Agent {\n    id\n    kind\n    state\n    profile {\n      name\n      role\n      role_description\n      avatar_url\n      background_color\n    }\n    goal\n    plan\n    user_prompt\n    version_id\n    created_at\n    updated_at\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  \n\n  query getAgent($id: ID!) {\n    agent(id: $id) {\n      ...AgentFields\n    }\n  }\n"): (typeof documents)["\n  \n\n  query getAgent($id: ID!) {\n    agent(id: $id) {\n      ...AgentFields\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  \n\n  query listAgents {\n    agents {\n      ...AgentFields\n    }\n  }\n"): (typeof documents)["\n  \n\n  query listAgents {\n    agents {\n      ...AgentFields\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  \n\n  mutation createAgent($input: CreateAgentInput!) {\n    create_agent(input: $input) {\n      ...AgentFields\n    }\n  }\n"): (typeof documents)["\n  \n\n  mutation createAgent($input: CreateAgentInput!) {\n    create_agent(input: $input) {\n      ...AgentFields\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  \n\n  mutation createBlankAgent($input: CreateBlankAgentInput) {\n    create_blank_agent(input: $input) {\n      ...AgentFields\n    }\n  }\n"): (typeof documents)["\n  \n\n  mutation createBlankAgent($input: CreateBlankAgentInput) {\n    create_blank_agent(input: $input) {\n      ...AgentFields\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  \n\n  mutation deleteAgent($id: ID!) {\n    delete_agent(id: $id) {\n      ...AgentFields\n    }\n  }\n"): (typeof documents)["\n  \n\n  mutation deleteAgent($id: ID!) {\n    delete_agent(id: $id) {\n      ...AgentFields\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
