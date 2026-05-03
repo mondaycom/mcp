@@ -44,7 +44,6 @@ export class ChangeItemColumnValuesTool extends BaseMondayApiTool<ChangeItemColu
   getDescription(): string {
     return (
       'Change the column values of an item in a monday.com board. ' +
-      'Optional create_labels_if_missing creates missing status/dropdown labels when permitted. ' +
       '[REQUIRED PRECONDITION]: For board-relation linking tasks, call link_board_items_workflow before using this tool.'
     );
   }
