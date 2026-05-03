@@ -18,12 +18,12 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
   });
 
   getDescription(): string {
-    return `Fetch current user information, account context, and their relevant items (boards, folders, workspaces, dashboards).
+    return `Fetch current user information, account information, and their relevant items (boards, folders, workspaces, dashboards).
 
     Use this tool to:
     - Get context about who the current user is (id, name, title)
     - Get account info: plan tier, active member count, trial status, and active products
-    - Count how many people/members are in the account (returns active_members_count)
+    - Get the number of active members in the account (returns active_members_count)
     - Discover user's favorite boards, folders, workspaces, and dashboards
     - Get user's most relevant boards based on visit frequency and recency
     - Get user's most relevant people based on interaction frequency and recency
