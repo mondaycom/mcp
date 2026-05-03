@@ -43,8 +43,8 @@ export class LinkBoardItemsWorkflowTool extends BaseMondayApiTool<typeof linkBoa
   getDescription(): string {
     return (
       'When to use: any board-relation / cross-board linking task. ' +
-      '**Hard gate — you MUST call this BEFORE `get_board_items_page`, or ' +
-      '`change_item_column_values` in the same turn. No discovery, matching, or write happens first.** ' +
+      '**Hard gate — you MUST call this BEFORE get_board_items_page, or ' +
+      'change_item_column_values in the same turn. No discovery, matching, or write happens first.** ' +
       'Triggers: **link** or **connect** items **across boards** (board-relation / "connect boards" / ' +
       'pairs) — also vague phrasings where only one side is named ("link this to **an** item on another ' +
       'board", "**the matching** row"). This tool is read-only (no API).'
