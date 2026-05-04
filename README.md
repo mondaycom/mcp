@@ -204,6 +204,28 @@ Add to your settings:
 }
 ```
 
+#### For Kiro
+
+[![Add to Kiro](https://kiro.dev/images/add-to-kiro.svg)](https://kiro.dev/launch/mcp/add?name=monday-api-mcp&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22%40mondaydotcomorg%2Fmonday-api-mcp%40latest%22%5D%2C%22env%22%3A%7B%22MONDAY_TOKEN%22%3A%22your_monday_api_token%22%7D%7D)
+
+Or add the following to your Kiro MCP config file (`~/.kiro/settings/mcp.json` for global, or `.kiro/settings/mcp.json` for project-scoped). See the [Kiro MCP documentation](https://kiro.dev/docs/mcp/) for more details.
+
+```json
+{
+  "mcpServers": {
+    "monday-api-mcp": {
+      "command": "npx",
+      "args": [
+        "@mondaydotcomorg/monday-api-mcp@latest"
+      ],
+      "env": {
+        "MONDAY_TOKEN": "your_monday_api_token"
+      }
+    }
+  }
+}
+```
+
 ### Step 5: Test Your Integration
 
 1. Ask Claude or your AI assistant a question like:
