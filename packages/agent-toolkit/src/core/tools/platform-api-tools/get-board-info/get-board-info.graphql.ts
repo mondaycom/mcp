@@ -44,6 +44,7 @@ export const getBoardInfo = gql`
         description
         type
         settings
+        revision
       }
 
       # All Groups with Metadata
@@ -98,6 +99,7 @@ export const getBoardInfoJustColumns = gql`
         description
         type
         settings
+        revision
       }
     }
   }
