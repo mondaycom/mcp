@@ -33,9 +33,9 @@ monday platform agents are user-built workflows that live on the monday.com plat
 
 Terminology note: users might ask for "agent" in natural language (for example: "create me an agent"), but in this API context this refers to monday personal/custom agents.
 
-Agent state in get_agent results is one of: ACTIVE, INACTIVE, ARCHIVED, FAILED. (DELETED agents are filtered from these queries — DELETED only appears as the return value of delete_agent.) Agent kind is one of: PERSONAL, ACCOUNT_LEVEL, EXTERNAL.
+Agent state in get_agent results is one of ACTIVE, INACTIVE, ARCHIVED, or FAILED. DELETED agents are filtered from these queries — DELETED only appears as the return value of delete_agent. Agent kind is one of PERSONAL, ACCOUNT_LEVEL, or EXTERNAL.
 
-Pass id to fetch one specific agent by its unique identifier. Omit id to list every non-deleted personal agent owned by the authenticated user; an empty list means the user owns no agents (not an error).
+Pass id to fetch one specific agent by its unique identifier. Omit id to list every non-deleted personal agent owned by the authenticated user. An empty list means the user owns no agents, which is not an error.
 
 USAGE EXAMPLES:
 - Fetch one agent: { "id": "42" }

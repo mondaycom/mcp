@@ -23,7 +23,7 @@ export const createAgentToolSchema = {
     .string()
     .optional()
     .describe(
-      'STRONGLY DISCOURAGED — omit this field. Only set when the user explicitly names a monday-supported model. Do not invent or guess model identifiers (e.g. "gpt-4o", "claude-3-opus"); invalid values are rejected by the platform. When omitted the platform default is used, which is the right choice in almost every case.',
+      'STRONGLY DISCOURAGED — omit this field. Only set when the user explicitly names a monday-supported model. Do not invent or guess model identifiers (e.g. gpt-4o, claude-3-opus). Invalid values are rejected by the platform. When omitted the platform default is used, which is the right choice in almost every case.',
     ),
   name: z.string().trim().min(1, 'Name must be a non-empty string').optional().describe('Display name of the agent.'),
   role: z.string().trim().min(1, 'Role must be a non-empty string').optional().describe('Role of the agent.'),
