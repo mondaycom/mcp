@@ -29,7 +29,7 @@ export class GetAgentTool extends BaseMondayApiTool<typeof getAgentToolSchema> {
   getDescription(): string {
     return `Fetch one or more personal/custom agents on the monday.com platform.
 
-monday platform agents are user-built workflows that live on the monday.com platform — each has a profile (name, role, avatar), a goal, and an execution plan in markdown describing capabilities and operating principles. Agents in state ACTIVE can be triggered to perform automated work on monday boards. They are NOT local LangChain or MCP agents — they are managed entities on the monday.com platform owned by a specific user.
+monday platform agents are user-built work orchestrators that live on the monday.com platform — each has a profile (name, role, avatar), a goal, and an execution plan in markdown describing capabilities and operating principles. Agents in state ACTIVE can be triggered to perform automated work on monday boards. They are NOT local LangChain or MCP agents — they are managed entities on the monday.com platform owned by a specific user.
 
 Terminology note: users might ask for "agent" in natural language (for example: "create me an agent"), but in this API context this refers to monday personal/custom agents.
 

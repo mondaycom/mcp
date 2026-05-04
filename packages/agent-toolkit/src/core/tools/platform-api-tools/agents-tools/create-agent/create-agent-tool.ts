@@ -80,7 +80,7 @@ Two modes:
 
 Do not mix prompt with manual profile fields in one request.
 
-Created agents start in state INACTIVE and must be activated before they can be triggered. There is no activation tool yet — instruct the user to activate from the monday.com agent settings UI (a dedicated activate_agent tool is planned for a future release).
+Created agents start in state INACTIVE and must be activated before they can be triggered. Instruct the user to activate from the monday.com agent settings UI.
 
 created_at and updated_at are null in the response — call get_agent with the returned id afterward to fetch them.
 
