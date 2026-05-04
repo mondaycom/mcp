@@ -110,10 +110,9 @@ export const GraphQLDescriptions = {
       insertAfterQuestionId: 'ID to insert after. Omit to append. Null for first position.',
       pageBlockId:
         'Page block ID to group this question within. Set to null to remove from page block. Omit to leave unchanged.',
-      existingColumnId:
-        'Links this question to an existing board column instead of creating a new one. Omit to auto-create a column. Only send when explicitly asked.',
+
     },
-    showIfRules: 'Conditional visibility. OR between rules, AND between conditions within a rule.',
+    showIfRules: 'Conditional visibility. All operators must be OR.',
 
     showIfConditionBuildingBlockId: 'Question ID to evaluate.',
     showIfConditionValues: 'Answer values that satisfy the condition.',

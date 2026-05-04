@@ -3817,6 +3817,51 @@ export type Department = {
   reserved_seats: Scalars['Int']['output'];
 };
 
+/** The actual time window used to query the platform activity log */
+export type DependenciesBoardActivityLogEffectiveWindow = {
+  __typename?: 'DependenciesBoardActivityLogEffectiveWindow';
+  /** Effective lower bound (ISO8601). Null when no lower bound was applied. */
+  from?: Maybe<Scalars['String']['output']>;
+  /** True if the caller-supplied startDate was clamped down to the previous validation timestamp. */
+  from_clamped_to_previous_validation?: Maybe<Scalars['Boolean']['output']>;
+  /** Timestamp of the previous validation used as the lower-bound cap, or null when no cap exists. */
+  previous_validation_at?: Maybe<Scalars['String']['output']>;
+  /** Effective upper bound (ISO8601), capped at the current time. */
+  to?: Maybe<Scalars['String']['output']>;
+};
+
+/** A single platform activity-log event for a board */
+export type DependenciesBoardActivityLogEvent = {
+  __typename?: 'DependenciesBoardActivityLogEvent';
+  /** Account on which the event occurred */
+  account_id?: Maybe<Scalars['ID']['output']>;
+  /** Event creation timestamp as the platform returns it (17-digit epoch string) */
+  created_at?: Maybe<Scalars['String']['output']>;
+  /** JSON-encoded event payload */
+  data?: Maybe<Scalars['String']['output']>;
+  /** Entity affected by the event */
+  entity?: Maybe<Scalars['String']['output']>;
+  /** Event name (e.g. update_column_value, create_pulse) */
+  event?: Maybe<Scalars['String']['output']>;
+  /** Platform activity-log event id */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** User who triggered the event */
+  user_id?: Maybe<Scalars['ID']['output']>;
+};
+
+/** Paginated export of a board's platform activity log */
+export type DependenciesBoardActivityLogExport = {
+  __typename?: 'DependenciesBoardActivityLogExport';
+  /** Time window actually applied (echoed for debugging) */
+  effective_window?: Maybe<DependenciesBoardActivityLogEffectiveWindow>;
+  /** Merged + deduped activity-log events sorted DESC by created_at */
+  events?: Maybe<Array<DependenciesBoardActivityLogEvent>>;
+  /** Page size used for the platform request */
+  limit?: Maybe<Scalars['Int']['output']>;
+  /** Opaque cursor to pass as `cursor` to fetch the next page. Null when no more pages. */
+  next_cursor?: Maybe<Scalars['String']['output']>;
+};
+
 /** Configuration record for a dependency column */
 export type DependencyColumnConfig = {
   __typename?: 'DependencyColumnConfig';
@@ -6531,6 +6576,238 @@ export type ItemSearchResult = {
   /** The relevance score of the search result. */
   score: Scalars['Float']['output'];
 };
+
+/** The raw value of a column for a historical item. */
+export type ItemsHistoryColumnResult = {
+  __typename?: 'ItemsHistoryColumnResult';
+  /** The raw column value at the given timestamp. */
+  value?: Maybe<Scalars['JSON']['output']>;
+};
+
+/** A group of filter rules that can be combined with AND/OR logic. Supports nesting. */
+export type ItemsHistoryFilterGroupInput = {
+  /** Nested filter groups for complex logic. */
+  groups?: InputMaybe<Array<ItemsHistoryFilterGroupInput>>;
+  /** The logical operator to combine rules within this group. */
+  operator?: InputMaybe<ItemsHistoryQueryOperator>;
+  /** Filter rules in this group. */
+  rules?: InputMaybe<Array<ItemsHistoryFilterRuleInput>>;
+};
+
+/** Comparison operators for filtering items in items history queries. */
+export enum ItemsHistoryFilterOperator {
+  /** Match any of the specified values (OR). */
+  AnyOf = 'ANY_OF',
+  /** Text ends with the specified substring. */
+  EndsWith = 'ENDS_WITH',
+  /** Value is greater than the specified value. */
+  GreaterThan = 'GREATER_THAN',
+  /** Value is greater than or equal to the specified value. */
+  GreaterThanOrEquals = 'GREATER_THAN_OR_EQUALS',
+  /** Value is empty or null. */
+  IsEmpty = 'IS_EMPTY',
+  /** Value is not empty or null. */
+  IsNotEmpty = 'IS_NOT_EMPTY',
+  /** Value is less than the specified value. */
+  LowerThan = 'LOWER_THAN',
+  /** Value is less than or equal to the specified value. */
+  LowerThanOrEqual = 'LOWER_THAN_OR_EQUAL',
+  /** Match none of the specified values. */
+  NotAnyOf = 'NOT_ANY_OF',
+  /** Text starts with the specified substring. */
+  StartsWith = 'STARTS_WITH'
+}
+
+/** A single filter rule for matching items based on column values. */
+export type ItemsHistoryFilterRuleInput = {
+  /** The unique identifier of the column to filter by. */
+  column_id: Scalars['ID']['input'];
+  /** Optional attribute for complex column types. */
+  compare_attribute?: InputMaybe<Scalars['String']['input']>;
+  /** The value(s) to compare against. Can be a string, number, boolean, or array. */
+  compare_value?: InputMaybe<Scalars['JSON']['input']>;
+  /** The comparison operator to use. */
+  operator: ItemsHistoryFilterOperator;
+};
+
+/** The source type for the items history query. */
+export enum ItemsHistoryFromElement {
+  /** Query historical snapshots of board/table data at a specific date. */
+  Table = 'TABLE'
+}
+
+/** The source table and its ID for the items history query. */
+export type ItemsHistoryFromInput = {
+  /** The unique identifier of the source board. */
+  id: Scalars['ID']['input'];
+  /** The source type. Must be TABLE for historical queries. */
+  type: ItemsHistoryFromElement;
+};
+
+/** The function to apply to a column value. */
+export enum ItemsHistoryFunction {
+  /** Calculate the average of numeric values. */
+  Average = 'AVERAGE',
+  /** Get the hex color value. */
+  Color = 'COLOR',
+  /** Count all values. */
+  Count = 'COUNT',
+  /** Count distinct values. */
+  CountDistinct = 'COUNT_DISTINCT',
+  /** Count items. */
+  CountItems = 'COUNT_ITEMS',
+  /** Get the first value. */
+  First = 'FIRST',
+  /** Get the ID/index value. */
+  Id = 'ID',
+  /** Check if the status is a done state. */
+  IsDone = 'IS_DONE',
+  /** Get the label text. */
+  Label = 'LABEL',
+  /** Get the length of a value. */
+  Length = 'LENGTH',
+  /** Convert text to lowercase. */
+  Lower = 'LOWER',
+  /** Get the maximum value. */
+  Max = 'MAX',
+  /** Calculate the median. */
+  Median = 'MEDIAN',
+  /** Get the minimum value. */
+  Min = 'MIN',
+  /** Calculate the sum of numeric values. */
+  Sum = 'SUM',
+  /** Trim whitespace from a text value. */
+  Trim = 'TRIM',
+  /** Convert text to uppercase. */
+  Upper = 'UPPER'
+}
+
+/** The result of a function applied to a column value (e.g. SUM, LABEL, COLOR). */
+export type ItemsHistoryFunctionResult = {
+  __typename?: 'ItemsHistoryFunctionResult';
+  /** The computed result from the function. */
+  value?: Maybe<Scalars['JSON']['output']>;
+};
+
+/** A historical snapshot of an item at a specific timestamp. */
+export type ItemsHistoryItem = {
+  __typename?: 'ItemsHistoryItem';
+  /** The selected field values for this item at the given timestamp. */
+  entries?: Maybe<Array<ItemsHistoryResultEntry>>;
+  /** The unique identifier of the item. */
+  item_id?: Maybe<Scalars['ID']['output']>;
+  /** The item's name at the given timestamp. */
+  name?: Maybe<Scalars['String']['output']>;
+  /** The timestamp this snapshot corresponds to (from the provided at_timestamps). */
+  timestamp?: Maybe<Scalars['String']['output']>;
+};
+
+/** Filter configuration for selecting which items to include in the items history results. */
+export type ItemsHistoryItemsQueryInput = {
+  /** Nested filter groups for complex logic. */
+  groups?: InputMaybe<Array<ItemsHistoryFilterGroupInput>>;
+  /** Specific item IDs to include. If provided, only these items are considered. */
+  ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  /** The logical operator to combine top-level rules and groups. */
+  operator?: InputMaybe<ItemsHistoryQueryOperator>;
+  /** Filter rules to apply. */
+  rules?: InputMaybe<Array<ItemsHistoryFilterRuleInput>>;
+};
+
+/** Configuration for sorting items history results by a column. */
+export type ItemsHistoryOrderByInput = {
+  /** The unique identifier of the column to sort by. */
+  column_id: Scalars['ID']['input'];
+  /** The sort direction. Default: ASC. */
+  direction?: InputMaybe<ItemsHistorySortDirection>;
+};
+
+/** Input for querying historical item data from a board at a specific date. */
+export type ItemsHistoryQueryInput = {
+  /** Array of ISO timestamp/date strings. Currently limited to 1 timestamp per request. */
+  at_timestamps: Array<Scalars['String']['input']>;
+  /** The data source for the query (board with TABLE type). */
+  from: ItemsHistoryFromInput;
+  /** Maximum number of items to return. Default: 50, max: 500. */
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  /** Number of items to skip for pagination. Default: 0. */
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  /** Sort configuration. Defaults to ordering by item ID. */
+  order_by?: InputMaybe<Array<ItemsHistoryOrderByInput>>;
+  /** Filters for items. Without filters, all items are included. */
+  query?: InputMaybe<ItemsHistoryItemsQueryInput>;
+  /** Columns and functions to include in the results. If omitted, all tracked columns are returned. */
+  select?: InputMaybe<Array<ItemsHistorySelectElementInput>>;
+};
+
+/** Logical operators for combining filter rules. */
+export enum ItemsHistoryQueryOperator {
+  /** All rules must match (AND logic). */
+  And = 'AND',
+  /** Any rule can match (OR logic). */
+  Or = 'OR'
+}
+
+/** A single selected field for a historical item, identified by its alias. */
+export type ItemsHistoryResultEntry = {
+  __typename?: 'ItemsHistoryResultEntry';
+  /** The alias for this field, as defined by the `as` field in the select input. */
+  alias?: Maybe<Scalars['String']['output']>;
+  /** The value for this field. */
+  value?: Maybe<ItemsHistoryResultValue>;
+};
+
+/** The complete result set from an items_history query. */
+export type ItemsHistoryResultSet = {
+  __typename?: 'ItemsHistoryResultSet';
+  /** Array of item snapshots at the requested timestamp. */
+  results?: Maybe<Array<ItemsHistoryItem>>;
+};
+
+/** The value of a result entry. Either a raw column value or a function result. */
+export type ItemsHistoryResultValue = ItemsHistoryColumnResult | ItemsHistoryFunctionResult;
+
+/** Specifies a column to include in the items history results. */
+export type ItemsHistorySelectColumnInput = {
+  /** The unique identifier of the column to include. */
+  column_id: Scalars['ID']['input'];
+};
+
+/** A select element: either a raw column (COLUMN) or a function applied to column(s) (FUNCTION). Use the `as` alias as the column_id in the response. */
+export type ItemsHistorySelectElementInput = {
+  /** The alias for this element. Used as the column_id in the response. */
+  as: Scalars['String']['input'];
+  /** The column to select. Required when type is COLUMN. */
+  column?: InputMaybe<ItemsHistorySelectColumnInput>;
+  /** The function to apply. Required when type is FUNCTION. */
+  function?: InputMaybe<ItemsHistorySelectFunctionInput>;
+  /** The type of selection. */
+  type: ItemsHistorySelectKind;
+};
+
+/** Specifies a function to apply to column value(s). */
+export type ItemsHistorySelectFunctionInput = {
+  /** The function to apply. */
+  function: ItemsHistoryFunction;
+  /** Parameters passed to the function (columns or nested functions). */
+  params?: InputMaybe<Array<ItemsHistorySelectElementInput>>;
+};
+
+/** Whether this select element is a raw column or a function. */
+export enum ItemsHistorySelectKind {
+  /** Select a raw column value. */
+  Column = 'COLUMN',
+  /** Apply a function to column value(s). */
+  Function = 'FUNCTION'
+}
+
+/** Sort direction for ordering items history results. */
+export enum ItemsHistorySortDirection {
+  /** Sort in ascending order (A-Z, 0-9). */
+  Asc = 'ASC',
+  /** Sort in descending order (Z-A, 9-0). */
+  Desc = 'DESC'
+}
 
 /** Item counts for an items job process */
 export type ItemsJobItemCounts = {
@@ -10810,6 +11087,8 @@ export type Query = {
    * This can be replaced with actual queries as the service evolves.
    */
   empty?: Maybe<Scalars['String']['output']>;
+  /** Export a board's platform activity log via monday's Board.activity_logs field. The caller-supplied startDate is capped at the previous validation timestamp; columnIds defaults to the graph dependency + time columns; item-lifecycle events (create/delete/archive/restore pulse) are always merged in. Pagination is cursor-based: pass the `next_cursor` from a previous response back as `cursor` to fetch the next page. Both upstream feeds (lifecycle and column-filtered) advance independently via the cursor; events are never lost or duplicated across pages. */
+  export_dependencies_board_activity_log?: Maybe<DependenciesBoardActivityLogExport>;
   /** Export events for a board within a date range. Requires a valid X-Tool-Execution-Secret header. */
   export_events?: Maybe<EventsExport>;
   /** Export the dependency graph for a specific board */
@@ -10873,6 +11152,8 @@ export type Query = {
   intelligence?: Maybe<Intelligence>;
   /** Get a collection of items. */
   items?: Maybe<Array<Maybe<Item>>>;
+  /** Retrieve historical item data from a board at a specific point in time. */
+  items_history?: Maybe<ItemsHistoryResultSet>;
   /** Search items by multiple columns and values. */
   items_page_by_column_values: ItemsResponse;
   /** Search knowledge base snippets. */
@@ -10955,6 +11236,8 @@ export type Query = {
   sprints?: Maybe<Array<Sprint>>;
   /** Execute an ANSI SQL query against board data */
   sql?: Maybe<Scalars['JSON']['output']>;
+  /** Compile an ANSI SQL query without executing it */
+  sql_compile?: Maybe<Scalars['JSON']['output']>;
   /** Describe the schema of available tables by board or materialized view IDs */
   sql_describe?: Maybe<Scalars['JSON']['output']>;
   /** Get a collection of tags. */
@@ -11250,6 +11533,17 @@ export type QueryDocsArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QueryExport_Dependencies_Board_Activity_LogArgs = {
+  board_id: Scalars['ID']['input'];
+  column_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  end_date?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  start_date?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryExport_EventsArgs = {
   board_id?: InputMaybe<Scalars['ID']['input']>;
   end_date?: InputMaybe<Scalars['String']['input']>;
@@ -11441,6 +11735,12 @@ export type QueryItemsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   newest_first?: InputMaybe<Scalars['Boolean']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryItems_HistoryArgs = {
+  query: ItemsHistoryQueryInput;
 };
 
 
@@ -11646,6 +11946,12 @@ export type QuerySprintsArgs = {
 
 /** Root query type for the Dependencies service */
 export type QuerySqlArgs = {
+  query: Scalars['String']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QuerySql_CompileArgs = {
   query: Scalars['String']['input'];
 };
 
@@ -14377,6 +14683,8 @@ export enum UserKindFilter {
   NexusApiUser = 'NEXUS_API_USER',
   /** A omnichannel api user user. */
   OmnichannelApiUser = 'OMNICHANNEL_API_USER',
+  /** A personal agent member user. */
+  PersonalAgentMember = 'PERSONAL_AGENT_MEMBER',
   /** A portal user. */
   Portal = 'PORTAL',
   /** A portfolio api user user. */
@@ -15335,6 +15643,41 @@ export type WorldClockValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
+export type AgentFieldsFragment = { __typename?: 'Agent', id: string, kind?: AgentKind | null, state?: AgentState | null, goal?: string | null, plan?: string | null, user_prompt?: string | null, version_id: string, created_at?: any | null, updated_at?: any | null, profile?: { __typename?: 'AgentProfile', name?: string | null, role?: string | null, role_description?: string | null, avatar_url?: string | null, background_color?: string | null } | null };
+
+export type GetAgentQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type GetAgentQuery = { __typename?: 'Query', agent?: { __typename?: 'Agent', id: string, kind?: AgentKind | null, state?: AgentState | null, goal?: string | null, plan?: string | null, user_prompt?: string | null, version_id: string, created_at?: any | null, updated_at?: any | null, profile?: { __typename?: 'AgentProfile', name?: string | null, role?: string | null, role_description?: string | null, avatar_url?: string | null, background_color?: string | null } | null } | null };
+
+export type ListAgentsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type ListAgentsQuery = { __typename?: 'Query', agents?: Array<{ __typename?: 'Agent', id: string, kind?: AgentKind | null, state?: AgentState | null, goal?: string | null, plan?: string | null, user_prompt?: string | null, version_id: string, created_at?: any | null, updated_at?: any | null, profile?: { __typename?: 'AgentProfile', name?: string | null, role?: string | null, role_description?: string | null, avatar_url?: string | null, background_color?: string | null } | null }> | null };
+
+export type CreateAgentMutationVariables = Exact<{
+  input: CreateAgentInput;
+}>;
+
+
+export type CreateAgentMutation = { __typename?: 'Mutation', create_agent?: { __typename?: 'Agent', id: string, kind?: AgentKind | null, state?: AgentState | null, goal?: string | null, plan?: string | null, user_prompt?: string | null, version_id: string, created_at?: any | null, updated_at?: any | null, profile?: { __typename?: 'AgentProfile', name?: string | null, role?: string | null, role_description?: string | null, avatar_url?: string | null, background_color?: string | null } | null } | null };
+
+export type CreateBlankAgentMutationVariables = Exact<{
+  input?: InputMaybe<CreateBlankAgentInput>;
+}>;
+
+
+export type CreateBlankAgentMutation = { __typename?: 'Mutation', create_blank_agent?: { __typename?: 'Agent', id: string, kind?: AgentKind | null, state?: AgentState | null, goal?: string | null, plan?: string | null, user_prompt?: string | null, version_id: string, created_at?: any | null, updated_at?: any | null, profile?: { __typename?: 'AgentProfile', name?: string | null, role?: string | null, role_description?: string | null, avatar_url?: string | null, background_color?: string | null } | null } | null };
+
+export type DeleteAgentMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteAgentMutation = { __typename?: 'Mutation', delete_agent?: { __typename?: 'Agent', id: string, kind?: AgentKind | null, state?: AgentState | null, goal?: string | null, plan?: string | null, user_prompt?: string | null, version_id: string, created_at?: any | null, updated_at?: any | null, profile?: { __typename?: 'AgentProfile', name?: string | null, role?: string | null, role_description?: string | null, avatar_url?: string | null, background_color?: string | null } | null } | null };
+
 export type DeleteObjectSchemaColumnsMutationVariables = Exact<{
   objectSchemaId?: InputMaybe<Scalars['ID']['input']>;
   objectSchemaName?: InputMaybe<Scalars['String']['input']>;
@@ -15395,7 +15738,12 @@ export type CreateFormSubmissionMutationVariables = Exact<{
 
 export type CreateFormSubmissionMutation = { __typename?: 'Mutation', create_form_submission?: { __typename?: 'FormSubmissionResult', id: string } | null };
 
-
+export const AgentFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Agent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<AgentFieldsFragment, unknown>;
+export const GetAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AgentFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Agent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<GetAgentQuery, GetAgentQueryVariables>;
+export const ListAgentsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"listAgents"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"agents"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AgentFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Agent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<ListAgentsQuery, ListAgentsQueryVariables>;
+export const CreateAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"createAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateAgentInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"create_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AgentFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Agent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<CreateAgentMutation, CreateAgentMutationVariables>;
+export const CreateBlankAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"createBlankAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateBlankAgentInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"create_blank_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AgentFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Agent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<CreateBlankAgentMutation, CreateBlankAgentMutationVariables>;
+export const DeleteAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"deleteAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"delete_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AgentFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Agent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<DeleteAgentMutation, DeleteAgentMutationVariables>;
 export const DeleteObjectSchemaColumnsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteObjectSchemaColumns"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"objectSchemaId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"objectSchemaName"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnIds"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"delete_object_schema_columns"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"object_schema_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"objectSchemaId"}}},{"kind":"Argument","name":{"kind":"Name","value":"object_schema_name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"objectSchemaName"}}},{"kind":"Argument","name":{"kind":"Name","value":"column_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"parent_id"}},{"kind":"Field","name":{"kind":"Name","value":"revision"}}]}}]}}]} as unknown as DocumentNode<DeleteObjectSchemaColumnsMutation, DeleteObjectSchemaColumnsMutationVariables>;
 export const SearchItemsDevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchItemsDev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"board_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"results"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchItemsDevQuery, SearchItemsDevQueryVariables>;
 export const SearchBoardsDevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchBoardsDev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"boards"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"workspace_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"results"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"indexed_data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"url"}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchBoardsDevQuery, SearchBoardsDevQueryVariables>;
