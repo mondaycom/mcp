@@ -309,6 +309,14 @@ limit: Int,   "Number of events to skip for pagination"
 offset: Int,   "Field to order by (default: createdAt)"
 order_by: String,   "Order direction: ASC or DESC (default: DESC)"
 order_direction: String): EventsExport
+  "Export a board's platform activity log via monday's Board.activity_logs field. The caller-supplied startDate is capped at the previous validation timestamp; columnIds defaults to the graph dependency + time columns; item-lifecycle events (create/delete/archive/restore pulse) are always merged in. Pagination is cursor-based: pass the `next_cursor` from a previous response back as `cursor` to fetch the next page. Both upstream feeds (lifecycle and column-filtered) advance independently via the cursor; events are never lost or duplicated across pages."
+  export_dependencies_board_activity_log(  "Board to fetch the activity log for"
+board_id: ID!,   "Lower bound (ISO8601). Capped at the previous validation timestamp."
+start_date: String,   "Upper bound (ISO8601). Capped at the current time. Defaults to now."
+end_date: String,   "Filter column-scoped events by these column IDs. Defaults to graph dependency + time columns."
+column_ids: [ID!],   "Page size (default and max 100)"
+limit: Int,   "Opaque cursor from a previous response. Omit for the first page."
+cursor: String): DependenciesBoardActivityLogExport
   "Retrieves blocks for the published version of a specific article if the requesting user has permission to access it. Returns paginated blocks in their position order. Will return an error if the user lacks the required permissions."
   article_blocks(  "The unique identifier of the article object. Can be used to reference this specific object in queries and mutations. This ID can be found in the article's URL."
 object_id: ID!,   "Maximum number of blocks to return per article. Defaults to 25."
@@ -550,9 +558,15 @@ query: String!): JSON
   "Describe the schema of available tables by board or materialized view IDs"
   sql_describe(  "Data sources to describe (boards, materialized views, data views)"
 sources: [SqlDescribeSourceInput!]!): JSON
+  "Compile an ANSI SQL query without executing it"
+  sql_compile(  "ANSI SQL query to compile."
+query: String!): JSON
   "Retrieve aggregated board data at specific historical dates for point-in-time analysis."
   aggregate_history(  "The aggregation query configuration including source, dates, filters, and selections."
 query: AggregateHistoryQueryInput!): AggregateHistoryResultSet
+  "Retrieve historical item data from a board at a specific point in time."
+  items_history(  "The query configuration including source, date, filters, and selections."
+query: ItemsHistoryQueryInput!): ItemsHistoryResultSet
   "A test query for resource allocation functionality."
   resource_allocation_test: String
   "Fetch resources information from the resource directory"
@@ -5165,6 +5179,48 @@ type BoardGraphExport {
   graphAttributes: JSON
   "The cycles in the graph"
   cycles: JSON
+}
+
+"The actual time window used to query the platform activity log"
+type DependenciesBoardActivityLogEffectiveWindow {
+  "Effective lower bound (ISO8601). Null when no lower bound was applied."
+  from: String
+  "Effective upper bound (ISO8601), capped at the current time."
+  to: String
+  "True if the caller-supplied startDate was clamped down to the previous validation timestamp."
+  from_clamped_to_previous_validation: Boolean
+  "Timestamp of the previous validation used as the lower-bound cap, or null when no cap exists."
+  previous_validation_at: String
+}
+
+"A single platform activity-log event for a board"
+type DependenciesBoardActivityLogEvent {
+  "Platform activity-log event id"
+  id: ID
+  "Event name (e.g. update_column_value, create_pulse)"
+  event: String
+  "Entity affected by the event"
+  entity: String
+  "User who triggered the event"
+  user_id: ID
+  "Account on which the event occurred"
+  account_id: ID
+  "Event creation timestamp as the platform returns it (17-digit epoch string)"
+  created_at: String
+  "JSON-encoded event payload"
+  data: String
+}
+
+"Paginated export of a board's platform activity log"
+type DependenciesBoardActivityLogExport {
+  "Merged + deduped activity-log events sorted DESC by created_at"
+  events: [DependenciesBoardActivityLogEvent!]
+  "Page size used for the platform request"
+  limit: Int
+  "Opaque cursor to pass as `cursor` to fetch the next page. Null when no more pages."
+  next_cursor: String
+  "Time window actually applied (echoed for debugging)"
+  effective_window: DependenciesBoardActivityLogEffectiveWindow
 }
 
 "Configuration record for a dependency column"
@@ -10235,6 +10291,233 @@ enum AggregateHistorySortDirection {
   DESC
 }
 
+"The raw value of a column for a historical item."
+type ItemsHistoryColumnResult {
+  "The raw column value at the given timestamp."
+  value: JSON
+}
+
+"A group of filter rules that can be combined with AND/OR logic. Supports nesting."
+input ItemsHistoryFilterGroupInput {
+  "The logical operator to combine rules within this group."
+  operator: ItemsHistoryQueryOperator
+  "Filter rules in this group."
+  rules: [ItemsHistoryFilterRuleInput!]
+  "Nested filter groups for complex logic."
+  groups: [ItemsHistoryFilterGroupInput!]
+}
+
+"Comparison operators for filtering items in items history queries."
+enum ItemsHistoryFilterOperator {
+  "Match any of the specified values (OR)."
+  ANY_OF
+  "Match none of the specified values."
+  NOT_ANY_OF
+  "Value is greater than the specified value."
+  GREATER_THAN
+  "Value is greater than or equal to the specified value."
+  GREATER_THAN_OR_EQUALS
+  "Value is less than the specified value."
+  LOWER_THAN
+  "Value is less than or equal to the specified value."
+  LOWER_THAN_OR_EQUAL
+  "Text starts with the specified substring."
+  STARTS_WITH
+  "Text ends with the specified substring."
+  ENDS_WITH
+  "Value is empty or null."
+  IS_EMPTY
+  "Value is not empty or null."
+  IS_NOT_EMPTY
+}
+
+"A single filter rule for matching items based on column values."
+input ItemsHistoryFilterRuleInput {
+  "The unique identifier of the column to filter by."
+  column_id: ID!
+  "The comparison operator to use."
+  operator: ItemsHistoryFilterOperator!
+  "The value(s) to compare against. Can be a string, number, boolean, or array."
+  compare_value: JSON
+  "Optional attribute for complex column types."
+  compare_attribute: String
+}
+
+"The source type for the items history query."
+enum ItemsHistoryFromElement {
+  "Query historical snapshots of board/table data at a specific date."
+  TABLE
+}
+
+"The source table and its ID for the items history query."
+input ItemsHistoryFromInput {
+  "The source type. Must be TABLE for historical queries."
+  type: ItemsHistoryFromElement!
+  "The unique identifier of the source board."
+  id: ID!
+}
+
+"The function to apply to a column value."
+enum ItemsHistoryFunction {
+  "Calculate the average of numeric values."
+  AVERAGE
+  "Get the hex color value."
+  COLOR
+  "Count all values."
+  COUNT
+  "Count distinct values."
+  COUNT_DISTINCT
+  "Count items."
+  COUNT_ITEMS
+  "Get the first value."
+  FIRST
+  "Get the ID/index value."
+  ID
+  "Check if the status is a done state."
+  IS_DONE
+  "Get the label text."
+  LABEL
+  "Get the length of a value."
+  LENGTH
+  "Convert text to lowercase."
+  LOWER
+  "Get the maximum value."
+  MAX
+  "Calculate the median."
+  MEDIAN
+  "Get the minimum value."
+  MIN
+  "Calculate the sum of numeric values."
+  SUM
+  "Trim whitespace from a text value."
+  TRIM
+  "Convert text to uppercase."
+  UPPER
+}
+
+"The result of a function applied to a column value (e.g. SUM, LABEL, COLOR)."
+type ItemsHistoryFunctionResult {
+  "The computed result from the function."
+  value: JSON
+}
+
+"A historical snapshot of an item at a specific timestamp."
+type ItemsHistoryItem {
+  "The unique identifier of the item."
+  item_id: ID
+  "The item's name at the given timestamp."
+  name: String
+  "The timestamp this snapshot corresponds to (from the provided at_timestamps)."
+  timestamp: String
+  "The selected field values for this item at the given timestamp."
+  entries: [ItemsHistoryResultEntry!]
+}
+
+"Filter configuration for selecting which items to include in the items history results."
+input ItemsHistoryItemsQueryInput {
+  "The logical operator to combine top-level rules and groups."
+  operator: ItemsHistoryQueryOperator
+  "Filter rules to apply."
+  rules: [ItemsHistoryFilterRuleInput!]
+  "Nested filter groups for complex logic."
+  groups: [ItemsHistoryFilterGroupInput!]
+  "Specific item IDs to include. If provided, only these items are considered."
+  ids: [ID!]
+}
+
+"Configuration for sorting items history results by a column."
+input ItemsHistoryOrderByInput {
+  "The unique identifier of the column to sort by."
+  column_id: ID!
+  "The sort direction. Default: ASC."
+  direction: ItemsHistorySortDirection = ASC
+}
+
+"Input for querying historical item data from a board at a specific date."
+input ItemsHistoryQueryInput {
+  "The data source for the query (board with TABLE type)."
+  from: ItemsHistoryFromInput!
+  "Array of ISO timestamp/date strings. Currently limited to 1 timestamp per request."
+  at_timestamps: [String!]!
+  "Columns and functions to include in the results. If omitted, all tracked columns are returned."
+  select: [ItemsHistorySelectElementInput!]
+  "Filters for items. Without filters, all items are included."
+  query: ItemsHistoryItemsQueryInput
+  "Sort configuration. Defaults to ordering by item ID."
+  order_by: [ItemsHistoryOrderByInput!]
+  "Maximum number of items to return. Default: 50, max: 500."
+  limit: Int = 50
+  "Number of items to skip for pagination. Default: 0."
+  offset: Int = 0
+}
+
+"Logical operators for combining filter rules."
+enum ItemsHistoryQueryOperator {
+  "All rules must match (AND logic)."
+  AND
+  "Any rule can match (OR logic)."
+  OR
+}
+
+"A single selected field for a historical item, identified by its alias."
+type ItemsHistoryResultEntry {
+  "The alias for this field, as defined by the `as` field in the select input."
+  alias: String
+  "The value for this field."
+  value: ItemsHistoryResultValue
+}
+
+"The complete result set from an items_history query."
+type ItemsHistoryResultSet {
+  "Array of item snapshots at the requested timestamp."
+  results: [ItemsHistoryItem!]
+}
+
+"The value of a result entry. Either a raw column value or a function result."
+union ItemsHistoryResultValue = ItemsHistoryFunctionResult | ItemsHistoryColumnResult
+
+"Specifies a column to include in the items history results."
+input ItemsHistorySelectColumnInput {
+  "The unique identifier of the column to include."
+  column_id: ID!
+}
+
+"A select element: either a raw column (COLUMN) or a function applied to column(s) (FUNCTION). Use the `as` alias as the column_id in the response."
+input ItemsHistorySelectElementInput {
+  "The type of selection."
+  type: ItemsHistorySelectKind!
+  "The alias for this element. Used as the column_id in the response."
+  as: String!
+  "The column to select. Required when type is COLUMN."
+  column: ItemsHistorySelectColumnInput
+  "The function to apply. Required when type is FUNCTION."
+  function: ItemsHistorySelectFunctionInput
+}
+
+"Specifies a function to apply to column value(s)."
+input ItemsHistorySelectFunctionInput {
+  "The function to apply."
+  function: ItemsHistoryFunction!
+  "Parameters passed to the function (columns or nested functions)."
+  params: [ItemsHistorySelectElementInput!]
+}
+
+"Whether this select element is a raw column or a function."
+enum ItemsHistorySelectKind {
+  "Select a raw column value."
+  COLUMN
+  "Apply a function to column value(s)."
+  FUNCTION
+}
+
+"Sort direction for ordering items history results."
+enum ItemsHistorySortDirection {
+  "Sort in ascending order (A-Z, 0-9)."
+  ASC
+  "Sort in descending order (Z-A, 9-0)."
+  DESC
+}
+
 "Response containing per-item results for adding allocations to resources"
 type AddAllocationsToResourcesResponse {
   "Per-item results for each allocation in the request"
@@ -11929,6 +12212,8 @@ enum UserKindFilter {
   VIEW_ONLY
   "A agent member user."
   AGENT_MEMBER
+  "A personal agent member user."
+  PERSONAL_AGENT_MEMBER
   "A agent signup user user."
   AGENT_SIGNUP_USER
   "A portal user."
