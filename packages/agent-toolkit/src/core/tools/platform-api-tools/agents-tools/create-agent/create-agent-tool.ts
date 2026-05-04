@@ -4,11 +4,11 @@ import {
   CreateAgentMutationVariables,
   CreateBlankAgentMutation,
   CreateBlankAgentMutationVariables,
-} from '../../../../monday-graphql/generated/graphql.dev/graphql';
-import { createAgentMutation, createBlankAgentMutation } from './agents.graphql.dev';
-import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
-import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { rethrowWithContext } from '../../../../utils';
+} from '../../../../../monday-graphql/generated/graphql.dev/graphql';
+import { createAgentMutation, createBlankAgentMutation } from '../shared/agents.graphql.dev';
+import { ToolInputType, ToolOutputType, ToolType } from '../../../../tool';
+import { BaseMondayApiTool, createMondayApiAnnotations } from '../../base-monday-api-tool';
+import { rethrowWithContext } from '../../../../../utils';
 
 export const createAgentToolSchema = {
   prompt: z

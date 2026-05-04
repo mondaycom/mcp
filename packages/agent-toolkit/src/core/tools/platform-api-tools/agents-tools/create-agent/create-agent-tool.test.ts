@@ -1,5 +1,5 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
-import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '../test-utils/mock-api-client';
+import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '../../test-utils/mock-api-client';
 import { CreateAgentMutation, CreateBlankAgentMutation } from 'src/monday-graphql/generated/graphql.dev/graphql';
 
 describe('CreateAgentTool', () => {

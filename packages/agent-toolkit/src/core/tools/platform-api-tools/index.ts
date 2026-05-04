@@ -61,9 +61,9 @@ import { GetNotetakerMeetingsTool } from './get-notetaker-meetings-tool/get-note
 import { UndoActionTool } from './undo-action-tool/undo-action-tool';
 import { LinkBoardItemsWorkflowTool } from './link-board-items-workflow-tool/link-board-items-workflow-tool';
 import { FetchFileContentTool } from './fetch-file-content-tool/fetch-file-content-tool';
-import { GetAgentTool } from './agents-tools/get-agent-tool';
-import { CreateAgentTool } from './agents-tools/create-agent-tool';
-import { DeleteAgentTool } from './agents-tools/delete-agent-tool';
+import { GetAgentTool } from './agents-tools/get-agent/get-agent-tool';
+import { CreateAgentTool } from './agents-tools/create-agent/create-agent-tool';
+import { DeleteAgentTool } from './agents-tools/delete-agent/delete-agent-tool';
 
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteItemTool,

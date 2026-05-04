@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import { GetAgentQuery, ListAgentsQuery } from '../../../../monday-graphql/generated/graphql.dev/graphql';
-import { getAgentQuery, listAgentsQuery } from './agents.graphql.dev';
-import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
-import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { rethrowWithContext } from '../../../../utils';
+import { GetAgentQuery, ListAgentsQuery } from '../../../../../monday-graphql/generated/graphql.dev/graphql';
+import { getAgentQuery, listAgentsQuery } from '../shared/agents.graphql.dev';
+import { ToolInputType, ToolOutputType, ToolType } from '../../../../tool';
+import { BaseMondayApiTool, createMondayApiAnnotations } from '../../base-monday-api-tool';
+import { rethrowWithContext } from '../../../../../utils';
 
 export const getAgentToolSchema = {
   id: z
