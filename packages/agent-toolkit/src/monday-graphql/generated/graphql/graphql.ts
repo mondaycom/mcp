@@ -10696,6 +10696,8 @@ export enum UserKindFilter {
   NexusApiUser = 'NEXUS_API_USER',
   /** A omnichannel api user user. */
   OmnichannelApiUser = 'OMNICHANNEL_API_USER',
+  /** A personal agent member user. */
+  PersonalAgentMember = 'PERSONAL_AGENT_MEMBER',
   /** A portal user. */
   Portal = 'PORTAL',
   /** A portfolio api user user. */
