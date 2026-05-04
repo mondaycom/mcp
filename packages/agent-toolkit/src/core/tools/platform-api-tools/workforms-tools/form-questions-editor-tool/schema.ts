@@ -19,7 +19,7 @@ const questionSchema = z.object({
     .nullish()
     .describe(GraphQLDescriptions.question.properties.insertAfterQuestionId),
   page_block_id: z.string().nullish().describe(GraphQLDescriptions.question.properties.pageBlockId),
-  existing_column_id: z.string().describe(GraphQLDescriptions.question.properties.existingColumnId).optional(),
+
   show_if_rules: z
     .object({
       operator: z.nativeEnum(ConditionOperator),

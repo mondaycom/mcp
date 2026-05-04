@@ -8458,6 +8458,8 @@ enum UserKindFilter {
   VIEW_ONLY
   "A agent member user."
   AGENT_MEMBER
+  "A personal agent member user."
+  PERSONAL_AGENT_MEMBER
   "A agent signup user user."
   AGENT_SIGNUP_USER
   "A portal user."

@@ -14,6 +14,12 @@ export const changeItemColumnValuesToolSchema = {
     .describe(
       `A string containing the new column values for the item following this structure: {\\"column_id\\": \\"value\\",... you can change multiple columns at once, note that for status column you must use nested value with 'label' as a key and for date column use 'date' as key} - example: "{\\"text_column_id\\":\\"New text\\", \\"status_column_id\\":{\\"label\\":\\"Done\\"}, \\"date_column_id\\":{\\"date\\":\\"2023-05-25\\"}, \\"phone_id\\":\\"123-456-7890\\", \\"email_id\\":\\"test@example.com\\"}"`,
     ),
+  createLabelsIfMissing: z
+    .boolean()
+    .optional()
+    .describe(
+      'If true, create missing Status/Dropdown labels when setting those columns. Requires permission to change board structure. Omit or false to only use existing labels.',
+    ),
 };
 
 export const changeItemColumnValuesInBoardToolSchema = {
@@ -59,6 +65,9 @@ export class ChangeItemColumnValuesTool extends BaseMondayApiTool<ChangeItemColu
       boardId: boardId.toString(),
       itemId: input.itemId.toString(),
       columnValues: input.columnValues,
+      ...(input.createLabelsIfMissing !== undefined && {
+        createLabelsIfMissing: input.createLabelsIfMissing,
+      }),
     };
 
     const res = await this.mondayApi.request<ChangeItemColumnValuesMutation>(changeItemColumnValues, variables);

@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.7.1
+
+### form_questions_editor — fix ConditionOperator and remove existing_column_id
+
+- Removed `existing_column_id` from the tool schema — this field caused 38% of all tool errors (ColumnNotFound / QuestionTypeIncompatibleWithColumnType) because agents passed arbitrary board column IDs not linked to the form
+- Fixed misleading `show_if_rules` description that incorrectly stated AND was used between conditions — all operators must be OR per the GraphQL schema
+- Removed `And` from the local `ConditionOperator` enum to align with the GraphQL schema constraint
+
 ## 5.7.0
 
 ### Add account context to get_user_context tool
