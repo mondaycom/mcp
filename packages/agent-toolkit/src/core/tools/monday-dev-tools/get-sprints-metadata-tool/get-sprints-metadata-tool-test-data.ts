@@ -8,14 +8,14 @@ export const VALID_SPRINTS_BOARD_SCHEMA: GetBoardSchemaQuery = {
   boards: [
     {
       columns: [
-        { id: 'sprint_tasks', type: NonDeprecatedColumnType.BoardRelation, title: 'Sprint Tasks' },
-        { id: 'sprint_timeline', type: NonDeprecatedColumnType.Timeline, title: 'Sprint Timeline' },
-        { id: 'sprint_completion', type: NonDeprecatedColumnType.Checkbox, title: 'Sprint Completion' },
-        { id: 'sprint_start_date', type: NonDeprecatedColumnType.Date, title: 'Sprint Start Date' },
-        { id: 'sprint_end_date', type: NonDeprecatedColumnType.Date, title: 'Sprint End Date' },
-        { id: 'sprint_activation', type: NonDeprecatedColumnType.Checkbox, title: 'Sprint Activation' },
-        { id: 'sprint_summary', type: NonDeprecatedColumnType.Doc, title: 'Sprint Summary' },
-        { id: 'sprint_capacity', type: NonDeprecatedColumnType.Text, title: 'Sprint Capacity' },
+        { id: 'sprint_tasks', type: NonDeprecatedColumnType.BoardRelation, title: 'Sprint Tasks', revision: '1' },
+        { id: 'sprint_timeline', type: NonDeprecatedColumnType.Timeline, title: 'Sprint Timeline', revision: '1' },
+        { id: 'sprint_completion', type: NonDeprecatedColumnType.Checkbox, title: 'Sprint Completion', revision: '1' },
+        { id: 'sprint_start_date', type: NonDeprecatedColumnType.Date, title: 'Sprint Start Date', revision: '1' },
+        { id: 'sprint_end_date', type: NonDeprecatedColumnType.Date, title: 'Sprint End Date', revision: '1' },
+        { id: 'sprint_activation', type: NonDeprecatedColumnType.Checkbox, title: 'Sprint Activation', revision: '1' },
+        { id: 'sprint_summary', type: NonDeprecatedColumnType.Doc, title: 'Sprint Summary', revision: '1' },
+        { id: 'sprint_capacity', type: NonDeprecatedColumnType.Text, title: 'Sprint Capacity', revision: '1' },
       ],
       groups: [],
     },
@@ -247,8 +247,8 @@ export const INVALID_BOARD_SCHEMA: GetBoardSchemaQuery = {
   boards: [
     {
       columns: [
-        { id: 'some_other_column', type: NonDeprecatedColumnType.Text, title: 'Other Column' },
-        { id: 'another_column', type: NonDeprecatedColumnType.Status, title: 'Status' },
+        { id: 'some_other_column', type: NonDeprecatedColumnType.Text, title: 'Other Column', revision: '1' },
+        { id: 'another_column', type: NonDeprecatedColumnType.Status, title: 'Status', revision: '1' },
       ],
       groups: [],
     },

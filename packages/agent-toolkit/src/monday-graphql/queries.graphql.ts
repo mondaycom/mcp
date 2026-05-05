@@ -28,14 +28,25 @@ export const getBoardSchema = gql`
         id
         type
         title
+        revision
       }
     }
   }
 `;
 
 export const changeItemColumnValues = gql`
-  mutation changeItemColumnValues($boardId: ID!, $itemId: ID!, $columnValues: JSON!) {
-    change_multiple_column_values(board_id: $boardId, item_id: $itemId, column_values: $columnValues) {
+  mutation changeItemColumnValues(
+    $boardId: ID!
+    $itemId: ID!
+    $columnValues: JSON!
+    $createLabelsIfMissing: Boolean
+  ) {
+    change_multiple_column_values(
+      board_id: $boardId
+      item_id: $itemId
+      column_values: $columnValues
+      create_labels_if_missing: $createLabelsIfMissing
+    ) {
       id
       name
       url
@@ -92,6 +103,32 @@ export const deleteColumn = gql`
   mutation deleteColumn($boardId: ID!, $columnId: String!) {
     delete_column(board_id: $boardId, column_id: $columnId) {
       id
+    }
+  }
+`;
+
+export const updateColumn = gql`
+  mutation updateColumn(
+    $boardId: ID!
+    $columnId: String!
+    $columnType: ColumnType!
+    $revision: String!
+    $columnTitle: String
+    $columnDescription: String
+    $columnSettings: JSON
+  ) {
+    update_column(
+      board_id: $boardId
+      id: $columnId
+      column_type: $columnType
+      revision: $revision
+      title: $columnTitle
+      description: $columnDescription
+      settings: $columnSettings
+    ) {
+      id
+      title
+      revision
     }
   }
 `;

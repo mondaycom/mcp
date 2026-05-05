@@ -1,14 +1,13 @@
 export const GraphQLDescriptions = {
   commonArgs: {
-    formToken: 'The unique identifier token for the form. Required for all form-specific operations.',
-    questionId: 'The unique identifier for the question. Used to target specific questions within a form.',
+    questionId: 'Question ID. Required for update/delete.',
   },
   form: {
     operations: {
       createForm: 'Create a new form with specified configuration. Returns the created form with its unique token.',
       updateForm: {
         action:
-          'The type of update action to perform on the form. Can be one of the following: activate, deactivate, shortenFormUrl, setFormPassword, createTag, deleteTag, updateTag, updateForm, updateAppearance, updateAccessibility, updateFeatures, updateQuestionOrder, updateFormHeader.',
+          'Action to execute on the form. Each action requires different fields — check field descriptions to know what to include.',
       },
       activateForm: 'Activate a form to make it visible to users and accept new submissions.',
       deactivateForm: 'Deactivate a form to hide it from users and stop accepting submissions. Form data is preserved.',
@@ -26,7 +25,7 @@ export const GraphQLDescriptions = {
       questions: 'Array of question objects that make up the form content, in display order.',
       isSuspicious:
         'Boolean flag indicating if the form has been flagged for review due to suspicious content or activity.',
-      isAnonymous: 'Boolean indicating if responses are collected without identifying the submitter.',
+      isAnonymous: 'Hides submitter identity.',
       type: 'The category or classification of the form for organizational purposes.',
       features: 'Object containing feature toggles and settings like password protection, response limits, etc.',
       appearance: 'Object containing visual styling settings including colors, fonts, layout, and branding.',
@@ -34,141 +33,50 @@ export const GraphQLDescriptions = {
       tags: {
         description:
           'Array of tracking tags for categorization and analytics (e.g., UTM parameters for marketing tracking).',
-        id: 'The unique identifier for the tag. This will get auto generated when creating a tag and can’t be updated. This is required when updating or deleting a tag.',
-        name: 'The name of the tag. This can only be created, not updated. This is required when creating a tag.',
-        value: 'The value of the tag. This value is required when creating or updating a tag.',
-        columnId:
-          'The ID of the column this tag is associated with. This will get auto generated when creating a tag and can’t be updated.',
+        id: 'Required for update/delete. Auto-generated.',
+        name: 'Required for create. Cannot be updated.',
+        value: 'Required for create/update.',
+        columnId: 'Auto-generated. Cannot be updated.',
       },
     },
     inputs: {
-      title:
-        'The title text for the form. Must be at least 1 character long. Can only be updated if the update action is updateFormHeader.',
-      description:
-        'Optional description text providing context about the form purpose. Can only be updated if the update action is updateFormHeader.',
+      title: 'Required for updateFormHeader.',
+      description: 'Required for updateFormHeader.',
       input: 'Complete form configuration object containing properties to create or update.',
-      questions:
-        'Ordered array of dehydrated questions, object only including each question ID, for reordering. Must include all existing question IDs. Required if the update action is updateQuestionOrder.',
-      questionId:
-        'The unique identifier for the question. Used to target specific questions within a form. Required when deleting or updating a question.',
-      tag: 'The tag data to create, update or delete. If deleting a tag, only provide the id of the tag to delete. If creating a tag, provide the name and value, the id and columnId are auto generated. If updating a tag, provide the id and new value, name and columnId are not changeable.',
+      questions: 'All question IDs in order. Must include every existing ID. Required for updateQuestionOrder.',
+      questionId: 'Question ID. Required for update/delete.',
+      tag: 'Tag to create/update/delete. Delete: id only. Create: name+value (id/columnId auto-generated). Update: id+new value.',
       form: {
-        describe:
-          'The form data to update. Required if updating the appearance, accessibility, features, question order, or form header.',
-        appearance:
-          'The appearance data to update. Acts as a patch object, meaning that only the fields that are provided will be updated. Required if the update action is updateAppearance.',
-        accessibility:
-          'The accessibility data to update. Acts as a patch object, meaning that only the fields that are provided will be updated. Required if the update action is updateAccessibility.',
-        features:
-          'The features data to update. Acts as a patch object, meaning that only the fields that are provided will be updated. Required if the update action is updateFeatures.',
-        questionOrder:
-          'The question order data to update. Acts as a patch object, meaning that only the fields that are provided will be updated. Required if the update action is updateQuestionOrder.',
-        formHeader:
-          'The form header data to update. Acts as a patch object, meaning that only the fields that are provided will be updated. Required if the update action is updateFormHeader.',
+        describe: 'Form data to update (patch semantics).',
+        appearance: 'Patch. Required for updateAppearance.',
+        accessibility: 'Patch. Required for updateAccessibility.',
+        features: 'Patch. Required for updateFeatures.',
+        questionOrder: 'Patch. Required for updateQuestionOrder.',
+        formHeader: 'Patch. Required for updateFormHeader.',
       },
     },
     args: {
-      formToken: 'The unique form token identifying which form to operate on.',
-      destinationWorkspaceId: 'The workspace in which the form will be created in.',
-      destinationFolderId: 'The folder in which the form will be created under.',
-      destinationFolderName: 'The name of the folder in which the form will be created in.',
-      boardKind: 'The board kind to create for the board in which the form will create items in.',
-      destinationName: 'The name of the board that will be created to store the form responses in.',
-      boardOwnerIds:
-        'Array of user IDs who will have owner permissions on the board in which the form will create items in.',
-      boardOwnerTeamIds:
-        'Array of team IDs whose members will have owner permissions on the board in which the form will create items in.',
-      boardSubscriberIds:
-        'Array of user IDs who will receive notifications about board activity for the board in which the form will create items in.',
-      boardSubscriberTeamsIds:
-        'Array of team IDs whose members will receive notifications about board activity for the board in which the form will create items in.',
+      destinationName: 'Board name (stores form responses).',
+      boardSubscriberIds: 'User IDs to notify on board activity.',
+      boardSubscriberTeamsIds: 'Team IDs to notify on board activity.',
     },
   },
   formSettings: {
     operations: {
       updateFormSettings: 'Update form configuration including features, appearance, and accessibility options.',
-      setFormPassword:
-        'Set a password on a form to restrict access. This will enable password protection for the form. Required for the action "setFormPassword" in the update form tool.',
+      setFormPassword: 'Required for setFormPassword action.',
       shortenUrl: 'Shorten a URL for a form and store it in the form settings. Returns the shortened link object.',
     },
     properties: {
-      features:
-        'Object containing form features including but not limited to password protection, response limits, login requirements, etc. Required when updating the features of the form.',
-      appearance:
-        'Object containing visual styling including colors, layout, fonts, and branding elements. Required when updating the appearance of the form.',
-      accessibility:
-        'Object containing accessibility options such as language, alt text, etc. Required when updating the accessibility of the form.',
-      isInternal: 'Boolean indicating if the form is restricted to internal users only.',
-      reCaptchaChallenge: 'Boolean enabling reCAPTCHA verification to prevent spam submissions.',
-      password: 'Object containing password protection configuration for the form.',
-      passwordEnabled:
-        'Boolean disabling password protection. Can only be updated to false. In order to enable password protection use the setFormPassword action instead.',
-      requireLogin: 'Object containing login requirement settings for form access.',
-      requireLoginEnabled: 'Boolean requiring users to be logged in before submitting responses.',
-      redirectToLogin: 'Boolean automatically redirecting unauthenticated users to the login page.',
-      shortenedLink: 'Object containing shortened URL configuration for easy form sharing.',
-      shortenedLinkEnabled: 'Boolean enabling generation of shortened URLs for the form.',
-      shortenedLinkUrl: 'The generated shortened URL for form access. Only available when shortened links are enabled.',
-      draftSubmission: 'Object containing draft saving configuration allowing users to save progress.',
-      draftSubmissionEnabled: 'Boolean allowing users to save incomplete responses as drafts.',
-      aiTranslate: 'Object containing AI translation configuration for the form.',
-      aiTranslateEnabled: 'Boolean enabling AI translation for the form.',
-      responseLimit: 'Object containing response limitation settings to control submission volume.',
-      responseLimitEnabled: 'Boolean enabling response count limits for the form.',
-      responseLimitValue: 'Integer specifying the maximum number of responses allowed.',
-      closeDate: 'Object containing automatic form closure configuration.',
-      closeDateEnabled: 'Boolean enabling automatic form closure at a specified date and time.',
-      closeDateValue: 'ISO timestamp when the form will automatically stop accepting responses.',
-      allowResubmit: 'Boolean allowing users to submit multiple responses to the same form.',
-      allowEditSubmission: 'Boolean allowing users to modify their submitted responses after submission.',
-      allowViewSubmission: 'Boolean allowing users to view their submitted responses.',
-      preSubmissionView: 'Object containing welcome screen configuration displayed before the form.',
-      preSubmissionEnabled: 'Boolean showing a welcome/introduction screen before the form begins.',
-      preSubmissionTitle: 'Text displayed as the title on the welcome screen.',
-      preSubmissionDescription: 'Text providing context or instructions on the welcome screen.',
-      startButton: 'Object containing start button configuration for the welcome screen.',
-      startButtonText: 'Custom text for the button that begins the form experience.',
-      afterSubmissionView: 'Object containing settings for the post-submission user experience.',
-      postSubmissionTitle: 'Text displayed as the title after successful form submission.',
-      postSubmissionDescription: 'Text shown to users after they complete the form.',
-      showSuccessImage: 'Boolean displaying a success image after form completion.',
-      redirectAfterSubmission: 'Object containing redirect configuration after form submission.',
-      redirectAfterSubmissionEnabled: 'Boolean enabling automatic redirect after form completion to a specified URL.',
-      redirectUrl: 'The URL where users will be redirected after successfully submitting the form.',
-      monday: 'Object containing board settings for response handling.',
-      itemGroupId: 'The board group ID where new items from form responses will be created.',
-      includeNameQuestion:
-        'Boolean adding a name question to the form. This is a special question type that represents the name column from the associated monday board',
-      includeUpdateQuestion:
-        'Boolean adding an update/comment field to the form. This is a special question type that represents the updates from the associated item of the submission on the monday board. ',
-      syncQuestionAndColumnsTitles:
-        'Boolean synchronizing form question titles with board column names. When true, the form question titles will be synchronized with the board column names.',
-      allowCreateItem:
-        'Boolean showing a "Create Item" button on the board that opens this form. When enabled, board members can create new board items by filling out this form directly from the board.',
-      hideBranding: 'Boolean hiding monday branding from the form display.',
-      showProgressBar: 'Boolean displaying a progress indicator showing form completion progress bar.',
-      primaryColor: 'Hex color code for the primary theme color used throughout the form.',
-      layout: 'Object containing form structure and presentation settings.',
-      format: 'String specifying the form display format. Can be a step by step form or a classic one page form.',
-      alignment: 'String controlling text and content alignment.',
-      direction: 'String setting reading direction.',
-      background: 'Object containing background appearance configuration for the form.',
-      backgroundType: 'String specifying background style.',
-      backgroundValue:
-        'String containing the background value. The value will depend on the background type. If the background type is color, the value will be a hex color code. If the background type is image, the value will be an image URL.',
-      text: 'Object containing typography and text styling configuration.',
-      font: 'String specifying the font family used throughout the form.',
-      textColor: 'Hex color code for the text color in the form.',
-      fontSize: 'String or number specifying the base font size for form text.',
-      logo: 'Object containing logo display configuration for form branding.',
-      logoPosition: 'String specifying logo placement ("top", "bottom", "header").',
-      logoUrl: 'URL pointing to the logo image file for display on the form.',
-      logoSize:
-        'String specifying logo size ("small", "medium", "large") for the logo that appears on the header of the form.',
-      logoAltText: 'Alternative text description for the logo image for accessibility.',
-      submitButton: 'Object containing submit button styling and text configuration.',
-      submitButtonText: 'Custom text displayed on the form submission button.',
-      language: 'Language code for form localization and interface text (e.g., "en", "es", "fr").',
+      passwordEnabled: 'Can only be set to false. Use setFormPassword to enable.',
+      closeDateValue: 'ISO timestamp.',
+      includeNameQuestion: 'Adds name column as a form question.',
+      includeUpdateQuestion: 'Adds updates/comments field linked to the board item.',
+      syncQuestionAndColumnsTitles: 'Syncs question titles with board column names.',
+      allowCreateItem: "Shows 'Create Item' button on the board to open this form.",
+      backgroundValue: 'Hex color or image URL (depends on type).',
+      logoSize: 'Logo size for the form header.',
+      language: "Form locale, e.g. 'en', 'es', 'fr'.",
     },
     inputs: {
       settings: 'Complete form settings object containing all configuration options.',
@@ -182,41 +90,32 @@ export const GraphQLDescriptions = {
   },
   question: {
     actions: {
-      type: 'The type of operation to perform on the question. Can delete, update, or create. When updating or deleting a question, the questionId is required. When creating or updating a question, the question object is required. When updating, the question is a patch object, meaning that only the fields that are provided will be updated.',
+      type: 'Action to perform on the question of a form. create requires question. update requires questionId and question with type always included. delete requires questionId.',
       question:
-        'The question object containing all properties for creation or update. When creating a question, the title is required.',
+        'The question to create or update. Always include type, then only the fields you want to set or change.',
     },
     properties: {
-      title:
-        'The question text displayed to respondents. Must be at least 1 character long and clearly indicate the expected response.',
-      type: 'The question type determining input behavior and validation (e.g., "text", "email", "single_select", "multi_select").',
-      visible:
-        'Boolean controlling question visibility to respondents. Hidden questions remain in form structure but are not displayed.',
-      required: 'Boolean indicating if the question must be answered before form submission.',
+      title: 'Question text. Required when creating.',
+      type: 'Question type. Always required. Cannot be changed after creation — always send the existing type when updating.',
       position: 'Integer specifying the display order of the question within the form (zero-based).',
-      description:
-        'Optional explanatory text providing additional context, instructions, or examples for the question.',
+      description: 'Help text shown under the question.',
       placeholder: 'Optional placeholder text shown in input fields to guide user input.',
       createdAt: 'ISO timestamp when the question was created.',
       updatedAt: 'ISO timestamp when the question was last modified.',
       selectOptions:
-        'Array of option objects for choice-based questions (single_select, multi_select). Supported on both create and update. When updating, the provided array replaces all existing options (PUT semantics). SingleSelect: max 40 options. MultiSelect: max 500 options. Cannot remove options that are already used in board items (existing submissions) — those options must be preserved and must include their value field.',
-      selectOptionsLabel: 'Display label for the option shown to respondents.',
-      selectOptionsValue: 'Internal identifier for the option. Required when updating options that are already assigned to board items — omitting it will cause those options to be removed.',
-      selectOptionsVisible: 'Whether the option is visible to respondents. Defaults to true.',
+        'Options for select questions. Always include all options — omitting an existing option will delete it. To update safely, call get_form first to retrieve existing option values, then include all options you want to keep with their original value fields.',
+      selectOptionsValue:
+        'Unique identifier for the option. If this option was used in existing submissions, it must keep its original value to preserve data integrity.',
       blockType: 'The kind of block to create. Includes all question types and content block types.',
-      insertAfterQuestionId: 'Insert the new question after this question ID. Omit to append at the end. Pass null to place it first in the form.',
-      pageBlockId: 'Page block this question belongs to. Required for questions inside a page block. Pass null to remove the page block association.',
-      existingColumnId: 'Link to an existing board column instead of creating a new one.',
+      insertAfterQuestionId: 'ID to insert after. Omit to append. Null for first position.',
+      pageBlockId:
+        'Page block ID to group this question within. Set to null to remove from page block. Omit to leave unchanged.',
+
     },
-    showIfRules:
-      'Conditional visibility rules for this question. The question is shown when any rule is satisfied (OR between rules). Each rule contains conditions that must all be met (AND within a rule). Structure: { operator, rules: [{ operator, conditions: [{ building_block_id, operator, values }] }] }.',
-    showIfRulesOperator:
-      'Logical operator for combining rules or conditions. Use "OR" at the top level (show if any rule matches) and "OR" within conditions (match if any value matches).',
-    showIfConditionBuildingBlockId:
-      'The ID of the question whose answer is evaluated by this condition.',
-    showIfConditionValues:
-      'The expected answer values. The condition is met if the question answer matches any of these values.',
+    showIfRules: 'Conditional visibility. All operators must be OR.',
+
+    showIfConditionBuildingBlockId: 'Question ID to evaluate.',
+    showIfConditionValues: 'Answer values that satisfy the condition.',
     inputs: {
       question: 'Complete question object containing all properties for creation or update.',
       questionData: 'Question configuration including type, title, and type-specific settings.',
@@ -226,41 +125,23 @@ export const GraphQLDescriptions = {
   questionSettings: {
     properties: {
       validation: 'Validation rules applied to the question response',
-      prefill:
-        'Configuration for automatically populating question values from various data sources such as user account information or URL query parameters.',
-      prefillEnabled:
-        'Whether prefill functionality is enabled for this question. When true, the question will attempt to auto-populate values from the specified source.',
-      prefillSource:
-        'The data source to use for prefilling the question value. Check the PrefillSources for available options.',
-      prefillLookup:
-        'The specific field or parameter name to lookup from the prefill source. For account sources, this would be a user property like "name" or "email". For query parameters, this would be the parameter name that would be set in the URL.',
-      prefixAutofilled:
-        "Phone questions only: Automatically detect and fill the phone country prefix based on the user's geographic location or browser settings.",
-      prefixPredefined:
-        'Phone questions only: Configuration for setting a specific predefined phone country prefix that will be pre-selected for users.',
-      prefixPredefinedEnabled:
-        'Whether a predefined phone prefix is enabled for phone number questions. When true, the specified prefix will be pre-selected.',
-      prefixPredefinedPrefix:
-        'The predefined phone country prefix to use as country code in capital letters (e.g., "US", "UK", "IL"). Only used when enabled is true.',
-      checkedByDefault:
-        'Boolean/checkbox questions only: Whether the checkbox should be checked by default when the form loads.',
-      defaultCurrentDate:
-        'Date based questions only: Automatically set the current date as the default value when the form loads.',
-      includeTime:
-        'Date questions only: Whether to include time selection (hours and minutes) in addition to the date picker. When false, only date selection is available.',
-      display:
-        'Single/Multi Select questions only: Controls how the selection options are visually presented to users.',
-      optionsOrder: 'Single/Multi Select questions only: Determines the ordering of selection options.',
-      locationAutofilled:
-        "Location questions only: Automatically detect and fill the user's current location using browser geolocation services, requiring user permission.",
+      prefill: 'Auto-populates from account data or URL query params.',
+
+      prefillLookup: "Field name (e.g. 'email') or URL param name.",
+      prefixAutofilled: 'Phone only. Auto-detects country prefix.',
+      prefixPredefined: 'Phone only. Sets a default country prefix.',
+      prefixPredefinedPrefix: "Country code, e.g. 'US', 'IL'.",
+      checkedByDefault: 'Boolean question type only.',
+      defaultCurrentDate: 'Date question type only.',
+      includeTime: 'Date only. Adds time picker.',
+      display: 'SingleSelect/MultiSelect only.',
+      optionsOrder: 'SingleSelect/MultiSelect only.',
+      locationAutofilled: 'Location only. Auto-fills current location.',
       limit: 'Rating questions only: Maximum rating value that users can select.',
-      skipValidation: 'Link/URL questions only: Whether to skip URL format validation, allowing any text input.',
-      labelLimitCount:
-        'Multi Select questions only: Maximum number of options a respondent can select. Must be set together with labelLimitCountEnabled to take effect.',
-      labelLimitCountEnabled:
-        'Multi Select questions only: Whether to enforce an option selection limit. Set labelLimitCount to specify the limit.',
-      defaultAnswer:
-        'ShortText, LongText, Name, and Link questions only: Pre-filled default value shown to respondents when the form loads. Respondents can clear or change it before submitting.',
+      skipValidation: 'Link only. Skips URL format validation.',
+      labelLimitCount: 'MultiSelect only. Max selections. Pair with labelLimitCountEnabled.',
+      labelLimitCountEnabled: 'MultiSelect only. Enables selection limit.',
+      defaultAnswer: 'ShortText/LongText/Name/Link only. Pre-filled default value.',
     },
     inputs: {
       settings: 'Question-specific configuration object that varies by question type.',
