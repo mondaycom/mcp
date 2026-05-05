@@ -131,7 +131,7 @@ describe('ReadDocsTool', () => {
     it('should return restoring points for a doc', async () => {
       mocks.setResponse(mockHistoryResponse);
 
-      const result = await callToolByNameAsync(TOOL_NAME, { mode: "version_history", ids: [DOC_ID] });
+      const result = await callToolByNameAsync(TOOL_NAME, { mode: 'version_history', ids: [DOC_ID] });
 
       expect(result.doc_id).toBe(DOC_ID);
       expect(result.restoring_points).toHaveLength(2);
@@ -142,7 +142,7 @@ describe('ReadDocsTool', () => {
     it('should include publish type on restoring points', async () => {
       mocks.setResponse(mockHistoryResponse);
 
-      const result = await callToolByNameAsync(TOOL_NAME, { mode: "version_history", ids: [DOC_ID] });
+      const result = await callToolByNameAsync(TOOL_NAME, { mode: 'version_history', ids: [DOC_ID] });
 
       expect(result.restoring_points[1].type).toBe('publish');
     });
@@ -156,7 +156,7 @@ describe('ReadDocsTool', () => {
     it('should return no history message when no restoring points found', async () => {
       mocks.setResponse({ doc_version_history: { doc_id: DOC_ID, restoring_points: [] } });
 
-      const result = await callToolByNameRawAsync(TOOL_NAME, { mode: "version_history", ids: [DOC_ID] });
+      const result = await callToolByNameRawAsync(TOOL_NAME, { mode: 'version_history', ids: [DOC_ID] });
 
       expect(result.content[0].text).toContain('No version history found');
       expect(result.content[0].text).toContain(DOC_ID);
@@ -205,7 +205,11 @@ describe('ReadDocsTool', () => {
     it('should fetch diffs for consecutive restoring points', async () => {
       mocks.mockRequest.mockResolvedValueOnce(mockHistoryResponse).mockResolvedValueOnce(mockDiffResponse);
 
-      const result = await callToolByNameAsync(TOOL_NAME, { mode: "version_history", ids: [DOC_ID], include_diff: true });
+      const result = await callToolByNameAsync(TOOL_NAME, {
+        mode: 'version_history',
+        ids: [DOC_ID],
+        include_diff: true,
+      });
 
       expect(result.restoring_points[0].diff).toEqual(mockDiffBlocks);
     });
@@ -213,7 +217,11 @@ describe('ReadDocsTool', () => {
     it('should not attach diff to last restoring point', async () => {
       mocks.mockRequest.mockResolvedValueOnce(mockHistoryResponse).mockResolvedValueOnce(mockDiffResponse);
 
-      const result = await callToolByNameAsync(TOOL_NAME, { mode: "version_history", ids: [DOC_ID], include_diff: true });
+      const result = await callToolByNameAsync(TOOL_NAME, {
+        mode: 'version_history',
+        ids: [DOC_ID],
+        include_diff: true,
+      });
 
       const lastPoint = result.restoring_points[result.restoring_points.length - 1];
       expect(lastPoint.diff).toBeUndefined();
@@ -225,10 +233,16 @@ describe('ReadDocsTool', () => {
         user_ids: ['1001'],
         type: null,
       }));
-      mocks.mockRequest.mockResolvedValueOnce({ doc_version_history: { doc_id: DOC_ID, restoring_points: manyPoints } });
+      mocks.mockRequest.mockResolvedValueOnce({
+        doc_version_history: { doc_id: DOC_ID, restoring_points: manyPoints },
+      });
       for (let i = 0; i < 9; i++) mocks.mockRequest.mockResolvedValueOnce(mockDiffResponse);
 
-      const result = await callToolByNameAsync(TOOL_NAME, { mode: "version_history", ids: [DOC_ID], include_diff: true });
+      const result = await callToolByNameAsync(TOOL_NAME, {
+        mode: 'version_history',
+        ids: [DOC_ID],
+        include_diff: true,
+      });
 
       expect(result.restoring_points).toHaveLength(10);
       expect(result.truncated).toBe(true);
@@ -240,7 +254,11 @@ describe('ReadDocsTool', () => {
         .mockResolvedValueOnce(mockHistoryResponse)
         .mockRejectedValueOnce(new Error('Diff fetch failed'));
 
-      const result = await callToolByNameAsync(TOOL_NAME, { mode: "version_history", ids: [DOC_ID], include_diff: true });
+      const result = await callToolByNameAsync(TOOL_NAME, {
+        mode: 'version_history',
+        ids: [DOC_ID],
+        include_diff: true,
+      });
 
       expect(result.restoring_points).toHaveLength(2);
       expect(result.restoring_points[0].diff).toBeUndefined();
@@ -255,7 +273,11 @@ describe('ReadDocsTool', () => {
         doc_version_history: { doc_id: DOC_ID, restoring_points: pointsWithNullDate },
       });
 
-      const result = await callToolByNameAsync(TOOL_NAME, { mode: "version_history", ids: [DOC_ID], include_diff: true });
+      const result = await callToolByNameAsync(TOOL_NAME, {
+        mode: 'version_history',
+        ids: [DOC_ID],
+        include_diff: true,
+      });
 
       expect(result.restoring_points[0].diff).toBeUndefined();
       expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
@@ -264,7 +286,7 @@ describe('ReadDocsTool', () => {
     it('should return error content on API errors', async () => {
       mocks.setError('Network error');
 
-      const result = await callToolByNameRawAsync(TOOL_NAME, { mode: "version_history", ids: [DOC_ID] });
+      const result = await callToolByNameRawAsync(TOOL_NAME, { mode: 'version_history', ids: [DOC_ID] });
 
       expect(result.content[0].text).toContain('Error fetching version history');
       expect(result.content[0].text).toContain('Network error');
@@ -353,9 +375,7 @@ describe('ReadDocsTool', () => {
     });
 
     it('should not include comments when include_comments is false', async () => {
-      mocks.mockRequest
-        .mockResolvedValueOnce(mockDocsResponse)
-        .mockResolvedValueOnce(mockMarkdownResponse);
+      mocks.mockRequest.mockResolvedValueOnce(mockDocsResponse).mockResolvedValueOnce(mockMarkdownResponse);
 
       const result = await callToolByNameAsync(TOOL_NAME, {
         type: 'ids',
@@ -367,9 +387,7 @@ describe('ReadDocsTool', () => {
     });
 
     it('should not include comments by default', async () => {
-      mocks.mockRequest
-        .mockResolvedValueOnce(mockDocsResponse)
-        .mockResolvedValueOnce(mockMarkdownResponse);
+      mocks.mockRequest.mockResolvedValueOnce(mockDocsResponse).mockResolvedValueOnce(mockMarkdownResponse);
 
       const result = await callToolByNameAsync(TOOL_NAME, {
         type: 'ids',
@@ -430,6 +448,144 @@ describe('ReadDocsTool', () => {
     });
   });
 
+  // ─── include_blocks with pagination ────────────────────────────────────────
+
+  describe('include_blocks with pagination', () => {
+    const mockBlocks = Array.from({ length: 10 }, (_, i) => ({
+      id: `block_${i}`,
+      type: 'text',
+      parent_block_id: null,
+      position: String(i),
+      content: JSON.stringify({ text: `Block ${i}` }),
+    }));
+
+    const mockDocsWithBlocksResponse = { docs: [{ ...mockDoc, blocks: mockBlocks }] };
+
+    it('should forward blocks_limit and blocks_page to the GraphQL query', async () => {
+      mocks.mockRequest.mockResolvedValueOnce(mockDocsWithBlocksResponse).mockResolvedValueOnce(mockMarkdownResponse);
+
+      await callToolByNameAsync(TOOL_NAME, {
+        type: 'ids',
+        ids: [DOC_ID],
+        include_blocks: true,
+        blocks_limit: 10,
+        blocks_page: 2,
+      });
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query readDocs'),
+        expect.objectContaining({ blocksLimit: 10, blocksPage: 2 }),
+      );
+    });
+
+    it('should include blocks_pagination in the response', async () => {
+      mocks.mockRequest.mockResolvedValueOnce(mockDocsWithBlocksResponse).mockResolvedValueOnce(mockMarkdownResponse);
+
+      const result = await callToolByNameAsync(TOOL_NAME, {
+        type: 'ids',
+        ids: [DOC_ID],
+        include_blocks: true,
+        blocks_limit: 10,
+        blocks_page: 2,
+      });
+
+      expect(result.data[0].blocks_pagination).toBeDefined();
+      expect(result.data[0].blocks_pagination.current_page).toBe(2);
+      expect(result.data[0].blocks_pagination.limit).toBe(10);
+      expect(result.data[0].blocks_pagination.count).toBe(10);
+      expect(result.data[0].blocks_pagination.has_more_pages).toBe(true);
+    });
+
+    it('should not include blocks_pagination when include_blocks is false', async () => {
+      mocks.mockRequest.mockResolvedValueOnce(mockDocsResponse).mockResolvedValueOnce(mockMarkdownResponse);
+
+      const result = await callToolByNameAsync(TOOL_NAME, {
+        type: 'ids',
+        ids: [DOC_ID],
+        include_blocks: false,
+      });
+
+      expect(result.data[0].blocks_pagination).toBeUndefined();
+    });
+
+    it('should not include blocks_pagination when include_blocks is false even if blocks_limit is provided', async () => {
+      mocks.mockRequest.mockResolvedValueOnce(mockDocsResponse).mockResolvedValueOnce(mockMarkdownResponse);
+
+      const result = await callToolByNameAsync(TOOL_NAME, {
+        type: 'ids',
+        ids: [DOC_ID],
+        include_blocks: false,
+        blocks_limit: 10,
+      });
+
+      expect(result.data[0].blocks_pagination).toBeUndefined();
+    });
+
+    it('should not include blocks_pagination when blocks_limit and blocks_page are both omitted', async () => {
+      mocks.mockRequest.mockResolvedValueOnce(mockDocsWithBlocksResponse).mockResolvedValueOnce(mockMarkdownResponse);
+
+      const result = await callToolByNameAsync(TOOL_NAME, {
+        type: 'ids',
+        ids: [DOC_ID],
+        include_blocks: true,
+      });
+
+      expect(result.data[0].blocks_pagination).toBeUndefined();
+    });
+
+    it('should set has_more_pages to false when count is less than limit', async () => {
+      const fewerBlocks = mockBlocks.slice(0, 7);
+      mocks.mockRequest
+        .mockResolvedValueOnce({ docs: [{ ...mockDoc, blocks: fewerBlocks }] })
+        .mockResolvedValueOnce(mockMarkdownResponse);
+
+      const result = await callToolByNameAsync(TOOL_NAME, {
+        type: 'ids',
+        ids: [DOC_ID],
+        include_blocks: true,
+        blocks_limit: 10,
+      });
+
+      expect(result.data[0].blocks_pagination.has_more_pages).toBe(false);
+      expect(result.data[0].blocks_pagination.count).toBe(7);
+    });
+
+    it('should forward blocks_limit and blocks_page through the fallback object_ids retry', async () => {
+      mocks.mockRequest
+        .mockResolvedValueOnce(mockEmptyDocsResponse)
+        .mockResolvedValueOnce(mockDocsWithBlocksResponse)
+        .mockResolvedValueOnce(mockMarkdownResponse);
+
+      await callToolByNameAsync(TOOL_NAME, {
+        type: 'ids',
+        ids: [DOC_ID],
+        include_blocks: true,
+        blocks_limit: 10,
+        blocks_page: 3,
+      });
+
+      const calls = mocks.getMockRequest().mock.calls;
+      expect(calls[1][1]).toMatchObject({ blocksLimit: 10, blocksPage: 3, object_ids: [DOC_ID], ids: undefined });
+    });
+
+    it('should not forward blocksLimit/blocksPage to GraphQL when include_blocks is false', async () => {
+      mocks.mockRequest.mockResolvedValueOnce(mockDocsResponse).mockResolvedValueOnce(mockMarkdownResponse);
+
+      await callToolByNameAsync(TOOL_NAME, {
+        type: 'ids',
+        ids: [DOC_ID],
+        include_blocks: false,
+        blocks_limit: 10,
+        blocks_page: 2,
+      });
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query readDocs'),
+        expect.not.objectContaining({ blocksLimit: 10, blocksPage: 2 }),
+      );
+    });
+  });
+
   // ─── schema validation ──────────────────────────────────────────────────────
 
   describe('schema validation', () => {
@@ -451,6 +607,9 @@ describe('ReadDocsTool', () => {
       expect(schema.mode).toBeDefined();
       expect(schema.type).toBeDefined();
       expect(schema.ids).toBeDefined();
+      expect(schema.include_blocks).toBeDefined();
+      expect(schema.blocks_limit).toBeDefined();
+      expect(schema.blocks_page).toBeDefined();
       expect(schema.version_history_limit).toBeDefined();
       expect(schema.since).toBeDefined();
       expect(schema.until).toBeDefined();
@@ -466,6 +625,8 @@ describe('ReadDocsTool', () => {
       expect(description).toContain('content');
       expect(description).toContain('version_history');
       expect(description).toContain('object_id');
+      expect(description).toContain('blocks_limit');
+      expect(description).toContain('blocks_page');
       expect(description).toContain('include_diff');
       expect(description).toContain('include_comments');
     });
