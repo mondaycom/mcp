@@ -9,6 +9,8 @@ export const readDocs = gql`
     $page: Int
     $workspace_ids: [ID]
     $includeBlocks: Boolean = false
+    $blocksLimit: Int
+    $blocksPage: Int
   ) {
     docs(
       ids: $ids
@@ -36,7 +38,7 @@ export const readDocs = gql`
       }
       workspace_id
       doc_folder_id
-      blocks @include(if: $includeBlocks) {
+      blocks(limit: $blocksLimit, page: $blocksPage) @include(if: $includeBlocks) {
         id
         type
         parent_block_id
