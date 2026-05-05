@@ -38,7 +38,7 @@ export class GetColumnTypeInfoTool extends BaseMondayApiTool<typeof getNonDeprec
     return (
       'Retrieves comprehensive information about a specific column type. ' +
       `Use fetchMode "${ColumnTypeInfoFetchMode.Schema}" (default) to get the JSON schema definition from the API — use this before creating or updating columns (e.g. create_column) to understand structure, validation rules, and available properties for column settings. ` +
-      `Use fetchMode "${ColumnTypeInfoFetchMode.Guidelines}" to get only guidelines.filter and guidelines.aggregation for building items_page filters and board insights counts (no schema; no GraphQL round-trip). `
+      `Use fetchMode "${ColumnTypeInfoFetchMode.Guidelines}" to get only guidelines.filter and guidelines.aggregation for building items_page filters and board insights counts (no schema, no GraphQL round-trip). `
     );
   }
 
