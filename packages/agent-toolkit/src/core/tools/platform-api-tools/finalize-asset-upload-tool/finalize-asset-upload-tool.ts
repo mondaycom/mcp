@@ -65,6 +65,7 @@ export class FinalizeAssetUploadTool extends BaseMondayApiTool<typeof finalizeAs
           parts: [{ part_number: 1, etag: input.etag }],
         },
       },
+      // complete_upload is only available in the dev schema; remove versionOverride once promoted to stable
       { versionOverride: 'dev' },
     );
 

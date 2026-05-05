@@ -37,11 +37,4 @@ export const ARG_CONFIGS: ArgConfig[] = [
     required: false,
     defaultValue: false,
   },
-  {
-    name: 'apiUrl',
-    flags: ['--api-url', '-au'],
-    description: 'Monday API endpoint URL (e.g. https://monday.mondaystaging.com/v2)',
-    required: false,
-    defaultValue: undefined,
-  },
 ];

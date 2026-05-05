@@ -12,7 +12,6 @@ async function runMcpServer(validatedArgs: ReturnType<typeof validateArgs>): Pro
   const toolkit = new MondayAgentToolkit({
     mondayApiToken: validatedArgs.token,
     mondayApiVersion: validatedArgs.version,
-    mondayApiEndpoint: validatedArgs.apiUrl,
     mondayApiRequestConfig: {},
     toolsConfiguration: {
       readOnlyMode: validatedArgs.readOnlyMode,

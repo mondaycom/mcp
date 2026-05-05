@@ -56,6 +56,22 @@ describe('GetAssetUploadUrlTool', () => {
     );
   });
 
+  it('throws when parts array is empty', async () => {
+    mocks.setResponse({
+      create_upload: {
+        upload_id: 'uuid-999',
+        parts: [],
+        part_size: 1024,
+        expires_at: '2026-04-17T12:00:00Z',
+      },
+    });
+
+    const tool = new GetAssetUploadUrlTool(mocks.mockApiClient);
+    await expect(
+      tool.execute({ fileName: 'test.pdf', contentType: 'application/pdf', fileSize: 1024 }),
+    ).rejects.toThrow('create_upload returned no upload URL');
+  });
+
   it('has correct metadata', () => {
     const tool = new GetAssetUploadUrlTool(mocks.mockApiClient);
     expect(tool.name).toBe('get_asset_upload_url');

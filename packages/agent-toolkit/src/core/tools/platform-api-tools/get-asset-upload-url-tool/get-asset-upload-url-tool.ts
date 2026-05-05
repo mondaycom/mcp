@@ -6,7 +6,7 @@ import { createUploadMutationDev } from './get-asset-upload-url.graphql.dev';
 export const getAssetUploadUrlSchema = {
   fileName: z.string().describe('The name of the file to upload, including extension (e.g. "report.pdf")'),
   contentType: z.string().describe('The MIME type of the file (e.g. "application/pdf", "image/png", "text/plain")'),
-  fileSize: z.number().int().positive().describe('The file size in bytes. Maximum 500MB (524288000 bytes)'),
+  fileSize: z.number().int().positive().max(524288000).describe('The file size in bytes. Maximum 500MB (524288000 bytes)'),
 };
 
 interface CreateUploadMutation {
@@ -37,7 +37,7 @@ export class GetAssetUploadUrlTool extends BaseMondayApiTool<typeof getAssetUplo
       '  -H "Content-Type: <the contentType you provided>" \\\n' +
       '  --data-binary @<local_file_path>\n\n' +
       'The response includes an ETag header (e.g. ETag: "abc123...") — save this value.\n\n' +
-      'Then call finalize_asset_upload with the upload_id, etag, board_id, item_id, column_id, and fileName ' +
+      'Then call finalize_asset_upload with the upload_id, etag, board_id, item_id, and column_id ' +
       "to complete the upload and attach the file to an item's file column.\n\n" +
       'Max file size: 500MB.'
     );
@@ -59,15 +59,20 @@ export class GetAssetUploadUrlTool extends BaseMondayApiTool<typeof getAssetUplo
           multipart: false,
         },
       },
+      // create_upload is only available in the dev schema; remove versionOverride once promoted to stable
       { versionOverride: 'dev' },
     );
 
     const upload = res.create_upload;
+    const uploadUrl = upload.parts[0]?.url;
+    if (!uploadUrl) {
+      throw new Error('create_upload returned no upload URL — parts array was empty');
+    }
 
     return {
       content: {
         upload_id: upload.upload_id,
-        upload_url: upload.parts[0]?.url,
+        upload_url: uploadUrl,
         url_expires_at: upload.expires_at,
       },
     };
