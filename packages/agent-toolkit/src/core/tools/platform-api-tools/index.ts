@@ -170,6 +170,7 @@ export * from './full-board-data-tool/full-board-data-tool';
 export * from './undo-action-tool/undo-action-tool';
 export * from './get-board-items-page-tool';
 export * from './get-board-schema-tool';
+export * from './get-column-type-info/get-column-type-info-fetch-mode';
 export * from './get-column-type-info/get-column-type-info-tool';
 export * from './get-graphql-schema-tool';
 export * from './get-type-details-tool';

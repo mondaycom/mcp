@@ -3,6 +3,7 @@ import { CreateColumnMutation, CreateColumnMutationVariables } from 'src/monday-
 import { createColumn } from '../../../monday-graphql/queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
+import { ColumnTypeInfoFetchMode } from './get-column-type-info/get-column-type-info-fetch-mode';
 import { NonDeprecatedColumnType } from 'src/utils/types';
 
 export const createColumnToolSchema = {
@@ -13,7 +14,7 @@ export const createColumnToolSchema = {
     .string()
     .optional()
     .describe(
-      'Column-specific configuration settings as a JSON string. Use the get_column_type_info tool to fetch the JSON schema for the given column type.',
+      `Column-specific configuration settings as a JSON string. Use get_column_type_info with fetchMode "${ColumnTypeInfoFetchMode.Schema}" for the JSON schema for the given column type.`,
     ),
 };
 

@@ -10,6 +10,7 @@ import {
 import { handleFilters, handleFrom, handleSelectAndGroupByElements } from './board-insights-utils';
 import { BoardInsightsAggregationFunction, DEFAULT_LIMIT, MAX_LIMIT } from './board-insights.consts';
 import { filterRulesSchema, filtersOperatorSchema } from '../get-board-items-page-tool';
+import { ColumnTypeInfoFetchMode } from '../get-column-type-info/get-column-type-info-fetch-mode';
 
 export const boardInsightsToolSchema = {
   boardId: z.number().describe('The id of the board to get insights for'),
@@ -24,7 +25,7 @@ export const boardInsightsToolSchema = {
       }),
     )
     .describe(
-      'The aggregations to get. Before sending the aggregations, use get_board_info tool to check "aggregationGuidelines" key for information. Transformative functions and plain columns (no function) must be in group by.',
+      `The aggregations to get. Before sending the aggregations, read guidelines.aggregation from get_column_type_info with fetchMode "${ColumnTypeInfoFetchMode.Guidelines}" for a relevant column type on this board. Transformative functions and plain columns (no function) must be in group by.`,
     )
     .optional(),
   groupBy: z
