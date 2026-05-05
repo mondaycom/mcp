@@ -60,6 +60,8 @@ import { GetAssetsTool } from './get-assets-tool/get-assets-tool';
 import { UserContextTool } from './user-context-tool/user-context-tool';
 import { GetNotetakerMeetingsTool } from './get-notetaker-meetings-tool/get-notetaker-meetings-tool';
 import { UndoActionTool } from './undo-action-tool/undo-action-tool';
+import { GetAssetUploadUrlTool } from './get-asset-upload-url-tool/get-asset-upload-url-tool';
+import { FinalizeAssetUploadTool } from './finalize-asset-upload-tool/finalize-asset-upload-tool';
 import { LinkBoardItemsWorkflowTool } from './link-board-items-workflow-tool/link-board-items-workflow-tool';
 import { FetchFileContentTool } from './fetch-file-content-tool/fetch-file-content-tool';
 import { GetAgentTool } from './agents-tools/get-agent/get-agent-tool';
@@ -129,6 +131,8 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   ManageObjectSchemaBoardConnectionTool,
   ManageObjectSchemaColumnsTool,
   SetObjectSchemaColumnActiveStateTool,
+  GetAssetUploadUrlTool,
+  FinalizeAssetUploadTool,
   LinkBoardItemsWorkflowTool,
   FetchFileContentTool,
   // monday Platform Agents (subgraph still on dev API version)
@@ -194,6 +198,8 @@ export * from './search-tool/search-tool';
 export * from './user-context-tool/user-context-tool';
 export * from './update-assets-on-item-tool/update-assets-on-item-tool';
 export * from './get-assets-tool/get-assets-tool';
+export * from './get-asset-upload-url-tool/get-asset-upload-url-tool';
+export * from './finalize-asset-upload-tool/finalize-asset-upload-tool';
 // Notetaker Tools
 export * from './get-notetaker-meetings-tool/get-notetaker-meetings-tool';
 export * from './fetch-file-content-tool/fetch-file-content-tool';

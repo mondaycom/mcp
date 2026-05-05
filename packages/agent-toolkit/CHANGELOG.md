@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.9.1
+
+### Asset upload MCP tools
+
+- Added `get_asset_upload_url` — requests a presigned S3 upload URL for a file. Returns `upload_id`, `upload_url`, and expiry. Includes inline `curl` example for the upload step and ETag capture guidance.
+- Added `finalize_asset_upload` — finalizes the upload via `complete_upload` and attaches the asset to a file column on a board item using `change_column_value` (append semantics). Returns `asset_id`, `filename`, `content_type`, `file_size`, `url`, and `filelink`.
+- Both tools use `versionOverride: 'dev'` as `create_upload` / `complete_upload` are currently dev-schema-only.
+
 ## 5.7.1
 
 ### form_questions_editor — fix ConditionOperator and remove existing_column_id
