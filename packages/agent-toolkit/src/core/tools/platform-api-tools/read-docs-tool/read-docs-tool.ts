@@ -78,25 +78,33 @@ export const readDocsToolSchema = {
   ids: z
     .array(z.string())
     .optional()
-    .describe('Array of ID values. In content mode: matches the query type (ids/object_ids/workspace_ids). In version_history mode: provide the single document object_id here (e.g., ids: ["5001466606"]).'),
-  limit: z
-    .number()
-    .optional()
-    .describe('Number of docs per page (default: 25). Only used in content mode.'),
+    .describe(
+      'Array of ID values. In content mode: matches the query type (ids/object_ids/workspace_ids). In version_history mode: provide the single document object_id here (e.g., ids: ["5001466606"]).',
+    ),
+  limit: z.number().optional().describe('Number of docs per page (default: 25). Only used in content mode.'),
   order_by: z
     .nativeEnum(DocsOrderBy)
     .optional()
     .describe('Order in which to retrieve docs. Only used in content mode.'),
-  page: z
-    .number()
-    .optional()
-    .describe('Page number to return (starts at 1). Only used in content mode.'),
+  page: z.number().optional().describe('Page number to return (starts at 1). Only used in content mode.'),
   include_blocks: z
     .boolean()
     .optional()
     .default(false)
     .describe(
       'If true, includes the blocks array (block IDs, types, positions, content) in the response. Required when you plan to call update_doc. Defaults to false to reduce response size. Only used in content mode.',
+    ),
+  blocks_limit: z
+    .number()
+    .optional()
+    .describe(
+      'Maximum number of blocks to return per document (default: 25). Only used in content mode when include_blocks is true.',
+    ),
+  blocks_page: z
+    .number()
+    .optional()
+    .describe(
+      'Page number for block pagination, starting at 1. Omit to use the API default. Use with blocks_limit to page through documents with more than 25 blocks. Only used in content mode when include_blocks is true.',
     ),
   include_comments: z
     .boolean()
@@ -159,6 +167,7 @@ MODE: "content" (default) — Fetch documents with their full markdown content.
 - Supports pagination via page/limit. Check has_more_pages in response.
 - If type "ids" returns no results, automatically retries with object_ids.
 - Set include_blocks: true to include block IDs, types, and positions in the response — required before calling update_doc.
+- Blocks default to 25 per page. Use blocks_limit and blocks_page to paginate through long documents.
 - Set include_comments: true to fetch all comments and replies on the document. Use comments_limit to control how many comments per item (default 50).
 
 MODE: "version_history" — Fetch the edit history of a single document.
@@ -212,8 +221,11 @@ MODE: "version_history" — Fetch the edit history of a single document.
           break;
       }
 
+      type ReadDocsVariables = ReadDocsQueryVariables & { includeBlocks: boolean; blocksLimit?: number; blocksPage?: number };
+
       const includeBlocks = input.include_blocks ?? false;
-      const variables: ReadDocsQueryVariables & { includeBlocks: boolean } = {
+      const blocksPagination = includeBlocks ? { blocksLimit: input.blocks_limit, blocksPage: input.blocks_page } : {};
+      const variables: ReadDocsVariables = {
         ids,
         object_ids,
         limit: input.limit || 25,
@@ -221,12 +233,13 @@ MODE: "version_history" — Fetch the edit history of a single document.
         page: input.page,
         workspace_ids,
         includeBlocks,
+        ...blocksPagination,
       };
 
       let res = await this.mondayApi.request<ReadDocsQuery>(readDocs, variables);
 
       if ((!res.docs || res.docs.length === 0) && ids) {
-        const fallbackVariables: ReadDocsQueryVariables & { includeBlocks: boolean } = {
+        const fallbackVariables: ReadDocsVariables = {
           ids: undefined,
           object_ids: ids,
           limit: input.limit || 25,
@@ -234,6 +247,7 @@ MODE: "version_history" — Fetch the edit history of a single document.
           page: input.page,
           workspace_ids,
           includeBlocks,
+          ...blocksPagination,
         };
         res = await this.mondayApi.request<ReadDocsQuery>(readDocs, fallbackVariables);
       }
@@ -252,9 +266,19 @@ MODE: "version_history" — Fetch the edit history of a single document.
         object_ids: res.docs.flatMap((d) => d?.object_id ? [d.object_id] : []),
       };
 
-      return this.enrichDocsWithMarkdown(res.docs, variables, includeBlocks, includeComments, commentsLimit);
+      return this.enrichDocsWithMarkdown(
+        res.docs,
+        variables,
+        includeBlocks,
+        includeComments,
+        commentsLimit,
+        input.blocks_limit,
+        input.blocks_page,
+      );
     } catch (error) {
-      return { content: `Error reading documents: ${error instanceof Error ? error.message : 'Unknown error occurred'}` };
+      return {
+        content: `Error reading documents: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
+      };
     }
   }
 
@@ -404,6 +428,8 @@ MODE: "version_history" — Fetch the edit history of a single document.
     includeBlocks: boolean,
     includeComments: boolean = false,
     commentsLimit: number = 50,
+    blocksLimit?: number,
+    blocksPage?: number,
   ): Promise<ToolOutputType<never>> {
     type ExportMarkdownFromDocMutationVariables = {
       docId: string;
@@ -466,6 +492,18 @@ MODE: "version_history" — Fetch the edit history of a single document.
                   position: b.position,
                   content: b.content,
                 })),
+              ...(blocksLimit !== undefined || blocksPage !== undefined
+                ? {
+                    blocks_pagination: {
+                      current_page: blocksPage ?? 1,
+                      limit: blocksLimit ?? 25,
+                      count: (doc.blocks ?? []).filter((b) => b != null).length,
+                      // Raw length (including null slots) used for has_more_pages to avoid
+                      // false negatives when a page contains access-controlled/deleted block slots.
+                      has_more_pages: (doc.blocks ?? []).length === (blocksLimit ?? 25),
+                    },
+                  }
+                : {}),
             }),
             blocks_as_markdown: blocksAsMarkdown,
             ...(includeComments && { comments }),
