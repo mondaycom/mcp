@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { ColumnTypeInfoFetchMode } from '../get-column-type-info/get-column-type-info-fetch-mode';
 
 import {
   ItemsQueryOperator,
@@ -34,7 +35,7 @@ export const filterRulesSchema = z
   )
   .optional()
   .describe(
-    'The configuration of filters to apply on the items. Before sending the filters, use get_board_info tool to check "filteringGuidelines" key for filtering by the column.',
+    `The configuration of filters to apply on the items. Use get_board_info for column ids and types on the board. Before sending the filters, use get_column_type_info with fetchMode "${ColumnTypeInfoFetchMode.Guidelines}" and use data.guidelines.filter (null if that type has no documented rules).`,
   );
 
 export const filtersOperatorSchema = z
