@@ -50,6 +50,7 @@ const fileAnswerSchema = z.object({
   is_image: z.boolean().optional().describe('Whether the file is an image.'),
 });
 
+
 const formAnswerInputSchema = z
   .object({
     question_id: z.string().describe('The ID of the question being answered.'),
@@ -63,7 +64,7 @@ const formAnswerInputSchema = z
     number: z.number().optional().describe('Answer for number questions.'),
     rating: z
       .number()
-      .positive()
+      .min(1)
       .optional()
       .describe("Answer for rating questions. Must be a positive number within the question's configured limit."),
     single_select: z.string().optional().describe('Answer for single-select questions — the selected option ID.'),
