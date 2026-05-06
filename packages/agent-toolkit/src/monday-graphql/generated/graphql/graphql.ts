@@ -12249,6 +12249,7 @@ export type CreateBoardMutationVariables = Exact<{
   boardName: Scalars['String']['input'];
   boardDescription?: InputMaybe<Scalars['String']['input']>;
   workspaceId?: InputMaybe<Scalars['ID']['input']>;
+  owners?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
 }>;
 
 

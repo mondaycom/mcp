@@ -13,6 +13,7 @@ export const createBoardToolSchema = {
   boardKind: z.nativeEnum(BoardKind).default(BoardKind.Public).describe('The kind of board to create'),
   boardDescription: z.string().optional().describe('The description of the board to create'),
   workspaceId: z.string().optional().describe('The ID of the workspace to create the board in'),
+  owners: z.array(z.string()).optional().describe('Optional list of user IDs to set as board owners'),
 };
 
 export class CreateBoardTool extends BaseMondayApiTool<typeof createBoardToolSchema, never> {
@@ -26,7 +27,7 @@ export class CreateBoardTool extends BaseMondayApiTool<typeof createBoardToolSch
   });
 
   getDescription(): string {
-    return 'Create a monday.com board';
+    return 'Create a monday.com board, optionally setting owner user IDs';
   }
 
   getInputSchema(): typeof createBoardToolSchema {
@@ -39,6 +40,7 @@ export class CreateBoardTool extends BaseMondayApiTool<typeof createBoardToolSch
       boardKind: input.boardKind,
       boardDescription: input.boardDescription,
       workspaceId: input.workspaceId,
+      owners: input.owners,
     };
 
     const res = await this.mondayApi.request<CreateBoardMutation>(createBoard, variables);
