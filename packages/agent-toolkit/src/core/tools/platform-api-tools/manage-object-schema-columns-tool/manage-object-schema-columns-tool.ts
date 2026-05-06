@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+import { ColumnTypeInfoFetchMode } from '../get-column-type-info/get-column-type-info-fetch-mode';
 import {
   CanOverrideField,
   ColumnType,
@@ -25,10 +26,17 @@ const policyInputSchema = z
   .describe('Controls board-level permissions for this column. If omitted, defaults to: no field overrides allowed, column can be deleted by boards.');
 
 const createColumnSchema = z.object({
-  type: z.string().describe('Column type (e.g. text, status, numbers, date, dropdown, people). Use get_column_type_info to see available types.'),
+  type: z.string().describe(
+    `Column type (e.g. text, status, numbers, date, dropdown, people). Call get_column_type_info with fetchMode "${ColumnTypeInfoFetchMode.Schema}" for a type's settings schema.`,
+  ),
   title: z.string().describe('Column title.'),
   description: z.string().optional().describe('Column description.'),
-  defaults: z.record(z.unknown()).optional().describe('Type-specific column settings. Call get_column_type_info with the column type before populating this field to understand the valid structure.'),
+  defaults: z
+    .record(z.unknown())
+    .optional()
+    .describe(
+      `Type-specific column settings. Call get_column_type_info with fetchMode "${ColumnTypeInfoFetchMode.Schema}" before populating this field to understand the valid structure.`,
+    ),
   policy: policyInputSchema,
   opt_out_by_default: z.boolean().optional().describe('If true, the column will not be automatically added to boards connected to this schema.'),
 });
@@ -37,7 +45,12 @@ const updateColumnSchema = z.object({
   column_id: z.string().describe('The ID of the column to update.'),
   title: z.string().optional().describe('New column title.'),
   description: z.string().optional().describe('New column description.'),
-  defaults: z.record(z.unknown()).optional().describe('Type-specific column settings. Call get_column_type_info with the column type before populating this field.'),
+  defaults: z
+    .record(z.unknown())
+    .optional()
+    .describe(
+      `Type-specific column settings. Call get_column_type_info with fetchMode "${ColumnTypeInfoFetchMode.Schema}" before populating this field.`,
+    ),
   opt_out_by_default: z.boolean().optional().describe('If true, the column will not be automatically added to boards connected to this schema.'),
   policy: policyInputSchema,
 });
@@ -47,7 +60,7 @@ export const manageObjectSchemaColumnsToolSchema = {
     .enum(['create', 'update'])
     .describe(
       'The operation to perform on columns. ' +
-        'create: adds new columns to the schema. Each column requires type and title. Call get_column_type_info first to understand valid defaults per column type. ' +
+        `create: adds new columns to the schema. Each column requires type and title. Call get_column_type_info with fetchMode "${ColumnTypeInfoFetchMode.Schema}" first to understand valid defaults per column type. ` +
         'update: modifies existing columns. Each entry must include column_id. Only send the columns you want to modify — other columns are unaffected. ' +
         'Use opt_out_by_default=true to opt a column out (stop auto-adding to boards), or opt_out_by_default=false to opt in (restore auto-adding).',
     ),
@@ -69,7 +82,7 @@ export class ManageObjectSchemaColumnsTool extends BaseMondayApiTool<typeof mana
   getDescription(): string {
     return (
       'Create or update columns on an account-level object schema. Column changes are propagated to all boards connected to the schema. ' +
-      'create: adds new columns. Each column requires type and title. Call get_column_type_info first to understand valid defaults per column type. ' +
+      `create: adds new columns. Each column requires type and title. Call get_column_type_info with fetchMode "${ColumnTypeInfoFetchMode.Schema}" first to understand valid defaults per column type. ` +
       'update: modifies existing columns. Each entry must include column_id. Only send the columns you want to modify — other columns are unaffected. ' +
       'Use opt_out_by_default=true to stop a column from being auto-added to boards (opt out), or opt_out_by_default=false to restore auto-adding (opt in).'
     );
