@@ -63,12 +63,19 @@ export const moveItemToGroup = gql`
 `;
 
 export const createBoard = gql`
-  mutation createBoard($boardKind: BoardKind!, $boardName: String!, $boardDescription: String, $workspaceId: ID) {
+  mutation createBoard(
+    $boardKind: BoardKind!
+    $boardName: String!
+    $boardDescription: String
+    $workspaceId: ID
+    $boardOwnerIds: [ID!]
+  ) {
     create_board(
       board_kind: $boardKind
       board_name: $boardName
       description: $boardDescription
       workspace_id: $workspaceId
+      board_owner_ids: $boardOwnerIds
       empty: true
     ) {
       id
