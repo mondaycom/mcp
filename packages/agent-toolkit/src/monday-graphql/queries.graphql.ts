@@ -68,14 +68,14 @@ export const createBoard = gql`
     $boardName: String!
     $boardDescription: String
     $workspaceId: ID
-    $owners: [ID!]
+    $boardOwnerIds: [ID!]
   ) {
     create_board(
       board_kind: $boardKind
       board_name: $boardName
       description: $boardDescription
       workspace_id: $workspaceId
-      owners: $owners
+      board_owner_ids: $boardOwnerIds
       empty: true
     ) {
       id
