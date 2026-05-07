@@ -27,7 +27,7 @@ export class CreateBoardTool extends BaseMondayApiTool<typeof createBoardToolSch
   });
 
   getDescription(): string {
-    return 'Create a monday.com board, optionally setting owner user IDs';
+    return 'Create a monday.com board';
   }
 
   getInputSchema(): typeof createBoardToolSchema {
@@ -40,7 +40,7 @@ export class CreateBoardTool extends BaseMondayApiTool<typeof createBoardToolSch
       boardKind: input.boardKind,
       boardDescription: input.boardDescription,
       workspaceId: input.workspaceId,
-      owners: input.owners,
+      ...(input.owners !== undefined ? { owners: input.owners } : {}),
     };
 
     const res = await this.mondayApi.request<CreateBoardMutation>(createBoard, variables);
