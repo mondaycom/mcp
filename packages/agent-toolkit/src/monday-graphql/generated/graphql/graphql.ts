@@ -11540,6 +11540,7 @@ export type GetItemBoardQuery = { __typename?: 'Query', items?: Array<{ __typena
 
 export type CreateDocMutationVariables = Exact<{
   location: CreateDocInput;
+  docOwnerIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
 }>;
 
 
