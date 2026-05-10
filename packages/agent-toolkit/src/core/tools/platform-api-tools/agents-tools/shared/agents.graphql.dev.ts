@@ -21,21 +21,11 @@ const agentFieldsFragment = gql`
   }
 `;
 
-export const getAgentQuery = gql`
+export const getAgentsQuery = gql`
   ${agentFieldsFragment}
 
-  query getAgent($id: ID!) {
-    agent(id: $id) {
-      ...AgentFields
-    }
-  }
-`;
-
-export const listAgentsQuery = gql`
-  ${agentFieldsFragment}
-
-  query listAgents {
-    agents {
+  query getAgents($ids: [ID!], $limit: Int) {
+    agents(ids: $ids, limit: $limit) {
       ...AgentFields
     }
   }

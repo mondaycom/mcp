@@ -15,8 +15,7 @@ import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/
  */
 type Documents = {
     "\n  fragment AgentFields on Agent {\n    id\n    kind\n    state\n    profile {\n      name\n      role\n      role_description\n      avatar_url\n      background_color\n    }\n    goal\n    plan\n    user_prompt\n    version_id\n    created_at\n    updated_at\n  }\n": typeof types.AgentFieldsFragmentDoc,
-    "\n  \n\n  query getAgent($id: ID!) {\n    agent(id: $id) {\n      ...AgentFields\n    }\n  }\n": typeof types.GetAgentDocument,
-    "\n  \n\n  query listAgents {\n    agents {\n      ...AgentFields\n    }\n  }\n": typeof types.ListAgentsDocument,
+    "\n  \n\n  query getAgents($ids: [ID!], $limit: Int) {\n    agents(ids: $ids, limit: $limit) {\n      ...AgentFields\n    }\n  }\n": typeof types.GetAgentsDocument,
     "\n  \n\n  mutation createAgent($input: CreateAgentInput!) {\n    create_agent(input: $input) {\n      ...AgentFields\n    }\n  }\n": typeof types.CreateAgentDocument,
     "\n  \n\n  mutation createBlankAgent($input: CreateBlankAgentInput) {\n    create_blank_agent(input: $input) {\n      ...AgentFields\n    }\n  }\n": typeof types.CreateBlankAgentDocument,
     "\n  \n\n  mutation deleteAgent($id: ID!) {\n    delete_agent(id: $id) {\n      ...AgentFields\n    }\n  }\n": typeof types.DeleteAgentDocument,
@@ -30,8 +29,7 @@ type Documents = {
 };
 const documents: Documents = {
     "\n  fragment AgentFields on Agent {\n    id\n    kind\n    state\n    profile {\n      name\n      role\n      role_description\n      avatar_url\n      background_color\n    }\n    goal\n    plan\n    user_prompt\n    version_id\n    created_at\n    updated_at\n  }\n": types.AgentFieldsFragmentDoc,
-    "\n  \n\n  query getAgent($id: ID!) {\n    agent(id: $id) {\n      ...AgentFields\n    }\n  }\n": types.GetAgentDocument,
-    "\n  \n\n  query listAgents {\n    agents {\n      ...AgentFields\n    }\n  }\n": types.ListAgentsDocument,
+    "\n  \n\n  query getAgents($ids: [ID!], $limit: Int) {\n    agents(ids: $ids, limit: $limit) {\n      ...AgentFields\n    }\n  }\n": types.GetAgentsDocument,
     "\n  \n\n  mutation createAgent($input: CreateAgentInput!) {\n    create_agent(input: $input) {\n      ...AgentFields\n    }\n  }\n": types.CreateAgentDocument,
     "\n  \n\n  mutation createBlankAgent($input: CreateBlankAgentInput) {\n    create_blank_agent(input: $input) {\n      ...AgentFields\n    }\n  }\n": types.CreateBlankAgentDocument,
     "\n  \n\n  mutation deleteAgent($id: ID!) {\n    delete_agent(id: $id) {\n      ...AgentFields\n    }\n  }\n": types.DeleteAgentDocument,
@@ -65,11 +63,7 @@ export function graphql(source: "\n  fragment AgentFields on Agent {\n    id\n  
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  \n\n  query getAgent($id: ID!) {\n    agent(id: $id) {\n      ...AgentFields\n    }\n  }\n"): (typeof documents)["\n  \n\n  query getAgent($id: ID!) {\n    agent(id: $id) {\n      ...AgentFields\n    }\n  }\n"];
-/**
- * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
- */
-export function graphql(source: "\n  \n\n  query listAgents {\n    agents {\n      ...AgentFields\n    }\n  }\n"): (typeof documents)["\n  \n\n  query listAgents {\n    agents {\n      ...AgentFields\n    }\n  }\n"];
+export function graphql(source: "\n  \n\n  query getAgents($ids: [ID!], $limit: Int) {\n    agents(ids: $ids, limit: $limit) {\n      ...AgentFields\n    }\n  }\n"): (typeof documents)["\n  \n\n  query getAgents($ids: [ID!], $limit: Int) {\n    agents(ids: $ids, limit: $limit) {\n      ...AgentFields\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
