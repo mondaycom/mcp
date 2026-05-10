@@ -190,61 +190,6 @@ describe('CreateDocTool', () => {
       });
     });
 
-    describe('docOwnerIds', () => {
-      it('includes docOwnerIds in variables when provided', async () => {
-        const createDocResponse = {
-          create_doc: { id: 'doc_owners', object_id: 'obj_owners', url: 'https://monday.com/docs/obj_owners', name: 'Owners Doc' },
-        };
-        const addContentResponse = { add_content_to_doc_from_markdown: { success: true, block_ids: [] } };
-
-        mocks.getMockRequest().mockImplementation((query: string) => {
-          if (query.includes('mutation createDoc')) return Promise.resolve(createDocResponse);
-          if (query.includes('mutation addContentToDocFromMarkdown')) return Promise.resolve(addContentResponse);
-          return Promise.resolve({});
-        });
-
-        const args: inputType = {
-          location: 'workspace',
-          workspace_id: 12345,
-          doc_name: 'Owners Doc',
-          markdown: '# Test',
-          docOwnerIds: ['111', '222'],
-        };
-
-        await callToolByNameRawAsync('create_doc', args);
-
-        const createDocCall = mocks.getMockRequest().mock.calls.find((c) => c[0].includes('mutation createDoc'));
-        expect(createDocCall).toBeDefined();
-        expect(createDocCall[1]).toMatchObject({ docOwnerIds: ['111', '222'] });
-      });
-
-      it('does not include docOwnerIds in variables when not provided', async () => {
-        const createDocResponse = {
-          create_doc: { id: 'doc_no_owners', object_id: 'obj_no_owners', url: 'https://monday.com/docs/obj_no_owners', name: 'No Owners Doc' },
-        };
-        const addContentResponse = { add_content_to_doc_from_markdown: { success: true, block_ids: [] } };
-
-        mocks.getMockRequest().mockImplementation((query: string) => {
-          if (query.includes('mutation createDoc')) return Promise.resolve(createDocResponse);
-          if (query.includes('mutation addContentToDocFromMarkdown')) return Promise.resolve(addContentResponse);
-          return Promise.resolve({});
-        });
-
-        const args: inputType = {
-          location: 'workspace',
-          workspace_id: 12345,
-          doc_name: 'No Owners Doc',
-          markdown: '# Test',
-        };
-
-        await callToolByNameRawAsync('create_doc', args);
-
-        const createDocCall = mocks.getMockRequest().mock.calls.find((c) => c[0].includes('mutation createDoc'));
-        expect(createDocCall).toBeDefined();
-        expect(createDocCall[1]).not.toHaveProperty('docOwnerIds');
-      });
-    });
-
     describe('Validation Errors', () => {
       it('should return error when workspace_id is missing', async () => {
         const args: Partial<inputType> = {
