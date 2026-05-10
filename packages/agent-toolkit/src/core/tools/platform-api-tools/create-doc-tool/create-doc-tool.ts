@@ -54,6 +54,12 @@ export const createDocToolSchema = {
   location: z
     .enum(['workspace', 'item'])
     .describe('Location where the document should be created - either in a workspace or attached to an item'),
+  docOwnerIds: z
+    .array(z.string())
+    .optional()
+    .describe(
+      'Optional list of user IDs to set as document owners at creation time. Use this to add the agent owner as a co-owner so they retain access to the document. Ownership is set inside the creation mutation itself, bypassing the permission checks that would block a subsequent add_users_to_board call.',
+    ),
   workspace_id: z
     .number()
     .optional()
@@ -103,7 +109,8 @@ LOCATION TYPES:
 USAGE EXAMPLES:
 - Workspace doc: { location: "workspace", workspace_id: 123, doc_kind: "private" , markdown: "..." }
 - Workspace doc in folder: { location: "workspace", workspace_id: 123, folder_id: 17264196 , markdown: "..." }
-- Item doc: { location: "item", item_id: 456, column_id: "doc_col_1" , markdown: "..." }`;
+- Item doc: { location: "item", item_id: 456, column_id: "doc_col_1" , markdown: "..." }
+- Workspace doc with agent owner: { location: "workspace", workspace_id: 123, markdown: "...", docOwnerIds: ["<agent_owner_user_id>"] }`;
   }
 
   getInputSchema(): typeof createDocToolSchema {
@@ -138,6 +145,7 @@ USAGE EXAMPLES:
               folder_id: parsedInput.folder_id?.toString(),
             },
           },
+          ...(input.docOwnerIds !== undefined ? { docOwnerIds: input.docOwnerIds } : {}),
         };
 
         const res: CreateDocMutation = await this.mondayApi.request(createDocMutation, variables);
