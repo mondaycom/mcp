@@ -190,8 +190,8 @@ describe('CreateDocTool', () => {
       });
     });
 
-    describe('boardOwnerIds', () => {
-      it('includes boardOwnerIds in variables when provided', async () => {
+    describe('docOwnerIds', () => {
+      it('includes docOwnerIds in variables when provided', async () => {
         const createDocResponse = {
           create_doc: { id: 'doc_owners', object_id: 'obj_owners', url: 'https://monday.com/docs/obj_owners', name: 'Owners Doc' },
         };
@@ -208,17 +208,17 @@ describe('CreateDocTool', () => {
           workspace_id: 12345,
           doc_name: 'Owners Doc',
           markdown: '# Test',
-          boardOwnerIds: ['111', '222'],
+          docOwnerIds: ['111', '222'],
         };
 
         await callToolByNameRawAsync('create_doc', args);
 
         const createDocCall = mocks.getMockRequest().mock.calls.find((c) => c[0].includes('mutation createDoc'));
         expect(createDocCall).toBeDefined();
-        expect(createDocCall[1]).toMatchObject({ boardOwnerIds: ['111', '222'] });
+        expect(createDocCall[1]).toMatchObject({ docOwnerIds: ['111', '222'] });
       });
 
-      it('does not include boardOwnerIds in variables when not provided', async () => {
+      it('does not include docOwnerIds in variables when not provided', async () => {
         const createDocResponse = {
           create_doc: { id: 'doc_no_owners', object_id: 'obj_no_owners', url: 'https://monday.com/docs/obj_no_owners', name: 'No Owners Doc' },
         };
@@ -241,7 +241,7 @@ describe('CreateDocTool', () => {
 
         const createDocCall = mocks.getMockRequest().mock.calls.find((c) => c[0].includes('mutation createDoc'));
         expect(createDocCall).toBeDefined();
-        expect(createDocCall[1]).not.toHaveProperty('boardOwnerIds');
+        expect(createDocCall[1]).not.toHaveProperty('docOwnerIds');
       });
     });
 

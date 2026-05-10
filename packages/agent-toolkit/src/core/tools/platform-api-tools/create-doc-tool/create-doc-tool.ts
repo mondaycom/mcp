@@ -54,7 +54,7 @@ export const createDocToolSchema = {
   location: z
     .enum(['workspace', 'item'])
     .describe('Location where the document should be created - either in a workspace or attached to an item'),
-  boardOwnerIds: z
+  docOwnerIds: z
     .array(z.string())
     .optional()
     .describe(
@@ -110,7 +110,7 @@ USAGE EXAMPLES:
 - Workspace doc: { location: "workspace", workspace_id: 123, doc_kind: "private" , markdown: "..." }
 - Workspace doc in folder: { location: "workspace", workspace_id: 123, folder_id: 17264196 , markdown: "..." }
 - Item doc: { location: "item", item_id: 456, column_id: "doc_col_1" , markdown: "..." }
-- Workspace doc with agent owner: { location: "workspace", workspace_id: 123, markdown: "...", boardOwnerIds: ["<agent_owner_user_id>"] }`;
+- Workspace doc with agent owner: { location: "workspace", workspace_id: 123, markdown: "...", docOwnerIds: ["<agent_owner_user_id>"] }`;
   }
 
   getInputSchema(): typeof createDocToolSchema {
@@ -145,7 +145,7 @@ USAGE EXAMPLES:
               folder_id: parsedInput.folder_id?.toString(),
             },
           },
-          ...(input.boardOwnerIds !== undefined ? { boardOwnerIds: input.boardOwnerIds } : {}),
+          ...(input.docOwnerIds !== undefined ? { docOwnerIds: input.docOwnerIds } : {}),
         };
 
         const res: CreateDocMutation = await this.mondayApi.request(createDocMutation, variables);
