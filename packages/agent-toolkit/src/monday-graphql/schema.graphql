@@ -880,6 +880,11 @@ board_ids: [ID!]!): [BulkDetachBoardResult!]
 object_schema_id: ID,   "The object schema name to update columns on. Either object_schema_id or object_schema_name must be provided."
 object_schema_name: String,   "Array of column updates"
 columns: [UpdateObjectSchemaColumnInput!]!): ObjectSchema
+  "Execute multiple object schema column actions in a single request. Actions are executed sequentially in the order provided. If any action fails, execution stops and an error is returned."
+  bulk_object_schema_column_actions(  "The ID of the object schema to operate on."
+object_schema_id: ID,   "The object schema name to operate on. Either object_schema_id or object_schema_name must be provided."
+object_schema_name: String,   "Array of column actions to execute sequentially."
+actions: [ObjectSchemaActionInput!]!): [ObjectSchemaActionResult!]
   "Add a required column to a board"
   add_required_column(id: ID!, column_id: String!,   "The type of entity for validations the default is board"
 type: ValidationsEntityType = board): RequiredColumns
@@ -1005,6 +1010,14 @@ account_slug: String!): DeleteMarketplaceAppDiscountResult!
   grant_marketplace_app_discount(  "The id of an app"
 app_id: ID!,   "Slug of an account"
 account_slug: String!, data: GrantMarketplaceAppDiscountData!): GrantMarketplaceAppDiscountResult!
+  "Asynchronously delete items on a board"
+  bulk_delete_items(  "The ID of the board containing the items"
+board_id: ID!,   "List of item IDs to delete"
+item_ids: [ID!]!): BulkDeleteInit
+  "Asynchronously archive items on a board"
+  bulk_archive_items(  "The ID of the board containing the items"
+board_id: ID!,   "List of item IDs to archive"
+item_ids: [ID!]!): BulkDeleteInit
   "Initialize a backfill job for a board and group. Designed for data migrations with no side effects and a 20k row limit. Returns job ID and upload URL to begin the process."
   backfill_items(  "The ID of the board to import items into"
 board_id: ID!,   "The ID of the group to import items into"
@@ -1014,6 +1027,9 @@ group_id: ID!): UploadJobInit
 board_id: ID!,   "The ID of the group to import items into"
 group_id: ID!,   "Configuration for handling matching items. When provided, items will be matched based on the specified column."
 on_match: OnMatchInput): UploadJobInit
+  "Undo a previously completed action, or cancel one still in flight"
+  undo_action(  "The job ID returned by the originating mutation"
+job_id: ID!): UndoResult
   "Creates a new app with the specified configuration."
   create_app(  "App configuration data"
 input: CreateAppInput!): CreateAppResponse
@@ -2774,6 +2790,12 @@ input CreateObjectSchemaColumnInput {
   policy: ColumnPolicyInput!
 }
 
+"Input for the create_object_schema_columns action."
+input CreateObjectSchemaColumnsActionInput {
+  "Array of columns to create."
+  columns: [CreateObjectSchemaColumnInput!]!
+}
+
 input CreateStatusColumnSettingsInput {
   labels: [CreateStatusLabelInput!]!
 }
@@ -2784,6 +2806,12 @@ input CreateStatusLabelInput {
   index: Int!
   description: String
   is_done: Boolean
+}
+
+"Input for the delete_object_schema_columns action."
+input DeleteObjectSchemaColumnsActionInput {
+  "The IDs of the columns to delete."
+  column_ids: [ID!]!
 }
 
 "Reasons why specific actions are disabled on a column"
@@ -2888,6 +2916,36 @@ type ObjectSchema {
   description: String
   "The number of boards connected to this object schema."
   connected_boards_count: Int!
+}
+
+"The type of column action to perform in a bulk object schema mutation."
+enum ObjectSchemaAction {
+  "Create columns on an object schema"
+  CREATE_OBJECT_SCHEMA_COLUMNS
+  "Update columns on an object schema"
+  UPDATE_OBJECT_SCHEMA_COLUMNS
+  "Delete columns from an object schema"
+  DELETE_OBJECT_SCHEMA_COLUMNS
+}
+
+"A single action in a bulk object schema mutation. Provide the action type and the corresponding input field."
+input ObjectSchemaActionInput {
+  "The type of action to perform."
+  action: ObjectSchemaAction!
+  "Input for create_object_schema_columns action. Required when action is create_object_schema_columns."
+  create_object_schema_columns: CreateObjectSchemaColumnsActionInput
+  "Input for update_object_schema_columns action. Required when action is update_object_schema_columns."
+  update_object_schema_columns: UpdateObjectSchemaColumnsActionInput
+  "Input for delete_object_schema_columns action. Required when action is delete_object_schema_columns."
+  delete_object_schema_columns: DeleteObjectSchemaColumnsActionInput
+}
+
+"Result of a single action within a bulk object schema mutation."
+type ObjectSchemaActionResult {
+  "The type of action that was performed."
+  action: ObjectSchemaAction
+  "The resulting object schema after the action."
+  object_schema: ObjectSchema
 }
 
 "A column definition within an object schema."
@@ -3056,6 +3114,12 @@ input UpdateObjectSchemaColumnInput {
   opt_out_by_default: Boolean
   "Policy rules controlling what can be done with the column"
   policy: ColumnPolicyInput
+}
+
+"Input for the update_object_schema_columns action."
+input UpdateObjectSchemaColumnsActionInput {
+  "Array of column updates."
+  columns: [UpdateObjectSchemaColumnInput!]!
 }
 
 input UpdateStatusColumnSettingsInput {
@@ -4456,6 +4520,12 @@ enum SubscriptionStatus {
   inactive
 }
 
+"Initialization response for bulk delete containing job ID for polling"
+type BulkDeleteInit {
+  "Job ID for polling progress via job_status query"
+  job_id: ID
+}
+
 "Reason for failure when status is Rejected or Failed"
 enum BulkImportFailureReason {
   "The upload is invalid."
@@ -4541,6 +4611,14 @@ input OnMatchInput {
   match_column_id: String!
   "Strategy for handling matching items"
   behaviour: OnMatchBehaviour!
+}
+
+"Result of an undo operation"
+type UndoResult {
+  "Whether the undo was successfully initiated"
+  success: Boolean
+  "Human-readable status message"
+  message: String
 }
 
 "Initialization response containing job ID and upload URL"
@@ -9174,6 +9252,8 @@ enum FormQuestionType {
   Email
   "A file upload question for attachments."
   File
+  "A time input question for selecting an hour and minute."
+  HOUR
   "A URL/link input question with optional format validation."
   Link
   "A location/address input question with optional geolocation autofill."
