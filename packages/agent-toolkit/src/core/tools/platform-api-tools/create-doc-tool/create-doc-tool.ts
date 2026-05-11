@@ -197,6 +197,7 @@ USAGE EXAMPLES:
               column_id: columnId,
             },
           },
+          ...(input.boardOwnerIds !== undefined ? { boardOwnerIds: input.boardOwnerIds } : {}),
         };
 
         const res: CreateDocMutation = await this.mondayApi.request(createDocMutation, itemVariables);
