@@ -1,6 +1,6 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '../../test-utils/mock-api-client';
-import { GetAgentQuery, ListAgentsQuery } from 'src/monday-graphql/generated/graphql.dev/graphql';
+import { GetAgentsQuery } from 'src/monday-graphql/generated/graphql.dev/graphql';
 
 describe('GetAgentTool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
@@ -30,7 +30,7 @@ describe('GetAgentTool', () => {
   };
 
   it('should fetch a single agent when id is provided', async () => {
-    mocks.setResponseOnce({ agent: mockAgent } as GetAgentQuery);
+    mocks.setResponseOnce({ agents: [mockAgent] } as GetAgentsQuery);
 
     const result = await callToolByNameRawAsync('get_agent', { id: '1' });
     const parsed = parseToolResult(result);
@@ -38,21 +38,21 @@ describe('GetAgentTool', () => {
     expect(parsed.agent).toEqual(mockAgent);
   });
 
-  it('should pass versionOverride dev when fetching a single agent', async () => {
-    mocks.setResponseOnce({ agent: mockAgent } as GetAgentQuery);
+  it('should pass ids and versionOverride dev when fetching a single agent', async () => {
+    mocks.setResponseOnce({ agents: [mockAgent] } as GetAgentsQuery);
 
     await callToolByNameRawAsync('get_agent', { id: '1' });
 
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-      expect.stringContaining('getAgent'),
-      { id: '1' },
+      expect.stringContaining('getAgents'),
+      { ids: ['1'] },
       expect.objectContaining({ versionOverride: 'dev' }),
     );
   });
 
-  it('should list all agents when id is omitted', async () => {
+  it('should list agents when id is omitted', async () => {
     const expectedAgents = [mockAgent, { ...mockAgent, id: '2' }];
-    mocks.setResponseOnce({ agents: expectedAgents } as ListAgentsQuery);
+    mocks.setResponseOnce({ agents: expectedAgents } as GetAgentsQuery);
 
     const result = await callToolByNameRawAsync('get_agent', {});
     const parsed = parseToolResult(result);
@@ -61,20 +61,20 @@ describe('GetAgentTool', () => {
     expect(parsed.agents).toEqual(expectedAgents);
   });
 
-  it('should pass versionOverride dev when listing agents', async () => {
-    mocks.setResponseOnce({ agents: [] } as ListAgentsQuery);
+  it('should pass limit 100 and versionOverride dev when listing agents', async () => {
+    mocks.setResponseOnce({ agents: [] } as GetAgentsQuery);
 
     await callToolByNameRawAsync('get_agent', {});
 
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-      expect.stringContaining('listAgents'),
-      {},
+      expect.stringContaining('getAgents'),
+      { limit: 100 },
       expect.objectContaining({ versionOverride: 'dev' }),
     );
   });
 
-  it('should return a not-found message when single fetch returns null', async () => {
-    mocks.setResponseOnce({ agent: null } as GetAgentQuery);
+  it('should return a not-found message when single fetch returns empty list', async () => {
+    mocks.setResponseOnce({ agents: [] } as GetAgentsQuery);
 
     const result = await callToolByNameRawAsync('get_agent', { id: '999' });
 
@@ -82,7 +82,7 @@ describe('GetAgentTool', () => {
   });
 
   it('should return zero count when no agents exist', async () => {
-    mocks.setResponseOnce({ agents: [] } as ListAgentsQuery);
+    mocks.setResponseOnce({ agents: [] } as GetAgentsQuery);
 
     const result = await callToolByNameRawAsync('get_agent', {});
     const parsed = parseToolResult(result);
