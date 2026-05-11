@@ -4,17 +4,21 @@ import {
   ItemsQueryOperator,
   ItemsQueryRuleOperator,
   ItemsOrderByDirection,
-  CreateViewMutation,
-  CreateViewMutationVariables,
+  UpdateViewMutation,
+  UpdateViewMutationVariables,
 } from '../../../../monday-graphql/generated/graphql/graphql';
-import { createView } from './create-view-tool.graphql';
+import { updateView } from './update-view-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 
-export const createViewToolSchema = {
-  boardId: z.string().describe('The board ID to create the view on'),
-  type: z.nativeEnum(ViewKind).default(ViewKind.Table).describe('The type of board view to create. Use TABLE for standard board views.'),
-  name: z.string().optional().describe('The name of the view (e.g. "High Priority Items", "My Tasks")'),
+export const updateViewToolSchema = {
+  viewId: z.string().describe('The ID of the view to update'),
+  boardId: z.string().describe('The board ID the view belongs to'),
+  type: z
+    .nativeEnum(ViewKind)
+    .default(ViewKind.Table)
+    .describe('The type of the board view being updated. Use TABLE for standard board views.'),
+  name: z.string().optional().describe('New name for the view (omit to leave unchanged)'),
   filter: z
     .object({
       rules: z
@@ -36,7 +40,7 @@ export const createViewToolSchema = {
         .describe('Logical operator between rules (defaults to and)'),
     })
     .optional()
-    .describe('Filter configuration for the view'),
+    .describe('Filter configuration to apply to the view'),
   sort: z
     .array(
       z.object({
@@ -50,22 +54,22 @@ export const createViewToolSchema = {
     .any()
     .optional()
     .describe(
-      'Type-specific view settings as a JSON object (e.g. column visibility, group_by for TABLE). The shape varies by view type — call get_view_schema_by_type with the same ViewKind to discover the supported structure. For TABLE views, prefer the dedicated create_view_table tool which exposes a strongly-typed settings field.',
+      'Type-specific view settings as a JSON object (e.g. column visibility, group_by for TABLE). The shape varies by view type — call get_view_schema_by_type with the same ViewKind to discover the supported structure. For TABLE views, prefer the dedicated update_view_table tool which exposes a strongly-typed settings field.',
     ),
 };
 
-export class CreateViewTool extends BaseMondayApiTool<typeof createViewToolSchema, never> {
-  name = 'create_view';
+export class UpdateViewTool extends BaseMondayApiTool<typeof updateViewToolSchema, never> {
+  name = 'update_view';
   type = ToolType.WRITE;
   annotations = createMondayApiAnnotations({
-    title: 'Create View',
+    title: 'Update View',
     readOnlyHint: false,
     destructiveHint: false,
-    idempotentHint: false,
+    idempotentHint: true,
   });
 
   getDescription(): string {
-    return `Create a new board view (tab) with optional filters and sorting. This creates a saved view on a monday.com board that users can switch to.
+    return `Update an existing board view (tab) — change its name, filter rules, or sort order. Provide only the fields you want to change; omitted fields are left unchanged.
 
 Filter operators: any_of, not_any_of, is_empty, is_not_empty, greater_than, lower_than, between, contains_text, not_contains_text
 
@@ -73,30 +77,31 @@ Example filter for people column: { "rules": [{ "column_id": "people", "compare_
 Example filter for status column: { "rules": [{ "column_id": "status", "compare_value": [1], "operator": "any_of" }] }`;
   }
 
-  getInputSchema(): typeof createViewToolSchema {
-    return createViewToolSchema;
+  getInputSchema(): typeof updateViewToolSchema {
+    return updateViewToolSchema;
   }
 
   protected async executeInternal(
-    input: ToolInputType<typeof createViewToolSchema>,
+    input: ToolInputType<typeof updateViewToolSchema>,
   ): Promise<ToolOutputType<never>> {
     const variables = {
+      viewId: input.viewId,
       boardId: input.boardId,
       type: input.type,
       name: input.name,
       filter: input.filter,
       sort: input.sort,
       settings: input.settings,
-    } as CreateViewMutationVariables;
+    } as UpdateViewMutationVariables;
 
-    const res = await this.mondayApi.request<CreateViewMutation>(createView, variables);
+    const res = await this.mondayApi.request<UpdateViewMutation>(updateView, variables);
 
-    if (!res.create_view) {
-      return { content: 'Failed to create view - no response from API' };
+    if (!res.update_view) {
+      return { content: 'Failed to update view - no response from API' };
     }
 
     return {
-      content: `View "${res.create_view.name}" (ID: ${res.create_view.id}, type: ${res.create_view.type}) successfully created`,
+      content: `View "${res.update_view.name}" (ID: ${res.update_view.id}, type: ${res.update_view.type}) successfully updated`,
     };
   }
 }
