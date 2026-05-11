@@ -69,7 +69,7 @@ export class UpdateViewTool extends BaseMondayApiTool<typeof updateViewToolSchem
   });
 
   getDescription(): string {
-    return `Update an existing board view (tab) — change its name, filter rules, or sort order. Provide only the fields you want to change; omitted fields are left unchanged.
+    return `Update an existing board view (tab) — change its name, filter rules, or sort order. Provide only the fields you want to change. Omitted fields are left unchanged.
 
 Filter operators: any_of, not_any_of, is_empty, is_not_empty, greater_than, lower_than, between, contains_text, not_contains_text
 

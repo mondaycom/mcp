@@ -109,7 +109,7 @@ export class CreateViewTableTool extends BaseMondayApiTool<typeof createViewTabl
   });
 
   getDescription(): string {
-    return `Create a new table-type board view with optional filters, sort, tags, and table-specific settings (column visibility/order and group-by). Use this instead of create_view when you need to configure table-specific settings; for a simple table view, create_view also works.
+    return `Create a new table-type board view with optional filters, sort, tags, and table-specific settings (column visibility/order and group-by). Use this instead of create_view when you need to configure table-specific settings. For a simple table view, create_view also works.
 
 Filter operators: any_of, not_any_of, is_empty, is_not_empty, greater_than, lower_than, between, contains_text, not_contains_text
 
