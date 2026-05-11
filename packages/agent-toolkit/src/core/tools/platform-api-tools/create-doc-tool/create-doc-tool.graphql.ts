@@ -18,8 +18,8 @@ export const getItemBoard = gql`
 
 // Create a new monday doc (works for both workspace and board/item locations via CreateDocInput)
 export const createDoc = gql`
-  mutation createDoc($location: CreateDocInput!, $docOwnerIds: [ID!]) {
-    create_doc(location: $location, board_owner_ids: $docOwnerIds) {
+  mutation createDoc($location: CreateDocInput!, $boardOwnerIds: [ID!]) {
+    create_doc(location: $location, board_owner_ids: $boardOwnerIds) {
       id
       object_id
       url
