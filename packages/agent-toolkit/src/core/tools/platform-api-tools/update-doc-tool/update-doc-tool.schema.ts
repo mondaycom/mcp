@@ -35,7 +35,12 @@ const ColumnValueInsertSchema = z.object({
 
 export const DeltaOperationSchema = z.object({
   insert: z
-    .union([z.object({ text: z.string() }), MentionInsertSchema, ColumnValueInsertSchema])
+    .union([
+      z.string().transform((s) => ({ text: s })),
+      z.object({ text: z.string() }),
+      MentionInsertSchema,
+      ColumnValueInsertSchema,
+    ])
     .describe(
       'Content to insert. Use {text: "..."} for plain text, {mention: {id, type}} to tag a user/doc/board, or {column_value: {item_id, column_id}} to embed a live column value. The last operation in the array must be {text: "\\n"}.',
     ),
