@@ -26,7 +26,7 @@ export const updateAgentToolSchema = {
     .trim()
     .min(1)
     .optional()
-    .describe('AI model identifier — only set if user explicitly named a model'),
+    .describe('AI model identifier. STRONGLY DISCOURAGED — omit this field. Only set when the user explicitly names a monday-supported model. Do not invent or guess model identifiers — use the exact string the user provided.'),
 };
 
 export class UpdateAgentTool extends BaseMondayApiTool<typeof updateAgentToolSchema> {
@@ -69,7 +69,10 @@ USAGE EXAMPLE:
         versionOverride: 'dev',
       });
 
-      return { content: res.update_agent ?? {} };
+      if (!res.update_agent) {
+        throw new Error('update_agent returned no data — the agent may not exist');
+      }
+      return { content: res.update_agent };
     } catch (error) {
       rethrowWithContext(error, 'update monday platform agent');
     }

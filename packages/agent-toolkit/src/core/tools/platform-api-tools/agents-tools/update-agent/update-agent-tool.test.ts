@@ -36,6 +36,9 @@ describe('UpdateAgentTool', () => {
     const parsed = parseToolResult(result);
 
     expect(parsed.id).toBe('7');
+    // also assert something from the profile to confirm response forwarding
+    expect(parsed.profile).toBeDefined();
+    expect(parsed.profile.name).toBe('Updated Agent');
   });
 
   it('should update multiple fields — happy path', async () => {
