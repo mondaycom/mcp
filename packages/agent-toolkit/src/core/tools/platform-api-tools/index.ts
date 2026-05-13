@@ -68,6 +68,7 @@ import { FetchFileContentTool } from './fetch-file-content-tool/fetch-file-conte
 import { GetAgentTool } from './agents-tools/get-agent/get-agent-tool';
 import { CreateAgentTool } from './agents-tools/create-agent/create-agent-tool';
 import { DeleteAgentTool } from './agents-tools/delete-agent/delete-agent-tool';
+import { GetAgentCatalogTool } from './agents-tools/get-agent-catalog/get-agent-catalog-tool';
 
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteItemTool,
@@ -141,6 +142,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   GetAgentTool,
   CreateAgentTool,
   DeleteAgentTool,
+  GetAgentCatalogTool,
 ];
 
 export * from './all-monday-api-tool';
