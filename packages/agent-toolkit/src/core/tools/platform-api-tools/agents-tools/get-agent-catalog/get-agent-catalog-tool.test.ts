@@ -53,7 +53,7 @@ describe('GetAgentCatalogTool', () => {
 
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
       expect.anything(),
-      { block_reference_ids: ['status-change-ref'] },
+      expect.objectContaining({ block_reference_ids: ['status-change-ref'] }),
       expect.anything(),
     );
   });

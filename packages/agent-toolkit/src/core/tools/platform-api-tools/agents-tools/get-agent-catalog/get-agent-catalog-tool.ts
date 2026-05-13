@@ -58,7 +58,7 @@ USAGE EXAMPLES:
     if (input.type === 'triggers') {
       try {
         const variables: GetAgentTriggersCatalogQueryVariables = {
-          block_reference_ids: input.block_reference_ids ?? undefined,
+          block_reference_ids: input.block_reference_ids,
         };
         const res = await this.mondayApi.request<GetAgentTriggersCatalogQuery>(
           getAgentTriggersCatalogQuery,
