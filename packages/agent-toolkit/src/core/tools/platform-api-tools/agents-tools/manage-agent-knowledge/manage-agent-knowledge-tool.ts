@@ -59,7 +59,7 @@ export class ManageAgentKnowledgeTool extends BaseMondayApiTool<typeof manageAge
 
 An agent's "knowledge" is the set of monday.com boards and docs it can read from or write to during a run.
 
-- list: Returns all resources the agent currently has access to, including permission level and resource type.
+- list: Returns all resources the agent currently has access to, including permission level and resource type. The response also includes a "files" array — those are uploaded files managed directly on the monday.com platform and cannot be added or removed via this tool. If the user wants to manage uploaded files, direct them to the agent settings in the monday.com UI.
 - add: Grants the agent access to a board or doc with the specified permission level.
 - update: Changes the permission level on a resource the agent already has access to.
 - remove: Revokes the agent's access to a board or doc entirely.

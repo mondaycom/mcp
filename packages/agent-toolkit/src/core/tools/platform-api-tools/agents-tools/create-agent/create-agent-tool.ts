@@ -80,7 +80,7 @@ Two modes:
 
 Do not mix prompt with manual profile fields in one request.
 
-Created agents start in state INACTIVE and must be activated before they can be triggered. Instruct the user to activate from the monday.com agent settings UI.
+Created agents start in state INACTIVE and must be activated before they can be triggered. After creation, call manage_agent_state with action:activate and the returned agent id.
 
 created_at and updated_at are null in the response — call get_agent with the returned id afterward to fetch them.
 
@@ -137,7 +137,7 @@ USAGE EXAMPLES:
 
         return {
           content: {
-            message: `monday platform agent ${res.create_blank_agent.id} created in state INACTIVE — user must activate it from the monday.com UI before it can be triggered`,
+            message: `monday platform agent ${res.create_blank_agent.id} created in state INACTIVE — call manage_agent_state with action:activate and agent_id:${res.create_blank_agent.id} to activate it`,
             agent: res.create_blank_agent,
           },
         };
@@ -163,12 +163,12 @@ USAGE EXAMPLES:
         throw new Error('monday platform agent creation returned no id');
       }
 
-      return {
-        content: {
-          message: `monday platform agent ${res.create_agent.id} created in state INACTIVE — user must activate it from the monday.com UI before it can be triggered`,
-          agent: res.create_agent,
-        },
-      };
+        return {
+          content: {
+            message: `monday platform agent ${res.create_agent.id} created in state INACTIVE — call manage_agent_state with action:activate and agent_id:${res.create_agent.id} to activate it`,
+            agent: res.create_agent,
+          },
+        };
     } catch (error) {
       rethrowWithContext(error, 'create monday platform agent');
     }

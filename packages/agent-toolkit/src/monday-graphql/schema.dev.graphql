@@ -1417,6 +1417,11 @@ skill_id: ID!): MutationResult
   remove_skill_from_agent(  "Unique identifier of the agent"
 agent_id: ID!,   "Skill reference id to detach"
 skill_id: ID!): MutationResult
+  "Create a new skill for the account. The skill will appear in agent_skills_catalog and can be attached to any agent via add_skill_to_agent."
+  create_agent_skill(  "Display name of the skill"
+name: String!,   "Markdown instructions defining what the skill does"
+content: String!,   "Short description of the skill"
+description: String): AgentSkillCatalogEntry
   "Creates a new app with the specified configuration."
   create_app(  "App configuration data"
 input: CreateAppInput!): CreateAppResponse
@@ -12311,6 +12316,8 @@ type SearchIndexedBoard {
   description: String
   "ID of the workspace containing this board."
   workspace_id: ID
+  "ID of the user who created this board."
+  creator_id: ID
   "URL to view this board."
   url: String!
 }
@@ -12370,7 +12377,8 @@ workspace_ids: [ID!]): SearchItemResults!
 query: String!,   "Maximum number of results to return (default 10, max 20)."
 limit: Int = 10,   "Date range filter."
 date_range: CrossEntityDateRangeInput,   "Controls the trade-off between search quality and response time. Defaults to balanced."
-strategy: SearchStrategy,   "Filter boards to specific workspace IDs."
+strategy: SearchStrategy,   "Filter boards to specific board IDs."
+board_ids: [ID!],   "Filter boards to specific workspace IDs."
 workspace_ids: [ID!]): SearchBoardResults!
   "Search for documents."
   docs(  "The search query string."

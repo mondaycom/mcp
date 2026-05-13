@@ -946,6 +946,36 @@ export type AssignTeamOwnersResult = {
   team?: Maybe<Team>;
 };
 
+/** Structured result data for a completed or partially-completed operation */
+export type AsyncJobResult = {
+  __typename?: 'AsyncJobResult';
+  /** Operation-specific details (failed item IDs, report URLs, etc.) */
+  details?: Maybe<Scalars['JSON']['output']>;
+  /** Items that failed */
+  failed?: Maybe<Scalars['Int']['output']>;
+  /** Successfully processed items */
+  succeeded?: Maybe<Scalars['Int']['output']>;
+  /** Total items in the operation */
+  total?: Maybe<Scalars['Int']['output']>;
+};
+
+/** Status information for an async job */
+export type AsyncJobStatus = {
+  __typename?: 'AsyncJobStatus';
+  /** When the job was created (ISO 8601) */
+  created_at?: Maybe<Scalars['String']['output']>;
+  /** Error description if the job failed */
+  error?: Maybe<Scalars['String']['output']>;
+  /** Unique job identifier */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Structured result data for completed or partially-completed operations */
+  result?: Maybe<AsyncJobResult>;
+  /** Current job status */
+  status?: Maybe<JobState>;
+  /** When the job was last updated (ISO 8601) */
+  updated_at?: Maybe<Scalars['String']['output']>;
+};
+
 /** Text formatting attributes (bold, italic, links, colors, etc.) */
 export type Attributes = {
   __typename?: 'Attributes';
@@ -4892,6 +4922,22 @@ export type ItemsResponse = {
   items: Array<Item>;
 };
 
+/** Status of an async job */
+export enum JobState {
+  /** Job was cancelled */
+  Cancelled = 'CANCELLED',
+  /** Job completed successfully */
+  Completed = 'COMPLETED',
+  /** Job expired before completion */
+  Expired = 'EXPIRED',
+  /** Job failed */
+  Failed = 'FAILED',
+  /** Job is queued but not yet started */
+  Pending = 'PENDING',
+  /** Job is actively executing */
+  Running = 'RUNNING'
+}
+
 /** Status of a job operation. Currently supports items job status for backfill and ingest operations. */
 export type JobStatus = ItemsJobStatus;
 
@@ -8214,6 +8260,8 @@ export type Query = {
   items?: Maybe<Array<Maybe<Item>>>;
   /** Search items by multiple columns and values. */
   items_page_by_column_values: ItemsResponse;
+  /** Get the status of an async job by its external ID */
+  job_status: AsyncJobStatus;
   /** Search knowledge base snippets. */
   knowledge_base_search?: Maybe<KnowledgeBaseAnswer>;
   /** Get managed column data. */
@@ -8599,6 +8647,12 @@ export type QueryItems_Page_By_Column_ValuesArgs = {
   cursor?: InputMaybe<Scalars['String']['input']>;
   hierarchy_scope_config?: InputMaybe<Scalars['String']['input']>;
   limit?: Scalars['Int']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryJob_StatusArgs = {
+  job_id: Scalars['ID']['input'];
 };
 
 
@@ -9081,6 +9135,8 @@ export type SearchDocResults = {
 /** Board data stored in the search index. */
 export type SearchIndexedBoard = {
   __typename?: 'SearchIndexedBoard';
+  /** ID of the user who created this board. */
+  creator_id?: Maybe<Scalars['ID']['output']>;
   /** Board description. */
   description?: Maybe<Scalars['String']['output']>;
   /** Board ID. */
@@ -9151,6 +9207,7 @@ export type SearchNamespace = {
 
 /** Per-entity search namespace. Each field searches a single entity type. */
 export type SearchNamespaceBoardsArgs = {
+  board_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   date_range?: InputMaybe<CrossEntityDateRangeInput>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   query: Scalars['String']['input'];
@@ -11305,12 +11362,6 @@ export type __Schema = {
   directives: Array<__Directive>;
 };
 
-
-/** A GraphQL Schema defines the capabilities of a GraphQL server. It exposes all available types and directives on the server, as well as the entry points for query, mutation, and subscription operations. */
-export type __SchemaDirectivesArgs = {
-  includeDeprecated?: Scalars['Boolean']['input'];
-};
-
 /**
  * The fundamental unit of any GraphQL Schema is the type. There are many kinds of types in GraphQL as represented by the `__TypeKind` enum.
  *
@@ -11328,7 +11379,6 @@ export type __Type = {
   enumValues?: Maybe<Array<__EnumValue>>;
   inputFields?: Maybe<Array<__InputValue>>;
   ofType?: Maybe<__Type>;
-  isOneOf?: Maybe<Scalars['Boolean']['output']>;
 };
 
 
@@ -11431,8 +11481,6 @@ export type __Directive = {
   isRepeatable: Scalars['Boolean']['output'];
   locations: Array<__DirectiveLocation>;
   args: Array<__InputValue>;
-  isDeprecated: Scalars['Boolean']['output'];
-  deprecationReason?: Maybe<Scalars['String']['output']>;
 };
 
 
@@ -11484,9 +11532,7 @@ export enum __DirectiveLocation {
   /** Location adjacent to an input object type definition. */
   InputObject = 'INPUT_OBJECT',
   /** Location adjacent to an input object field definition. */
-  InputFieldDefinition = 'INPUT_FIELD_DEFINITION',
-  /** Location adjacent to a directive definition. */
-  DirectiveDefinition = 'DIRECTIVE_DEFINITION'
+  InputFieldDefinition = 'INPUT_FIELD_DEFINITION'
 }
 
 export type GetSprintsByIdsQueryVariables = Exact<{

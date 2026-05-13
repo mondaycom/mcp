@@ -23,10 +23,10 @@ export const manageAgentStateToolSchema = {
   ),
   agent_id: z.string().trim().min(1).describe('Unique identifier of the agent.'),
   inactive_reason: z
-    .enum(['DEACTIVATED_BY_USER', 'ACCOUNT_LEVEL_BLOCKING'])
+    .enum(['DEACTIVATED_BY_USER'])
     .optional()
     .describe(
-      'Only for action:deactivate. Reason for deactivation. Defaults to "DEACTIVATED_BY_USER" if omitted.',
+      'Only for action:deactivate. Pass "DEACTIVATED_BY_USER" when the user has clearly expressed intent to deactivate (e.g. "pause the agent", "turn it off", "I\'m going on vacation"). Omit if the reason is ambiguous — do not guess.',
     ),
 };
 
@@ -44,7 +44,7 @@ export class ManageAgentStateTool extends BaseMondayApiTool<typeof manageAgentSt
     return `Activate, deactivate, or manually trigger a run for a monday platform agent.
 
 - activate: Transitions the agent to ACTIVE state so it can receive and respond to triggers.
-- deactivate: Transitions the agent to INACTIVE. Use inactive_reason:"DEACTIVATED_BY_USER" (default) for user-initiated deactivation.
+- deactivate: Transitions the agent to INACTIVE. Pass inactive_reason:"DEACTIVATED_BY_USER" when the user has clearly expressed intent to deactivate — omit if the reason is ambiguous.
 - run: Manually enqueues a run of the agent (fire-and-forget). Returns a trigger_uuid for downstream correlation. Success means the run was enqueued — not that it completed.
 
 USAGE EXAMPLES:

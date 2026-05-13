@@ -71,8 +71,8 @@ WORKFLOW FOR CREATE:
 2. Note the id in the response — use it as skill_id for action:"add".
 
 WORKFLOW FOR ADD:
-1. Call get_agent_catalog with type:"skills" to find an existing skill by name/description, or use the id returned by action:"create".
-2. Call this tool with action:"add" and the resolved skill_id.
+- If you just ran action:"create": use the id from that response directly as skill_id — no catalog lookup needed.
+- If the user asks to add an existing skill: call get_agent_catalog with type:"skills" to find it by name/description, then call this tool with action:"add" and the resolved skill_id.
 
 WORKFLOW FOR REMOVE:
 1. Call this tool with action:"remove" and the skill_id to detach.

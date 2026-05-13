@@ -459,6 +459,9 @@ board_id: ID!): [Sequence!]
   "Get a collection of monday dev sprints"
   sprints(  "A list of monday dev sprints unique identifiers"
 ids: [ID!]!): [Sprint!]
+  "Get the status of an async job by its external ID"
+  job_status(  "The job ID returned by the originating mutation"
+job_id: ID!): AsyncJobStatus!
   "Get all roles for the account"
   account_roles: [AccountRole!]
   "Get all user configs for the account."
@@ -7935,6 +7938,8 @@ type SearchIndexedBoard {
   description: String
   "ID of the workspace containing this board."
   workspace_id: ID
+  "ID of the user who created this board."
+  creator_id: ID
   "URL to view this board."
   url: String!
 }
@@ -7994,7 +7999,8 @@ workspace_ids: [ID!]): SearchItemResults!
 query: String!,   "Maximum number of results to return (default 10, max 20)."
 limit: Int = 10,   "Date range filter."
 date_range: CrossEntityDateRangeInput,   "Controls the trade-off between search quality and response time. Defaults to balanced."
-strategy: SearchStrategy,   "Filter boards to specific workspace IDs."
+strategy: SearchStrategy,   "Filter boards to specific board IDs."
+board_ids: [ID!],   "Filter boards to specific workspace IDs."
 workspace_ids: [ID!]): SearchBoardResults!
   "Search for documents."
   docs(  "The search query string."
@@ -8164,6 +8170,50 @@ type SprintTimeline {
   from: Date
   "user-editable complete date of the monday dev sprint timeline, may be different than the sprint complete date"
   to: Date
+}
+
+"Structured result data for a completed or partially-completed operation"
+type AsyncJobResult {
+  "Total items in the operation"
+  total: Int
+  "Successfully processed items"
+  succeeded: Int
+  "Items that failed"
+  failed: Int
+  "Operation-specific details (failed item IDs, report URLs, etc.)"
+  details: JSON
+}
+
+"Status information for an async job"
+type AsyncJobStatus {
+  "Unique job identifier"
+  id: ID
+  "Current job status"
+  status: JobState
+  "When the job was created (ISO 8601)"
+  created_at: String
+  "When the job was last updated (ISO 8601)"
+  updated_at: String
+  "Error description if the job failed"
+  error: String
+  "Structured result data for completed or partially-completed operations"
+  result: AsyncJobResult
+}
+
+"Status of an async job"
+enum JobState {
+  "Job is queued but not yet started"
+  PENDING
+  "Job is actively executing"
+  RUNNING
+  "Job completed successfully"
+  COMPLETED
+  "Job failed"
+  FAILED
+  "Job expired before completion"
+  EXPIRED
+  "Job was cancelled"
+  CANCELLED
 }
 
 "A role in the account"

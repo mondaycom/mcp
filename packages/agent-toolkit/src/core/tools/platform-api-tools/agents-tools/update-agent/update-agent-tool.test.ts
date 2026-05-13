@@ -90,6 +90,14 @@ describe('UpdateAgentTool', () => {
     );
   });
 
+  it('should throw when update_agent returns null', async () => {
+    mocks.setResponseOnce({ update_agent: null } as UpdateAgentMutation);
+
+    const result = await callToolByNameRawAsync('update_agent', { id: '7', name: 'X' });
+
+    expect(result.content[0].text).toContain('update_agent returned no data');
+  });
+
   it('should propagate API errors with context', async () => {
     mocks.setError('API error');
 

@@ -85,18 +85,18 @@ describe('ManageAgentStateTool', () => {
   });
 
   // Explicit inactive_reason
-  it('should accept explicit inactive_reason ACCOUNT_LEVEL_BLOCKING', async () => {
+  it('should pass explicit inactive_reason DEACTIVATED_BY_USER when provided', async () => {
     mocks.setResponseOnce({ deactivate_agent: { success: true } } as DeactivateAgentMutation);
 
     await callToolByNameRawAsync('manage_agent_state', {
       action: 'deactivate',
       agent_id: '7',
-      inactive_reason: 'ACCOUNT_LEVEL_BLOCKING',
+      inactive_reason: 'DEACTIVATED_BY_USER',
     });
 
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
       expect.stringContaining('deactivateAgent'),
-      expect.objectContaining({ inactive_reason: 'ACCOUNT_LEVEL_BLOCKING' }),
+      expect.objectContaining({ inactive_reason: InactiveReason.DeactivatedByUser }),
       expect.objectContaining({ versionOverride: 'dev' }),
     );
   });
