@@ -48,7 +48,9 @@ WORKFLOW:
 
 USAGE EXAMPLES:
 - Add skill: { "action": "add", "agent_id": "7", "skill_id": "skill-abc-123" }
-- Remove skill: { "action": "remove", "agent_id": "7", "skill_id": "skill-abc-123" }`;
+- Remove skill: { "action": "remove", "agent_id": "7", "skill_id": "skill-abc-123" }
+
+NOTE: There is no list action for skills — the platform does not yet expose a query for listing an agent's attached skills.`;
   }
 
   getInputSchema() {

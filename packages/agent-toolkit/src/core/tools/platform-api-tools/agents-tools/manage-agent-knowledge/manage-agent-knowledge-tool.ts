@@ -85,29 +85,27 @@ USAGE EXAMPLES:
     input: ToolInputType<typeof manageAgentKnowledgeToolSchema>,
   ): Promise<ToolOutputType<never>> {
     if (input.action === 'list') {
-      let res: GetAgentKnowledgeQuery;
       try {
-        res = await this.mondayApi.request<GetAgentKnowledgeQuery>(
+        const res = await this.mondayApi.request<GetAgentKnowledgeQuery>(
           getAgentKnowledgeQuery,
           { id: input.agent_id } satisfies GetAgentKnowledgeQueryVariables,
           { versionOverride: 'dev' },
         );
+        return {
+          content: {
+            message: 'Current agent resource access.',
+            knowledge: res.agent_knowledge ?? { resources: [], files: [] },
+          },
+        };
       } catch (error) {
         rethrowWithContext(error, 'list agent knowledge for monday platform agent');
       }
-      return {
-        content: {
-          message: 'Current agent resource access.',
-          knowledge: res!.agent_knowledge ?? { resources: [], files: [] },
-        },
-      };
     } else if (input.action === 'add') {
       if (!input.resource_id || !input.scope_type || !input.permission_type) {
         throw new Error('resource_id, scope_type, and permission_type are required for action:add');
       }
-      let res: AddAgentResourceAccessMutation;
       try {
-        res = await this.mondayApi.request<AddAgentResourceAccessMutation>(
+        const res = await this.mondayApi.request<AddAgentResourceAccessMutation>(
           addAgentResourceAccessMutation,
           {
             id: input.agent_id,
@@ -117,22 +115,21 @@ USAGE EXAMPLES:
           } satisfies AddAgentResourceAccessMutationVariables,
           { versionOverride: 'dev' },
         );
+        return {
+          content: {
+            message: 'Resource access granted to agent.',
+            success: res.add_agent_resource_access?.success ?? false,
+          },
+        };
       } catch (error) {
         rethrowWithContext(error, 'add agent resource access for monday platform agent');
       }
-      return {
-        content: {
-          message: 'Resource access granted to agent.',
-          success: res!.add_agent_resource_access?.success ?? false,
-        },
-      };
     } else if (input.action === 'update') {
       if (!input.resource_id || !input.scope_type || !input.permission_type) {
         throw new Error('resource_id, scope_type, and permission_type are required for action:update');
       }
-      let res: UpdateAgentResourceAccessMutation;
       try {
-        res = await this.mondayApi.request<UpdateAgentResourceAccessMutation>(
+        const res = await this.mondayApi.request<UpdateAgentResourceAccessMutation>(
           updateAgentResourceAccessMutation,
           {
             id: input.agent_id,
@@ -142,22 +139,21 @@ USAGE EXAMPLES:
           } satisfies UpdateAgentResourceAccessMutationVariables,
           { versionOverride: 'dev' },
         );
+        return {
+          content: {
+            message: 'Resource access updated.',
+            success: res.update_agent_resource_access?.success ?? false,
+          },
+        };
       } catch (error) {
         rethrowWithContext(error, 'update agent resource access for monday platform agent');
       }
-      return {
-        content: {
-          message: 'Resource access updated.',
-          success: res!.update_agent_resource_access?.success ?? false,
-        },
-      };
     } else {
       if (!input.resource_id || !input.scope_type) {
         throw new Error('resource_id and scope_type are required for action:remove');
       }
-      let res: RemoveAgentResourceAccessMutation;
       try {
-        res = await this.mondayApi.request<RemoveAgentResourceAccessMutation>(
+        const res = await this.mondayApi.request<RemoveAgentResourceAccessMutation>(
           removeAgentResourceAccessMutation,
           {
             id: input.agent_id,
@@ -166,15 +162,15 @@ USAGE EXAMPLES:
           } satisfies RemoveAgentResourceAccessMutationVariables,
           { versionOverride: 'dev' },
         );
+        return {
+          content: {
+            message: 'Resource access removed from agent.',
+            success: res.remove_agent_resource_access?.success ?? false,
+          },
+        };
       } catch (error) {
         rethrowWithContext(error, 'remove agent resource access for monday platform agent');
       }
-      return {
-        content: {
-          message: 'Resource access removed from agent.',
-          success: res!.remove_agent_resource_access?.success ?? false,
-        },
-      };
     }
   }
 }
