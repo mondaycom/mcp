@@ -135,4 +135,28 @@ describe('ManageAgentTriggersTool', () => {
 
     expect(result.content[0].text).toContain('Failed to list active triggers');
   });
+
+  it('should propagate errors with operation context for add', async () => {
+    mocks.setError('API error');
+
+    const result = await callToolByNameRawAsync('manage_agent_triggers', {
+      action: 'add',
+      agent_id: '7',
+      block_reference_id: 'status-change-ref',
+    });
+
+    expect(result.content[0].text).toContain('Failed to add trigger');
+  });
+
+  it('should propagate errors with operation context for remove', async () => {
+    mocks.setError('API error');
+
+    const result = await callToolByNameRawAsync('manage_agent_triggers', {
+      action: 'remove',
+      agent_id: '7',
+      node_id: 'node-abc',
+    });
+
+    expect(result.content[0].text).toContain('Failed to remove trigger');
+  });
 });
