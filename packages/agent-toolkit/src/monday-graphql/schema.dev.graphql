@@ -1509,7 +1509,7 @@ workspace_id: ID): Board
   "Create a new doc."
   create_doc(  "new monday doc location"
 location: CreateDocInput!,   "Optional list of user IDs to set as document owners at creation time"
-board_owner_ids: [ID!]): Document
+doc_owner_ids: [ID!]): Document
   "Create new document block"
   create_doc_block(  "After which block to insert this one. If not provided, will be inserted first in the document"
 after_block_id: String,   "The block's content."
