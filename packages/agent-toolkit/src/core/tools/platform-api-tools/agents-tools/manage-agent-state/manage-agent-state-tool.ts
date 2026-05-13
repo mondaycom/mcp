@@ -61,59 +61,63 @@ USAGE EXAMPLES:
     input: ToolInputType<typeof manageAgentStateToolSchema>,
   ): Promise<ToolOutputType<never>> {
     if (input.action === 'activate') {
+      let activateRes: ActivateAgentMutation;
       try {
-        const variables: ActivateAgentMutationVariables = { id: input.agent_id };
-        const res = await this.mondayApi.request<ActivateAgentMutation>(
+        activateRes = await this.mondayApi.request<ActivateAgentMutation>(
           activateAgentMutation,
-          variables,
+          { id: input.agent_id } satisfies ActivateAgentMutationVariables,
           { versionOverride: 'dev' },
         );
-        return {
-          content: {
-            message: 'Agent activated.',
-            success: res.activate_agent?.success ?? false,
-          },
-        };
       } catch (error) {
         rethrowWithContext(error, 'activate monday platform agent');
       }
+      return {
+        content: {
+          message: 'Agent activated.',
+          success: activateRes!.activate_agent?.success ?? false,
+        },
+      };
     } else if (input.action === 'deactivate') {
+      let deactivateRes: DeactivateAgentMutation;
       try {
         const variables: DeactivateAgentMutationVariables = {
           id: input.agent_id,
           inactive_reason: (input.inactive_reason as InactiveReason) ?? InactiveReason.DeactivatedByUser,
         };
-        const res = await this.mondayApi.request<DeactivateAgentMutation>(
+        deactivateRes = await this.mondayApi.request<DeactivateAgentMutation>(
           deactivateAgentMutation,
           variables,
           { versionOverride: 'dev' },
         );
-        return {
-          content: {
-            message: 'Agent deactivated.',
-            success: res.deactivate_agent?.success ?? false,
-          },
-        };
       } catch (error) {
         rethrowWithContext(error, 'deactivate monday platform agent');
       }
+      return {
+        content: {
+          message: 'Agent deactivated.',
+          success: deactivateRes!.deactivate_agent?.success ?? false,
+        },
+      };
     } else {
+      let runRes: RunAgentMutation;
       try {
-        const variables: RunAgentMutationVariables = { id: input.agent_id };
-        const res = await this.mondayApi.request<RunAgentMutation>(
+        runRes = await this.mondayApi.request<RunAgentMutation>(
           runAgentMutation,
-          variables,
+          { id: input.agent_id } satisfies RunAgentMutationVariables,
           { versionOverride: 'dev' },
         );
-        return {
-          content: {
-            message: 'Agent run enqueued.',
-            trigger_uuid: res.run_agent?.trigger_uuid,
-          },
-        };
       } catch (error) {
         rethrowWithContext(error, 'run monday platform agent');
       }
+      if (!runRes!.run_agent) {
+        throw new Error('run_agent returned no data — the agent run may not have been enqueued');
+      }
+      return {
+        content: {
+          message: 'Agent run enqueued.',
+          trigger_uuid: runRes.run_agent.trigger_uuid,
+        },
+      };
     }
   }
 }

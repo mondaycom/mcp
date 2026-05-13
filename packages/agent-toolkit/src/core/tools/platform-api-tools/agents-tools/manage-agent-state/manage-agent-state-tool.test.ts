@@ -157,4 +157,13 @@ describe('ManageAgentStateTool', () => {
 
     expect(parseToolResult(result).success).toBe(false);
   });
+
+  it('should handle null run_agent response', async () => {
+    mocks.setResponseOnce({ run_agent: null } as RunAgentMutation);
+    const result = await callToolByNameRawAsync('manage_agent_state', {
+      action: 'run',
+      agent_id: '7',
+    });
+    expect(result.content[0].text).toContain('run_agent returned no data');
+  });
 });
