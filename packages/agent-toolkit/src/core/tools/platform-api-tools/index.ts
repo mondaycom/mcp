@@ -74,6 +74,7 @@ import { ManageAgentSkillsTool } from './agents-tools/manage-agent-skills/manage
 import { UpdateAgentTool } from './agents-tools/update-agent/update-agent-tool';
 import { ManageAgentStateTool } from './agents-tools/manage-agent-state/manage-agent-state-tool';
 import { ManageAgentKnowledgeTool } from './agents-tools/manage-agent-knowledge/manage-agent-knowledge-tool';
+import { CreateAgentSkillTool } from './agents-tools/create-agent-skill/create-agent-skill-tool';
 
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteItemTool,
@@ -153,6 +154,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   UpdateAgentTool,
   ManageAgentStateTool,
   ManageAgentKnowledgeTool,
+  CreateAgentSkillTool,
 ];
 
 export * from './all-monday-api-tool';
