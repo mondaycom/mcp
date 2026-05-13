@@ -1,6 +1,6 @@
 import { gql } from 'graphql-request';
 
-const agentFieldsFragment = gql`
+export const agentFieldsFragment = gql`
   fragment AgentFields on Agent {
     id
     kind
