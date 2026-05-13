@@ -94,4 +94,24 @@ describe('ManageAgentSkillsTool', () => {
 
     expect(result.content[0].text).toContain('Failed to remove skill');
   });
+
+  it('should return success:false when add_skill_to_agent is null', async () => {
+    mocks.setResponseOnce({ add_skill_to_agent: null } as AddSkillToAgentMutation);
+    const result = await callToolByNameRawAsync('manage_agent_skills', {
+      action: 'add',
+      agent_id: '7',
+      skill_id: 'skill-abc-123',
+    });
+    expect(parseToolResult(result).success).toBe(false);
+  });
+
+  it('should return success:false when remove_skill_from_agent is null', async () => {
+    mocks.setResponseOnce({ remove_skill_from_agent: null } as RemoveSkillFromAgentMutation);
+    const result = await callToolByNameRawAsync('manage_agent_skills', {
+      action: 'remove',
+      agent_id: '7',
+      skill_id: 'skill-abc-123',
+    });
+    expect(parseToolResult(result).success).toBe(false);
+  });
 });

@@ -78,26 +78,26 @@ USAGE EXAMPLES:
       } catch (error) {
         rethrowWithContext(error, 'add skill to monday platform agent');
       }
-    }
-
-    try {
-      const variables: RemoveSkillFromAgentMutationVariables = {
-        agent_id: input.agent_id,
-        skill_id: input.skill_id,
-      };
-      const res = await this.mondayApi.request<RemoveSkillFromAgentMutation>(
-        removeSkillFromAgentMutation,
-        variables,
-        { versionOverride: 'dev' },
-      );
-      return {
-        content: {
-          message: 'Skill removed from agent.',
-          success: res.remove_skill_from_agent?.success ?? false,
-        },
-      };
-    } catch (error) {
-      rethrowWithContext(error, 'remove skill from monday platform agent');
+    } else {
+      try {
+        const variables: RemoveSkillFromAgentMutationVariables = {
+          agent_id: input.agent_id,
+          skill_id: input.skill_id,
+        };
+        const res = await this.mondayApi.request<RemoveSkillFromAgentMutation>(
+          removeSkillFromAgentMutation,
+          variables,
+          { versionOverride: 'dev' },
+        );
+        return {
+          content: {
+            message: 'Skill removed from agent.',
+            success: res.remove_skill_from_agent?.success ?? false,
+          },
+        };
+      } catch (error) {
+        rethrowWithContext(error, 'remove skill from monday platform agent');
+      }
     }
   }
 }
