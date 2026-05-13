@@ -98,7 +98,7 @@ USAGE EXAMPLES:
       return {
         content: {
           message: 'Current agent resource access.',
-          knowledge: res!.agent_knowledge,
+          knowledge: res!.agent_knowledge ?? { resources: [], files: [] },
         },
       };
     } else if (input.action === 'add') {

@@ -184,4 +184,27 @@ describe('ManageAgentKnowledgeTool', () => {
 
     expect(parseToolResult(result).success).toBe(false);
   });
+
+  it('should reject update action with missing permission_type', async () => {
+    const result = await callToolByNameRawAsync('manage_agent_knowledge', {
+      action: 'update',
+      agent_id: '7',
+      resource_id: '42',
+      scope_type: 'BOARD',
+      // permission_type omitted
+    });
+    expect(result.content[0].text).toContain('resource_id, scope_type, and permission_type are required for action:update');
+  });
+
+  it('should return success:false when update_agent_resource_access is null', async () => {
+    mocks.setResponseOnce({ update_agent_resource_access: null } as UpdateAgentResourceAccessMutation);
+    const result = await callToolByNameRawAsync('manage_agent_knowledge', {
+      action: 'update',
+      agent_id: '7',
+      resource_id: '42',
+      scope_type: 'BOARD',
+      permission_type: 'READ_WRITE',
+    });
+    expect(parseToolResult(result).success).toBe(false);
+  });
 });
