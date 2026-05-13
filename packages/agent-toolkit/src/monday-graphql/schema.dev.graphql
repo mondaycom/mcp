@@ -363,6 +363,12 @@ limit: Int = 5): KnowledgeBaseAnswer
   favorites: [GraphqlHierarchyObjectItem!]
   "Intelligence data."
   intelligence: Intelligence
+  "Get board automations. Filter by ids (specific automation IDs) or board_ids (up to 1 board). Omit all filters to get all account automations."
+  board_automations(  "Automation IDs to fetch (max 100)"
+ids: [ID!],   "Board IDs to filter by (max 1)"
+board_ids: [ID!],   "Max number of automations to return"
+limit: Int,   "Cursor from a previous page for pagination"
+cursor: String): AutomationsPage!
   marketplace_app_discounts(  "The id of an app"
 app_id: ID!): [MarketplaceAppDiscount!]!
   app_subscriptions(  "The ID of an app"
@@ -388,13 +394,21 @@ import_id: ID!): BulkImportStatus!
   "Get the status of a backfill or ingest job"
   fetch_job_status(  "The ID of the job to get status for"
 job_id: ID!): JobStatus!
-  "Get an agent by its ID. Returns null if the agent does not exist or the user does not have access."
-  agent(  "The unique identifier of the agent"
-id: ID!): Agent
   "List personal agents for the authenticated user. At least one filter (ids or limit) is required."
   agents(  "Optional list of agent IDs to fetch. Applied before limit when both are provided."
 ids: [ID!],   "Optional max number of agents to return. Applied after ids filter when both are provided."
 limit: Int): [Agent!]
+  "Returns trigger types that can be attached to an agent via add_trigger_to_agent. Pass block_reference_ids to fetch only specific entries (much faster). Only includes auto-addable triggers — 3rd-party triggers requiring OAuth or credentials are excluded."
+  agent_triggers_catalog(  "Optional list of block_reference_id values to fetch. When omitted, all catalog entries are returned."
+block_reference_ids: [ID!]): [AgentTriggerCatalogEntry!]
+  "Returns the triggers currently attached to an agent. Use node_id from each result to remove a trigger."
+  agent_active_triggers(  "Unique identifier of the agent"
+agent_id: ID!): [AgentActiveTrigger!]
+  "Returns the knowledge configuration of an agent — boards/docs it has access to and uploaded files. Board and doc names are not included; use the board/doc subgraph queries to resolve them."
+  agent_knowledge(  "Unique identifier of the agent"
+id: ID!): AgentKnowledge
+  "List all skills available to attach to an agent. Use the returned id to call add_skill_to_agent."
+  agent_skills_catalog: [AgentSkillCatalogEntry!]
   "Get an app by ID or slug."
   app(  "The ID or slug of the app"
 id: ID!): AppType
@@ -635,6 +649,9 @@ board_id: ID!): [Sequence!]
   "Get a collection of monday dev sprints"
   sprints(  "A list of monday dev sprints unique identifiers"
 ids: [ID!]!): [Sprint!]
+  "Get the status of an async job by its external ID"
+  job_status(  "The job ID returned by the originating mutation"
+job_id: ID!): AsyncJobStatus!
   "Get the changelog of decisions that were made for a task by the My Tasks agent."
   get_task_changelog(  "The task (item) ID to fetch the changelog of decisions for"
 task_id: ID!): [TaskDecisionChangelogEvent!]
@@ -1288,8 +1305,8 @@ export_options: ExportOptionsInput,   """
   Time zone for date formatting (e.g. "America/New_York")
   """
 time_zone: String,   "Column IDs in desired display order"
-columns_order: [String!],   "Output format (defaults to XLSX)"
-export_format: ExportFormat): ExportBoardResult
+columns_order: [String!],   "Output format (defaults to CSV)"
+export_format: ExportFormat = CSV): ExportBoardResult
   "Add workspace object to favorites"
   create_favorite(  "The input for adding an object to the favorites"
 input: CreateFavoriteInput!): CreateFavoriteResultType
@@ -1299,6 +1316,13 @@ input: DeleteFavoriteInput!): DeleteFavoriteInputResultType
   "Update the position of an object in favorites"
   update_favorite_position(  "The input for updating the favorite object position"
 input: UpdateObjectHierarchyPositionInput!): UpdateFavoriteResultType
+  "Delete a board automation by ID."
+  delete_board_automation(  "The ID of the automation to delete"
+id: ID!,   "The board ID the automation belongs to"
+board_id: ID!): BoardAutomationDeleteResult!
+  "Create a board automation. Provide template_reference_id to create from a template, or workflow_blocks and workflow_variables for a direct creation."
+  create_board_automation(  "Automation creation input"
+input: BoardAutomationCreateInput!): BoardAutomationCreateResult!
   "Create a marketplace app discount"
   create_marketplace_app_discount(  "The id of an app"
 app_id: ID!,   "Slug of an account"
@@ -1343,6 +1367,56 @@ input: CreateBlankAgentInput): Agent
   "Delete an AI agent by its ID"
   delete_agent(  "The unique identifier of the agent to delete"
 id: ID!): Agent
+  "Trigger a manual run for an existing agent. This is an async fire-and-forget operation — a successful response means the run was accepted and enqueued, not that it has completed or succeeded. Use trigger_uuid to correlate the execution in downstream events or future status endpoints."
+  run_agent(  "Unique identifier of the agent to run"
+id: ID!): RunAgentResult
+  "Activate an existing agent"
+  activate_agent(  "Unique identifier of the agent to activate"
+id: ID!): AgentStateResult
+  "Deactivate an existing agent"
+  deactivate_agent(  "Unique identifier of the agent to deactivate"
+id: ID!,   "The reason for deactivating the agent. Defaults to DEACTIVATED_BY_USER."
+inactive_reason: InactiveReason): AgentStateResult
+  "Update an agent — creates a new draft if needed, applies the changes, and publishes to live in one call"
+  update_agent(  "Unique identifier of the agent to update"
+id: ID!,   "Fields to update — only provided fields are changed"
+input: UpdateAgentInput!): Agent
+  "Adds a trigger to an agent. Creates a draft if needed, applies the change, and promotes to live in one call. Returns { success: true } on success. Use agent_active_triggers to read the updated trigger list. Get available trigger types and field schemas from agent_triggers_catalog."
+  add_trigger_to_agent(  "Unique identifier of the agent"
+agent_id: ID!,   "The block_reference_id from agent_triggers_catalog identifying the trigger type"
+block_reference_id: ID!,   """
+  Configuration values for the trigger. Shape depends on the trigger type — see field_schemas and required_fields in agent_triggers_catalog. For scheduler fields: pass the structured config object directly. For selection fields (e.g. board picker): pass { value: <id>, label: "<display name>" }.
+  """
+field_values: JSON): MutationResult
+  "Removes a trigger from an agent by its node_id. Creates a draft if needed, applies the change, and promotes to live in one call. Returns { success: true } on success. Use agent_active_triggers to verify the trigger is gone. Get node_id values from the agent_active_triggers query."
+  remove_trigger_from_agent(  "Unique identifier of the agent"
+agent_id: ID!,   "The node_id of the trigger to remove — from agent_active_triggers"
+node_id: ID!): MutationResult
+  "Grant an agent access to a monday.com board or doc. Creates a draft version, applies the change, and promotes to live."
+  add_agent_resource_access(  "Unique identifier of the agent"
+id: ID!,   "The ID of the board or doc to add"
+resource_id: ID!,   "Whether the resource is a board or a doc"
+scope_type: KnowledgeScope!,   "The permission level to grant the agent on this resource"
+permission_type: KnowledgePermission!): MutationResult
+  "Remove a board or doc from an agent. Creates a draft, removes the access, and promotes to live."
+  remove_agent_resource_access(  "Unique identifier of the agent"
+id: ID!,   "The ID of the board or doc to remove"
+resource_id: ID!,   "Whether the resource is a board or a doc"
+scope_type: KnowledgeScope!): MutationResult
+  "Change the permission level an agent has on an existing board or doc. Creates a draft, updates the permission, and promotes to live."
+  update_agent_resource_access(  "Unique identifier of the agent"
+id: ID!,   "The ID of the board or doc to update"
+resource_id: ID!,   "Whether the resource is a board or a doc"
+scope_type: KnowledgeScope!,   "The new permission level to grant the agent"
+permission_type: KnowledgePermission!): MutationResult
+  "Attach a skill to an agent by its catalog id. Use agent_skills_catalog to discover available ids."
+  add_skill_to_agent(  "Unique identifier of the agent"
+agent_id: ID!,   "Skill reference id from agent_skills_catalog"
+skill_id: ID!): MutationResult
+  "Detach a skill from an agent by its catalog id."
+  remove_skill_from_agent(  "Unique identifier of the agent"
+agent_id: ID!,   "Skill reference id to detach"
+skill_id: ID!): MutationResult
   "Creates a new app with the specified configuration."
   create_app(  "App configuration data"
 input: CreateAppInput!): CreateAppResponse
@@ -1382,6 +1456,10 @@ input: InstallAppInput!): InstallAppResponse
   "Uninstalls an app from the current account. Requires account admin permission."
   uninstall_app(  "The app identifier (numeric ID or slug)"
 app_identifier: ID!): AppDeletionResponse
+  "Promotes the latest draft app version of an app to live. Promotion is asynchronous — poll the returned version's status field (via the app query) until it transitions to LIVE. Only app collaborators can perform this action."
+  promote_app(  "The identifier of the app whose draft version should be promoted"
+app_id: ID!,   "Optional: the specific app version to promote. Defaults to the latest draft version"
+app_version_id: ID): DeveloperAppVersion
   "Add a file to a column value."
   add_file_to_column(  "The column to add the file to."
 column_id: String!,   "The file to upload."
@@ -2151,9 +2229,9 @@ input WebSearchConfigInput {
 
 "Configuration options for web search functionality"
 input WebSearchOptionsInput {
-  "Maximum number of search results to retrieve (default: 5)"
+  "Hint for max number of sources to consider (default: 5). Interpreted as guidance — the model decides retrieval breadth."
   topK: Int
-  "Limit search results to content from the last N days"
+  "Hint to prioritize content from the last N days. Interpreted as guidance — not a hard filter."
   recencyDays: Int
 }
 
@@ -2167,6 +2245,8 @@ enum AssetHolder {
   WORKSPACE
   "An account entity."
   ACCOUNT
+  "A vibe application entity."
+  VIBE_APP
 }
 
 "The result of a completed file upload, representing the created asset."
@@ -2596,14 +2676,10 @@ interface FieldType {
   has_remote_options: Boolean
 }
 
-"Implementation of a field type"
+"An interface (app feature) that a field type implements"
 type FieldTypeImplementation {
-  "Unique identifier for the implementation"
-  id: Int
-  "Unique key of the app feature"
-  uniqueKey: String
-  "Name of the implementation"
-  name: String
+  "Reference id of the app feature interface this field type implements"
+  app_feature_reference_id: ID
 }
 
 "The type of relation between a field and its type"
@@ -2739,6 +2815,8 @@ type Option {
   value: JSON
   "The display title of the option"
   title: String
+  "Optional icon to display alongside the option (e.g. { vibe, tooltip })"
+  icon: JSON
 }
 
 "Interface for output field configuration"
@@ -3520,6 +3598,10 @@ cursor: String): UpdatesPage
 ids: [String],   "A list of column types."
 types: [ColumnType!],   "A list of column capabilities to filter by. Returns columns that have any of the specified capabilities. Use null in the array to represent columns with no capabilities (e.g., [null] for only columns without capabilities, [null, CALCULATED] for columns without capabilities or with calculated)."
 capabilities: [ColumnCapability]): [Column]
+  "Automations for this board"
+  automations(  "Max number of automations to return"
+limit: Int,   "Cursor from a previous page for pagination"
+cursor: String): AutomationsPage!
   "The user's permission level for this board (view / edit)."
   access_level: BoardAccessLevel!
   "The board log events."
@@ -6194,6 +6276,8 @@ input ExportOptionsInput {
   header_row: HeaderFormat
   "Behavior for columns with no codec support in CSV exports. Ignored for other formats."
   non_importable_columns: NonImportableColumns = INCLUDE
+  "Include item_id (and parent_item_id when subitems are enabled) columns at the end of CSV exports."
+  include_item_identifiers: Boolean = false
 }
 
 "CSV header row format."
@@ -6468,6 +6552,74 @@ type UserContextResponse {
   user: UserContext
   "Account context."
   account: AccountContext
+}
+
+"A page of automations with cursor for pagination"
+type AutomationsPage {
+  "Opaque cursor for fetching the next page. Null if no more results."
+  cursor: String
+  "The automations in this page"
+  items: [BoardAutomation!]
+}
+
+"A board automation"
+type BoardAutomation {
+  "Automation ID"
+  id: ID
+  "Creator user ID"
+  user_id: ID
+  "Whether the automation is active"
+  active: Boolean
+  "Automation title"
+  title: String
+  "Automation description"
+  description: String
+  "Creation timestamp"
+  created_at: String
+  "Last update timestamp"
+  updated_at: String
+  "Host data (board ID and type)"
+  workflow_host_data: JSON
+  "Workflow block definitions"
+  workflow_blocks: JSON
+  "Workflow variable definitions"
+  workflow_variables: JSON
+  "Automation importance level"
+  importance: Int
+  "Notice message for the automation"
+  notice_message: String
+  "Template reference ID if created from template"
+  template_reference_id: ID
+}
+
+"Input for creating a board automation. Provide template_reference_id to create from a template, or workflow_blocks and workflow_variables for a direct creation."
+input BoardAutomationCreateInput {
+  "Board ID to host the automation"
+  board_id: String!
+  "Automation title"
+  title: String!
+  "Automation description"
+  description: String
+  "Template reference ID (for template-based creation)"
+  template_reference_id: ID
+  "Automation block definitions (for direct creation)"
+  workflow_blocks: JSON
+  "Automation variable definitions (for direct creation)"
+  workflow_variables: JSON
+  "Template variable values (for template-based creation)"
+  workflow_variables_values: JSON
+}
+
+"Result of creating a board automation"
+type BoardAutomationCreateResult {
+  "The ID of the created automation"
+  workflow_id: ID
+}
+
+"Result of deleting a board automation"
+type BoardAutomationDeleteResult {
+  "Whether the deletion was successful"
+  is_success: Boolean
 }
 
 "Subscription object"
@@ -6874,14 +7026,36 @@ type Agent {
   goal: String
   "The execution plan in markdown format, describing the agent capabilities and operating principles"
   plan: String
+  "The LLM model the agent uses"
+  agent_model: AgentModel
+  "Reference IDs of skills attached to this agent. Use agent_skills_catalog to resolve full name and description."
+  skill_ids: [ID!]!
   "The original user prompt used to create the agent"
   user_prompt: String
   "The current configuration version of the agent. Increments on each update."
   version_id: ID!
+  "Knowledge files attached to the agent. Only populated on create mutation responses."
+  knowledge: [AgentKnowledgeEntry!]
   "The timestamp when the agent was created. Null on create mutation responses — use the agent query to fetch it."
   created_at: Date
   "The timestamp when the agent was last updated. Null on create mutation responses — use the agent query to fetch it."
   updated_at: Date
+}
+
+"A trigger currently attached to an agent"
+type AgentActiveTrigger {
+  "Stable identifier of this trigger instance — use this as node_id when calling remove_trigger_from_agent"
+  node_id: ID!
+  "The trigger type, matching block_reference_id in the catalog"
+  block_reference_id: ID!
+  "Display name of the trigger type"
+  name: String!
+  "Description of the trigger type"
+  description: String
+  """
+  Human-readable summary of how this trigger is configured (e.g. "type=Weekly, hour=9, days=3/4")
+  """
+  field_summary: String
 }
 
 "The kind of AI agent"
@@ -6892,6 +7066,70 @@ enum AgentKind {
   ACCOUNT_LEVEL
   "An agent created by an external provider"
   EXTERNAL
+}
+
+"The full knowledge configuration of an agent — resources (boards/docs) and uploaded files"
+type AgentKnowledge {
+  "Boards and docs the agent has access to"
+  resources: [AgentKnowledgeResource!]
+  "Files uploaded as agent knowledge"
+  files: [AgentKnowledgeFile!]
+}
+
+"A knowledge entry attached to an agent"
+type AgentKnowledgeEntry {
+  "The unique identifier of the knowledge entry"
+  id: ID!
+  "File metadata for this knowledge entry"
+  metadata: AgentKnowledgeMetadata
+  "The source type of this knowledge entry"
+  source_type: KnowledgeSource
+  "The current state of this knowledge entry"
+  state: KnowledgeState
+  "Reference ID for the knowledge entry"
+  knowledge_reference_id: ID
+}
+
+"A file uploaded as agent knowledge"
+type AgentKnowledgeFile {
+  "Unique identifier of the knowledge file"
+  id: ID
+  "Original file name"
+  file_name: String
+  "File extension (e.g. pdf, docx, csv)"
+  file_type: String
+}
+
+"Metadata about a knowledge file attachment"
+type AgentKnowledgeMetadata {
+  "Original name of the uploaded file"
+  file_name: String
+  "MIME type of the file"
+  file_type: String
+  "Cloudinary asset ID for image files"
+  asset_id: ID
+}
+
+"A monday.com board or doc the agent has been granted access to"
+type AgentKnowledgeResource {
+  "The ID of the board or doc"
+  resource_id: ID
+  "Whether this resource is a board or a doc"
+  scope_type: KnowledgeScope
+  "The permission level the agent has on this resource"
+  permission_type: KnowledgePermission
+}
+
+"Supported LLM models for an agent"
+enum AgentModel {
+  "Claude Sonnet 4.6 (claude-sonnet-4-6)"
+  CLAUDE_SONNET_4_6
+  "Claude Opus 4.7 (claude-opus-4-7)"
+  CLAUDE_OPUS_4_7
+  "GPT 5.2"
+  GPT_5_2
+  "Gemini 2.5 Flash"
+  GEMINI_2_5_FLASH
 }
 
 "Visual and role identity of an agent."
@@ -6908,6 +7146,16 @@ type AgentProfile {
   background_color: String
 }
 
+"A skill available for agents to use — browse the catalog, then attach by id."
+type AgentSkillCatalogEntry {
+  "Stable reference ID — pass this to add_skill_to_agent / remove_skill_from_agent"
+  id: ID
+  "Display name of the skill"
+  name: String
+  "What this skill does"
+  description: String
+}
+
 "The current state of an agent"
 enum AgentState {
   "The agent is active and can be triggered and executed"
@@ -6922,12 +7170,34 @@ enum AgentState {
   FAILED
 }
 
+"Result of an agent state change operation"
+type AgentStateResult {
+  "Whether the operation succeeded"
+  success: Boolean
+}
+
+"An available trigger type that can be attached to an agent"
+type AgentTriggerCatalogEntry {
+  "Pass this value as block_reference_id when calling add_trigger_to_agent"
+  block_reference_id: ID!
+  "Display name of the trigger"
+  name: String!
+  "What this trigger does"
+  description: String
+  "Structured value schemas for fields you can populate directly in field_values"
+  field_schemas: [TriggerFieldSchema!]!
+  "Selection fields (e.g. board picker) that must be provided in field_values as { value, label } pairs"
+  required_fields: [TriggerRequiredField!]!
+}
+
 "Input for creating an AI agent from a prompt — AI generates the profile from the prompt"
 input CreateAgentInput {
   "A description of what the agent should do — used to generate profile, goal, and plan via AI"
   prompt: String!
   "The LLM model the agent should use"
   agent_model: String
+  "IDs of previously uploaded pending files to attach as knowledge during creation"
+  pending_file_ids: [ID!]
 }
 
 "Input for creating a blank AI agent without AI generation"
@@ -6946,6 +7216,90 @@ input CreateBlankAgentInput {
   background_color: String
   "Stored as metadata on the agent. Not used for AI generation — use create_agent if you want AI to build the agent from a prompt."
   user_prompt: String
+}
+
+"The reason an agent is inactive"
+enum InactiveReason {
+  "The agent was deactivated due to an account-level block"
+  ACCOUNT_LEVEL_BLOCKING
+  "The agent was manually deactivated by a user"
+  DEACTIVATED_BY_USER
+}
+
+"The permission level the agent has on a resource"
+enum KnowledgePermission {
+  "Agent can read the resource"
+  READ
+  "Agent can read and write the resource"
+  READ_WRITE
+}
+
+"The type of monday.com resource granted to an agent"
+enum KnowledgeScope {
+  "A monday.com board"
+  BOARD
+  "A monday.com doc"
+  DOC
+}
+
+"The source type of a knowledge entry"
+enum KnowledgeSource {
+  "Knowledge sourced from an uploaded file"
+  FILE
+}
+
+"The state of a knowledge entry"
+enum KnowledgeState {
+  "Knowledge is active and available for retrieval"
+  ACTIVE
+  "Knowledge is being processed"
+  PENDING
+  "Knowledge has been deleted"
+  DELETED
+}
+
+"Result of a write operation that does not need to return entity data."
+type MutationResult {
+  "Whether the operation succeeded"
+  success: Boolean!
+}
+
+"Confirmation that a manual agent run was accepted and enqueued. This does not reflect the outcome of the run itself — the execution happens asynchronously. In the future, trigger_uuid can be used to query run status via a dedicated endpoint."
+type RunAgentResult {
+  "Correlation ID for the triggered run. Use this to track or look up the execution in downstream events or future run-status endpoints."
+  trigger_uuid: String
+}
+
+"Schema description for a trigger field that accepts a structured JSON value"
+type TriggerFieldSchema {
+  "The key to use in field_values when calling add_trigger_to_agent"
+  field_key: String!
+  "Human-readable description of the expected JSON shape for this field"
+  value_schema: String!
+}
+
+"A selection field (e.g. board picker) required when adding this trigger"
+type TriggerRequiredField {
+  "The key to use in field_values"
+  field_key: String!
+  "Field keys that must be provided before this field — resolve them in order"
+  depends_on: [String!]!
+  "Whether this field can be omitted"
+  optional: Boolean!
+}
+
+"Input for updating an AI agent — all fields are optional; only provided fields are changed"
+input UpdateAgentInput {
+  "The display name of the agent"
+  name: String
+  "The role of the agent"
+  role: String
+  "A description of the agent role"
+  role_description: String
+  "The execution plan (instructions) for the agent, in markdown format"
+  plan: String
+  "The LLM model the agent should use"
+  agent_model: AgentModel
 }
 
 "Response object for app deletion operations"
@@ -7202,6 +7556,8 @@ type AppType {
   photo_url_small: String
   "The app kind"
   kind: AppKind
+  "All versions of this app with their current status. Use this to poll promotion progress."
+  versions: [DeveloperAppVersion!]
   "The app status (i.e. is live?)"
   status: AppStatus
   "The latest version type"
@@ -7225,6 +7581,18 @@ type AppType {
 live_version_only: Boolean = false,   "Number of items to get, the default is 25."
 limit: Int = 25,   "Page number to get, starting at 1."
 page: Int = 1): [AppFeatureType!]
+}
+
+"The lifecycle status of an app version"
+enum AppVersionStatus {
+  "Version is in development and not yet live"
+  DRAFT
+  "Version is live and available to users"
+  LIVE
+  "Version has been superseded by a newer version"
+  DEPRECATED
+  "Version is in the process of being promoted"
+  PROMOTING
 }
 
 "Input for creating an app with its configuration data."
@@ -7259,6 +7627,14 @@ type CreateAppResponse {
   client_secret: String
   "The app's signing secret used for webhook signature verification"
   signing_secret: String
+}
+
+"An app version"
+type DeveloperAppVersion {
+  "The unique identifier of the app version"
+  id: ID
+  "The current lifecycle status of this app version"
+  status: AppVersionStatus
 }
 
 "Input for installing an app on the current account."
@@ -12164,6 +12540,50 @@ type SprintTimeline {
   from: Date
   "user-editable complete date of the monday dev sprint timeline, may be different than the sprint complete date"
   to: Date
+}
+
+"Structured result data for a completed or partially-completed operation"
+type AsyncJobResult {
+  "Total items in the operation"
+  total: Int
+  "Successfully processed items"
+  succeeded: Int
+  "Items that failed"
+  failed: Int
+  "Operation-specific details (failed item IDs, report URLs, etc.)"
+  details: JSON
+}
+
+"Status information for an async job"
+type AsyncJobStatus {
+  "Unique job identifier"
+  id: ID
+  "Current job status"
+  status: JobState
+  "When the job was created (ISO 8601)"
+  created_at: String
+  "When the job was last updated (ISO 8601)"
+  updated_at: String
+  "Error description if the job failed"
+  error: String
+  "Structured result data for completed or partially-completed operations"
+  result: AsyncJobResult
+}
+
+"Status of an async job"
+enum JobState {
+  "Job is queued but not yet started"
+  PENDING
+  "Job is actively executing"
+  RUNNING
+  "Job completed successfully"
+  COMPLETED
+  "Job failed"
+  FAILED
+  "Job expired before completion"
+  EXPIRED
+  "Job was cancelled"
+  CANCELLED
 }
 
 "A single column value change within a task decision"
