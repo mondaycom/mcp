@@ -5,3 +5,4 @@ export * from './get-agent-catalog/get-agent-catalog-tool';
 export * from './manage-agent-triggers/manage-agent-triggers-tool';
 export * from './manage-agent-skills/manage-agent-skills-tool';
 export * from './update-agent/update-agent-tool';
+export * from './manage-agent-state/manage-agent-state-tool';
