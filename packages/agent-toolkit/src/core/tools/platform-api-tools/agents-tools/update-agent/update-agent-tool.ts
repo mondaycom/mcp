@@ -44,7 +44,7 @@ export class UpdateAgentTool extends BaseMondayApiTool<typeof updateAgentToolSch
 
 Only the fields you provide are changed — omit any field to leave it unchanged.
 
-IMPORTANT — agent_model: Do not set agent_model unless the user has explicitly named a specific model. The platform selects a sensible default; setting an incorrect model degrades the agent's performance.
+IMPORTANT — agent_model: Do not set agent_model unless the user has explicitly named a specific model. The platform selects a sensible default. Setting an incorrect model degrades the agent's performance.
 
 USAGE EXAMPLE:
 - Update name only: { "id": "7", "name": "New Name" }

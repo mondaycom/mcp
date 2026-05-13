@@ -16,7 +16,7 @@ import { rethrowWithContext } from '../../../../../utils';
 export const manageAgentSkillsToolSchema = {
   action: z
     .enum(['add', 'remove'])
-    .describe('"add" — attaches a skill; "remove" — detaches a skill'),
+    .describe('"add" attaches a skill. "remove" detaches a skill.'),
   agent_id: z.string().describe('Unique identifier of the agent'),
   skill_id: z
     .string()

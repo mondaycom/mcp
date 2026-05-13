@@ -35,7 +35,7 @@ export const manageAgentTriggersToolSchema = {
     .record(z.unknown())
     .optional()
     .describe(
-      'Required for action:add when the trigger type has required_fields. A key/value object whose shape is described by field_schemas in the get_agent_catalog response. Example: { "board_id": "12345" }. For scheduler fields pass the structured config directly; for selection fields (e.g. board picker) pass { "value": "<id>", "label": "<name>" }.',
+      'Required for action:add when the trigger type has required_fields. A key/value object whose shape is described by field_schemas in the get_agent_catalog response. Example: { "board_id": "12345" }. For scheduler fields pass the structured config directly. For selection fields (e.g. board picker) pass { "value": "<id>", "label": "<name>" }.',
     ),
   node_id: z
     .string()
