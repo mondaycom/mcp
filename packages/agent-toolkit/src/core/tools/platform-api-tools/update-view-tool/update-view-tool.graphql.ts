@@ -1,7 +1,8 @@
 import { gql } from 'graphql-request';
 
-export const createView = gql`
-  mutation createView(
+export const updateView = gql`
+  mutation updateView(
+    $viewId: ID!
     $boardId: ID!
     $type: ViewKind!
     $name: String
@@ -9,7 +10,8 @@ export const createView = gql`
     $sort: [ItemsQueryOrderBy!]
     $settings: JSON
   ) {
-    create_view(
+    update_view(
+      view_id: $viewId
       board_id: $boardId
       type: $type
       name: $name

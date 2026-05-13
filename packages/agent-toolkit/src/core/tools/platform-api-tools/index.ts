@@ -11,6 +11,9 @@ import { ManageObjectSchemaColumnsTool } from './manage-object-schema-columns-to
 import { SetObjectSchemaColumnActiveStateTool } from './set-object-schema-column-active-state-tool/set-object-schema-column-active-state-tool';
 import { CreateBoardTool } from './create-board-tool';
 import { CreateViewTool } from './create-view-tool/create-view-tool';
+import { UpdateViewTool } from './update-view-tool/update-view-tool';
+import { CreateViewTableTool } from './create-view-table-tool/create-view-table-tool';
+import { UpdateViewTableTool } from './update-view-table-tool/update-view-table-tool';
 import { CreateFormTool } from './workforms-tools/create-form-tool';
 import { FormQuestionsEditorTool } from './workforms-tools/form-questions-editor-tool';
 import { UpdateFormTool } from './workforms-tools/update-form-tool';
@@ -122,6 +125,9 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   GetAssetsTool,
   GetNotetakerMeetingsTool,
   CreateViewTool,
+  UpdateViewTool,
+  CreateViewTableTool,
+  UpdateViewTableTool,
   UndoActionTool,
   GetObjectSchemasTool,
   CreateObjectSchemaTool,
@@ -167,6 +173,9 @@ export * from './create-timeline-item-tool';
 export * from './create-update-tool/create-update-tool';
 export * from './get-updates-tool/get-updates-tool';
 export * from './create-view-tool/create-view-tool';
+export * from './update-view-tool/update-view-tool';
+export * from './create-view-table-tool/create-view-table-tool';
+export * from './update-view-table-tool/update-view-table-tool';
 export * from './delete-column-tool';
 export * from './delete-item-tool';
 export * from './fetch-custom-activity-tool';

@@ -1,8 +1,13 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
-import { ViewKind, ItemsQueryRuleOperator, ItemsQueryOperator, ItemsOrderByDirection } from 'src/monday-graphql/generated/graphql/graphql';
+import {
+  ViewKind,
+  ItemsQueryRuleOperator,
+  ItemsQueryOperator,
+  ItemsOrderByDirection,
+} from 'src/monday-graphql/generated/graphql/graphql';
 
-describe('CreateViewTool', () => {
+describe('UpdateViewTool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
 
   beforeEach(() => {
@@ -16,26 +21,28 @@ describe('CreateViewTool', () => {
   });
 
   describe('Success Cases', () => {
-    it('should create a view with minimal parameters', async () => {
+    it('should update a view with minimal parameters', async () => {
       mocks.setResponse({
-        create_view: {
+        update_view: {
           id: 'view_123',
-          name: 'New View',
+          name: 'Existing View',
           type: 'BoardTableView',
         },
       });
 
-      const result = await callToolByNameRawAsync('create_view', {
+      const result = await callToolByNameRawAsync('update_view', {
+        viewId: 'view_123',
         boardId: '123',
         type: ViewKind.Table,
       });
 
-      expect(result.content[0].text).toContain('View "New View"');
+      expect(result.content[0].text).toContain('View "Existing View"');
       expect(result.content[0].text).toContain('ID: view_123');
-      expect(result.content[0].text).toContain('successfully created');
+      expect(result.content[0].text).toContain('successfully updated');
 
       const call = mocks.getMockRequest().mock.calls[0];
       expect(call[1]).toEqual({
+        viewId: 'view_123',
         boardId: '123',
         type: ViewKind.Table,
         name: undefined,
@@ -45,30 +52,31 @@ describe('CreateViewTool', () => {
       });
     });
 
-    it('should create a view with a name', async () => {
+    it('should update a view name', async () => {
       mocks.setResponse({
-        create_view: {
+        update_view: {
           id: 'view_456',
-          name: 'High Priority Items',
+          name: 'Renamed View',
           type: 'BoardTableView',
         },
       });
 
-      const result = await callToolByNameRawAsync('create_view', {
+      const result = await callToolByNameRawAsync('update_view', {
+        viewId: 'view_456',
         boardId: '123',
         type: ViewKind.Table,
-        name: 'High Priority Items',
+        name: 'Renamed View',
       });
 
-      expect(result.content[0].text).toContain('View "High Priority Items"');
+      expect(result.content[0].text).toContain('View "Renamed View"');
 
       const call = mocks.getMockRequest().mock.calls[0];
-      expect(call[1].name).toBe('High Priority Items');
+      expect(call[1].name).toBe('Renamed View');
     });
 
-    it('should create a view with filter configuration', async () => {
+    it('should update a view filter', async () => {
       mocks.setResponse({
-        create_view: {
+        update_view: {
           id: 'view_789',
           name: 'Filtered View',
           type: 'BoardTableView',
@@ -86,14 +94,14 @@ describe('CreateViewTool', () => {
         operator: ItemsQueryOperator.And,
       };
 
-      const result = await callToolByNameRawAsync('create_view', {
+      const result = await callToolByNameRawAsync('update_view', {
+        viewId: 'view_789',
         boardId: '123',
         type: ViewKind.Table,
-        name: 'Filtered View',
         filter,
       });
 
-      expect(result.content[0].text).toContain('successfully created');
+      expect(result.content[0].text).toContain('successfully updated');
 
       const call = mocks.getMockRequest().mock.calls[0];
       expect(call[1].filter).toEqual(filter);
@@ -101,7 +109,7 @@ describe('CreateViewTool', () => {
 
     it('should pass settings through as freeform JSON', async () => {
       mocks.setResponse({
-        create_view: {
+        update_view: {
           id: 'view_settings',
           name: 'Custom View',
           type: 'BoardAppView',
@@ -110,7 +118,8 @@ describe('CreateViewTool', () => {
 
       const settings = { app_feature_id: 'feat_42', custom: { hidden: ['col_a'] } };
 
-      await callToolByNameRawAsync('create_view', {
+      await callToolByNameRawAsync('update_view', {
+        viewId: 'view_settings',
         boardId: '123',
         type: ViewKind.App,
         settings,
@@ -120,9 +129,9 @@ describe('CreateViewTool', () => {
       expect(call[1].settings).toEqual(settings);
     });
 
-    it('should create a view with sort configuration', async () => {
+    it('should update a view sort', async () => {
       mocks.setResponse({
-        create_view: {
+        update_view: {
           id: 'view_101',
           name: 'Sorted View',
           type: 'BoardTableView',
@@ -131,14 +140,14 @@ describe('CreateViewTool', () => {
 
       const sort = [{ column_id: 'date', direction: ItemsOrderByDirection.Desc }];
 
-      const result = await callToolByNameRawAsync('create_view', {
+      const result = await callToolByNameRawAsync('update_view', {
+        viewId: 'view_101',
         boardId: '123',
         type: ViewKind.Table,
-        name: 'Sorted View',
         sort,
       });
 
-      expect(result.content[0].text).toContain('successfully created');
+      expect(result.content[0].text).toContain('successfully updated');
 
       const call = mocks.getMockRequest().mock.calls[0];
       expect(call[1].sort).toEqual(sort);
@@ -147,20 +156,22 @@ describe('CreateViewTool', () => {
 
   describe('Error Cases', () => {
     it('should return error when API returns null', async () => {
-      mocks.setResponse({ create_view: null });
+      mocks.setResponse({ update_view: null });
 
-      const result = await callToolByNameRawAsync('create_view', {
+      const result = await callToolByNameRawAsync('update_view', {
+        viewId: 'view_123',
         boardId: '123',
         type: ViewKind.Table,
       });
 
-      expect(result.content[0].text).toBe('Failed to create view - no response from API');
+      expect(result.content[0].text).toBe('Failed to update view - no response from API');
     });
 
     it('should handle GraphQL request exception', async () => {
       mocks.setError('Network error: Connection timeout');
 
-      const result = await callToolByNameRawAsync('create_view', {
+      const result = await callToolByNameRawAsync('update_view', {
+        viewId: 'view_123',
         boardId: '123',
         type: ViewKind.Table,
       });
@@ -168,8 +179,19 @@ describe('CreateViewTool', () => {
       expect(result.content[0].text).toContain('Network error: Connection timeout');
     });
 
+    it('should fail validation when viewId is missing', async () => {
+      const result = await callToolByNameRawAsync('update_view', {
+        boardId: '123',
+        type: ViewKind.Table,
+      });
+
+      expect(result.content[0].text).toContain('Invalid arguments');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+
     it('should fail validation when boardId is missing', async () => {
-      const result = await callToolByNameRawAsync('create_view', {
+      const result = await callToolByNameRawAsync('update_view', {
+        viewId: 'view_123',
         type: ViewKind.Table,
       });
 

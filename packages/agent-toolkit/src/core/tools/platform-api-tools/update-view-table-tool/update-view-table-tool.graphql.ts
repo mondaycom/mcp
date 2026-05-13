@@ -1,20 +1,22 @@
 import { gql } from 'graphql-request';
 
-export const createView = gql`
-  mutation createView(
+export const updateViewTable = gql`
+  mutation updateViewTable(
+    $viewId: ID!
     $boardId: ID!
-    $type: ViewKind!
     $name: String
     $filter: ItemsQueryGroup
     $sort: [ItemsQueryOrderBy!]
-    $settings: JSON
+    $tags: [String!]
+    $settings: TableViewSettingsInput
   ) {
-    create_view(
+    update_view_table(
+      view_id: $viewId
       board_id: $boardId
-      type: $type
       name: $name
       filter: $filter
       sort: $sort
+      tags: $tags
       settings: $settings
     ) {
       id
