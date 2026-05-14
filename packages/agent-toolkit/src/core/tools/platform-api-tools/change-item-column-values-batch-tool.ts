@@ -1,9 +1,4 @@
 import { z } from 'zod';
-import {
-  ChangeItemColumnValuesMutation,
-  ChangeItemColumnValuesMutationVariables,
-} from 'src/monday-graphql/generated/graphql/graphql';
-import { changeItemColumnValues } from '../../../monday-graphql/queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
 
@@ -39,6 +34,33 @@ export type ChangeItemColumnValuesBatchToolInput =
   | typeof changeItemColumnValuesBatchToolSchema
   | typeof changeItemColumnValuesBatchInBoardToolSchema;
 
+type ItemResult = { id: string; name: string; url: string | null } | null;
+
+function buildBatchMutation(boardId: string, items: z.infer<typeof batchItemSchema>[]) {
+  const varDefs: string[] = ['$boardId: ID!'];
+  const mutations: string[] = [];
+  const variables: Record<string, unknown> = { boardId };
+
+  items.forEach((item, i) => {
+    varDefs.push(`$itemId_${i}: ID!`, `$columnValues_${i}: JSON!`);
+    variables[`itemId_${i}`] = item.itemId.toString();
+    variables[`columnValues_${i}`] = item.columnValues;
+
+    const args = ['board_id: $boardId', `item_id: $itemId_${i}`, `column_values: $columnValues_${i}`];
+
+    if (item.createLabelsIfMissing !== undefined) {
+      varDefs.push(`$createLabelsIfMissing_${i}: Boolean`);
+      args.push(`create_labels_if_missing: $createLabelsIfMissing_${i}`);
+      variables[`createLabelsIfMissing_${i}`] = item.createLabelsIfMissing;
+    }
+
+    mutations.push(`item_${i}: change_multiple_column_values(${args.join(', ')}) { id name url }`);
+  });
+
+  const query = `mutation(${varDefs.join(', ')}) {\n${mutations.join('\n')}\n}`;
+  return { query, variables };
+}
+
 export class ChangeItemColumnValuesBatchTool extends BaseMondayApiTool<ChangeItemColumnValuesBatchToolInput> {
   name = 'change_item_column_values_batch';
   type = ToolType.WRITE;
@@ -52,7 +74,7 @@ export class ChangeItemColumnValuesBatchTool extends BaseMondayApiTool<ChangeIte
   getDescription(): string {
     return (
       'Update column values for multiple items in a single batch operation. ' +
-      'Each item is updated independently — partial failures do not block other items. ' +
+      'All items are sent in one GraphQL request using aliased mutations — partial failures do not block other items. ' +
       'Returns per-item success/failure results. Max 50 items per batch. ' +
       '[REQUIRED PRECONDITION]: Before using this tool, if new columns were added to the board or if you are not familiar with the board structure (column IDs, column types, status labels, etc.), first use get_board_info to understand the board metadata. This is essential for constructing proper column values and knowing which columns are available. ' +
       '[REQUIRED PRECONDITION]: For board-relation linking tasks, call link_board_items_workflow before using this tool.'
@@ -73,40 +95,48 @@ export class ChangeItemColumnValuesBatchTool extends BaseMondayApiTool<ChangeIte
     const boardId =
       this.context?.boardId ?? (input as ToolInputType<typeof changeItemColumnValuesBatchInBoardToolSchema>).boardId;
 
-    const results = await Promise.allSettled(
-      input.items.map(async (item) => {
-        const variables: ChangeItemColumnValuesMutationVariables = {
-          boardId: boardId.toString(),
-          itemId: item.itemId.toString(),
-          columnValues: item.columnValues,
-          ...(item.createLabelsIfMissing !== undefined && {
-            createLabelsIfMissing: item.createLabelsIfMissing,
-          }),
-        };
+    const { query, variables } = buildBatchMutation(boardId.toString(), input.items);
 
-        const res = await this.mondayApi.request<ChangeItemColumnValuesMutation>(changeItemColumnValues, variables);
+    let data: Record<string, ItemResult> = {};
+    let errors: Array<{ message: string; path?: string[] }> = [];
+
+    try {
+      data = await this.mondayApi.request<Record<string, ItemResult>>(query, variables);
+    } catch (error: unknown) {
+      const partialData = (error as any)?.response?.data;
+      if (partialData) {
+        data = partialData;
+        errors = (error as any).response?.errors ?? [];
+      } else {
         return {
-          itemId: item.itemId,
-          id: res.change_multiple_column_values?.id,
-          name: res.change_multiple_column_values?.name,
-          url: res.change_multiple_column_values?.url,
+          content: {
+            message: `0 of ${input.items.length} items updated successfully, ${input.items.length} failed`,
+            successful: [],
+            failed: input.items.map((item) => ({
+              itemId: item.itemId,
+              error: this.extractErrorMessage(error),
+            })),
+          },
         };
-      }),
-    );
+      }
+    }
 
-    const successful = results
-      .filter((r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled')
-      .map((r) => r.value);
+    const successful: Array<{ itemId: number; id: string; name: string; url: string | null }> = [];
+    const failed: Array<{ itemId: number; error: string }> = [];
 
-    const failed = input.items
-      .map((item, index) => ({ item, result: results[index] }))
-      .filter((entry): entry is { item: typeof entry.item; result: PromiseRejectedResult } =>
-        entry.result.status === 'rejected',
-      )
-      .map((entry) => ({
-        itemId: entry.item.itemId,
-        error: this.extractErrorMessage(entry.result.reason),
-      }));
+    input.items.forEach((item, i) => {
+      const alias = `item_${i}`;
+      const result = data[alias];
+      if (result) {
+        successful.push({ itemId: item.itemId, id: result.id, name: result.name, url: result.url });
+      } else {
+        const itemErrors = errors
+          .filter((e) => e.path?.[0] === alias)
+          .map((e) => e.message)
+          .join(', ');
+        failed.push({ itemId: item.itemId, error: itemErrors || 'Unknown error' });
+      }
+    });
 
     return {
       content: {
