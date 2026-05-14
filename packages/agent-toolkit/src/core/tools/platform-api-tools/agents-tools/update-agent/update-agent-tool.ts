@@ -11,7 +11,7 @@ import { BaseMondayApiTool, createMondayApiAnnotations } from '../../base-monday
 import { rethrowWithContext } from '../../../../../utils';
 
 export const updateAgentToolSchema = {
-  id: z.string().trim().min(1).describe('Unique identifier of the agent to update'),
+  agent_id: z.string().trim().min(1).describe('Unique identifier of the agent to update'),
   name: z.string().trim().min(1).optional().describe('New display name for the agent'),
   role: z.string().trim().min(1).optional().describe('Short role title (e.g. "Customer Success Bot")'),
   role_description: z
@@ -22,11 +22,11 @@ export const updateAgentToolSchema = {
     .describe("Detailed description of the agent's role"),
   plan: z.string().trim().min(1).optional().describe('Step-by-step execution plan in markdown'),
   agent_model: z
-    .string()
-    .trim()
-    .min(1)
+    .nativeEnum(AgentModel)
     .optional()
-    .describe('AI model identifier. STRONGLY DISCOURAGED — omit this field. Only set when the user explicitly names a monday-supported model. Do not invent or guess model identifiers — use the exact string the user provided.'),
+    .describe(
+      'AI model identifier. STRONGLY DISCOURAGED — omit unless the user explicitly names a supported model. Invalid model identifiers are rejected by the server. Omit to keep the current model.',
+    ),
 };
 
 export class UpdateAgentTool extends BaseMondayApiTool<typeof updateAgentToolSchema> {
@@ -40,15 +40,18 @@ export class UpdateAgentTool extends BaseMondayApiTool<typeof updateAgentToolSch
   });
 
   getDescription(): string {
-    return `Update an existing monday platform agent's profile or execution plan.
+    return `Update an existing monday platform agent.
 
-Only the fields you provide are changed — omit any field to leave it unchanged.
+Updatable fields: name, role, role_description, plan, agent_model.
+Fields NOT supported here: avatar_url, background_color, goal, user_prompt — use the monday.com UI to change those.
 
-IMPORTANT — agent_model: Do not set agent_model unless the user has explicitly named a specific model. The platform selects a sensible default. Setting an incorrect model degrades the agent's performance.
+Only the fields you provide are changed — omit any field to leave it unchanged. At least one field must be provided.
 
-USAGE EXAMPLE:
-- Update name only: { "id": "7", "name": "New Name" }
-- Update plan: { "id": "7", "plan": "1. Check board status\\n2. Send notification" }`;
+IMPORTANT — agent_model: Do not set agent_model unless the user has explicitly named a specific model. Invalid model identifiers are rejected by the server.
+
+USAGE EXAMPLES:
+- Update name only: { "agent_id": "7", "name": "New Name" }
+- Update plan: { "agent_id": "7", "plan": "1. Check board status\\n2. Send notification" }`;
   }
 
   getInputSchema() {
@@ -62,9 +65,13 @@ USAGE EXAMPLE:
       if (input.role !== undefined) agentInput.role = input.role;
       if (input.role_description !== undefined) agentInput.role_description = input.role_description;
       if (input.plan !== undefined) agentInput.plan = input.plan;
-      if (input.agent_model !== undefined) agentInput.agent_model = input.agent_model as AgentModel;
+      if (input.agent_model !== undefined) agentInput.agent_model = input.agent_model;
 
-      const variables: UpdateAgentMutationVariables = { id: input.id, input: agentInput };
+      if (Object.keys(agentInput).length === 0) {
+        throw new Error('At least one field must be provided to update.');
+      }
+
+      const variables: UpdateAgentMutationVariables = { id: input.agent_id, input: agentInput };
       const res = await this.mondayApi.request<UpdateAgentMutation>(updateAgentMutation, variables, {
         versionOverride: 'dev',
       });
@@ -72,7 +79,7 @@ USAGE EXAMPLE:
       if (!res.update_agent) {
         throw new Error('update_agent returned no data — the agent may not exist');
       }
-      return { content: res.update_agent };
+      return { content: { message: 'monday platform agent updated', agent: res.update_agent } };
     } catch (error) {
       rethrowWithContext(error, 'update monday platform agent');
     }

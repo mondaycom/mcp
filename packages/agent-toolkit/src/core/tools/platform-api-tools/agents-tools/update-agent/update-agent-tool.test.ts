@@ -29,22 +29,28 @@ describe('UpdateAgentTool', () => {
     jest.spyOn(MondayAgentToolkit.prototype as any, 'createApiClient').mockReturnValue(mocks.mockApiClient);
   });
 
-  it('should update agent name — happy path', async () => {
+  it('should return agent id on update — happy path', async () => {
     mocks.setResponseOnce({ update_agent: { ...mockAgent } } as UpdateAgentMutation);
 
-    const result = await callToolByNameRawAsync('update_agent', { id: '7', name: 'Updated Agent' });
+    const result = await callToolByNameRawAsync('update_agent', { agent_id: '7', name: 'Updated Agent' });
     const parsed = parseToolResult(result);
 
-    expect(parsed.id).toBe('7');
-    // also assert something from the profile to confirm response forwarding
-    expect(parsed.profile).toBeDefined();
-    expect(parsed.profile.name).toBe('Updated Agent');
+    expect(parsed.agent.id).toBe('7');
+  });
+
+  it('should return agent profile on update — happy path', async () => {
+    mocks.setResponseOnce({ update_agent: { ...mockAgent } } as UpdateAgentMutation);
+
+    const result = await callToolByNameRawAsync('update_agent', { agent_id: '7', name: 'Updated Agent' });
+    const parsed = parseToolResult(result);
+
+    expect(parsed.agent.profile.name).toBe('Updated Agent');
   });
 
   it('should update multiple fields — happy path', async () => {
     mocks.setResponseOnce({ update_agent: { ...mockAgent } } as UpdateAgentMutation);
 
-    const result = await callToolByNameRawAsync('update_agent', { id: '7', name: 'X', plan: 'step 1' });
+    const result = await callToolByNameRawAsync('update_agent', { agent_id: '7', name: 'X', plan: 'step 1' });
 
     expect(mocks.getMockRequest()).toHaveBeenCalled();
     expect(result).toBeDefined();
@@ -53,7 +59,7 @@ describe('UpdateAgentTool', () => {
   it('should only include provided fields in input object', async () => {
     mocks.setResponseOnce({ update_agent: { ...mockAgent } } as UpdateAgentMutation);
 
-    await callToolByNameRawAsync('update_agent', { id: '7', name: 'X' });
+    await callToolByNameRawAsync('update_agent', { agent_id: '7', name: 'X' });
 
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
       expect.anything(),
@@ -65,7 +71,7 @@ describe('UpdateAgentTool', () => {
   it('should not include omitted fields in input object', async () => {
     mocks.setResponseOnce({ update_agent: { ...mockAgent } } as UpdateAgentMutation);
 
-    await callToolByNameRawAsync('update_agent', { id: '7', role: 'Bot' });
+    await callToolByNameRawAsync('update_agent', { agent_id: '7', role: 'Bot' });
 
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
       expect.anything(),
@@ -81,7 +87,7 @@ describe('UpdateAgentTool', () => {
   it('should pass versionOverride dev', async () => {
     mocks.setResponseOnce({ update_agent: { ...mockAgent } } as UpdateAgentMutation);
 
-    await callToolByNameRawAsync('update_agent', { id: '7', name: 'X' });
+    await callToolByNameRawAsync('update_agent', { agent_id: '7', name: 'X' });
 
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
       expect.anything(),
@@ -90,10 +96,16 @@ describe('UpdateAgentTool', () => {
     );
   });
 
+  it('should throw when no fields are provided', async () => {
+    const result = await callToolByNameRawAsync('update_agent', { agent_id: '7' });
+
+    expect(result.content[0].text).toContain('At least one field must be provided');
+  });
+
   it('should throw when update_agent returns null', async () => {
     mocks.setResponseOnce({ update_agent: null } as UpdateAgentMutation);
 
-    const result = await callToolByNameRawAsync('update_agent', { id: '7', name: 'X' });
+    const result = await callToolByNameRawAsync('update_agent', { agent_id: '7', name: 'X' });
 
     expect(result.content[0].text).toContain('update_agent returned no data');
   });
@@ -101,7 +113,7 @@ describe('UpdateAgentTool', () => {
   it('should propagate API errors with context', async () => {
     mocks.setError('API error');
 
-    const result = await callToolByNameRawAsync('update_agent', { id: '7', name: 'X' });
+    const result = await callToolByNameRawAsync('update_agent', { agent_id: '7', name: 'X' });
 
     expect(result.content[0].text).toContain('Failed to update monday platform agent');
   });

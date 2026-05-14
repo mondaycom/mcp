@@ -17,6 +17,7 @@ export const getAgentCatalogToolSchema = {
     ),
   block_reference_ids: z
     .array(z.string())
+    .min(1)
     .optional()
     .describe(
       'Only applies when type is "triggers". Fetch specific entries by block_reference_id instead of the full catalog. Omit to return all trigger types.',

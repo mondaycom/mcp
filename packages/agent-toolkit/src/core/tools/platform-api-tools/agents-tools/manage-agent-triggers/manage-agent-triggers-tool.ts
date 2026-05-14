@@ -32,10 +32,10 @@ export const manageAgentTriggersToolSchema = {
       'Required for action:add. The block_reference_id from get_agent_catalog (type:triggers) identifying the trigger type to attach. Never guess this value — look it up in the catalog first.',
     ),
   field_values: z
-    .record(z.unknown())
+    .record(z.union([z.string(), z.number(), z.boolean(), z.object({ value: z.string(), label: z.string() }).passthrough()]))
     .optional()
     .describe(
-      'Required for action:add when the trigger type has required_fields. A key/value object whose shape is described by field_schemas in the get_agent_catalog response. Example: { "board_id": "12345" }. For scheduler fields pass the structured config directly. For selection fields (e.g. board picker) pass { "value": "<id>", "label": "<name>" }.',
+      'Required for action:add when the trigger type has required_fields. A key/value object whose shape is described by field_schemas in the get_agent_catalog response. Scalar fields (e.g. { "board_id": "12345" }) use string/number/boolean values. Selection fields (e.g. board picker) use { "value": "<id>", "label": "<name>" }. For scheduler fields pass the structured config object.',
     ),
   node_id: z
     .string()
@@ -62,10 +62,13 @@ export class ManageAgentTriggersTool extends BaseMondayApiTool<typeof manageAgen
 
 Triggers define when an agent runs automatically — for example, when a board status changes, when a date arrives, or on a schedule.
 
+Note: the catalog only includes triggers that can be added programmatically. OAuth/3rd-party triggers (Slack, Gmail, Salesforce, etc.) require user setup in the monday.com UI and will not appear in get_agent_catalog.
+
 WORKFLOW FOR ADD:
 1. Call get_agent_catalog with type:"triggers" to find the right trigger type by name/description. Note its block_reference_id and inspect field_schemas (describes what field_values to pass when adding — e.g. { board_id: "<ID>" }) and required_fields (fields you must collect from the user — e.g. which board, which column).
 2. Collect any required field values from the user.
 3. Call this tool with action:"add", the block_reference_id, and the assembled field_values.
+Note: the add response returns only { success } — no node_id for the new trigger. Call action:"list" afterward if you need the node_id to remove it later.
 
 WORKFLOW FOR REMOVE:
 1. Call this tool with action:"list" to see active triggers by name and field_summary. Match the trigger the user described, note its node_id.

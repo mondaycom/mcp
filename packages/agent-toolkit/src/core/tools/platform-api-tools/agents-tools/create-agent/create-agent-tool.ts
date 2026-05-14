@@ -163,12 +163,12 @@ USAGE EXAMPLES:
         throw new Error('monday platform agent creation returned no id');
       }
 
-        return {
-          content: {
-            message: `monday platform agent ${res.create_agent.id} created in state INACTIVE — call manage_agent_state with action:activate and agent_id:${res.create_agent.id} to activate it`,
-            agent: res.create_agent,
-          },
-        };
+      return {
+        content: {
+          message: `monday platform agent ${res.create_agent.id} created in state INACTIVE — call manage_agent_state with action:activate and agent_id:${res.create_agent.id} to activate it`,
+          agent: res.create_agent,
+        },
+      };
     } catch (error) {
       rethrowWithContext(error, 'create monday platform agent');
     }

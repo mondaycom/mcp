@@ -1,5 +1,18 @@
 # Changelog
 
+## 5.11.0
+
+### Add agent management tools
+
+Six new tools enabling agents to create and manage monday.com platform agents end-to-end:
+
+- `manage_agent_state` — activate, deactivate, or manually trigger a run
+- `manage_agent_knowledge` — grant, update, or revoke a board/doc access for an agent
+- `manage_agent_skills` — create account-wide skills and attach/detach them to agents
+- `manage_agent_triggers` — list, add, or remove triggers; catalog lookup workflow built in
+- `get_agent_catalog` — fetch available trigger types and skills from the account catalog
+- Extended `update_agent` with `agent_id` naming alignment, enum-safe `agent_model`, empty-input guard, and consistent return shape
+
 ## 5.7.1
 
 ### form_questions_editor — fix ConditionOperator and remove existing_column_id

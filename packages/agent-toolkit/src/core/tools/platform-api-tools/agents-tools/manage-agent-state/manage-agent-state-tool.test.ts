@@ -15,7 +15,6 @@ describe('ManageAgentStateTool', () => {
     jest.spyOn(MondayAgentToolkit.prototype as any, 'createApiClient').mockReturnValue(mocks.mockApiClient);
   });
 
-  // Happy path tests
   it('should activate an agent successfully', async () => {
     mocks.setResponseOnce({ activate_agent: { success: true } } as ActivateAgentMutation);
 
@@ -52,7 +51,6 @@ describe('ManageAgentStateTool', () => {
     expect(parsed.trigger_uuid).toBe('uuid-123');
   });
 
-  // versionOverride dev
   it('should pass versionOverride:dev for activate', async () => {
     mocks.setResponseOnce({ activate_agent: { success: true } } as ActivateAgentMutation);
 
@@ -68,8 +66,7 @@ describe('ManageAgentStateTool', () => {
     );
   });
 
-  // Default inactive_reason
-  it('should default inactive_reason to DeactivatedByUser when not provided', async () => {
+  it('should always send DeactivatedByUser as inactive_reason', async () => {
     mocks.setResponseOnce({ deactivate_agent: { success: true } } as DeactivateAgentMutation);
 
     await callToolByNameRawAsync('manage_agent_state', {
@@ -84,24 +81,6 @@ describe('ManageAgentStateTool', () => {
     );
   });
 
-  // Explicit inactive_reason
-  it('should pass explicit inactive_reason DEACTIVATED_BY_USER when provided', async () => {
-    mocks.setResponseOnce({ deactivate_agent: { success: true } } as DeactivateAgentMutation);
-
-    await callToolByNameRawAsync('manage_agent_state', {
-      action: 'deactivate',
-      agent_id: '7',
-      inactive_reason: 'DEACTIVATED_BY_USER',
-    });
-
-    expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-      expect.stringContaining('deactivateAgent'),
-      expect.objectContaining({ inactive_reason: InactiveReason.DeactivatedByUser }),
-      expect.objectContaining({ versionOverride: 'dev' }),
-    );
-  });
-
-  // Error propagation
   it('should propagate errors with context for activate', async () => {
     mocks.setError('API error');
 
@@ -135,7 +114,6 @@ describe('ManageAgentStateTool', () => {
     expect(result.content[0].text).toContain('Failed to run');
   });
 
-  // success:false fallback
   it('should return success:false when activate_agent is null', async () => {
     mocks.setResponseOnce({ activate_agent: null } as ActivateAgentMutation);
 
