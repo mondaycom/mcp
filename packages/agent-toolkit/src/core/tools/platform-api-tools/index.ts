@@ -70,6 +70,7 @@ import { CreateAgentTool } from './agents-tools/create-agent/create-agent-tool';
 import { DeleteAgentTool } from './agents-tools/delete-agent/delete-agent-tool';
 import { GetAgentCatalogTool } from './agents-tools/get-agent-catalog/get-agent-catalog-tool';
 import { ManageAgentTriggersTool } from './agents-tools/manage-agent-triggers/manage-agent-triggers-tool';
+import { CreateAgentSkillTool } from './agents-tools/create-agent-skill/create-agent-skill-tool';
 import { ManageAgentSkillsTool } from './agents-tools/manage-agent-skills/manage-agent-skills-tool';
 import { UpdateAgentTool } from './agents-tools/update-agent/update-agent-tool';
 import { ManageAgentStateTool } from './agents-tools/manage-agent-state/manage-agent-state-tool';
@@ -149,6 +150,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteAgentTool,
   GetAgentCatalogTool,
   ManageAgentTriggersTool,
+  CreateAgentSkillTool,
   ManageAgentSkillsTool,
   UpdateAgentTool,
   ManageAgentStateTool,
