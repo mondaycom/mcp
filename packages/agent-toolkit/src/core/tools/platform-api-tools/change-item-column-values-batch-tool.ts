@@ -121,14 +121,26 @@ export class ChangeItemColumnValuesBatchTool extends BaseMondayApiTool<ChangeIte
       }
     }
 
-    const successful: Array<{ itemId: number; id: string; name: string; url: string | null }> = [];
+    const successful: Array<{
+      itemId: number;
+      message: string;
+      item_id: string;
+      item_name: string;
+      item_url: string | null;
+    }> = [];
     const failed: Array<{ itemId: number; error: string }> = [];
 
     input.items.forEach((item, i) => {
       const alias = `item_${i}`;
       const result = data[alias];
       if (result) {
-        successful.push({ itemId: item.itemId, id: result.id, name: result.name, url: result.url });
+        successful.push({
+          itemId: item.itemId,
+          message: `Item ${result.id} successfully updated`,
+          item_id: result.id,
+          item_name: result.name,
+          item_url: result.url,
+        });
       } else {
         const itemErrors = errors
           .filter((e) => e.path?.[0] === alias)

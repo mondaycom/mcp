@@ -34,6 +34,28 @@ describe('ChangeItemColumnValuesBatchTool', () => {
       expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
     });
 
+    it('returns per-item fields matching the singular tool response shape', async () => {
+      mocks.setResponse({
+        item_0: { id: '101', name: 'Item A', url: 'https://monday.com/101' },
+      });
+
+      const tool = new ChangeItemColumnValuesBatchTool(mocks.mockApiClient, { boardId: 456 });
+
+      const result = await tool.execute({
+        items: [{ itemId: 101, columnValues: '{"status":{"label":"Done"}}' }],
+      });
+
+      const content = result.content as Record<string, any>;
+      const item = content.successful[0];
+      expect(item).toEqual({
+        itemId: 101,
+        message: 'Item 101 successfully updated',
+        item_id: '101',
+        item_name: 'Item A',
+        item_url: 'https://monday.com/101',
+      });
+    });
+
     it('builds query with correct aliased mutation structure', async () => {
       mocks.setResponse({
         item_0: { id: '101', name: 'Item A', url: null },
@@ -81,6 +103,8 @@ describe('ChangeItemColumnValuesBatchTool', () => {
 
       const content = result.content as Record<string, any>;
       expect(content.successful).toHaveLength(2);
+      expect(content.successful[0].item_id).toBe('101');
+      expect(content.successful[0].message).toBe('Item 101 successfully updated');
       expect(content.failed).toHaveLength(1);
       expect(content.failed[0].error).toContain('unable to assign person');
       expect(content.message).toContain('2 of 3');
@@ -102,6 +126,8 @@ describe('ChangeItemColumnValuesBatchTool', () => {
       const content = result.content as Record<string, any>;
       expect(content.successful).toHaveLength(0);
       expect(content.failed).toHaveLength(2);
+      expect(content.failed[0].itemId).toBe(101);
+      expect(content.failed[1].itemId).toBe(102);
       expect(content.message).toContain('0 of 2');
     });
 
