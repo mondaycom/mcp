@@ -56,6 +56,7 @@ export const createDocToolSchema = {
     .describe('Location where the document should be created - either in a workspace or attached to an item'),
   docOwnerIds: z
     .array(z.string())
+    .min(1)
     .optional()
     .describe(
       'Optional list of user IDs to set as document owners at creation time. Use this to add the agent owner as a co-owner so they retain access to the document. Ownership is set inside the creation mutation itself, bypassing the permission checks that would block a subsequent add_users_to_board call.',
