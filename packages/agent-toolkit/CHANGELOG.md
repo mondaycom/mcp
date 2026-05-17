@@ -4,14 +4,12 @@
 
 ### Add agent management tools
 
-Six new tools enabling agents to create and manage monday.com platform agents end-to-end:
+Four new tools enabling agents to create and manage monday.com platform agents end-to-end:
 
-- `manage_agent_state` — activate, deactivate, or manually trigger a run
-- `manage_agent_knowledge` — grant, update, or revoke a board/doc access for an agent
-- `manage_agent_skills` — create account-wide skills and attach/detach them to agents
-- `manage_agent_triggers` — list, add, or remove triggers; catalog lookup workflow built in
-- `get_agent_catalog` — fetch available trigger types and skills from the account catalog
-- Extended `update_agent` with `agent_id` naming alignment, enum-safe `agent_model`, empty-input guard, and consistent return shape
+- `manage_agent` — full lifecycle management: create (AI or manual mode), get, update, delete, activate, deactivate, and manually run an agent
+- `manage_agent_capabilities` — attach and detach triggers (when an agent runs) and skills (what it can do) on a specific agent
+- `manage_agent_knowledge` — grant, update, or revoke an agent's access to boards and docs
+- `agent_catalog` — browse the account-wide catalog of available trigger types and skills; create new custom skills
 
 ## 5.7.1
 

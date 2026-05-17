@@ -125,10 +125,11 @@ ACTIONS AND ARGS (only provide fields that apply to the chosen action):
 
 RULES:
 - "create" requires either "prompt" (AI mode) or at least one manual profile field. Do not mix both.
+- "create" with no fields at all (neither prompt nor any manual field) creates a blank nameless agent — only do this intentionally.
 - "update" requires at least one of name/role/role_description/plan/agent_model.
 - "update", "delete", "activate", "deactivate", "run" all require "id".
 - Created agents start INACTIVE. Follow with action:"activate" and the returned id before they can be triggered.
-- VERIFY BEFORE DELETING: when the user refers to an agent by name, call action:"get" first to confirm the correct id.
+- ⚠️ DESTRUCTIVE — "delete" is permanent and irreversible. When the user refers to an agent by name, ALWAYS call action:"get" first to confirm the correct id before deleting.
 - "run" is fire-and-forget. Returns trigger_uuid (no run-status query exists) — treat enqueue as the only success signal.
 - Agent state from action:"get" is one of ACTIVE, INACTIVE, ARCHIVED, or FAILED. DELETED only appears as the return value of action:"delete". Agent kind is one of PERSONAL, ACCOUNT_LEVEL, or EXTERNAL.
 

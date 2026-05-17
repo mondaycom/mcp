@@ -82,95 +82,112 @@ USAGE EXAMPLES:
   protected async executeInternal(
     input: ToolInputType<typeof manageAgentKnowledgeToolSchema>,
   ): Promise<ToolOutputType<never>> {
-    if (input.action === 'list') {
-      try {
-        const res = await this.mondayApi.request<GetAgentKnowledgeQuery>(
-          getAgentKnowledgeQuery,
-          { id: input.agent_id } satisfies GetAgentKnowledgeQueryVariables,
-          { versionOverride: 'dev' },
-        );
-        const knowledge = res.agent_knowledge ?? { resources: [], files: [] };
-        return {
-          content: {
-            message: 'Current agent resource access.',
-            count: knowledge.resources?.length ?? 0,
-            knowledge,
-          },
-        };
-      } catch (error) {
-        rethrowWithContext(error, 'list agent knowledge for monday platform agent');
-      }
-    } else if (input.action === 'add') {
-      if (!input.resource_id || !input.scope_type || !input.permission_type) {
-        throw new Error('resource_id, scope_type, and permission_type are required for action:add');
-      }
-      try {
-        const res = await this.mondayApi.request<AddAgentResourceAccessMutation>(
-          addAgentResourceAccessMutation,
-          {
-            id: input.agent_id,
-            resource_id: input.resource_id,
-            scope_type: input.scope_type as KnowledgeScope,
-            permission_type: input.permission_type as KnowledgePermission,
-          } satisfies AddAgentResourceAccessMutationVariables,
-          { versionOverride: 'dev' },
-        );
-        return {
-          content: {
-            message: 'Resource access granted to agent.',
-            success: res.add_agent_resource_access?.success ?? false,
-          },
-        };
-      } catch (error) {
-        rethrowWithContext(error, 'add agent resource access for monday platform agent');
-      }
-    } else if (input.action === 'update') {
-      if (!input.resource_id || !input.scope_type || !input.permission_type) {
-        throw new Error('resource_id, scope_type, and permission_type are required for action:update');
-      }
-      try {
-        const res = await this.mondayApi.request<UpdateAgentResourceAccessMutation>(
-          updateAgentResourceAccessMutation,
-          {
-            id: input.agent_id,
-            resource_id: input.resource_id,
-            scope_type: input.scope_type as KnowledgeScope,
-            permission_type: input.permission_type as KnowledgePermission,
-          } satisfies UpdateAgentResourceAccessMutationVariables,
-          { versionOverride: 'dev' },
-        );
-        return {
-          content: {
-            message: 'Resource access updated.',
-            success: res.update_agent_resource_access?.success ?? false,
-          },
-        };
-      } catch (error) {
-        rethrowWithContext(error, 'update agent resource access for monday platform agent');
-      }
-    } else {
-      if (!input.resource_id || !input.scope_type) {
-        throw new Error('resource_id and scope_type are required for action:remove');
-      }
-      try {
-        const res = await this.mondayApi.request<RemoveAgentResourceAccessMutation>(
-          removeAgentResourceAccessMutation,
-          {
-            id: input.agent_id,
-            resource_id: input.resource_id,
-            scope_type: input.scope_type as KnowledgeScope,
-          } satisfies RemoveAgentResourceAccessMutationVariables,
-          { versionOverride: 'dev' },
-        );
-        return {
-          content: {
-            message: 'Resource access removed from agent.',
-            success: res.remove_agent_resource_access?.success ?? false,
-          },
-        };
-      } catch (error) {
-        rethrowWithContext(error, 'remove agent resource access for monday platform agent');
-      }
+    switch (input.action) {
+      case 'list':
+        return this.handleList(input);
+      case 'add':
+        return this.handleAdd(input);
+      case 'update':
+        return this.handleUpdate(input);
+      case 'remove':
+        return this.handleRemove(input);
+    }
+  }
+
+  private async handleList(input: ToolInputType<typeof manageAgentKnowledgeToolSchema>): Promise<ToolOutputType<never>> {
+    try {
+      const res = await this.mondayApi.request<GetAgentKnowledgeQuery>(
+        getAgentKnowledgeQuery,
+        { id: input.agent_id } satisfies GetAgentKnowledgeQueryVariables,
+        { versionOverride: 'dev' },
+      );
+      const knowledge = res.agent_knowledge ?? { resources: [], files: [] };
+      return {
+        content: {
+          message: 'Current agent resource access.',
+          count: knowledge.resources?.length ?? 0,
+          knowledge,
+        },
+      };
+    } catch (error) {
+      rethrowWithContext(error, 'list agent knowledge for monday platform agent');
+    }
+  }
+
+  private async handleAdd(input: ToolInputType<typeof manageAgentKnowledgeToolSchema>): Promise<ToolOutputType<never>> {
+    if (!input.resource_id || !input.scope_type || !input.permission_type) {
+      throw new Error('resource_id, scope_type, and permission_type are required for action:add');
+    }
+    try {
+      const res = await this.mondayApi.request<AddAgentResourceAccessMutation>(
+        addAgentResourceAccessMutation,
+        {
+          id: input.agent_id,
+          resource_id: input.resource_id,
+          scope_type: input.scope_type as KnowledgeScope,
+          permission_type: input.permission_type as KnowledgePermission,
+        } satisfies AddAgentResourceAccessMutationVariables,
+        { versionOverride: 'dev' },
+      );
+      return {
+        content: {
+          message: 'Resource access granted to agent.',
+          success: res.add_agent_resource_access?.success ?? false,
+        },
+      };
+    } catch (error) {
+      rethrowWithContext(error, 'add agent resource access for monday platform agent');
+    }
+  }
+
+  private async handleUpdate(input: ToolInputType<typeof manageAgentKnowledgeToolSchema>): Promise<ToolOutputType<never>> {
+    if (!input.resource_id || !input.scope_type || !input.permission_type) {
+      throw new Error('resource_id, scope_type, and permission_type are required for action:update');
+    }
+    try {
+      const res = await this.mondayApi.request<UpdateAgentResourceAccessMutation>(
+        updateAgentResourceAccessMutation,
+        {
+          id: input.agent_id,
+          resource_id: input.resource_id,
+          scope_type: input.scope_type as KnowledgeScope,
+          permission_type: input.permission_type as KnowledgePermission,
+        } satisfies UpdateAgentResourceAccessMutationVariables,
+        { versionOverride: 'dev' },
+      );
+      return {
+        content: {
+          message: 'Resource access updated.',
+          success: res.update_agent_resource_access?.success ?? false,
+        },
+      };
+    } catch (error) {
+      rethrowWithContext(error, 'update agent resource access for monday platform agent');
+    }
+  }
+
+  private async handleRemove(input: ToolInputType<typeof manageAgentKnowledgeToolSchema>): Promise<ToolOutputType<never>> {
+    if (!input.resource_id || !input.scope_type) {
+      throw new Error('resource_id and scope_type are required for action:remove');
+    }
+    try {
+      const res = await this.mondayApi.request<RemoveAgentResourceAccessMutation>(
+        removeAgentResourceAccessMutation,
+        {
+          id: input.agent_id,
+          resource_id: input.resource_id,
+          scope_type: input.scope_type as KnowledgeScope,
+        } satisfies RemoveAgentResourceAccessMutationVariables,
+        { versionOverride: 'dev' },
+      );
+      return {
+        content: {
+          message: 'Resource access removed from agent.',
+          success: res.remove_agent_resource_access?.success ?? false,
+        },
+      };
+    } catch (error) {
+      rethrowWithContext(error, 'remove agent resource access for monday platform agent');
     }
   }
 }

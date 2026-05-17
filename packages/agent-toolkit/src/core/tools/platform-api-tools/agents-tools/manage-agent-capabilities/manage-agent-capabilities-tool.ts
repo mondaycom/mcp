@@ -85,7 +85,7 @@ ACTIONS:
 - add_skill:     { agent_id, skill_id } — attaches a skill. Get skill_id from agent_catalog action:"list_skills" or action:"create_skill".
 - remove_skill:  { agent_id, skill_id } — detaches a skill from the agent.
 
-NOTE: There is no list action for skills — the platform does not yet expose a query for an agent's attached skills.
+NOTE: There is no action to list which skills are currently attached to a specific agent — the platform does not yet expose that query. To browse all skills available in the account catalog, use agent_catalog with action:"list_skills".
 
 NOTE: add_trigger returns only { success } — no node_id for the new instance. Call action:"list_triggers" afterward if you need the node_id.
 

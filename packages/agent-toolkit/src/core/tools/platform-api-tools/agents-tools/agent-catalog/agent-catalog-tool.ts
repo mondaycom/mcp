@@ -56,6 +56,8 @@ export class AgentCatalogTool extends BaseMondayApiTool<typeof agentCatalogToolS
 
 This is the discovery and authoring tool — no agent_id required. Use it before wiring capabilities to a specific agent.
 
+NOTE: list_triggers and list_skills are read-only operations, but this tool is classified as WRITE because it also creates skills. In deployments with readOnlyMode enabled, catalog browsing is therefore unavailable.
+
 ACTIONS:
 - list_triggers:  { block_reference_ids? } — returns available trigger types. Use before manage_agent_capabilities action:"add_trigger".
   Each entry has block_reference_id (required for add_trigger), name, description,
