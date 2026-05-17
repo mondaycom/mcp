@@ -1,6 +1,5 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '../../test-utils/mock-api-client';
-import { GetLiveWorkflowsQuery } from 'src/monday-graphql/generated/graphql.dev/graphql';
 
 describe('ListWorkflowsTool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
@@ -10,65 +9,53 @@ describe('ListWorkflowsTool', () => {
     jest.spyOn(MondayAgentToolkit.prototype as any, 'createApiClient').mockReturnValue(mocks.mockApiClient);
   });
 
-  const mockWorkflow = {
+  const mockAutomation = {
     id: '101',
-    user_id: 42,
-    is_active: true,
-    automation_id: '9001',
+    user_id: '42',
+    active: true,
     title: 'Status notifier',
     description: 'Notify the team when a status changes',
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-04-01T00:00:00Z',
+    workflow_host_data: { boardId: '1234567890', type: 'BOARD' },
+    workflow_blocks: [],
+    workflow_variables: {},
     importance: null,
     notice_message: null,
     template_reference_id: null,
-    created_at: '2026-01-01T00:00:00Z',
-    updated_at: '2026-04-01T00:00:00Z',
-    workflow_variables: {},
-    workflow_host_data: { type: 'BOARD', id: '1234567890' },
-    workflow_blocks: [],
-  } as unknown as GetLiveWorkflowsQuery['get_live_workflows'][0];
+  };
 
-  it('should return the live workflows for the board', async () => {
-    mocks.setResponseOnce({ get_live_workflows: [mockWorkflow] } as GetLiveWorkflowsQuery);
+  it('should return the board automations as workflows for the board', async () => {
+    mocks.setResponseOnce({ board_automations: { items: [mockAutomation] } });
 
     const result = await callToolByNameRawAsync('list_workflows', { boardId: '1234567890' });
     const parsed = parseToolResult(result);
 
-    expect(parsed.workflows).toEqual([mockWorkflow]);
+    expect(parsed.workflows).toEqual([mockAutomation]);
     expect(parsed.message).toContain('1');
     expect(parsed.message).toContain('1234567890');
   });
 
-  it('should pass hostInstanceId, hostType BOARD and versionOverride dev', async () => {
-    mocks.setResponseOnce({ get_live_workflows: [] } as unknown as GetLiveWorkflowsQuery);
+  it('should query board_automations with boardIds', async () => {
+    mocks.setResponseOnce({ board_automations: { items: [] } });
 
     await callToolByNameRawAsync('list_workflows', { boardId: '1234567890' });
 
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-      expect.stringContaining('getLiveWorkflows'),
-      expect.objectContaining({ hostInstanceId: '1234567890', hostType: 'BOARD' }),
-      expect.objectContaining({ versionOverride: 'dev' }),
+      expect.stringContaining('board_automations'),
+      { boardIds: ['1234567890'] },
+      expect.objectContaining({ versionOverride: '2026-10' }),
     );
   });
 
-  it('should pass pagination when limit or lastId provided', async () => {
-    mocks.setResponseOnce({ get_live_workflows: [] } as unknown as GetLiveWorkflowsQuery);
+  it('should default workflows to an empty array when board_automations is null', async () => {
+    mocks.setResponseOnce({ board_automations: null });
 
-    await callToolByNameRawAsync('list_workflows', { boardId: '1234567890', limit: 10, lastId: 50 });
+    const result = await callToolByNameRawAsync('list_workflows', { boardId: '1234567890' });
+    const parsed = parseToolResult(result);
 
-    expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.objectContaining({ pagination: { limit: 10, lastId: 50 } }),
-      expect.anything(),
-    );
-  });
-
-  it('should omit pagination when neither limit nor lastId provided', async () => {
-    mocks.setResponseOnce({ get_live_workflows: [] } as unknown as GetLiveWorkflowsQuery);
-
-    await callToolByNameRawAsync('list_workflows', { boardId: '1234567890' });
-
-    const call = mocks.getMockRequest().mock.calls[0];
-    expect(call[1].pagination).toBeUndefined();
+    expect(parsed.workflows).toEqual([]);
+    expect(parsed.message).toContain('0');
   });
 
   it('should propagate GraphQL errors with operation context', async () => {
