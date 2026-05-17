@@ -65,16 +65,10 @@ import { GetNotetakerMeetingsTool } from './get-notetaker-meetings-tool/get-note
 import { UndoActionTool } from './undo-action-tool/undo-action-tool';
 import { LinkBoardItemsWorkflowTool } from './link-board-items-workflow-tool/link-board-items-workflow-tool';
 import { FetchFileContentTool } from './fetch-file-content-tool/fetch-file-content-tool';
-import { GetAgentTool } from './agents-tools/get-agent/get-agent-tool';
-import { CreateAgentTool } from './agents-tools/create-agent/create-agent-tool';
-import { DeleteAgentTool } from './agents-tools/delete-agent/delete-agent-tool';
-import { GetAgentCatalogTool } from './agents-tools/get-agent-catalog/get-agent-catalog-tool';
-import { ManageAgentTriggersTool } from './agents-tools/manage-agent-triggers/manage-agent-triggers-tool';
-import { CreateAgentSkillTool } from './agents-tools/create-agent-skill/create-agent-skill-tool';
-import { ManageAgentSkillsTool } from './agents-tools/manage-agent-skills/manage-agent-skills-tool';
-import { UpdateAgentTool } from './agents-tools/update-agent/update-agent-tool';
-import { ManageAgentStateTool } from './agents-tools/manage-agent-state/manage-agent-state-tool';
+import { ManageAgentTool } from './agents-tools/manage-agent/manage-agent-tool';
+import { ManageAgentCapabilitiesTool } from './agents-tools/manage-agent-capabilities/manage-agent-capabilities-tool';
 import { ManageAgentKnowledgeTool } from './agents-tools/manage-agent-knowledge/manage-agent-knowledge-tool';
+import { AgentCatalogTool } from './agents-tools/agent-catalog/agent-catalog-tool';
 
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteItemTool,
@@ -145,16 +139,10 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   LinkBoardItemsWorkflowTool,
   FetchFileContentTool,
   // monday Platform Agents (subgraph still on dev API version)
-  GetAgentTool,
-  CreateAgentTool,
-  DeleteAgentTool,
-  GetAgentCatalogTool,
-  ManageAgentTriggersTool,
-  CreateAgentSkillTool,
-  ManageAgentSkillsTool,
-  UpdateAgentTool,
-  ManageAgentStateTool,
+  ManageAgentTool,
+  ManageAgentCapabilitiesTool,
   ManageAgentKnowledgeTool,
+  AgentCatalogTool,
 ];
 
 export * from './all-monday-api-tool';
