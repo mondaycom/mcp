@@ -31,7 +31,7 @@ export class DeleteWorkflowTool extends BaseMondayApiTool<typeof deleteWorkflowT
 
 Requires a workflow id from list_workflows. When the user refers to a workflow by name, always call list_workflows first to confirm the id — never guess or infer ids.
 
-When NOT to use: When the user's intent is ambiguous ("remove", "get rid of", "stop"), prefer deactivate_workflow instead — it preserves the workflow definition. Only use delete_workflow when the user explicitly wants permanent removal.
+When NOT to use: When the user's intent is ambiguous ("stop", "turn off", "pause"), prefer set_workflow_active_state with action "deactivate" instead — it preserves the workflow definition. Only use delete_workflow when the user explicitly wants permanent removal.
 
 Terminology: "workflows" and "automations" are the same thing.`;
   }
@@ -46,11 +46,9 @@ Terminology: "workflows" and "automations" are the same thing.`;
     try {
       const variables: DeleteLiveWorkflowMutationVariables = { id: input.workflowId };
 
-      const res = await this.mondayApi.request<DeleteLiveWorkflowMutation>(
-        deleteLiveWorkflowMutation,
-        variables,
-        { versionOverride: 'dev' },
-      );
+      const res = await this.mondayApi.request<DeleteLiveWorkflowMutation>(deleteLiveWorkflowMutation, variables, {
+        versionOverride: 'dev',
+      });
 
       if (!res.delete_live_workflow?.is_success) {
         throw new Error(`Workflow ${input.workflowId} deletion did not report success`);
