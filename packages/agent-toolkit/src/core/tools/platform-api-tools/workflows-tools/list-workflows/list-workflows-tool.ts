@@ -1,59 +1,12 @@
-import { gql } from 'graphql-request';
 import { z } from 'zod';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../../base-monday-api-tool';
 import { rethrowWithContext } from '../../../../../utils';
-
-// `board_automations` is available on the 2026-10 (and dev) API but is not yet in the
-// fetched schema, so this query lives outside the codegen-scanned *.graphql.ts files and
-// is declared with hand-written TypeScript types below. The request below pins to 2026-10.
-const getBoardAutomationsQuery = gql`
-  query getBoardAutomations($boardIds: [ID!]!) {
-    board_automations(board_ids: $boardIds) {
-      items {
-        id
-        user_id
-        active
-        title
-        description
-        created_at
-        updated_at
-        workflow_host_data
-        workflow_blocks
-        workflow_variables
-        importance
-        notice_message
-        template_reference_id
-      }
-    }
-  }
-`;
-
-interface BoardAutomation {
-  readonly id: string;
-  readonly user_id: string | null;
-  readonly active: boolean | null;
-  readonly title: string | null;
-  readonly description: string | null;
-  readonly created_at: string | null;
-  readonly updated_at: string | null;
-  readonly workflow_host_data: unknown;
-  readonly workflow_blocks: unknown;
-  readonly workflow_variables: unknown;
-  readonly importance: number | null;
-  readonly notice_message: string | null;
-  readonly template_reference_id: string | null;
-}
-
-interface GetBoardAutomationsQuery {
-  readonly board_automations?: {
-    readonly items?: BoardAutomation[] | null;
-  } | null;
-}
-
-interface GetBoardAutomationsQueryVariables {
-  readonly boardIds: string[];
-}
+import {
+  getBoardAutomationsQuery,
+  GetBoardAutomationsQuery,
+  GetBoardAutomationsQueryVariables,
+} from '../shared/board-automations';
 
 export const listWorkflowsToolSchema = {
   boardId: z
