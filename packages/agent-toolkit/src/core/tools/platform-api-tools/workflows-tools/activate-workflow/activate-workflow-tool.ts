@@ -27,12 +27,9 @@ export class ActivateWorkflowTool extends BaseMondayApiTool<typeof activateWorkf
   });
 
   getDescription(): string {
-    return `Activate (enable) a monday.com automation/workflow so it starts responding to its trigger. Idempotent — activating an already-active workflow succeeds without side effects.
-
+    return `Activate (enable) a monday.com automation/workflow so it starts responding to its trigger.
 Requires a workflow id from list_workflows. When the user refers to a workflow by name, always call list_workflows first to resolve the id — never guess or infer ids.
-
 When NOT to use: If the user wants to create a new automation, this tool cannot do that — it only enables existing ones.
-
 Terminology: "workflows" and "automations" are the same thing.`;
   }
 
