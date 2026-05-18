@@ -13,7 +13,7 @@ export const deactivateWorkflowToolSchema = {
     .string()
     .trim()
     .min(1, 'workflowId must be a non-empty string')
-    .describe('Unique identifier of the workflow to deactivate.'),
+    .describe('The workflow ID to deactivate. Obtain from list_workflows.'),
 };
 
 export class DeactivateWorkflowTool extends BaseMondayApiTool<typeof deactivateWorkflowToolSchema> {
@@ -27,14 +27,13 @@ export class DeactivateWorkflowTool extends BaseMondayApiTool<typeof deactivateW
   });
 
   getDescription(): string {
-    return `Deactivate (disable) a monday.com workflow/automation. The workflow stays defined but stops reacting to its trigger until re-activated.
+    return `Deactivate (pause) a monday.com automation/workflow. The workflow definition is preserved but it stops responding to its trigger until re-activated with activate_workflow. Idempotent — deactivating an already-inactive workflow succeeds without side effects.
 
-Terminology note: users typically call these "automations" or "recipes" in the monday UI. In this API they are "workflows".
+Requires a workflow id from list_workflows. When the user refers to a workflow by name, always call list_workflows first to resolve the id — never guess or infer ids.
 
-VERIFY BEFORE DEACTIVATING: When the user refers to a workflow by name (e.g. "pause my onboarding automation"), call list_workflows on the relevant board first to find the matching id. Do not infer ids.
+When NOT to use: If the user wants permanent removal, use delete_workflow instead. When intent is ambiguous ("turn off", "stop", "pause"), prefer this tool over delete_workflow.
 
-USAGE EXAMPLE:
-{ "workflowId": "42" }`;
+Terminology: "workflows" and "automations" are the same thing.`;
   }
 
   getInputSchema() {

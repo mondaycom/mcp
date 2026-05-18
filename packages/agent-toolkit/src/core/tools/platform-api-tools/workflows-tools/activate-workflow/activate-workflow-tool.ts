@@ -13,7 +13,7 @@ export const activateWorkflowToolSchema = {
     .string()
     .trim()
     .min(1, 'workflowId must be a non-empty string')
-    .describe('Unique identifier of the workflow to activate.'),
+    .describe('The workflow ID to activate. Obtain from list_workflows.'),
 };
 
 export class ActivateWorkflowTool extends BaseMondayApiTool<typeof activateWorkflowToolSchema> {
@@ -27,14 +27,13 @@ export class ActivateWorkflowTool extends BaseMondayApiTool<typeof activateWorkf
   });
 
   getDescription(): string {
-    return `Activate (enable) a monday.com workflow/automation. After activation the workflow starts reacting to its trigger.
+    return `Activate (enable) a monday.com automation/workflow so it starts responding to its trigger. Idempotent — activating an already-active workflow succeeds without side effects.
 
-Terminology note: users typically call these "automations" or "recipes" in the monday UI. In this API they are "workflows".
+Requires a workflow id from list_workflows. When the user refers to a workflow by name, always call list_workflows first to resolve the id — never guess or infer ids.
 
-VERIFY BEFORE ACTIVATING: When the user refers to a workflow by name (e.g. "turn on my status notifier"), call list_workflows on the relevant board first to find the matching id. Do not infer ids.
+When NOT to use: If the user wants to create a new automation, this tool cannot do that — it only enables existing ones.
 
-USAGE EXAMPLE:
-{ "workflowId": "42" }`;
+Terminology: "workflows" and "automations" are the same thing.`;
   }
 
   getInputSchema() {

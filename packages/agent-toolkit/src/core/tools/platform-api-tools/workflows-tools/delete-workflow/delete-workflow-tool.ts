@@ -13,7 +13,7 @@ export const deleteWorkflowToolSchema = {
     .string()
     .trim()
     .min(1, 'workflowId must be a non-empty string')
-    .describe('Unique identifier of the workflow to delete.'),
+    .describe('The workflow ID to permanently delete. Obtain from list_workflows.'),
 };
 
 export class DeleteWorkflowTool extends BaseMondayApiTool<typeof deleteWorkflowToolSchema> {
@@ -27,14 +27,13 @@ export class DeleteWorkflowTool extends BaseMondayApiTool<typeof deleteWorkflowT
   });
 
   getDescription(): string {
-    return `Permanently delete a monday.com workflow/automation. The workflow is removed entirely and cannot be recovered. To temporarily turn a workflow off without losing it, use deactivate_workflow instead.
+    return `Permanently delete a monday.com automation/workflow. This is irreversible — the workflow cannot be recovered.
 
-Terminology note: users typically call these "automations" or "recipes" in the monday UI. In this API they are "workflows".
+Requires a workflow id from list_workflows. When the user refers to a workflow by name, always call list_workflows first to confirm the id — never guess or infer ids.
 
-VERIFY BEFORE DELETING: When the user refers to a workflow by name (e.g. "delete my standup reminder"), call list_workflows on the relevant board first to confirm the matching id. Do not infer ids. Prefer deactivate over delete when intent is ambiguous.
+When NOT to use: When the user's intent is ambiguous ("remove", "get rid of", "stop"), prefer deactivate_workflow instead — it preserves the workflow definition. Only use delete_workflow when the user explicitly wants permanent removal.
 
-USAGE EXAMPLE:
-{ "workflowId": "42" }`;
+Terminology: "workflows" and "automations" are the same thing.`;
   }
 
   getInputSchema() {

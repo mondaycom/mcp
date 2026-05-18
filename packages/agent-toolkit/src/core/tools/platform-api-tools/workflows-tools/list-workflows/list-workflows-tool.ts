@@ -13,7 +13,7 @@ export const listWorkflowsToolSchema = {
     .string()
     .trim()
     .min(1, 'boardId must be a non-empty string')
-    .describe('Board ID whose live workflows should be listed. Pass the board (pulse) numeric ID as a string.'),
+    .describe('The numeric board ID as a string.'),
 };
 
 export class ListWorkflowsTool extends BaseMondayApiTool<typeof listWorkflowsToolSchema> {
@@ -27,12 +27,13 @@ export class ListWorkflowsTool extends BaseMondayApiTool<typeof listWorkflowsToo
   });
 
   getDescription(): string {
-    return `List the live automations/workflows on a monday.com board. Returns each workflow's id, creator user_id, active state, title, description, created_at/updated_at timestamps, workflow_host_data, workflow_blocks, workflow_variables, importance, notice_message and template_reference_id.
+    return `List all automations (workflows) on a monday.com board, including their ids, titles, active state, and configuration.
 
-Terminology note: users typically call these "automations" or "recipes" in the monday UI. In this API they are "workflows". Both terms refer to the same entity.
+Use this tool first to resolve workflow ids — activate_workflow, deactivate_workflow, and delete_workflow all require a workflow id that must come from this tool's response.
 
-USAGE EXAMPLE:
-{ "boardId": "1234567890" }`;
+When NOT to use: Do not call this tool to get general board information — use get_board_schema or get_items instead.
+
+Terminology: "workflows" and "automations" are the same thing.`;
   }
 
   getInputSchema() {
