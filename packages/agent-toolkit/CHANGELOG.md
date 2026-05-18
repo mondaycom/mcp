@@ -1,6 +1,6 @@
 # Changelog
 
-## 5.9.1
+## 5.11.0
 
 ### Asset upload MCP tools
 
