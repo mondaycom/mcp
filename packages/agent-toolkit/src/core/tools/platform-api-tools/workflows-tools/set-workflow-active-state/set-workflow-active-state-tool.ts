@@ -5,7 +5,7 @@ import {
   DeactivateLiveWorkflowMutation,
   DeactivateLiveWorkflowMutationVariables,
 } from '../../../../../monday-graphql/generated/graphql.dev/graphql';
-import { activateLiveWorkflowMutation, deactivateLiveWorkflowMutation } from '../shared/workflows.graphql.dev';
+import { activateLiveWorkflowMutation, deactivateLiveWorkflowMutation } from './set-workflow-active-state.graphql.dev';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../../base-monday-api-tool';
 import { rethrowWithContext } from '../../../../../utils';

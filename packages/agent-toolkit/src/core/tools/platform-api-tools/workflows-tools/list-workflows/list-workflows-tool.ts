@@ -6,7 +6,7 @@ import {
   getBoardAutomationsQuery,
   GetBoardAutomationsQuery,
   GetBoardAutomationsQueryVariables,
-} from '../shared/board-automations';
+} from './board-automations';
 
 export const listWorkflowsToolSchema = {
   boardId: z.string().trim().min(1, 'boardId must be a non-empty string').describe('The numeric board ID as a string.'),

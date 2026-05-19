@@ -3,7 +3,7 @@ import {
   DeleteLiveWorkflowMutation,
   DeleteLiveWorkflowMutationVariables,
 } from '../../../../../monday-graphql/generated/graphql.dev/graphql';
-import { deleteLiveWorkflowMutation } from '../shared/workflows.graphql.dev';
+import { deleteLiveWorkflowMutation } from './delete-workflow.graphql.dev';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../../base-monday-api-tool';
 import { rethrowWithContext } from '../../../../../utils';

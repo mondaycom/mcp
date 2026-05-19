@@ -15,11 +15,3 @@ export const deactivateLiveWorkflowMutation = gql`
     }
   }
 `;
-
-export const deleteLiveWorkflowMutation = gql`
-  mutation deleteLiveWorkflow($id: ID!) {
-    delete_live_workflow(id: $id) {
-      is_success
-    }
-  }
-`;
