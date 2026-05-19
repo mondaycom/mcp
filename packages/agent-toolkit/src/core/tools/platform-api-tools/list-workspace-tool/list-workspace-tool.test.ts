@@ -43,8 +43,7 @@ describe('ListWorkspaceTool', () => {
         workspaces: null,
       };
 
-      // Both member and all workspaces return null
-      mocks.setResponses([response, response]);
+      mocks.setResponses([response]);
 
       const args: inputType = {};
 
@@ -53,16 +52,11 @@ describe('ListWorkspaceTool', () => {
       const parsed = parseToolResult(result);
       expect(parsed.message).toBe('No workspaces found.');
       expect(parsed.data).toEqual([]);
-      // Two calls: first member (empty), then all (also empty)
-      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
 
       const firstCall = mocks.getMockRequest().mock.calls[0];
       expect(firstCall[0]).toContain('query listWorkspaces');
-      expect(firstCall[1]).toMatchObject({ membershipKind: 'member' });
-
-      const secondCall = mocks.getMockRequest().mock.calls[1];
-      expect(secondCall[0]).toContain('query listWorkspaces');
-      expect(secondCall[1]).toMatchObject({ membershipKind: 'all' });
+      expect(firstCall[1]).toMatchObject({ membershipKind: 'all' });
     });
 
     it('should return "No workspaces found." when GraphQL query returns empty array', async () => {
@@ -70,8 +64,7 @@ describe('ListWorkspaceTool', () => {
         workspaces: [],
       };
 
-      // Both member and all workspaces return empty array
-      mocks.setResponses([response, response]);
+      mocks.setResponses([response]);
 
       const args: inputType = {};
 
@@ -80,21 +73,16 @@ describe('ListWorkspaceTool', () => {
       const parsed = parseToolResult(result);
       expect(parsed.message).toBe('No workspaces found.');
       expect(parsed.data).toEqual([]);
-      // Two calls: first member (empty), then all (also empty)
-      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
 
       const firstCall = mocks.getMockRequest().mock.calls[0];
       expect(firstCall[0]).toContain('query listWorkspaces');
-      expect(firstCall[1]).toMatchObject({ membershipKind: 'member' });
-
-      const secondCall = mocks.getMockRequest().mock.calls[1];
-      expect(secondCall[0]).toContain('query listWorkspaces');
-      expect(secondCall[1]).toMatchObject({ membershipKind: 'all' });
+      expect(firstCall[1]).toMatchObject({ membershipKind: 'all' });
     });
   });
 
   describe('Successful Flow Without SearchTerm', () => {
-    it('should list workspaces without search term (basic case) using member-only query', async () => {
+    it('should list all accessible workspaces without search term', async () => {
       const response = {
         workspaces: [
           { id: '123', name: 'Marketing Team', description: 'Marketing workspace' },
@@ -116,7 +104,7 @@ describe('ListWorkspaceTool', () => {
       expect(mockCall[1]).toEqual({
         limit: 100,
         page: 1,
-        membershipKind: 'member',
+        membershipKind: 'all',
       });
 
       const parsed = parseToolResult(result);

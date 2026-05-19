@@ -72,27 +72,29 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
       membershipKind,
     });
 
-    // First, try to get workspaces where the user is a member (more relevant results)
-    const memberRes = await this.mondayApi.request<ListWorkspacesQuery>(
+    const initialMembershipKind = searchTermNormalized ? WorkspaceMembershipKind.Member : WorkspaceMembershipKind.All;
+
+    const initialRes = await this.mondayApi.request<ListWorkspacesQuery>(
       listWorkspaces,
-      createVariables(WorkspaceMembershipKind.Member),
+      createVariables(initialMembershipKind),
     );
-    const memberWorkspaces = filterNullWorkspaces(memberRes);
+    let workspaces = filterNullWorkspaces(initialRes);
 
     const shouldFetchAllWorkspaces =
-      !arrayHasElements(memberWorkspaces) || (searchTermNormalized && !hasMatchingWorkspace(searchTermNormalized, memberWorkspaces));
+      searchTermNormalized &&
+      (!arrayHasElements(workspaces) || !hasMatchingWorkspace(searchTermNormalized, workspaces));
 
-    // Fetch all workspaces only if needed, otherwise use member workspaces
-    let workspaces = memberWorkspaces;
+    // Unfiltered listing uses all workspaces. For search, start with member
+    // workspaces and fall back to all workspaces when member workspaces do not match.
 
     if (shouldFetchAllWorkspaces) {
       const allWorkspacesRes = await this.mondayApi.request<ListWorkspacesQuery>(
         listWorkspaces,
         createVariables(WorkspaceMembershipKind.All),
       );
-      workspaces = filterNullWorkspaces(allWorkspacesRes);
+      const allWorkspaces = filterNullWorkspaces(allWorkspacesRes);
+      workspaces = arrayHasElements(allWorkspaces) ? allWorkspaces : workspaces;
     }
-
 
     if (!arrayHasElements(workspaces)) {
       return {

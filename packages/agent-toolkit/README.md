@@ -50,7 +50,7 @@ The toolkit includes several pre-built tools for common monday.com operations, o
 
 ### Workspace Operations
 
-- `ListWorkspaceTool` - List workspaces available to the user, prioritizing workspaces where the user is a member
+- `ListWorkspaceTool` - List workspaces available to the user
 
 ### Dynamic API Tools
 
