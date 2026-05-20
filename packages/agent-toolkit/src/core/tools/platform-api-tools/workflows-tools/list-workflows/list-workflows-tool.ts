@@ -3,9 +3,9 @@ import { ToolInputType, ToolOutputType, ToolType } from '../../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../../base-monday-api-tool';
 import { rethrowWithContext } from '../../../../../utils';
 import {
-  getBoardAutomationsQuery,
-  GetBoardAutomationsQuery,
-  GetBoardAutomationsQueryVariables,
+  getLiveWorkflowsQuery,
+  GetLiveWorkflowsQuery,
+  GetLiveWorkflowsQueryVariables,
 } from './board-automations.graphql.dev';
 
 const DEFAULT_LIMIT = 100;
@@ -45,18 +45,22 @@ Terminology: "workflows" and "automations" are the same thing.`;
     input: ToolInputType<typeof listWorkflowsToolSchema>,
   ): Promise<ToolOutputType<never>> {
     try {
-      const variables: GetBoardAutomationsQueryVariables = {
-        board_ids: [input.boardId],
-        limit: input.limit ?? DEFAULT_LIMIT,
-        cursor: input.cursor || undefined,
+      const variables: GetLiveWorkflowsQueryVariables = {
+        hostInstanceId: input.boardId,
+        hostType: 'BOARD',
+        pagination: {
+          limit: input.limit ?? DEFAULT_LIMIT,
+          ...(input.cursor ? { lastId: parseInt(input.cursor, 10) } : {}),
+        },
       };
 
-      const res = await this.mondayApi.request<GetBoardAutomationsQuery>(getBoardAutomationsQuery, variables, {
+      const res = await this.mondayApi.request<GetLiveWorkflowsQuery>(getLiveWorkflowsQuery, variables, {
         versionOverride: '2026-10',
       });
 
-      const workflows = res.board_automations?.items ?? [];
-      const nextCursor = res.board_automations?.cursor ?? null;
+      const workflows = res.get_live_workflows ?? [];
+      const lastWorkflow = workflows[workflows.length - 1];
+      const nextCursor = workflows.length === (input.limit ?? DEFAULT_LIMIT) && lastWorkflow ? lastWorkflow.id : null;
 
       return {
         content: {

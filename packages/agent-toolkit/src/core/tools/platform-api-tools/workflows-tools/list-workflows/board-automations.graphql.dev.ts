@@ -1,53 +1,66 @@
 import { gql } from 'graphql-request';
 
-export const getBoardAutomationsQuery = gql`
-  query getBoardAutomations($board_ids: [ID!]!, $limit: Int, $cursor: String) {
-    board_automations(board_ids: $board_ids, limit: $limit, cursor: $cursor) {
-      cursor
-      items {
+export const getLiveWorkflowsQuery = gql`
+  query getLiveWorkflows($hostInstanceId: String, $hostType: HostType, $pagination: PaginationInput) {
+    get_live_workflows(hostInstanceId: $hostInstanceId, hostType: $hostType, pagination: $pagination) {
+      id
+      user_id
+      is_active
+      title
+      description
+      created_at
+      updated_at
+      workflow_host_data {
         id
-        user_id
-        active
-        title
-        description
-        created_at
-        updated_at
-        workflow_host_data
-        workflow_blocks
-        workflow_variables
-        importance
-        notice_message
-        template_reference_id
+        type
       }
+      workflow_blocks {
+        workflowNodeId
+        blockReferenceId
+        title
+        kind
+      }
+      workflow_variables
+      importance
+      notice_message
+      template_reference_id
     }
   }
 `;
 
-export interface BoardAutomation {
+export interface LiveWorkflow {
   readonly id: string;
-  readonly user_id: string | null;
-  readonly active: boolean | null;
-  readonly title: string | null;
-  readonly description: string | null;
-  readonly created_at: string | null;
-  readonly updated_at: string | null;
-  readonly workflow_host_data: unknown;
-  readonly workflow_blocks: unknown;
+  readonly user_id: number;
+  readonly is_active: boolean;
+  readonly title: string;
+  readonly description: string;
+  readonly created_at: string;
+  readonly updated_at: string;
+  readonly workflow_host_data: {
+    readonly id: string | null;
+    readonly type: string;
+  };
+  readonly workflow_blocks: {
+    readonly workflowNodeId: number;
+    readonly blockReferenceId: number;
+    readonly title: string;
+    readonly kind: string;
+  }[];
   readonly workflow_variables: unknown;
   readonly importance: number | null;
   readonly notice_message: string | null;
   readonly template_reference_id: string | null;
 }
 
-export interface GetBoardAutomationsQuery {
-  readonly board_automations?: {
-    readonly cursor?: string | null;
-    readonly items?: BoardAutomation[] | null;
-  } | null;
+export interface GetLiveWorkflowsQuery {
+  readonly get_live_workflows: LiveWorkflow[];
 }
 
-export interface GetBoardAutomationsQueryVariables {
-  readonly board_ids: string[];
-  readonly limit?: number;
-  readonly cursor?: string;
+export interface GetLiveWorkflowsQueryVariables {
+  readonly hostInstanceId?: string;
+  readonly hostType?: 'APP_FEATURE_OBJECT' | 'BOARD' | 'ACCOUNT_LEVEL';
+  readonly pagination?: {
+    readonly limit?: number;
+    readonly lastId?: number;
+  };
 }
