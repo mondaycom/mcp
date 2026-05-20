@@ -71,8 +71,7 @@ import { GetAgentTool } from './agents-tools/get-agent/get-agent-tool';
 import { CreateAgentTool } from './agents-tools/create-agent/create-agent-tool';
 import { DeleteAgentTool } from './agents-tools/delete-agent/delete-agent-tool';
 import { ListWorkflowsTool } from './workflows-tools/list-workflows/list-workflows-tool';
-import { SetWorkflowActiveStateTool } from './workflows-tools/set-workflow-active-state/set-workflow-active-state-tool';
-import { DeleteWorkflowTool } from './workflows-tools/delete-workflow/delete-workflow-tool';
+import { ManageWorkflowsTool } from './workflows-tools/manage-workflows/manage-workflows-tool';
 
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteItemTool,
@@ -150,8 +149,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteAgentTool,
   // Workflows (subgraph still on dev API version)
   ListWorkflowsTool,
-  SetWorkflowActiveStateTool,
-  DeleteWorkflowTool,
+  ManageWorkflowsTool,
 ];
 
 export * from './all-monday-api-tool';
