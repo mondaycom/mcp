@@ -1,10 +1,5 @@
 import { gql } from 'graphql-request';
 
-// File intentionally NOT named *.graphql.ts / *.graphql.dev.ts — board_automations
-// is not yet in the fetched schema, so this query uses hand-written types and must
-// stay outside the codegen-scanned globs.
-// TODO: migrate to get_live_workflows on dev API when 2026-10 is sunset.
-
 export const getBoardAutomationsQuery = gql`
   query getBoardAutomations($board_ids: [ID!]!, $limit: Int, $cursor: String) {
     board_automations(board_ids: $board_ids, limit: $limit, cursor: $cursor) {

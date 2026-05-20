@@ -6,7 +6,7 @@ import {
   getBoardAutomationsQuery,
   GetBoardAutomationsQuery,
   GetBoardAutomationsQueryVariables,
-} from './board-automations';
+} from './board-automations.graphql.dev';
 
 const DEFAULT_LIMIT = 100;
 
