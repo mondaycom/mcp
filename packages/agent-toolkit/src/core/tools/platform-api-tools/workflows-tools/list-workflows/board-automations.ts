@@ -3,10 +3,12 @@ import { gql } from 'graphql-request';
 // File intentionally NOT named *.graphql.ts / *.graphql.dev.ts — board_automations
 // is not yet in the fetched schema, so this query uses hand-written types and must
 // stay outside the codegen-scanned globs.
+// TODO: migrate to get_live_workflows on dev API when 2026-10 is sunset.
 
 export const getBoardAutomationsQuery = gql`
-  query getBoardAutomations($boardIds: [ID!]!) {
-    board_automations(board_ids: $boardIds) {
+  query getBoardAutomations($board_ids: [ID!]!, $limit: Int, $cursor: String) {
+    board_automations(board_ids: $board_ids, limit: $limit, cursor: $cursor) {
+      cursor
       items {
         id
         user_id
@@ -44,10 +46,13 @@ export interface BoardAutomation {
 
 export interface GetBoardAutomationsQuery {
   readonly board_automations?: {
+    readonly cursor?: string | null;
     readonly items?: BoardAutomation[] | null;
   } | null;
 }
 
 export interface GetBoardAutomationsQueryVariables {
-  readonly boardIds: string[];
+  readonly board_ids: string[];
+  readonly limit?: number;
+  readonly cursor?: string;
 }

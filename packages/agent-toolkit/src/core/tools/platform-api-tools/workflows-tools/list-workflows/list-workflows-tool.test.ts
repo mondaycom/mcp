@@ -26,7 +26,7 @@ describe('ListWorkflowsTool', () => {
   };
 
   it('should return the board automations as workflows for the board', async () => {
-    mocks.setResponseOnce({ board_automations: { items: [mockAutomation] } });
+    mocks.setResponseOnce({ board_automations: { cursor: null, items: [mockAutomation] } });
 
     const result = await callToolByNameRawAsync('list_workflows', { boardId: '1234567890' });
     const parsed = parseToolResult(result);
@@ -34,16 +34,38 @@ describe('ListWorkflowsTool', () => {
     expect(parsed.workflows).toEqual([mockAutomation]);
     expect(parsed.message).toContain('1');
     expect(parsed.message).toContain('1234567890');
+    expect(parsed.pagination).toEqual({ nextCursor: null, hasMore: false });
   });
 
-  it('should query board_automations with boardIds', async () => {
-    mocks.setResponseOnce({ board_automations: { items: [] } });
+  it('should query board_automations with board_ids', async () => {
+    mocks.setResponseOnce({ board_automations: { cursor: null, items: [] } });
 
     await callToolByNameRawAsync('list_workflows', { boardId: '1234567890' });
 
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
       expect.stringContaining('board_automations'),
-      { boardIds: ['1234567890'] },
+      { board_ids: ['1234567890'], limit: 100, cursor: undefined },
+      expect.objectContaining({ versionOverride: '2026-10' }),
+    );
+  });
+
+  it('should return pagination cursor when more results exist', async () => {
+    mocks.setResponseOnce({ board_automations: { cursor: 'next-page-token', items: [mockAutomation] } });
+
+    const result = await callToolByNameRawAsync('list_workflows', { boardId: '1234567890' });
+    const parsed = parseToolResult(result);
+
+    expect(parsed.pagination).toEqual({ nextCursor: 'next-page-token', hasMore: true });
+  });
+
+  it('should pass cursor and limit when provided', async () => {
+    mocks.setResponseOnce({ board_automations: { cursor: null, items: [] } });
+
+    await callToolByNameRawAsync('list_workflows', { boardId: '1234567890', cursor: 'abc', limit: 50 });
+
+    expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+      expect.stringContaining('board_automations'),
+      { board_ids: ['1234567890'], limit: 50, cursor: 'abc' },
       expect.objectContaining({ versionOverride: '2026-10' }),
     );
   });

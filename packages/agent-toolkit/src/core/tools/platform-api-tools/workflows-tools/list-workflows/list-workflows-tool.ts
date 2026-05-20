@@ -8,8 +8,15 @@ import {
   GetBoardAutomationsQueryVariables,
 } from './board-automations';
 
+const DEFAULT_LIMIT = 100;
+
 export const listWorkflowsToolSchema = {
   boardId: z.string().trim().min(1, 'boardId must be a non-empty string').describe('The numeric board ID as a string.'),
+  limit: z.number().int().min(1).max(100).optional().describe('Maximum number of workflows to return. Default: 100.'),
+  cursor: z
+    .string()
+    .optional()
+    .describe('Pagination cursor from a previous response. Pass to retrieve the next page of workflows.'),
 };
 
 export class ListWorkflowsTool extends BaseMondayApiTool<typeof listWorkflowsToolSchema> {
@@ -39,7 +46,9 @@ Terminology: "workflows" and "automations" are the same thing.`;
   ): Promise<ToolOutputType<never>> {
     try {
       const variables: GetBoardAutomationsQueryVariables = {
-        boardIds: [input.boardId],
+        board_ids: [input.boardId],
+        limit: input.limit ?? DEFAULT_LIMIT,
+        cursor: input.cursor || undefined,
       };
 
       const res = await this.mondayApi.request<GetBoardAutomationsQuery>(getBoardAutomationsQuery, variables, {
@@ -47,11 +56,16 @@ Terminology: "workflows" and "automations" are the same thing.`;
       });
 
       const workflows = res.board_automations?.items ?? [];
+      const nextCursor = res.board_automations?.cursor ?? null;
 
       return {
         content: {
           message: `Found ${workflows.length} live workflow(s) on board ${input.boardId}`,
           workflows,
+          pagination: {
+            nextCursor,
+            hasMore: nextCursor !== null,
+          },
         },
       };
     } catch (error) {
