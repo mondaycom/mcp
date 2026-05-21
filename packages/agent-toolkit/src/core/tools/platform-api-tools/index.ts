@@ -70,6 +70,8 @@ import { FetchFileContentTool } from './fetch-file-content-tool/fetch-file-conte
 import { GetAgentTool } from './agents-tools/get-agent/get-agent-tool';
 import { CreateAgentTool } from './agents-tools/create-agent/create-agent-tool';
 import { DeleteAgentTool } from './agents-tools/delete-agent/delete-agent-tool';
+import { ListWorkflowsTool } from './workflows-tools/list-workflows/list-workflows-tool';
+import { ManageWorkflowsTool } from './workflows-tools/manage-workflows/manage-workflows-tool';
 
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteItemTool,
@@ -145,6 +147,9 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   GetAgentTool,
   CreateAgentTool,
   DeleteAgentTool,
+  // Workflows (subgraph still on dev API version)
+  ListWorkflowsTool,
+  ManageWorkflowsTool,
 ];
 
 export * from './all-monday-api-tool';
@@ -215,6 +220,8 @@ export * from './get-notetaker-meetings-tool/get-notetaker-meetings-tool';
 export * from './fetch-file-content-tool/fetch-file-content-tool';
 // monday Platform Agents
 export * from './agents-tools';
+// Workflows
+export * from './workflows-tools';
 // Dashboard Tools
 export * from './dashboard-tools';
 // Monday Dev Tools
