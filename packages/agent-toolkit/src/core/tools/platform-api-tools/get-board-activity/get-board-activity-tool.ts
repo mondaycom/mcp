@@ -10,6 +10,10 @@ import { TIME_IN_MILLISECONDS } from '../../../../utils';
 
 export const getBoardActivityToolSchema = {
   boardId: z.number().describe('The id of the board to get activity for'),
+  itemIds: z
+    .array(z.number())
+    .optional()
+    .describe('Filter activity to specific item ids. Omit to get activity for the whole board.'),
   fromDate: z
     .string()
     .optional()
@@ -37,7 +41,7 @@ export class GetBoardActivityTool extends BaseMondayApiTool<typeof getBoardActiv
   private defaultLimit = 1000;
 
   getDescription(): string {
-    return 'Get board activity logs for a specified time range (defaults to last 30 days)';
+    return 'Get board activity logs for a specified time range (defaults to last 30 days). Optionally filter by item ids to avoid fetching activity for the entire board.';
   }
 
   getInputSchema(): typeof getBoardActivityToolSchema {
@@ -56,6 +60,7 @@ export class GetBoardActivityTool extends BaseMondayApiTool<typeof getBoardActiv
 
     const variables: GetBoardAllActivityQueryVariables = {
       boardId: input.boardId.toString(),
+      itemIds: input.itemIds?.map(String),
       fromDate,
       toDate,
       limit: this.defaultLimit,

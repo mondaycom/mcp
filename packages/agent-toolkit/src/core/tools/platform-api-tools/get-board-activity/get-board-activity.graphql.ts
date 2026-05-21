@@ -3,6 +3,7 @@ import { gql } from 'graphql-request';
 export const getBoardAllActivity = gql`
   query GetBoardAllActivity(
     $boardId: ID!
+    $itemIds: [ID!]
     $fromDate: ISO8601DateTime!
     $toDate: ISO8601DateTime!
     $limit: Int = 1000
@@ -12,7 +13,7 @@ export const getBoardAllActivity = gql`
     boards(ids: [$boardId]) {
       name
       url
-      activity_logs(from: $fromDate, to: $toDate, limit: $limit, page: $page) {
+      activity_logs(item_ids: $itemIds, from: $fromDate, to: $toDate, limit: $limit, page: $page) {
         user_id
         entity
         event
