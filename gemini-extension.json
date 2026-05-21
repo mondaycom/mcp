@@ -1,6 +1,6 @@
 {
     "name": "monday",
-    "description": "Connect AI agents to monday.com — the Work OS for managing projects, tasks, and workflows.",
+    "description": "Manage your monday.com projects, tasks, and everday work.",
     "version": "0.0.41",
     "contextFileName": "MONDAY.md",
     "mcpServers": {
