@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { CallToolResult, ServerCapabilities } from '@modelcontextprotocol/sdk/types';
-import { ApiClient } from '@mondaydotcomorg/api';
+import { ApiClient, QueryVariables, RequestOptions } from '@mondaydotcomorg/api';
 import { getFilteredToolInstances } from '../utils/tools/tools-filtering.utils';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
@@ -15,17 +15,43 @@ export interface GetToolsOptions {
   schemaFormat?: 'zod' | 'json';
 }
 
+type ApiComplexity = {
+  query?: number | null;
+  before?: number | null;
+  after?: number | null;
+  reset_in_x_seconds?: number | null;
+};
+
+type ComplexityMetadata = {
+  complexity: ApiComplexity;
+  complexities?: ApiComplexity[];
+};
+
+type ComplexityTrackingApiClient = ApiClient & {
+  startComplexityTracking?: () => void;
+  consumeComplexityMetadata?: () => ComplexityMetadata | undefined;
+};
+
+const COMPLEXITY_SELECTION = `complexity {
+      query
+      before
+      after
+      reset_in_x_seconds
+    }`;
+
 /**
  * Monday Agent Toolkit providing an MCP server with monday.com tools
  */
 export class MondayAgentToolkit extends McpServer {
-  private readonly mondayApiClient: ApiClient;
+  private readonly mondayApiClient: ComplexityTrackingApiClient;
   private readonly mondayApiToken: string | (() => string);
   private readonly context?: MondayAgentToolkitConfig['context'];
   private readonly toolkitConfig: MondayAgentToolkitConfig;
   private readonly dynamicToolManager: DynamicToolManager = new DynamicToolManager();
   private toolInstances: Tool<any, any>[] = [];
   private managementTool: Tool<any, any> | null = null;
+  private isComplexityTracking = false;
+  private trackedComplexities: ApiComplexity[] = [];
 
   /**
    * Creates a new instance of the Monday Agent Toolkit
@@ -66,8 +92,8 @@ export class MondayAgentToolkit extends McpServer {
   /**
    * Create and configure the Monday API client
    */
-  private createApiClient(token: string, config: MondayAgentToolkitConfig): ApiClient {
-    return new ApiClient({
+  private createApiClient(token: string, config: MondayAgentToolkitConfig): ComplexityTrackingApiClient {
+    const client = new ApiClient({
       token,
       apiVersion: config.mondayApiVersion ?? API_VERSION,
       endpoint: config.mondayApiEndpoint,
@@ -79,6 +105,117 @@ export class MondayAgentToolkit extends McpServer {
         },
       },
     });
+
+    return this.createComplexityTrackingClient(client);
+  }
+
+  private createComplexityTrackingClient(client: ApiClient): ComplexityTrackingApiClient {
+    const trackedClient = client as ComplexityTrackingApiClient;
+    if (typeof client.request !== 'function') {
+      return trackedClient;
+    }
+
+    const originalRequest = client.request.bind(client);
+
+    trackedClient.startComplexityTracking = () => {
+      this.startComplexityTracking();
+    };
+
+    trackedClient.consumeComplexityMetadata = () => {
+      return this.consumeComplexityMetadata();
+    };
+
+    trackedClient.request = async <T>(
+      query: string,
+      variables?: QueryVariables,
+      options?: RequestOptions,
+    ): Promise<T> => {
+      const complexityQuery = this.isComplexityTracking
+        ? this.addComplexitySelection(query)
+        : { query, injected: false };
+      const response = await originalRequest<T>(complexityQuery.query, variables, options);
+      const complexity = this.extractComplexity(response);
+
+      if (this.isComplexityTracking && complexity) {
+        this.trackedComplexities.push(complexity);
+      }
+
+      if (complexityQuery.injected && this.isRecord(response)) {
+        const { complexity: _complexity, ...responseWithoutComplexity } = response;
+        return responseWithoutComplexity as T;
+      }
+
+      return response;
+    };
+
+    return trackedClient;
+  }
+
+  private startComplexityTracking(): void {
+    this.isComplexityTracking = true;
+    this.trackedComplexities = [];
+  }
+
+  private consumeComplexityMetadata(): ComplexityMetadata | undefined {
+    this.isComplexityTracking = false;
+    const trackedComplexities = this.trackedComplexities;
+    this.trackedComplexities = [];
+
+    if (!trackedComplexities.length) {
+      return undefined;
+    }
+
+    const latestComplexity = trackedComplexities[trackedComplexities.length - 1];
+
+    return {
+      complexity: latestComplexity,
+      ...(trackedComplexities.length > 1 ? { complexities: trackedComplexities } : {}),
+    };
+  }
+
+  private addComplexitySelection(query: string): { query: string; injected: boolean } {
+    if (!query || /\bcomplexity\s*\{/i.test(query)) {
+      return { query, injected: false };
+    }
+
+    const operationStart = query.search(/\b(query|mutation)\b/i);
+    if (operationStart === -1) {
+      return { query, injected: false };
+    }
+
+    const selectionStart = query.indexOf('{', operationStart);
+    if (selectionStart === -1) {
+      return { query, injected: false };
+    }
+
+    return {
+      query: `${query.slice(0, selectionStart + 1)}
+    ${COMPLEXITY_SELECTION}${query.slice(selectionStart + 1)}`,
+      injected: true,
+    };
+  }
+
+  private extractComplexity(response: unknown): ApiComplexity | undefined {
+    if (!this.isRecord(response) || !this.isRecord(response.complexity)) {
+      return undefined;
+    }
+
+    const complexity = response.complexity;
+
+    return {
+      query: this.getNullableNumber(complexity.query),
+      before: this.getNullableNumber(complexity.before),
+      after: this.getNullableNumber(complexity.after),
+      reset_in_x_seconds: this.getNullableNumber(complexity.reset_in_x_seconds),
+    };
+  }
+
+  private getNullableNumber(value: unknown): number | null | undefined {
+    return typeof value === 'number' || value === null ? value : undefined;
+  }
+
+  private isRecord(value: unknown): value is Record<string, any> {
+    return !!value && typeof value === 'object' && !Array.isArray(value);
   }
 
   /**
@@ -115,7 +252,8 @@ export class MondayAgentToolkit extends McpServer {
    */
   private initializeTools(config: MondayAgentToolkitConfig): Tool<any, any>[] {
     const instanceOptions = {
-      apiClient: typeof this.mondayApiToken === 'function' ? () => this.createApiClientFromToken() : this.mondayApiClient,
+      apiClient:
+        typeof this.mondayApiToken === 'function' ? () => this.createApiClientFromToken() : this.mondayApiClient,
       apiToken: this.mondayApiToken,
       context: this.context,
     };
@@ -141,17 +279,8 @@ export class MondayAgentToolkit extends McpServer {
       },
       async (args: any, _extra: any) => {
         try {
-          let result;
-          if (inputSchema) {
-            const parsedArgs = z.object(inputSchema).safeParse(args);
-            if (!parsedArgs.success) {
-              throw new Error(`Invalid arguments: ${parsedArgs.error.message}`);
-            }
-            result = await tool.execute(parsedArgs.data);
-          } else {
-            result = await tool.execute();
-          }
-          return this.formatToolResult(result.content);
+          const result = await this.executeTool(tool, args);
+          return this.formatToolResult(result.content, result.metadata);
         } catch (error) {
           return this.handleToolError(error, tool.name);
         }
@@ -291,20 +420,8 @@ export class MondayAgentToolkit extends McpServer {
   private createMcpToolHandler(tool: Tool<any, any>) {
     return async (params: any, extra?: any): Promise<CallToolResult> => {
       try {
-        const inputSchema = tool.getInputSchema();
-
-        if (inputSchema) {
-          // inputSchema is already a Zod schema object definition, so we wrap it with z.object()
-          const parsedArgs = z.object(inputSchema).safeParse(params);
-          if (!parsedArgs.success) {
-            throw new Error(`Invalid arguments: ${parsedArgs.error.message}`);
-          }
-          const result = await tool.execute(parsedArgs.data, extra);
-          return this.formatToolResult(result.content);
-        } else {
-          const result = await tool.execute(undefined, extra);
-          return this.formatToolResult(result.content);
-        }
+        const result = await this.executeTool(tool, params, extra);
+        return this.formatToolResult(result.content, result.metadata);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         return {
@@ -329,26 +446,75 @@ export class MondayAgentToolkit extends McpServer {
     }
 
     if (options?.schemaFormat === 'json') {
-      return zodToJsonSchema(z.object(inputSchema));
+      return zodToJsonSchema(z.object(inputSchema) as any);
     }
 
     return inputSchema;
   }
 
   /**
+   * Execute a tool and attach any API complexity data captured during the call.
+   */
+  private async executeTool(tool: Tool<any, any>, args?: any, extra?: any) {
+    const inputSchema = tool.getInputSchema();
+    const tracker = this.mondayApiClient;
+
+    tracker.startComplexityTracking?.();
+
+    try {
+      const result = inputSchema
+        ? await tool.execute(this.parseToolArgs(inputSchema, args), extra)
+        : await tool.execute(undefined, extra);
+      const complexityMetadata = tracker.consumeComplexityMetadata?.();
+
+      if (!complexityMetadata) {
+        return result;
+      }
+
+      return {
+        ...result,
+        metadata: {
+          ...result.metadata,
+          ...complexityMetadata,
+        },
+      };
+    } catch (error) {
+      tracker.consumeComplexityMetadata?.();
+      throw error;
+    }
+  }
+
+  private parseToolArgs(inputSchema: z.ZodRawShape, args: any) {
+    const parsedArgs = z.object(inputSchema).safeParse(args);
+    if (!parsedArgs.success) {
+      throw new Error(`Invalid arguments: ${parsedArgs.error.message}`);
+    }
+
+    return parsedArgs.data;
+  }
+
+  /**
    * Format the tool result into the expected MCP format
    */
-  private formatToolResult(content: string | Record<string, any>): CallToolResult {
-    if(typeof content === 'string') {
+  private formatToolResult(content: string | Record<string, any>, metadata?: Record<string, unknown>): CallToolResult {
+    const result: CallToolResult =
+      typeof content === 'string'
+        ? {
+            content: [{ type: 'text', text: content }],
+          }
+        : {
+            structuredContent: content,
+            content: [{ type: 'text', text: JSON.stringify(content) }],
+          };
+
+    if (metadata && Object.keys(metadata).length > 0) {
       return {
-        content: [{ type: 'text', text: content }],
-      }
+        ...result,
+        _meta: metadata,
+      };
     }
-    
-    return {
-      structuredContent: content,
-      content: [{ type: 'text', text: JSON.stringify(content) }]
-    };
+
+    return result;
   }
 
   /**

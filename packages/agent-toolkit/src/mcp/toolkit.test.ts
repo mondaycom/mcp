@@ -1008,6 +1008,156 @@ describe('MondayAgentToolkit', () => {
       });
     });
 
+    it('should include tool metadata in MCP-formatted results', async () => {
+      const complexity = {
+        query: 12500,
+        before: 9950000,
+        after: 9937500,
+        reset_in_x_seconds: 42,
+      };
+      const mockTool = {
+        name: 'mcp-metadata-tool',
+        type: ToolType.READ,
+        annotations: { audience: [] },
+        enabledByDefault: true,
+        getDescription: jest.fn().mockReturnValue('MCP metadata tool'),
+        getInputSchema: jest.fn().mockReturnValue({ input: z.string() }),
+        execute: jest.fn().mockResolvedValue({
+          content: { message: 'Test content' },
+          metadata: { complexity },
+        }),
+      };
+
+      mockGetFilteredToolInstances.mockReturnValue([mockTool]);
+
+      const toolkit = new MondayAgentToolkit({
+        mondayApiToken: 'test-token',
+      });
+
+      const [tool] = toolkit.getToolsForMcp();
+      const result = await tool.handler({ input: 'test' });
+
+      expect(result).toEqual({
+        structuredContent: { message: 'Test content' },
+        content: [{ type: 'text', text: JSON.stringify({ message: 'Test content' }) }],
+        _meta: { complexity },
+      });
+    });
+
+    it('should expose monday API complexity metadata captured during MCP tool calls', async () => {
+      const complexity = {
+        query: 12500,
+        before: 9950000,
+        after: 9937500,
+        reset_in_x_seconds: 42,
+      };
+      const mockRequest = jest.fn().mockResolvedValue({
+        complexity,
+        boards: [{ id: '123' }],
+      });
+
+      mockApiClient.mockImplementationOnce(() => ({ request: mockRequest }) as any);
+      mockGetFilteredToolInstances.mockImplementationOnce(({ apiClient }) => [
+        {
+          name: 'api-complexity-tool',
+          type: ToolType.READ,
+          annotations: { audience: [] },
+          enabledByDefault: true,
+          getDescription: jest.fn().mockReturnValue('API complexity tool'),
+          getInputSchema: jest.fn().mockReturnValue({ boardId: z.string() }),
+          execute: jest.fn().mockImplementation(async ({ boardId }) => {
+            const response = await apiClient.request(
+              `query getBoard($boardId: [ID!]) {
+                boards(ids: $boardId) {
+                  id
+                }
+              }`,
+              { boardId },
+            );
+
+            return { content: response };
+          }),
+        },
+      ]);
+
+      const toolkit = new MondayAgentToolkit({
+        mondayApiToken: 'test-token',
+      });
+
+      const [tool] = toolkit.getToolsForMcp();
+      const result = await tool.handler({ boardId: '123' });
+
+      expect(mockRequest).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'complexity {\n      query\n      before\n      after\n      reset_in_x_seconds\n    }',
+        ),
+        { boardId: '123' },
+        undefined,
+      );
+      expect(result).toEqual({
+        structuredContent: { boards: [{ id: '123' }] },
+        content: [{ type: 'text', text: JSON.stringify({ boards: [{ id: '123' }] }) }],
+        _meta: { complexity },
+      });
+    });
+
+    it('should expose complexity metadata when tools create API clients from a token getter', async () => {
+      const complexity = {
+        query: 12500,
+        before: 9950000,
+        after: 9937500,
+        reset_in_x_seconds: 42,
+      };
+      const mockRequest = jest.fn().mockResolvedValue({
+        complexity,
+        boards: [{ id: '123' }],
+      });
+
+      mockApiClient.mockImplementation(() => ({ request: mockRequest }) as any);
+      mockGetFilteredToolInstances.mockImplementationOnce(({ apiClient }) => [
+        {
+          name: 'dynamic-token-complexity-tool',
+          type: ToolType.READ,
+          annotations: { audience: [] },
+          enabledByDefault: true,
+          getDescription: jest.fn().mockReturnValue('Dynamic token complexity tool'),
+          getInputSchema: jest.fn().mockReturnValue({ boardId: z.string() }),
+          execute: jest.fn().mockImplementation(async ({ boardId }) => {
+            const response = await (apiClient as () => ApiClient)().request(
+              `query getBoard($boardId: [ID!]) {
+                boards(ids: $boardId) {
+                  id
+                }
+              }`,
+              { boardId },
+            );
+
+            return { content: response };
+          }),
+        },
+      ]);
+
+      const toolkit = new MondayAgentToolkit({
+        mondayApiToken: () => 'dynamic-token',
+      });
+
+      const [tool] = toolkit.getToolsForMcp();
+      const result = await tool.handler({ boardId: '123' });
+
+      expect(mockRequest).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'complexity {\n      query\n      before\n      after\n      reset_in_x_seconds\n    }',
+        ),
+        { boardId: '123' },
+        undefined,
+      );
+      expect(result).toEqual({
+        structuredContent: { boards: [{ id: '123' }] },
+        content: [{ type: 'text', text: JSON.stringify({ boards: [{ id: '123' }] }) }],
+        _meta: { complexity },
+      });
+    });
+
     it('should handle errors in MCP format', async () => {
       const mockTool = {
         name: 'mcp-error-tool',
