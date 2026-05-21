@@ -1,7 +1,15 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-10-17/server.schema.json",
   "name": "com.monday/monday.com",
-  "description": "MCP server for monday.com integration.",
+  "title": "monday.com",
+  "description": "Connect AI agents to monday.com — the Work OS for managing projects, tasks, and workflows. Create and update boards, items, columns, groups, and docs; query views and dashboards; automate work across teams.",
+  "icons": [
+    {
+      "src": "https://monday.com/p/wp-content/uploads/2024/03/Logo-1-NO-1.png",
+      "mimeType": "image/png"
+    }
+  ],
+  "websiteUrl": "https://monday.com/w/mcp",
   "repository": {
     "url": "https://github.com/mondaycom/mcp",
     "source": "github"
