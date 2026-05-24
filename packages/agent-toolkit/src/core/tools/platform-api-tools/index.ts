@@ -72,6 +72,7 @@ import { CreateAgentTool } from './agents-tools/create-agent/create-agent-tool';
 import { DeleteAgentTool } from './agents-tools/delete-agent/delete-agent-tool';
 import { ListWorkflowsTool } from './workflows-tools/list-workflows/list-workflows-tool';
 import { ManageWorkflowsTool } from './workflows-tools/manage-workflows/manage-workflows-tool';
+import { CreateBulkItemsTool } from './create-bulk-items-tool/create-bulk-items-tool';
 
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteItemTool,
@@ -150,6 +151,8 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   // Workflows (subgraph still on dev API version)
   ListWorkflowsTool,
   ManageWorkflowsTool,
+  // Bulk operations
+  CreateBulkItemsTool,
 ];
 
 export * from './all-monday-api-tool';
@@ -224,5 +227,7 @@ export * from './agents-tools';
 export * from './workflows-tools';
 // Dashboard Tools
 export * from './dashboard-tools';
+// Bulk operations
+export * from './create-bulk-items-tool/create-bulk-items-tool';
 // Monday Dev Tools
 export * from '../monday-dev-tools';
