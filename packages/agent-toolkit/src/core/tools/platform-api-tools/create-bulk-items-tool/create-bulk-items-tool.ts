@@ -13,6 +13,7 @@ const onMatchSchema = z
 
 export const createBulkItemsSchema = {
   board_id: z.number().describe('The ID of the target board to create items on'),
+  group_id: z.string().optional().default('topics').describe('The ID of the group to create items in. Defaults to "topics".'),
   items: z
     .array(
       z.record(z.string(), z.string()).describe('A row object where keys are column IDs and values are strings'),
@@ -28,8 +29,7 @@ export const createBulkItemsSchema = {
 interface IngestItemsResponse {
   ingest_items: {
     job_id: string;
-    status: string;
-    s3_url: string;
+    upload_url: string;
   };
 }
 
@@ -113,9 +113,9 @@ export class CreateBulkItemsTool extends BaseMondayApiTool<typeof createBulkItem
   }
 
   protected async executeInternal(input: ToolInputType<typeof createBulkItemsSchema>): Promise<ToolOutputType<never>> {
-    const { board_id, items, on_match } = input;
+    const { board_id, group_id, items, on_match } = input;
 
-    const variables: Record<string, any> = { boardId: String(board_id) };
+    const variables: Record<string, any> = { boardId: String(board_id), groupId: group_id };
     if (on_match) {
       variables.onMatch = { match_column_id: on_match.match_column_id, behaviour: on_match.behaviour };
     }
@@ -126,10 +126,10 @@ export class CreateBulkItemsTool extends BaseMondayApiTool<typeof createBulkItem
       { versionOverride: '2026-07' },
     );
 
-    const { job_id, s3_url } = ingestRes.ingest_items;
+    const { job_id, upload_url } = ingestRes.ingest_items;
 
     const csv = buildCsv(items);
-    const uploadResponse = await fetch(s3_url, {
+    const uploadResponse = await fetch(upload_url, {
       method: 'PUT',
       headers: { 'Content-Type': 'text/csv' },
       body: csv,

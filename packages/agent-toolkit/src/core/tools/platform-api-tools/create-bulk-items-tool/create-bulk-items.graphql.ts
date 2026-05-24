@@ -1,11 +1,10 @@
 import { gql } from 'graphql-request';
 
 export const ingestItemsMutation = gql`
-  mutation IngestItems($boardId: ID!, $onMatch: OnMatchInput) {
-    ingest_items(board_id: $boardId, on_match: $onMatch) {
+  mutation IngestItems($boardId: ID!, $groupId: ID!, $onMatch: OnMatchInput) {
+    ingest_items(board_id: $boardId, group_id: $groupId, on_match: $onMatch) {
       job_id
-      status
-      s3_url
+      upload_url
     }
   }
 `;
