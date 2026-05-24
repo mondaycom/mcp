@@ -70,6 +70,7 @@ import { FetchFileContentTool } from './fetch-file-content-tool/fetch-file-conte
 import { GetAgentTool } from './agents-tools/get-agent/get-agent-tool';
 import { CreateAgentTool } from './agents-tools/create-agent/create-agent-tool';
 import { DeleteAgentTool } from './agents-tools/delete-agent/delete-agent-tool';
+import { CreateWorkflowBuilderTool } from './workflow-builder-tools/create-workflow/create-workflow-tool';
 import { ListAutomationsTool } from './workflows-tools/list-workflows/list-workflows-tool';
 import { ManageWorkflowsTool } from './workflows-tools/manage-workflows/manage-workflows-tool';
 import { CreateAutomationTool } from './workflows-tools/create-automation/create-automation-tool';
@@ -149,6 +150,8 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   CreateAgentTool,
   DeleteAgentTool,
   // Workflows (subgraph still on dev API version)
+  // Workflow Builder Tools
+  CreateWorkflowBuilderTool,
   ListAutomationsTool,
   ManageWorkflowsTool,
   // Cast: ctor signature (api, apiToken, context?) doesn't match BaseMondayApiToolConstructor.
@@ -225,6 +228,8 @@ export * from './fetch-file-content-tool/fetch-file-content-tool';
 export * from './agents-tools';
 // Workflows
 export * from './workflows-tools';
+// Workflow Builder Tools
+export * from './workflow-builder-tools';
 // Dashboard Tools
 export * from './dashboard-tools';
 // Monday Dev Tools
