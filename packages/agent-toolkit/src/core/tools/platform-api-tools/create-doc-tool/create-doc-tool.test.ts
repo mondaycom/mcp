@@ -197,7 +197,7 @@ describe('CreateDocTool', () => {
         };
         const addContentResponse = { add_content_to_doc_from_markdown: { success: true, block_ids: [] } };
 
-        mocks.getMockRequest().mockImplementation((query: string) => {
+        jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
           if (query.includes('mutation createDoc')) return Promise.resolve(createDocResponse);
           if (query.includes('mutation addContentToDocFromMarkdown')) return Promise.resolve(addContentResponse);
           return Promise.resolve({});
@@ -215,7 +215,7 @@ describe('CreateDocTool', () => {
 
         const createDocCall = mocks.getMockRequest().mock.calls.find((c) => c[0].includes('mutation createDoc'));
         expect(createDocCall).toBeDefined();
-        expect(createDocCall[1]).toMatchObject({ docOwnerIds: ['111', '222'] });
+        expect(createDocCall[1]).toEqual(expect.objectContaining({ docOwnerIds: ['111', '222'] }));
       });
 
       it('does not include docOwnerIds in variables when not provided', async () => {
@@ -224,7 +224,7 @@ describe('CreateDocTool', () => {
         };
         const addContentResponse = { add_content_to_doc_from_markdown: { success: true, block_ids: [] } };
 
-        mocks.getMockRequest().mockImplementation((query: string) => {
+        jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
           if (query.includes('mutation createDoc')) return Promise.resolve(createDocResponse);
           if (query.includes('mutation addContentToDocFromMarkdown')) return Promise.resolve(addContentResponse);
           return Promise.resolve({});
@@ -242,6 +242,20 @@ describe('CreateDocTool', () => {
         const createDocCall = mocks.getMockRequest().mock.calls.find((c) => c[0].includes('mutation createDoc'));
         expect(createDocCall).toBeDefined();
         expect(createDocCall[1]).not.toHaveProperty('docOwnerIds');
+      });
+
+      it('rejects docOwnerIds as empty array (min 1 required)', async () => {
+        const args = {
+          location: 'workspace',
+          workspace_id: 12345,
+          doc_name: 'Empty Owners Doc',
+          markdown: '# Test',
+          docOwnerIds: [],
+        };
+
+        const result = await callToolByNameRawAsync('create_doc', args);
+        expect(result.content[0].text).toContain('Invalid arguments');
+        expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
     });
 
@@ -667,7 +681,7 @@ describe('CreateDocTool', () => {
 
         const createDocCall = mocks.getMockRequest().mock.calls.find((c) => c[0].includes('mutation createDoc'));
         expect(createDocCall).toBeDefined();
-        expect(createDocCall[1]).toMatchObject({ docOwnerIds: ['555', '666'] });
+        expect(createDocCall[1]).toEqual(expect.objectContaining({ docOwnerIds: ['555', '666'] }));
       });
 
       it('does not include docOwnerIds in item doc variables when not provided', async () => {
