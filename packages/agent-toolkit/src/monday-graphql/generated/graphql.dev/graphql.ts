@@ -9146,7 +9146,7 @@ export type MutationCreate_DepartmentArgs = {
 
 /** Root mutation type for the Dependencies service */
 export type MutationCreate_DocArgs = {
-  board_owner_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  doc_owner_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   location: CreateDocInput;
 };
 
