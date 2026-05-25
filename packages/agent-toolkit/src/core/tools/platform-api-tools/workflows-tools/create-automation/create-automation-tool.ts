@@ -16,7 +16,7 @@ export const createAutomationToolSchema = {
       'Natural-language description of the workflow to create. ' +
         'Describe the trigger, conditions, and what should happen in plain English.',
     ),
-  boardId: z.string().trim().min(1).optional().describe('Target board ID'),
+  boardId: z.string().trim().min(1).describe('Target board ID'),
 };
 
 export class CreateAutomationTool extends BaseMondayApiTool<typeof createAutomationToolSchema> {
@@ -67,7 +67,7 @@ Terminology:
         },
         body: JSON.stringify({
           userPrompt: input.userPrompt,
-          ...(input.boardId ? { boardId: input.boardId } : {}),
+          boardId: input.boardId,
         }),
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       });
