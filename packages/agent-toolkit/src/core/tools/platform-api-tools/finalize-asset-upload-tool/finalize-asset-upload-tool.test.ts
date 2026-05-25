@@ -1,0 +1,103 @@
+import { createMockApiClient } from '../test-utils/mock-api-client';
+import { FinalizeAssetUploadTool } from './finalize-asset-upload-tool';
+
+const MOCK_ASSET = {
+  id: 987654,
+  filename: 'report.pdf',
+  content_type: 'application/pdf',
+  file_size: 1024,
+  url: '/protected_static/12345/resources/987654/report.pdf',
+  created_at: '2026-04-17T00:00:00Z',
+  filelink: 'https://monday.com/files/987654/report.pdf',
+};
+
+describe('FinalizeAssetUploadTool', () => {
+  let mocks: ReturnType<typeof createMockApiClient>;
+
+  beforeEach(() => {
+    mocks = createMockApiClient();
+  });
+
+  it('completes upload, attaches to column, and returns asset details', async () => {
+    mocks.mockRequest.mockResolvedValueOnce({ complete_upload: MOCK_ASSET });
+    mocks.mockRequest.mockResolvedValueOnce({ change_column_value: { id: '42' } });
+
+    const tool = new FinalizeAssetUploadTool(mocks.mockApiClient);
+    const result = await tool.execute({
+      uploadId: 'uuid-upload-123',
+      etag: '"abc123etag"',
+      boardId: '100',
+      itemId: '42',
+      columnId: 'file_mkvvv9cm',
+    });
+
+    expect(result.content).toEqual({
+      asset_id: 987654,
+      filename: 'report.pdf',
+      content_type: 'application/pdf',
+      file_size: 1024,
+      url: '/protected_static/12345/resources/987654/report.pdf',
+      filelink: 'https://monday.com/files/987654/report.pdf',
+    });
+
+    expect(mocks.mockRequest).toHaveBeenCalledTimes(2);
+
+    expect(mocks.mockRequest).toHaveBeenNthCalledWith(
+      1,
+      expect.anything(),
+      {
+        input: {
+          upload_id: 'uuid-upload-123',
+          holder: { type: 'ITEM', id: '42' },
+          board_id: '100',
+          parts: [{ part_number: 1, etag: '"abc123etag"' }],
+        },
+      },
+      expect.objectContaining({ versionOverride: 'dev' }),
+    );
+
+    expect(mocks.mockRequest).toHaveBeenNthCalledWith(
+      2,
+      expect.anything(),
+      {
+        boardId: '100',
+        itemId: '42',
+        columnId: 'file_mkvvv9cm',
+        value: JSON.stringify({
+          added_file: {
+            fileType: 'ASSET',
+            name: 'report.pdf',
+            assetId: '987654',
+          },
+        }),
+      },
+    );
+  });
+
+  it('propagates complete_upload errors', async () => {
+    mocks.mockRequest.mockRejectedValueOnce(new Error('Upload not found'));
+    const tool = new FinalizeAssetUploadTool(mocks.mockApiClient);
+
+    await expect(
+      tool.execute({ uploadId: 'bad', etag: '"etag"', boardId: '100', itemId: '42', columnId: 'file_mkvvv9cm' }),
+    ).rejects.toThrow('Upload not found');
+  });
+
+  it('propagates change_column_value errors', async () => {
+    mocks.mockRequest.mockResolvedValueOnce({ complete_upload: MOCK_ASSET });
+    mocks.mockRequest.mockRejectedValueOnce(new Error('Column not found'));
+    const tool = new FinalizeAssetUploadTool(mocks.mockApiClient);
+
+    await expect(
+      tool.execute({ uploadId: 'uuid-upload-123', etag: '"abc123etag"', boardId: '100', itemId: '42', columnId: 'bad_col' }),
+    ).rejects.toThrow('Column not found');
+  });
+
+  it('has correct metadata', () => {
+    const tool = new FinalizeAssetUploadTool(mocks.mockApiClient);
+    expect(tool.name).toBe('finalize_asset_upload');
+    expect(tool.type).toBe('write');
+    expect(tool.getDescription()).toContain('get_asset_upload_url');
+    expect(tool.getDescription()).toContain('asset_id');
+  });
+});

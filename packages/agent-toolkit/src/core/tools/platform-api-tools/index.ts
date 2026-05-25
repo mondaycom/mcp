@@ -63,11 +63,16 @@ import { GetAssetsTool } from './get-assets-tool/get-assets-tool';
 import { UserContextTool } from './user-context-tool/user-context-tool';
 import { GetNotetakerMeetingsTool } from './get-notetaker-meetings-tool/get-notetaker-meetings-tool';
 import { UndoActionTool } from './undo-action-tool/undo-action-tool';
+import { GetAssetUploadUrlTool } from './get-asset-upload-url-tool/get-asset-upload-url-tool';
+import { FinalizeAssetUploadTool } from './finalize-asset-upload-tool/finalize-asset-upload-tool';
 import { LinkBoardItemsWorkflowTool } from './link-board-items-workflow-tool/link-board-items-workflow-tool';
 import { FetchFileContentTool } from './fetch-file-content-tool/fetch-file-content-tool';
 import { GetAgentTool } from './agents-tools/get-agent/get-agent-tool';
 import { CreateAgentTool } from './agents-tools/create-agent/create-agent-tool';
 import { DeleteAgentTool } from './agents-tools/delete-agent/delete-agent-tool';
+import { ListWorkflowsTool } from './workflows-tools/list-workflows/list-workflows-tool';
+import { ManageWorkflowsTool } from './workflows-tools/manage-workflows/manage-workflows-tool';
+import { CreateAutomationTool } from './workflows-tools/create-automation/create-automation-tool';
 
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteItemTool,
@@ -135,12 +140,19 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   ManageObjectSchemaBoardConnectionTool,
   ManageObjectSchemaColumnsTool,
   SetObjectSchemaColumnActiveStateTool,
+  GetAssetUploadUrlTool,
+  FinalizeAssetUploadTool,
   LinkBoardItemsWorkflowTool,
   FetchFileContentTool,
   // monday Platform Agents (subgraph still on dev API version)
   GetAgentTool,
   CreateAgentTool,
   DeleteAgentTool,
+  // Workflows (subgraph still on dev API version)
+  ListWorkflowsTool,
+  ManageWorkflowsTool,
+  // Cast: ctor signature (api, apiToken, context?) doesn't match BaseMondayApiToolConstructor.
+  CreateAutomationTool as unknown as BaseMondayApiToolConstructor,
 ];
 
 export * from './all-monday-api-tool';
@@ -204,11 +216,15 @@ export * from './search-tool/search-tool';
 export * from './user-context-tool/user-context-tool';
 export * from './update-assets-on-item-tool/update-assets-on-item-tool';
 export * from './get-assets-tool/get-assets-tool';
+export * from './get-asset-upload-url-tool/get-asset-upload-url-tool';
+export * from './finalize-asset-upload-tool/finalize-asset-upload-tool';
 // Notetaker Tools
 export * from './get-notetaker-meetings-tool/get-notetaker-meetings-tool';
 export * from './fetch-file-content-tool/fetch-file-content-tool';
 // monday Platform Agents
 export * from './agents-tools';
+// Workflows
+export * from './workflows-tools';
 // Dashboard Tools
 export * from './dashboard-tools';
 // Monday Dev Tools
