@@ -16,7 +16,7 @@ export const createAutomationToolSchema = {
       'Natural-language description of the workflow to create. ' +
         'Describe the trigger, conditions, and what should happen in plain English.',
     ),
-  boardId: z.string().trim().min(1).describe('Target board ID'),
+  boardId: z.string().trim().min(1, 'boardId must be a non-empty string').describe('The numeric board ID as a string.'),
 };
 
 export class CreateAutomationTool extends BaseMondayApiTool<typeof createAutomationToolSchema> {
@@ -40,7 +40,7 @@ export class CreateAutomationTool extends BaseMondayApiTool<typeof createAutomat
   getDescription(): string {
     return `Creates an automation on a monday board from a natural-language description (e.g. "notify me when status changes to Done").
 
-Use when the user has clearly described what to automate — both the trigger (what kicks it off) and the action (what should happen). If basic details are missing, ask the user first instead of calling with a vague prompt.
+Use when the user has clearly described what to automate — both the trigger (what kicks it off) and the action (what should happen), and you know which board to create it on. If basic details are missing (including boardId), ask the user first instead of calling with a vague prompt.
 
 If the prompt is still ambiguous, the tool returns status: "needs_clarification" with the unresolved fields — present them to the user, gather answers, then call again.
 

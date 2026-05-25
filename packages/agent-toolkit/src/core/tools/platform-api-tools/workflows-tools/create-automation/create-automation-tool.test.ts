@@ -65,19 +65,13 @@ describe('CreateAutomationTool', () => {
     });
   });
 
-  it('omits boardId from the body when not provided', async () => {
-    fetchSpy.mockResolvedValue(
-      mockFetchResponse({
-        body: { status: 'needs_clarification', unresolvedFields: [], partialWorkflow: {} },
-      }),
-    );
-
-    await callToolByNameRawAsync('create_automation', {
+  it('rejects missing boardId before making any HTTP call', async () => {
+    const result = await callToolByNameRawAsync('create_automation', {
       userPrompt: 'Notify someone when something happens',
     });
 
-    const [, init] = fetchSpy.mock.calls[0];
-    expect(JSON.parse(init.body)).toEqual({ userPrompt: 'Notify someone when something happens' });
+    expect(result.content[0].text).toContain('boardId');
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 
   it('passes through an "activated" outcome', async () => {
@@ -116,6 +110,7 @@ describe('CreateAutomationTool', () => {
 
     const result = await callToolByNameRawAsync('create_automation', {
       userPrompt: 'Notify me',
+      boardId: '12345',
     });
     const parsed = parseToolResult(result);
 
@@ -134,6 +129,7 @@ describe('CreateAutomationTool', () => {
 
     const result = await callToolByNameRawAsync('create_automation', {
       userPrompt: 'x',
+      boardId: '12345',
     });
 
     expect(result.content[0].text).toContain('Failed to create automation');
@@ -147,6 +143,7 @@ describe('CreateAutomationTool', () => {
 
     const result = await callToolByNameRawAsync('create_automation', {
       userPrompt: 'Notify me when status changes',
+      boardId: '12345',
     });
 
     expect(result.content[0].text).toContain('Failed to create automation');
@@ -156,9 +153,20 @@ describe('CreateAutomationTool', () => {
   it('rejects an empty userPrompt before making any HTTP call', async () => {
     const result = await callToolByNameRawAsync('create_automation', {
       userPrompt: '   ',
+      boardId: '12345',
     });
 
     expect(result.content[0].text).toContain('userPrompt must be a non-empty string');
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('rejects whitespace-only boardId before making any HTTP call', async () => {
+    const result = await callToolByNameRawAsync('create_automation', {
+      userPrompt: 'Notify me when status changes to Done',
+      boardId: '   ',
+    });
+
+    expect(result.content[0].text).toContain('boardId must be a non-empty string');
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 });
