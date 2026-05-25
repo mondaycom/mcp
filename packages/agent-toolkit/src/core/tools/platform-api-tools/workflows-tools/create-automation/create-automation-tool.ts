@@ -14,7 +14,7 @@ export const createAutomationToolSchema = {
     .min(1, 'userPrompt must be a non-empty string')
     .describe(
       'Natural-language description of the workflow to create. ' +
-        'Describe the trigger (when the automation should run), conditions (if any), and what should happen in plain English.',
+        'Describe the trigger, conditions, and what should happen in plain English.',
     ),
   boardId: z.string().trim().min(1).describe('Target board ID'),
 };
