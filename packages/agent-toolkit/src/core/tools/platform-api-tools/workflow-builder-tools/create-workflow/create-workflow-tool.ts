@@ -63,6 +63,9 @@ Returns:
         versionOverride: 'dev',
       });
 
+      if (!res.create_workflow) {
+        throw new Error('create_workflow returned null');
+      }
       const { workflow_object_id, workflow_draft_id } = res.create_workflow;
 
       if (!workflow_object_id || !workflow_draft_id) {
