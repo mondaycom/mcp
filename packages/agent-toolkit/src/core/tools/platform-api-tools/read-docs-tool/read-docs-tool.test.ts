@@ -334,11 +334,33 @@ describe('ReadDocsTool', () => {
       ],
     };
 
+    const mockBlockContentResponse = {
+      docs: [
+        {
+          blocks: [
+            {
+              id: 'block_abc',
+              type: 'normal_text',
+              content: JSON.stringify({
+                deltaFormat: [
+                  { insert: 'Hello ', attributes: { comments: ['update_1'] } },
+                  { insert: 'world\n' },
+                ],
+              }),
+            },
+          ],
+        },
+      ],
+    };
+
+    const mockEmptyBlockContentResponse = { docs: [{ blocks: [] }] };
+
     it('should include comments when include_comments is true', async () => {
       mocks.mockRequest
         .mockResolvedValueOnce(mockDocsResponse)
         .mockResolvedValueOnce(mockMarkdownResponse)
-        .mockResolvedValueOnce(mockCommentsResponse);
+        .mockResolvedValueOnce(mockCommentsResponse)
+        .mockResolvedValueOnce(mockBlockContentResponse);
 
       const result = await callToolByNameAsync(TOOL_NAME, {
         type: 'ids',
@@ -355,11 +377,72 @@ describe('ReadDocsTool', () => {
       expect(result.data[0].comments[0].creator).toEqual({ id: '1', name: 'Alice' });
     });
 
+    it('should include anchor info from block deltaFormat', async () => {
+      mocks.mockRequest
+        .mockResolvedValueOnce(mockDocsResponse)
+        .mockResolvedValueOnce(mockMarkdownResponse)
+        .mockResolvedValueOnce(mockCommentsResponse)
+        .mockResolvedValueOnce(mockBlockContentResponse);
+
+      const result = await callToolByNameAsync(TOOL_NAME, {
+        type: 'ids',
+        ids: [DOC_ID],
+        include_comments: true,
+      });
+
+      const anchor = result.data[0].comments[0].anchor;
+      expect(anchor).toBeDefined();
+      expect(anchor.block_id).toBe('block_abc');
+      expect(anchor.selection_from).toBe(0);
+      expect(anchor.selection_length).toBe(6); // "Hello " is 6 chars
+    });
+
+    it('should return null anchor for doc-level comments', async () => {
+      const mockCommentsNoAnchor = {
+        boards: [
+          {
+            items_page: {
+              items: [
+                {
+                  id: 'item_1',
+                  name: 'Doc Section 1',
+                  updates: [
+                    {
+                      id: 'update_99',
+                      text_body: 'Doc-level comment',
+                      body: '<p>Doc-level comment</p>',
+                      created_at: '2026-03-25T10:00:00Z',
+                      creator: { id: '1', name: 'Alice' },
+                      replies: [],
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+      };
+      mocks.mockRequest
+        .mockResolvedValueOnce(mockDocsResponse)
+        .mockResolvedValueOnce(mockMarkdownResponse)
+        .mockResolvedValueOnce(mockCommentsNoAnchor)
+        .mockResolvedValueOnce(mockEmptyBlockContentResponse);
+
+      const result = await callToolByNameAsync(TOOL_NAME, {
+        type: 'ids',
+        ids: [DOC_ID],
+        include_comments: true,
+      });
+
+      expect(result.data[0].comments[0].anchor).toBeNull();
+    });
+
     it('should include replies in comments', async () => {
       mocks.mockRequest
         .mockResolvedValueOnce(mockDocsResponse)
         .mockResolvedValueOnce(mockMarkdownResponse)
-        .mockResolvedValueOnce(mockCommentsResponse);
+        .mockResolvedValueOnce(mockCommentsResponse)
+        .mockResolvedValueOnce(mockBlockContentResponse);
 
       const result = await callToolByNameAsync(TOOL_NAME, {
         type: 'ids',
@@ -401,7 +484,8 @@ describe('ReadDocsTool', () => {
       mocks.mockRequest
         .mockResolvedValueOnce(mockDocsResponse)
         .mockResolvedValueOnce(mockMarkdownResponse)
-        .mockResolvedValueOnce(mockCommentsResponse);
+        .mockResolvedValueOnce(mockCommentsResponse)
+        .mockResolvedValueOnce(mockBlockContentResponse);
 
       await callToolByNameAsync(TOOL_NAME, {
         type: 'ids',
@@ -420,7 +504,8 @@ describe('ReadDocsTool', () => {
       mocks.mockRequest
         .mockResolvedValueOnce(mockDocsResponse)
         .mockResolvedValueOnce(mockMarkdownResponse)
-        .mockResolvedValueOnce(mockCommentsResponse);
+        .mockResolvedValueOnce(mockCommentsResponse)
+        .mockResolvedValueOnce(mockBlockContentResponse);
 
       const result = await callToolByNameAsync(TOOL_NAME, {
         type: 'ids',

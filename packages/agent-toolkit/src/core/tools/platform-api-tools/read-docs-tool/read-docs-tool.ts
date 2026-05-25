@@ -7,8 +7,10 @@ import {
   GetDocVersionHistoryQueryVariables,
   GetDocVersionDiffQuery,
   GetDocVersionDiffQueryVariables,
+  GetDocBlockContentQuery,
 } from '../../../../monday-graphql/generated/graphql/graphql';
 import { getDocVersionHistory, getDocVersionDiff } from './read-docs-tool.graphql';
+import { getDocBlockContent } from '../update-doc-tool/update-doc-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 
@@ -54,6 +56,14 @@ type GetDocCommentsQuery = {
     } | null;
   }> | null;
 };
+
+type CommentAnchor = {
+  block_id: string;
+  selection_from: number;
+  selection_length: number;
+};
+
+type CommentAnchorMap = Map<string, CommentAnchor>;
 
 const CONTENT_MODE = 'content' as const;
 const VERSION_HISTORY_MODE = 'version_history' as const;
@@ -168,7 +178,7 @@ MODE: "content" (default) — Fetch documents with their full markdown content.
 - If type "ids" returns no results, automatically retries with object_ids.
 - Set include_blocks: true to include block IDs, types, and positions in the response — required before calling update_doc.
 - Blocks default to 25 per page. Use blocks_limit and blocks_page to paginate through long documents.
-- Set include_comments: true to fetch all comments and replies on the document. Use comments_limit to control how many comments per item (default 50).
+- Set include_comments: true to fetch all comments and replies on the document. Each comment is enriched with anchor info (block_id, selection_from, selection_length) indicating which block and text range it's attached to. Use comments_limit to control how many comments per item (default 50).
 
 MODE: "version_history" — Fetch the edit history of a single document.
 - Requires: ids with the document's object_id (use the object_id field from content mode results, NOT the id field).
@@ -363,7 +373,48 @@ MODE: "version_history" — Fetch the edit history of a single document.
     }
   }
 
-  private async fetchDocComments(objectId: string, commentsLimit: number) {
+  private buildCommentAnchorMap(
+    blocks: Array<{ id: string; type: string; content: Record<string, unknown> }>,
+  ): CommentAnchorMap {
+    const anchorMap: CommentAnchorMap = new Map();
+
+    for (const block of blocks) {
+      const deltaFormat = block.content?.deltaFormat as Record<string, unknown>[] | undefined;
+      if (!deltaFormat || !Array.isArray(deltaFormat)) continue;
+
+      let cursor = 0;
+      for (const op of deltaFormat) {
+        const insert = op.insert;
+        const opLen = typeof insert === 'string' ? insert.length : 1;
+        const attrs = op.attributes as Record<string, unknown> | undefined;
+        const comments = attrs?.comments as Array<string | number> | undefined;
+
+        if (comments && Array.isArray(comments)) {
+          for (const commentId of comments) {
+            const key = String(commentId);
+            const existing = anchorMap.get(key);
+            if (existing && existing.block_id === block.id) {
+              // Extend selection to cover contiguous annotated ops
+              const newEnd = Math.max(existing.selection_from + existing.selection_length, cursor + opLen);
+              existing.selection_length = newEnd - existing.selection_from;
+            } else if (!existing) {
+              anchorMap.set(key, {
+                block_id: block.id,
+                selection_from: cursor,
+                selection_length: opLen,
+              });
+            }
+          }
+        }
+
+        cursor += opLen;
+      }
+    }
+
+    return anchorMap;
+  }
+
+  private async fetchDocComments(objectId: string, docId: string, commentsLimit: number) {
     try {
       const variables: GetDocCommentsQueryVariables = {
         boardId: objectId,
@@ -371,10 +422,32 @@ MODE: "version_history" — Fetch the edit history of a single document.
         updatesLimit: commentsLimit,
       };
 
-      const res = await this.mondayApi.request<GetDocCommentsQuery>(getDocComments, variables);
-      const items = res.boards?.[0]?.items_page?.items;
+      const [commentsRes, blocksRes] = await Promise.all([
+        this.mondayApi.request<GetDocCommentsQuery>(getDocComments, variables),
+        this.mondayApi.request<GetDocBlockContentQuery>(getDocBlockContent, { docId: [docId] }),
+      ]);
 
+      const items = commentsRes.boards?.[0]?.items_page?.items;
       if (!items) return [];
+
+      // Build anchor map from block content
+      const rawBlocks = (blocksRes.docs?.[0]?.blocks ?? []).filter(
+        (b): b is NonNullable<typeof b> => b != null,
+      );
+      const parsedBlocks = rawBlocks.map((block) => {
+        let content: Record<string, unknown>;
+        if (typeof block.content === 'string') {
+          try {
+            content = JSON.parse(block.content);
+          } catch {
+            content = {};
+          }
+        } else {
+          content = (block.content as Record<string, unknown>) ?? {};
+        }
+        return { id: block.id ?? '', type: block.type ?? '', content };
+      });
+      const anchorMap = this.buildCommentAnchorMap(parsedBlocks);
 
       const comments: Array<{
         id: string;
@@ -384,6 +457,7 @@ MODE: "version_history" — Fetch the edit history of a single document.
         creator: { id: string; name: string } | null;
         item_id: string;
         item_name: string;
+        anchor: CommentAnchor | null;
         replies: Array<{
           id: string;
           text_body?: string | null;
@@ -405,6 +479,7 @@ MODE: "version_history" — Fetch the edit history of a single document.
             creator: update.creator ? { id: update.creator.id, name: update.creator.name } : null,
             item_id: item.id,
             item_name: item.name,
+            anchor: anchorMap.get(update.id) ?? null,
             replies: (update.replies ?? []).map((reply) => ({
               id: reply.id,
               text_body: reply.text_body,
@@ -466,7 +541,7 @@ MODE: "version_history" — Fetch the edit history of a single document.
 
           let comments: Awaited<ReturnType<ReadDocsTool['fetchDocComments']>> | undefined;
           if (includeComments && doc.object_id) {
-            comments = await this.fetchDocComments(doc.object_id, commentsLimit);
+            comments = await this.fetchDocComments(doc.object_id, doc.id, commentsLimit);
           }
 
           return {
