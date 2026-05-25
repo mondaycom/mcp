@@ -43,8 +43,8 @@ export class CreateAutomationTool extends BaseMondayApiTool<typeof createAutomat
 Use when the user has clearly described what to automate — both the trigger (what kicks it off) and the action (what should happen). If basic details are missing, ask the user first instead of calling with a vague prompt.
 
 If the prompt is still ambiguous, the tool returns status: "needs_clarification" with the unresolved fields — present them to the user, gather answers, then call again.
+
 Terminology:
-    t
     - Trigger: When the automation should run (e.g. "when a new item is created").
     - Conditions: additional conditions that must be met for the automation to run.
     - Actions: what the automation should do when it runs (can have multiple actions).
@@ -84,4 +84,3 @@ Terminology:
     }
   }
 }
-
