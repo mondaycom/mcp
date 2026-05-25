@@ -1,5 +1,10 @@
 import { formatBoardInfoAsJson, BoardInfoData } from './helpers';
-import { BoardViewAccessLevel, State, BoardKind, WorkspaceKind } from '../../../../monday-graphql/generated/graphql/graphql';
+import {
+  BoardViewAccessLevel,
+  State,
+  BoardKind,
+  WorkspaceKind,
+} from '../../../../monday-graphql/generated/graphql/graphql';
 import { NonDeprecatedColumnType } from 'src/utils/types';
 
 describe('formatBoardInfoAsJson - board structure', () => {
@@ -156,6 +161,51 @@ describe('formatBoardInfoAsJson - board structure', () => {
     expect(result.board.subItemColumns).toHaveLength(1);
     expect(result.board.subItemColumns?.[0]?.id).toBe('sub_col_1');
   });
+
+  it('should omit verbose column fields in compact mode', () => {
+    const mockBoard = {
+      id: '123456789',
+      name: 'Main Board',
+      columns: [
+        {
+          id: 'main_col_1',
+          title: 'Main Task Name',
+          description: 'The name of the main task',
+          type: NonDeprecatedColumnType.Text,
+          settings: { width: 200 },
+          revision: 'abc',
+        },
+      ],
+    } as any;
+
+    const mockSubItemBoard = {
+      columns: [
+        {
+          id: 'sub_col_1',
+          title: 'Sub Task Name',
+          description: 'The name of the sub task',
+          type: NonDeprecatedColumnType.Text,
+          settings: { width: 150 },
+          revision: 'def',
+        },
+      ],
+    } as any;
+
+    const result = formatBoardInfoAsJson(mockBoard, mockSubItemBoard, { compact: true }) as any;
+
+    expect(result.board.columns[0]).toEqual({
+      id: 'main_col_1',
+      title: 'Main Task Name',
+      description: 'The name of the main task',
+      type: NonDeprecatedColumnType.Text,
+    });
+    expect(result.board.subItemColumns[0]).toEqual({
+      id: 'sub_col_1',
+      title: 'Sub Task Name',
+      description: 'The name of the sub task',
+      type: NonDeprecatedColumnType.Text,
+    });
+  });
 });
 
 describe('formatBoardInfoAsJson - views', () => {
@@ -194,7 +244,12 @@ describe('formatBoardInfoAsJson - views', () => {
           settings: {},
           filter: {
             operator: 'AND',
-            groups: [{ operator: 'AND', rules: [{ column_id: 'person', compare_value: ['assigned_to_me'], operator: 'ANY_OF' }] }],
+            groups: [
+              {
+                operator: 'AND',
+                rules: [{ column_id: 'person', compare_value: ['assigned_to_me'], operator: 'ANY_OF' }],
+              },
+            ],
           },
           sort: [],
           access_level: BoardViewAccessLevel.Edit,
@@ -232,7 +287,9 @@ describe('formatBoardInfoAsJson - views', () => {
   it('should include the structured filter object from the view', () => {
     const filter = {
       operator: 'AND',
-      groups: [{ operator: 'AND', rules: [{ column_id: 'person', compare_value: ['assigned_to_me'], operator: 'ANY_OF' }] }],
+      groups: [
+        { operator: 'AND', rules: [{ column_id: 'person', compare_value: ['assigned_to_me'], operator: 'ANY_OF' }] },
+      ],
     };
     const board: BoardInfoData = {
       ...baseBoard,
@@ -285,13 +342,63 @@ describe('formatBoardInfoAsJson - views', () => {
     const board: BoardInfoData = {
       ...baseBoard,
       views: [
-        { id: 'view_1', name: 'View A', type: 'TableBoardView', settings: {}, filter: null, sort: [], access_level: BoardViewAccessLevel.Edit },
-        { id: 'view_2', name: 'View B', type: 'TableBoardView', settings: {}, filter: null, sort: [], access_level: BoardViewAccessLevel.Edit },
+        {
+          id: 'view_1',
+          name: 'View A',
+          type: 'TableBoardView',
+          settings: {},
+          filter: null,
+          sort: [],
+          access_level: BoardViewAccessLevel.Edit,
+        },
+        {
+          id: 'view_2',
+          name: 'View B',
+          type: 'TableBoardView',
+          settings: {},
+          filter: null,
+          sort: [],
+          access_level: BoardViewAccessLevel.Edit,
+        },
       ],
     } as unknown as BoardInfoData;
 
     const result = formatBoardInfoAsJson(board, null) as any;
 
     expect(result.board.views).toHaveLength(2);
+  });
+
+  it('should omit verbose view fields in compact mode', () => {
+    const board: BoardInfoData = {
+      ...baseBoard,
+      views: [
+        {
+          id: 'view_1',
+          name: 'Assigned to Me',
+          type: 'TableBoardView',
+          settings: { visibleColumns: ['name'] },
+          filter: {
+            operator: 'AND',
+            groups: [
+              {
+                operator: 'AND',
+                rules: [{ column_id: 'person', compare_value: ['assigned_to_me'], operator: 'ANY_OF' }],
+              },
+            ],
+          },
+          sort: [{ column_id: 'date', direction: 'asc' }],
+          access_level: BoardViewAccessLevel.Edit,
+        },
+      ],
+    } as unknown as BoardInfoData;
+
+    const result = formatBoardInfoAsJson(board, null, { compact: true }) as any;
+
+    expect(result.board.views[0]).toEqual({
+      id: 'view_1',
+      name: 'Assigned to Me',
+      type: 'TableBoardView',
+      access_level: BoardViewAccessLevel.Edit,
+    });
   });
 });
