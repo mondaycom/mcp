@@ -7,7 +7,7 @@ import { rethrowWithContext } from '../../../../../utils';
 const LITE_BUILDER_AGENT_URL = 'https://api.monday.com/platform-ai-gateway/agents/lite-builder';
 const REQUEST_TIMEOUT_MS = 180_000;
 
-export const createWorkflowWithAiToolSchema = {
+export const createAutomationToolSchema = {
   userPrompt: z
     .string()
     .trim()
@@ -33,11 +33,11 @@ interface LiteBuilderErrorEnvelope {
   reason?: unknown;
 }
 
-export class CreateWorkflowWithAiTool extends BaseMondayApiTool<typeof createWorkflowWithAiToolSchema> {
-  name = 'create_workflow_with_ai';
+export class CreateAutomationTool extends BaseMondayApiTool<typeof createAutomationToolSchema> {
+  name = 'create_automation';
   type = ToolType.WRITE;
   annotations = createMondayApiAnnotations({
-    title: 'Create Workflow with AI',
+    title: 'Create Automation',
     readOnlyHint: false,
     destructiveHint: false,
     idempotentHint: false,
@@ -48,7 +48,7 @@ export class CreateWorkflowWithAiTool extends BaseMondayApiTool<typeof createWor
   }
 
   getDescription(): string {
-    return `Create a monday.com workflow (automation) from a natural-language description, using the lite-builder AI agent.
+    return `Create a automation from a natural-language description, using the lite-builder AI agent.
 
 The agent generates the full workflow definition from the user's prompt and either:
 - activates it live on the target board (status: "activated", returns workflowId), or
@@ -69,11 +69,11 @@ Terminology: "workflows" and "automations" are the same thing.`;
   }
 
   getInputSchema() {
-    return createWorkflowWithAiToolSchema;
+    return createAutomationToolSchema;
   }
 
   protected async executeInternal(
-    input: ToolInputType<typeof createWorkflowWithAiToolSchema>,
+    input: ToolInputType<typeof createAutomationToolSchema>,
   ): Promise<ToolOutputType<never>> {
     try {
       const response = await fetch(LITE_BUILDER_AGENT_URL, {
@@ -97,7 +97,7 @@ Terminology: "workflows" and "automations" are the same thing.`;
       const body = (await response.json()) as Record<string, unknown>;
       return { content: body };
     } catch (error) {
-      rethrowWithContext(error, 'create workflow with AI');
+      rethrowWithContext(error, 'create automation');
     }
   }
 }

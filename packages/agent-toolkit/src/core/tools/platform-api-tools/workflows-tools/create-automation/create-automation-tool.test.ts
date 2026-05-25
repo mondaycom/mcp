@@ -25,7 +25,7 @@ function mockFetchResponse({
   } as unknown as Response;
 }
 
-describe('CreateWorkflowWithAiTool', () => {
+describe('CreateAutomationTool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
   let fetchSpy: jest.SpyInstance;
 
@@ -46,7 +46,7 @@ describe('CreateWorkflowWithAiTool', () => {
       }),
     );
 
-    await callToolByNameRawAsync('create_workflow_with_ai', {
+    await callToolByNameRawAsync('create_automation', {
       userPrompt: 'Notify me when status changes to Done on board 12345',
       boardId: '12345',
     });
@@ -72,7 +72,7 @@ describe('CreateWorkflowWithAiTool', () => {
       }),
     );
 
-    await callToolByNameRawAsync('create_workflow_with_ai', {
+    await callToolByNameRawAsync('create_automation', {
       userPrompt: 'Notify someone when something happens',
     });
 
@@ -92,7 +92,7 @@ describe('CreateWorkflowWithAiTool', () => {
       }),
     );
 
-    const result = await callToolByNameRawAsync('create_workflow_with_ai', {
+    const result = await callToolByNameRawAsync('create_automation', {
       userPrompt: 'Create a notify workflow',
       boardId: '12345',
     });
@@ -114,7 +114,7 @@ describe('CreateWorkflowWithAiTool', () => {
       }),
     );
 
-    const result = await callToolByNameRawAsync('create_workflow_with_ai', {
+    const result = await callToolByNameRawAsync('create_automation', {
       userPrompt: 'Notify me',
     });
     const parsed = parseToolResult(result);
@@ -132,11 +132,11 @@ describe('CreateWorkflowWithAiTool', () => {
       }),
     );
 
-    const result = await callToolByNameRawAsync('create_workflow_with_ai', {
+    const result = await callToolByNameRawAsync('create_automation', {
       userPrompt: 'x',
     });
 
-    expect(result.content[0].text).toContain('Failed to create workflow with AI');
+    expect(result.content[0].text).toContain('Failed to create automation');
     expect(result.content[0].text).toContain('HTTP 400');
     expect(result.content[0].text).toContain('PROMPT_INVALID');
     expect(result.content[0].text).toContain('Bad prompt');
@@ -145,16 +145,16 @@ describe('CreateWorkflowWithAiTool', () => {
   it('wraps network/timeout errors with operation context', async () => {
     fetchSpy.mockRejectedValue(new Error('network failure'));
 
-    const result = await callToolByNameRawAsync('create_workflow_with_ai', {
+    const result = await callToolByNameRawAsync('create_automation', {
       userPrompt: 'Notify me when status changes',
     });
 
-    expect(result.content[0].text).toContain('Failed to create workflow with AI');
+    expect(result.content[0].text).toContain('Failed to create automation');
     expect(result.content[0].text).toContain('network failure');
   });
 
   it('rejects an empty userPrompt before making any HTTP call', async () => {
-    const result = await callToolByNameRawAsync('create_workflow_with_ai', {
+    const result = await callToolByNameRawAsync('create_automation', {
       userPrompt: '   ',
     });
 

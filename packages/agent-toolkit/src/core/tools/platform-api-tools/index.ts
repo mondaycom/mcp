@@ -72,7 +72,7 @@ import { CreateAgentTool } from './agents-tools/create-agent/create-agent-tool';
 import { DeleteAgentTool } from './agents-tools/delete-agent/delete-agent-tool';
 import { ListWorkflowsTool } from './workflows-tools/list-workflows/list-workflows-tool';
 import { ManageWorkflowsTool } from './workflows-tools/manage-workflows/manage-workflows-tool';
-import { CreateWorkflowWithAiTool } from './workflows-tools/create-workflow/create-workflow-tool';
+import { CreateAutomationTool } from './workflows-tools/create-automation/create-automation-tool';
 
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteItemTool,
@@ -154,7 +154,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   // Cast: this tool's ctor takes (api, apiToken, context?), which is what the factory already passes
   // but doesn't fit the 1-arg BaseMondayApiToolConstructor type. Broadening the type would break
   // existing tools whose ctor is (api, context?). See spec for details.
-  CreateWorkflowWithAiTool as unknown as BaseMondayApiToolConstructor,
+  CreateAutomationTool as unknown as BaseMondayApiToolConstructor,
 ];
 
 export * from './all-monday-api-tool';
