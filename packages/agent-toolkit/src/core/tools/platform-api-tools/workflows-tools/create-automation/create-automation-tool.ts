@@ -43,29 +43,20 @@ export class CreateAutomationTool extends BaseMondayApiTool<typeof createAutomat
     idempotentHint: false,
   });
 
-  constructor(api: ApiClient, private readonly apiToken: string, context?: MondayApiToolContext) {
+  constructor(
+    api: ApiClient,
+    private readonly apiToken: string,
+    context?: MondayApiToolContext,
+  ) {
     super(api, context);
   }
 
   getDescription(): string {
-    return `Create a automation from a natural-language description, using the lite-builder AI agent.
+    return `Creates an automation on a monday board from a natural-language description (e.g. "notify me when status changes to Done").
 
-The agent generates the full workflow definition from the user's prompt and either:
-- activates it live on the target board (status: "activated", returns workflowId), or
-- responds with status: "needs_clarification" and a list of unresolved fields when the prompt is ambiguous — present these to the user, gather answers, then call again with a more specific prompt.
+Use when the user has clearly described what to automate — both the trigger (what kicks it off) and the action (what should happen). If basic details are missing, ask the user first instead of calling with a vague prompt.
 
-When to use:
-- The user describes a workflow/automation to create in plain English (e.g. "notify me when status changes to Done").
-
-When NOT to use:
-- The user wants to activate, deactivate, or delete an existing workflow — use manage_workflows.
-- The user asks to list existing workflows — use list_workflows.
-
-Tips:
-- Pass boardId when known to avoid the agent having to resolve it from the prompt.
-- Generation can take up to ~3 minutes for complex prompts.
-
-Terminology: "workflows" and "automations" are the same thing.`;
+If the prompt is still ambiguous, the tool returns status: "needs_clarification" with the unresolved fields — present them to the user, gather answers, then call again.`;
   }
 
   getInputSchema() {
