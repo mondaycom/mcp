@@ -20,8 +20,6 @@ projects:
     schema: 'src/monday-graphql/schema.dev.graphql'
     documents:
       - 'src/**/*.graphql.dev.ts'
-      # Excluded until create_workflow mutation schema lands in master via fetch:generate
-      - '!src/**/workflow-builder-tools/**/*.graphql.dev.ts'
     ignoreNoDocuments: true
     extensions:
       codegen:
