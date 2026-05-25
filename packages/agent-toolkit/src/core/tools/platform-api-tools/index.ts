@@ -151,9 +151,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   // Workflows (subgraph still on dev API version)
   ListWorkflowsTool,
   ManageWorkflowsTool,
-  // Cast: this tool's ctor takes (api, apiToken, context?), which is what the factory already passes
-  // but doesn't fit the 1-arg BaseMondayApiToolConstructor type. Broadening the type would break
-  // existing tools whose ctor is (api, context?). See spec for details.
+  // Cast: ctor signature (api, apiToken, context?) doesn't match BaseMondayApiToolConstructor.
   CreateAutomationTool as unknown as BaseMondayApiToolConstructor,
 ];
 
