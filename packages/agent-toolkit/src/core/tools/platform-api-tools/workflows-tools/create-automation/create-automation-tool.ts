@@ -14,17 +14,9 @@ export const createAutomationToolSchema = {
     .min(1, 'userPrompt must be a non-empty string')
     .describe(
       'Natural-language description of the workflow to create. ' +
-        'Describe the trigger (e.g. "when a new item is created"), conditions, and actions in plain English.',
+        'Describe the trigger (when the automation should run), conditions (if any), and what should happen in plain English.',
     ),
-  boardId: z
-    .string()
-    .trim()
-    .min(1)
-    .optional()
-    .describe(
-      'Optional target board ID (numeric, as a string). ' +
-        'When omitted, the agent attempts to resolve the board from the prompt.',
-    ),
+  boardId: z.string().trim().min(1).describe('Target board ID'),
 };
 
 interface LiteBuilderErrorEnvelope {
@@ -56,7 +48,13 @@ export class CreateAutomationTool extends BaseMondayApiTool<typeof createAutomat
 
 Use when the user has clearly described what to automate — both the trigger (what kicks it off) and the action (what should happen). If basic details are missing, ask the user first instead of calling with a vague prompt.
 
-If the prompt is still ambiguous, the tool returns status: "needs_clarification" with the unresolved fields — present them to the user, gather answers, then call again.`;
+If the prompt is still ambiguous, the tool returns status: "needs_clarification" with the unresolved fields — present them to the user, gather answers, then call again.
+Terminology:
+    t
+    - Trigger: When the automation should run (e.g. "when a new item is created").
+    - Conditions: additional conditions that must be met for the automation to run.
+    - Actions: what the automation should do when it runs (can have multiple actions).
+`;
   }
 
   getInputSchema() {
