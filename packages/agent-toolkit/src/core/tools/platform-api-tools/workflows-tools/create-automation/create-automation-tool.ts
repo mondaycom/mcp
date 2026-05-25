@@ -16,14 +16,8 @@ export const createAutomationToolSchema = {
       'Natural-language description of the workflow to create. ' +
         'Describe the trigger, conditions, and what should happen in plain English.',
     ),
-  boardId: z.string().trim().min(1).describe('Target board ID'),
+  boardId: z.string().trim().min(1).optional().describe('Target board ID'),
 };
-
-interface LiteBuilderErrorEnvelope {
-  error?: string;
-  code?: string;
-  reason?: unknown;
-}
 
 export class CreateAutomationTool extends BaseMondayApiTool<typeof createAutomationToolSchema> {
   name = 'create_automation';
@@ -79,8 +73,8 @@ Terminology:
       });
 
       if (!response.ok) {
-        const errorBody = await readErrorBody(response);
-        throw new Error(formatErrorMessage(response.status, errorBody));
+        const body = await response.text().catch(() => '');
+        throw new Error(`lite-builder responded with HTTP ${response.status}${body ? `: ${body}` : ''}`);
       }
 
       const body = (await response.json()) as Record<string, unknown>;
@@ -91,29 +85,3 @@ Terminology:
   }
 }
 
-async function readErrorBody(response: Response): Promise<LiteBuilderErrorEnvelope | string> {
-  const contentType = response.headers.get('content-type') ?? '';
-  if (contentType.includes('application/json')) {
-    try {
-      return (await response.json()) as LiteBuilderErrorEnvelope;
-    } catch {
-      return '';
-    }
-  }
-  try {
-    return await response.text();
-  } catch {
-    return '';
-  }
-}
-
-function formatErrorMessage(status: number, body: LiteBuilderErrorEnvelope | string): string {
-  if (typeof body === 'string') {
-    return `lite-builder responded with HTTP ${status}${body ? `: ${body}` : ''}`;
-  }
-  const parts: string[] = [`HTTP ${status}`];
-  if (body.error) parts.push(body.error);
-  if (body.code) parts.push(`code=${body.code}`);
-  if (body.reason !== undefined) parts.push(`reason=${JSON.stringify(body.reason)}`);
-  return `lite-builder responded with ${parts.join(' ')}`;
-}
