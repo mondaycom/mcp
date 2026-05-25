@@ -3,12 +3,37 @@ import { ToolInputType, ToolOutputType, ToolType } from '../../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../../base-monday-api-tool';
 import { rethrowWithContext } from '../../../../../utils';
 import {
-  getLiveWorkflowsQuery,
-  GetLiveWorkflowsQuery,
-  GetLiveWorkflowsQueryVariables,
-} from './board-automations.graphql.dev';
+  BoardAutomation,
+  BoardAutomationsQuery,
+  BoardAutomationsQueryVariables,
+  getBoardAutomationsQuery,
+} from './board-automations-query';
 
 const DEFAULT_LIMIT = 100;
+
+type WorkflowOutput = Omit<BoardAutomation, 'active' | 'user_id'> & {
+  readonly user_id: BoardAutomation['user_id'];
+  readonly is_active: boolean;
+};
+
+function normalizeUserId(userId: BoardAutomation['user_id']): BoardAutomation['user_id'] {
+  if (typeof userId !== 'string') {
+    return userId;
+  }
+
+  const parsedUserId = Number(userId);
+  return Number.isNaN(parsedUserId) ? userId : parsedUserId;
+}
+
+function mapBoardAutomationToWorkflow(automation: BoardAutomation): WorkflowOutput {
+  const { active, user_id: userId, ...workflow } = automation;
+
+  return {
+    ...workflow,
+    user_id: normalizeUserId(userId),
+    is_active: active ?? false,
+  };
+}
 
 export const listWorkflowsToolSchema = {
   boardId: z.string().trim().min(1, 'boardId must be a non-empty string').describe('The numeric board ID as a string.'),
@@ -45,22 +70,18 @@ Terminology: "workflows" and "automations" are the same thing.`;
     input: ToolInputType<typeof listWorkflowsToolSchema>,
   ): Promise<ToolOutputType<never>> {
     try {
-      const variables: GetLiveWorkflowsQueryVariables = {
-        hostInstanceId: input.boardId,
-        hostType: 'BOARD',
-        pagination: {
-          limit: input.limit ?? DEFAULT_LIMIT,
-          ...(input.cursor ? { lastId: parseInt(input.cursor, 10) } : {}),
-        },
+      const variables: BoardAutomationsQueryVariables = {
+        boardIds: [input.boardId],
+        limit: input.limit ?? DEFAULT_LIMIT,
+        ...(input.cursor ? { cursor: input.cursor } : {}),
       };
 
-      const res = await this.mondayApi.request<GetLiveWorkflowsQuery>(getLiveWorkflowsQuery, variables, {
+      const res = await this.mondayApi.request<BoardAutomationsQuery>(getBoardAutomationsQuery, variables, {
         versionOverride: '2026-10',
       });
 
-      const workflows = res.get_live_workflows ?? [];
-      const lastWorkflow = workflows[workflows.length - 1];
-      const nextCursor = workflows.length === (input.limit ?? DEFAULT_LIMIT) && lastWorkflow ? lastWorkflow.id : null;
+      const workflows = (res.board_automations?.items ?? []).map(mapBoardAutomationToWorkflow);
+      const nextCursor = res.board_automations?.cursor ?? null;
 
       return {
         content: {
