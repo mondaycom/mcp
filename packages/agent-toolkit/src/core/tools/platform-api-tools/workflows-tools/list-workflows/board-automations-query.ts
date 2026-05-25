@@ -1,5 +1,7 @@
 import { gql } from 'graphql-request';
 
+// board_automations is available at runtime for version 2026-10, but the
+// schema snapshot used by codegen does not expose it yet.
 export const getBoardAutomationsQuery = gql`
   query getBoardAutomations($boardIds: [ID!], $limit: Int, $cursor: String) {
     board_automations(board_ids: $boardIds, limit: $limit, cursor: $cursor) {
