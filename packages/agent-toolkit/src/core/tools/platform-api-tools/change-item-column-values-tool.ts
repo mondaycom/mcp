@@ -44,6 +44,7 @@ export class ChangeItemColumnValuesTool extends BaseMondayApiTool<ChangeItemColu
   getDescription(): string {
     return (
       'Change the column values of an item in a monday.com board. ' +
+      'For updating multiple items at once, use update_bulk_items instead. ' +
       '[REQUIRED PRECONDITION]: For board-relation linking tasks, call link_board_items_workflow before using this tool.'
     );
   }
