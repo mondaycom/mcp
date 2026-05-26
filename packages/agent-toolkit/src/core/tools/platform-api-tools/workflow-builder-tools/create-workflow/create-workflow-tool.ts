@@ -38,7 +38,7 @@ export class CreateWorkflowBuilderTool extends BaseMondayApiTool<typeof createWo
   getDescription(): string {
     return `Creates a new empty Workflow Builder workflow in a monday.com workspace.
 
-Use this when the user wants to build a new standalone workflow from scratch. Workflow Builder workflows are cross-board, workspace-level automations — distinct from board automations (use create_automation for those). You only need a workspaceId to get started; all other fields are optional.
+Use this when the user wants to build a new standalone workflow from scratch. Workflow Builder workflows are cross-board, workspace-level automations — distinct from board automations (use create_automation for those). You only need a workspaceId to get started — all other fields are optional.
 
 Returns:
 - workflowObjectId: stable entity ID for the workflow
@@ -47,7 +47,7 @@ Returns:
 Terminology:
 - Workflow Builder vs. board automations: Workflow Builder workflows are standalone objects scoped to a workspace. Board automations (create_automation) are per-board trigger/action rules. They are different products.
 - Draft: the editable, inactive version of a workflow. Changes are made on the draft until it is activated.
-- Privacy: PUBLIC — visible to all workspace members (default); PRIVATE — restricted access; SHAREABLE — accessible to guests outside the account.
+- Privacy: PUBLIC — visible to all workspace members (default). PRIVATE — restricted access. SHAREABLE — accessible to guests outside the account.
 `;
   }
 
