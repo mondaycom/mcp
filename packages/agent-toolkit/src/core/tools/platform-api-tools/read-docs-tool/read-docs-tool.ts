@@ -398,6 +398,7 @@ MODE: "version_history" — Fetch the edit history of a single document.
               const newEnd = Math.max(existing.selection_from + existing.selection_length, cursor + opLen);
               existing.selection_length = newEnd - existing.selection_from;
             } else if (!existing) {
+              // A comment can only anchor to one block; ignore duplicates from malformed data
               anchorMap.set(key, {
                 block_id: block.id,
                 selection_from: cursor,
@@ -424,30 +425,33 @@ MODE: "version_history" — Fetch the edit history of a single document.
 
       const [commentsRes, blocksRes] = await Promise.all([
         this.mondayApi.request<GetDocCommentsQuery>(getDocComments, variables),
-        this.mondayApi.request<GetDocBlockContentQuery>(getDocBlockContent, { docId: [docId] }),
+        this.mondayApi.request<GetDocBlockContentQuery>(getDocBlockContent, { docId: [docId] }).catch(() => null),
       ]);
 
       const items = commentsRes.boards?.[0]?.items_page?.items;
       if (!items) return [];
 
-      // Build anchor map from block content
-      const rawBlocks = (blocksRes.docs?.[0]?.blocks ?? []).filter(
-        (b): b is NonNullable<typeof b> => b != null,
-      );
-      const parsedBlocks = rawBlocks.map((block) => {
-        let content: Record<string, unknown>;
-        if (typeof block.content === 'string') {
-          try {
-            content = JSON.parse(block.content);
-          } catch {
-            content = {};
+      // Build anchor map from block content (graceful degradation: if blocks fetch fails, comments still work without anchors)
+      let anchorMap: CommentAnchorMap = new Map();
+      if (blocksRes) {
+        const rawBlocks = (blocksRes.docs?.[0]?.blocks ?? []).filter(
+          (b): b is NonNullable<typeof b> => b != null,
+        );
+        const parsedBlocks = rawBlocks.map((block) => {
+          let content: Record<string, unknown>;
+          if (typeof block.content === 'string') {
+            try {
+              content = JSON.parse(block.content);
+            } catch {
+              content = {};
+            }
+          } else {
+            content = (block.content as Record<string, unknown>) ?? {};
           }
-        } else {
-          content = (block.content as Record<string, unknown>) ?? {};
-        }
-        return { id: block.id ?? '', type: block.type ?? '', content };
-      });
-      const anchorMap = this.buildCommentAnchorMap(parsedBlocks);
+          return { id: block.id ?? '', type: block.type ?? '', content };
+        });
+        anchorMap = this.buildCommentAnchorMap(parsedBlocks);
+      }
 
       const comments: Array<{
         id: string;
