@@ -11,7 +11,7 @@ export const updateWorkflowBuilderToolSchema = {
   workflowObjectId: z
     .number()
     .describe(
-      'The stable workflow entity ID returned by create_workflow_builder. Identifies the workflow across all its drafts and published versions.',
+      'The workflow object ID returned by create_workflow_builder. Identifies the workflow across all its drafts and published versions.',
     ),
   workflowDraftId: z
     .number()
