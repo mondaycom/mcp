@@ -3,18 +3,29 @@ import { z } from 'zod';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../../tool';
 import { BaseMondayApiTool, MondayApiToolContext, createMondayApiAnnotations } from '../../base-monday-api-tool';
 import { rethrowWithContext } from '../../../../../utils';
+import { WORKFLOW_BUILDER_AGENT_URL } from '../constants';
 
-const WORKFLOW_BUILDER_AGENT_URL = 'https://api.monday.com/platform-ai-gateway/agents/workflow-builder';
 const REQUEST_TIMEOUT_MS = 180_000;
 
 export const updateWorkflowBuilderToolSchema = {
-  workflowObjectId: z.number().describe('The stable workflow entity ID (workflow_object_id returned by create_workflow_builder).'),
-  workflowDraftId: z.number().describe('The draft workflow ID to update (workflow_draft_id returned by create_workflow_builder).'),
+  workflowObjectId: z
+    .number()
+    .describe(
+      'The stable workflow entity ID returned by create_workflow_builder. Identifies the workflow across all its drafts and published versions.',
+    ),
+  workflowDraftId: z
+    .number()
+    .describe(
+      'The draft version ID returned by create_workflow_builder. The agent applies changes to this specific draft. Both workflowObjectId and workflowDraftId are required — together they identify the exact draft to update.',
+    ),
   prompt: z
     .string()
     .trim()
     .min(1, 'prompt must be a non-empty string')
-    .describe('Natural-language description of the changes to make to the workflow (e.g. "add a step that sends an email when an item is created").'),
+    .max(2000, 'prompt must not exceed 2000 characters')
+    .describe(
+      'Natural-language description of the changes to make. Describe what steps to add, remove, or modify in plain English (e.g. "add a step that sends an email when an item is created"). The agent interprets this and applies the right structural changes. Maximum 2000 characters.',
+    ),
 };
 
 export class UpdateWorkflowBuilderTool extends BaseMondayApiTool<typeof updateWorkflowBuilderToolSchema> {
@@ -36,14 +47,22 @@ export class UpdateWorkflowBuilderTool extends BaseMondayApiTool<typeof updateWo
   }
 
   getDescription(): string {
-    return `Updates an existing Workflow Builder workflow from a natural-language description.
+    return `Updates an existing Workflow Builder workflow draft using an AI agent.
 
-Use when the user wants to modify a workflow — add steps, remove steps, change triggers or conditions, etc. Requires the workflowObjectId and workflowDraftId from a previous create_workflow_builder call (or from list_workflows).
+The agent interprets the prompt and applies structural changes to the workflow — creating, updating, or deleting steps. Pass clear, descriptive instructions and the agent will decide which operations to perform, then return a summary of what it did.
+
+Use this after create_workflow_builder to build out the workflow step by step. You can call it multiple times on the same draft to iteratively refine the workflow.
+
+Parameters:
+- workflowObjectId and workflowDraftId: both returned by create_workflow_builder — they identify which draft to update.
+- prompt: describe what you want to change in plain English. Maximum 2000 characters.
 
 Returns:
-- workflowObjectId: the workflow entity ID
-- workflowDraftId: the updated draft ID
+- workflowObjectId: the workflow entity ID (unchanged)
+- workflowDraftId: the draft version ID (unchanged)
 - result: agent response describing the changes made
+
+Note: the workflow runs only after it is published to live version.
 `;
   }
 
