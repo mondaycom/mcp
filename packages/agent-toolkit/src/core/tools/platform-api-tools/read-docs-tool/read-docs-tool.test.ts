@@ -521,7 +521,8 @@ describe('ReadDocsTool', () => {
       mocks.mockRequest
         .mockResolvedValueOnce(mockDocsResponse)
         .mockResolvedValueOnce(mockMarkdownResponse)
-        .mockRejectedValueOnce(new Error('Comments API error'));
+        .mockRejectedValueOnce(new Error('Comments API error'))
+        .mockResolvedValueOnce(mockEmptyBlockContentResponse);
 
       const result = await callToolByNameAsync(TOOL_NAME, {
         type: 'ids',

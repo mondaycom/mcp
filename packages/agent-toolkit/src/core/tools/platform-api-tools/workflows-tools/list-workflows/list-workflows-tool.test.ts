@@ -1,7 +1,7 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '../../test-utils/mock-api-client';
 
-describe('ListWorkflowsTool', () => {
+describe('ListAutomationsTool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
 
   beforeEach(() => {
@@ -44,7 +44,7 @@ describe('ListWorkflowsTool', () => {
   it('should return live workflows for the board', async () => {
     mocks.setResponseOnce({ board_automations: { cursor: null, items: [mockBoardAutomation] } });
 
-    const result = await callToolByNameRawAsync('list_workflows', { boardId: '1234567890' });
+    const result = await callToolByNameRawAsync('list_automations', { boardId: '1234567890' });
     const parsed = parseToolResult(result);
 
     expect(parsed.workflows).toEqual([expectedWorkflow]);
@@ -55,7 +55,7 @@ describe('ListWorkflowsTool', () => {
   it('should query board_automations with board_ids', async () => {
     mocks.setResponseOnce({ board_automations: { cursor: null, items: [] } });
 
-    await callToolByNameRawAsync('list_workflows', { boardId: '1234567890' });
+    await callToolByNameRawAsync('list_automations', { boardId: '1234567890' });
 
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
       expect.stringContaining('board_automations'),
@@ -68,7 +68,7 @@ describe('ListWorkflowsTool', () => {
   it('should return pagination cursor from board_automations', async () => {
     mocks.setResponseOnce({ board_automations: { cursor: 'next-page', items: [mockBoardAutomation] } });
 
-    const result = await callToolByNameRawAsync('list_workflows', { boardId: '1234567890' });
+    const result = await callToolByNameRawAsync('list_automations', { boardId: '1234567890' });
     const parsed = parseToolResult(result);
 
     expect(parsed.pagination).toEqual({ nextCursor: 'next-page', hasMore: true });
@@ -77,7 +77,7 @@ describe('ListWorkflowsTool', () => {
   it('should pass cursor and limit when provided', async () => {
     mocks.setResponseOnce({ board_automations: { cursor: null, items: [] } });
 
-    await callToolByNameRawAsync('list_workflows', { boardId: '1234567890', cursor: '50', limit: 50 });
+    await callToolByNameRawAsync('list_automations', { boardId: '1234567890', cursor: '50', limit: 50 });
 
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
       expect.stringContaining('board_automations'),
@@ -89,7 +89,7 @@ describe('ListWorkflowsTool', () => {
   it('should default workflows to an empty array when board_automations items are null', async () => {
     mocks.setResponseOnce({ board_automations: { cursor: null, items: null } });
 
-    const result = await callToolByNameRawAsync('list_workflows', { boardId: '1234567890' });
+    const result = await callToolByNameRawAsync('list_automations', { boardId: '1234567890' });
     const parsed = parseToolResult(result);
 
     expect(parsed.workflows).toEqual([]);
@@ -99,13 +99,13 @@ describe('ListWorkflowsTool', () => {
   it('should propagate GraphQL errors with operation context', async () => {
     mocks.setError('Not authorized');
 
-    const result = await callToolByNameRawAsync('list_workflows', { boardId: '1234567890' });
+    const result = await callToolByNameRawAsync('list_automations', { boardId: '1234567890' });
 
     expect(result.content[0].text).toContain('Failed to list live workflows');
   });
 
   it('should reject whitespace-only boardId', async () => {
-    const result = await callToolByNameRawAsync('list_workflows', { boardId: '   ' });
+    const result = await callToolByNameRawAsync('list_automations', { boardId: '   ' });
 
     expect(result.content[0].text).toContain('boardId must be a non-empty string');
   });
