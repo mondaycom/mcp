@@ -20,7 +20,7 @@ describe('CreateWorkflowBuilderTool', () => {
   it('should return workflowObjectId and workflowDraftId on success', async () => {
     mocks.setResponseOnce(mockResponse);
 
-    const result = await callToolByNameRawAsync('create_workflow_builder', { workspaceId: '42' });
+    const result = await callToolByNameRawAsync('create_workflow', { workspaceId: '42' });
     const parsed = parseToolResult(result);
 
     expect(parsed.workflowObjectId).toBe('999');
@@ -31,7 +31,7 @@ describe('CreateWorkflowBuilderTool', () => {
   it('should call the mutation with workspace_id and versionOverride dev', async () => {
     mocks.setResponseOnce(mockResponse);
 
-    await callToolByNameRawAsync('create_workflow_builder', { workspaceId: '42' });
+    await callToolByNameRawAsync('create_workflow', { workspaceId: '42' });
 
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
       expect.stringContaining('createWorkflow'),
@@ -43,7 +43,7 @@ describe('CreateWorkflowBuilderTool', () => {
   it('should pass title when provided', async () => {
     mocks.setResponseOnce(mockResponse);
 
-    await callToolByNameRawAsync('create_workflow_builder', { workspaceId: '42', title: 'My Workflow' });
+    await callToolByNameRawAsync('create_workflow', { workspaceId: '42', title: 'My Workflow' });
 
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
       expect.anything(),
@@ -55,7 +55,7 @@ describe('CreateWorkflowBuilderTool', () => {
   it('should pass privacy_kind when provided', async () => {
     mocks.setResponseOnce(mockResponse);
 
-    await callToolByNameRawAsync('create_workflow_builder', { workspaceId: '42', privacyKind: 'PRIVATE' });
+    await callToolByNameRawAsync('create_workflow', { workspaceId: '42', privacyKind: 'PRIVATE' });
 
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
       expect.anything(),
@@ -67,7 +67,7 @@ describe('CreateWorkflowBuilderTool', () => {
   it('should accept SHAREABLE as a valid privacyKind', async () => {
     mocks.setResponseOnce(mockResponse);
 
-    await callToolByNameRawAsync('create_workflow_builder', { workspaceId: '42', privacyKind: 'SHAREABLE' });
+    await callToolByNameRawAsync('create_workflow', { workspaceId: '42', privacyKind: 'SHAREABLE' });
 
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
       expect.anything(),
@@ -79,7 +79,7 @@ describe('CreateWorkflowBuilderTool', () => {
   it('should pass description when provided', async () => {
     mocks.setResponseOnce(mockResponse);
 
-    await callToolByNameRawAsync('create_workflow_builder', { workspaceId: '42', description: 'My description' });
+    await callToolByNameRawAsync('create_workflow', { workspaceId: '42', description: 'My description' });
 
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
       expect.anything(),
@@ -91,7 +91,7 @@ describe('CreateWorkflowBuilderTool', () => {
   it('should pass folder_id when provided', async () => {
     mocks.setResponseOnce(mockResponse);
 
-    await callToolByNameRawAsync('create_workflow_builder', { workspaceId: '42', folderId: '77' });
+    await callToolByNameRawAsync('create_workflow', { workspaceId: '42', folderId: '77' });
 
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
       expect.anything(),
@@ -103,7 +103,7 @@ describe('CreateWorkflowBuilderTool', () => {
   it('should pass owner_ids when provided', async () => {
     mocks.setResponseOnce(mockResponse);
 
-    await callToolByNameRawAsync('create_workflow_builder', { workspaceId: '42', ownerIds: ['1', '2'] });
+    await callToolByNameRawAsync('create_workflow', { workspaceId: '42', ownerIds: ['1', '2'] });
 
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
       expect.anything(),
@@ -115,7 +115,7 @@ describe('CreateWorkflowBuilderTool', () => {
   it('should not include optional fields when not provided', async () => {
     mocks.setResponseOnce(mockResponse);
 
-    await callToolByNameRawAsync('create_workflow_builder', { workspaceId: '42' });
+    await callToolByNameRawAsync('create_workflow', { workspaceId: '42' });
 
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
       expect.anything(),
@@ -125,7 +125,7 @@ describe('CreateWorkflowBuilderTool', () => {
   });
 
   it('should reject invalid privacyKind values', async () => {
-    const result = await callToolByNameRawAsync('create_workflow_builder', {
+    const result = await callToolByNameRawAsync('create_workflow', {
       workspaceId: '42',
       privacyKind: 'private',
     });
@@ -134,7 +134,7 @@ describe('CreateWorkflowBuilderTool', () => {
   });
 
   it('should reject whitespace-only workspaceId', async () => {
-    const result = await callToolByNameRawAsync('create_workflow_builder', { workspaceId: '   ' });
+    const result = await callToolByNameRawAsync('create_workflow', { workspaceId: '   ' });
 
     expect(result.content[0].text).toContain('workspaceId must be a non-empty string');
   });
@@ -142,7 +142,7 @@ describe('CreateWorkflowBuilderTool', () => {
   it('should propagate GraphQL errors with operation context', async () => {
     mocks.setError('Not authorized');
 
-    const result = await callToolByNameRawAsync('create_workflow_builder', { workspaceId: '42' });
+    const result = await callToolByNameRawAsync('create_workflow', { workspaceId: '42' });
 
     expect(result.content[0].text).toContain('Failed to create Workflow Builder workflow');
   });

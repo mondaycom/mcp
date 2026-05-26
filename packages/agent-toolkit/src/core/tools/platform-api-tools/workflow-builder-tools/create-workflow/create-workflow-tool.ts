@@ -26,26 +26,26 @@ export const createWorkflowToolSchema = {
 };
 
 export class CreateWorkflowBuilderTool extends BaseMondayApiTool<typeof createWorkflowToolSchema> {
-  name = 'create_workflow_builder';
+  name = 'create_workflow';
   type = ToolType.WRITE;
   annotations = createMondayApiAnnotations({
-    title: 'Create Workflow Builder',
+    title: 'Create Workflow',
     readOnlyHint: false,
     destructiveHint: false,
     idempotentHint: false,
   });
 
   getDescription(): string {
-    return `Creates a new empty Workflow Builder workflow in a monday.com workspace.
+    return `Creates a new empty workflow in a monday.com workspace.
 
-Use this when the user wants to build a new standalone workflow from scratch. Workflow Builder workflows are cross-board, workspace-level automations — distinct from board automations (use create_automation for those). You only need a workspaceId to get started — all other fields are optional.
+Use this when the user wants to build a new standalone workflow from scratch. Workflows are cross-board, workspace-level — distinct from automations (use create_automation for those). You only need a workspaceId to get started — all other fields are optional.
 
 Returns:
 - workflowObjectId: the workflow object ID
 - workflowDraftId: the current draft version ID — workflows start as drafts and must be published before they run
 
 Terminology:
-- Workflow Builder vs. board automations: Workflow Builder workflows are standalone objects scoped to a workspace. Board automations (create_automation) are per-board trigger/action rules. They are different products.
+- Workflows vs. automations: workflows are standalone objects scoped to a workspace. Automations (create_automation) are per-board trigger/action rules. They are different products.
 - Draft: the editable, inactive version of a workflow. Changes are made on the draft version until it is published as the live version.
 - Privacy: PUBLIC — visible to all workspace members (default). PRIVATE — restricted access. SHAREABLE — accessible to guests outside the account.
 `;
