@@ -1,7 +1,6 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '../../test-utils/mock-api-client';
-
-const WORKFLOW_BUILDER_URL = 'https://api.monday.com/platform-ai-gateway/agents/workflow-builder';
+import { WORKFLOW_BUILDER_AGENT_URL } from '../constants';
 
 function mockFetchResponse({
   ok = true,
@@ -49,7 +48,7 @@ describe('UpdateWorkflowBuilderTool', () => {
 
     expect(fetchSpy).toHaveBeenCalledTimes(1);
     const [url, init] = fetchSpy.mock.calls[0];
-    expect(url).toBe(WORKFLOW_BUILDER_URL);
+    expect(url).toBe(WORKFLOW_BUILDER_AGENT_URL);
     expect(init.method).toBe('POST');
     expect(init.headers).toMatchObject({
       Authorization: 'test-token',
