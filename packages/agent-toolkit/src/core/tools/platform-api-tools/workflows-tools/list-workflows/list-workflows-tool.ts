@@ -35,39 +35,37 @@ function mapBoardAutomationToWorkflow(automation: BoardAutomation): WorkflowOutp
   };
 }
 
-export const listWorkflowsToolSchema = {
+export const listAutomationsToolSchema = {
   boardId: z.string().trim().min(1, 'boardId must be a non-empty string').describe('The numeric board ID as a string.'),
-  limit: z.number().int().min(1).max(100).optional().describe('Maximum number of workflows to return. Default: 100.'),
+  limit: z.number().int().min(1).max(100).optional().describe('Maximum number of automations to return. Default: 100.'),
   cursor: z
     .string()
     .optional()
-    .describe('Pagination cursor from a previous response. Pass to retrieve the next page of workflows.'),
+    .describe('Pagination cursor from a previous response. Pass to retrieve the next page of automations.'),
 };
 
-export class ListWorkflowsTool extends BaseMondayApiTool<typeof listWorkflowsToolSchema> {
-  name = 'list_workflows';
+export class ListAutomationsTool extends BaseMondayApiTool<typeof listAutomationsToolSchema> {
+  name = 'list_automations';
   type = ToolType.READ;
   annotations = createMondayApiAnnotations({
-    title: 'List Live Workflows',
+    title: 'List Board Automations',
     readOnlyHint: true,
     destructiveHint: false,
     idempotentHint: true,
   });
 
   getDescription(): string {
-    return `List all automations (workflows) on a monday.com board, including their ids, titles, active state, and configuration.
+    return `List all automations on a specific monday.com board, including their ids, titles, active state, and configuration.
 
-When NOT to use: Do not call this tool to get general board information unrelated to workflows.
-
-Terminology: "workflows" and "automations" are the same thing.`;
+When NOT to use: Do not call this tool to get general board information unrelated to automations.`;
   }
 
   getInputSchema() {
-    return listWorkflowsToolSchema;
+    return listAutomationsToolSchema;
   }
 
   protected async executeInternal(
-    input: ToolInputType<typeof listWorkflowsToolSchema>,
+    input: ToolInputType<typeof listAutomationsToolSchema>,
   ): Promise<ToolOutputType<never>> {
     try {
       const variables: BoardAutomationsQueryVariables = {
