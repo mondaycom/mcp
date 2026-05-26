@@ -4,10 +4,13 @@ import {
   CreateItemMutationVariables,
   DuplicateItemMutation,
   CreateSubitemMutation,
+  SetItemDescriptionContentMutation,
+  SetItemDescriptionContentMutationVariables,
 } from '../../../../monday-graphql/generated/graphql/graphql';
 import { createItem } from '../../../../monday-graphql/queries.graphql';
 import { duplicateItem } from './duplicate-item.graphql';
 import { createSubitem } from './create-subitem.graphql';
+import { setItemDescriptionContent } from './set-item-description-content.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { ChangeItemColumnValuesTool } from '../change-item-column-values-tool';
@@ -29,6 +32,10 @@ export const createItemToolSchema = {
     .number()
     .optional()
     .describe('The id of existing item to duplicate and update with new values (only provide when duplicating)'),
+  description: z
+    .string()
+    .optional()
+    .describe('Markdown content to set as the item description. Replaces any existing description.'),
 };
 
 export const createItemInBoardToolSchema = {
@@ -50,7 +57,7 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
 
   getDescription(): string {
     return (
-      'Create a new item with provided values, create a subitem under a parent item, or duplicate an existing item and update it with new values. Use parentItemId when creating a subitem under an existing item. Use duplicateFromItemId when copying an existing item with modifications.' +
+      'Create a new item with provided values, create a subitem under a parent item, or duplicate an existing item and update it with new values. Use parentItemId when creating a subitem under an existing item. Use duplicateFromItemId when copying an existing item with modifications. Optionally provide description (markdown) to set the item description after creation.' +
       `[REQUIRED PRECONDITION]: Before using this tool, if new columns were added to the board or if you are not familiar with the board's structure (column IDs, column types, status labels, etc.), first use get_board_info to understand the board metadata. This is essential for constructing proper column values and knowing which columns are available.`
     );
   }
@@ -117,6 +124,10 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
         columnValues: JSON.stringify(columnValuesAndName),
       });
 
+      if (input.description) {
+        await this.setItemDescription(duplicateRes.duplicate_item.id, input.description);
+      }
+
       return {
         content: { message: `Item ${duplicateRes.duplicate_item.id} duplicated from ${input.duplicateFromItemId}`, item_id: duplicateRes.duplicate_item.id, item_name: duplicateRes.duplicate_item.name, item_url: duplicateRes.duplicate_item .url, board_id: boardId },
       };
@@ -136,6 +147,10 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
 
       if (!res.create_subitem?.id) {
         throw new Error('Failed to create subitem: no subitem created');
+      }
+
+      if (input.description) {
+        await this.setItemDescription(res.create_subitem.id, input.description);
       }
 
       return {
@@ -160,11 +175,26 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
 
       const res = await this.mondayApi.request<CreateItemMutation>(createItem, variables);
 
+      if (input.description && res.create_item?.id) {
+        await this.setItemDescription(res.create_item.id, input.description);
+      }
+
       return {
         content: { message: `Item ${res.create_item?.id} successfully created`, item_id: res.create_item?.id, item_name: res.create_item?.name, item_url: res.create_item?.url, board_id: boardId },
       };
     } catch (error) {
       rethrowWithContext(error, 'create item');
+    }
+  }
+
+  private async setItemDescription(itemId: string, markdown: string): Promise<void> {
+    const variables: SetItemDescriptionContentMutationVariables = {
+      itemId,
+      markdown,
+    };
+    const res = await this.mondayApi.request<SetItemDescriptionContentMutation>(setItemDescriptionContent, variables);
+    if (!res.set_item_description_content?.success) {
+      throw new Error(`Failed to set item description: ${res.set_item_description_content?.error ?? 'unknown error'}`);
     }
   }
 }

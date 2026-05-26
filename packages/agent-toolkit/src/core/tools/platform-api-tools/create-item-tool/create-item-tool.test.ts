@@ -385,5 +385,128 @@ describe('Create Item Tool Behaviour', () => {
         );
       });
     });
+
+    describe('Description Setting', () => {
+      const successfulDescriptionResponse = {
+        set_item_description_content: {
+          success: true,
+          block_ids: ['block1'],
+          error: null,
+        },
+      };
+
+      it('Sets item description after creating a new item', async () => {
+        mocks.setResponses([successfulCreateItemResponse, successfulDescriptionResponse]);
+
+        const tool = new CreateItemTool(mocks.mockApiClient, { boardId: 456 });
+
+        const result = await tool.execute({
+          name: 'Test Item',
+          columnValues: '{"text_column": "Test Value"}',
+          description: '## My Description\n\nSome content.',
+        });
+
+        expect(result.content).toEqual({ message: 'Item 123456789 successfully created', item_id: '123456789', item_name: 'New Item', item_url: undefined, board_id: 456 });
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('mutation setItemDescriptionContent'),
+          { itemId: '123456789', markdown: '## My Description\n\nSome content.' },
+        );
+      });
+
+      it('Skips description call when description is not provided for new item', async () => {
+        mocks.setResponse(successfulCreateItemResponse);
+
+        const tool = new CreateItemTool(mocks.mockApiClient, { boardId: 456 });
+
+        await tool.execute({
+          name: 'Test Item',
+          columnValues: '{"text_column": "Test Value"}',
+        });
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+        expect(mocks.getMockRequest()).not.toHaveBeenCalledWith(
+          expect.stringContaining('setItemDescriptionContent'),
+          expect.anything(),
+        );
+      });
+
+      it('Sets item description after creating a subitem', async () => {
+        const successfulCreateSubitemResponse = {
+          create_subitem: {
+            id: '111222333',
+            name: 'New Subitem',
+            parent_item: { id: '123' },
+          },
+        };
+        mocks.setResponses([successfulCreateSubitemResponse, successfulDescriptionResponse]);
+
+        const tool = new CreateItemTool(mocks.mockApiClient, { boardId: 456 });
+
+        const result = await tool.execute({
+          name: 'New Subitem',
+          columnValues: '{"text_column": "Subitem Value"}',
+          parentItemId: 123,
+          description: '## Subitem Description',
+        });
+
+        expect(result.content).toEqual({ message: 'Subitem 111222333 created under 123', item_id: '111222333', item_name: 'New Subitem', item_url: undefined });
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('mutation setItemDescriptionContent'),
+          { itemId: '111222333', markdown: '## Subitem Description' },
+        );
+      });
+
+      it('Sets item description after duplicating an item', async () => {
+        mocks.setResponses([successfulDuplicateItemResponse, successfulDescriptionResponse]);
+        mockChangeColumnValuesTool.execute.mockResolvedValue(successfulUpdateResponse);
+
+        const tool = new CreateItemTool(mocks.mockApiClient, { boardId: 456 });
+
+        const result = await tool.execute({
+          name: 'Updated Item',
+          columnValues: '{"text_column": "Updated Value"}',
+          duplicateFromItemId: 123,
+          description: '## Duplicated Description',
+        });
+
+        expect(result.content).toEqual({ message: 'Item 987654321 duplicated from 123', item_id: '987654321', item_name: 'Duplicated Item', item_url: undefined, board_id: 456 });
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('mutation setItemDescriptionContent'),
+          { itemId: '987654321', markdown: '## Duplicated Description' },
+        );
+      });
+
+      it('Throws error when set_item_description_content returns success: false', async () => {
+        mocks.setResponses([
+          successfulCreateItemResponse,
+          { set_item_description_content: { success: false, block_ids: null, error: 'Markdown conversion failed' } },
+        ]);
+
+        const tool = new CreateItemTool(mocks.mockApiClient, { boardId: 456 });
+
+        await expect(
+          tool.execute({
+            name: 'Test Item',
+            columnValues: '{"text_column": "Test Value"}',
+            description: '## Bad Description',
+          }),
+        ).rejects.toThrow('Failed to set item description: Markdown conversion failed');
+      });
+
+      it('Throws error when set_item_description_content API call fails', async () => {
+        mocks.setResponseOnce(successfulCreateItemResponse);
+        mocks.getMockRequest().mockRejectedValueOnce(new Error('Network error'));
+
+        const tool = new CreateItemTool(mocks.mockApiClient, { boardId: 456 });
+
+        await expect(
+          tool.execute({
+            name: 'Test Item',
+            columnValues: '{"text_column": "Test Value"}',
+            description: '## My Description',
+          }),
+        ).rejects.toThrow('Network error');
+      });
+    });
   });
 });
