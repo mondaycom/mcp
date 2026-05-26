@@ -46,7 +46,7 @@ Returns:
 
 Terminology:
 - Workflow Builder vs. board automations: Workflow Builder workflows are standalone objects scoped to a workspace. Board automations (create_automation) are per-board trigger/action rules. They are different products.
-- Draft: the editable, inactive version of a workflow. Changes are made on the draft until it is published to live version.
+- Draft: the editable, inactive version of a workflow. Changes are made on the draft version until it is published as the live version.
 - Privacy: PUBLIC — visible to all workspace members (default). PRIVATE — restricted access. SHAREABLE — accessible to guests outside the account.
 `;
   }
