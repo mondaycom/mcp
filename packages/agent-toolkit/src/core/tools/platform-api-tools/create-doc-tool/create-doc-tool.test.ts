@@ -190,6 +190,75 @@ describe('CreateDocTool', () => {
       });
     });
 
+    describe('docOwnerIds', () => {
+      it('includes docOwnerIds in variables when provided', async () => {
+        const createDocResponse = {
+          create_doc: { id: 'doc_owners', object_id: 'obj_owners', url: 'https://monday.com/docs/obj_owners', name: 'Owners Doc' },
+        };
+        const addContentResponse = { add_content_to_doc_from_markdown: { success: true, block_ids: [] } };
+
+        jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+          if (query.includes('mutation createDoc')) return Promise.resolve(createDocResponse);
+          if (query.includes('mutation addContentToDocFromMarkdown')) return Promise.resolve(addContentResponse);
+          return Promise.resolve({});
+        });
+
+        const args: inputType = {
+          location: 'workspace',
+          workspace_id: 12345,
+          doc_name: 'Owners Doc',
+          markdown: '# Test',
+          docOwnerIds: ['111', '222'],
+        };
+
+        await callToolByNameRawAsync('create_doc', args);
+
+        const createDocCall = mocks.getMockRequest().mock.calls.find((c) => c[0].includes('mutation createDoc'));
+        expect(createDocCall).toBeDefined();
+        expect(createDocCall[1]).toEqual(expect.objectContaining({ docOwnerIds: ['111', '222'] }));
+      });
+
+      it('does not include docOwnerIds in variables when not provided', async () => {
+        const createDocResponse = {
+          create_doc: { id: 'doc_no_owners', object_id: 'obj_no_owners', url: 'https://monday.com/docs/obj_no_owners', name: 'No Owners Doc' },
+        };
+        const addContentResponse = { add_content_to_doc_from_markdown: { success: true, block_ids: [] } };
+
+        jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+          if (query.includes('mutation createDoc')) return Promise.resolve(createDocResponse);
+          if (query.includes('mutation addContentToDocFromMarkdown')) return Promise.resolve(addContentResponse);
+          return Promise.resolve({});
+        });
+
+        const args: inputType = {
+          location: 'workspace',
+          workspace_id: 12345,
+          doc_name: 'No Owners Doc',
+          markdown: '# Test',
+        };
+
+        await callToolByNameRawAsync('create_doc', args);
+
+        const createDocCall = mocks.getMockRequest().mock.calls.find((c) => c[0].includes('mutation createDoc'));
+        expect(createDocCall).toBeDefined();
+        expect(createDocCall[1]).not.toHaveProperty('docOwnerIds');
+      });
+
+      it('rejects docOwnerIds as empty array (min 1 required)', async () => {
+        const args = {
+          location: 'workspace',
+          workspace_id: 12345,
+          doc_name: 'Empty Owners Doc',
+          markdown: '# Test',
+          docOwnerIds: [],
+        };
+
+        const result = await callToolByNameRawAsync('create_doc', args);
+        expect(result.content[0].text).toContain('Invalid arguments');
+        expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+      });
+    });
+
     describe('Validation Errors', () => {
       it('should return error when workspace_id is missing', async () => {
         const args: Partial<inputType> = {
@@ -580,6 +649,69 @@ describe('CreateDocTool', () => {
         // Verify the new column ID was used
         const createDocCall = mockCalls.find((call) => call[0].includes('mutation createDoc'));
         expect(createDocCall[1].location.board.column_id).toBe('new_doc_col');
+      });
+    });
+
+    describe('docOwnerIds', () => {
+      it('includes docOwnerIds in item doc variables when provided', async () => {
+        const getItemBoardResponse = {
+          items: [{ id: 'item_99', board: { id: 'board_99', columns: [{ id: 'doc_col_99', type: NonDeprecatedColumnType.Doc }] } }],
+        };
+        const createDocResponse = { create_doc: { id: 'doc_owners_item', object_id: 'obj_owners_item', url: 'https://monday.com/docs/obj_owners_item', name: null } };
+        const addContentResponse = { add_content_to_doc_from_markdown: { success: true, block_ids: [] } };
+
+        jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+          if (query.includes('query getItemBoard')) return Promise.resolve(getItemBoardResponse);
+          if (query.includes('mutation createDoc')) return Promise.resolve(createDocResponse);
+          if (query.includes('mutation updateDocName')) return Promise.resolve({ update_doc_name: true });
+          if (query.includes('mutation addContentToDocFromMarkdown')) return Promise.resolve(addContentResponse);
+          return Promise.resolve({});
+        });
+
+        const args: inputType = {
+          location: 'item',
+          item_id: 99,
+          column_id: 'doc_col_99',
+          doc_name: 'Owners Item Doc',
+          markdown: '# Test',
+          docOwnerIds: ['555', '666'],
+        };
+
+        await callToolByNameRawAsync('create_doc', args);
+
+        const createDocCall = mocks.getMockRequest().mock.calls.find((c) => c[0].includes('mutation createDoc'));
+        expect(createDocCall).toBeDefined();
+        expect(createDocCall[1]).toEqual(expect.objectContaining({ docOwnerIds: ['555', '666'] }));
+      });
+
+      it('does not include docOwnerIds in item doc variables when not provided', async () => {
+        const getItemBoardResponse = {
+          items: [{ id: 'item_77', board: { id: 'board_77', columns: [{ id: 'doc_col_77', type: NonDeprecatedColumnType.Doc }] } }],
+        };
+        const createDocResponse = { create_doc: { id: 'doc_no_owners_item', object_id: 'obj_no_owners_item', url: 'https://monday.com/docs/obj_no_owners_item', name: null } };
+        const addContentResponse = { add_content_to_doc_from_markdown: { success: true, block_ids: [] } };
+
+        jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+          if (query.includes('query getItemBoard')) return Promise.resolve(getItemBoardResponse);
+          if (query.includes('mutation createDoc')) return Promise.resolve(createDocResponse);
+          if (query.includes('mutation updateDocName')) return Promise.resolve({ update_doc_name: true });
+          if (query.includes('mutation addContentToDocFromMarkdown')) return Promise.resolve(addContentResponse);
+          return Promise.resolve({});
+        });
+
+        const args: inputType = {
+          location: 'item',
+          item_id: 77,
+          column_id: 'doc_col_77',
+          doc_name: 'No Owners Item Doc',
+          markdown: '# Test',
+        };
+
+        await callToolByNameRawAsync('create_doc', args);
+
+        const createDocCall = mocks.getMockRequest().mock.calls.find((c) => c[0].includes('mutation createDoc'));
+        expect(createDocCall).toBeDefined();
+        expect(createDocCall[1]).not.toHaveProperty('docOwnerIds');
       });
     });
 

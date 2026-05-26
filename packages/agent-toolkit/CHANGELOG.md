@@ -1,6 +1,6 @@
 # Changelog
 
-## 5.11.0
+## 5.15.0
 
 ### Add agent management tools
 
@@ -11,6 +11,14 @@ Five new tools enabling agents to create and manage monday.com platform agents e
 - `manage_agent_skills` — full skill lifecycle: `create` a new skill in the catalog, `add` to agent, `remove` from agent
 - `manage_agent_knowledge` — grant, update, or revoke an agent's access to boards and docs
 - `agent_catalog` (READ) — browse the account-wide catalog of available trigger types and skills before wiring them to an agent
+
+## 5.11.0
+
+### Asset upload MCP tools
+
+- Added `get_asset_upload_url` — requests a presigned S3 upload URL for a file. Returns `upload_id`, `upload_url`, and expiry. Includes inline `curl` example for the upload step and ETag capture guidance.
+- Added `finalize_asset_upload` — finalizes the upload via `complete_upload` and attaches the asset to a file column on a board item using `change_column_value` (append semantics). Returns `asset_id`, `filename`, `content_type`, `file_size`, `url`, and `filelink`.
+- Both tools use `versionOverride: 'dev'` as `create_upload` / `complete_upload` are currently dev-schema-only.
 
 ## 5.7.1
 

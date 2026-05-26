@@ -94,13 +94,7 @@ id: String!): Workflow
 hostInstanceId: String,   "Host type for filtering workflows. If omitted, defaults to ACCOUNT_LEVEL."
 hostType: HostType,   "Optional list of app IDs to filter workflows by creator app"
 creator_app_ids: [ID!],   "Pagination parameters"
-pagination: PaginationInput): [Workflow!]! @deprecated(reason: "Use `get_live_workflows_page` for cursor-based pagination metadata (`has_next_page`, `end_cursor`).")
-  "Get a page of live workflows with cursor-based pagination metadata"
-  get_live_workflows_page(  "Host instance ID (e.g., board ID) to filter workflows. If omitted, defaults to the current account ID."
-host_instance_id: ID,   "Host type for filtering workflows. If omitted, defaults to ACCOUNT_LEVEL."
-host_type: HostType,   "Optional list of app IDs to filter workflows by creator app"
-creator_app_ids: [ID!],   "Pagination parameters"
-pagination: WorkflowsPaginationInput): LiveWorkflowsPage!
+pagination: PaginationInput): [Workflow!]!
   "Count active workflows for a given host instance"
   count_active_workflows(  "Instance ID of the host"
 host_instance_id: ID!,   "Type of host for this workflow"
@@ -173,7 +167,7 @@ pagination: PaginationInput): [Connection!]
 id: Int!): Connection
   "Get board IDs that are linked to a specific connection."
   connection_board_ids(  "Unique identifier of the connection."
-connection_id: ID!): [ID!]!
+connectionId: Int!): [Int!]
   "Get automation data (automation and recipe) by ID - internal use only"
   get_automation_data(  "Account ID that owns the automation"
 account_id: ID!,   "Unique identifier for the automation"
@@ -261,14 +255,6 @@ migration_job_id: ID!): SnapshottableBoard
   snapshottable_workspace(  "The workspace ID."
 id: ID!,   "The migration job ID for authorization."
 migration_job_id: ID!): SnapshottableWorkspace
-  "Get the status history timeline for a snapshot entity"
-  get_snapshot_history(  "The id of the migration job."
-migration_job_id: ID!,   "The entity id (package id) to get history for."
-entity_id: ID!): [SnapshotHistoryEntry!]
-  "Get the status history timeline for a restore entity"
-  get_restore_history(  "The id of the migration job."
-migration_job_id: ID!,   "The entity id (package id) to get history for."
-entity_id: ID!): [RestoreHistoryEntry!]
   "Get managed column data."
   managed_column(  "The managed column ids."
 id: [String!],   "The state of the managed column."
@@ -375,45 +361,8 @@ query: String!,   "The maximum number of results to return."
 limit: Int = 5): KnowledgeBaseAnswer
   "Get all personal list items by list ID"
   favorites: [GraphqlHierarchyObjectItem!]
-  "Synchronously runs the full dashboard data-fetching flow and returns the results in a single blocking call. POC: reporting (aggregated_data) widgets only. Gated by the LoadDashboardDataSync flow feature."
-  load_dashboard_data(  "The dashboard (overview) ID to load."
-dashboard_id: ID!): DashboardDataResult
   "Intelligence data."
   intelligence: Intelligence
-  "Get board automations. Filter by ids (specific automation IDs) or board_ids (up to 1 board). Omit all filters to get all account automations."
-  board_automations(  "Automation IDs to fetch (max 100)"
-ids: [ID!],   "Board IDs to filter by (max 1)"
-board_ids: [ID!],   "Max number of automations to return"
-limit: Int,   "Cursor from a previous page for pagination"
-cursor: String): AutomationsPage!
-  "Search analytics events by identifier"
-  analytics_events(  "The identifier to search for"
-identifier: String!,   "Filter by campaign ID"
-campaign_id: ID,   "Filter by event type"
-event_type: CampaignsAnalyticsEventKind,   "Maximum number of events to return (max 1000)"
-limit: Int!,   "Pagination token for the next page"
-next_token: String): CampaignsAnalyticsEventsResponse
-  "List email campaigns for the current account"
-  campaigns(  "Maximum number of campaigns to return (max 200)"
-limit: Int): [CampaignsEmailCampaign!]
-  "Get a single email campaign by ID"
-  campaign(id: ID!): CampaignsEmailCampaign
-  "Get the brand kit for the current account"
-  brand_kit: CampaignsBrandKit
-  "List market insights for the current account"
-  insights(  "Maximum number of insights to return (max 200)"
-limit: Int): [CampaignsInsight!]
-  "Get a single market insight by ID"
-  insight(id: ID!): CampaignsInsight
-  "List audience segments for the current account"
-  segments(  "Maximum number of segments to return (max 200)"
-limit: Int): [CampaignsSegment!]
-  "Get a single audience segment by ID"
-  segment(id: ID!): CampaignsSegment
-  "Get marketing channels settings for the current account"
-  settings: CampaignsSettings
-  "Usage metrics for the current account"
-  usage: CampaignsUsage
   marketplace_app_discounts(  "The id of an app"
 app_id: ID!): [MarketplaceAppDiscount!]!
   app_subscriptions(  "The ID of an app"
@@ -439,21 +388,13 @@ import_id: ID!): BulkImportStatus!
   "Get the status of a backfill or ingest job"
   fetch_job_status(  "The ID of the job to get status for"
 job_id: ID!): JobStatus!
+  "Get an agent by its ID. Returns null if the agent does not exist or the user does not have access."
+  agent(  "The unique identifier of the agent"
+id: ID!): Agent
   "List personal agents for the authenticated user. At least one filter (ids or limit) is required."
   agents(  "Optional list of agent IDs to fetch. Applied before limit when both are provided."
 ids: [ID!],   "Optional max number of agents to return. Applied after ids filter when both are provided."
 limit: Int): [Agent!]
-  "Returns trigger types that can be attached to an agent via add_trigger_to_agent. Pass block_reference_ids to fetch only specific entries (much faster). Only includes auto-addable triggers — 3rd-party triggers requiring OAuth or credentials are excluded."
-  agent_triggers_catalog(  "Optional list of block_reference_id values to fetch. When omitted, all catalog entries are returned."
-block_reference_ids: [ID!]): [AgentTriggerCatalogEntry!]
-  "Returns the triggers currently attached to an agent. Use node_id from each result to remove a trigger."
-  agent_active_triggers(  "Unique identifier of the agent"
-agent_id: ID!): [AgentActiveTrigger!]
-  "Returns the knowledge configuration of an agent — boards/docs it has access to and uploaded files. Board and doc names are not included; use the board/doc subgraph queries to resolve them."
-  agent_knowledge(  "Unique identifier of the agent"
-id: ID!): AgentKnowledge
-  "List all skills available to attach to an agent. Use the returned id to call add_skill_to_agent."
-  agent_skills_catalog: [AgentSkillCatalogEntry!]
   "Get an app by ID or slug."
   app(  "The ID or slug of the app"
 id: ID!): AppType
@@ -552,7 +493,7 @@ ids: [ID!]): [Tag]
 ids: [ID!]): [Team]
   "Get users."
   users(  "Filter by user IDs."
-ids: [ID!],   "Filter by user name. Uses fuzzy search unless combined with `user_kind`, `kind`, or `emails` args, then uses exact search."
+ids: [ID!],   "Filter by exact user name."
 name: String,   "A list of users' emails."
 emails: [String!],   "Filter by user kind."
 user_kind: UserKindFilterInput,   "Sort users by one or more fields and directions."
@@ -560,10 +501,7 @@ sort: [UsersSortInput!],   "Filter by visibility."
 visibility: String,   "Filter by user status. Defaults to [ACTIVE, PENDING] if not provided."
 status: [UserStatus!],   "Number of items to get, the default is 200. The maximum is 1000."
 limit: Int = 200,   "Page number to get, starting at 1."
-page: Int = 1,   "The kind to search users by."
-kind: UserKind,   "When true, returns only inactive users. When false, returns only active users."
-non_active: Boolean,   "Sort users by creation date, newest first."
-newest_first: Boolean): [User!]
+page: Int = 1): [User!]
   "Get a collection of webhooks for the board"
   webhooks(  "Filters webhooks that were created by the app initiating the request"
 app_webhooks_only: Boolean,   "Board unique identifier."
@@ -670,38 +608,6 @@ limit: Int = 25): GetAllocationsResponse
   "Fetch the unique set of resources (assignees and placeholders) in a planner"
   get_allocated_resources(  "The planner ID"
 planner_id: ID!): [AllocatedResource!]
-  "Returns active work schedules for the caller's account"
-  work_schedules(  "Filter by specific work schedule IDs"
-ids: [ID!],   "Number of items to return per page; max 500"
-limit: Int,   "Filter by work schedule name"
-name: String): WorkSchedulePage
-  "Fetches the next page of work schedules using a cursor from a previous work_schedules or next_work_schedules_page call"
-  next_work_schedules_page(  "Cursor returned by a previous work_schedules or next_work_schedules_page call"
-cursor: String!,   "Number of items to get, the default is 25."
-limit: Int = 25): WorkSchedulePage
-  "Returns active time off schedules for the caller's account"
-  time_offs(  "Filter by specific time off schedule IDs"
-ids: [ID!],   "Number of items to return per page; max 500"
-limit: Int,   "Filter by time off schedule name"
-name: String): TimeOffPage
-  "Fetches the next page of time off schedules using a cursor from a previous time_offs or next_time_offs_page call"
-  next_time_offs_page(  "Cursor returned by a previous time_offs or next_time_offs_page call"
-cursor: String!,   "Number of items to get, the default is 25."
-limit: Int = 25): TimeOffPage
-  "Fetches the next page of entries for a time off schedule using a cursor from entries_page or next_time_off_entries_page"
-  next_time_off_entries_page(  "Cursor returned by a previous entries_page or next_time_off_entries_page call"
-cursor: String!,   "Number of items to get, the default is 25."
-limit: Int = 25): TimeOffEntryPage
-  "Returns user schedule assignments for the caller's account"
-  user_availabilities(  "Filter by specific user IDs"
-user_ids: [ID!],   "Number of items to return per page; max 500"
-limit: Int): UserAvailabilityPage
-  "Fetches the next page of user availabilities using a cursor from a previous user_availabilities or next_user_availabilities_page call"
-  next_user_availabilities_page(  "Cursor returned by a previous user_availabilities or next_user_availabilities_page call"
-cursor: String!,   "Number of items to get, the default is 25."
-limit: Int = 25): UserAvailabilityPage
-  "Returns the account-level default work schedule and time off schedule"
-  account_availability_defaults: AccountAvailabilityDefaults
   "Returns utilization report for resources: either grouped by attribute or ungrouped with per-resource data. Use inline fragments to query the appropriate fields."
   utilization_report(  "Time range, effort types, optional groupBy, filters, resourceIds, and options."
 input: UtilizationReportInput!): UtilizationReport
@@ -729,9 +635,6 @@ board_id: ID!): [Sequence!]
   "Get a collection of monday dev sprints"
   sprints(  "A list of monday dev sprints unique identifiers"
 ids: [ID!]!): [Sprint!]
-  "Get the status of an async job by its external ID"
-  job_status(  "The job ID returned by the originating mutation"
-job_id: ID!): AsyncJobStatus!
   "Get the changelog of decisions that were made for a task by the My Tasks agent."
   get_task_changelog(  "The task (item) ID to fetch the changelog of decisions for"
 task_id: ID!): [TaskDecisionChangelogEvent!]
@@ -746,11 +649,6 @@ task_id: ID!): [TaskDecisionChangelogEvent!]
 task_id: ID!): Task
   "Get all roles for the account"
   account_roles: [AccountRole!]
-  "Retrieves API tokens for the given service users."
-  service_user_tokens(  "The IDs of the service users."
-service_user_ids: [ID!]!): [ServiceUserToken!]
-  "Retrieves all service users in the account with their token last activity."
-  service_users: [ServiceUser!]
   "Get all user configs for the account."
   user_configs(  "Filter by kinds."
 kinds: [String!],   "Filter by visibility."
@@ -758,12 +656,6 @@ visibility: String,   "Filter by behaviors. Returns configs that have all of the
 behaviors: [String!]): [UserConfig!]
   "Returns all available widget schemas for documentation and validation purposes"
   all_widgets_schema: [WidgetSchemaInfo!]
-  "Fetch workflows by IDs (max 50 per request)"
-  workflows(  "Workflow entity IDs"
-ids: [ID!]!): [WorkflowAutomation!]!
-  "Fetch a page of live workflows for the requesting account, with cursor-based pagination"
-  live_workflows_page(  "Pagination parameters"
-pagination: WorkflowAutomationsPaginationInput): LiveWorkflowAutomationsPage!
   "Fetch a form by its token. The returned form includes all the details of the form such as its settings, questions, title, etc. Use this endpoint when you need to retrieve complete form data for display or processing. Requires that the requesting user has read access to the associated board."
   form(  "The unique identifier token for the form. This token is used to securely access the form and can be found in the form URL."
 formToken: String!): ResponseForm
@@ -1060,8 +952,8 @@ snapshot_id: ID!): RollbackSnapshotMutationResult
   "Rollback a restore to undo the workspace creation in the target account"
   rollback_restore(  "The id of the migration job."
 migration_job_id: ID!,   "The restore id to rollback."
-restore_id: ID!,   "Force rollback even if the restore is older than the maximum age."
-force: Boolean): RollbackRestoreMutationResult
+restore_id: ID!,   "The API token for the target account."
+target_account_api_token: String!): RollbackRestoreMutationResult
   "Upsert entity ID mappings for a migration job."
   upsert_entity_id_mappings(  "The id of the migration job."
 migrationJobId: String!,   "The entity type for the mappings."
@@ -1355,9 +1247,6 @@ object_id: ID!): ArticleMetadata
   "Permanently deletes a document and all its content from the system. This action cannot be undone. The document will be removed from all user views and workspaces. Use with caution - ensure the document is no longer needed before deletion. Returns success status and the deleted document ID."
   delete_doc(  "The document's unique identifier. Get this from document queries or creation responses."
 docId: ID!): JSON
-  "Deletes multiple document blocks in a single operation. Maximum 100 blocks per request."
-  delete_doc_blocks(  "The unique identifiers of the blocks to delete."
-block_ids: [ID!]!): [DeletedDocBlock!]
   "Creates an exact copy of an existing document, including all content, structure, and formatting. Use this to create templates, backup documents before major changes, or create variations of existing documents. The duplicated document will have a new unique ID and can be modified independently. Returns the new document's ID on success."
   duplicate_doc(  "The document's unique identifier to duplicate. Get this from document queries or creation responses."
 docId: ID!,   "Controls what gets duplicated: content only (default) or content with update history. Choose content-only for clean copies."
@@ -1399,8 +1288,8 @@ export_options: ExportOptionsInput,   """
   Time zone for date formatting (e.g. "America/New_York")
   """
 time_zone: String,   "Column IDs in desired display order"
-columns_order: [String!],   "Output format (defaults to CSV)"
-export_format: ExportFormat = CSV): ExportBoardResult
+columns_order: [String!],   "Output format (defaults to XLSX)"
+export_format: ExportFormat): ExportBoardResult
   "Add workspace object to favorites"
   create_favorite(  "The input for adding an object to the favorites"
 input: CreateFavoriteInput!): CreateFavoriteResultType
@@ -1410,13 +1299,6 @@ input: DeleteFavoriteInput!): DeleteFavoriteInputResultType
   "Update the position of an object in favorites"
   update_favorite_position(  "The input for updating the favorite object position"
 input: UpdateObjectHierarchyPositionInput!): UpdateFavoriteResultType
-  "Delete a board automation by ID."
-  delete_board_automation(  "The ID of the automation to delete"
-id: ID!,   "The board ID the automation belongs to"
-board_id: ID!): BoardAutomationDeleteResult!
-  "Create a board automation. Provide template_reference_id to create from a template, or workflow_blocks and workflow_variables for a direct creation."
-  create_board_automation(  "Automation creation input"
-input: BoardAutomationCreateInput!): BoardAutomationCreateResult!
   "Create a marketplace app discount"
   create_marketplace_app_discount(  "The id of an app"
 app_id: ID!,   "Slug of an account"
@@ -1461,61 +1343,6 @@ input: CreateBlankAgentInput): Agent
   "Delete an AI agent by its ID"
   delete_agent(  "The unique identifier of the agent to delete"
 id: ID!): Agent
-  "Trigger a manual run for an existing agent. This is an async fire-and-forget operation — a successful response means the run was accepted and enqueued, not that it has completed or succeeded. Use trigger_uuid to correlate the execution in downstream events or future status endpoints."
-  run_agent(  "Unique identifier of the agent to run"
-id: ID!): RunAgentResult
-  "Activate an existing agent"
-  activate_agent(  "Unique identifier of the agent to activate"
-id: ID!): AgentStateResult
-  "Deactivate an existing agent"
-  deactivate_agent(  "Unique identifier of the agent to deactivate"
-id: ID!,   "The reason for deactivating the agent. Defaults to DEACTIVATED_BY_USER."
-inactive_reason: InactiveReason): AgentStateResult
-  "Update an agent — creates a new draft if needed, applies the changes, and publishes to live in one call"
-  update_agent(  "Unique identifier of the agent to update"
-id: ID!,   "Fields to update — only provided fields are changed"
-input: UpdateAgentInput!): Agent
-  "Adds a trigger to an agent. Creates a draft if needed, applies the change, and promotes to live in one call. Returns { success: true } on success. Use agent_active_triggers to read the updated trigger list. Get available trigger types and field schemas from agent_triggers_catalog."
-  add_trigger_to_agent(  "Unique identifier of the agent"
-agent_id: ID!,   "The block_reference_id from agent_triggers_catalog identifying the trigger type"
-block_reference_id: ID!,   """
-  Configuration values for the trigger. Shape depends on the trigger type — see field_schemas and required_fields in agent_triggers_catalog. For scheduler fields: pass the structured config object directly. For selection fields (e.g. board picker): pass { value: <id>, label: "<display name>" }.
-  """
-field_values: JSON): MutationResult
-  "Removes a trigger from an agent by its node_id. Creates a draft if needed, applies the change, and promotes to live in one call. Returns { success: true } on success. Use agent_active_triggers to verify the trigger is gone. Get node_id values from the agent_active_triggers query."
-  remove_trigger_from_agent(  "Unique identifier of the agent"
-agent_id: ID!,   "The node_id of the trigger to remove — from agent_active_triggers"
-node_id: ID!): MutationResult
-  "Grant an agent access to a monday.com board or doc. Creates a draft version, applies the change, and promotes to live."
-  add_agent_resource_access(  "Unique identifier of the agent"
-id: ID!,   "The ID of the board or doc to add"
-resource_id: ID!,   "Whether the resource is a board or a doc"
-scope_type: KnowledgeScope!,   "The permission level to grant the agent on this resource"
-permission_type: KnowledgePermission!): MutationResult
-  "Remove a board or doc from an agent. Creates a draft, removes the access, and promotes to live."
-  remove_agent_resource_access(  "Unique identifier of the agent"
-id: ID!,   "The ID of the board or doc to remove"
-resource_id: ID!,   "Whether the resource is a board or a doc"
-scope_type: KnowledgeScope!): MutationResult
-  "Change the permission level an agent has on an existing board or doc. Creates a draft, updates the permission, and promotes to live."
-  update_agent_resource_access(  "Unique identifier of the agent"
-id: ID!,   "The ID of the board or doc to update"
-resource_id: ID!,   "Whether the resource is a board or a doc"
-scope_type: KnowledgeScope!,   "The new permission level to grant the agent"
-permission_type: KnowledgePermission!): MutationResult
-  "Attach a skill to an agent by its catalog id. Use agent_skills_catalog to discover available ids."
-  add_skill_to_agent(  "Unique identifier of the agent"
-agent_id: ID!,   "Skill reference id from agent_skills_catalog"
-skill_id: ID!): MutationResult
-  "Detach a skill from an agent by its catalog id."
-  remove_skill_from_agent(  "Unique identifier of the agent"
-agent_id: ID!,   "Skill reference id to detach"
-skill_id: ID!): MutationResult
-  "Create a new skill for the account. The skill will appear in agent_skills_catalog and can be attached to any agent via add_skill_to_agent."
-  create_agent_skill(  "Display name of the skill"
-name: String!,   "Markdown instructions defining what the skill does"
-content: String!,   "Short description of the skill"
-description: String): AgentSkillCatalogEntry
   "Creates a new app with the specified configuration."
   create_app(  "App configuration data"
 input: CreateAppInput!): CreateAppResponse
@@ -1555,10 +1382,6 @@ input: InstallAppInput!): InstallAppResponse
   "Uninstalls an app from the current account. Requires account admin permission."
   uninstall_app(  "The app identifier (numeric ID or slug)"
 app_identifier: ID!): AppDeletionResponse
-  "Promotes the latest draft app version of an app to live. Promotion is asynchronous — poll the returned version's status field (via the app query) until it transitions to LIVE. Only app collaborators can perform this action."
-  promote_app(  "The identifier of the app whose draft version should be promoted"
-app_id: ID!,   "Optional: the specific app version to promote. Defaults to the latest draft version"
-app_version_id: ID): DeveloperAppVersion
   "Add a file to a column value."
   add_file_to_column(  "The column to add the file to."
 column_id: String!,   "The file to upload."
@@ -1684,9 +1507,9 @@ prompt: String,   "Optional board template id"
 template_id: ID,   "Optional workspace id"
 workspace_id: ID): Board
   "Create a new doc."
-  create_doc(  "Optional list of user IDs to set as document owners at creation time"
-doc_owner_ids: [ID!],   "new monday doc location"
-location: CreateDocInput!): Document
+  create_doc(  "new monday doc location"
+location: CreateDocInput!,   "Optional list of user IDs to set as document owners at creation time"
+doc_owner_ids: [ID!]): Document
   "Create new document block"
   create_doc_block(  "After which block to insert this one. If not provided, will be inserted first in the document"
 after_block_id: String,   "The block's content."
@@ -2014,41 +1837,6 @@ allocations: [AllocationToResourceInput!]!): AddAllocationsToResourcesResponse
   update_allocations(  "The ID of the planner containing the allocations"
 planner_id: ID!,   "Array of allocation updates to apply"
 updates: [AllocationUpdateInput!]!): [UpdateAllocationResult!]
-  "Create one or more named work schedules for the account; maximum 100 inputs per call"
-  create_work_schedule(  "Work schedules to create; maximum 100 items per call"
-inputs: [CreateWorkScheduleInput!]!): [WorkScheduleResult!]
-  "Update the name and/or working hours of an existing work schedule"
-  update_work_schedule(  "ID of the work schedule to update"
-id: ID!,   "Fields to update on the work schedule"
-input: UpdateWorkScheduleInput!): WorkScheduleResult
-  "Soft-delete one or more work schedules; maximum 100 IDs per call"
-  delete_work_schedule(  "IDs of work schedules to delete; maximum 100 items per call"
-ids: [ID!]!): [WorkScheduleDeleteResult!]
-  "Create one or more named time off schedules for the account; maximum 100 inputs per call"
-  create_time_off(  "Time off schedules to create; maximum 100 items per call"
-inputs: [CreateTimeOffInput!]!): [TimeOffResult!]
-  "Update the name of a time off schedule"
-  update_time_off(  "ID of the time off schedule to update"
-id: ID!,   "Fields to update on the time off schedule"
-input: UpdateTimeOffInput!): TimeOffResult
-  "Soft-delete one or more time off schedules; maximum 100 IDs per call"
-  delete_time_off(  "IDs of time off schedules to delete; maximum 100 items per call"
-ids: [ID!]!): [TimeOffDeleteResult!]
-  "Add one or more non-working date entries to a time off schedule; maximum 100 inputs per call"
-  create_time_off_entry(  "Entries to create; maximum 100 items per call"
-inputs: [CreateTimeOffEntryInput!]!): [TimeOffEntryResult!]
-  "Update the name or date range of one or more existing time off entries; maximum 100 inputs per call"
-  update_time_off_entry(  "Entries to update; maximum 100 items per call"
-inputs: [UpdateTimeOffEntryInput!]!): [TimeOffEntryResult!]
-  "Soft-delete one or more time off entries; maximum 100 IDs per call"
-  delete_time_off_entry(  "IDs of time off entries to delete; maximum 100 items per call"
-ids: [ID!]!): [TimeOffEntryDeleteResult!]
-  "Assign the same work schedule and time off schedule to multiple users; maximum 100 user IDs per call. Returns one result per user, allowing partial success."
-  assign_user_availability(  "Users and schedules to assign; maximum 100 user IDs per call"
-input: AssignUserAvailabilityInput!): [UserAvailabilityResult!]
-  "Remove explicit work schedule and/or time off assignments from multiple users; maximum 100 user IDs per call. Returns one result per user, allowing partial success."
-  unassign_user_availability(  "Users to unassign; maximum 100 user IDs per call"
-input: UnassignUserAvailabilityInput!): [UserAvailabilityResult!]
   "Enroll multiple items to a single sequence. Maximum 50 items per request."
   enroll_items_to_sequence(  "Input for enrolling multiple items to a single sequence"
 input: EnrollToSequenceInput!): EnrollToSequenceResult
@@ -2101,16 +1889,6 @@ use_async_mode: Boolean): UpdateUserAttributesResult
 emails: [String!]!,   "The new role of the users."
 user_role: UserRole,   "The product to invite the users to"
 product: Product): InviteUsersResult
-  "Revokes all API tokens for a service user."
-  revoke_service_user_tokens(  "The ID of the service user whose tokens to revoke."
-service_user_id: ID!): Boolean
-  "Revokes all existing tokens and generates a new API token for a service user."
-  regenerate_service_user_token(  "The ID of the service user whose token to regenerate."
-service_user_id: ID!): String
-  "Creates a new service user with a read-only API token."
-  create_service_user(  "Display name for the service user."
-name: String!,   "Optional title/description for the service user."
-title: String): CreateServiceUserResult
   "Create a new widget."
   create_widget(  "Parent container for the widget (dashboard or board view)."
 parent: WidgetParentInput!,   "The kind of widget to create (i.e CHART, NUMBER, BATTERY, CALENDAR, GANTT)."
@@ -2144,16 +1922,6 @@ board_folder_id: ID): Dashboard
   "Delete an existing dashboard."
   delete_dashboard(  "The ID of the dashboard to delete."
 id: ID!): Boolean
-  "Create a new empty workflow in the given workspace and return its identifiers."
-  create_workflow(  "Workspace ID to create the workflow in"
-workspace_id: ID!,   """
-  Workflow title (defaults to "New Workflow")
-  """
-title: String,   "Privacy kind for the workflow (defaults to PUBLIC)"
-privacy_kind: WorkflowBuilderPrivacyKind,   "Optional workflow description"
-description: String,   "Optional folder ID to place the workflow in"
-folder_id: ID,   "Optional list of user IDs to set as workflow owners"
-owner_ids: [ID!]): WorkflowBuilderCreateResult!
   "Submit answers to a form. Open to authenticated and anonymous users — authorization is handled by the form settings (user restrictions, etc.). Note: forms with reCAPTCHA enabled cannot be submitted via GraphQL — use the UI instead."
   create_form_submission(  "The unique token identifying the form to submit to."
 form_token: String!,   "The answers to submit. Each entry specifies a question ID and the answer for that question."
@@ -2265,6 +2033,36 @@ type EnhancedPromptResult {
   addition: String
 }
 
+"A theme produced by extracting brand identity from a URL. Extends VibeTheme with extraction metadata."
+type ExtractedVibeTheme {
+  "The theme identifier (e.g. extracted_<8-char-hash>)"
+  id: ID
+  "Theme display name (derived from extracted brand)"
+  name: String
+  "User-friendly display name"
+  label: String
+  """
+  Three representative HSL colors for the picker swatch: [primary, accent (= brand secondary), chart-3 (= primary +60° hue)]. Differs from VibeTheme.colors which uses [primary, accent, secondary]: extracted themes leave the scaffold "secondary" slot neutral, so chart-3 is substituted to give three distinct brand-related hues.
+  """
+  colors: [String!]
+  "Base border radius value"
+  radius: String
+  "Primary font family name"
+  font_family: String
+  "Secondary font family name"
+  font_family_secondary: String
+  "Light mode CSS token values (HSL strings keyed by CSS variable name)"
+  light: JSON
+  "Dark mode CSS token values (HSL strings keyed by CSS variable name)"
+  dark: JSON
+  "URL the theme was extracted from"
+  source_url: String
+  "Primary logo URL for FE preview hint"
+  logo_url: String
+  "Pass-through warnings from brand-extraction"
+  extraction_notes: [String!]
+}
+
 "Presigned URL for uploading a file to S3"
 type FileUploadUrl {
   "Presigned URL to upload the file directly to S3"
@@ -2335,6 +2133,9 @@ monday_assets: [MondayAssetDocumentSourceInput!]!): AiDocumentActionResponse!
   "Enhance a user prompt to include AI capabilities"
   enhance_prompt(  "The original user prompt to enhance"
 prompt: String!): EnhancedPromptResult!
+  "Extract brand identity from a URL and produce a ThemeDefinition plug-compatible with presets."
+  extract_brand_theme(  "The URL to extract brand identity from."
+url: String!): ExtractedVibeTheme!
   "Get a presigned URL to upload a file to S3"
   file_upload_url(  "Original file name"
 file_name: String!,   "MIME type of the file"
@@ -2351,9 +2152,9 @@ input WebSearchConfigInput {
 
 "Configuration options for web search functionality"
 input WebSearchOptionsInput {
-  "Hint for max number of sources to consider (default: 5). Interpreted as guidance — the model decides retrieval breadth."
+  "Maximum number of search results to retrieve (default: 5)"
   topK: Int
-  "Hint to prioritize content from the last N days. Interpreted as guidance — not a hard filter."
+  "Limit search results to content from the last N days"
   recencyDays: Int
 }
 
@@ -2367,8 +2168,6 @@ enum AssetHolder {
   WORKSPACE
   "An account entity."
   ACCOUNT
-  "A vibe application entity."
-  VIBE_APP
 }
 
 "The result of a completed file upload, representing the created asset."
@@ -2798,10 +2597,14 @@ interface FieldType {
   has_remote_options: Boolean
 }
 
-"An interface (app feature) that a field type implements"
+"Implementation of a field type"
 type FieldTypeImplementation {
-  "Reference id of the app feature interface this field type implements"
-  app_feature_reference_id: ID
+  "Unique identifier for the implementation"
+  id: Int
+  "Unique key of the app feature"
+  uniqueKey: String
+  "Name of the implementation"
+  name: String
 }
 
 "The type of relation between a field and its type"
@@ -2915,22 +2718,6 @@ type LiteBuilderContextData {
   inbound_field_overrides: JSON
 }
 
-"A page of live workflows with pagination metadata"
-type LiveWorkflowsPage {
-  "List of live workflows in this page"
-  data: [Workflow!]!
-  "Cursor-based pagination metadata for fetching subsequent pages"
-  page_info: LiveWorkflowsPageInfo!
-}
-
-"Cursor-based pagination metadata for live workflows"
-type LiveWorkflowsPageInfo {
-  "Whether there are more results beyond the current page"
-  has_next_page: Boolean!
-  "Cursor of the last item in the current page; pass as `lastId` to fetch the next page"
-  end_cursor: ID
-}
-
 "Context data for Monday agents"
 type MondayAgentsContextData {
   "Display name of the block in the agents context"
@@ -2953,8 +2740,6 @@ type Option {
   value: JSON
   "The display title of the option"
   title: String
-  "Optional icon to display alongside the option (e.g. { vibe, tooltip })"
-  icon: JSON
 }
 
 "Interface for output field configuration"
@@ -3418,14 +3203,6 @@ input WorkflowIteratorInput {
   max_iterations_workflow_variable_key: Int
 }
 
-"Cursor-based pagination parameters for live workflows queries"
-input WorkflowsPaginationInput {
-  "Maximum number of results to return"
-  limit: Int
-  "Cursor of the last item from the previous page; pass `page_info.end_cursor` from the previous response"
-  last_id: ID
-}
-
 "The context where a workflow template can be accessed"
 enum WorkflowTemplateContext {
   "Using this context will make the template accessible in the Lite Builder"
@@ -3744,10 +3521,6 @@ cursor: String): UpdatesPage
 ids: [String],   "A list of column types."
 types: [ColumnType!],   "A list of column capabilities to filter by. Returns columns that have any of the specified capabilities. Use null in the array to represent columns with no capabilities (e.g., [null] for only columns without capabilities, [null, CALCULATED] for columns without capabilities or with calculated)."
 capabilities: [ColumnCapability]): [Column]
-  "Automations for this board"
-  automations(  "Max number of automations to return"
-limit: Int,   "Cursor from a previous page for pagination"
-cursor: String): AutomationsPage!
   "The user's permission level for this board (view / edit)."
   access_level: BoardAccessLevel!
   "The board log events."
@@ -4472,18 +4245,6 @@ type RestoreEntityResult {
   accepted: Boolean
 }
 
-"A point-in-time record of a restore status change."
-type RestoreHistoryEntry {
-  "The restore ID at the time this history entry was recorded."
-  restore_id: ID!
-  "The entity id (package id) of the restore."
-  entity_id: ID!
-  "The status of the restore at the time this history entry was recorded."
-  status: RestoreStatus!
-  "The date and time this history entry was recorded."
-  recorded_at: String!
-}
-
 "The possible statuses of a restore operation."
 enum RestoreStatus {
   "The restore is pending and has not started yet."
@@ -4512,18 +4273,6 @@ type RollbackSnapshotMutationResult {
   snapshot_id: ID!
   "The new status of the snapshot (rollback)."
   status: SnapshotStatus!
-}
-
-"A point-in-time record of a snapshot status change."
-type SnapshotHistoryEntry {
-  "The snapshot ID at the time this history entry was recorded."
-  snapshot_id: ID!
-  "The entity id (package id) of the snapshot."
-  entity_id: ID!
-  "The status of the snapshot at the time this history entry was recorded."
-  status: SnapshotStatus!
-  "The date and time this history entry was recorded."
-  recorded_at: String!
 }
 
 "The possible statuses of a snapshot operation."
@@ -5887,12 +5636,6 @@ input CreateBlockInput {
   page_break_block: PageBreakBlockInput
 }
 
-"Represents a document block that was successfully deleted."
-type DeletedDocBlock {
-  "The deleted block's unique identifier."
-  id: ID!
-}
-
 "A document block that was changed between two versions, including its content and what type of change occurred."
 type DiffBlock {
   "The unique identifier of the block."
@@ -5905,10 +5648,6 @@ type DiffBlock {
   summary: String
   "The parent block ID, or null if the block is at the top level."
   parent_block_id: ID
-  "The ID of the user who made the change to this block, or null if not available."
-  user_id: ID
-  "The ID of the AI agent that made the change to this block, or null if the change was made by a user."
-  agent_id: ID
   "The changes that occurred to this block (added, deleted, or changed)."
   changes: BlockChanges
 }
@@ -6456,8 +6195,6 @@ input ExportOptionsInput {
   header_row: HeaderFormat
   "Behavior for columns with no codec support in CSV exports. Ignored for other formats."
   non_importable_columns: NonImportableColumns = INCLUDE
-  "Include item_id (and parent_item_id when subitems are enabled) columns at the end of CSV exports."
-  include_item_identifiers: Boolean = false
 }
 
 "CSV header row format."
@@ -6622,34 +6359,6 @@ input UpdateObjectHierarchyPositionInput {
   newPosition: ObjectDynamicPositionInput
 }
 
-"Aggregated result of synchronously loading all widget data for a dashboard."
-type DashboardDataResult {
-  "Identifier of the dashboard whose widgets were loaded."
-  dashboard_id: ID
-  "Per-widget results for the dashboard, one entry per supported widget."
-  widgets: [WidgetResult!]
-}
-
-"Result of loading a single widget within a dashboard data load."
-type WidgetResult {
-  "Identifier of the widget this result belongs to."
-  widget_id: ID
-  "Whether the widget data loaded successfully or failed."
-  status: WidgetStatus
-  "Loaded widget data payload; null when status is ERROR or no data is available."
-  data: JSON
-  "Error message describing why the widget failed to load; null on success."
-  error: String
-}
-
-"Outcome of loading a single widget within loadDashboardData."
-enum WidgetStatus {
-  "Widget data was loaded successfully."
-  OK
-  "Widget failed to load; see error field for details."
-  ERROR
-}
-
 "Account context information."
 type AccountContext {
   "Unique account identifier."
@@ -6760,486 +6469,6 @@ type UserContextResponse {
   user: UserContext
   "Account context."
   account: AccountContext
-}
-
-"A page of automations with cursor for pagination"
-type AutomationsPage {
-  "Opaque cursor for fetching the next page. Null if no more results."
-  cursor: String
-  "The automations in this page"
-  items: [BoardAutomation!]
-}
-
-"A board automation"
-type BoardAutomation {
-  "Automation ID"
-  id: ID
-  "Creator user ID"
-  user_id: ID
-  "Whether the automation is active"
-  active: Boolean
-  "Automation title"
-  title: String
-  "Automation description"
-  description: String
-  "Creation timestamp"
-  created_at: String
-  "Last update timestamp"
-  updated_at: String
-  "Host data (board ID and type)"
-  workflow_host_data: JSON
-  "Workflow block definitions"
-  workflow_blocks: JSON
-  "Workflow variable definitions"
-  workflow_variables: JSON
-  "Automation importance level"
-  importance: Int
-  "Notice message for the automation"
-  notice_message: String
-  "Template reference ID if created from template"
-  template_reference_id: ID
-}
-
-"Input for creating a board automation. Provide template_reference_id to create from a template, or workflow_blocks and workflow_variables for a direct creation."
-input BoardAutomationCreateInput {
-  "Board ID to host the automation"
-  board_id: String!
-  "Automation title"
-  title: String!
-  "Automation description"
-  description: String
-  "Template reference ID (for template-based creation)"
-  template_reference_id: ID
-  "Automation block definitions (for direct creation)"
-  workflow_blocks: JSON
-  "Automation variable definitions (for direct creation)"
-  workflow_variables: JSON
-  "Template variable values (for template-based creation)"
-  workflow_variables_values: JSON
-}
-
-"Result of creating a board automation"
-type BoardAutomationCreateResult {
-  "The ID of the created automation"
-  workflow_id: ID
-}
-
-"Result of deleting a board automation"
-type BoardAutomationDeleteResult {
-  "Whether the deletion was successful"
-  is_success: Boolean
-}
-
-"Additional quota allocated beyond the base plan limit"
-type CampaignsAdditionalQuota {
-  "Amount of additional quota consumed"
-  consumed: Int
-  "Additional quota limit"
-  limit: Int
-  "Timestamp when additional quota expires"
-  expired_at: Date
-}
-
-"A campaign analytics event"
-type CampaignsAnalyticsEvent {
-  "Unique event identifier"
-  id: ID
-  "Unique identifier for this event"
-  identifier: String
-  "ID of the associated campaign"
-  campaign_id: ID
-  "ID of the associated variant"
-  variant_id: ID
-  "Timestamp when the event was created"
-  created_at: Date
-  "Type of analytics event"
-  type: CampaignsAnalyticsEventKind
-  "Parsed reason for bounced emails"
-  parsed_reason: String
-}
-
-"Types of analytics events for campaigns"
-enum CampaignsAnalyticsEventKind {
-  "Email was bounced back"
-  EMAIL_BOUNCED
-  "Email was successfully delivered"
-  EMAIL_DELIVERED
-  "Email was sent"
-  EMAIL_SENT
-  "Recipient marked email as spam"
-  EMAIL_RECIPIENT_COMPLAINT
-  "Recipient unsubscribed"
-  EMAIL_RECIPIENT_UNSUBSCRIBED
-  "Email was dropped before sending"
-  EMAIL_DROPPED
-  "Email was opened by recipient"
-  EMAIL_OPENED
-  "Link in email was clicked by recipient"
-  EMAIL_CLICKED
-}
-
-"Paginated analytics events response"
-type CampaignsAnalyticsEventsResponse {
-  "List of analytics events"
-  data: [CampaignsAnalyticsEvent!]
-  "Token for pagination to retrieve next batch"
-  next_token: String
-}
-
-"Aggregated analytics summary for an email campaign"
-type CampaignsAnalyticsSummary {
-  "Total emails sent"
-  total_sent: Int
-  "Total emails delivered"
-  total_delivered: Int
-  "Total number of email opens"
-  total_opens: Int
-  "Number of unique opens"
-  unique_opens: Int
-  "Total number of link clicks"
-  total_clicks: Int
-  "Number of unique clicks"
-  unique_clicks: Int
-  "Total unsubscribes"
-  total_unsubscribes: Int
-  "Number of unique unsubscribes"
-  unique_unsubscribes: Int
-  "Total emails not delivered"
-  total_undelivered: Int
-  "Number of unique undelivered"
-  unique_undelivered: Int
-  "Total spam complaints"
-  total_spam_reports: Int
-  "Number of unique spam reports"
-  unique_spam_reports: Int
-}
-
-"A brand color in a brand kit"
-type CampaignsBrandColor {
-  "Unique color identifier"
-  id: ID
-  "Hex color code"
-  hex_code: String
-  "Category of the brand color"
-  kind: CampaignsBrandColorKind
-}
-
-"Types of brand colors"
-enum CampaignsBrandColorKind {
-  "Primary brand color"
-  PRIMARY
-  "Secondary brand color"
-  SECONDARY
-  "Accent brand color"
-  ACCENT
-  "Text color"
-  TEXT
-  "Other brand color"
-  OTHER
-}
-
-"A brand image in a brand kit"
-type CampaignsBrandImage {
-  "Unique image identifier"
-  id: ID
-  "Name of the image"
-  name: String
-  "Alternative text for the image"
-  alt_text: String
-  "Category of the brand image"
-  kind: CampaignsBrandImageKind
-  "Current status of the image"
-  status: CampaignsBrandImageStatus
-  "Size of the image in bytes"
-  size_bytes: Int
-  "MIME type of the image"
-  mime_type: String
-  "Width of the image in pixels"
-  width: Int
-  "Height of the image in pixels"
-  height: Int
-  "URL to access the image"
-  remote_url: String
-}
-
-"Types of brand images"
-enum CampaignsBrandImageKind {
-  "Primary brand logo"
-  PRIMARY_LOGO
-  "Secondary brand logo"
-  SECONDARY_LOGO
-  "Image attachment"
-  ATTACHMENT
-}
-
-"Status of a brand image"
-enum CampaignsBrandImageStatus {
-  "Image pending confirmation"
-  PENDING
-  "Image confirmed"
-  CONFIRMED
-}
-
-"A brand kit containing colors and images for an account"
-type CampaignsBrandKit {
-  "Unique brand kit identifier"
-  id: ID
-  "Name of the brand kit"
-  name: String
-  "Status of the brand kit"
-  status: String
-  "Timestamp when the brand kit was created"
-  created_at: Date
-  "Timestamp when the brand kit was last updated"
-  updated_at: Date
-  "Colors in this brand kit"
-  brand_colors: [CampaignsBrandColor!]
-  "Images in this brand kit"
-  brand_images: [CampaignsBrandImage!]
-}
-
-"Company information for email campaigns"
-type CampaignsCompanyInformation {
-  "Company name"
-  company_name: String
-  "Company website URL"
-  company_website_url: String
-  "Whether physical address was AI generated"
-  physical_address_is_ai_generated: Boolean
-  "Physical mailing address"
-  physical_address: CampaignsPhysicalAddress
-}
-
-"Marketing contacts board configuration"
-type CampaignsContactsBoard {
-  "ID of the board"
-  board_id: ID
-  "ID of the email column"
-  email_column_id: ID
-  "ID of the email subscription column"
-  email_subscription_column_id: ID
-}
-
-"An email campaign"
-type CampaignsEmailCampaign {
-  "Unique campaign identifier"
-  id: ID
-  "Name of the campaign"
-  name: String
-  "Current status of the campaign"
-  status: CampaignsStatusKind
-  "Timestamp when the campaign was sent"
-  sent_on: Date
-  "Timestamp when the campaign was created"
-  created_at: Date
-  "Timestamp when the campaign was last updated"
-  updated_at: Date
-  "Analytics summary for the campaign"
-  summary: CampaignsAnalyticsSummary
-  "User who created the campaign"
-  created_by: User
-  "Email subject line"
-  subject: String
-  "Preview text shown in email clients"
-  preview_text: String
-  "When the campaign should be sent"
-  schedule_type: CampaignsScheduleKind
-  "Scheduled time for sending"
-  scheduled_time: Date
-  "IDs of segments targeted by this campaign"
-  segment_ids: [ID!]
-  "HTML content of the email template"
-  template_html: String
-}
-
-"A market insight"
-type CampaignsInsight {
-  "Unique insight identifier"
-  id: ID
-  "Title of the insight"
-  title: String
-  "Summary of the insight"
-  summary: String
-  "Target audience for the insight"
-  target_audience: String
-  "Rationale for the target audience"
-  audience_rationale: String
-  "Assessment of campaign worthiness"
-  campaign_worthiness: String
-  "Timestamp of the insight"
-  timestamp: String
-  "Source of the insight"
-  source: String
-  "Raw context data for the insight"
-  raw_context: String
-  "Timestamp when the insight was created"
-  created_at: Date
-  "Timestamp when the insight was last updated"
-  updated_at: Date
-  "Current status of the insight"
-  status: CampaignsInsightStatusKind
-  "Classification type of the insight"
-  type: CampaignsInsightClassificationKind
-}
-
-"Classification type of an insight"
-enum CampaignsInsightClassificationKind {
-  "Competitor move insight"
-  COMPETITOR_MOVE
-  "Market trend insight"
-  MARKET_TREND
-  "Customer behavior insight"
-  CUSTOMER_BEHAVIOR
-  "Emerging technology insight"
-  EMERGING_TECHNOLOGY
-  "Regulatory change insight"
-  REGULATORY_CHANGE
-  "Product launch insight"
-  PRODUCT_LAUNCH
-  "Crisis or event insight"
-  CRISIS_EVENT
-  "Other type of insight"
-  OTHER
-}
-
-"Status of an insight"
-enum CampaignsInsightStatusKind {
-  "active"
-  ACTIVE
-  "consumed"
-  CONSUMED
-  "dismissed"
-  DISMISSED
-}
-
-"A physical mailing address"
-type CampaignsPhysicalAddress {
-  "Street address"
-  street_address: String
-  "ZIP code"
-  zip_code: String
-  "City name"
-  city: String
-  "Country name"
-  country: String
-  "State or province"
-  state: String
-}
-
-"When the campaign should be sent"
-enum CampaignsScheduleKind {
-  "Send immediately"
-  NOW
-  "Send at scheduled time"
-  LATER
-}
-
-"An audience segment"
-type CampaignsSegment {
-  "Unique segment identifier"
-  id: ID
-  "Name of the segment"
-  name: String
-  "Type of the segment"
-  type: String
-  "Timestamp when the segment was created"
-  created_at: Date
-  "Timestamp when the segment was last updated"
-  updated_at: Date
-  "User who created the segment"
-  created_by: User
-  "ID of the data source"
-  data_source_id: ID
-  "Entity ID from the data source"
-  data_source_entity_id: ID
-  "Entity type from the data source"
-  data_source_entity_type: String
-}
-
-"Marketing channels settings for the current account"
-type CampaignsSettings {
-  "Company information settings"
-  company_information: CampaignsCompanyInformation
-  "Unsubscribe page configuration"
-  unsubscribe_page: CampaignsUnsubscribePage
-  "Unsubscribe footer configuration"
-  unsubscribe_footer: CampaignsUnsubscribeFooter
-  "Marketing contacts board configuration"
-  contacts_board: CampaignsContactsBoard
-}
-
-"Status of a campaign"
-enum CampaignsStatusKind {
-  "Campaign is being generated"
-  GENERATING
-  "Campaign is in draft state"
-  DRAFT
-  "Campaign is ready to send"
-  READY_TO_SEND
-  "Campaign is currently sending"
-  SENDING
-  "Campaign is scheduled for later"
-  SCHEDULED
-  "Campaign has been sent"
-  SENT
-  "Campaign is ongoing"
-  ONGOING
-  "Campaign failed"
-  FAILED
-  "Campaign is on hold"
-  ON_HOLD
-  "Campaign is blocked"
-  BLOCKED
-  "Campaign is processing"
-  PROCESSING
-}
-
-"Unsubscribe footer configuration"
-type CampaignsUnsubscribeFooter {
-  "Whether removal is allowed"
-  allow_removal: Boolean
-}
-
-"Unsubscribe page configuration"
-type CampaignsUnsubscribePage {
-  "Page title"
-  title: String
-  "Page body content"
-  body: String
-}
-
-"Account-level usage metrics across all resource domains"
-type CampaignsUsage {
-  "Email sends usage metrics"
-  email_sends: CampaignsUsageForDomain
-  "Marketing contacts usage metrics"
-  marketing_contacts: CampaignsUsageForDomain
-  "Whether this is a touch account"
-  is_touch_account: Boolean
-}
-
-"Usage metrics for a single resource domain"
-type CampaignsUsageForDomain {
-  "Metering bucket and service identifier"
-  key: CampaignsUsageKey
-  "Amount of resources consumed"
-  consumed: Int
-  "Resource usage limit"
-  limit: Int
-  "End date of the billing period"
-  end_date: String
-  "Whether usage is blocked due to limit exceeded"
-  blocked: Boolean
-  "Additional quota allocation"
-  additional_quota: CampaignsAdditionalQuota
-}
-
-"Identifies the metering bucket and service"
-type CampaignsUsageKey {
-  "Metering bucket name"
-  bucket_name: String
-  "Service name"
-  service: String
 }
 
 "Subscription object"
@@ -7646,36 +6875,14 @@ type Agent {
   goal: String
   "The execution plan in markdown format, describing the agent capabilities and operating principles"
   plan: String
-  "The LLM model the agent uses"
-  agent_model: AgentModel
-  "Reference IDs of skills attached to this agent. Use agent_skills_catalog to resolve full name and description."
-  skill_ids: [ID!]!
   "The original user prompt used to create the agent"
   user_prompt: String
   "The current configuration version of the agent. Increments on each update."
   version_id: ID!
-  "Knowledge files attached to the agent. Only populated on create mutation responses."
-  knowledge: [AgentKnowledgeEntry!]
   "The timestamp when the agent was created. Null on create mutation responses — use the agent query to fetch it."
   created_at: Date
   "The timestamp when the agent was last updated. Null on create mutation responses — use the agent query to fetch it."
   updated_at: Date
-}
-
-"A trigger currently attached to an agent"
-type AgentActiveTrigger {
-  "Stable identifier of this trigger instance — use this as node_id when calling remove_trigger_from_agent"
-  node_id: ID!
-  "The trigger type, matching block_reference_id in the catalog"
-  block_reference_id: ID!
-  "Display name of the trigger type"
-  name: String!
-  "Description of the trigger type"
-  description: String
-  """
-  Human-readable summary of how this trigger is configured (e.g. "type=Weekly, hour=9, days=3/4")
-  """
-  field_summary: String
 }
 
 "The kind of AI agent"
@@ -7686,70 +6893,6 @@ enum AgentKind {
   ACCOUNT_LEVEL
   "An agent created by an external provider"
   EXTERNAL
-}
-
-"The full knowledge configuration of an agent — resources (boards/docs) and uploaded files"
-type AgentKnowledge {
-  "Boards and docs the agent has access to"
-  resources: [AgentKnowledgeResource!]
-  "Files uploaded as agent knowledge"
-  files: [AgentKnowledgeFile!]
-}
-
-"A knowledge entry attached to an agent"
-type AgentKnowledgeEntry {
-  "The unique identifier of the knowledge entry"
-  id: ID!
-  "File metadata for this knowledge entry"
-  metadata: AgentKnowledgeMetadata
-  "The source type of this knowledge entry"
-  source_type: KnowledgeSource
-  "The current state of this knowledge entry"
-  state: KnowledgeState
-  "Reference ID for the knowledge entry"
-  knowledge_reference_id: ID
-}
-
-"A file uploaded as agent knowledge"
-type AgentKnowledgeFile {
-  "Unique identifier of the knowledge file"
-  id: ID
-  "Original file name"
-  file_name: String
-  "File extension (e.g. pdf, docx, csv)"
-  file_type: String
-}
-
-"Metadata about a knowledge file attachment"
-type AgentKnowledgeMetadata {
-  "Original name of the uploaded file"
-  file_name: String
-  "MIME type of the file"
-  file_type: String
-  "Cloudinary asset ID for image files"
-  asset_id: ID
-}
-
-"A monday.com board or doc the agent has been granted access to"
-type AgentKnowledgeResource {
-  "The ID of the board or doc"
-  resource_id: ID
-  "Whether this resource is a board or a doc"
-  scope_type: KnowledgeScope
-  "The permission level the agent has on this resource"
-  permission_type: KnowledgePermission
-}
-
-"Supported LLM models for an agent"
-enum AgentModel {
-  "Claude Sonnet 4.6 (claude-sonnet-4-6)"
-  CLAUDE_SONNET_4_6
-  "Claude Opus 4.7 (claude-opus-4-7)"
-  CLAUDE_OPUS_4_7
-  "GPT 5.2"
-  GPT_5_2
-  "Gemini 2.5 Flash"
-  GEMINI_2_5_FLASH
 }
 
 "Visual and role identity of an agent."
@@ -7766,16 +6909,6 @@ type AgentProfile {
   background_color: String
 }
 
-"A skill available for agents to use — browse the catalog, then attach by id."
-type AgentSkillCatalogEntry {
-  "Stable reference ID — pass this to add_skill_to_agent / remove_skill_from_agent"
-  id: ID
-  "Display name of the skill"
-  name: String
-  "What this skill does"
-  description: String
-}
-
 "The current state of an agent"
 enum AgentState {
   "The agent is active and can be triggered and executed"
@@ -7790,34 +6923,12 @@ enum AgentState {
   FAILED
 }
 
-"Result of an agent state change operation"
-type AgentStateResult {
-  "Whether the operation succeeded"
-  success: Boolean
-}
-
-"An available trigger type that can be attached to an agent"
-type AgentTriggerCatalogEntry {
-  "Pass this value as block_reference_id when calling add_trigger_to_agent"
-  block_reference_id: ID!
-  "Display name of the trigger"
-  name: String!
-  "What this trigger does"
-  description: String
-  "Structured value schemas for fields you can populate directly in field_values"
-  field_schemas: [TriggerFieldSchema!]!
-  "Selection fields (e.g. board picker) that must be provided in field_values as { value, label } pairs"
-  required_fields: [TriggerRequiredField!]!
-}
-
 "Input for creating an AI agent from a prompt — AI generates the profile from the prompt"
 input CreateAgentInput {
   "A description of what the agent should do — used to generate profile, goal, and plan via AI"
   prompt: String!
   "The LLM model the agent should use"
   agent_model: String
-  "IDs of previously uploaded pending files to attach as knowledge during creation"
-  pending_file_ids: [ID!]
 }
 
 "Input for creating a blank AI agent without AI generation"
@@ -7836,92 +6947,6 @@ input CreateBlankAgentInput {
   background_color: String
   "Stored as metadata on the agent. Not used for AI generation — use create_agent if you want AI to build the agent from a prompt."
   user_prompt: String
-}
-
-"The reason an agent is inactive"
-enum InactiveReason {
-  "The agent was deactivated due to an account-level block"
-  ACCOUNT_LEVEL_BLOCKING
-  "The agent was manually deactivated by a user"
-  DEACTIVATED_BY_USER
-  "The agent was deactivated automatically because it exceeded the runs rate limit"
-  RUNS_RATE_LIMIT_EXCEEDED
-}
-
-"The permission level the agent has on a resource"
-enum KnowledgePermission {
-  "Agent can read the resource"
-  READ
-  "Agent can read and write the resource"
-  READ_WRITE
-}
-
-"The type of monday.com resource granted to an agent"
-enum KnowledgeScope {
-  "A monday.com board"
-  BOARD
-  "A monday.com doc"
-  DOC
-}
-
-"The source type of a knowledge entry"
-enum KnowledgeSource {
-  "Knowledge sourced from an uploaded file"
-  FILE
-}
-
-"The state of a knowledge entry"
-enum KnowledgeState {
-  "Knowledge is active and available for retrieval"
-  ACTIVE
-  "Knowledge is being processed"
-  PENDING
-  "Knowledge has been deleted"
-  DELETED
-}
-
-"Result of a write operation that does not need to return entity data."
-type MutationResult {
-  "Whether the operation succeeded"
-  success: Boolean!
-}
-
-"Confirmation that a manual agent run was accepted and enqueued. This does not reflect the outcome of the run itself — the execution happens asynchronously. In the future, trigger_uuid can be used to query run status via a dedicated endpoint."
-type RunAgentResult {
-  "Correlation ID for the triggered run. Use this to track or look up the execution in downstream events or future run-status endpoints."
-  trigger_uuid: String
-}
-
-"Schema description for a trigger field that accepts a structured JSON value"
-type TriggerFieldSchema {
-  "The key to use in field_values when calling add_trigger_to_agent"
-  field_key: String!
-  "Human-readable description of the expected JSON shape for this field"
-  value_schema: String!
-}
-
-"A selection field (e.g. board picker) required when adding this trigger"
-type TriggerRequiredField {
-  "The key to use in field_values"
-  field_key: String!
-  "Field keys that must be provided before this field — resolve them in order"
-  depends_on: [String!]!
-  "Whether this field can be omitted"
-  optional: Boolean!
-}
-
-"Input for updating an AI agent — all fields are optional; only provided fields are changed"
-input UpdateAgentInput {
-  "The display name of the agent"
-  name: String
-  "The role of the agent"
-  role: String
-  "A description of the agent role"
-  role_description: String
-  "The execution plan (instructions) for the agent, in markdown format"
-  plan: String
-  "The LLM model the agent should use"
-  agent_model: AgentModel
 }
 
 "Response object for app deletion operations"
@@ -8178,8 +7203,6 @@ type AppType {
   photo_url_small: String
   "The app kind"
   kind: AppKind
-  "All versions of this app with their current status. Use this to poll promotion progress."
-  versions: [DeveloperAppVersion!]
   "The app status (i.e. is live?)"
   status: AppStatus
   "The latest version type"
@@ -8203,18 +7226,6 @@ type AppType {
 live_version_only: Boolean = false,   "Number of items to get, the default is 25."
 limit: Int = 25,   "Page number to get, starting at 1."
 page: Int = 1): [AppFeatureType!]
-}
-
-"The lifecycle status of an app version"
-enum AppVersionStatus {
-  "Version is in development and not yet live"
-  DRAFT
-  "Version is live and available to users"
-  LIVE
-  "Version has been superseded by a newer version"
-  DEPRECATED
-  "Version is in the process of being promoted"
-  PROMOTING
 }
 
 "Input for creating an app with its configuration data."
@@ -8249,14 +7260,6 @@ type CreateAppResponse {
   client_secret: String
   "The app's signing secret used for webhook signature verification"
   signing_secret: String
-}
-
-"An app version"
-type DeveloperAppVersion {
-  "The unique identifier of the app version"
-  id: ID
-  "The current lifecycle status of this app version"
-  status: AppVersionStatus
 }
 
 "Input for installing an app on the current account."
@@ -10594,8 +9597,6 @@ type Meeting {
   meeting_link: String!
   "The list of participants in the meeting."
   participants: [Participant!]!
-  "A concise AI-generated gist of the meeting."
-  gist: String
   "The AI-generated summary of the meeting."
   summary: String
   "The topics discussed during the meeting."
@@ -11984,16 +10985,6 @@ enum AggregateHistoryFunction {
   TRIM
   "Convert to uppercase."
   UPPER
-  "Truncate a date or datetime value to the day."
-  DATE_TRUNC_DAY
-  "Truncate a date or datetime value to the week."
-  DATE_TRUNC_WEEK
-  "Truncate a date or datetime value to the month."
-  DATE_TRUNC_MONTH
-  "Truncate a date or datetime value to the quarter."
-  DATE_TRUNC_QUARTER
-  "Truncate a date or datetime value to the year."
-  DATE_TRUNC_YEAR
 }
 
 "Configuration for grouping aggregate results by a column."
@@ -12348,14 +11339,6 @@ enum ItemsHistorySortDirection {
   DESC
 }
 
-"The account-level default work schedule and time off schedule"
-type AccountAvailabilityDefaults {
-  "The account-level default work schedule"
-  work_schedule: WorkSchedule!
-  "The account-level default time off schedule"
-  time_off: TimeOff!
-}
-
 "Response containing per-item results for adding allocations to resources"
 type AddAllocationsToResourcesResponse {
   "Per-item results for each allocation in the request"
@@ -12484,16 +11467,6 @@ input AllocationUpdateInput {
   resource_id: ID
 }
 
-"Input for assigning a work schedule and/or time off schedule to multiple users"
-input AssignUserAvailabilityInput {
-  "IDs of the users to assign schedules to"
-  user_ids: [ID!]!
-  "ID of the work schedule to assign; omit to leave unchanged"
-  work_schedule_id: ID
-  "ID of the time off schedule to assign; omit to leave unchanged"
-  time_off_id: ID
-}
-
 "Represents a single attribute type option for a resource"
 type Attribute {
   "Unique identifier for the attribute"
@@ -12502,34 +11475,6 @@ type Attribute {
   name: String!
   "Whether the attribute is enabled and can be used"
   is_active: Boolean!
-}
-
-"Input for adding a non-working date entry to a time off schedule"
-input CreateTimeOffEntryInput {
-  "ID of the time off schedule to add this entry to"
-  time_off_id: ID!
-  "Optional display name for this time off entry"
-  name: String
-  "Start date of the non-working period in YYYY-MM-DD format"
-  start: String!
-  "End date of the non-working period in YYYY-MM-DD format"
-  end: String!
-}
-
-"Input for creating a new time off schedule"
-input CreateTimeOffInput {
-  "Display name for the new time off schedule"
-  name: String!
-  "Non-working date entries to create alongside the schedule. Subsequent additions/updates use the dedicated time off entry mutations."
-  entries: [TimeOffEntryInput!]
-}
-
-"Input for creating a new work schedule"
-input CreateWorkScheduleInput {
-  "Display name for the new work schedule"
-  name: String!
-  "Per-weekday working hours; if omitted, all seven days are created as inactive"
-  days: [WorkScheduleDayInput!]
 }
 
 "Response indicating whether the allocation deletion succeeded"
@@ -12564,8 +11509,6 @@ type DirectoryResource {
   skills: [String!]
   "The location of the directory resource."
   location: String
-  "The type of the resource (user, viewer, or guest)."
-  resource_type: DirectoryResourceKind
 }
 
 "Attributes that can be updated on a resource directory entry"
@@ -12576,16 +11519,6 @@ enum DirectoryResourceAttribute {
   SKILLS
   "Represents the resource directory location attribute."
   LOCATION
-}
-
-"The type of a directory resource"
-enum DirectoryResourceKind {
-  "A member or admin user"
-  USER
-  "A view-only user"
-  VIEWER
-  "A guest user"
-  GUEST
 }
 
 "Paginated response containing directory resources and cursor for next page"
@@ -12684,122 +11617,6 @@ enum ResourceAttributeTypeKey {
   RESOURCE_MANAGER
 }
 
-"A named time off schedule with non-working date entries"
-type TimeOff {
-  "Unique identifier of the time off schedule"
-  id: ID!
-  "Display name of the time off schedule"
-  name: String!
-  "Whether this is the account-level default time off schedule"
-  is_default: Boolean!
-  "ID of the user who created this time off schedule, null if system-generated"
-  created_by: ID
-  "ISO 8601 timestamp when this record was created"
-  created_at: Date!
-  "ISO 8601 timestamp when this record was last updated"
-  updated_at: Date!
-  "Paginated non-working date entries in this time off schedule. Use next_time_off_entries_page as the top-level continuation query."
-  entries_page(  "The cursor which allows to fetch the next page of directory resources."
-cursor: String,   "Number of items to get, the default is 25."
-limit: Int = 25): TimeOffEntryPage!
-}
-
-"Result of a time off schedule delete operation"
-type TimeOffDeleteResult {
-  "ID of the deleted time off schedule, null if the operation failed"
-  id: ID
-  "Whether the operation succeeded"
-  success: Boolean!
-  "Structured error details, null if the operation succeeded"
-  error: Error
-}
-
-"A non-working date entry within a time off schedule"
-type TimeOffEntry {
-  "Unique identifier of the time off entry"
-  id: ID!
-  "ID of the time off schedule this entry belongs to"
-  time_off_id: ID!
-  "Optional display name for this time off entry"
-  name: String
-  "Start date of the non-working period in YYYY-MM-DD format"
-  start: String!
-  "End date of the non-working period in YYYY-MM-DD format"
-  end: String!
-  "ID of the user who created this entry"
-  created_by: ID!
-  "ISO 8601 timestamp when this record was created"
-  created_at: Date!
-  "ISO 8601 timestamp when this record was last updated"
-  updated_at: Date!
-}
-
-"Result of a time off entry delete operation"
-type TimeOffEntryDeleteResult {
-  "ID of the deleted time off entry, null if the operation failed"
-  id: ID
-  "Whether the operation succeeded"
-  success: Boolean!
-  "Structured error details, null if the operation succeeded"
-  error: Error
-}
-
-"A non-working date entry to create inline with a time off schedule"
-input TimeOffEntryInput {
-  "Optional display name for this time off entry"
-  name: String
-  "Start date of the non-working period in YYYY-MM-DD format"
-  start: String!
-  "End date of the non-working period in YYYY-MM-DD format"
-  end: String!
-}
-
-"Paginated list of time off entries"
-type TimeOffEntryPage {
-  "Time off entries in this page"
-  entries: [TimeOffEntry!]!
-  "Opaque cursor for fetching the next page, null when no more pages exist"
-  cursor: String
-}
-
-"Result of a time off entry create or update operation"
-type TimeOffEntryResult {
-  "The created or updated time off entry, null if the operation failed"
-  time_off_entry: TimeOffEntry
-  "Whether the operation succeeded"
-  success: Boolean!
-  "Structured error details, null if the operation succeeded"
-  error: Error
-}
-
-"Paginated list of time off schedules"
-type TimeOffPage {
-  "Time off schedules in this page"
-  time_offs: [TimeOff!]!
-  "Opaque cursor for fetching the next page, null when no more pages exist"
-  cursor: String
-}
-
-"Result of a time off schedule create or update operation"
-type TimeOffResult {
-  "The created or updated time off schedule, null if the operation failed"
-  time_off: TimeOff
-  "Whether the operation succeeded"
-  success: Boolean!
-  "Structured error details, null if the operation succeeded"
-  error: Error
-}
-
-"Input for removing work schedule and/or time off assignments from multiple users"
-input UnassignUserAvailabilityInput {
-  "IDs of the users to remove assignments from"
-  user_ids: [ID!]!
-  "Whether to remove the explicit work schedule assignment"
-  unassign_work_schedule: Boolean
-  "Whether to remove the explicit time off schedule assignment"
-  unassign_time_off: Boolean
-}
-
 "Result of a single allocation update operation"
 type UpdateAllocationResult {
   "Whether the operation succeeded"
@@ -12816,152 +11633,6 @@ type UpdateAllocationResult {
 type UpdateDirectoryResourceAttributesResponse {
   "Indicates whether the batch update completed successfully."
   success: Boolean!
-}
-
-"Input for updating an existing time off entry"
-input UpdateTimeOffEntryInput {
-  "ID of the time off entry to update"
-  id: ID!
-  "New display name for the time off entry"
-  name: String
-  "New start date in YYYY-MM-DD format"
-  start: String
-  "New end date in YYYY-MM-DD format"
-  end: String
-}
-
-"Input for updating an existing time off schedule. Entries are managed via the dedicated time off entry mutations (create_time_off_entry, update_time_off_entry, delete_time_off_entry)."
-input UpdateTimeOffInput {
-  "New display name for the time off schedule"
-  name: String
-}
-
-"Input for updating an existing work schedule"
-input UpdateWorkScheduleInput {
-  "New display name for the work schedule"
-  name: String
-  "Updated per-weekday working hours"
-  days: [WorkScheduleDayInput!]
-}
-
-"A user's assigned work schedule and time off schedule"
-type UserAvailability {
-  "ID of the user"
-  user_id: ID!
-  "The work schedule assigned to this user, null if using account default"
-  work_schedule: WorkSchedule
-  "The time off schedule assigned to this user, null if using account default"
-  time_off: TimeOff
-}
-
-"Paginated list of user availability assignments"
-type UserAvailabilityPage {
-  "User availability assignments in this page"
-  user_availabilities: [UserAvailability!]!
-  "Opaque cursor for fetching the next page, null when no more pages exist"
-  cursor: String
-}
-
-"Result of a single user availability assignment. Batch assign/unassign mutations return one of these per requested user, allowing partial success — successful entries have user_availability populated and success=true; failed entries have user_availability=null, success=false, and a populated error."
-type UserAvailabilityResult {
-  "The updated user availability, null if the operation failed for this user"
-  user_availability: UserAvailability
-  "Whether the operation succeeded"
-  success: Boolean!
-  "Structured error details, null if the operation succeeded"
-  error: Error
-}
-
-"Day of the week"
-enum WeekDay {
-  "Sunday"
-  SUNDAY
-  "Monday"
-  MONDAY
-  "Tuesday"
-  TUESDAY
-  "Wednesday"
-  WEDNESDAY
-  "Thursday"
-  THURSDAY
-  "Friday"
-  FRIDAY
-  "Saturday"
-  SATURDAY
-}
-
-"A named work schedule with per-weekday working hours"
-type WorkSchedule {
-  "Unique identifier of the work schedule"
-  id: ID!
-  "Display name of the work schedule"
-  name: String!
-  "Whether this is the account-level default work schedule"
-  is_default: Boolean!
-  "ID of the user who created this work schedule, null if system-generated"
-  created_by: ID
-  "ISO 8601 timestamp when this record was created"
-  created_at: Date!
-  "ISO 8601 timestamp when this record was last updated"
-  updated_at: Date!
-  "Per-weekday working hours for this schedule"
-  days: [WorkScheduleDay!]!
-}
-
-"Per-weekday working hours for a work schedule"
-type WorkScheduleDay {
-  "Day of the week this entry applies to"
-  week_day: WeekDay!
-  "Start of the working day in HH:MM format, null when is_active is false"
-  start_time: String
-  "End of the working day in HH:MM format, null when is_active is false"
-  end_time: String
-  "Whether this day is a working day"
-  is_active: Boolean!
-  "ISO 8601 timestamp when this record was created"
-  created_at: Date!
-  "ISO 8601 timestamp when this record was last updated"
-  updated_at: Date!
-}
-
-"Working hours for a specific day of the week"
-input WorkScheduleDayInput {
-  "Day of the week this entry applies to"
-  week_day: WeekDay!
-  "Start of the working day in HH:MM format. Required when is_active is true; ignored otherwise."
-  start_time: String
-  "End of the working day in HH:MM format. Required when is_active is true; ignored otherwise."
-  end_time: String
-  "Whether this day is a working day"
-  is_active: Boolean!
-}
-
-"Result of a work schedule delete operation"
-type WorkScheduleDeleteResult {
-  "ID of the deleted work schedule, null if the operation failed"
-  id: ID
-  "Whether the operation succeeded"
-  success: Boolean!
-  "Structured error details, null if the operation succeeded"
-  error: Error
-}
-
-"Paginated list of work schedules"
-type WorkSchedulePage {
-  "Work schedules in this page"
-  work_schedules: [WorkSchedule!]!
-  "Opaque cursor for fetching the next page, null when no more pages exist"
-  cursor: String
-}
-
-"Result of a work schedule create or update operation"
-type WorkScheduleResult {
-  "The created or updated work schedule, null if the operation failed"
-  work_schedule: WorkSchedule
-  "Whether the operation succeeded"
-  success: Boolean!
-  "Structured error details, null if the operation succeeded"
-  error: Error
 }
 
 "Effort hours per kind (allocated, planned, spent, available)."
@@ -13265,8 +11936,6 @@ type SearchIndexedBoard {
   description: String
   "ID of the workspace containing this board."
   workspace_id: ID
-  "ID of the user who created this board."
-  creator_id: ID
   "URL to view this board."
   url: String!
 }
@@ -13326,8 +11995,7 @@ workspace_ids: [ID!]): SearchItemResults!
 query: String!,   "Maximum number of results to return (default 10, max 20)."
 limit: Int = 10,   "Date range filter."
 date_range: CrossEntityDateRangeInput,   "Controls the trade-off between search quality and response time. Defaults to balanced."
-strategy: SearchStrategy,   "Filter boards to specific board IDs."
-board_ids: [ID!],   "Filter boards to specific workspace IDs."
+strategy: SearchStrategy,   "Filter boards to specific workspace IDs."
 workspace_ids: [ID!]): SearchBoardResults!
   "Search for documents."
   docs(  "The search query string."
@@ -13497,50 +12165,6 @@ type SprintTimeline {
   from: Date
   "user-editable complete date of the monday dev sprint timeline, may be different than the sprint complete date"
   to: Date
-}
-
-"Structured result data for a completed or partially-completed operation"
-type AsyncJobResult {
-  "Total items in the operation"
-  total: Int
-  "Successfully processed items"
-  succeeded: Int
-  "Items that failed"
-  failed: Int
-  "Operation-specific details (failed item IDs, report URLs, etc.)"
-  details: JSON
-}
-
-"Status information for an async job"
-type AsyncJobStatus {
-  "Unique job identifier"
-  id: ID
-  "Current job status"
-  status: JobState
-  "When the job was created (ISO 8601)"
-  created_at: String
-  "When the job was last updated (ISO 8601)"
-  updated_at: String
-  "Error description if the job failed"
-  error: String
-  "Structured result data for completed or partially-completed operations"
-  result: AsyncJobResult
-}
-
-"Status of an async job"
-enum JobState {
-  "Job is queued but not yet started"
-  PENDING
-  "Job is actively executing"
-  RUNNING
-  "Job completed successfully"
-  COMPLETED
-  "Job failed"
-  FAILED
-  "Job expired before completion"
-  EXPIRED
-  "Job was cancelled"
-  CANCELLED
 }
 
 "A single column value change within a task decision"
@@ -13783,14 +12407,6 @@ enum BaseRoleName {
   ADMIN
 }
 
-"The result of creating a service user."
-type CreateServiceUserResult {
-  "The created service user."
-  user: User
-  "The API token for the created service user. Null if token generation failed."
-  token: String
-}
-
 "Attributes of the team to be created."
 input CreateTeamAttributesInput {
   "The team's name."
@@ -13898,32 +12514,6 @@ type RemoveTeamOwnersResult {
   team: Team
   "Errors that occurred while removing team owners."
   errors: [RemoveTeamOwnersError!]
-}
-
-"A service user in the account."
-type ServiceUser {
-  "The ID of the service user."
-  id: ID
-  "The display name of the service user."
-  name: String
-  "The title/description of the service user."
-  title: String
-  "Whether the service user is active."
-  enabled: Boolean
-  "The ID of the user who created this service user."
-  invited_by_id: ID
-  "When the service user was created."
-  created_at: String
-  "The last time the service user token was used for an API request."
-  last_token_activity: String
-}
-
-"A service user token result."
-type ServiceUserToken {
-  "The ID of the service user."
-  service_user_id: ID
-  "The API token."
-  token: String
 }
 
 "Attributes of the email domain to be updated."
@@ -14073,8 +12663,6 @@ enum InvitationMethod {
   API_USER_CREATION
   "Created as an agent user."
   AGENT_USER_CREATION
-  "Created via system creation flow."
-  SYSTEM_CREATION
 }
 
 "URLs for the user's profile photo in various sizes."
@@ -14119,8 +12707,6 @@ enum UserKindFilter {
   PERSONAL_AGENT_MEMBER
   "A agent signup user user."
   AGENT_SIGNUP_USER
-  "A service user user."
-  SERVICE_USER
   "A portal user."
   PORTAL
   "A portfolio api user user."
@@ -14287,76 +12873,6 @@ type WidgetSchemaInfo {
   widget_type: ExternalWidget
   "The JSON schema (draft 7) for this widget type"
   schema: JSON
-}
-
-"A page of live workflow automations with cursor-based pagination metadata"
-type LiveWorkflowAutomationsPage {
-  "List of live workflow automations in this page"
-  data: [WorkflowAutomation!]
-  "Cursor-based pagination metadata"
-  page_info: WorkflowAutomationsPageInfo
-}
-
-"A workflow and its steps"
-type WorkflowAutomation {
-  "Workflow entity ID"
-  id: ID
-  "Workflow title"
-  title: String
-  "Workflow description"
-  description: String
-  "Whether the workflow is currently active"
-  active: Boolean
-  "Last update timestamp"
-  updated_at: String
-  "Creation timestamp"
-  created_at: String
-  "The steps that make up this workflow"
-  steps: [WorkflowStep!]
-}
-
-"Cursor-based pagination metadata for live workflow automation queries"
-type WorkflowAutomationsPageInfo {
-  "Whether there are more results beyond the current page"
-  has_next_page: Boolean
-  "Cursor of the last item in this page; pass as last_id to fetch the next page"
-  end_cursor: ID
-}
-
-"Cursor-based pagination parameters for workflow automation queries"
-input WorkflowAutomationsPaginationInput {
-  "Maximum number of results to return (default 50, max 100)"
-  limit: Int
-  "Cursor of the last item from the previous page; pass page_info.end_cursor from the previous response"
-  last_id: ID
-}
-
-"Identifiers for a newly created workflow"
-type WorkflowBuilderCreateResult {
-  "Stable workflow entity ID"
-  workflow_object_id: ID
-  "Draft workflow ID"
-  workflow_draft_id: ID
-}
-
-"Privacy level for a workflow"
-enum WorkflowBuilderPrivacyKind {
-  "Workflow is publicly accessible (Main)"
-  PUBLIC
-  "Workflow is private and restricted"
-  PRIVATE
-  "Workflow is shareable with guests outside the account"
-  SHAREABLE
-}
-
-"A step instance within a workflow"
-type WorkflowStep {
-  "Unique node ID within the workflow"
-  node_id: ID
-  "ID of the block type this step uses"
-  block_reference_id: ID
-  "Display title of the step"
-  title: String
 }
 
 "Logical operator for combining rules or conditions. Must be OR — the question is shown if any rule or condition is satisfied."
