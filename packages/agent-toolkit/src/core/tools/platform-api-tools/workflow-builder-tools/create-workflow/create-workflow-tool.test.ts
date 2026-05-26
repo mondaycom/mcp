@@ -1,6 +1,6 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '../../test-utils/mock-api-client';
-import { CreateWorkflowMutation } from './create-workflow.graphql.dev';
+import { CreateWorkflowMutation } from '../../../../../monday-graphql/generated/graphql.dev/graphql';
 
 describe('CreateWorkflowBuilderTool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;

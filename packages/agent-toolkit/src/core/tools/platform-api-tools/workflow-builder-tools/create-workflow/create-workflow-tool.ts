@@ -3,10 +3,11 @@ import { ToolInputType, ToolOutputType, ToolType } from '../../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../../base-monday-api-tool';
 import { rethrowWithContext } from '../../../../../utils';
 import {
-  createWorkflowMutation,
   CreateWorkflowMutation,
   CreateWorkflowMutationVariables,
-} from './create-workflow.graphql.dev';
+  WorkflowBuilderPrivacyKind,
+} from '../../../../../monday-graphql/generated/graphql.dev/graphql';
+import { createWorkflowMutation } from './create-workflow.graphql.dev';
 
 export const createWorkflowToolSchema = {
   workspaceId: z
@@ -53,7 +54,7 @@ Returns:
       const variables: CreateWorkflowMutationVariables = {
         workspace_id: input.workspaceId,
         ...(input.title !== undefined ? { title: input.title } : {}),
-        ...(input.privacyKind !== undefined ? { privacy_kind: input.privacyKind } : {}),
+        ...(input.privacyKind !== undefined ? { privacy_kind: input.privacyKind as WorkflowBuilderPrivacyKind } : {}),
         ...(input.description !== undefined ? { description: input.description } : {}),
         ...(input.folderId !== undefined ? { folder_id: input.folderId } : {}),
         ...(input.ownerIds !== undefined ? { owner_ids: input.ownerIds } : {}),

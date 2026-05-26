@@ -22,19 +22,3 @@ export const createWorkflowMutation = gql`
     }
   }
 `;
-
-export interface CreateWorkflowMutationVariables {
-  readonly workspace_id: string;
-  readonly title?: string;
-  readonly privacy_kind?: 'PUBLIC' | 'PRIVATE' | 'SHAREABLE';
-  readonly description?: string;
-  readonly folder_id?: string;
-  readonly owner_ids?: string[];
-}
-
-export interface CreateWorkflowMutation {
-  readonly create_workflow: {
-    readonly workflow_object_id: string;
-    readonly workflow_draft_id: string;
-  };
-}
