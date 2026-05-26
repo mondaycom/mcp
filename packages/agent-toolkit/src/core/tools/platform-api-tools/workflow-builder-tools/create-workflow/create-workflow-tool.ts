@@ -42,7 +42,7 @@ Use this when the user wants to build a new standalone workflow from scratch. Wo
 
 Returns:
 - workflowObjectId: the workflow object ID
-- workflowDraftId: the current draft version ID — workflows start as drafts and must be activated before they run
+- workflowDraftId: the current draft version ID — workflows start as drafts and must be published before they run
 
 Terminology:
 - Workflow Builder vs. board automations: Workflow Builder workflows are standalone objects scoped to a workspace. Board automations (create_automation) are per-board trigger/action rules. They are different products.
