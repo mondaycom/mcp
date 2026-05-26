@@ -229,7 +229,7 @@ export * from './agents-tools';
 // Workflows
 export * from './workflows-tools';
 // Workflow Builder Tools
-export * from './workflow-builder-tools';
+export * from './workflow-builder-tools/create-workflow/create-workflow-tool';
 // Dashboard Tools
 export * from './dashboard-tools';
 // Monday Dev Tools
