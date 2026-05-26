@@ -26,10 +26,10 @@ export const createWorkflowToolSchema = {
 };
 
 export class CreateWorkflowBuilderTool extends BaseMondayApiTool<typeof createWorkflowToolSchema> {
-  name = 'create_workflow_builder';
+  name = 'create_workflow';
   type = ToolType.WRITE;
   annotations = createMondayApiAnnotations({
-    title: 'Create Workflow Builder',
+    title: 'Create Workflow',
     readOnlyHint: false,
     destructiveHint: false,
     idempotentHint: false,
