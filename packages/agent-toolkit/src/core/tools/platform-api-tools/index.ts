@@ -149,7 +149,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   GetAgentTool,
   CreateAgentTool,
   DeleteAgentTool,
-  // Automations Tools
+  // Workflows (subgraph still on dev API version)
   ListAutomationsTool,
   ManageWorkflowsTool,
   // Cast: ctor signature (api, apiToken, context?) doesn't match BaseMondayApiToolConstructor.
