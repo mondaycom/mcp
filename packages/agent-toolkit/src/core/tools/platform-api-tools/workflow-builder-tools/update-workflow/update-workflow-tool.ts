@@ -58,7 +58,7 @@ Parameters:
 - prompt: describe what you want to change in plain English. Maximum 2000 characters.
 
 Returns:
-- workflowObjectId: the workflow entity ID (unchanged)
+- workflowObjectId: the workflow object ID (unchanged)
 - workflowDraftId: the draft version ID (unchanged)
 - result: agent response describing the changes made
 
