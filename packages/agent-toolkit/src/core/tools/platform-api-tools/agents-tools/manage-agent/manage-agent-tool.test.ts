@@ -32,7 +32,7 @@ describe('ManageAgentTool', () => {
     jest.spyOn(MondayAgentToolkit.prototype as any, 'createApiClient').mockReturnValue(mocks.mockApiClient);
   });
 
-  // ─── create ────────────────────────────────────────────────────────────────
+  // ─── create (AI mode) ──────────────────────────────────────────────────────
 
   describe('action: create', () => {
     it('should create an agent via AI mode and return it', async () => {
@@ -57,51 +57,16 @@ describe('ManageAgentTool', () => {
       );
     });
 
-    it('should create an agent via manual mode and return it', async () => {
-      mocks.setResponseOnce({ create_blank_agent: mockAgent } as CreateBlankAgentMutation);
+    it('should reject create without prompt', async () => {
+      const result = await callToolByNameRawAsync('manage_agent', { action: 'create' });
 
-      const result = await callToolByNameRawAsync('manage_agent', { action: 'create', name: 'Standup Bot', role: 'PM' });
-      const parsed = parseToolResult(result);
-
-      expect(parsed.agent.id).toBe('7');
-    });
-
-    it('should pass name and role for manual mode', async () => {
-      mocks.setResponseOnce({ create_blank_agent: mockAgent } as CreateBlankAgentMutation);
-
-      await callToolByNameRawAsync('manage_agent', { action: 'create', name: 'Standup Bot', role: 'PM' });
-
-      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-        expect.stringContaining('createBlankAgent'),
-        expect.objectContaining({ input: expect.objectContaining({ name: 'Standup Bot', role: 'PM' }) }),
-        expect.objectContaining({ versionOverride: 'dev' }),
-      );
-    });
-
-    it('should reject mixing prompt with manual fields', async () => {
-      const result = await callToolByNameRawAsync('manage_agent', { action: 'create', prompt: 'Make an agent', name: 'Agent' });
-
-      expect(result.content[0].text).toContain('Do not mix both');
-    });
-
-    it('should reject agent_model without prompt', async () => {
-      const result = await callToolByNameRawAsync('manage_agent', { action: 'create', name: 'Bot', agent_model: 'gpt-4o' });
-
-      expect(result.content[0].text).toContain('"agent_model" can only be used together with "prompt"');
+      expect(result.content[0].text).toContain('"prompt"');
     });
 
     it('should throw when AI create returns no id', async () => {
       mocks.setResponseOnce({ create_agent: null } as CreateAgentMutation);
 
       const result = await callToolByNameRawAsync('manage_agent', { action: 'create', prompt: 'Make an agent' });
-
-      expect(result.content[0].text).toContain('creation returned no id');
-    });
-
-    it('should throw when manual create returns no id', async () => {
-      mocks.setResponseOnce({ create_blank_agent: null } as CreateBlankAgentMutation);
-
-      const result = await callToolByNameRawAsync('manage_agent', { action: 'create', name: 'Bot' });
 
       expect(result.content[0].text).toContain('creation returned no id');
     });
@@ -113,11 +78,44 @@ describe('ManageAgentTool', () => {
 
       expect(result.content[0].text).toContain('Failed to create monday platform agent');
     });
+  });
+
+  // ─── create_blank (manual mode) ────────────────────────────────────────────
+
+  describe('action: create_blank', () => {
+    it('should create an agent via manual mode and return it', async () => {
+      mocks.setResponseOnce({ create_blank_agent: mockAgent } as CreateBlankAgentMutation);
+
+      const result = await callToolByNameRawAsync('manage_agent', { action: 'create_blank', name: 'Standup Bot', role: 'PM' });
+      const parsed = parseToolResult(result);
+
+      expect(parsed.agent.id).toBe('7');
+    });
+
+    it('should pass name and role for manual mode', async () => {
+      mocks.setResponseOnce({ create_blank_agent: mockAgent } as CreateBlankAgentMutation);
+
+      await callToolByNameRawAsync('manage_agent', { action: 'create_blank', name: 'Standup Bot', role: 'PM' });
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('createBlankAgent'),
+        expect.objectContaining({ input: expect.objectContaining({ name: 'Standup Bot', role: 'PM' }) }),
+        expect.objectContaining({ versionOverride: 'dev' }),
+      );
+    });
+
+    it('should throw when manual create returns no id', async () => {
+      mocks.setResponseOnce({ create_blank_agent: null } as CreateBlankAgentMutation);
+
+      const result = await callToolByNameRawAsync('manage_agent', { action: 'create_blank', name: 'Bot' });
+
+      expect(result.content[0].text).toContain('creation returned no id');
+    });
 
     it('should propagate API errors for manual create', async () => {
       mocks.setError('Unauthorized');
 
-      const result = await callToolByNameRawAsync('manage_agent', { action: 'create', name: 'Bot' });
+      const result = await callToolByNameRawAsync('manage_agent', { action: 'create_blank', name: 'Bot' });
 
       expect(result.content[0].text).toContain('Failed to create blank monday platform agent');
     });
@@ -126,19 +124,19 @@ describe('ManageAgentTool', () => {
   // ─── get ───────────────────────────────────────────────────────────────────
 
   describe('action: get', () => {
-    it('should fetch a single agent when id is provided', async () => {
+    it('should fetch a single agent when agent_id is provided', async () => {
       mocks.setResponseOnce({ agents: [mockAgent] } as GetAgentsQuery);
 
-      const result = await callToolByNameRawAsync('manage_agent', { action: 'get', id: '7' });
+      const result = await callToolByNameRawAsync('manage_agent', { action: 'get', agent_id: '7' });
       const parsed = parseToolResult(result);
 
       expect(parsed.agent).toEqual(mockAgent);
     });
 
-    it('should pass ids and versionOverride dev when fetching by id', async () => {
+    it('should pass ids and versionOverride dev when fetching by agent_id', async () => {
       mocks.setResponseOnce({ agents: [mockAgent] } as GetAgentsQuery);
 
-      await callToolByNameRawAsync('manage_agent', { action: 'get', id: '7' });
+      await callToolByNameRawAsync('manage_agent', { action: 'get', agent_id: '7' });
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.stringContaining('getAgents'),
@@ -150,12 +148,12 @@ describe('ManageAgentTool', () => {
     it('should return not-found message when agent does not exist', async () => {
       mocks.setResponseOnce({ agents: [] } as GetAgentsQuery);
 
-      const result = await callToolByNameRawAsync('manage_agent', { action: 'get', id: '999' });
+      const result = await callToolByNameRawAsync('manage_agent', { action: 'get', agent_id: '999' });
 
       expect(result.content[0].text).toContain('not found');
     });
 
-    it('should list agents when id is omitted', async () => {
+    it('should list agents when agent_id is omitted', async () => {
       mocks.setResponseOnce({ agents: [mockAgent] } as GetAgentsQuery);
 
       const result = await callToolByNameRawAsync('manage_agent', { action: 'get' });
@@ -180,7 +178,7 @@ describe('ManageAgentTool', () => {
     it('should propagate API errors with context for get', async () => {
       mocks.setError('Unauthorized');
 
-      const result = await callToolByNameRawAsync('manage_agent', { action: 'get', id: '7' });
+      const result = await callToolByNameRawAsync('manage_agent', { action: 'get', agent_id: '7' });
 
       expect(result.content[0].text).toContain('Failed to get monday platform agent');
     });
@@ -200,7 +198,7 @@ describe('ManageAgentTool', () => {
     it('should update an agent and return it', async () => {
       mocks.setResponseOnce({ update_agent: { ...mockAgent, profile: { ...mockAgent.profile, name: 'New Name' } } } as UpdateAgentMutation);
 
-      const result = await callToolByNameRawAsync('manage_agent', { action: 'update', id: '7', name: 'New Name' });
+      const result = await callToolByNameRawAsync('manage_agent', { action: 'update', agent_id: '7', name: 'New Name' });
       const parsed = parseToolResult(result);
 
       expect(parsed.agent.id).toBe('7');
@@ -209,7 +207,7 @@ describe('ManageAgentTool', () => {
     it('should only include provided fields in the input object', async () => {
       mocks.setResponseOnce({ update_agent: mockAgent } as UpdateAgentMutation);
 
-      await callToolByNameRawAsync('manage_agent', { action: 'update', id: '7', name: 'X' });
+      await callToolByNameRawAsync('manage_agent', { action: 'update', agent_id: '7', name: 'X' });
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.anything(),
@@ -218,14 +216,14 @@ describe('ManageAgentTool', () => {
       );
     });
 
-    it('should reject update without id', async () => {
+    it('should reject update without agent_id', async () => {
       const result = await callToolByNameRawAsync('manage_agent', { action: 'update', name: 'X' });
 
-      expect(result.content[0].text).toContain('requires "id"');
+      expect(result.content[0].text).toContain('requires "agent_id"');
     });
 
     it('should reject update with no fields', async () => {
-      const result = await callToolByNameRawAsync('manage_agent', { action: 'update', id: '7' });
+      const result = await callToolByNameRawAsync('manage_agent', { action: 'update', agent_id: '7' });
 
       expect(result.content[0].text).toContain('at least one of');
     });
@@ -233,7 +231,7 @@ describe('ManageAgentTool', () => {
     it('should throw when update_agent returns null', async () => {
       mocks.setResponseOnce({ update_agent: null } as UpdateAgentMutation);
 
-      const result = await callToolByNameRawAsync('manage_agent', { action: 'update', id: '7', name: 'X' });
+      const result = await callToolByNameRawAsync('manage_agent', { action: 'update', agent_id: '7', name: 'X' });
 
       expect(result.content[0].text).toContain('update_agent returned no data');
     });
@@ -241,7 +239,7 @@ describe('ManageAgentTool', () => {
     it('should propagate API errors for update', async () => {
       mocks.setError('API error');
 
-      const result = await callToolByNameRawAsync('manage_agent', { action: 'update', id: '7', name: 'X' });
+      const result = await callToolByNameRawAsync('manage_agent', { action: 'update', agent_id: '7', name: 'X' });
 
       expect(result.content[0].text).toContain('Failed to update monday platform agent');
     });
@@ -255,7 +253,7 @@ describe('ManageAgentTool', () => {
     it('should delete an agent and return it', async () => {
       mocks.setResponseOnce({ delete_agent: mockDeletedAgent } as DeleteAgentMutation);
 
-      const result = await callToolByNameRawAsync('manage_agent', { action: 'delete', id: '7' });
+      const result = await callToolByNameRawAsync('manage_agent', { action: 'delete', agent_id: '7' });
       const parsed = parseToolResult(result);
 
       expect(parsed.agent.id).toBe('7');
@@ -265,7 +263,7 @@ describe('ManageAgentTool', () => {
     it('should pass versionOverride dev for delete', async () => {
       mocks.setResponseOnce({ delete_agent: mockDeletedAgent } as DeleteAgentMutation);
 
-      await callToolByNameRawAsync('manage_agent', { action: 'delete', id: '7' });
+      await callToolByNameRawAsync('manage_agent', { action: 'delete', agent_id: '7' });
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.stringContaining('deleteAgent'),
@@ -274,16 +272,16 @@ describe('ManageAgentTool', () => {
       );
     });
 
-    it('should reject delete without id', async () => {
+    it('should reject delete without agent_id', async () => {
       const result = await callToolByNameRawAsync('manage_agent', { action: 'delete' });
 
-      expect(result.content[0].text).toContain('requires "id"');
+      expect(result.content[0].text).toContain('requires "agent_id"');
     });
 
     it('should throw when delete_agent returns no id', async () => {
       mocks.setResponseOnce({ delete_agent: null } as DeleteAgentMutation);
 
-      const result = await callToolByNameRawAsync('manage_agent', { action: 'delete', id: '7' });
+      const result = await callToolByNameRawAsync('manage_agent', { action: 'delete', agent_id: '7' });
 
       expect(result.content[0].text).toContain('returned no id');
     });
@@ -291,7 +289,7 @@ describe('ManageAgentTool', () => {
     it('should propagate API errors for delete', async () => {
       mocks.setError('Not authorized');
 
-      const result = await callToolByNameRawAsync('manage_agent', { action: 'delete', id: '7' });
+      const result = await callToolByNameRawAsync('manage_agent', { action: 'delete', agent_id: '7' });
 
       expect(result.content[0].text).toContain('Failed to delete monday platform agent');
     });
@@ -303,7 +301,7 @@ describe('ManageAgentTool', () => {
     it('should activate an agent', async () => {
       mocks.setResponseOnce({ activate_agent: { success: true } } as ActivateAgentMutation);
 
-      const result = await callToolByNameRawAsync('manage_agent', { action: 'activate', id: '7' });
+      const result = await callToolByNameRawAsync('manage_agent', { action: 'activate', agent_id: '7' });
       const parsed = parseToolResult(result);
 
       expect(parsed.success).toBe(true);
@@ -313,7 +311,7 @@ describe('ManageAgentTool', () => {
     it('should pass versionOverride dev for activate', async () => {
       mocks.setResponseOnce({ activate_agent: { success: true } } as ActivateAgentMutation);
 
-      await callToolByNameRawAsync('manage_agent', { action: 'activate', id: '7' });
+      await callToolByNameRawAsync('manage_agent', { action: 'activate', agent_id: '7' });
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.stringContaining('activateAgent'),
@@ -322,16 +320,16 @@ describe('ManageAgentTool', () => {
       );
     });
 
-    it('should reject activate without id', async () => {
+    it('should reject activate without agent_id', async () => {
       const result = await callToolByNameRawAsync('manage_agent', { action: 'activate' });
 
-      expect(result.content[0].text).toContain('requires "id"');
+      expect(result.content[0].text).toContain('requires "agent_id"');
     });
 
     it('should return success:false when activate_agent is null', async () => {
       mocks.setResponseOnce({ activate_agent: null } as ActivateAgentMutation);
 
-      const result = await callToolByNameRawAsync('manage_agent', { action: 'activate', id: '7' });
+      const result = await callToolByNameRawAsync('manage_agent', { action: 'activate', agent_id: '7' });
 
       expect(parseToolResult(result).success).toBe(false);
     });
@@ -339,7 +337,7 @@ describe('ManageAgentTool', () => {
     it('should propagate API errors for activate', async () => {
       mocks.setError('API error');
 
-      const result = await callToolByNameRawAsync('manage_agent', { action: 'activate', id: '7' });
+      const result = await callToolByNameRawAsync('manage_agent', { action: 'activate', agent_id: '7' });
 
       expect(result.content[0].text).toContain('Failed to activate monday platform agent');
     });
@@ -351,17 +349,17 @@ describe('ManageAgentTool', () => {
     it('should deactivate an agent', async () => {
       mocks.setResponseOnce({ deactivate_agent: { success: true } } as DeactivateAgentMutation);
 
-      const result = await callToolByNameRawAsync('manage_agent', { action: 'deactivate', id: '7' });
+      const result = await callToolByNameRawAsync('manage_agent', { action: 'deactivate', agent_id: '7' });
       const parsed = parseToolResult(result);
 
       expect(parsed.success).toBe(true);
       expect(parsed.message).toContain('deactivated');
     });
 
-    it('should default to DEACTIVATED_BY_USER when inactive_reason is omitted', async () => {
+    it('should always pass DEACTIVATED_BY_USER as inactive_reason', async () => {
       mocks.setResponseOnce({ deactivate_agent: { success: true } } as DeactivateAgentMutation);
 
-      await callToolByNameRawAsync('manage_agent', { action: 'deactivate', id: '7' });
+      await callToolByNameRawAsync('manage_agent', { action: 'deactivate', agent_id: '7' });
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.anything(),
@@ -370,28 +368,24 @@ describe('ManageAgentTool', () => {
       );
     });
 
-    it('should pass ACCOUNT_LEVEL_BLOCKING when specified', async () => {
-      mocks.setResponseOnce({ deactivate_agent: { success: true } } as DeactivateAgentMutation);
-
-      await callToolByNameRawAsync('manage_agent', { action: 'deactivate', id: '7', inactive_reason: 'ACCOUNT_LEVEL_BLOCKING' });
-
-      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({ inactive_reason: 'ACCOUNT_LEVEL_BLOCKING' }),
-        expect.anything(),
-      );
-    });
-
-    it('should reject deactivate without id', async () => {
+    it('should reject deactivate without agent_id', async () => {
       const result = await callToolByNameRawAsync('manage_agent', { action: 'deactivate' });
 
-      expect(result.content[0].text).toContain('requires "id"');
+      expect(result.content[0].text).toContain('requires "agent_id"');
+    });
+
+    it('should return success:false when deactivate_agent is null', async () => {
+      mocks.setResponseOnce({ deactivate_agent: null } as DeactivateAgentMutation);
+
+      const result = await callToolByNameRawAsync('manage_agent', { action: 'deactivate', agent_id: '7' });
+
+      expect(parseToolResult(result).success).toBe(false);
     });
 
     it('should propagate API errors for deactivate', async () => {
       mocks.setError('API error');
 
-      const result = await callToolByNameRawAsync('manage_agent', { action: 'deactivate', id: '7' });
+      const result = await callToolByNameRawAsync('manage_agent', { action: 'deactivate', agent_id: '7' });
 
       expect(result.content[0].text).toContain('Failed to deactivate monday platform agent');
     });
@@ -403,7 +397,7 @@ describe('ManageAgentTool', () => {
     it('should enqueue an agent run and return trigger_uuid', async () => {
       mocks.setResponseOnce({ run_agent: { trigger_uuid: 'uuid-123' } } as RunAgentMutation);
 
-      const result = await callToolByNameRawAsync('manage_agent', { action: 'run', id: '7' });
+      const result = await callToolByNameRawAsync('manage_agent', { action: 'run', agent_id: '7' });
       const parsed = parseToolResult(result);
 
       expect(parsed.trigger_uuid).toBe('uuid-123');
@@ -413,7 +407,7 @@ describe('ManageAgentTool', () => {
     it('should pass versionOverride dev for run', async () => {
       mocks.setResponseOnce({ run_agent: { trigger_uuid: 'uuid-123' } } as RunAgentMutation);
 
-      await callToolByNameRawAsync('manage_agent', { action: 'run', id: '7' });
+      await callToolByNameRawAsync('manage_agent', { action: 'run', agent_id: '7' });
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.stringContaining('runAgent'),
@@ -422,16 +416,16 @@ describe('ManageAgentTool', () => {
       );
     });
 
-    it('should reject run without id', async () => {
+    it('should reject run without agent_id', async () => {
       const result = await callToolByNameRawAsync('manage_agent', { action: 'run' });
 
-      expect(result.content[0].text).toContain('requires "id"');
+      expect(result.content[0].text).toContain('requires "agent_id"');
     });
 
     it('should throw when run_agent returns null', async () => {
       mocks.setResponseOnce({ run_agent: null } as RunAgentMutation);
 
-      const result = await callToolByNameRawAsync('manage_agent', { action: 'run', id: '7' });
+      const result = await callToolByNameRawAsync('manage_agent', { action: 'run', agent_id: '7' });
 
       expect(result.content[0].text).toContain('run_agent returned no data');
     });
@@ -439,7 +433,7 @@ describe('ManageAgentTool', () => {
     it('should propagate API errors for run', async () => {
       mocks.setError('API error');
 
-      const result = await callToolByNameRawAsync('manage_agent', { action: 'run', id: '7' });
+      const result = await callToolByNameRawAsync('manage_agent', { action: 'run', agent_id: '7' });
 
       expect(result.content[0].text).toContain('Failed to run monday platform agent');
     });

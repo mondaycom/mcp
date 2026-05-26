@@ -62,6 +62,15 @@ export type Account = {
   tier?: Maybe<Scalars['String']['output']>;
 };
 
+/** The account-level default work schedule and time off schedule */
+export type AccountAvailabilityDefaults = {
+  __typename?: 'AccountAvailabilityDefaults';
+  /** The account-level default time off schedule */
+  time_off: TimeOff;
+  /** The account-level default work schedule */
+  work_schedule: WorkSchedule;
+};
+
 /** Account context information. */
 export type AccountContext = {
   __typename?: 'AccountContext';
@@ -553,6 +562,16 @@ export enum AggregateHistoryFunction {
   CountDistinct = 'COUNT_DISTINCT',
   /** Count items. */
   CountItems = 'COUNT_ITEMS',
+  /** Truncate a date or datetime value to the day. */
+  DateTruncDay = 'DATE_TRUNC_DAY',
+  /** Truncate a date or datetime value to the month. */
+  DateTruncMonth = 'DATE_TRUNC_MONTH',
+  /** Truncate a date or datetime value to the quarter. */
+  DateTruncQuarter = 'DATE_TRUNC_QUARTER',
+  /** Truncate a date or datetime value to the week. */
+  DateTruncWeek = 'DATE_TRUNC_WEEK',
+  /** Truncate a date or datetime value to the year. */
+  DateTruncYear = 'DATE_TRUNC_YEAR',
   /** Get the first value. */
   First = 'FIRST',
   /** Get the ID. */
@@ -1619,6 +1638,16 @@ export type AssignTeamOwnersResult = {
   errors?: Maybe<Array<AssignTeamOwnersError>>;
   /** The team for which the owners were changed. */
   team?: Maybe<Team>;
+};
+
+/** Input for assigning a work schedule and/or time off schedule to multiple users */
+export type AssignUserAvailabilityInput = {
+  /** ID of the time off schedule to assign; omit to leave unchanged */
+  time_off_id?: InputMaybe<Scalars['ID']['input']>;
+  /** IDs of the users to assign schedules to */
+  user_ids: Array<Scalars['ID']['input']>;
+  /** ID of the work schedule to assign; omit to leave unchanged */
+  work_schedule_id?: InputMaybe<Scalars['ID']['input']>;
 };
 
 /** A board where the user has item assignments. */
@@ -2693,6 +2722,437 @@ export enum CalculatedFunction {
   Sum = 'SUM'
 }
 
+/** Additional quota allocated beyond the base plan limit */
+export type CampaignsAdditionalQuota = {
+  __typename?: 'CampaignsAdditionalQuota';
+  /** Amount of additional quota consumed */
+  consumed?: Maybe<Scalars['Int']['output']>;
+  /** Timestamp when additional quota expires */
+  expired_at?: Maybe<Scalars['Date']['output']>;
+  /** Additional quota limit */
+  limit?: Maybe<Scalars['Int']['output']>;
+};
+
+/** A campaign analytics event */
+export type CampaignsAnalyticsEvent = {
+  __typename?: 'CampaignsAnalyticsEvent';
+  /** ID of the associated campaign */
+  campaign_id?: Maybe<Scalars['ID']['output']>;
+  /** Timestamp when the event was created */
+  created_at?: Maybe<Scalars['Date']['output']>;
+  /** Unique event identifier */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Unique identifier for this event */
+  identifier?: Maybe<Scalars['String']['output']>;
+  /** Parsed reason for bounced emails */
+  parsed_reason?: Maybe<Scalars['String']['output']>;
+  /** Type of analytics event */
+  type?: Maybe<CampaignsAnalyticsEventKind>;
+  /** ID of the associated variant */
+  variant_id?: Maybe<Scalars['ID']['output']>;
+};
+
+/** Types of analytics events for campaigns */
+export enum CampaignsAnalyticsEventKind {
+  /** Email was bounced back */
+  EmailBounced = 'EMAIL_BOUNCED',
+  /** Link in email was clicked by recipient */
+  EmailClicked = 'EMAIL_CLICKED',
+  /** Email was successfully delivered */
+  EmailDelivered = 'EMAIL_DELIVERED',
+  /** Email was dropped before sending */
+  EmailDropped = 'EMAIL_DROPPED',
+  /** Email was opened by recipient */
+  EmailOpened = 'EMAIL_OPENED',
+  /** Recipient marked email as spam */
+  EmailRecipientComplaint = 'EMAIL_RECIPIENT_COMPLAINT',
+  /** Recipient unsubscribed */
+  EmailRecipientUnsubscribed = 'EMAIL_RECIPIENT_UNSUBSCRIBED',
+  /** Email was sent */
+  EmailSent = 'EMAIL_SENT'
+}
+
+/** Paginated analytics events response */
+export type CampaignsAnalyticsEventsResponse = {
+  __typename?: 'CampaignsAnalyticsEventsResponse';
+  /** List of analytics events */
+  data?: Maybe<Array<CampaignsAnalyticsEvent>>;
+  /** Token for pagination to retrieve next batch */
+  next_token?: Maybe<Scalars['String']['output']>;
+};
+
+/** Aggregated analytics summary for an email campaign */
+export type CampaignsAnalyticsSummary = {
+  __typename?: 'CampaignsAnalyticsSummary';
+  /** Total number of link clicks */
+  total_clicks?: Maybe<Scalars['Int']['output']>;
+  /** Total emails delivered */
+  total_delivered?: Maybe<Scalars['Int']['output']>;
+  /** Total number of email opens */
+  total_opens?: Maybe<Scalars['Int']['output']>;
+  /** Total emails sent */
+  total_sent?: Maybe<Scalars['Int']['output']>;
+  /** Total spam complaints */
+  total_spam_reports?: Maybe<Scalars['Int']['output']>;
+  /** Total emails not delivered */
+  total_undelivered?: Maybe<Scalars['Int']['output']>;
+  /** Total unsubscribes */
+  total_unsubscribes?: Maybe<Scalars['Int']['output']>;
+  /** Number of unique clicks */
+  unique_clicks?: Maybe<Scalars['Int']['output']>;
+  /** Number of unique opens */
+  unique_opens?: Maybe<Scalars['Int']['output']>;
+  /** Number of unique spam reports */
+  unique_spam_reports?: Maybe<Scalars['Int']['output']>;
+  /** Number of unique undelivered */
+  unique_undelivered?: Maybe<Scalars['Int']['output']>;
+  /** Number of unique unsubscribes */
+  unique_unsubscribes?: Maybe<Scalars['Int']['output']>;
+};
+
+/** A brand color in a brand kit */
+export type CampaignsBrandColor = {
+  __typename?: 'CampaignsBrandColor';
+  /** Hex color code */
+  hex_code?: Maybe<Scalars['String']['output']>;
+  /** Unique color identifier */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Category of the brand color */
+  kind?: Maybe<CampaignsBrandColorKind>;
+};
+
+/** Types of brand colors */
+export enum CampaignsBrandColorKind {
+  /** Accent brand color */
+  Accent = 'ACCENT',
+  /** Other brand color */
+  Other = 'OTHER',
+  /** Primary brand color */
+  Primary = 'PRIMARY',
+  /** Secondary brand color */
+  Secondary = 'SECONDARY',
+  /** Text color */
+  Text = 'TEXT'
+}
+
+/** A brand image in a brand kit */
+export type CampaignsBrandImage = {
+  __typename?: 'CampaignsBrandImage';
+  /** Alternative text for the image */
+  alt_text?: Maybe<Scalars['String']['output']>;
+  /** Height of the image in pixels */
+  height?: Maybe<Scalars['Int']['output']>;
+  /** Unique image identifier */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Category of the brand image */
+  kind?: Maybe<CampaignsBrandImageKind>;
+  /** MIME type of the image */
+  mime_type?: Maybe<Scalars['String']['output']>;
+  /** Name of the image */
+  name?: Maybe<Scalars['String']['output']>;
+  /** URL to access the image */
+  remote_url?: Maybe<Scalars['String']['output']>;
+  /** Size of the image in bytes */
+  size_bytes?: Maybe<Scalars['Int']['output']>;
+  /** Current status of the image */
+  status?: Maybe<CampaignsBrandImageStatus>;
+  /** Width of the image in pixels */
+  width?: Maybe<Scalars['Int']['output']>;
+};
+
+/** Types of brand images */
+export enum CampaignsBrandImageKind {
+  /** Image attachment */
+  Attachment = 'ATTACHMENT',
+  /** Primary brand logo */
+  PrimaryLogo = 'PRIMARY_LOGO',
+  /** Secondary brand logo */
+  SecondaryLogo = 'SECONDARY_LOGO'
+}
+
+/** Status of a brand image */
+export enum CampaignsBrandImageStatus {
+  /** Image confirmed */
+  Confirmed = 'CONFIRMED',
+  /** Image pending confirmation */
+  Pending = 'PENDING'
+}
+
+/** A brand kit containing colors and images for an account */
+export type CampaignsBrandKit = {
+  __typename?: 'CampaignsBrandKit';
+  /** Colors in this brand kit */
+  brand_colors?: Maybe<Array<CampaignsBrandColor>>;
+  /** Images in this brand kit */
+  brand_images?: Maybe<Array<CampaignsBrandImage>>;
+  /** Timestamp when the brand kit was created */
+  created_at?: Maybe<Scalars['Date']['output']>;
+  /** Unique brand kit identifier */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Name of the brand kit */
+  name?: Maybe<Scalars['String']['output']>;
+  /** Status of the brand kit */
+  status?: Maybe<Scalars['String']['output']>;
+  /** Timestamp when the brand kit was last updated */
+  updated_at?: Maybe<Scalars['Date']['output']>;
+};
+
+/** Company information for email campaigns */
+export type CampaignsCompanyInformation = {
+  __typename?: 'CampaignsCompanyInformation';
+  /** Company name */
+  company_name?: Maybe<Scalars['String']['output']>;
+  /** Company website URL */
+  company_website_url?: Maybe<Scalars['String']['output']>;
+  /** Physical mailing address */
+  physical_address?: Maybe<CampaignsPhysicalAddress>;
+  /** Whether physical address was AI generated */
+  physical_address_is_ai_generated?: Maybe<Scalars['Boolean']['output']>;
+};
+
+/** Marketing contacts board configuration */
+export type CampaignsContactsBoard = {
+  __typename?: 'CampaignsContactsBoard';
+  /** ID of the board */
+  board_id?: Maybe<Scalars['ID']['output']>;
+  /** ID of the email column */
+  email_column_id?: Maybe<Scalars['ID']['output']>;
+  /** ID of the email subscription column */
+  email_subscription_column_id?: Maybe<Scalars['ID']['output']>;
+};
+
+/** An email campaign */
+export type CampaignsEmailCampaign = {
+  __typename?: 'CampaignsEmailCampaign';
+  /** Timestamp when the campaign was created */
+  created_at?: Maybe<Scalars['Date']['output']>;
+  /** User who created the campaign */
+  created_by?: Maybe<User>;
+  /** Unique campaign identifier */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Name of the campaign */
+  name?: Maybe<Scalars['String']['output']>;
+  /** Preview text shown in email clients */
+  preview_text?: Maybe<Scalars['String']['output']>;
+  /** When the campaign should be sent */
+  schedule_type?: Maybe<CampaignsScheduleKind>;
+  /** Scheduled time for sending */
+  scheduled_time?: Maybe<Scalars['Date']['output']>;
+  /** IDs of segments targeted by this campaign */
+  segment_ids?: Maybe<Array<Scalars['ID']['output']>>;
+  /** Timestamp when the campaign was sent */
+  sent_on?: Maybe<Scalars['Date']['output']>;
+  /** Current status of the campaign */
+  status?: Maybe<CampaignsStatusKind>;
+  /** Email subject line */
+  subject?: Maybe<Scalars['String']['output']>;
+  /** Analytics summary for the campaign */
+  summary?: Maybe<CampaignsAnalyticsSummary>;
+  /** HTML content of the email template */
+  template_html?: Maybe<Scalars['String']['output']>;
+  /** Timestamp when the campaign was last updated */
+  updated_at?: Maybe<Scalars['Date']['output']>;
+};
+
+/** A market insight */
+export type CampaignsInsight = {
+  __typename?: 'CampaignsInsight';
+  /** Rationale for the target audience */
+  audience_rationale?: Maybe<Scalars['String']['output']>;
+  /** Assessment of campaign worthiness */
+  campaign_worthiness?: Maybe<Scalars['String']['output']>;
+  /** Timestamp when the insight was created */
+  created_at?: Maybe<Scalars['Date']['output']>;
+  /** Unique insight identifier */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Raw context data for the insight */
+  raw_context?: Maybe<Scalars['String']['output']>;
+  /** Source of the insight */
+  source?: Maybe<Scalars['String']['output']>;
+  /** Current status of the insight */
+  status?: Maybe<CampaignsInsightStatusKind>;
+  /** Summary of the insight */
+  summary?: Maybe<Scalars['String']['output']>;
+  /** Target audience for the insight */
+  target_audience?: Maybe<Scalars['String']['output']>;
+  /** Timestamp of the insight */
+  timestamp?: Maybe<Scalars['String']['output']>;
+  /** Title of the insight */
+  title?: Maybe<Scalars['String']['output']>;
+  /** Classification type of the insight */
+  type?: Maybe<CampaignsInsightClassificationKind>;
+  /** Timestamp when the insight was last updated */
+  updated_at?: Maybe<Scalars['Date']['output']>;
+};
+
+/** Classification type of an insight */
+export enum CampaignsInsightClassificationKind {
+  /** Competitor move insight */
+  CompetitorMove = 'COMPETITOR_MOVE',
+  /** Crisis or event insight */
+  CrisisEvent = 'CRISIS_EVENT',
+  /** Customer behavior insight */
+  CustomerBehavior = 'CUSTOMER_BEHAVIOR',
+  /** Emerging technology insight */
+  EmergingTechnology = 'EMERGING_TECHNOLOGY',
+  /** Market trend insight */
+  MarketTrend = 'MARKET_TREND',
+  /** Other type of insight */
+  Other = 'OTHER',
+  /** Product launch insight */
+  ProductLaunch = 'PRODUCT_LAUNCH',
+  /** Regulatory change insight */
+  RegulatoryChange = 'REGULATORY_CHANGE'
+}
+
+/** Status of an insight */
+export enum CampaignsInsightStatusKind {
+  /** active */
+  Active = 'ACTIVE',
+  /** consumed */
+  Consumed = 'CONSUMED',
+  /** dismissed */
+  Dismissed = 'DISMISSED'
+}
+
+/** A physical mailing address */
+export type CampaignsPhysicalAddress = {
+  __typename?: 'CampaignsPhysicalAddress';
+  /** City name */
+  city?: Maybe<Scalars['String']['output']>;
+  /** Country name */
+  country?: Maybe<Scalars['String']['output']>;
+  /** State or province */
+  state?: Maybe<Scalars['String']['output']>;
+  /** Street address */
+  street_address?: Maybe<Scalars['String']['output']>;
+  /** ZIP code */
+  zip_code?: Maybe<Scalars['String']['output']>;
+};
+
+/** When the campaign should be sent */
+export enum CampaignsScheduleKind {
+  /** Send at scheduled time */
+  Later = 'LATER',
+  /** Send immediately */
+  Now = 'NOW'
+}
+
+/** An audience segment */
+export type CampaignsSegment = {
+  __typename?: 'CampaignsSegment';
+  /** Timestamp when the segment was created */
+  created_at?: Maybe<Scalars['Date']['output']>;
+  /** User who created the segment */
+  created_by?: Maybe<User>;
+  /** Entity ID from the data source */
+  data_source_entity_id?: Maybe<Scalars['ID']['output']>;
+  /** Entity type from the data source */
+  data_source_entity_type?: Maybe<Scalars['String']['output']>;
+  /** ID of the data source */
+  data_source_id?: Maybe<Scalars['ID']['output']>;
+  /** Unique segment identifier */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Name of the segment */
+  name?: Maybe<Scalars['String']['output']>;
+  /** Type of the segment */
+  type?: Maybe<Scalars['String']['output']>;
+  /** Timestamp when the segment was last updated */
+  updated_at?: Maybe<Scalars['Date']['output']>;
+};
+
+/** Marketing channels settings for the current account */
+export type CampaignsSettings = {
+  __typename?: 'CampaignsSettings';
+  /** Company information settings */
+  company_information?: Maybe<CampaignsCompanyInformation>;
+  /** Marketing contacts board configuration */
+  contacts_board?: Maybe<CampaignsContactsBoard>;
+  /** Unsubscribe footer configuration */
+  unsubscribe_footer?: Maybe<CampaignsUnsubscribeFooter>;
+  /** Unsubscribe page configuration */
+  unsubscribe_page?: Maybe<CampaignsUnsubscribePage>;
+};
+
+/** Status of a campaign */
+export enum CampaignsStatusKind {
+  /** Campaign is blocked */
+  Blocked = 'BLOCKED',
+  /** Campaign is in draft state */
+  Draft = 'DRAFT',
+  /** Campaign failed */
+  Failed = 'FAILED',
+  /** Campaign is being generated */
+  Generating = 'GENERATING',
+  /** Campaign is ongoing */
+  Ongoing = 'ONGOING',
+  /** Campaign is on hold */
+  OnHold = 'ON_HOLD',
+  /** Campaign is processing */
+  Processing = 'PROCESSING',
+  /** Campaign is ready to send */
+  ReadyToSend = 'READY_TO_SEND',
+  /** Campaign is scheduled for later */
+  Scheduled = 'SCHEDULED',
+  /** Campaign is currently sending */
+  Sending = 'SENDING',
+  /** Campaign has been sent */
+  Sent = 'SENT'
+}
+
+/** Unsubscribe footer configuration */
+export type CampaignsUnsubscribeFooter = {
+  __typename?: 'CampaignsUnsubscribeFooter';
+  /** Whether removal is allowed */
+  allow_removal?: Maybe<Scalars['Boolean']['output']>;
+};
+
+/** Unsubscribe page configuration */
+export type CampaignsUnsubscribePage = {
+  __typename?: 'CampaignsUnsubscribePage';
+  /** Page body content */
+  body?: Maybe<Scalars['String']['output']>;
+  /** Page title */
+  title?: Maybe<Scalars['String']['output']>;
+};
+
+/** Account-level usage metrics across all resource domains */
+export type CampaignsUsage = {
+  __typename?: 'CampaignsUsage';
+  /** Email sends usage metrics */
+  email_sends?: Maybe<CampaignsUsageForDomain>;
+  /** Whether this is a touch account */
+  is_touch_account?: Maybe<Scalars['Boolean']['output']>;
+  /** Marketing contacts usage metrics */
+  marketing_contacts?: Maybe<CampaignsUsageForDomain>;
+};
+
+/** Usage metrics for a single resource domain */
+export type CampaignsUsageForDomain = {
+  __typename?: 'CampaignsUsageForDomain';
+  /** Additional quota allocation */
+  additional_quota?: Maybe<CampaignsAdditionalQuota>;
+  /** Whether usage is blocked due to limit exceeded */
+  blocked?: Maybe<Scalars['Boolean']['output']>;
+  /** Amount of resources consumed */
+  consumed?: Maybe<Scalars['Int']['output']>;
+  /** End date of the billing period */
+  end_date?: Maybe<Scalars['String']['output']>;
+  /** Metering bucket and service identifier */
+  key?: Maybe<CampaignsUsageKey>;
+  /** Resource usage limit */
+  limit?: Maybe<Scalars['Int']['output']>;
+};
+
+/** Identifies the metering bucket and service */
+export type CampaignsUsageKey = {
+  __typename?: 'CampaignsUsageKey';
+  /** Metering bucket name */
+  bucket_name?: Maybe<Scalars['String']['output']>;
+  /** Service name */
+  service?: Maybe<Scalars['String']['output']>;
+};
+
 /** Fields that can be overridden in a column policy */
 export enum CanOverrideField {
   /** Allow overriding column description */
@@ -3483,6 +3943,15 @@ export type CreateQuestionInput = {
   visible?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
+/** The result of creating a service user. */
+export type CreateServiceUserResult = {
+  __typename?: 'CreateServiceUserResult';
+  /** The API token for the created service user. Null if token generation failed. */
+  token?: Maybe<Scalars['String']['output']>;
+  /** The created service user. */
+  user?: Maybe<User>;
+};
+
 export type CreateStatusColumnSettingsInput = {
   labels: Array<CreateStatusLabelInput>;
 };
@@ -3539,6 +4008,26 @@ export type CreateTeamOptionsInput = {
   allow_empty_team?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
+/** Input for adding a non-working date entry to a time off schedule */
+export type CreateTimeOffEntryInput = {
+  /** End date of the non-working period in YYYY-MM-DD format */
+  end: Scalars['String']['input'];
+  /** Optional display name for this time off entry */
+  name?: InputMaybe<Scalars['String']['input']>;
+  /** Start date of the non-working period in YYYY-MM-DD format */
+  start: Scalars['String']['input'];
+  /** ID of the time off schedule to add this entry to */
+  time_off_id: Scalars['ID']['input'];
+};
+
+/** Input for creating a new time off schedule */
+export type CreateTimeOffInput = {
+  /** Non-working date entries to create alongside the schedule. Subsequent additions/updates use the dedicated time off entry mutations. */
+  entries?: InputMaybe<Array<TimeOffEntryInput>>;
+  /** Display name for the new time off schedule */
+  name: Scalars['String']['input'];
+};
+
 /** Input for initiating a file upload. */
 export type CreateUploadInput = {
   /** The MIME content type of the file. */
@@ -3564,6 +4053,14 @@ export type CreateUploadResult = {
   parts?: Maybe<Array<UploadPartInfo>>;
   /** The unique identifier for this upload session. */
   upload_id?: Maybe<Scalars['ID']['output']>;
+};
+
+/** Input for creating a new work schedule */
+export type CreateWorkScheduleInput = {
+  /** Per-weekday working hours; if omitted, all seven days are created as inactive */
+  days?: InputMaybe<Array<WorkScheduleDayInput>>;
+  /** Display name for the new work schedule */
+  name: Scalars['String']['input'];
 };
 
 /** Input for creating a workflow from a template */
@@ -3837,6 +4334,15 @@ export type Dashboard = {
   workspace_id?: Maybe<Scalars['ID']['output']>;
 };
 
+/** Aggregated result of synchronously loading all widget data for a dashboard. */
+export type DashboardDataResult = {
+  __typename?: 'DashboardDataResult';
+  /** Identifier of the dashboard whose widgets were loaded. */
+  dashboard_id?: Maybe<Scalars['ID']['output']>;
+  /** Per-widget results for the dashboard, one entry per supported widget. */
+  widgets?: Maybe<Array<WidgetResult>>;
+};
+
 /** Dashboard visibility. `PUBLIC` dashboards are visible to all workspace members; `PRIVATE` dashboards are only visible to invited users. */
 export enum DashboardKind {
   Private = 'PRIVATE',
@@ -4005,6 +4511,13 @@ export type DeleteWorkflowResult = {
   __typename?: 'DeleteWorkflowResult';
   /** Whether the workflow was successfully deleted */
   is_success: Scalars['Boolean']['output'];
+};
+
+/** Represents a document block that was successfully deleted. */
+export type DeletedDocBlock = {
+  __typename?: 'DeletedDocBlock';
+  /** The deleted block's unique identifier. */
+  id: Scalars['ID']['output'];
 };
 
 /** A department in the account. */
@@ -4199,6 +4712,8 @@ export type DeveloperAppVersion = {
 /** A document block that was changed between two versions, including its content and what type of change occurred. */
 export type DiffBlock = {
   __typename?: 'DiffBlock';
+  /** The ID of the AI agent that made the change to this block, or null if the change was made by a user. */
+  agent_id?: Maybe<Scalars['ID']['output']>;
   /** The changes that occurred to this block (added, deleted, or changed). */
   changes?: Maybe<BlockChanges>;
   /** The block content as a JSON string. */
@@ -4211,6 +4726,8 @@ export type DiffBlock = {
   summary?: Maybe<Scalars['String']['output']>;
   /** The type of block (e.g., text, image, list). */
   type?: Maybe<Scalars['String']['output']>;
+  /** The ID of the user who made the change to this block, or null if not available. */
+  user_id?: Maybe<Scalars['ID']['output']>;
 };
 
 export type DirectDocValue = ColumnValue & {
@@ -4244,6 +4761,8 @@ export type DirectoryResource = {
   location?: Maybe<Scalars['String']['output']>;
   /** The name of the directory resource. */
   name: Scalars['String']['output'];
+  /** The type of the resource (user, viewer, or guest). */
+  resource_type?: Maybe<DirectoryResourceKind>;
   /** The skills of the directory resource. */
   skills?: Maybe<Array<Scalars['String']['output']>>;
 };
@@ -4256,6 +4775,16 @@ export enum DirectoryResourceAttribute {
   Location = 'LOCATION',
   /** Represents the resource directory skills attribute. */
   Skills = 'SKILLS'
+}
+
+/** The type of a directory resource */
+export enum DirectoryResourceKind {
+  /** A guest user */
+  Guest = 'GUEST',
+  /** A member or admin user */
+  User = 'USER',
+  /** A view-only user */
+  Viewer = 'VIEWER'
 }
 
 /** Paginated response containing directory resources and cursor for next page */
@@ -4887,35 +5416,6 @@ export enum ExternalWidget {
   /** Table widgets for visualization */
   Table = 'TABLE'
 }
-
-/** A theme produced by extracting brand identity from a URL. Extends VibeTheme with extraction metadata. */
-export type ExtractedVibeTheme = {
-  __typename?: 'ExtractedVibeTheme';
-  /** Three representative HSL colors for the picker swatch: [primary, accent (= brand secondary), chart-3 (= primary +60° hue)]. Differs from VibeTheme.colors which uses [primary, accent, secondary]: extracted themes leave the scaffold "secondary" slot neutral, so chart-3 is substituted to give three distinct brand-related hues. */
-  colors?: Maybe<Array<Scalars['String']['output']>>;
-  /** Dark mode CSS token values (HSL strings keyed by CSS variable name) */
-  dark?: Maybe<Scalars['JSON']['output']>;
-  /** Pass-through warnings from brand-extraction */
-  extraction_notes?: Maybe<Array<Scalars['String']['output']>>;
-  /** Primary font family name */
-  font_family?: Maybe<Scalars['String']['output']>;
-  /** Secondary font family name */
-  font_family_secondary?: Maybe<Scalars['String']['output']>;
-  /** The theme identifier (e.g. extracted_<8-char-hash>) */
-  id?: Maybe<Scalars['ID']['output']>;
-  /** User-friendly display name */
-  label?: Maybe<Scalars['String']['output']>;
-  /** Light mode CSS token values (HSL strings keyed by CSS variable name) */
-  light?: Maybe<Scalars['JSON']['output']>;
-  /** Primary logo URL for FE preview hint */
-  logo_url?: Maybe<Scalars['String']['output']>;
-  /** Theme display name (derived from extracted brand) */
-  name?: Maybe<Scalars['String']['output']>;
-  /** Base border radius value */
-  radius?: Maybe<Scalars['String']['output']>;
-  /** URL the theme was extracted from */
-  source_url?: Maybe<Scalars['String']['output']>;
-};
 
 /** Information about a failed user board role update, including the user ID and the error encountered. */
 export type FailedUserBoardRoleUpdate = {
@@ -6343,7 +6843,9 @@ export enum InactiveReason {
   /** The agent was deactivated due to an account-level block */
   AccountLevelBlocking = 'ACCOUNT_LEVEL_BLOCKING',
   /** The agent was manually deactivated by a user */
-  DeactivatedByUser = 'DEACTIVATED_BY_USER'
+  DeactivatedByUser = 'DEACTIVATED_BY_USER',
+  /** The agent was deactivated automatically because it exceeded the runs rate limit */
+  RunsRateLimitExceeded = 'RUNS_RATE_LIMIT_EXCEEDED'
 }
 
 /** Interface for input field configuration */
@@ -6527,6 +7029,8 @@ export enum InvitationMethod {
   ServicePortalUserInvitation = 'SERVICE_PORTAL_USER_INVITATION',
   /** Added via single sign-on. */
   Sso = 'SSO',
+  /** Created via system creation flow. */
+  SystemCreation = 'SYSTEM_CREATION',
   /** Unknown invitation method. */
   Unknown = 'UNKNOWN',
   /** Invited by another user. */
@@ -8037,6 +8541,33 @@ export type LiteBuilderContextData = {
   source_config?: Maybe<Scalars['JSON']['output']>;
 };
 
+/** A page of live workflow automations with cursor-based pagination metadata */
+export type LiveWorkflowAutomationsPage = {
+  __typename?: 'LiveWorkflowAutomationsPage';
+  /** List of live workflow automations in this page */
+  data?: Maybe<Array<WorkflowAutomation>>;
+  /** Cursor-based pagination metadata */
+  page_info?: Maybe<WorkflowAutomationsPageInfo>;
+};
+
+/** A page of live workflows with pagination metadata */
+export type LiveWorkflowsPage = {
+  __typename?: 'LiveWorkflowsPage';
+  /** List of live workflows in this page */
+  data: Array<Workflow>;
+  /** Cursor-based pagination metadata for fetching subsequent pages */
+  page_info: LiveWorkflowsPageInfo;
+};
+
+/** Cursor-based pagination metadata for live workflows */
+export type LiveWorkflowsPageInfo = {
+  __typename?: 'LiveWorkflowsPageInfo';
+  /** Cursor of the last item in the current page; pass as `lastId` to fetch the next page */
+  end_cursor?: Maybe<Scalars['ID']['output']>;
+  /** Whether there are more results beyond the current page */
+  has_next_page: Scalars['Boolean']['output'];
+};
+
 /** Answer for a location question. */
 export type LocationAnswerInput = {
   /** Full formatted address. */
@@ -8295,6 +8826,8 @@ export type Meeting = {
   action_items?: Maybe<Array<ActionItem>>;
   /** The end time of the meeting. */
   end_time: Scalars['Date']['output'];
+  /** A concise AI-generated gist of the meeting. */
+  gist?: Maybe<Scalars['String']['output']>;
   /** The unique identifier of the meeting. */
   id: Scalars['ID']['output'];
   /** The URL to view the meeting in the notetaker. */
@@ -8568,6 +9101,8 @@ export type Mutation = {
   assign_department_owner?: Maybe<AssignDepartmentOwnerResult>;
   /** Assigns the specified users as owners of the specified team. */
   assign_team_owners?: Maybe<AssignTeamOwnersResult>;
+  /** Assign the same work schedule and time off schedule to multiple users; maximum 100 user IDs per call. Returns one result per user, allowing partial success. */
+  assign_user_availability?: Maybe<Array<UserAvailabilityResult>>;
   /** Creates a new dropdown column in a board that is linked to a managed column. The column data and settings are controlled by the managed column. Title, description, and dropdown-specific settings (limit_select, label_limit_count) can be overridden locally. */
   attach_dropdown_managed_column?: Maybe<Column>;
   /** Creates a new status column in a board that is linked to a managed column. The column data and settings are controlled by the managed column. Only title and description can be overridden locally. */
@@ -8697,6 +9232,8 @@ export type Mutation = {
   create_portfolio?: Maybe<CreatePortfolioResult>;
   /** Create a new project in monday.com from scratch. This mutation initiates asynchronous project creation with comprehensive customization options including: privacy settings (private/public - share is currently not supported), optional companions like Resource Planner for enhanced project management capabilities, workspace assignment for organizational structure, folder placement for better organization, and template selection for predefined project structures. Since project creation is asynchronous, you can optionally provide a callback_url where the project ID will be sent via POST request once creation completes. The callback will receive: { is_success: boolean, process_id: string, project_id?: number }. Returns a process_id for tracking the creation request. */
   create_project?: Maybe<CreateProjectResult>;
+  /** Creates a new service user with a read-only API token. */
+  create_service_user?: Maybe<CreateServiceUserResult>;
   /** Creates a new status column with strongly typed settings. Status columns allow users to track item progress through customizable labels (e.g., "Working on it", "Done", "Stuck"). This mutation is specifically for status/color columns and provides type-safe creation with label configuration. */
   create_status_column?: Maybe<Column>;
   /** Create managed column of type status mutation. */
@@ -8707,6 +9244,10 @@ export type Mutation = {
   create_task?: Maybe<Task>;
   /** Creates a new team. */
   create_team?: Maybe<Team>;
+  /** Create one or more named time off schedules for the account; maximum 100 inputs per call */
+  create_time_off?: Maybe<Array<TimeOffResult>>;
+  /** Add one or more non-working date entries to a time off schedule; maximum 100 inputs per call */
+  create_time_off_entry?: Maybe<Array<TimeOffEntryResult>>;
   create_timeline_item?: Maybe<TimelineItem>;
   create_update?: Maybe<Update>;
   /** Initiate a file upload. Returns presigned upload URLs and an upload_id. */
@@ -8721,6 +9262,10 @@ export type Mutation = {
   create_webhook?: Maybe<Webhook>;
   /** Create a new widget. */
   create_widget?: Maybe<Widget>;
+  /** Create one or more named work schedules for the account; maximum 100 inputs per call */
+  create_work_schedule?: Maybe<Array<WorkScheduleResult>>;
+  /** Create a new empty workflow in the given workspace and return its identifiers. */
+  create_workflow: WorkflowBuilderCreateResult;
   /** Create a new workspace. */
   create_workspace?: Maybe<Workspace>;
   /** Deactivate an existing agent */
@@ -8756,6 +9301,8 @@ export type Mutation = {
   delete_doc?: Maybe<Scalars['JSON']['output']>;
   /** Delete a document block */
   delete_doc_block?: Maybe<DocumentBlockIdOnly>;
+  /** Deletes multiple document blocks in a single operation. Maximum 100 blocks per request. */
+  delete_doc_blocks?: Maybe<Array<DeletedDocBlock>>;
   /** Delete entity ID mappings by old IDs for a migration job. */
   delete_entity_id_mappings?: Maybe<DeleteEntityIdMappingsResult>;
   /** Remove an object from favorites */
@@ -8793,6 +9340,10 @@ export type Mutation = {
   delete_teams_from_board?: Maybe<Array<Maybe<Team>>>;
   /** Delete teams from a workspace. */
   delete_teams_from_workspace?: Maybe<Array<Maybe<Team>>>;
+  /** Soft-delete one or more time off schedules; maximum 100 IDs per call */
+  delete_time_off?: Maybe<Array<TimeOffDeleteResult>>;
+  /** Soft-delete one or more time off entries; maximum 100 IDs per call */
+  delete_time_off_entry?: Maybe<Array<TimeOffEntryDeleteResult>>;
   delete_timeline_item?: Maybe<TimelineItem>;
   delete_update?: Maybe<Update>;
   /** Delete users from a workspace. */
@@ -8805,6 +9356,8 @@ export type Mutation = {
   delete_webhook?: Maybe<Webhook>;
   /** Delete an existing widget. */
   delete_widget?: Maybe<Scalars['Boolean']['output']>;
+  /** Soft-delete one or more work schedules; maximum 100 IDs per call */
+  delete_work_schedule?: Maybe<Array<WorkScheduleDeleteResult>>;
   /** Delete workspace. */
   delete_workspace?: Maybe<Workspace>;
   /** Detach boards from their object schemas. */
@@ -8851,6 +9404,8 @@ export type Mutation = {
   publish_object?: Maybe<ObjectOperationResponse>;
   /** Reconcile the current user tasks board with latest source item changes. */
   reconcile_with_items?: Maybe<ReconciliationResult>;
+  /** Revokes all existing tokens and generates a new API token for a service user. */
+  regenerate_service_user_token?: Maybe<Scalars['String']['output']>;
   /** Remove a board or doc from an agent. Creates a draft, removes the access, and promotes to live. */
   remove_agent_resource_access?: Maybe<MutationResult>;
   /** Removes connected boards from a board relation column. */
@@ -8869,6 +9424,8 @@ export type Mutation = {
   remove_users_from_team?: Maybe<ChangeTeamMembershipsResult>;
   /** Restore an entity from a migration job */
   restore_entity?: Maybe<RestoreEntityResult>;
+  /** Revokes all API tokens for a service user. */
+  revoke_service_user_tokens?: Maybe<Scalars['Boolean']['output']>;
   /** Rollback a restore to undo the workspace creation in the target account */
   rollback_restore?: Maybe<RollbackRestoreMutationResult>;
   /** Rollback a snapshot to allow creating a new one for the same entity */
@@ -8894,6 +9451,8 @@ export type Mutation = {
   shorten_form_url?: Maybe<FormShortenedLink>;
   /** Unassigns owners from a department. */
   unassign_department_owners?: Maybe<UnassignDepartmentOwnerResult>;
+  /** Remove explicit work schedule and/or time off assignments from multiple users; maximum 100 user IDs per call. Returns one result per user, allowing partial success. */
+  unassign_user_availability?: Maybe<Array<UserAvailabilityResult>>;
   /** Undo a previously completed action, or cancel one still in flight */
   undo_action?: Maybe<UndoResult>;
   /** Uninstalls an app from the current account. Requires account admin permission. */
@@ -8988,6 +9547,10 @@ export type Mutation = {
   update_status_managed_column?: Maybe<StatusManagedColumn>;
   /** Update an existing task by ID. */
   update_task?: Maybe<Task>;
+  /** Update the name of a time off schedule */
+  update_time_off?: Maybe<TimeOffResult>;
+  /** Update the name or date range of one or more existing time off entries; maximum 100 inputs per call */
+  update_time_off_entry?: Maybe<Array<TimeOffEntryResult>>;
   /** Update board roles for multiple users. */
   update_users_board_role?: Maybe<UpdateUsersBoardRoleResponse>;
   /** Updates the role of the specified users. */
@@ -8998,6 +9561,8 @@ export type Mutation = {
   update_view?: Maybe<BoardView>;
   /** Update an existing board table view */
   update_view_table?: Maybe<BoardView>;
+  /** Update the name and/or working hours of an existing work schedule */
+  update_work_schedule?: Maybe<WorkScheduleResult>;
   /** Update an existing workspace. */
   update_workspace?: Maybe<Workspace>;
   /** Upsert entity ID mappings for a migration job. */
@@ -9214,6 +9779,12 @@ export type MutationAssign_Department_OwnerArgs = {
 export type MutationAssign_Team_OwnersArgs = {
   team_id: Scalars['ID']['input'];
   user_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationAssign_User_AvailabilityArgs = {
+  input: AssignUserAvailabilityInput;
 };
 
 
@@ -9535,6 +10106,7 @@ export type MutationCreate_DepartmentArgs = {
 
 /** Root mutation type for the Dependencies service */
 export type MutationCreate_DocArgs = {
+  doc_owner_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   location: CreateDocInput;
 };
 
@@ -9773,6 +10345,13 @@ export type MutationCreate_ProjectArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationCreate_Service_UserArgs = {
+  name: Scalars['String']['input'];
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_Status_ColumnArgs = {
   after_column_id?: InputMaybe<Scalars['ID']['input']>;
   board_id: Scalars['ID']['input'];
@@ -9811,6 +10390,18 @@ export type MutationCreate_TaskArgs = {
 export type MutationCreate_TeamArgs = {
   input: CreateTeamAttributesInput;
   options?: InputMaybe<CreateTeamOptionsInput>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationCreate_Time_OffArgs = {
+  inputs: Array<CreateTimeOffInput>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationCreate_Time_Off_EntryArgs = {
+  inputs: Array<CreateTimeOffEntryInput>;
 };
 
 
@@ -9900,6 +10491,23 @@ export type MutationCreate_WidgetArgs = {
   name: Scalars['String']['input'];
   parent: WidgetParentInput;
   settings: Scalars['JSON']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationCreate_Work_ScheduleArgs = {
+  inputs: Array<CreateWorkScheduleInput>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationCreate_WorkflowArgs = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  folder_id?: InputMaybe<Scalars['ID']['input']>;
+  owner_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  privacy_kind?: InputMaybe<WorkflowBuilderPrivacyKind>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  workspace_id: Scalars['ID']['input'];
 };
 
 
@@ -10015,6 +10623,12 @@ export type MutationDelete_DocArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationDelete_Doc_BlockArgs = {
   block_id: Scalars['String']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationDelete_Doc_BlocksArgs = {
+  block_ids: Array<Scalars['ID']['input']>;
 };
 
 
@@ -10148,6 +10762,18 @@ export type MutationDelete_Teams_From_WorkspaceArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationDelete_Time_OffArgs = {
+  ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationDelete_Time_Off_EntryArgs = {
+  ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationDelete_Timeline_ItemArgs = {
   id: Scalars['String']['input'];
 };
@@ -10190,6 +10816,12 @@ export type MutationDelete_WebhookArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationDelete_WidgetArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationDelete_Work_ScheduleArgs = {
+  ids: Array<Scalars['ID']['input']>;
 };
 
 
@@ -10380,6 +11012,12 @@ export type MutationPublish_ObjectArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationRegenerate_Service_User_TokenArgs = {
+  service_user_id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationRemove_Agent_Resource_AccessArgs = {
   id: Scalars['ID']['input'];
   resource_id: Scalars['ID']['input'];
@@ -10447,10 +11085,16 @@ export type MutationRestore_EntityArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationRevoke_Service_User_TokensArgs = {
+  service_user_id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationRollback_RestoreArgs = {
+  force?: InputMaybe<Scalars['Boolean']['input']>;
   migration_job_id: Scalars['ID']['input'];
   restore_id: Scalars['ID']['input'];
-  target_account_api_token: Scalars['String']['input'];
 };
 
 
@@ -10527,6 +11171,12 @@ export type MutationShorten_Form_UrlArgs = {
 export type MutationUnassign_Department_OwnersArgs = {
   department_id: Scalars['ID']['input'];
   user_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUnassign_User_AvailabilityArgs = {
+  input: UnassignUserAvailabilityInput;
 };
 
 
@@ -10923,6 +11573,19 @@ export type MutationUpdate_TaskArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationUpdate_Time_OffArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdateTimeOffInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUpdate_Time_Off_EntryArgs = {
+  inputs: Array<UpdateTimeOffEntryInput>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Users_Board_RoleArgs = {
   board_id: Scalars['ID']['input'];
   role_name: BoardBasicRoleName;
@@ -10975,6 +11638,13 @@ export type MutationUpdate_View_TableArgs = {
   sort?: InputMaybe<Array<ItemsQueryOrderBy>>;
   tags?: InputMaybe<Array<Scalars['String']['input']>>;
   view_id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUpdate_Work_ScheduleArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdateWorkScheduleInput;
 };
 
 
@@ -12038,6 +12708,8 @@ export type Query = {
   __typename?: 'Query';
   /** Get the connected account's information. */
   account?: Maybe<Account>;
+  /** Returns the account-level default work schedule and time off schedule */
+  account_availability_defaults?: Maybe<AccountAvailabilityDefaults>;
   /** Returns all connections for the account. Requires admin privileges. */
   account_connections?: Maybe<Array<Connection>>;
   /** Get all roles for the account */
@@ -12064,6 +12736,8 @@ export type Query = {
   all_widgets_schema?: Maybe<Array<WidgetSchemaInfo>>;
   /** Get sequences that the current user is allowed to enroll items to, that are connected to the provided board. Returns sequences owned by the user or sequences where the user has access to the sender connection. */
   allowed_sequences_to_enroll?: Maybe<Array<Sequence>>;
+  /** Search analytics events by identifier */
+  analytics_events?: Maybe<CampaignsAnalyticsEventsResponse>;
   /** Get an app by ID or slug. */
   app?: Maybe<AppType>;
   /** Get a collection of installs of an app. */
@@ -12165,14 +12839,20 @@ export type Query = {
   board_dependencies?: Maybe<BoardDependencies>;
   /** Get a collection of boards. */
   boards?: Maybe<Array<Maybe<Board>>>;
+  /** Get the brand kit for the current account */
+  brand_kit?: Maybe<CampaignsBrandKit>;
   /** Get the status of a bulk import items process */
   bulk_import_items_status: BulkImportStatus;
+  /** Get a single email campaign by ID */
+  campaign?: Maybe<CampaignsEmailCampaign>;
+  /** List email campaigns for the current account */
+  campaigns?: Maybe<Array<CampaignsEmailCampaign>>;
   /** Get the complexity data of your queries. */
   complexity?: Maybe<Complexity>;
   /** Fetch a single connection by its unique ID. */
   connection?: Maybe<Connection>;
   /** Get board IDs that are linked to a specific connection. */
-  connection_board_ids?: Maybe<Array<Scalars['Int']['output']>>;
+  connection_board_ids: Array<Scalars['ID']['output']>;
   /** Returns connections for the authenticated user. Supports filtering, pagination, ordering, and partial-scope options. */
   connections?: Maybe<Array<Connection>>;
   /** Count active workflows for a given host instance */
@@ -12232,16 +12912,25 @@ export type Query = {
   get_entity_snapshots?: Maybe<Array<GetSnapshotsQueryResults>>;
   /** Get workflow by ID */
   get_live_workflow?: Maybe<Workflow>;
-  /** Get list of live workflows with pagination */
+  /**
+   * Get list of live workflows with pagination
+   * @deprecated Use `get_live_workflows_page` for cursor-based pagination metadata (`has_next_page`, `end_cursor`).
+   */
   get_live_workflows: Array<Workflow>;
+  /** Get a page of live workflows with cursor-based pagination metadata */
+  get_live_workflows_page: LiveWorkflowsPage;
   /** Retrieve active account object schemas by their IDs or names. Only returns account-level object schemas (not global). Object schemas define the structure and columns of boards. If no parameters are provided, all account object schemas are returned. Pass exclude_created_by_monday: true to omit the schemas seeded by monday.com and return only schemas created by users in this account. Results are paginated using page and limit parameters. */
   get_object_schemas?: Maybe<Array<ObjectSchema>>;
   /** Retrieve available resource attribute types with descriptions */
   get_resource_attribute_types?: Maybe<Array<ResourceAttributeTypeInfo>>;
   /** Fetch available attribute options for a resource attribute type */
   get_resource_attributes?: Maybe<GetAttributesResponse>;
+  /** Get the status history timeline for a restore entity */
+  get_restore_history?: Maybe<Array<RestoreHistoryEntry>>;
   /** Get the entity restores */
   get_restores?: Maybe<Array<GetRestoresQueryResults>>;
+  /** Get the status history timeline for a snapshot entity */
+  get_snapshot_history?: Maybe<Array<SnapshotHistoryEntry>>;
   /** Get the changelog of decisions that were made for a task by the My Tasks agent. */
   get_task_changelog?: Maybe<Array<TaskDecisionChangelogEvent>>;
   /**
@@ -12256,6 +12945,10 @@ export type Query = {
   get_workflow_data?: Maybe<Scalars['JSON']['output']>;
   /** List of all supported workflow variable kinds with their json schemas */
   get_workflow_variable_schemas: Array<WorkflowVariableSchema>;
+  /** Get a single market insight by ID */
+  insight?: Maybe<CampaignsInsight>;
+  /** List market insights for the current account */
+  insights?: Maybe<Array<CampaignsInsight>>;
   /** Intelligence data. */
   intelligence?: Maybe<Intelligence>;
   /** Get all dependency predecessors for a specific item, including dependency type and lag per edge */
@@ -12272,6 +12965,10 @@ export type Query = {
   job_status: AsyncJobStatus;
   /** Search knowledge base snippets. */
   knowledge_base_search?: Maybe<KnowledgeBaseAnswer>;
+  /** Fetch a page of live workflows for the requesting account, with cursor-based pagination */
+  live_workflows_page: LiveWorkflowAutomationsPage;
+  /** Synchronously runs the full dashboard data-fetching flow and returns the results in a single blocking call. POC: reporting (aggregated_data) widgets only. Gated by the LoadDashboardDataSync flow feature. */
+  load_dashboard_data?: Maybe<DashboardDataResult>;
   /** Lookup API. Each field looks up a single entity type by name (lexical, name-only). */
   lookup: LookupNamespace;
   /** Get managed column data. */
@@ -12296,6 +12993,14 @@ export type Query = {
   my_tasks?: Maybe<MyTasksResponse>;
   /** Get next pages of board's items (rows) by cursor. */
   next_items_page: ItemsResponse;
+  /** Fetches the next page of entries for a time off schedule using a cursor from entries_page or next_time_off_entries_page */
+  next_time_off_entries_page?: Maybe<TimeOffEntryPage>;
+  /** Fetches the next page of time off schedules using a cursor from a previous time_offs or next_time_offs_page call */
+  next_time_offs_page?: Maybe<TimeOffPage>;
+  /** Fetches the next page of user availabilities using a cursor from a previous user_availabilities or next_user_availabilities_page call */
+  next_user_availabilities_page?: Maybe<UserAvailabilityPage>;
+  /** Fetches the next page of work schedules using a cursor from a previous work_schedules or next_work_schedules_page call */
+  next_work_schedules_page?: Maybe<WorkSchedulePage>;
   /** Namespace for all notetaker-related queries. */
   notetaker?: Maybe<NotetakerQueries>;
   notifications?: Maybe<Array<NotificationV2>>;
@@ -12335,6 +13040,16 @@ export type Query = {
   search_benchmark?: Maybe<SearchBenchmarkResults>;
   /** A query to search across all boards in the account. Returns raw json results. */
   search_cross_board?: Maybe<SearchAllResult>;
+  /** Get a single audience segment by ID */
+  segment?: Maybe<CampaignsSegment>;
+  /** List audience segments for the current account */
+  segments?: Maybe<Array<CampaignsSegment>>;
+  /** Retrieves API tokens for the given service users. */
+  service_user_tokens?: Maybe<Array<ServiceUserToken>>;
+  /** Retrieves all service users in the account with their token last activity. */
+  service_users?: Maybe<Array<ServiceUser>>;
+  /** Get marketing channels settings for the current account */
+  settings?: Maybe<CampaignsSettings>;
   /** Look up a single board with its metadata and relations for snapshot planning. */
   snapshottable_board?: Maybe<SnapshottableBoard>;
   /** Look up a workspace with paginated boards and overviews for snapshot planning. */
@@ -12353,6 +13068,8 @@ export type Query = {
   task?: Maybe<Task>;
   /** Get a collection of teams. */
   teams?: Maybe<Array<Maybe<Team>>>;
+  /** Returns active time off schedules for the caller's account */
+  time_offs?: Maybe<TimeOffPage>;
   /** Fetches timeline items for a given item */
   timeline?: Maybe<TimelineResponse>;
   timeline_item?: Maybe<TimelineItem>;
@@ -12363,6 +13080,10 @@ export type Query = {
   /** List trigger events with optional filters */
   trigger_events?: Maybe<TriggerEventsPage>;
   updates?: Maybe<Array<Update>>;
+  /** Usage metrics for the current account */
+  usage?: Maybe<CampaignsUsage>;
+  /** Returns user schedule assignments for the caller's account */
+  user_availabilities?: Maybe<UserAvailabilityPage>;
   /** Get all user configs for the account. */
   user_configs?: Maybe<Array<UserConfig>>;
   /** Returns connections that belong to the authenticated user. */
@@ -12381,6 +13102,10 @@ export type Query = {
   versions?: Maybe<Array<Version>>;
   /** Get a collection of webhooks for the board */
   webhooks?: Maybe<Array<Maybe<Webhook>>>;
+  /** Returns active work schedules for the caller's account */
+  work_schedules?: Maybe<WorkSchedulePage>;
+  /** Fetch workflows by IDs (max 50 per request) */
+  workflows: Array<WorkflowAutomation>;
   /** Get a collection of workspaces. */
   workspaces?: Maybe<Array<Maybe<Workspace>>>;
 };
@@ -12450,6 +13175,16 @@ export type QueryAggregate_HistoryArgs = {
 /** Root query type for the Dependencies service */
 export type QueryAllowed_Sequences_To_EnrollArgs = {
   board_id: Scalars['ID']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryAnalytics_EventsArgs = {
+  campaign_id?: InputMaybe<Scalars['ID']['input']>;
+  event_type?: InputMaybe<CampaignsAnalyticsEventKind>;
+  identifier: Scalars['String']['input'];
+  limit: Scalars['Int']['input'];
+  next_token?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -12585,6 +13320,18 @@ export type QueryBulk_Import_Items_StatusArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QueryCampaignArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryCampaignsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryConnectionArgs = {
   id: Scalars['Int']['input'];
 };
@@ -12592,7 +13339,7 @@ export type QueryConnectionArgs = {
 
 /** Root query type for the Dependencies service */
 export type QueryConnection_Board_IdsArgs = {
-  connectionId: Scalars['Int']['input'];
+  connection_id: Scalars['ID']['input'];
 };
 
 
@@ -12825,6 +13572,15 @@ export type QueryGet_Live_WorkflowsArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QueryGet_Live_Workflows_PageArgs = {
+  creator_app_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  host_instance_id?: InputMaybe<Scalars['ID']['input']>;
+  host_type?: InputMaybe<HostType>;
+  pagination?: InputMaybe<WorkflowsPaginationInput>;
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryGet_Object_SchemasArgs = {
   exclude_created_by_monday?: InputMaybe<Scalars['Boolean']['input']>;
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
@@ -12841,10 +13597,24 @@ export type QueryGet_Resource_AttributesArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QueryGet_Restore_HistoryArgs = {
+  entity_id: Scalars['ID']['input'];
+  migration_job_id: Scalars['ID']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryGet_RestoresArgs = {
   entityIds: Array<Scalars['String']['input']>;
   migrationJobId: Scalars['String']['input'];
   status?: Array<RestoreStatus>;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryGet_Snapshot_HistoryArgs = {
+  entity_id: Scalars['ID']['input'];
+  migration_job_id: Scalars['ID']['input'];
 };
 
 
@@ -12866,6 +13636,18 @@ export type QueryGet_Workflow_DataArgs = {
   account_id: Scalars['ID']['input'];
   internal_token: Scalars['String']['input'];
   workflow_entity_id: Scalars['ID']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryInsightArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryInsightsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 
@@ -12920,6 +13702,18 @@ export type QueryJob_StatusArgs = {
 export type QueryKnowledge_Base_SearchArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   query: Scalars['String']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryLive_Workflows_PageArgs = {
+  pagination?: InputMaybe<WorkflowAutomationsPaginationInput>;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryLoad_Dashboard_DataArgs = {
+  dashboard_id: Scalars['ID']['input'];
 };
 
 
@@ -12979,6 +13773,34 @@ export type QueryMute_Board_SettingsArgs = {
 export type QueryNext_Items_PageArgs = {
   cursor: Scalars['String']['input'];
   limit?: Scalars['Int']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryNext_Time_Off_Entries_PageArgs = {
+  cursor: Scalars['String']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryNext_Time_Offs_PageArgs = {
+  cursor: Scalars['String']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryNext_User_Availabilities_PageArgs = {
+  cursor: Scalars['String']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryNext_Work_Schedules_PageArgs = {
+  cursor: Scalars['String']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 
@@ -13063,6 +13885,24 @@ export type QuerySearch_Cross_BoardArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QuerySegmentArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QuerySegmentsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryService_User_TokensArgs = {
+  service_user_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
 export type QuerySnapshottable_BoardArgs = {
   id: Scalars['ID']['input'];
   migration_job_id: Scalars['ID']['input'];
@@ -13119,6 +13959,14 @@ export type QueryTeamsArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QueryTime_OffsArgs = {
+  ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryTimelineArgs = {
   id: Scalars['ID']['input'];
   skipConnectedItems?: InputMaybe<Scalars['Boolean']['input']>;
@@ -13162,6 +14010,13 @@ export type QueryUpdatesArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QueryUser_AvailabilitiesArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  user_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryUser_ConfigsArgs = {
   behaviors?: InputMaybe<Array<Scalars['String']['input']>>;
   kinds?: InputMaybe<Array<Scalars['String']['input']>>;
@@ -13184,8 +14039,11 @@ export type QueryUser_ConnectionsArgs = {
 export type QueryUsersArgs = {
   emails?: InputMaybe<Array<Scalars['String']['input']>>;
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  kind?: InputMaybe<UserKind>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
+  newest_first?: InputMaybe<Scalars['Boolean']['input']>;
+  non_active?: InputMaybe<Scalars['Boolean']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
   sort?: InputMaybe<Array<UsersSortInput>>;
   status?: InputMaybe<Array<UserStatus>>;
@@ -13218,6 +14076,20 @@ export type QueryValidationsArgs = {
 export type QueryWebhooksArgs = {
   app_webhooks_only?: InputMaybe<Scalars['Boolean']['input']>;
   board_id: Scalars['ID']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryWork_SchedulesArgs = {
+  ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryWorkflowsArgs = {
+  ids: Array<Scalars['ID']['input']>;
 };
 
 
@@ -13506,6 +14378,19 @@ export type RestoreEntityResult = {
   __typename?: 'RestoreEntityResult';
   /** Confirms the restore request was accepted. */
   accepted?: Maybe<Scalars['Boolean']['output']>;
+};
+
+/** A point-in-time record of a restore status change. */
+export type RestoreHistoryEntry = {
+  __typename?: 'RestoreHistoryEntry';
+  /** The entity id (package id) of the restore. */
+  entity_id: Scalars['ID']['output'];
+  /** The date and time this history entry was recorded. */
+  recorded_at: Scalars['String']['output'];
+  /** The restore ID at the time this history entry was recorded. */
+  restore_id: Scalars['ID']['output'];
+  /** The status of the restore at the time this history entry was recorded. */
+  status: RestoreStatus;
 };
 
 /** The possible statuses of a restore operation. */
@@ -13820,6 +14705,34 @@ export enum SequenceStatus {
   MissingConfig = 'MISSING_CONFIG'
 }
 
+/** A service user in the account. */
+export type ServiceUser = {
+  __typename?: 'ServiceUser';
+  /** When the service user was created. */
+  created_at?: Maybe<Scalars['String']['output']>;
+  /** Whether the service user is active. */
+  enabled?: Maybe<Scalars['Boolean']['output']>;
+  /** The ID of the service user. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** The ID of the user who created this service user. */
+  invited_by_id?: Maybe<Scalars['ID']['output']>;
+  /** The last time the service user token was used for an API request. */
+  last_token_activity?: Maybe<Scalars['String']['output']>;
+  /** The display name of the service user. */
+  name?: Maybe<Scalars['String']['output']>;
+  /** The title/description of the service user. */
+  title?: Maybe<Scalars['String']['output']>;
+};
+
+/** A service user token result. */
+export type ServiceUserToken = {
+  __typename?: 'ServiceUserToken';
+  /** The ID of the service user. */
+  service_user_id?: Maybe<Scalars['ID']['output']>;
+  /** The API token. */
+  token?: Maybe<Scalars['String']['output']>;
+};
+
 /** Response type for detailed board permissions. Contains information about the permissions that were set. */
 export type SetBoardPermissionResponse = {
   __typename?: 'SetBoardPermissionResponse';
@@ -13861,6 +14774,19 @@ export type ShowIfRulesInput = {
   operator: ConditionOperator;
   /** A rule grouping one or more conditions. All conditions within a rule must be met for the rule to be satisfied. */
   rules: Array<ShowIfRuleInput>;
+};
+
+/** A point-in-time record of a snapshot status change. */
+export type SnapshotHistoryEntry = {
+  __typename?: 'SnapshotHistoryEntry';
+  /** The entity id (package id) of the snapshot. */
+  entity_id: Scalars['ID']['output'];
+  /** The date and time this history entry was recorded. */
+  recorded_at: Scalars['String']['output'];
+  /** The snapshot ID at the time this history entry was recorded. */
+  snapshot_id: Scalars['ID']['output'];
+  /** The status of the snapshot at the time this history entry was recorded. */
+  status: SnapshotStatus;
 };
 
 /** The possible statuses of a snapshot operation. */
@@ -14684,6 +15610,125 @@ export enum TimeGranularity {
   Years = 'YEARS'
 }
 
+/** A named time off schedule with non-working date entries */
+export type TimeOff = {
+  __typename?: 'TimeOff';
+  /** ISO 8601 timestamp when this record was created */
+  created_at: Scalars['Date']['output'];
+  /** ID of the user who created this time off schedule, null if system-generated */
+  created_by?: Maybe<Scalars['ID']['output']>;
+  /** Paginated non-working date entries in this time off schedule. Use next_time_off_entries_page as the top-level continuation query. */
+  entries_page: TimeOffEntryPage;
+  /** Unique identifier of the time off schedule */
+  id: Scalars['ID']['output'];
+  /** Whether this is the account-level default time off schedule */
+  is_default: Scalars['Boolean']['output'];
+  /** Display name of the time off schedule */
+  name: Scalars['String']['output'];
+  /** ISO 8601 timestamp when this record was last updated */
+  updated_at: Scalars['Date']['output'];
+};
+
+
+/** A named time off schedule with non-working date entries */
+export type TimeOffEntries_PageArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+/** Result of a time off schedule delete operation */
+export type TimeOffDeleteResult = {
+  __typename?: 'TimeOffDeleteResult';
+  /** Structured error details, null if the operation succeeded */
+  error?: Maybe<Error>;
+  /** ID of the deleted time off schedule, null if the operation failed */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Whether the operation succeeded */
+  success: Scalars['Boolean']['output'];
+};
+
+/** A non-working date entry within a time off schedule */
+export type TimeOffEntry = {
+  __typename?: 'TimeOffEntry';
+  /** ISO 8601 timestamp when this record was created */
+  created_at: Scalars['Date']['output'];
+  /** ID of the user who created this entry */
+  created_by: Scalars['ID']['output'];
+  /** End date of the non-working period in YYYY-MM-DD format */
+  end: Scalars['String']['output'];
+  /** Unique identifier of the time off entry */
+  id: Scalars['ID']['output'];
+  /** Optional display name for this time off entry */
+  name?: Maybe<Scalars['String']['output']>;
+  /** Start date of the non-working period in YYYY-MM-DD format */
+  start: Scalars['String']['output'];
+  /** ID of the time off schedule this entry belongs to */
+  time_off_id: Scalars['ID']['output'];
+  /** ISO 8601 timestamp when this record was last updated */
+  updated_at: Scalars['Date']['output'];
+};
+
+/** Result of a time off entry delete operation */
+export type TimeOffEntryDeleteResult = {
+  __typename?: 'TimeOffEntryDeleteResult';
+  /** Structured error details, null if the operation succeeded */
+  error?: Maybe<Error>;
+  /** ID of the deleted time off entry, null if the operation failed */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Whether the operation succeeded */
+  success: Scalars['Boolean']['output'];
+};
+
+/** A non-working date entry to create inline with a time off schedule */
+export type TimeOffEntryInput = {
+  /** End date of the non-working period in YYYY-MM-DD format */
+  end: Scalars['String']['input'];
+  /** Optional display name for this time off entry */
+  name?: InputMaybe<Scalars['String']['input']>;
+  /** Start date of the non-working period in YYYY-MM-DD format */
+  start: Scalars['String']['input'];
+};
+
+/** Paginated list of time off entries */
+export type TimeOffEntryPage = {
+  __typename?: 'TimeOffEntryPage';
+  /** Opaque cursor for fetching the next page, null when no more pages exist */
+  cursor?: Maybe<Scalars['String']['output']>;
+  /** Time off entries in this page */
+  entries: Array<TimeOffEntry>;
+};
+
+/** Result of a time off entry create or update operation */
+export type TimeOffEntryResult = {
+  __typename?: 'TimeOffEntryResult';
+  /** Structured error details, null if the operation succeeded */
+  error?: Maybe<Error>;
+  /** Whether the operation succeeded */
+  success: Scalars['Boolean']['output'];
+  /** The created or updated time off entry, null if the operation failed */
+  time_off_entry?: Maybe<TimeOffEntry>;
+};
+
+/** Paginated list of time off schedules */
+export type TimeOffPage = {
+  __typename?: 'TimeOffPage';
+  /** Opaque cursor for fetching the next page, null when no more pages exist */
+  cursor?: Maybe<Scalars['String']['output']>;
+  /** Time off schedules in this page */
+  time_offs: Array<TimeOff>;
+};
+
+/** Result of a time off schedule create or update operation */
+export type TimeOffResult = {
+  __typename?: 'TimeOffResult';
+  /** Structured error details, null if the operation succeeded */
+  error?: Maybe<Error>;
+  /** Whether the operation succeeded */
+  success: Scalars['Boolean']['output'];
+  /** The created or updated time off schedule, null if the operation failed */
+  time_off?: Maybe<TimeOff>;
+};
+
 /** Header for a time period (label and date range). */
 export type TimePeriodHeader = {
   __typename?: 'TimePeriodHeader';
@@ -15027,6 +16072,16 @@ export type UnassignDepartmentOwnerResult = {
   __typename?: 'UnassignDepartmentOwnerResult';
   /** The user IDs of the owners that were unassigned from the department. */
   unassigned_users?: Maybe<Array<User>>;
+};
+
+/** Input for removing work schedule and/or time off assignments from multiple users */
+export type UnassignUserAvailabilityInput = {
+  /** Whether to remove the explicit time off schedule assignment */
+  unassign_time_off?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Whether to remove the explicit work schedule assignment */
+  unassign_work_schedule?: InputMaybe<Scalars['Boolean']['input']>;
+  /** IDs of the users to remove assignments from */
+  user_ids: Array<Scalars['ID']['input']>;
 };
 
 /** Result of an undo operation */
@@ -15410,6 +16465,24 @@ export type UpdateTaskInput = {
   title?: InputMaybe<Scalars['String']['input']>;
 };
 
+/** Input for updating an existing time off entry */
+export type UpdateTimeOffEntryInput = {
+  /** New end date in YYYY-MM-DD format */
+  end?: InputMaybe<Scalars['String']['input']>;
+  /** ID of the time off entry to update */
+  id: Scalars['ID']['input'];
+  /** New display name for the time off entry */
+  name?: InputMaybe<Scalars['String']['input']>;
+  /** New start date in YYYY-MM-DD format */
+  start?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** Input for updating an existing time off schedule. Entries are managed via the dedicated time off entry mutations (create_time_off_entry, update_time_off_entry, delete_time_off_entry). */
+export type UpdateTimeOffInput = {
+  /** New display name for the time off schedule */
+  name?: InputMaybe<Scalars['String']['input']>;
+};
+
 /** Error that occurred while updating users attributes. */
 export type UpdateUserAttributesError = {
   __typename?: 'UpdateUserAttributesError';
@@ -15474,6 +16547,14 @@ export type UpdateUsersRoleResult = {
   errors?: Maybe<Array<UpdateUsersRoleError>>;
   /** The users that were updated. */
   updated_users?: Maybe<Array<User>>;
+};
+
+/** Input for updating an existing work schedule */
+export type UpdateWorkScheduleInput = {
+  /** Updated per-weekday working hours */
+  days?: InputMaybe<Array<WorkScheduleDayInput>>;
+  /** New display name for the work schedule */
+  name?: InputMaybe<Scalars['String']['input']>;
 };
 
 /** Input for updating a workflow created from a template */
@@ -15701,6 +16782,37 @@ export type UserAttributesInput = {
   title?: InputMaybe<Scalars['String']['input']>;
 };
 
+/** A user's assigned work schedule and time off schedule */
+export type UserAvailability = {
+  __typename?: 'UserAvailability';
+  /** The time off schedule assigned to this user, null if using account default */
+  time_off?: Maybe<TimeOff>;
+  /** ID of the user */
+  user_id: Scalars['ID']['output'];
+  /** The work schedule assigned to this user, null if using account default */
+  work_schedule?: Maybe<WorkSchedule>;
+};
+
+/** Paginated list of user availability assignments */
+export type UserAvailabilityPage = {
+  __typename?: 'UserAvailabilityPage';
+  /** Opaque cursor for fetching the next page, null when no more pages exist */
+  cursor?: Maybe<Scalars['String']['output']>;
+  /** User availability assignments in this page */
+  user_availabilities: Array<UserAvailability>;
+};
+
+/** Result of a single user availability assignment. Batch assign/unassign mutations return one of these per requested user, allowing partial success — successful entries have user_availability populated and success=true; failed entries have user_availability=null, success=false, and a populated error. */
+export type UserAvailabilityResult = {
+  __typename?: 'UserAvailabilityResult';
+  /** Structured error details, null if the operation succeeded */
+  error?: Maybe<Error>;
+  /** Whether the operation succeeded */
+  success: Scalars['Boolean']['output'];
+  /** The updated user availability, null if the operation failed for this user */
+  user_availability?: Maybe<UserAvailability>;
+};
+
 /** User config of a user kind within the account. */
 export type UserConfig = {
   __typename?: 'UserConfig';
@@ -15806,6 +16918,8 @@ export enum UserKindFilter {
   ProjectsApiUser = 'PROJECTS_API_USER',
   /** A resource directory api user user. */
   ResourceDirectoryApiUser = 'RESOURCE_DIRECTORY_API_USER',
+  /** A service user user. */
+  ServiceUser = 'SERVICE_USER',
   /** A sprint management api user user. */
   SprintManagementApiUser = 'SPRINT_MANAGEMENT_API_USER',
   /** A view only user. */
@@ -16054,8 +17168,6 @@ export type VibeMutations = {
   document_ai_action: AiDocumentActionResponse;
   /** Enhance a user prompt to include AI capabilities */
   enhance_prompt: EnhancedPromptResult;
-  /** Extract brand identity from a URL and produce a ThemeDefinition plug-compatible with presets. */
-  extract_brand_theme: ExtractedVibeTheme;
   /** Get a presigned URL to upload a file to S3 */
   file_upload_url?: Maybe<FileUploadUrl>;
   /** Rollback an AI app to an older specific version  */
@@ -16087,12 +17199,6 @@ export type VibeMutationsDocument_Ai_ActionArgs = {
 /** Namespace for all vibe-related mutations */
 export type VibeMutationsEnhance_PromptArgs = {
   prompt: Scalars['String']['input'];
-};
-
-
-/** Namespace for all vibe-related mutations */
-export type VibeMutationsExtract_Brand_ThemeArgs = {
-  url: Scalars['String']['input'];
 };
 
 
@@ -16266,6 +17372,24 @@ export enum WebhookEventType {
   SubitemDeleted = 'subitem_deleted'
 }
 
+/** Day of the week */
+export enum WeekDay {
+  /** Friday */
+  Friday = 'FRIDAY',
+  /** Monday */
+  Monday = 'MONDAY',
+  /** Saturday */
+  Saturday = 'SATURDAY',
+  /** Sunday */
+  Sunday = 'SUNDAY',
+  /** Thursday */
+  Thursday = 'THURSDAY',
+  /** Tuesday */
+  Tuesday = 'TUESDAY',
+  /** Wednesday */
+  Wednesday = 'WEDNESDAY'
+}
+
 export type WeekValue = ColumnValue & {
   __typename?: 'WeekValue';
   /** The column that this value belongs to. */
@@ -16324,6 +17448,19 @@ export type WidgetParentOutput = {
   kind?: Maybe<WidgetParentKind>;
 };
 
+/** Result of loading a single widget within a dashboard data load. */
+export type WidgetResult = {
+  __typename?: 'WidgetResult';
+  /** Loaded widget data payload; null when status is ERROR or no data is available. */
+  data?: Maybe<Scalars['JSON']['output']>;
+  /** Error message describing why the widget failed to load; null on success. */
+  error?: Maybe<Scalars['String']['output']>;
+  /** Whether the widget data loaded successfully or failed. */
+  status?: Maybe<WidgetStatus>;
+  /** Identifier of the widget this result belongs to. */
+  widget_id?: Maybe<Scalars['ID']['output']>;
+};
+
 /** Information about a widget type and its JSON schema */
 export type WidgetSchemaInfo = {
   __typename?: 'WidgetSchemaInfo';
@@ -16331,6 +17468,93 @@ export type WidgetSchemaInfo = {
   schema?: Maybe<Scalars['JSON']['output']>;
   /** The widget kind (e.g., Chart, Number, Battery) */
   widget_type?: Maybe<ExternalWidget>;
+};
+
+/** Outcome of loading a single widget within loadDashboardData. */
+export enum WidgetStatus {
+  /** Widget failed to load; see error field for details. */
+  Error = 'ERROR',
+  /** Widget data was loaded successfully. */
+  Ok = 'OK'
+}
+
+/** A named work schedule with per-weekday working hours */
+export type WorkSchedule = {
+  __typename?: 'WorkSchedule';
+  /** ISO 8601 timestamp when this record was created */
+  created_at: Scalars['Date']['output'];
+  /** ID of the user who created this work schedule, null if system-generated */
+  created_by?: Maybe<Scalars['ID']['output']>;
+  /** Per-weekday working hours for this schedule */
+  days: Array<WorkScheduleDay>;
+  /** Unique identifier of the work schedule */
+  id: Scalars['ID']['output'];
+  /** Whether this is the account-level default work schedule */
+  is_default: Scalars['Boolean']['output'];
+  /** Display name of the work schedule */
+  name: Scalars['String']['output'];
+  /** ISO 8601 timestamp when this record was last updated */
+  updated_at: Scalars['Date']['output'];
+};
+
+/** Per-weekday working hours for a work schedule */
+export type WorkScheduleDay = {
+  __typename?: 'WorkScheduleDay';
+  /** ISO 8601 timestamp when this record was created */
+  created_at: Scalars['Date']['output'];
+  /** End of the working day in HH:MM format, null when is_active is false */
+  end_time?: Maybe<Scalars['String']['output']>;
+  /** Whether this day is a working day */
+  is_active: Scalars['Boolean']['output'];
+  /** Start of the working day in HH:MM format, null when is_active is false */
+  start_time?: Maybe<Scalars['String']['output']>;
+  /** ISO 8601 timestamp when this record was last updated */
+  updated_at: Scalars['Date']['output'];
+  /** Day of the week this entry applies to */
+  week_day: WeekDay;
+};
+
+/** Working hours for a specific day of the week */
+export type WorkScheduleDayInput = {
+  /** End of the working day in HH:MM format. Required when is_active is true; ignored otherwise. */
+  end_time?: InputMaybe<Scalars['String']['input']>;
+  /** Whether this day is a working day */
+  is_active: Scalars['Boolean']['input'];
+  /** Start of the working day in HH:MM format. Required when is_active is true; ignored otherwise. */
+  start_time?: InputMaybe<Scalars['String']['input']>;
+  /** Day of the week this entry applies to */
+  week_day: WeekDay;
+};
+
+/** Result of a work schedule delete operation */
+export type WorkScheduleDeleteResult = {
+  __typename?: 'WorkScheduleDeleteResult';
+  /** Structured error details, null if the operation succeeded */
+  error?: Maybe<Error>;
+  /** ID of the deleted work schedule, null if the operation failed */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Whether the operation succeeded */
+  success: Scalars['Boolean']['output'];
+};
+
+/** Paginated list of work schedules */
+export type WorkSchedulePage = {
+  __typename?: 'WorkSchedulePage';
+  /** Opaque cursor for fetching the next page, null when no more pages exist */
+  cursor?: Maybe<Scalars['String']['output']>;
+  /** Work schedules in this page */
+  work_schedules: Array<WorkSchedule>;
+};
+
+/** Result of a work schedule create or update operation */
+export type WorkScheduleResult = {
+  __typename?: 'WorkScheduleResult';
+  /** Structured error details, null if the operation succeeded */
+  error?: Maybe<Error>;
+  /** Whether the operation succeeded */
+  success: Scalars['Boolean']['output'];
+  /** The created or updated work schedule, null if the operation failed */
+  work_schedule?: Maybe<WorkSchedule>;
 };
 
 export type Workflow = {
@@ -16365,6 +17589,42 @@ export type Workflow = {
   workflow_host_data: WorkflowHostData;
   /** Variables used within this workflow. To get the accurate JSON schema call the GraphQL query 'get_workflow_variable_schemas' */
   workflow_variables: Scalars['JSON']['output'];
+};
+
+/** A workflow and its steps */
+export type WorkflowAutomation = {
+  __typename?: 'WorkflowAutomation';
+  /** Whether the workflow is currently active */
+  active?: Maybe<Scalars['Boolean']['output']>;
+  /** Creation timestamp */
+  created_at?: Maybe<Scalars['String']['output']>;
+  /** Workflow description */
+  description?: Maybe<Scalars['String']['output']>;
+  /** Workflow entity ID */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** The steps that make up this workflow */
+  steps?: Maybe<Array<WorkflowStep>>;
+  /** Workflow title */
+  title?: Maybe<Scalars['String']['output']>;
+  /** Last update timestamp */
+  updated_at?: Maybe<Scalars['String']['output']>;
+};
+
+/** Cursor-based pagination metadata for live workflow automation queries */
+export type WorkflowAutomationsPageInfo = {
+  __typename?: 'WorkflowAutomationsPageInfo';
+  /** Cursor of the last item in this page; pass as last_id to fetch the next page */
+  end_cursor?: Maybe<Scalars['ID']['output']>;
+  /** Whether there are more results beyond the current page */
+  has_next_page?: Maybe<Scalars['Boolean']['output']>;
+};
+
+/** Cursor-based pagination parameters for workflow automation queries */
+export type WorkflowAutomationsPaginationInput = {
+  /** Cursor of the last item from the previous page; pass page_info.end_cursor from the previous response */
+  last_id?: InputMaybe<Scalars['ID']['input']>;
+  /** Maximum number of results to return (default 50, max 100) */
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type WorkflowBlock = {
@@ -16454,6 +17714,25 @@ export type WorkflowBuilderContextData = {
   hidden_input_fields_keys?: Maybe<Array<Scalars['String']['output']>>;
 };
 
+/** Identifiers for a newly created workflow */
+export type WorkflowBuilderCreateResult = {
+  __typename?: 'WorkflowBuilderCreateResult';
+  /** Draft workflow ID */
+  workflow_draft_id?: Maybe<Scalars['ID']['output']>;
+  /** Stable workflow entity ID */
+  workflow_object_id?: Maybe<Scalars['ID']['output']>;
+};
+
+/** Privacy level for a workflow */
+export enum WorkflowBuilderPrivacyKind {
+  /** Workflow is private and restricted */
+  Private = 'PRIVATE',
+  /** Workflow is publicly accessible (Main) */
+  Public = 'PUBLIC',
+  /** Workflow is shareable with guests outside the account */
+  Shareable = 'SHAREABLE'
+}
+
 /** Customization settings for the workflow */
 export type WorkflowCustomizationInput = {
   /** The access level for CRUD operations on an account-level workflow. Only applicable for ACCOUNT_LEVEL host type. Defaults to USER (only the creator can modify). */
@@ -16531,6 +17810,17 @@ export type WorkflowIteratorInput = {
   post_iterator_node_id?: InputMaybe<Scalars['ID']['input']>;
 };
 
+/** A step instance within a workflow */
+export type WorkflowStep = {
+  __typename?: 'WorkflowStep';
+  /** ID of the block type this step uses */
+  block_reference_id?: Maybe<Scalars['ID']['output']>;
+  /** Unique node ID within the workflow */
+  node_id?: Maybe<Scalars['ID']['output']>;
+  /** Display title of the step */
+  title?: Maybe<Scalars['String']['output']>;
+};
+
 /** The context where a workflow template can be accessed */
 export enum WorkflowTemplateContext {
   /** Using this context will make the template accessible in the Lite Builder */
@@ -16596,6 +17886,14 @@ export enum WorkflowVariableSourceKind {
   /** A value defined by the user */
   UserConfig = 'user_config'
 }
+
+/** Cursor-based pagination parameters for live workflows queries */
+export type WorkflowsPaginationInput = {
+  /** Cursor of the last item from the previous page; pass `page_info.end_cursor` from the previous response */
+  last_id?: InputMaybe<Scalars['ID']['input']>;
+  /** Maximum number of results to return */
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
 
 /** A monday.com workspace. */
 export type Workspace = {
@@ -16756,27 +18054,6 @@ export type WorldClockValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
-export type CreateAgentSkillMutationVariables = Exact<{
-  name: Scalars['String']['input'];
-  content: Scalars['String']['input'];
-  description?: InputMaybe<Scalars['String']['input']>;
-}>;
-
-
-export type CreateAgentSkillMutation = { __typename?: 'Mutation', create_agent_skill?: { __typename?: 'AgentSkillCatalogEntry', id?: string | null, name?: string | null, description?: string | null } | null };
-
-export type GetAgentTriggersCatalogQueryVariables = Exact<{
-  block_reference_ids?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
-}>;
-
-
-export type GetAgentTriggersCatalogQuery = { __typename?: 'Query', agent_triggers_catalog?: Array<{ __typename?: 'AgentTriggerCatalogEntry', block_reference_id: string, name: string, description?: string | null, field_schemas: Array<{ __typename?: 'TriggerFieldSchema', field_key: string, value_schema: string }>, required_fields: Array<{ __typename?: 'TriggerRequiredField', field_key: string, depends_on: Array<string>, optional: boolean }> }> | null };
-
-export type GetAgentSkillsCatalogQueryVariables = Exact<{ [key: string]: never; }>;
-
-
-export type GetAgentSkillsCatalogQuery = { __typename?: 'Query', agent_skills_catalog?: Array<{ __typename?: 'AgentSkillCatalogEntry', id?: string | null, name?: string | null, description?: string | null }> | null };
-
 export type GetAgentKnowledgeQueryVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
@@ -16813,21 +18090,44 @@ export type UpdateAgentResourceAccessMutationVariables = Exact<{
 
 export type UpdateAgentResourceAccessMutation = { __typename?: 'Mutation', update_agent_resource_access?: { __typename?: 'MutationResult', success: boolean } | null };
 
-export type AddSkillToAgentMutationVariables = Exact<{
-  agent_id: Scalars['ID']['input'];
-  skill_id: Scalars['ID']['input'];
+export type AgentFieldsFragment = { __typename?: 'Agent', id: string, kind?: AgentKind | null, state?: AgentState | null, goal?: string | null, plan?: string | null, user_prompt?: string | null, version_id: string, created_at?: any | null, updated_at?: any | null, profile?: { __typename?: 'AgentProfile', name?: string | null, role?: string | null, role_description?: string | null, avatar_url?: string | null, background_color?: string | null } | null };
+
+export type GetAgentsQueryVariables = Exact<{
+  ids?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
 }>;
 
 
-export type AddSkillToAgentMutation = { __typename?: 'Mutation', add_skill_to_agent?: { __typename?: 'MutationResult', success: boolean } | null };
+export type GetAgentsQuery = { __typename?: 'Query', agents?: Array<{ __typename?: 'Agent', id: string, kind?: AgentKind | null, state?: AgentState | null, goal?: string | null, plan?: string | null, user_prompt?: string | null, version_id: string, created_at?: any | null, updated_at?: any | null, profile?: { __typename?: 'AgentProfile', name?: string | null, role?: string | null, role_description?: string | null, avatar_url?: string | null, background_color?: string | null } | null }> | null };
 
-export type RemoveSkillFromAgentMutationVariables = Exact<{
-  agent_id: Scalars['ID']['input'];
-  skill_id: Scalars['ID']['input'];
+export type CreateAgentMutationVariables = Exact<{
+  input: CreateAgentInput;
 }>;
 
 
-export type RemoveSkillFromAgentMutation = { __typename?: 'Mutation', remove_skill_from_agent?: { __typename?: 'MutationResult', success: boolean } | null };
+export type CreateAgentMutation = { __typename?: 'Mutation', create_agent?: { __typename?: 'Agent', id: string, kind?: AgentKind | null, state?: AgentState | null, goal?: string | null, plan?: string | null, user_prompt?: string | null, version_id: string, created_at?: any | null, updated_at?: any | null, profile?: { __typename?: 'AgentProfile', name?: string | null, role?: string | null, role_description?: string | null, avatar_url?: string | null, background_color?: string | null } | null } | null };
+
+export type CreateBlankAgentMutationVariables = Exact<{
+  input?: InputMaybe<CreateBlankAgentInput>;
+}>;
+
+
+export type CreateBlankAgentMutation = { __typename?: 'Mutation', create_blank_agent?: { __typename?: 'Agent', id: string, kind?: AgentKind | null, state?: AgentState | null, goal?: string | null, plan?: string | null, user_prompt?: string | null, version_id: string, created_at?: any | null, updated_at?: any | null, profile?: { __typename?: 'AgentProfile', name?: string | null, role?: string | null, role_description?: string | null, avatar_url?: string | null, background_color?: string | null } | null } | null };
+
+export type UpdateAgentMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  input: UpdateAgentInput;
+}>;
+
+
+export type UpdateAgentMutation = { __typename?: 'Mutation', update_agent?: { __typename?: 'Agent', id: string, kind?: AgentKind | null, state?: AgentState | null, goal?: string | null, plan?: string | null, user_prompt?: string | null, version_id: string, created_at?: any | null, updated_at?: any | null, profile?: { __typename?: 'AgentProfile', name?: string | null, role?: string | null, role_description?: string | null, avatar_url?: string | null, background_color?: string | null } | null } | null };
+
+export type DeleteAgentMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteAgentMutation = { __typename?: 'Mutation', delete_agent?: { __typename?: 'Agent', id: string, kind?: AgentKind | null, state?: AgentState | null, goal?: string | null, plan?: string | null, user_prompt?: string | null, version_id: string, created_at?: any | null, updated_at?: any | null, profile?: { __typename?: 'AgentProfile', name?: string | null, role?: string | null, role_description?: string | null, avatar_url?: string | null, background_color?: string | null } | null } | null };
 
 export type ActivateAgentMutationVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -16875,44 +18175,42 @@ export type RemoveTriggerFromAgentMutationVariables = Exact<{
 
 export type RemoveTriggerFromAgentMutation = { __typename?: 'Mutation', remove_trigger_from_agent?: { __typename?: 'MutationResult', success: boolean } | null };
 
-export type AgentFieldsFragment = { __typename?: 'Agent', id: string, kind?: AgentKind | null, state?: AgentState | null, goal?: string | null, plan?: string | null, user_prompt?: string | null, version_id: string, created_at?: any | null, updated_at?: any | null, profile?: { __typename?: 'AgentProfile', name?: string | null, role?: string | null, role_description?: string | null, avatar_url?: string | null, background_color?: string | null } | null };
-
-export type GetAgentsQueryVariables = Exact<{
-  ids?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
+export type AddSkillToAgentMutationVariables = Exact<{
+  agent_id: Scalars['ID']['input'];
+  skill_id: Scalars['ID']['input'];
 }>;
 
 
-export type GetAgentsQuery = { __typename?: 'Query', agents?: Array<{ __typename?: 'Agent', id: string, kind?: AgentKind | null, state?: AgentState | null, goal?: string | null, plan?: string | null, user_prompt?: string | null, version_id: string, created_at?: any | null, updated_at?: any | null, profile?: { __typename?: 'AgentProfile', name?: string | null, role?: string | null, role_description?: string | null, avatar_url?: string | null, background_color?: string | null } | null }> | null };
+export type AddSkillToAgentMutation = { __typename?: 'Mutation', add_skill_to_agent?: { __typename?: 'MutationResult', success: boolean } | null };
 
-export type CreateAgentMutationVariables = Exact<{
-  input: CreateAgentInput;
+export type RemoveSkillFromAgentMutationVariables = Exact<{
+  agent_id: Scalars['ID']['input'];
+  skill_id: Scalars['ID']['input'];
 }>;
 
 
-export type CreateAgentMutation = { __typename?: 'Mutation', create_agent?: { __typename?: 'Agent', id: string, kind?: AgentKind | null, state?: AgentState | null, goal?: string | null, plan?: string | null, user_prompt?: string | null, version_id: string, created_at?: any | null, updated_at?: any | null, profile?: { __typename?: 'AgentProfile', name?: string | null, role?: string | null, role_description?: string | null, avatar_url?: string | null, background_color?: string | null } | null } | null };
+export type RemoveSkillFromAgentMutation = { __typename?: 'Mutation', remove_skill_from_agent?: { __typename?: 'MutationResult', success: boolean } | null };
 
-export type CreateBlankAgentMutationVariables = Exact<{
-  input?: InputMaybe<CreateBlankAgentInput>;
+export type GetAgentTriggersCatalogQueryVariables = Exact<{
+  block_reference_ids?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
 }>;
 
 
-export type CreateBlankAgentMutation = { __typename?: 'Mutation', create_blank_agent?: { __typename?: 'Agent', id: string, kind?: AgentKind | null, state?: AgentState | null, goal?: string | null, plan?: string | null, user_prompt?: string | null, version_id: string, created_at?: any | null, updated_at?: any | null, profile?: { __typename?: 'AgentProfile', name?: string | null, role?: string | null, role_description?: string | null, avatar_url?: string | null, background_color?: string | null } | null } | null };
+export type GetAgentTriggersCatalogQuery = { __typename?: 'Query', agent_triggers_catalog?: Array<{ __typename?: 'AgentTriggerCatalogEntry', block_reference_id: string, name: string, description?: string | null, field_schemas: Array<{ __typename?: 'TriggerFieldSchema', field_key: string, value_schema: string }>, required_fields: Array<{ __typename?: 'TriggerRequiredField', field_key: string, depends_on: Array<string>, optional: boolean }> }> | null };
 
-export type DeleteAgentMutationVariables = Exact<{
-  id: Scalars['ID']['input'];
+export type GetAgentSkillsCatalogQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetAgentSkillsCatalogQuery = { __typename?: 'Query', agent_skills_catalog?: Array<{ __typename?: 'AgentSkillCatalogEntry', id?: string | null, name?: string | null, description?: string | null }> | null };
+
+export type CreateAgentSkillMutationVariables = Exact<{
+  name: Scalars['String']['input'];
+  content: Scalars['String']['input'];
+  description?: InputMaybe<Scalars['String']['input']>;
 }>;
 
 
-export type DeleteAgentMutation = { __typename?: 'Mutation', delete_agent?: { __typename?: 'Agent', id: string, kind?: AgentKind | null, state?: AgentState | null, goal?: string | null, plan?: string | null, user_prompt?: string | null, version_id: string, created_at?: any | null, updated_at?: any | null, profile?: { __typename?: 'AgentProfile', name?: string | null, role?: string | null, role_description?: string | null, avatar_url?: string | null, background_color?: string | null } | null } | null };
-
-export type UpdateAgentMutationVariables = Exact<{
-  id: Scalars['ID']['input'];
-  input: UpdateAgentInput;
-}>;
-
-
-export type UpdateAgentMutation = { __typename?: 'Mutation', update_agent?: { __typename?: 'Agent', id: string, kind?: AgentKind | null, state?: AgentState | null, goal?: string | null, plan?: string | null, user_prompt?: string | null, version_id: string, created_at?: any | null, updated_at?: any | null, profile?: { __typename?: 'AgentProfile', name?: string | null, role?: string | null, role_description?: string | null, avatar_url?: string | null, background_color?: string | null } | null } | null };
+export type CreateAgentSkillMutation = { __typename?: 'Mutation', create_agent_skill?: { __typename?: 'AgentSkillCatalogEntry', id?: string | null, name?: string | null, description?: string | null } | null };
 
 export type DeleteObjectSchemaColumnsMutationVariables = Exact<{
   objectSchemaId?: InputMaybe<Scalars['ID']['input']>;
@@ -16975,26 +18273,26 @@ export type CreateFormSubmissionMutationVariables = Exact<{
 export type CreateFormSubmissionMutation = { __typename?: 'Mutation', create_form_submission?: { __typename?: 'FormSubmissionResult', id: string } | null };
 
 export const AgentFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Agent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<AgentFieldsFragment, unknown>;
-export const CreateAgentSkillDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"createAgentSkill"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"name"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"content"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"description"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"create_agent_skill"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"name"}}},{"kind":"Argument","name":{"kind":"Name","value":"content"},"value":{"kind":"Variable","name":{"kind":"Name","value":"content"}}},{"kind":"Argument","name":{"kind":"Name","value":"description"},"value":{"kind":"Variable","name":{"kind":"Name","value":"description"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}}]}}]} as unknown as DocumentNode<CreateAgentSkillMutation, CreateAgentSkillMutationVariables>;
-export const GetAgentTriggersCatalogDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getAgentTriggersCatalog"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"block_reference_ids"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"agent_triggers_catalog"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"block_reference_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"block_reference_ids"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"block_reference_id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"field_schemas"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"field_key"}},{"kind":"Field","name":{"kind":"Name","value":"value_schema"}}]}},{"kind":"Field","name":{"kind":"Name","value":"required_fields"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"field_key"}},{"kind":"Field","name":{"kind":"Name","value":"depends_on"}},{"kind":"Field","name":{"kind":"Name","value":"optional"}}]}}]}}]}}]} as unknown as DocumentNode<GetAgentTriggersCatalogQuery, GetAgentTriggersCatalogQueryVariables>;
-export const GetAgentSkillsCatalogDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getAgentSkillsCatalog"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"agent_skills_catalog"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}}]}}]} as unknown as DocumentNode<GetAgentSkillsCatalogQuery, GetAgentSkillsCatalogQueryVariables>;
 export const GetAgentKnowledgeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getAgentKnowledge"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"agent_knowledge"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"resources"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"resource_id"}},{"kind":"Field","name":{"kind":"Name","value":"scope_type"}},{"kind":"Field","name":{"kind":"Name","value":"permission_type"}}]}},{"kind":"Field","name":{"kind":"Name","value":"files"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"file_name"}},{"kind":"Field","name":{"kind":"Name","value":"file_type"}}]}}]}}]}}]} as unknown as DocumentNode<GetAgentKnowledgeQuery, GetAgentKnowledgeQueryVariables>;
 export const AddAgentResourceAccessDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"addAgentResourceAccess"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"resource_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"scope_type"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"KnowledgeScope"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"permission_type"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"KnowledgePermission"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"add_agent_resource_access"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"resource_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"resource_id"}}},{"kind":"Argument","name":{"kind":"Name","value":"scope_type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"scope_type"}}},{"kind":"Argument","name":{"kind":"Name","value":"permission_type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"permission_type"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<AddAgentResourceAccessMutation, AddAgentResourceAccessMutationVariables>;
 export const RemoveAgentResourceAccessDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"removeAgentResourceAccess"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"resource_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"scope_type"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"KnowledgeScope"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"remove_agent_resource_access"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"resource_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"resource_id"}}},{"kind":"Argument","name":{"kind":"Name","value":"scope_type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"scope_type"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<RemoveAgentResourceAccessMutation, RemoveAgentResourceAccessMutationVariables>;
 export const UpdateAgentResourceAccessDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"updateAgentResourceAccess"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"resource_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"scope_type"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"KnowledgeScope"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"permission_type"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"KnowledgePermission"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"update_agent_resource_access"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"resource_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"resource_id"}}},{"kind":"Argument","name":{"kind":"Name","value":"scope_type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"scope_type"}}},{"kind":"Argument","name":{"kind":"Name","value":"permission_type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"permission_type"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<UpdateAgentResourceAccessMutation, UpdateAgentResourceAccessMutationVariables>;
-export const AddSkillToAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"addSkillToAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"agent_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"skill_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"add_skill_to_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"agent_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"agent_id"}}},{"kind":"Argument","name":{"kind":"Name","value":"skill_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"skill_id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<AddSkillToAgentMutation, AddSkillToAgentMutationVariables>;
-export const RemoveSkillFromAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"removeSkillFromAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"agent_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"skill_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"remove_skill_from_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"agent_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"agent_id"}}},{"kind":"Argument","name":{"kind":"Name","value":"skill_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"skill_id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<RemoveSkillFromAgentMutation, RemoveSkillFromAgentMutationVariables>;
+export const GetAgentsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getAgents"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"ids"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"agents"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"ids"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AgentFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Agent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<GetAgentsQuery, GetAgentsQueryVariables>;
+export const CreateAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"createAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateAgentInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"create_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AgentFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Agent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<CreateAgentMutation, CreateAgentMutationVariables>;
+export const CreateBlankAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"createBlankAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateBlankAgentInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"create_blank_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AgentFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Agent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<CreateBlankAgentMutation, CreateBlankAgentMutationVariables>;
+export const UpdateAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"updateAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateAgentInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"update_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AgentFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Agent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<UpdateAgentMutation, UpdateAgentMutationVariables>;
+export const DeleteAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"deleteAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"delete_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AgentFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Agent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<DeleteAgentMutation, DeleteAgentMutationVariables>;
 export const ActivateAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"activateAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"activate_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<ActivateAgentMutation, ActivateAgentMutationVariables>;
 export const DeactivateAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"deactivateAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"inactive_reason"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"InactiveReason"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deactivate_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"inactive_reason"},"value":{"kind":"Variable","name":{"kind":"Name","value":"inactive_reason"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<DeactivateAgentMutation, DeactivateAgentMutationVariables>;
 export const RunAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"runAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"run_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"trigger_uuid"}}]}}]}}]} as unknown as DocumentNode<RunAgentMutation, RunAgentMutationVariables>;
 export const GetAgentActiveTriggersDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getAgentActiveTriggers"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"agent_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"agent_active_triggers"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"agent_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"agent_id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node_id"}},{"kind":"Field","name":{"kind":"Name","value":"block_reference_id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"field_summary"}}]}}]}}]} as unknown as DocumentNode<GetAgentActiveTriggersQuery, GetAgentActiveTriggersQueryVariables>;
 export const AddTriggerToAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"addTriggerToAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"agent_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"block_reference_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"field_values"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"JSON"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"add_trigger_to_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"agent_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"agent_id"}}},{"kind":"Argument","name":{"kind":"Name","value":"block_reference_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"block_reference_id"}}},{"kind":"Argument","name":{"kind":"Name","value":"field_values"},"value":{"kind":"Variable","name":{"kind":"Name","value":"field_values"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<AddTriggerToAgentMutation, AddTriggerToAgentMutationVariables>;
 export const RemoveTriggerFromAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"removeTriggerFromAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"agent_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"node_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"remove_trigger_from_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"agent_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"agent_id"}}},{"kind":"Argument","name":{"kind":"Name","value":"node_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"node_id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<RemoveTriggerFromAgentMutation, RemoveTriggerFromAgentMutationVariables>;
-export const GetAgentsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getAgents"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"ids"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"agents"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"ids"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AgentFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Agent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<GetAgentsQuery, GetAgentsQueryVariables>;
-export const CreateAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"createAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateAgentInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"create_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AgentFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Agent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<CreateAgentMutation, CreateAgentMutationVariables>;
-export const CreateBlankAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"createBlankAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateBlankAgentInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"create_blank_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AgentFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Agent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<CreateBlankAgentMutation, CreateBlankAgentMutationVariables>;
-export const DeleteAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"deleteAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"delete_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AgentFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Agent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<DeleteAgentMutation, DeleteAgentMutationVariables>;
-export const UpdateAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"updateAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateAgentInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"update_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AgentFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Agent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<UpdateAgentMutation, UpdateAgentMutationVariables>;
+export const AddSkillToAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"addSkillToAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"agent_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"skill_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"add_skill_to_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"agent_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"agent_id"}}},{"kind":"Argument","name":{"kind":"Name","value":"skill_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"skill_id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<AddSkillToAgentMutation, AddSkillToAgentMutationVariables>;
+export const RemoveSkillFromAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"removeSkillFromAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"agent_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"skill_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"remove_skill_from_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"agent_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"agent_id"}}},{"kind":"Argument","name":{"kind":"Name","value":"skill_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"skill_id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<RemoveSkillFromAgentMutation, RemoveSkillFromAgentMutationVariables>;
+export const GetAgentTriggersCatalogDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getAgentTriggersCatalog"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"block_reference_ids"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"agent_triggers_catalog"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"block_reference_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"block_reference_ids"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"block_reference_id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"field_schemas"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"field_key"}},{"kind":"Field","name":{"kind":"Name","value":"value_schema"}}]}},{"kind":"Field","name":{"kind":"Name","value":"required_fields"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"field_key"}},{"kind":"Field","name":{"kind":"Name","value":"depends_on"}},{"kind":"Field","name":{"kind":"Name","value":"optional"}}]}}]}}]}}]} as unknown as DocumentNode<GetAgentTriggersCatalogQuery, GetAgentTriggersCatalogQueryVariables>;
+export const GetAgentSkillsCatalogDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getAgentSkillsCatalog"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"agent_skills_catalog"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}}]}}]} as unknown as DocumentNode<GetAgentSkillsCatalogQuery, GetAgentSkillsCatalogQueryVariables>;
+export const CreateAgentSkillDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"createAgentSkill"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"name"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"content"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"description"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"create_agent_skill"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"name"}}},{"kind":"Argument","name":{"kind":"Name","value":"content"},"value":{"kind":"Variable","name":{"kind":"Name","value":"content"}}},{"kind":"Argument","name":{"kind":"Name","value":"description"},"value":{"kind":"Variable","name":{"kind":"Name","value":"description"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}}]}}]} as unknown as DocumentNode<CreateAgentSkillMutation, CreateAgentSkillMutationVariables>;
 export const DeleteObjectSchemaColumnsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteObjectSchemaColumns"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"objectSchemaId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"objectSchemaName"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnIds"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"delete_object_schema_columns"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"object_schema_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"objectSchemaId"}}},{"kind":"Argument","name":{"kind":"Name","value":"object_schema_name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"objectSchemaName"}}},{"kind":"Argument","name":{"kind":"Name","value":"column_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"parent_id"}},{"kind":"Field","name":{"kind":"Name","value":"revision"}}]}}]}}]} as unknown as DocumentNode<DeleteObjectSchemaColumnsMutation, DeleteObjectSchemaColumnsMutationVariables>;
 export const SearchItemsDevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchItemsDev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"board_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"results"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchItemsDevQuery, SearchItemsDevQueryVariables>;
 export const SearchBoardsDevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchBoardsDev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"boards"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"workspace_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"results"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"indexed_data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"url"}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchBoardsDevQuery, SearchBoardsDevQueryVariables>;

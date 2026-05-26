@@ -1,10 +1,6 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '../../test-utils/mock-api-client';
-import {
-  CreateAgentSkillMutation,
-  GetAgentSkillsCatalogQuery,
-  GetAgentTriggersCatalogQuery,
-} from 'src/monday-graphql/generated/graphql.dev/graphql';
+import { GetAgentSkillsCatalogQuery, GetAgentTriggersCatalogQuery } from 'src/monday-graphql/generated/graphql.dev/graphql';
 
 const mockTrigger = {
   block_reference_id: 'status-change-ref',
@@ -124,81 +120,4 @@ describe('AgentCatalogTool', () => {
     });
   });
 
-  // ─── create_skill ──────────────────────────────────────────────────────────
-
-  describe('action: create_skill', () => {
-    const mockCreatedSkill = { id: 'skill-123', name: 'Send Slack Message', description: 'Posts to Slack' };
-
-    it('should create a skill and return it', async () => {
-      mocks.setResponseOnce({ create_agent_skill: mockCreatedSkill } as CreateAgentSkillMutation);
-
-      const result = await callToolByNameRawAsync('agent_catalog', {
-        action: 'create_skill',
-        name: 'Send Slack Message',
-        content: '## Instructions\nPost a message.',
-      });
-      const parsed = parseToolResult(result);
-
-      expect(parsed.skill.id).toBe('skill-123');
-    });
-
-    it('should pass name, content, and description to the mutation', async () => {
-      mocks.setResponseOnce({ create_agent_skill: mockCreatedSkill } as CreateAgentSkillMutation);
-
-      await callToolByNameRawAsync('agent_catalog', {
-        action: 'create_skill',
-        name: 'Send Slack Message',
-        content: '## Instructions\nPost a message.',
-        description: 'Posts to Slack',
-      });
-
-      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-        expect.stringContaining('createAgentSkill'),
-        { name: 'Send Slack Message', content: '## Instructions\nPost a message.', description: 'Posts to Slack' },
-        expect.objectContaining({ versionOverride: 'dev' }),
-      );
-    });
-
-    it('should reject create_skill without name', async () => {
-      const result = await callToolByNameRawAsync('agent_catalog', {
-        action: 'create_skill',
-        content: '## Instructions\nPost a message.',
-      });
-
-      expect(result.content[0].text).toContain('"name" and "content"');
-    });
-
-    it('should reject create_skill without content', async () => {
-      const result = await callToolByNameRawAsync('agent_catalog', {
-        action: 'create_skill',
-        name: 'Send Slack Message',
-      });
-
-      expect(result.content[0].text).toContain('"name" and "content"');
-    });
-
-    it('should throw when create_agent_skill returns null', async () => {
-      mocks.setResponseOnce({ create_agent_skill: null } as CreateAgentSkillMutation);
-
-      const result = await callToolByNameRawAsync('agent_catalog', {
-        action: 'create_skill',
-        name: 'Send Slack Message',
-        content: '## Instructions',
-      });
-
-      expect(result.content[0].text).toContain('create_agent_skill returned no data');
-    });
-
-    it('should propagate API errors for create_skill', async () => {
-      mocks.setError('API error');
-
-      const result = await callToolByNameRawAsync('agent_catalog', {
-        action: 'create_skill',
-        name: 'Send Slack Message',
-        content: '## Instructions',
-      });
-
-      expect(result.content[0].text).toContain('Failed to create monday platform agent skill');
-    });
-  });
 });

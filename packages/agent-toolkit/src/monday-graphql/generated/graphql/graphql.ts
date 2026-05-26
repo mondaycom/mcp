@@ -2373,6 +2373,15 @@ export type CreateQuestionInput = {
   visible?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
+/** The result of creating a service user. */
+export type CreateServiceUserResult = {
+  __typename?: 'CreateServiceUserResult';
+  /** The API token for the created service user. Null if token generation failed. */
+  token?: Maybe<Scalars['String']['output']>;
+  /** The created service user. */
+  user?: Maybe<User>;
+};
+
 export type CreateStatusColumnSettingsInput = {
   labels: Array<CreateStatusLabelInput>;
 };
@@ -2673,6 +2682,13 @@ export type DeleteObjectSchemaColumnsActionInput = {
   column_ids: Array<Scalars['ID']['input']>;
 };
 
+/** Represents a document block that was successfully deleted. */
+export type DeletedDocBlock = {
+  __typename?: 'DeletedDocBlock';
+  /** The deleted block's unique identifier. */
+  id: Scalars['ID']['output'];
+};
+
 /** A department in the account. */
 export type Department = {
   __typename?: 'Department';
@@ -2773,6 +2789,8 @@ export type DependencyValueInput = {
 /** A document block that was changed between two versions, including its content and what type of change occurred. */
 export type DiffBlock = {
   __typename?: 'DiffBlock';
+  /** The ID of the AI agent that made the change to this block, or null if the change was made by a user. */
+  agent_id?: Maybe<Scalars['ID']['output']>;
   /** The changes that occurred to this block (added, deleted, or changed). */
   changes?: Maybe<BlockChanges>;
   /** The block content as a JSON string. */
@@ -2785,6 +2803,8 @@ export type DiffBlock = {
   summary?: Maybe<Scalars['String']['output']>;
   /** The type of block (e.g., text, image, list). */
   type?: Maybe<Scalars['String']['output']>;
+  /** The ID of the user who made the change to this block, or null if not available. */
+  user_id?: Maybe<Scalars['ID']['output']>;
 };
 
 export type DirectDocValue = ColumnValue & {
@@ -2818,6 +2838,8 @@ export type DirectoryResource = {
   location?: Maybe<Scalars['String']['output']>;
   /** The name of the directory resource. */
   name: Scalars['String']['output'];
+  /** The type of the resource (user, viewer, or guest). */
+  resource_type?: Maybe<DirectoryResourceKind>;
   /** The skills of the directory resource. */
   skills?: Maybe<Array<Scalars['String']['output']>>;
 };
@@ -2830,6 +2852,16 @@ export enum DirectoryResourceAttribute {
   Location = 'LOCATION',
   /** Represents the resource directory skills attribute. */
   Skills = 'SKILLS'
+}
+
+/** The type of a directory resource */
+export enum DirectoryResourceKind {
+  /** A guest user */
+  Guest = 'GUEST',
+  /** A member or admin user */
+  User = 'USER',
+  /** A view-only user */
+  Viewer = 'VIEWER'
 }
 
 /** Paginated response containing directory resources and cursor for next page */
@@ -4617,6 +4649,8 @@ export enum InvitationMethod {
   ServicePortalUserInvitation = 'SERVICE_PORTAL_USER_INVITATION',
   /** Added via single sign-on. */
   Sso = 'SSO',
+  /** Created via system creation flow. */
+  SystemCreation = 'SYSTEM_CREATION',
   /** Unknown invitation method. */
   Unknown = 'UNKNOWN',
   /** Invited by another user. */
@@ -5314,6 +5348,8 @@ export type Meeting = {
   action_items?: Maybe<Array<ActionItem>>;
   /** The end time of the meeting. */
   end_time: Scalars['Date']['output'];
+  /** A concise AI-generated gist of the meeting. */
+  gist?: Maybe<Scalars['String']['output']>;
   /** The unique identifier of the meeting. */
   id: Scalars['ID']['output'];
   /** The URL to view the meeting in the notetaker. */
@@ -5592,6 +5628,8 @@ export type Mutation = {
   create_portfolio?: Maybe<CreatePortfolioResult>;
   /** Create a new project in monday.com from scratch. This mutation initiates asynchronous project creation with comprehensive customization options including: privacy settings (private/public - share is currently not supported), optional companions like Resource Planner for enhanced project management capabilities, workspace assignment for organizational structure, folder placement for better organization, and template selection for predefined project structures. Since project creation is asynchronous, you can optionally provide a callback_url where the project ID will be sent via POST request once creation completes. The callback will receive: { is_success: boolean, process_id: string, project_id?: number }. Returns a process_id for tracking the creation request. */
   create_project?: Maybe<CreateProjectResult>;
+  /** Creates a new service user with a read-only API token. */
+  create_service_user?: Maybe<CreateServiceUserResult>;
   /** Creates a new status column with strongly typed settings. Status columns allow users to track item progress through customizable labels (e.g., "Working on it", "Done", "Stuck"). This mutation is specifically for status/color columns and provides type-safe creation with label configuration. */
   create_status_column?: Maybe<Column>;
   /** Create managed column of type status mutation. */
@@ -5637,6 +5675,8 @@ export type Mutation = {
   delete_doc?: Maybe<Scalars['JSON']['output']>;
   /** Delete a document block */
   delete_doc_block?: Maybe<DocumentBlockIdOnly>;
+  /** Deletes multiple document blocks in a single operation. Maximum 100 blocks per request. */
+  delete_doc_blocks?: Maybe<Array<DeletedDocBlock>>;
   /** Remove an object from favorites */
   delete_favorite?: Maybe<DeleteFavoriteInputResultType>;
   /** Deletes a folder in a specific workspace. */
@@ -5716,6 +5756,8 @@ export type Mutation = {
   publish_article?: Maybe<ArticleMetadata>;
   /** Publishes object out of draft state. Returns {success: true} on success, {success: false} on failure. */
   publish_object?: Maybe<ObjectOperationResponse>;
+  /** Revokes all existing tokens and generates a new API token for a service user. */
+  regenerate_service_user_token?: Maybe<Scalars['String']['output']>;
   /** Remove mock app subscription for the current account */
   remove_mock_app_subscription?: Maybe<AppSubscription>;
   /** Remove a required column from a board */
@@ -5724,6 +5766,8 @@ export type Mutation = {
   remove_team_owners?: Maybe<RemoveTeamOwnersResult>;
   /** Remove users from team. */
   remove_users_from_team?: Maybe<ChangeTeamMembershipsResult>;
+  /** Revokes all API tokens for a service user. */
+  revoke_service_user_tokens?: Maybe<Scalars['Boolean']['output']>;
   /**
    * Set or update the board's permission to specified role. This concept is also
    * known as default board role, general access or board permission set.
@@ -6222,6 +6266,7 @@ export type MutationCreate_DepartmentArgs = {
 
 /** Root mutation type for the Dependencies service */
 export type MutationCreate_DocArgs = {
+  doc_owner_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   location: CreateDocInput;
 };
 
@@ -6406,6 +6451,13 @@ export type MutationCreate_PortfolioArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationCreate_ProjectArgs = {
   input: CreateProjectInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationCreate_Service_UserArgs = {
+  name: Scalars['String']['input'];
+  title?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -6606,6 +6658,12 @@ export type MutationDelete_DocArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationDelete_Doc_BlockArgs = {
   block_id: Scalars['String']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationDelete_Doc_BlocksArgs = {
+  block_ids: Array<Scalars['ID']['input']>;
 };
 
 
@@ -6919,6 +6977,12 @@ export type MutationPublish_ObjectArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationRegenerate_Service_User_TokenArgs = {
+  service_user_id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationRemove_Mock_App_SubscriptionArgs = {
   app_id: Scalars['ID']['input'];
   partial_signing_secret: Scalars['String']['input'];
@@ -6944,6 +7008,12 @@ export type MutationRemove_Team_OwnersArgs = {
 export type MutationRemove_Users_From_TeamArgs = {
   team_id: Scalars['ID']['input'];
   user_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationRevoke_Service_User_TokensArgs = {
+  service_user_id: Scalars['ID']['input'];
 };
 
 
@@ -8209,7 +8279,7 @@ export type Query = {
   /** Fetch a single connection by its unique ID. */
   connection?: Maybe<Connection>;
   /** Get board IDs that are linked to a specific connection. */
-  connection_board_ids?: Maybe<Array<Scalars['Int']['output']>>;
+  connection_board_ids: Array<Scalars['ID']['output']>;
   /** Returns connections for the authenticated user. Supports filtering, pagination, ordering, and partial-scope options. */
   connections?: Maybe<Array<Connection>>;
   custom_activity?: Maybe<Array<CustomActivity>>;
@@ -8298,6 +8368,10 @@ export type Query = {
   replies?: Maybe<Array<Reply>>;
   /** Search API. Each field searches a single entity type with tailored filters. */
   search: SearchNamespace;
+  /** Retrieves API tokens for the given service users. */
+  service_user_tokens?: Maybe<Array<ServiceUserToken>>;
+  /** Retrieves all service users in the account with their token last activity. */
+  service_users?: Maybe<Array<ServiceUser>>;
   /** Get a collection of monday dev sprints */
   sprints?: Maybe<Array<Sprint>>;
   /** Get a collection of tags. */
@@ -8477,7 +8551,7 @@ export type QueryConnectionArgs = {
 
 /** Root query type for the Dependencies service */
 export type QueryConnection_Board_IdsArgs = {
-  connectionId: Scalars['Int']['input'];
+  connection_id: Scalars['ID']['input'];
 };
 
 
@@ -8762,6 +8836,12 @@ export type QueryRepliesArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QueryService_User_TokensArgs = {
+  service_user_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
 export type QuerySprintsArgs = {
   ids: Array<Scalars['ID']['input']>;
 };
@@ -8845,8 +8925,11 @@ export type QueryUser_ConnectionsArgs = {
 export type QueryUsersArgs = {
   emails?: InputMaybe<Array<Scalars['String']['input']>>;
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  kind?: InputMaybe<UserKind>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
+  newest_first?: InputMaybe<Scalars['Boolean']['input']>;
+  non_active?: InputMaybe<Scalars['Boolean']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
   sort?: InputMaybe<Array<UsersSortInput>>;
   status?: InputMaybe<Array<UserStatus>>;
@@ -9288,6 +9371,34 @@ export enum SequenceStatus {
   /** Sequence is missing required configuration */
   MissingConfig = 'MISSING_CONFIG'
 }
+
+/** A service user in the account. */
+export type ServiceUser = {
+  __typename?: 'ServiceUser';
+  /** When the service user was created. */
+  created_at?: Maybe<Scalars['String']['output']>;
+  /** Whether the service user is active. */
+  enabled?: Maybe<Scalars['Boolean']['output']>;
+  /** The ID of the service user. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** The ID of the user who created this service user. */
+  invited_by_id?: Maybe<Scalars['ID']['output']>;
+  /** The last time the service user token was used for an API request. */
+  last_token_activity?: Maybe<Scalars['String']['output']>;
+  /** The display name of the service user. */
+  name?: Maybe<Scalars['String']['output']>;
+  /** The title/description of the service user. */
+  title?: Maybe<Scalars['String']['output']>;
+};
+
+/** A service user token result. */
+export type ServiceUserToken = {
+  __typename?: 'ServiceUserToken';
+  /** The ID of the service user. */
+  service_user_id?: Maybe<Scalars['ID']['output']>;
+  /** The API token. */
+  token?: Maybe<Scalars['String']['output']>;
+};
 
 /** Response type for detailed board permissions. Contains information about the permissions that were set. */
 export type SetBoardPermissionResponse = {
@@ -10402,7 +10513,10 @@ export type UpdateFormSettingsInput = {
   is_anonymous?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
-export type UpdateFormTagInput = {};
+export type UpdateFormTagInput = {
+  /** The value of the tag */
+  value?: InputMaybe<Scalars['String']['input']>;
+};
 
 /** Input for updating lifecycle subscriptions for an entity */
 export type UpdateLifecycleSubscriptionsInput = {
@@ -10866,6 +10980,8 @@ export enum UserKindFilter {
   ProjectsApiUser = 'PROJECTS_API_USER',
   /** A resource directory api user user. */
   ResourceDirectoryApiUser = 'RESOURCE_DIRECTORY_API_USER',
+  /** A service user user. */
+  ServiceUser = 'SERVICE_USER',
   /** A sprint management api user user. */
   SprintManagementApiUser = 'SPRINT_MANAGEMENT_API_USER',
   /** A view only user. */

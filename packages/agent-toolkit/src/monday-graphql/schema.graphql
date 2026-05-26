@@ -129,7 +129,7 @@ pagination: PaginationInput): [Connection!]
 id: Int!): Connection
   "Get board IDs that are linked to a specific connection."
   connection_board_ids(  "Unique identifier of the connection."
-connectionId: Int!): [Int!]
+connection_id: ID!): [ID!]!
   "List trigger events with optional filters"
   trigger_events(nextPageOffset: Int = 0, filters: TriggerEventsFiltersInput): TriggerEventsPage
   "Fetch a single trigger event by UUID"
@@ -376,7 +376,7 @@ ids: [ID!]): [Tag]
 ids: [ID!]): [Team]
   "Get users."
   users(  "Filter by user IDs."
-ids: [ID!],   "Filter by exact user name."
+ids: [ID!],   "Filter by user name. Uses fuzzy search unless combined with `user_kind`, `kind`, or `emails` args, then uses exact search."
 name: String,   "A list of users' emails."
 emails: [String!],   "Filter by user kind."
 user_kind: UserKindFilterInput,   "Sort users by one or more fields and directions."
@@ -384,7 +384,10 @@ sort: [UsersSortInput!],   "Filter by visibility."
 visibility: String,   "Filter by user status. Defaults to [ACTIVE, PENDING] if not provided."
 status: [UserStatus!],   "Number of items to get, the default is 200. The maximum is 1000."
 limit: Int = 200,   "Page number to get, starting at 1."
-page: Int = 1): [User!]
+page: Int = 1,   "The kind to search users by."
+kind: UserKind,   "When true, returns only inactive users. When false, returns only active users."
+non_active: Boolean,   "Sort users by creation date, newest first."
+newest_first: Boolean): [User!]
   "Get a collection of webhooks for the board"
   webhooks(  "Filters webhooks that were created by the app initiating the request"
 app_webhooks_only: Boolean,   "Board unique identifier."
@@ -464,6 +467,11 @@ ids: [ID!]!): [Sprint!]
 job_id: ID!): AsyncJobStatus!
   "Get all roles for the account"
   account_roles: [AccountRole!]
+  "Retrieves API tokens for the given service users."
+  service_user_tokens(  "The IDs of the service users."
+service_user_ids: [ID!]!): [ServiceUserToken!]
+  "Retrieves all service users in the account with their token last activity."
+  service_users: [ServiceUser!]
   "Get all user configs for the account."
   user_configs(  "Filter by kinds."
 kinds: [String!],   "Filter by visibility."
@@ -960,6 +968,9 @@ object_id: ID!): ArticleMetadata
   "Permanently deletes a document and all its content from the system. This action cannot be undone. The document will be removed from all user views and workspaces. Use with caution - ensure the document is no longer needed before deletion. Returns success status and the deleted document ID."
   delete_doc(  "The document's unique identifier. Get this from document queries or creation responses."
 docId: ID!): JSON
+  "Deletes multiple document blocks in a single operation. Maximum 100 blocks per request."
+  delete_doc_blocks(  "The unique identifiers of the blocks to delete."
+block_ids: [ID!]!): [DeletedDocBlock!]
   "Creates an exact copy of an existing document, including all content, structure, and formatting. Use this to create templates, backup documents before major changes, or create variations of existing documents. The duplicated document will have a new unique ID and can be modified independently. Returns the new document's ID on success."
   duplicate_doc(  "The document's unique identifier to duplicate. Get this from document queries or creation responses."
 docId: ID!,   "Controls what gets duplicated: content only (default) or content with update history. Choose content-only for clean copies."
@@ -1191,7 +1202,8 @@ prompt: String,   "Optional board template id"
 template_id: ID,   "Optional workspace id"
 workspace_id: ID): Board
   "Create a new doc."
-  create_doc(  "new monday doc location"
+  create_doc(  "Optional list of user IDs to set as document owners at creation time"
+doc_owner_ids: [ID!],   "new monday doc location"
 location: CreateDocInput!): Document
   "Create new document block"
   create_doc_block(  "After which block to insert this one. If not provided, will be inserted first in the document"
@@ -1531,6 +1543,16 @@ use_async_mode: Boolean): UpdateUserAttributesResult
 emails: [String!]!,   "The new role of the users."
 user_role: UserRole,   "The product to invite the users to"
 product: Product): InviteUsersResult
+  "Revokes all API tokens for a service user."
+  revoke_service_user_tokens(  "The ID of the service user whose tokens to revoke."
+service_user_id: ID!): Boolean
+  "Revokes all existing tokens and generates a new API token for a service user."
+  regenerate_service_user_token(  "The ID of the service user whose token to regenerate."
+service_user_id: ID!): String
+  "Creates a new service user with a read-only API token."
+  create_service_user(  "Display name for the service user."
+name: String!,   "Optional title/description for the service user."
+title: String): CreateServiceUserResult
   "Create a new widget."
   create_widget(  "Parent container for the widget (dashboard or board view)."
 parent: WidgetParentInput!,   "The kind of widget to create (i.e CHART, NUMBER, BATTERY, CALENDAR, GANTT)."
@@ -3611,6 +3633,12 @@ input CreateBlockInput {
   page_break_block: PageBreakBlockInput
 }
 
+"Represents a document block that was successfully deleted."
+type DeletedDocBlock {
+  "The deleted block's unique identifier."
+  id: ID!
+}
+
 "A document block that was changed between two versions, including its content and what type of change occurred."
 type DiffBlock {
   "The unique identifier of the block."
@@ -3623,6 +3651,10 @@ type DiffBlock {
   summary: String
   "The parent block ID, or null if the block is at the top level."
   parent_block_id: ID
+  "The ID of the user who made the change to this block, or null if not available."
+  user_id: ID
+  "The ID of the AI agent that made the change to this block, or null if the change was made by a user."
+  agent_id: ID
   "The changes that occurred to this block (added, deleted, or changed)."
   changes: BlockChanges
 }
@@ -7255,6 +7287,8 @@ type Meeting {
   meeting_link: String!
   "The list of participants in the meeting."
   participants: [Participant!]!
+  "A concise AI-generated gist of the meeting."
+  gist: String
   "The AI-generated summary of the meeting."
   summary: String
   "The topics discussed during the meeting."
@@ -7856,6 +7890,8 @@ type DirectoryResource {
   skills: [String!]
   "The location of the directory resource."
   location: String
+  "The type of the resource (user, viewer, or guest)."
+  resource_type: DirectoryResourceKind
 }
 
 "Attributes that can be updated on a resource directory entry"
@@ -7866,6 +7902,16 @@ enum DirectoryResourceAttribute {
   SKILLS
   "Represents the resource directory location attribute."
   LOCATION
+}
+
+"The type of a directory resource"
+enum DirectoryResourceKind {
+  "A member or admin user"
+  USER
+  "A view-only user"
+  VIEWER
+  "A guest user"
+  GUEST
 }
 
 "Paginated response containing directory resources and cursor for next page"
@@ -8290,6 +8336,14 @@ enum BaseRoleName {
   ADMIN
 }
 
+"The result of creating a service user."
+type CreateServiceUserResult {
+  "The created service user."
+  user: User
+  "The API token for the created service user. Null if token generation failed."
+  token: String
+}
+
 "Attributes of the team to be created."
 input CreateTeamAttributesInput {
   "The team's name."
@@ -8397,6 +8451,32 @@ type RemoveTeamOwnersResult {
   team: Team
   "Errors that occurred while removing team owners."
   errors: [RemoveTeamOwnersError!]
+}
+
+"A service user in the account."
+type ServiceUser {
+  "The ID of the service user."
+  id: ID
+  "The display name of the service user."
+  name: String
+  "The title/description of the service user."
+  title: String
+  "Whether the service user is active."
+  enabled: Boolean
+  "The ID of the user who created this service user."
+  invited_by_id: ID
+  "When the service user was created."
+  created_at: String
+  "The last time the service user token was used for an API request."
+  last_token_activity: String
+}
+
+"A service user token result."
+type ServiceUserToken {
+  "The ID of the service user."
+  service_user_id: ID
+  "The API token."
+  token: String
 }
 
 "Attributes of the email domain to be updated."
@@ -8546,6 +8626,8 @@ enum InvitationMethod {
   API_USER_CREATION
   "Created as an agent user."
   AGENT_USER_CREATION
+  "Created via system creation flow."
+  SYSTEM_CREATION
 }
 
 "URLs for the user's profile photo in various sizes."
@@ -8590,6 +8672,8 @@ enum UserKindFilter {
   PERSONAL_AGENT_MEMBER
   "A agent signup user user."
   AGENT_SIGNUP_USER
+  "A service user user."
+  SERVICE_USER
   "A portal user."
   PORTAL
   "A portfolio api user user."
@@ -9589,7 +9673,10 @@ input UpdateFormSettingsInput {
   is_anonymous: Boolean
 }
 
-input UpdateFormTagInput 
+input UpdateFormTagInput {
+  "The value of the tag"
+  value: String
+}
 
 input UpdateQuestionInput {
   """

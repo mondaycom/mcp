@@ -66,7 +66,8 @@ import { UndoActionTool } from './undo-action-tool/undo-action-tool';
 import { LinkBoardItemsWorkflowTool } from './link-board-items-workflow-tool/link-board-items-workflow-tool';
 import { FetchFileContentTool } from './fetch-file-content-tool/fetch-file-content-tool';
 import { ManageAgentTool } from './agents-tools/manage-agent/manage-agent-tool';
-import { ManageAgentCapabilitiesTool } from './agents-tools/manage-agent-capabilities/manage-agent-capabilities-tool';
+import { ManageAgentTriggersTool } from './agents-tools/manage-agent-triggers/manage-agent-triggers-tool';
+import { ManageAgentSkillsTool } from './agents-tools/manage-agent-skills/manage-agent-skills-tool';
 import { ManageAgentKnowledgeTool } from './agents-tools/manage-agent-knowledge/manage-agent-knowledge-tool';
 import { AgentCatalogTool } from './agents-tools/agent-catalog/agent-catalog-tool';
 
@@ -140,7 +141,8 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   FetchFileContentTool,
   // monday Platform Agents (subgraph still on dev API version)
   ManageAgentTool,
-  ManageAgentCapabilitiesTool,
+  ManageAgentTriggersTool,
+  ManageAgentSkillsTool,
   ManageAgentKnowledgeTool,
   AgentCatalogTool,
 ];

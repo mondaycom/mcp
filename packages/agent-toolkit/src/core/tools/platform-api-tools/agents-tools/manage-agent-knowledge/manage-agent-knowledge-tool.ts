@@ -72,7 +72,12 @@ USAGE EXAMPLES:
 - List: { "action": "list", "agent_id": "7" }
 - Add board access: { "action": "add", "agent_id": "7", "resource_id": "42", "scope_type": "BOARD", "permission_type": "READ" }
 - Update to read-write: { "action": "update", "agent_id": "7", "resource_id": "42", "scope_type": "BOARD", "permission_type": "READ_WRITE" }
-- Remove access: { "action": "remove", "agent_id": "7", "resource_id": "42", "scope_type": "BOARD" }`;
+- Remove access: { "action": "remove", "agent_id": "7", "resource_id": "42", "scope_type": "BOARD" }
+
+RELATED TOOLS:
+- manage_agent — manage the agent entity itself (create, activate, deactivate, etc.)
+- manage_agent_triggers — manage which triggers fire this agent automatically
+- manage_agent_skills — manage which skills this agent can perform`;
   }
 
   getInputSchema() {
