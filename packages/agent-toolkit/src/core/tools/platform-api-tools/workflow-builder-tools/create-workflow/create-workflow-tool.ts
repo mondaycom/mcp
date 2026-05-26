@@ -41,7 +41,7 @@ export class CreateWorkflowBuilderTool extends BaseMondayApiTool<typeof createWo
 Use this when the user wants to build a new standalone workflow from scratch. Workflow Builder workflows are cross-board, workspace-level automations — distinct from board automations (use create_automation for those). You only need a workspaceId to get started — all other fields are optional.
 
 Returns:
-- workflowObjectId: stable entity ID for the workflow
+- workflowObjectId: the workflow object ID
 - workflowDraftId: the current draft version ID — workflows start as drafts and must be activated before they run
 
 Terminology:
