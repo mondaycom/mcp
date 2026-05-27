@@ -16,7 +16,7 @@ export const updateWorkflowToolSchema = {
   workflowDraftId: z
     .number()
     .describe(
-      'The draft version ID returned by create_workflow. The agent applies changes to this specific draft. Both workflowObjectId and workflowDraftId are required — together they identify the exact draft to update. A new version ID is issued after each publish.',
+      'The draft version ID to update. Use the workflowDraftId from the previous create_workflow or update_workflow response — the agent may return a new draft ID, so always read it from the latest response rather than reusing an earlier value.',
     ),
   prompt: z
     .string()
