@@ -1,22 +1,10 @@
-import { gql } from 'graphql-request';
 import { z } from 'zod';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../../base-monday-api-tool';
 import { rethrowWithContext } from '../../../../../utils';
+import { publishWorkflowMutation } from './publish-workflow.graphql.dev';
 
-const publishWorkflowMutation = gql`
-  mutation publishWorkflow($workflow_object_id: ID!, $workflow_draft_id: ID!, $should_activate: Boolean) {
-    publish_workflow(
-      workflow_object_id: $workflow_object_id
-      workflow_draft_id: $workflow_draft_id
-      should_activate: $should_activate
-    ) {
-      workflow_object_id
-      workflow_live_id
-    }
-  }
-`;
-
+// TODO: replace with codegen-generated types once publish_workflow lands in the dev schema (automation-builders#3085)
 type PublishWorkflowMutationVariables = {
   workflow_object_id: string;
   workflow_draft_id: string;
@@ -74,7 +62,7 @@ Returns:
 - workflowObjectId: the workflow object ID (unchanged)
 - workflowLiveId: the new live version ID — this changes on every publish, so do not cache it
 
-Note: a new draft is created after each publish. To make further changes, call update_workflow with the new draft ID.
+Note: a new draft is created after each publish. To make further changes, retrieve the new draft ID first (e.g. via manage_workflows), then call update_workflow.
 `;
   }
 
