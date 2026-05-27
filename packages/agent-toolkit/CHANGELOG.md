@@ -1,5 +1,14 @@
 # Changelog
 
+## 5.13.0
+
+### get_board_activity — add item and user filters
+
+- Added optional `itemIds` parameter to filter activity logs to specific items, avoiding full-board fetches
+- Added optional `userIds` parameter to filter activity logs to actions performed by specific users
+- Updated GraphQL query (`GetBoardActivity`) to pass `item_ids` and `user_ids` arguments to `activity_logs`
+- Updated `getDescription()` to reflect the new filtering capabilities
+
 ## 5.11.0
 
 ### Asset upload MCP tools
