@@ -24,7 +24,7 @@ export const updateWorkflowToolSchema = {
     .min(1, 'prompt must be a non-empty string')
     .max(2000, 'prompt must not exceed 2000 characters')
     .describe(
-      'Natural-language description of the changes to make. Describe what steps to add, remove, or modify in plain English (e.g. "Add a trigger that fires when an item is created on Amit\'s Board (5001393610)"). The agent interprets this and applies the right structural changes. Maximum 2000 characters.',
+      'Natural-language description of the changes to make. Describe what steps to add, remove, or modify in plain English (e.g. "Add a trigger that fires when an item is created on board 1234567890"). The agent interprets this and applies the right structural changes. Maximum 2000 characters.',
     ),
 };
 
@@ -55,7 +55,7 @@ Use this after create_workflow to build out the workflow step by step. You can c
 
 Parameters:
 - workflowObjectId and workflowDraftId: both returned by create_workflow — they identify which draft to update.
-- prompt: describe what you want to change in plain English (e.g. "Add a trigger that fires when an item is created on Amit's Board (5001393610)"). Maximum 2000 characters.
+- prompt: describe what you want to change in plain English (e.g. "Add a trigger that fires when an item is created on board 1234567890"). Maximum 2000 characters.
 
 Returns:
 - workflowObjectId: the workflow object ID (unchanged)
