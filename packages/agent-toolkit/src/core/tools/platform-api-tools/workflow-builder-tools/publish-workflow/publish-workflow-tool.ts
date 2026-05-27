@@ -47,7 +47,7 @@ export const publishWorkflowToolSchema = {
     .boolean()
     .optional()
     .describe(
-      'Whether to activate the workflow immediately after publishing so it starts running. Defaults to false — the workflow is published but stays inactive.',
+      'Whether to activate the workflow immediately after publishing so it starts running. Defaults to true — the workflow is activated immediately after publish.',
     ),
 };
 
@@ -68,7 +68,7 @@ Use this after create_workflow (and optionally update_workflow) to make the work
 
 Parameters:
 - workflowObjectId and workflowDraftId: returned by create_workflow — they identify which draft to publish.
-- shouldActivate: set to true to start running the workflow immediately after publish. Defaults to false (published but inactive).
+- shouldActivate: whether to activate the workflow immediately after publish. Defaults to true — pass false to publish without activating.
 
 Returns:
 - workflowObjectId: the workflow object ID (unchanged)
