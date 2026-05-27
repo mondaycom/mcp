@@ -35,13 +35,13 @@ export const publishWorkflowToolSchema = {
     .string()
     .trim()
     .min(1, 'workflowObjectId must be a non-empty string')
-    .describe('The workflow object ID returned by create_workflow or update_workflow. Identifies the workflow across all its drafts and live versions.'),
+    .describe('The workflow object ID returned by create_workflow. Identifies the workflow across all its drafts and live versions.'),
   workflowDraftId: z
     .string()
     .trim()
     .min(1, 'workflowDraftId must be a non-empty string')
     .describe(
-      'The draft version ID returned by create_workflow or update_workflow. Both workflowObjectId and workflowDraftId are required — together they identify the exact draft to publish.',
+      'The draft version ID returned by create_workflow. Both workflowObjectId and workflowDraftId are required — together they identify the exact draft to publish.',
     ),
   shouldActivate: z
     .boolean()
@@ -67,7 +67,7 @@ export class PublishWorkflowTool extends BaseMondayApiTool<typeof publishWorkflo
 Use this after create_workflow (and optionally update_workflow) to make the workflow active. Before publishing, the workflow is validated — if it has missing or misconfigured steps, publish will fail with a validation error describing what needs to be fixed.
 
 Parameters:
-- workflowObjectId and workflowDraftId: returned by create_workflow or update_workflow — they identify which draft to publish.
+- workflowObjectId and workflowDraftId: returned by create_workflow — they identify which draft to publish.
 - shouldActivate: set to true to start running the workflow immediately after publish. Defaults to false (published but inactive).
 
 Returns:
