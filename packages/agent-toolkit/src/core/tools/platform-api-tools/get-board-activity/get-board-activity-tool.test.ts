@@ -92,6 +92,36 @@ describe('GetBoardActivityTool', () => {
     );
   });
 
+  it('passes undefined for omitted filters — not empty arrays', async () => {
+    mocks.setResponse({ boards: [mockBoard] });
+    const tool = new GetBoardActivityTool(mocks.mockApiClient);
+
+    await tool.execute({ boardId: 1, includeData: false });
+
+    expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+      expect.stringContaining('query GetBoardActivity'),
+      expect.objectContaining({
+        itemIds: undefined,
+        userIds: undefined,
+      }),
+    );
+  });
+
+  it('passes empty arrays when filters are explicitly set to []', async () => {
+    mocks.setResponse({ boards: [mockBoard] });
+    const tool = new GetBoardActivityTool(mocks.mockApiClient);
+
+    await tool.execute({ boardId: 1, itemIds: [], userIds: [], includeData: false });
+
+    expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+      expect.stringContaining('query GetBoardActivity'),
+      expect.objectContaining({
+        itemIds: [],
+        userIds: [],
+      }),
+    );
+  });
+
   it('propagates API errors', async () => {
     mocks.getMockRequest().mockRejectedValueOnce(new Error('Unauthorized'));
     const tool = new GetBoardActivityTool(mocks.mockApiClient);
