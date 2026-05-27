@@ -74,7 +74,7 @@ import { ListAutomationsTool } from './workflows-tools/list-workflows/list-workf
 import { ManageWorkflowsTool } from './workflows-tools/manage-workflows/manage-workflows-tool';
 import { CreateAutomationTool } from './workflows-tools/create-automation/create-automation-tool';
 import { CreateWorkflowBuilderTool } from './workflow-builder-tools/create-workflow/create-workflow-tool';
-import { UpdateWorkflowBuilderTool } from './workflow-builder-tools/update-workflow/update-workflow-tool';
+import { UpdateWorkflowTool } from './workflow-builder-tools/update-workflow/update-workflow-tool';
 
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteItemTool,
@@ -158,7 +158,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   // Workflow Builder Tools
   CreateWorkflowBuilderTool,
   // Cast: ctor signature (api, apiToken, context?) doesn't match BaseMondayApiToolConstructor.
-  UpdateWorkflowBuilderTool as unknown as BaseMondayApiToolConstructor,
+  UpdateWorkflowTool as unknown as BaseMondayApiToolConstructor,
 ];
 
 export * from './all-monday-api-tool';

@@ -7,16 +7,16 @@ import { WORKFLOW_BUILDER_AGENT_URL } from '../constants';
 
 const REQUEST_TIMEOUT_MS = 180_000;
 
-export const updateWorkflowBuilderToolSchema = {
+export const updateWorkflowToolSchema = {
   workflowObjectId: z
     .number()
     .describe(
-      'The workflow object ID returned by create_workflow_builder. Identifies the workflow across all its drafts and published versions.',
+      'The workflow object ID returned by create_workflow. Identifies the workflow across all its drafts and published versions.',
     ),
   workflowDraftId: z
     .number()
     .describe(
-      'The draft version ID returned by create_workflow_builder. The agent applies changes to this specific draft. Both workflowObjectId and workflowDraftId are required — together they identify the exact draft to update.',
+      'The draft version ID returned by create_workflow. The agent applies changes to this specific draft. Both workflowObjectId and workflowDraftId are required — together they identify the exact draft to update.',
     ),
   prompt: z
     .string()
@@ -28,11 +28,11 @@ export const updateWorkflowBuilderToolSchema = {
     ),
 };
 
-export class UpdateWorkflowBuilderTool extends BaseMondayApiTool<typeof updateWorkflowBuilderToolSchema> {
-  name = 'update_workflow_builder';
+export class UpdateWorkflowTool extends BaseMondayApiTool<typeof updateWorkflowToolSchema> {
+  name = 'update_workflow';
   type = ToolType.WRITE;
   annotations = createMondayApiAnnotations({
-    title: 'Update Workflow Builder',
+    title: 'Update Workflow',
     readOnlyHint: false,
     destructiveHint: false,
     idempotentHint: false,
@@ -47,14 +47,14 @@ export class UpdateWorkflowBuilderTool extends BaseMondayApiTool<typeof updateWo
   }
 
   getDescription(): string {
-    return `Updates an existing Workflow Builder workflow draft using an AI agent.
+    return `Updates an existing workflow draft using an AI agent.
 
 The agent interprets the prompt and applies structural changes to the workflow — creating, updating, or deleting steps. Pass clear, descriptive instructions and the agent will decide which operations to perform, then return a summary of what it did.
 
-Use this after create_workflow_builder to build out the workflow step by step. You can call it multiple times on the same draft to iteratively refine the workflow.
+Use this after create_workflow to build out the workflow step by step. You can call it multiple times on the same draft to iteratively refine the workflow.
 
 Parameters:
-- workflowObjectId and workflowDraftId: both returned by create_workflow_builder — they identify which draft to update.
+- workflowObjectId and workflowDraftId: both returned by create_workflow — they identify which draft to update.
 - prompt: describe what you want to change in plain English. Maximum 2000 characters.
 
 Returns:
@@ -67,11 +67,11 @@ Note: the workflow runs only after it is published to live version.
   }
 
   getInputSchema() {
-    return updateWorkflowBuilderToolSchema;
+    return updateWorkflowToolSchema;
   }
 
   protected async executeInternal(
-    input: ToolInputType<typeof updateWorkflowBuilderToolSchema>,
+    input: ToolInputType<typeof updateWorkflowToolSchema>,
   ): Promise<ToolOutputType<never>> {
     try {
       const response = await fetch(WORKFLOW_BUILDER_AGENT_URL, {

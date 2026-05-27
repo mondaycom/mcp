@@ -19,7 +19,7 @@ function mockFetchResponse({
   } as unknown as Response;
 }
 
-describe('UpdateWorkflowBuilderTool', () => {
+describe('UpdateWorkflowTool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
   let fetchSpy: jest.SpyInstance;
 
@@ -40,7 +40,7 @@ describe('UpdateWorkflowBuilderTool', () => {
       }),
     );
 
-    await callToolByNameRawAsync('update_workflow_builder', {
+    await callToolByNameRawAsync('update_workflow', {
       workflowObjectId: 5002722216,
       workflowDraftId: 43023,
       prompt: 'add a step that sends an email when an item is created',
@@ -72,7 +72,7 @@ describe('UpdateWorkflowBuilderTool', () => {
       }),
     );
 
-    const result = await callToolByNameRawAsync('update_workflow_builder', {
+    const result = await callToolByNameRawAsync('update_workflow', {
       workflowObjectId: 5002722216,
       workflowDraftId: 43023,
       prompt: 'add an email step',
@@ -85,7 +85,7 @@ describe('UpdateWorkflowBuilderTool', () => {
   });
 
   it('rejects missing workflowObjectId before making any HTTP call', async () => {
-    const result = await callToolByNameRawAsync('update_workflow_builder', {
+    const result = await callToolByNameRawAsync('update_workflow', {
       workflowDraftId: 43023,
       prompt: 'add a step',
     });
@@ -95,7 +95,7 @@ describe('UpdateWorkflowBuilderTool', () => {
   });
 
   it('rejects missing workflowDraftId before making any HTTP call', async () => {
-    const result = await callToolByNameRawAsync('update_workflow_builder', {
+    const result = await callToolByNameRawAsync('update_workflow', {
       workflowObjectId: 5002722216,
       prompt: 'add a step',
     });
@@ -105,7 +105,7 @@ describe('UpdateWorkflowBuilderTool', () => {
   });
 
   it('rejects empty prompt before making any HTTP call', async () => {
-    const result = await callToolByNameRawAsync('update_workflow_builder', {
+    const result = await callToolByNameRawAsync('update_workflow', {
       workflowObjectId: 5002722216,
       workflowDraftId: 43023,
       prompt: '   ',
@@ -124,7 +124,7 @@ describe('UpdateWorkflowBuilderTool', () => {
       }),
     );
 
-    const result = await callToolByNameRawAsync('update_workflow_builder', {
+    const result = await callToolByNameRawAsync('update_workflow', {
       workflowObjectId: 5002722216,
       workflowDraftId: 43023,
       prompt: 'add a step',
@@ -138,7 +138,7 @@ describe('UpdateWorkflowBuilderTool', () => {
   it('wraps network errors with operation context', async () => {
     fetchSpy.mockRejectedValue(new Error('network failure'));
 
-    const result = await callToolByNameRawAsync('update_workflow_builder', {
+    const result = await callToolByNameRawAsync('update_workflow', {
       workflowObjectId: 5002722216,
       workflowDraftId: 43023,
       prompt: 'add a step',
