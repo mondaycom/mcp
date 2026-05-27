@@ -229,7 +229,6 @@ export * from './get-notetaker-meetings-tool/get-notetaker-meetings-tool';
 export * from './fetch-file-content-tool/fetch-file-content-tool';
 // monday Platform Agents
 export * from './agents-tools';
-// Workflow Builder Tools
 // Workflows
 export * from './workflows-tools';
 // Workflow Builder Tools
