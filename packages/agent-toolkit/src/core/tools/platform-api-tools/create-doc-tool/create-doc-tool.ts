@@ -54,7 +54,13 @@ export const createDocToolSchema = {
   location: z
     .enum(['workspace', 'item'])
     .describe('Location where the document should be created - either in a workspace or attached to an item'),
-
+  docOwnerIds: z
+    .array(z.string())
+    .min(1)
+    .optional()
+    .describe(
+      'Optional list of user IDs to set as document owners at creation time. Use this to add the agent owner so they retain access to the document. Ownership is set inside the creation mutation itself, bypassing the permission checks that would block a subsequent add_subscribers_to_object call.',
+    ),
   workspace_id: z
     .number()
     .optional()
@@ -98,13 +104,14 @@ export class CreateDocTool extends BaseMondayApiTool<typeof createDocToolSchema>
     return `Create a new monday.com doc either inside a workspace or attached to an item (via a doc column). After creation, the provided markdown will be appended to the document.
 
 LOCATION TYPES:
-- workspace: Creates a document in a workspace (requires workspace_id, optional doc_kind, optional folder_id)
-- item: Creates a document attached to an item (requires item_id, optional column_id)
+- workspace: Creates a document in a workspace (requires workspace_id, optional doc_kind, optional folder_id, optional docOwnerIds)
+- item: Creates a document attached to an item (requires item_id, optional column_id, optional docOwnerIds)
 
 USAGE EXAMPLES:
-- Workspace doc: { location: "workspace", workspace_id: 123, doc_kind: "private" , markdown: "..." }
-- Workspace doc in folder: { location: "workspace", workspace_id: 123, folder_id: 17264196 , markdown: "..." }
-- Item doc: { location: "item", item_id: 456, column_id: "doc_col_1" , markdown: "..." }`;
+- Workspace doc: { location: "workspace", workspace_id: 123, doc_name: "My Doc", doc_kind: "private" , markdown: "..." }
+- Workspace doc in folder: { location: "workspace", workspace_id: 123, doc_name: "My Doc", folder_id: 17264196 , markdown: "..." }
+- Item doc: { location: "item", item_id: 456, doc_name: "My Doc", column_id: "doc_col_1" , markdown: "..." }
+- Workspace doc with agent owner: { location: "workspace", workspace_id: 123, doc_name: "My Doc", markdown: "...", docOwnerIds: ["<agent_owner_user_id>"] }`;
   }
 
   getInputSchema(): typeof createDocToolSchema {
@@ -139,6 +146,7 @@ USAGE EXAMPLES:
               folder_id: parsedInput.folder_id?.toString(),
             },
           },
+          ...(input.docOwnerIds !== undefined ? { docOwnerIds: input.docOwnerIds } : {}),
         };
 
         const res: CreateDocMutation = await this.mondayApi.request(createDocMutation, variables);
@@ -190,6 +198,7 @@ USAGE EXAMPLES:
               column_id: columnId,
             },
           },
+          ...(input.docOwnerIds !== undefined ? { docOwnerIds: input.docOwnerIds } : {}),
         };
 
         const res: CreateDocMutation = await this.mondayApi.request(createDocMutation, itemVariables);

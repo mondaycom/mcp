@@ -70,8 +70,10 @@ import { FetchFileContentTool } from './fetch-file-content-tool/fetch-file-conte
 import { GetAgentTool } from './agents-tools/get-agent/get-agent-tool';
 import { CreateAgentTool } from './agents-tools/create-agent/create-agent-tool';
 import { DeleteAgentTool } from './agents-tools/delete-agent/delete-agent-tool';
-import { ListWorkflowsTool } from './workflows-tools/list-workflows/list-workflows-tool';
+import { ListAutomationsTool } from './workflows-tools/list-workflows/list-workflows-tool';
 import { ManageWorkflowsTool } from './workflows-tools/manage-workflows/manage-workflows-tool';
+import { CreateAutomationTool } from './workflows-tools/create-automation/create-automation-tool';
+import { CreateWorkflowBuilderTool } from './workflow-builder-tools/create-workflow/create-workflow-tool';
 
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteItemTool,
@@ -148,8 +150,12 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   CreateAgentTool,
   DeleteAgentTool,
   // Workflows (subgraph still on dev API version)
-  ListWorkflowsTool,
+  ListAutomationsTool,
   ManageWorkflowsTool,
+  // Cast: ctor signature (api, apiToken, context?) doesn't match BaseMondayApiToolConstructor.
+  CreateAutomationTool as unknown as BaseMondayApiToolConstructor,
+  // Workflow Builder Tools
+  CreateWorkflowBuilderTool,
 ];
 
 export * from './all-monday-api-tool';
@@ -222,6 +228,8 @@ export * from './fetch-file-content-tool/fetch-file-content-tool';
 export * from './agents-tools';
 // Workflows
 export * from './workflows-tools';
+// Workflow Builder Tools
+export * from './workflow-builder-tools/create-workflow/create-workflow-tool';
 // Dashboard Tools
 export * from './dashboard-tools';
 // Monday Dev Tools

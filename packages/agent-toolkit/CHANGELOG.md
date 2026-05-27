@@ -1,6 +1,6 @@
 # Changelog
 
-## 5.13.0
+## 5.17.0
 
 ### get_board_activity — add item and user filters
 
