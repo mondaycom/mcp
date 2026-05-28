@@ -7,6 +7,7 @@ import {
   PublishWorkflowMutationVariables,
 } from '../../../../../monday-graphql/generated/graphql.dev/graphql';
 import { publishWorkflowMutation } from './publish-workflow.graphql.dev';
+import { WORKFLOW_VALIDATION_FAILED } from '../constants';
 
 export const publishWorkflowToolSchema = {
   workflowObjectId: z
@@ -113,6 +114,7 @@ interface WorkflowValidationIssue {
 interface GraphQLValidationError {
   response?: {
     errors?: Array<{
+      message?: string;
       extensions?: {
         code?: string;
         error_data?: { issues?: WorkflowValidationIssue[] };
@@ -123,14 +125,15 @@ interface GraphQLValidationError {
 
 function extractWorkflowValidationError(error: unknown): Record<string, unknown> | null {
   const gqlError = error as GraphQLValidationError;
-  const ext = gqlError?.response?.errors?.[0]?.extensions;
-  if (ext?.code !== 'WORKFLOW_VALIDATION_FAILED') return null;
+  const firstError = gqlError?.response?.errors?.[0];
+  if (!firstError || firstError.extensions?.code !== WORKFLOW_VALIDATION_FAILED) return null;
+  const ext = firstError.extensions;
 
   const issues = ext.error_data?.issues ?? [];
   return {
     success: false,
-    reason: 'WORKFLOW_VALIDATION_FAILED',
-    message: 'Workflow has validation issues that must be resolved before publishing.',
+    reason: WORKFLOW_VALIDATION_FAILED,
+    message: firstError.message ?? 'Workflow has validation issues that must be resolved before publishing.',
     issues: issues.map((issue) => ({
       stepId: issue.stepId,
       stepVisibleId: issue.stepVisibleId,
