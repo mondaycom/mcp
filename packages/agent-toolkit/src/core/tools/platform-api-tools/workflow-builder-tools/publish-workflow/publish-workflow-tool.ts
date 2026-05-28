@@ -7,7 +7,6 @@ import {
   PublishWorkflowMutationVariables,
 } from '../../../../../monday-graphql/generated/graphql.dev/graphql';
 import { publishWorkflowMutation } from './publish-workflow.graphql.dev';
-import { WORKFLOW_VALIDATION_FAILED } from '../constants';
 
 export const publishWorkflowToolSchema = {
   workflowObjectId: z
@@ -93,56 +92,7 @@ Note: a new draft is created after each publish. To make further changes, retrie
         },
       };
     } catch (error) {
-      const validationResult = extractWorkflowValidationError(error);
-      if (validationResult) {
-        return { content: validationResult };
-      }
       rethrowWithContext(error, 'publish workflow');
     }
   }
-}
-
-interface WorkflowValidationIssue {
-  stepId: number;
-  stepVisibleId: number;
-  stepTitle: string;
-  type: string;
-  blockName: string;
-  missingMandatoryInputs?: Array<{ fieldKey: string; fieldTitle: string }>;
-}
-
-interface GraphQLValidationError {
-  response?: {
-    errors?: Array<{
-      message?: string;
-      extensions?: {
-        code?: string;
-        error_data?: { issues?: WorkflowValidationIssue[] };
-      };
-    }>;
-  };
-}
-
-function extractWorkflowValidationError(error: unknown): Record<string, unknown> | null {
-  const gqlError = error as GraphQLValidationError;
-  const firstError = gqlError?.response?.errors?.[0];
-  if (!firstError || firstError.extensions?.code !== WORKFLOW_VALIDATION_FAILED) return null;
-  const ext = firstError.extensions;
-
-  const issues = ext.error_data?.issues ?? [];
-  return {
-    success: false,
-    reason: WORKFLOW_VALIDATION_FAILED,
-    message: firstError.message ?? 'Workflow has validation issues that must be resolved before publishing.',
-    issues: issues.map((issue) => ({
-      stepId: issue.stepId,
-      stepVisibleId: issue.stepVisibleId,
-      stepTitle: issue.stepTitle,
-      type: issue.type,
-      blockName: issue.blockName,
-      ...(issue.missingMandatoryInputs?.length
-        ? { missingMandatoryInputs: issue.missingMandatoryInputs }
-        : {}),
-    })),
-  };
 }
