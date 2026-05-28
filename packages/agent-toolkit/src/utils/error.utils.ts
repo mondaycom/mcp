@@ -3,7 +3,7 @@
  */
 interface GraphQLErrorResponse {
   response?: {
-    errors?: Array<{ message: string }>;
+    errors?: Array<{ message: string; extensions?: Record<string, unknown> }>;
   };
 }
 
@@ -29,7 +29,14 @@ interface GraphQLErrorResponse {
  */
 export function rethrowWithContext(error: unknown, operation: string): never {
   // Try to extract GraphQL errors from the response
-  const graphQLErrors = (error as GraphQLErrorResponse)?.response?.errors?.map((e) => e.message)?.join(', ');
+  const graphQLErrors = (error as GraphQLErrorResponse)?.response?.errors
+    ?.map((e) => {
+      if (e.extensions && Object.keys(e.extensions).length > 0) {
+        return `${e.message} (details: ${JSON.stringify(e.extensions)})`;
+      }
+      return e.message;
+    })
+    ?.join(', ');
 
   if (graphQLErrors) {
     throw new Error(`Failed to ${operation}: ${graphQLErrors}`);
