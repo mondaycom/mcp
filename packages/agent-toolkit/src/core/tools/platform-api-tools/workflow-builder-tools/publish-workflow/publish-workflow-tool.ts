@@ -92,7 +92,54 @@ Note: a new draft is created after each publish. To make further changes, retrie
         },
       };
     } catch (error) {
+      const validationResult = extractWorkflowValidationError(error);
+      if (validationResult) {
+        return { content: validationResult };
+      }
       rethrowWithContext(error, 'publish workflow');
     }
   }
+}
+
+interface WorkflowValidationIssue {
+  stepId: number;
+  stepVisibleId: number;
+  stepTitle: string;
+  type: string;
+  blockName: string;
+  missingMandatoryInputs?: Array<{ fieldKey: string; fieldTitle: string }>;
+}
+
+interface GraphQLValidationError {
+  response?: {
+    errors?: Array<{
+      extensions?: {
+        code?: string;
+        error_data?: { issues?: WorkflowValidationIssue[] };
+      };
+    }>;
+  };
+}
+
+function extractWorkflowValidationError(error: unknown): Record<string, unknown> | null {
+  const gqlError = error as GraphQLValidationError;
+  const ext = gqlError?.response?.errors?.[0]?.extensions;
+  if (ext?.code !== 'WORKFLOW_VALIDATION_FAILED') return null;
+
+  const issues = ext.error_data?.issues ?? [];
+  return {
+    success: false,
+    reason: 'WORKFLOW_VALIDATION_FAILED',
+    message: 'Workflow has validation issues that must be resolved before publishing.',
+    issues: issues.map((issue) => ({
+      stepId: issue.stepId,
+      stepVisibleId: issue.stepVisibleId,
+      stepTitle: issue.stepTitle,
+      type: issue.type,
+      blockName: issue.blockName,
+      ...(issue.missingMandatoryInputs?.length
+        ? { missingMandatoryInputs: issue.missingMandatoryInputs }
+        : {}),
+    })),
+  };
 }
