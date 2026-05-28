@@ -12,7 +12,7 @@ describe('rethrowWithContext', () => {
       expect(() => rethrowWithContext(error, 'create item')).toThrow('Failed to create item: Item not found');
     });
 
-    it('should include extensions in error message when present', () => {
+    it('should include allowlisted extension keys in error message', () => {
       const error = {
         response: {
           errors: [
@@ -21,6 +21,7 @@ describe('rethrowWithContext', () => {
               extensions: {
                 code: 'WORKFLOW_VALIDATION_FAILED',
                 error_data: { issues: [{ stepId: 2, type: 'missing-mandatory-inputs' }] },
+                internalTrace: 'should-be-omitted',
               },
             },
           ],
@@ -32,10 +33,10 @@ describe('rethrowWithContext', () => {
       );
     });
 
-    it('should not append details when extensions is empty', () => {
+    it('should not append details when no allowlisted keys are present', () => {
       const error = {
         response: {
-          errors: [{ message: 'Some error', extensions: {} }],
+          errors: [{ message: 'Some error', extensions: { internalTrace: 'abc' } }],
         },
       };
 
