@@ -528,7 +528,7 @@ export enum AggregateHistoryFilterOperator {
 export type AggregateHistoryFilterRuleInput = {
   /** The unique identifier of the column to filter by. */
   column_id: Scalars['String']['input'];
-  /** Optional attribute for complex column types (e.g., date for timeline columns). */
+  /** For columns whose value has multiple comparable parts (such as `timeline` columns with a start and end date), indicates which part to compare. For example, set `"date"` to compare against the timeline date. Leave unset for columns with a single comparable value. */
   compare_attribute?: InputMaybe<Scalars['String']['input']>;
   /** The value(s) to compare against. Can be a string, number, boolean, or array. */
   compare_value?: InputMaybe<Scalars['JSON']['input']>;
@@ -2766,6 +2766,10 @@ export enum CampaignsAnalyticsEventKind {
   EmailOpened = 'EMAIL_OPENED',
   /** Recipient marked email as spam */
   EmailRecipientComplaint = 'EMAIL_RECIPIENT_COMPLAINT',
+  /** email_recipient_group_resubscribed */
+  EmailRecipientGroupResubscribed = 'EMAIL_RECIPIENT_GROUP_RESUBSCRIBED',
+  /** email_recipient_group_unsubscribed */
+  EmailRecipientGroupUnsubscribed = 'EMAIL_RECIPIENT_GROUP_UNSUBSCRIBED',
   /** Recipient unsubscribed */
   EmailRecipientUnsubscribed = 'EMAIL_RECIPIENT_UNSUBSCRIBED',
   /** Email was sent */
@@ -3218,6 +3222,15 @@ export type CheckboxValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
+/** Provider-specific data for Claude managed agents */
+export type ClaudeProviderData = {
+  __typename?: 'ClaudeProviderData';
+  /** Available environments on this provider */
+  environments?: Maybe<Array<ProviderResource>>;
+  /** Available vaults for secret management on this provider */
+  vaults?: Maybe<Array<ProviderResource>>;
+};
+
 /** Result of clearing users department. */
 export type ClearUsersDepartmentResult = {
   __typename?: 'ClearUsersDepartmentResult';
@@ -3513,6 +3526,31 @@ export enum ConditionOperator {
   Or = 'OR'
 }
 
+/** Input for connecting an external agent via BYOA (Bring Your Own Agent) */
+export type ConnectExternalAgentInput = {
+  /** Optional callback URL for agent event notifications */
+  callback_url?: InputMaybe<Scalars['String']['input']>;
+  /** The credential ID used to authenticate with the external provider */
+  credential_id: Scalars['ID']['input'];
+  /** Optional environment identifier on the external provider */
+  environment_id?: InputMaybe<Scalars['ID']['input']>;
+  /** The unique identifier of the agent on the external provider */
+  external_agent_id: Scalars['ID']['input'];
+  /** The type of external provider (e.g. CLAUDE_MANAGED_AGENT, CUSTOM_AGENT) */
+  external_provider_type: ExternalProvider;
+  /** The display name for the connected agent */
+  name: Scalars['String']['input'];
+  /** Optional vault identifier for secret management on the external provider */
+  vault_id?: InputMaybe<Scalars['ID']['input']>;
+};
+
+/** Payload returned after initiating an external agent connection (async operation) */
+export type ConnectExternalAgentPayload = {
+  __typename?: 'ConnectExternalAgentPayload';
+  /** The connection status (e.g. "connecting"). Final result is delivered via Pusher. */
+  status?: Maybe<Scalars['String']['output']>;
+};
+
 /** The result of the connect_migration_job mutation. */
 export type ConnectMigrationJobResult = {
   __typename?: 'ConnectMigrationJobResult';
@@ -3528,6 +3566,8 @@ export type ConnectProjectResult = {
   message?: Maybe<Scalars['String']['output']>;
   /** The ID of the created portfolio item, if successful. */
   portfolio_item_id?: Maybe<Scalars['String']['output']>;
+  /** Unique process ID for tracking this request. Included in the callback payload when the operation completes. */
+  process_id?: Maybe<Scalars['ID']['output']>;
   /** Indicates if the operation was successful. */
   success?: Maybe<Scalars['Boolean']['output']>;
 };
@@ -4814,6 +4854,13 @@ export type DisabledReasonInput = {
   edit_title?: InputMaybe<Scalars['String']['input']>;
 };
 
+/** Payload returned after disconnecting an external agent */
+export type DisconnectExternalAgentPayload = {
+  __typename?: 'DisconnectExternalAgentPayload';
+  /** Whether the disconnection was successful */
+  success?: Maybe<Scalars['Boolean']['output']>;
+};
+
 /** The period of a discount */
 export enum DiscountPeriod {
   Monthly = 'MONTHLY',
@@ -5392,6 +5439,17 @@ export type ExtendTrialPeriod = {
   /** Result of a single operation */
   success: Scalars['Boolean']['output'];
 };
+
+/** The type of external agent provider */
+export enum ExternalProvider {
+  /** A Claude-managed agent hosted on Anthropic infrastructure */
+  ClaudeManagedAgent = 'CLAUDE_MANAGED_AGENT',
+  /** A custom agent with a user-provided callback URL */
+  CustomAgent = 'CUSTOM_AGENT'
+}
+
+/** Provider-specific data, use inline fragments to access fields per provider type */
+export type ExternalProviderData = ClaudeProviderData;
 
 /** Widget types available for creating data visualizations and displays */
 export enum ExternalWidget {
@@ -7272,7 +7330,7 @@ export enum ItemsHistoryFilterOperator {
 export type ItemsHistoryFilterRuleInput = {
   /** The unique identifier of the column to filter by. */
   column_id: Scalars['ID']['input'];
-  /** Optional attribute for complex column types. */
+  /** For columns whose value has multiple comparable parts (such as `timeline` columns with a start and end date), indicates which part to compare. For example, set `"date"` to compare against the timeline date. Leave unset for columns with a single comparable value. */
   compare_attribute?: InputMaybe<Scalars['String']['input']>;
   /** The value(s) to compare against. Can be a string, number, boolean, or array. */
   compare_value?: InputMaybe<Scalars['JSON']['input']>;
@@ -7374,14 +7432,14 @@ export type ItemsHistoryOrderByInput = {
 
 /** Input for querying historical item data from a board at a specific date. */
 export type ItemsHistoryQueryInput = {
-  /** Array of ISO timestamp/date strings. Currently limited to 1 timestamp per request. */
+  /** Cursor for forward pagination. Returns items after this cursor position. */
+  after?: InputMaybe<Scalars['String']['input']>;
+  /** Array of ISO timestamp/date strings to retrieve historical snapshots for. */
   at_timestamps: Array<Scalars['String']['input']>;
   /** The data source for the query (board with TABLE type). */
   from: ItemsHistoryFromInput;
   /** Maximum number of items to return. Default: 50, max: 500. */
   limit?: InputMaybe<Scalars['Int']['input']>;
-  /** Number of items to skip for pagination. Default: 0. */
-  offset?: InputMaybe<Scalars['Int']['input']>;
   /** Sort configuration. Defaults to ordering by item ID. */
   order_by?: InputMaybe<Array<ItemsHistoryOrderByInput>>;
   /** Filters for items. Without filters, all items are included. */
@@ -7410,6 +7468,8 @@ export type ItemsHistoryResultEntry = {
 /** The complete result set from an items_history query. */
 export type ItemsHistoryResultSet = {
   __typename?: 'ItemsHistoryResultSet';
+  /** Cursor for the next page. Null if there are no more results. */
+  after?: Maybe<Scalars['String']['output']>;
   /** Array of item snapshots at the requested timestamp. */
   results?: Maybe<Array<ItemsHistoryItem>>;
 };
@@ -9147,9 +9207,11 @@ export type Mutation = {
   complexity?: Maybe<Complexity>;
   /** Connect a board to an object schema. */
   connect_board_to_object_schema?: Maybe<BoardConnection>;
+  /** Initiate connecting an external agent via BYOA (async — result delivered via Pusher) */
+  connect_external_agent?: Maybe<ConnectExternalAgentPayload>;
   /** Connect a migration job from a source account to the target account */
   connect_migration_job?: Maybe<ConnectMigrationJobResult>;
-  /** Connect project to portfolio */
+  /** Connect an existing project to a portfolio. When a callback_url is provided the mutation returns immediately with a process_id, and the result is POSTed to that URL once the operation completes. The callback payload is: { is_success: boolean, process_id: string, portfolio_item_id?: string }. */
   connect_project_to_portfolio?: Maybe<ConnectProjectResult>;
   /** Convert an existing monday.com board into a project with enhanced project management capabilities. This mutation transforms a regular board by applying project-specific features and configurations through column mappings that define how existing board columns should be interpreted in the project context. The conversion process is asynchronous and returns a process_id for tracking completion. Optionally accepts a callback URL for notification when the conversion completes. Use this when you have an existing board with data that needs to be upgraded to a full project with advanced project management features like Resource Planner integration. */
   convert_board_to_project?: Maybe<ConvertBoardToProjectResult>;
@@ -9362,6 +9424,8 @@ export type Mutation = {
   delete_workspace?: Maybe<Workspace>;
   /** Detach boards from their object schemas. */
   detach_boards_from_object_schema?: Maybe<Array<BulkDetachBoardResult>>;
+  /** Disconnect an external agent by its ID */
+  disconnect_external_agent?: Maybe<DisconnectExternalAgentPayload>;
   /** Duplicate a board. */
   duplicate_board?: Maybe<BoardDuplication>;
   /** Creates an exact copy of an existing document, including all content, structure, and formatting. Use this to create templates, backup documents before major changes, or create variations of existing documents. The duplicated document will have a new unique ID and can be modified independently. Returns the new document's ID on success. */
@@ -9402,6 +9466,8 @@ export type Mutation = {
   publish_article?: Maybe<ArticleMetadata>;
   /** Publishes object out of draft state. Returns {success: true} on success, {success: false} on failure. */
   publish_object?: Maybe<ObjectOperationResponse>;
+  /** Promote a workflow draft to live and optionally activate it. */
+  publish_workflow: WorkflowBuilderPublishResult;
   /** Reconcile the current user tasks board with latest source item changes. */
   reconcile_with_items?: Maybe<ReconciliationResult>;
   /** Revokes all existing tokens and generates a new API token for a service user. */
@@ -9962,6 +10028,12 @@ export type MutationConnect_Board_To_Object_SchemaArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationConnect_External_AgentArgs = {
+  input: ConnectExternalAgentInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationConnect_Migration_JobArgs = {
   migrationJobId: Scalars['String']['input'];
   sourceAccountId: Scalars['Int']['input'];
@@ -9972,6 +10044,7 @@ export type MutationConnect_Migration_JobArgs = {
 
 /** Root mutation type for the Dependencies service */
 export type MutationConnect_Project_To_PortfolioArgs = {
+  callback_url?: InputMaybe<Scalars['String']['input']>;
   portfolioBoardId: Scalars['ID']['input'];
   projectBoardId: Scalars['ID']['input'];
 };
@@ -10838,6 +10911,12 @@ export type MutationDetach_Boards_From_Object_SchemaArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationDisconnect_External_AgentArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationDuplicate_BoardArgs = {
   board_id: Scalars['ID']['input'];
   board_name?: InputMaybe<Scalars['String']['input']>;
@@ -11008,6 +11087,14 @@ export type MutationPublish_ArticleArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationPublish_ObjectArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationPublish_WorkflowArgs = {
+  should_activate?: InputMaybe<Scalars['Boolean']['input']>;
+  workflow_draft_id: Scalars['ID']['input'];
+  workflow_object_id: Scalars['ID']['input'];
 };
 
 
@@ -12703,6 +12790,15 @@ export type ProgressValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
+/** A resource (agent, environment, or vault) available on an external provider */
+export type ProviderResource = {
+  __typename?: 'ProviderResource';
+  /** The unique identifier of the resource on the provider */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** The display name of the resource */
+  name?: Maybe<Scalars['String']['output']>;
+};
+
 /** Root query type for the Dependencies service */
 export type Query = {
   __typename?: 'Query';
@@ -12730,7 +12826,7 @@ export type Query = {
   agents?: Maybe<Array<Agent>>;
   /** Performs aggregation operations on board data */
   aggregate?: Maybe<AggregateQueryResult>;
-  /** Retrieve aggregated board data at specific historical dates for point-in-time analysis. */
+  /** Retrieve aggregated board data at specific historical dates for point-in-time analysis. When the query references a date column, results are only available from when date column history began for that board; earlier timestamps are rejected. */
   aggregate_history?: Maybe<AggregateHistoryResultSet>;
   /** Returns all available widget schemas for documentation and validation purposes */
   all_widgets_schema?: Maybe<Array<WidgetSchemaInfo>>;
@@ -12881,6 +12977,10 @@ export type Query = {
   export_graph?: Maybe<BoardGraphExport>;
   /** Converts document content into standard markdown format for external use, backup, or processing. Exports the entire document by default, or specific blocks if block IDs are provided. Use this to extract content for integration with other systems, create backups, generate reports, or process document content with external tools. The output is clean, portable markdown that preserves formatting and structure. */
   export_markdown_from_doc?: Maybe<ExportMarkdownResult>;
+  /** List available agents from an external provider */
+  external_provider_agents?: Maybe<Array<ProviderResource>>;
+  /** Fetch provider-specific resources (environments, vaults, etc.) from an external provider */
+  external_provider_data?: Maybe<ExternalProviderData>;
   /** Get all personal list items by list ID */
   favorites?: Maybe<Array<GraphqlHierarchyObjectItem>>;
   /** Get the status of a backfill or ingest job */
@@ -12955,7 +13055,7 @@ export type Query = {
   item_dependency?: Maybe<ItemDependency>;
   /** Get a collection of items. */
   items?: Maybe<Array<Maybe<Item>>>;
-  /** Retrieve historical item data from a board at a specific point in time. */
+  /** Retrieve historical item data from a board at a specific point in time. When the query references a date column, results are only available from when date column history began for that board; earlier timestamps are rejected. */
   items_history?: Maybe<ItemsHistoryResultSet>;
   /** Retrieves a paginated page of items from a board. Provide input for the first page, or cursor for subsequent pages. */
   items_page?: Maybe<ItemsPageResult>;
@@ -12996,9 +13096,7 @@ export type Query = {
   /** Fetches the next page of entries for a time off schedule using a cursor from entries_page or next_time_off_entries_page */
   next_time_off_entries_page?: Maybe<TimeOffEntryPage>;
   /** Fetches the next page of time off schedules using a cursor from a previous time_offs or next_time_offs_page call */
-  next_time_offs_page?: Maybe<TimeOffPage>;
-  /** Fetches the next page of user availabilities using a cursor from a previous user_availabilities or next_user_availabilities_page call */
-  next_user_availabilities_page?: Maybe<UserAvailabilityPage>;
+  next_time_offs_page?: Maybe<TimesOffPage>;
   /** Fetches the next page of work schedules using a cursor from a previous work_schedules or next_work_schedules_page call */
   next_work_schedules_page?: Maybe<WorkSchedulePage>;
   /** Namespace for all notetaker-related queries. */
@@ -13069,7 +13167,7 @@ export type Query = {
   /** Get a collection of teams. */
   teams?: Maybe<Array<Maybe<Team>>>;
   /** Returns active time off schedules for the caller's account */
-  time_offs?: Maybe<TimeOffPage>;
+  time_offs?: Maybe<TimesOffPage>;
   /** Fetches timeline items for a given item */
   timeline?: Maybe<TimelineResponse>;
   timeline_item?: Maybe<TimelineItem>;
@@ -13082,14 +13180,14 @@ export type Query = {
   updates?: Maybe<Array<Update>>;
   /** Usage metrics for the current account */
   usage?: Maybe<CampaignsUsage>;
-  /** Returns user schedule assignments for the caller's account */
-  user_availabilities?: Maybe<UserAvailabilityPage>;
   /** Get all user configs for the account. */
   user_configs?: Maybe<Array<UserConfig>>;
   /** Returns connections that belong to the authenticated user. */
   user_connections?: Maybe<Array<Connection>>;
   /** Get users. */
   users?: Maybe<Array<User>>;
+  /** Returns users availability: work schedule and time offs schedule */
+  users_availability?: Maybe<UsersAvailability>;
   /** Returns utilization report for resources: either grouped by attribute or ungrouped with per-resource data. Use inline fragments to query the appropriate fields. */
   utilization_report?: Maybe<UtilizationReport>;
   /** Validate projects and portfolios */
@@ -13454,6 +13552,20 @@ export type QueryExport_Markdown_From_DocArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QueryExternal_Provider_AgentsArgs = {
+  credential_id: Scalars['ID']['input'];
+  provider_type: ExternalProvider;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryExternal_Provider_DataArgs = {
+  credential_id: Scalars['ID']['input'];
+  provider_type: ExternalProvider;
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryFetch_Job_StatusArgs = {
   job_id: Scalars['ID']['input'];
 };
@@ -13791,13 +13903,6 @@ export type QueryNext_Time_Offs_PageArgs = {
 
 
 /** Root query type for the Dependencies service */
-export type QueryNext_User_Availabilities_PageArgs = {
-  cursor: Scalars['String']['input'];
-  limit?: InputMaybe<Scalars['Int']['input']>;
-};
-
-
-/** Root query type for the Dependencies service */
 export type QueryNext_Work_Schedules_PageArgs = {
   cursor: Scalars['String']['input'];
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -14010,13 +14115,6 @@ export type QueryUpdatesArgs = {
 
 
 /** Root query type for the Dependencies service */
-export type QueryUser_AvailabilitiesArgs = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  user_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
-};
-
-
-/** Root query type for the Dependencies service */
 export type QueryUser_ConfigsArgs = {
   behaviors?: InputMaybe<Array<Scalars['String']['input']>>;
   kinds?: InputMaybe<Array<Scalars['String']['input']>>;
@@ -14039,13 +14137,23 @@ export type QueryUser_ConnectionsArgs = {
 export type QueryUsersArgs = {
   emails?: InputMaybe<Array<Scalars['String']['input']>>;
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  kind?: InputMaybe<UserKind>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
+  newest_first?: InputMaybe<Scalars['Boolean']['input']>;
+  non_active?: InputMaybe<Scalars['Boolean']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
   sort?: InputMaybe<Array<UsersSortInput>>;
   status?: InputMaybe<Array<UserStatus>>;
   user_kind?: InputMaybe<UserKindFilterInput>;
   visibility?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryUsers_AvailabilityArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  user_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
 };
 
 
@@ -15607,15 +15715,15 @@ export enum TimeGranularity {
   Years = 'YEARS'
 }
 
-/** A named time off schedule with non-working date entries */
+/** A named time off schedule with all its non-working date entries */
 export type TimeOff = {
   __typename?: 'TimeOff';
   /** ISO 8601 timestamp when this record was created */
   created_at: Scalars['Date']['output'];
   /** ID of the user who created this time off schedule, null if system-generated */
   created_by?: Maybe<Scalars['ID']['output']>;
-  /** Paginated non-working date entries in this time off schedule. Use next_time_off_entries_page as the top-level continuation query. */
-  entries_page: TimeOffEntryPage;
+  /** All non-working date entries in this time off schedule */
+  entries: Array<TimeOffEntry>;
   /** Unique identifier of the time off schedule */
   id: Scalars['ID']['output'];
   /** Whether this is the account-level default time off schedule */
@@ -15624,13 +15732,6 @@ export type TimeOff = {
   name: Scalars['String']['output'];
   /** ISO 8601 timestamp when this record was last updated */
   updated_at: Scalars['Date']['output'];
-};
-
-
-/** A named time off schedule with non-working date entries */
-export type TimeOffEntries_PageArgs = {
-  cursor?: InputMaybe<Scalars['String']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** Result of a time off schedule delete operation */
@@ -15706,15 +15807,6 @@ export type TimeOffEntryResult = {
   time_off_entry?: Maybe<TimeOffEntry>;
 };
 
-/** Paginated list of time off schedules */
-export type TimeOffPage = {
-  __typename?: 'TimeOffPage';
-  /** Opaque cursor for fetching the next page, null when no more pages exist */
-  cursor?: Maybe<Scalars['String']['output']>;
-  /** Time off schedules in this page */
-  time_offs: Array<TimeOff>;
-};
-
 /** Result of a time off schedule create or update operation */
 export type TimeOffResult = {
   __typename?: 'TimeOffResult';
@@ -15723,7 +15815,33 @@ export type TimeOffResult = {
   /** Whether the operation succeeded */
   success: Scalars['Boolean']['output'];
   /** The created or updated time off schedule, null if the operation failed */
-  time_off?: Maybe<TimeOff>;
+  time_off?: Maybe<TimeOffWithPagedEntries>;
+};
+
+/** A named time off schedule with non-working date entries */
+export type TimeOffWithPagedEntries = {
+  __typename?: 'TimeOffWithPagedEntries';
+  /** ISO 8601 timestamp when this record was created */
+  created_at: Scalars['Date']['output'];
+  /** ID of the user who created this time off schedule, null if system-generated */
+  created_by?: Maybe<Scalars['ID']['output']>;
+  /** Unique identifier of the time off schedule */
+  id: Scalars['ID']['output'];
+  /** Whether this is the account-level default time off schedule */
+  is_default: Scalars['Boolean']['output'];
+  /** Display name of the time off schedule */
+  name: Scalars['String']['output'];
+  /** Paginated non-working date entries in this time off schedule. Use next_time_off_entries_page as the top-level continuation query. */
+  time_off_entries: TimeOffEntryPage;
+  /** ISO 8601 timestamp when this record was last updated */
+  updated_at: Scalars['Date']['output'];
+};
+
+
+/** A named time off schedule with non-working date entries */
+export type TimeOffWithPagedEntriesTime_Off_EntriesArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 /** Header for a time period (label and date range). */
@@ -15877,6 +15995,15 @@ export type TimelineValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
   /** The visualization type for the timeline */
   visualization_type?: Maybe<Scalars['String']['output']>;
+};
+
+/** Paginated list of time off schedules */
+export type TimesOffPage = {
+  __typename?: 'TimesOffPage';
+  /** Opaque cursor for fetching the next page, null when no more pages exist */
+  cursor?: Maybe<Scalars['String']['output']>;
+  /** Time off schedules in this page */
+  time_offs: Array<TimeOffWithPagedEntries>;
 };
 
 /** Token usage details from AI request */
@@ -16782,21 +16909,12 @@ export type UserAttributesInput = {
 /** A user's assigned work schedule and time off schedule */
 export type UserAvailability = {
   __typename?: 'UserAvailability';
-  /** The time off schedule assigned to this user, null if using account default */
-  time_off?: Maybe<TimeOff>;
+  /** The time off schedules assigned to this user */
+  time_offs: Array<TimeOffWithPagedEntries>;
   /** ID of the user */
   user_id: Scalars['ID']['output'];
   /** The work schedule assigned to this user, null if using account default */
   work_schedule?: Maybe<WorkSchedule>;
-};
-
-/** Paginated list of user availability assignments */
-export type UserAvailabilityPage = {
-  __typename?: 'UserAvailabilityPage';
-  /** Opaque cursor for fetching the next page, null when no more pages exist */
-  cursor?: Maybe<Scalars['String']['output']>;
-  /** User availability assignments in this page */
-  user_availabilities: Array<UserAvailability>;
 };
 
 /** Result of a single user availability assignment. Batch assign/unassign mutations return one of these per requested user, allowing partial success — successful entries have user_availability populated and success=true; failed entries have user_availability=null, success=false, and a populated error. */
@@ -16815,6 +16933,8 @@ export type UserConfig = {
   __typename?: 'UserConfig';
   /** The behavior IDs that are true for this user kind. */
   behaviors: Array<Scalars['String']['output']>;
+  /** The group this user config belongs to. */
+  group: Scalars['String']['output'];
   /** The user kind for the user config. */
   kind: Scalars['String']['output'];
   /** The role ID associated with this user config. */
@@ -16952,6 +17072,13 @@ export enum UserStatus {
 export type UserUpdateInput = {
   user_attribute_updates: UserAttributesInput;
   user_id: Scalars['ID']['input'];
+};
+
+/** List of user availability assignments */
+export type UsersAvailability = {
+  __typename?: 'UsersAvailability';
+  /** User availability assignments */
+  users_availability: Array<UserAvailability>;
 };
 
 /** The direction to sort users. */
@@ -17497,16 +17624,12 @@ export type WorkSchedule = {
 /** Per-weekday working hours for a work schedule */
 export type WorkScheduleDay = {
   __typename?: 'WorkScheduleDay';
-  /** ISO 8601 timestamp when this record was created */
-  created_at: Scalars['Date']['output'];
   /** End of the working day in HH:MM format, null when is_active is false */
   end_time?: Maybe<Scalars['String']['output']>;
   /** Whether this day is a working day */
   is_active: Scalars['Boolean']['output'];
   /** Start of the working day in HH:MM format, null when is_active is false */
   start_time?: Maybe<Scalars['String']['output']>;
-  /** ISO 8601 timestamp when this record was last updated */
-  updated_at: Scalars['Date']['output'];
   /** Day of the week this entry applies to */
   week_day: WeekDay;
 };
@@ -17729,6 +17852,15 @@ export enum WorkflowBuilderPrivacyKind {
   /** Workflow is shareable with guests outside the account */
   Shareable = 'SHAREABLE'
 }
+
+/** Identifiers for a published workflow */
+export type WorkflowBuilderPublishResult = {
+  __typename?: 'WorkflowBuilderPublishResult';
+  /** Live workflow ID after promotion */
+  workflow_live_id?: Maybe<Scalars['ID']['output']>;
+  /** Stable workflow entity ID */
+  workflow_object_id?: Maybe<Scalars['ID']['output']>;
+};
 
 /** Customization settings for the workflow */
 export type WorkflowCustomizationInput = {
@@ -18157,6 +18289,15 @@ export type CreateWorkflowMutationVariables = Exact<{
 
 export type CreateWorkflowMutation = { __typename?: 'Mutation', create_workflow: { __typename?: 'WorkflowBuilderCreateResult', workflow_object_id?: string | null, workflow_draft_id?: string | null } };
 
+export type PublishWorkflowMutationVariables = Exact<{
+  workflow_object_id: Scalars['ID']['input'];
+  workflow_draft_id: Scalars['ID']['input'];
+  should_activate?: InputMaybe<Scalars['Boolean']['input']>;
+}>;
+
+
+export type PublishWorkflowMutation = { __typename?: 'Mutation', publish_workflow: { __typename?: 'WorkflowBuilderPublishResult', workflow_object_id?: string | null, workflow_live_id?: string | null } };
+
 export type ActivateLiveWorkflowMutationVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
@@ -18203,6 +18344,7 @@ export const SearchDocsDevDocument = {"kind":"Document","definitions":[{"kind":"
 export const BatchUndoDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"BatchUndo"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"undoRecordId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"batch_undo"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"board_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}},{"kind":"Argument","name":{"kind":"Name","value":"undo_record_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"undoRecordId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<BatchUndoMutation, BatchUndoMutationVariables>;
 export const GetUserContextDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getUserContext"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"me"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"account"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"tier"}},{"kind":"Field","name":{"kind":"Name","value":"active_members_count"}},{"kind":"Field","name":{"kind":"Name","value":"is_during_trial"}},{"kind":"Field","name":{"kind":"Name","value":"products"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"tier"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"favorites"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"object"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"type"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"intelligence"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"relevant_boards"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"10"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"board"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"relevant_people"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"10"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetUserContextQuery, GetUserContextQueryVariables>;
 export const CreateWorkflowDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"createWorkflow"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspace_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"title"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"privacy_kind"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"WorkflowBuilderPrivacyKind"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"description"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"folder_id"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"owner_ids"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"create_workflow"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"workspace_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspace_id"}}},{"kind":"Argument","name":{"kind":"Name","value":"title"},"value":{"kind":"Variable","name":{"kind":"Name","value":"title"}}},{"kind":"Argument","name":{"kind":"Name","value":"privacy_kind"},"value":{"kind":"Variable","name":{"kind":"Name","value":"privacy_kind"}}},{"kind":"Argument","name":{"kind":"Name","value":"description"},"value":{"kind":"Variable","name":{"kind":"Name","value":"description"}}},{"kind":"Argument","name":{"kind":"Name","value":"folder_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"folder_id"}}},{"kind":"Argument","name":{"kind":"Name","value":"owner_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"owner_ids"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"workflow_object_id"}},{"kind":"Field","name":{"kind":"Name","value":"workflow_draft_id"}}]}}]}}]} as unknown as DocumentNode<CreateWorkflowMutation, CreateWorkflowMutationVariables>;
+export const PublishWorkflowDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"publishWorkflow"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workflow_object_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workflow_draft_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"should_activate"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"publish_workflow"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"workflow_object_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workflow_object_id"}}},{"kind":"Argument","name":{"kind":"Name","value":"workflow_draft_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workflow_draft_id"}}},{"kind":"Argument","name":{"kind":"Name","value":"should_activate"},"value":{"kind":"Variable","name":{"kind":"Name","value":"should_activate"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"workflow_object_id"}},{"kind":"Field","name":{"kind":"Name","value":"workflow_live_id"}}]}}]}}]} as unknown as DocumentNode<PublishWorkflowMutation, PublishWorkflowMutationVariables>;
 export const ActivateLiveWorkflowDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"activateLiveWorkflow"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"activate_live_workflow"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"is_success"}}]}}]}}]} as unknown as DocumentNode<ActivateLiveWorkflowMutation, ActivateLiveWorkflowMutationVariables>;
 export const DeactivateLiveWorkflowDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"deactivateLiveWorkflow"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deactivate_live_workflow"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"is_success"}}]}}]}}]} as unknown as DocumentNode<DeactivateLiveWorkflowMutation, DeactivateLiveWorkflowMutationVariables>;
 export const DeleteLiveWorkflowDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"deleteLiveWorkflow"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"delete_live_workflow"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"is_success"}}]}}]}}]} as unknown as DocumentNode<DeleteLiveWorkflowMutation, DeleteLiveWorkflowMutationVariables>;
