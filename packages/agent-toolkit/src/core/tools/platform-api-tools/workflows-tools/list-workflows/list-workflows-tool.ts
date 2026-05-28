@@ -57,7 +57,7 @@ export class ListAutomationsTool extends BaseMondayApiTool<typeof listAutomation
   getDescription(): string {
     return `List all automations on a specific monday.com board, including their ids, titles, active state, and configuration.
 When NOT to use: Do not call this tool to get general board information unrelated to automations.
-Note: Some legacy automations may not appear; mention this if users ask about missing automations.
+Note: Some legacy automations may not appear — mention this if users ask about missing automations.
 `;
   }
 

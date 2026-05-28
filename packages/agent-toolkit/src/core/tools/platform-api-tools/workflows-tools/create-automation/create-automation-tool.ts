@@ -46,7 +46,7 @@ Use this tool only when you know:
 - at least one intended action
 - any details the user provided that are relevant to the trigger, conditions, or actions
 
-The caller does not need to know the exact available automation blocks or their required fields. Describe the user's intent clearly; the tool will translate that intent into supported blocks and values.
+The caller does not need to know the exact available automation blocks or their required fields. Describe the user's intent clearly — the tool will translate that intent into supported blocks and values.
 
 If a required detail is missing from the user's request, ask for clarification before calling the tool.
 
