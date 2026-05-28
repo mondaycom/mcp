@@ -13,8 +13,7 @@ export const createAutomationToolSchema = {
     .trim()
     .min(1, 'userPrompt must be a non-empty string')
     .describe(
-      'Natural-language description of the automation to create. ' +
-        'Describe the trigger, conditions, and what should happen in plain English.',
+      'Structured description of the automation to create.',
     ),
   boardId: z.string().trim().min(1, 'boardId must be a non-empty string').describe('The numeric board ID as a string.'),
 };
@@ -38,16 +37,64 @@ export class CreateAutomationTool extends BaseMondayApiTool<typeof createAutomat
   }
 
   getDescription(): string {
-    return `Creates an automation on a monday board from a natural-language description (e.g. "notify me when status changes to Done").
+    return `
+    Creates an automation on a monday board from a structured natural-language description.
 
-Use when the user has clearly described what to automate — both the trigger (what kicks it off) and the action (what should happen), and you know which board to create it on. If basic details are missing (including boardId), ask the user first instead of calling with a vague prompt.
+Use this tool only when you know:
+- boardId
+- the user's intended trigger
+- at least one intended action
+- any details the user provided that are relevant to the trigger, conditions, or actions
 
-If the prompt is still ambiguous, the tool returns status: "needs_clarification" with the unresolved fields — present them to the user, gather answers, then call again.
+The caller does not need to know the exact available automation blocks or their required fields. Describe the user's intent clearly; the tool will translate that intent into supported blocks and values.
+
+If a required detail is missing from the user's request, ask for clarification before calling the tool.
+
+If the tool returns status: "needs_clarification", present the unresolved fields to the user, gather answers, then call the tool again.
+
+Describe the automation in this format:
+
+Trigger:
+  When <the event that should start the automation>
+  Details:
+    <relevant detail>: <value>
+
+Conditions:
+  - Only if <condition that should be true>
+    Details:
+      <relevant detail>: <value>
+
+Actions:
+  - <action the automation should perform>:
+      <relevant detail>: <value>
+
+Rules:
+- Use one trigger.
+- Conditions are optional.
+- Multiple conditions mean AND.
+- Use one or more actions.
+- Do not use branching.
+- Use natural language, not block IDs or internal field names.
+- Actions may reference values from the trigger context, such as "{{item name}}", "{{creator}}", "{{status}}", "{{group}}", or "{{board}}".
 
 Terminology:
-    - Trigger: When the automation should run (e.g. "when a new item is created").
-    - Conditions: additional conditions that must be met for the automation to run.
-    - Actions: what the automation should do when it runs (can have multiple actions).
+- Trigger: the event that starts the automation, such as "when a new item is created".
+- Conditions: optional requirements that must be true before actions run.
+- Actions: what the automation does when it runs.
+
+Example:
+
+Trigger:
+  When a new item is created
+
+Actions:
+  - Send a notification:
+      Recipient: John Snow
+      Title: Important Update
+      Message: The item "{{item name}}" was created.
+
+  - Move the item to a group:
+      Group: Top group
 `;
   }
 
