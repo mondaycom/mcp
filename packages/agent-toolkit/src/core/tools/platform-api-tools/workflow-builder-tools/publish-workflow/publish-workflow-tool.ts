@@ -2,21 +2,11 @@ import { z } from 'zod';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../../base-monday-api-tool';
 import { rethrowWithContext } from '../../../../../utils';
+import {
+  PublishWorkflowMutation,
+  PublishWorkflowMutationVariables,
+} from '../../../../../monday-graphql/generated/graphql.dev/graphql';
 import { publishWorkflowMutation } from './publish-workflow.graphql.dev';
-
-// TODO: replace with codegen-generated types once publish_workflow lands in the dev schema (automation-builders#3085)
-type PublishWorkflowMutationVariables = {
-  workflow_object_id: string;
-  workflow_draft_id: string;
-  should_activate?: boolean;
-};
-
-type PublishWorkflowMutation = {
-  publish_workflow: {
-    workflow_object_id: string;
-    workflow_live_id: string;
-  };
-};
 
 export const publishWorkflowToolSchema = {
   workflowObjectId: z
