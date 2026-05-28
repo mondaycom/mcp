@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.19.0
+
+### publish_workflow — surface validation error details
+
+- `rethrowWithContext` now includes GraphQL `extensions` data in the error message when present, so structured errors like `WORKFLOW_VALIDATION_FAILED` (with step-level issue details) are passed through to the LLM instead of being dropped
+
 ## 5.11.0
 
 ### Asset upload MCP tools
