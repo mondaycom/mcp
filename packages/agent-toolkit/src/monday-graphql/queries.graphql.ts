@@ -35,12 +35,7 @@ export const getBoardSchema = gql`
 `;
 
 export const changeItemColumnValues = gql`
-  mutation changeItemColumnValues(
-    $boardId: ID!
-    $itemId: ID!
-    $columnValues: JSON!
-    $createLabelsIfMissing: Boolean
-  ) {
+  mutation changeItemColumnValues($boardId: ID!, $itemId: ID!, $columnValues: JSON!, $createLabelsIfMissing: Boolean) {
     change_multiple_column_values(
       board_id: $boardId
       item_id: $itemId
@@ -492,6 +487,35 @@ export const getWorkspaceInfo = gql`
     folders(workspace_ids: [$workspace_id], limit: 100) {
       id
       name
+    }
+  }
+`;
+
+export const useTemplate = gql`
+  mutation useTemplate(
+    $templateId: Int!
+    $destinationWorkspaceId: Int
+    $destinationName: String
+    $boardKind: BoardKind
+  ) {
+    use_template(
+      template_id: $templateId
+      destination_workspace_id: $destinationWorkspaceId
+      destination_name: $destinationName
+      board_kind: $boardKind
+    ) {
+      process_id
+    }
+  }
+`;
+
+export const useTemplateStatus = gql`
+  query useTemplateStatus($processId: String!) {
+    use_template_status(process_id: $processId) {
+      process_id
+      status
+      board_ids
+      board_ids_map
     }
   }
 `;

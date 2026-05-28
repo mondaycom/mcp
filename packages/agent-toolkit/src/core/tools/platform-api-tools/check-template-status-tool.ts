@@ -1,0 +1,70 @@
+import { z } from 'zod';
+import {
+  UseTemplateStatus,
+  UseTemplateStatusQuery,
+  UseTemplateStatusQueryVariables,
+} from '../../../monday-graphql/generated/graphql/graphql';
+import { useTemplateStatus } from '../../../monday-graphql/queries.graphql';
+import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
+import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
+
+export const checkTemplateStatusToolSchema = {
+  processId: z.string().describe('The process_id returned by use_template.'),
+};
+
+export class CheckTemplateStatusTool extends BaseMondayApiTool<typeof checkTemplateStatusToolSchema, never> {
+  name = 'check_template_status';
+  type = ToolType.READ;
+  annotations = createMondayApiAnnotations({
+    title: 'Check Template Status',
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+  });
+
+  getDescription(): string {
+    return (
+      'Check the status of a use_template operation. ' +
+      'Poll after calling use_template — wait 5–10 seconds between polls. ' +
+      'Status values: PENDING | IN_PROGRESS | COMPLETE | FAILED. ' +
+      'Wait for status=COMPLETE before working with board IDs — boards exist but are empty during IN_PROGRESS. ' +
+      'Returns null if process_id is invalid or expired (1-hour TTL).'
+    );
+  }
+
+  getInputSchema(): typeof checkTemplateStatusToolSchema {
+    return checkTemplateStatusToolSchema;
+  }
+
+  protected async executeInternal(
+    input: ToolInputType<typeof checkTemplateStatusToolSchema>,
+  ): Promise<ToolOutputType<never>> {
+    const variables: UseTemplateStatusQueryVariables = { processId: input.processId };
+
+    const res = await this.mondayApi.request<UseTemplateStatusQuery>(useTemplateStatus, variables);
+    const status = res.use_template_status;
+
+    if (!status) {
+      return { content: 'Status not found. The process_id is invalid or has expired.' };
+    }
+    if (status.status === UseTemplateStatus.Failed) {
+      return { content: 'Template application failed. Please try again.' };
+    }
+    if (status.status === UseTemplateStatus.Complete) {
+      return {
+        content: {
+          status: UseTemplateStatus.Complete,
+          board_ids: status.board_ids,
+          board_ids_map: status.board_ids_map ?? null,
+          message: `Template application complete. ${status.board_ids.length} board(s) created.`,
+        },
+      };
+    }
+    if (status.status === UseTemplateStatus.Pending || status.status === UseTemplateStatus.InProgress) {
+      return {
+        content: `Template application ${status.status.toLowerCase()}. Board IDs will be available once complete.`,
+      };
+    }
+    return { content: `Unexpected status: ${status.status}. Poll again or contact support.` };
+  }
+}

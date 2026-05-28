@@ -10,6 +10,8 @@ import { ManageObjectSchemaBoardConnectionTool } from './manage-object-schema-bo
 import { ManageObjectSchemaColumnsTool } from './manage-object-schema-columns-tool/manage-object-schema-columns-tool';
 import { SetObjectSchemaColumnActiveStateTool } from './set-object-schema-column-active-state-tool/set-object-schema-column-active-state-tool';
 import { CreateBoardTool } from './create-board-tool';
+import { UseTemplateTool } from './use-template-tool';
+import { CheckTemplateStatusTool } from './check-template-status-tool';
 import { CreateViewTool } from './create-view-tool/create-view-tool';
 import { UpdateViewTool } from './update-view-tool/update-view-tool';
 import { CreateViewTableTool } from './create-view-table-tool/create-view-table-tool';
@@ -89,6 +91,8 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   ChangeItemColumnValuesTool,
   MoveItemToGroupTool,
   CreateBoardTool,
+  UseTemplateTool,
+  CheckTemplateStatusTool,
   CreateFormTool,
   UpdateFormTool,
   GetFormTool,
@@ -166,6 +170,8 @@ export * from './manage-object-schema-columns-tool/manage-object-schema-columns-
 export * from './set-object-schema-column-active-state-tool/set-object-schema-column-active-state-tool';
 export * from './change-item-column-values-tool';
 export * from './create-board-tool';
+export * from './use-template-tool';
+export * from './check-template-status-tool';
 export * from './workforms-tools/create-form-tool';
 export * from './workforms-tools/update-form-tool';
 export * from './workforms-tools/get-form-tool';
