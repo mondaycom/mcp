@@ -34,8 +34,16 @@ describe('UseTemplateTool', () => {
     expect(out.content).toContain('pid-1');
   });
 
-  it('returns failure message when process_id is absent', async () => {
+  it('returns failure message when process_id is null', async () => {
     mocks.setResponse({ use_template: null });
+    const tool = new UseTemplateTool(mocks.mockApiClient);
+
+    const out = await tool.execute({ templateId: 123 });
+    expect(out.content).toMatch(/Failed to start template/i);
+  });
+
+  it('returns failure message when process_id is undefined', async () => {
+    mocks.setResponse({ use_template: { process_id: undefined } });
     const tool = new UseTemplateTool(mocks.mockApiClient);
 
     const out = await tool.execute({ templateId: 123 });

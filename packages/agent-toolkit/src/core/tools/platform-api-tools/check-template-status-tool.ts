@@ -45,10 +45,12 @@ export class CheckTemplateStatusTool extends BaseMondayApiTool<typeof checkTempl
     const status = res.use_template_status;
 
     if (!status) {
-      return { content: 'Status not found. The process_id is invalid or has expired.' };
-    }
-    if (status.status === UseTemplateStatus.Failed) {
-      return { content: 'Template application failed. Please try again.' };
+      return {
+        content: {
+          status: null,
+          message: 'Status not found. The process_id is invalid or has expired.',
+        },
+      };
     }
     if (status.status === UseTemplateStatus.Complete) {
       return {
@@ -60,11 +62,33 @@ export class CheckTemplateStatusTool extends BaseMondayApiTool<typeof checkTempl
         },
       };
     }
-    if (status.status === UseTemplateStatus.Pending || status.status === UseTemplateStatus.InProgress) {
+    if (status.status === UseTemplateStatus.Failed) {
       return {
-        content: `Template application ${status.status.toLowerCase()}. Board IDs will be available once complete.`,
+        content: {
+          status: UseTemplateStatus.Failed,
+          board_ids: [],
+          board_ids_map: null,
+          message: 'Template application failed. Please try again.',
+        },
       };
     }
-    return { content: `Unexpected status: ${status.status}. Poll again or contact support.` };
+    if (status.status === UseTemplateStatus.Pending || status.status === UseTemplateStatus.InProgress) {
+      return {
+        content: {
+          status: status.status,
+          board_ids: [],
+          board_ids_map: null,
+          message: `Template application ${status.status === UseTemplateStatus.InProgress ? 'in progress' : 'pending'}. Board IDs will be available once complete.`,
+        },
+      };
+    }
+    return {
+      content: {
+        status: status.status,
+        board_ids: [],
+        board_ids_map: null,
+        message: `Unexpected status: ${status.status}. Poll again or contact support.`,
+      },
+    };
   }
 }

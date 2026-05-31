@@ -9,22 +9,24 @@ describe('CheckTemplateStatusTool', () => {
     jest.clearAllMocks();
   });
 
-  it('returns expired message when status is null', async () => {
+  it('returns null status with expiry message when process_id is not found', async () => {
     mocks.setResponse({ use_template_status: null });
     const tool = new CheckTemplateStatusTool(mocks.mockApiClient);
 
     const out = await tool.execute({ processId: 'pid-1' });
-    expect(out.content).toMatch(/invalid or has expired/i);
+    expect(out.content).toMatchObject({ status: null });
+    expect((out.content as any).message).toMatch(/invalid or has expired/i);
   });
 
-  it('returns failure message when status=FAILED', async () => {
+  it('returns FAILED status with structured content', async () => {
     mocks.setResponse({
-      use_template_status: { status: 'FAILED', is_failed: true, is_complete: false, board_ids: [] },
+      use_template_status: { status: 'FAILED', board_ids: [] },
     });
     const tool = new CheckTemplateStatusTool(mocks.mockApiClient);
 
     const out = await tool.execute({ processId: 'pid-1' });
-    expect(out.content).toMatch(/failed/i);
+    expect(out.content).toMatchObject({ status: 'FAILED', board_ids: [], board_ids_map: null });
+    expect((out.content as any).message).toMatch(/failed/i);
   });
 
   it('returns structured content with board_ids and board_ids_map on COMPLETE', async () => {
@@ -52,26 +54,39 @@ describe('CheckTemplateStatusTool', () => {
     const tool = new CheckTemplateStatusTool(mocks.mockApiClient);
 
     const out = await tool.execute({ processId: 'pid-1' });
-    expect(out.content).toMatchObject({ board_ids_map: null });
+    expect(out.content).toMatchObject({ status: 'COMPLETE', board_ids_map: null });
   });
 
-  it('returns the non-terminal status string for PENDING and IN_PROGRESS', async () => {
+  it('returns IN_PROGRESS status with "in progress" message', async () => {
     mocks.setResponse({
       use_template_status: { status: 'IN_PROGRESS', board_ids: [] },
     });
     const tool = new CheckTemplateStatusTool(mocks.mockApiClient);
 
     const out = await tool.execute({ processId: 'pid-1' });
-    expect(out.content).toMatch(/in_progress/i);
+    expect(out.content).toMatchObject({ status: 'IN_PROGRESS', board_ids: [], board_ids_map: null });
+    expect((out.content as any).message).toMatch(/in progress/i);
   });
 
-  it('returns an unexpected-status message for unknown status values', async () => {
+  it('returns PENDING status with structured content', async () => {
+    mocks.setResponse({
+      use_template_status: { status: 'PENDING', board_ids: [] },
+    });
+    const tool = new CheckTemplateStatusTool(mocks.mockApiClient);
+
+    const out = await tool.execute({ processId: 'pid-1' });
+    expect(out.content).toMatchObject({ status: 'PENDING', board_ids: [], board_ids_map: null });
+    expect((out.content as any).message).toMatch(/pending/i);
+  });
+
+  it('returns unexpected-status structured content for unknown status values', async () => {
     mocks.setResponse({
       use_template_status: { status: 'CANCELLING' as any, board_ids: [] },
     });
     const tool = new CheckTemplateStatusTool(mocks.mockApiClient);
 
     const out = await tool.execute({ processId: 'pid-1' });
-    expect(out.content).toMatch(/unexpected status/i);
+    expect(out.content).toMatchObject({ status: 'CANCELLING' });
+    expect((out.content as any).message).toMatch(/unexpected status/i);
   });
 });
