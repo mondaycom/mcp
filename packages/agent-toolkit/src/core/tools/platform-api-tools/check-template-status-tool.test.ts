@@ -10,7 +10,7 @@ describe('CheckTemplateStatusTool', () => {
   });
 
   it('returns null status with expiry message when process_id is not found', async () => {
-    mocks.setResponse({ use_template_status: null });
+    mocks.setResponse({ template_installation_status: null });
     const tool = new CheckTemplateStatusTool(mocks.mockApiClient);
 
     const out = await tool.execute({ processId: 'pid-1' });
@@ -20,7 +20,7 @@ describe('CheckTemplateStatusTool', () => {
 
   it('returns FAILED status with structured content', async () => {
     mocks.setResponse({
-      use_template_status: { status: 'FAILED', board_ids: [] },
+      template_installation_status: { status: 'FAILED', board_ids: [] },
     });
     const tool = new CheckTemplateStatusTool(mocks.mockApiClient);
 
@@ -31,7 +31,7 @@ describe('CheckTemplateStatusTool', () => {
 
   it('returns structured content with board_ids and board_ids_map on COMPLETE', async () => {
     mocks.setResponse({
-      use_template_status: {
+      template_installation_status: {
         status: 'COMPLETE',
         board_ids: ['10', '20'],
         board_ids_map: { '1': '10', '2': '20' },
@@ -49,7 +49,7 @@ describe('CheckTemplateStatusTool', () => {
 
   it('returns null board_ids_map when absent on COMPLETE', async () => {
     mocks.setResponse({
-      use_template_status: { status: 'COMPLETE', board_ids: ['10'], board_ids_map: null },
+      template_installation_status: { status: 'COMPLETE', board_ids: ['10'], board_ids_map: null },
     });
     const tool = new CheckTemplateStatusTool(mocks.mockApiClient);
 
@@ -59,7 +59,7 @@ describe('CheckTemplateStatusTool', () => {
 
   it('returns IN_PROGRESS status with "in progress" message', async () => {
     mocks.setResponse({
-      use_template_status: { status: 'IN_PROGRESS', board_ids: [] },
+      template_installation_status: { status: 'IN_PROGRESS', board_ids: [] },
     });
     const tool = new CheckTemplateStatusTool(mocks.mockApiClient);
 
@@ -70,7 +70,7 @@ describe('CheckTemplateStatusTool', () => {
 
   it('returns PENDING status with structured content', async () => {
     mocks.setResponse({
-      use_template_status: { status: 'PENDING', board_ids: [] },
+      template_installation_status: { status: 'PENDING', board_ids: [] },
     });
     const tool = new CheckTemplateStatusTool(mocks.mockApiClient);
 
@@ -81,7 +81,7 @@ describe('CheckTemplateStatusTool', () => {
 
   it('returns unexpected-status structured content for unknown status values', async () => {
     mocks.setResponse({
-      use_template_status: { status: 'CANCELLING' as any, board_ids: [] },
+      template_installation_status: { status: 'CANCELLING' as any, board_ids: [] },
     });
     const tool = new CheckTemplateStatusTool(mocks.mockApiClient);
 

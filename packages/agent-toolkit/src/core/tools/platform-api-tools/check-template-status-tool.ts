@@ -42,7 +42,7 @@ export class CheckTemplateStatusTool extends BaseMondayApiTool<typeof checkTempl
     const variables: UseTemplateStatusQueryVariables = { processId: input.processId };
 
     const res = await this.mondayApi.request<UseTemplateStatusQuery>(useTemplateStatus, variables);
-    const status = res.use_template_status;
+    const status = res.template_installation_status;
 
     if (!status) {
       return {

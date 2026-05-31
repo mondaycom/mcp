@@ -483,7 +483,7 @@ behaviors: [String!]): [UserConfig!]
   form(  "The unique identifier token for the form. This token is used to securely access the form and can be found in the form URL."
 formToken: String!): ResponseForm
   "Get the status of a use_template async operation. Returns null if the process_id is invalid, expired, or unauthorized."
-  use_template_status(
+  template_installation_status(
     "The process_id returned by use_template."
     process_id: String!
   ): UseTemplateStatusType
