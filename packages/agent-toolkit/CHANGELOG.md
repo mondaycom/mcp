@@ -1,5 +1,23 @@
 # Changelog
 
+## 5.20.0
+
+### Add agent management tools
+
+Five new tools enabling agents to create and manage monday.com platform agents end-to-end:
+
+- `manage_agent` — full lifecycle management: `create` (AI mode via prompt), `create_blank` (manual mode), `get`, `update`, `delete`, `activate`, `deactivate`, `run`
+- `manage_agent_triggers` — manage per-agent triggers (when it runs): `list`, `add`, `remove`
+- `manage_agent_skills` — full skill lifecycle: `create` a new skill in the catalog, `add` to agent, `remove` from agent
+- `manage_agent_knowledge` — grant, update, or revoke an agent's access to boards and docs
+- `agent_catalog` (READ) — browse the account-wide catalog of available trigger types and skills before wiring them to an agent
+
+## 5.19.0
+
+### publish_workflow — surface validation error details
+
+- `rethrowWithContext` now includes GraphQL `extensions` data in the error message when present, so structured errors like `WORKFLOW_VALIDATION_FAILED` (with step-level issue details) are passed through to the LLM instead of being dropped
+
 ## 5.11.0
 
 ### Asset upload MCP tools

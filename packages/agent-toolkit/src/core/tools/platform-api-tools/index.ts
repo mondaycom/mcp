@@ -69,12 +69,17 @@ import { GetAssetUploadUrlTool } from './get-asset-upload-url-tool/get-asset-upl
 import { FinalizeAssetUploadTool } from './finalize-asset-upload-tool/finalize-asset-upload-tool';
 import { LinkBoardItemsWorkflowTool } from './link-board-items-workflow-tool/link-board-items-workflow-tool';
 import { FetchFileContentTool } from './fetch-file-content-tool/fetch-file-content-tool';
-import { GetAgentTool } from './agents-tools/get-agent/get-agent-tool';
-import { CreateAgentTool } from './agents-tools/create-agent/create-agent-tool';
-import { DeleteAgentTool } from './agents-tools/delete-agent/delete-agent-tool';
-import { ListWorkflowsTool } from './workflows-tools/list-workflows/list-workflows-tool';
+import { ManageAgentTool } from './agents-tools/manage-agent/manage-agent-tool';
+import { ManageAgentTriggersTool } from './agents-tools/manage-agent-triggers/manage-agent-triggers-tool';
+import { ManageAgentSkillsTool } from './agents-tools/manage-agent-skills/manage-agent-skills-tool';
+import { ManageAgentKnowledgeTool } from './agents-tools/manage-agent-knowledge/manage-agent-knowledge-tool';
+import { AgentCatalogTool } from './agents-tools/agent-catalog/agent-catalog-tool';
+import { ListAutomationsTool } from './workflows-tools/list-workflows/list-workflows-tool';
 import { ManageWorkflowsTool } from './workflows-tools/manage-workflows/manage-workflows-tool';
 import { CreateAutomationTool } from './workflows-tools/create-automation/create-automation-tool';
+import { CreateWorkflowBuilderTool } from './workflow-builder-tools/create-workflow/create-workflow-tool';
+import { UpdateWorkflowTool } from './workflow-builder-tools/update-workflow/update-workflow-tool';
+import { PublishWorkflowTool } from './workflow-builder-tools/publish-workflow/publish-workflow-tool';
 
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteItemTool,
@@ -149,14 +154,21 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   LinkBoardItemsWorkflowTool,
   FetchFileContentTool,
   // monday Platform Agents (subgraph still on dev API version)
-  GetAgentTool,
-  CreateAgentTool,
-  DeleteAgentTool,
+  ManageAgentTool,
+  ManageAgentTriggersTool,
+  ManageAgentSkillsTool,
+  ManageAgentKnowledgeTool,
+  AgentCatalogTool,
   // Workflows (subgraph still on dev API version)
-  ListWorkflowsTool,
+  ListAutomationsTool,
   ManageWorkflowsTool,
   // Cast: ctor signature (api, apiToken, context?) doesn't match BaseMondayApiToolConstructor.
   CreateAutomationTool as unknown as BaseMondayApiToolConstructor,
+  // Workflow Builder Tools
+  CreateWorkflowBuilderTool,
+  // Cast: ctor signature (api, apiToken, context?) doesn't match BaseMondayApiToolConstructor.
+  UpdateWorkflowTool as unknown as BaseMondayApiToolConstructor,
+  PublishWorkflowTool,
 ];
 
 export * from './all-monday-api-tool';
@@ -231,6 +243,10 @@ export * from './fetch-file-content-tool/fetch-file-content-tool';
 export * from './agents-tools';
 // Workflows
 export * from './workflows-tools';
+// Workflow Builder Tools
+export * from './workflow-builder-tools/create-workflow/create-workflow-tool';
+export * from './workflow-builder-tools/update-workflow/update-workflow-tool';
+export * from './workflow-builder-tools/publish-workflow/publish-workflow-tool';
 // Dashboard Tools
 export * from './dashboard-tools';
 // Monday Dev Tools

@@ -946,6 +946,36 @@ export type AssignTeamOwnersResult = {
   team?: Maybe<Team>;
 };
 
+/** Structured result data for a completed or partially-completed operation */
+export type AsyncJobResult = {
+  __typename?: 'AsyncJobResult';
+  /** Operation-specific details (failed item IDs, report URLs, etc.) */
+  details?: Maybe<Scalars['JSON']['output']>;
+  /** Items that failed */
+  failed?: Maybe<Scalars['Int']['output']>;
+  /** Successfully processed items */
+  succeeded?: Maybe<Scalars['Int']['output']>;
+  /** Total items in the operation */
+  total?: Maybe<Scalars['Int']['output']>;
+};
+
+/** Status information for an async job */
+export type AsyncJobStatus = {
+  __typename?: 'AsyncJobStatus';
+  /** When the job was created (ISO 8601) */
+  created_at?: Maybe<Scalars['String']['output']>;
+  /** Error description if the job failed */
+  error?: Maybe<Scalars['String']['output']>;
+  /** Unique job identifier */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Structured result data for completed or partially-completed operations */
+  result?: Maybe<AsyncJobResult>;
+  /** Current job status */
+  status?: Maybe<JobState>;
+  /** When the job was last updated (ISO 8601) */
+  updated_at?: Maybe<Scalars['String']['output']>;
+};
+
 /** Text formatting attributes (bold, italic, links, colors, etc.) */
 export type Attributes = {
   __typename?: 'Attributes';
@@ -2020,6 +2050,8 @@ export type ConnectProjectResult = {
   message?: Maybe<Scalars['String']['output']>;
   /** The ID of the created portfolio item, if successful. */
   portfolio_item_id?: Maybe<Scalars['String']['output']>;
+  /** Unique process ID for tracking this request. Included in the callback payload when the operation completes. */
+  process_id?: Maybe<Scalars['ID']['output']>;
   /** Indicates if the operation was successful. */
   success?: Maybe<Scalars['Boolean']['output']>;
 };
@@ -2343,6 +2375,15 @@ export type CreateQuestionInput = {
   visible?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
+/** The result of creating a service user. */
+export type CreateServiceUserResult = {
+  __typename?: 'CreateServiceUserResult';
+  /** The API token for the created service user. Null if token generation failed. */
+  token?: Maybe<Scalars['String']['output']>;
+  /** The created service user. */
+  user?: Maybe<User>;
+};
+
 export type CreateStatusColumnSettingsInput = {
   labels: Array<CreateStatusLabelInput>;
 };
@@ -2643,6 +2684,13 @@ export type DeleteObjectSchemaColumnsActionInput = {
   column_ids: Array<Scalars['ID']['input']>;
 };
 
+/** Represents a document block that was successfully deleted. */
+export type DeletedDocBlock = {
+  __typename?: 'DeletedDocBlock';
+  /** The deleted block's unique identifier. */
+  id: Scalars['ID']['output'];
+};
+
 /** A department in the account. */
 export type Department = {
   __typename?: 'Department';
@@ -2743,6 +2791,8 @@ export type DependencyValueInput = {
 /** A document block that was changed between two versions, including its content and what type of change occurred. */
 export type DiffBlock = {
   __typename?: 'DiffBlock';
+  /** The ID of the AI agent that made the change to this block, or null if the change was made by a user. */
+  agent_id?: Maybe<Scalars['ID']['output']>;
   /** The changes that occurred to this block (added, deleted, or changed). */
   changes?: Maybe<BlockChanges>;
   /** The block content as a JSON string. */
@@ -2755,6 +2805,8 @@ export type DiffBlock = {
   summary?: Maybe<Scalars['String']['output']>;
   /** The type of block (e.g., text, image, list). */
   type?: Maybe<Scalars['String']['output']>;
+  /** The ID of the user who made the change to this block, or null if not available. */
+  user_id?: Maybe<Scalars['ID']['output']>;
 };
 
 export type DirectDocValue = ColumnValue & {
@@ -2788,6 +2840,8 @@ export type DirectoryResource = {
   location?: Maybe<Scalars['String']['output']>;
   /** The name of the directory resource. */
   name: Scalars['String']['output'];
+  /** The type of the resource (user, viewer, or guest). */
+  resource_type?: Maybe<DirectoryResourceKind>;
   /** The skills of the directory resource. */
   skills?: Maybe<Array<Scalars['String']['output']>>;
 };
@@ -2800,6 +2854,16 @@ export enum DirectoryResourceAttribute {
   Location = 'LOCATION',
   /** Represents the resource directory skills attribute. */
   Skills = 'SKILLS'
+}
+
+/** The type of a directory resource */
+export enum DirectoryResourceKind {
+  /** A guest user */
+  Guest = 'GUEST',
+  /** A member or admin user */
+  User = 'USER',
+  /** A view-only user */
+  Viewer = 'VIEWER'
 }
 
 /** Paginated response containing directory resources and cursor for next page */
@@ -4587,6 +4651,8 @@ export enum InvitationMethod {
   ServicePortalUserInvitation = 'SERVICE_PORTAL_USER_INVITATION',
   /** Added via single sign-on. */
   Sso = 'SSO',
+  /** Created via system creation flow. */
+  SystemCreation = 'SYSTEM_CREATION',
   /** Unknown invitation method. */
   Unknown = 'UNKNOWN',
   /** Invited by another user. */
@@ -4891,6 +4957,22 @@ export type ItemsResponse = {
   /** The items associated with the cursor. */
   items: Array<Item>;
 };
+
+/** Status of an async job */
+export enum JobState {
+  /** Job was cancelled */
+  Cancelled = 'CANCELLED',
+  /** Job completed successfully */
+  Completed = 'COMPLETED',
+  /** Job expired before completion */
+  Expired = 'EXPIRED',
+  /** Job failed */
+  Failed = 'FAILED',
+  /** Job is queued but not yet started */
+  Pending = 'PENDING',
+  /** Job is actively executing */
+  Running = 'RUNNING'
+}
 
 /** Status of a job operation. Currently supports items job status for backfill and ingest operations. */
 export type JobStatus = ItemsJobStatus;
@@ -5268,6 +5350,8 @@ export type Meeting = {
   action_items?: Maybe<Array<ActionItem>>;
   /** The end time of the meeting. */
   end_time: Scalars['Date']['output'];
+  /** A concise AI-generated gist of the meeting. */
+  gist?: Maybe<Scalars['String']['output']>;
   /** The unique identifier of the meeting. */
   id: Scalars['ID']['output'];
   /** The URL to view the meeting in the notetaker. */
@@ -5485,7 +5569,7 @@ export type Mutation = {
   complexity?: Maybe<Complexity>;
   /** Connect a board to an object schema. */
   connect_board_to_object_schema?: Maybe<BoardConnection>;
-  /** Connect project to portfolio */
+  /** Connect an existing project to a portfolio. When a callback_url is provided the mutation returns immediately with a process_id, and the result is POSTed to that URL once the operation completes. The callback payload is: { is_success: boolean, process_id: string, portfolio_item_id?: string }. */
   connect_project_to_portfolio?: Maybe<ConnectProjectResult>;
   /** Convert an existing monday.com board into a project with enhanced project management capabilities. This mutation transforms a regular board by applying project-specific features and configurations through column mappings that define how existing board columns should be interpreted in the project context. The conversion process is asynchronous and returns a process_id for tracking completion. Optionally accepts a callback URL for notification when the conversion completes. Use this when you have an existing board with data that needs to be upgraded to a full project with advanced project management features like Resource Planner integration. */
   convert_board_to_project?: Maybe<ConvertBoardToProjectResult>;
@@ -5546,6 +5630,8 @@ export type Mutation = {
   create_portfolio?: Maybe<CreatePortfolioResult>;
   /** Create a new project in monday.com from scratch. This mutation initiates asynchronous project creation with comprehensive customization options including: privacy settings (private/public - share is currently not supported), optional companions like Resource Planner for enhanced project management capabilities, workspace assignment for organizational structure, folder placement for better organization, and template selection for predefined project structures. Since project creation is asynchronous, you can optionally provide a callback_url where the project ID will be sent via POST request once creation completes. The callback will receive: { is_success: boolean, process_id: string, project_id?: number }. Returns a process_id for tracking the creation request. */
   create_project?: Maybe<CreateProjectResult>;
+  /** Creates a new service user with a read-only API token. */
+  create_service_user?: Maybe<CreateServiceUserResult>;
   /** Creates a new status column with strongly typed settings. Status columns allow users to track item progress through customizable labels (e.g., "Working on it", "Done", "Stuck"). This mutation is specifically for status/color columns and provides type-safe creation with label configuration. */
   create_status_column?: Maybe<Column>;
   /** Create managed column of type status mutation. */
@@ -5591,6 +5677,8 @@ export type Mutation = {
   delete_doc?: Maybe<Scalars['JSON']['output']>;
   /** Delete a document block */
   delete_doc_block?: Maybe<DocumentBlockIdOnly>;
+  /** Deletes multiple document blocks in a single operation. Maximum 100 blocks per request. */
+  delete_doc_blocks?: Maybe<Array<DeletedDocBlock>>;
   /** Remove an object from favorites */
   delete_favorite?: Maybe<DeleteFavoriteInputResultType>;
   /** Deletes a folder in a specific workspace. */
@@ -5670,6 +5758,8 @@ export type Mutation = {
   publish_article?: Maybe<ArticleMetadata>;
   /** Publishes object out of draft state. Returns {success: true} on success, {success: false} on failure. */
   publish_object?: Maybe<ObjectOperationResponse>;
+  /** Revokes all existing tokens and generates a new API token for a service user. */
+  regenerate_service_user_token?: Maybe<Scalars['String']['output']>;
   /** Remove mock app subscription for the current account */
   remove_mock_app_subscription?: Maybe<AppSubscription>;
   /** Remove a required column from a board */
@@ -5678,6 +5768,8 @@ export type Mutation = {
   remove_team_owners?: Maybe<RemoveTeamOwnersResult>;
   /** Remove users from team. */
   remove_users_from_team?: Maybe<ChangeTeamMembershipsResult>;
+  /** Revokes all API tokens for a service user. */
+  revoke_service_user_tokens?: Maybe<Scalars['Boolean']['output']>;
   /**
    * Set or update the board's permission to specified role. This concept is also
    * known as default board role, general access or board permission set.
@@ -6082,6 +6174,7 @@ export type MutationConnect_Board_To_Object_SchemaArgs = {
 
 /** Root mutation type for the Dependencies service */
 export type MutationConnect_Project_To_PortfolioArgs = {
+  callback_url?: InputMaybe<Scalars['String']['input']>;
   portfolioBoardId: Scalars['ID']['input'];
   projectBoardId: Scalars['ID']['input'];
 };
@@ -6365,6 +6458,13 @@ export type MutationCreate_ProjectArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationCreate_Service_UserArgs = {
+  name: Scalars['String']['input'];
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_Status_ColumnArgs = {
   after_column_id?: InputMaybe<Scalars['ID']['input']>;
   board_id: Scalars['ID']['input'];
@@ -6561,6 +6661,12 @@ export type MutationDelete_DocArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationDelete_Doc_BlockArgs = {
   block_id: Scalars['String']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationDelete_Doc_BlocksArgs = {
+  block_ids: Array<Scalars['ID']['input']>;
 };
 
 
@@ -6874,6 +6980,12 @@ export type MutationPublish_ObjectArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationRegenerate_Service_User_TokenArgs = {
+  service_user_id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationRemove_Mock_App_SubscriptionArgs = {
   app_id: Scalars['ID']['input'];
   partial_signing_secret: Scalars['String']['input'];
@@ -6899,6 +7011,12 @@ export type MutationRemove_Team_OwnersArgs = {
 export type MutationRemove_Users_From_TeamArgs = {
   team_id: Scalars['ID']['input'];
   user_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationRevoke_Service_User_TokensArgs = {
+  service_user_id: Scalars['ID']['input'];
 };
 
 
@@ -8164,7 +8282,7 @@ export type Query = {
   /** Fetch a single connection by its unique ID. */
   connection?: Maybe<Connection>;
   /** Get board IDs that are linked to a specific connection. */
-  connection_board_ids?: Maybe<Array<Scalars['Int']['output']>>;
+  connection_board_ids: Array<Scalars['ID']['output']>;
   /** Returns connections for the authenticated user. Supports filtering, pagination, ordering, and partial-scope options. */
   connections?: Maybe<Array<Connection>>;
   custom_activity?: Maybe<Array<CustomActivity>>;
@@ -8215,6 +8333,8 @@ export type Query = {
   items?: Maybe<Array<Maybe<Item>>>;
   /** Search items by multiple columns and values. */
   items_page_by_column_values: ItemsResponse;
+  /** Get the status of an async job by its external ID */
+  job_status: AsyncJobStatus;
   /** Search knowledge base snippets. */
   knowledge_base_search?: Maybe<KnowledgeBaseAnswer>;
   /** Get managed column data. */
@@ -8251,6 +8371,10 @@ export type Query = {
   replies?: Maybe<Array<Reply>>;
   /** Search API. Each field searches a single entity type with tailored filters. */
   search: SearchNamespace;
+  /** Retrieves API tokens for the given service users. */
+  service_user_tokens?: Maybe<Array<ServiceUserToken>>;
+  /** Retrieves all service users in the account with their token last activity. */
+  service_users?: Maybe<Array<ServiceUser>>;
   /** Get a collection of monday dev sprints */
   sprints?: Maybe<Array<Sprint>>;
   /** Get a collection of tags. */
@@ -8432,7 +8556,7 @@ export type QueryConnectionArgs = {
 
 /** Root query type for the Dependencies service */
 export type QueryConnection_Board_IdsArgs = {
-  connectionId: Scalars['Int']['input'];
+  connection_id: Scalars['ID']['input'];
 };
 
 
@@ -8606,6 +8730,12 @@ export type QueryItems_Page_By_Column_ValuesArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QueryJob_StatusArgs = {
+  job_id: Scalars['ID']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryKnowledge_Base_SearchArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   query: Scalars['String']['input'];
@@ -8711,6 +8841,12 @@ export type QueryRepliesArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QueryService_User_TokensArgs = {
+  service_user_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
 export type QuerySprintsArgs = {
   ids: Array<Scalars['ID']['input']>;
 };
@@ -8800,8 +8936,11 @@ export type QueryUser_ConnectionsArgs = {
 export type QueryUsersArgs = {
   emails?: InputMaybe<Array<Scalars['String']['input']>>;
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  kind?: InputMaybe<UserKind>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
+  newest_first?: InputMaybe<Scalars['Boolean']['input']>;
+  non_active?: InputMaybe<Scalars['Boolean']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
   sort?: InputMaybe<Array<UsersSortInput>>;
   status?: InputMaybe<Array<UserStatus>>;
@@ -9090,6 +9229,8 @@ export type SearchDocResults = {
 /** Board data stored in the search index. */
 export type SearchIndexedBoard = {
   __typename?: 'SearchIndexedBoard';
+  /** ID of the user who created this board. */
+  creator_id?: Maybe<Scalars['ID']['output']>;
   /** Board description. */
   description?: Maybe<Scalars['String']['output']>;
   /** Board ID. */
@@ -9128,6 +9269,21 @@ export type SearchIndexedItem = {
   workspace_id?: Maybe<Scalars['ID']['output']>;
 };
 
+/** Workspace data stored in the search index. */
+export type SearchIndexedWorkspace = {
+  __typename?: 'SearchIndexedWorkspace';
+  /** Workspace description. */
+  description?: Maybe<Scalars['String']['output']>;
+  /** Workspace ID. */
+  id: Scalars['ID']['output'];
+  /** Workspace kind (open or closed). */
+  kind: Scalars['String']['output'];
+  /** Workspace name. */
+  name: Scalars['String']['output'];
+  /** Workspace state (active, archived, or deleted). */
+  state: Scalars['String']['output'];
+};
+
 /** A single item search result with indexed and live data. */
 export type SearchItemResult = {
   __typename?: 'SearchItemResult';
@@ -9155,11 +9311,14 @@ export type SearchNamespace = {
   docs: SearchDocResults;
   /** Search for items. */
   items: SearchItemResults;
+  /** Search for workspaces. */
+  workspaces: SearchWorkspaceResults;
 };
 
 
 /** Per-entity search namespace. Each field searches a single entity type. */
 export type SearchNamespaceBoardsArgs = {
+  board_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   date_range?: InputMaybe<CrossEntityDateRangeInput>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   query: Scalars['String']['input'];
@@ -9188,6 +9347,17 @@ export type SearchNamespaceItemsArgs = {
   workspace_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
 };
 
+
+/** Per-entity search namespace. Each field searches a single entity type. */
+export type SearchNamespaceWorkspacesArgs = {
+  date_range?: InputMaybe<CrossEntityDateRangeInput>;
+  kind?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  query: Scalars['String']['input'];
+  strategy?: InputMaybe<SearchStrategy>;
+  workspace_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+};
+
 /** Controls the trade-off between search quality and response time. */
 export enum SearchStrategy {
   /** Good search quality with reasonable response time. Default. */
@@ -9197,6 +9367,22 @@ export enum SearchStrategy {
   /** Faster results with lower search quality. */
   Speed = 'SPEED'
 }
+
+/** A single workspace search result. */
+export type SearchWorkspaceResult = {
+  __typename?: 'SearchWorkspaceResult';
+  /** Unique identifier of the workspace. */
+  id: Scalars['ID']['output'];
+  /** Workspace data from the search index. */
+  indexed_data: SearchIndexedWorkspace;
+};
+
+/** Wrapper for a list of workspace search results. */
+export type SearchWorkspaceResults = {
+  __typename?: 'SearchWorkspaceResults';
+  /** List of workspace search results. */
+  results: Array<SearchWorkspaceResult>;
+};
 
 /** A sequence that can be used to automate email outreach */
 export type Sequence = {
@@ -9240,6 +9426,36 @@ export enum SequenceStatus {
   /** Sequence is missing required configuration */
   MissingConfig = 'MISSING_CONFIG'
 }
+
+/** A service user in the account. */
+export type ServiceUser = {
+  __typename?: 'ServiceUser';
+  /** When the service user was created. */
+  created_at?: Maybe<Scalars['String']['output']>;
+  /** Whether the service user is active. */
+  enabled?: Maybe<Scalars['Boolean']['output']>;
+  /** Whether the service user currently has an active API token. */
+  has_token?: Maybe<Scalars['Boolean']['output']>;
+  /** The ID of the service user. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** The ID of the user who created this service user. */
+  invited_by_id?: Maybe<Scalars['ID']['output']>;
+  /** The last time the service user token was used for an API request. */
+  last_token_activity?: Maybe<Scalars['String']['output']>;
+  /** The display name of the service user. */
+  name?: Maybe<Scalars['String']['output']>;
+  /** The title/description of the service user. */
+  title?: Maybe<Scalars['String']['output']>;
+};
+
+/** A service user token result. */
+export type ServiceUserToken = {
+  __typename?: 'ServiceUserToken';
+  /** The ID of the service user. */
+  service_user_id?: Maybe<Scalars['ID']['output']>;
+  /** The API token. */
+  token?: Maybe<Scalars['String']['output']>;
+};
 
 /** Response type for detailed board permissions. Contains information about the permissions that were set. */
 export type SetBoardPermissionResponse = {
@@ -10354,7 +10570,10 @@ export type UpdateFormSettingsInput = {
   is_anonymous?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
-export type UpdateFormTagInput = {};
+export type UpdateFormTagInput = {
+  /** The value of the tag */
+  value?: InputMaybe<Scalars['String']['input']>;
+};
 
 /** Input for updating lifecycle subscriptions for an entity */
 export type UpdateLifecycleSubscriptionsInput = {
@@ -10779,6 +10998,8 @@ export type UserConfig = {
   __typename?: 'UserConfig';
   /** The behavior IDs that are true for this user kind. */
   behaviors: Array<Scalars['String']['output']>;
+  /** The group this user config belongs to. */
+  group: Scalars['String']['output'];
   /** The user kind for the user config. */
   kind: Scalars['String']['output'];
   /** The role ID associated with this user config. */
@@ -10843,6 +11064,8 @@ export enum UserKindFilter {
   ProjectsApiUser = 'PROJECTS_API_USER',
   /** A resource directory api user user. */
   ResourceDirectoryApiUser = 'RESOURCE_DIRECTORY_API_USER',
+  /** A service user user. */
+  ServiceUser = 'SERVICE_USER',
   /** A sprint management api user user. */
   SprintManagementApiUser = 'SPRINT_MANAGEMENT_API_USER',
   /** A view only user. */

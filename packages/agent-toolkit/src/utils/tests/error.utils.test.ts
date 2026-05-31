@@ -12,6 +12,37 @@ describe('rethrowWithContext', () => {
       expect(() => rethrowWithContext(error, 'create item')).toThrow('Failed to create item: Item not found');
     });
 
+    it('should include allowlisted extension keys in error message', () => {
+      const error = {
+        response: {
+          errors: [
+            {
+              message: 'Workflow has validation issues',
+              extensions: {
+                code: 'WORKFLOW_VALIDATION_FAILED',
+                error_data: { issues: [{ stepId: 2, type: 'missing-mandatory-inputs' }] },
+                internalTrace: 'should-be-omitted',
+              },
+            },
+          ],
+        },
+      };
+
+      expect(() => rethrowWithContext(error, 'publish workflow')).toThrow(
+        'Failed to publish workflow: Workflow has validation issues (details: {"code":"WORKFLOW_VALIDATION_FAILED","error_data":{"issues":[{"stepId":2,"type":"missing-mandatory-inputs"}]}})',
+      );
+    });
+
+    it('should not append details when no allowlisted keys are present', () => {
+      const error = {
+        response: {
+          errors: [{ message: 'Some error', extensions: { internalTrace: 'abc' } }],
+        },
+      };
+
+      expect(() => rethrowWithContext(error, 'create item')).toThrow('Failed to create item: Some error');
+    });
+
     it('should extract and join multiple GraphQL errors', () => {
       const error = {
         response: {

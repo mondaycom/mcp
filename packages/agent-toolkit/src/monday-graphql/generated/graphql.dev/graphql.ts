@@ -62,6 +62,15 @@ export type Account = {
   tier?: Maybe<Scalars['String']['output']>;
 };
 
+/** The account-level default work schedule and time off schedule */
+export type AccountAvailabilityDefaults = {
+  __typename?: 'AccountAvailabilityDefaults';
+  /** The account-level default time off schedule */
+  time_off: TimeOff;
+  /** The account-level default work schedule */
+  work_schedule: WorkSchedule;
+};
+
 /** Account context information. */
 export type AccountContext = {
   __typename?: 'AccountContext';
@@ -254,6 +263,8 @@ export type AddedAllocatedResource = {
 /** An AI agent on the monday.com platform */
 export type Agent = {
   __typename?: 'Agent';
+  /** The LLM model the agent uses */
+  agent_model?: Maybe<AgentModel>;
   /** The timestamp when the agent was created. Null on create mutation responses — use the agent query to fetch it. */
   created_at?: Maybe<Scalars['Date']['output']>;
   /** The goal or objective of the agent */
@@ -262,10 +273,14 @@ export type Agent = {
   id: Scalars['ID']['output'];
   /** The kind of agent (personal, account-level, or external) */
   kind?: Maybe<AgentKind>;
+  /** Knowledge files attached to the agent. Only populated on create mutation responses. */
+  knowledge?: Maybe<Array<AgentKnowledgeEntry>>;
   /** The execution plan in markdown format, describing the agent capabilities and operating principles */
   plan?: Maybe<Scalars['String']['output']>;
   /** The agent profile with name, role, and avatar */
   profile?: Maybe<AgentProfile>;
+  /** Reference IDs of skills attached to this agent. Use agent_skills_catalog to resolve full name and description. */
+  skill_ids: Array<Scalars['ID']['output']>;
   /** The current state of the agent */
   state?: Maybe<AgentState>;
   /** The timestamp when the agent was last updated. Null on create mutation responses — use the agent query to fetch it. */
@@ -276,6 +291,21 @@ export type Agent = {
   version_id: Scalars['ID']['output'];
 };
 
+/** A trigger currently attached to an agent */
+export type AgentActiveTrigger = {
+  __typename?: 'AgentActiveTrigger';
+  /** The trigger type, matching block_reference_id in the catalog */
+  block_reference_id: Scalars['ID']['output'];
+  /** Description of the trigger type */
+  description?: Maybe<Scalars['String']['output']>;
+  /** Human-readable summary of how this trigger is configured (e.g. "type=Weekly, hour=9, days=3/4") */
+  field_summary?: Maybe<Scalars['String']['output']>;
+  /** Display name of the trigger type */
+  name: Scalars['String']['output'];
+  /** Stable identifier of this trigger instance — use this as node_id when calling remove_trigger_from_agent */
+  node_id: Scalars['ID']['output'];
+};
+
 /** The kind of AI agent */
 export enum AgentKind {
   /** An account-level agent available to the entire account */
@@ -284,6 +314,75 @@ export enum AgentKind {
   External = 'EXTERNAL',
   /** A personal agent owned by a specific user */
   Personal = 'PERSONAL'
+}
+
+/** The full knowledge configuration of an agent — resources (boards/docs) and uploaded files */
+export type AgentKnowledge = {
+  __typename?: 'AgentKnowledge';
+  /** Files uploaded as agent knowledge */
+  files?: Maybe<Array<AgentKnowledgeFile>>;
+  /** Boards and docs the agent has access to */
+  resources?: Maybe<Array<AgentKnowledgeResource>>;
+};
+
+/** A knowledge entry attached to an agent */
+export type AgentKnowledgeEntry = {
+  __typename?: 'AgentKnowledgeEntry';
+  /** The unique identifier of the knowledge entry */
+  id: Scalars['ID']['output'];
+  /** Reference ID for the knowledge entry */
+  knowledge_reference_id?: Maybe<Scalars['ID']['output']>;
+  /** File metadata for this knowledge entry */
+  metadata?: Maybe<AgentKnowledgeMetadata>;
+  /** The source type of this knowledge entry */
+  source_type?: Maybe<KnowledgeSource>;
+  /** The current state of this knowledge entry */
+  state?: Maybe<KnowledgeState>;
+};
+
+/** A file uploaded as agent knowledge */
+export type AgentKnowledgeFile = {
+  __typename?: 'AgentKnowledgeFile';
+  /** Original file name */
+  file_name?: Maybe<Scalars['String']['output']>;
+  /** File extension (e.g. pdf, docx, csv) */
+  file_type?: Maybe<Scalars['String']['output']>;
+  /** Unique identifier of the knowledge file */
+  id?: Maybe<Scalars['ID']['output']>;
+};
+
+/** Metadata about a knowledge file attachment */
+export type AgentKnowledgeMetadata = {
+  __typename?: 'AgentKnowledgeMetadata';
+  /** Cloudinary asset ID for image files */
+  asset_id?: Maybe<Scalars['ID']['output']>;
+  /** Original name of the uploaded file */
+  file_name?: Maybe<Scalars['String']['output']>;
+  /** MIME type of the file */
+  file_type?: Maybe<Scalars['String']['output']>;
+};
+
+/** A monday.com board or doc the agent has been granted access to */
+export type AgentKnowledgeResource = {
+  __typename?: 'AgentKnowledgeResource';
+  /** The permission level the agent has on this resource */
+  permission_type?: Maybe<KnowledgePermission>;
+  /** The ID of the board or doc */
+  resource_id?: Maybe<Scalars['ID']['output']>;
+  /** Whether this resource is a board or a doc */
+  scope_type?: Maybe<KnowledgeScope>;
+};
+
+/** Supported LLM models for an agent */
+export enum AgentModel {
+  /** Claude Opus 4.7 (claude-opus-4-7) */
+  ClaudeOpus_4_7 = 'CLAUDE_OPUS_4_7',
+  /** Claude Sonnet 4.6 (claude-sonnet-4-6) */
+  ClaudeSonnet_4_6 = 'CLAUDE_SONNET_4_6',
+  /** Gemini 2.5 Flash */
+  Gemini_2_5Flash = 'GEMINI_2_5_FLASH',
+  /** GPT 5.2 */
+  Gpt_5_2 = 'GPT_5_2'
 }
 
 /** Visual and role identity of an agent. */
@@ -301,6 +400,17 @@ export type AgentProfile = {
   role_description?: Maybe<Scalars['String']['output']>;
 };
 
+/** A skill available for agents to use — browse the catalog, then attach by id. */
+export type AgentSkillCatalogEntry = {
+  __typename?: 'AgentSkillCatalogEntry';
+  /** What this skill does */
+  description?: Maybe<Scalars['String']['output']>;
+  /** Stable reference ID — pass this to add_skill_to_agent / remove_skill_from_agent */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Display name of the skill */
+  name?: Maybe<Scalars['String']['output']>;
+};
+
 /** The current state of an agent */
 export enum AgentState {
   /** The agent is active and can be triggered and executed */
@@ -314,6 +424,28 @@ export enum AgentState {
   /** The agent is inactive and cannot be triggered. This is the default state after creation. */
   Inactive = 'INACTIVE'
 }
+
+/** Result of an agent state change operation */
+export type AgentStateResult = {
+  __typename?: 'AgentStateResult';
+  /** Whether the operation succeeded */
+  success?: Maybe<Scalars['Boolean']['output']>;
+};
+
+/** An available trigger type that can be attached to an agent */
+export type AgentTriggerCatalogEntry = {
+  __typename?: 'AgentTriggerCatalogEntry';
+  /** Pass this value as block_reference_id when calling add_trigger_to_agent */
+  block_reference_id: Scalars['ID']['output'];
+  /** What this trigger does */
+  description?: Maybe<Scalars['String']['output']>;
+  /** Structured value schemas for fields you can populate directly in field_values */
+  field_schemas: Array<TriggerFieldSchema>;
+  /** Display name of the trigger */
+  name: Scalars['String']['output'];
+  /** Selection fields (e.g. board picker) that must be provided in field_values as { value, label } pairs */
+  required_fields: Array<TriggerRequiredField>;
+};
 
 export type AggregateBasicAggregationResult = {
   __typename?: 'AggregateBasicAggregationResult';
@@ -396,7 +528,7 @@ export enum AggregateHistoryFilterOperator {
 export type AggregateHistoryFilterRuleInput = {
   /** The unique identifier of the column to filter by. */
   column_id: Scalars['String']['input'];
-  /** Optional attribute for complex column types (e.g., date for timeline columns). */
+  /** For columns whose value has multiple comparable parts (such as `timeline` columns with a start and end date), indicates which part to compare. For example, set `"date"` to compare against the timeline date. Leave unset for columns with a single comparable value. */
   compare_attribute?: InputMaybe<Scalars['String']['input']>;
   /** The value(s) to compare against. Can be a string, number, boolean, or array. */
   compare_value?: InputMaybe<Scalars['JSON']['input']>;
@@ -430,6 +562,16 @@ export enum AggregateHistoryFunction {
   CountDistinct = 'COUNT_DISTINCT',
   /** Count items. */
   CountItems = 'COUNT_ITEMS',
+  /** Truncate a date or datetime value to the day. */
+  DateTruncDay = 'DATE_TRUNC_DAY',
+  /** Truncate a date or datetime value to the month. */
+  DateTruncMonth = 'DATE_TRUNC_MONTH',
+  /** Truncate a date or datetime value to the quarter. */
+  DateTruncQuarter = 'DATE_TRUNC_QUARTER',
+  /** Truncate a date or datetime value to the week. */
+  DateTruncWeek = 'DATE_TRUNC_WEEK',
+  /** Truncate a date or datetime value to the year. */
+  DateTruncYear = 'DATE_TRUNC_YEAR',
   /** Get the first value. */
   First = 'FIRST',
   /** Get the ID. */
@@ -1272,6 +1414,8 @@ export type AppType = {
   updated_at?: Maybe<Scalars['Date']['output']>;
   /** The latest version type */
   version_type?: Maybe<Scalars['String']['output']>;
+  /** All versions of this app with their current status. Use this to poll promotion progress. */
+  versions?: Maybe<Array<DeveloperAppVersion>>;
   /** The webhook endpoint URL */
   webhook_url?: Maybe<Scalars['String']['output']>;
 };
@@ -1297,6 +1441,18 @@ export type AppVersion = {
   /** The app's version type. */
   type?: Maybe<Scalars['String']['output']>;
 };
+
+/** The lifecycle status of an app version */
+export enum AppVersionStatus {
+  /** Version has been superseded by a newer version */
+  Deprecated = 'DEPRECATED',
+  /** Version is in development and not yet live */
+  Draft = 'DRAFT',
+  /** Version is live and available to users */
+  Live = 'LIVE',
+  /** Version is in the process of being promoted */
+  Promoting = 'PROMOTING'
+}
 
 /** The app monetization information for the current account */
 export type AppsMonetizationInfo = {
@@ -1402,6 +1558,8 @@ export enum AssetHolder {
   Item = 'ITEM',
   /** An update/post entity. */
   Post = 'POST',
+  /** A vibe application entity. */
+  VibeApp = 'VIBE_APP',
   /** A workspace entity. */
   Workspace = 'WORKSPACE'
 }
@@ -1482,6 +1640,16 @@ export type AssignTeamOwnersResult = {
   team?: Maybe<Team>;
 };
 
+/** Input for assigning a work schedule and/or time off schedule to multiple users */
+export type AssignUserAvailabilityInput = {
+  /** ID of the time off schedule to assign; omit to leave unchanged */
+  time_off_id?: InputMaybe<Scalars['ID']['input']>;
+  /** IDs of the users to assign schedules to */
+  user_ids: Array<Scalars['ID']['input']>;
+  /** ID of the work schedule to assign; omit to leave unchanged */
+  work_schedule_id?: InputMaybe<Scalars['ID']['input']>;
+};
+
 /** A board where the user has item assignments. */
 export type AssignedBoard = {
   __typename?: 'AssignedBoard';
@@ -1491,6 +1659,36 @@ export type AssignedBoard = {
   board?: Maybe<Board>;
   /** Board ID */
   board_id?: Maybe<Scalars['ID']['output']>;
+};
+
+/** Structured result data for a completed or partially-completed operation */
+export type AsyncJobResult = {
+  __typename?: 'AsyncJobResult';
+  /** Operation-specific details (failed item IDs, report URLs, etc.) */
+  details?: Maybe<Scalars['JSON']['output']>;
+  /** Items that failed */
+  failed?: Maybe<Scalars['Int']['output']>;
+  /** Successfully processed items */
+  succeeded?: Maybe<Scalars['Int']['output']>;
+  /** Total items in the operation */
+  total?: Maybe<Scalars['Int']['output']>;
+};
+
+/** Status information for an async job */
+export type AsyncJobStatus = {
+  __typename?: 'AsyncJobStatus';
+  /** When the job was created (ISO 8601) */
+  created_at?: Maybe<Scalars['String']['output']>;
+  /** Error description if the job failed */
+  error?: Maybe<Scalars['String']['output']>;
+  /** Unique job identifier */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Structured result data for completed or partially-completed operations */
+  result?: Maybe<AsyncJobResult>;
+  /** Current job status */
+  status?: Maybe<JobState>;
+  /** When the job was last updated (ISO 8601) */
+  updated_at?: Maybe<Scalars['String']['output']>;
 };
 
 /** Represents a single attribute type option for a resource */
@@ -1626,6 +1824,15 @@ export type AutomationData = {
   id: Scalars['ID']['output'];
   /** The recipe entity associated with the automation */
   recipe?: Maybe<Recipe>;
+};
+
+/** A page of automations with cursor for pagination */
+export type AutomationsPage = {
+  __typename?: 'AutomationsPage';
+  /** Opaque cursor for fetching the next page. Null if no more results. */
+  cursor?: Maybe<Scalars['String']['output']>;
+  /** The automations in this page */
+  items?: Maybe<Array<BoardAutomation>>;
 };
 
 /** Base field type implementation */
@@ -1847,6 +2054,8 @@ export type Board = {
   access_level: BoardAccessLevel;
   /** The board log events. */
   activity_logs?: Maybe<Array<Maybe<ActivityLogType>>>;
+  /** Automations for this board */
+  automations: AutomationsPage;
   /** The board's folder unique identifier. */
   board_folder_id?: Maybe<Scalars['ID']['output']>;
   /** The board's kind (public / private / share). */
@@ -1945,6 +2154,13 @@ export type BoardActivity_LogsArgs = {
 
 
 /** A monday.com board. */
+export type BoardAutomationsArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** A monday.com board. */
 export type BoardColumnsArgs = {
   capabilities?: InputMaybe<Array<InputMaybe<ColumnCapability>>>;
   ids?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
@@ -2024,6 +2240,69 @@ export enum BoardAttributes {
   /** Board name. */
   Name = 'name'
 }
+
+/** A board automation */
+export type BoardAutomation = {
+  __typename?: 'BoardAutomation';
+  /** Whether the automation is active */
+  active?: Maybe<Scalars['Boolean']['output']>;
+  /** Creation timestamp */
+  created_at?: Maybe<Scalars['String']['output']>;
+  /** Automation description */
+  description?: Maybe<Scalars['String']['output']>;
+  /** Automation ID */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Automation importance level */
+  importance?: Maybe<Scalars['Int']['output']>;
+  /** Notice message for the automation */
+  notice_message?: Maybe<Scalars['String']['output']>;
+  /** Template reference ID if created from template */
+  template_reference_id?: Maybe<Scalars['ID']['output']>;
+  /** Automation title */
+  title?: Maybe<Scalars['String']['output']>;
+  /** Last update timestamp */
+  updated_at?: Maybe<Scalars['String']['output']>;
+  /** Creator user ID */
+  user_id?: Maybe<Scalars['ID']['output']>;
+  /** Workflow block definitions */
+  workflow_blocks?: Maybe<Scalars['JSON']['output']>;
+  /** Host data (board ID and type) */
+  workflow_host_data?: Maybe<Scalars['JSON']['output']>;
+  /** Workflow variable definitions */
+  workflow_variables?: Maybe<Scalars['JSON']['output']>;
+};
+
+/** Input for creating a board automation. Provide template_reference_id to create from a template, or workflow_blocks and workflow_variables for a direct creation. */
+export type BoardAutomationCreateInput = {
+  /** Board ID to host the automation */
+  board_id: Scalars['String']['input'];
+  /** Automation description */
+  description?: InputMaybe<Scalars['String']['input']>;
+  /** Template reference ID (for template-based creation) */
+  template_reference_id?: InputMaybe<Scalars['ID']['input']>;
+  /** Automation title */
+  title: Scalars['String']['input'];
+  /** Automation block definitions (for direct creation) */
+  workflow_blocks?: InputMaybe<Scalars['JSON']['input']>;
+  /** Automation variable definitions (for direct creation) */
+  workflow_variables?: InputMaybe<Scalars['JSON']['input']>;
+  /** Template variable values (for template-based creation) */
+  workflow_variables_values?: InputMaybe<Scalars['JSON']['input']>;
+};
+
+/** Result of creating a board automation */
+export type BoardAutomationCreateResult = {
+  __typename?: 'BoardAutomationCreateResult';
+  /** The ID of the created automation */
+  workflow_id?: Maybe<Scalars['ID']['output']>;
+};
+
+/** Result of deleting a board automation */
+export type BoardAutomationDeleteResult = {
+  __typename?: 'BoardAutomationDeleteResult';
+  /** Whether the deletion was successful */
+  is_success?: Maybe<Scalars['Boolean']['output']>;
+};
 
 /** Basic role names for board permissions. Each role grants different levels of access to the board. */
 export enum BoardBasicRoleName {
@@ -2443,6 +2722,437 @@ export enum CalculatedFunction {
   Sum = 'SUM'
 }
 
+/** Additional quota allocated beyond the base plan limit */
+export type CampaignsAdditionalQuota = {
+  __typename?: 'CampaignsAdditionalQuota';
+  /** Amount of additional quota consumed */
+  consumed?: Maybe<Scalars['Int']['output']>;
+  /** Timestamp when additional quota expires */
+  expired_at?: Maybe<Scalars['Date']['output']>;
+  /** Additional quota limit */
+  limit?: Maybe<Scalars['Int']['output']>;
+};
+
+/** A campaign analytics event */
+export type CampaignsAnalyticsEvent = {
+  __typename?: 'CampaignsAnalyticsEvent';
+  /** ID of the associated campaign */
+  campaign_id?: Maybe<Scalars['ID']['output']>;
+  /** Timestamp when the event was created */
+  created_at?: Maybe<Scalars['Date']['output']>;
+  /** Unique event identifier */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Unique identifier for this event */
+  identifier?: Maybe<Scalars['String']['output']>;
+  /** Parsed reason for bounced emails */
+  parsed_reason?: Maybe<Scalars['String']['output']>;
+  /** Type of analytics event */
+  type?: Maybe<CampaignsAnalyticsEventKind>;
+  /** ID of the associated variant */
+  variant_id?: Maybe<Scalars['ID']['output']>;
+};
+
+/** Types of analytics events for campaigns */
+export enum CampaignsAnalyticsEventKind {
+  /** Email was bounced back */
+  EmailBounced = 'EMAIL_BOUNCED',
+  /** Link in email was clicked by recipient */
+  EmailClicked = 'EMAIL_CLICKED',
+  /** Email was successfully delivered */
+  EmailDelivered = 'EMAIL_DELIVERED',
+  /** Email was dropped before sending */
+  EmailDropped = 'EMAIL_DROPPED',
+  /** Email was opened by recipient */
+  EmailOpened = 'EMAIL_OPENED',
+  /** Recipient marked email as spam */
+  EmailRecipientComplaint = 'EMAIL_RECIPIENT_COMPLAINT',
+  /** Recipient unsubscribed */
+  EmailRecipientUnsubscribed = 'EMAIL_RECIPIENT_UNSUBSCRIBED',
+  /** Email was sent */
+  EmailSent = 'EMAIL_SENT'
+}
+
+/** Paginated analytics events response */
+export type CampaignsAnalyticsEventsResponse = {
+  __typename?: 'CampaignsAnalyticsEventsResponse';
+  /** List of analytics events */
+  data?: Maybe<Array<CampaignsAnalyticsEvent>>;
+  /** Token for pagination to retrieve next batch */
+  next_token?: Maybe<Scalars['String']['output']>;
+};
+
+/** Aggregated analytics summary for an email campaign */
+export type CampaignsAnalyticsSummary = {
+  __typename?: 'CampaignsAnalyticsSummary';
+  /** Total number of link clicks */
+  total_clicks?: Maybe<Scalars['Int']['output']>;
+  /** Total emails delivered */
+  total_delivered?: Maybe<Scalars['Int']['output']>;
+  /** Total number of email opens */
+  total_opens?: Maybe<Scalars['Int']['output']>;
+  /** Total emails sent */
+  total_sent?: Maybe<Scalars['Int']['output']>;
+  /** Total spam complaints */
+  total_spam_reports?: Maybe<Scalars['Int']['output']>;
+  /** Total emails not delivered */
+  total_undelivered?: Maybe<Scalars['Int']['output']>;
+  /** Total unsubscribes */
+  total_unsubscribes?: Maybe<Scalars['Int']['output']>;
+  /** Number of unique clicks */
+  unique_clicks?: Maybe<Scalars['Int']['output']>;
+  /** Number of unique opens */
+  unique_opens?: Maybe<Scalars['Int']['output']>;
+  /** Number of unique spam reports */
+  unique_spam_reports?: Maybe<Scalars['Int']['output']>;
+  /** Number of unique undelivered */
+  unique_undelivered?: Maybe<Scalars['Int']['output']>;
+  /** Number of unique unsubscribes */
+  unique_unsubscribes?: Maybe<Scalars['Int']['output']>;
+};
+
+/** A brand color in a brand kit */
+export type CampaignsBrandColor = {
+  __typename?: 'CampaignsBrandColor';
+  /** Hex color code */
+  hex_code?: Maybe<Scalars['String']['output']>;
+  /** Unique color identifier */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Category of the brand color */
+  kind?: Maybe<CampaignsBrandColorKind>;
+};
+
+/** Types of brand colors */
+export enum CampaignsBrandColorKind {
+  /** Accent brand color */
+  Accent = 'ACCENT',
+  /** Other brand color */
+  Other = 'OTHER',
+  /** Primary brand color */
+  Primary = 'PRIMARY',
+  /** Secondary brand color */
+  Secondary = 'SECONDARY',
+  /** Text color */
+  Text = 'TEXT'
+}
+
+/** A brand image in a brand kit */
+export type CampaignsBrandImage = {
+  __typename?: 'CampaignsBrandImage';
+  /** Alternative text for the image */
+  alt_text?: Maybe<Scalars['String']['output']>;
+  /** Height of the image in pixels */
+  height?: Maybe<Scalars['Int']['output']>;
+  /** Unique image identifier */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Category of the brand image */
+  kind?: Maybe<CampaignsBrandImageKind>;
+  /** MIME type of the image */
+  mime_type?: Maybe<Scalars['String']['output']>;
+  /** Name of the image */
+  name?: Maybe<Scalars['String']['output']>;
+  /** URL to access the image */
+  remote_url?: Maybe<Scalars['String']['output']>;
+  /** Size of the image in bytes */
+  size_bytes?: Maybe<Scalars['Int']['output']>;
+  /** Current status of the image */
+  status?: Maybe<CampaignsBrandImageStatus>;
+  /** Width of the image in pixels */
+  width?: Maybe<Scalars['Int']['output']>;
+};
+
+/** Types of brand images */
+export enum CampaignsBrandImageKind {
+  /** Image attachment */
+  Attachment = 'ATTACHMENT',
+  /** Primary brand logo */
+  PrimaryLogo = 'PRIMARY_LOGO',
+  /** Secondary brand logo */
+  SecondaryLogo = 'SECONDARY_LOGO'
+}
+
+/** Status of a brand image */
+export enum CampaignsBrandImageStatus {
+  /** Image confirmed */
+  Confirmed = 'CONFIRMED',
+  /** Image pending confirmation */
+  Pending = 'PENDING'
+}
+
+/** A brand kit containing colors and images for an account */
+export type CampaignsBrandKit = {
+  __typename?: 'CampaignsBrandKit';
+  /** Colors in this brand kit */
+  brand_colors?: Maybe<Array<CampaignsBrandColor>>;
+  /** Images in this brand kit */
+  brand_images?: Maybe<Array<CampaignsBrandImage>>;
+  /** Timestamp when the brand kit was created */
+  created_at?: Maybe<Scalars['Date']['output']>;
+  /** Unique brand kit identifier */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Name of the brand kit */
+  name?: Maybe<Scalars['String']['output']>;
+  /** Status of the brand kit */
+  status?: Maybe<Scalars['String']['output']>;
+  /** Timestamp when the brand kit was last updated */
+  updated_at?: Maybe<Scalars['Date']['output']>;
+};
+
+/** Company information for email campaigns */
+export type CampaignsCompanyInformation = {
+  __typename?: 'CampaignsCompanyInformation';
+  /** Company name */
+  company_name?: Maybe<Scalars['String']['output']>;
+  /** Company website URL */
+  company_website_url?: Maybe<Scalars['String']['output']>;
+  /** Physical mailing address */
+  physical_address?: Maybe<CampaignsPhysicalAddress>;
+  /** Whether physical address was AI generated */
+  physical_address_is_ai_generated?: Maybe<Scalars['Boolean']['output']>;
+};
+
+/** Marketing contacts board configuration */
+export type CampaignsContactsBoard = {
+  __typename?: 'CampaignsContactsBoard';
+  /** ID of the board */
+  board_id?: Maybe<Scalars['ID']['output']>;
+  /** ID of the email column */
+  email_column_id?: Maybe<Scalars['ID']['output']>;
+  /** ID of the email subscription column */
+  email_subscription_column_id?: Maybe<Scalars['ID']['output']>;
+};
+
+/** An email campaign */
+export type CampaignsEmailCampaign = {
+  __typename?: 'CampaignsEmailCampaign';
+  /** Timestamp when the campaign was created */
+  created_at?: Maybe<Scalars['Date']['output']>;
+  /** User who created the campaign */
+  created_by?: Maybe<User>;
+  /** Unique campaign identifier */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Name of the campaign */
+  name?: Maybe<Scalars['String']['output']>;
+  /** Preview text shown in email clients */
+  preview_text?: Maybe<Scalars['String']['output']>;
+  /** When the campaign should be sent */
+  schedule_type?: Maybe<CampaignsScheduleKind>;
+  /** Scheduled time for sending */
+  scheduled_time?: Maybe<Scalars['Date']['output']>;
+  /** IDs of segments targeted by this campaign */
+  segment_ids?: Maybe<Array<Scalars['ID']['output']>>;
+  /** Timestamp when the campaign was sent */
+  sent_on?: Maybe<Scalars['Date']['output']>;
+  /** Current status of the campaign */
+  status?: Maybe<CampaignsStatusKind>;
+  /** Email subject line */
+  subject?: Maybe<Scalars['String']['output']>;
+  /** Analytics summary for the campaign */
+  summary?: Maybe<CampaignsAnalyticsSummary>;
+  /** HTML content of the email template */
+  template_html?: Maybe<Scalars['String']['output']>;
+  /** Timestamp when the campaign was last updated */
+  updated_at?: Maybe<Scalars['Date']['output']>;
+};
+
+/** A market insight */
+export type CampaignsInsight = {
+  __typename?: 'CampaignsInsight';
+  /** Rationale for the target audience */
+  audience_rationale?: Maybe<Scalars['String']['output']>;
+  /** Assessment of campaign worthiness */
+  campaign_worthiness?: Maybe<Scalars['String']['output']>;
+  /** Timestamp when the insight was created */
+  created_at?: Maybe<Scalars['Date']['output']>;
+  /** Unique insight identifier */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Raw context data for the insight */
+  raw_context?: Maybe<Scalars['String']['output']>;
+  /** Source of the insight */
+  source?: Maybe<Scalars['String']['output']>;
+  /** Current status of the insight */
+  status?: Maybe<CampaignsInsightStatusKind>;
+  /** Summary of the insight */
+  summary?: Maybe<Scalars['String']['output']>;
+  /** Target audience for the insight */
+  target_audience?: Maybe<Scalars['String']['output']>;
+  /** Timestamp of the insight */
+  timestamp?: Maybe<Scalars['String']['output']>;
+  /** Title of the insight */
+  title?: Maybe<Scalars['String']['output']>;
+  /** Classification type of the insight */
+  type?: Maybe<CampaignsInsightClassificationKind>;
+  /** Timestamp when the insight was last updated */
+  updated_at?: Maybe<Scalars['Date']['output']>;
+};
+
+/** Classification type of an insight */
+export enum CampaignsInsightClassificationKind {
+  /** Competitor move insight */
+  CompetitorMove = 'COMPETITOR_MOVE',
+  /** Crisis or event insight */
+  CrisisEvent = 'CRISIS_EVENT',
+  /** Customer behavior insight */
+  CustomerBehavior = 'CUSTOMER_BEHAVIOR',
+  /** Emerging technology insight */
+  EmergingTechnology = 'EMERGING_TECHNOLOGY',
+  /** Market trend insight */
+  MarketTrend = 'MARKET_TREND',
+  /** Other type of insight */
+  Other = 'OTHER',
+  /** Product launch insight */
+  ProductLaunch = 'PRODUCT_LAUNCH',
+  /** Regulatory change insight */
+  RegulatoryChange = 'REGULATORY_CHANGE'
+}
+
+/** Status of an insight */
+export enum CampaignsInsightStatusKind {
+  /** active */
+  Active = 'ACTIVE',
+  /** consumed */
+  Consumed = 'CONSUMED',
+  /** dismissed */
+  Dismissed = 'DISMISSED'
+}
+
+/** A physical mailing address */
+export type CampaignsPhysicalAddress = {
+  __typename?: 'CampaignsPhysicalAddress';
+  /** City name */
+  city?: Maybe<Scalars['String']['output']>;
+  /** Country name */
+  country?: Maybe<Scalars['String']['output']>;
+  /** State or province */
+  state?: Maybe<Scalars['String']['output']>;
+  /** Street address */
+  street_address?: Maybe<Scalars['String']['output']>;
+  /** ZIP code */
+  zip_code?: Maybe<Scalars['String']['output']>;
+};
+
+/** When the campaign should be sent */
+export enum CampaignsScheduleKind {
+  /** Send at scheduled time */
+  Later = 'LATER',
+  /** Send immediately */
+  Now = 'NOW'
+}
+
+/** An audience segment */
+export type CampaignsSegment = {
+  __typename?: 'CampaignsSegment';
+  /** Timestamp when the segment was created */
+  created_at?: Maybe<Scalars['Date']['output']>;
+  /** User who created the segment */
+  created_by?: Maybe<User>;
+  /** Entity ID from the data source */
+  data_source_entity_id?: Maybe<Scalars['ID']['output']>;
+  /** Entity type from the data source */
+  data_source_entity_type?: Maybe<Scalars['String']['output']>;
+  /** ID of the data source */
+  data_source_id?: Maybe<Scalars['ID']['output']>;
+  /** Unique segment identifier */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Name of the segment */
+  name?: Maybe<Scalars['String']['output']>;
+  /** Type of the segment */
+  type?: Maybe<Scalars['String']['output']>;
+  /** Timestamp when the segment was last updated */
+  updated_at?: Maybe<Scalars['Date']['output']>;
+};
+
+/** Marketing channels settings for the current account */
+export type CampaignsSettings = {
+  __typename?: 'CampaignsSettings';
+  /** Company information settings */
+  company_information?: Maybe<CampaignsCompanyInformation>;
+  /** Marketing contacts board configuration */
+  contacts_board?: Maybe<CampaignsContactsBoard>;
+  /** Unsubscribe footer configuration */
+  unsubscribe_footer?: Maybe<CampaignsUnsubscribeFooter>;
+  /** Unsubscribe page configuration */
+  unsubscribe_page?: Maybe<CampaignsUnsubscribePage>;
+};
+
+/** Status of a campaign */
+export enum CampaignsStatusKind {
+  /** Campaign is blocked */
+  Blocked = 'BLOCKED',
+  /** Campaign is in draft state */
+  Draft = 'DRAFT',
+  /** Campaign failed */
+  Failed = 'FAILED',
+  /** Campaign is being generated */
+  Generating = 'GENERATING',
+  /** Campaign is ongoing */
+  Ongoing = 'ONGOING',
+  /** Campaign is on hold */
+  OnHold = 'ON_HOLD',
+  /** Campaign is processing */
+  Processing = 'PROCESSING',
+  /** Campaign is ready to send */
+  ReadyToSend = 'READY_TO_SEND',
+  /** Campaign is scheduled for later */
+  Scheduled = 'SCHEDULED',
+  /** Campaign is currently sending */
+  Sending = 'SENDING',
+  /** Campaign has been sent */
+  Sent = 'SENT'
+}
+
+/** Unsubscribe footer configuration */
+export type CampaignsUnsubscribeFooter = {
+  __typename?: 'CampaignsUnsubscribeFooter';
+  /** Whether removal is allowed */
+  allow_removal?: Maybe<Scalars['Boolean']['output']>;
+};
+
+/** Unsubscribe page configuration */
+export type CampaignsUnsubscribePage = {
+  __typename?: 'CampaignsUnsubscribePage';
+  /** Page body content */
+  body?: Maybe<Scalars['String']['output']>;
+  /** Page title */
+  title?: Maybe<Scalars['String']['output']>;
+};
+
+/** Account-level usage metrics across all resource domains */
+export type CampaignsUsage = {
+  __typename?: 'CampaignsUsage';
+  /** Email sends usage metrics */
+  email_sends?: Maybe<CampaignsUsageForDomain>;
+  /** Whether this is a touch account */
+  is_touch_account?: Maybe<Scalars['Boolean']['output']>;
+  /** Marketing contacts usage metrics */
+  marketing_contacts?: Maybe<CampaignsUsageForDomain>;
+};
+
+/** Usage metrics for a single resource domain */
+export type CampaignsUsageForDomain = {
+  __typename?: 'CampaignsUsageForDomain';
+  /** Additional quota allocation */
+  additional_quota?: Maybe<CampaignsAdditionalQuota>;
+  /** Whether usage is blocked due to limit exceeded */
+  blocked?: Maybe<Scalars['Boolean']['output']>;
+  /** Amount of resources consumed */
+  consumed?: Maybe<Scalars['Int']['output']>;
+  /** End date of the billing period */
+  end_date?: Maybe<Scalars['String']['output']>;
+  /** Metering bucket and service identifier */
+  key?: Maybe<CampaignsUsageKey>;
+  /** Resource usage limit */
+  limit?: Maybe<Scalars['Int']['output']>;
+};
+
+/** Identifies the metering bucket and service */
+export type CampaignsUsageKey = {
+  __typename?: 'CampaignsUsageKey';
+  /** Metering bucket name */
+  bucket_name?: Maybe<Scalars['String']['output']>;
+  /** Service name */
+  service?: Maybe<Scalars['String']['output']>;
+};
+
 /** Fields that can be overridden in a column policy */
 export enum CanOverrideField {
   /** Allow overriding column description */
@@ -2506,6 +3216,15 @@ export type CheckboxValue = ColumnValue & {
   /** The date when column value was last updated. */
   updated_at?: Maybe<Scalars['Date']['output']>;
   value?: Maybe<Scalars['JSON']['output']>;
+};
+
+/** Provider-specific data for Claude managed agents */
+export type ClaudeProviderData = {
+  __typename?: 'ClaudeProviderData';
+  /** Available environments on this provider */
+  environments?: Maybe<Array<ProviderResource>>;
+  /** Available vaults for secret management on this provider */
+  vaults?: Maybe<Array<ProviderResource>>;
 };
 
 /** Result of clearing users department. */
@@ -2803,6 +3522,31 @@ export enum ConditionOperator {
   Or = 'OR'
 }
 
+/** Input for connecting an external agent via BYOA (Bring Your Own Agent) */
+export type ConnectExternalAgentInput = {
+  /** Optional callback URL for agent event notifications */
+  callback_url?: InputMaybe<Scalars['String']['input']>;
+  /** The credential ID used to authenticate with the external provider */
+  credential_id: Scalars['ID']['input'];
+  /** Optional environment identifier on the external provider */
+  environment_id?: InputMaybe<Scalars['ID']['input']>;
+  /** The unique identifier of the agent on the external provider */
+  external_agent_id: Scalars['ID']['input'];
+  /** The type of external provider (e.g. CLAUDE_MANAGED_AGENT, CUSTOM_AGENT) */
+  external_provider_type: ExternalProvider;
+  /** The display name for the connected agent */
+  name: Scalars['String']['input'];
+  /** Optional vault identifier for secret management on the external provider */
+  vault_id?: InputMaybe<Scalars['ID']['input']>;
+};
+
+/** Payload returned after initiating an external agent connection (async operation) */
+export type ConnectExternalAgentPayload = {
+  __typename?: 'ConnectExternalAgentPayload';
+  /** The connection status (e.g. "connecting"). Final result is delivered via Pusher. */
+  status?: Maybe<Scalars['String']['output']>;
+};
+
 /** The result of the connect_migration_job mutation. */
 export type ConnectMigrationJobResult = {
   __typename?: 'ConnectMigrationJobResult';
@@ -2818,6 +3562,8 @@ export type ConnectProjectResult = {
   message?: Maybe<Scalars['String']['output']>;
   /** The ID of the created portfolio item, if successful. */
   portfolio_item_id?: Maybe<Scalars['String']['output']>;
+  /** Unique process ID for tracking this request. Included in the callback payload when the operation completes. */
+  process_id?: Maybe<Scalars['ID']['output']>;
   /** Indicates if the operation was successful. */
   success?: Maybe<Scalars['Boolean']['output']>;
 };
@@ -2941,6 +3687,8 @@ export type CountryValue = ColumnValue & {
 export type CreateAgentInput = {
   /** The LLM model the agent should use */
   agent_model?: InputMaybe<Scalars['String']['input']>;
+  /** IDs of previously uploaded pending files to attach as knowledge during creation */
+  pending_file_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   /** A description of what the agent should do — used to generate profile, goal, and plan via AI */
   prompt: Scalars['String']['input'];
 };
@@ -3231,6 +3979,15 @@ export type CreateQuestionInput = {
   visible?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
+/** The result of creating a service user. */
+export type CreateServiceUserResult = {
+  __typename?: 'CreateServiceUserResult';
+  /** The API token for the created service user. Null if token generation failed. */
+  token?: Maybe<Scalars['String']['output']>;
+  /** The created service user. */
+  user?: Maybe<User>;
+};
+
 export type CreateStatusColumnSettingsInput = {
   labels: Array<CreateStatusLabelInput>;
 };
@@ -3287,6 +4044,26 @@ export type CreateTeamOptionsInput = {
   allow_empty_team?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
+/** Input for adding a non-working date entry to a time off schedule */
+export type CreateTimeOffEntryInput = {
+  /** End date of the non-working period in YYYY-MM-DD format */
+  end: Scalars['String']['input'];
+  /** Optional display name for this time off entry */
+  name?: InputMaybe<Scalars['String']['input']>;
+  /** Start date of the non-working period in YYYY-MM-DD format */
+  start: Scalars['String']['input'];
+  /** ID of the time off schedule to add this entry to */
+  time_off_id: Scalars['ID']['input'];
+};
+
+/** Input for creating a new time off schedule */
+export type CreateTimeOffInput = {
+  /** Non-working date entries to create alongside the schedule. Subsequent additions/updates use the dedicated time off entry mutations. */
+  entries?: InputMaybe<Array<TimeOffEntryInput>>;
+  /** Display name for the new time off schedule */
+  name: Scalars['String']['input'];
+};
+
 /** Input for initiating a file upload. */
 export type CreateUploadInput = {
   /** The MIME content type of the file. */
@@ -3312,6 +4089,14 @@ export type CreateUploadResult = {
   parts?: Maybe<Array<UploadPartInfo>>;
   /** The unique identifier for this upload session. */
   upload_id?: Maybe<Scalars['ID']['output']>;
+};
+
+/** Input for creating a new work schedule */
+export type CreateWorkScheduleInput = {
+  /** Per-weekday working hours; if omitted, all seven days are created as inactive */
+  days?: InputMaybe<Array<WorkScheduleDayInput>>;
+  /** Display name for the new work schedule */
+  name: Scalars['String']['input'];
 };
 
 /** Input for creating a workflow from a template */
@@ -3585,6 +4370,15 @@ export type Dashboard = {
   workspace_id?: Maybe<Scalars['ID']['output']>;
 };
 
+/** Aggregated result of synchronously loading all widget data for a dashboard. */
+export type DashboardDataResult = {
+  __typename?: 'DashboardDataResult';
+  /** Identifier of the dashboard whose widgets were loaded. */
+  dashboard_id?: Maybe<Scalars['ID']['output']>;
+  /** Per-widget results for the dashboard, one entry per supported widget. */
+  widgets?: Maybe<Array<WidgetResult>>;
+};
+
 /** Dashboard visibility. `PUBLIC` dashboards are visible to all workspace members; `PRIVATE` dashboards are only visible to invited users. */
 export enum DashboardKind {
   Private = 'PRIVATE',
@@ -3753,6 +4547,13 @@ export type DeleteWorkflowResult = {
   __typename?: 'DeleteWorkflowResult';
   /** Whether the workflow was successfully deleted */
   is_success: Scalars['Boolean']['output'];
+};
+
+/** Represents a document block that was successfully deleted. */
+export type DeletedDocBlock = {
+  __typename?: 'DeletedDocBlock';
+  /** The deleted block's unique identifier. */
+  id: Scalars['ID']['output'];
 };
 
 /** A department in the account. */
@@ -3935,9 +4736,20 @@ export type DependencyValueInput = {
   removed_pulse?: InputMaybe<Array<UpdateDependencyColumnInput>>;
 };
 
+/** An app version */
+export type DeveloperAppVersion = {
+  __typename?: 'DeveloperAppVersion';
+  /** The unique identifier of the app version */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** The current lifecycle status of this app version */
+  status?: Maybe<AppVersionStatus>;
+};
+
 /** A document block that was changed between two versions, including its content and what type of change occurred. */
 export type DiffBlock = {
   __typename?: 'DiffBlock';
+  /** The ID of the AI agent that made the change to this block, or null if the change was made by a user. */
+  agent_id?: Maybe<Scalars['ID']['output']>;
   /** The changes that occurred to this block (added, deleted, or changed). */
   changes?: Maybe<BlockChanges>;
   /** The block content as a JSON string. */
@@ -3950,6 +4762,8 @@ export type DiffBlock = {
   summary?: Maybe<Scalars['String']['output']>;
   /** The type of block (e.g., text, image, list). */
   type?: Maybe<Scalars['String']['output']>;
+  /** The ID of the user who made the change to this block, or null if not available. */
+  user_id?: Maybe<Scalars['ID']['output']>;
 };
 
 export type DirectDocValue = ColumnValue & {
@@ -3983,6 +4797,8 @@ export type DirectoryResource = {
   location?: Maybe<Scalars['String']['output']>;
   /** The name of the directory resource. */
   name: Scalars['String']['output'];
+  /** The type of the resource (user, viewer, or guest). */
+  resource_type?: Maybe<DirectoryResourceKind>;
   /** The skills of the directory resource. */
   skills?: Maybe<Array<Scalars['String']['output']>>;
 };
@@ -3995,6 +4811,16 @@ export enum DirectoryResourceAttribute {
   Location = 'LOCATION',
   /** Represents the resource directory skills attribute. */
   Skills = 'SKILLS'
+}
+
+/** The type of a directory resource */
+export enum DirectoryResourceKind {
+  /** A guest user */
+  Guest = 'GUEST',
+  /** A member or admin user */
+  User = 'USER',
+  /** A view-only user */
+  Viewer = 'VIEWER'
 }
 
 /** Paginated response containing directory resources and cursor for next page */
@@ -4022,6 +4848,13 @@ export type DisabledReasonInput = {
   edit_settings?: InputMaybe<Scalars['String']['input']>;
   /** Reason why the column title cannot be edited */
   edit_title?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** Payload returned after disconnecting an external agent */
+export type DisconnectExternalAgentPayload = {
+  __typename?: 'DisconnectExternalAgentPayload';
+  /** Whether the disconnection was successful */
+  success?: Maybe<Scalars['Boolean']['output']>;
 };
 
 /** The period of a discount */
@@ -4582,6 +5415,8 @@ export type ExportMarkdownResult = {
 export type ExportOptionsInput = {
   /** Header row format for CSV exports. Ignored for other formats. */
   header_row?: InputMaybe<HeaderFormat>;
+  /** Include item_id (and parent_item_id when subitems are enabled) columns at the end of CSV exports. */
+  include_item_identifiers?: InputMaybe<Scalars['Boolean']['input']>;
   /** Include subitems in the export */
   include_subitems?: InputMaybe<Scalars['Boolean']['input']>;
   /** Include updates/comments in the export */
@@ -4600,6 +5435,17 @@ export type ExtendTrialPeriod = {
   /** Result of a single operation */
   success: Scalars['Boolean']['output'];
 };
+
+/** The type of external agent provider */
+export enum ExternalProvider {
+  /** A Claude-managed agent hosted on Anthropic infrastructure */
+  ClaudeManagedAgent = 'CLAUDE_MANAGED_AGENT',
+  /** A custom agent with a user-provided callback URL */
+  CustomAgent = 'CUSTOM_AGENT'
+}
+
+/** Provider-specific data, use inline fragments to access fields per provider type */
+export type ExternalProviderData = ClaudeProviderData;
 
 /** Widget types available for creating data visualizations and displays */
 export enum ExternalWidget {
@@ -4624,35 +5470,6 @@ export enum ExternalWidget {
   /** Table widgets for visualization */
   Table = 'TABLE'
 }
-
-/** A theme produced by extracting brand identity from a URL. Extends VibeTheme with extraction metadata. */
-export type ExtractedVibeTheme = {
-  __typename?: 'ExtractedVibeTheme';
-  /** Three representative HSL colors for the picker swatch: [primary, accent (= brand secondary), chart-3 (= primary +60° hue)]. Differs from VibeTheme.colors which uses [primary, accent, secondary]: extracted themes leave the scaffold "secondary" slot neutral, so chart-3 is substituted to give three distinct brand-related hues. */
-  colors?: Maybe<Array<Scalars['String']['output']>>;
-  /** Dark mode CSS token values (HSL strings keyed by CSS variable name) */
-  dark?: Maybe<Scalars['JSON']['output']>;
-  /** Pass-through warnings from brand-extraction */
-  extraction_notes?: Maybe<Array<Scalars['String']['output']>>;
-  /** Primary font family name */
-  font_family?: Maybe<Scalars['String']['output']>;
-  /** Secondary font family name */
-  font_family_secondary?: Maybe<Scalars['String']['output']>;
-  /** The theme identifier (e.g. extracted_<8-char-hash>) */
-  id?: Maybe<Scalars['ID']['output']>;
-  /** User-friendly display name */
-  label?: Maybe<Scalars['String']['output']>;
-  /** Light mode CSS token values (HSL strings keyed by CSS variable name) */
-  light?: Maybe<Scalars['JSON']['output']>;
-  /** Primary logo URL for FE preview hint */
-  logo_url?: Maybe<Scalars['String']['output']>;
-  /** Theme display name (derived from extracted brand) */
-  name?: Maybe<Scalars['String']['output']>;
-  /** Base border radius value */
-  radius?: Maybe<Scalars['String']['output']>;
-  /** URL the theme was extracted from */
-  source_url?: Maybe<Scalars['String']['output']>;
-};
 
 /** Information about a failed user board role update, including the user ID and the error encountered. */
 export type FailedUserBoardRoleUpdate = {
@@ -4696,15 +5513,11 @@ export type FieldType = {
   uniqueKey?: Maybe<Scalars['String']['output']>;
 };
 
-/** Implementation of a field type */
+/** An interface (app feature) that a field type implements */
 export type FieldTypeImplementation = {
   __typename?: 'FieldTypeImplementation';
-  /** Unique identifier for the implementation */
-  id?: Maybe<Scalars['Int']['output']>;
-  /** Name of the implementation */
-  name?: Maybe<Scalars['String']['output']>;
-  /** Unique key of the app feature */
-  uniqueKey?: Maybe<Scalars['String']['output']>;
+  /** Reference id of the app feature interface this field type implements */
+  app_feature_reference_id?: Maybe<Scalars['ID']['output']>;
 };
 
 /** The type of relation between a field and its type */
@@ -6079,6 +6892,16 @@ export type ImportDocFromHtmlResult = {
   success: Scalars['Boolean']['output'];
 };
 
+/** The reason an agent is inactive */
+export enum InactiveReason {
+  /** The agent was deactivated due to an account-level block */
+  AccountLevelBlocking = 'ACCOUNT_LEVEL_BLOCKING',
+  /** The agent was manually deactivated by a user */
+  DeactivatedByUser = 'DEACTIVATED_BY_USER',
+  /** The agent was deactivated automatically because it exceeded the runs rate limit */
+  RunsRateLimitExceeded = 'RUNS_RATE_LIMIT_EXCEEDED'
+}
+
 /** Interface for input field configuration */
 export type InputFieldConfig = {
   /** Detailed description of the field */
@@ -6260,6 +7083,8 @@ export enum InvitationMethod {
   ServicePortalUserInvitation = 'SERVICE_PORTAL_USER_INVITATION',
   /** Added via single sign-on. */
   Sso = 'SSO',
+  /** Created via system creation flow. */
+  SystemCreation = 'SYSTEM_CREATION',
   /** Unknown invitation method. */
   Unknown = 'UNKNOWN',
   /** Invited by another user. */
@@ -6501,7 +7326,7 @@ export enum ItemsHistoryFilterOperator {
 export type ItemsHistoryFilterRuleInput = {
   /** The unique identifier of the column to filter by. */
   column_id: Scalars['ID']['input'];
-  /** Optional attribute for complex column types. */
+  /** For columns whose value has multiple comparable parts (such as `timeline` columns with a start and end date), indicates which part to compare. For example, set `"date"` to compare against the timeline date. Leave unset for columns with a single comparable value. */
   compare_attribute?: InputMaybe<Scalars['String']['input']>;
   /** The value(s) to compare against. Can be a string, number, boolean, or array. */
   compare_value?: InputMaybe<Scalars['JSON']['input']>;
@@ -6603,14 +7428,14 @@ export type ItemsHistoryOrderByInput = {
 
 /** Input for querying historical item data from a board at a specific date. */
 export type ItemsHistoryQueryInput = {
-  /** Array of ISO timestamp/date strings. Currently limited to 1 timestamp per request. */
+  /** Cursor for forward pagination. Returns items after this cursor position. */
+  after?: InputMaybe<Scalars['String']['input']>;
+  /** Array of ISO timestamp/date strings to retrieve historical snapshots for. */
   at_timestamps: Array<Scalars['String']['input']>;
   /** The data source for the query (board with TABLE type). */
   from: ItemsHistoryFromInput;
   /** Maximum number of items to return. Default: 50, max: 500. */
   limit?: InputMaybe<Scalars['Int']['input']>;
-  /** Number of items to skip for pagination. Default: 0. */
-  offset?: InputMaybe<Scalars['Int']['input']>;
   /** Sort configuration. Defaults to ordering by item ID. */
   order_by?: InputMaybe<Array<ItemsHistoryOrderByInput>>;
   /** Filters for items. Without filters, all items are included. */
@@ -6639,6 +7464,8 @@ export type ItemsHistoryResultEntry = {
 /** The complete result set from an items_history query. */
 export type ItemsHistoryResultSet = {
   __typename?: 'ItemsHistoryResultSet';
+  /** Cursor for the next page. Null if there are no more results. */
+  after?: Maybe<Scalars['String']['output']>;
   /** Array of item snapshots at the requested timestamp. */
   results?: Maybe<Array<ItemsHistoryItem>>;
 };
@@ -7522,6 +8349,22 @@ export type ItemsResponse = {
   items: Array<Item>;
 };
 
+/** Status of an async job */
+export enum JobState {
+  /** Job was cancelled */
+  Cancelled = 'CANCELLED',
+  /** Job completed successfully */
+  Completed = 'COMPLETED',
+  /** Job expired before completion */
+  Expired = 'EXPIRED',
+  /** Job failed */
+  Failed = 'FAILED',
+  /** Job is queued but not yet started */
+  Pending = 'PENDING',
+  /** Job is actively executing */
+  Running = 'RUNNING'
+}
+
 /** Status of a job operation. Currently supports items job status for backfill and ingest operations. */
 export type JobStatus = ItemsJobStatus;
 
@@ -7543,6 +8386,38 @@ export type KnowledgeBaseAnswer = {
   /** List of knowledge base snippets used to generate the answer. */
   raw_snippets?: Maybe<Array<SnippetSearchResult>>;
 };
+
+/** The permission level the agent has on a resource */
+export enum KnowledgePermission {
+  /** Agent can read the resource */
+  Read = 'READ',
+  /** Agent can read and write the resource */
+  ReadWrite = 'READ_WRITE'
+}
+
+/** The type of monday.com resource granted to an agent */
+export enum KnowledgeScope {
+  /** A monday.com board */
+  Board = 'BOARD',
+  /** A monday.com doc */
+  Doc = 'DOC'
+}
+
+/** The source type of a knowledge entry */
+export enum KnowledgeSource {
+  /** Knowledge sourced from an uploaded file */
+  File = 'FILE'
+}
+
+/** The state of a knowledge entry */
+export enum KnowledgeState {
+  /** Knowledge is active and available for retrieval */
+  Active = 'ACTIVE',
+  /** Knowledge has been deleted */
+  Deleted = 'DELETED',
+  /** Knowledge is being processed */
+  Pending = 'PENDING'
+}
 
 export type LastUpdatedValue = ColumnValue & {
   __typename?: 'LastUpdatedValue';
@@ -7720,6 +8595,33 @@ export type LiteBuilderContextData = {
   sentence_part_configurations?: Maybe<Scalars['JSON']['output']>;
   /** Mapping of inbound field keys to their source configuration */
   source_config?: Maybe<Scalars['JSON']['output']>;
+};
+
+/** A page of live workflow automations with cursor-based pagination metadata */
+export type LiveWorkflowAutomationsPage = {
+  __typename?: 'LiveWorkflowAutomationsPage';
+  /** List of live workflow automations in this page */
+  data?: Maybe<Array<WorkflowAutomation>>;
+  /** Cursor-based pagination metadata */
+  page_info?: Maybe<WorkflowAutomationsPageInfo>;
+};
+
+/** A page of live workflows with pagination metadata */
+export type LiveWorkflowsPage = {
+  __typename?: 'LiveWorkflowsPage';
+  /** List of live workflows in this page */
+  data: Array<Workflow>;
+  /** Cursor-based pagination metadata for fetching subsequent pages */
+  page_info: LiveWorkflowsPageInfo;
+};
+
+/** Cursor-based pagination metadata for live workflows */
+export type LiveWorkflowsPageInfo = {
+  __typename?: 'LiveWorkflowsPageInfo';
+  /** Cursor of the last item in the current page; pass as `lastId` to fetch the next page */
+  end_cursor?: Maybe<Scalars['ID']['output']>;
+  /** Whether there are more results beyond the current page */
+  has_next_page: Scalars['Boolean']['output'];
 };
 
 /** Answer for a location question. */
@@ -7980,6 +8882,8 @@ export type Meeting = {
   action_items?: Maybe<Array<ActionItem>>;
   /** The end time of the meeting. */
   end_time: Scalars['Date']['output'];
+  /** A concise AI-generated gist of the meeting. */
+  gist?: Maybe<Scalars['String']['output']>;
   /** The unique identifier of the meeting. */
   id: Scalars['ID']['output'];
   /** The URL to view the meeting in the notetaker. */
@@ -8192,6 +9096,8 @@ export type MondayAssetDocumentSourceInput = {
 /** Root mutation type for the Dependencies service */
 export type Mutation = {
   __typename?: 'Mutation';
+  /** Activate an existing agent */
+  activate_agent?: Maybe<AgentStateResult>;
   /** Activate a form to make it visible to users and accept new submissions. */
   activate_form?: Maybe<Scalars['Boolean']['output']>;
   /** Activate a live workflow */
@@ -8200,6 +9106,8 @@ export type Mutation = {
   activate_managed_column?: Maybe<ManagedColumn>;
   /** Activates the specified users. */
   activate_users?: Maybe<ActivateUsersResult>;
+  /** Grant an agent access to a monday.com board or doc. Creates a draft version, applies the change, and promotes to live. */
+  add_agent_resource_access?: Maybe<MutationResult>;
   /** Add resources to the planner without allocations */
   add_allocated_resources?: Maybe<Array<AllocatedResourceOperationResult>>;
   /** Add allocations to resources that already exist on the Resource Planner */
@@ -8214,6 +9122,8 @@ export type Mutation = {
   add_file_to_update?: Maybe<Asset>;
   /** Add a required column to a board */
   add_required_column?: Maybe<RequiredColumns>;
+  /** Attach a skill to an agent by its catalog id. Use agent_skills_catalog to discover available ids. */
+  add_skill_to_agent?: Maybe<MutationResult>;
   /**
    * Add subscribers to a board.
    * @deprecated use add_users_to_board instead
@@ -8225,6 +9135,8 @@ export type Mutation = {
   add_teams_to_board?: Maybe<Array<Maybe<Team>>>;
   /** Add teams to a workspace. */
   add_teams_to_workspace?: Maybe<Array<Maybe<Team>>>;
+  /** Adds a trigger to an agent. Creates a draft if needed, applies the change, and promotes to live in one call. Returns { success: true } on success. Use agent_active_triggers to read the updated trigger list. Get available trigger types and field schemas from agent_triggers_catalog. */
+  add_trigger_to_agent?: Maybe<MutationResult>;
   /** Add subscribers to a board. */
   add_users_to_board?: Maybe<Array<Maybe<User>>>;
   /** Add users to team. */
@@ -8245,6 +9157,8 @@ export type Mutation = {
   assign_department_owner?: Maybe<AssignDepartmentOwnerResult>;
   /** Assigns the specified users as owners of the specified team. */
   assign_team_owners?: Maybe<AssignTeamOwnersResult>;
+  /** Assign the same work schedule and time off schedule to multiple users; maximum 100 user IDs per call. Returns one result per user, allowing partial success. */
+  assign_user_availability?: Maybe<Array<UserAvailabilityResult>>;
   /** Creates a new dropdown column in a board that is linked to a managed column. The column data and settings are controlled by the managed column. Title, description, and dropdown-specific settings (limit_select, label_limit_count) can be overridden locally. */
   attach_dropdown_managed_column?: Maybe<Column>;
   /** Creates a new status column in a board that is linked to a managed column. The column data and settings are controlled by the managed column. Only title and description can be overridden locally. */
@@ -8289,14 +9203,18 @@ export type Mutation = {
   complexity?: Maybe<Complexity>;
   /** Connect a board to an object schema. */
   connect_board_to_object_schema?: Maybe<BoardConnection>;
+  /** Initiate connecting an external agent via BYOA (async — result delivered via Pusher) */
+  connect_external_agent?: Maybe<ConnectExternalAgentPayload>;
   /** Connect a migration job from a source account to the target account */
   connect_migration_job?: Maybe<ConnectMigrationJobResult>;
-  /** Connect project to portfolio */
+  /** Connect an existing project to a portfolio. When a callback_url is provided the mutation returns immediately with a process_id, and the result is POSTed to that URL once the operation completes. The callback payload is: { is_success: boolean, process_id: string, portfolio_item_id?: string }. */
   connect_project_to_portfolio?: Maybe<ConnectProjectResult>;
   /** Convert an existing monday.com board into a project with enhanced project management capabilities. This mutation transforms a regular board by applying project-specific features and configurations through column mappings that define how existing board columns should be interpreted in the project context. The conversion process is asynchronous and returns a process_id for tracking completion. Optionally accepts a callback URL for notification when the conversion completes. Use this when you have an existing board with data that needs to be upgraded to a full project with advanced project management features like Resource Planner integration. */
   convert_board_to_project?: Maybe<ConvertBoardToProjectResult>;
   /** Create an agent from a prompt. AI generates the profile, goal, and plan — expect ~20s for completion. created_at and updated_at are null in the response; use the agent query to fetch them. */
   create_agent?: Maybe<Agent>;
+  /** Create a new skill for the account. The skill will appear in agent_skills_catalog and can be attached to any agent via add_skill_to_agent. */
+  create_agent_skill?: Maybe<AgentSkillCatalogEntry>;
   /** Creates a new app with the specified configuration. */
   create_app?: Maybe<CreateAppResponse>;
   /** Create a new app feature. */
@@ -8307,6 +9225,8 @@ export type Mutation = {
   create_blank_agent?: Maybe<Agent>;
   /** Create a new board. */
   create_board?: Maybe<Board>;
+  /** Create a board automation. Provide template_reference_id to create from a template, or workflow_blocks and workflow_variables for a direct creation. */
+  create_board_automation: BoardAutomationCreateResult;
   /** Creates a board relation column. */
   create_board_relation_column?: Maybe<Column>;
   /** Generic mutation for creating any column type with validation. Supports creating column with properties like title, description, and type-specific defaults/settings. The mutation validates input against the column type's schema before applying changes. Use get_column_type_schema query to understand available properties for each column type. */
@@ -8370,6 +9290,8 @@ export type Mutation = {
   create_portfolio?: Maybe<CreatePortfolioResult>;
   /** Create a new project in monday.com from scratch. This mutation initiates asynchronous project creation with comprehensive customization options including: privacy settings (private/public - share is currently not supported), optional companions like Resource Planner for enhanced project management capabilities, workspace assignment for organizational structure, folder placement for better organization, and template selection for predefined project structures. Since project creation is asynchronous, you can optionally provide a callback_url where the project ID will be sent via POST request once creation completes. The callback will receive: { is_success: boolean, process_id: string, project_id?: number }. Returns a process_id for tracking the creation request. */
   create_project?: Maybe<CreateProjectResult>;
+  /** Creates a new service user with a read-only API token. */
+  create_service_user?: Maybe<CreateServiceUserResult>;
   /** Creates a new status column with strongly typed settings. Status columns allow users to track item progress through customizable labels (e.g., "Working on it", "Done", "Stuck"). This mutation is specifically for status/color columns and provides type-safe creation with label configuration. */
   create_status_column?: Maybe<Column>;
   /** Create managed column of type status mutation. */
@@ -8380,6 +9302,10 @@ export type Mutation = {
   create_task?: Maybe<Task>;
   /** Creates a new team. */
   create_team?: Maybe<Team>;
+  /** Create one or more named time off schedules for the account; maximum 100 inputs per call */
+  create_time_off?: Maybe<Array<TimeOffResult>>;
+  /** Add one or more non-working date entries to a time off schedule; maximum 100 inputs per call */
+  create_time_off_entry?: Maybe<Array<TimeOffEntryResult>>;
   create_timeline_item?: Maybe<TimelineItem>;
   create_update?: Maybe<Update>;
   /** Initiate a file upload. Returns presigned upload URLs and an upload_id. */
@@ -8394,8 +9320,14 @@ export type Mutation = {
   create_webhook?: Maybe<Webhook>;
   /** Create a new widget. */
   create_widget?: Maybe<Widget>;
+  /** Create one or more named work schedules for the account; maximum 100 inputs per call */
+  create_work_schedule?: Maybe<Array<WorkScheduleResult>>;
+  /** Create a new empty workflow in the given workspace and return its identifiers. */
+  create_workflow: WorkflowBuilderCreateResult;
   /** Create a new workspace. */
   create_workspace?: Maybe<Workspace>;
+  /** Deactivate an existing agent */
+  deactivate_agent?: Maybe<AgentStateResult>;
   /** Deactivate a form to hide it from users and stop accepting submissions. Form data is preserved. */
   deactivate_form?: Maybe<Scalars['Boolean']['output']>;
   /** Deactivate a live workflow */
@@ -8414,6 +9346,8 @@ export type Mutation = {
   delete_article?: Maybe<ArticleMetadata>;
   /** Delete a board. */
   delete_board?: Maybe<Board>;
+  /** Delete a board automation by ID. */
+  delete_board_automation: BoardAutomationDeleteResult;
   /** Deletes a column from a board. Cannot delete mandatory columns (e.g., name column). */
   delete_column?: Maybe<Column>;
   delete_custom_activity?: Maybe<CustomActivity>;
@@ -8425,6 +9359,8 @@ export type Mutation = {
   delete_doc?: Maybe<Scalars['JSON']['output']>;
   /** Delete a document block */
   delete_doc_block?: Maybe<DocumentBlockIdOnly>;
+  /** Deletes multiple document blocks in a single operation. Maximum 100 blocks per request. */
+  delete_doc_blocks?: Maybe<Array<DeletedDocBlock>>;
   /** Delete entity ID mappings by old IDs for a migration job. */
   delete_entity_id_mappings?: Maybe<DeleteEntityIdMappingsResult>;
   /** Remove an object from favorites */
@@ -8462,6 +9398,10 @@ export type Mutation = {
   delete_teams_from_board?: Maybe<Array<Maybe<Team>>>;
   /** Delete teams from a workspace. */
   delete_teams_from_workspace?: Maybe<Array<Maybe<Team>>>;
+  /** Soft-delete one or more time off schedules; maximum 100 IDs per call */
+  delete_time_off?: Maybe<Array<TimeOffDeleteResult>>;
+  /** Soft-delete one or more time off entries; maximum 100 IDs per call */
+  delete_time_off_entry?: Maybe<Array<TimeOffEntryDeleteResult>>;
   delete_timeline_item?: Maybe<TimelineItem>;
   delete_update?: Maybe<Update>;
   /** Delete users from a workspace. */
@@ -8474,10 +9414,14 @@ export type Mutation = {
   delete_webhook?: Maybe<Webhook>;
   /** Delete an existing widget. */
   delete_widget?: Maybe<Scalars['Boolean']['output']>;
+  /** Soft-delete one or more work schedules; maximum 100 IDs per call */
+  delete_work_schedule?: Maybe<Array<WorkScheduleDeleteResult>>;
   /** Delete workspace. */
   delete_workspace?: Maybe<Workspace>;
   /** Detach boards from their object schemas. */
   detach_boards_from_object_schema?: Maybe<Array<BulkDetachBoardResult>>;
+  /** Disconnect an external agent by its ID */
+  disconnect_external_agent?: Maybe<DisconnectExternalAgentPayload>;
   /** Duplicate a board. */
   duplicate_board?: Maybe<BoardDuplication>;
   /** Creates an exact copy of an existing document, including all content, structure, and formatting. Use this to create templates, backup documents before major changes, or create variations of existing documents. The duplicated document will have a new unique ID and can be modified independently. Returns the new document's ID on success. */
@@ -8512,28 +9456,44 @@ export type Mutation = {
   pin_to_top: Update;
   /** Process an event through the task engine AI. Returns true when accepted. */
   process_events?: Maybe<Scalars['Boolean']['output']>;
+  /** Promotes the latest draft app version of an app to live. Promotion is asynchronous — poll the returned version's status field (via the app query) until it transitions to LIVE. Only app collaborators can perform this action. */
+  promote_app?: Maybe<DeveloperAppVersion>;
   /** Publishes an article with the specified object ID. Allows setting privacy level, target folder, and managing subscribers (users and teams). Returns the updated article metadata. */
   publish_article?: Maybe<ArticleMetadata>;
   /** Publishes object out of draft state. Returns {success: true} on success, {success: false} on failure. */
   publish_object?: Maybe<ObjectOperationResponse>;
+  /** Promote a workflow draft to live and optionally activate it. */
+  publish_workflow: WorkflowBuilderPublishResult;
   /** Reconcile the current user tasks board with latest source item changes. */
   reconcile_with_items?: Maybe<ReconciliationResult>;
+  /** Revokes all existing tokens and generates a new API token for a service user. */
+  regenerate_service_user_token?: Maybe<Scalars['String']['output']>;
+  /** Remove a board or doc from an agent. Creates a draft, removes the access, and promotes to live. */
+  remove_agent_resource_access?: Maybe<MutationResult>;
   /** Removes connected boards from a board relation column. */
   remove_board_relation_connected_boards?: Maybe<Array<BoardRelationConnectedBoardsResult>>;
   /** Remove mock app subscription for the current account */
   remove_mock_app_subscription?: Maybe<AppSubscription>;
   /** Remove a required column from a board */
   remove_required_column?: Maybe<RequiredColumns>;
+  /** Detach a skill from an agent by its catalog id. */
+  remove_skill_from_agent?: Maybe<MutationResult>;
   /** Removes the specified users as owners of the specified team. */
   remove_team_owners?: Maybe<RemoveTeamOwnersResult>;
+  /** Removes a trigger from an agent by its node_id. Creates a draft if needed, applies the change, and promotes to live in one call. Returns { success: true } on success. Use agent_active_triggers to verify the trigger is gone. Get node_id values from the agent_active_triggers query. */
+  remove_trigger_from_agent?: Maybe<MutationResult>;
   /** Remove users from team. */
   remove_users_from_team?: Maybe<ChangeTeamMembershipsResult>;
   /** Restore an entity from a migration job */
   restore_entity?: Maybe<RestoreEntityResult>;
+  /** Revokes all API tokens for a service user. */
+  revoke_service_user_tokens?: Maybe<Scalars['Boolean']['output']>;
   /** Rollback a restore to undo the workspace creation in the target account */
   rollback_restore?: Maybe<RollbackRestoreMutationResult>;
   /** Rollback a snapshot to allow creating a new one for the same entity */
   rollback_snapshot?: Maybe<RollbackSnapshotMutationResult>;
+  /** Trigger a manual run for an existing agent. This is an async fire-and-forget operation — a successful response means the run was accepted and enqueued, not that it has completed or succeeded. Use trigger_uuid to correlate the execution in downstream events or future status endpoints. */
+  run_agent?: Maybe<RunAgentResult>;
   /** Create a workflow template for an account */
   save_workflow_as_template?: Maybe<SaveWorkflowAsTemplateResult>;
   /**
@@ -8553,6 +9513,8 @@ export type Mutation = {
   shorten_form_url?: Maybe<FormShortenedLink>;
   /** Unassigns owners from a department. */
   unassign_department_owners?: Maybe<UnassignDepartmentOwnerResult>;
+  /** Remove explicit work schedule and/or time off assignments from multiple users; maximum 100 user IDs per call. Returns one result per user, allowing partial success. */
+  unassign_user_availability?: Maybe<Array<UserAvailabilityResult>>;
   /** Undo a previously completed action, or cancel one still in flight */
   undo_action?: Maybe<UndoResult>;
   /** Uninstalls an app from the current account. Requires account admin permission. */
@@ -8561,6 +9523,10 @@ export type Mutation = {
   unpin_from_top: Update;
   /** Unpublishes object from public state back to draft state. Returns {success: true} on success, {success: false} on failure. */
   unpublish_object?: Maybe<ObjectOperationResponse>;
+  /** Update an agent — creates a new draft if needed, applies the changes, and publishes to live in one call */
+  update_agent?: Maybe<Agent>;
+  /** Change the permission level an agent has on an existing board or doc. Creates a draft, updates the permission, and promotes to live. */
+  update_agent_resource_access?: Maybe<MutationResult>;
   /** Update multiple allocations in a single batch operation. Returns per-item results. */
   update_allocations?: Maybe<Array<UpdateAllocationResult>>;
   /** Updates an existing app. If the app latest version is live, a new draft version is automatically created and updated. */
@@ -8643,6 +9609,10 @@ export type Mutation = {
   update_status_managed_column?: Maybe<StatusManagedColumn>;
   /** Update an existing task by ID. */
   update_task?: Maybe<Task>;
+  /** Update the name of a time off schedule */
+  update_time_off?: Maybe<TimeOffResult>;
+  /** Update the name or date range of one or more existing time off entries; maximum 100 inputs per call */
+  update_time_off_entry?: Maybe<Array<TimeOffEntryResult>>;
   /** Update board roles for multiple users. */
   update_users_board_role?: Maybe<UpdateUsersBoardRoleResponse>;
   /** Updates the role of the specified users. */
@@ -8653,6 +9623,8 @@ export type Mutation = {
   update_view?: Maybe<BoardView>;
   /** Update an existing board table view */
   update_view_table?: Maybe<BoardView>;
+  /** Update the name and/or working hours of an existing work schedule */
+  update_work_schedule?: Maybe<WorkScheduleResult>;
   /** Update an existing workspace. */
   update_workspace?: Maybe<Workspace>;
   /** Upsert entity ID mappings for a migration job. */
@@ -8661,6 +9633,12 @@ export type Mutation = {
   use_template?: Maybe<Template>;
   /** Namespace for all vibe-related mutations */
   vibe?: Maybe<VibeMutations>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationActivate_AgentArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -8685,6 +9663,15 @@ export type MutationActivate_Managed_ColumnArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationActivate_UsersArgs = {
   user_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationAdd_Agent_Resource_AccessArgs = {
+  id: Scalars['ID']['input'];
+  permission_type: KnowledgePermission;
+  resource_id: Scalars['ID']['input'];
+  scope_type: KnowledgeScope;
 };
 
 
@@ -8742,6 +9729,13 @@ export type MutationAdd_Required_ColumnArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationAdd_Skill_To_AgentArgs = {
+  agent_id: Scalars['ID']['input'];
+  skill_id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationAdd_Subscribers_To_BoardArgs = {
   board_id: Scalars['ID']['input'];
   kind?: InputMaybe<BoardSubscriberKind>;
@@ -8770,6 +9764,14 @@ export type MutationAdd_Teams_To_WorkspaceArgs = {
   kind?: InputMaybe<WorkspaceSubscriberKind>;
   team_ids: Array<Scalars['ID']['input']>;
   workspace_id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationAdd_Trigger_To_AgentArgs = {
+  agent_id: Scalars['ID']['input'];
+  block_reference_id: Scalars['ID']['input'];
+  field_values?: InputMaybe<Scalars['JSON']['input']>;
 };
 
 
@@ -8839,6 +9841,12 @@ export type MutationAssign_Department_OwnerArgs = {
 export type MutationAssign_Team_OwnersArgs = {
   team_id: Scalars['ID']['input'];
   user_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationAssign_User_AvailabilityArgs = {
+  input: AssignUserAvailabilityInput;
 };
 
 
@@ -9016,6 +10024,12 @@ export type MutationConnect_Board_To_Object_SchemaArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationConnect_External_AgentArgs = {
+  input: ConnectExternalAgentInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationConnect_Migration_JobArgs = {
   migrationJobId: Scalars['String']['input'];
   sourceAccountId: Scalars['Int']['input'];
@@ -9026,6 +10040,7 @@ export type MutationConnect_Migration_JobArgs = {
 
 /** Root mutation type for the Dependencies service */
 export type MutationConnect_Project_To_PortfolioArgs = {
+  callback_url?: InputMaybe<Scalars['String']['input']>;
   portfolioBoardId: Scalars['ID']['input'];
   projectBoardId: Scalars['ID']['input'];
 };
@@ -9040,6 +10055,14 @@ export type MutationConvert_Board_To_ProjectArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationCreate_AgentArgs = {
   input: CreateAgentInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationCreate_Agent_SkillArgs = {
+  content: Scalars['String']['input'];
+  description?: InputMaybe<Scalars['String']['input']>;
+  name: Scalars['String']['input'];
 };
 
 
@@ -9091,6 +10114,12 @@ export type MutationCreate_BoardArgs = {
   prompt?: InputMaybe<Scalars['String']['input']>;
   template_id?: InputMaybe<Scalars['ID']['input']>;
   workspace_id?: InputMaybe<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationCreate_Board_AutomationArgs = {
+  input: BoardAutomationCreateInput;
 };
 
 
@@ -9385,6 +10414,13 @@ export type MutationCreate_ProjectArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationCreate_Service_UserArgs = {
+  name: Scalars['String']['input'];
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_Status_ColumnArgs = {
   after_column_id?: InputMaybe<Scalars['ID']['input']>;
   board_id: Scalars['ID']['input'];
@@ -9423,6 +10459,18 @@ export type MutationCreate_TaskArgs = {
 export type MutationCreate_TeamArgs = {
   input: CreateTeamAttributesInput;
   options?: InputMaybe<CreateTeamOptionsInput>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationCreate_Time_OffArgs = {
+  inputs: Array<CreateTimeOffInput>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationCreate_Time_Off_EntryArgs = {
+  inputs: Array<CreateTimeOffEntryInput>;
 };
 
 
@@ -9516,11 +10564,35 @@ export type MutationCreate_WidgetArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationCreate_Work_ScheduleArgs = {
+  inputs: Array<CreateWorkScheduleInput>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationCreate_WorkflowArgs = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  folder_id?: InputMaybe<Scalars['ID']['input']>;
+  owner_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  privacy_kind?: InputMaybe<WorkflowBuilderPrivacyKind>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  workspace_id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_WorkspaceArgs = {
   account_product_id?: InputMaybe<Scalars['ID']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
   kind: WorkspaceKind;
   name: Scalars['String']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationDeactivate_AgentArgs = {
+  id: Scalars['ID']['input'];
+  inactive_reason?: InputMaybe<InactiveReason>;
 };
 
 
@@ -9580,6 +10652,13 @@ export type MutationDelete_BoardArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationDelete_Board_AutomationArgs = {
+  board_id: Scalars['ID']['input'];
+  id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationDelete_ColumnArgs = {
   board_id: Scalars['ID']['input'];
   column_id: Scalars['String']['input'];
@@ -9613,6 +10692,12 @@ export type MutationDelete_DocArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationDelete_Doc_BlockArgs = {
   block_id: Scalars['String']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationDelete_Doc_BlocksArgs = {
+  block_ids: Array<Scalars['ID']['input']>;
 };
 
 
@@ -9746,6 +10831,18 @@ export type MutationDelete_Teams_From_WorkspaceArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationDelete_Time_OffArgs = {
+  ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationDelete_Time_Off_EntryArgs = {
+  ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationDelete_Timeline_ItemArgs = {
   id: Scalars['String']['input'];
 };
@@ -9792,6 +10889,12 @@ export type MutationDelete_WidgetArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationDelete_Work_ScheduleArgs = {
+  ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationDelete_WorkspaceArgs = {
   workspace_id: Scalars['ID']['input'];
 };
@@ -9800,6 +10903,12 @@ export type MutationDelete_WorkspaceArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationDetach_Boards_From_Object_SchemaArgs = {
   board_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationDisconnect_External_AgentArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -9953,6 +11062,13 @@ export type MutationProcess_EventsArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationPromote_AppArgs = {
+  app_id: Scalars['ID']['input'];
+  app_version_id?: InputMaybe<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationPublish_ArticleArgs = {
   add_subscriber_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   add_subscriber_team_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
@@ -9967,6 +11083,28 @@ export type MutationPublish_ArticleArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationPublish_ObjectArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationPublish_WorkflowArgs = {
+  should_activate?: InputMaybe<Scalars['Boolean']['input']>;
+  workflow_draft_id: Scalars['ID']['input'];
+  workflow_object_id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationRegenerate_Service_User_TokenArgs = {
+  service_user_id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationRemove_Agent_Resource_AccessArgs = {
+  id: Scalars['ID']['input'];
+  resource_id: Scalars['ID']['input'];
+  scope_type: KnowledgeScope;
 };
 
 
@@ -9994,9 +11132,23 @@ export type MutationRemove_Required_ColumnArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationRemove_Skill_From_AgentArgs = {
+  agent_id: Scalars['ID']['input'];
+  skill_id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationRemove_Team_OwnersArgs = {
   team_id: Scalars['ID']['input'];
   user_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationRemove_Trigger_From_AgentArgs = {
+  agent_id: Scalars['ID']['input'];
+  node_id: Scalars['ID']['input'];
 };
 
 
@@ -10016,10 +11168,16 @@ export type MutationRestore_EntityArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationRevoke_Service_User_TokensArgs = {
+  service_user_id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationRollback_RestoreArgs = {
+  force?: InputMaybe<Scalars['Boolean']['input']>;
   migration_job_id: Scalars['ID']['input'];
   restore_id: Scalars['ID']['input'];
-  target_account_api_token: Scalars['String']['input'];
 };
 
 
@@ -10027,6 +11185,12 @@ export type MutationRollback_RestoreArgs = {
 export type MutationRollback_SnapshotArgs = {
   migration_job_id: Scalars['ID']['input'];
   snapshot_id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationRun_AgentArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -10094,6 +11258,12 @@ export type MutationUnassign_Department_OwnersArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationUnassign_User_AvailabilityArgs = {
+  input: UnassignUserAvailabilityInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationUndo_ActionArgs = {
   job_id: Scalars['ID']['input'];
 };
@@ -10121,6 +11291,22 @@ export type MutationUnpin_From_TopArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationUnpublish_ObjectArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUpdate_AgentArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdateAgentInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUpdate_Agent_Resource_AccessArgs = {
+  id: Scalars['ID']['input'];
+  permission_type: KnowledgePermission;
+  resource_id: Scalars['ID']['input'];
+  scope_type: KnowledgeScope;
 };
 
 
@@ -10470,6 +11656,19 @@ export type MutationUpdate_TaskArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationUpdate_Time_OffArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdateTimeOffInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUpdate_Time_Off_EntryArgs = {
+  inputs: Array<UpdateTimeOffEntryInput>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Users_Board_RoleArgs = {
   board_id: Scalars['ID']['input'];
   role_name: BoardBasicRoleName;
@@ -10526,6 +11725,13 @@ export type MutationUpdate_View_TableArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationUpdate_Work_ScheduleArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdateWorkScheduleInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationUpdate_WorkspaceArgs = {
   attributes: UpdateWorkspaceAttributesInput;
   id?: InputMaybe<Scalars['ID']['input']>;
@@ -10555,6 +11761,13 @@ export type MutationUse_TemplateArgs = {
   skip_target_folder_creation?: InputMaybe<Scalars['Boolean']['input']>;
   solution_extra_options?: InputMaybe<Scalars['JSON']['input']>;
   template_id: Scalars['Int']['input'];
+};
+
+/** Result of a write operation that does not need to return entity data. */
+export type MutationResult = {
+  __typename?: 'MutationResult';
+  /** Whether the operation succeeded */
+  success: Scalars['Boolean']['output'];
 };
 
 /** Response containing the current user's task board id */
@@ -10992,6 +12205,8 @@ export type OperationInput = {
 /** A single option in a remote options list */
 export type Option = {
   __typename?: 'Option';
+  /** Optional icon to display alongside the option (e.g. { vibe, tooltip }) */
+  icon?: Maybe<Scalars['JSON']['output']>;
   /** The display title of the option */
   title?: Maybe<Scalars['String']['output']>;
   /** The value of the option */
@@ -11571,11 +12786,22 @@ export type ProgressValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
+/** A resource (agent, environment, or vault) available on an external provider */
+export type ProviderResource = {
+  __typename?: 'ProviderResource';
+  /** The unique identifier of the resource on the provider */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** The display name of the resource */
+  name?: Maybe<Scalars['String']['output']>;
+};
+
 /** Root query type for the Dependencies service */
 export type Query = {
   __typename?: 'Query';
   /** Get the connected account's information. */
   account?: Maybe<Account>;
+  /** Returns the account-level default work schedule and time off schedule */
+  account_availability_defaults?: Maybe<AccountAvailabilityDefaults>;
   /** Returns all connections for the account. Requires admin privileges. */
   account_connections?: Maybe<Array<Connection>>;
   /** Get all roles for the account */
@@ -11584,18 +12810,26 @@ export type Query = {
   account_trigger_statistics?: Maybe<AccountTriggerStatistics>;
   /** Get aggregated automation runs statistics grouped by entity Ids */
   account_triggers_statistics_by_entity_id?: Maybe<AccountTriggersByEntityId>;
-  /** Get an agent by its ID. Returns null if the agent does not exist or the user does not have access. */
-  agent?: Maybe<Agent>;
+  /** Returns the triggers currently attached to an agent. Use node_id from each result to remove a trigger. */
+  agent_active_triggers?: Maybe<Array<AgentActiveTrigger>>;
+  /** Returns the knowledge configuration of an agent — boards/docs it has access to and uploaded files. Board and doc names are not included; use the board/doc subgraph queries to resolve them. */
+  agent_knowledge?: Maybe<AgentKnowledge>;
+  /** List all skills available to attach to an agent. Use the returned id to call add_skill_to_agent. */
+  agent_skills_catalog?: Maybe<Array<AgentSkillCatalogEntry>>;
+  /** Returns trigger types that can be attached to an agent via add_trigger_to_agent. Pass block_reference_ids to fetch only specific entries (much faster). Only includes auto-addable triggers — 3rd-party triggers requiring OAuth or credentials are excluded. */
+  agent_triggers_catalog?: Maybe<Array<AgentTriggerCatalogEntry>>;
   /** List personal agents for the authenticated user. At least one filter (ids or limit) is required. */
   agents?: Maybe<Array<Agent>>;
   /** Performs aggregation operations on board data */
   aggregate?: Maybe<AggregateQueryResult>;
-  /** Retrieve aggregated board data at specific historical dates for point-in-time analysis. */
+  /** Retrieve aggregated board data at specific historical dates for point-in-time analysis. When the query references a date column, results are only available from when date column history began for that board; earlier timestamps are rejected. */
   aggregate_history?: Maybe<AggregateHistoryResultSet>;
   /** Returns all available widget schemas for documentation and validation purposes */
   all_widgets_schema?: Maybe<Array<WidgetSchemaInfo>>;
   /** Get sequences that the current user is allowed to enroll items to, that are connected to the provided board. Returns sequences owned by the user or sequences where the user has access to the sender connection. */
   allowed_sequences_to_enroll?: Maybe<Array<Sequence>>;
+  /** Search analytics events by identifier */
+  analytics_events?: Maybe<CampaignsAnalyticsEventsResponse>;
   /** Get an app by ID or slug. */
   app?: Maybe<AppType>;
   /** Get a collection of installs of an app. */
@@ -11689,20 +12923,28 @@ export type Query = {
    * • The `kind` field tells you whether the block is a TRIGGER, ACTION or CONDITION, which helps decide its placement in the workflow.
    */
   blocks?: Maybe<BlocksResult>;
+  /** Get board automations. Filter by ids (specific automation IDs) or board_ids (up to 1 board). Omit all filters to get all account automations. */
+  board_automations: AutomationsPage;
   /** Get board candidates based on workspace and usage type */
   board_candidates?: Maybe<Array<Board>>;
   /** Get all dependency predecessors for every item on a board, paginated. Each item includes its predecessor edges with dependency type and lag. */
   board_dependencies?: Maybe<BoardDependencies>;
   /** Get a collection of boards. */
   boards?: Maybe<Array<Maybe<Board>>>;
+  /** Get the brand kit for the current account */
+  brand_kit?: Maybe<CampaignsBrandKit>;
   /** Get the status of a bulk import items process */
   bulk_import_items_status: BulkImportStatus;
+  /** Get a single email campaign by ID */
+  campaign?: Maybe<CampaignsEmailCampaign>;
+  /** List email campaigns for the current account */
+  campaigns?: Maybe<Array<CampaignsEmailCampaign>>;
   /** Get the complexity data of your queries. */
   complexity?: Maybe<Complexity>;
   /** Fetch a single connection by its unique ID. */
   connection?: Maybe<Connection>;
   /** Get board IDs that are linked to a specific connection. */
-  connection_board_ids?: Maybe<Array<Scalars['Int']['output']>>;
+  connection_board_ids: Array<Scalars['ID']['output']>;
   /** Returns connections for the authenticated user. Supports filtering, pagination, ordering, and partial-scope options. */
   connections?: Maybe<Array<Connection>>;
   /** Count active workflows for a given host instance */
@@ -11731,6 +12973,10 @@ export type Query = {
   export_graph?: Maybe<BoardGraphExport>;
   /** Converts document content into standard markdown format for external use, backup, or processing. Exports the entire document by default, or specific blocks if block IDs are provided. Use this to extract content for integration with other systems, create backups, generate reports, or process document content with external tools. The output is clean, portable markdown that preserves formatting and structure. */
   export_markdown_from_doc?: Maybe<ExportMarkdownResult>;
+  /** List available agents from an external provider */
+  external_provider_agents?: Maybe<Array<ProviderResource>>;
+  /** Fetch provider-specific resources (environments, vaults, etc.) from an external provider */
+  external_provider_data?: Maybe<ExternalProviderData>;
   /** Get all personal list items by list ID */
   favorites?: Maybe<Array<GraphqlHierarchyObjectItem>>;
   /** Get the status of a backfill or ingest job */
@@ -11762,16 +13008,25 @@ export type Query = {
   get_entity_snapshots?: Maybe<Array<GetSnapshotsQueryResults>>;
   /** Get workflow by ID */
   get_live_workflow?: Maybe<Workflow>;
-  /** Get list of live workflows with pagination */
+  /**
+   * Get list of live workflows with pagination
+   * @deprecated Use `get_live_workflows_page` for cursor-based pagination metadata (`has_next_page`, `end_cursor`).
+   */
   get_live_workflows: Array<Workflow>;
+  /** Get a page of live workflows with cursor-based pagination metadata */
+  get_live_workflows_page: LiveWorkflowsPage;
   /** Retrieve active account object schemas by their IDs or names. Only returns account-level object schemas (not global). Object schemas define the structure and columns of boards. If no parameters are provided, all account object schemas are returned. Pass exclude_created_by_monday: true to omit the schemas seeded by monday.com and return only schemas created by users in this account. Results are paginated using page and limit parameters. */
   get_object_schemas?: Maybe<Array<ObjectSchema>>;
   /** Retrieve available resource attribute types with descriptions */
   get_resource_attribute_types?: Maybe<Array<ResourceAttributeTypeInfo>>;
   /** Fetch available attribute options for a resource attribute type */
   get_resource_attributes?: Maybe<GetAttributesResponse>;
+  /** Get the status history timeline for a restore entity */
+  get_restore_history?: Maybe<Array<RestoreHistoryEntry>>;
   /** Get the entity restores */
   get_restores?: Maybe<Array<GetRestoresQueryResults>>;
+  /** Get the status history timeline for a snapshot entity */
+  get_snapshot_history?: Maybe<Array<SnapshotHistoryEntry>>;
   /** Get the changelog of decisions that were made for a task by the My Tasks agent. */
   get_task_changelog?: Maybe<Array<TaskDecisionChangelogEvent>>;
   /**
@@ -11786,20 +13041,30 @@ export type Query = {
   get_workflow_data?: Maybe<Scalars['JSON']['output']>;
   /** List of all supported workflow variable kinds with their json schemas */
   get_workflow_variable_schemas: Array<WorkflowVariableSchema>;
+  /** Get a single market insight by ID */
+  insight?: Maybe<CampaignsInsight>;
+  /** List market insights for the current account */
+  insights?: Maybe<Array<CampaignsInsight>>;
   /** Intelligence data. */
   intelligence?: Maybe<Intelligence>;
   /** Get all dependency predecessors for a specific item, including dependency type and lag per edge */
   item_dependency?: Maybe<ItemDependency>;
   /** Get a collection of items. */
   items?: Maybe<Array<Maybe<Item>>>;
-  /** Retrieve historical item data from a board at a specific point in time. */
+  /** Retrieve historical item data from a board at a specific point in time. When the query references a date column, results are only available from when date column history began for that board; earlier timestamps are rejected. */
   items_history?: Maybe<ItemsHistoryResultSet>;
   /** Retrieves a paginated page of items from a board. Provide input for the first page, or cursor for subsequent pages. */
   items_page?: Maybe<ItemsPageResult>;
   /** Search items by multiple columns and values. */
   items_page_by_column_values: ItemsResponse;
+  /** Get the status of an async job by its external ID */
+  job_status: AsyncJobStatus;
   /** Search knowledge base snippets. */
   knowledge_base_search?: Maybe<KnowledgeBaseAnswer>;
+  /** Fetch a page of live workflows for the requesting account, with cursor-based pagination */
+  live_workflows_page: LiveWorkflowAutomationsPage;
+  /** Synchronously runs the full dashboard data-fetching flow and returns the results in a single blocking call. POC: reporting (aggregated_data) widgets only. Gated by the LoadDashboardDataSync flow feature. */
+  load_dashboard_data?: Maybe<DashboardDataResult>;
   /** Lookup API. Each field looks up a single entity type by name (lexical, name-only). */
   lookup: LookupNamespace;
   /** Get managed column data. */
@@ -11824,6 +13089,10 @@ export type Query = {
   my_tasks?: Maybe<MyTasksResponse>;
   /** Get next pages of board's items (rows) by cursor. */
   next_items_page: ItemsResponse;
+  /** Fetches the next page of time off schedules using a cursor from a previous time_offs or next_time_offs_page call */
+  next_time_offs_page?: Maybe<TimesOffPage>;
+  /** Fetches the next page of work schedules using a cursor from a previous work_schedules or next_work_schedules_page call */
+  next_work_schedules_page?: Maybe<WorkSchedulePage>;
   /** Namespace for all notetaker-related queries. */
   notetaker?: Maybe<NotetakerQueries>;
   notifications?: Maybe<Array<NotificationV2>>;
@@ -11863,6 +13132,16 @@ export type Query = {
   search_benchmark?: Maybe<SearchBenchmarkResults>;
   /** A query to search across all boards in the account. Returns raw json results. */
   search_cross_board?: Maybe<SearchAllResult>;
+  /** Get a single audience segment by ID */
+  segment?: Maybe<CampaignsSegment>;
+  /** List audience segments for the current account */
+  segments?: Maybe<Array<CampaignsSegment>>;
+  /** Retrieves API tokens for the given service users. */
+  service_user_tokens?: Maybe<Array<ServiceUserToken>>;
+  /** Retrieves all service users in the account with their token last activity. */
+  service_users?: Maybe<Array<ServiceUser>>;
+  /** Get marketing channels settings for the current account */
+  settings?: Maybe<CampaignsSettings>;
   /** Look up a single board with its metadata and relations for snapshot planning. */
   snapshottable_board?: Maybe<SnapshottableBoard>;
   /** Look up a workspace with paginated boards and overviews for snapshot planning. */
@@ -11881,6 +13160,8 @@ export type Query = {
   task?: Maybe<Task>;
   /** Get a collection of teams. */
   teams?: Maybe<Array<Maybe<Team>>>;
+  /** Returns active time off schedules for the caller's account */
+  time_offs?: Maybe<TimesOffPage>;
   /** Fetches timeline items for a given item */
   timeline?: Maybe<TimelineResponse>;
   timeline_item?: Maybe<TimelineItem>;
@@ -11891,12 +13172,16 @@ export type Query = {
   /** List trigger events with optional filters */
   trigger_events?: Maybe<TriggerEventsPage>;
   updates?: Maybe<Array<Update>>;
+  /** Usage metrics for the current account */
+  usage?: Maybe<CampaignsUsage>;
   /** Get all user configs for the account. */
   user_configs?: Maybe<Array<UserConfig>>;
   /** Returns connections that belong to the authenticated user. */
   user_connections?: Maybe<Array<Connection>>;
   /** Get users. */
   users?: Maybe<Array<User>>;
+  /** Returns users availability: work schedule and time offs schedule */
+  users_availability?: Maybe<UsersAvailability>;
   /** Returns utilization report for resources: either grouped by attribute or ungrouped with per-resource data. Use inline fragments to query the appropriate fields. */
   utilization_report?: Maybe<UtilizationReport>;
   /** Validate projects and portfolios */
@@ -11909,6 +13194,10 @@ export type Query = {
   versions?: Maybe<Array<Version>>;
   /** Get a collection of webhooks for the board */
   webhooks?: Maybe<Array<Maybe<Webhook>>>;
+  /** Returns active work schedules for the caller's account */
+  work_schedules?: Maybe<WorkSchedulePage>;
+  /** Fetch workflows by IDs (max 50 per request) */
+  workflows: Array<WorkflowAutomation>;
   /** Get a collection of workspaces. */
   workspaces?: Maybe<Array<Maybe<Workspace>>>;
 };
@@ -11939,8 +13228,20 @@ export type QueryAccount_Triggers_Statistics_By_Entity_IdArgs = {
 
 
 /** Root query type for the Dependencies service */
-export type QueryAgentArgs = {
+export type QueryAgent_Active_TriggersArgs = {
+  agent_id: Scalars['ID']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryAgent_KnowledgeArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryAgent_Triggers_CatalogArgs = {
+  block_reference_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
 };
 
 
@@ -11966,6 +13267,16 @@ export type QueryAggregate_HistoryArgs = {
 /** Root query type for the Dependencies service */
 export type QueryAllowed_Sequences_To_EnrollArgs = {
   board_id: Scalars['ID']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryAnalytics_EventsArgs = {
+  campaign_id?: InputMaybe<Scalars['ID']['input']>;
+  event_type?: InputMaybe<CampaignsAnalyticsEventKind>;
+  identifier: Scalars['String']['input'];
+  limit: Scalars['Int']['input'];
+  next_token?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -12055,6 +13366,15 @@ export type QueryBlocksArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QueryBoard_AutomationsArgs = {
+  board_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryBoard_CandidatesArgs = {
   usageType: BoardUsage;
   workspaceId: Scalars['String']['input'];
@@ -12092,6 +13412,18 @@ export type QueryBulk_Import_Items_StatusArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QueryCampaignArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryCampaignsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryConnectionArgs = {
   id: Scalars['Int']['input'];
 };
@@ -12099,7 +13431,7 @@ export type QueryConnectionArgs = {
 
 /** Root query type for the Dependencies service */
 export type QueryConnection_Board_IdsArgs = {
-  connectionId: Scalars['Int']['input'];
+  connection_id: Scalars['ID']['input'];
 };
 
 
@@ -12210,6 +13542,20 @@ export type QueryExport_GraphArgs = {
 export type QueryExport_Markdown_From_DocArgs = {
   blockIds?: InputMaybe<Array<Scalars['String']['input']>>;
   docId: Scalars['ID']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryExternal_Provider_AgentsArgs = {
+  credential_id: Scalars['ID']['input'];
+  provider_type: ExternalProvider;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryExternal_Provider_DataArgs = {
+  credential_id: Scalars['ID']['input'];
+  provider_type: ExternalProvider;
 };
 
 
@@ -12332,6 +13678,15 @@ export type QueryGet_Live_WorkflowsArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QueryGet_Live_Workflows_PageArgs = {
+  creator_app_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  host_instance_id?: InputMaybe<Scalars['ID']['input']>;
+  host_type?: InputMaybe<HostType>;
+  pagination?: InputMaybe<WorkflowsPaginationInput>;
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryGet_Object_SchemasArgs = {
   exclude_created_by_monday?: InputMaybe<Scalars['Boolean']['input']>;
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
@@ -12348,10 +13703,24 @@ export type QueryGet_Resource_AttributesArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QueryGet_Restore_HistoryArgs = {
+  entity_id: Scalars['ID']['input'];
+  migration_job_id: Scalars['ID']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryGet_RestoresArgs = {
   entityIds: Array<Scalars['String']['input']>;
   migrationJobId: Scalars['String']['input'];
   status?: Array<RestoreStatus>;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryGet_Snapshot_HistoryArgs = {
+  entity_id: Scalars['ID']['input'];
+  migration_job_id: Scalars['ID']['input'];
 };
 
 
@@ -12373,6 +13742,18 @@ export type QueryGet_Workflow_DataArgs = {
   account_id: Scalars['ID']['input'];
   internal_token: Scalars['String']['input'];
   workflow_entity_id: Scalars['ID']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryInsightArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryInsightsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 
@@ -12418,9 +13799,27 @@ export type QueryItems_Page_By_Column_ValuesArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QueryJob_StatusArgs = {
+  job_id: Scalars['ID']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryKnowledge_Base_SearchArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   query: Scalars['String']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryLive_Workflows_PageArgs = {
+  pagination?: InputMaybe<WorkflowAutomationsPaginationInput>;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryLoad_Dashboard_DataArgs = {
+  dashboard_id: Scalars['ID']['input'];
 };
 
 
@@ -12480,6 +13879,20 @@ export type QueryMute_Board_SettingsArgs = {
 export type QueryNext_Items_PageArgs = {
   cursor: Scalars['String']['input'];
   limit?: Scalars['Int']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryNext_Time_Offs_PageArgs = {
+  cursor: Scalars['String']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryNext_Work_Schedules_PageArgs = {
+  cursor: Scalars['String']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 
@@ -12564,6 +13977,24 @@ export type QuerySearch_Cross_BoardArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QuerySegmentArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QuerySegmentsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryService_User_TokensArgs = {
+  service_user_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
 export type QuerySnapshottable_BoardArgs = {
   id: Scalars['ID']['input'];
   migration_job_id: Scalars['ID']['input'];
@@ -12616,6 +14047,14 @@ export type QueryTaskArgs = {
 /** Root query type for the Dependencies service */
 export type QueryTeamsArgs = {
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryTime_OffsArgs = {
+  ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -12685,13 +14124,23 @@ export type QueryUser_ConnectionsArgs = {
 export type QueryUsersArgs = {
   emails?: InputMaybe<Array<Scalars['String']['input']>>;
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  kind?: InputMaybe<UserKind>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
+  newest_first?: InputMaybe<Scalars['Boolean']['input']>;
+  non_active?: InputMaybe<Scalars['Boolean']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
   sort?: InputMaybe<Array<UsersSortInput>>;
   status?: InputMaybe<Array<UserStatus>>;
   user_kind?: InputMaybe<UserKindFilterInput>;
   visibility?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryUsers_AvailabilityArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  user_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
 };
 
 
@@ -12719,6 +14168,20 @@ export type QueryValidationsArgs = {
 export type QueryWebhooksArgs = {
   app_webhooks_only?: InputMaybe<Scalars['Boolean']['input']>;
   board_id: Scalars['ID']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryWork_SchedulesArgs = {
+  ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryWorkflowsArgs = {
+  ids: Array<Scalars['ID']['input']>;
 };
 
 
@@ -13009,6 +14472,19 @@ export type RestoreEntityResult = {
   accepted?: Maybe<Scalars['Boolean']['output']>;
 };
 
+/** A point-in-time record of a restore status change. */
+export type RestoreHistoryEntry = {
+  __typename?: 'RestoreHistoryEntry';
+  /** The entity id (package id) of the restore. */
+  entity_id: Scalars['ID']['output'];
+  /** The date and time this history entry was recorded. */
+  recorded_at: Scalars['String']['output'];
+  /** The restore ID at the time this history entry was recorded. */
+  restore_id: Scalars['ID']['output'];
+  /** The status of the restore at the time this history entry was recorded. */
+  status: RestoreStatus;
+};
+
 /** The possible statuses of a restore operation. */
 export enum RestoreStatus {
   /** The restore failed to complete. */
@@ -13096,6 +14572,13 @@ export enum RuleOperator {
   StartsWithText = 'STARTS_WITH_TEXT'
 }
 
+/** Confirmation that a manual agent run was accepted and enqueued. This does not reflect the outcome of the run itself — the execution happens asynchronously. In the future, trigger_uuid can be used to query run status via a dedicated endpoint. */
+export type RunAgentResult = {
+  __typename?: 'RunAgentResult';
+  /** Correlation ID for the triggered run. Use this to track or look up the execution in downstream events or future run-status endpoints. */
+  trigger_uuid?: Maybe<Scalars['String']['output']>;
+};
+
 /** Result of saving a workflow as a template */
 export type SaveWorkflowAsTemplateResult = {
   __typename?: 'SaveWorkflowAsTemplateResult';
@@ -13160,6 +14643,8 @@ export type SearchDocResults = {
 /** Board data stored in the search index. */
 export type SearchIndexedBoard = {
   __typename?: 'SearchIndexedBoard';
+  /** ID of the user who created this board. */
+  creator_id?: Maybe<Scalars['ID']['output']>;
   /** Board description. */
   description?: Maybe<Scalars['String']['output']>;
   /** Board ID. */
@@ -13198,6 +14683,21 @@ export type SearchIndexedItem = {
   workspace_id?: Maybe<Scalars['ID']['output']>;
 };
 
+/** Workspace data stored in the search index. */
+export type SearchIndexedWorkspace = {
+  __typename?: 'SearchIndexedWorkspace';
+  /** Workspace description. */
+  description?: Maybe<Scalars['String']['output']>;
+  /** Workspace ID. */
+  id: Scalars['ID']['output'];
+  /** Workspace kind (open or closed). */
+  kind: Scalars['String']['output'];
+  /** Workspace name. */
+  name: Scalars['String']['output'];
+  /** Workspace state (active, archived, or deleted). */
+  state: Scalars['String']['output'];
+};
+
 /** A single item search result with indexed and live data. */
 export type SearchItemResult = {
   __typename?: 'SearchItemResult';
@@ -13225,11 +14725,14 @@ export type SearchNamespace = {
   docs: SearchDocResults;
   /** Search for items. */
   items: SearchItemResults;
+  /** Search for workspaces. */
+  workspaces: SearchWorkspaceResults;
 };
 
 
 /** Per-entity search namespace. Each field searches a single entity type. */
 export type SearchNamespaceBoardsArgs = {
+  board_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   date_range?: InputMaybe<CrossEntityDateRangeInput>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   query: Scalars['String']['input'];
@@ -13258,6 +14761,17 @@ export type SearchNamespaceItemsArgs = {
   workspace_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
 };
 
+
+/** Per-entity search namespace. Each field searches a single entity type. */
+export type SearchNamespaceWorkspacesArgs = {
+  date_range?: InputMaybe<CrossEntityDateRangeInput>;
+  kind?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  query: Scalars['String']['input'];
+  strategy?: InputMaybe<SearchStrategy>;
+  workspace_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+};
+
 /** Controls the trade-off between search quality and response time. */
 export enum SearchStrategy {
   /** Good search quality with reasonable response time. Default. */
@@ -13267,6 +14781,22 @@ export enum SearchStrategy {
   /** Faster results with lower search quality. */
   Speed = 'SPEED'
 }
+
+/** A single workspace search result. */
+export type SearchWorkspaceResult = {
+  __typename?: 'SearchWorkspaceResult';
+  /** Unique identifier of the workspace. */
+  id: Scalars['ID']['output'];
+  /** Workspace data from the search index. */
+  indexed_data: SearchIndexedWorkspace;
+};
+
+/** Wrapper for a list of workspace search results. */
+export type SearchWorkspaceResults = {
+  __typename?: 'SearchWorkspaceResults';
+  /** List of workspace search results. */
+  results: Array<SearchWorkspaceResult>;
+};
 
 /** A sequence that can be used to automate email outreach */
 export type Sequence = {
@@ -13311,6 +14841,36 @@ export enum SequenceStatus {
   MissingConfig = 'MISSING_CONFIG'
 }
 
+/** A service user in the account. */
+export type ServiceUser = {
+  __typename?: 'ServiceUser';
+  /** When the service user was created. */
+  created_at?: Maybe<Scalars['String']['output']>;
+  /** Whether the service user is active. */
+  enabled?: Maybe<Scalars['Boolean']['output']>;
+  /** Whether the service user currently has an active API token. */
+  has_token?: Maybe<Scalars['Boolean']['output']>;
+  /** The ID of the service user. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** The ID of the user who created this service user. */
+  invited_by_id?: Maybe<Scalars['ID']['output']>;
+  /** The last time the service user token was used for an API request. */
+  last_token_activity?: Maybe<Scalars['String']['output']>;
+  /** The display name of the service user. */
+  name?: Maybe<Scalars['String']['output']>;
+  /** The title/description of the service user. */
+  title?: Maybe<Scalars['String']['output']>;
+};
+
+/** A service user token result. */
+export type ServiceUserToken = {
+  __typename?: 'ServiceUserToken';
+  /** The ID of the service user. */
+  service_user_id?: Maybe<Scalars['ID']['output']>;
+  /** The API token. */
+  token?: Maybe<Scalars['String']['output']>;
+};
+
 /** Response type for detailed board permissions. Contains information about the permissions that were set. */
 export type SetBoardPermissionResponse = {
   __typename?: 'SetBoardPermissionResponse';
@@ -13352,6 +14912,19 @@ export type ShowIfRulesInput = {
   operator: ConditionOperator;
   /** A rule grouping one or more conditions. All conditions within a rule must be met for the rule to be satisfied. */
   rules: Array<ShowIfRuleInput>;
+};
+
+/** A point-in-time record of a snapshot status change. */
+export type SnapshotHistoryEntry = {
+  __typename?: 'SnapshotHistoryEntry';
+  /** The entity id (package id) of the snapshot. */
+  entity_id: Scalars['ID']['output'];
+  /** The date and time this history entry was recorded. */
+  recorded_at: Scalars['String']['output'];
+  /** The snapshot ID at the time this history entry was recorded. */
+  snapshot_id: Scalars['ID']['output'];
+  /** The status of the snapshot at the time this history entry was recorded. */
+  status: SnapshotStatus;
 };
 
 /** The possible statuses of a snapshot operation. */
@@ -14175,6 +15748,100 @@ export enum TimeGranularity {
   Years = 'YEARS'
 }
 
+/** A named time off schedule with all its non-working date entries */
+export type TimeOff = {
+  __typename?: 'TimeOff';
+  /** ISO 8601 timestamp when this record was created */
+  created_at: Scalars['Date']['output'];
+  /** ID of the user who created this time off schedule, null if system-generated */
+  created_by?: Maybe<Scalars['ID']['output']>;
+  /** All non-working date entries in this time off schedule */
+  entries: Array<TimeOffEntry>;
+  /** Unique identifier of the time off schedule */
+  id: Scalars['ID']['output'];
+  /** Whether this is the account-level default time off schedule */
+  is_default: Scalars['Boolean']['output'];
+  /** Display name of the time off schedule */
+  name: Scalars['String']['output'];
+  /** ISO 8601 timestamp when this record was last updated */
+  updated_at: Scalars['Date']['output'];
+};
+
+/** Result of a time off schedule delete operation */
+export type TimeOffDeleteResult = {
+  __typename?: 'TimeOffDeleteResult';
+  /** Structured error details, null if the operation succeeded */
+  error?: Maybe<Error>;
+  /** ID of the deleted time off schedule, null if the operation failed */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Whether the operation succeeded */
+  success: Scalars['Boolean']['output'];
+};
+
+/** A non-working date entry within a time off schedule */
+export type TimeOffEntry = {
+  __typename?: 'TimeOffEntry';
+  /** ISO 8601 timestamp when this record was created */
+  created_at: Scalars['Date']['output'];
+  /** ID of the user who created this entry */
+  created_by: Scalars['ID']['output'];
+  /** End date of the non-working period in YYYY-MM-DD format */
+  end: Scalars['String']['output'];
+  /** Unique identifier of the time off entry */
+  id: Scalars['ID']['output'];
+  /** Optional display name for this time off entry */
+  name?: Maybe<Scalars['String']['output']>;
+  /** Start date of the non-working period in YYYY-MM-DD format */
+  start: Scalars['String']['output'];
+  /** ID of the time off schedule this entry belongs to */
+  time_off_id: Scalars['ID']['output'];
+  /** ISO 8601 timestamp when this record was last updated */
+  updated_at: Scalars['Date']['output'];
+};
+
+/** Result of a time off entry delete operation */
+export type TimeOffEntryDeleteResult = {
+  __typename?: 'TimeOffEntryDeleteResult';
+  /** Structured error details, null if the operation succeeded */
+  error?: Maybe<Error>;
+  /** ID of the deleted time off entry, null if the operation failed */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Whether the operation succeeded */
+  success: Scalars['Boolean']['output'];
+};
+
+/** A non-working date entry to create inline with a time off schedule */
+export type TimeOffEntryInput = {
+  /** End date of the non-working period in YYYY-MM-DD format */
+  end: Scalars['String']['input'];
+  /** Optional display name for this time off entry */
+  name?: InputMaybe<Scalars['String']['input']>;
+  /** Start date of the non-working period in YYYY-MM-DD format */
+  start: Scalars['String']['input'];
+};
+
+/** Result of a time off entry create or update operation */
+export type TimeOffEntryResult = {
+  __typename?: 'TimeOffEntryResult';
+  /** Structured error details, null if the operation succeeded */
+  error?: Maybe<Error>;
+  /** Whether the operation succeeded */
+  success: Scalars['Boolean']['output'];
+  /** The created or updated time off entry, null if the operation failed */
+  time_off_entry?: Maybe<TimeOffEntry>;
+};
+
+/** Result of a time off schedule create or update operation */
+export type TimeOffResult = {
+  __typename?: 'TimeOffResult';
+  /** Structured error details, null if the operation succeeded */
+  error?: Maybe<Error>;
+  /** Whether the operation succeeded */
+  success: Scalars['Boolean']['output'];
+  /** The created or updated time off schedule, null if the operation failed */
+  time_off?: Maybe<TimeOff>;
+};
+
 /** Header for a time period (label and date range). */
 export type TimePeriodHeader = {
   __typename?: 'TimePeriodHeader';
@@ -14326,6 +15993,15 @@ export type TimelineValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
   /** The visualization type for the timeline */
   visualization_type?: Maybe<Scalars['String']['output']>;
+};
+
+/** Paginated list of time off schedules, each with all their entries */
+export type TimesOffPage = {
+  __typename?: 'TimesOffPage';
+  /** Opaque cursor for fetching the next page, null when no more pages exist */
+  cursor?: Maybe<Scalars['String']['output']>;
+  /** Time off schedules in this page */
+  time_offs: Array<TimeOff>;
 };
 
 /** Token usage details from AI request */
@@ -14493,11 +16169,41 @@ export type TriggerEventsPage = {
   triggerEvents?: Maybe<Array<TriggerEvent>>;
 };
 
+/** Schema description for a trigger field that accepts a structured JSON value */
+export type TriggerFieldSchema = {
+  __typename?: 'TriggerFieldSchema';
+  /** The key to use in field_values when calling add_trigger_to_agent */
+  field_key: Scalars['String']['output'];
+  /** Human-readable description of the expected JSON shape for this field */
+  value_schema: Scalars['String']['output'];
+};
+
+/** A selection field (e.g. board picker) required when adding this trigger */
+export type TriggerRequiredField = {
+  __typename?: 'TriggerRequiredField';
+  /** Field keys that must be provided before this field — resolve them in order */
+  depends_on: Array<Scalars['String']['output']>;
+  /** The key to use in field_values */
+  field_key: Scalars['String']['output'];
+  /** Whether this field can be omitted */
+  optional: Scalars['Boolean']['output'];
+};
+
 /** Result of unassigning owners from a department. */
 export type UnassignDepartmentOwnerResult = {
   __typename?: 'UnassignDepartmentOwnerResult';
   /** The user IDs of the owners that were unassigned from the department. */
   unassigned_users?: Maybe<Array<User>>;
+};
+
+/** Input for removing work schedule and/or time off assignments from multiple users */
+export type UnassignUserAvailabilityInput = {
+  /** Whether to remove the explicit time off schedule assignment */
+  unassign_time_off?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Whether to remove the explicit work schedule assignment */
+  unassign_work_schedule?: InputMaybe<Scalars['Boolean']['input']>;
+  /** IDs of the users to remove assignments from */
+  user_ids: Array<Scalars['ID']['input']>;
 };
 
 /** Result of an undo operation */
@@ -14562,6 +16268,20 @@ export type Update = {
 export type UpdateViewersArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
+};
+
+/** Input for updating an AI agent — all fields are optional; only provided fields are changed */
+export type UpdateAgentInput = {
+  /** The LLM model the agent should use */
+  agent_model?: InputMaybe<AgentModel>;
+  /** The display name of the agent */
+  name?: InputMaybe<Scalars['String']['input']>;
+  /** The execution plan (instructions) for the agent, in markdown format */
+  plan?: InputMaybe<Scalars['String']['input']>;
+  /** The role of the agent */
+  role?: InputMaybe<Scalars['String']['input']>;
+  /** A description of the agent role */
+  role_description?: InputMaybe<Scalars['String']['input']>;
 };
 
 /** Result of a single allocation update operation */
@@ -14867,6 +16587,24 @@ export type UpdateTaskInput = {
   title?: InputMaybe<Scalars['String']['input']>;
 };
 
+/** Input for updating an existing time off entry */
+export type UpdateTimeOffEntryInput = {
+  /** New end date in YYYY-MM-DD format */
+  end?: InputMaybe<Scalars['String']['input']>;
+  /** ID of the time off entry to update */
+  id: Scalars['ID']['input'];
+  /** New display name for the time off entry */
+  name?: InputMaybe<Scalars['String']['input']>;
+  /** New start date in YYYY-MM-DD format */
+  start?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** Input for updating an existing time off schedule. Entries are managed via the dedicated time off entry mutations (create_time_off_entry, update_time_off_entry, delete_time_off_entry). */
+export type UpdateTimeOffInput = {
+  /** New display name for the time off schedule */
+  name?: InputMaybe<Scalars['String']['input']>;
+};
+
 /** Error that occurred while updating users attributes. */
 export type UpdateUserAttributesError = {
   __typename?: 'UpdateUserAttributesError';
@@ -14931,6 +16669,14 @@ export type UpdateUsersRoleResult = {
   errors?: Maybe<Array<UpdateUsersRoleError>>;
   /** The users that were updated. */
   updated_users?: Maybe<Array<User>>;
+};
+
+/** Input for updating an existing work schedule */
+export type UpdateWorkScheduleInput = {
+  /** Updated per-weekday working hours */
+  days?: InputMaybe<Array<WorkScheduleDayInput>>;
+  /** New display name for the work schedule */
+  name?: InputMaybe<Scalars['String']['input']>;
 };
 
 /** Input for updating a workflow created from a template */
@@ -15158,11 +16904,35 @@ export type UserAttributesInput = {
   title?: InputMaybe<Scalars['String']['input']>;
 };
 
+/** A user's assigned work schedule and time off schedule */
+export type UserAvailability = {
+  __typename?: 'UserAvailability';
+  /** The time off schedules assigned to this user */
+  time_offs: Array<TimeOff>;
+  /** ID of the user */
+  user_id: Scalars['ID']['output'];
+  /** The work schedule assigned to this user, null if using account default */
+  work_schedule?: Maybe<WorkSchedule>;
+};
+
+/** Result of a single user availability assignment. Batch assign/unassign mutations return one of these per requested user, allowing partial success — successful entries have user_availability populated and success=true; failed entries have user_availability=null, success=false, and a populated error. */
+export type UserAvailabilityResult = {
+  __typename?: 'UserAvailabilityResult';
+  /** Structured error details, null if the operation succeeded */
+  error?: Maybe<Error>;
+  /** Whether the operation succeeded */
+  success: Scalars['Boolean']['output'];
+  /** The updated user availability, null if the operation failed for this user */
+  user_availability?: Maybe<UserAvailability>;
+};
+
 /** User config of a user kind within the account. */
 export type UserConfig = {
   __typename?: 'UserConfig';
   /** The behavior IDs that are true for this user kind. */
   behaviors: Array<Scalars['String']['output']>;
+  /** The group this user config belongs to. */
+  group: Scalars['String']['output'];
   /** The user kind for the user config. */
   kind: Scalars['String']['output'];
   /** The role ID associated with this user config. */
@@ -15263,6 +17033,8 @@ export enum UserKindFilter {
   ProjectsApiUser = 'PROJECTS_API_USER',
   /** A resource directory api user user. */
   ResourceDirectoryApiUser = 'RESOURCE_DIRECTORY_API_USER',
+  /** A service user user. */
+  ServiceUser = 'SERVICE_USER',
   /** A sprint management api user user. */
   SprintManagementApiUser = 'SPRINT_MANAGEMENT_API_USER',
   /** A view only user. */
@@ -15298,6 +17070,13 @@ export enum UserStatus {
 export type UserUpdateInput = {
   user_attribute_updates: UserAttributesInput;
   user_id: Scalars['ID']['input'];
+};
+
+/** List of user availability assignments */
+export type UsersAvailability = {
+  __typename?: 'UsersAvailability';
+  /** User availability assignments */
+  users_availability: Array<UserAvailability>;
 };
 
 /** The direction to sort users. */
@@ -15511,8 +17290,6 @@ export type VibeMutations = {
   document_ai_action: AiDocumentActionResponse;
   /** Enhance a user prompt to include AI capabilities */
   enhance_prompt: EnhancedPromptResult;
-  /** Extract brand identity from a URL and produce a ThemeDefinition plug-compatible with presets. */
-  extract_brand_theme: ExtractedVibeTheme;
   /** Get a presigned URL to upload a file to S3 */
   file_upload_url?: Maybe<FileUploadUrl>;
   /** Rollback an AI app to an older specific version  */
@@ -15544,12 +17321,6 @@ export type VibeMutationsDocument_Ai_ActionArgs = {
 /** Namespace for all vibe-related mutations */
 export type VibeMutationsEnhance_PromptArgs = {
   prompt: Scalars['String']['input'];
-};
-
-
-/** Namespace for all vibe-related mutations */
-export type VibeMutationsExtract_Brand_ThemeArgs = {
-  url: Scalars['String']['input'];
 };
 
 
@@ -15658,9 +17429,9 @@ export type WebSearchConfigInput = {
 
 /** Configuration options for web search functionality */
 export type WebSearchOptionsInput = {
-  /** Limit search results to content from the last N days */
+  /** Hint to prioritize content from the last N days. Interpreted as guidance — not a hard filter. */
   recencyDays?: InputMaybe<Scalars['Int']['input']>;
-  /** Maximum number of search results to retrieve (default: 5) */
+  /** Hint for max number of sources to consider (default: 5). Interpreted as guidance — the model decides retrieval breadth. */
   topK?: InputMaybe<Scalars['Int']['input']>;
 };
 
@@ -15723,6 +17494,24 @@ export enum WebhookEventType {
   SubitemDeleted = 'subitem_deleted'
 }
 
+/** Day of the week */
+export enum WeekDay {
+  /** Friday */
+  Friday = 'FRIDAY',
+  /** Monday */
+  Monday = 'MONDAY',
+  /** Saturday */
+  Saturday = 'SATURDAY',
+  /** Sunday */
+  Sunday = 'SUNDAY',
+  /** Thursday */
+  Thursday = 'THURSDAY',
+  /** Tuesday */
+  Tuesday = 'TUESDAY',
+  /** Wednesday */
+  Wednesday = 'WEDNESDAY'
+}
+
 export type WeekValue = ColumnValue & {
   __typename?: 'WeekValue';
   /** The column that this value belongs to. */
@@ -15781,6 +17570,19 @@ export type WidgetParentOutput = {
   kind?: Maybe<WidgetParentKind>;
 };
 
+/** Result of loading a single widget within a dashboard data load. */
+export type WidgetResult = {
+  __typename?: 'WidgetResult';
+  /** Loaded widget data payload; null when status is ERROR or no data is available. */
+  data?: Maybe<Scalars['JSON']['output']>;
+  /** Error message describing why the widget failed to load; null on success. */
+  error?: Maybe<Scalars['String']['output']>;
+  /** Whether the widget data loaded successfully or failed. */
+  status?: Maybe<WidgetStatus>;
+  /** Identifier of the widget this result belongs to. */
+  widget_id?: Maybe<Scalars['ID']['output']>;
+};
+
 /** Information about a widget type and its JSON schema */
 export type WidgetSchemaInfo = {
   __typename?: 'WidgetSchemaInfo';
@@ -15788,6 +17590,89 @@ export type WidgetSchemaInfo = {
   schema?: Maybe<Scalars['JSON']['output']>;
   /** The widget kind (e.g., Chart, Number, Battery) */
   widget_type?: Maybe<ExternalWidget>;
+};
+
+/** Outcome of loading a single widget within loadDashboardData. */
+export enum WidgetStatus {
+  /** Widget failed to load; see error field for details. */
+  Error = 'ERROR',
+  /** Widget data was loaded successfully. */
+  Ok = 'OK'
+}
+
+/** A named work schedule with per-weekday working hours */
+export type WorkSchedule = {
+  __typename?: 'WorkSchedule';
+  /** ISO 8601 timestamp when this record was created */
+  created_at: Scalars['Date']['output'];
+  /** ID of the user who created this work schedule, null if system-generated */
+  created_by?: Maybe<Scalars['ID']['output']>;
+  /** Per-weekday working hours for this schedule */
+  days: Array<WorkScheduleDay>;
+  /** Unique identifier of the work schedule */
+  id: Scalars['ID']['output'];
+  /** Whether this is the account-level default work schedule */
+  is_default: Scalars['Boolean']['output'];
+  /** Display name of the work schedule */
+  name: Scalars['String']['output'];
+  /** ISO 8601 timestamp when this record was last updated */
+  updated_at: Scalars['Date']['output'];
+};
+
+/** Per-weekday working hours for a work schedule */
+export type WorkScheduleDay = {
+  __typename?: 'WorkScheduleDay';
+  /** End of the working day in HH:MM format, null when is_active is false */
+  end_time?: Maybe<Scalars['String']['output']>;
+  /** Whether this day is a working day */
+  is_active: Scalars['Boolean']['output'];
+  /** Start of the working day in HH:MM format, null when is_active is false */
+  start_time?: Maybe<Scalars['String']['output']>;
+  /** Day of the week this entry applies to */
+  week_day: WeekDay;
+};
+
+/** Working hours for a specific day of the week */
+export type WorkScheduleDayInput = {
+  /** End of the working day in HH:MM format. Required when is_active is true; ignored otherwise. */
+  end_time?: InputMaybe<Scalars['String']['input']>;
+  /** Whether this day is a working day */
+  is_active: Scalars['Boolean']['input'];
+  /** Start of the working day in HH:MM format. Required when is_active is true; ignored otherwise. */
+  start_time?: InputMaybe<Scalars['String']['input']>;
+  /** Day of the week this entry applies to */
+  week_day: WeekDay;
+};
+
+/** Result of a work schedule delete operation */
+export type WorkScheduleDeleteResult = {
+  __typename?: 'WorkScheduleDeleteResult';
+  /** Structured error details, null if the operation succeeded */
+  error?: Maybe<Error>;
+  /** ID of the deleted work schedule, null if the operation failed */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Whether the operation succeeded */
+  success: Scalars['Boolean']['output'];
+};
+
+/** Paginated list of work schedules */
+export type WorkSchedulePage = {
+  __typename?: 'WorkSchedulePage';
+  /** Opaque cursor for fetching the next page, null when no more pages exist */
+  cursor?: Maybe<Scalars['String']['output']>;
+  /** Work schedules in this page */
+  work_schedules: Array<WorkSchedule>;
+};
+
+/** Result of a work schedule create or update operation */
+export type WorkScheduleResult = {
+  __typename?: 'WorkScheduleResult';
+  /** Structured error details, null if the operation succeeded */
+  error?: Maybe<Error>;
+  /** Whether the operation succeeded */
+  success: Scalars['Boolean']['output'];
+  /** The created or updated work schedule, null if the operation failed */
+  work_schedule?: Maybe<WorkSchedule>;
 };
 
 export type Workflow = {
@@ -15822,6 +17707,42 @@ export type Workflow = {
   workflow_host_data: WorkflowHostData;
   /** Variables used within this workflow. To get the accurate JSON schema call the GraphQL query 'get_workflow_variable_schemas' */
   workflow_variables: Scalars['JSON']['output'];
+};
+
+/** A workflow and its steps */
+export type WorkflowAutomation = {
+  __typename?: 'WorkflowAutomation';
+  /** Whether the workflow is currently active */
+  active?: Maybe<Scalars['Boolean']['output']>;
+  /** Creation timestamp */
+  created_at?: Maybe<Scalars['String']['output']>;
+  /** Workflow description */
+  description?: Maybe<Scalars['String']['output']>;
+  /** Workflow entity ID */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** The steps that make up this workflow */
+  steps?: Maybe<Array<WorkflowStep>>;
+  /** Workflow title */
+  title?: Maybe<Scalars['String']['output']>;
+  /** Last update timestamp */
+  updated_at?: Maybe<Scalars['String']['output']>;
+};
+
+/** Cursor-based pagination metadata for live workflow automation queries */
+export type WorkflowAutomationsPageInfo = {
+  __typename?: 'WorkflowAutomationsPageInfo';
+  /** Cursor of the last item in this page; pass as last_id to fetch the next page */
+  end_cursor?: Maybe<Scalars['ID']['output']>;
+  /** Whether there are more results beyond the current page */
+  has_next_page?: Maybe<Scalars['Boolean']['output']>;
+};
+
+/** Cursor-based pagination parameters for workflow automation queries */
+export type WorkflowAutomationsPaginationInput = {
+  /** Cursor of the last item from the previous page; pass page_info.end_cursor from the previous response */
+  last_id?: InputMaybe<Scalars['ID']['input']>;
+  /** Maximum number of results to return (default 50, max 100) */
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type WorkflowBlock = {
@@ -15911,6 +17832,34 @@ export type WorkflowBuilderContextData = {
   hidden_input_fields_keys?: Maybe<Array<Scalars['String']['output']>>;
 };
 
+/** Identifiers for a newly created workflow */
+export type WorkflowBuilderCreateResult = {
+  __typename?: 'WorkflowBuilderCreateResult';
+  /** Draft workflow ID */
+  workflow_draft_id?: Maybe<Scalars['ID']['output']>;
+  /** Stable workflow entity ID */
+  workflow_object_id?: Maybe<Scalars['ID']['output']>;
+};
+
+/** Privacy level for a workflow */
+export enum WorkflowBuilderPrivacyKind {
+  /** Workflow is private and restricted */
+  Private = 'PRIVATE',
+  /** Workflow is publicly accessible (Main) */
+  Public = 'PUBLIC',
+  /** Workflow is shareable with guests outside the account */
+  Shareable = 'SHAREABLE'
+}
+
+/** Identifiers for a published workflow */
+export type WorkflowBuilderPublishResult = {
+  __typename?: 'WorkflowBuilderPublishResult';
+  /** Live workflow ID after promotion */
+  workflow_live_id?: Maybe<Scalars['ID']['output']>;
+  /** Stable workflow entity ID */
+  workflow_object_id?: Maybe<Scalars['ID']['output']>;
+};
+
 /** Customization settings for the workflow */
 export type WorkflowCustomizationInput = {
   /** The access level for CRUD operations on an account-level workflow. Only applicable for ACCOUNT_LEVEL host type. Defaults to USER (only the creator can modify). */
@@ -15988,6 +17937,17 @@ export type WorkflowIteratorInput = {
   post_iterator_node_id?: InputMaybe<Scalars['ID']['input']>;
 };
 
+/** A step instance within a workflow */
+export type WorkflowStep = {
+  __typename?: 'WorkflowStep';
+  /** ID of the block type this step uses */
+  block_reference_id?: Maybe<Scalars['ID']['output']>;
+  /** Unique node ID within the workflow */
+  node_id?: Maybe<Scalars['ID']['output']>;
+  /** Display title of the step */
+  title?: Maybe<Scalars['String']['output']>;
+};
+
 /** The context where a workflow template can be accessed */
 export enum WorkflowTemplateContext {
   /** Using this context will make the template accessible in the Lite Builder */
@@ -16053,6 +18013,14 @@ export enum WorkflowVariableSourceKind {
   /** A value defined by the user */
   UserConfig = 'user_config'
 }
+
+/** Cursor-based pagination parameters for live workflows queries */
+export type WorkflowsPaginationInput = {
+  /** Cursor of the last item from the previous page; pass `page_info.end_cursor` from the previous response */
+  last_id?: InputMaybe<Scalars['ID']['input']>;
+  /** Maximum number of results to return */
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
 
 /** A monday.com workspace. */
 export type Workspace = {
@@ -16213,6 +18181,42 @@ export type WorldClockValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
+export type GetAgentKnowledgeQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type GetAgentKnowledgeQuery = { __typename?: 'Query', agent_knowledge?: { __typename?: 'AgentKnowledge', resources?: Array<{ __typename?: 'AgentKnowledgeResource', resource_id?: string | null, scope_type?: KnowledgeScope | null, permission_type?: KnowledgePermission | null }> | null, files?: Array<{ __typename?: 'AgentKnowledgeFile', id?: string | null, file_name?: string | null, file_type?: string | null }> | null } | null };
+
+export type AddAgentResourceAccessMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  resource_id: Scalars['ID']['input'];
+  scope_type: KnowledgeScope;
+  permission_type: KnowledgePermission;
+}>;
+
+
+export type AddAgentResourceAccessMutation = { __typename?: 'Mutation', add_agent_resource_access?: { __typename?: 'MutationResult', success: boolean } | null };
+
+export type RemoveAgentResourceAccessMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  resource_id: Scalars['ID']['input'];
+  scope_type: KnowledgeScope;
+}>;
+
+
+export type RemoveAgentResourceAccessMutation = { __typename?: 'Mutation', remove_agent_resource_access?: { __typename?: 'MutationResult', success: boolean } | null };
+
+export type UpdateAgentResourceAccessMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  resource_id: Scalars['ID']['input'];
+  scope_type: KnowledgeScope;
+  permission_type: KnowledgePermission;
+}>;
+
+
+export type UpdateAgentResourceAccessMutation = { __typename?: 'Mutation', update_agent_resource_access?: { __typename?: 'MutationResult', success: boolean } | null };
+
 export type AgentFieldsFragment = { __typename?: 'Agent', id: string, kind?: AgentKind | null, state?: AgentState | null, goal?: string | null, plan?: string | null, user_prompt?: string | null, version_id: string, created_at?: any | null, updated_at?: any | null, profile?: { __typename?: 'AgentProfile', name?: string | null, role?: string | null, role_description?: string | null, avatar_url?: string | null, background_color?: string | null } | null };
 
 export type GetAgentsQueryVariables = Exact<{
@@ -16237,12 +18241,103 @@ export type CreateBlankAgentMutationVariables = Exact<{
 
 export type CreateBlankAgentMutation = { __typename?: 'Mutation', create_blank_agent?: { __typename?: 'Agent', id: string, kind?: AgentKind | null, state?: AgentState | null, goal?: string | null, plan?: string | null, user_prompt?: string | null, version_id: string, created_at?: any | null, updated_at?: any | null, profile?: { __typename?: 'AgentProfile', name?: string | null, role?: string | null, role_description?: string | null, avatar_url?: string | null, background_color?: string | null } | null } | null };
 
+export type UpdateAgentMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  input: UpdateAgentInput;
+}>;
+
+
+export type UpdateAgentMutation = { __typename?: 'Mutation', update_agent?: { __typename?: 'Agent', id: string, kind?: AgentKind | null, state?: AgentState | null, goal?: string | null, plan?: string | null, user_prompt?: string | null, version_id: string, created_at?: any | null, updated_at?: any | null, profile?: { __typename?: 'AgentProfile', name?: string | null, role?: string | null, role_description?: string | null, avatar_url?: string | null, background_color?: string | null } | null } | null };
+
 export type DeleteAgentMutationVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
 
 
 export type DeleteAgentMutation = { __typename?: 'Mutation', delete_agent?: { __typename?: 'Agent', id: string, kind?: AgentKind | null, state?: AgentState | null, goal?: string | null, plan?: string | null, user_prompt?: string | null, version_id: string, created_at?: any | null, updated_at?: any | null, profile?: { __typename?: 'AgentProfile', name?: string | null, role?: string | null, role_description?: string | null, avatar_url?: string | null, background_color?: string | null } | null } | null };
+
+export type ActivateAgentMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type ActivateAgentMutation = { __typename?: 'Mutation', activate_agent?: { __typename?: 'AgentStateResult', success?: boolean | null } | null };
+
+export type DeactivateAgentMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  inactive_reason?: InputMaybe<InactiveReason>;
+}>;
+
+
+export type DeactivateAgentMutation = { __typename?: 'Mutation', deactivate_agent?: { __typename?: 'AgentStateResult', success?: boolean | null } | null };
+
+export type RunAgentMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type RunAgentMutation = { __typename?: 'Mutation', run_agent?: { __typename?: 'RunAgentResult', trigger_uuid?: string | null } | null };
+
+export type GetAgentActiveTriggersQueryVariables = Exact<{
+  agent_id: Scalars['ID']['input'];
+}>;
+
+
+export type GetAgentActiveTriggersQuery = { __typename?: 'Query', agent_active_triggers?: Array<{ __typename?: 'AgentActiveTrigger', node_id: string, block_reference_id: string, name: string, description?: string | null, field_summary?: string | null }> | null };
+
+export type AddTriggerToAgentMutationVariables = Exact<{
+  agent_id: Scalars['ID']['input'];
+  block_reference_id: Scalars['ID']['input'];
+  field_values?: InputMaybe<Scalars['JSON']['input']>;
+}>;
+
+
+export type AddTriggerToAgentMutation = { __typename?: 'Mutation', add_trigger_to_agent?: { __typename?: 'MutationResult', success: boolean } | null };
+
+export type RemoveTriggerFromAgentMutationVariables = Exact<{
+  agent_id: Scalars['ID']['input'];
+  node_id: Scalars['ID']['input'];
+}>;
+
+
+export type RemoveTriggerFromAgentMutation = { __typename?: 'Mutation', remove_trigger_from_agent?: { __typename?: 'MutationResult', success: boolean } | null };
+
+export type AddSkillToAgentMutationVariables = Exact<{
+  agent_id: Scalars['ID']['input'];
+  skill_id: Scalars['ID']['input'];
+}>;
+
+
+export type AddSkillToAgentMutation = { __typename?: 'Mutation', add_skill_to_agent?: { __typename?: 'MutationResult', success: boolean } | null };
+
+export type RemoveSkillFromAgentMutationVariables = Exact<{
+  agent_id: Scalars['ID']['input'];
+  skill_id: Scalars['ID']['input'];
+}>;
+
+
+export type RemoveSkillFromAgentMutation = { __typename?: 'Mutation', remove_skill_from_agent?: { __typename?: 'MutationResult', success: boolean } | null };
+
+export type GetAgentTriggersCatalogQueryVariables = Exact<{
+  block_reference_ids?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+}>;
+
+
+export type GetAgentTriggersCatalogQuery = { __typename?: 'Query', agent_triggers_catalog?: Array<{ __typename?: 'AgentTriggerCatalogEntry', block_reference_id: string, name: string, description?: string | null, field_schemas: Array<{ __typename?: 'TriggerFieldSchema', field_key: string, value_schema: string }>, required_fields: Array<{ __typename?: 'TriggerRequiredField', field_key: string, depends_on: Array<string>, optional: boolean }> }> | null };
+
+export type GetAgentSkillsCatalogQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetAgentSkillsCatalogQuery = { __typename?: 'Query', agent_skills_catalog?: Array<{ __typename?: 'AgentSkillCatalogEntry', id?: string | null, name?: string | null, description?: string | null }> | null };
+
+export type CreateAgentSkillMutationVariables = Exact<{
+  name: Scalars['String']['input'];
+  content: Scalars['String']['input'];
+  description?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type CreateAgentSkillMutation = { __typename?: 'Mutation', create_agent_skill?: { __typename?: 'AgentSkillCatalogEntry', id?: string | null, name?: string | null, description?: string | null } | null };
 
 export type DeleteObjectSchemaColumnsMutationVariables = Exact<{
   objectSchemaId?: InputMaybe<Scalars['ID']['input']>;
@@ -16307,6 +18402,27 @@ export type GetUserContextQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type GetUserContextQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, name: string, title: string, account: { __typename?: 'Account', tier?: string | null, active_members_count?: number | null, is_during_trial?: boolean | null, products?: Array<{ __typename?: 'AccountProduct', kind?: string | null, tier?: string | null } | null> | null } } | null, favorites?: Array<{ __typename?: 'GraphqlHierarchyObjectItem', object?: { __typename?: 'HierarchyObjectID', id?: string | null, type?: GraphqlMondayObject | null } | null }> | null, intelligence?: { __typename?: 'Intelligence', relevant_boards?: Array<{ __typename?: 'RelevantBoard', id?: string | null, board?: { __typename?: 'Board', name: string } | null }> | null, relevant_people?: Array<{ __typename?: 'RelevantPerson', id?: string | null, user?: { __typename?: 'User', name: string } | null }> | null } | null };
 
+export type CreateWorkflowMutationVariables = Exact<{
+  workspace_id: Scalars['ID']['input'];
+  title?: InputMaybe<Scalars['String']['input']>;
+  privacy_kind?: InputMaybe<WorkflowBuilderPrivacyKind>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  folder_id?: InputMaybe<Scalars['ID']['input']>;
+  owner_ids?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+}>;
+
+
+export type CreateWorkflowMutation = { __typename?: 'Mutation', create_workflow: { __typename?: 'WorkflowBuilderCreateResult', workflow_object_id?: string | null, workflow_draft_id?: string | null } };
+
+export type PublishWorkflowMutationVariables = Exact<{
+  workflow_object_id: Scalars['ID']['input'];
+  workflow_draft_id: Scalars['ID']['input'];
+  should_activate?: InputMaybe<Scalars['Boolean']['input']>;
+}>;
+
+
+export type PublishWorkflowMutation = { __typename?: 'Mutation', publish_workflow: { __typename?: 'WorkflowBuilderPublishResult', workflow_object_id?: string | null, workflow_live_id?: string | null } };
+
 export type ActivateLiveWorkflowMutationVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
@@ -16340,10 +18456,26 @@ export type CreateFormSubmissionMutationVariables = Exact<{
 export type CreateFormSubmissionMutation = { __typename?: 'Mutation', create_form_submission?: { __typename?: 'FormSubmissionResult', id: string } | null };
 
 export const AgentFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Agent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<AgentFieldsFragment, unknown>;
+export const GetAgentKnowledgeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getAgentKnowledge"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"agent_knowledge"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"resources"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"resource_id"}},{"kind":"Field","name":{"kind":"Name","value":"scope_type"}},{"kind":"Field","name":{"kind":"Name","value":"permission_type"}}]}},{"kind":"Field","name":{"kind":"Name","value":"files"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"file_name"}},{"kind":"Field","name":{"kind":"Name","value":"file_type"}}]}}]}}]}}]} as unknown as DocumentNode<GetAgentKnowledgeQuery, GetAgentKnowledgeQueryVariables>;
+export const AddAgentResourceAccessDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"addAgentResourceAccess"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"resource_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"scope_type"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"KnowledgeScope"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"permission_type"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"KnowledgePermission"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"add_agent_resource_access"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"resource_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"resource_id"}}},{"kind":"Argument","name":{"kind":"Name","value":"scope_type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"scope_type"}}},{"kind":"Argument","name":{"kind":"Name","value":"permission_type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"permission_type"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<AddAgentResourceAccessMutation, AddAgentResourceAccessMutationVariables>;
+export const RemoveAgentResourceAccessDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"removeAgentResourceAccess"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"resource_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"scope_type"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"KnowledgeScope"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"remove_agent_resource_access"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"resource_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"resource_id"}}},{"kind":"Argument","name":{"kind":"Name","value":"scope_type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"scope_type"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<RemoveAgentResourceAccessMutation, RemoveAgentResourceAccessMutationVariables>;
+export const UpdateAgentResourceAccessDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"updateAgentResourceAccess"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"resource_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"scope_type"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"KnowledgeScope"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"permission_type"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"KnowledgePermission"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"update_agent_resource_access"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"resource_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"resource_id"}}},{"kind":"Argument","name":{"kind":"Name","value":"scope_type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"scope_type"}}},{"kind":"Argument","name":{"kind":"Name","value":"permission_type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"permission_type"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<UpdateAgentResourceAccessMutation, UpdateAgentResourceAccessMutationVariables>;
 export const GetAgentsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getAgents"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"ids"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"agents"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"ids"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AgentFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Agent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<GetAgentsQuery, GetAgentsQueryVariables>;
 export const CreateAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"createAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateAgentInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"create_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AgentFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Agent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<CreateAgentMutation, CreateAgentMutationVariables>;
 export const CreateBlankAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"createBlankAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateBlankAgentInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"create_blank_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AgentFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Agent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<CreateBlankAgentMutation, CreateBlankAgentMutationVariables>;
+export const UpdateAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"updateAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateAgentInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"update_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AgentFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Agent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<UpdateAgentMutation, UpdateAgentMutationVariables>;
 export const DeleteAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"deleteAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"delete_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AgentFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Agent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<DeleteAgentMutation, DeleteAgentMutationVariables>;
+export const ActivateAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"activateAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"activate_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<ActivateAgentMutation, ActivateAgentMutationVariables>;
+export const DeactivateAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"deactivateAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"inactive_reason"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"InactiveReason"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deactivate_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"inactive_reason"},"value":{"kind":"Variable","name":{"kind":"Name","value":"inactive_reason"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<DeactivateAgentMutation, DeactivateAgentMutationVariables>;
+export const RunAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"runAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"run_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"trigger_uuid"}}]}}]}}]} as unknown as DocumentNode<RunAgentMutation, RunAgentMutationVariables>;
+export const GetAgentActiveTriggersDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getAgentActiveTriggers"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"agent_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"agent_active_triggers"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"agent_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"agent_id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"node_id"}},{"kind":"Field","name":{"kind":"Name","value":"block_reference_id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"field_summary"}}]}}]}}]} as unknown as DocumentNode<GetAgentActiveTriggersQuery, GetAgentActiveTriggersQueryVariables>;
+export const AddTriggerToAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"addTriggerToAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"agent_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"block_reference_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"field_values"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"JSON"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"add_trigger_to_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"agent_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"agent_id"}}},{"kind":"Argument","name":{"kind":"Name","value":"block_reference_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"block_reference_id"}}},{"kind":"Argument","name":{"kind":"Name","value":"field_values"},"value":{"kind":"Variable","name":{"kind":"Name","value":"field_values"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<AddTriggerToAgentMutation, AddTriggerToAgentMutationVariables>;
+export const RemoveTriggerFromAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"removeTriggerFromAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"agent_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"node_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"remove_trigger_from_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"agent_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"agent_id"}}},{"kind":"Argument","name":{"kind":"Name","value":"node_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"node_id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<RemoveTriggerFromAgentMutation, RemoveTriggerFromAgentMutationVariables>;
+export const AddSkillToAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"addSkillToAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"agent_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"skill_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"add_skill_to_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"agent_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"agent_id"}}},{"kind":"Argument","name":{"kind":"Name","value":"skill_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"skill_id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<AddSkillToAgentMutation, AddSkillToAgentMutationVariables>;
+export const RemoveSkillFromAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"removeSkillFromAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"agent_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"skill_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"remove_skill_from_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"agent_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"agent_id"}}},{"kind":"Argument","name":{"kind":"Name","value":"skill_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"skill_id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<RemoveSkillFromAgentMutation, RemoveSkillFromAgentMutationVariables>;
+export const GetAgentTriggersCatalogDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getAgentTriggersCatalog"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"block_reference_ids"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"agent_triggers_catalog"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"block_reference_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"block_reference_ids"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"block_reference_id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"field_schemas"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"field_key"}},{"kind":"Field","name":{"kind":"Name","value":"value_schema"}}]}},{"kind":"Field","name":{"kind":"Name","value":"required_fields"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"field_key"}},{"kind":"Field","name":{"kind":"Name","value":"depends_on"}},{"kind":"Field","name":{"kind":"Name","value":"optional"}}]}}]}}]}}]} as unknown as DocumentNode<GetAgentTriggersCatalogQuery, GetAgentTriggersCatalogQueryVariables>;
+export const GetAgentSkillsCatalogDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getAgentSkillsCatalog"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"agent_skills_catalog"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}}]}}]} as unknown as DocumentNode<GetAgentSkillsCatalogQuery, GetAgentSkillsCatalogQueryVariables>;
+export const CreateAgentSkillDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"createAgentSkill"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"name"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"content"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"description"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"create_agent_skill"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"name"}}},{"kind":"Argument","name":{"kind":"Name","value":"content"},"value":{"kind":"Variable","name":{"kind":"Name","value":"content"}}},{"kind":"Argument","name":{"kind":"Name","value":"description"},"value":{"kind":"Variable","name":{"kind":"Name","value":"description"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}}]}}]} as unknown as DocumentNode<CreateAgentSkillMutation, CreateAgentSkillMutationVariables>;
 export const DeleteObjectSchemaColumnsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteObjectSchemaColumns"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"objectSchemaId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"objectSchemaName"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnIds"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"delete_object_schema_columns"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"object_schema_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"objectSchemaId"}}},{"kind":"Argument","name":{"kind":"Name","value":"object_schema_name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"objectSchemaName"}}},{"kind":"Argument","name":{"kind":"Name","value":"column_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"parent_id"}},{"kind":"Field","name":{"kind":"Name","value":"revision"}}]}}]}}]} as unknown as DocumentNode<DeleteObjectSchemaColumnsMutation, DeleteObjectSchemaColumnsMutationVariables>;
 export const CompleteUploadDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CompleteUpload"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CompleteUploadInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"complete_upload"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"filename"}},{"kind":"Field","name":{"kind":"Name","value":"content_type"}},{"kind":"Field","name":{"kind":"Name","value":"file_size"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"filelink"}}]}}]}}]} as unknown as DocumentNode<CompleteUploadMutation, CompleteUploadMutationVariables>;
 export const CreateUploadDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateUpload"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateUploadInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"create_upload"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"upload_id"}},{"kind":"Field","name":{"kind":"Name","value":"parts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"part_number"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"size_range_start"}},{"kind":"Field","name":{"kind":"Name","value":"size_range_end"}}]}},{"kind":"Field","name":{"kind":"Name","value":"part_size"}},{"kind":"Field","name":{"kind":"Name","value":"expires_at"}}]}}]}}]} as unknown as DocumentNode<CreateUploadMutation, CreateUploadMutationVariables>;
@@ -16352,6 +18484,8 @@ export const SearchBoardsDevDocument = {"kind":"Document","definitions":[{"kind"
 export const SearchDocsDevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchDocsDev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"docs"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"workspace_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"results"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"indexed_data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchDocsDevQuery, SearchDocsDevQueryVariables>;
 export const BatchUndoDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"BatchUndo"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"undoRecordId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"batch_undo"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"board_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}},{"kind":"Argument","name":{"kind":"Name","value":"undo_record_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"undoRecordId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<BatchUndoMutation, BatchUndoMutationVariables>;
 export const GetUserContextDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getUserContext"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"me"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"account"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"tier"}},{"kind":"Field","name":{"kind":"Name","value":"active_members_count"}},{"kind":"Field","name":{"kind":"Name","value":"is_during_trial"}},{"kind":"Field","name":{"kind":"Name","value":"products"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"tier"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"favorites"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"object"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"type"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"intelligence"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"relevant_boards"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"10"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"board"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"relevant_people"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"10"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetUserContextQuery, GetUserContextQueryVariables>;
+export const CreateWorkflowDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"createWorkflow"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspace_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"title"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"privacy_kind"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"WorkflowBuilderPrivacyKind"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"description"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"folder_id"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"owner_ids"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"create_workflow"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"workspace_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspace_id"}}},{"kind":"Argument","name":{"kind":"Name","value":"title"},"value":{"kind":"Variable","name":{"kind":"Name","value":"title"}}},{"kind":"Argument","name":{"kind":"Name","value":"privacy_kind"},"value":{"kind":"Variable","name":{"kind":"Name","value":"privacy_kind"}}},{"kind":"Argument","name":{"kind":"Name","value":"description"},"value":{"kind":"Variable","name":{"kind":"Name","value":"description"}}},{"kind":"Argument","name":{"kind":"Name","value":"folder_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"folder_id"}}},{"kind":"Argument","name":{"kind":"Name","value":"owner_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"owner_ids"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"workflow_object_id"}},{"kind":"Field","name":{"kind":"Name","value":"workflow_draft_id"}}]}}]}}]} as unknown as DocumentNode<CreateWorkflowMutation, CreateWorkflowMutationVariables>;
+export const PublishWorkflowDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"publishWorkflow"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workflow_object_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workflow_draft_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"should_activate"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"publish_workflow"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"workflow_object_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workflow_object_id"}}},{"kind":"Argument","name":{"kind":"Name","value":"workflow_draft_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workflow_draft_id"}}},{"kind":"Argument","name":{"kind":"Name","value":"should_activate"},"value":{"kind":"Variable","name":{"kind":"Name","value":"should_activate"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"workflow_object_id"}},{"kind":"Field","name":{"kind":"Name","value":"workflow_live_id"}}]}}]}}]} as unknown as DocumentNode<PublishWorkflowMutation, PublishWorkflowMutationVariables>;
 export const ActivateLiveWorkflowDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"activateLiveWorkflow"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"activate_live_workflow"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"is_success"}}]}}]}}]} as unknown as DocumentNode<ActivateLiveWorkflowMutation, ActivateLiveWorkflowMutationVariables>;
 export const DeactivateLiveWorkflowDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"deactivateLiveWorkflow"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deactivate_live_workflow"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"is_success"}}]}}]}}]} as unknown as DocumentNode<DeactivateLiveWorkflowMutation, DeactivateLiveWorkflowMutationVariables>;
 export const DeleteLiveWorkflowDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"deleteLiveWorkflow"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"delete_live_workflow"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"is_success"}}]}}]}}]} as unknown as DocumentNode<DeleteLiveWorkflowMutation, DeleteLiveWorkflowMutationVariables>;

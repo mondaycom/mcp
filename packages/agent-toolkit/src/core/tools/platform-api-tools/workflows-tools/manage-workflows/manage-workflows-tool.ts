@@ -29,7 +29,7 @@ export const manageWorkflowsToolSchema = {
     .string()
     .trim()
     .min(1, 'workflowId must be a non-empty string')
-    .describe('The workflow ID to operate on. Obtain from list_workflows.'),
+    .describe('The workflow ID to operate on. Obtain from list_automations.'),
 };
 
 interface ActivateWorkflowInput {
@@ -62,7 +62,7 @@ export class ManageWorkflowsTool extends BaseMondayApiTool<typeof manageWorkflow
   getDescription(): string {
     return `Activate, deactivate, or delete an existing monday.com automation/workflow.
 
-Requires a workflow id. When the user refers to a workflow by name, always call list_workflows first to resolve the id — never guess or infer ids.
+Requires a workflow id. When the user refers to an automation by name, always call list_automations first to resolve the id — never guess or infer ids.
 
 Actions:
 - activate: enables a paused workflow so it starts responding to its trigger.
