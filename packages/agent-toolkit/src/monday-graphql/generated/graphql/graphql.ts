@@ -2050,6 +2050,8 @@ export type ConnectProjectResult = {
   message?: Maybe<Scalars['String']['output']>;
   /** The ID of the created portfolio item, if successful. */
   portfolio_item_id?: Maybe<Scalars['String']['output']>;
+  /** Unique process ID for tracking this request. Included in the callback payload when the operation completes. */
+  process_id?: Maybe<Scalars['ID']['output']>;
   /** Indicates if the operation was successful. */
   success?: Maybe<Scalars['Boolean']['output']>;
 };
@@ -5567,7 +5569,7 @@ export type Mutation = {
   complexity?: Maybe<Complexity>;
   /** Connect a board to an object schema. */
   connect_board_to_object_schema?: Maybe<BoardConnection>;
-  /** Connect project to portfolio */
+  /** Connect an existing project to a portfolio. When a callback_url is provided the mutation returns immediately with a process_id, and the result is POSTed to that URL once the operation completes. The callback payload is: { is_success: boolean, process_id: string, portfolio_item_id?: string }. */
   connect_project_to_portfolio?: Maybe<ConnectProjectResult>;
   /** Convert an existing monday.com board into a project with enhanced project management capabilities. This mutation transforms a regular board by applying project-specific features and configurations through column mappings that define how existing board columns should be interpreted in the project context. The conversion process is asynchronous and returns a process_id for tracking completion. Optionally accepts a callback URL for notification when the conversion completes. Use this when you have an existing board with data that needs to be upgraded to a full project with advanced project management features like Resource Planner integration. */
   convert_board_to_project?: Maybe<ConvertBoardToProjectResult>;
@@ -6172,6 +6174,7 @@ export type MutationConnect_Board_To_Object_SchemaArgs = {
 
 /** Root mutation type for the Dependencies service */
 export type MutationConnect_Project_To_PortfolioArgs = {
+  callback_url?: InputMaybe<Scalars['String']['input']>;
   portfolioBoardId: Scalars['ID']['input'];
   projectBoardId: Scalars['ID']['input'];
 };
@@ -9258,6 +9261,21 @@ export type SearchIndexedItem = {
   workspace_id?: Maybe<Scalars['ID']['output']>;
 };
 
+/** Workspace data stored in the search index. */
+export type SearchIndexedWorkspace = {
+  __typename?: 'SearchIndexedWorkspace';
+  /** Workspace description. */
+  description?: Maybe<Scalars['String']['output']>;
+  /** Workspace ID. */
+  id: Scalars['ID']['output'];
+  /** Workspace kind (open or closed). */
+  kind: Scalars['String']['output'];
+  /** Workspace name. */
+  name: Scalars['String']['output'];
+  /** Workspace state (active, archived, or deleted). */
+  state: Scalars['String']['output'];
+};
+
 /** A single item search result with indexed and live data. */
 export type SearchItemResult = {
   __typename?: 'SearchItemResult';
@@ -9285,6 +9303,8 @@ export type SearchNamespace = {
   docs: SearchDocResults;
   /** Search for items. */
   items: SearchItemResults;
+  /** Search for workspaces. */
+  workspaces: SearchWorkspaceResults;
 };
 
 
@@ -9319,6 +9339,17 @@ export type SearchNamespaceItemsArgs = {
   workspace_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
 };
 
+
+/** Per-entity search namespace. Each field searches a single entity type. */
+export type SearchNamespaceWorkspacesArgs = {
+  date_range?: InputMaybe<CrossEntityDateRangeInput>;
+  kind?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  query: Scalars['String']['input'];
+  strategy?: InputMaybe<SearchStrategy>;
+  workspace_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+};
+
 /** Controls the trade-off between search quality and response time. */
 export enum SearchStrategy {
   /** Good search quality with reasonable response time. Default. */
@@ -9328,6 +9359,22 @@ export enum SearchStrategy {
   /** Faster results with lower search quality. */
   Speed = 'SPEED'
 }
+
+/** A single workspace search result. */
+export type SearchWorkspaceResult = {
+  __typename?: 'SearchWorkspaceResult';
+  /** Unique identifier of the workspace. */
+  id: Scalars['ID']['output'];
+  /** Workspace data from the search index. */
+  indexed_data: SearchIndexedWorkspace;
+};
+
+/** Wrapper for a list of workspace search results. */
+export type SearchWorkspaceResults = {
+  __typename?: 'SearchWorkspaceResults';
+  /** List of workspace search results. */
+  results: Array<SearchWorkspaceResult>;
+};
 
 /** A sequence that can be used to automate email outreach */
 export type Sequence = {
@@ -9379,6 +9426,8 @@ export type ServiceUser = {
   created_at?: Maybe<Scalars['String']['output']>;
   /** Whether the service user is active. */
   enabled?: Maybe<Scalars['Boolean']['output']>;
+  /** Whether the service user currently has an active API token. */
+  has_token?: Maybe<Scalars['Boolean']['output']>;
   /** The ID of the service user. */
   id?: Maybe<Scalars['ID']['output']>;
   /** The ID of the user who created this service user. */
@@ -10916,6 +10965,8 @@ export type UserConfig = {
   __typename?: 'UserConfig';
   /** The behavior IDs that are true for this user kind. */
   behaviors: Array<Scalars['String']['output']>;
+  /** The group this user config belongs to. */
+  group: Scalars['String']['output'];
   /** The user kind for the user config. */
   kind: Scalars['String']['output'];
   /** The role ID associated with this user config. */
