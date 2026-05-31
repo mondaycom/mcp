@@ -72,8 +72,22 @@ export class ChangeItemColumnValuesTool extends BaseMondayApiTool<ChangeItemColu
 
     const res = await this.mondayApi.request<ChangeItemColumnValuesMutation>(changeItemColumnValues, variables);
 
+    const changedColumnIds = Object.keys(JSON.parse(input.columnValues));
+    const updatedColumnValues = res.change_multiple_column_values?.column_values
+      ?.filter((cv) => changedColumnIds.includes(cv.id))
+      ?.reduce((acc: Record<string, string | null>, cv) => {
+        acc[cv.id] = cv.value ?? null;
+        return acc;
+      }, {});
+
     return {
-      content: { message: `Item ${res.change_multiple_column_values?.id} successfully updated`, item_id: res.change_multiple_column_values?.id, item_name: res.change_multiple_column_values?.name, item_url: res.change_multiple_column_values?.url },
+      content: {
+        message: `Item ${res.change_multiple_column_values?.id} successfully updated`,
+        item_id: res.change_multiple_column_values?.id,
+        item_name: res.change_multiple_column_values?.name,
+        item_url: res.change_multiple_column_values?.url,
+        column_values: updatedColumnValues,
+      },
     };
   }
 }

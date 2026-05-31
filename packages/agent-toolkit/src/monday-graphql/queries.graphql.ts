@@ -50,6 +50,10 @@ export const changeItemColumnValues = gql`
       id
       name
       url
+      column_values {
+        id
+        value
+      }
     }
   }
 `;
