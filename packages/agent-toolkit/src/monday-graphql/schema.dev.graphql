@@ -696,10 +696,6 @@ name: String): TimesOffPage
   next_time_offs_page(  "Cursor returned by a previous time_offs or next_time_offs_page call"
 cursor: String!,   "Number of items to get, the default is 25."
 limit: Int = 25): TimesOffPage
-  "Fetches the next page of entries for a time off schedule using a cursor from entries_page or next_time_off_entries_page"
-  next_time_off_entries_page(  "Cursor returned by a previous entries_page or next_time_off_entries_page call"
-cursor: String!,   "Number of items to get, the default is 25."
-limit: Int = 25): TimeOffEntryPage
   "Returns users availability: work schedule and time offs schedule"
   users_availability(  "Filter by specific user IDs"
 user_ids: [ID!],   "Number of items to return per page; max 500"
@@ -2373,9 +2369,6 @@ input WebSearchOptionsInput {
   recencyDays: Int
 }
 
-"A file"
-scalar File
-
 "The type of entity that holds or owns an asset."
 enum AssetHolder {
   "An update/post entity."
@@ -2445,6 +2438,9 @@ type CreateUploadResult {
   "The timestamp when the upload session expires."
   expires_at: Date
 }
+
+"A file"
+scalar File
 
 "Information about the entity that holds or owns an asset."
 input HolderInfoInput {
@@ -6945,10 +6941,6 @@ enum CampaignsAnalyticsEventKind {
   EMAIL_RECIPIENT_COMPLAINT
   "Recipient unsubscribed"
   EMAIL_RECIPIENT_UNSUBSCRIBED
-  "email_recipient_group_unsubscribed"
-  EMAIL_RECIPIENT_GROUP_UNSUBSCRIBED
-  "email_recipient_group_resubscribed"
-  EMAIL_RECIPIENT_GROUP_RESUBSCRIBED
   "Email was dropped before sending"
   EMAIL_DROPPED
   "Email was opened by recipient"
@@ -12839,14 +12831,6 @@ input TimeOffEntryInput {
   end: String!
 }
 
-"Paginated list of time off entries"
-type TimeOffEntryPage {
-  "Time off entries in this page"
-  entries: [TimeOffEntry!]!
-  "Opaque cursor for fetching the next page, null when no more pages exist"
-  cursor: String
-}
-
 "Result of a time off entry create or update operation"
 type TimeOffEntryResult {
   "The created or updated time off entry, null if the operation failed"
@@ -12860,37 +12844,17 @@ type TimeOffEntryResult {
 "Result of a time off schedule create or update operation"
 type TimeOffResult {
   "The created or updated time off schedule, null if the operation failed"
-  time_off: TimeOffWithPagedEntries
+  time_off: TimeOff
   "Whether the operation succeeded"
   success: Boolean!
   "Structured error details, null if the operation succeeded"
   error: Error
 }
 
-"A named time off schedule with non-working date entries"
-type TimeOffWithPagedEntries {
-  "Unique identifier of the time off schedule"
-  id: ID!
-  "Display name of the time off schedule"
-  name: String!
-  "Whether this is the account-level default time off schedule"
-  is_default: Boolean!
-  "ID of the user who created this time off schedule, null if system-generated"
-  created_by: ID
-  "ISO 8601 timestamp when this record was created"
-  created_at: Date!
-  "ISO 8601 timestamp when this record was last updated"
-  updated_at: Date!
-  "Paginated non-working date entries in this time off schedule. Use next_time_off_entries_page as the top-level continuation query."
-  time_off_entries(  "The cursor which allows to fetch the next page of directory resources."
-cursor: String,   "Number of items to get, the default is 25."
-limit: Int = 25): TimeOffEntryPage!
-}
-
-"Paginated list of time off schedules"
+"Paginated list of time off schedules, each with all their entries"
 type TimesOffPage {
   "Time off schedules in this page"
-  time_offs: [TimeOffWithPagedEntries!]!
+  time_offs: [TimeOff!]!
   "Opaque cursor for fetching the next page, null when no more pages exist"
   cursor: String
 }
@@ -12956,7 +12920,7 @@ type UserAvailability {
   "The work schedule assigned to this user, null if using account default"
   work_schedule: WorkSchedule
   "The time off schedules assigned to this user"
-  time_offs: [TimeOffWithPagedEntries!]!
+  time_offs: [TimeOff!]!
 }
 
 "Result of a single user availability assignment. Batch assign/unassign mutations return one of these per requested user, allowing partial success — successful entries have user_availability populated and success=true; failed entries have user_availability=null, success=false, and a populated error."
@@ -13394,6 +13358,20 @@ type SearchIndexedItem {
   workspace_id: ID
 }
 
+"Workspace data stored in the search index."
+type SearchIndexedWorkspace {
+  "Workspace ID."
+  id: ID!
+  "Workspace name."
+  name: String!
+  "Workspace kind (open or closed)."
+  kind: String!
+  "Workspace description."
+  description: String
+  "Workspace state (active, archived, or deleted)."
+  state: String!
+}
+
 "A single item search result with indexed and live data."
 type SearchItemResult {
   "Unique identifier of the item."
@@ -13435,6 +13413,14 @@ limit: Int = 10,   "Date range filter."
 date_range: CrossEntityDateRangeInput,   "Controls the trade-off between search quality and response time. Defaults to balanced."
 strategy: SearchStrategy,   "Filter documents to specific workspace IDs."
 workspace_ids: [ID!]): SearchDocResults!
+  "Search for workspaces."
+  workspaces(  "The search query string."
+query: String!,   "Maximum number of results to return (default 10, max 20)."
+limit: Int = 10,   "Date range filter."
+date_range: CrossEntityDateRangeInput,   "Controls the trade-off between search quality and response time. Defaults to balanced."
+strategy: SearchStrategy,   "Filter to specific workspace IDs."
+workspace_ids: [ID!],   "Filter workspaces by kind (open or closed)."
+kind: String): SearchWorkspaceResults!
 }
 
 "Controls the trade-off between search quality and response time."
@@ -13445,6 +13431,20 @@ enum SearchStrategy {
   BALANCED
   "Best search quality with higher response time."
   QUALITY
+}
+
+"A single workspace search result."
+type SearchWorkspaceResult {
+  "Unique identifier of the workspace."
+  id: ID!
+  "Workspace data from the search index."
+  indexed_data: SearchIndexedWorkspace!
+}
+
+"Wrapper for a list of workspace search results."
+type SearchWorkspaceResults {
+  "List of workspace search results."
+  results: [SearchWorkspaceResult!]!
 }
 
 "Input for enrolling multiple items to a single sequence"
@@ -14015,6 +14015,8 @@ type ServiceUser {
   created_at: String
   "The last time the service user token was used for an API request."
   last_token_activity: String
+  "Whether the service user currently has an active API token."
+  has_token: Boolean
 }
 
 "A service user token result."
