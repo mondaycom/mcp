@@ -369,6 +369,14 @@ until: String): DocVersionHistory
   export_markdown_from_doc(  "The document's unique identifier to export. Get this from document queries or creation responses."
 docId: ID!,   "Optional array of specific block IDs to export. If omitted, exports the entire document. Use when you only need specific sections."
 blockIds: [String!]): ExportMarkdownResult
+  "List available agents from an external provider"
+  external_provider_agents(  "The credential ID for authenticating with the provider"
+credential_id: ID!,   "The type of external provider to query"
+provider_type: ExternalProvider!): [ProviderResource!]
+  "Fetch provider-specific resources (environments, vaults, etc.) from an external provider"
+  external_provider_data(  "The credential ID for authenticating with the provider"
+credential_id: ID!,   "The type of external provider to query"
+provider_type: ExternalProvider!): ExternalProviderData
   "Search knowledge base snippets."
   knowledge_base_search(  "The search query."
 query: String!,   "The maximum number of results to return."
@@ -560,7 +568,10 @@ sort: [UsersSortInput!],   "Filter by visibility."
 visibility: String,   "Filter by user status. Defaults to [ACTIVE, PENDING] if not provided."
 status: [UserStatus!],   "Number of items to get, the default is 200. The maximum is 1000."
 limit: Int = 200,   "Page number to get, starting at 1."
-page: Int = 1): [User!]
+page: Int = 1,   "The kind to search users by."
+kind: UserKind,   "When true, returns only inactive users. When false, returns only active users."
+non_active: Boolean,   "Sort users by creation date, newest first."
+newest_first: Boolean): [User!]
   "Get a collection of webhooks for the board"
   webhooks(  "Filters webhooks that were created by the app initiating the request"
 app_webhooks_only: Boolean,   "Board unique identifier."
@@ -640,10 +651,10 @@ sources: [SqlDescribeSourceInput!]!): JSON
   "Compile an ANSI SQL query without executing it"
   sql_compile(  "ANSI SQL query to compile."
 query: String!): JSON
-  "Retrieve aggregated board data at specific historical dates for point-in-time analysis."
+  "Retrieve aggregated board data at specific historical dates for point-in-time analysis. When the query references a date column, results are only available from when date column history began for that board; earlier timestamps are rejected."
   aggregate_history(  "The aggregation query configuration including source, dates, filters, and selections."
 query: AggregateHistoryQueryInput!): AggregateHistoryResultSet
-  "Retrieve historical item data from a board at a specific point in time."
+  "Retrieve historical item data from a board at a specific point in time. When the query references a date column, results are only available from when date column history began for that board; earlier timestamps are rejected."
   items_history(  "The query configuration including source, date, filters, and selections."
 query: ItemsHistoryQueryInput!): ItemsHistoryResultSet
   "A test query for resource allocation functionality."
@@ -680,23 +691,15 @@ limit: Int = 25): WorkSchedulePage
   time_offs(  "Filter by specific time off schedule IDs"
 ids: [ID!],   "Number of items to return per page; max 500"
 limit: Int,   "Filter by time off schedule name"
-name: String): TimeOffPage
+name: String): TimesOffPage
   "Fetches the next page of time off schedules using a cursor from a previous time_offs or next_time_offs_page call"
   next_time_offs_page(  "Cursor returned by a previous time_offs or next_time_offs_page call"
 cursor: String!,   "Number of items to get, the default is 25."
-limit: Int = 25): TimeOffPage
-  "Fetches the next page of entries for a time off schedule using a cursor from entries_page or next_time_off_entries_page"
-  next_time_off_entries_page(  "Cursor returned by a previous entries_page or next_time_off_entries_page call"
-cursor: String!,   "Number of items to get, the default is 25."
-limit: Int = 25): TimeOffEntryPage
-  "Returns user schedule assignments for the caller's account"
-  user_availabilities(  "Filter by specific user IDs"
+limit: Int = 25): TimesOffPage
+  "Returns users availability: work schedule and time offs schedule"
+  users_availability(  "Filter by specific user IDs"
 user_ids: [ID!],   "Number of items to return per page; max 500"
-limit: Int): UserAvailabilityPage
-  "Fetches the next page of user availabilities using a cursor from a previous user_availabilities or next_user_availabilities_page call"
-  next_user_availabilities_page(  "Cursor returned by a previous user_availabilities or next_user_availabilities_page call"
-cursor: String!,   "Number of items to get, the default is 25."
-limit: Int = 25): UserAvailabilityPage
+limit: Int = 25): UsersAvailability
   "Returns the account-level default work schedule and time off schedule"
   account_availability_defaults: AccountAvailabilityDefaults
   "Returns utilization report for resources: either grouped by attribute or ungrouped with per-resource data. Use inline fragments to query the appropriate fields."
@@ -1398,6 +1401,12 @@ export_options: ExportOptionsInput,   """
 time_zone: String,   "Column IDs in desired display order"
 columns_order: [String!],   "Output format (defaults to CSV)"
 export_format: ExportFormat = CSV): ExportBoardResult
+  "Initiate connecting an external agent via BYOA (async — result delivered via Pusher)"
+  connect_external_agent(  "The external agent connection parameters"
+input: ConnectExternalAgentInput!): ConnectExternalAgentPayload
+  "Disconnect an external agent by its ID"
+  disconnect_external_agent(  "The ID of the agent to disconnect"
+id: ID!): DisconnectExternalAgentPayload
   "Add workspace object to favorites"
   create_favorite(  "The input for adding an object to the favorites"
 input: CreateFavoriteInput!): CreateFavoriteResultType
@@ -1981,10 +1990,11 @@ relations: [ObjectRelationInput!]!): [ObjectRelation!]
   delete_object_relation(  "ID of the source object"
 source_object_id: ID!,   "ID of the relation to delete. If not provided, deletes all relations for the source object."
 relation_id: ID): Int
-  "Connect project to portfolio"
+  "Connect an existing project to a portfolio. When a callback_url is provided the mutation returns immediately with a process_id, and the result is POSTed to that URL once the operation completes. The callback payload is: { is_success: boolean, process_id: string, portfolio_item_id?: string }."
   connect_project_to_portfolio(  "The ID of the project to connect"
 projectBoardId: ID!,   "The ID of the portfolio to connect to"
-portfolioBoardId: ID!): ConnectProjectResult
+portfolioBoardId: ID!,   "Optional URL to receive a POST request when the operation completes. Enables async mode: the mutation returns immediately with a process_id."
+callback_url: String): ConnectProjectResult
   "Create a new portfolio"
   create_portfolio(boardName: String!, boardPrivacy: String!, destinationWorkspaceId: Int): CreatePortfolioResult
   "Update attributes (Job Role, Skills, or Location) for multiple resources in the directory"
@@ -2151,6 +2161,11 @@ privacy_kind: WorkflowBuilderPrivacyKind,   "Optional workflow description"
 description: String,   "Optional folder ID to place the workflow in"
 folder_id: ID,   "Optional list of user IDs to set as workflow owners"
 owner_ids: [ID!]): WorkflowBuilderCreateResult!
+  "Promote a workflow draft to live and optionally activate it."
+  publish_workflow(  "Stable workflow entity ID"
+workflow_object_id: ID!,   "Draft workflow ID to promote"
+workflow_draft_id: ID!,   "Activate the workflow immediately after publishing (defaults to true)"
+should_activate: Boolean): WorkflowBuilderPublishResult!
   "Submit answers to a form. Open to authenticated and anonymous users — authorization is handled by the form settings (user restrictions, etc.). Note: forms with reCAPTCHA enabled cannot be submitted via GraphQL — use the UI instead."
   create_form_submission(  "The unique token identifying the form to submit to."
 form_token: String!,   "The answers to submit. Each entry specifies a question ID and the answer for that question."
@@ -6473,6 +6488,65 @@ enum NonImportableColumns {
   SKIP
   "Fail the export if any non-importable column would be included."
   ERROR
+}
+
+"Provider-specific data for Claude managed agents"
+type ClaudeProviderData {
+  "Available environments on this provider"
+  environments: [ProviderResource!]
+  "Available vaults for secret management on this provider"
+  vaults: [ProviderResource!]
+}
+
+"Input for connecting an external agent via BYOA (Bring Your Own Agent)"
+input ConnectExternalAgentInput {
+  "The type of external provider (e.g. CLAUDE_MANAGED_AGENT, CUSTOM_AGENT)"
+  external_provider_type: ExternalProvider!
+  "The unique identifier of the agent on the external provider"
+  external_agent_id: ID!
+  "The credential ID used to authenticate with the external provider"
+  credential_id: ID!
+  "The display name for the connected agent"
+  name: String!
+  "Optional environment identifier on the external provider"
+  environment_id: ID
+  "Optional vault identifier for secret management on the external provider"
+  vault_id: ID
+  "Optional callback URL for agent event notifications"
+  callback_url: String
+}
+
+"Payload returned after initiating an external agent connection (async operation)"
+type ConnectExternalAgentPayload {
+  """
+  The connection status (e.g. "connecting"). Final result is delivered via Pusher.
+  """
+  status: String
+}
+
+"Payload returned after disconnecting an external agent"
+type DisconnectExternalAgentPayload {
+  "Whether the disconnection was successful"
+  success: Boolean
+}
+
+"The type of external agent provider"
+enum ExternalProvider {
+  "A Claude-managed agent hosted on Anthropic infrastructure"
+  CLAUDE_MANAGED_AGENT
+  "A custom agent with a user-provided callback URL"
+  CUSTOM_AGENT
+}
+
+"Provider-specific data, use inline fragments to access fields per provider type"
+union ExternalProviderData = ClaudeProviderData
+
+"A resource (agent, environment, or vault) available on an external provider"
+type ProviderResource {
+  "The unique identifier of the resource on the provider"
+  id: ID
+  "The display name of the resource"
+  name: String
 }
 
 "Knowledge base answer generated from snippets using LLM."
@@ -11004,6 +11078,8 @@ type ConnectProjectResult {
   message: String
   "The ID of the created portfolio item, if successful."
   portfolio_item_id: String
+  "Unique process ID for tracking this request. Included in the callback payload when the operation completes."
+  process_id: ID
 }
 
 type CreatePortfolioResult {
@@ -11927,7 +12003,9 @@ input AggregateHistoryFilterRuleInput {
   operator: AggregateHistoryFilterOperator!
   "The value(s) to compare against. Can be a string, number, boolean, or array."
   compare_value: JSON
-  "Optional attribute for complex column types (e.g., date for timeline columns)."
+  """
+  For columns whose value has multiple comparable parts (such as `timeline` columns with a start and end date), indicates which part to compare. For example, set `"date"` to compare against the timeline date. Leave unset for columns with a single comparable value.
+  """
   compare_attribute: String
 }
 
@@ -12166,7 +12244,9 @@ input ItemsHistoryFilterRuleInput {
   operator: ItemsHistoryFilterOperator!
   "The value(s) to compare against. Can be a string, number, boolean, or array."
   compare_value: JSON
-  "Optional attribute for complex column types."
+  """
+  For columns whose value has multiple comparable parts (such as `timeline` columns with a start and end date), indicates which part to compare. For example, set `"date"` to compare against the timeline date. Leave unset for columns with a single comparable value.
+  """
   compare_attribute: String
 }
 
@@ -12264,7 +12344,7 @@ input ItemsHistoryOrderByInput {
 input ItemsHistoryQueryInput {
   "The data source for the query (board with TABLE type)."
   from: ItemsHistoryFromInput!
-  "Array of ISO timestamp/date strings. Currently limited to 1 timestamp per request."
+  "Array of ISO timestamp/date strings to retrieve historical snapshots for."
   at_timestamps: [String!]!
   "Columns and functions to include in the results. If omitted, all tracked columns are returned."
   select: [ItemsHistorySelectElementInput!]
@@ -12274,8 +12354,8 @@ input ItemsHistoryQueryInput {
   order_by: [ItemsHistoryOrderByInput!]
   "Maximum number of items to return. Default: 50, max: 500."
   limit: Int = 50
-  "Number of items to skip for pagination. Default: 0."
-  offset: Int = 0
+  "Cursor for forward pagination. Returns items after this cursor position."
+  after: String
 }
 
 "Logical operators for combining filter rules."
@@ -12298,6 +12378,8 @@ type ItemsHistoryResultEntry {
 type ItemsHistoryResultSet {
   "Array of item snapshots at the requested timestamp."
   results: [ItemsHistoryItem!]
+  "Cursor for the next page. Null if there are no more results."
+  after: String
 }
 
 "The value of a result entry. Either a raw column value or a function result."
@@ -12681,7 +12763,7 @@ enum ResourceAttributeTypeKey {
   RESOURCE_MANAGER
 }
 
-"A named time off schedule with non-working date entries"
+"A named time off schedule with all its non-working date entries"
 type TimeOff {
   "Unique identifier of the time off schedule"
   id: ID!
@@ -12695,10 +12777,8 @@ type TimeOff {
   created_at: Date!
   "ISO 8601 timestamp when this record was last updated"
   updated_at: Date!
-  "Paginated non-working date entries in this time off schedule. Use next_time_off_entries_page as the top-level continuation query."
-  entries_page(  "The cursor which allows to fetch the next page of directory resources."
-cursor: String,   "Number of items to get, the default is 25."
-limit: Int = 25): TimeOffEntryPage!
+  "All non-working date entries in this time off schedule"
+  entries: [TimeOffEntry!]!
 }
 
 "Result of a time off schedule delete operation"
@@ -12751,14 +12831,6 @@ input TimeOffEntryInput {
   end: String!
 }
 
-"Paginated list of time off entries"
-type TimeOffEntryPage {
-  "Time off entries in this page"
-  entries: [TimeOffEntry!]!
-  "Opaque cursor for fetching the next page, null when no more pages exist"
-  cursor: String
-}
-
 "Result of a time off entry create or update operation"
 type TimeOffEntryResult {
   "The created or updated time off entry, null if the operation failed"
@@ -12769,14 +12841,6 @@ type TimeOffEntryResult {
   error: Error
 }
 
-"Paginated list of time off schedules"
-type TimeOffPage {
-  "Time off schedules in this page"
-  time_offs: [TimeOff!]!
-  "Opaque cursor for fetching the next page, null when no more pages exist"
-  cursor: String
-}
-
 "Result of a time off schedule create or update operation"
 type TimeOffResult {
   "The created or updated time off schedule, null if the operation failed"
@@ -12785,6 +12849,14 @@ type TimeOffResult {
   success: Boolean!
   "Structured error details, null if the operation succeeded"
   error: Error
+}
+
+"Paginated list of time off schedules, each with all their entries"
+type TimesOffPage {
+  "Time off schedules in this page"
+  time_offs: [TimeOff!]!
+  "Opaque cursor for fetching the next page, null when no more pages exist"
+  cursor: String
 }
 
 "Input for removing work schedule and/or time off assignments from multiple users"
@@ -12847,16 +12919,8 @@ type UserAvailability {
   user_id: ID!
   "The work schedule assigned to this user, null if using account default"
   work_schedule: WorkSchedule
-  "The time off schedule assigned to this user, null if using account default"
-  time_off: TimeOff
-}
-
-"Paginated list of user availability assignments"
-type UserAvailabilityPage {
-  "User availability assignments in this page"
-  user_availabilities: [UserAvailability!]!
-  "Opaque cursor for fetching the next page, null when no more pages exist"
-  cursor: String
+  "The time off schedules assigned to this user"
+  time_offs: [TimeOff!]!
 }
 
 "Result of a single user availability assignment. Batch assign/unassign mutations return one of these per requested user, allowing partial success — successful entries have user_availability populated and success=true; failed entries have user_availability=null, success=false, and a populated error."
@@ -12867,6 +12931,12 @@ type UserAvailabilityResult {
   success: Boolean!
   "Structured error details, null if the operation succeeded"
   error: Error
+}
+
+"List of user availability assignments"
+type UsersAvailability {
+  "User availability assignments"
+  users_availability: [UserAvailability!]!
 }
 
 "Day of the week"
@@ -12915,10 +12985,6 @@ type WorkScheduleDay {
   end_time: String
   "Whether this day is a working day"
   is_active: Boolean!
-  "ISO 8601 timestamp when this record was created"
-  created_at: Date!
-  "ISO 8601 timestamp when this record was last updated"
-  updated_at: Date!
 }
 
 "Working hours for a specific day of the week"
@@ -13292,6 +13358,20 @@ type SearchIndexedItem {
   workspace_id: ID
 }
 
+"Workspace data stored in the search index."
+type SearchIndexedWorkspace {
+  "Workspace ID."
+  id: ID!
+  "Workspace name."
+  name: String!
+  "Workspace kind (open or closed)."
+  kind: String!
+  "Workspace description."
+  description: String
+  "Workspace state (active, archived, or deleted)."
+  state: String!
+}
+
 "A single item search result with indexed and live data."
 type SearchItemResult {
   "Unique identifier of the item."
@@ -13333,6 +13413,14 @@ limit: Int = 10,   "Date range filter."
 date_range: CrossEntityDateRangeInput,   "Controls the trade-off between search quality and response time. Defaults to balanced."
 strategy: SearchStrategy,   "Filter documents to specific workspace IDs."
 workspace_ids: [ID!]): SearchDocResults!
+  "Search for workspaces."
+  workspaces(  "The search query string."
+query: String!,   "Maximum number of results to return (default 10, max 20)."
+limit: Int = 10,   "Date range filter."
+date_range: CrossEntityDateRangeInput,   "Controls the trade-off between search quality and response time. Defaults to balanced."
+strategy: SearchStrategy,   "Filter to specific workspace IDs."
+workspace_ids: [ID!],   "Filter workspaces by kind (open or closed)."
+kind: String): SearchWorkspaceResults!
 }
 
 "Controls the trade-off between search quality and response time."
@@ -13343,6 +13431,20 @@ enum SearchStrategy {
   BALANCED
   "Best search quality with higher response time."
   QUALITY
+}
+
+"A single workspace search result."
+type SearchWorkspaceResult {
+  "Unique identifier of the workspace."
+  id: ID!
+  "Workspace data from the search index."
+  indexed_data: SearchIndexedWorkspace!
+}
+
+"Wrapper for a list of workspace search results."
+type SearchWorkspaceResults {
+  "List of workspace search results."
+  results: [SearchWorkspaceResult!]!
 }
 
 "Input for enrolling multiple items to a single sequence"
@@ -13913,6 +14015,8 @@ type ServiceUser {
   created_at: String
   "The last time the service user token was used for an API request."
   last_token_activity: String
+  "Whether the service user currently has an active API token."
+  has_token: Boolean
 }
 
 "A service user token result."
@@ -14098,6 +14202,8 @@ type UserConfig {
   visibility: [String!]!
   "The behavior IDs that are true for this user kind."
   behaviors: [String!]!
+  "The group this user config belongs to."
+  group: String!
 }
 
 "Filter for user kinds, including kind groups."
@@ -14344,6 +14450,14 @@ enum WorkflowBuilderPrivacyKind {
   PRIVATE
   "Workflow is shareable with guests outside the account"
   SHAREABLE
+}
+
+"Identifiers for a published workflow"
+type WorkflowBuilderPublishResult {
+  "Stable workflow entity ID"
+  workflow_object_id: ID
+  "Live workflow ID after promotion"
+  workflow_live_id: ID
 }
 
 "A step instance within a workflow"

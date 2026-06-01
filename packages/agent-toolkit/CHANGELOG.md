@@ -1,13 +1,30 @@
 # Changelog
 
-## 5.17.0
+## 5.21.0
 
-### get_board_activity — add item and user filters
+### get_board_activity — add user_ids filter
 
-- Added optional `itemIds` parameter to filter activity logs to specific items, avoiding full-board fetches
 - Added optional `userIds` parameter to filter activity logs to actions performed by specific users
-- Updated GraphQL query (`GetBoardActivity`) to pass `item_ids` and `user_ids` arguments to `activity_logs`
+- Updated GraphQL query (`GetBoardActivity`) to pass `user_ids` argument to `activity_logs`
 - Updated `getDescription()` to reflect the new filtering capabilities
+
+## 5.20.0
+
+### Add agent management tools
+
+Five new tools enabling agents to create and manage monday.com platform agents end-to-end:
+
+- `manage_agent` — full lifecycle management: `create` (AI mode via prompt), `create_blank` (manual mode), `get`, `update`, `delete`, `activate`, `deactivate`, `run`
+- `manage_agent_triggers` — manage per-agent triggers (when it runs): `list`, `add`, `remove`
+- `manage_agent_skills` — full skill lifecycle: `create` a new skill in the catalog, `add` to agent, `remove` from agent
+- `manage_agent_knowledge` — grant, update, or revoke an agent's access to boards and docs
+- `agent_catalog` (READ) — browse the account-wide catalog of available trigger types and skills before wiring them to an agent
+
+## 5.19.0
+
+### publish_workflow — surface validation error details
+
+- `rethrowWithContext` now includes GraphQL `extensions` data in the error message when present, so structured errors like `WORKFLOW_VALIDATION_FAILED` (with step-level issue details) are passed through to the LLM instead of being dropped
 
 ## 5.11.0
 
