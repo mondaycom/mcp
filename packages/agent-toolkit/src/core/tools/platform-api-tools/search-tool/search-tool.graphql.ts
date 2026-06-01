@@ -28,3 +28,13 @@ export const getFolders = gql`
     }
   }
 `;
+
+export const getWorkspaces = gql`
+  query GetWorkspaces($page: Int!, $limit: Int!) {
+    workspaces(page: $page, limit: $limit) {
+      id
+      name
+      description
+    }
+  }
+`;

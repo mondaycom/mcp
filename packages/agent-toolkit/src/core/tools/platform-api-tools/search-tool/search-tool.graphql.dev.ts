@@ -32,3 +32,21 @@ export const searchDocsDev = gql`
     }
   }
 `;
+
+export const searchWorkspacesDev = gql`
+  query SearchWorkspacesDev($query: String!, $limit: Int, $kind: String) {
+    search {
+      workspaces(query: $query, limit: $limit, kind: $kind) {
+        results {
+          id
+          indexed_data {
+            id
+            name
+            kind
+            description
+          }
+        }
+      }
+    }
+  }
+`;

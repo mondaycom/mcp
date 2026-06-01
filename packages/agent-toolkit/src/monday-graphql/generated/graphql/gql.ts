@@ -81,6 +81,7 @@ type Documents = {
     "\n  query GetBoards($page: Int!, $limit: Int!, $workspace_ids: [ID]) {\n    boards(page: $page, limit: $limit, workspace_ids: $workspace_ids) {\n      id\n      name\n      url\n    }\n  }\n": typeof types.GetBoardsDocument,
     "\n  query GetDocs($page: Int!, $limit: Int!, $workspace_ids: [ID]) {\n    docs(page: $page, limit: $limit, workspace_ids: $workspace_ids) {\n      id\n      name\n      url\n    }\n  }\n": typeof types.GetDocsDocument,
     "\n  query GetFolders($page: Int!, $limit: Int!, $workspace_ids: [ID]) {\n    folders(page: $page, limit: $limit, workspace_ids: $workspace_ids) {\n      id\n      name\n    }\n  }\n": typeof types.GetFoldersDocument,
+    "\n  query GetWorkspaces($page: Int!, $limit: Int!) {\n    workspaces(page: $page, limit: $limit) {\n      id\n      name\n      description\n    }\n  }\n": typeof types.GetWorkspacesDocument,
     "\n  mutation SetObjectSchemaColumnActiveState($objectSchemaId: ID, $objectSchemaName: String, $columnId: ID!, $action: ColumnActiveStateAction!) {\n    set_object_schema_column_active_state(object_schema_id: $objectSchemaId, object_schema_name: $objectSchemaName, column_id: $columnId, action: $action) {\n      id\n      name\n      description\n      parent_id\n      revision\n    }\n  }\n": typeof types.SetObjectSchemaColumnActiveStateDocument,
     "\n  mutation updateAssetsOnItem($boardId: ID!, $itemId: ID!, $columnId: String!, $files: [FileInput!]!) {\n    update_assets_on_item(board_id: $boardId, item_id: $itemId, column_id: $columnId, files: $files) {\n      id\n      name\n    }\n  }\n": typeof types.UpdateAssetsOnItemDocument,
     "\n  query getDocIdByObjectId($objectId: [ID!]) {\n    docs(object_ids: $objectId) {\n      id\n    }\n  }\n": typeof types.GetDocIdByObjectIdDocument,
@@ -211,6 +212,7 @@ const documents: Documents = {
     "\n  query GetBoards($page: Int!, $limit: Int!, $workspace_ids: [ID]) {\n    boards(page: $page, limit: $limit, workspace_ids: $workspace_ids) {\n      id\n      name\n      url\n    }\n  }\n": types.GetBoardsDocument,
     "\n  query GetDocs($page: Int!, $limit: Int!, $workspace_ids: [ID]) {\n    docs(page: $page, limit: $limit, workspace_ids: $workspace_ids) {\n      id\n      name\n      url\n    }\n  }\n": types.GetDocsDocument,
     "\n  query GetFolders($page: Int!, $limit: Int!, $workspace_ids: [ID]) {\n    folders(page: $page, limit: $limit, workspace_ids: $workspace_ids) {\n      id\n      name\n    }\n  }\n": types.GetFoldersDocument,
+    "\n  query GetWorkspaces($page: Int!, $limit: Int!) {\n    workspaces(page: $page, limit: $limit) {\n      id\n      name\n      description\n    }\n  }\n": types.GetWorkspacesDocument,
     "\n  mutation SetObjectSchemaColumnActiveState($objectSchemaId: ID, $objectSchemaName: String, $columnId: ID!, $action: ColumnActiveStateAction!) {\n    set_object_schema_column_active_state(object_schema_id: $objectSchemaId, object_schema_name: $objectSchemaName, column_id: $columnId, action: $action) {\n      id\n      name\n      description\n      parent_id\n      revision\n    }\n  }\n": types.SetObjectSchemaColumnActiveStateDocument,
     "\n  mutation updateAssetsOnItem($boardId: ID!, $itemId: ID!, $columnId: String!, $files: [FileInput!]!) {\n    update_assets_on_item(board_id: $boardId, item_id: $itemId, column_id: $columnId, files: $files) {\n      id\n      name\n    }\n  }\n": types.UpdateAssetsOnItemDocument,
     "\n  query getDocIdByObjectId($objectId: [ID!]) {\n    docs(object_ids: $objectId) {\n      id\n    }\n  }\n": types.GetDocIdByObjectIdDocument,
@@ -556,6 +558,10 @@ export function graphql(source: "\n  query GetDocs($page: Int!, $limit: Int!, $w
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  query GetFolders($page: Int!, $limit: Int!, $workspace_ids: [ID]) {\n    folders(page: $page, limit: $limit, workspace_ids: $workspace_ids) {\n      id\n      name\n    }\n  }\n"): (typeof documents)["\n  query GetFolders($page: Int!, $limit: Int!, $workspace_ids: [ID]) {\n    folders(page: $page, limit: $limit, workspace_ids: $workspace_ids) {\n      id\n      name\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query GetWorkspaces($page: Int!, $limit: Int!) {\n    workspaces(page: $page, limit: $limit) {\n      id\n      name\n      description\n    }\n  }\n"): (typeof documents)["\n  query GetWorkspaces($page: Int!, $limit: Int!) {\n    workspaces(page: $page, limit: $limit) {\n      id\n      name\n      description\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

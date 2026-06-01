@@ -1,8 +1,8 @@
 import { ToolInputType, ToolOutputType, ToolType } from 'src/core/tool';
 import { z } from 'zod';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { getBoards, getDocs, getFolders } from './search-tool.graphql';
-import { searchBoardsDev, searchDocsDev } from './search-tool.graphql.dev';
+import { getBoards, getDocs, getFolders, getWorkspaces } from './search-tool.graphql';
+import { searchBoardsDev, searchDocsDev, searchWorkspacesDev } from './search-tool.graphql.dev';
 import {
   GetBoardsQuery,
   GetBoardsQueryVariables,
@@ -10,12 +10,16 @@ import {
   GetDocsQueryVariables,
   GetFoldersQuery,
   GetFoldersQueryVariables,
+  GetWorkspacesQuery,
+  GetWorkspacesQueryVariables,
 } from 'src/monday-graphql/generated/graphql/graphql';
 import {
   SearchBoardsDevQuery,
   SearchBoardsDevQueryVariables,
   SearchDocsDevQuery,
   SearchDocsDevQueryVariables,
+  SearchWorkspacesDevQuery,
+  SearchWorkspacesDevQueryVariables,
 } from 'src/monday-graphql/generated/graphql.dev/graphql';
 import { normalizeString } from 'src/utils/string.utils';
 import { DataWithFilterInfo, GlobalSearchType, ObjectPrefixes, SearchResult } from './search-tool.types';
@@ -56,13 +60,13 @@ export class SearchTool extends BaseMondayApiTool<SearchToolInput> {
   });
 
   getDescription(): string {
-    return `Search within monday.com platform. Can search for boards, documents, forms, folders.
+    return `Search within monday.com platform. Can search for boards, documents, folders, and workspaces.
 For searching/listing specific users and teams, use list_users_and_teams tool.
 For account-level info (plan, member count, products), use get_user_context tool.
-For workspaces, use list_workspaces tool.
+For listing all workspaces (membership-ordered), use list_workspaces tool.
 For items and groups, use get_board_items_page tool.
 For groups, use get_board_info tool.
-IMPORTANT: ids returned by this tool are prefixed with the type of the object (e.g doc-123, board-456, folder-789). When passing the ids to other tools, you need to remove the prefix and just pass the number.
+IMPORTANT: ids returned by this tool are prefixed with the type of the object (e.g doc-123, board-456, folder-789, workspace-101). When passing the ids to other tools, you need to remove the prefix and just pass the number.
     `;
   }
 
@@ -71,7 +75,7 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
   }
 
   protected async executeInternal(input: ToolInputType<SearchToolInput>): Promise<ToolOutputType<never>> {
-    // Try using "cross_entity_search" field from dev schema for BOARD and DOCUMENTS types
+    // Try using "cross_entity_search" field from dev schema for BOARD, DOCUMENTS, and WORKSPACES types
     if (input.searchType !== GlobalSearchType.FOLDERS && input.searchTerm) {
       try {
         const data = await this.searchWithDevEndpointAsync(input);
@@ -88,6 +92,7 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
       [GlobalSearchType.BOARD]: this.searchBoardsAsync.bind(this),
       [GlobalSearchType.DOCUMENTS]: this.searchDocsAsync.bind(this),
       [GlobalSearchType.FOLDERS]: this.searchFoldersAsync.bind(this),
+      [GlobalSearchType.WORKSPACES]: this.searchWorkspacesAsync.bind(this),
     };
 
     const handler = handlers[input.searchType];
@@ -118,6 +123,10 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
 
     if (input.searchType === GlobalSearchType.DOCUMENTS) {
       return this.searchDocsWithDevEndpointAsync(input.searchTerm!, input.limit, workspaceIds);
+    }
+
+    if (input.searchType === GlobalSearchType.WORKSPACES) {
+      return this.searchWorkspacesWithDevEndpointAsync(input.searchTerm!, input.limit);
     }
 
     throw new Error(`Unsupported search type for dev endpoint: ${input.searchType}`);
@@ -162,6 +171,46 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     }));
 
     return { items, wasFiltered: true };
+  }
+
+  private async searchWorkspacesWithDevEndpointAsync(
+    query: string,
+    limit: number,
+  ): Promise<DataWithFilterInfo<SearchResult>> {
+    const variables: SearchWorkspacesDevQueryVariables = { query, limit };
+
+    const response = await this.mondayApi.request<SearchWorkspacesDevQuery>(searchWorkspacesDev, variables, {
+      versionOverride: 'dev',
+      timeout: SEARCH_TIMEOUT,
+    });
+
+    const items = response.search.workspaces.results.map((result) => ({
+      id: ObjectPrefixes.WORKSPACE + result.indexed_data.id,
+      title: result.indexed_data.name,
+      description: result.indexed_data.description || undefined,
+    }));
+
+    return { items, wasFiltered: true };
+  }
+
+  private async searchWorkspacesAsync(input: ToolInputType<SearchToolInput>): Promise<DataWithFilterInfo<SearchResult>> {
+    const variables: GetWorkspacesQueryVariables = {
+      ...this.getPagingParamsForSearch(input),
+    };
+
+    const response = await this.mondayApi.request<GetWorkspacesQuery>(getWorkspaces, variables);
+    const data = this.searchAndVirtuallyPaginate(input, response.workspaces || [], (workspace) => workspace!.name);
+
+    const result = {
+      items: data.items.map((workspace) => ({
+        id: ObjectPrefixes.WORKSPACE + workspace!.id,
+        title: workspace!.name,
+        description: workspace!.description || undefined,
+      })),
+      wasFiltered: data.wasFiltered,
+    };
+
+    return result;
   }
 
   private async searchFoldersAsync(input: ToolInputType<SearchToolInput>): Promise<DataWithFilterInfo<SearchResult>> {
