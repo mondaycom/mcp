@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.21.0
+
+### get_board_activity — add user_ids filter
+
+- Added optional `userIds` parameter to filter activity logs to actions performed by specific users
+- Updated GraphQL query (`GetBoardActivity`) to pass `user_ids` argument to `activity_logs`
+- Updated `getDescription()` to reflect the new filtering capabilities
+
 ## 5.20.0
 
 ### Add agent management tools
