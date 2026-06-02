@@ -161,6 +161,9 @@ RELATED TOOLS:
 
   protected async executeInternal(input: ToolInputType<ConfigureAiColumnToolInput>): Promise<ToolOutputType<never>> {
     const boardId = this.context?.boardId ?? (input as ToolInputType<typeof configureAiColumnInBoardToolSchema>).board_id;
+    if (!boardId) {
+      throw new Error('board_id is required');
+    }
     const extraSettings = input.run_backfill !== undefined ? { run_backfill: input.run_backfill } : undefined;
 
     try {
