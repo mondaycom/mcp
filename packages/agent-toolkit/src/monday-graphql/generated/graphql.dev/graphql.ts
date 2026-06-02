@@ -880,6 +880,176 @@ export type AiActionResponse = {
   usage?: Maybe<TokenUsage>;
 };
 
+/** Type of entity to extract from text. */
+export enum AiColumnEntity {
+  /** Extract company names. */
+  CompanyName = 'company_name',
+  /** Extract a custom entity defined by custom_instructions. */
+  Custom = 'custom',
+  /** Extract dates. */
+  Date = 'date',
+  /** Extract domain names. */
+  DomainName = 'domain_name',
+  /** Extract email addresses. */
+  EmailAddress = 'email_address',
+  /** Extract first names. */
+  FirstName = 'first_name',
+  /** Extract last names. */
+  LastName = 'last_name',
+  /** Extract phone numbers. */
+  PhoneNumber = 'phone_number',
+  /** Extract times. */
+  Time = 'time',
+  /** Extract URLs. */
+  Url = 'url',
+  /** Extract years. */
+  Year = 'year'
+}
+
+/** Optional settings controlling backfill behavior when configuring an AI column. */
+export type AiColumnExtraSettingsInput = {
+  /** Whether to immediately apply the AI automation to existing items. Defaults to true. */
+  run_backfill?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+/** Desired output length relative to the input text. */
+export enum AiColumnImproverLength {
+  /** Make the output longer than the input. */
+  Longer = 'longer',
+  /** Keep approximately the same length as input. */
+  Same = 'same',
+  /** Make the output shorter than the input. */
+  Shorter = 'shorter'
+}
+
+/** Target language for translation. */
+export enum AiColumnLanguage {
+  /** Arabic. */
+  Arabic = 'arabic',
+  /** Bengali. */
+  Bengali = 'bengali',
+  /** Chinese. */
+  Chinese = 'chinese',
+  /** Danish. */
+  Danish = 'danish',
+  /** Dutch. */
+  Dutch = 'dutch',
+  /** English. */
+  English = 'english',
+  /** French. */
+  French = 'french',
+  /** German. */
+  German = 'german',
+  /** Hebrew. */
+  Hebrew = 'hebrew',
+  /** Hindi. */
+  Hindi = 'hindi',
+  /** Indonesian. */
+  Indonesian = 'indonesian',
+  /** Italian. */
+  Italian = 'italian',
+  /** Japanese. */
+  Japanese = 'japanese',
+  /** Korean. */
+  Korean = 'korean',
+  /** Norwegian. */
+  Norwegian = 'norwegian',
+  /** Polish. */
+  Polish = 'polish',
+  /** Portuguese. */
+  Portuguese = 'portuguese',
+  /** Russian. */
+  Russian = 'russian',
+  /** Spanish. */
+  Spanish = 'spanish',
+  /** Swedish. */
+  Swedish = 'swedish',
+  /** Thai. */
+  Thai = 'thai',
+  /** Turkish. */
+  Turkish = 'turkish',
+  /** Vietnamese. */
+  Vietnamese = 'vietnamese'
+}
+
+/** Approximate desired length of generated text. */
+export enum AiColumnOutputLength {
+  /** Output a brief, concise response. */
+  Brief = 'brief',
+  /** Output a detailed, in-depth response. */
+  InDepth = 'in_depth',
+  /** Output approximately one paragraph. */
+  Paragraph = 'paragraph',
+  /** Output approximately one sentence. */
+  Sentence = 'sentence'
+}
+
+/** A group of people available for AI-based assignment. */
+export type AiColumnPersonGroupInput = {
+  /** Description of this group (e.g., role, team name, or assignment criteria). */
+  description: Scalars['String']['input'];
+  /** Array of user IDs in this group. */
+  user_ids: Array<Scalars['Int']['input']>;
+};
+
+/** Level of text refinement to apply. */
+export enum AiColumnRefinementLevel {
+  /** Substantially rewrite with creative freedom. */
+  HighCreativity = 'high_creativity',
+  /** Apply only minor corrections and improvements. */
+  MinimalChanges = 'minimal_changes',
+  /** Restructure and improve while preserving intent. */
+  ModerateChanges = 'moderate_changes'
+}
+
+/** The result of removing AI configuration from a column. */
+export type AiColumnRemoveResult = {
+  __typename?: 'AiColumnRemoveResult';
+  /** The ID of the column that had AI removed. */
+  column_id: Scalars['ID']['output'];
+  /** Whether the AI configuration was successfully removed. */
+  success: Scalars['Boolean']['output'];
+};
+
+/** The result of configuring AI on a column. */
+export type AiColumnResult = {
+  __typename?: 'AiColumnResult';
+  /** The ID of the column that was configured. */
+  column_id: Scalars['ID']['output'];
+};
+
+/** The data source for AI column processing. */
+export enum AiColumnSource {
+  /** Use a specific column value as the AI input source. */
+  Column = 'column',
+  /** Use emails and activities associated with the item as the AI input source. */
+  EmailsAndActivities = 'emails_and_activities',
+  /** Use the item name as the AI input source. */
+  ItemName = 'item_name',
+  /** Use the item update thread as the AI input source. */
+  Thread = 'thread'
+}
+
+/** Writing tone/style for AI text generation. */
+export enum AiColumnTone {
+  /** Relaxed, informal tone. */
+  Casual = 'casual',
+  /** Assertive and authoritative tone. */
+  Confident = 'confident',
+  /** Warm, understanding, and emotionally aware tone. */
+  Empathic = 'empathic',
+  /** Approachable, personable tone. */
+  Friendly = 'friendly',
+  /** Conversational, everyday tone. */
+  Natural = 'natural',
+  /** Formal, business-appropriate tone. */
+  Professional = 'professional',
+  /** Persuasive, marketing-oriented tone. */
+  Promotional = 'promotional',
+  /** Preserve the same tone as the input text. */
+  Same = 'same'
+}
+
 /** Response from document AI extraction request */
 export type AiDocumentActionResponse = {
   __typename?: 'AiDocumentActionResponse';
@@ -9201,6 +9371,22 @@ export type Mutation = {
   complete_upload?: Maybe<AssetResult>;
   /** Get the complexity data of your mutations. */
   complexity?: Maybe<Complexity>;
+  /** Configures a column to categorize items based on content analysis. */
+  configure_categorize_ai_column?: Maybe<AiColumnResult>;
+  /** Configures a column to extract structured information from text. */
+  configure_extract_ai_column?: Maybe<AiColumnResult>;
+  /** Configures a column to rewrite or improve text quality. */
+  configure_improve_text_ai_column?: Maybe<AiColumnResult>;
+  /** Configures a column with a custom AI prompt for complex or flexible operations. */
+  configure_open_block_ai_column?: Maybe<AiColumnResult>;
+  /** Configures a column to assign a person to items based on context. */
+  configure_person_assignment_ai_column?: Maybe<AiColumnResult>;
+  /** Configures a column to generate concise summaries of input text. */
+  configure_summarize_ai_column?: Maybe<AiColumnResult>;
+  /** Configures a column to translate text to a target language. */
+  configure_translate_ai_column?: Maybe<AiColumnResult>;
+  /** Configures a column to generate new text content from a prompt. */
+  configure_write_me_ai_column?: Maybe<AiColumnResult>;
   /** Connect a board to an object schema. */
   connect_board_to_object_schema?: Maybe<BoardConnection>;
   /** Initiate connecting an external agent via BYOA (async — result delivered via Pusher) */
@@ -9470,6 +9656,8 @@ export type Mutation = {
   regenerate_service_user_token?: Maybe<Scalars['String']['output']>;
   /** Remove a board or doc from an agent. Creates a draft, removes the access, and promotes to live. */
   remove_agent_resource_access?: Maybe<MutationResult>;
+  /** Removes AI configuration from a column, deleting all associated automation recipes. */
+  remove_ai_from_column?: Maybe<AiColumnRemoveResult>;
   /** Removes connected boards from a board relation column. */
   remove_board_relation_connected_boards?: Maybe<Array<BoardRelationConnectedBoardsResult>>;
   /** Remove mock app subscription for the current account */
@@ -10012,6 +10200,96 @@ export type MutationClear_Users_DepartmentArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationComplete_UploadArgs = {
   input: CompleteUploadInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationConfigure_Categorize_Ai_ColumnArgs = {
+  additional_instructions?: InputMaybe<Scalars['String']['input']>;
+  board_id: Scalars['ID']['input'];
+  column_id: Scalars['ID']['input'];
+  extra_settings?: InputMaybe<AiColumnExtraSettingsInput>;
+  source_column_id?: InputMaybe<Scalars['ID']['input']>;
+  source_type: AiColumnSource;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationConfigure_Extract_Ai_ColumnArgs = {
+  additional_instructions?: InputMaybe<Scalars['String']['input']>;
+  board_id: Scalars['ID']['input'];
+  column_id: Scalars['ID']['input'];
+  custom_instructions?: InputMaybe<Scalars['String']['input']>;
+  entity_type: AiColumnEntity;
+  extra_settings?: InputMaybe<AiColumnExtraSettingsInput>;
+  source_column_id?: InputMaybe<Scalars['ID']['input']>;
+  source_type: AiColumnSource;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationConfigure_Improve_Text_Ai_ColumnArgs = {
+  board_id: Scalars['ID']['input'];
+  column_id: Scalars['ID']['input'];
+  extra_settings?: InputMaybe<AiColumnExtraSettingsInput>;
+  length?: InputMaybe<AiColumnImproverLength>;
+  refinement_type?: InputMaybe<AiColumnRefinementLevel>;
+  source_column_id?: InputMaybe<Scalars['ID']['input']>;
+  source_type: AiColumnSource;
+  tone?: InputMaybe<AiColumnTone>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationConfigure_Open_Block_Ai_ColumnArgs = {
+  ai_query: Scalars['String']['input'];
+  board_id: Scalars['ID']['input'];
+  column_id: Scalars['ID']['input'];
+  extra_settings?: InputMaybe<AiColumnExtraSettingsInput>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationConfigure_Person_Assignment_Ai_ColumnArgs = {
+  board_id: Scalars['ID']['input'];
+  column_id: Scalars['ID']['input'];
+  extra_settings?: InputMaybe<AiColumnExtraSettingsInput>;
+  groups: Array<AiColumnPersonGroupInput>;
+  source_column_id?: InputMaybe<Scalars['ID']['input']>;
+  source_type: AiColumnSource;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationConfigure_Summarize_Ai_ColumnArgs = {
+  additional_instructions?: InputMaybe<Scalars['String']['input']>;
+  board_id: Scalars['ID']['input'];
+  column_id: Scalars['ID']['input'];
+  extra_settings?: InputMaybe<AiColumnExtraSettingsInput>;
+  source_column_id?: InputMaybe<Scalars['ID']['input']>;
+  source_type: AiColumnSource;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationConfigure_Translate_Ai_ColumnArgs = {
+  board_id: Scalars['ID']['input'];
+  column_id: Scalars['ID']['input'];
+  extra_settings?: InputMaybe<AiColumnExtraSettingsInput>;
+  source_column_id?: InputMaybe<Scalars['ID']['input']>;
+  source_type: AiColumnSource;
+  target_language: AiColumnLanguage;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationConfigure_Write_Me_Ai_ColumnArgs = {
+  ai_query: Scalars['String']['input'];
+  board_id: Scalars['ID']['input'];
+  column_id: Scalars['ID']['input'];
+  extra_settings?: InputMaybe<AiColumnExtraSettingsInput>;
+  length: AiColumnOutputLength;
+  tone: AiColumnTone;
 };
 
 
@@ -11105,6 +11383,13 @@ export type MutationRemove_Agent_Resource_AccessArgs = {
   id: Scalars['ID']['input'];
   resource_id: Scalars['ID']['input'];
   scope_type: KnowledgeScope;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationRemove_Ai_From_ColumnArgs = {
+  board_id: Scalars['ID']['input'];
+  column_id: Scalars['ID']['input'];
 };
 
 
@@ -12548,10 +12833,27 @@ export type PortfolioNoConnectedProjects = {
   has_no_connected_projects?: Maybe<Scalars['Boolean']['output']>;
 };
 
+/** A resource belonging to a portfolio, with name resolved from the resource directory. */
+export type PortfolioResource = {
+  __typename?: 'PortfolioResource';
+  /** The resource ID. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** The resource name. */
+  name?: Maybe<Scalars['String']['output']>;
+};
+
 /** Input for fetching the list of resource IDs belonging to a portfolio. */
 export type PortfolioResourcesInput = {
   /** The portfolio ID to fetch resources for. */
   portfolio_id: Scalars['ID']['input'];
+};
+
+/** Input for searching resources within a portfolio by name. */
+export type PortfolioResourcesSearchInput = {
+  /** The portfolio ID to scope the search to. */
+  portfolio_id: Scalars['ID']['input'];
+  /** Resource name search term. Length: 1-100 chars. */
+  search_term: Scalars['String']['input'];
 };
 
 /** Portfolio utilization report result: utilization data (grouped or ungrouped) or a signal that no projects are connected. */
@@ -13108,6 +13410,8 @@ export type Query = {
   platform_api?: Maybe<PlatformApi>;
   /** Returns the list of resource IDs belonging to a portfolio. Lightweight alternative to portfolio_utilization_report when only resource identity is needed — no effort computation. */
   portfolio_resources?: Maybe<Array<Scalars['ID']['output']>>;
+  /** Portfolio resources filtered by name. Returns up to 25 matches. */
+  portfolio_resources_by_name: Array<PortfolioResource>;
   /** Returns utilization report scoped to a portfolio. Resolves portfolio to board IDs, then returns the same report shape as utilization_report. */
   portfolio_utilization_report?: Maybe<PortfolioUtilizationReport>;
   /** Get the current user's priority prompt. */
@@ -13937,6 +14241,12 @@ export type QueryObjectsArgs = {
 /** Root query type for the Dependencies service */
 export type QueryPortfolio_ResourcesArgs = {
   input: PortfolioResourcesInput;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryPortfolio_Resources_By_NameArgs = {
+  input: PortfolioResourcesSearchInput;
 };
 
 
@@ -18339,6 +18649,104 @@ export type CreateAgentSkillMutationVariables = Exact<{
 
 export type CreateAgentSkillMutation = { __typename?: 'Mutation', create_agent_skill?: { __typename?: 'AgentSkillCatalogEntry', id?: string | null, name?: string | null, description?: string | null } | null };
 
+export type ConfigureCategorizeAiColumnMutationVariables = Exact<{
+  boardId: Scalars['ID']['input'];
+  columnId: Scalars['ID']['input'];
+  sourceType: AiColumnSource;
+  sourceColumnId?: InputMaybe<Scalars['ID']['input']>;
+  additionalInstructions?: InputMaybe<Scalars['String']['input']>;
+  extraSettings?: InputMaybe<AiColumnExtraSettingsInput>;
+}>;
+
+
+export type ConfigureCategorizeAiColumnMutation = { __typename?: 'Mutation', configure_categorize_ai_column?: { __typename?: 'AiColumnResult', column_id: string } | null };
+
+export type ConfigureSummarizeAiColumnMutationVariables = Exact<{
+  boardId: Scalars['ID']['input'];
+  columnId: Scalars['ID']['input'];
+  sourceType: AiColumnSource;
+  sourceColumnId?: InputMaybe<Scalars['ID']['input']>;
+  additionalInstructions?: InputMaybe<Scalars['String']['input']>;
+  extraSettings?: InputMaybe<AiColumnExtraSettingsInput>;
+}>;
+
+
+export type ConfigureSummarizeAiColumnMutation = { __typename?: 'Mutation', configure_summarize_ai_column?: { __typename?: 'AiColumnResult', column_id: string } | null };
+
+export type ConfigureTranslateAiColumnMutationVariables = Exact<{
+  boardId: Scalars['ID']['input'];
+  columnId: Scalars['ID']['input'];
+  sourceType: AiColumnSource;
+  sourceColumnId?: InputMaybe<Scalars['ID']['input']>;
+  targetLanguage: AiColumnLanguage;
+  extraSettings?: InputMaybe<AiColumnExtraSettingsInput>;
+}>;
+
+
+export type ConfigureTranslateAiColumnMutation = { __typename?: 'Mutation', configure_translate_ai_column?: { __typename?: 'AiColumnResult', column_id: string } | null };
+
+export type ConfigureImproveTextAiColumnMutationVariables = Exact<{
+  boardId: Scalars['ID']['input'];
+  columnId: Scalars['ID']['input'];
+  sourceType: AiColumnSource;
+  sourceColumnId?: InputMaybe<Scalars['ID']['input']>;
+  tone?: InputMaybe<AiColumnTone>;
+  length?: InputMaybe<AiColumnImproverLength>;
+  refinementType?: InputMaybe<AiColumnRefinementLevel>;
+  extraSettings?: InputMaybe<AiColumnExtraSettingsInput>;
+}>;
+
+
+export type ConfigureImproveTextAiColumnMutation = { __typename?: 'Mutation', configure_improve_text_ai_column?: { __typename?: 'AiColumnResult', column_id: string } | null };
+
+export type ConfigureExtractAiColumnMutationVariables = Exact<{
+  boardId: Scalars['ID']['input'];
+  columnId: Scalars['ID']['input'];
+  sourceType: AiColumnSource;
+  sourceColumnId?: InputMaybe<Scalars['ID']['input']>;
+  entityType: AiColumnEntity;
+  customInstructions?: InputMaybe<Scalars['String']['input']>;
+  additionalInstructions?: InputMaybe<Scalars['String']['input']>;
+  extraSettings?: InputMaybe<AiColumnExtraSettingsInput>;
+}>;
+
+
+export type ConfigureExtractAiColumnMutation = { __typename?: 'Mutation', configure_extract_ai_column?: { __typename?: 'AiColumnResult', column_id: string } | null };
+
+export type ConfigureOpenBlockAiColumnMutationVariables = Exact<{
+  boardId: Scalars['ID']['input'];
+  columnId: Scalars['ID']['input'];
+  aiQuery: Scalars['String']['input'];
+  extraSettings?: InputMaybe<AiColumnExtraSettingsInput>;
+}>;
+
+
+export type ConfigureOpenBlockAiColumnMutation = { __typename?: 'Mutation', configure_open_block_ai_column?: { __typename?: 'AiColumnResult', column_id: string } | null };
+
+export type ConfigureWriteMeAiColumnMutationVariables = Exact<{
+  boardId: Scalars['ID']['input'];
+  columnId: Scalars['ID']['input'];
+  aiQuery: Scalars['String']['input'];
+  tone: AiColumnTone;
+  length: AiColumnOutputLength;
+  extraSettings?: InputMaybe<AiColumnExtraSettingsInput>;
+}>;
+
+
+export type ConfigureWriteMeAiColumnMutation = { __typename?: 'Mutation', configure_write_me_ai_column?: { __typename?: 'AiColumnResult', column_id: string } | null };
+
+export type ConfigurePersonAssignmentAiColumnMutationVariables = Exact<{
+  boardId: Scalars['ID']['input'];
+  columnId: Scalars['ID']['input'];
+  sourceType: AiColumnSource;
+  sourceColumnId?: InputMaybe<Scalars['ID']['input']>;
+  groups: Array<AiColumnPersonGroupInput> | AiColumnPersonGroupInput;
+  extraSettings?: InputMaybe<AiColumnExtraSettingsInput>;
+}>;
+
+
+export type ConfigurePersonAssignmentAiColumnMutation = { __typename?: 'Mutation', configure_person_assignment_ai_column?: { __typename?: 'AiColumnResult', column_id: string } | null };
+
 export type DeleteObjectSchemaColumnsMutationVariables = Exact<{
   objectSchemaId?: InputMaybe<Scalars['ID']['input']>;
   objectSchemaName?: InputMaybe<Scalars['String']['input']>;
@@ -18370,6 +18778,14 @@ export type SearchItemsDevQueryVariables = Exact<{
 
 
 export type SearchItemsDevQuery = { __typename?: 'Query', search: { __typename?: 'SearchNamespace', items: { __typename?: 'SearchItemResults', results: Array<{ __typename?: 'SearchItemResult', id: string }> } } };
+
+export type RemoveAiFromColumnMutationVariables = Exact<{
+  boardId: Scalars['ID']['input'];
+  columnId: Scalars['ID']['input'];
+}>;
+
+
+export type RemoveAiFromColumnMutation = { __typename?: 'Mutation', remove_ai_from_column?: { __typename?: 'AiColumnRemoveResult', column_id: string, success: boolean } | null };
 
 export type SearchBoardsDevQueryVariables = Exact<{
   query: Scalars['String']['input'];
@@ -18476,10 +18892,19 @@ export const RemoveSkillFromAgentDocument = {"kind":"Document","definitions":[{"
 export const GetAgentTriggersCatalogDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getAgentTriggersCatalog"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"block_reference_ids"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"agent_triggers_catalog"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"block_reference_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"block_reference_ids"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"block_reference_id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"field_schemas"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"field_key"}},{"kind":"Field","name":{"kind":"Name","value":"value_schema"}}]}},{"kind":"Field","name":{"kind":"Name","value":"required_fields"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"field_key"}},{"kind":"Field","name":{"kind":"Name","value":"depends_on"}},{"kind":"Field","name":{"kind":"Name","value":"optional"}}]}}]}}]}}]} as unknown as DocumentNode<GetAgentTriggersCatalogQuery, GetAgentTriggersCatalogQueryVariables>;
 export const GetAgentSkillsCatalogDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getAgentSkillsCatalog"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"agent_skills_catalog"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}}]}}]} as unknown as DocumentNode<GetAgentSkillsCatalogQuery, GetAgentSkillsCatalogQueryVariables>;
 export const CreateAgentSkillDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"createAgentSkill"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"name"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"content"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"description"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"create_agent_skill"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"name"}}},{"kind":"Argument","name":{"kind":"Name","value":"content"},"value":{"kind":"Variable","name":{"kind":"Name","value":"content"}}},{"kind":"Argument","name":{"kind":"Name","value":"description"},"value":{"kind":"Variable","name":{"kind":"Name","value":"description"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}}]}}]} as unknown as DocumentNode<CreateAgentSkillMutation, CreateAgentSkillMutationVariables>;
+export const ConfigureCategorizeAiColumnDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ConfigureCategorizeAiColumn"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"sourceType"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"AiColumnSource"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"sourceColumnId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"additionalInstructions"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"extraSettings"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"AiColumnExtraSettingsInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"configure_categorize_ai_column"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"board_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}},{"kind":"Argument","name":{"kind":"Name","value":"column_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}}},{"kind":"Argument","name":{"kind":"Name","value":"source_type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"sourceType"}}},{"kind":"Argument","name":{"kind":"Name","value":"source_column_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"sourceColumnId"}}},{"kind":"Argument","name":{"kind":"Name","value":"additional_instructions"},"value":{"kind":"Variable","name":{"kind":"Name","value":"additionalInstructions"}}},{"kind":"Argument","name":{"kind":"Name","value":"extra_settings"},"value":{"kind":"Variable","name":{"kind":"Name","value":"extraSettings"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"column_id"}}]}}]}}]} as unknown as DocumentNode<ConfigureCategorizeAiColumnMutation, ConfigureCategorizeAiColumnMutationVariables>;
+export const ConfigureSummarizeAiColumnDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ConfigureSummarizeAiColumn"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"sourceType"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"AiColumnSource"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"sourceColumnId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"additionalInstructions"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"extraSettings"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"AiColumnExtraSettingsInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"configure_summarize_ai_column"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"board_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}},{"kind":"Argument","name":{"kind":"Name","value":"column_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}}},{"kind":"Argument","name":{"kind":"Name","value":"source_type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"sourceType"}}},{"kind":"Argument","name":{"kind":"Name","value":"source_column_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"sourceColumnId"}}},{"kind":"Argument","name":{"kind":"Name","value":"additional_instructions"},"value":{"kind":"Variable","name":{"kind":"Name","value":"additionalInstructions"}}},{"kind":"Argument","name":{"kind":"Name","value":"extra_settings"},"value":{"kind":"Variable","name":{"kind":"Name","value":"extraSettings"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"column_id"}}]}}]}}]} as unknown as DocumentNode<ConfigureSummarizeAiColumnMutation, ConfigureSummarizeAiColumnMutationVariables>;
+export const ConfigureTranslateAiColumnDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ConfigureTranslateAiColumn"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"sourceType"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"AiColumnSource"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"sourceColumnId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"targetLanguage"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"AiColumnLanguage"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"extraSettings"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"AiColumnExtraSettingsInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"configure_translate_ai_column"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"board_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}},{"kind":"Argument","name":{"kind":"Name","value":"column_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}}},{"kind":"Argument","name":{"kind":"Name","value":"source_type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"sourceType"}}},{"kind":"Argument","name":{"kind":"Name","value":"source_column_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"sourceColumnId"}}},{"kind":"Argument","name":{"kind":"Name","value":"target_language"},"value":{"kind":"Variable","name":{"kind":"Name","value":"targetLanguage"}}},{"kind":"Argument","name":{"kind":"Name","value":"extra_settings"},"value":{"kind":"Variable","name":{"kind":"Name","value":"extraSettings"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"column_id"}}]}}]}}]} as unknown as DocumentNode<ConfigureTranslateAiColumnMutation, ConfigureTranslateAiColumnMutationVariables>;
+export const ConfigureImproveTextAiColumnDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ConfigureImproveTextAiColumn"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"sourceType"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"AiColumnSource"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"sourceColumnId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"tone"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"AiColumnTone"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"length"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"AiColumnImproverLength"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"refinementType"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"AiColumnRefinementLevel"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"extraSettings"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"AiColumnExtraSettingsInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"configure_improve_text_ai_column"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"board_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}},{"kind":"Argument","name":{"kind":"Name","value":"column_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}}},{"kind":"Argument","name":{"kind":"Name","value":"source_type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"sourceType"}}},{"kind":"Argument","name":{"kind":"Name","value":"source_column_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"sourceColumnId"}}},{"kind":"Argument","name":{"kind":"Name","value":"tone"},"value":{"kind":"Variable","name":{"kind":"Name","value":"tone"}}},{"kind":"Argument","name":{"kind":"Name","value":"length"},"value":{"kind":"Variable","name":{"kind":"Name","value":"length"}}},{"kind":"Argument","name":{"kind":"Name","value":"refinement_type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"refinementType"}}},{"kind":"Argument","name":{"kind":"Name","value":"extra_settings"},"value":{"kind":"Variable","name":{"kind":"Name","value":"extraSettings"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"column_id"}}]}}]}}]} as unknown as DocumentNode<ConfigureImproveTextAiColumnMutation, ConfigureImproveTextAiColumnMutationVariables>;
+export const ConfigureExtractAiColumnDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ConfigureExtractAiColumn"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"sourceType"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"AiColumnSource"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"sourceColumnId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"entityType"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"AiColumnEntity"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"customInstructions"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"additionalInstructions"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"extraSettings"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"AiColumnExtraSettingsInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"configure_extract_ai_column"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"board_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}},{"kind":"Argument","name":{"kind":"Name","value":"column_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}}},{"kind":"Argument","name":{"kind":"Name","value":"source_type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"sourceType"}}},{"kind":"Argument","name":{"kind":"Name","value":"source_column_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"sourceColumnId"}}},{"kind":"Argument","name":{"kind":"Name","value":"entity_type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"entityType"}}},{"kind":"Argument","name":{"kind":"Name","value":"custom_instructions"},"value":{"kind":"Variable","name":{"kind":"Name","value":"customInstructions"}}},{"kind":"Argument","name":{"kind":"Name","value":"additional_instructions"},"value":{"kind":"Variable","name":{"kind":"Name","value":"additionalInstructions"}}},{"kind":"Argument","name":{"kind":"Name","value":"extra_settings"},"value":{"kind":"Variable","name":{"kind":"Name","value":"extraSettings"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"column_id"}}]}}]}}]} as unknown as DocumentNode<ConfigureExtractAiColumnMutation, ConfigureExtractAiColumnMutationVariables>;
+export const ConfigureOpenBlockAiColumnDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ConfigureOpenBlockAiColumn"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"aiQuery"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"extraSettings"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"AiColumnExtraSettingsInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"configure_open_block_ai_column"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"board_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}},{"kind":"Argument","name":{"kind":"Name","value":"column_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}}},{"kind":"Argument","name":{"kind":"Name","value":"ai_query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"aiQuery"}}},{"kind":"Argument","name":{"kind":"Name","value":"extra_settings"},"value":{"kind":"Variable","name":{"kind":"Name","value":"extraSettings"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"column_id"}}]}}]}}]} as unknown as DocumentNode<ConfigureOpenBlockAiColumnMutation, ConfigureOpenBlockAiColumnMutationVariables>;
+export const ConfigureWriteMeAiColumnDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ConfigureWriteMeAiColumn"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"aiQuery"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"tone"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"AiColumnTone"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"length"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"AiColumnOutputLength"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"extraSettings"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"AiColumnExtraSettingsInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"configure_write_me_ai_column"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"board_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}},{"kind":"Argument","name":{"kind":"Name","value":"column_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}}},{"kind":"Argument","name":{"kind":"Name","value":"ai_query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"aiQuery"}}},{"kind":"Argument","name":{"kind":"Name","value":"tone"},"value":{"kind":"Variable","name":{"kind":"Name","value":"tone"}}},{"kind":"Argument","name":{"kind":"Name","value":"length"},"value":{"kind":"Variable","name":{"kind":"Name","value":"length"}}},{"kind":"Argument","name":{"kind":"Name","value":"extra_settings"},"value":{"kind":"Variable","name":{"kind":"Name","value":"extraSettings"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"column_id"}}]}}]}}]} as unknown as DocumentNode<ConfigureWriteMeAiColumnMutation, ConfigureWriteMeAiColumnMutationVariables>;
+export const ConfigurePersonAssignmentAiColumnDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ConfigurePersonAssignmentAiColumn"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"sourceType"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"AiColumnSource"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"sourceColumnId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"groups"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"AiColumnPersonGroupInput"}}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"extraSettings"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"AiColumnExtraSettingsInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"configure_person_assignment_ai_column"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"board_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}},{"kind":"Argument","name":{"kind":"Name","value":"column_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}}},{"kind":"Argument","name":{"kind":"Name","value":"source_type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"sourceType"}}},{"kind":"Argument","name":{"kind":"Name","value":"source_column_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"sourceColumnId"}}},{"kind":"Argument","name":{"kind":"Name","value":"groups"},"value":{"kind":"Variable","name":{"kind":"Name","value":"groups"}}},{"kind":"Argument","name":{"kind":"Name","value":"extra_settings"},"value":{"kind":"Variable","name":{"kind":"Name","value":"extraSettings"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"column_id"}}]}}]}}]} as unknown as DocumentNode<ConfigurePersonAssignmentAiColumnMutation, ConfigurePersonAssignmentAiColumnMutationVariables>;
 export const DeleteObjectSchemaColumnsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteObjectSchemaColumns"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"objectSchemaId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"objectSchemaName"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnIds"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"delete_object_schema_columns"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"object_schema_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"objectSchemaId"}}},{"kind":"Argument","name":{"kind":"Name","value":"object_schema_name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"objectSchemaName"}}},{"kind":"Argument","name":{"kind":"Name","value":"column_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"parent_id"}},{"kind":"Field","name":{"kind":"Name","value":"revision"}}]}}]}}]} as unknown as DocumentNode<DeleteObjectSchemaColumnsMutation, DeleteObjectSchemaColumnsMutationVariables>;
 export const CompleteUploadDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CompleteUpload"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CompleteUploadInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"complete_upload"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"filename"}},{"kind":"Field","name":{"kind":"Name","value":"content_type"}},{"kind":"Field","name":{"kind":"Name","value":"file_size"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"filelink"}}]}}]}}]} as unknown as DocumentNode<CompleteUploadMutation, CompleteUploadMutationVariables>;
 export const CreateUploadDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateUpload"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateUploadInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"create_upload"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"upload_id"}},{"kind":"Field","name":{"kind":"Name","value":"parts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"part_number"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"size_range_start"}},{"kind":"Field","name":{"kind":"Name","value":"size_range_end"}}]}},{"kind":"Field","name":{"kind":"Name","value":"part_size"}},{"kind":"Field","name":{"kind":"Name","value":"expires_at"}}]}}]}}]} as unknown as DocumentNode<CreateUploadMutation, CreateUploadMutationVariables>;
 export const SearchItemsDevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchItemsDev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"board_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"results"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchItemsDevQuery, SearchItemsDevQueryVariables>;
+export const RemoveAiFromColumnDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RemoveAiFromColumn"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"remove_ai_from_column"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"board_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}},{"kind":"Argument","name":{"kind":"Name","value":"column_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"column_id"}},{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<RemoveAiFromColumnMutation, RemoveAiFromColumnMutationVariables>;
 export const SearchBoardsDevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchBoardsDev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"boards"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"workspace_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"results"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"indexed_data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"url"}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchBoardsDevQuery, SearchBoardsDevQueryVariables>;
 export const SearchDocsDevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchDocsDev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"docs"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"workspace_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"results"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"indexed_data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchDocsDevQuery, SearchDocsDevQueryVariables>;
 export const BatchUndoDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"BatchUndo"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"undoRecordId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"batch_undo"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"board_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}},{"kind":"Argument","name":{"kind":"Name","value":"undo_record_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"undoRecordId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<BatchUndoMutation, BatchUndoMutationVariables>;

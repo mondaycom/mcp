@@ -78,6 +78,8 @@ import { CreateAutomationTool } from './workflows-tools/create-automation/create
 import { CreateWorkflowBuilderTool } from './workflow-builder-tools/create-workflow/create-workflow-tool';
 import { UpdateWorkflowTool } from './workflow-builder-tools/update-workflow/update-workflow-tool';
 import { PublishWorkflowTool } from './workflow-builder-tools/publish-workflow/publish-workflow-tool';
+import { ConfigureAiColumnTool } from './configure-ai-column-tool/configure-ai-column-tool';
+import { RemoveAiFromColumnTool } from './remove-ai-from-column-tool/remove-ai-from-column-tool';
 
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteItemTool,
@@ -165,6 +167,9 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   // Cast: ctor signature (api, apiToken, context?) doesn't match BaseMondayApiToolConstructor.
   UpdateWorkflowTool as unknown as BaseMondayApiToolConstructor,
   PublishWorkflowTool,
+  // AI Column Tools
+  ConfigureAiColumnTool,
+  RemoveAiFromColumnTool,
 ];
 
 export * from './all-monday-api-tool';
@@ -243,5 +248,8 @@ export * from './workflow-builder-tools/update-workflow/update-workflow-tool';
 export * from './workflow-builder-tools/publish-workflow/publish-workflow-tool';
 // Dashboard Tools
 export * from './dashboard-tools';
+// AI Column Tools
+export * from './configure-ai-column-tool/configure-ai-column-tool';
+export * from './remove-ai-from-column-tool/remove-ai-from-column-tool';
 // Monday Dev Tools
 export * from '../monday-dev-tools';

@@ -679,14 +679,14 @@ limit: Int = 25): GetAllocationsResponse
   get_allocated_resources(  "The planner ID"
 planner_id: ID!): [AllocatedResource!]
   "Returns active work schedules for the caller's account"
-  work_schedules(  "Filter by specific work schedule IDs"
-ids: [ID!],   "Number of items to return per page; max 500"
-limit: Int,   "Filter by work schedule name"
+  work_schedules(  "Filter by specific work schedule IDs (max 100)"
+ids: [ID!],   "Number of items to return per page; default 20, max 500"
+limit: Int = 20,   "Filter by work schedule name"
 name: String): WorkSchedulePage
   "Fetches the next page of work schedules using a cursor from a previous work_schedules or next_work_schedules_page call"
   next_work_schedules_page(  "Cursor returned by a previous work_schedules or next_work_schedules_page call"
-cursor: String!,   "Number of items to get, the default is 25."
-limit: Int = 25): WorkSchedulePage
+cursor: String!,   "Number of items to return per page; default 20, max 500"
+limit: Int = 20): WorkSchedulePage
   "Returns active time off schedules for the caller's account"
   time_offs(  "Filter by specific time off schedule IDs"
 ids: [ID!],   "Number of items to return per page; max 500"
@@ -711,6 +711,9 @@ input: PortfolioUtilizationReportInput!): PortfolioUtilizationReport
   "Returns the list of resource IDs belonging to a portfolio. Lightweight alternative to portfolio_utilization_report when only resource identity is needed — no effort computation."
   portfolio_resources(  "Portfolio ID to fetch resources for."
 input: PortfolioResourcesInput!): [ID!]
+  "Portfolio resources filtered by name. Returns up to 25 matches."
+  portfolio_resources_by_name(  "Portfolio ID and search term."
+input: PortfolioResourcesSearchInput!): [PortfolioResource!]!
   "A query to search across all boards in the account. Returns raw json results."
   search_benchmark(  "A query to search for."
 query: String!,   "The board id to search in."
@@ -897,6 +900,94 @@ type Mutation {
   execute_integration_block(  "The ID of the integration block instance to execute"
 block_instance_id: ID!,   "The field values to pass to the integration block"
 inbound_field_values: JSON!): IntegrationExecutionResult
+  "Configures a column to categorize items based on content analysis."
+  configure_categorize_ai_column(  "The ID of the board containing the column."
+board_id: ID!,   "The ID of the column to configure with AI."
+column_id: ID!,   "Where the AI reads its input data from."
+source_type: AiColumnSource!,   """
+  The ID of the source column. Required when source_type is "column".
+  """
+source_column_id: ID,   "Optional settings controlling backfill behavior."
+extra_settings: AiColumnExtraSettingsInput,   "Custom categorization rules or non-standard scales. Max 3000 characters."
+additional_instructions: String): AiColumnResult
+  "Configures a column to generate concise summaries of input text."
+  configure_summarize_ai_column(  "The ID of the board containing the column."
+board_id: ID!,   "The ID of the column to configure with AI."
+column_id: ID!,   "Where the AI reads its input data from."
+source_type: AiColumnSource!,   """
+  The ID of the source column. Required when source_type is "column".
+  """
+source_column_id: ID,   "Optional settings controlling backfill behavior."
+extra_settings: AiColumnExtraSettingsInput,   "Format requirements or focus areas. Max 3000 characters."
+additional_instructions: String): AiColumnResult
+  "Configures a column to translate text to a target language."
+  configure_translate_ai_column(  "The ID of the board containing the column."
+board_id: ID!,   "The ID of the column to configure with AI."
+column_id: ID!,   "Where the AI reads its input data from."
+source_type: AiColumnSource!,   """
+  The ID of the source column. Required when source_type is "column".
+  """
+source_column_id: ID,   "Optional settings controlling backfill behavior."
+extra_settings: AiColumnExtraSettingsInput,   "The language to translate text into."
+target_language: AiColumnLanguage!): AiColumnResult
+  "Configures a column to rewrite or improve text quality."
+  configure_improve_text_ai_column(  "The ID of the board containing the column."
+board_id: ID!,   "The ID of the column to configure with AI."
+column_id: ID!,   "Where the AI reads its input data from."
+source_type: AiColumnSource!,   """
+  The ID of the source column. Required when source_type is "column".
+  """
+source_column_id: ID,   "Optional settings controlling backfill behavior."
+extra_settings: AiColumnExtraSettingsInput,   "The desired writing style."
+tone: AiColumnTone,   "The desired output length relative to input."
+length: AiColumnImproverLength,   "The type of improvement to apply."
+refinement_type: AiColumnRefinementLevel): AiColumnResult
+  "Configures a column to extract structured information from text."
+  configure_extract_ai_column(  "The ID of the board containing the column."
+board_id: ID!,   "The ID of the column to configure with AI."
+column_id: ID!,   "Where the AI reads its input data from."
+source_type: AiColumnSource!,   """
+  The ID of the source column. Required when source_type is "column".
+  """
+source_column_id: ID,   "Optional settings controlling backfill behavior."
+extra_settings: AiColumnExtraSettingsInput,   """
+  The type of entity to extract. Use "custom" for non-preset entities.
+  """
+entity_type: AiColumnEntity!,   """
+  Required when entity_type is "custom". A short descriptive phrase of what to extract. Max 3000 characters.
+  """
+custom_instructions: String,   """
+  Contextual qualifiers (e.g., "of the boss", "from the signature"). Max 3000 characters.
+  """
+additional_instructions: String): AiColumnResult
+  "Configures a column with a custom AI prompt for complex or flexible operations."
+  configure_open_block_ai_column(  "The ID of the board containing the column."
+board_id: ID!,   "The ID of the column to configure with AI."
+column_id: ID!,   "Optional settings controlling backfill behavior."
+extra_settings: AiColumnExtraSettingsInput,   "The natural-language instruction for the AI. Reference columns using {pulse.column_id} syntax (e.g., {pulse.text_col}). Use {pulse.name} for item name, {pulse.subitem.column_id} for subitems. Max 3000 characters."
+ai_query: String!): AiColumnResult
+  "Configures a column to generate new text content from a prompt."
+  configure_write_me_ai_column(  "The ID of the board containing the column."
+board_id: ID!,   "The ID of the column to configure with AI."
+column_id: ID!,   "Optional settings controlling backfill behavior."
+extra_settings: AiColumnExtraSettingsInput,   "The prompt guiding content generation. Reference columns using {pulse.column_id} syntax (e.g., {pulse.text_col}). Use {pulse.name} for item name, {pulse.subitem.column_id} for subitems. Max 3000 characters."
+ai_query: String!,   "The desired writing tone/style."
+tone: AiColumnTone!,   "The approximate desired output length."
+length: AiColumnOutputLength!): AiColumnResult
+  "Configures a column to assign a person to items based on context."
+  configure_person_assignment_ai_column(  "The ID of the board containing the column."
+board_id: ID!,   "The ID of the column to configure with AI."
+column_id: ID!,   "Where the AI reads its input data from."
+source_type: AiColumnSource!,   """
+  The ID of the source column. Required when source_type is "column".
+  """
+source_column_id: ID,   "Optional settings controlling backfill behavior."
+extra_settings: AiColumnExtraSettingsInput,   "People or teams available for assignment."
+groups: [AiColumnPersonGroupInput!]!): AiColumnResult
+  "Removes AI configuration from a column, deleting all associated automation recipes."
+  remove_ai_from_column(  "The ID of the board containing the column."
+board_id: ID!,   "The ID of the column to remove AI from."
+column_id: ID!): AiColumnRemoveResult
   "Initiate a file upload. Returns presigned upload URLs and an upload_id."
   create_upload(input: CreateUploadInput!): CreateUploadResult
   "Complete a file upload and create the asset record."
@@ -2369,6 +2460,177 @@ input WebSearchOptionsInput {
   recencyDays: Int
 }
 
+"Type of entity to extract from text."
+enum AiColumnEntity {
+  "Extract email addresses."
+  email_address
+  "Extract first names."
+  first_name
+  "Extract last names."
+  last_name
+  "Extract phone numbers."
+  phone_number
+  "Extract company names."
+  company_name
+  "Extract domain names."
+  domain_name
+  "Extract URLs."
+  url
+  "Extract dates."
+  date
+  "Extract times."
+  time
+  "Extract years."
+  year
+  "Extract a custom entity defined by custom_instructions."
+  custom
+}
+
+"Optional settings controlling backfill behavior when configuring an AI column."
+input AiColumnExtraSettingsInput {
+  "Whether to immediately apply the AI automation to existing items. Defaults to true."
+  run_backfill: Boolean
+}
+
+"Desired output length relative to the input text."
+enum AiColumnImproverLength {
+  "Keep approximately the same length as input."
+  same
+  "Make the output shorter than the input."
+  shorter
+  "Make the output longer than the input."
+  longer
+}
+
+"Target language for translation."
+enum AiColumnLanguage {
+  "English."
+  english
+  "Spanish."
+  spanish
+  "French."
+  french
+  "German."
+  german
+  "Hebrew."
+  hebrew
+  "Chinese."
+  chinese
+  "Korean."
+  korean
+  "Arabic."
+  arabic
+  "Bengali."
+  bengali
+  "Danish."
+  danish
+  "Dutch."
+  dutch
+  "Hindi."
+  hindi
+  "Indonesian."
+  indonesian
+  "Italian."
+  italian
+  "Japanese."
+  japanese
+  "Norwegian."
+  norwegian
+  "Polish."
+  polish
+  "Portuguese."
+  portuguese
+  "Russian."
+  russian
+  "Swedish."
+  swedish
+  "Thai."
+  thai
+  "Turkish."
+  turkish
+  "Vietnamese."
+  vietnamese
+}
+
+"Approximate desired length of generated text."
+enum AiColumnOutputLength {
+  "Output approximately one sentence."
+  sentence
+  "Output approximately one paragraph."
+  paragraph
+  "Output a brief, concise response."
+  brief
+  "Output a detailed, in-depth response."
+  in_depth
+}
+
+"A group of people available for AI-based assignment."
+input AiColumnPersonGroupInput {
+  "Array of user IDs in this group."
+  user_ids: [Int!]!
+  "Description of this group (e.g., role, team name, or assignment criteria)."
+  description: String!
+}
+
+"Level of text refinement to apply."
+enum AiColumnRefinementLevel {
+  "Apply only minor corrections and improvements."
+  minimal_changes
+  "Restructure and improve while preserving intent."
+  moderate_changes
+  "Substantially rewrite with creative freedom."
+  high_creativity
+}
+
+"The result of removing AI configuration from a column."
+type AiColumnRemoveResult {
+  "The ID of the column that had AI removed."
+  column_id: ID!
+  "Whether the AI configuration was successfully removed."
+  success: Boolean!
+}
+
+"The result of configuring AI on a column."
+type AiColumnResult {
+  "The ID of the column that was configured."
+  column_id: ID!
+}
+
+"The data source for AI column processing."
+enum AiColumnSource {
+  "Use the item name as the AI input source."
+  item_name
+  "Use the item update thread as the AI input source."
+  thread
+  "Use a specific column value as the AI input source."
+  column
+  "Use emails and activities associated with the item as the AI input source."
+  emails_and_activities
+}
+
+"Writing tone/style for AI text generation."
+enum AiColumnTone {
+  "Warm, understanding, and emotionally aware tone."
+  empathic
+  "Persuasive, marketing-oriented tone."
+  promotional
+  "Assertive and authoritative tone."
+  confident
+  "Formal, business-appropriate tone."
+  professional
+  "Conversational, everyday tone."
+  natural
+  "Relaxed, informal tone."
+  casual
+  "Approachable, personable tone."
+  friendly
+  "Preserve the same tone as the input text."
+  same
+}
+
+"A file"
+scalar File
+
 "The type of entity that holds or owns an asset."
 enum AssetHolder {
   "An update/post entity."
@@ -2438,9 +2700,6 @@ type CreateUploadResult {
   "The timestamp when the upload session expires."
   expires_at: Date
 }
-
-"A file"
-scalar File
 
 "Information about the entity that holds or owns an asset."
 input HolderInfoInput {
@@ -13071,10 +13330,26 @@ type PortfolioNoConnectedProjects {
   has_no_connected_projects: Boolean
 }
 
+"A resource belonging to a portfolio, with name resolved from the resource directory."
+type PortfolioResource {
+  "The resource ID."
+  id: ID
+  "The resource name."
+  name: String
+}
+
 "Input for fetching the list of resource IDs belonging to a portfolio."
 input PortfolioResourcesInput {
   "The portfolio ID to fetch resources for."
   portfolio_id: ID!
+}
+
+"Input for searching resources within a portfolio by name."
+input PortfolioResourcesSearchInput {
+  "The portfolio ID to scope the search to."
+  portfolio_id: ID!
+  "Resource name search term. Length: 1-100 chars."
+  search_term: String!
 }
 
 "Portfolio utilization report result: utilization data (grouped or ungrouped) or a signal that no projects are connected."
