@@ -40,6 +40,7 @@ export const changeItemColumnValues = gql`
     $itemId: ID!
     $columnValues: JSON!
     $createLabelsIfMissing: Boolean
+    $columnIds: [String!]
   ) {
     change_multiple_column_values(
       board_id: $boardId
@@ -50,7 +51,7 @@ export const changeItemColumnValues = gql`
       id
       name
       url
-      column_values {
+      column_values(ids: $columnIds) {
         id
         value
       }

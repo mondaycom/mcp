@@ -18,27 +18,11 @@ describe('ChangeItemColumnValuesTool', () => {
       column_values: [
         { id: 'color_mm3nhhab', value: '{"index":2,"changed_at":"2026-05-31T13:49:12.379Z"}' },
         { id: 'text_mm3npgdn', value: '"Updated text"' },
-        { id: 'numeric_mm3np5n9', value: '"45"' },
       ],
     },
   };
 
   describe('column_values in response', () => {
-    it('returns only changed column values filtered from response', async () => {
-      mocks.setResponse(mockMutationResponse);
-
-      const result = await tool.execute(
-        { boardId: 18414630189, itemId: 12093604112, columnValues: '{"color_mm3nhhab":{"label":"Stuck"}}' },
-        undefined as any,
-      );
-
-      expect(result).toMatchObject({
-        content: expect.objectContaining({
-          column_values: { color_mm3nhhab: '{"index":2,"changed_at":"2026-05-31T13:49:12.379Z"}' },
-        }),
-      });
-    });
-
     it('returns multiple changed columns when multiple are updated', async () => {
       mocks.setResponse(mockMutationResponse);
 
@@ -61,17 +45,27 @@ describe('ChangeItemColumnValuesTool', () => {
       });
     });
 
-    it('excludes unchanged columns from response', async () => {
+    it('passes columnIds to the GraphQL query for pre-filtering', async () => {
       mocks.setResponse(mockMutationResponse);
 
-      const result = await tool.execute(
+      await tool.execute(
         { boardId: 18414630189, itemId: 12093604112, columnValues: '{"color_mm3nhhab":{"label":"Stuck"}}' },
         undefined as any,
       );
 
-      const content = (result as any).content;
-      expect(content.column_values).not.toHaveProperty('numeric_mm3np5n9');
-      expect(content.column_values).not.toHaveProperty('text_mm3npgdn');
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ columnIds: ['color_mm3nhhab'] }),
+      );
+    });
+
+    it('throws meaningful error for invalid columnValues JSON', async () => {
+      await expect(
+        tool.execute(
+          { boardId: 18414630189, itemId: 12093604112, columnValues: 'not valid json' },
+          undefined as any,
+        ),
+      ).rejects.toThrow('Invalid columnValues JSON');
     });
 
     it('includes item metadata in response', async () => {

@@ -70,15 +70,25 @@ export class ChangeItemColumnValuesTool extends BaseMondayApiTool<ChangeItemColu
       }),
     };
 
-    const res = await this.mondayApi.request<ChangeItemColumnValuesMutation>(changeItemColumnValues, variables);
+    let changedColumnIds: string[];
+    try {
+      changedColumnIds = Object.keys(JSON.parse(input.columnValues));
+    } catch (e) {
+      throw new Error(`Invalid columnValues JSON: ${(e as Error).message}`);
+    }
 
-    const changedColumnIds = Object.keys(JSON.parse(input.columnValues));
-    const updatedColumnValues = res.change_multiple_column_values?.column_values
-      ?.filter((cv) => changedColumnIds.includes(cv.id))
-      ?.reduce((acc: Record<string, string | null>, cv) => {
+    const res = await this.mondayApi.request<ChangeItemColumnValuesMutation>(changeItemColumnValues, {
+      ...variables,
+      columnIds: changedColumnIds,
+    });
+
+    const updatedColumnValues = res.change_multiple_column_values?.column_values?.reduce(
+      (acc: Record<string, string | null>, cv) => {
         acc[cv.id] = cv.value ?? null;
         return acc;
-      }, {});
+      },
+      {},
+    );
 
     return {
       content: {
