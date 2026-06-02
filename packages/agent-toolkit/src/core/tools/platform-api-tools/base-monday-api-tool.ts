@@ -20,7 +20,7 @@ export type BaseMondayApiToolConstructor = new (api: ApiClient) => BaseMondayApi
 // Helper function to merge annotations with default openWorldHint
 export function createMondayApiAnnotations(annotations: ToolAnnotations): ToolAnnotations {
   return {
-    openWorldHint: true,
+    openWorldHint: false,
     ...annotations,
   };
 }
