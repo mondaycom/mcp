@@ -70,10 +70,34 @@ export class ChangeItemColumnValuesTool extends BaseMondayApiTool<ChangeItemColu
       }),
     };
 
-    const res = await this.mondayApi.request<ChangeItemColumnValuesMutation>(changeItemColumnValues, variables);
+    let changedColumnIds: string[];
+    try {
+      changedColumnIds = Object.keys(JSON.parse(input.columnValues));
+    } catch (e) {
+      throw new Error(`Invalid columnValues JSON: ${(e as Error).message}`);
+    }
+
+    const res = await this.mondayApi.request<ChangeItemColumnValuesMutation>(changeItemColumnValues, {
+      ...variables,
+      columnIds: changedColumnIds,
+    });
+
+    const updatedColumnValues = res.change_multiple_column_values?.column_values?.reduce(
+      (acc: Record<string, string | null>, cv) => {
+        acc[cv.id] = cv.value ?? null;
+        return acc;
+      },
+      {},
+    );
 
     return {
-      content: { message: `Item ${res.change_multiple_column_values?.id} successfully updated`, item_id: res.change_multiple_column_values?.id, item_name: res.change_multiple_column_values?.name, item_url: res.change_multiple_column_values?.url },
+      content: {
+        message: `Item ${res.change_multiple_column_values?.id} successfully updated`,
+        item_id: res.change_multiple_column_values?.id,
+        item_name: res.change_multiple_column_values?.name,
+        item_url: res.change_multiple_column_values?.url,
+        column_values: updatedColumnValues,
+      },
     };
   }
 }
