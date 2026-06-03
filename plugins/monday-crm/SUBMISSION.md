@@ -1,7 +1,9 @@
 # SUBMISSION.md — monday-crm plugin submission runbook
 
 Turn-key guide for submitting `monday-crm` to Anthropic's official Claude
-plugin directory. **Tom executes these steps; Devin prepared everything.**
+plugin directory. **Tom executes these steps; Devin/Cursor prepared everything.**
+
+**Hosting repo (locked):** `mondaycom/mcp` at `plugins/monday-crm/`, marketplace at `.claude-plugin/marketplace.json` (Rom Kadria approved 2026-06-03).
 
 ---
 
@@ -9,8 +11,8 @@ plugin directory. **Tom executes these steps; Devin prepared everything.**
 
 Run these locally before submitting:
 
-- [ ] `claude plugin validate ./monday-crm --strict` → clean (no errors, no warnings)
-- [ ] `claude plugin validate ./plugin --strict` → clean (marketplace-level)
+- [ ] `claude plugin validate ./plugins/monday-crm --strict` → clean (run from `mondaycom/mcp` repo root)
+- [ ] `claude plugin validate . --strict` → clean (marketplace-level, from `mondaycom/mcp` repo root)
 - [ ] Version in `plugin.json` is `0.2.0`
 - [ ] CHANGELOG.md has a `[0.2.0]` entry
 - [ ] README.md lists all 7 skills + bundled connector
@@ -26,27 +28,16 @@ Run these locally before submitting:
 
 ## Step-by-step submission flow
 
-### 1. Choose the hosting repo
+### 1. Hosting repo
 
-See `repo-home-recommendation.md` for the ranked analysis. Short version:
-
-| Option | Repo | Path |
-|---|---|---|
-| **Recommended** | `mondaycom/agentic-monday` | `plugins-official/monday-crm/` |
-| **Fallback** | New `mondaycom/monday-crm-plugin` | repo root |
-
-Copy the `monday-crm/` directory to the chosen repo. If using `agentic-monday`, also add a plugin entry to its root `marketplace.json`.
+**Locked:** `mondaycom/mcp` at `plugins/monday-crm/`. Approved by Rom Kadria 2026-06-03 (Slack). Marketplace catalog at repo root: `.claude-plugin/marketplace.json` (`monday-mcp` marketplace, forward-extensible for future monday plugins). Constraint: plugin must stay fully separate from server source — no imports from `packages/`.
 
 ### 2. Validate in the hosting repo
 
 ```bash
-cd /path/to/hosting-repo
-
-# If plugin is at root:
+cd /path/to/mondaycom-mcp-clone
+claude plugin validate ./plugins/monday-crm --strict
 claude plugin validate . --strict
-
-# If plugin is in a subdirectory:
-claude plugin validate ./plugins-official/monday-crm --strict
 ```
 
 Both must pass clean.
@@ -54,28 +45,26 @@ Both must pass clean.
 ### 3. Test locally via marketplace
 
 ```bash
-# Add local marketplace
-claude plugin marketplace add /path/to/hosting-repo
+# Add local marketplace (clone of mondaycom/mcp)
+claude plugin marketplace add /path/to/mondaycom-mcp-clone
 
 # Install
-claude plugin install monday-crm@<local-marketplace-name>
+claude plugin install monday-crm@monday-mcp
 
 # Verify: should show 7 skills + 1 MCP server
-claude plugin details monday-crm@<local-marketplace-name>
+claude plugin details monday-crm@monday-mcp
 
 # Clean up
-claude plugin uninstall monday-crm@<local-marketplace-name>
-claude plugin marketplace remove <local-marketplace-name>
+claude plugin uninstall monday-crm@monday-mcp
+claude plugin marketplace remove monday-mcp
 ```
 
 ### 4. Submit to Anthropic
 
 1. Go to: **https://claude.ai/settings/plugins/submit**
 2. Choose **"GitHub repository"** as the source type.
-3. Enter the public repo URL:
-   - If `agentic-monday`: `https://github.com/mondaycom/agentic-monday`
-     - If subdirectory is supported: path = `plugins-official/monday-crm`
-   - If dedicated repo: `https://github.com/mondaycom/monday-crm-plugin`
+3. Enter: `https://github.com/mondaycom/mcp`
+   - Path/subdirectory (if the form accepts one): `plugins/monday-crm`
 4. Fill in submission details:
    - **Plugin name:** `monday-crm`
    - **Display name:** monday CRM
