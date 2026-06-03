@@ -48,4 +48,20 @@ describe('RemoveAiFromColumnTool', () => {
 
     expect(result.content[0].text).toContain('remove AI from column');
   });
+
+  it('should reject when board_id is missing', async () => {
+    const result = await callToolByNameRawAsync('remove_ai_from_column', {
+      column_id: 'col1',
+    });
+
+    expect(result.content[0].text).toContain('board_id');
+  });
+
+  it('should reject when column_id is missing', async () => {
+    const result = await callToolByNameRawAsync('remove_ai_from_column', {
+      board_id: 123,
+    });
+
+    expect(result.content[0].text).toContain('column_id');
+  });
 });

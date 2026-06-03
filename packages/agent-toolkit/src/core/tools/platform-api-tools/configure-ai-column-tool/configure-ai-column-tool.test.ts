@@ -384,4 +384,26 @@ describe('ConfigureAiColumnTool', () => {
       expect(result.content[0].text).toContain('not supported as a target for categorize');
     });
   });
+
+  describe('validation', () => {
+    it('should reject when board_id is missing', async () => {
+      const result = await callToolByNameRawAsync('configure_ai_column', {
+        column_id: 'col1',
+        block_type: 'categorize',
+        source_type: 'item_name',
+      });
+
+      expect(result.content[0].text).toContain('board_id');
+    });
+
+    it('should reject when column_id is missing', async () => {
+      const result = await callToolByNameRawAsync('configure_ai_column', {
+        board_id: 123,
+        block_type: 'categorize',
+        source_type: 'item_name',
+      });
+
+      expect(result.content[0].text).toContain('column_id');
+    });
+  });
 });
