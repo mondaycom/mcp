@@ -1,5 +1,22 @@
 # Changelog
 
+## 5.22.0
+
+### plan_workflow — new tool
+
+- Adds `plan_workflow` MCP tool that calls the `workflow-planner` platform-agent proxy (`/platform-ai-gateway/agents/workflow-planner`)
+- Takes a single `prompt` (max 2000 chars) describing a process and returns a structured markdown plan: workflow breakdowns, block IDs, Mermaid diagrams, resource definitions, and assumption/gap notes
+- Use before `create_workflow` to understand how to decompose a complex process into individual workflows and which resources to create first
+- Adds `WORKFLOW_PLANNER_AGENT_URL` constant to `workflow-builder-tools/constants.ts`
+
+## 5.21.0
+
+### get_board_activity — add user_ids filter
+
+- Added optional `userIds` parameter to filter activity logs to actions performed by specific users
+- Updated GraphQL query (`GetBoardActivity`) to pass `user_ids` argument to `activity_logs`
+- Updated `getDescription()` to reflect the new filtering capabilities
+
 ## 5.20.0
 
 ### Add agent management tools

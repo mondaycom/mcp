@@ -77,6 +77,7 @@ import { ManageWorkflowsTool } from './workflows-tools/manage-workflows/manage-w
 import { CreateAutomationTool } from './workflows-tools/create-automation/create-automation-tool';
 import { CreateWorkflowBuilderTool } from './workflow-builder-tools/create-workflow/create-workflow-tool';
 import { UpdateWorkflowTool } from './workflow-builder-tools/update-workflow/update-workflow-tool';
+import { PlanWorkflowTool } from './workflow-builder-tools/plan-workflow/plan-workflow-tool';
 import { PublishWorkflowTool } from './workflow-builder-tools/publish-workflow/publish-workflow-tool';
 import { ConfigureAiColumnTool } from './configure-ai-column-tool/configure-ai-column-tool';
 import { RemoveAiFromColumnTool } from './remove-ai-from-column-tool/remove-ai-from-column-tool';
@@ -166,6 +167,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   CreateWorkflowBuilderTool,
   // Cast: ctor signature (api, apiToken, context?) doesn't match BaseMondayApiToolConstructor.
   UpdateWorkflowTool as unknown as BaseMondayApiToolConstructor,
+  PlanWorkflowTool as unknown as BaseMondayApiToolConstructor,
   PublishWorkflowTool,
   // AI Column Tools
   ConfigureAiColumnTool,
@@ -245,6 +247,7 @@ export * from './workflows-tools';
 // Workflow Builder Tools
 export * from './workflow-builder-tools/create-workflow/create-workflow-tool';
 export * from './workflow-builder-tools/update-workflow/update-workflow-tool';
+export * from './workflow-builder-tools/plan-workflow/plan-workflow-tool';
 export * from './workflow-builder-tools/publish-workflow/publish-workflow-tool';
 // Dashboard Tools
 export * from './dashboard-tools';
