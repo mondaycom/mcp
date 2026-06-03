@@ -56,6 +56,7 @@ const ENTITY_TYPES = [
 ] as const;
 
 export const configureAiColumnToolSchema = {
+  board_id: z.number().describe('The ID of the board containing the column'),
   column_id: z.string().describe('The ID of the column to configure with AI'),
   block_type: z.enum(AI_BLOCK_TYPES).describe(
     'The AI block type to configure. See tool description for which fields apply to each block.',
@@ -66,7 +67,7 @@ export const configureAiColumnToolSchema = {
   source_column_id: z.string().optional().describe(
     'The ID of the source column. Required when source_type is "column".',
   ),
-  additional_instructions: z.string().optional().describe(
+  additional_instructions: z.string().max(3000).optional().describe(
     'Custom instructions for categorize/summarize/extract blocks (max 3000 chars).',
   ),
   target_language: z.enum(LANGUAGES).optional().describe(
@@ -87,10 +88,10 @@ export const configureAiColumnToolSchema = {
   entity_type: z.enum(ENTITY_TYPES).optional().describe(
     'Required for extract block. Type of entity to extract from text.',
   ),
-  custom_instructions: z.string().optional().describe(
+  custom_instructions: z.string().max(3000).optional().describe(
     'Required for extract when entity_type is "custom". Describes what to extract (max 3000 chars).',
   ),
-  ai_query: z.string().optional().describe(
+  ai_query: z.string().max(3000).optional().describe(
     'Required for open_block and write_me. Natural-language prompt. Reference columns via {pulse.column_id}, item name via {pulse.name}, subitems via {pulse.subitem.column_id}. Max 3000 chars.',
   ),
   groups: z.array(z.object({
@@ -104,12 +105,7 @@ export const configureAiColumnToolSchema = {
   ),
 };
 
-export const configureAiColumnInBoardToolSchema = {
-  board_id: z.number().describe('The ID of the board containing the column'),
-  ...configureAiColumnToolSchema,
-};
-
-export type ConfigureAiColumnToolInput = typeof configureAiColumnToolSchema | typeof configureAiColumnInBoardToolSchema;
+export type ConfigureAiColumnToolInput = typeof configureAiColumnToolSchema;
 
 export class ConfigureAiColumnTool extends BaseMondayApiTool<ConfigureAiColumnToolInput> {
   name = 'configure_ai_column';
@@ -153,37 +149,30 @@ RELATED TOOLS:
   }
 
   getInputSchema(): ConfigureAiColumnToolInput {
-    if (this.context?.boardId) {
-      return configureAiColumnToolSchema;
-    }
-    return configureAiColumnInBoardToolSchema;
+    return configureAiColumnToolSchema;
   }
 
   protected async executeInternal(input: ToolInputType<ConfigureAiColumnToolInput>): Promise<ToolOutputType<never>> {
-    const boardId = this.context?.boardId ?? (input as ToolInputType<typeof configureAiColumnInBoardToolSchema>).board_id;
-    if (!boardId) {
-      throw new Error('board_id is required');
-    }
     const extraSettings = input.run_backfill !== undefined ? { run_backfill: input.run_backfill } : undefined;
 
     try {
       switch (input.block_type) {
         case 'categorize':
-          return this.handleCategorize(boardId, input, extraSettings);
+          return this.handleCategorize(input.board_id, input, extraSettings);
         case 'summarize':
-          return this.handleSummarize(boardId, input, extraSettings);
+          return this.handleSummarize(input.board_id, input, extraSettings);
         case 'translate':
-          return this.handleTranslate(boardId, input, extraSettings);
+          return this.handleTranslate(input.board_id, input, extraSettings);
         case 'improve_text':
-          return this.handleImproveText(boardId, input, extraSettings);
+          return this.handleImproveText(input.board_id, input, extraSettings);
         case 'extract':
-          return this.handleExtract(boardId, input, extraSettings);
+          return this.handleExtract(input.board_id, input, extraSettings);
         case 'open_block':
-          return this.handleOpenBlock(boardId, input, extraSettings);
+          return this.handleOpenBlock(input.board_id, input, extraSettings);
         case 'write_me':
-          return this.handleWriteMe(boardId, input, extraSettings);
+          return this.handleWriteMe(input.board_id, input, extraSettings);
         case 'person_assignment':
-          return this.handlePersonAssignment(boardId, input, extraSettings);
+          return this.handlePersonAssignment(input.board_id, input, extraSettings);
       }
     } catch (error) {
       rethrowWithContext(error, 'configure AI column');
