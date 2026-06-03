@@ -1,0 +1,123 @@
+# SUBMISSION.md — monday-crm plugin submission runbook
+
+Turn-key guide for submitting `monday-crm` to Anthropic's official Claude
+plugin directory. **Tom executes these steps; Devin prepared everything.**
+
+---
+
+## Pre-submission checklist
+
+Run these locally before submitting:
+
+- [ ] `claude plugin validate ./monday-crm --strict` → clean (no errors, no warnings)
+- [ ] `claude plugin validate ./plugin --strict` → clean (marketplace-level)
+- [ ] Version in `plugin.json` is `0.2.0`
+- [ ] CHANGELOG.md has a `[0.2.0]` entry
+- [ ] README.md lists all 7 skills + bundled connector
+- [ ] `plugin.json` has `defaultEnabled: false`
+- [ ] `.mcp.json` has `"type": "http"` and `"url": "https://mcp.monday.com/mcp"`
+- [ ] monday MCP OAuth tested: `claude mcp add --transport http monday https://mcp.monday.com/mcp` → connect → `/mcp` shows `monday` green
+- [ ] `mcp__monday__get_user_context` tool works (verify tool name matches hosted server)
+- [ ] All `mcp__monday__*` tool names in `allowed-tools` verified against hosted server inventory
+- [ ] Plugin repo is **public** (required for GitHub-link submission)
+- [ ] monday MCP is listed in the [Connectors Directory](https://claude.ai/settings/integrations) (note status — if not yet listed, mention in submission notes)
+
+---
+
+## Step-by-step submission flow
+
+### 1. Choose the hosting repo
+
+See `repo-home-recommendation.md` for the ranked analysis. Short version:
+
+| Option | Repo | Path |
+|---|---|---|
+| **Recommended** | `mondaycom/agentic-monday` | `plugins-official/monday-crm/` |
+| **Fallback** | New `mondaycom/monday-crm-plugin` | repo root |
+
+Copy the `monday-crm/` directory to the chosen repo. If using `agentic-monday`, also add a plugin entry to its root `marketplace.json`.
+
+### 2. Validate in the hosting repo
+
+```bash
+cd /path/to/hosting-repo
+
+# If plugin is at root:
+claude plugin validate . --strict
+
+# If plugin is in a subdirectory:
+claude plugin validate ./plugins-official/monday-crm --strict
+```
+
+Both must pass clean.
+
+### 3. Test locally via marketplace
+
+```bash
+# Add local marketplace
+claude plugin marketplace add /path/to/hosting-repo
+
+# Install
+claude plugin install monday-crm@<local-marketplace-name>
+
+# Verify: should show 7 skills + 1 MCP server
+claude plugin details monday-crm@<local-marketplace-name>
+
+# Clean up
+claude plugin uninstall monday-crm@<local-marketplace-name>
+claude plugin marketplace remove <local-marketplace-name>
+```
+
+### 4. Submit to Anthropic
+
+1. Go to: **https://claude.ai/settings/plugins/submit**
+2. Choose **"GitHub repository"** as the source type.
+3. Enter the public repo URL:
+   - If `agentic-monday`: `https://github.com/mondaycom/agentic-monday`
+     - If subdirectory is supported: path = `plugins-official/monday-crm`
+   - If dedicated repo: `https://github.com/mondaycom/monday-crm-plugin`
+4. Fill in submission details:
+   - **Plugin name:** `monday-crm`
+   - **Display name:** monday CRM
+   - **Author:** monday.com
+   - **Description:** Seven skills for monday CRM users — first-run setup, morning briefings, forecast dashboards, board diagnosis, bulk data hygiene, workspace setup, and meeting-to-opportunity sync. Composes the official monday MCP connector; no custom server, no new auth.
+   - **Category:** CRM / Sales
+5. Acknowledge the [Plugin Policy](https://www.anthropic.com/policies/plugin-terms).
+6. Submit.
+
+### 5. Post-acceptance
+
+Once accepted into the official directory:
+
+**Install command for users:**
+```bash
+claude plugin install monday-crm@claude-plugins-official
+```
+
+**Auto-updates:** The official directory mirrors the source repo on every push. Version bumps in `plugin.json` trigger update notifications for installed users.
+
+**First-run:** Users should run `/monday-crm:setup` after installing to connect the monday MCP via OAuth.
+
+---
+
+## Notes
+
+- **`defaultEnabled: false`** — the plugin installs disabled. Users enable it after connecting the monday MCP, which prevents errors from an unconnected server.
+- **Setup skill** — `/monday-crm:setup` guides OAuth connection + troubleshooting. This is the recommended first-run path.
+- **No secrets in the plugin** — `.mcp.json` carries only the endpoint URL. OAuth happens at connect time via Claude Code's built-in flow.
+- **Connectors Directory status** — if the monday MCP is not yet in the Connectors Directory (`claude.ai/settings/integrations`), note this in the submission. The plugin still works (`.mcp.json` bundles the server), but Connectors Directory listing improves discoverability.
+
+---
+
+## Open questions / known gaps before public submission
+
+### Resolved (round 2)
+
+- [x] **New-user vs existing-user routing gap.** Resolved via option (c): setup skill now has a triage step (Step 4) that detects existing CRM boards and routes to operate-mode skills. workspace-builder trigger phrases tightened to only fire on explicit "build from scratch" intent. (2026-06-04)
+- [x] **No-monday-account fallback.** Setup skill Step 1 now asks whether user has a monday account and routes no-account users to https://monday.com/crm. README updated with matching callout. (2026-06-04)
+
+### Open
+
+- [ ] **Cowork plugin UI doesn't show skill inventory.** Plugin uploads via zip and skills auto-trigger on natural language, but the Customize panel says "This plugin doesn't have any skills or agents." Bundled `.mcp.json` connector does surface and prompt for OAuth correctly. Possibly a Cowork rendering bug or version gap (vs Claude Code CLI 2.1.161 which lists all 7 skills via `claude plugin details`). Flag to Anthropic during submission — does not block CLI / official-directory install. **Note for Anthropic reviewer:** Please test this plugin via Claude Code CLI (`claude plugin details monday-crm`) or Claude Code desktop app, not Cowork specifically — the Cowork Customize panel appears to have a rendering issue with skill inventory display that does not affect actual skill loading or activation.
+- [ ] **Trigger-phrase activation tests not yet run.** 48-prompt CSV test suite exists in `plugin/tests/` but requires a Claude Code session with the plugin installed to execute. Blocked on Tom. See `plugin/tests/results/activation-2026-06-04.md` for the runbook. Acceptance: ≥90% correct, ZERO false positives.
+- [ ] **`claude plugin validate --strict` not run.** Claude Code CLI is not installed in the build environment. Tom should run both validations before submission. See pre-submission checklist above.
