@@ -105,10 +105,12 @@ claude plugin install monday-crm@claude-plugins-official
 - [x] **New-user vs existing-user routing gap.** Resolved via option (c): setup skill now has a triage step (Step 4) that detects existing CRM boards and routes to operate-mode skills. workspace-builder trigger phrases tightened to only fire on explicit "build from scratch" intent. (2026-06-04)
 - [x] **No-monday-account fallback.** Setup skill Step 1 now asks whether user has a monday account and routes no-account users to https://monday.com/crm. README updated with matching callout. (2026-06-04)
 
-### Open
-
-- [ ] **Cowork plugin UI doesn't show skill inventory.** Plugin uploads via zip and skills auto-trigger on natural language, but the Customize panel says "This plugin doesn't have any skills or agents." Bundled `.mcp.json` connector does surface and prompt for OAuth correctly. Possibly a Cowork rendering bug or version gap (vs Claude Code CLI 2.1.161 which lists all 7 skills via `claude plugin details`). Flag to Anthropic during submission — does not block CLI / official-directory install. **Note for Anthropic reviewer:** Please test this plugin via Claude Code CLI (`claude plugin details monday-crm`) or Claude Code desktop app, not Cowork specifically — the Cowork Customize panel appears to have a rendering issue with skill inventory display that does not affect actual skill loading or activation.
 ### Resolved (2026-06-04, post-PR)
 
 - [x] **`claude plugin validate --strict` passes.** Both `./plugins/monday-crm` and `./` (marketplace, after adding `.claude-plugin/marketplace.json` at repo root) validate strict-clean against Claude Code CLI 2.1.161.
 - [x] **Trigger-phrase activation tests pass.** 48-prompt CSV suite re-run with `claude-haiku-4-5` against round-2 descriptions. Result: 0 skill defects, 46/48 strict-pass under round-1 expected mapping; the 2 misses (`wb-exp-1` "set up my CRM", `wb-imp-1` "I'm new to monday") correctly route to `setup` instead of `workspace-builder` — this is the round-2 triage doing its job, and the CSV expected-values need a one-line update to reflect the new design. Round-1's single failure (`mo-imp-2`) is fixed.
+- [x] **Cowork plugin UI display.** Confirmed working when Cowork installs via GitHub marketplace URL (the real-user path): plugin card, skills, and bundled MCP connector all render correctly. The "no skills shown" issue earlier in testing was specific to the local zip-upload path, which is not how external users install. No action needed.
+
+### Open
+
+_None blocking submission._
