@@ -401,9 +401,15 @@ campaign_id: ID,   "Filter by event type"
 event_type: CampaignsAnalyticsEventKind,   "Maximum number of events to return (max 1000)"
 limit: Int!,   "Pagination token for the next page"
 next_token: String): CampaignsAnalyticsEventsResponse
-  "List email campaigns for the current account"
+  "List email campaigns for the current account with optional filtering and sorting"
   campaigns(  "Maximum number of campaigns to return (max 200)"
-limit: Int): [CampaignsEmailCampaign!]
+limit: Int,   "Filter by campaign status(es)"
+status: [CampaignsStatusKind!],   "Filter by campaign name (partial match)"
+name: String,   "Filter campaigns sent after this date"
+sent_after: Date,   "Filter campaigns sent before this date"
+sent_before: Date,   "Field to sort by"
+sort_field: CampaignsSortField,   "Sort direction (defaults to DESC)"
+sort_order: CampaignsSortOrder): [CampaignsEmailCampaign!]
   "Get a single email campaign by ID"
   campaign(id: ID!): CampaignsEmailCampaign
   "Get the brand kit for the current account"
@@ -688,14 +694,14 @@ name: String): WorkSchedulePage
 cursor: String!,   "Number of items to return per page; default 20, max 500"
 limit: Int = 20): WorkSchedulePage
   "Returns active time off schedules for the caller's account"
-  time_offs(  "Filter by specific time off schedule IDs"
-ids: [ID!],   "Number of items to return per page; max 500"
-limit: Int,   "Filter by time off schedule name"
+  time_offs(  "Filter by specific time off schedule IDs (max 100)"
+ids: [ID!],   "Number of items to return per page; default 20, max 500"
+limit: Int = 20,   "Filter by time off schedule name"
 name: String): TimesOffPage
   "Fetches the next page of time off schedules using a cursor from a previous time_offs or next_time_offs_page call"
   next_time_offs_page(  "Cursor returned by a previous time_offs or next_time_offs_page call"
-cursor: String!,   "Number of items to get, the default is 25."
-limit: Int = 25): TimesOffPage
+cursor: String!,   "Number of items to return per page; default 20, max 500"
+limit: Int = 20): TimesOffPage
   "Returns users availability: work schedule and time offs schedule"
   users_availability(  "Filter by specific user IDs"
 user_ids: [ID!],   "Number of items to return per page; max 500"
@@ -2086,8 +2092,9 @@ relation_id: ID): Int
 projectBoardId: ID!,   "The ID of the portfolio to connect to"
 portfolioBoardId: ID!,   "Optional URL to receive a POST request when the operation completes. Enables async mode: the mutation returns immediately with a process_id."
 callback_url: String): ConnectProjectResult
-  "Create a new portfolio"
-  create_portfolio(boardName: String!, boardPrivacy: String!, destinationWorkspaceId: Int): CreatePortfolioResult
+  "Create a new portfolio. When a callback_url is provided the mutation returns immediately with a process_id, and the portfolio_id is POSTed to that URL once the portfolio is actually created. The callback payload is: { is_success: boolean, process_id: string, portfolio_id?: number }."
+  create_portfolio(boardName: String!, boardPrivacy: String!, destinationWorkspaceId: Int,   "Optional URL to receive a POST request when the portfolio is created. Enables async mode: the mutation returns immediately with a process_id; the portfolio_id is delivered via the callback."
+callback_url: String): CreatePortfolioResult
   "Update attributes (Job Role, Skills, or Location) for multiple resources in the directory"
   update_directory_resources_attributes(  "The attribute type to update (JOB_ROLE, SKILLS, or LOCATION)"
 attribute: DirectoryResourceAttribute!,   "The values of the attribute to update"
@@ -2118,10 +2125,16 @@ inputs: [CreateWorkScheduleInput!]!): [WorkScheduleResult!]
   "Update the name and/or working hours of an existing work schedule"
   update_work_schedule(  "ID of the work schedule to update"
 id: ID!,   "Fields to update on the work schedule"
-input: UpdateWorkScheduleInput!): WorkScheduleResult
+input: UpdateWorkScheduleInput!): WorkScheduleResult!
   "Soft-delete one or more work schedules; maximum 100 IDs per call"
   delete_work_schedule(  "IDs of work schedules to delete; maximum 100 items per call"
 ids: [ID!]!): [WorkScheduleDeleteResult!]
+  "Assign a work schedule to multiple users. Returns one result per user, allowing partial success. Pass the account default schedule ID to revert users to the account default. Maximum 100 user IDs per call."
+  assign_work_schedule(  "Users and work schedule to assign; maximum 100 user IDs per call"
+input: AssignWorkScheduleInput!): [AssignWorkScheduleUserResult!]
+  "Remove explicit work schedule assignments from multiple users; maximum 100 user IDs per call. Returns one result per user, allowing partial success."
+  unassign_work_schedule(  "IDs of users to remove work schedule assignments from; maximum 100 items per call"
+user_ids: [ID!]!): [AssignWorkScheduleUserResult!]
   "Create one or more named time off schedules for the account; maximum 100 inputs per call"
   create_time_off(  "Time off schedules to create; maximum 100 items per call"
 inputs: [CreateTimeOffInput!]!): [TimeOffResult!]
@@ -2132,6 +2145,12 @@ input: UpdateTimeOffInput!): TimeOffResult
   "Soft-delete one or more time off schedules; maximum 100 IDs per call"
   delete_time_off(  "IDs of time off schedules to delete; maximum 100 items per call"
 ids: [ID!]!): [TimeOffDeleteResult!]
+  "Assign a time off schedule to multiple users. Returns one result per user, allowing partial success. Pass the account default time off ID to revert users to the account default. Maximum 100 user IDs per call."
+  assign_time_off(  "Users and time off schedule to assign; maximum 100 user IDs per call"
+input: AssignTimeOffInput!): [AssignTimeOffUserResult!]
+  "Remove explicit time off assignments from multiple users; maximum 100 user IDs per call. Returns one result per user, allowing partial success."
+  unassign_time_off(  "IDs of users to remove time off assignments from; maximum 100 items per call"
+user_ids: [ID!]!): [UserAvailabilityResult!]!
   "Add one or more non-working date entries to a time off schedule; maximum 100 inputs per call"
   create_time_off_entry(  "Entries to create; maximum 100 items per call"
 inputs: [CreateTimeOffEntryInput!]!): [TimeOffEntryResult!]
@@ -7200,6 +7219,10 @@ enum CampaignsAnalyticsEventKind {
   EMAIL_RECIPIENT_COMPLAINT
   "Recipient unsubscribed"
   EMAIL_RECIPIENT_UNSUBSCRIBED
+  "email_recipient_group_unsubscribed"
+  EMAIL_RECIPIENT_GROUP_UNSUBSCRIBED
+  "email_recipient_group_resubscribed"
+  EMAIL_RECIPIENT_GROUP_RESUBSCRIBED
   "Email was dropped before sending"
   EMAIL_DROPPED
   "Email was opened by recipient"
@@ -7378,6 +7401,8 @@ type CampaignsEmailCampaign {
   scheduled_time: Date
   "IDs of segments targeted by this campaign"
   segment_ids: [ID!]
+  "URL of the campaign email template preview image"
+  preview_image: String
   "HTML content of the email template"
   template_html: String
 }
@@ -7496,6 +7521,22 @@ type CampaignsSettings {
   unsubscribe_footer: CampaignsUnsubscribeFooter
   "Marketing contacts board configuration"
   contacts_board: CampaignsContactsBoard
+}
+
+"Fields available for sorting campaigns"
+enum CampaignsSortField {
+  "Sort by campaign name"
+  NAME
+  "Sort by creation date"
+  CREATED_AT
+}
+
+"Sort direction"
+enum CampaignsSortOrder {
+  "Ascending order"
+  ASC
+  "Descending order"
+  DESC
 }
 
 "Status of a campaign"
@@ -10364,6 +10405,8 @@ page: Int): [User]
   name: String!
   "Whether the team is a guest team"
   is_guest: Boolean
+  "The team's creation date as an ISO 8601 string."
+  created_at: String
 }
 
 type TeamValue implements ColumnValue {
@@ -11348,6 +11391,8 @@ type CreatePortfolioResult {
   success: Boolean
   "A message describing the result of the operation."
   message: String
+  "Unique process ID for tracking this request. Included in the callback payload when the operation completes."
+  process_id: ID
 }
 
 "Result of validating projects and portfolios for connection compatibility."
@@ -12272,14 +12317,18 @@ input AggregateHistoryFilterRuleInput {
 enum AggregateHistoryFromElement {
   "Query historical snapshots of board/table data at specific dates."
   TABLE
+  "Query historical snapshots across multiple boards via unified sub-queries."
+  UNION
 }
 
-"The source table and its ID for the aggregate history query."
+"The source for the aggregate history query (single board or union of boards)."
 input AggregateHistoryFromInput {
-  "The source type. Must be TABLE for historical queries."
+  "The source type: TABLE for a single board, UNION for cross-board queries."
   type: AggregateHistoryFromElement!
-  "The unique identifier of the source board."
-  id: ID!
+  "The board ID. Required when type is TABLE."
+  id: ID
+  "Union sub-queries. Required when type is UNION."
+  union: AggregateHistoryUnionInput
 }
 
 "The aggregation function to apply."
@@ -12408,6 +12457,8 @@ type AggregateHistoryResultEntry {
 type AggregateHistoryResultSet {
   "Array of results, one for each date specified in at_timestamps."
   results: [AggregateHistoryDateResult!]
+  "Boards that contributed to the merged results. Populated for union queries; empty for single-board TABLE queries."
+  source_boards: [SourceBoardInfo!]
 }
 
 "The value of an aggregate result entry. Can be an aggregation result or a group-by key."
@@ -12427,7 +12478,7 @@ input AggregateHistorySelectFunctionInput {
   params: [AggregateHistorySelectInput!]
 }
 
-"Specifies a field or function to include in the aggregation results."
+"Specifies a field or function to include in the aggregation results. For union queries, sub-queries may use any function; top-level select is restricted to mergeable functions at validation time."
 input AggregateHistorySelectInput {
   "The type of selection: COLUMN for direct column values, FUNCTION for aggregations."
   type: AggregateHistorySelectKind!
@@ -12453,6 +12504,36 @@ enum AggregateHistorySortDirection {
   ASC
   "Sort in descending order (Z-A, 9-0)."
   DESC
+}
+
+"Table source type for union sub-queries."
+enum AggregateHistoryTableFromElement {
+  "Single board table source."
+  TABLE
+}
+
+"A single-board table source for union sub-queries."
+input AggregateHistoryTableFromInput {
+  "Must be TABLE."
+  type: AggregateHistoryTableFromElement!
+  "The unique identifier of the source board."
+  id: ID!
+}
+
+"Union of per-board sub-queries for cross-board aggregate history."
+input AggregateHistoryUnionInput {
+  "One sub-query per board. All sub-queries must produce matching select aliases."
+  queries: [AggregateHistoryUnionQueryInput!]!
+}
+
+"A per-board sub-query within a union aggregate history query (board schema + column aliases only)."
+input AggregateHistoryUnionQueryInput {
+  "The board source. Must be type TABLE."
+  from: AggregateHistoryTableFromInput!
+  "Per-board select elements with unified aliases across sub-queries. Supports the full aggregate function set."
+  select: [AggregateHistorySelectInput!]!
+  "Maximum results per board before cross-board merge."
+  limit: Int
 }
 
 "The raw value of a column for a historical item."
@@ -12686,6 +12767,12 @@ enum ItemsHistorySortDirection {
   DESC
 }
 
+"Metadata for a board that contributed results to a union aggregate query."
+type SourceBoardInfo {
+  "The board ID that contributed to the merged result."
+  board_id: ID
+}
+
 "The account-level default work schedule and time off schedule"
 type AccountAvailabilityDefaults {
   "The account-level default work schedule"
@@ -12822,6 +12909,24 @@ input AllocationUpdateInput {
   resource_id: ID
 }
 
+"Input for assigning a time off schedule to multiple users"
+input AssignTimeOffInput {
+  "IDs of the users to assign the time off schedule to; maximum 100 per call"
+  user_ids: [ID!]!
+  "ID of the time off schedule to assign; pass the account default time off ID to revert the user to the account default"
+  time_off_id: ID!
+}
+
+"Result of a time off assignment for a single user. Batch mutations return one of these per requested user, allowing partial success."
+type AssignTimeOffUserResult {
+  "ID of the user this result applies to"
+  user_id: ID!
+  "Whether the operation succeeded"
+  success: Boolean!
+  "Structured error details, null if the operation succeeded"
+  error: Error
+}
+
 "Input for assigning a work schedule and/or time off schedule to multiple users"
 input AssignUserAvailabilityInput {
   "IDs of the users to assign schedules to"
@@ -12830,6 +12935,24 @@ input AssignUserAvailabilityInput {
   work_schedule_id: ID
   "ID of the time off schedule to assign; omit to leave unchanged"
   time_off_id: ID
+}
+
+"Input for assigning a work schedule to multiple users"
+input AssignWorkScheduleInput {
+  "IDs of the users to assign the work schedule to; maximum 100 per call"
+  user_ids: [ID!]!
+  "ID of the work schedule to assign; pass the account default schedule ID to revert the user to the account default"
+  work_schedule_id: ID!
+}
+
+"Result of a work schedule assignment for a single user. Batch mutations return one of these per requested user, allowing partial success."
+type AssignWorkScheduleUserResult {
+  "ID of the user this result applies to"
+  user_id: ID!
+  "Whether the operation succeeded"
+  success: Boolean!
+  "Structured error details, null if the operation succeeded"
+  error: Error
 }
 
 "Represents a single attribute type option for a resource"
@@ -13633,6 +13756,24 @@ type SearchIndexedItem {
   workspace_id: ID
 }
 
+"Update data stored in the search index."
+type SearchIndexedUpdate {
+  "Update ID."
+  id: ID!
+  "Update content (HTML formatted)."
+  body: String!
+  "ID of the user who created the update."
+  creator_id: ID!
+  "ID of the item this update belongs to."
+  item_id: ID!
+  "ID of the board containing this update."
+  board_id: ID!
+  "ISO timestamp when the update was created."
+  created_at: String!
+  "ISO timestamp when the update was last modified."
+  updated_at: String!
+}
+
 "Workspace data stored in the search index."
 type SearchIndexedWorkspace {
   "Workspace ID."
@@ -13688,6 +13829,12 @@ limit: Int = 10,   "Date range filter."
 date_range: CrossEntityDateRangeInput,   "Controls the trade-off between search quality and response time. Defaults to balanced."
 strategy: SearchStrategy,   "Filter documents to specific workspace IDs."
 workspace_ids: [ID!]): SearchDocResults!
+  "Search for updates."
+  updates(  "The search query string."
+query: String!,   "Maximum number of results to return (default 10, max 20)."
+limit: Int = 10,   "Date range filter."
+date_range: CrossEntityDateRangeInput,   "Controls the trade-off between search quality and response time. Defaults to balanced."
+strategy: SearchStrategy): SearchUpdateResults!
   "Search for workspaces."
   workspaces(  "The search query string."
 query: String!,   "Maximum number of results to return (default 10, max 20)."
@@ -13708,12 +13855,30 @@ enum SearchStrategy {
   QUALITY
 }
 
+"A single update search result with indexed and live data."
+type SearchUpdateResult {
+  "Unique identifier of the update."
+  id: ID!
+  "Update data from the search index."
+  indexed_data: SearchIndexedUpdate!
+  "Live update data via federation. Null when the referenced update cannot be resolved by the owning subgraph (e.g. deleted, not accessible to the caller, or indexing lag)."
+  live_data: Update
+}
+
+"Wrapper for a list of update search results."
+type SearchUpdateResults {
+  "List of update search results."
+  results: [SearchUpdateResult!]!
+}
+
 "A single workspace search result."
 type SearchWorkspaceResult {
   "Unique identifier of the workspace."
   id: ID!
   "Workspace data from the search index."
   indexed_data: SearchIndexedWorkspace!
+  "Live workspace data via federation. Null when the referenced workspace cannot be resolved by the owning subgraph (e.g. deleted, not accessible to the caller, or indexing lag)."
+  live_data: Workspace
 }
 
 "Wrapper for a list of workspace search results."

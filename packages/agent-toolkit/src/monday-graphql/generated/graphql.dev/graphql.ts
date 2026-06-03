@@ -539,15 +539,19 @@ export type AggregateHistoryFilterRuleInput = {
 /** The source type for the aggregate history query. */
 export enum AggregateHistoryFromElement {
   /** Query historical snapshots of board/table data at specific dates. */
-  Table = 'TABLE'
+  Table = 'TABLE',
+  /** Query historical snapshots across multiple boards via unified sub-queries. */
+  Union = 'UNION'
 }
 
-/** The source table and its ID for the aggregate history query. */
+/** The source for the aggregate history query (single board or union of boards). */
 export type AggregateHistoryFromInput = {
-  /** The unique identifier of the source board. */
-  id: Scalars['ID']['input'];
-  /** The source type. Must be TABLE for historical queries. */
+  /** The board ID. Required when type is TABLE. */
+  id?: InputMaybe<Scalars['ID']['input']>;
+  /** The source type: TABLE for a single board, UNION for cross-board queries. */
   type: AggregateHistoryFromElement;
+  /** Union sub-queries. Required when type is UNION. */
+  union?: InputMaybe<AggregateHistoryUnionInput>;
 };
 
 /** The aggregation function to apply. */
@@ -679,6 +683,8 @@ export type AggregateHistoryResultSet = {
   __typename?: 'AggregateHistoryResultSet';
   /** Array of results, one for each date specified in at_timestamps. */
   results?: Maybe<Array<AggregateHistoryDateResult>>;
+  /** Boards that contributed to the merged results. Populated for union queries; empty for single-board TABLE queries. */
+  source_boards?: Maybe<Array<SourceBoardInfo>>;
 };
 
 /** The value of an aggregate result entry. Can be an aggregation result or a group-by key. */
@@ -698,7 +704,7 @@ export type AggregateHistorySelectFunctionInput = {
   params?: InputMaybe<Array<AggregateHistorySelectInput>>;
 };
 
-/** Specifies a field or function to include in the aggregation results. */
+/** Specifies a field or function to include in the aggregation results. For union queries, sub-queries may use any function; top-level select is restricted to mergeable functions at validation time. */
 export type AggregateHistorySelectInput = {
   /** The alias for this field in the result set. */
   as: Scalars['String']['input'];
@@ -725,6 +731,36 @@ export enum AggregateHistorySortDirection {
   /** Sort in descending order (Z-A, 9-0). */
   Desc = 'DESC'
 }
+
+/** Table source type for union sub-queries. */
+export enum AggregateHistoryTableFromElement {
+  /** Single board table source. */
+  Table = 'TABLE'
+}
+
+/** A single-board table source for union sub-queries. */
+export type AggregateHistoryTableFromInput = {
+  /** The unique identifier of the source board. */
+  id: Scalars['ID']['input'];
+  /** Must be TABLE. */
+  type: AggregateHistoryTableFromElement;
+};
+
+/** Union of per-board sub-queries for cross-board aggregate history. */
+export type AggregateHistoryUnionInput = {
+  /** One sub-query per board. All sub-queries must produce matching select aliases. */
+  queries: Array<AggregateHistoryUnionQueryInput>;
+};
+
+/** A per-board sub-query within a union aggregate history query (board schema + column aliases only). */
+export type AggregateHistoryUnionQueryInput = {
+  /** The board source. Must be type TABLE. */
+  from: AggregateHistoryTableFromInput;
+  /** Maximum results per board before cross-board merge. */
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  /** Per-board select elements with unified aliases across sub-queries. Supports the full aggregate function set. */
+  select: Array<AggregateHistorySelectInput>;
+};
 
 export type AggregateQueryInput = {
   /** Source to select from (table or data view) */
@@ -1810,6 +1846,25 @@ export type AssignTeamOwnersResult = {
   team?: Maybe<Team>;
 };
 
+/** Input for assigning a time off schedule to multiple users */
+export type AssignTimeOffInput = {
+  /** ID of the time off schedule to assign; pass the account default time off ID to revert the user to the account default */
+  time_off_id: Scalars['ID']['input'];
+  /** IDs of the users to assign the time off schedule to; maximum 100 per call */
+  user_ids: Array<Scalars['ID']['input']>;
+};
+
+/** Result of a time off assignment for a single user. Batch mutations return one of these per requested user, allowing partial success. */
+export type AssignTimeOffUserResult = {
+  __typename?: 'AssignTimeOffUserResult';
+  /** Structured error details, null if the operation succeeded */
+  error?: Maybe<Error>;
+  /** Whether the operation succeeded */
+  success: Scalars['Boolean']['output'];
+  /** ID of the user this result applies to */
+  user_id: Scalars['ID']['output'];
+};
+
 /** Input for assigning a work schedule and/or time off schedule to multiple users */
 export type AssignUserAvailabilityInput = {
   /** ID of the time off schedule to assign; omit to leave unchanged */
@@ -1818,6 +1873,25 @@ export type AssignUserAvailabilityInput = {
   user_ids: Array<Scalars['ID']['input']>;
   /** ID of the work schedule to assign; omit to leave unchanged */
   work_schedule_id?: InputMaybe<Scalars['ID']['input']>;
+};
+
+/** Input for assigning a work schedule to multiple users */
+export type AssignWorkScheduleInput = {
+  /** IDs of the users to assign the work schedule to; maximum 100 per call */
+  user_ids: Array<Scalars['ID']['input']>;
+  /** ID of the work schedule to assign; pass the account default schedule ID to revert the user to the account default */
+  work_schedule_id: Scalars['ID']['input'];
+};
+
+/** Result of a work schedule assignment for a single user. Batch mutations return one of these per requested user, allowing partial success. */
+export type AssignWorkScheduleUserResult = {
+  __typename?: 'AssignWorkScheduleUserResult';
+  /** Structured error details, null if the operation succeeded */
+  error?: Maybe<Error>;
+  /** Whether the operation succeeded */
+  success: Scalars['Boolean']['output'];
+  /** ID of the user this result applies to */
+  user_id: Scalars['ID']['output'];
 };
 
 /** A board where the user has item assignments. */
@@ -2936,6 +3010,10 @@ export enum CampaignsAnalyticsEventKind {
   EmailOpened = 'EMAIL_OPENED',
   /** Recipient marked email as spam */
   EmailRecipientComplaint = 'EMAIL_RECIPIENT_COMPLAINT',
+  /** email_recipient_group_resubscribed */
+  EmailRecipientGroupResubscribed = 'EMAIL_RECIPIENT_GROUP_RESUBSCRIBED',
+  /** email_recipient_group_unsubscribed */
+  EmailRecipientGroupUnsubscribed = 'EMAIL_RECIPIENT_GROUP_UNSUBSCRIBED',
   /** Recipient unsubscribed */
   EmailRecipientUnsubscribed = 'EMAIL_RECIPIENT_UNSUBSCRIBED',
   /** Email was sent */
@@ -3102,6 +3180,8 @@ export type CampaignsEmailCampaign = {
   id?: Maybe<Scalars['ID']['output']>;
   /** Name of the campaign */
   name?: Maybe<Scalars['String']['output']>;
+  /** URL of the campaign email template preview image */
+  preview_image?: Maybe<Scalars['String']['output']>;
   /** Preview text shown in email clients */
   preview_text?: Maybe<Scalars['String']['output']>;
   /** When the campaign should be sent */
@@ -3243,6 +3323,22 @@ export type CampaignsSettings = {
   /** Unsubscribe page configuration */
   unsubscribe_page?: Maybe<CampaignsUnsubscribePage>;
 };
+
+/** Fields available for sorting campaigns */
+export enum CampaignsSortField {
+  /** Sort by creation date */
+  CreatedAt = 'CREATED_AT',
+  /** Sort by campaign name */
+  Name = 'NAME'
+}
+
+/** Sort direction */
+export enum CampaignsSortOrder {
+  /** Ascending order */
+  Asc = 'ASC',
+  /** Descending order */
+  Desc = 'DESC'
+}
 
 /** Status of a campaign */
 export enum CampaignsStatusKind {
@@ -4089,6 +4185,8 @@ export type CreatePortfolioResult = {
   __typename?: 'CreatePortfolioResult';
   /** A message describing the result of the operation. */
   message?: Maybe<Scalars['String']['output']>;
+  /** Unique process ID for tracking this request. Included in the callback payload when the operation completes. */
+  process_id?: Maybe<Scalars['ID']['output']>;
   /** The ID of the solution that was created */
   solution_live_version_id?: Maybe<Scalars['String']['output']>;
   /** Indicates if the operation was successful. */
@@ -9327,8 +9425,12 @@ export type Mutation = {
   assign_department_owner?: Maybe<AssignDepartmentOwnerResult>;
   /** Assigns the specified users as owners of the specified team. */
   assign_team_owners?: Maybe<AssignTeamOwnersResult>;
+  /** Assign a time off schedule to multiple users. Returns one result per user, allowing partial success. Pass the account default time off ID to revert users to the account default. Maximum 100 user IDs per call. */
+  assign_time_off?: Maybe<Array<AssignTimeOffUserResult>>;
   /** Assign the same work schedule and time off schedule to multiple users; maximum 100 user IDs per call. Returns one result per user, allowing partial success. */
   assign_user_availability?: Maybe<Array<UserAvailabilityResult>>;
+  /** Assign a work schedule to multiple users. Returns one result per user, allowing partial success. Pass the account default schedule ID to revert users to the account default. Maximum 100 user IDs per call. */
+  assign_work_schedule?: Maybe<Array<AssignWorkScheduleUserResult>>;
   /** Creates a new dropdown column in a board that is linked to a managed column. The column data and settings are controlled by the managed column. Title, description, and dropdown-specific settings (limit_select, label_limit_count) can be overridden locally. */
   attach_dropdown_managed_column?: Maybe<Column>;
   /** Creates a new status column in a board that is linked to a managed column. The column data and settings are controlled by the managed column. Only title and description can be overridden locally. */
@@ -9472,7 +9574,7 @@ export type Mutation = {
   create_object_schema_columns?: Maybe<ObjectSchema>;
   /** Create a new tag or get it if it already exists. */
   create_or_get_tag?: Maybe<Tag>;
-  /** Create a new portfolio */
+  /** Create a new portfolio. When a callback_url is provided the mutation returns immediately with a process_id, and the portfolio_id is POSTed to that URL once the portfolio is actually created. The callback payload is: { is_success: boolean, process_id: string, portfolio_id?: number }. */
   create_portfolio?: Maybe<CreatePortfolioResult>;
   /** Create a new project in monday.com from scratch. This mutation initiates asynchronous project creation with comprehensive customization options including: privacy settings (private/public - share is currently not supported), optional companions like Resource Planner for enhanced project management capabilities, workspace assignment for organizational structure, folder placement for better organization, and template selection for predefined project structures. Since project creation is asynchronous, you can optionally provide a callback_url where the project ID will be sent via POST request once creation completes. The callback will receive: { is_success: boolean, process_id: string, project_id?: number }. Returns a process_id for tracking the creation request. */
   create_project?: Maybe<CreateProjectResult>;
@@ -9701,8 +9803,12 @@ export type Mutation = {
   shorten_form_url?: Maybe<FormShortenedLink>;
   /** Unassigns owners from a department. */
   unassign_department_owners?: Maybe<UnassignDepartmentOwnerResult>;
+  /** Remove explicit time off assignments from multiple users; maximum 100 user IDs per call. Returns one result per user, allowing partial success. */
+  unassign_time_off: Array<UserAvailabilityResult>;
   /** Remove explicit work schedule and/or time off assignments from multiple users; maximum 100 user IDs per call. Returns one result per user, allowing partial success. */
   unassign_user_availability?: Maybe<Array<UserAvailabilityResult>>;
+  /** Remove explicit work schedule assignments from multiple users; maximum 100 user IDs per call. Returns one result per user, allowing partial success. */
+  unassign_work_schedule?: Maybe<Array<AssignWorkScheduleUserResult>>;
   /** Undo a previously completed action, or cancel one still in flight */
   undo_action?: Maybe<UndoResult>;
   /** Uninstalls an app from the current account. Requires account admin permission. */
@@ -9812,7 +9918,7 @@ export type Mutation = {
   /** Update an existing board table view */
   update_view_table?: Maybe<BoardView>;
   /** Update the name and/or working hours of an existing work schedule */
-  update_work_schedule?: Maybe<WorkScheduleResult>;
+  update_work_schedule: WorkScheduleResult;
   /** Update an existing workspace. */
   update_workspace?: Maybe<Workspace>;
   /** Upsert entity ID mappings for a migration job. */
@@ -10033,8 +10139,20 @@ export type MutationAssign_Team_OwnersArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationAssign_Time_OffArgs = {
+  input: AssignTimeOffInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationAssign_User_AvailabilityArgs = {
   input: AssignUserAvailabilityInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationAssign_Work_ScheduleArgs = {
+  input: AssignWorkScheduleInput;
 };
 
 
@@ -10681,6 +10799,7 @@ export type MutationCreate_Or_Get_TagArgs = {
 export type MutationCreate_PortfolioArgs = {
   boardName: Scalars['String']['input'];
   boardPrivacy: Scalars['String']['input'];
+  callback_url?: InputMaybe<Scalars['String']['input']>;
   destinationWorkspaceId?: InputMaybe<Scalars['Int']['input']>;
 };
 
@@ -11543,8 +11662,20 @@ export type MutationUnassign_Department_OwnersArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationUnassign_Time_OffArgs = {
+  user_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationUnassign_User_AvailabilityArgs = {
   input: UnassignUserAvailabilityInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUnassign_Work_ScheduleArgs = {
+  user_ids: Array<Scalars['ID']['input']>;
 };
 
 
@@ -13239,7 +13370,7 @@ export type Query = {
   bulk_import_items_status: BulkImportStatus;
   /** Get a single email campaign by ID */
   campaign?: Maybe<CampaignsEmailCampaign>;
-  /** List email campaigns for the current account */
+  /** List email campaigns for the current account with optional filtering and sorting */
   campaigns?: Maybe<Array<CampaignsEmailCampaign>>;
   /** Get the complexity data of your queries. */
   complexity?: Maybe<Complexity>;
@@ -13724,6 +13855,12 @@ export type QueryCampaignArgs = {
 /** Root query type for the Dependencies service */
 export type QueryCampaignsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  sent_after?: InputMaybe<Scalars['Date']['input']>;
+  sent_before?: InputMaybe<Scalars['Date']['input']>;
+  sort_field?: InputMaybe<CampaignsSortField>;
+  sort_order?: InputMaybe<CampaignsSortOrder>;
+  status?: InputMaybe<Array<CampaignsStatusKind>>;
 };
 
 
@@ -14993,6 +15130,25 @@ export type SearchIndexedItem = {
   workspace_id?: Maybe<Scalars['ID']['output']>;
 };
 
+/** Update data stored in the search index. */
+export type SearchIndexedUpdate = {
+  __typename?: 'SearchIndexedUpdate';
+  /** ID of the board containing this update. */
+  board_id: Scalars['ID']['output'];
+  /** Update content (HTML formatted). */
+  body: Scalars['String']['output'];
+  /** ISO timestamp when the update was created. */
+  created_at: Scalars['String']['output'];
+  /** ID of the user who created the update. */
+  creator_id: Scalars['ID']['output'];
+  /** Update ID. */
+  id: Scalars['ID']['output'];
+  /** ID of the item this update belongs to. */
+  item_id: Scalars['ID']['output'];
+  /** ISO timestamp when the update was last modified. */
+  updated_at: Scalars['String']['output'];
+};
+
 /** Workspace data stored in the search index. */
 export type SearchIndexedWorkspace = {
   __typename?: 'SearchIndexedWorkspace';
@@ -15035,6 +15191,8 @@ export type SearchNamespace = {
   docs: SearchDocResults;
   /** Search for items. */
   items: SearchItemResults;
+  /** Search for updates. */
+  updates: SearchUpdateResults;
   /** Search for workspaces. */
   workspaces: SearchWorkspaceResults;
 };
@@ -15073,6 +15231,15 @@ export type SearchNamespaceItemsArgs = {
 
 
 /** Per-entity search namespace. Each field searches a single entity type. */
+export type SearchNamespaceUpdatesArgs = {
+  date_range?: InputMaybe<CrossEntityDateRangeInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  query: Scalars['String']['input'];
+  strategy?: InputMaybe<SearchStrategy>;
+};
+
+
+/** Per-entity search namespace. Each field searches a single entity type. */
 export type SearchNamespaceWorkspacesArgs = {
   date_range?: InputMaybe<CrossEntityDateRangeInput>;
   kind?: InputMaybe<Scalars['String']['input']>;
@@ -15092,6 +15259,24 @@ export enum SearchStrategy {
   Speed = 'SPEED'
 }
 
+/** A single update search result with indexed and live data. */
+export type SearchUpdateResult = {
+  __typename?: 'SearchUpdateResult';
+  /** Unique identifier of the update. */
+  id: Scalars['ID']['output'];
+  /** Update data from the search index. */
+  indexed_data: SearchIndexedUpdate;
+  /** Live update data via federation. Null when the referenced update cannot be resolved by the owning subgraph (e.g. deleted, not accessible to the caller, or indexing lag). */
+  live_data?: Maybe<Update>;
+};
+
+/** Wrapper for a list of update search results. */
+export type SearchUpdateResults = {
+  __typename?: 'SearchUpdateResults';
+  /** List of update search results. */
+  results: Array<SearchUpdateResult>;
+};
+
 /** A single workspace search result. */
 export type SearchWorkspaceResult = {
   __typename?: 'SearchWorkspaceResult';
@@ -15099,6 +15284,8 @@ export type SearchWorkspaceResult = {
   id: Scalars['ID']['output'];
   /** Workspace data from the search index. */
   indexed_data: SearchIndexedWorkspace;
+  /** Live workspace data via federation. Null when the referenced workspace cannot be resolved by the owning subgraph (e.g. deleted, not accessible to the caller, or indexing lag). */
+  live_data?: Maybe<Workspace>;
 };
 
 /** Wrapper for a list of workspace search results. */
@@ -15362,6 +15549,13 @@ export enum SortDirection {
   /** Descending order */
   Desc = 'DESC'
 }
+
+/** Metadata for a board that contributed results to a union aggregate query. */
+export type SourceBoardInfo = {
+  __typename?: 'SourceBoardInfo';
+  /** The board ID that contributed to the merged result. */
+  board_id?: Maybe<Scalars['ID']['output']>;
+};
 
 /** A monday dev sprint. */
 export type Sprint = {
@@ -15919,6 +16113,8 @@ export enum TaskStatus {
 /** A team of users. */
 export type Team = {
   __typename?: 'Team';
+  /** The team's creation date as an ISO 8601 string. */
+  created_at?: Maybe<Scalars['String']['output']>;
   /** The team's unique identifier. */
   id: Scalars['ID']['output'];
   /** Whether the team is a guest team */
