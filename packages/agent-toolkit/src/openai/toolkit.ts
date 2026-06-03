@@ -14,13 +14,14 @@ import { stringifyIfObject } from 'src/utils/object.utils';
 
 export class MondayAgentToolkit {
   private readonly mondayApi: ApiClient;
-  private readonly mondayApiToken: string;
+  private readonly mondayApiToken: string | (() => string);
   private readonly context?: MondayAgentToolkitConfig['context'];
   tools: Tool<any, any>[];
 
   constructor(config: MondayAgentToolkitConfig) {
+    const resolvedToken = typeof config.mondayApiToken === 'function' ? config.mondayApiToken() : config.mondayApiToken;
     this.mondayApi = new ApiClient({
-      token: config.mondayApiToken,
+      token: resolvedToken,
       apiVersion: config.mondayApiVersion ?? API_VERSION,
       endpoint: config.mondayApiEndpoint,
       requestConfig: config.mondayApiRequestConfig,
@@ -39,8 +40,18 @@ export class MondayAgentToolkit {
    */
   private initializeTools(config: MondayAgentToolkitConfig): Tool<any, any>[] {
     const tools: Tool<any, any>[] = [];
+    const apiClient: ApiClient | (() => ApiClient) =
+      typeof config.mondayApiToken === 'function'
+        ? () =>
+            new ApiClient({
+              token: (config.mondayApiToken as () => string)(),
+              apiVersion: config.mondayApiVersion ?? API_VERSION,
+              endpoint: config.mondayApiEndpoint,
+              requestConfig: config.mondayApiRequestConfig,
+            })
+        : this.mondayApi;
     const instanceOptions = {
-      apiClient: this.mondayApi,
+      apiClient,
       apiToken: this.mondayApiToken,
       context: this.context,
     };

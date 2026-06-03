@@ -37,10 +37,15 @@ export abstract class BaseMondayApiTool<
 
   protected sessionContext: SessionContext = {};
 
-  constructor(
-    protected readonly mondayApi: ApiClient,
-    protected readonly context?: MondayApiToolContext,
-  ) {}
+  private readonly _mondayApiProvider: ApiClient | (() => ApiClient);
+
+  constructor(mondayApi: ApiClient | (() => ApiClient), protected readonly context?: MondayApiToolContext) {
+    this._mondayApiProvider = mondayApi;
+  }
+
+  protected get mondayApi(): ApiClient {
+    return typeof this._mondayApiProvider === 'function' ? this._mondayApiProvider() : this._mondayApiProvider;
+  }
 
   abstract getDescription(): string;
   abstract getInputSchema(): Input;
