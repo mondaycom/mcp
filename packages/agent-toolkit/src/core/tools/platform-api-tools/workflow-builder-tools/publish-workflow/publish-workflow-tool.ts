@@ -52,7 +52,7 @@ Returns:
 - workflowObjectId: the workflow object ID (unchanged)
 - workflowLiveId: the new live version ID — this changes on every publish, so do not cache it
 
-Note: a new draft is created after each publish. To make further changes, retrieve the new draft ID first (e.g. via manage_workflows), then call update_workflow.
+Note: a new draft is created after each publish. To make further changes, retrieve the new draft ID first (e.g. via manage_automations), then call update_workflow.
 `;
   }
 
