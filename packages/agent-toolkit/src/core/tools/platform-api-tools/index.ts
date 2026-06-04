@@ -72,9 +72,9 @@ import { ManageAgentTriggersTool } from './agents-tools/manage-agent-triggers/ma
 import { ManageAgentSkillsTool } from './agents-tools/manage-agent-skills/manage-agent-skills-tool';
 import { ManageAgentKnowledgeTool } from './agents-tools/manage-agent-knowledge/manage-agent-knowledge-tool';
 import { AgentCatalogTool } from './agents-tools/agent-catalog/agent-catalog-tool';
-import { ListAutomationsTool } from './workflows-tools/list-workflows/list-workflows-tool';
-import { ManageAutomationsTool } from './workflows-tools/manage-automations/manage-automations-tool';
-import { CreateAutomationTool } from './workflows-tools/create-automation/create-automation-tool';
+import { ListAutomationsTool } from './automations-tools/list-automations/list-automations-tool';
+import { ManageAutomationsTool } from './automations-tools/manage-automations/manage-automations-tool';
+import { CreateAutomationTool } from './automations-tools/create-automation/create-automation-tool';
 import { CreateWorkflowBuilderTool } from './workflow-builder-tools/create-workflow/create-workflow-tool';
 import { UpdateWorkflowTool } from './workflow-builder-tools/update-workflow/update-workflow-tool';
 import { PlanWorkflowTool } from './workflow-builder-tools/plan-workflow/plan-workflow-tool';
@@ -156,7 +156,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   ManageAgentSkillsTool,
   ManageAgentKnowledgeTool,
   AgentCatalogTool,
-  // Workflows (subgraph still on dev API version)
+  // Automations (subgraph still on dev API version)
   ListAutomationsTool,
   ManageAutomationsTool,
   // Cast: ctor signature (api, apiToken, context?) doesn't match BaseMondayApiToolConstructor.
@@ -237,8 +237,8 @@ export * from './get-notetaker-meetings-tool/get-notetaker-meetings-tool';
 export * from './fetch-file-content-tool/fetch-file-content-tool';
 // monday Platform Agents
 export * from './agents-tools';
-// Workflows
-export * from './workflows-tools';
+// Automations
+export * from './automations-tools';
 // Workflow Builder Tools
 export * from './workflow-builder-tools/create-workflow/create-workflow-tool';
 export * from './workflow-builder-tools/update-workflow/update-workflow-tool';
