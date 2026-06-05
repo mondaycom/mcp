@@ -267,7 +267,7 @@ After the artifact is published (or attempted), also print the brief in chat as 
 
 1. `mcp__monday__list_users_and_teams` → resolve recipient. If user has a declared manager in their profile metadata, default to that; else `AskUserQuestion` with top-5 most-linked teammates.
 2. `mcp__monday__create_notification({ userId, itemId: <artifact item>, text: "Morning briefing for <Mon DD>" })`.
-3. Optional: `create_update` on a team-rollup board (board named `Team Pipeline`, `Sales Rollup`, or passed by user). Same footer + skill-id-comment convention as the personal-workspace artifact.
+3. Optional: `create_update` on a team-rollup board — one whose name suggests a team or sales rollup (e.g. contains "team", "rollup", or "sales"), or one the user names explicitly. These are not default monday CRM boards, so resolve by `search` / `AskUserQuestion` rather than assuming a fixed name; if none is found, ask the user which board to post to. Same footer + skill-id-comment convention as the personal-workspace artifact.
 4. Default mode: confirm before each `create_notification`. Silent mode: skip confirmation. Proactive: honors session choice.
 
 ---

@@ -3,7 +3,7 @@ name: meeting-to-opportunity
 description: Connects monday NoteTaker meeting transcripts to CRM deals. Reads recent NoteTaker meetings, matches each to an opportunity by participant email or company name, and appends a structured update (key points + next steps + commitments) to the matching deal item. Auto-creates a contact item when a meeting participant doesn't exist on the Contacts board. Use when someone says "log my meetings to deals", "update CRM from yesterday's calls", "what did I commit to in meetings", "sync notetaker", or any variation of meeting-driven CRM update.
 argument-hint: "[optional: time window — 'today', 'yesterday', 'last 7 days', or 'since 2026-05-20']"
 user-invocable: true
-allowed-tools: [Read, AskUserQuestion, mcp__monday__get_user_context, mcp__monday__list_workspaces, mcp__monday__search, mcp__monday__get_board_info, mcp__monday__get_column_type_info, mcp__monday__get_board_items_page, mcp__monday__get_notetaker_meetings, mcp__monday__create_update, mcp__monday__create_item, mcp__monday__change_item_column_values, mcp__monday__create_doc, mcp__monday__list_users_and_teams, mcp__monday__all_monday_api]
+allowed-tools: [Read, AskUserQuestion, mcp__monday__get_user_context, mcp__monday__list_workspaces, mcp__monday__search, mcp__monday__get_board_info, mcp__monday__get_column_type_info, mcp__monday__get_board_items_page, mcp__monday__get_notetaker_meetings, mcp__monday__create_update, mcp__monday__create_item, mcp__monday__change_item_column_values, mcp__monday__create_doc, mcp__monday__create_notification, mcp__monday__list_users_and_teams, mcp__monday__all_monday_api]
 ---
 
 # Meeting to Opportunity
@@ -93,10 +93,10 @@ Edge cases:
 
 ## Step 4: Resolve Deals + Contacts boards (Gather)
 
-Mirror morning-briefing's resolution logic:
+Resolve the boards directly — this skill is self-contained:
 
-1. `get_user_context` → scan favorites + relevantBoards for `deals|opportunities|pipeline`. Pick or `AskUserQuestion`.
-2. Same pass for `contacts|people|leads` for the Contacts board (only if β auto-contact may run).
+1. **Deals board:** `get_user_context` → scan `favorites` + `relevantBoards` for names matching `deals|opportunities|pipeline|sales`. One candidate → use it; multiple → `AskUserQuestion`; zero → `list_workspaces` → `search("deal", BOARD)`. Still zero → degrade per step 4 below.
+2. **Contacts board:** same pass for `contacts|people|leads` (only if β auto-contact may run).
 3. `get_board_info` on each. Resolve columns by type:
    - On Deals: `email` (if present), `text` company-name, `people` owner, `status` stage, `numbers` value, `date` last-touch.
    - On Contacts: `email`, `text` (or company-link `board_relation`), `phone`, `people` owner.

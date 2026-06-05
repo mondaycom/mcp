@@ -25,7 +25,7 @@ When the user asks for "morning brief", "pipeline summary", "what's on my deals 
 
 3. **Identify Won/Lost label IDs** — from the stage column's labels, find labels where `is_done: true` (Won) and labels with text "Lost"/"Closed Lost".
 
-4. **Pull deal data — three filtered passes in parallel:**
+4. **Pull deal data — three filtered passes in parallel** (`Won_id` / `Lost_id` below are **not** fixed or generic values — they are the label IDs you resolved from *this board's own* Stage column in step 3. Resolve them per board at runtime; never hardcode. Note: on the default monday CRM Deals board, "Won" carries `is_done: true` but "Lost" does **not**, so Lost must be matched by label text):
    - **Active deals**: `get_board_items_page` with stage `not_any_of [Won_id, Lost_id]`, limit 200
    - **Recently closed**: stage `any_of [Won_id, Lost_id]`, ordered by close date desc, limit 50, then in-memory filter to last 24h by `updated_at`
    - **Recent activity**: from active deals, sort by `updated_at` desc, take last 24h

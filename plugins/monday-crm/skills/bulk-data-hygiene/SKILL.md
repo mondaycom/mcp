@@ -41,7 +41,11 @@ Flow: **Trigger → Audit → User picks gaps → Plan writes → Execute (bound
 
 ## Step 0: Connector check
 
-Same as morning-briefing. Stop on missing connector.
+**Goal:** Fail fast if the user has no monday MCP connection — no partial writes, no guessing.
+
+1. Try `mcp__monday__get_user_context`.
+2. If the tool is missing, returns an auth-style error, or the user has no accessible workspace: print *"I don't see the monday connector active on this session. Install it from https://monday.com/mcp, then run this skill again."* and stop.
+3. If it works, cache `user.id` + `user.name` for artifact metadata.
 
 ---
 
@@ -57,7 +61,10 @@ Hard safety rail regardless of mode: **no deletes, no amount-column writes, no c
 
 ## Step 2: Resolve board
 
-Same as morning-briefing Step 2. Board name match → user pick → fail-closed if zero.
+**Goal:** Land on a single `boardId` before reading any data.
+
+1. If the user passed a board via argument: numeric → use as `boardId` directly; string → `mcp__monday__search` with `searchType: "BOARD"`. One match → use it; multiple → `AskUserQuestion`.
+2. If no argument: `get_user_context` → scan `relevantBoards` + `favorites` for names matching `deals|opportunities|pipeline|leads|sales|contacts|accounts`. One candidate → use it; multiple → `AskUserQuestion`; zero → `list_workspaces` → `search`. Still zero → stop with *"I don't see a CRM-shaped board in your workspaces. Tell me the board name or ID, or run `/monday-crm:workspace-builder` to create one."*
 
 ---
 
