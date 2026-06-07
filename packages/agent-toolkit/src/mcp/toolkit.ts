@@ -21,8 +21,8 @@ export interface GetToolsOptions {
 export class MondayAgentToolkit extends McpServer {
   private readonly mondayApiClient: ApiClient;
   private readonly mondayApiToken: string | (() => string);
-  private readonly mondayApiClientFactory?: () => ApiClient;
   private readonly context?: MondayAgentToolkitConfig['context'];
+  private readonly toolkitConfig: MondayAgentToolkitConfig;
   private readonly dynamicToolManager: DynamicToolManager = new DynamicToolManager();
   private toolInstances: Tool<any, any>[] = [];
   private managementTool: Tool<any, any> | null = null;
@@ -47,13 +47,9 @@ export class MondayAgentToolkit extends McpServer {
     );
 
     this.mondayApiToken = config.mondayApiToken;
+    this.toolkitConfig = config;
     const resolvedToken = typeof config.mondayApiToken === 'function' ? config.mondayApiToken() : config.mondayApiToken;
     this.mondayApiClient = this.createApiClient(resolvedToken, config);
-
-    if (typeof config.mondayApiToken === 'function') {
-      const tokenFn = config.mondayApiToken;
-      this.mondayApiClientFactory = () => this.createApiClient(tokenFn(), config);
-    }
 
     this.context = {
       ...config.context,
@@ -61,6 +57,10 @@ export class MondayAgentToolkit extends McpServer {
     };
 
     this.registerTools(config);
+  }
+
+  private createApiClientFromToken(): ApiClient {
+    return this.createApiClient((this.mondayApiToken as () => string)(), this.toolkitConfig);
   }
 
   /**
@@ -115,7 +115,7 @@ export class MondayAgentToolkit extends McpServer {
    */
   private initializeTools(config: MondayAgentToolkitConfig): Tool<any, any>[] {
     const instanceOptions = {
-      apiClient: this.mondayApiClientFactory ?? this.mondayApiClient,
+      apiClient: typeof this.mondayApiToken === 'function' ? () => this.createApiClientFromToken() : this.mondayApiClient,
       apiToken: this.mondayApiToken,
       context: this.context,
     };
