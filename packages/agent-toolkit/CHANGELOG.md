@@ -1,5 +1,18 @@
 # Changelog
 
+## 5.24.0
+
+### manage_automations — rename from manage_workflows
+
+- Renamed `manage_workflows` tool to `manage_automations` for consistency with `list_automations` and `create_automation`
+- Updated tool title and description accordingly; removed the now-unnecessary "Terminology: workflows = automations" note
+- No functional changes — activate, deactivate, and delete behaviour is unchanged
+
+### automations-tools — directory restructure
+
+- Renamed `workflows-tools/` → `automations-tools/` and `list-workflows/` → `list-automations/` to align directory names with tool naming convention
+- Removed stale note from `publish_workflow` description that incorrectly referenced `manage_automations` as a way to retrieve draft IDs
+
 ## 5.22.0
 
 ### plan_workflow — new tool
