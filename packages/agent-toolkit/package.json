@@ -1,6 +1,6 @@
 {
   "name": "@mondaydotcomorg/agent-toolkit",
-  "version": "4.0.0-msft-v3",
+  "version": "4.0.0-msft-v4",
   "description": "monday.com agent toolkit",
   "exports": {
     "./mcp": {

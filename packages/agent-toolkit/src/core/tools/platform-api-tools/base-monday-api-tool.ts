@@ -36,11 +36,28 @@ export abstract class BaseMondayApiTool<
   abstract annotations: ToolAnnotations;
   enabledByDefault?: boolean;
 
+  private readonly _mondayApiProvider: ApiClient | (() => ApiClient);
+  private readonly _apiTokenProvider?: string | (() => string);
+  protected readonly context?: MondayApiToolContext;
+
   constructor(
-    protected readonly mondayApi: ApiClient,
-    protected readonly apiToken?: string,
-    protected readonly context?: MondayApiToolContext,
-  ) {}
+    mondayApi: ApiClient | (() => ApiClient),
+    apiToken?: string | (() => string),
+    context?: MondayApiToolContext,
+  ) {
+    this._mondayApiProvider = mondayApi;
+    this._apiTokenProvider = apiToken;
+    this.context = context;
+  }
+
+  protected get mondayApi(): ApiClient {
+    return typeof this._mondayApiProvider === 'function' ? this._mondayApiProvider() : this._mondayApiProvider;
+  }
+
+  protected get apiToken(): string | undefined {
+    if (this._apiTokenProvider === undefined) return undefined;
+    return typeof this._apiTokenProvider === 'function' ? this._apiTokenProvider() : this._apiTokenProvider;
+  }
 
   abstract getDescription(): string;
   abstract getInputSchema(): Input;
