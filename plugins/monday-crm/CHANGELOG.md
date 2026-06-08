@@ -3,6 +3,18 @@
 All notable changes to the `monday-crm` Claude plugin are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.1] — 2026-06-08
+
+### Fixed
+- `plugin.json` `homepage`: was `https://monday.com/mcp` (404) → now points at the plugin's folder on GitHub.
+- README install command: corrected `@claude-plugins-official` → `@claude-community` (the submission form lands plugins in the reviewed community marketplace, not the curated official one), and added the required `marketplace add anthropics/claude-plugins-community` step.
+
+### Changed
+- Plugin description (`plugin.json` + `marketplace.json`): rewritten to lead with what users can do instead of a skill count.
+- README: reworded the "Silent" mode row to plain language (removed undefined α/β notation); aligned the intro line with the new description.
+
+---
+
 ## [0.2.0] — 2026-06-04
 
 ### Changed
