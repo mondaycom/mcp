@@ -63,8 +63,7 @@ For searching/listing specific users and teams, use list_users_and_teams tool.
 For account-level info (plan, member count, products), use get_user_context tool.
 For workspaces, use list_workspaces tool.
 For groups, use get_board_info tool.
-For full item details (column values, descriptions, subitems) within a known board, use get_board_items_page tool.
-ITEMS search requires a searchTerm and only returns id, title, and url — use get_board_items_page to fetch column values for the returned items.
+ITEMS search requires a searchTerm and only returns id, title, and url.
 IMPORTANT: ids returned by this tool are prefixed with the type of the object (e.g doc-123, board-456, folder-789, item-321). When passing the ids to other tools, you need to remove the prefix and just pass the number.
     `;
   }
@@ -74,7 +73,7 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
   }
 
   protected async executeInternal(input: ToolInputType<SearchToolInput>): Promise<ToolOutputType<never>> {
-    // ITEMS only supports the per-entity search endpoint; there is no listing fallback.
+    // ITEMS uses the per-entity search endpoint and has no listing fallback.
     if (input.searchType === GlobalSearchType.ITEMS) {
       if (!input.searchTerm) {
         throw new Error('Items search requires a searchTerm');
