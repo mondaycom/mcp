@@ -4,7 +4,7 @@ import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { buildClientSchema, GraphQLSchema, IntrospectionQuery, parse, validate } from 'graphql';
 import { ApiClient } from '@mondaydotcomorg/api';
 import { introspectionQuery } from '../../../monday-graphql';
-import { API_VERSION } from '../../../utils/version.utils';
+import { API_VERSION, rethrowWithContext } from '../../../utils';
 
 export const allMondayApiToolSchema = {
   query: z.string().describe('Custom GraphQL query/mutation. you need to provide the full query / mutation'),
@@ -74,42 +74,25 @@ export class AllMondayApiTool extends BaseMondayApiTool<typeof allMondayApiToolS
   protected async executeInternal(input: ToolInputType<typeof allMondayApiToolSchema>): Promise<ToolOutputType<never>> {
     const { query, variables } = input;
 
+    let parsedVariables = {};
     try {
-      let parsedVariables = {};
-      try {
-        parsedVariables = JSON.parse(variables);
-      } catch (error) {
-        return {
-          content: `Error parsing variables: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        };
-      }
+      parsedVariables = JSON.parse(variables);
+    } catch (error) {
+      throw new Error(`Error parsing variables: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
 
-      const validationErrors = await this.validateOperation(query, this.context?.apiVersion ?? API_VERSION);
-      if (validationErrors.length > 0) {
-        return {
-          content: validationErrors.join(', '),
-        };
-      }
+    const validationErrors = await this.validateOperation(query, this.context?.apiVersion ?? API_VERSION);
+    if (validationErrors.length > 0) {
+      throw new Error(validationErrors.join(', '));
+    }
 
+    try {
       const data = await this.mondayApi.request<GraphQLResponse>(query, parsedVariables);
       return {
         content: data,
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
-      if (error instanceof Error && 'response' in error) {
-        const clientError = error as any;
-        if (clientError.response?.errors) {
-          return {
-            content: clientError.response.errors.map((e: any) => e.message).join(', '),
-          };
-        }
-      }
-
-      return {
-        content: errorMessage,
-      };
+      rethrowWithContext(error, 'execute GraphQL operation');
     }
   }
 }
