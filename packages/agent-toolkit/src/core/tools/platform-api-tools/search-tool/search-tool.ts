@@ -2,7 +2,7 @@ import { ToolInputType, ToolOutputType, ToolType } from 'src/core/tool';
 import { z } from 'zod';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { getBoards, getDocs, getFolders } from './search-tool.graphql';
-import { searchBoardsDev, searchDocsDev } from './search-tool.graphql.dev';
+import { searchBoardsDev, searchDocsDev, searchItemsGlobalDev } from './search-tool.graphql.dev';
 import {
   GetBoardsQuery,
   GetBoardsQueryVariables,
@@ -16,6 +16,8 @@ import {
   SearchBoardsDevQueryVariables,
   SearchDocsDevQuery,
   SearchDocsDevQueryVariables,
+  SearchItemsGlobalDevQuery,
+  SearchItemsGlobalDevQueryVariables,
 } from 'src/monday-graphql/generated/graphql.dev/graphql';
 import { normalizeString } from 'src/utils/string.utils';
 import { DataWithFilterInfo, GlobalSearchType, ObjectPrefixes, SearchResult } from './search-tool.types';
@@ -56,13 +58,14 @@ export class SearchTool extends BaseMondayApiTool<SearchToolInput> {
   });
 
   getDescription(): string {
-    return `Search within monday.com platform. Can search for boards, documents, forms, folders.
+    return `Search within monday.com platform. Can search for boards, documents, items, folders.
 For searching/listing specific users and teams, use list_users_and_teams tool.
 For account-level info (plan, member count, products), use get_user_context tool.
 For workspaces, use list_workspaces tool.
-For items and groups, use get_board_items_page tool.
 For groups, use get_board_info tool.
-IMPORTANT: ids returned by this tool are prefixed with the type of the object (e.g doc-123, board-456, folder-789). When passing the ids to other tools, you need to remove the prefix and just pass the number.
+For full item details (column values, descriptions, subitems) within a known board, use get_board_items_page tool.
+ITEMS search requires a searchTerm and only returns id, title, and url — use get_board_items_page to fetch column values for the returned items.
+IMPORTANT: ids returned by this tool are prefixed with the type of the object (e.g doc-123, board-456, folder-789, item-321). When passing the ids to other tools, you need to remove the prefix and just pass the number.
     `;
   }
 
@@ -71,6 +74,19 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
   }
 
   protected async executeInternal(input: ToolInputType<SearchToolInput>): Promise<ToolOutputType<never>> {
+    // ITEMS only supports the dev "per-entity search" endpoint; there is no listing fallback.
+    if (input.searchType === GlobalSearchType.ITEMS) {
+      if (!input.searchTerm) {
+        throw new Error('Items search requires a searchTerm');
+      }
+
+      const data = await this.searchItemsWithDevEndpointAsync(input);
+
+      return {
+        content: { message: "Search results", data: data.items },
+      };
+    }
+
     // Try using "cross_entity_search" field from dev schema for BOARD and DOCUMENTS types
     if (input.searchType !== GlobalSearchType.FOLDERS && input.searchTerm) {
       try {
@@ -90,7 +106,7 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
       [GlobalSearchType.FOLDERS]: this.searchFoldersAsync.bind(this),
     };
 
-    const handler = handlers[input.searchType];
+    const handler = handlers[input.searchType as Exclude<GlobalSearchType, GlobalSearchType.ITEMS>];
 
     if (!handler) {
       throw new Error(`Unsupported search type: ${input.searchType}`);
@@ -159,6 +175,29 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     const items = response.search.docs.results.map((result) => ({
       id: ObjectPrefixes.DOCUMENT + result.indexed_data.id,
       title: result.indexed_data.name,
+    }));
+
+    return { items, wasFiltered: true };
+  }
+
+  private async searchItemsWithDevEndpointAsync(
+    input: ToolInputType<SearchToolInput>,
+  ): Promise<DataWithFilterInfo<SearchResult>> {
+    const variables: SearchItemsGlobalDevQueryVariables = {
+      query: input.searchTerm!,
+      limit: input.limit,
+      workspaceIds: input.workspaceIds?.map((id) => id.toString()),
+    };
+
+    const response = await this.mondayApi.request<SearchItemsGlobalDevQuery>(searchItemsGlobalDev, variables, {
+      versionOverride: 'dev',
+      timeout: SEARCH_TIMEOUT,
+    });
+
+    const items = response.search.items.results.map((result) => ({
+      id: ObjectPrefixes.ITEM + result.indexed_data.id,
+      title: result.indexed_data.name,
+      url: result.indexed_data.url,
     }));
 
     return { items, wasFiltered: true };

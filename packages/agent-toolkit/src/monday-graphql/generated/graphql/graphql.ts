@@ -11529,12 +11529,6 @@ export type __Schema = {
   directives: Array<__Directive>;
 };
 
-
-/** A GraphQL Schema defines the capabilities of a GraphQL server. It exposes all available types and directives on the server, as well as the entry points for query, mutation, and subscription operations. */
-export type __SchemaDirectivesArgs = {
-  includeDeprecated?: Scalars['Boolean']['input'];
-};
-
 /**
  * The fundamental unit of any GraphQL Schema is the type. There are many kinds of types in GraphQL as represented by the `__TypeKind` enum.
  *
@@ -11552,7 +11546,6 @@ export type __Type = {
   enumValues?: Maybe<Array<__EnumValue>>;
   inputFields?: Maybe<Array<__InputValue>>;
   ofType?: Maybe<__Type>;
-  isOneOf?: Maybe<Scalars['Boolean']['output']>;
 };
 
 
@@ -11655,8 +11648,6 @@ export type __Directive = {
   isRepeatable: Scalars['Boolean']['output'];
   locations: Array<__DirectiveLocation>;
   args: Array<__InputValue>;
-  isDeprecated: Scalars['Boolean']['output'];
-  deprecationReason?: Maybe<Scalars['String']['output']>;
 };
 
 
@@ -11708,9 +11699,7 @@ export enum __DirectiveLocation {
   /** Location adjacent to an input object type definition. */
   InputObject = 'INPUT_OBJECT',
   /** Location adjacent to an input object field definition. */
-  InputFieldDefinition = 'INPUT_FIELD_DEFINITION',
-  /** Location adjacent to a directive definition. */
-  DirectiveDefinition = 'DIRECTIVE_DEFINITION'
+  InputFieldDefinition = 'INPUT_FIELD_DEFINITION'
 }
 
 export type GetSprintsByIdsQueryVariables = Exact<{
