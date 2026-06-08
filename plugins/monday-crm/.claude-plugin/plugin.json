@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "monday-crm",
+  "displayName": "monday CRM",
+  "description": "Seven skills for monday CRM users — first-run setup, morning briefings, forecast dashboards, board diagnosis, bulk data hygiene, workspace setup, and meeting-to-opportunity sync. Each skill publishes a monday artifact (update, doc, or dashboard) so work stays inside monday. Composes the official monday MCP connector; no custom server, no new auth.",
+  "version": "0.2.0",
+  "defaultEnabled": false,
+  "author": {
+    "name": "monday.com"
+  },
+  "homepage": "https://monday.com/mcp",
+  "repository": "https://github.com/mondaycom/mcp",
+  "license": "MIT",
+  "keywords": [
+    "monday",
+    "monday-crm",
+    "crm",
+    "sales",
+    "pipeline",
+    "forecast",
+    "morning-briefing",
+    "forecast-dashboard",
+    "board-diagnosis",
+    "bulk-data-hygiene",
+    "workspace-builder",
+    "meeting-to-opportunity"
+  ]
+}
