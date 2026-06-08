@@ -1,8 +1,8 @@
 import { ToolInputType, ToolOutputType, ToolType } from 'src/core/tool';
 import { z } from 'zod';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { getBoards, getDocs, getFolders } from './search-tool.graphql';
-import { searchBoardsDev, searchDocsDev, searchItemsGlobalDev } from './search-tool.graphql.dev';
+import { getBoards, getDocs, getFolders, searchItems } from './search-tool.graphql';
+import { searchBoardsDev, searchDocsDev } from './search-tool.graphql.dev';
 import {
   GetBoardsQuery,
   GetBoardsQueryVariables,
@@ -10,14 +10,14 @@ import {
   GetDocsQueryVariables,
   GetFoldersQuery,
   GetFoldersQueryVariables,
+  SearchItemsQuery,
+  SearchItemsQueryVariables,
 } from 'src/monday-graphql/generated/graphql/graphql';
 import {
   SearchBoardsDevQuery,
   SearchBoardsDevQueryVariables,
   SearchDocsDevQuery,
   SearchDocsDevQueryVariables,
-  SearchItemsGlobalDevQuery,
-  SearchItemsGlobalDevQueryVariables,
 } from 'src/monday-graphql/generated/graphql.dev/graphql';
 import { normalizeString } from 'src/utils/string.utils';
 import { DataWithFilterInfo, GlobalSearchType, ObjectPrefixes, SearchResult } from './search-tool.types';
@@ -74,13 +74,13 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
   }
 
   protected async executeInternal(input: ToolInputType<SearchToolInput>): Promise<ToolOutputType<never>> {
-    // ITEMS only supports the dev "per-entity search" endpoint; there is no listing fallback.
+    // ITEMS only supports the per-entity search endpoint; there is no listing fallback.
     if (input.searchType === GlobalSearchType.ITEMS) {
       if (!input.searchTerm) {
         throw new Error('Items search requires a searchTerm');
       }
 
-      const data = await this.searchItemsWithDevEndpointAsync(input);
+      const data = await this.searchItemsAsync(input);
 
       return {
         content: { message: "Search results", data: data.items },
@@ -180,17 +180,16 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     return { items, wasFiltered: true };
   }
 
-  private async searchItemsWithDevEndpointAsync(
+  private async searchItemsAsync(
     input: ToolInputType<SearchToolInput>,
   ): Promise<DataWithFilterInfo<SearchResult>> {
-    const variables: SearchItemsGlobalDevQueryVariables = {
+    const variables: SearchItemsQueryVariables = {
       query: input.searchTerm!,
       limit: input.limit,
       workspaceIds: input.workspaceIds?.map((id) => id.toString()),
     };
 
-    const response = await this.mondayApi.request<SearchItemsGlobalDevQuery>(searchItemsGlobalDev, variables, {
-      versionOverride: 'dev',
+    const response = await this.mondayApi.request<SearchItemsQuery>(searchItems, variables, {
       timeout: SEARCH_TIMEOUT,
     });
 

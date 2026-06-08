@@ -32,20 +32,3 @@ export const searchDocsDev = gql`
     }
   }
 `;
-
-export const searchItemsGlobalDev = gql`
-  query SearchItemsGlobalDev($query: String!, $limit: Int, $workspaceIds: [ID!]) {
-    search {
-      items(query: $query, limit: $limit, workspace_ids: $workspaceIds) {
-        results {
-          id
-          indexed_data {
-            id
-            name
-            url
-          }
-        }
-      }
-    }
-  }
-`;
