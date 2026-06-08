@@ -90,23 +90,15 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
       }
     }
 
-    const handlers = {
+    const handlers: Record<GlobalSearchType, (input: ToolInputType<SearchToolInput>) => Promise<DataWithFilterInfo<SearchResult>>> = {
       [GlobalSearchType.BOARD]: this.searchBoardsAsync.bind(this),
       [GlobalSearchType.DOCUMENTS]: this.searchDocsAsync.bind(this),
       [GlobalSearchType.FOLDERS]: this.searchFoldersAsync.bind(this),
+      // Items has no cross-board listing endpoint — only reachable when searchTerm is missing.
+      [GlobalSearchType.ITEMS]: () => { throw new Error('Items search requires a searchTerm'); },
     };
 
-    const handler = handlers[input.searchType as Exclude<GlobalSearchType, GlobalSearchType.ITEMS>];
-
-    if (!handler) {
-      // ITEMS reaches here only when searchTerm is missing (no listing handler exists for it).
-      if (input.searchType === GlobalSearchType.ITEMS) {
-        throw new Error('Items search requires a searchTerm');
-      }
-      throw new Error(`Unsupported search type: ${input.searchType}`);
-    }
-
-    const data = await handler(input);
+    const data = await handlers[input.searchType](input);
 
     return {
       content: { message: "Search results", disclaimer: data.wasFiltered || !input.searchTerm ? undefined : '[IMPORTANT]Items were not filtered. Please perform the filtering.', data: data.items },
