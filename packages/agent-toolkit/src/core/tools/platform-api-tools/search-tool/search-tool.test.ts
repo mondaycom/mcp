@@ -1273,22 +1273,18 @@ describe('SearchTool', () => {
       expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
     });
 
-    it('should ignore page parameter for items (no pagination)', async () => {
-      mocks.setResponse(mockItemsResponse);
-
+    it('should throw when page > 1 (pagination not supported, no listing fallback)', async () => {
       const args: inputType = {
         searchType: GlobalSearchType.ITEMS,
         searchTerm: 'Item',
         page: 5,
       };
 
-      await callToolByNameAsync('search', args);
+      const result = await callToolByNameRawAsync('search', args);
 
-      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-        expect.stringContaining('query SearchItems'),
-        expect.any(Object),
-        expect.any(Object),
-      );
+      expect(result.content[0].text).toContain('Failed to execute tool search');
+      expect(result.content[0].text).toContain('Pagination is not supported for search');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
   });
 
