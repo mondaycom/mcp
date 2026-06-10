@@ -15,6 +15,7 @@ export enum ObjectPrefixes {
   DOCUMENT = 'doc-',
   FOLDER = 'folder-',
   WORKSPACE = 'workspace-',
+  ITEM = 'item-',
 }
 
 export enum GlobalSearchType {
@@ -22,11 +23,11 @@ export enum GlobalSearchType {
   DOCUMENTS = 'DOCUMENTS',
   FOLDERS = 'FOLDERS',
   WORKSPACES = 'WORKSPACES',
+  ITEMS = 'ITEMS',
 
   // Why other types are not included:
   // FORMS = 'FORMS', // forms are not supported
   // USERS = 'USERS', // already supported by list_users_and_teams tool
   // TEAMS = 'TEAMS', // already supported by list_users_and_teams tool
-  // ITEMS = 'ITEMS', // already supported by get_board_items_page tool
   // GROUPS = 'GROUPS', // already supported by get_board_info tool
 }

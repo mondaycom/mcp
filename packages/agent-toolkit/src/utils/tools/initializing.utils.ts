@@ -5,7 +5,7 @@ import { BaseMondayAppsTool } from '../../core/tools/monday-apps-tools/base-tool
 
 export const toolFactory = (
   tool: new (...args: any[]) => Tool<any, any>,
-  instanceOptions: { apiClient: ApiClient; apiToken: string; context?: MondayApiToolContext },
+  instanceOptions: { apiClient: ApiClient | (() => ApiClient); apiToken: string | (() => string); context?: MondayApiToolContext },
 ) => {
   if (tool.prototype instanceof BaseMondayApiTool) {
     return new tool(instanceOptions.apiClient, instanceOptions.apiToken, instanceOptions.context);

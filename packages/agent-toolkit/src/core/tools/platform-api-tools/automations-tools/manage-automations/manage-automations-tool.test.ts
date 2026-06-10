@@ -6,7 +6,7 @@ import {
   DeleteLiveWorkflowMutation,
 } from 'src/monday-graphql/generated/graphql.dev/graphql';
 
-describe('ManageWorkflowsTool', () => {
+describe('ManageAutomationsTool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
 
   beforeEach(() => {
@@ -18,7 +18,7 @@ describe('ManageWorkflowsTool', () => {
     it('should activate a workflow and report the active state', async () => {
       mocks.setResponseOnce({ activate_live_workflow: { is_success: true } } as ActivateLiveWorkflowMutation);
 
-      const result = await callToolByNameRawAsync('manage_workflows', {
+      const result = await callToolByNameRawAsync('manage_automations', {
         action: 'activate',
         workflowId: '42',
       });
@@ -33,7 +33,7 @@ describe('ManageWorkflowsTool', () => {
     it('should use the activation mutation with id and versionOverride dev', async () => {
       mocks.setResponseOnce({ activate_live_workflow: { is_success: true } } as ActivateLiveWorkflowMutation);
 
-      await callToolByNameRawAsync('manage_workflows', {
+      await callToolByNameRawAsync('manage_automations', {
         action: 'activate',
         workflowId: '42',
       });
@@ -48,7 +48,7 @@ describe('ManageWorkflowsTool', () => {
     it('should error when activation does not report success', async () => {
       mocks.setResponseOnce({ activate_live_workflow: { is_success: false } } as ActivateLiveWorkflowMutation);
 
-      const result = await callToolByNameRawAsync('manage_workflows', {
+      const result = await callToolByNameRawAsync('manage_automations', {
         action: 'activate',
         workflowId: '42',
       });
@@ -59,7 +59,7 @@ describe('ManageWorkflowsTool', () => {
     it('should propagate GraphQL errors with operation context', async () => {
       mocks.setError('Not authorized');
 
-      const result = await callToolByNameRawAsync('manage_workflows', {
+      const result = await callToolByNameRawAsync('manage_automations', {
         action: 'activate',
         workflowId: '42',
       });
@@ -72,7 +72,7 @@ describe('ManageWorkflowsTool', () => {
     it('should deactivate a workflow and report the inactive state', async () => {
       mocks.setResponseOnce({ deactivate_live_workflow: { is_success: true } } as DeactivateLiveWorkflowMutation);
 
-      const result = await callToolByNameRawAsync('manage_workflows', {
+      const result = await callToolByNameRawAsync('manage_automations', {
         action: 'deactivate',
         workflowId: '42',
       });
@@ -87,7 +87,7 @@ describe('ManageWorkflowsTool', () => {
     it('should use the deactivation mutation with id and versionOverride dev', async () => {
       mocks.setResponseOnce({ deactivate_live_workflow: { is_success: true } } as DeactivateLiveWorkflowMutation);
 
-      await callToolByNameRawAsync('manage_workflows', {
+      await callToolByNameRawAsync('manage_automations', {
         action: 'deactivate',
         workflowId: '42',
       });
@@ -102,7 +102,7 @@ describe('ManageWorkflowsTool', () => {
     it('should error when deactivation does not report success', async () => {
       mocks.setResponseOnce({ deactivate_live_workflow: { is_success: false } } as DeactivateLiveWorkflowMutation);
 
-      const result = await callToolByNameRawAsync('manage_workflows', {
+      const result = await callToolByNameRawAsync('manage_automations', {
         action: 'deactivate',
         workflowId: '42',
       });
@@ -113,7 +113,7 @@ describe('ManageWorkflowsTool', () => {
     it('should propagate GraphQL errors with operation context', async () => {
       mocks.setError('Not authorized');
 
-      const result = await callToolByNameRawAsync('manage_workflows', {
+      const result = await callToolByNameRawAsync('manage_automations', {
         action: 'deactivate',
         workflowId: '42',
       });
@@ -126,7 +126,7 @@ describe('ManageWorkflowsTool', () => {
     it('should report success and echo the workflow id', async () => {
       mocks.setResponseOnce({ delete_live_workflow: { is_success: true } } as DeleteLiveWorkflowMutation);
 
-      const result = await callToolByNameRawAsync('manage_workflows', {
+      const result = await callToolByNameRawAsync('manage_automations', {
         action: 'delete',
         workflowId: '42',
       });
@@ -140,7 +140,7 @@ describe('ManageWorkflowsTool', () => {
     it('should pass id and versionOverride dev', async () => {
       mocks.setResponseOnce({ delete_live_workflow: { is_success: true } } as DeleteLiveWorkflowMutation);
 
-      await callToolByNameRawAsync('manage_workflows', {
+      await callToolByNameRawAsync('manage_automations', {
         action: 'delete',
         workflowId: '42',
       });
@@ -155,7 +155,7 @@ describe('ManageWorkflowsTool', () => {
     it('should error when deletion does not report success', async () => {
       mocks.setResponseOnce({ delete_live_workflow: { is_success: false } } as DeleteLiveWorkflowMutation);
 
-      const result = await callToolByNameRawAsync('manage_workflows', {
+      const result = await callToolByNameRawAsync('manage_automations', {
         action: 'delete',
         workflowId: '42',
       });
@@ -166,7 +166,7 @@ describe('ManageWorkflowsTool', () => {
     it('should propagate GraphQL errors with operation context', async () => {
       mocks.setError('Not authorized');
 
-      const result = await callToolByNameRawAsync('manage_workflows', {
+      const result = await callToolByNameRawAsync('manage_automations', {
         action: 'delete',
         workflowId: '42',
       });
@@ -177,7 +177,7 @@ describe('ManageWorkflowsTool', () => {
 
   describe('validation', () => {
     it('should reject whitespace-only workflowId', async () => {
-      const result = await callToolByNameRawAsync('manage_workflows', {
+      const result = await callToolByNameRawAsync('manage_automations', {
         action: 'activate',
         workflowId: '   ',
       });

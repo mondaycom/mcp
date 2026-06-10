@@ -35,6 +35,9 @@ type Documents = {
     "\n  query getAgentTriggersCatalog($block_reference_ids: [ID!]) {\n    agent_triggers_catalog(block_reference_ids: $block_reference_ids) {\n      block_reference_id\n      name\n      description\n      field_schemas {\n        field_key\n        value_schema\n      }\n      required_fields {\n        field_key\n        depends_on\n        optional\n      }\n    }\n  }\n": typeof types.GetAgentTriggersCatalogDocument,
     "\n  query getAgentSkillsCatalog {\n    agent_skills_catalog {\n      id\n      name\n      description\n    }\n  }\n": typeof types.GetAgentSkillsCatalogDocument,
     "\n  mutation createAgentSkill($name: String!, $content: String!, $description: String) {\n    create_agent_skill(name: $name, content: $content, description: $description) {\n      id\n      name\n      description\n    }\n  }\n": typeof types.CreateAgentSkillDocument,
+    "\n  mutation activateLiveWorkflow($id: ID!) {\n    activate_live_workflow(id: $id) {\n      is_success\n    }\n  }\n": typeof types.ActivateLiveWorkflowDocument,
+    "\n  mutation deactivateLiveWorkflow($id: ID!) {\n    deactivate_live_workflow(id: $id) {\n      is_success\n    }\n  }\n": typeof types.DeactivateLiveWorkflowDocument,
+    "\n  mutation deleteLiveWorkflow($id: ID!) {\n    delete_live_workflow(id: $id) {\n      is_success\n    }\n  }\n": typeof types.DeleteLiveWorkflowDocument,
     "\n  mutation DeleteObjectSchemaColumns($objectSchemaId: ID, $objectSchemaName: String, $columnIds: [ID!]!) {\n    delete_object_schema_columns(object_schema_id: $objectSchemaId, object_schema_name: $objectSchemaName, column_ids: $columnIds) {\n      id\n      name\n      description\n      parent_id\n      revision\n    }\n  }\n": typeof types.DeleteObjectSchemaColumnsDocument,
     "\n  mutation CompleteUpload($input: CompleteUploadInput!) {\n    complete_upload(input: $input) {\n      id\n      filename\n      content_type\n      file_size\n      url\n      created_at\n      filelink\n    }\n  }\n": typeof types.CompleteUploadDocument,
     "\n  mutation CreateUpload($input: CreateUploadInput!) {\n    create_upload(input: $input) {\n      upload_id\n      parts {\n        part_number\n        url\n        size_range_start\n        size_range_end\n      }\n      part_size\n      expires_at\n    }\n  }\n": typeof types.CreateUploadDocument,
@@ -46,9 +49,6 @@ type Documents = {
     "\n  query getUserContext {\n    me {\n      id\n      name\n      title\n      account {\n        tier\n        active_members_count\n        is_during_trial\n        products {\n          kind\n          tier\n        }\n      }\n    }\n    favorites {\n      object {\n        id\n        type\n      }\n    }\n    intelligence {\n      relevant_boards(limit: 10) {\n        id\n        board {\n          name\n        }\n      }\n      relevant_people(limit: 10) {\n        id\n        user {\n          name\n        }\n      }\n    }\n  }\n": typeof types.GetUserContextDocument,
     "\n  mutation createWorkflow(\n    $workspace_id: ID!\n    $title: String\n    $privacy_kind: WorkflowBuilderPrivacyKind\n    $description: String\n    $folder_id: ID\n    $owner_ids: [ID!]\n  ) {\n    create_workflow(\n      workspace_id: $workspace_id\n      title: $title\n      privacy_kind: $privacy_kind\n      description: $description\n      folder_id: $folder_id\n      owner_ids: $owner_ids\n    ) {\n      workflow_object_id\n      workflow_draft_id\n    }\n  }\n": typeof types.CreateWorkflowDocument,
     "\n  mutation publishWorkflow($workflow_object_id: ID!, $workflow_draft_id: ID!, $should_activate: Boolean) {\n    publish_workflow(\n      workflow_object_id: $workflow_object_id\n      workflow_draft_id: $workflow_draft_id\n      should_activate: $should_activate\n    ) {\n      workflow_object_id\n      workflow_live_id\n    }\n  }\n": typeof types.PublishWorkflowDocument,
-    "\n  mutation activateLiveWorkflow($id: ID!) {\n    activate_live_workflow(id: $id) {\n      is_success\n    }\n  }\n": typeof types.ActivateLiveWorkflowDocument,
-    "\n  mutation deactivateLiveWorkflow($id: ID!) {\n    deactivate_live_workflow(id: $id) {\n      is_success\n    }\n  }\n": typeof types.DeactivateLiveWorkflowDocument,
-    "\n  mutation deleteLiveWorkflow($id: ID!) {\n    delete_live_workflow(id: $id) {\n      is_success\n    }\n  }\n": typeof types.DeleteLiveWorkflowDocument,
     "\n  mutation CreateFormSubmission(\n    $form_token: String!\n    $answers: [FormAnswerInput!]!\n    $form_timezone_offset: Int!\n    $password: String\n    $tags: [TagInput!]\n  ) {\n    create_form_submission(\n      form_token: $form_token\n      answers: $answers\n      form_timezone_offset: $form_timezone_offset\n      password: $password\n      tags: $tags\n    ) {\n      id\n    }\n  }\n": typeof types.CreateFormSubmissionDocument,
 };
 const documents: Documents = {
@@ -73,6 +73,9 @@ const documents: Documents = {
     "\n  query getAgentTriggersCatalog($block_reference_ids: [ID!]) {\n    agent_triggers_catalog(block_reference_ids: $block_reference_ids) {\n      block_reference_id\n      name\n      description\n      field_schemas {\n        field_key\n        value_schema\n      }\n      required_fields {\n        field_key\n        depends_on\n        optional\n      }\n    }\n  }\n": types.GetAgentTriggersCatalogDocument,
     "\n  query getAgentSkillsCatalog {\n    agent_skills_catalog {\n      id\n      name\n      description\n    }\n  }\n": types.GetAgentSkillsCatalogDocument,
     "\n  mutation createAgentSkill($name: String!, $content: String!, $description: String) {\n    create_agent_skill(name: $name, content: $content, description: $description) {\n      id\n      name\n      description\n    }\n  }\n": types.CreateAgentSkillDocument,
+    "\n  mutation activateLiveWorkflow($id: ID!) {\n    activate_live_workflow(id: $id) {\n      is_success\n    }\n  }\n": types.ActivateLiveWorkflowDocument,
+    "\n  mutation deactivateLiveWorkflow($id: ID!) {\n    deactivate_live_workflow(id: $id) {\n      is_success\n    }\n  }\n": types.DeactivateLiveWorkflowDocument,
+    "\n  mutation deleteLiveWorkflow($id: ID!) {\n    delete_live_workflow(id: $id) {\n      is_success\n    }\n  }\n": types.DeleteLiveWorkflowDocument,
     "\n  mutation DeleteObjectSchemaColumns($objectSchemaId: ID, $objectSchemaName: String, $columnIds: [ID!]!) {\n    delete_object_schema_columns(object_schema_id: $objectSchemaId, object_schema_name: $objectSchemaName, column_ids: $columnIds) {\n      id\n      name\n      description\n      parent_id\n      revision\n    }\n  }\n": types.DeleteObjectSchemaColumnsDocument,
     "\n  mutation CompleteUpload($input: CompleteUploadInput!) {\n    complete_upload(input: $input) {\n      id\n      filename\n      content_type\n      file_size\n      url\n      created_at\n      filelink\n    }\n  }\n": types.CompleteUploadDocument,
     "\n  mutation CreateUpload($input: CreateUploadInput!) {\n    create_upload(input: $input) {\n      upload_id\n      parts {\n        part_number\n        url\n        size_range_start\n        size_range_end\n      }\n      part_size\n      expires_at\n    }\n  }\n": types.CreateUploadDocument,
@@ -84,9 +87,6 @@ const documents: Documents = {
     "\n  query getUserContext {\n    me {\n      id\n      name\n      title\n      account {\n        tier\n        active_members_count\n        is_during_trial\n        products {\n          kind\n          tier\n        }\n      }\n    }\n    favorites {\n      object {\n        id\n        type\n      }\n    }\n    intelligence {\n      relevant_boards(limit: 10) {\n        id\n        board {\n          name\n        }\n      }\n      relevant_people(limit: 10) {\n        id\n        user {\n          name\n        }\n      }\n    }\n  }\n": types.GetUserContextDocument,
     "\n  mutation createWorkflow(\n    $workspace_id: ID!\n    $title: String\n    $privacy_kind: WorkflowBuilderPrivacyKind\n    $description: String\n    $folder_id: ID\n    $owner_ids: [ID!]\n  ) {\n    create_workflow(\n      workspace_id: $workspace_id\n      title: $title\n      privacy_kind: $privacy_kind\n      description: $description\n      folder_id: $folder_id\n      owner_ids: $owner_ids\n    ) {\n      workflow_object_id\n      workflow_draft_id\n    }\n  }\n": types.CreateWorkflowDocument,
     "\n  mutation publishWorkflow($workflow_object_id: ID!, $workflow_draft_id: ID!, $should_activate: Boolean) {\n    publish_workflow(\n      workflow_object_id: $workflow_object_id\n      workflow_draft_id: $workflow_draft_id\n      should_activate: $should_activate\n    ) {\n      workflow_object_id\n      workflow_live_id\n    }\n  }\n": types.PublishWorkflowDocument,
-    "\n  mutation activateLiveWorkflow($id: ID!) {\n    activate_live_workflow(id: $id) {\n      is_success\n    }\n  }\n": types.ActivateLiveWorkflowDocument,
-    "\n  mutation deactivateLiveWorkflow($id: ID!) {\n    deactivate_live_workflow(id: $id) {\n      is_success\n    }\n  }\n": types.DeactivateLiveWorkflowDocument,
-    "\n  mutation deleteLiveWorkflow($id: ID!) {\n    delete_live_workflow(id: $id) {\n      is_success\n    }\n  }\n": types.DeleteLiveWorkflowDocument,
     "\n  mutation CreateFormSubmission(\n    $form_token: String!\n    $answers: [FormAnswerInput!]!\n    $form_timezone_offset: Int!\n    $password: String\n    $tags: [TagInput!]\n  ) {\n    create_form_submission(\n      form_token: $form_token\n      answers: $answers\n      form_timezone_offset: $form_timezone_offset\n      password: $password\n      tags: $tags\n    ) {\n      id\n    }\n  }\n": types.CreateFormSubmissionDocument,
 };
 
@@ -191,6 +191,18 @@ export function graphql(source: "\n  mutation createAgentSkill($name: String!, $
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
+export function graphql(source: "\n  mutation activateLiveWorkflow($id: ID!) {\n    activate_live_workflow(id: $id) {\n      is_success\n    }\n  }\n"): (typeof documents)["\n  mutation activateLiveWorkflow($id: ID!) {\n    activate_live_workflow(id: $id) {\n      is_success\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation deactivateLiveWorkflow($id: ID!) {\n    deactivate_live_workflow(id: $id) {\n      is_success\n    }\n  }\n"): (typeof documents)["\n  mutation deactivateLiveWorkflow($id: ID!) {\n    deactivate_live_workflow(id: $id) {\n      is_success\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation deleteLiveWorkflow($id: ID!) {\n    delete_live_workflow(id: $id) {\n      is_success\n    }\n  }\n"): (typeof documents)["\n  mutation deleteLiveWorkflow($id: ID!) {\n    delete_live_workflow(id: $id) {\n      is_success\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
 export function graphql(source: "\n  mutation DeleteObjectSchemaColumns($objectSchemaId: ID, $objectSchemaName: String, $columnIds: [ID!]!) {\n    delete_object_schema_columns(object_schema_id: $objectSchemaId, object_schema_name: $objectSchemaName, column_ids: $columnIds) {\n      id\n      name\n      description\n      parent_id\n      revision\n    }\n  }\n"): (typeof documents)["\n  mutation DeleteObjectSchemaColumns($objectSchemaId: ID, $objectSchemaName: String, $columnIds: [ID!]!) {\n    delete_object_schema_columns(object_schema_id: $objectSchemaId, object_schema_name: $objectSchemaName, column_ids: $columnIds) {\n      id\n      name\n      description\n      parent_id\n      revision\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
@@ -232,18 +244,6 @@ export function graphql(source: "\n  mutation createWorkflow(\n    $workspace_id
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  mutation publishWorkflow($workflow_object_id: ID!, $workflow_draft_id: ID!, $should_activate: Boolean) {\n    publish_workflow(\n      workflow_object_id: $workflow_object_id\n      workflow_draft_id: $workflow_draft_id\n      should_activate: $should_activate\n    ) {\n      workflow_object_id\n      workflow_live_id\n    }\n  }\n"): (typeof documents)["\n  mutation publishWorkflow($workflow_object_id: ID!, $workflow_draft_id: ID!, $should_activate: Boolean) {\n    publish_workflow(\n      workflow_object_id: $workflow_object_id\n      workflow_draft_id: $workflow_draft_id\n      should_activate: $should_activate\n    ) {\n      workflow_object_id\n      workflow_live_id\n    }\n  }\n"];
-/**
- * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
- */
-export function graphql(source: "\n  mutation activateLiveWorkflow($id: ID!) {\n    activate_live_workflow(id: $id) {\n      is_success\n    }\n  }\n"): (typeof documents)["\n  mutation activateLiveWorkflow($id: ID!) {\n    activate_live_workflow(id: $id) {\n      is_success\n    }\n  }\n"];
-/**
- * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
- */
-export function graphql(source: "\n  mutation deactivateLiveWorkflow($id: ID!) {\n    deactivate_live_workflow(id: $id) {\n      is_success\n    }\n  }\n"): (typeof documents)["\n  mutation deactivateLiveWorkflow($id: ID!) {\n    deactivate_live_workflow(id: $id) {\n      is_success\n    }\n  }\n"];
-/**
- * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
- */
-export function graphql(source: "\n  mutation deleteLiveWorkflow($id: ID!) {\n    delete_live_workflow(id: $id) {\n      is_success\n    }\n  }\n"): (typeof documents)["\n  mutation deleteLiveWorkflow($id: ID!) {\n    delete_live_workflow(id: $id) {\n      is_success\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
