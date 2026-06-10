@@ -18,7 +18,7 @@ export const listWorkspaceToolSchema = {
     .string()
     .optional()
     .describe(
-      'Optional search term used to filter workspaces. [IMPORTANT] Only alphanumeric characters are supported.',
+      '[DEPRECATED] Use the "search" tool with searchType WORKSPACES instead for better workspace search. This parameter filters workspaces in-memory and may not return accurate results.',
     ),
   limit: z
     .number()
@@ -42,7 +42,8 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
   });
 
   getDescription(): string {
-    return 'List all workspaces available to the user. Returns up to 500 workspaces with their ID, name, and description.';
+    return `List all workspaces available to the user, ordered by membership. Returns workspaces with their ID, name, and description.
+[IMPORTANT] To search for workspaces by name, use the "search" tool with searchType WORKSPACES instead — it provides faster and more accurate results.`;
   }
 
   getInputSchema(): typeof listWorkspaceToolSchema {
