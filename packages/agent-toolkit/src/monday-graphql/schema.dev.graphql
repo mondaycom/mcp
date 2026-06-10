@@ -448,9 +448,9 @@ import_id: ID!): BulkImportStatus!
   fetch_job_status(  "The ID of the job to get status for"
 job_id: ID!): JobStatus!
   "List personal agents for the authenticated user. At least one filter (ids or limit) is required."
-  agents(  "Optional list of agent IDs to fetch. Applied before limit when both are provided."
+  custom_agents(  "Optional list of agent IDs to fetch. Applied before limit when both are provided."
 ids: [ID!],   "Optional max number of agents to return. Applied after ids filter when both are provided."
-limit: Int): [Agent!]
+limit: Int): [CustomAgent!]
   "Returns trigger types that can be attached to an agent via add_trigger_to_agent. Pass block_reference_ids to fetch only specific entries (much faster). Only includes auto-addable triggers — 3rd-party triggers requiring OAuth or credentials are excluded."
   agent_triggers_catalog(  "Optional list of block_reference_id values to fetch. When omitted, all catalog entries are returned."
 block_reference_ids: [ID!]): [AgentTriggerCatalogEntry!]
@@ -1460,13 +1460,13 @@ on_match: OnMatchInput): UploadJobInit
 job_id: ID!): UndoResult
   "Create an agent from a prompt. AI generates the profile, goal, and plan — expect ~20s for completion. created_at and updated_at are null in the response; use the agent query to fetch them."
   create_agent(  "The agent creation parameters"
-input: CreateAgentInput!): Agent
+input: CreateAgentInput!): CustomAgent
   "Create a blank AI agent without AI generation. Profile fields default to generated values when omitted. created_at and updated_at are null in the response; use the agent query to fetch them."
   create_blank_agent(  "Optional profile attributes for the blank agent"
-input: CreateBlankAgentInput): Agent
+input: CreateBlankAgentInput): CustomAgent
   "Delete an AI agent by its ID"
   delete_agent(  "The unique identifier of the agent to delete"
-id: ID!): Agent
+id: ID!): CustomAgent
   "Trigger a manual run for an existing agent. This is an async fire-and-forget operation — a successful response means the run was accepted and enqueued, not that it has completed or succeeded. Use trigger_uuid to correlate the execution in downstream events or future status endpoints."
   run_agent(  "Unique identifier of the agent to run"
 id: ID!): RunAgentResult
@@ -1480,7 +1480,7 @@ inactive_reason: InactiveReason): AgentStateResult
   "Update an agent — creates a new draft if needed, applies the changes, and publishes to live in one call"
   update_agent(  "Unique identifier of the agent to update"
 id: ID!,   "Fields to update — only provided fields are changed"
-input: UpdateAgentInput!): Agent
+input: UpdateAgentInput!): CustomAgent
   "Adds a trigger to an agent. Creates a draft if needed, applies the change, and promotes to live in one call. Returns { success: true } on success. Use agent_active_triggers to read the updated trigger list. Get available trigger types and field schemas from agent_triggers_catalog."
   add_trigger_to_agent(  "Unique identifier of the agent"
 agent_id: ID!,   "The block_reference_id from agent_triggers_catalog identifying the trigger type"
@@ -7704,7 +7704,7 @@ type UploadJobInit {
 }
 
 "An AI agent on the monday.com platform"
-type Agent {
+type CustomAgent {
   "The unique identifier of the agent"
   id: ID!
   "The kind of agent (personal, account-level, or external)"
@@ -7712,7 +7712,7 @@ type Agent {
   "The current state of the agent"
   state: AgentState
   "The agent profile with name, role, and avatar"
-  profile: AgentProfile
+  profile: CustomAgentProfile
   "The goal or objective of the agent"
   goal: String
   "The execution plan in markdown format, describing the agent capabilities and operating principles"
@@ -7824,7 +7824,7 @@ enum AgentModel {
 }
 
 "Visual and role identity of an agent."
-type AgentProfile {
+type CustomAgentProfile {
   "The display name of the agent"
   name: String
   "The role assigned to the agent"

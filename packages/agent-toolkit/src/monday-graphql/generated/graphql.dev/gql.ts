@@ -18,12 +18,12 @@ type Documents = {
     "\n  mutation addAgentResourceAccess($id: ID!, $resource_id: ID!, $scope_type: KnowledgeScope!, $permission_type: KnowledgePermission!) {\n    add_agent_resource_access(id: $id, resource_id: $resource_id, scope_type: $scope_type, permission_type: $permission_type) {\n      success\n    }\n  }\n": typeof types.AddAgentResourceAccessDocument,
     "\n  mutation removeAgentResourceAccess($id: ID!, $resource_id: ID!, $scope_type: KnowledgeScope!) {\n    remove_agent_resource_access(id: $id, resource_id: $resource_id, scope_type: $scope_type) {\n      success\n    }\n  }\n": typeof types.RemoveAgentResourceAccessDocument,
     "\n  mutation updateAgentResourceAccess($id: ID!, $resource_id: ID!, $scope_type: KnowledgeScope!, $permission_type: KnowledgePermission!) {\n    update_agent_resource_access(id: $id, resource_id: $resource_id, scope_type: $scope_type, permission_type: $permission_type) {\n      success\n    }\n  }\n": typeof types.UpdateAgentResourceAccessDocument,
-    "\n  fragment AgentFields on Agent {\n    id\n    kind\n    state\n    profile {\n      name\n      role\n      role_description\n      avatar_url\n      background_color\n    }\n    goal\n    plan\n    user_prompt\n    version_id\n    created_at\n    updated_at\n  }\n": typeof types.AgentFieldsFragmentDoc,
-    "\n  \n\n  query getAgents($ids: [ID!], $limit: Int) {\n    agents(ids: $ids, limit: $limit) {\n      ...AgentFields\n    }\n  }\n": typeof types.GetAgentsDocument,
-    "\n  \n\n  mutation createAgent($input: CreateAgentInput!) {\n    create_agent(input: $input) {\n      ...AgentFields\n    }\n  }\n": typeof types.CreateAgentDocument,
-    "\n  \n\n  mutation createBlankAgent($input: CreateBlankAgentInput) {\n    create_blank_agent(input: $input) {\n      ...AgentFields\n    }\n  }\n": typeof types.CreateBlankAgentDocument,
-    "\n  \n\n  mutation updateAgent($id: ID!, $input: UpdateAgentInput!) {\n    update_agent(id: $id, input: $input) {\n      ...AgentFields\n    }\n  }\n": typeof types.UpdateAgentDocument,
-    "\n  \n\n  mutation deleteAgent($id: ID!) {\n    delete_agent(id: $id) {\n      ...AgentFields\n    }\n  }\n": typeof types.DeleteAgentDocument,
+    "\n  fragment CustomAgentFields on CustomAgent {\n    id\n    kind\n    state\n    profile {\n      name\n      role\n      role_description\n      avatar_url\n      background_color\n    }\n    goal\n    plan\n    user_prompt\n    version_id\n    created_at\n    updated_at\n  }\n": typeof types.CustomAgentFieldsFragmentDoc,
+    "\n  \n\n  query getCustomAgents($ids: [ID!], $limit: Int) {\n    custom_agents(ids: $ids, limit: $limit) {\n      ...CustomAgentFields\n    }\n  }\n": typeof types.GetCustomAgentsDocument,
+    "\n  \n\n  mutation createAgent($input: CreateAgentInput!) {\n    create_agent(input: $input) {\n      ...CustomAgentFields\n    }\n  }\n": typeof types.CreateAgentDocument,
+    "\n  \n\n  mutation createBlankAgent($input: CreateBlankAgentInput) {\n    create_blank_agent(input: $input) {\n      ...CustomAgentFields\n    }\n  }\n": typeof types.CreateBlankAgentDocument,
+    "\n  \n\n  mutation updateAgent($id: ID!, $input: UpdateAgentInput!) {\n    update_agent(id: $id, input: $input) {\n      ...CustomAgentFields\n    }\n  }\n": typeof types.UpdateAgentDocument,
+    "\n  \n\n  mutation deleteAgent($id: ID!) {\n    delete_agent(id: $id) {\n      ...CustomAgentFields\n    }\n  }\n": typeof types.DeleteAgentDocument,
     "\n  mutation activateAgent($id: ID!) {\n    activate_agent(id: $id) {\n      success\n    }\n  }\n": typeof types.ActivateAgentDocument,
     "\n  mutation deactivateAgent($id: ID!, $inactive_reason: InactiveReason) {\n    deactivate_agent(id: $id, inactive_reason: $inactive_reason) {\n      success\n    }\n  }\n": typeof types.DeactivateAgentDocument,
     "\n  mutation runAgent($id: ID!) {\n    run_agent(id: $id) {\n      trigger_uuid\n    }\n  }\n": typeof types.RunAgentDocument,
@@ -55,12 +55,12 @@ const documents: Documents = {
     "\n  mutation addAgentResourceAccess($id: ID!, $resource_id: ID!, $scope_type: KnowledgeScope!, $permission_type: KnowledgePermission!) {\n    add_agent_resource_access(id: $id, resource_id: $resource_id, scope_type: $scope_type, permission_type: $permission_type) {\n      success\n    }\n  }\n": types.AddAgentResourceAccessDocument,
     "\n  mutation removeAgentResourceAccess($id: ID!, $resource_id: ID!, $scope_type: KnowledgeScope!) {\n    remove_agent_resource_access(id: $id, resource_id: $resource_id, scope_type: $scope_type) {\n      success\n    }\n  }\n": types.RemoveAgentResourceAccessDocument,
     "\n  mutation updateAgentResourceAccess($id: ID!, $resource_id: ID!, $scope_type: KnowledgeScope!, $permission_type: KnowledgePermission!) {\n    update_agent_resource_access(id: $id, resource_id: $resource_id, scope_type: $scope_type, permission_type: $permission_type) {\n      success\n    }\n  }\n": types.UpdateAgentResourceAccessDocument,
-    "\n  fragment AgentFields on Agent {\n    id\n    kind\n    state\n    profile {\n      name\n      role\n      role_description\n      avatar_url\n      background_color\n    }\n    goal\n    plan\n    user_prompt\n    version_id\n    created_at\n    updated_at\n  }\n": types.AgentFieldsFragmentDoc,
-    "\n  \n\n  query getAgents($ids: [ID!], $limit: Int) {\n    agents(ids: $ids, limit: $limit) {\n      ...AgentFields\n    }\n  }\n": types.GetAgentsDocument,
-    "\n  \n\n  mutation createAgent($input: CreateAgentInput!) {\n    create_agent(input: $input) {\n      ...AgentFields\n    }\n  }\n": types.CreateAgentDocument,
-    "\n  \n\n  mutation createBlankAgent($input: CreateBlankAgentInput) {\n    create_blank_agent(input: $input) {\n      ...AgentFields\n    }\n  }\n": types.CreateBlankAgentDocument,
-    "\n  \n\n  mutation updateAgent($id: ID!, $input: UpdateAgentInput!) {\n    update_agent(id: $id, input: $input) {\n      ...AgentFields\n    }\n  }\n": types.UpdateAgentDocument,
-    "\n  \n\n  mutation deleteAgent($id: ID!) {\n    delete_agent(id: $id) {\n      ...AgentFields\n    }\n  }\n": types.DeleteAgentDocument,
+    "\n  fragment CustomAgentFields on CustomAgent {\n    id\n    kind\n    state\n    profile {\n      name\n      role\n      role_description\n      avatar_url\n      background_color\n    }\n    goal\n    plan\n    user_prompt\n    version_id\n    created_at\n    updated_at\n  }\n": types.CustomAgentFieldsFragmentDoc,
+    "\n  \n\n  query getCustomAgents($ids: [ID!], $limit: Int) {\n    custom_agents(ids: $ids, limit: $limit) {\n      ...CustomAgentFields\n    }\n  }\n": types.GetCustomAgentsDocument,
+    "\n  \n\n  mutation createAgent($input: CreateAgentInput!) {\n    create_agent(input: $input) {\n      ...CustomAgentFields\n    }\n  }\n": types.CreateAgentDocument,
+    "\n  \n\n  mutation createBlankAgent($input: CreateBlankAgentInput) {\n    create_blank_agent(input: $input) {\n      ...CustomAgentFields\n    }\n  }\n": types.CreateBlankAgentDocument,
+    "\n  \n\n  mutation updateAgent($id: ID!, $input: UpdateAgentInput!) {\n    update_agent(id: $id, input: $input) {\n      ...CustomAgentFields\n    }\n  }\n": types.UpdateAgentDocument,
+    "\n  \n\n  mutation deleteAgent($id: ID!) {\n    delete_agent(id: $id) {\n      ...CustomAgentFields\n    }\n  }\n": types.DeleteAgentDocument,
     "\n  mutation activateAgent($id: ID!) {\n    activate_agent(id: $id) {\n      success\n    }\n  }\n": types.ActivateAgentDocument,
     "\n  mutation deactivateAgent($id: ID!, $inactive_reason: InactiveReason) {\n    deactivate_agent(id: $id, inactive_reason: $inactive_reason) {\n      success\n    }\n  }\n": types.DeactivateAgentDocument,
     "\n  mutation runAgent($id: ID!) {\n    run_agent(id: $id) {\n      trigger_uuid\n    }\n  }\n": types.RunAgentDocument,
@@ -121,27 +121,27 @@ export function graphql(source: "\n  mutation updateAgentResourceAccess($id: ID!
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  fragment AgentFields on Agent {\n    id\n    kind\n    state\n    profile {\n      name\n      role\n      role_description\n      avatar_url\n      background_color\n    }\n    goal\n    plan\n    user_prompt\n    version_id\n    created_at\n    updated_at\n  }\n"): (typeof documents)["\n  fragment AgentFields on Agent {\n    id\n    kind\n    state\n    profile {\n      name\n      role\n      role_description\n      avatar_url\n      background_color\n    }\n    goal\n    plan\n    user_prompt\n    version_id\n    created_at\n    updated_at\n  }\n"];
+export function graphql(source: "\n  fragment CustomAgentFields on CustomAgent {\n    id\n    kind\n    state\n    profile {\n      name\n      role\n      role_description\n      avatar_url\n      background_color\n    }\n    goal\n    plan\n    user_prompt\n    version_id\n    created_at\n    updated_at\n  }\n"): (typeof documents)["\n  fragment CustomAgentFields on CustomAgent {\n    id\n    kind\n    state\n    profile {\n      name\n      role\n      role_description\n      avatar_url\n      background_color\n    }\n    goal\n    plan\n    user_prompt\n    version_id\n    created_at\n    updated_at\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  \n\n  query getAgents($ids: [ID!], $limit: Int) {\n    agents(ids: $ids, limit: $limit) {\n      ...AgentFields\n    }\n  }\n"): (typeof documents)["\n  \n\n  query getAgents($ids: [ID!], $limit: Int) {\n    agents(ids: $ids, limit: $limit) {\n      ...AgentFields\n    }\n  }\n"];
+export function graphql(source: "\n  \n\n  query getCustomAgents($ids: [ID!], $limit: Int) {\n    custom_agents(ids: $ids, limit: $limit) {\n      ...CustomAgentFields\n    }\n  }\n"): (typeof documents)["\n  \n\n  query getCustomAgents($ids: [ID!], $limit: Int) {\n    custom_agents(ids: $ids, limit: $limit) {\n      ...CustomAgentFields\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  \n\n  mutation createAgent($input: CreateAgentInput!) {\n    create_agent(input: $input) {\n      ...AgentFields\n    }\n  }\n"): (typeof documents)["\n  \n\n  mutation createAgent($input: CreateAgentInput!) {\n    create_agent(input: $input) {\n      ...AgentFields\n    }\n  }\n"];
+export function graphql(source: "\n  \n\n  mutation createAgent($input: CreateAgentInput!) {\n    create_agent(input: $input) {\n      ...CustomAgentFields\n    }\n  }\n"): (typeof documents)["\n  \n\n  mutation createAgent($input: CreateAgentInput!) {\n    create_agent(input: $input) {\n      ...CustomAgentFields\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  \n\n  mutation createBlankAgent($input: CreateBlankAgentInput) {\n    create_blank_agent(input: $input) {\n      ...AgentFields\n    }\n  }\n"): (typeof documents)["\n  \n\n  mutation createBlankAgent($input: CreateBlankAgentInput) {\n    create_blank_agent(input: $input) {\n      ...AgentFields\n    }\n  }\n"];
+export function graphql(source: "\n  \n\n  mutation createBlankAgent($input: CreateBlankAgentInput) {\n    create_blank_agent(input: $input) {\n      ...CustomAgentFields\n    }\n  }\n"): (typeof documents)["\n  \n\n  mutation createBlankAgent($input: CreateBlankAgentInput) {\n    create_blank_agent(input: $input) {\n      ...CustomAgentFields\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  \n\n  mutation updateAgent($id: ID!, $input: UpdateAgentInput!) {\n    update_agent(id: $id, input: $input) {\n      ...AgentFields\n    }\n  }\n"): (typeof documents)["\n  \n\n  mutation updateAgent($id: ID!, $input: UpdateAgentInput!) {\n    update_agent(id: $id, input: $input) {\n      ...AgentFields\n    }\n  }\n"];
+export function graphql(source: "\n  \n\n  mutation updateAgent($id: ID!, $input: UpdateAgentInput!) {\n    update_agent(id: $id, input: $input) {\n      ...CustomAgentFields\n    }\n  }\n"): (typeof documents)["\n  \n\n  mutation updateAgent($id: ID!, $input: UpdateAgentInput!) {\n    update_agent(id: $id, input: $input) {\n      ...CustomAgentFields\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  \n\n  mutation deleteAgent($id: ID!) {\n    delete_agent(id: $id) {\n      ...AgentFields\n    }\n  }\n"): (typeof documents)["\n  \n\n  mutation deleteAgent($id: ID!) {\n    delete_agent(id: $id) {\n      ...AgentFields\n    }\n  }\n"];
+export function graphql(source: "\n  \n\n  mutation deleteAgent($id: ID!) {\n    delete_agent(id: $id) {\n      ...CustomAgentFields\n    }\n  }\n"): (typeof documents)["\n  \n\n  mutation deleteAgent($id: ID!) {\n    delete_agent(id: $id) {\n      ...CustomAgentFields\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

@@ -260,37 +260,6 @@ export type AddedAllocatedResource = {
   resource_type: PlannerResourceKind;
 };
 
-/** An AI agent on the monday.com platform */
-export type Agent = {
-  __typename?: 'Agent';
-  /** The LLM model the agent uses */
-  agent_model?: Maybe<AgentModel>;
-  /** The timestamp when the agent was created. Null on create mutation responses — use the agent query to fetch it. */
-  created_at?: Maybe<Scalars['Date']['output']>;
-  /** The goal or objective of the agent */
-  goal?: Maybe<Scalars['String']['output']>;
-  /** The unique identifier of the agent */
-  id: Scalars['ID']['output'];
-  /** The kind of agent (personal, account-level, or external) */
-  kind?: Maybe<AgentKind>;
-  /** Knowledge files attached to the agent. Only populated on create mutation responses. */
-  knowledge?: Maybe<Array<AgentKnowledgeEntry>>;
-  /** The execution plan in markdown format, describing the agent capabilities and operating principles */
-  plan?: Maybe<Scalars['String']['output']>;
-  /** The agent profile with name, role, and avatar */
-  profile?: Maybe<AgentProfile>;
-  /** Reference IDs of skills attached to this agent. Use agent_skills_catalog to resolve full name and description. */
-  skill_ids: Array<Scalars['ID']['output']>;
-  /** The current state of the agent */
-  state?: Maybe<AgentState>;
-  /** The timestamp when the agent was last updated. Null on create mutation responses — use the agent query to fetch it. */
-  updated_at?: Maybe<Scalars['Date']['output']>;
-  /** The original user prompt used to create the agent */
-  user_prompt?: Maybe<Scalars['String']['output']>;
-  /** The current configuration version of the agent. Increments on each update. */
-  version_id: Scalars['ID']['output'];
-};
-
 /** A trigger currently attached to an agent */
 export type AgentActiveTrigger = {
   __typename?: 'AgentActiveTrigger';
@@ -384,21 +353,6 @@ export enum AgentModel {
   /** GPT 5.2 */
   Gpt_5_2 = 'GPT_5_2'
 }
-
-/** Visual and role identity of an agent. */
-export type AgentProfile = {
-  __typename?: 'AgentProfile';
-  /** URL of the agent avatar image */
-  avatar_url?: Maybe<Scalars['String']['output']>;
-  /** Background color for the agent card */
-  background_color?: Maybe<Scalars['String']['output']>;
-  /** The display name of the agent */
-  name?: Maybe<Scalars['String']['output']>;
-  /** The role assigned to the agent */
-  role?: Maybe<Scalars['String']['output']>;
-  /** A description of the agent role */
-  role_description?: Maybe<Scalars['String']['output']>;
-};
 
 /** A skill available for agents to use — browse the catalog, then attach by id. */
 export type AgentSkillCatalogEntry = {
@@ -4226,6 +4180,52 @@ export enum CustomActivityIcon {
   Twoflags = 'TWOFLAGS',
   Utencils = 'UTENCILS'
 }
+
+/** An AI agent on the monday.com platform */
+export type CustomAgent = {
+  __typename?: 'CustomAgent';
+  /** The LLM model the agent uses */
+  agent_model?: Maybe<AgentModel>;
+  /** The timestamp when the agent was created. Null on create mutation responses — use the agent query to fetch it. */
+  created_at?: Maybe<Scalars['Date']['output']>;
+  /** The goal or objective of the agent */
+  goal?: Maybe<Scalars['String']['output']>;
+  /** The unique identifier of the agent */
+  id: Scalars['ID']['output'];
+  /** The kind of agent (personal, account-level, or external) */
+  kind?: Maybe<AgentKind>;
+  /** Knowledge files attached to the agent. Only populated on create mutation responses. */
+  knowledge?: Maybe<Array<AgentKnowledgeEntry>>;
+  /** The execution plan in markdown format, describing the agent capabilities and operating principles */
+  plan?: Maybe<Scalars['String']['output']>;
+  /** The agent profile with name, role, and avatar */
+  profile?: Maybe<CustomAgentProfile>;
+  /** Reference IDs of skills attached to this agent. Use agent_skills_catalog to resolve full name and description. */
+  skill_ids: Array<Scalars['ID']['output']>;
+  /** The current state of the agent */
+  state?: Maybe<AgentState>;
+  /** The timestamp when the agent was last updated. Null on create mutation responses — use the agent query to fetch it. */
+  updated_at?: Maybe<Scalars['Date']['output']>;
+  /** The original user prompt used to create the agent */
+  user_prompt?: Maybe<Scalars['String']['output']>;
+  /** The current configuration version of the agent. Increments on each update. */
+  version_id: Scalars['ID']['output'];
+};
+
+/** Visual and role identity of an agent. */
+export type CustomAgentProfile = {
+  __typename?: 'CustomAgentProfile';
+  /** URL of the agent avatar image */
+  avatar_url?: Maybe<Scalars['String']['output']>;
+  /** Background color for the agent card */
+  background_color?: Maybe<Scalars['String']['output']>;
+  /** The display name of the agent */
+  name?: Maybe<Scalars['String']['output']>;
+  /** The role assigned to the agent */
+  role?: Maybe<Scalars['String']['output']>;
+  /** A description of the agent role */
+  role_description?: Maybe<Scalars['String']['output']>;
+};
 
 /** The custom fields meta data for user profile. */
 export type CustomFieldMetas = {
@@ -9212,7 +9212,7 @@ export type Mutation = {
   /** Convert an existing monday.com board into a project with enhanced project management capabilities. This mutation transforms a regular board by applying project-specific features and configurations through column mappings that define how existing board columns should be interpreted in the project context. The conversion process is asynchronous and returns a process_id for tracking completion. Optionally accepts a callback URL for notification when the conversion completes. Use this when you have an existing board with data that needs to be upgraded to a full project with advanced project management features like Resource Planner integration. */
   convert_board_to_project?: Maybe<ConvertBoardToProjectResult>;
   /** Create an agent from a prompt. AI generates the profile, goal, and plan — expect ~20s for completion. created_at and updated_at are null in the response; use the agent query to fetch them. */
-  create_agent?: Maybe<Agent>;
+  create_agent?: Maybe<CustomAgent>;
   /** Create a new skill for the account. The skill will appear in agent_skills_catalog and can be attached to any agent via add_skill_to_agent. */
   create_agent_skill?: Maybe<AgentSkillCatalogEntry>;
   /** Creates a new app with the specified configuration. */
@@ -9222,7 +9222,7 @@ export type Mutation = {
   /** Creates a new article in the specified workspace. Optionally accepts a name and folder ID. Returns the created article metadata. */
   create_article?: Maybe<ArticleMetadata>;
   /** Create a blank AI agent without AI generation. Profile fields default to generated values when omitted. created_at and updated_at are null in the response; use the agent query to fetch them. */
-  create_blank_agent?: Maybe<Agent>;
+  create_blank_agent?: Maybe<CustomAgent>;
   /** Create a new board. */
   create_board?: Maybe<Board>;
   /** Create a board automation. Provide template_reference_id to create from a template, or workflow_blocks and workflow_variables for a direct creation. */
@@ -9337,7 +9337,7 @@ export type Mutation = {
   /** Deactivates the specified users. */
   deactivate_users?: Maybe<DeactivateUsersResult>;
   /** Delete an AI agent by its ID */
-  delete_agent?: Maybe<Agent>;
+  delete_agent?: Maybe<CustomAgent>;
   /** Delete an allocation by its ID */
   delete_allocation?: Maybe<DeleteAllocationResponse>;
   /** Delete all lifecycle subscriptions for an entity. Returns true if deleted successfully or if no subscriptions exist. */
@@ -9524,7 +9524,7 @@ export type Mutation = {
   /** Unpublishes object from public state back to draft state. Returns {success: true} on success, {success: false} on failure. */
   unpublish_object?: Maybe<ObjectOperationResponse>;
   /** Update an agent — creates a new draft if needed, applies the changes, and publishes to live in one call */
-  update_agent?: Maybe<Agent>;
+  update_agent?: Maybe<CustomAgent>;
   /** Change the permission level an agent has on an existing board or doc. Creates a draft, updates the permission, and promotes to live. */
   update_agent_resource_access?: Maybe<MutationResult>;
   /** Update multiple allocations in a single batch operation. Returns per-item results. */
@@ -12818,8 +12818,6 @@ export type Query = {
   agent_skills_catalog?: Maybe<Array<AgentSkillCatalogEntry>>;
   /** Returns trigger types that can be attached to an agent via add_trigger_to_agent. Pass block_reference_ids to fetch only specific entries (much faster). Only includes auto-addable triggers — 3rd-party triggers requiring OAuth or credentials are excluded. */
   agent_triggers_catalog?: Maybe<Array<AgentTriggerCatalogEntry>>;
-  /** List personal agents for the authenticated user. At least one filter (ids or limit) is required. */
-  agents?: Maybe<Array<Agent>>;
   /** Performs aggregation operations on board data */
   aggregate?: Maybe<AggregateQueryResult>;
   /** Retrieve aggregated board data at specific historical dates for point-in-time analysis. When the query references a date column, results are only available from when date column history began for that board; earlier timestamps are rejected. */
@@ -12950,6 +12948,8 @@ export type Query = {
   /** Count active workflows for a given host instance */
   count_active_workflows: Scalars['Int']['output'];
   custom_activity?: Maybe<Array<CustomActivity>>;
+  /** List personal agents for the authenticated user. At least one filter (ids or limit) is required. */
+  custom_agents?: Maybe<Array<CustomAgent>>;
   /** Get account departments */
   departments?: Maybe<Array<Department>>;
   /** Fetch dependency column configuration for a board */
@@ -13246,13 +13246,6 @@ export type QueryAgent_Triggers_CatalogArgs = {
 
 
 /** Root query type for the Dependencies service */
-export type QueryAgentsArgs = {
-  ids?: InputMaybe<Array<Scalars['ID']['input']>>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
-};
-
-
-/** Root query type for the Dependencies service */
 export type QueryAggregateArgs = {
   query: AggregateQueryInput;
 };
@@ -13462,6 +13455,13 @@ export type QueryCustom_ActivityArgs = {
   icon_id?: InputMaybe<CustomActivityIcon>;
   ids?: InputMaybe<Array<Scalars['String']['input']>>;
   name?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryCustom_AgentsArgs = {
+  ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 
@@ -18217,29 +18217,29 @@ export type UpdateAgentResourceAccessMutationVariables = Exact<{
 
 export type UpdateAgentResourceAccessMutation = { __typename?: 'Mutation', update_agent_resource_access?: { __typename?: 'MutationResult', success: boolean } | null };
 
-export type AgentFieldsFragment = { __typename?: 'Agent', id: string, kind?: AgentKind | null, state?: AgentState | null, goal?: string | null, plan?: string | null, user_prompt?: string | null, version_id: string, created_at?: any | null, updated_at?: any | null, profile?: { __typename?: 'AgentProfile', name?: string | null, role?: string | null, role_description?: string | null, avatar_url?: string | null, background_color?: string | null } | null };
+export type CustomAgentFieldsFragment = { __typename?: 'CustomAgent', id: string, kind?: AgentKind | null, state?: AgentState | null, goal?: string | null, plan?: string | null, user_prompt?: string | null, version_id: string, created_at?: any | null, updated_at?: any | null, profile?: { __typename?: 'CustomAgentProfile', name?: string | null, role?: string | null, role_description?: string | null, avatar_url?: string | null, background_color?: string | null } | null };
 
-export type GetAgentsQueryVariables = Exact<{
+export type GetCustomAgentsQueryVariables = Exact<{
   ids?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
 }>;
 
 
-export type GetAgentsQuery = { __typename?: 'Query', agents?: Array<{ __typename?: 'Agent', id: string, kind?: AgentKind | null, state?: AgentState | null, goal?: string | null, plan?: string | null, user_prompt?: string | null, version_id: string, created_at?: any | null, updated_at?: any | null, profile?: { __typename?: 'AgentProfile', name?: string | null, role?: string | null, role_description?: string | null, avatar_url?: string | null, background_color?: string | null } | null }> | null };
+export type GetCustomAgentsQuery = { __typename?: 'Query', custom_agents?: Array<{ __typename?: 'CustomAgent', id: string, kind?: AgentKind | null, state?: AgentState | null, goal?: string | null, plan?: string | null, user_prompt?: string | null, version_id: string, created_at?: any | null, updated_at?: any | null, profile?: { __typename?: 'CustomAgentProfile', name?: string | null, role?: string | null, role_description?: string | null, avatar_url?: string | null, background_color?: string | null } | null }> | null };
 
 export type CreateAgentMutationVariables = Exact<{
   input: CreateAgentInput;
 }>;
 
 
-export type CreateAgentMutation = { __typename?: 'Mutation', create_agent?: { __typename?: 'Agent', id: string, kind?: AgentKind | null, state?: AgentState | null, goal?: string | null, plan?: string | null, user_prompt?: string | null, version_id: string, created_at?: any | null, updated_at?: any | null, profile?: { __typename?: 'AgentProfile', name?: string | null, role?: string | null, role_description?: string | null, avatar_url?: string | null, background_color?: string | null } | null } | null };
+export type CreateAgentMutation = { __typename?: 'Mutation', create_agent?: { __typename?: 'CustomAgent', id: string, kind?: AgentKind | null, state?: AgentState | null, goal?: string | null, plan?: string | null, user_prompt?: string | null, version_id: string, created_at?: any | null, updated_at?: any | null, profile?: { __typename?: 'CustomAgentProfile', name?: string | null, role?: string | null, role_description?: string | null, avatar_url?: string | null, background_color?: string | null } | null } | null };
 
 export type CreateBlankAgentMutationVariables = Exact<{
   input?: InputMaybe<CreateBlankAgentInput>;
 }>;
 
 
-export type CreateBlankAgentMutation = { __typename?: 'Mutation', create_blank_agent?: { __typename?: 'Agent', id: string, kind?: AgentKind | null, state?: AgentState | null, goal?: string | null, plan?: string | null, user_prompt?: string | null, version_id: string, created_at?: any | null, updated_at?: any | null, profile?: { __typename?: 'AgentProfile', name?: string | null, role?: string | null, role_description?: string | null, avatar_url?: string | null, background_color?: string | null } | null } | null };
+export type CreateBlankAgentMutation = { __typename?: 'Mutation', create_blank_agent?: { __typename?: 'CustomAgent', id: string, kind?: AgentKind | null, state?: AgentState | null, goal?: string | null, plan?: string | null, user_prompt?: string | null, version_id: string, created_at?: any | null, updated_at?: any | null, profile?: { __typename?: 'CustomAgentProfile', name?: string | null, role?: string | null, role_description?: string | null, avatar_url?: string | null, background_color?: string | null } | null } | null };
 
 export type UpdateAgentMutationVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -18247,14 +18247,14 @@ export type UpdateAgentMutationVariables = Exact<{
 }>;
 
 
-export type UpdateAgentMutation = { __typename?: 'Mutation', update_agent?: { __typename?: 'Agent', id: string, kind?: AgentKind | null, state?: AgentState | null, goal?: string | null, plan?: string | null, user_prompt?: string | null, version_id: string, created_at?: any | null, updated_at?: any | null, profile?: { __typename?: 'AgentProfile', name?: string | null, role?: string | null, role_description?: string | null, avatar_url?: string | null, background_color?: string | null } | null } | null };
+export type UpdateAgentMutation = { __typename?: 'Mutation', update_agent?: { __typename?: 'CustomAgent', id: string, kind?: AgentKind | null, state?: AgentState | null, goal?: string | null, plan?: string | null, user_prompt?: string | null, version_id: string, created_at?: any | null, updated_at?: any | null, profile?: { __typename?: 'CustomAgentProfile', name?: string | null, role?: string | null, role_description?: string | null, avatar_url?: string | null, background_color?: string | null } | null } | null };
 
 export type DeleteAgentMutationVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
 
 
-export type DeleteAgentMutation = { __typename?: 'Mutation', delete_agent?: { __typename?: 'Agent', id: string, kind?: AgentKind | null, state?: AgentState | null, goal?: string | null, plan?: string | null, user_prompt?: string | null, version_id: string, created_at?: any | null, updated_at?: any | null, profile?: { __typename?: 'AgentProfile', name?: string | null, role?: string | null, role_description?: string | null, avatar_url?: string | null, background_color?: string | null } | null } | null };
+export type DeleteAgentMutation = { __typename?: 'Mutation', delete_agent?: { __typename?: 'CustomAgent', id: string, kind?: AgentKind | null, state?: AgentState | null, goal?: string | null, plan?: string | null, user_prompt?: string | null, version_id: string, created_at?: any | null, updated_at?: any | null, profile?: { __typename?: 'CustomAgentProfile', name?: string | null, role?: string | null, role_description?: string | null, avatar_url?: string | null, background_color?: string | null } | null } | null };
 
 export type ActivateAgentMutationVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -18455,16 +18455,16 @@ export type CreateFormSubmissionMutationVariables = Exact<{
 
 export type CreateFormSubmissionMutation = { __typename?: 'Mutation', create_form_submission?: { __typename?: 'FormSubmissionResult', id: string } | null };
 
-export const AgentFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Agent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<AgentFieldsFragment, unknown>;
+export const CustomAgentFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"CustomAgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"CustomAgent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<CustomAgentFieldsFragment, unknown>;
 export const GetAgentKnowledgeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getAgentKnowledge"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"agent_knowledge"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"resources"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"resource_id"}},{"kind":"Field","name":{"kind":"Name","value":"scope_type"}},{"kind":"Field","name":{"kind":"Name","value":"permission_type"}}]}},{"kind":"Field","name":{"kind":"Name","value":"files"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"file_name"}},{"kind":"Field","name":{"kind":"Name","value":"file_type"}}]}}]}}]}}]} as unknown as DocumentNode<GetAgentKnowledgeQuery, GetAgentKnowledgeQueryVariables>;
 export const AddAgentResourceAccessDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"addAgentResourceAccess"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"resource_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"scope_type"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"KnowledgeScope"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"permission_type"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"KnowledgePermission"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"add_agent_resource_access"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"resource_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"resource_id"}}},{"kind":"Argument","name":{"kind":"Name","value":"scope_type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"scope_type"}}},{"kind":"Argument","name":{"kind":"Name","value":"permission_type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"permission_type"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<AddAgentResourceAccessMutation, AddAgentResourceAccessMutationVariables>;
 export const RemoveAgentResourceAccessDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"removeAgentResourceAccess"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"resource_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"scope_type"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"KnowledgeScope"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"remove_agent_resource_access"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"resource_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"resource_id"}}},{"kind":"Argument","name":{"kind":"Name","value":"scope_type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"scope_type"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<RemoveAgentResourceAccessMutation, RemoveAgentResourceAccessMutationVariables>;
 export const UpdateAgentResourceAccessDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"updateAgentResourceAccess"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"resource_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"scope_type"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"KnowledgeScope"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"permission_type"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"KnowledgePermission"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"update_agent_resource_access"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"resource_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"resource_id"}}},{"kind":"Argument","name":{"kind":"Name","value":"scope_type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"scope_type"}}},{"kind":"Argument","name":{"kind":"Name","value":"permission_type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"permission_type"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<UpdateAgentResourceAccessMutation, UpdateAgentResourceAccessMutationVariables>;
-export const GetAgentsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getAgents"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"ids"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"agents"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"ids"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AgentFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Agent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<GetAgentsQuery, GetAgentsQueryVariables>;
-export const CreateAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"createAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateAgentInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"create_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AgentFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Agent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<CreateAgentMutation, CreateAgentMutationVariables>;
-export const CreateBlankAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"createBlankAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateBlankAgentInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"create_blank_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AgentFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Agent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<CreateBlankAgentMutation, CreateBlankAgentMutationVariables>;
-export const UpdateAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"updateAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateAgentInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"update_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AgentFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Agent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<UpdateAgentMutation, UpdateAgentMutationVariables>;
-export const DeleteAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"deleteAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"delete_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AgentFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Agent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<DeleteAgentMutation, DeleteAgentMutationVariables>;
+export const GetCustomAgentsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getCustomAgents"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"ids"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"custom_agents"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"ids"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"CustomAgentFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"CustomAgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"CustomAgent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<GetCustomAgentsQuery, GetCustomAgentsQueryVariables>;
+export const CreateAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"createAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateAgentInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"create_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"CustomAgentFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"CustomAgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"CustomAgent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<CreateAgentMutation, CreateAgentMutationVariables>;
+export const CreateBlankAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"createBlankAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateBlankAgentInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"create_blank_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"CustomAgentFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"CustomAgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"CustomAgent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<CreateBlankAgentMutation, CreateBlankAgentMutationVariables>;
+export const UpdateAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"updateAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateAgentInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"update_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"CustomAgentFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"CustomAgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"CustomAgent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<UpdateAgentMutation, UpdateAgentMutationVariables>;
+export const DeleteAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"deleteAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"delete_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"CustomAgentFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"CustomAgentFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"CustomAgent"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"profile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"role"}},{"kind":"Field","name":{"kind":"Name","value":"role_description"}},{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"background_color"}}]}},{"kind":"Field","name":{"kind":"Name","value":"goal"}},{"kind":"Field","name":{"kind":"Name","value":"plan"}},{"kind":"Field","name":{"kind":"Name","value":"user_prompt"}},{"kind":"Field","name":{"kind":"Name","value":"version_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}}]}}]} as unknown as DocumentNode<DeleteAgentMutation, DeleteAgentMutationVariables>;
 export const ActivateAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"activateAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"activate_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<ActivateAgentMutation, ActivateAgentMutationVariables>;
 export const DeactivateAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"deactivateAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"inactive_reason"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"InactiveReason"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deactivate_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"inactive_reason"},"value":{"kind":"Variable","name":{"kind":"Name","value":"inactive_reason"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<DeactivateAgentMutation, DeactivateAgentMutationVariables>;
 export const RunAgentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"runAgent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"run_agent"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"trigger_uuid"}}]}}]}}]} as unknown as DocumentNode<RunAgentMutation, RunAgentMutationVariables>;
