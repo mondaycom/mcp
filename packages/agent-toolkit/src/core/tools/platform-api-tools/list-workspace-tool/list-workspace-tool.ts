@@ -2,24 +2,15 @@ import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { fetchAccountSlug, buildWorkspaceUrl } from '../utils/account-slug.utils';
 import { listWorkspaces } from './list-workspace.graphql';
-import { DEFAULT_WORKSPACE_LIMIT, MAX_WORKSPACE_LIMIT_FOR_SEARCH } from './list-workspace.consts';
+import { DEFAULT_WORKSPACE_LIMIT } from './list-workspace.consts';
 import {
   filterNullWorkspaces,
-  hasMatchingWorkspace,
-  filterWorkspacesBySearchTerm,
 } from './list-workspace.utils';
 import { ListWorkspacesQuery, WorkspaceMembershipKind } from '../../../../monday-graphql/generated/graphql/graphql';
 import { z } from 'zod';
-import { normalizeString } from 'src/utils/string.utils';
 import { arrayHasElements } from 'src/utils/array.utils';
 
 export const listWorkspaceToolSchema = {
-  searchTerm: z
-    .string()
-    .optional()
-    .describe(
-      '[DEPRECATED] Use the "search" tool with searchType WORKSPACES instead for better workspace search. This parameter filters workspaces in-memory and may not return accurate results.',
-    ),
   limit: z
     .number()
     .min(1)
@@ -42,7 +33,7 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
   });
 
   getDescription(): string {
-    return `List all workspaces available to the user, ordered by membership. Returns workspaces with their ID, name, and description.
+    return `List all workspaces available to the user, ordered by membership (user's workspaces first). Returns workspaces with their ID, name, and description.
 [IMPORTANT] To search for workspaces by name, use the "search" tool with searchType WORKSPACES instead — it provides faster and more accurate results.`;
   }
 
@@ -53,23 +44,9 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
   protected async executeInternal(
     input: ToolInputType<typeof listWorkspaceToolSchema>,
   ): Promise<ToolOutputType<never>> {
-    // Due to lack of search capabilities in the API, we filter in memory.
-    // When search term is provided, we fetch at max ${MAX_WORKSPACE_LIMIT_FOR_SEARCH} workspaces and filter in memory.
-    // Paging is also done memory so in API request we always request 1st page
-    const limitOverride = input.searchTerm ? MAX_WORKSPACE_LIMIT_FOR_SEARCH : input.limit;
-    const pageOverride = input.searchTerm ? 1 : input.page;
-
-    let searchTermNormalized: string | null = null;
-    if (input.searchTerm) {
-      searchTermNormalized = normalizeString(input.searchTerm);
-      if (searchTermNormalized.length === 0) {
-        throw new Error('Search term did not include any alphanumeric characters. Please provide a valid search term.');
-      }
-    }
-
     const createVariables = (membershipKind: WorkspaceMembershipKind) => ({
-      limit: limitOverride,
-      page: pageOverride,
+      limit: input.limit,
+      page: input.page,
       membershipKind,
     });
 
@@ -80,13 +57,10 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
     );
     const memberWorkspaces = filterNullWorkspaces(memberRes);
 
-    const shouldFetchAllWorkspaces =
-      !arrayHasElements(memberWorkspaces) || (searchTermNormalized && !hasMatchingWorkspace(searchTermNormalized, memberWorkspaces));
-
-    // Fetch all workspaces only if needed, otherwise use member workspaces
+    // Fetch all workspaces only if member workspaces are empty
     let workspaces = memberWorkspaces;
 
-    if (shouldFetchAllWorkspaces) {
+    if (!arrayHasElements(memberWorkspaces)) {
       const allWorkspacesRes = await this.mondayApi.request<ListWorkspacesQuery>(
         listWorkspaces,
         createVariables(WorkspaceMembershipKind.All),
@@ -94,28 +68,16 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
       workspaces = filterNullWorkspaces(allWorkspacesRes);
     }
 
-
     if (!arrayHasElements(workspaces)) {
       return {
         content: { message: 'No workspaces found.', data: [] },
       };
     }
 
-    // If the number of workspaces is small we prefer not filter and return all workspaces to LLM to filter
-    const shouldIncludeNoFilteringDisclaimer = searchTermNormalized && workspaces?.length <= DEFAULT_WORKSPACE_LIMIT;
-    const filteredWorkspaces = filterWorkspacesBySearchTerm(searchTermNormalized, workspaces, input.page, input.limit);
-
-    if (!arrayHasElements(filteredWorkspaces)) {
-      return {
-        content: { message: 'No workspaces found matching the search term. Try using the tool without a search term', data: [] },
-      };
-    }
-
-    // Naive check to see if there are more pages
-    const hasMorePages = filteredWorkspaces.length === input.limit;
+    const hasMorePages = workspaces.length === input.limit;
 
     const slug = await fetchAccountSlug(this.mondayApi);
-    const workspacesWithUrls = filteredWorkspaces.map(ws => ({
+    const workspacesWithUrls = workspaces.map(ws => ({
       id: ws.id,
       name: ws.name,
       description: ws.description || undefined,
@@ -125,7 +87,6 @@ export class ListWorkspaceTool extends BaseMondayApiTool<typeof listWorkspaceToo
     return {
       content: {
         message: "Workspaces retrieved",
-        ...(shouldIncludeNoFilteringDisclaimer ? { disclaimer: "Search term not applied - returning all workspaces. Perform the filtering manually." } : {}),
         ...(hasMorePages ? { next_page: input.page + 1 } : {}),
         data: workspacesWithUrls,
       },
