@@ -62,6 +62,8 @@ Returns:
 - workflowDraftId: the draft version ID (unchanged)
 - result: agent response describing the changes made
 
+Note: if directing the user to the workflow in the UI, the correct URL path is custom_objects/, not workflows/ — e.g. {account}.monday.com/custom_objects/{workflowObjectId}.
+
 Note: the workflow runs only after it is published to live version.
 `;
   }

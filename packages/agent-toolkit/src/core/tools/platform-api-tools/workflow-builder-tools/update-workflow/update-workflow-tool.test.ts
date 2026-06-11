@@ -1,6 +1,7 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '../../test-utils/mock-api-client';
 import { WORKFLOW_BUILDER_AGENT_URL } from '../constants';
+import { UpdateWorkflowTool } from './update-workflow-tool';
 
 function mockFetchResponse({
   ok = true,
@@ -146,5 +147,13 @@ describe('UpdateWorkflowTool', () => {
 
     expect(result.content[0].text).toContain('Failed to update workflow');
     expect(result.content[0].text).toContain('network failure');
+  });
+
+  it('should include custom_objects URL guidance in description', () => {
+    const tool = new UpdateWorkflowTool(mocks.mockApiClient, 'test-token');
+    const desc = tool.getDescription();
+
+    expect(desc).toContain('custom_objects/');
+    expect(desc).not.toContain('/workflows/');
   });
 });
