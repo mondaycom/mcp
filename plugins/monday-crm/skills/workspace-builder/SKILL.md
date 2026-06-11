@@ -1,6 +1,6 @@
 ---
 name: workspace-builder
-description: "Build a CRM workspace from scratch for users with NO existing CRM boards. User describes their business in plain language and the skill proposes a board structure with groups, columns, and starter items, then creates the board(s) in monday on confirmation. Use ONLY when someone explicitly says 'build me a CRM from scratch', 'create CRM boards for me', 'I need a new sales pipeline board', 'set up my first monday CRM', or 'I have no CRM boards yet'. Do NOT use for: 'help me with my CRM' (use morning-briefing or board-diagnosis instead), 'set up monday CRM' without explicit new-build intent (use setup for triage), 'what can this plugin do' (use setup)."
+description: Build a CRM workspace from scratch — describe your business and get boards, columns, and pipeline stages created in monday. Use ONLY when someone says "build me a CRM from scratch", "create CRM boards for me", or "I need a new sales pipeline board". Do NOT use for existing-board questions (use morning-briefing or board-diagnosis).
 argument-hint: "[optional: business description, e.g. 'window coverings, B2C, ~50 leads/month']"
 user-invocable: true
 allowed-tools: [Read, AskUserQuestion, mcp__monday__get_user_context, mcp__monday__list_workspaces, mcp__monday__workspace_info, mcp__monday__search, mcp__monday__create_workspace, mcp__monday__create_board, mcp__monday__create_group, mcp__monday__create_column, mcp__monday__create_item, mcp__monday__create_doc, mcp__monday__get_board_info, mcp__monday__all_monday_api]
