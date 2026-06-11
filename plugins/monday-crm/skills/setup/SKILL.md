@@ -1,6 +1,6 @@
 ---
 name: setup
-description: "First-run setup for the monday CRM plugin. Checks the monday MCP connection, walks through OAuth if needed, then detects whether the user already has CRM boards and routes to the right next skill. Say 'connect my monday account', 'set up monday CRM', 'monday CRM setup', or 'get started with monday CRM'."
+description: Get started with monday CRM — connect your account and discover which skills work with your existing boards (or build from scratch). Use when someone says "set up monday CRM", "connect my monday account", "monday CRM setup", or "get started with monday CRM".
 user-invocable: true
 allowed-tools: [Read, AskUserQuestion, mcp__monday__get_user_context, mcp__monday__search, mcp__monday__list_workspaces]
 ---
@@ -25,7 +25,7 @@ Before attempting the MCP connection, ask the user:
 - **yes** → continue to Step 2.
 - **no** →
 
-  > Don't have a monday account yet? monday CRM has a free tier — start at **https://monday.com/crm**.
+  > Don't have a monday account yet? Start a free 14-day trial at **https://monday.com/crm**.
   > Once your account is set up, come back and run `/monday-crm:setup` to connect it here.
 
   Stop.
