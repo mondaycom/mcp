@@ -1,6 +1,6 @@
 ---
 name: morning-briefing
-description: Daily prioritized CRM pipeline briefing. Reads the user's monday deals board, ranks deals by new activity, stall age, and commitments due today, then publishes a timestamped `Morning Briefing` update on a pinned item or a new doc in the user's workspace. Use when someone says "what should I focus on today", "morning briefing", "what's hot in my pipeline", "what changed on my deals", "pipeline summary", or any variation of a daily CRM digest.
+description: Get your daily CRM briefing — deals needing attention today ranked by urgency, published as a monday doc or pinned update. Use when someone says "what should I focus on today", "morning briefing", "what's hot in my pipeline", "what changed on my deals", or "pipeline summary".
 argument-hint: "[optional: board name or ID, e.g. 'Deals' or '10046221612']"
 user-invocable: true
 allowed-tools: [Read, AskUserQuestion, mcp__monday__get_user_context, mcp__monday__list_workspaces, mcp__monday__search, mcp__monday__get_board_info, mcp__monday__get_column_type_info, mcp__monday__get_board_items_page, mcp__monday__board_insights, mcp__monday__create_update, mcp__monday__create_doc, mcp__monday__create_notification, mcp__monday__list_users_and_teams, mcp__monday__all_monday_api]
@@ -8,7 +8,7 @@ allowed-tools: [Read, AskUserQuestion, mcp__monday__get_user_context, mcp__monda
 
 # Morning Briefing
 
-Produces a daily prioritized briefing over the user's monday CRM pipeline and **publishes it as a monday artifact** (update on a pinned item, or a doc in the user's workspace) so the briefing lives inside monday — not just in the chat. Replaces the five-minute "let me scan my deals" routine that power users (Kevin, Amit, Jaisy) automate via overnight Claude runs.
+Produces a daily prioritized briefing over the user's monday CRM pipeline and **publishes it as a monday artifact** (update on a pinned item, or a doc in the user's workspace) so the briefing lives inside monday — not just in the chat. Replaces the five-minute "let me scan my deals" routine that power users automate via overnight Claude runs.
 
 Flow: **Trigger → Gather → Synthesize → Publish (α, default) → Share (β, opt-in) → Proactive extension (opt-in)**.
 
