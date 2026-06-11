@@ -16,12 +16,18 @@ export interface GraphQLErrorResponse {
   response?: GraphQLApiErrorResponse;
 }
 
+export interface ToolErrorEntry {
+  message?: string;
+  path?: (string | number)[];
+  [key: string]: unknown;
+}
+
 export interface ToolErrorStructuredContent {
   message: string;
   tool?: string;
   status?: number;
   headers?: Record<string, unknown>;
-  response_extensions?: Record<string, unknown>;
   partial_success?: boolean;
-  errors?: GraphQLError[];
+  errors?: ToolErrorEntry[];
+  [key: string]: unknown;
 }

@@ -181,7 +181,7 @@ describe('error.utils', () => {
         expect((e as GraphQLErrorResponse).response).toBe(error.response);
         expect(buildToolErrorStructuredContent(e)).toMatchObject({
           status: 404,
-          errors: [{ extensions: { code: 'NOT_FOUND' } }],
+          errors: [{ code: 'NOT_FOUND' }],
         });
         return;
       }
@@ -282,21 +282,19 @@ describe('error.utils', () => {
     expect(result.structuredContent).toEqual({
       message: 'GraphQL Error',
       tool: 'get_board_info',
+      request_id: 'req-2',
       status: 200,
-      response_extensions: { request_id: 'req-2' },
       errors: [
         {
           message: 'Rate limit exceeded for board-columns',
           path: ['boards', 0, 'columns'],
-          extensions: {
-            code: 'tooManyRequests',
-            status_code: 400,
-            service: 'data-structure',
-          },
+          code: 'tooManyRequests',
+          status_code: 400,
+          service: 'data-structure',
         },
         {
           message: 'Secondary failure',
-          extensions: { code: 'OTHER_CODE' },
+          code: 'OTHER_CODE',
         },
       ],
     });
@@ -324,7 +322,8 @@ describe('error.utils', () => {
       errors: [
         {
           message: 'The board does not exist',
-          extensions: { code: 'InvalidBoardIdException', error_data: { board_id: 123 } },
+          code: 'InvalidBoardIdException',
+          error_data: { board_id: 123 },
         },
       ],
     });
@@ -364,7 +363,7 @@ describe('error.utils', () => {
   });
 
   describe('buildToolErrorStructuredContent', () => {
-    it('should expose rate-limit fields in errors[].extensions when response is on the error', () => {
+    it('should expose rate-limit fields on errors when response is on the error', () => {
       const rawMessage = 'Minute rate limit exceeded';
       const error = new Error(rawMessage);
       (error as any).response = {
@@ -382,12 +381,13 @@ describe('error.utils', () => {
       expect(buildToolErrorStructuredContent(error, { toolName: 'get_board_info' })).toEqual({
         message: rawMessage,
         tool: 'get_board_info',
+        request_id: 'req-rate',
         status: 429,
-        response_extensions: { request_id: 'req-rate' },
         errors: [
           {
             message: 'Minute rate limit exceeded',
-            extensions: { code: 'MINUTE_RATE_LIMIT_EXCEEDED', retry_in_seconds: 58 },
+            code: 'MINUTE_RATE_LIMIT_EXCEEDED',
+            retry_in_seconds: 58,
           },
         ],
       });
@@ -412,7 +412,7 @@ describe('error.utils', () => {
 
       expect(structured.partial_success).toBe(true);
       expect(structured).not.toHaveProperty('data');
-      expect(structured.response_extensions).toEqual({ request_id: 'req-partial' });
+      expect(structured.request_id).toBe('req-partial');
     });
 
     it('should omit headers when response headers are empty', () => {
@@ -552,7 +552,8 @@ describe('error.utils', () => {
           errors: [
             {
               message: 'The board does not exist. Please check your board ID and try again',
-              extensions: { code: 'InvalidBoardIdException', error_data: { board_id: 123 } },
+              code: 'InvalidBoardIdException',
+              error_data: { board_id: 123 },
             },
           ],
         });
@@ -596,10 +597,11 @@ describe('error.utils', () => {
 
         expect(result.structuredContent).toMatchObject({
           message: 'GraphQL Error',
+          request_id: 'req-multi',
           status: 200,
           errors: [
-            { message: 'Invalid item ID', extensions: { code: 'InvalidItemId' } },
-            { message: 'Insufficient permissions', extensions: { code: 'InsufficientPermissions' } },
+            { message: 'Invalid item ID', code: 'InvalidItemId' },
+            { message: 'Insufficient permissions', code: 'InsufficientPermissions' },
           ],
         });
         expect(result.content?.[0]?.text).toBe('Error: GraphQL Error');

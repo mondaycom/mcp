@@ -58,14 +58,14 @@ export function buildToolErrorStructuredContent(
     return {
       message: rawMessage,
       tool: options?.toolName,
+      ...(response.extensions ?? {}),
       status: response.status,
       headers,
-      response_extensions: response.extensions,
       ...(response.data != null ? { partial_success: true } : {}),
       errors: response.errors.map((entry) => ({
         message: entry.message,
         path: entry.path,
-        extensions: entry.extensions,
+        ...(entry.extensions ?? {}),
       })),
     };
   }
