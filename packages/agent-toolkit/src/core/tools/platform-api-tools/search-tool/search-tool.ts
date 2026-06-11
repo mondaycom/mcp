@@ -1,8 +1,8 @@
 import { ToolInputType, ToolOutputType, ToolType } from 'src/core/tool';
 import { z } from 'zod';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { getBoards, getDocs, getFolders, getWorkspaces, searchItems } from './search-tool.graphql';
-import { searchBoardsDev, searchDocsDev, searchWorkspacesDev } from './search-tool.graphql.dev';
+import { getBoards, getDocs, getFolders, searchItems, searchWorkspaces } from './search-tool.graphql';
+import { searchBoardsDev, searchDocsDev } from './search-tool.graphql.dev';
 import {
   GetBoardsQuery,
   GetBoardsQueryVariables,
@@ -10,18 +10,16 @@ import {
   GetDocsQueryVariables,
   GetFoldersQuery,
   GetFoldersQueryVariables,
-  GetWorkspacesQuery,
-  GetWorkspacesQueryVariables,
   SearchItemsQuery,
   SearchItemsQueryVariables,
+  SearchWorkspacesQuery,
+  SearchWorkspacesQueryVariables,
 } from 'src/monday-graphql/generated/graphql/graphql';
 import {
   SearchBoardsDevQuery,
   SearchBoardsDevQueryVariables,
   SearchDocsDevQuery,
   SearchDocsDevQueryVariables,
-  SearchWorkspacesDevQuery,
-  SearchWorkspacesDevQueryVariables,
 } from 'src/monday-graphql/generated/graphql.dev/graphql';
 import { normalizeString } from 'src/utils/string.utils';
 import { DataWithFilterInfo, GlobalSearchType, ObjectPrefixes, SearchResult } from './search-tool.types';
@@ -65,9 +63,9 @@ export class SearchTool extends BaseMondayApiTool<SearchToolInput> {
     return `Search within monday.com platform. Can search for boards, documents, folders, workspaces, and items.
 For searching/listing specific users and teams, use list_users_and_teams tool.
 For account-level info (plan, member count, products), use get_user_context tool.
-For listing all workspaces (membership-ordered), use list_workspaces tool.
 For groups, use get_board_info tool.
 ITEMS search requires a searchTerm and only returns id, title, and url.
+WORKSPACES search requires a searchTerm and only returns id, title, and description.
 IMPORTANT: ids returned by this tool are prefixed with the type of the object (e.g doc-123, board-456, folder-789, workspace-101, item-321). When passing the ids to other tools, you need to remove the prefix and just pass the number.
     `;
   }
@@ -86,8 +84,8 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
         };
       } catch (error) {
         throwIfSearchTimeoutError(error);
-        // ITEMS has no listing fallback — propagate the error instead of falling through.
-        if (input.searchType === GlobalSearchType.ITEMS) {
+        // ITEMS and WORKSPACES have no listing fallback — propagate the error instead of falling through.
+        if (input.searchType === GlobalSearchType.ITEMS || input.searchType === GlobalSearchType.WORKSPACES) {
           throw error;
         }
       }
@@ -97,7 +95,7 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
       [GlobalSearchType.BOARD]: this.searchBoardsAsync.bind(this),
       [GlobalSearchType.DOCUMENTS]: this.searchDocsAsync.bind(this),
       [GlobalSearchType.FOLDERS]: this.searchFoldersAsync.bind(this),
-      [GlobalSearchType.WORKSPACES]: this.searchWorkspacesAsync.bind(this),
+      [GlobalSearchType.WORKSPACES]: () => { throw new Error('Workspaces search requires a searchTerm'); },
       [GlobalSearchType.ITEMS]: () => { throw new Error('Items search requires a searchTerm'); },
     };
 
@@ -126,7 +124,7 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     }
 
     if (input.searchType === GlobalSearchType.WORKSPACES) {
-      return this.searchWorkspacesWithDevEndpointAsync(input.searchTerm!, input.limit);
+      return this.searchWorkspacesAsync(input.searchTerm!, input.limit);
     }
 
     if (input.searchType === GlobalSearchType.ITEMS) {
@@ -177,14 +175,13 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     return { items, wasFiltered: true };
   }
 
-  private async searchWorkspacesWithDevEndpointAsync(
+  private async searchWorkspacesAsync(
     query: string,
     limit: number,
   ): Promise<DataWithFilterInfo<SearchResult>> {
-    const variables: SearchWorkspacesDevQueryVariables = { query, limit };
+    const variables: SearchWorkspacesQueryVariables = { query, limit };
 
-    const response = await this.mondayApi.request<SearchWorkspacesDevQuery>(searchWorkspacesDev, variables, {
-      versionOverride: 'dev',
+    const response = await this.mondayApi.request<SearchWorkspacesQuery>(searchWorkspaces, variables, {
       timeout: SEARCH_TIMEOUT,
     });
 
@@ -217,25 +214,6 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     return { items, wasFiltered: true };
   }
 
-  private async searchWorkspacesAsync(input: ToolInputType<SearchToolInput>): Promise<DataWithFilterInfo<SearchResult>> {
-    const variables: GetWorkspacesQueryVariables = {
-      ...this.getPagingParamsForSearch(input),
-    };
-
-    const response = await this.mondayApi.request<GetWorkspacesQuery>(getWorkspaces, variables);
-    const data = this.searchAndVirtuallyPaginate(input, response.workspaces || [], (workspace) => workspace!.name);
-
-    const result = {
-      items: data.items.map((workspace) => ({
-        id: ObjectPrefixes.WORKSPACE + workspace!.id,
-        title: workspace!.name,
-        description: workspace!.description || undefined,
-      })),
-      wasFiltered: data.wasFiltered,
-    };
-
-    return result;
-  }
 
 
   private async searchFoldersAsync(input: ToolInputType<SearchToolInput>): Promise<DataWithFilterInfo<SearchResult>> {

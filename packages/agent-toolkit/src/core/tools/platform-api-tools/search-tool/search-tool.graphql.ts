@@ -29,16 +29,6 @@ export const getFolders = gql`
   }
 `;
 
-export const getWorkspaces = gql`
-  query GetWorkspaces($page: Int!, $limit: Int!) {
-    workspaces(page: $page, limit: $limit) {
-      id
-      name
-      description
-    }
-  }
-`;
-
 export const searchItems = gql`
   query SearchItems($query: String!, $limit: Int, $workspaceIds: [ID!]) {
     search {
@@ -49,6 +39,23 @@ export const searchItems = gql`
             id
             name
             url
+          }
+        }
+      }
+    }
+  }
+`;
+
+export const searchWorkspaces = gql`
+  query SearchWorkspaces($query: String!, $limit: Int) {
+    search {
+      workspaces(query: $query, limit: $limit) {
+        results {
+          id
+          indexed_data {
+            id
+            name
+            description
           }
         }
       }
