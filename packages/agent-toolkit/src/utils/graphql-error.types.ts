@@ -19,7 +19,6 @@ export interface GraphQLErrorResponse {
 export interface ToolErrorStructuredContent {
   message: string;
   tool?: string;
-  error_count?: number;
   status?: number;
   headers?: Record<string, unknown>;
   response_extensions?: Record<string, unknown>;

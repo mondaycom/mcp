@@ -58,7 +58,6 @@ export function buildToolErrorStructuredContent(
     return {
       message: rawMessage,
       tool: options?.toolName,
-      error_count: response.errors.length,
       status: response.status,
       headers,
       response_extensions: response.extensions,

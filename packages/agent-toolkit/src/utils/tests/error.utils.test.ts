@@ -180,7 +180,6 @@ describe('error.utils', () => {
       } catch (e) {
         expect((e as GraphQLErrorResponse).response).toBe(error.response);
         expect(buildToolErrorStructuredContent(e)).toMatchObject({
-          error_count: 1,
           status: 404,
           errors: [{ extensions: { code: 'NOT_FOUND' } }],
         });
@@ -283,7 +282,6 @@ describe('error.utils', () => {
     expect(result.structuredContent).toEqual({
       message: 'GraphQL Error',
       tool: 'get_board_info',
-      error_count: 2,
       status: 200,
       response_extensions: { request_id: 'req-2' },
       errors: [
@@ -323,7 +321,6 @@ describe('error.utils', () => {
     expect(structured).toMatchObject({
       message:
         'Failed to execute GraphQL operation: The board does not exist (details: {"code":"InvalidBoardIdException","error_data":{"board_id":123}})',
-      error_count: 1,
       errors: [
         {
           message: 'The board does not exist',
@@ -385,7 +382,6 @@ describe('error.utils', () => {
       expect(buildToolErrorStructuredContent(error, { toolName: 'get_board_info' })).toEqual({
         message: rawMessage,
         tool: 'get_board_info',
-        error_count: 1,
         status: 429,
         response_extensions: { request_id: 'req-rate' },
         errors: [
@@ -553,7 +549,6 @@ describe('error.utils', () => {
         expect(result.structuredContent).toMatchObject({
           message:
             'Failed to execute GraphQL operation: The board does not exist. Please check your board ID and try again (details: {"code":"InvalidBoardIdException","error_data":{"board_id":123}})',
-          error_count: 1,
           errors: [
             {
               message: 'The board does not exist. Please check your board ID and try again',
@@ -601,7 +596,6 @@ describe('error.utils', () => {
 
         expect(result.structuredContent).toMatchObject({
           message: 'GraphQL Error',
-          error_count: 2,
           status: 200,
           errors: [
             { message: 'Invalid item ID', extensions: { code: 'InvalidItemId' } },
