@@ -1,6 +1,6 @@
 ---
 name: bulk-data-hygiene
-description: Diagnoses a CRM board for missing/stale data, surfaces gaps to the user, and runs an enrichment + normalization loop to fix them in bulk. Normalizes phone numbers, country codes, email casing; fills missing emails from company domain heuristics; flags unowned and amount-less deals. Different from board-diagnosis — that one **reports**, this one **acts**. Use when someone says "clean my CRM", "fix my data", "normalize phone numbers", "find missing emails", "my board is messy", or any variation of bulk data fix.
+description: Clean and normalize your CRM data in bulk — fix phone formats, fill missing emails, standardize country codes, and flag unowned deals. Unlike board-diagnosis (which reports), this skill acts. Use when someone says "clean my CRM", "fix my data", "normalize phone numbers", or "my board is messy".
 argument-hint: "[optional: board name or ID]"
 user-invocable: true
 allowed-tools: [Read, AskUserQuestion, mcp__monday__get_user_context, mcp__monday__list_workspaces, mcp__monday__search, mcp__monday__get_board_info, mcp__monday__get_column_type_info, mcp__monday__get_board_items_page, mcp__monday__board_insights, mcp__monday__change_item_column_values, mcp__monday__create_doc, mcp__monday__create_update, mcp__monday__all_monday_api]
