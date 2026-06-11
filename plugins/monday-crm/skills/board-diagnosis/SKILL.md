@@ -1,6 +1,6 @@
 ---
 name: board-diagnosis
-description: Structural audit of a monday CRM board — missing-data patterns, stalled groups, abandoned columns, automation gaps, and data-quality scores — published as a prioritized diagnosis doc for CSM / admin action. Use when someone says "audit my CRM", "what's wrong with my board", "CSM kickoff doc", "diagnose the pipeline", or "board health check".
+description: Find and fix what's wrong with your CRM board. Surfaces missing data, stalled deals, abandoned columns, and automation gaps as a prioritized diagnosis doc. Use when someone says "audit my CRM", "what's wrong with my board", "CSM kickoff doc", or "board health check".
 argument-hint: "[optional: board name or ID, e.g. 'Deals' or '10046221612']"
 user-invocable: true
 allowed-tools: [Read, AskUserQuestion, mcp__monday__get_user_context, mcp__monday__list_workspaces, mcp__monday__search, mcp__monday__get_board_info, mcp__monday__get_column_type_info, mcp__monday__get_board_items_page, mcp__monday__board_insights, mcp__monday__get_board_activity, mcp__monday__create_doc, mcp__monday__create_item, mcp__monday__create_notification, mcp__monday__change_item_column_values, mcp__monday__list_users_and_teams, mcp__monday__all_monday_api]
@@ -46,7 +46,13 @@ Flow: **Trigger → Gather → Synthesize → Publish (α, default) → Share (�
 
 ## Step 0: Connector check
 
-**Goal:** Same as morning-briefing Step 0. Fail fast on missing monday connector.
+**Goal:** Fail fast if the user has no monday MCP connection. No partial writes, no guessing.
+
+1. Try `mcp__monday__get_user_context`.
+2. If the tool is missing, returns auth-style error, or the user has no accessible workspace:
+   - Print exactly: *"I don't see the monday connector active on this session. Install it from https://monday.com/mcp, then run this skill again."*
+   - Stop. Do not proceed.
+3. If connector works, cache `user.id` and `user.name` for artifact metadata.
 
 ---
 
@@ -95,7 +101,7 @@ Same rate-limit + error-handling as morning-briefing Step 5. On partial failures
 
 Rank findings by impact × fix-effort. P0 = data blocking forecast / reporting; P1 = hygiene; P2 = structural.
 
-TODO: see spec §5.3 — exact scoring rubric, impact weights, and fix-task templates.
+Scoring rubric v0.1: fill-rate <50% on required fields = P0; fill-rate 50-75% or stall >30d = P1; column <5% populated = P2.
 
 ---
 
@@ -103,7 +109,7 @@ TODO: see spec §5.3 — exact scoring rubric, impact weights, and fix-task temp
 
 **Goal:** `create_doc` in user's workspace with the full audit.
 
-TODO: see spec §5.3 Publish (α). Core content sections:
+Core content sections:
 - **Score:** overall data-quality score (0-100) + 5-strand breakdown.
 - **P0 fixes** — concrete, actionable.
 - **P1 / P2 fixes** — batched.
@@ -120,7 +126,6 @@ Non-admin fallback isn't applicable (docs don't require admin). But if Proactive
 
 **Goal:** Share doc + notify.
 
-TODO: see spec §5.3 Share (β):
 1. `list_users_and_teams` → user picks CSM.
 2. Grant doc view/edit via `all_monday_api`.
 3. `create_notification` to CSM with doc link.
@@ -137,7 +142,7 @@ For each P0 / P1 fix:
 - If >20 fix-tasks: batch into one `Fix Tasks — <date>` doc list (with `<!-- claude-skill-id: board-diagnosis -->` in body) rather than creating 20 items.
 - Never deletes columns, never archives groups, never removes automations.
 
-TODO: see spec §5.3 Proactive extension — exact normalization rules (phone E.164, country ISO 3166, etc.).
+Normalization rules: phone → E.164 format, country → ISO 3166-1 alpha-2, email → lowercase.
 
 ---
 
