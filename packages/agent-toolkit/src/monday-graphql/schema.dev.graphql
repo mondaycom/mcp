@@ -369,6 +369,9 @@ until: String): DocVersionHistory
   export_markdown_from_doc(  "The document's unique identifier to export. Get this from document queries or creation responses."
 docId: ID!,   "Optional array of specific block IDs to export. If omitted, exports the entire document. Use when you only need specific sections."
 blockIds: [String!]): ExportMarkdownResult
+  "Fetch the status of an async board export job. Poll until status is COMPLETED (use download_url) or FAILED (read failure_reason)."
+  fetch_export_job_status(  "The job_id returned by export_board_async."
+job_id: ID!): ExportJobStatusInfo
   "List available agents from an external provider"
   external_provider_agents(  "The credential ID for authenticating with the provider"
 credential_id: ID!,   "The type of external provider to query"
@@ -401,9 +404,15 @@ campaign_id: ID,   "Filter by event type"
 event_type: CampaignsAnalyticsEventKind,   "Maximum number of events to return (max 1000)"
 limit: Int!,   "Pagination token for the next page"
 next_token: String): CampaignsAnalyticsEventsResponse
-  "List email campaigns for the current account"
+  "List email campaigns for the current account with optional filtering and sorting"
   campaigns(  "Maximum number of campaigns to return (max 200)"
-limit: Int): [CampaignsEmailCampaign!]
+limit: Int,   "Filter by campaign status(es)"
+status: [CampaignsStatusKind!],   "Filter by campaign name (partial match)"
+name: String,   "Filter campaigns sent after this date"
+sent_after: Date,   "Filter campaigns sent before this date"
+sent_before: Date,   "Field to sort by"
+sort_field: CampaignsSortField,   "Sort direction (defaults to DESC)"
+sort_order: CampaignsSortOrder): [CampaignsEmailCampaign!]
   "Get a single email campaign by ID"
   campaign(id: ID!): CampaignsEmailCampaign
   "Get the brand kit for the current account"
@@ -497,7 +506,12 @@ ids: [ID!]!): [Asset]
 account_entity_name: String,   "The board's kind (public / private / share)"
 board_kind: BoardKind,   "A list of hierarchy types"
 hierarchy_types: [BoardHierarchy!],   "A list of boards unique identifiers."
-ids: [ID!],   "Boolean that brings the latest data"
+ids: [ID!],   """
+  When true and ids are provided, ids that are actually docs attached to board
+  items (i.e. embedded docs) are authorized and included in the result.
+  Defaults to false to preserve existing behavior.
+  """
+include_embedded_docs: Boolean = false,   "Boolean that brings the latest data"
 latest: Boolean,   "Number of items to get, the default is 25."
 limit: Int = 25,   "Property to order by (created_at / used_at)."
 order_by: BoardsOrderBy,   "Page number to get, starting at 1."
@@ -558,6 +572,9 @@ ids: [ID!]): [Tag]
   "Get a collection of teams."
   teams(  "A list of teams unique identifiers."
 ids: [ID!]): [Team]
+  "Get the status of a use_template async operation. Returns null if the process_id is invalid, expired, or unauthorized."
+  template_installation_status(  "The process_id returned by use_template."
+process_id: ID!): TemplateInstallationStatusResult
   "Get users."
   users(  "Filter by user IDs."
 ids: [ID!],   "Filter by user name. Uses fuzzy search unless combined with `user_kind`, `kind`, or `emails` args, then uses exact search."
@@ -679,23 +696,17 @@ limit: Int = 25): GetAllocationsResponse
   get_allocated_resources(  "The planner ID"
 planner_id: ID!): [AllocatedResource!]
   "Returns active work schedules for the caller's account"
-  work_schedules(  "Filter by specific work schedule IDs"
-ids: [ID!],   "Number of items to return per page; max 500"
-limit: Int,   "Filter by work schedule name"
-name: String): WorkSchedulePage
-  "Fetches the next page of work schedules using a cursor from a previous work_schedules or next_work_schedules_page call"
-  next_work_schedules_page(  "Cursor returned by a previous work_schedules or next_work_schedules_page call"
-cursor: String!,   "Number of items to get, the default is 25."
-limit: Int = 25): WorkSchedulePage
+  work_schedules(  "Filter by specific work schedule IDs (max 100)"
+ids: [ID!],   "Number of items to return per page; default 20, max 500"
+limit: Int = 20,   "Filter by work schedule name"
+name: String,   "Cursor returned by a previous work_schedules call to fetch the next page"
+cursor: String): WorkSchedulePage
   "Returns active time off schedules for the caller's account"
-  time_offs(  "Filter by specific time off schedule IDs"
-ids: [ID!],   "Number of items to return per page; max 500"
-limit: Int,   "Filter by time off schedule name"
-name: String): TimesOffPage
-  "Fetches the next page of time off schedules using a cursor from a previous time_offs or next_time_offs_page call"
-  next_time_offs_page(  "Cursor returned by a previous time_offs or next_time_offs_page call"
-cursor: String!,   "Number of items to get, the default is 25."
-limit: Int = 25): TimesOffPage
+  time_offs(  "Filter by specific time off schedule IDs (max 100)"
+ids: [ID!],   "Number of items to return per page; default 20, max 500"
+limit: Int = 20,   "Filter by time off schedule name"
+name: String,   "Cursor returned by a previous time_offs call to fetch the next page"
+cursor: String): TimesOffPage
   "Returns users availability: work schedule and time offs schedule"
   users_availability(  "Filter by specific user IDs"
 user_ids: [ID!],   "Number of items to return per page; max 500"
@@ -711,6 +722,9 @@ input: PortfolioUtilizationReportInput!): PortfolioUtilizationReport
   "Returns the list of resource IDs belonging to a portfolio. Lightweight alternative to portfolio_utilization_report when only resource identity is needed — no effort computation."
   portfolio_resources(  "Portfolio ID to fetch resources for."
 input: PortfolioResourcesInput!): [ID!]
+  "Portfolio resources filtered by name. Returns up to 25 matches."
+  portfolio_resources_by_name(  "Portfolio ID and search term."
+input: PortfolioResourcesSearchInput!): [PortfolioResource!]!
   "A query to search across all boards in the account. Returns raw json results."
   search_benchmark(  "A query to search for."
 query: String!,   "The board id to search in."
@@ -897,6 +911,94 @@ type Mutation {
   execute_integration_block(  "The ID of the integration block instance to execute"
 block_instance_id: ID!,   "The field values to pass to the integration block"
 inbound_field_values: JSON!): IntegrationExecutionResult
+  "Configures a column to categorize items based on content analysis."
+  configure_categorize_ai_column(  "The ID of the board containing the column."
+board_id: ID!,   "The ID of the column to configure with AI."
+column_id: ID!,   "Where the AI reads its input data from."
+source_type: AiColumnSource!,   """
+  The ID of the source column. Required when source_type is "column".
+  """
+source_column_id: ID,   "Optional settings controlling backfill behavior."
+extra_settings: AiColumnExtraSettingsInput,   "Custom categorization rules or non-standard scales. Max 3000 characters."
+additional_instructions: String): AiColumnResult
+  "Configures a column to generate concise summaries of input text."
+  configure_summarize_ai_column(  "The ID of the board containing the column."
+board_id: ID!,   "The ID of the column to configure with AI."
+column_id: ID!,   "Where the AI reads its input data from."
+source_type: AiColumnSource!,   """
+  The ID of the source column. Required when source_type is "column".
+  """
+source_column_id: ID,   "Optional settings controlling backfill behavior."
+extra_settings: AiColumnExtraSettingsInput,   "Format requirements or focus areas. Max 3000 characters."
+additional_instructions: String): AiColumnResult
+  "Configures a column to translate text to a target language."
+  configure_translate_ai_column(  "The ID of the board containing the column."
+board_id: ID!,   "The ID of the column to configure with AI."
+column_id: ID!,   "Where the AI reads its input data from."
+source_type: AiColumnSource!,   """
+  The ID of the source column. Required when source_type is "column".
+  """
+source_column_id: ID,   "Optional settings controlling backfill behavior."
+extra_settings: AiColumnExtraSettingsInput,   "The language to translate text into."
+target_language: AiColumnLanguage!): AiColumnResult
+  "Configures a column to rewrite or improve text quality."
+  configure_improve_text_ai_column(  "The ID of the board containing the column."
+board_id: ID!,   "The ID of the column to configure with AI."
+column_id: ID!,   "Where the AI reads its input data from."
+source_type: AiColumnSource!,   """
+  The ID of the source column. Required when source_type is "column".
+  """
+source_column_id: ID,   "Optional settings controlling backfill behavior."
+extra_settings: AiColumnExtraSettingsInput,   "The desired writing style."
+tone: AiColumnTone,   "The desired output length relative to input."
+length: AiColumnImproverLength,   "The type of improvement to apply."
+refinement_type: AiColumnRefinementLevel): AiColumnResult
+  "Configures a column to extract structured information from text."
+  configure_extract_ai_column(  "The ID of the board containing the column."
+board_id: ID!,   "The ID of the column to configure with AI."
+column_id: ID!,   "Where the AI reads its input data from."
+source_type: AiColumnSource!,   """
+  The ID of the source column. Required when source_type is "column".
+  """
+source_column_id: ID,   "Optional settings controlling backfill behavior."
+extra_settings: AiColumnExtraSettingsInput,   """
+  The type of entity to extract. Use "custom" for non-preset entities.
+  """
+entity_type: AiColumnEntity!,   """
+  Required when entity_type is "custom". A short descriptive phrase of what to extract. Max 3000 characters.
+  """
+custom_instructions: String,   """
+  Contextual qualifiers (e.g., "of the boss", "from the signature"). Max 3000 characters.
+  """
+additional_instructions: String): AiColumnResult
+  "Configures a column with a custom AI prompt for complex or flexible operations."
+  configure_open_block_ai_column(  "The ID of the board containing the column."
+board_id: ID!,   "The ID of the column to configure with AI."
+column_id: ID!,   "Optional settings controlling backfill behavior."
+extra_settings: AiColumnExtraSettingsInput,   "The natural-language instruction for the AI. Reference columns using {pulse.column_id} syntax (e.g., {pulse.text_col}). Use {pulse.name} for item name, {pulse.subitem.column_id} for subitems. Max 3000 characters."
+ai_query: String!): AiColumnResult
+  "Configures a column to generate new text content from a prompt."
+  configure_write_me_ai_column(  "The ID of the board containing the column."
+board_id: ID!,   "The ID of the column to configure with AI."
+column_id: ID!,   "Optional settings controlling backfill behavior."
+extra_settings: AiColumnExtraSettingsInput,   "The prompt guiding content generation. Reference columns using {pulse.column_id} syntax (e.g., {pulse.text_col}). Use {pulse.name} for item name, {pulse.subitem.column_id} for subitems. Max 3000 characters."
+ai_query: String!,   "The desired writing tone/style."
+tone: AiColumnTone!,   "The approximate desired output length."
+length: AiColumnOutputLength!): AiColumnResult
+  "Configures a column to assign a person to items based on context."
+  configure_person_assignment_ai_column(  "The ID of the board containing the column."
+board_id: ID!,   "The ID of the column to configure with AI."
+column_id: ID!,   "Where the AI reads its input data from."
+source_type: AiColumnSource!,   """
+  The ID of the source column. Required when source_type is "column".
+  """
+source_column_id: ID,   "Optional settings controlling backfill behavior."
+extra_settings: AiColumnExtraSettingsInput,   "People or teams available for assignment."
+groups: [AiColumnPersonGroupInput!]!): AiColumnResult
+  "Removes AI configuration from a column, deleting all associated automation recipes."
+  remove_ai_from_column(  "The ID of the board containing the column."
+board_id: ID!,   "The ID of the column to remove AI from."
+column_id: ID!): AiColumnRemoveResult
   "Initiate a file upload. Returns presigned upload URLs and an upload_id."
   create_upload(input: CreateUploadInput!): CreateUploadResult
   "Complete a file upload and create the asset record."
@@ -1401,9 +1503,21 @@ export_options: ExportOptionsInput,   """
 time_zone: String,   "Column IDs in desired display order"
 columns_order: [String!],   "Output format (defaults to CSV)"
 export_format: ExportFormat = CSV): ExportBoardResult
+  "Start an async board export. Returns a job_id immediately; poll fetch_export_job_status to get the download URL when the job is COMPLETED."
+  export_board_async(  "The ID of the board to export"
+board_id: ID!,   "Export configuration options"
+export_options: ExportOptionsInput,   """
+  Time zone for date formatting (e.g. "America/New_York")
+  """
+time_zone: String,   "Column IDs in desired display order"
+columns_order: [String!],   "Output format (defaults to CSV)"
+export_format: ExportFormat = CSV): ExportAsyncJob
   "Initiate connecting an external agent via BYOA (async — result delivered via Pusher)"
   connect_external_agent(  "The external agent connection parameters"
 input: ConnectExternalAgentInput!): ConnectExternalAgentPayload
+  "Synchronously connect an external agent. Blocks until the connect flow completes and returns the full result inline (including secrets for custom agents). Provide exactly one provider input. Requires the enable-connect-external-agent-sync flag to be on; returns FEATURE_DISABLED if not."
+  connect_external_agent_sync(  "Wrapper input — set exactly one provider key (claude | custom | openai)."
+input: ConnectExternalAgentSyncInput!): ConnectExternalAgentResult
   "Disconnect an external agent by its ID"
   disconnect_external_agent(  "The ID of the agent to disconnect"
 id: ID!): DisconnectExternalAgentPayload
@@ -1416,6 +1530,10 @@ input: DeleteFavoriteInput!): DeleteFavoriteInputResultType
   "Update the position of an object in favorites"
   update_favorite_position(  "The input for updating the favorite object position"
 input: UpdateObjectHierarchyPositionInput!): UpdateFavoriteResultType
+  "Update an existing widgets surface by regenerating its A2UI structure via LLM. The LLM receives the previous layout as context and makes minimal targeted changes based on the prompt, preserving existing bindings and layout where possible."
+  update_widgets_surface(  "The unique identifier of the widgets surface to update."
+id: ID!,   "The update payload."
+input: UpdateWidgetsSurfaceInput!): WidgetsSurface
   "Delete a board automation by ID."
   delete_board_automation(  "The ID of the automation to delete"
 id: ID!,   "The board ID the automation belongs to"
@@ -1995,8 +2113,9 @@ relation_id: ID): Int
 projectBoardId: ID!,   "The ID of the portfolio to connect to"
 portfolioBoardId: ID!,   "Optional URL to receive a POST request when the operation completes. Enables async mode: the mutation returns immediately with a process_id."
 callback_url: String): ConnectProjectResult
-  "Create a new portfolio"
-  create_portfolio(boardName: String!, boardPrivacy: String!, destinationWorkspaceId: Int): CreatePortfolioResult
+  "Create a new portfolio. When a callback_url is provided the mutation returns immediately with a process_id, and the portfolio_id is POSTed to that URL once the portfolio is actually created. The callback payload is: { is_success: boolean, process_id: string, portfolio_id?: number }."
+  create_portfolio(boardName: String!, boardPrivacy: String!, destinationWorkspaceId: Int,   "Optional URL to receive a POST request when the portfolio is created. Enables async mode: the mutation returns immediately with a process_id; the portfolio_id is delivered via the callback."
+callback_url: String): CreatePortfolioResult
   "Update attributes (Job Role, Skills, or Location) for multiple resources in the directory"
   update_directory_resources_attributes(  "The attribute type to update (JOB_ROLE, SKILLS, or LOCATION)"
 attribute: DirectoryResourceAttribute!,   "The values of the attribute to update"
@@ -2027,10 +2146,16 @@ inputs: [CreateWorkScheduleInput!]!): [WorkScheduleResult!]
   "Update the name and/or working hours of an existing work schedule"
   update_work_schedule(  "ID of the work schedule to update"
 id: ID!,   "Fields to update on the work schedule"
-input: UpdateWorkScheduleInput!): WorkScheduleResult
+input: UpdateWorkScheduleInput!): WorkScheduleResult!
   "Soft-delete one or more work schedules; maximum 100 IDs per call"
   delete_work_schedule(  "IDs of work schedules to delete; maximum 100 items per call"
 ids: [ID!]!): [WorkScheduleDeleteResult!]
+  "Assign a work schedule to multiple users. Returns one result per user, allowing partial success. Pass the account default schedule ID to revert users to the account default. Maximum 100 user IDs per call."
+  assign_work_schedule(  "Users and work schedule to assign; maximum 100 user IDs per call"
+input: AssignWorkScheduleInput!): [AssignWorkScheduleUserResult!]
+  "Remove explicit work schedule assignments from multiple users; maximum 100 user IDs per call. Returns one result per user, allowing partial success."
+  unassign_work_schedule(  "IDs of users to remove work schedule assignments from; maximum 100 items per call"
+user_ids: [ID!]!): [AssignWorkScheduleUserResult!]
   "Create one or more named time off schedules for the account; maximum 100 inputs per call"
   create_time_off(  "Time off schedules to create; maximum 100 items per call"
 inputs: [CreateTimeOffInput!]!): [TimeOffResult!]
@@ -2041,6 +2166,12 @@ input: UpdateTimeOffInput!): TimeOffResult
   "Soft-delete one or more time off schedules; maximum 100 IDs per call"
   delete_time_off(  "IDs of time off schedules to delete; maximum 100 items per call"
 ids: [ID!]!): [TimeOffDeleteResult!]
+  "Assign a time off schedule to multiple users. Returns one result per user, allowing partial success. Pass the account default time off ID to revert users to the account default. Maximum 100 user IDs per call."
+  assign_time_off(  "Users and time off schedule to assign; maximum 100 user IDs per call"
+input: AssignTimeOffInput!): [AssignTimeOffUserResult!]
+  "Remove explicit time off assignments from multiple users; maximum 100 user IDs per call. Returns one result per user, allowing partial success."
+  unassign_time_off(  "IDs of users to remove time off assignments from; maximum 100 items per call"
+user_ids: [ID!]!): [AssignTimeOffUserResult!]!
   "Add one or more non-working date entries to a time off schedule; maximum 100 inputs per call"
   create_time_off_entry(  "Entries to create; maximum 100 items per call"
 inputs: [CreateTimeOffEntryInput!]!): [TimeOffEntryResult!]
@@ -2114,7 +2245,7 @@ service_user_id: ID!): Boolean
   "Revokes all existing tokens and generates a new API token for a service user."
   regenerate_service_user_token(  "The ID of the service user whose token to regenerate."
 service_user_id: ID!): String
-  "Creates a new service user with a read-only API token."
+  "Creates a new service user."
   create_service_user(  "Display name for the service user."
 name: String!,   "Optional title/description for the service user."
 title: String): CreateServiceUserResult
@@ -2264,6 +2395,10 @@ enum AllowedFileMime {
   IMAGE_WEBP
   "PDF document"
   APPLICATION_PDF
+  "CSV spreadsheet"
+  TEXT_CSV
+  "Excel spreadsheet"
+  APPLICATION_XLSX
 }
 
 "A date."
@@ -2369,6 +2504,177 @@ input WebSearchOptionsInput {
   recencyDays: Int
 }
 
+"Type of entity to extract from text."
+enum AiColumnEntity {
+  "Extract email addresses."
+  email_address
+  "Extract first names."
+  first_name
+  "Extract last names."
+  last_name
+  "Extract phone numbers."
+  phone_number
+  "Extract company names."
+  company_name
+  "Extract domain names."
+  domain_name
+  "Extract URLs."
+  url
+  "Extract dates."
+  date
+  "Extract times."
+  time
+  "Extract years."
+  year
+  "Extract a custom entity defined by custom_instructions."
+  custom
+}
+
+"Optional settings controlling backfill behavior when configuring an AI column."
+input AiColumnExtraSettingsInput {
+  "Whether to immediately apply the AI automation to existing items. Defaults to true."
+  run_backfill: Boolean
+}
+
+"Desired output length relative to the input text."
+enum AiColumnImproverLength {
+  "Keep approximately the same length as input."
+  same
+  "Make the output shorter than the input."
+  shorter
+  "Make the output longer than the input."
+  longer
+}
+
+"Target language for translation."
+enum AiColumnLanguage {
+  "English."
+  english
+  "Spanish."
+  spanish
+  "French."
+  french
+  "German."
+  german
+  "Hebrew."
+  hebrew
+  "Chinese."
+  chinese
+  "Korean."
+  korean
+  "Arabic."
+  arabic
+  "Bengali."
+  bengali
+  "Danish."
+  danish
+  "Dutch."
+  dutch
+  "Hindi."
+  hindi
+  "Indonesian."
+  indonesian
+  "Italian."
+  italian
+  "Japanese."
+  japanese
+  "Norwegian."
+  norwegian
+  "Polish."
+  polish
+  "Portuguese."
+  portuguese
+  "Russian."
+  russian
+  "Swedish."
+  swedish
+  "Thai."
+  thai
+  "Turkish."
+  turkish
+  "Vietnamese."
+  vietnamese
+}
+
+"Approximate desired length of generated text."
+enum AiColumnOutputLength {
+  "Output approximately one sentence."
+  sentence
+  "Output approximately one paragraph."
+  paragraph
+  "Output a brief, concise response."
+  brief
+  "Output a detailed, in-depth response."
+  in_depth
+}
+
+"A group of people available for AI-based assignment."
+input AiColumnPersonGroupInput {
+  "Array of user IDs in this group."
+  user_ids: [Int!]!
+  "Description of this group (e.g., role, team name, or assignment criteria)."
+  description: String!
+}
+
+"Level of text refinement to apply."
+enum AiColumnRefinementLevel {
+  "Apply only minor corrections and improvements."
+  minimal_changes
+  "Restructure and improve while preserving intent."
+  moderate_changes
+  "Substantially rewrite with creative freedom."
+  high_creativity
+}
+
+"The result of removing AI configuration from a column."
+type AiColumnRemoveResult {
+  "The ID of the column that had AI removed."
+  column_id: ID!
+  "Whether the AI configuration was successfully removed."
+  success: Boolean!
+}
+
+"The result of configuring AI on a column."
+type AiColumnResult {
+  "The ID of the column that was configured."
+  column_id: ID!
+}
+
+"The data source for AI column processing."
+enum AiColumnSource {
+  "Use the item name as the AI input source."
+  item_name
+  "Use the item update thread as the AI input source."
+  thread
+  "Use a specific column value as the AI input source."
+  column
+  "Use emails and activities associated with the item as the AI input source."
+  emails_and_activities
+}
+
+"Writing tone/style for AI text generation."
+enum AiColumnTone {
+  "Warm, understanding, and emotionally aware tone."
+  empathic
+  "Persuasive, marketing-oriented tone."
+  promotional
+  "Assertive and authoritative tone."
+  confident
+  "Formal, business-appropriate tone."
+  professional
+  "Conversational, everyday tone."
+  natural
+  "Relaxed, informal tone."
+  casual
+  "Approachable, personable tone."
+  friendly
+  "Preserve the same tone as the input text."
+  same
+}
+
+"A file"
+scalar File
+
 "The type of entity that holds or owns an asset."
 enum AssetHolder {
   "An update/post entity."
@@ -2381,6 +2687,14 @@ enum AssetHolder {
   ACCOUNT
   "A vibe application entity."
   VIBE_APP
+  "A channel entity."
+  CHANNEL
+  "An initiative entity."
+  INITIATIVE
+  "An AI agent knowledge base (brain) entity."
+  AI_AGENT_BRAIN
+  "An AI agent conversation entity."
+  AI_AGENT_CONVERSATION
 }
 
 "The result of a completed file upload, representing the created asset."
@@ -2438,9 +2752,6 @@ type CreateUploadResult {
   "The timestamp when the upload session expires."
   expires_at: Date
 }
-
-"A file"
-scalar File
 
 "Information about the entity that holds or owns an asset."
 input HolderInfoInput {
@@ -3587,6 +3898,8 @@ type BlockEvent {
   current_iteration: Int
   "Total number of iterations configured for the loop"
   max_iterations: Int
+  "Whether the block was executed as part of a test run"
+  is_test_run: Boolean
 }
 
 "A page of block events"
@@ -3675,6 +3988,8 @@ type TriggerEvent {
   hostInstanceId: String
   "Original creator feature reference ID"
   creatorAppFeatureReferenceId: String
+  "Whether the trigger was fired as part of a test run"
+  is_test_run: Boolean
 }
 
 "Filters for querying trigger events"
@@ -6442,6 +6757,12 @@ type VideoContent implements DocBaseBlockContent {
   width: Int
 }
 
+"Reference to a started async board export. Use the job_id with fetch_export_job_status to poll until COMPLETED or FAILED."
+type ExportAsyncJob {
+  "Opaque identifier for this export job. Pass to fetch_export_job_status."
+  job_id: ID
+}
+
 "Result of a board export operation"
 type ExportBoardResult {
   "URL to download the exported Excel file"
@@ -6450,12 +6771,50 @@ type ExportBoardResult {
   expires_at: String
 }
 
+"Structured reason an async export job failed."
+enum ExportFailureReason {
+  "The board is deleted or archived."
+  BOARD_UNAVAILABLE
+  "The caller lost permission to read the board."
+  BOARD_INACCESSIBLE
+  "The board has more items than the export limit allows."
+  ITEM_LIMIT_EXCEEDED
+  "The request was rejected during validation (e.g. unsupported CSV options)."
+  INVALID_REQUEST
+  "The board or a referenced resource could not be found."
+  NOT_FOUND
+  "An unexpected internal error occurred. Retry the mutation."
+  INTERNAL_ERROR
+}
+
 "Output format for the exported board file."
 enum ExportFormat {
   "Excel spreadsheet format (.xlsx)."
   XLSX
   "CSV formatted for round-trip import into mdb-data (cells encoded via @mondaydotcomorg/data-board-columns codecs)."
   CSV
+}
+
+"Lifecycle status of an async board export job. Polling clients should treat COMPLETED and FAILED as terminal."
+enum ExportJobStatus {
+  "The export is in progress."
+  RUNNING
+  "The export finished successfully. download_url will be populated."
+  COMPLETED
+  "The export failed. failure_reason and (when available) failure_message will be populated."
+  FAILED
+}
+
+"Status of an async board export job, including download URL when completed."
+type ExportJobStatusInfo {
+  "Current job status. Terminal values: COMPLETED, FAILED."
+  status: ExportJobStatus
+  "Presigned S3 download URL, available only when status is COMPLETED and the export completed within the last hour. Returns null after 1 hour — re-trigger the export to get a new one."
+  download_url: String
+  "Structured reason for failure. Populated only when status is FAILED."
+  failure_reason: ExportFailureReason
+  "Human-readable error detail. Populated only when status is FAILED and the reason exposes safe text."
+  failure_message: String
 }
 
 "Options for board export"
@@ -6498,6 +6857,14 @@ type ClaudeProviderData {
   vaults: [ProviderResource!]
 }
 
+"Connect input for a custom external agent reachable via callback URL"
+input ConnectCustomAgentInput {
+  "The display name for the connected agent"
+  name: String!
+  "The HTTPS callback URL the platform invokes for agent events"
+  callback_url: String!
+}
+
 "Input for connecting an external agent via BYOA (Bring Your Own Agent)"
 input ConnectExternalAgentInput {
   "The type of external provider (e.g. CLAUDE_MANAGED_AGENT, CUSTOM_AGENT)"
@@ -6524,6 +6891,24 @@ type ConnectExternalAgentPayload {
   status: String
 }
 
+"Result of a synchronous external-agent connect. agent_id is always present; signing_secret, api_token, and instructions are populated only for custom agents."
+type ConnectExternalAgentResult {
+  "The internal monday-agents agent ID"
+  agent_id: ID
+  "Custom-agent only — secret used to sign callback requests. Never logged."
+  signing_secret: String
+  "Custom-agent only — API token for the agent to call back into monday. Never logged."
+  api_token: String
+  "Custom-agent only — setup instructions for the integrator. Never logged."
+  instructions: String
+}
+
+"Wrapper input for the synchronous connect mutation. Currently supports custom agents only."
+input ConnectExternalAgentSyncInput {
+  "Connect a custom agent."
+  custom: ConnectCustomAgentInput
+}
+
 "Payload returned after disconnecting an external agent"
 type DisconnectExternalAgentPayload {
   "Whether the disconnection was successful"
@@ -6536,6 +6921,8 @@ enum ExternalProvider {
   CLAUDE_MANAGED_AGENT
   "A custom agent with a user-provided callback URL"
   CUSTOM_AGENT
+  "An OpenAI assistant"
+  OPENAI
 }
 
 "Provider-specific data, use inline fragments to access fields per provider type"
@@ -6833,6 +7220,32 @@ type UserContextResponse {
   account: AccountContext
 }
 
+"Input for updating an existing widgets surface via LLM regeneration."
+input UpdateWidgetsSurfaceInput {
+  "Natural-language instruction describing the desired changes to the widgets surface."
+  prompt: String!
+  "Metadata associated with the update request."
+  metadata: JSON
+  "JSON Schema (JSONSchema7 format) used as the data structure source for widget generation. If omitted, the previously persisted data_structure is used."
+  data_structure: JSON
+  "Optional sample data for the data source, used to guide generation."
+  data_sample: JSON
+}
+
+"A generated AI widgets surface containing A2UI component definitions."
+type WidgetsSurface {
+  "The unique identifier of the widgets surface."
+  id: ID
+  "The current version number, incremented on each update."
+  version: Int
+  "The jazz-widgets catalog version used for generation."
+  catalog_version: String
+  "The generated A2UI JSON string defining the widget layout."
+  structure: String
+  "The JSON Schema used as the data structure for widgets surface generation."
+  data_structure: JSON
+}
+
 "A page of automations with cursor for pagination"
 type AutomationsPage {
   "Opaque cursor for fetching the next page. Null if no more results."
@@ -6941,6 +7354,10 @@ enum CampaignsAnalyticsEventKind {
   EMAIL_RECIPIENT_COMPLAINT
   "Recipient unsubscribed"
   EMAIL_RECIPIENT_UNSUBSCRIBED
+  "email_recipient_group_unsubscribed"
+  EMAIL_RECIPIENT_GROUP_UNSUBSCRIBED
+  "email_recipient_group_resubscribed"
+  EMAIL_RECIPIENT_GROUP_RESUBSCRIBED
   "Email was dropped before sending"
   EMAIL_DROPPED
   "Email was opened by recipient"
@@ -7119,6 +7536,8 @@ type CampaignsEmailCampaign {
   scheduled_time: Date
   "IDs of segments targeted by this campaign"
   segment_ids: [ID!]
+  "URL of the campaign email template preview image"
+  preview_image: String
   "HTML content of the email template"
   template_html: String
 }
@@ -7237,6 +7656,22 @@ type CampaignsSettings {
   unsubscribe_footer: CampaignsUnsubscribeFooter
   "Marketing contacts board configuration"
   contacts_board: CampaignsContactsBoard
+}
+
+"Fields available for sorting campaigns"
+enum CampaignsSortField {
+  "Sort by campaign name"
+  NAME
+  "Sort by creation date"
+  CREATED_AT
+}
+
+"Sort direction"
+enum CampaignsSortOrder {
+  "Ascending order"
+  ASC
+  "Descending order"
+  DESC
 }
 
 "Status of a campaign"
@@ -7703,36 +8138,6 @@ type UploadJobInit {
   upload_url: String
 }
 
-"An AI agent on the monday.com platform"
-type CustomAgent {
-  "The unique identifier of the agent"
-  id: ID!
-  "The kind of agent (personal, account-level, or external)"
-  kind: AgentKind
-  "The current state of the agent"
-  state: AgentState
-  "The agent profile with name, role, and avatar"
-  profile: CustomAgentProfile
-  "The goal or objective of the agent"
-  goal: String
-  "The execution plan in markdown format, describing the agent capabilities and operating principles"
-  plan: String
-  "The LLM model the agent uses"
-  agent_model: AgentModel
-  "Reference IDs of skills attached to this agent. Use agent_skills_catalog to resolve full name and description."
-  skill_ids: [ID!]!
-  "The original user prompt used to create the agent"
-  user_prompt: String
-  "The current configuration version of the agent. Increments on each update."
-  version_id: ID!
-  "Knowledge files attached to the agent. Only populated on create mutation responses."
-  knowledge: [AgentKnowledgeEntry!]
-  "The timestamp when the agent was created. Null on create mutation responses — use the agent query to fetch it."
-  created_at: Date
-  "The timestamp when the agent was last updated. Null on create mutation responses — use the agent query to fetch it."
-  updated_at: Date
-}
-
 "A trigger currently attached to an agent"
 type AgentActiveTrigger {
   "Stable identifier of this trigger instance — use this as node_id when calling remove_trigger_from_agent"
@@ -7817,24 +8222,12 @@ enum AgentModel {
   CLAUDE_SONNET_4_6
   "Claude Opus 4.7 (claude-opus-4-7)"
   CLAUDE_OPUS_4_7
+  "Claude Fable 5 (claude-fable-5)"
+  CLAUDE_FABLE_5
   "GPT 5.2"
   GPT_5_2
   "Gemini 2.5 Flash"
   GEMINI_2_5_FLASH
-}
-
-"Visual and role identity of an agent."
-type CustomAgentProfile {
-  "The display name of the agent"
-  name: String
-  "The role assigned to the agent"
-  role: String
-  "A description of the agent role"
-  role_description: String
-  "URL of the agent avatar image"
-  avatar_url: String
-  "Background color for the agent card"
-  background_color: String
 }
 
 "A skill available for agents to use — browse the catalog, then attach by id."
@@ -7889,6 +8282,8 @@ input CreateAgentInput {
   agent_model: String
   "IDs of previously uploaded pending files to attach as knowledge during creation"
   pending_file_ids: [ID!]
+  "Open-vocabulary placement string recorded for analytics (e.g. start_from_scratch, mcp_public). Defaults to unknown when omitted."
+  creation_source: String
 }
 
 "Input for creating a blank AI agent without AI generation"
@@ -7907,6 +8302,52 @@ input CreateBlankAgentInput {
   background_color: String
   "Stored as metadata on the agent. Not used for AI generation — use create_agent if you want AI to build the agent from a prompt."
   user_prompt: String
+  "Open-vocabulary placement string recorded for analytics (e.g. start_from_scratch, mcp_public). Defaults to unknown when omitted."
+  creation_source: String
+}
+
+"An AI agent on the monday.com platform"
+type CustomAgent {
+  "The unique identifier of the agent"
+  id: ID!
+  "The kind of agent (personal, account-level, or external)"
+  kind: AgentKind
+  "The current state of the agent"
+  state: AgentState
+  "The agent profile with name, role, and avatar"
+  profile: CustomAgentProfile
+  "The goal or objective of the agent"
+  goal: String
+  "The execution plan in markdown format, describing the agent capabilities and operating principles"
+  plan: String
+  "The LLM model the agent uses"
+  agent_model: AgentModel
+  "Reference IDs of skills attached to this agent. Use agent_skills_catalog to resolve full name and description."
+  skill_ids: [ID!]!
+  "The original user prompt used to create the agent"
+  user_prompt: String
+  "The current configuration version of the agent. Increments on each update."
+  version_id: ID!
+  "Knowledge files attached to the agent. Only populated on create mutation responses."
+  knowledge: [AgentKnowledgeEntry!]
+  "The timestamp when the agent was created. Null on create mutation responses — use the agent query to fetch it."
+  created_at: Date
+  "The timestamp when the agent was last updated. Null on create mutation responses — use the agent query to fetch it."
+  updated_at: Date
+}
+
+"Visual and role identity of an agent."
+type CustomAgentProfile {
+  "The display name of the agent"
+  name: String
+  "The role assigned to the agent"
+  role: String
+  "A description of the agent role"
+  role_description: String
+  "URL of the agent avatar image"
+  avatar_url: String
+  "Background color for the agent card"
+  background_color: String
 }
 
 "The reason an agent is inactive"
@@ -8708,6 +9149,14 @@ enum BoardHierarchy {
   classic
   "multilevel of items"
   multi_level
+}
+
+"Maps a source board ID to the newly created board ID produced by a template installation."
+type BoardIdMapping {
+  "The newly created board ID."
+  created_board_id: ID!
+  "The source (template) board ID."
+  source_board_id: ID!
 }
 
 "The board kinds available."
@@ -10105,6 +10554,8 @@ page: Int): [User]
   name: String!
   "Whether the team is a guest team"
   is_guest: Boolean
+  "The team's creation date as an ISO 8601 string."
+  created_at: String
 }
 
 type TeamValue implements ColumnValue {
@@ -10129,6 +10580,40 @@ type TeamValue implements ColumnValue {
 type Template {
   "The template process unique identifier for async operations."
   process_id: String
+}
+
+"Lifecycle status of a template installation async operation."
+enum TemplateInstallationStatus {
+  "All boards fully ready."
+  COMPLETE
+  "Duplication failed. Any partial boards were rolled back."
+  FAILED
+  "Boards being created."
+  IN_PROGRESS
+  "Job queued, not yet started."
+  PENDING
+}
+
+"Status of a template installation async operation."
+type TemplateInstallationStatusResult {
+  """
+  Board IDs are populated incrementally during the metadata phase as each board
+  is created, and complete by the time per-board content jobs start. Boards
+  exist as empty shells (no items, broken mirror columns, no automations) until
+  status is COMPLETE. Safe to store these IDs early, but do not read or write
+  board content until COMPLETE.
+  """
+  board_ids: [ID!]!
+  "Mapping of each source (template) board ID to the newly created board ID."
+  board_ids_map: [BoardIdMapping!]!
+  "True iff status is COMPLETE."
+  is_complete: Boolean!
+  "True iff status is FAILED."
+  is_failed: Boolean!
+  "The process_id returned by use_template."
+  process_id: ID!
+  "Lifecycle status (PENDING / IN_PROGRESS / COMPLETE / FAILED)."
+  status: TemplateInstallationStatus!
 }
 
 type TextValue implements ColumnValue {
@@ -11089,6 +11574,8 @@ type CreatePortfolioResult {
   success: Boolean
   "A message describing the result of the operation."
   message: String
+  "Unique process ID for tracking this request. Included in the callback payload when the operation completes."
+  process_id: ID
 }
 
 "Result of validating projects and portfolios for connection compatibility."
@@ -12013,14 +12500,18 @@ input AggregateHistoryFilterRuleInput {
 enum AggregateHistoryFromElement {
   "Query historical snapshots of board/table data at specific dates."
   TABLE
+  "Query historical snapshots across multiple boards via unified sub-queries."
+  UNION
 }
 
-"The source table and its ID for the aggregate history query."
+"The source for the aggregate history query (single board or union of boards)."
 input AggregateHistoryFromInput {
-  "The source type. Must be TABLE for historical queries."
+  "The source type: TABLE for a single board, UNION for cross-board queries."
   type: AggregateHistoryFromElement!
-  "The unique identifier of the source board."
-  id: ID!
+  "The board ID. Required when type is TABLE."
+  id: ID
+  "Union sub-queries. Required when type is UNION."
+  union: AggregateHistoryUnionInput
 }
 
 "The aggregation function to apply."
@@ -12149,6 +12640,8 @@ type AggregateHistoryResultEntry {
 type AggregateHistoryResultSet {
   "Array of results, one for each date specified in at_timestamps."
   results: [AggregateHistoryDateResult!]
+  "Boards that contributed to the merged results. Populated for union queries; empty for single-board TABLE queries."
+  source_boards: [SourceBoardInfo!]
 }
 
 "The value of an aggregate result entry. Can be an aggregation result or a group-by key."
@@ -12168,7 +12661,7 @@ input AggregateHistorySelectFunctionInput {
   params: [AggregateHistorySelectInput!]
 }
 
-"Specifies a field or function to include in the aggregation results."
+"Specifies a field or function to include in the aggregation results. For union queries, sub-queries may use any function; top-level select is restricted to mergeable functions at validation time."
 input AggregateHistorySelectInput {
   "The type of selection: COLUMN for direct column values, FUNCTION for aggregations."
   type: AggregateHistorySelectKind!
@@ -12194,6 +12687,36 @@ enum AggregateHistorySortDirection {
   ASC
   "Sort in descending order (Z-A, 9-0)."
   DESC
+}
+
+"Table source type for union sub-queries."
+enum AggregateHistoryTableFromElement {
+  "Single board table source."
+  TABLE
+}
+
+"A single-board table source for union sub-queries."
+input AggregateHistoryTableFromInput {
+  "Must be TABLE."
+  type: AggregateHistoryTableFromElement!
+  "The unique identifier of the source board."
+  id: ID!
+}
+
+"Union of per-board sub-queries for cross-board aggregate history."
+input AggregateHistoryUnionInput {
+  "One sub-query per board. All sub-queries must produce matching select aliases."
+  queries: [AggregateHistoryUnionQueryInput!]!
+}
+
+"A per-board sub-query within a union aggregate history query (board schema + column aliases only)."
+input AggregateHistoryUnionQueryInput {
+  "The board source. Must be type TABLE."
+  from: AggregateHistoryTableFromInput!
+  "Per-board select elements with unified aliases across sub-queries. Supports the full aggregate function set."
+  select: [AggregateHistorySelectInput!]!
+  "Maximum results per board before cross-board merge."
+  limit: Int
 }
 
 "The raw value of a column for a historical item."
@@ -12427,6 +12950,12 @@ enum ItemsHistorySortDirection {
   DESC
 }
 
+"Metadata for a board that contributed results to a union aggregate query."
+type SourceBoardInfo {
+  "The board ID that contributed to the merged result."
+  board_id: ID
+}
+
 "The account-level default work schedule and time off schedule"
 type AccountAvailabilityDefaults {
   "The account-level default work schedule"
@@ -12563,6 +13092,24 @@ input AllocationUpdateInput {
   resource_id: ID
 }
 
+"Input for assigning a time off schedule to multiple users"
+input AssignTimeOffInput {
+  "IDs of the users to assign the time off schedule to; maximum 100 per call"
+  user_ids: [ID!]!
+  "ID of the time off schedule to assign; pass the account default time off ID to revert the user to the account default"
+  time_off_id: ID!
+}
+
+"Result of a time off assignment for a single user. Batch mutations return one of these per requested user, allowing partial success."
+type AssignTimeOffUserResult {
+  "ID of the user this result applies to"
+  user_id: ID!
+  "Whether the operation succeeded"
+  success: Boolean!
+  "Structured error details, null if the operation succeeded"
+  error: Error
+}
+
 "Input for assigning a work schedule and/or time off schedule to multiple users"
 input AssignUserAvailabilityInput {
   "IDs of the users to assign schedules to"
@@ -12571,6 +13118,24 @@ input AssignUserAvailabilityInput {
   work_schedule_id: ID
   "ID of the time off schedule to assign; omit to leave unchanged"
   time_off_id: ID
+}
+
+"Input for assigning a work schedule to multiple users"
+input AssignWorkScheduleInput {
+  "IDs of the users to assign the work schedule to; maximum 100 per call"
+  user_ids: [ID!]!
+  "ID of the work schedule to assign; pass the account default schedule ID to revert the user to the account default"
+  work_schedule_id: ID!
+}
+
+"Result of a work schedule assignment for a single user. Batch mutations return one of these per requested user, allowing partial success."
+type AssignWorkScheduleUserResult {
+  "ID of the user this result applies to"
+  user_id: ID!
+  "Whether the operation succeeded"
+  success: Boolean!
+  "Structured error details, null if the operation succeeded"
+  error: Error
 }
 
 "Represents a single attribute type option for a resource"
@@ -12587,8 +13152,8 @@ type Attribute {
 input CreateTimeOffEntryInput {
   "ID of the time off schedule to add this entry to"
   time_off_id: ID!
-  "Optional display name for this time off entry"
-  name: String
+  "Display name for this time off entry"
+  name: String!
   "Start date of the non-working period in YYYY-MM-DD format"
   start: String!
   "End date of the non-working period in YYYY-MM-DD format"
@@ -12797,8 +13362,8 @@ type TimeOffEntry {
   id: ID!
   "ID of the time off schedule this entry belongs to"
   time_off_id: ID!
-  "Optional display name for this time off entry"
-  name: String
+  "Display name for this time off entry"
+  name: String!
   "Start date of the non-working period in YYYY-MM-DD format"
   start: String!
   "End date of the non-working period in YYYY-MM-DD format"
@@ -12813,7 +13378,7 @@ type TimeOffEntry {
 
 "Result of a time off entry delete operation"
 type TimeOffEntryDeleteResult {
-  "ID of the deleted time off entry, null if the operation failed"
+  "ID of the deleted time off entry, null only if an internal error prevented identification"
   id: ID
   "Whether the operation succeeded"
   success: Boolean!
@@ -12913,30 +13478,38 @@ input UpdateWorkScheduleInput {
   days: [WorkScheduleDayInput!]
 }
 
-"A user's assigned work schedule and time off schedule"
-type UserAvailability {
+"A user's assigned work schedule and time off schedule IDs"
+type UserAssignment {
   "ID of the user"
   user_id: ID!
-  "The work schedule assigned to this user, null if using account default"
-  work_schedule: WorkSchedule
-  "The time off schedules assigned to this user"
-  time_offs: [TimeOff!]!
+  "ID of the work schedule assigned to this user"
+  work_schedule_id: ID!
+  "ID of the time off schedule assigned to this user"
+  time_off_id: ID!
 }
 
 "Result of a single user availability assignment. Batch assign/unassign mutations return one of these per requested user, allowing partial success — successful entries have user_availability populated and success=true; failed entries have user_availability=null, success=false, and a populated error."
 type UserAvailabilityResult {
   "The updated user availability, null if the operation failed for this user"
-  user_availability: UserAvailability
+  user_availability: UserAssignment
   "Whether the operation succeeded"
   success: Boolean!
   "Structured error details, null if the operation succeeded"
   error: Error
 }
 
-"List of user availability assignments"
+"Users availability with per-user references and top-level schedule/time-off data"
 type UsersAvailability {
-  "User availability assignments"
-  users_availability: [UserAvailability!]!
+  "Per-user availability references"
+  users_assignment: [UserAssignment!]!
+  "All work schedules referenced by users_assignment entries"
+  work_schedules: [WorkSchedule!]!
+  "All time off schedules referenced by users_assignment entries"
+  time_offs: [TimeOff!]!
+  "ID of the account-level default work schedule"
+  default_work_schedule_id: ID!
+  "ID of the account-level default time off schedule"
+  default_time_off_id: ID!
 }
 
 "Day of the week"
@@ -13071,10 +13644,26 @@ type PortfolioNoConnectedProjects {
   has_no_connected_projects: Boolean
 }
 
+"A resource belonging to a portfolio, with name resolved from the resource directory."
+type PortfolioResource {
+  "The resource ID."
+  id: ID
+  "The resource name."
+  name: String
+}
+
 "Input for fetching the list of resource IDs belonging to a portfolio."
 input PortfolioResourcesInput {
   "The portfolio ID to fetch resources for."
   portfolio_id: ID!
+}
+
+"Input for searching resources within a portfolio by name."
+input PortfolioResourcesSearchInput {
+  "The portfolio ID to scope the search to."
+  portfolio_id: ID!
+  "Resource name search term. Length: 1-100 chars."
+  search_term: String!
 }
 
 "Portfolio utilization report result: utilization data (grouped or ungrouped) or a signal that no projects are connected."
@@ -13358,6 +13947,24 @@ type SearchIndexedItem {
   workspace_id: ID
 }
 
+"Update data stored in the search index."
+type SearchIndexedUpdate {
+  "Update ID."
+  id: ID!
+  "Update content (HTML formatted)."
+  body: String!
+  "ID of the user who created the update."
+  creator_id: ID!
+  "ID of the item this update belongs to."
+  item_id: ID!
+  "ID of the board containing this update."
+  board_id: ID!
+  "ISO timestamp when the update was created."
+  created_at: String!
+  "ISO timestamp when the update was last modified."
+  updated_at: String!
+}
+
 "Workspace data stored in the search index."
 type SearchIndexedWorkspace {
   "Workspace ID."
@@ -13413,6 +14020,14 @@ limit: Int = 10,   "Date range filter."
 date_range: CrossEntityDateRangeInput,   "Controls the trade-off between search quality and response time. Defaults to balanced."
 strategy: SearchStrategy,   "Filter documents to specific workspace IDs."
 workspace_ids: [ID!]): SearchDocResults!
+  "Search for updates."
+  updates(  "The search query string."
+query: String!,   "Maximum number of results to return (default 10, max 20)."
+limit: Int = 10,   "Date range filter."
+date_range: CrossEntityDateRangeInput,   "Controls the trade-off between search quality and response time. Defaults to balanced."
+strategy: SearchStrategy,   "Filter updates to specific board IDs."
+board_ids: [ID!],   "Filter updates to those authored by specific creator (user) IDs."
+creator_ids: [ID!]): SearchUpdateResults!
   "Search for workspaces."
   workspaces(  "The search query string."
 query: String!,   "Maximum number of results to return (default 10, max 20)."
@@ -13433,12 +14048,30 @@ enum SearchStrategy {
   QUALITY
 }
 
+"A single update search result with indexed and live data."
+type SearchUpdateResult {
+  "Unique identifier of the update."
+  id: ID!
+  "Update data from the search index."
+  indexed_data: SearchIndexedUpdate!
+  "Live update data via federation. Null when the referenced update cannot be resolved by the owning subgraph (e.g. deleted, not accessible to the caller, or indexing lag)."
+  live_data: Update
+}
+
+"Wrapper for a list of update search results."
+type SearchUpdateResults {
+  "List of update search results."
+  results: [SearchUpdateResult!]!
+}
+
 "A single workspace search result."
 type SearchWorkspaceResult {
   "Unique identifier of the workspace."
   id: ID!
   "Workspace data from the search index."
   indexed_data: SearchIndexedWorkspace!
+  "Live workspace data via federation. Null when the referenced workspace cannot be resolved by the owning subgraph (e.g. deleted, not accessible to the caller, or indexing lag)."
+  live_data: Workspace
 }
 
 "Wrapper for a list of workspace search results."
@@ -13886,8 +14519,6 @@ enum BaseRoleName {
 type CreateServiceUserResult {
   "The created service user."
   user: User
-  "The API token for the created service user. Null if token generation failed."
-  token: String
 }
 
 "Attributes of the team to be created."
@@ -14222,8 +14853,14 @@ enum UserKindFilter {
   PERSONAL_AGENT_MEMBER
   "A agent signup user user."
   AGENT_SIGNUP_USER
+  "A external agent member user."
+  EXTERNAL_AGENT_MEMBER
+  "A external agent detached member user."
+  EXTERNAL_AGENT_DETACHED_MEMBER
   "A service user user."
   SERVICE_USER
+  "A vibe user user."
+  VIBE_USER
   "A portal user."
   PORTAL
   "A portfolio api user user."
@@ -14254,7 +14891,7 @@ enum UserKindFilter {
   DEPENDENCIES_API_USER
   "A historical tracking backfill api user user."
   HISTORICAL_TRACKING_BACKFILL_API_USER
-  "A group representing admin, member, guest, view-only, and agent member users."
+  "A group representing admin, member, guest, view-only, agent member, service, and vibe users."
   BASIC
 }
 

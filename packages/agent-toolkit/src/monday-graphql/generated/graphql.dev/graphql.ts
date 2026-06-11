@@ -344,6 +344,8 @@ export type AgentKnowledgeResource = {
 
 /** Supported LLM models for an agent */
 export enum AgentModel {
+  /** Claude Fable 5 (claude-fable-5) */
+  ClaudeFable_5 = 'CLAUDE_FABLE_5',
   /** Claude Opus 4.7 (claude-opus-4-7) */
   ClaudeOpus_4_7 = 'CLAUDE_OPUS_4_7',
   /** Claude Sonnet 4.6 (claude-sonnet-4-6) */
@@ -493,15 +495,19 @@ export type AggregateHistoryFilterRuleInput = {
 /** The source type for the aggregate history query. */
 export enum AggregateHistoryFromElement {
   /** Query historical snapshots of board/table data at specific dates. */
-  Table = 'TABLE'
+  Table = 'TABLE',
+  /** Query historical snapshots across multiple boards via unified sub-queries. */
+  Union = 'UNION'
 }
 
-/** The source table and its ID for the aggregate history query. */
+/** The source for the aggregate history query (single board or union of boards). */
 export type AggregateHistoryFromInput = {
-  /** The unique identifier of the source board. */
-  id: Scalars['ID']['input'];
-  /** The source type. Must be TABLE for historical queries. */
+  /** The board ID. Required when type is TABLE. */
+  id?: InputMaybe<Scalars['ID']['input']>;
+  /** The source type: TABLE for a single board, UNION for cross-board queries. */
   type: AggregateHistoryFromElement;
+  /** Union sub-queries. Required when type is UNION. */
+  union?: InputMaybe<AggregateHistoryUnionInput>;
 };
 
 /** The aggregation function to apply. */
@@ -633,6 +639,8 @@ export type AggregateHistoryResultSet = {
   __typename?: 'AggregateHistoryResultSet';
   /** Array of results, one for each date specified in at_timestamps. */
   results?: Maybe<Array<AggregateHistoryDateResult>>;
+  /** Boards that contributed to the merged results. Populated for union queries; empty for single-board TABLE queries. */
+  source_boards?: Maybe<Array<SourceBoardInfo>>;
 };
 
 /** The value of an aggregate result entry. Can be an aggregation result or a group-by key. */
@@ -652,7 +660,7 @@ export type AggregateHistorySelectFunctionInput = {
   params?: InputMaybe<Array<AggregateHistorySelectInput>>;
 };
 
-/** Specifies a field or function to include in the aggregation results. */
+/** Specifies a field or function to include in the aggregation results. For union queries, sub-queries may use any function; top-level select is restricted to mergeable functions at validation time. */
 export type AggregateHistorySelectInput = {
   /** The alias for this field in the result set. */
   as: Scalars['String']['input'];
@@ -679,6 +687,36 @@ export enum AggregateHistorySortDirection {
   /** Sort in descending order (Z-A, 9-0). */
   Desc = 'DESC'
 }
+
+/** Table source type for union sub-queries. */
+export enum AggregateHistoryTableFromElement {
+  /** Single board table source. */
+  Table = 'TABLE'
+}
+
+/** A single-board table source for union sub-queries. */
+export type AggregateHistoryTableFromInput = {
+  /** The unique identifier of the source board. */
+  id: Scalars['ID']['input'];
+  /** Must be TABLE. */
+  type: AggregateHistoryTableFromElement;
+};
+
+/** Union of per-board sub-queries for cross-board aggregate history. */
+export type AggregateHistoryUnionInput = {
+  /** One sub-query per board. All sub-queries must produce matching select aliases. */
+  queries: Array<AggregateHistoryUnionQueryInput>;
+};
+
+/** A per-board sub-query within a union aggregate history query (board schema + column aliases only). */
+export type AggregateHistoryUnionQueryInput = {
+  /** The board source. Must be type TABLE. */
+  from: AggregateHistoryTableFromInput;
+  /** Maximum results per board before cross-board merge. */
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  /** Per-board select elements with unified aliases across sub-queries. Supports the full aggregate function set. */
+  select: Array<AggregateHistorySelectInput>;
+};
 
 export type AggregateQueryInput = {
   /** Source to select from (table or data view) */
@@ -834,6 +872,176 @@ export type AiActionResponse = {
   usage?: Maybe<TokenUsage>;
 };
 
+/** Type of entity to extract from text. */
+export enum AiColumnEntity {
+  /** Extract company names. */
+  CompanyName = 'company_name',
+  /** Extract a custom entity defined by custom_instructions. */
+  Custom = 'custom',
+  /** Extract dates. */
+  Date = 'date',
+  /** Extract domain names. */
+  DomainName = 'domain_name',
+  /** Extract email addresses. */
+  EmailAddress = 'email_address',
+  /** Extract first names. */
+  FirstName = 'first_name',
+  /** Extract last names. */
+  LastName = 'last_name',
+  /** Extract phone numbers. */
+  PhoneNumber = 'phone_number',
+  /** Extract times. */
+  Time = 'time',
+  /** Extract URLs. */
+  Url = 'url',
+  /** Extract years. */
+  Year = 'year'
+}
+
+/** Optional settings controlling backfill behavior when configuring an AI column. */
+export type AiColumnExtraSettingsInput = {
+  /** Whether to immediately apply the AI automation to existing items. Defaults to true. */
+  run_backfill?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+/** Desired output length relative to the input text. */
+export enum AiColumnImproverLength {
+  /** Make the output longer than the input. */
+  Longer = 'longer',
+  /** Keep approximately the same length as input. */
+  Same = 'same',
+  /** Make the output shorter than the input. */
+  Shorter = 'shorter'
+}
+
+/** Target language for translation. */
+export enum AiColumnLanguage {
+  /** Arabic. */
+  Arabic = 'arabic',
+  /** Bengali. */
+  Bengali = 'bengali',
+  /** Chinese. */
+  Chinese = 'chinese',
+  /** Danish. */
+  Danish = 'danish',
+  /** Dutch. */
+  Dutch = 'dutch',
+  /** English. */
+  English = 'english',
+  /** French. */
+  French = 'french',
+  /** German. */
+  German = 'german',
+  /** Hebrew. */
+  Hebrew = 'hebrew',
+  /** Hindi. */
+  Hindi = 'hindi',
+  /** Indonesian. */
+  Indonesian = 'indonesian',
+  /** Italian. */
+  Italian = 'italian',
+  /** Japanese. */
+  Japanese = 'japanese',
+  /** Korean. */
+  Korean = 'korean',
+  /** Norwegian. */
+  Norwegian = 'norwegian',
+  /** Polish. */
+  Polish = 'polish',
+  /** Portuguese. */
+  Portuguese = 'portuguese',
+  /** Russian. */
+  Russian = 'russian',
+  /** Spanish. */
+  Spanish = 'spanish',
+  /** Swedish. */
+  Swedish = 'swedish',
+  /** Thai. */
+  Thai = 'thai',
+  /** Turkish. */
+  Turkish = 'turkish',
+  /** Vietnamese. */
+  Vietnamese = 'vietnamese'
+}
+
+/** Approximate desired length of generated text. */
+export enum AiColumnOutputLength {
+  /** Output a brief, concise response. */
+  Brief = 'brief',
+  /** Output a detailed, in-depth response. */
+  InDepth = 'in_depth',
+  /** Output approximately one paragraph. */
+  Paragraph = 'paragraph',
+  /** Output approximately one sentence. */
+  Sentence = 'sentence'
+}
+
+/** A group of people available for AI-based assignment. */
+export type AiColumnPersonGroupInput = {
+  /** Description of this group (e.g., role, team name, or assignment criteria). */
+  description: Scalars['String']['input'];
+  /** Array of user IDs in this group. */
+  user_ids: Array<Scalars['Int']['input']>;
+};
+
+/** Level of text refinement to apply. */
+export enum AiColumnRefinementLevel {
+  /** Substantially rewrite with creative freedom. */
+  HighCreativity = 'high_creativity',
+  /** Apply only minor corrections and improvements. */
+  MinimalChanges = 'minimal_changes',
+  /** Restructure and improve while preserving intent. */
+  ModerateChanges = 'moderate_changes'
+}
+
+/** The result of removing AI configuration from a column. */
+export type AiColumnRemoveResult = {
+  __typename?: 'AiColumnRemoveResult';
+  /** The ID of the column that had AI removed. */
+  column_id: Scalars['ID']['output'];
+  /** Whether the AI configuration was successfully removed. */
+  success: Scalars['Boolean']['output'];
+};
+
+/** The result of configuring AI on a column. */
+export type AiColumnResult = {
+  __typename?: 'AiColumnResult';
+  /** The ID of the column that was configured. */
+  column_id: Scalars['ID']['output'];
+};
+
+/** The data source for AI column processing. */
+export enum AiColumnSource {
+  /** Use a specific column value as the AI input source. */
+  Column = 'column',
+  /** Use emails and activities associated with the item as the AI input source. */
+  EmailsAndActivities = 'emails_and_activities',
+  /** Use the item name as the AI input source. */
+  ItemName = 'item_name',
+  /** Use the item update thread as the AI input source. */
+  Thread = 'thread'
+}
+
+/** Writing tone/style for AI text generation. */
+export enum AiColumnTone {
+  /** Relaxed, informal tone. */
+  Casual = 'casual',
+  /** Assertive and authoritative tone. */
+  Confident = 'confident',
+  /** Warm, understanding, and emotionally aware tone. */
+  Empathic = 'empathic',
+  /** Approachable, personable tone. */
+  Friendly = 'friendly',
+  /** Conversational, everyday tone. */
+  Natural = 'natural',
+  /** Formal, business-appropriate tone. */
+  Professional = 'professional',
+  /** Persuasive, marketing-oriented tone. */
+  Promotional = 'promotional',
+  /** Preserve the same tone as the input text. */
+  Same = 'same'
+}
+
 /** Response from document AI extraction request */
 export type AiDocumentActionResponse = {
   __typename?: 'AiDocumentActionResponse';
@@ -968,6 +1176,8 @@ export type AllocationUpdateInput = {
 export enum AllowedFileMime {
   /** PDF document */
   ApplicationPdf = 'APPLICATION_PDF',
+  /** Excel spreadsheet */
+  ApplicationXlsx = 'APPLICATION_XLSX',
   /** GIF image */
   ImageGif = 'IMAGE_GIF',
   /** JPEG image */
@@ -975,7 +1185,9 @@ export enum AllowedFileMime {
   /** PNG image */
   ImagePng = 'IMAGE_PNG',
   /** WebP image */
-  ImageWebp = 'IMAGE_WEBP'
+  ImageWebp = 'IMAGE_WEBP',
+  /** CSV spreadsheet */
+  TextCsv = 'TEXT_CSV'
 }
 
 /** Response object for app deletion operations */
@@ -1508,6 +1720,14 @@ export type Asset = {
 export enum AssetHolder {
   /** An account entity. */
   Account = 'ACCOUNT',
+  /** An AI agent knowledge base (brain) entity. */
+  AiAgentBrain = 'AI_AGENT_BRAIN',
+  /** An AI agent conversation entity. */
+  AiAgentConversation = 'AI_AGENT_CONVERSATION',
+  /** A channel entity. */
+  Channel = 'CHANNEL',
+  /** An initiative entity. */
+  Initiative = 'INITIATIVE',
   /** A board item entity. */
   Item = 'ITEM',
   /** An update/post entity. */
@@ -1594,6 +1814,25 @@ export type AssignTeamOwnersResult = {
   team?: Maybe<Team>;
 };
 
+/** Input for assigning a time off schedule to multiple users */
+export type AssignTimeOffInput = {
+  /** ID of the time off schedule to assign; pass the account default time off ID to revert the user to the account default */
+  time_off_id: Scalars['ID']['input'];
+  /** IDs of the users to assign the time off schedule to; maximum 100 per call */
+  user_ids: Array<Scalars['ID']['input']>;
+};
+
+/** Result of a time off assignment for a single user. Batch mutations return one of these per requested user, allowing partial success. */
+export type AssignTimeOffUserResult = {
+  __typename?: 'AssignTimeOffUserResult';
+  /** Structured error details, null if the operation succeeded */
+  error?: Maybe<Error>;
+  /** Whether the operation succeeded */
+  success: Scalars['Boolean']['output'];
+  /** ID of the user this result applies to */
+  user_id: Scalars['ID']['output'];
+};
+
 /** Input for assigning a work schedule and/or time off schedule to multiple users */
 export type AssignUserAvailabilityInput = {
   /** ID of the time off schedule to assign; omit to leave unchanged */
@@ -1602,6 +1841,25 @@ export type AssignUserAvailabilityInput = {
   user_ids: Array<Scalars['ID']['input']>;
   /** ID of the work schedule to assign; omit to leave unchanged */
   work_schedule_id?: InputMaybe<Scalars['ID']['input']>;
+};
+
+/** Input for assigning a work schedule to multiple users */
+export type AssignWorkScheduleInput = {
+  /** IDs of the users to assign the work schedule to; maximum 100 per call */
+  user_ids: Array<Scalars['ID']['input']>;
+  /** ID of the work schedule to assign; pass the account default schedule ID to revert the user to the account default */
+  work_schedule_id: Scalars['ID']['input'];
+};
+
+/** Result of a work schedule assignment for a single user. Batch mutations return one of these per requested user, allowing partial success. */
+export type AssignWorkScheduleUserResult = {
+  __typename?: 'AssignWorkScheduleUserResult';
+  /** Structured error details, null if the operation succeeded */
+  error?: Maybe<Error>;
+  /** Whether the operation succeeded */
+  success: Scalars['Boolean']['output'];
+  /** ID of the user this result applies to */
+  user_id: Scalars['ID']['output'];
 };
 
 /** A board where the user has item assignments. */
@@ -1958,6 +2216,8 @@ export type BlockEvent = {
   eventState?: Maybe<Scalars['String']['output']>;
   /** Document identifier */
   id?: Maybe<Scalars['String']['output']>;
+  /** Whether the block was executed as part of a test run */
+  is_test_run?: Maybe<Scalars['Boolean']['output']>;
   /** Iterator identifier if block is part of a loop */
   iterator_id?: Maybe<Scalars['ID']['output']>;
   /** Total number of iterations configured for the loop */
@@ -2340,6 +2600,15 @@ export enum BoardHierarchy {
   MultiLevel = 'multi_level'
 }
 
+/** Maps a source board ID to the newly created board ID produced by a template installation. */
+export type BoardIdMapping = {
+  __typename?: 'BoardIdMapping';
+  /** The newly created board ID. */
+  created_board_id: Scalars['ID']['output'];
+  /** The source (template) board ID. */
+  source_board_id: Scalars['ID']['output'];
+};
+
 /** Inferred metadata associated with a board, such as custom terminology settings. */
 export type BoardInferredMetadata = {
   __typename?: 'BoardInferredMetadata';
@@ -2720,6 +2989,10 @@ export enum CampaignsAnalyticsEventKind {
   EmailOpened = 'EMAIL_OPENED',
   /** Recipient marked email as spam */
   EmailRecipientComplaint = 'EMAIL_RECIPIENT_COMPLAINT',
+  /** email_recipient_group_resubscribed */
+  EmailRecipientGroupResubscribed = 'EMAIL_RECIPIENT_GROUP_RESUBSCRIBED',
+  /** email_recipient_group_unsubscribed */
+  EmailRecipientGroupUnsubscribed = 'EMAIL_RECIPIENT_GROUP_UNSUBSCRIBED',
   /** Recipient unsubscribed */
   EmailRecipientUnsubscribed = 'EMAIL_RECIPIENT_UNSUBSCRIBED',
   /** Email was sent */
@@ -2886,6 +3159,8 @@ export type CampaignsEmailCampaign = {
   id?: Maybe<Scalars['ID']['output']>;
   /** Name of the campaign */
   name?: Maybe<Scalars['String']['output']>;
+  /** URL of the campaign email template preview image */
+  preview_image?: Maybe<Scalars['String']['output']>;
   /** Preview text shown in email clients */
   preview_text?: Maybe<Scalars['String']['output']>;
   /** When the campaign should be sent */
@@ -3027,6 +3302,22 @@ export type CampaignsSettings = {
   /** Unsubscribe page configuration */
   unsubscribe_page?: Maybe<CampaignsUnsubscribePage>;
 };
+
+/** Fields available for sorting campaigns */
+export enum CampaignsSortField {
+  /** Sort by creation date */
+  CreatedAt = 'CREATED_AT',
+  /** Sort by campaign name */
+  Name = 'NAME'
+}
+
+/** Sort direction */
+export enum CampaignsSortOrder {
+  /** Ascending order */
+  Asc = 'ASC',
+  /** Descending order */
+  Desc = 'DESC'
+}
 
 /** Status of a campaign */
 export enum CampaignsStatusKind {
@@ -3476,6 +3767,14 @@ export enum ConditionOperator {
   Or = 'OR'
 }
 
+/** Connect input for a custom external agent reachable via callback URL */
+export type ConnectCustomAgentInput = {
+  /** The HTTPS callback URL the platform invokes for agent events */
+  callback_url: Scalars['String']['input'];
+  /** The display name for the connected agent */
+  name: Scalars['String']['input'];
+};
+
 /** Input for connecting an external agent via BYOA (Bring Your Own Agent) */
 export type ConnectExternalAgentInput = {
   /** Optional callback URL for agent event notifications */
@@ -3499,6 +3798,25 @@ export type ConnectExternalAgentPayload = {
   __typename?: 'ConnectExternalAgentPayload';
   /** The connection status (e.g. "connecting"). Final result is delivered via Pusher. */
   status?: Maybe<Scalars['String']['output']>;
+};
+
+/** Result of a synchronous external-agent connect. agent_id is always present; signing_secret, api_token, and instructions are populated only for custom agents. */
+export type ConnectExternalAgentResult = {
+  __typename?: 'ConnectExternalAgentResult';
+  /** The internal monday-agents agent ID */
+  agent_id?: Maybe<Scalars['ID']['output']>;
+  /** Custom-agent only — API token for the agent to call back into monday. Never logged. */
+  api_token?: Maybe<Scalars['String']['output']>;
+  /** Custom-agent only — setup instructions for the integrator. Never logged. */
+  instructions?: Maybe<Scalars['String']['output']>;
+  /** Custom-agent only — secret used to sign callback requests. Never logged. */
+  signing_secret?: Maybe<Scalars['String']['output']>;
+};
+
+/** Wrapper input for the synchronous connect mutation. Currently supports custom agents only. */
+export type ConnectExternalAgentSyncInput = {
+  /** Connect a custom agent. */
+  custom?: InputMaybe<ConnectCustomAgentInput>;
 };
 
 /** The result of the connect_migration_job mutation. */
@@ -3641,6 +3959,8 @@ export type CountryValue = ColumnValue & {
 export type CreateAgentInput = {
   /** The LLM model the agent should use */
   agent_model?: InputMaybe<Scalars['String']['input']>;
+  /** Open-vocabulary placement string recorded for analytics (e.g. start_from_scratch, mcp_public). Defaults to unknown when omitted. */
+  creation_source?: InputMaybe<Scalars['String']['input']>;
   /** IDs of previously uploaded pending files to attach as knowledge during creation */
   pending_file_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   /** A description of what the agent should do — used to generate profile, goal, and plan via AI */
@@ -3686,6 +4006,8 @@ export type CreateBlankAgentInput = {
   avatar_url?: InputMaybe<Scalars['String']['input']>;
   /** Background color for the agent card */
   background_color?: InputMaybe<Scalars['String']['input']>;
+  /** Open-vocabulary placement string recorded for analytics (e.g. start_from_scratch, mcp_public). Defaults to unknown when omitted. */
+  creation_source?: InputMaybe<Scalars['String']['input']>;
   /** Influences the generated avatar and name when name or avatar_url are not provided. Accepts 'male' or 'female'. Defaults to random if omitted or unrecognized. */
   gender?: InputMaybe<Scalars['String']['input']>;
   /** The display name of the agent */
@@ -3873,6 +4195,8 @@ export type CreatePortfolioResult = {
   __typename?: 'CreatePortfolioResult';
   /** A message describing the result of the operation. */
   message?: Maybe<Scalars['String']['output']>;
+  /** Unique process ID for tracking this request. Included in the callback payload when the operation completes. */
+  process_id?: Maybe<Scalars['ID']['output']>;
   /** The ID of the solution that was created */
   solution_live_version_id?: Maybe<Scalars['String']['output']>;
   /** Indicates if the operation was successful. */
@@ -3936,8 +4260,6 @@ export type CreateQuestionInput = {
 /** The result of creating a service user. */
 export type CreateServiceUserResult = {
   __typename?: 'CreateServiceUserResult';
-  /** The API token for the created service user. Null if token generation failed. */
-  token?: Maybe<Scalars['String']['output']>;
   /** The created service user. */
   user?: Maybe<User>;
 };
@@ -4002,8 +4324,8 @@ export type CreateTeamOptionsInput = {
 export type CreateTimeOffEntryInput = {
   /** End date of the non-working period in YYYY-MM-DD format */
   end: Scalars['String']['input'];
-  /** Optional display name for this time off entry */
-  name?: InputMaybe<Scalars['String']['input']>;
+  /** Display name for this time off entry */
+  name: Scalars['String']['input'];
   /** Start date of the non-working period in YYYY-MM-DD format */
   start: Scalars['String']['input'];
   /** ID of the time off schedule to add this entry to */
@@ -5383,6 +5705,13 @@ export type EventsExport = {
   total?: Maybe<Scalars['Int']['output']>;
 };
 
+/** Reference to a started async board export. Use the job_id with fetch_export_job_status to poll until COMPLETED or FAILED. */
+export type ExportAsyncJob = {
+  __typename?: 'ExportAsyncJob';
+  /** Opaque identifier for this export job. Pass to fetch_export_job_status. */
+  job_id?: Maybe<Scalars['ID']['output']>;
+};
+
 /** Result of a board export operation */
 export type ExportBoardResult = {
   __typename?: 'ExportBoardResult';
@@ -5392,6 +5721,22 @@ export type ExportBoardResult = {
   expires_at?: Maybe<Scalars['String']['output']>;
 };
 
+/** Structured reason an async export job failed. */
+export enum ExportFailureReason {
+  /** The caller lost permission to read the board. */
+  BoardInaccessible = 'BOARD_INACCESSIBLE',
+  /** The board is deleted or archived. */
+  BoardUnavailable = 'BOARD_UNAVAILABLE',
+  /** An unexpected internal error occurred. Retry the mutation. */
+  InternalError = 'INTERNAL_ERROR',
+  /** The request was rejected during validation (e.g. unsupported CSV options). */
+  InvalidRequest = 'INVALID_REQUEST',
+  /** The board has more items than the export limit allows. */
+  ItemLimitExceeded = 'ITEM_LIMIT_EXCEEDED',
+  /** The board or a referenced resource could not be found. */
+  NotFound = 'NOT_FOUND'
+}
+
 /** Output format for the exported board file. */
 export enum ExportFormat {
   /** CSV formatted for round-trip import into mdb-data (cells encoded via @mondaydotcomorg/data-board-columns codecs). */
@@ -5399,6 +5744,29 @@ export enum ExportFormat {
   /** Excel spreadsheet format (.xlsx). */
   Xlsx = 'XLSX'
 }
+
+/** Lifecycle status of an async board export job. Polling clients should treat COMPLETED and FAILED as terminal. */
+export enum ExportJobStatus {
+  /** The export finished successfully. download_url will be populated. */
+  Completed = 'COMPLETED',
+  /** The export failed. failure_reason and (when available) failure_message will be populated. */
+  Failed = 'FAILED',
+  /** The export is in progress. */
+  Running = 'RUNNING'
+}
+
+/** Status of an async board export job, including download URL when completed. */
+export type ExportJobStatusInfo = {
+  __typename?: 'ExportJobStatusInfo';
+  /** Presigned S3 download URL, available only when status is COMPLETED and the export completed within the last hour. Returns null after 1 hour — re-trigger the export to get a new one. */
+  download_url?: Maybe<Scalars['String']['output']>;
+  /** Human-readable error detail. Populated only when status is FAILED and the reason exposes safe text. */
+  failure_message?: Maybe<Scalars['String']['output']>;
+  /** Structured reason for failure. Populated only when status is FAILED. */
+  failure_reason?: Maybe<ExportFailureReason>;
+  /** Current job status. Terminal values: COMPLETED, FAILED. */
+  status?: Maybe<ExportJobStatus>;
+};
 
 /** Response from exporting document content as markdown. Contains the generated markdown text or error details. */
 export type ExportMarkdownResult = {
@@ -5441,7 +5809,9 @@ export enum ExternalProvider {
   /** A Claude-managed agent hosted on Anthropic infrastructure */
   ClaudeManagedAgent = 'CLAUDE_MANAGED_AGENT',
   /** A custom agent with a user-provided callback URL */
-  CustomAgent = 'CUSTOM_AGENT'
+  CustomAgent = 'CUSTOM_AGENT',
+  /** An OpenAI assistant */
+  Openai = 'OPENAI'
 }
 
 /** Provider-specific data, use inline fragments to access fields per provider type */
@@ -9157,8 +9527,12 @@ export type Mutation = {
   assign_department_owner?: Maybe<AssignDepartmentOwnerResult>;
   /** Assigns the specified users as owners of the specified team. */
   assign_team_owners?: Maybe<AssignTeamOwnersResult>;
+  /** Assign a time off schedule to multiple users. Returns one result per user, allowing partial success. Pass the account default time off ID to revert users to the account default. Maximum 100 user IDs per call. */
+  assign_time_off?: Maybe<Array<AssignTimeOffUserResult>>;
   /** Assign the same work schedule and time off schedule to multiple users; maximum 100 user IDs per call. Returns one result per user, allowing partial success. */
   assign_user_availability?: Maybe<Array<UserAvailabilityResult>>;
+  /** Assign a work schedule to multiple users. Returns one result per user, allowing partial success. Pass the account default schedule ID to revert users to the account default. Maximum 100 user IDs per call. */
+  assign_work_schedule?: Maybe<Array<AssignWorkScheduleUserResult>>;
   /** Creates a new dropdown column in a board that is linked to a managed column. The column data and settings are controlled by the managed column. Title, description, and dropdown-specific settings (limit_select, label_limit_count) can be overridden locally. */
   attach_dropdown_managed_column?: Maybe<Column>;
   /** Creates a new status column in a board that is linked to a managed column. The column data and settings are controlled by the managed column. Only title and description can be overridden locally. */
@@ -9201,10 +9575,28 @@ export type Mutation = {
   complete_upload?: Maybe<AssetResult>;
   /** Get the complexity data of your mutations. */
   complexity?: Maybe<Complexity>;
+  /** Configures a column to categorize items based on content analysis. */
+  configure_categorize_ai_column?: Maybe<AiColumnResult>;
+  /** Configures a column to extract structured information from text. */
+  configure_extract_ai_column?: Maybe<AiColumnResult>;
+  /** Configures a column to rewrite or improve text quality. */
+  configure_improve_text_ai_column?: Maybe<AiColumnResult>;
+  /** Configures a column with a custom AI prompt for complex or flexible operations. */
+  configure_open_block_ai_column?: Maybe<AiColumnResult>;
+  /** Configures a column to assign a person to items based on context. */
+  configure_person_assignment_ai_column?: Maybe<AiColumnResult>;
+  /** Configures a column to generate concise summaries of input text. */
+  configure_summarize_ai_column?: Maybe<AiColumnResult>;
+  /** Configures a column to translate text to a target language. */
+  configure_translate_ai_column?: Maybe<AiColumnResult>;
+  /** Configures a column to generate new text content from a prompt. */
+  configure_write_me_ai_column?: Maybe<AiColumnResult>;
   /** Connect a board to an object schema. */
   connect_board_to_object_schema?: Maybe<BoardConnection>;
   /** Initiate connecting an external agent via BYOA (async — result delivered via Pusher) */
   connect_external_agent?: Maybe<ConnectExternalAgentPayload>;
+  /** Synchronously connect an external agent. Blocks until the connect flow completes and returns the full result inline (including secrets for custom agents). Provide exactly one provider input. Requires the enable-connect-external-agent-sync flag to be on; returns FEATURE_DISABLED if not. */
+  connect_external_agent_sync?: Maybe<ConnectExternalAgentResult>;
   /** Connect a migration job from a source account to the target account */
   connect_migration_job?: Maybe<ConnectMigrationJobResult>;
   /** Connect an existing project to a portfolio. When a callback_url is provided the mutation returns immediately with a process_id, and the result is POSTed to that URL once the operation completes. The callback payload is: { is_success: boolean, process_id: string, portfolio_item_id?: string }. */
@@ -9286,11 +9678,11 @@ export type Mutation = {
   create_object_schema_columns?: Maybe<ObjectSchema>;
   /** Create a new tag or get it if it already exists. */
   create_or_get_tag?: Maybe<Tag>;
-  /** Create a new portfolio */
+  /** Create a new portfolio. When a callback_url is provided the mutation returns immediately with a process_id, and the portfolio_id is POSTed to that URL once the portfolio is actually created. The callback payload is: { is_success: boolean, process_id: string, portfolio_id?: number }. */
   create_portfolio?: Maybe<CreatePortfolioResult>;
   /** Create a new project in monday.com from scratch. This mutation initiates asynchronous project creation with comprehensive customization options including: privacy settings (private/public - share is currently not supported), optional companions like Resource Planner for enhanced project management capabilities, workspace assignment for organizational structure, folder placement for better organization, and template selection for predefined project structures. Since project creation is asynchronous, you can optionally provide a callback_url where the project ID will be sent via POST request once creation completes. The callback will receive: { is_success: boolean, process_id: string, project_id?: number }. Returns a process_id for tracking the creation request. */
   create_project?: Maybe<CreateProjectResult>;
-  /** Creates a new service user with a read-only API token. */
+  /** Creates a new service user. */
   create_service_user?: Maybe<CreateServiceUserResult>;
   /** Creates a new status column with strongly typed settings. Status columns allow users to track item progress through customizable labels (e.g., "Working on it", "Done", "Stuck"). This mutation is specifically for status/color columns and provides type-safe creation with label configuration. */
   create_status_column?: Maybe<Column>;
@@ -9437,6 +9829,8 @@ export type Mutation = {
   execute_integration_block?: Maybe<IntegrationExecutionResult>;
   /** Export a board to an Excel file. Returns a download URL. */
   export_board?: Maybe<ExportBoardResult>;
+  /** Start an async board export. Returns a job_id immediately; poll fetch_export_job_status to get the download URL when the job is COMPLETED. */
+  export_board_async?: Maybe<ExportAsyncJob>;
   grant_marketplace_app_discount: GrantMarketplaceAppDiscountResult;
   /** Imports HTML content as a new document by converting it into document blocks. The HTML will be parsed and converted into the appropriate document block types (text, headers, lists, etc.). Returns the ID of the newly created document on success. */
   import_doc_from_html?: Maybe<ImportDocFromHtmlResult>;
@@ -9470,6 +9864,8 @@ export type Mutation = {
   regenerate_service_user_token?: Maybe<Scalars['String']['output']>;
   /** Remove a board or doc from an agent. Creates a draft, removes the access, and promotes to live. */
   remove_agent_resource_access?: Maybe<MutationResult>;
+  /** Removes AI configuration from a column, deleting all associated automation recipes. */
+  remove_ai_from_column?: Maybe<AiColumnRemoveResult>;
   /** Removes connected boards from a board relation column. */
   remove_board_relation_connected_boards?: Maybe<Array<BoardRelationConnectedBoardsResult>>;
   /** Remove mock app subscription for the current account */
@@ -9513,8 +9909,12 @@ export type Mutation = {
   shorten_form_url?: Maybe<FormShortenedLink>;
   /** Unassigns owners from a department. */
   unassign_department_owners?: Maybe<UnassignDepartmentOwnerResult>;
+  /** Remove explicit time off assignments from multiple users; maximum 100 user IDs per call. Returns one result per user, allowing partial success. */
+  unassign_time_off: Array<AssignTimeOffUserResult>;
   /** Remove explicit work schedule and/or time off assignments from multiple users; maximum 100 user IDs per call. Returns one result per user, allowing partial success. */
   unassign_user_availability?: Maybe<Array<UserAvailabilityResult>>;
+  /** Remove explicit work schedule assignments from multiple users; maximum 100 user IDs per call. Returns one result per user, allowing partial success. */
+  unassign_work_schedule?: Maybe<Array<AssignWorkScheduleUserResult>>;
   /** Undo a previously completed action, or cancel one still in flight */
   undo_action?: Maybe<UndoResult>;
   /** Uninstalls an app from the current account. Requires account admin permission. */
@@ -9623,8 +10023,10 @@ export type Mutation = {
   update_view?: Maybe<BoardView>;
   /** Update an existing board table view */
   update_view_table?: Maybe<BoardView>;
+  /** Update an existing widgets surface by regenerating its A2UI structure via LLM. The LLM receives the previous layout as context and makes minimal targeted changes based on the prompt, preserving existing bindings and layout where possible. */
+  update_widgets_surface?: Maybe<WidgetsSurface>;
   /** Update the name and/or working hours of an existing work schedule */
-  update_work_schedule?: Maybe<WorkScheduleResult>;
+  update_work_schedule: WorkScheduleResult;
   /** Update an existing workspace. */
   update_workspace?: Maybe<Workspace>;
   /** Upsert entity ID mappings for a migration job. */
@@ -9845,8 +10247,20 @@ export type MutationAssign_Team_OwnersArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationAssign_Time_OffArgs = {
+  input: AssignTimeOffInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationAssign_User_AvailabilityArgs = {
   input: AssignUserAvailabilityInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationAssign_Work_ScheduleArgs = {
+  input: AssignWorkScheduleInput;
 };
 
 
@@ -10016,6 +10430,96 @@ export type MutationComplete_UploadArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationConfigure_Categorize_Ai_ColumnArgs = {
+  additional_instructions?: InputMaybe<Scalars['String']['input']>;
+  board_id: Scalars['ID']['input'];
+  column_id: Scalars['ID']['input'];
+  extra_settings?: InputMaybe<AiColumnExtraSettingsInput>;
+  source_column_id?: InputMaybe<Scalars['ID']['input']>;
+  source_type: AiColumnSource;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationConfigure_Extract_Ai_ColumnArgs = {
+  additional_instructions?: InputMaybe<Scalars['String']['input']>;
+  board_id: Scalars['ID']['input'];
+  column_id: Scalars['ID']['input'];
+  custom_instructions?: InputMaybe<Scalars['String']['input']>;
+  entity_type: AiColumnEntity;
+  extra_settings?: InputMaybe<AiColumnExtraSettingsInput>;
+  source_column_id?: InputMaybe<Scalars['ID']['input']>;
+  source_type: AiColumnSource;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationConfigure_Improve_Text_Ai_ColumnArgs = {
+  board_id: Scalars['ID']['input'];
+  column_id: Scalars['ID']['input'];
+  extra_settings?: InputMaybe<AiColumnExtraSettingsInput>;
+  length?: InputMaybe<AiColumnImproverLength>;
+  refinement_type?: InputMaybe<AiColumnRefinementLevel>;
+  source_column_id?: InputMaybe<Scalars['ID']['input']>;
+  source_type: AiColumnSource;
+  tone?: InputMaybe<AiColumnTone>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationConfigure_Open_Block_Ai_ColumnArgs = {
+  ai_query: Scalars['String']['input'];
+  board_id: Scalars['ID']['input'];
+  column_id: Scalars['ID']['input'];
+  extra_settings?: InputMaybe<AiColumnExtraSettingsInput>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationConfigure_Person_Assignment_Ai_ColumnArgs = {
+  board_id: Scalars['ID']['input'];
+  column_id: Scalars['ID']['input'];
+  extra_settings?: InputMaybe<AiColumnExtraSettingsInput>;
+  groups: Array<AiColumnPersonGroupInput>;
+  source_column_id?: InputMaybe<Scalars['ID']['input']>;
+  source_type: AiColumnSource;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationConfigure_Summarize_Ai_ColumnArgs = {
+  additional_instructions?: InputMaybe<Scalars['String']['input']>;
+  board_id: Scalars['ID']['input'];
+  column_id: Scalars['ID']['input'];
+  extra_settings?: InputMaybe<AiColumnExtraSettingsInput>;
+  source_column_id?: InputMaybe<Scalars['ID']['input']>;
+  source_type: AiColumnSource;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationConfigure_Translate_Ai_ColumnArgs = {
+  board_id: Scalars['ID']['input'];
+  column_id: Scalars['ID']['input'];
+  extra_settings?: InputMaybe<AiColumnExtraSettingsInput>;
+  source_column_id?: InputMaybe<Scalars['ID']['input']>;
+  source_type: AiColumnSource;
+  target_language: AiColumnLanguage;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationConfigure_Write_Me_Ai_ColumnArgs = {
+  ai_query: Scalars['String']['input'];
+  board_id: Scalars['ID']['input'];
+  column_id: Scalars['ID']['input'];
+  extra_settings?: InputMaybe<AiColumnExtraSettingsInput>;
+  length: AiColumnOutputLength;
+  tone: AiColumnTone;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationConnect_Board_To_Object_SchemaArgs = {
   board_id: Scalars['ID']['input'];
   object_schema_id?: InputMaybe<Scalars['ID']['input']>;
@@ -10026,6 +10530,12 @@ export type MutationConnect_Board_To_Object_SchemaArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationConnect_External_AgentArgs = {
   input: ConnectExternalAgentInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationConnect_External_Agent_SyncArgs = {
+  input: ConnectExternalAgentSyncInput;
 };
 
 
@@ -10403,6 +10913,7 @@ export type MutationCreate_Or_Get_TagArgs = {
 export type MutationCreate_PortfolioArgs = {
   boardName: Scalars['String']['input'];
   boardPrivacy: Scalars['String']['input'];
+  callback_url?: InputMaybe<Scalars['String']['input']>;
   destinationWorkspaceId?: InputMaybe<Scalars['Int']['input']>;
 };
 
@@ -10978,6 +11489,16 @@ export type MutationExport_BoardArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationExport_Board_AsyncArgs = {
+  board_id: Scalars['ID']['input'];
+  columns_order?: InputMaybe<Array<Scalars['String']['input']>>;
+  export_format?: InputMaybe<ExportFormat>;
+  export_options?: InputMaybe<ExportOptionsInput>;
+  time_zone?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationGrant_Marketplace_App_DiscountArgs = {
   account_slug: Scalars['String']['input'];
   app_id: Scalars['ID']['input'];
@@ -11105,6 +11626,13 @@ export type MutationRemove_Agent_Resource_AccessArgs = {
   id: Scalars['ID']['input'];
   resource_id: Scalars['ID']['input'];
   scope_type: KnowledgeScope;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationRemove_Ai_From_ColumnArgs = {
+  board_id: Scalars['ID']['input'];
+  column_id: Scalars['ID']['input'];
 };
 
 
@@ -11258,8 +11786,20 @@ export type MutationUnassign_Department_OwnersArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationUnassign_Time_OffArgs = {
+  user_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationUnassign_User_AvailabilityArgs = {
   input: UnassignUserAvailabilityInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUnassign_Work_ScheduleArgs = {
+  user_ids: Array<Scalars['ID']['input']>;
 };
 
 
@@ -11721,6 +12261,13 @@ export type MutationUpdate_View_TableArgs = {
   sort?: InputMaybe<Array<ItemsQueryOrderBy>>;
   tags?: InputMaybe<Array<Scalars['String']['input']>>;
   view_id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUpdate_Widgets_SurfaceArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdateWidgetsSurfaceInput;
 };
 
 
@@ -12548,10 +13095,27 @@ export type PortfolioNoConnectedProjects = {
   has_no_connected_projects?: Maybe<Scalars['Boolean']['output']>;
 };
 
+/** A resource belonging to a portfolio, with name resolved from the resource directory. */
+export type PortfolioResource = {
+  __typename?: 'PortfolioResource';
+  /** The resource ID. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** The resource name. */
+  name?: Maybe<Scalars['String']['output']>;
+};
+
 /** Input for fetching the list of resource IDs belonging to a portfolio. */
 export type PortfolioResourcesInput = {
   /** The portfolio ID to fetch resources for. */
   portfolio_id: Scalars['ID']['input'];
+};
+
+/** Input for searching resources within a portfolio by name. */
+export type PortfolioResourcesSearchInput = {
+  /** The portfolio ID to scope the search to. */
+  portfolio_id: Scalars['ID']['input'];
+  /** Resource name search term. Length: 1-100 chars. */
+  search_term: Scalars['String']['input'];
 };
 
 /** Portfolio utilization report result: utilization data (grouped or ungrouped) or a signal that no projects are connected. */
@@ -12935,7 +13499,7 @@ export type Query = {
   bulk_import_items_status: BulkImportStatus;
   /** Get a single email campaign by ID */
   campaign?: Maybe<CampaignsEmailCampaign>;
-  /** List email campaigns for the current account */
+  /** List email campaigns for the current account with optional filtering and sorting */
   campaigns?: Maybe<Array<CampaignsEmailCampaign>>;
   /** Get the complexity data of your queries. */
   complexity?: Maybe<Complexity>;
@@ -12979,6 +13543,8 @@ export type Query = {
   external_provider_data?: Maybe<ExternalProviderData>;
   /** Get all personal list items by list ID */
   favorites?: Maybe<Array<GraphqlHierarchyObjectItem>>;
+  /** Fetch the status of an async board export job. Poll until status is COMPLETED (use download_url) or FAILED (read failure_reason). */
+  fetch_export_job_status?: Maybe<ExportJobStatusInfo>;
   /** Get the status of a backfill or ingest job */
   fetch_job_status: JobStatus;
   /** Get a collection of folders. Note: This query won't return folders from closed workspaces to which you are not subscribed */
@@ -13089,10 +13655,6 @@ export type Query = {
   my_tasks?: Maybe<MyTasksResponse>;
   /** Get next pages of board's items (rows) by cursor. */
   next_items_page: ItemsResponse;
-  /** Fetches the next page of time off schedules using a cursor from a previous time_offs or next_time_offs_page call */
-  next_time_offs_page?: Maybe<TimesOffPage>;
-  /** Fetches the next page of work schedules using a cursor from a previous work_schedules or next_work_schedules_page call */
-  next_work_schedules_page?: Maybe<WorkSchedulePage>;
   /** Namespace for all notetaker-related queries. */
   notetaker?: Maybe<NotetakerQueries>;
   notifications?: Maybe<Array<NotificationV2>>;
@@ -13108,6 +13670,8 @@ export type Query = {
   platform_api?: Maybe<PlatformApi>;
   /** Returns the list of resource IDs belonging to a portfolio. Lightweight alternative to portfolio_utilization_report when only resource identity is needed — no effort computation. */
   portfolio_resources?: Maybe<Array<Scalars['ID']['output']>>;
+  /** Portfolio resources filtered by name. Returns up to 25 matches. */
+  portfolio_resources_by_name: Array<PortfolioResource>;
   /** Returns utilization report scoped to a portfolio. Resolves portfolio to board IDs, then returns the same report shape as utilization_report. */
   portfolio_utilization_report?: Maybe<PortfolioUtilizationReport>;
   /** Get the current user's priority prompt. */
@@ -13160,6 +13724,8 @@ export type Query = {
   task?: Maybe<Task>;
   /** Get a collection of teams. */
   teams?: Maybe<Array<Maybe<Team>>>;
+  /** Get the status of a use_template async operation. Returns null if the process_id is invalid, expired, or unauthorized. */
+  template_installation_status?: Maybe<TemplateInstallationStatusResult>;
   /** Returns active time off schedules for the caller's account */
   time_offs?: Maybe<TimesOffPage>;
   /** Fetches timeline items for a given item */
@@ -13389,6 +13955,7 @@ export type QueryBoardsArgs = {
   board_kind?: InputMaybe<BoardKind>;
   hierarchy_types?: InputMaybe<Array<BoardHierarchy>>;
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  include_embedded_docs?: InputMaybe<Scalars['Boolean']['input']>;
   latest?: InputMaybe<Scalars['Boolean']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   order_by?: InputMaybe<BoardsOrderBy>;
@@ -13413,6 +13980,12 @@ export type QueryCampaignArgs = {
 /** Root query type for the Dependencies service */
 export type QueryCampaignsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  sent_after?: InputMaybe<Scalars['Date']['input']>;
+  sent_before?: InputMaybe<Scalars['Date']['input']>;
+  sort_field?: InputMaybe<CampaignsSortField>;
+  sort_order?: InputMaybe<CampaignsSortOrder>;
+  status?: InputMaybe<Array<CampaignsStatusKind>>;
 };
 
 
@@ -13556,6 +14129,12 @@ export type QueryExternal_Provider_AgentsArgs = {
 export type QueryExternal_Provider_DataArgs = {
   credential_id: Scalars['ID']['input'];
   provider_type: ExternalProvider;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryFetch_Export_Job_StatusArgs = {
+  job_id: Scalars['ID']['input'];
 };
 
 
@@ -13883,20 +14462,6 @@ export type QueryNext_Items_PageArgs = {
 
 
 /** Root query type for the Dependencies service */
-export type QueryNext_Time_Offs_PageArgs = {
-  cursor: Scalars['String']['input'];
-  limit?: InputMaybe<Scalars['Int']['input']>;
-};
-
-
-/** Root query type for the Dependencies service */
-export type QueryNext_Work_Schedules_PageArgs = {
-  cursor: Scalars['String']['input'];
-  limit?: InputMaybe<Scalars['Int']['input']>;
-};
-
-
-/** Root query type for the Dependencies service */
 export type QueryNotificationsArgs = {
   cursor?: InputMaybe<Scalars['ID']['input']>;
   filter_read?: InputMaybe<Scalars['Boolean']['input']>;
@@ -13937,6 +14502,12 @@ export type QueryObjectsArgs = {
 /** Root query type for the Dependencies service */
 export type QueryPortfolio_ResourcesArgs = {
   input: PortfolioResourcesInput;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryPortfolio_Resources_By_NameArgs = {
+  input: PortfolioResourcesSearchInput;
 };
 
 
@@ -14051,7 +14622,14 @@ export type QueryTeamsArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QueryTemplate_Installation_StatusArgs = {
+  process_id: Scalars['ID']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryTime_OffsArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
@@ -14173,6 +14751,7 @@ export type QueryWebhooksArgs = {
 
 /** Root query type for the Dependencies service */
 export type QueryWork_SchedulesArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
@@ -14683,6 +15262,25 @@ export type SearchIndexedItem = {
   workspace_id?: Maybe<Scalars['ID']['output']>;
 };
 
+/** Update data stored in the search index. */
+export type SearchIndexedUpdate = {
+  __typename?: 'SearchIndexedUpdate';
+  /** ID of the board containing this update. */
+  board_id: Scalars['ID']['output'];
+  /** Update content (HTML formatted). */
+  body: Scalars['String']['output'];
+  /** ISO timestamp when the update was created. */
+  created_at: Scalars['String']['output'];
+  /** ID of the user who created the update. */
+  creator_id: Scalars['ID']['output'];
+  /** Update ID. */
+  id: Scalars['ID']['output'];
+  /** ID of the item this update belongs to. */
+  item_id: Scalars['ID']['output'];
+  /** ISO timestamp when the update was last modified. */
+  updated_at: Scalars['String']['output'];
+};
+
 /** Workspace data stored in the search index. */
 export type SearchIndexedWorkspace = {
   __typename?: 'SearchIndexedWorkspace';
@@ -14725,6 +15323,8 @@ export type SearchNamespace = {
   docs: SearchDocResults;
   /** Search for items. */
   items: SearchItemResults;
+  /** Search for updates. */
+  updates: SearchUpdateResults;
   /** Search for workspaces. */
   workspaces: SearchWorkspaceResults;
 };
@@ -14763,6 +15363,17 @@ export type SearchNamespaceItemsArgs = {
 
 
 /** Per-entity search namespace. Each field searches a single entity type. */
+export type SearchNamespaceUpdatesArgs = {
+  board_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  creator_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  date_range?: InputMaybe<CrossEntityDateRangeInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  query: Scalars['String']['input'];
+  strategy?: InputMaybe<SearchStrategy>;
+};
+
+
+/** Per-entity search namespace. Each field searches a single entity type. */
 export type SearchNamespaceWorkspacesArgs = {
   date_range?: InputMaybe<CrossEntityDateRangeInput>;
   kind?: InputMaybe<Scalars['String']['input']>;
@@ -14782,6 +15393,24 @@ export enum SearchStrategy {
   Speed = 'SPEED'
 }
 
+/** A single update search result with indexed and live data. */
+export type SearchUpdateResult = {
+  __typename?: 'SearchUpdateResult';
+  /** Unique identifier of the update. */
+  id: Scalars['ID']['output'];
+  /** Update data from the search index. */
+  indexed_data: SearchIndexedUpdate;
+  /** Live update data via federation. Null when the referenced update cannot be resolved by the owning subgraph (e.g. deleted, not accessible to the caller, or indexing lag). */
+  live_data?: Maybe<Update>;
+};
+
+/** Wrapper for a list of update search results. */
+export type SearchUpdateResults = {
+  __typename?: 'SearchUpdateResults';
+  /** List of update search results. */
+  results: Array<SearchUpdateResult>;
+};
+
 /** A single workspace search result. */
 export type SearchWorkspaceResult = {
   __typename?: 'SearchWorkspaceResult';
@@ -14789,6 +15418,8 @@ export type SearchWorkspaceResult = {
   id: Scalars['ID']['output'];
   /** Workspace data from the search index. */
   indexed_data: SearchIndexedWorkspace;
+  /** Live workspace data via federation. Null when the referenced workspace cannot be resolved by the owning subgraph (e.g. deleted, not accessible to the caller, or indexing lag). */
+  live_data?: Maybe<Workspace>;
 };
 
 /** Wrapper for a list of workspace search results. */
@@ -15052,6 +15683,13 @@ export enum SortDirection {
   /** Descending order */
   Desc = 'DESC'
 }
+
+/** Metadata for a board that contributed results to a union aggregate query. */
+export type SourceBoardInfo = {
+  __typename?: 'SourceBoardInfo';
+  /** The board ID that contributed to the merged result. */
+  board_id?: Maybe<Scalars['ID']['output']>;
+};
 
 /** A monday dev sprint. */
 export type Sprint = {
@@ -15609,6 +16247,8 @@ export enum TaskStatus {
 /** A team of users. */
 export type Team = {
   __typename?: 'Team';
+  /** The team's creation date as an ISO 8601 string. */
+  created_at?: Maybe<Scalars['String']['output']>;
   /** The team's unique identifier. */
   id: Scalars['ID']['output'];
   /** Whether the team is a guest team */
@@ -15666,6 +16306,41 @@ export type Template = {
   __typename?: 'Template';
   /** The template process unique identifier for async operations. */
   process_id?: Maybe<Scalars['String']['output']>;
+};
+
+/** Lifecycle status of a template installation async operation. */
+export enum TemplateInstallationStatus {
+  /** All boards fully ready. */
+  Complete = 'COMPLETE',
+  /** Duplication failed. Any partial boards were rolled back. */
+  Failed = 'FAILED',
+  /** Boards being created. */
+  InProgress = 'IN_PROGRESS',
+  /** Job queued, not yet started. */
+  Pending = 'PENDING'
+}
+
+/** Status of a template installation async operation. */
+export type TemplateInstallationStatusResult = {
+  __typename?: 'TemplateInstallationStatusResult';
+  /**
+   * Board IDs are populated incrementally during the metadata phase as each board
+   * is created, and complete by the time per-board content jobs start. Boards
+   * exist as empty shells (no items, broken mirror columns, no automations) until
+   * status is COMPLETE. Safe to store these IDs early, but do not read or write
+   * board content until COMPLETE.
+   */
+  board_ids: Array<Scalars['ID']['output']>;
+  /** Mapping of each source (template) board ID to the newly created board ID. */
+  board_ids_map: Array<BoardIdMapping>;
+  /** True iff status is COMPLETE. */
+  is_complete: Scalars['Boolean']['output'];
+  /** True iff status is FAILED. */
+  is_failed: Scalars['Boolean']['output'];
+  /** The process_id returned by use_template. */
+  process_id: Scalars['ID']['output'];
+  /** Lifecycle status (PENDING / IN_PROGRESS / COMPLETE / FAILED). */
+  status: TemplateInstallationStatus;
 };
 
 /** Text block formatting types. Controls visual appearance and semantic meaning. */
@@ -15789,8 +16464,8 @@ export type TimeOffEntry = {
   end: Scalars['String']['output'];
   /** Unique identifier of the time off entry */
   id: Scalars['ID']['output'];
-  /** Optional display name for this time off entry */
-  name?: Maybe<Scalars['String']['output']>;
+  /** Display name for this time off entry */
+  name: Scalars['String']['output'];
   /** Start date of the non-working period in YYYY-MM-DD format */
   start: Scalars['String']['output'];
   /** ID of the time off schedule this entry belongs to */
@@ -15804,7 +16479,7 @@ export type TimeOffEntryDeleteResult = {
   __typename?: 'TimeOffEntryDeleteResult';
   /** Structured error details, null if the operation succeeded */
   error?: Maybe<Error>;
-  /** ID of the deleted time off entry, null if the operation failed */
+  /** ID of the deleted time off entry, null only if an internal error prevented identification */
   id?: Maybe<Scalars['ID']['output']>;
   /** Whether the operation succeeded */
   success: Scalars['Boolean']['output'];
@@ -16102,6 +16777,8 @@ export type TriggerEvent = {
   hostInstanceId?: Maybe<Scalars['String']['output']>;
   /** Host type on which the automation is executed */
   hostType?: Maybe<Scalars['String']['output']>;
+  /** Whether the trigger was fired as part of a test run */
+  is_test_run?: Maybe<Scalars['Boolean']['output']>;
   /** Reignition subscription ID if trigger was reignited */
   reignitionSubscriptionId?: Maybe<Scalars['String']['output']>;
   /** Duration of the trigger in milliseconds */
@@ -16671,6 +17348,18 @@ export type UpdateUsersRoleResult = {
   updated_users?: Maybe<Array<User>>;
 };
 
+/** Input for updating an existing widgets surface via LLM regeneration. */
+export type UpdateWidgetsSurfaceInput = {
+  /** Optional sample data for the data source, used to guide generation. */
+  data_sample?: InputMaybe<Scalars['JSON']['input']>;
+  /** JSON Schema (JSONSchema7 format) used as the data structure source for widget generation. If omitted, the previously persisted data_structure is used. */
+  data_structure?: InputMaybe<Scalars['JSON']['input']>;
+  /** Metadata associated with the update request. */
+  metadata?: InputMaybe<Scalars['JSON']['input']>;
+  /** Natural-language instruction describing the desired changes to the widgets surface. */
+  prompt: Scalars['String']['input'];
+};
+
 /** Input for updating an existing work schedule */
 export type UpdateWorkScheduleInput = {
   /** Updated per-weekday working hours */
@@ -16882,6 +17571,17 @@ export type UserActivityLogsPage = {
   logs?: Maybe<Array<ActivityLog>>;
 };
 
+/** A user's assigned work schedule and time off schedule IDs */
+export type UserAssignment = {
+  __typename?: 'UserAssignment';
+  /** ID of the time off schedule assigned to this user */
+  time_off_id: Scalars['ID']['output'];
+  /** ID of the user */
+  user_id: Scalars['ID']['output'];
+  /** ID of the work schedule assigned to this user */
+  work_schedule_id: Scalars['ID']['output'];
+};
+
 /** The attributes to update for a user. */
 export type UserAttributesInput = {
   /** The birthday of the user. */
@@ -16904,17 +17604,6 @@ export type UserAttributesInput = {
   title?: InputMaybe<Scalars['String']['input']>;
 };
 
-/** A user's assigned work schedule and time off schedule */
-export type UserAvailability = {
-  __typename?: 'UserAvailability';
-  /** The time off schedules assigned to this user */
-  time_offs: Array<TimeOff>;
-  /** ID of the user */
-  user_id: Scalars['ID']['output'];
-  /** The work schedule assigned to this user, null if using account default */
-  work_schedule?: Maybe<WorkSchedule>;
-};
-
 /** Result of a single user availability assignment. Batch assign/unassign mutations return one of these per requested user, allowing partial success — successful entries have user_availability populated and success=true; failed entries have user_availability=null, success=false, and a populated error. */
 export type UserAvailabilityResult = {
   __typename?: 'UserAvailabilityResult';
@@ -16923,7 +17612,7 @@ export type UserAvailabilityResult = {
   /** Whether the operation succeeded */
   success: Scalars['Boolean']['output'];
   /** The updated user availability, null if the operation failed for this user */
-  user_availability?: Maybe<UserAvailability>;
+  user_availability?: Maybe<UserAssignment>;
 };
 
 /** User config of a user kind within the account. */
@@ -16999,7 +17688,7 @@ export enum UserKindFilter {
   AgentSignupUser = 'AGENT_SIGNUP_USER',
   /** A ai platform agent api user user. */
   AiPlatformAgentApiUser = 'AI_PLATFORM_AGENT_API_USER',
-  /** A group representing admin, member, guest, view-only, and agent member users. */
+  /** A group representing admin, member, guest, view-only, agent member, service, and vibe users. */
   Basic = 'BASIC',
   /** A campaigns api user user. */
   CampaignsApiUser = 'CAMPAIGNS_API_USER',
@@ -17009,6 +17698,10 @@ export enum UserKindFilter {
   DataRetentionApiUser = 'DATA_RETENTION_API_USER',
   /** A dependencies api user user. */
   DependenciesApiUser = 'DEPENDENCIES_API_USER',
+  /** A external agent detached member user. */
+  ExternalAgentDetachedMember = 'EXTERNAL_AGENT_DETACHED_MEMBER',
+  /** A external agent member user. */
+  ExternalAgentMember = 'EXTERNAL_AGENT_MEMBER',
   /** A goals api user user. */
   GoalsApiUser = 'GOALS_API_USER',
   /** A guest user. */
@@ -17037,6 +17730,8 @@ export enum UserKindFilter {
   ServiceUser = 'SERVICE_USER',
   /** A sprint management api user user. */
   SprintManagementApiUser = 'SPRINT_MANAGEMENT_API_USER',
+  /** A vibe user user. */
+  VibeUser = 'VIBE_USER',
   /** A view only user. */
   ViewOnly = 'VIEW_ONLY'
 }
@@ -17072,11 +17767,19 @@ export type UserUpdateInput = {
   user_id: Scalars['ID']['input'];
 };
 
-/** List of user availability assignments */
+/** Users availability with per-user references and top-level schedule/time-off data */
 export type UsersAvailability = {
   __typename?: 'UsersAvailability';
-  /** User availability assignments */
-  users_availability: Array<UserAvailability>;
+  /** ID of the account-level default time off schedule */
+  default_time_off_id: Scalars['ID']['output'];
+  /** ID of the account-level default work schedule */
+  default_work_schedule_id: Scalars['ID']['output'];
+  /** All time off schedules referenced by users_assignment entries */
+  time_offs: Array<TimeOff>;
+  /** Per-user availability references */
+  users_assignment: Array<UserAssignment>;
+  /** All work schedules referenced by users_assignment entries */
+  work_schedules: Array<WorkSchedule>;
 };
 
 /** The direction to sort users. */
@@ -17599,6 +18302,21 @@ export enum WidgetStatus {
   /** Widget data was loaded successfully. */
   Ok = 'OK'
 }
+
+/** A generated AI widgets surface containing A2UI component definitions. */
+export type WidgetsSurface = {
+  __typename?: 'WidgetsSurface';
+  /** The jazz-widgets catalog version used for generation. */
+  catalog_version?: Maybe<Scalars['String']['output']>;
+  /** The JSON Schema used as the data structure for widgets surface generation. */
+  data_structure?: Maybe<Scalars['JSON']['output']>;
+  /** The unique identifier of the widgets surface. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** The generated A2UI JSON string defining the widget layout. */
+  structure?: Maybe<Scalars['String']['output']>;
+  /** The current version number, incremented on each update. */
+  version?: Maybe<Scalars['Int']['output']>;
+};
 
 /** A named work schedule with per-weekday working hours */
 export type WorkSchedule = {
