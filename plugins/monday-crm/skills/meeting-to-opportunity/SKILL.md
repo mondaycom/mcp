@@ -1,6 +1,6 @@
 ---
 name: meeting-to-opportunity
-description: Connects monday NoteTaker meeting transcripts to CRM deals. Reads recent NoteTaker meetings, matches each to an opportunity by participant email or company name, and appends a structured update (key points + next steps + commitments) to the matching deal item. Auto-creates a contact item when a meeting participant doesn't exist on the Contacts board. Use when someone says "log my meetings to deals", "update CRM from yesterday's calls", "what did I commit to in meetings", "sync notetaker", or any variation of meeting-driven CRM update.
+description: Turn meeting transcripts into deal updates — key points, commitments, and next steps posted to matching CRM deals automatically. Auto-creates contacts for new attendees. Use when someone says "log my meetings to deals", "update CRM from calls", "what did I commit to in meetings", or "sync notetaker".
 argument-hint: "[optional: time window — 'today', 'yesterday', 'last 7 days', or 'since 2026-05-20']"
 user-invocable: true
 allowed-tools: [Read, AskUserQuestion, mcp__monday__get_user_context, mcp__monday__list_workspaces, mcp__monday__search, mcp__monday__get_board_info, mcp__monday__get_column_type_info, mcp__monday__get_board_items_page, mcp__monday__get_notetaker_meetings, mcp__monday__create_update, mcp__monday__create_item, mcp__monday__change_item_column_values, mcp__monday__create_doc, mcp__monday__create_notification, mcp__monday__list_users_and_teams, mcp__monday__all_monday_api]
