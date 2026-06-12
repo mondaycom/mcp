@@ -43,6 +43,7 @@ import { ListUsersAndTeamsTool } from './list-users-and-teams-tool/list-users-an
 import { MoveItemToGroupTool } from './move-item-to-group-tool';
 import { ReadDocsTool } from './read-docs-tool/read-docs-tool';
 import { WorkspaceInfoTool } from './workspace-info-tool/workspace-info-tool';
+import { ListWorkspaceTool } from './list-workspace-tool/list-workspace-tool';
 import { CreateDocTool } from './create-doc-tool/create-doc-tool';
 import { AddContentToDocTool } from './add-content-to-doc-tool/add-content-to-doc-tool';
 import { UpdateDocTool } from './update-doc-tool/update-doc-tool';
@@ -113,6 +114,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   FetchCustomActivityTool,
   ReadDocsTool,
   WorkspaceInfoTool,
+  ListWorkspaceTool,
   CreateDocTool,
   AddContentToDocTool,
   UpdateDocTool,
@@ -212,6 +214,7 @@ export * from './manage-tools-tool';
 export * from './move-item-to-group-tool';
 export * from './read-docs-tool/read-docs-tool';
 export * from './workspace-info-tool/workspace-info-tool';
+export * from './list-workspace-tool/list-workspace-tool';
 export * from './create-doc-tool/create-doc-tool';
 export * from './add-content-to-doc-tool/add-content-to-doc-tool';
 export * from './update-doc-tool/update-doc-tool';
