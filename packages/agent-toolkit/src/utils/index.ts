@@ -3,4 +3,9 @@ export { toolFactory } from './tools/initializing.utils';
 export { extractTokenInfo, decodeJwtToken, MondayTokenPayload } from './token.utils';
 export { TIME_IN_SECONDS, TIME_IN_MILLISECONDS, NANOSECONDS_PER_MILLISECOND } from './time.utils';
 export { API_VERSION } from './version.utils';
-export { rethrowWithContext } from './error.utils';
+export {
+  buildToolErrorStructuredContent,
+  formatToolError,
+  rethrowWithContext,
+  throwIfSearchTimeoutError,
+} from './error.utils';
