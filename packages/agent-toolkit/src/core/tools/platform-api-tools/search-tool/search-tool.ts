@@ -1,7 +1,7 @@
 import { ToolInputType, ToolOutputType, ToolType } from 'src/core/tool';
 import { z } from 'zod';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { getBoards, getDocs, getFolders } from './search-tool.graphql';
+import { getBoards, getDocs, getFolders, searchItems } from './search-tool.graphql';
 import { searchBoardsDev, searchDocsDev } from './search-tool.graphql.dev';
 import {
   GetBoardsQuery,
@@ -10,6 +10,8 @@ import {
   GetDocsQueryVariables,
   GetFoldersQuery,
   GetFoldersQueryVariables,
+  SearchItemsQuery,
+  SearchItemsQueryVariables,
 } from 'src/monday-graphql/generated/graphql/graphql';
 import {
   SearchBoardsDevQuery,
@@ -56,13 +58,13 @@ export class SearchTool extends BaseMondayApiTool<SearchToolInput> {
   });
 
   getDescription(): string {
-    return `Search within monday.com platform. Can search for boards, documents, forms, folders.
+    return `Search within monday.com platform. Can search for boards, documents, items, folders.
 For searching/listing specific users and teams, use list_users_and_teams tool.
 For account-level info (plan, member count, products), use get_user_context tool.
 For workspaces, use list_workspaces tool.
-For items and groups, use get_board_items_page tool.
 For groups, use get_board_info tool.
-IMPORTANT: ids returned by this tool are prefixed with the type of the object (e.g doc-123, board-456, folder-789). When passing the ids to other tools, you need to remove the prefix and just pass the number.
+ITEMS search requires a searchTerm and only returns id, title, and url.
+IMPORTANT: ids returned by this tool are prefixed with the type of the object (e.g doc-123, board-456, folder-789, item-321). When passing the ids to other tools, you need to remove the prefix and just pass the number.
     `;
   }
 
@@ -71,39 +73,39 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
   }
 
   protected async executeInternal(input: ToolInputType<SearchToolInput>): Promise<ToolOutputType<never>> {
-    // Try using "cross_entity_search" field from dev schema for BOARD and DOCUMENTS types
+    // Try the per-entity search endpoint for entities that support it (BOARD, DOCUMENTS, ITEMS)
     if (input.searchType !== GlobalSearchType.FOLDERS && input.searchTerm) {
       try {
-        const data = await this.searchWithDevEndpointAsync(input);
+        const data = await this.runSmartSearchAsync(input);
 
         return {
           content: { message: "Search results", data: data.items },
         };
       } catch (error) {
-       throwIfSearchTimeoutError(error);
+        throwIfSearchTimeoutError(error);
+        // ITEMS has no listing fallback — propagate the error instead of falling through.
+        if (input.searchType === GlobalSearchType.ITEMS) {
+          throw error;
+        }
       }
     }
 
-    const handlers = {
+    const handlers: Record<GlobalSearchType, (input: ToolInputType<SearchToolInput>) => Promise<DataWithFilterInfo<SearchResult>>> = {
       [GlobalSearchType.BOARD]: this.searchBoardsAsync.bind(this),
       [GlobalSearchType.DOCUMENTS]: this.searchDocsAsync.bind(this),
       [GlobalSearchType.FOLDERS]: this.searchFoldersAsync.bind(this),
+      // Items has no cross-board listing endpoint — only reachable when searchTerm is missing.
+      [GlobalSearchType.ITEMS]: () => { throw new Error('Items search requires a searchTerm'); },
     };
 
-    const handler = handlers[input.searchType];
-
-    if (!handler) {
-      throw new Error(`Unsupported search type: ${input.searchType}`);
-    }
-
-    const data = await handler(input);
+    const data = await handlers[input.searchType](input);
 
     return {
       content: { message: "Search results", disclaimer: data.wasFiltered || !input.searchTerm ? undefined : '[IMPORTANT]Items were not filtered. Please perform the filtering.', data: data.items },
     };
   }
 
-  private async searchWithDevEndpointAsync(
+  private async runSmartSearchAsync(
     input: ToolInputType<SearchToolInput>,
   ): Promise<DataWithFilterInfo<SearchResult>> {
     if(input.page > 1) {
@@ -120,7 +122,11 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
       return this.searchDocsWithDevEndpointAsync(input.searchTerm!, input.limit, workspaceIds);
     }
 
-    throw new Error(`Unsupported search type for dev endpoint: ${input.searchType}`);
+    if (input.searchType === GlobalSearchType.ITEMS) {
+      return this.searchItemsAsync(input.searchTerm!, input.limit, workspaceIds);
+    }
+
+    throw new Error(`Unsupported search type for smart search: ${input.searchType}`);
   }
 
   private async searchBoardsWithDevEndpointAsync(
@@ -159,6 +165,26 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     const items = response.search.docs.results.map((result) => ({
       id: ObjectPrefixes.DOCUMENT + result.indexed_data.id,
       title: result.indexed_data.name,
+    }));
+
+    return { items, wasFiltered: true };
+  }
+
+  private async searchItemsAsync(
+    query: string,
+    limit: number,
+    workspaceIds?: string[],
+  ): Promise<DataWithFilterInfo<SearchResult>> {
+    const variables: SearchItemsQueryVariables = { query, limit, workspaceIds };
+
+    const response = await this.mondayApi.request<SearchItemsQuery>(searchItems, variables, {
+      timeout: SEARCH_TIMEOUT,
+    });
+
+    const items = response.search.items.results.map((result) => ({
+      id: ObjectPrefixes.ITEM + result.indexed_data.id,
+      title: result.indexed_data.name,
+      url: result.indexed_data.url,
     }));
 
     return { items, wasFiltered: true };

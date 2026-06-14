@@ -16,20 +16,20 @@ import { ToolInputType, ToolOutputType, ToolType } from '../../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../../base-monday-api-tool';
 import { rethrowWithContext } from '../../../../../utils';
 
-export const manageWorkflowsToolSchema = {
+export const manageAutomationsToolSchema = {
   action: z
     .enum(['activate', 'deactivate', 'delete'])
     .describe(
       'The operation to perform. ' +
-        'activate: enables a paused workflow so it responds to its trigger. ' +
-        'deactivate: pauses a workflow without deleting it. ' +
-        'delete: permanently removes a workflow (irreversible).',
+        'activate: enables a paused automation so it responds to its trigger. ' +
+        'deactivate: pauses an automation without deleting it. ' +
+        'delete: permanently removes an automation (irreversible).',
     ),
   workflowId: z
     .string()
     .trim()
     .min(1, 'workflowId must be a non-empty string')
-    .describe('The workflow ID to operate on. Obtain from list_automations.'),
+    .describe('The automation ID to operate on. Obtain from list_automations.'),
 };
 
 interface ActivateWorkflowInput {
@@ -47,41 +47,39 @@ interface DeleteWorkflowInput {
   workflowId: string;
 }
 
-type ManageWorkflowsInput = ActivateWorkflowInput | DeactivateWorkflowInput | DeleteWorkflowInput;
+type ManageAutomationsInput = ActivateWorkflowInput | DeactivateWorkflowInput | DeleteWorkflowInput;
 
-export class ManageWorkflowsTool extends BaseMondayApiTool<typeof manageWorkflowsToolSchema> {
-  name = 'manage_workflows';
+export class ManageAutomationsTool extends BaseMondayApiTool<typeof manageAutomationsToolSchema> {
+  name = 'manage_automations';
   type = ToolType.WRITE;
   annotations = createMondayApiAnnotations({
-    title: 'Manage Workflows',
+    title: 'Manage Automations',
     readOnlyHint: false,
     destructiveHint: true,
     idempotentHint: false,
   });
 
   getDescription(): string {
-    return `Activate, deactivate, or delete an existing monday.com automation/workflow.
+    return `Activate, deactivate, or delete an existing monday.com automation.
 
-Requires a workflow id. When the user refers to an automation by name, always call list_automations first to resolve the id — never guess or infer ids.
+Requires an automation id. When the user refers to an automation by name, always call list_automations first to resolve the id — never guess or infer ids.
 
 Actions:
-- activate: enables a paused workflow so it starts responding to its trigger.
-- deactivate: pauses a workflow while preserving its definition.
-- delete: permanently removes a workflow — irreversible.
+- activate: enables a paused automation so it starts responding to its trigger.
+- deactivate: pauses an automation while preserving its definition.
+- delete: permanently removes an automation — irreversible.
 
-When intent is ambiguous ("stop", "turn off", "pause"), prefer deactivate over delete.
-
-Terminology: "workflows" and "automations" are the same thing.`;
+When intent is ambiguous ("stop", "turn off", "pause"), prefer deactivate over delete.`;
   }
 
   getInputSchema() {
-    return manageWorkflowsToolSchema;
+    return manageAutomationsToolSchema;
   }
 
   protected async executeInternal(
-    input: ToolInputType<typeof manageWorkflowsToolSchema>,
+    input: ToolInputType<typeof manageAutomationsToolSchema>,
   ): Promise<ToolOutputType<never>> {
-    const typedInput = input as ManageWorkflowsInput;
+    const typedInput = input as ManageAutomationsInput;
 
     switch (typedInput.action) {
       case 'activate':

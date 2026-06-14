@@ -33,11 +33,16 @@ export abstract class BaseMondayAppsTool<
   abstract name: string;
   abstract type: ToolType;
   abstract category: MondayAppsToolCategory;
-  private mondayApiToken?: string;
+  private readonly _mondayApiTokenProvider?: string | (() => string);
   abstract annotations: ToolAnnotations;
 
-  constructor(mondayApiToken?: string) {
-    this.mondayApiToken = mondayApiToken;
+  constructor(mondayApiToken?: string | (() => string)) {
+    this._mondayApiTokenProvider = mondayApiToken;
+  }
+
+  private get mondayApiToken(): string | undefined {
+    if (this._mondayApiTokenProvider === undefined) return undefined;
+    return typeof this._mondayApiTokenProvider === 'function' ? this._mondayApiTokenProvider() : this._mondayApiTokenProvider;
   }
 
   abstract getDescription(): string;
