@@ -12,9 +12,9 @@ Shows: skill invoked, connector check passes, NoteTaker probe returns auth/permi
 *[internal_domain = "monday.com"]*
 *[calls `mcp__monday__get_notetaker_meetings({ limit: 1 })` → error: `{ "error": "NoteTaker not enabled for this account" }`]*
 
-> NoteTaker isn't connected for this account, or you don't have meetings recorded yet. Set up NoteTaker at the monday.com app (monday NoteTaker), then re-run `/monday-crm:meeting-to-opportunity`.
+> NoteTaker isn't connected for this account, or you don't have meetings recorded yet. Set up NoteTaker at the monday.com app (monday NoteTaker), then re-run `/monday-crm:meeting-to-deal`.
 >
-> If you'd like to log notes manually instead, try `/monday-crm:meeting-to-opportunity` after pasting a transcript, or update the Arcadia Systems deal directly on your Deals board.
+> If you'd like to log notes manually instead, try `/monday-crm:meeting-to-deal` after pasting a transcript, or update the Arcadia Systems deal directly on your Deals board.
 
 **[Skill stops. No further steps run.]**
 

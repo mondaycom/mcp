@@ -1,6 +1,6 @@
 ---
 name: workspace-builder
-description: Build a CRM workspace from scratch — describe your business and get boards, columns, and pipeline stages created in monday. Use when someone says "set up my CRM", "build me a CRM", "create CRM boards for me", "I need a new sales pipeline", "help me get started in monday", "I don't know how to set up my pipeline", or "build me a CRM from scratch". Do not use for questions about an existing board — those belong to morning-briefing or board-diagnosis.
+description: Build a CRM workspace from scratch — describe your business and get boards, columns, and pipeline stages created in monday. Use when someone says "set up my CRM", "build me a CRM", "create CRM boards for me", "I need a new sales pipeline", "help me get started in monday", "I don't know how to set up my pipeline", or "build me a CRM from scratch". Do not use for questions about an existing board — those belong to daily-briefing or data-cleanup.
 argument-hint: "[optional: business description, e.g. 'window coverings, B2C, ~50 leads/month']"
 user-invocable: true
 allowed-tools: [Read, WebFetch, AskUserQuestion, mcp__monday__get_user_context, mcp__monday__list_workspaces, mcp__monday__workspace_info, mcp__monday__search, mcp__monday__create_workspace, mcp__monday__create_board, mcp__monday__create_group, mcp__monday__create_column, mcp__monday__create_item, mcp__monday__create_doc, mcp__monday__get_board_info, mcp__monday__all_monday_api]
@@ -43,8 +43,8 @@ Flow: **Trigger → Discover → Propose → Confirm → Build (α) → Seed (β
 
 ## Cross-skill handoffs
 - **From none (entry point):** First-run user, in-product CTA route, or explicit ask.
-- **To morning-briefing:** Once the board has at least 5 items with a stage column populated, suggest `/monday-crm:morning-briefing` to start the daily-ops loop.
-- **To board-diagnosis:** After 30 days of use, suggest `/monday-crm:board-diagnosis` for a fill-rate audit.
+- **To daily-briefing:** Once the board has at least 5 items with a stage column populated, suggest `/monday-crm:daily-briefing` to start the daily-ops loop.
+- **To data-cleanup:** After 30 days of use, suggest `/monday-crm:data-cleanup` for a fill-rate audit.
 
 ---
 
@@ -131,13 +131,19 @@ Never create all 5 boards by default. Blank boards are intimidating and reduce a
 
 ## Step 0: Connector check
 
-**Goal:** Fail fast if the monday MCP connection is missing.
+**Goal:** Fail fast if the monday MCP connection is missing. Detect the CRM product and cache its numeric ID for workspace creation.
 
 1. Try `mcp__monday__get_user_context`.
 2. If missing/auth error/no workspace:
    - Print exactly: *"I don't see the monday connector active on this session. Install the monday connector at monday.com/mcp, then run `/monday-crm:workspace-builder` again."*
    - Stop.
-3. If connector works, cache `user.id`, `user.name`, and default workspace. Check `account.products` for an entry with `kind: "crm"`. If found, cache `accountProductId = "crm"`. If not found, print: *"This plugin requires a monday CRM account. Your current plan doesn't include the CRM product — visit monday.com/crm to start a trial."* and stop.
+3. If connector works, cache `user.id` and `user.name`.
+4. Check `account.products` (from `get_user_context`) for an entry with `kind: "crm"`. If not found, print: *"This plugin requires a monday CRM account. Your current plan doesn't include the CRM product — visit monday.com/crm to start a trial."* and stop.
+5. **Get the CRM product's numeric ID** (needed for workspace creation — the `kind` string alone is not sufficient):
+   ```graphql
+   { account { products { id kind } } }
+   ```
+   via `all_monday_api`. Find the entry with `kind: "crm"` and cache its `id` as `crmProductId`. This ID is account-specific (e.g., `"1312540"`) — do not hardcode it.
 
 > **PAUSE**: do not write any `create_*` call before Step 5, and never before Step 0 passes.
 
@@ -227,13 +233,18 @@ Hard rule: **no writes** until the user confirms.
 
 ## Step 4: Resolve target workspace
 
-**Goal:** Land in the right workspace without cluttering Main.
+**Goal:** Land in the right workspace without cluttering Main. Prefer existing CRM workspaces over creating new ones.
 
-1. From `get_user_context`, list workspaces the user can write to.
-2. If the user has exactly one writable workspace → use it (skip ask).
-3. If multiple → `AskUserQuestion` with workspace names + option "create a new one".
-4. If "create a new one" → `create_workspace({ name: "<user input or default 'CRM'>", workspaceKind: "open", accountProductId: "crm" })` after confirming. The `accountProductId: "crm"` ties the workspace to the monday CRM product — omitting it creates a generic monday workspace.
-5. **Idempotency:** before any `create_board`, `search` for existing boards in this workspace whose names match the proposed names (case-insensitive). If found:
+1. From `get_user_context`, get the workspace list. Then call `list_workspaces` to get all writable workspaces.
+2. **Identify CRM workspaces:** A workspace is likely CRM-native if its name contains "CRM" (case-insensitive) or if it was previously used for CRM boards. Surface CRM-named workspaces first in the options list.
+3. If the user has exactly one writable workspace → use it (skip ask).
+4. If multiple → `AskUserQuestion` with workspace names (CRM ones labeled `[CRM]`) + option "create a new one".
+5. If "create a new one" → after confirming, call:
+   ```
+   create_workspace({ name: "<user input or default 'CRM'>", workspaceKind: "open", accountProductId: "<crmProductId>" })
+   ```
+   where `crmProductId` is the **numeric ID cached in Step 0** (e.g., `"1312540"`) — NOT the string `"crm"`. Passing the numeric ID ties the workspace to the monday CRM product; omitting it or passing `"crm"` creates a generic monday workspace with no product association.
+6. **Idempotency:** before any `create_board`, `search` for existing boards in this workspace whose names match the proposed names (case-insensitive). If found:
    - Surface to user: *"You already have a board named `<name>`. (a) Skip this board, (b) Create alongside as `<name> 2` (I'll re-confirm the full plan before building), (c) Cancel and pick a different workspace?"*
    - Option (b) updates the plan — show the revised full plan and ask for confirmation before any writes (even in Default mode).
    - Never overwrite, never write into the existing board, never delete it.
@@ -315,9 +326,9 @@ If no existing doc found, `create_doc` in the user's workspace, title `CRM Setup
 ## What's next
 
 1. **Add your real deals.** Replace the examples or add fresh items.
-2. **Try the morning briefing.** Once you have 5+ deals with stages set, run `/monday-crm:morning-briefing`.
+2. **Try the morning briefing.** Once you have 5+ deals with stages set, run `/monday-crm:daily-briefing`.
 3. **Set up automations.** Open the Automation Center on each board to wire status changes, due-date reminders, and lead routing.
-4. **Audit hygiene later.** After 30 days, run `/monday-crm:board-diagnosis` for a fill-rate audit.
+4. **Audit hygiene later.** After 30 days, run `/monday-crm:data-cleanup` for a fill-rate audit.
 
 ---
 Generated by Claude · <ISO timestamp> · re-run `/monday-crm:workspace-builder` only if you want to scaffold an additional CRM (won't touch this one).
@@ -325,10 +336,10 @@ Generated by Claude · <ISO timestamp> · re-run `/monday-crm:workspace-builder`
 
 ---
 
-## Step 8: Handoff to morning-briefing
+## Step 8: Handoff to daily-briefing
 
 If at least one board was created and the user is in Default/Proactive mode, print:
-*"Want to try the morning briefing now? Once you add a few real deals it'll prioritize your day. Run `/monday-crm:morning-briefing` whenever you're ready."*
+*"Want to try the morning briefing now? Once you add a few real deals it'll prioritize your day. Run `/monday-crm:daily-briefing` whenever you're ready."*
 
 Silent mode skips this prompt.
 

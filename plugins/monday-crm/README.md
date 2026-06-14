@@ -1,28 +1,35 @@
 # monday CRM — Claude plugin
 
-Run your monday CRM in plain language. Seven skills read your live monday
-boards via the official monday MCP connector, synthesize insights, and
-publish a monday-native artifact (update, doc, or dashboard) — so work
-stays inside monday.
+Run your sales pipeline in monday CRM from plain language. Five skills read
+your live monday boards via the official monday MCP connector, synthesize
+insights, and write the result straight back into monday as a real board,
+dashboard, or doc — so work stays inside monday.
+
+## Try asking…
+
+- "Give me my CRM deal briefing for today"
+- "Build a sales forecast from my pipeline"
+- "Turn my meeting notes into a deal update"
+- "Set up a CRM pipeline from scratch"
+- "Run a health check on my CRM board"
+- "Find and clean up duplicate deals in my CRM"
 
 ## Skills
 
 | Skill | What it does | Trigger phrases |
 |---|---|---|
-| `setup` | First-run OAuth connection for the bundled monday connector | "connect my monday account", "set up monday CRM", "monday CRM setup" |
-| `morning-briefing` | Daily pipeline digest → monday update | "morning briefing", "what should I focus on today", "pipeline summary" |
-| `forecast-dashboard` | Commit / best-case / pipeline → monday dashboard | "forecast dashboard", "show me Q2 pipeline", "commit vs best-case" |
-| `board-diagnosis` | Five-strand data-quality audit → monday doc | "audit my CRM board", "diagnose the pipeline", "what's wrong with my board" |
-| `bulk-data-hygiene` | Phone, email, country normalization + bulk-set → writes | "clean my CRM", "normalize phone numbers", "fix data" |
-| `workspace-builder` | CRM board setup from scratch → boards + columns | "build me a CRM from scratch", "create CRM boards for me", "set up my first monday CRM" |
-| `meeting-to-opportunity` | NoteTaker transcripts → deal recaps + stage signals | "log my meetings to deals", "sync notetaker", "update CRM from calls" |
+| `daily-briefing` | Prioritized daily deal briefing → monday update | "morning briefing", "what should I focus on today", "pipeline summary" |
+| `forecast` | Commit / best-case / pipeline → monday dashboard | "build me a forecast", "show me Q2 pipeline", "commit vs best-case" |
+| `meeting-to-deal` | Meeting transcripts → deal updates + stage signals | "log my meetings to deals", "sync notetaker", "update CRM from calls" |
+| `workspace-builder` | CRM workspace from scratch → boards + columns + stages | "build me a CRM from scratch", "create CRM boards for me", "set up my pipeline" |
+| `data-cleanup` | Board health check (report) + bulk data fixes → doc + writes | "run a board health check", "clean my CRM", "fix my data", "what's broken in my CRM" |
 
 ## How it works
 
 ```
 ┌─────────────────┐     OAuth      ┌─────────────────┐
 │   Claude Code   │ ──────────────▶│  monday MCP     │
-│  (7 skills)     │                │  mcp.monday.com │
+│  (5 skills)     │                │  mcp.monday.com │
 └─────────────────┘                └────────┬────────┘
                                             │
                                    ┌────────▼────────┐
@@ -70,23 +77,17 @@ claude plugin marketplace add ./path/to/plugin
 claude plugin install monday-crm@<local-marketplace-name>
 ```
 
-## First-run setup
+## Getting started
 
-After installing, run `/monday-crm:setup` (or ask "connect my monday
-account"). Claude will:
-
-1. Check whether you have a monday.com account. If not, direct you to
-   the free tier at https://monday.com/crm.
-2. Check whether the bundled `monday` MCP server is connected.
-3. If not, prompt you to complete OAuth via the browser pop-up.
-4. Verify the connection by calling `get_user_context`.
-5. Detect whether you have existing CRM boards and route you to the
-   right next skill — operate-mode skills for existing users,
-   `workspace-builder` for blank-slate users.
+After installing, just ask for what you need (e.g. "give me my CRM deal
+briefing"). On first use, Claude prompts for OAuth to connect the bundled
+`monday` MCP server via your browser — no API tokens to manage. Each skill
+verifies the connection (`get_user_context`) and, if you don't have a CRM
+board yet, routes you to `workspace-builder` to build one.
 
 > **Don't have a monday account?** The plugin works with monday CRM's
-> free tier. Start at https://monday.com/crm, then come back and run
-> `/monday-crm:setup`.
+> free tier. Start at https://monday.com/crm, then come back and ask for a
+> deal briefing or to build a CRM workspace.
 
 > **claude.ai users:** This plugin is designed for Claude Code (CLI and
 > desktop app). If you're on claude.ai, you can install the plugin but
