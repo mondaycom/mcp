@@ -23,7 +23,7 @@ describe('RemoveAiFromColumnTool', () => {
     expect(parsed.success).toBe(true);
   });
 
-  it('should pass versionOverride dev and correct variables', async () => {
+  it('should pass versionOverride 2026-10 and correct variables', async () => {
     mocks.setResponseOnce({ remove_ai_from_column: { column_id: 'col1', success: true } });
 
     await callToolByNameRawAsync('remove_ai_from_column', {
@@ -34,7 +34,7 @@ describe('RemoveAiFromColumnTool', () => {
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
       expect.stringContaining('RemoveAiFromColumn'),
       { boardId: '456', columnId: 'col1' },
-      expect.objectContaining({ versionOverride: 'dev' }),
+      expect.objectContaining({ versionOverride: '2026-10' }),
     );
   });
 

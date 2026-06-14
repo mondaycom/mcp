@@ -25,7 +25,7 @@ describe('ConfigureAiColumnTool', () => {
       expect(parsed.column_id).toBe('status_col');
     });
 
-    it('should pass versionOverride dev and correct variables', async () => {
+    it('should pass versionOverride 2026-10 and correct variables', async () => {
       mocks.setResponseOnce({ configure_categorize_ai_column: { column_id: 'col1' } });
 
       await callToolByNameRawAsync('configure_ai_column', {
@@ -46,7 +46,7 @@ describe('ConfigureAiColumnTool', () => {
           sourceColumnId: 'text_col',
           additionalInstructions: 'Use: Bug, Feature, Chore',
         }),
-        expect.objectContaining({ versionOverride: 'dev' }),
+        expect.objectContaining({ versionOverride: '2026-10' }),
       );
     });
 
@@ -152,7 +152,7 @@ describe('ConfigureAiColumnTool', () => {
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.stringContaining('ConfigureImproveTextAiColumn'),
         expect.objectContaining({ length: 'longer' }),
-        expect.objectContaining({ versionOverride: 'dev' }),
+        expect.objectContaining({ versionOverride: '2026-10' }),
       );
     });
   });
@@ -256,7 +256,7 @@ describe('ConfigureAiColumnTool', () => {
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.stringContaining('ConfigureWriteMeAiColumn'),
         expect.objectContaining({ length: 'sentence', tone: 'casual' }),
-        expect.objectContaining({ versionOverride: 'dev' }),
+        expect.objectContaining({ versionOverride: '2026-10' }),
       );
     });
 
@@ -317,7 +317,7 @@ describe('ConfigureAiColumnTool', () => {
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.stringContaining('ConfigurePersonAssignmentAiColumn'),
         expect.objectContaining({ groups }),
-        expect.objectContaining({ versionOverride: 'dev' }),
+        expect.objectContaining({ versionOverride: '2026-10' }),
       );
     });
 
