@@ -23,7 +23,7 @@ export class RemoveAiFromColumnTool extends BaseMondayApiTool<RemoveAiFromColumn
   });
 
   getDescription(): string {
-    return `Remove AI configuration from a column on a monday.com board. This deletes all AI automation recipes and the app feature extension associated with the column. The column itself is not deleted — only its AI behavior is removed.
+    return `Remove AI from a column on a monday.com board. Use this tool when the user wants to disable AI on a column, turn off AI automation, stop AI from running on a column, or delete the AI behavior from a column. This deletes all AI automation recipes and the app feature extension associated with the column. The column itself is not deleted — only its AI behavior is removed.
 
 Use get_board_schema to find column IDs before calling this tool.`;
   }
@@ -40,7 +40,7 @@ Use get_board_schema to find column IDs before calling this tool.`;
           boardId: input.board_id.toString(),
           columnId: input.column_id,
         },
-        { versionOverride: 'dev' },
+        { versionOverride: '2026-10' },
       );
 
       return {

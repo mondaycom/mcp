@@ -118,7 +118,7 @@ export class ConfigureAiColumnTool extends BaseMondayApiTool<ConfigureAiColumnTo
   });
 
   getDescription(): string {
-    return `Configure an AI block on an existing column in a monday.com board. AI columns automatically process item data using AI — categorize items, summarize text, translate content, extract entities, generate text, improve writing, or assign people.
+    return `Add AI to a column or set up an AI column on a monday.com board. Use this tool when the user wants to automatically categorize, summarize, translate, extract, generate text, improve writing, or assign people using AI on a column. This is the right tool for requests like "add AI to a column", "set up automatic extraction/categorization/summarization", "make a column use AI", "configure AI on a column", or "use AI to automatically fill a column".
 
 The column must already exist on the board with a compatible type for the chosen block. To create a new AI column, first use create_column to create the column, then use this tool to add AI behavior.
 
@@ -204,7 +204,7 @@ RELATED TOOLS:
         additionalInstructions: input.additional_instructions,
         extraSettings,
       },
-      { versionOverride: 'dev' },
+      { versionOverride: '2026-10' },
     );
     return {
       content: { message: 'AI column configured successfully', column_id: res.configure_categorize_ai_column?.column_id },
@@ -227,7 +227,7 @@ RELATED TOOLS:
         additionalInstructions: input.additional_instructions,
         extraSettings,
       },
-      { versionOverride: 'dev' },
+      { versionOverride: '2026-10' },
     );
     return {
       content: { message: 'AI column configured successfully', column_id: res.configure_summarize_ai_column?.column_id },
@@ -253,7 +253,7 @@ RELATED TOOLS:
         targetLanguage: input.target_language,
         extraSettings,
       },
-      { versionOverride: 'dev' },
+      { versionOverride: '2026-10' },
     );
     return {
       content: { message: 'AI column configured successfully', column_id: res.configure_translate_ai_column?.column_id },
@@ -278,7 +278,7 @@ RELATED TOOLS:
         refinementType: input.refinement_type,
         extraSettings,
       },
-      { versionOverride: 'dev' },
+      { versionOverride: '2026-10' },
     );
     return {
       content: { message: 'AI column configured successfully', column_id: res.configure_improve_text_ai_column?.column_id },
@@ -309,7 +309,7 @@ RELATED TOOLS:
         additionalInstructions: input.additional_instructions,
         extraSettings,
       },
-      { versionOverride: 'dev' },
+      { versionOverride: '2026-10' },
     );
     return {
       content: { message: 'AI column configured successfully', column_id: res.configure_extract_ai_column?.column_id },
@@ -332,7 +332,7 @@ RELATED TOOLS:
         aiQuery: input.ai_query,
         extraSettings,
       },
-      { versionOverride: 'dev' },
+      { versionOverride: '2026-10' },
     );
     return {
       content: { message: 'AI column configured successfully', column_id: res.configure_open_block_ai_column?.column_id },
@@ -363,7 +363,7 @@ RELATED TOOLS:
         length: input.output_length,
         extraSettings,
       },
-      { versionOverride: 'dev' },
+      { versionOverride: '2026-10' },
     );
     return {
       content: { message: 'AI column configured successfully', column_id: res.configure_write_me_ai_column?.column_id },
@@ -389,7 +389,7 @@ RELATED TOOLS:
         groups: input.groups,
         extraSettings,
       },
-      { versionOverride: 'dev' },
+      { versionOverride: '2026-10' },
     );
     return {
       content: { message: 'AI column configured successfully', column_id: res.configure_person_assignment_ai_column?.column_id },
