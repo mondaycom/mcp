@@ -48,6 +48,8 @@ Terminology:
 - Workflows vs. automations: workflows are standalone objects scoped to a workspace. Automations (create_automation) are per-board trigger/action rules. They are different products.
 - Draft: the editable, inactive version of a workflow. Changes are made on the draft version until it is published as the live version.
 - Privacy: PUBLIC — visible to all workspace members (default). PRIVATE — restricted access. SHAREABLE — accessible to guests outside the account.
+
+Note: if directing the user to the workflow in the UI, the correct URL path is custom_objects/, not workflows/ — e.g. {account}.monday.com/custom_objects/{workflowObjectId}.
 `;
   }
 

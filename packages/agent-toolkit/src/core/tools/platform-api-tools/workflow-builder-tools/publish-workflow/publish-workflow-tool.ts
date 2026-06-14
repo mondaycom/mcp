@@ -52,6 +52,8 @@ Returns:
 - workflowObjectId: the workflow object ID (unchanged)
 - workflowLiveId: the new live version ID — this changes on every publish, so do not cache it
 
+Note: if directing the user to the workflow in the UI, the correct URL path is custom_objects/, not workflows/ — e.g. {account}.monday.com/custom_objects/{workflowObjectId}.
+
 `;
   }
 
