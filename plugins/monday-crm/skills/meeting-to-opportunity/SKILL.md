@@ -1,14 +1,12 @@
 ---
 name: meeting-to-opportunity
-description: Connects monday NoteTaker meeting transcripts to CRM deals. Reads recent NoteTaker meetings, matches each to an opportunity by participant email or company name, and appends a structured update (key points + next steps + commitments) to the matching deal item. Auto-creates a contact item when a meeting participant doesn't exist on the Contacts board. Use when someone says "log my meetings to deals", "update CRM from yesterday's calls", "what did I commit to in meetings", "sync notetaker", or any variation of meeting-driven CRM update.
+description: Turn meeting transcripts into deal updates — key points, commitments, and next steps posted to matching CRM deals automatically. Auto-creates contacts for new attendees. Use when someone says "log my meetings to deals", "update CRM from calls", "what did I commit to in meetings", "sync notetaker", "log this meeting", "I just had a call with [company]", "what did I promise in that meeting", "add notes from today's calls", or "update the deal after my call".
 argument-hint: "[optional: time window — 'today', 'yesterday', 'last 7 days', or 'since 2026-05-20']"
 user-invocable: true
 allowed-tools: [Read, AskUserQuestion, mcp__monday__get_user_context, mcp__monday__list_workspaces, mcp__monday__search, mcp__monday__get_board_info, mcp__monday__get_column_type_info, mcp__monday__get_board_items_page, mcp__monday__get_notetaker_meetings, mcp__monday__create_update, mcp__monday__create_item, mcp__monday__change_item_column_values, mcp__monday__create_doc, mcp__monday__create_notification, mcp__monday__list_users_and_teams, mcp__monday__all_monday_api]
 ---
 
 # Meeting to Opportunity
-
-Pulls recent NoteTaker meetings, matches each to a CRM deal, and writes structured notes back as monday updates. Reverse-Salesforce-Einstein — Salesforce ships this loop, monday hasn't (until now). Cross-product stickiness for NoteTaker + CRM users.
 
 Flow: **Trigger → Pull meetings → Match → Synthesize → Publish (α) → Auto-contact (β, opt-in) → Proactive next-step nudges (opt-in)**.
 
@@ -27,7 +25,7 @@ Flow: **Trigger → Pull meetings → Match → Synthesize → Publish (α) → 
 - Shared artifact conventions (§ Shared patterns).
 
 ## Tools (MCP)
-- `get_user_context` — user identity for filtering meetings.
+- `get_user_context` — user identity + email domain for filtering meetings and extracting `internal_domain`.
 - `get_notetaker_meetings` — recent meetings + transcripts.
 - `search` / `list_workspaces` / `get_board_info` — locate Deals + Contacts boards.
 - `get_board_items_page` — fetch active deals to match against.
@@ -37,7 +35,7 @@ Flow: **Trigger → Pull meetings → Match → Synthesize → Publish (α) → 
 - `change_item_column_values` — populate the new contact's email + company columns, write `Source = Claude` on contacts, and apply confirmed stage / last-touch edits on matched deals. **Never** for amount columns.
 - `create_notification` — proactive next-step nudges.
 - `create_doc` — sync summary doc.
-- `all_monday_api` — escape hatch for connect-board column writes (linking contact ↔ deal).
+- `all_monday_api` — escape hatch for connect-board column writes (linking contact ↔ deal). Note: connect-board writes via `all_monday_api` may fail silently — see Error handling reference.
 
 ## Cross-skill handoffs
 - **From workspace-builder / morning-briefing:** suggested as a way to keep deals fresh after a meeting-heavy day.
@@ -48,11 +46,12 @@ Flow: **Trigger → Pull meetings → Match → Synthesize → Publish (α) → 
 
 ## Step 0: Connector check + NoteTaker availability
 
-**Goal:** Fail fast if either the monday MCP connector or NoteTaker is missing.
+**Goal:** Fail fast if either the monday MCP connector or NoteTaker is missing. Also extract `internal_domain` for use in Steps 4–5.
 
 1. Try `mcp__monday__get_user_context`. On error → standard install prompt, stop.
-2. Try `mcp__monday__get_notetaker_meetings({ limit: 1 })`.
-3. If NoteTaker tool returns auth error or empty-by-permission:
+2. Extract `internal_domain` from the user's email (e.g. `"kevin@monday.com"` → `"monday.com"`). Store for Steps 4–5. If email is absent from the response, `internal_domain` = `"monday.com"` (safe default).
+3. Try `mcp__monday__get_notetaker_meetings({ limit: 1 })`.
+4. If NoteTaker tool returns auth error or empty-by-permission:
    - Print: *"NoteTaker isn't connected for this account, or you don't have meetings recorded yet. Set up NoteTaker at <monday-app>, then re-run."*
    - Stop.
 
@@ -76,7 +75,8 @@ Hard safety rail regardless of mode: **no deletes, no amount-column writes, no c
 
 1. If argument carries a phrase, parse: "today" / "yesterday" / "last N days" / "since YYYY-MM-DD".
 2. Default = last 24h.
-3. If parsed window > 14 days: confirm via `AskUserQuestion` (large windows produce noisy recaps).
+3. If no argument was provided AND 0 meetings are found (or on the very first run with no prior session context), print: *"Using last 24h (no window specified). Add 'yesterday', 'last 7 days', or 'since YYYY-MM-DD' to change the range."*
+4. If parsed window > 14 days: confirm via `AskUserQuestion` (large windows produce noisy recaps).
 
 ---
 
@@ -85,7 +85,7 @@ Hard safety rail regardless of mode: **no deletes, no amount-column writes, no c
 `mcp__monday__get_notetaker_meetings({ since: <ISO>, until: <ISO>, limit: 50 })`. Cache transcripts + attendees + meeting metadata.
 
 Edge cases:
-- **0 meetings in window:** print *"No NoteTaker meetings found in `<window>`. Try a wider range, e.g. `last 7 days`."* Stop.
+- **0 meetings in window:** print *"No NoteTaker meetings found in `<window>`. Try a wider range, e.g. `last 7 days`."* (Also echo the default-window hint from Step 2 if no argument was supplied.) Stop.
 - **>50 meetings:** paginate up to 200, then cap and surface sampling note.
 - **Tool 429:** backoff 3x; on third failure stop with *"NoteTaker is rate-limiting; retry in 60s."*
 
@@ -96,7 +96,7 @@ Edge cases:
 Resolve the boards directly — this skill is self-contained:
 
 1. **Deals board:** `get_user_context` → scan `favorites` + `relevantBoards` for names matching `deals|opportunities|pipeline|sales`. One candidate → use it; multiple → `AskUserQuestion`; zero → `list_workspaces` → `search("deal", BOARD)`. Still zero → degrade per step 4 below.
-2. **Contacts board:** same pass for `contacts|people|leads` (only if β auto-contact may run).
+2. **Contacts board:** same pass for `contacts|people|leads` (only if β auto-contact may run). If Contacts board is missing and mode = Proactive and β was approved, surface a chat-level message **before** writing the sync doc: *"Auto-contact was approved but I couldn't find a Contacts board. Contacts not created. Run `/monday-crm:workspace-builder` to set one up."* Then continue with α recap only.
 3. `get_board_info` on each. Resolve columns by type:
    - On Deals: `email` (if present), `text` company-name, `people` owner, `status` stage, `numbers` value, `date` last-touch.
    - On Contacts: `email`, `text` (or company-link `board_relation`), `phone`, `people` owner.
@@ -108,20 +108,22 @@ Resolve the boards directly — this skill is self-contained:
 
 **Goal:** For each meeting, find the single best matching deal — or flag it as unmatched.
 
+`internal_domain` was extracted in Step 0. Use it throughout this step in place of hard-coded `@monday.com` checks.
+
 For each meeting:
 
-1. **Extract signals:** attendee emails (excluding internal monday domain), company names from email domains, meeting title keywords.
+1. **Extract signals:** attendee emails (excluding `@<internal_domain>` addresses), company names from email domains, meeting title keywords.
 2. **Pull active deals** (Pass A from morning-briefing — non-Won/Lost), `limit: 500`.
 3. **Score candidates:**
    - +5 per attendee email matching a deal's email column.
    - +3 per attendee email *domain* matching a deal's company-name column (case-insensitive substring).
    - +2 if meeting title contains a deal name (≥3 contiguous chars match).
-   - +1 if meeting attendee is the deal's owner (intra-team meetings without external attendees → likely internal review of that deal).
+   - **+1 if deal owner is a meeting attendee — only when ALL non-internal attendees are from `@<internal_domain>` (i.e. purely internal meeting).** This signal is intentionally narrow: a deal owner being on an external sales call is expected and not a reliable match signal; it only carries weight for internal deal-review meetings where ownership is the strongest available signal.
 4. **Pick the top score** if it's ≥5 AND beats the second-best by ≥3. Otherwise flag as **ambiguous** (multiple candidates) or **unmatched** (no candidate ≥5).
 5. **Multi-deal meetings:** if top two candidates are within 2 points and both ≥5, flag as multi-match — write the recap to *both* deals with a header line "*Meeting also discussed: <other deal>*".
 
 Edge cases:
-- Internal-only meetings (all attendees `@monday.com` or `@<company-domain>`) and no deal-name title match: skip (likely standup), log to summary doc as "skipped: internal-only".
+- Internal-only meetings (all attendees `@<internal_domain>`) and no deal-name title match: skip (likely standup), log to summary doc as "skipped: internal-only".
 - Personal-meetings filter: skip meetings tagged 1:1 (no transcript content of CRM relevance).
 
 ---
@@ -143,7 +145,14 @@ Deal-side metadata lookup: pull current stage + value + close date for context (
 
 For each matched meeting + deal pair:
 
-1. **Idempotency:** search recent updates on the deal item for one carrying both `<!-- claude-skill-id: meeting-to-opportunity -->` and `<!-- meeting-id: <id> -->`. If found → update via `all_monday_api`, don't post a duplicate.
+1. **Idempotency check:** Use `all_monday_api` with the following query pattern to scan existing updates on the deal item:
+   ```graphql
+   { items_by_id(ids: [<dealId>]) { updates(limit: 50) { body } } }
+   ```
+   Walk the `body` of each returned update and check for both `<!-- claude-skill-id: meeting-to-opportunity -->` and `<!-- meeting-id: <id> -->`. If a match is found → use `all_monday_api` to update that existing update's body; do not post a duplicate.
+   
+   > **Note:** `mcp__monday__search` cannot search update bodies — always use `all_monday_api` items_by_id for this check.
+
 2. `create_update({ itemId: <dealId>, body: <recap markdown> })`.
 3. Update body shape:
 
@@ -174,7 +183,14 @@ Generated by Claude · <ISO timestamp> · run `/monday-crm:meeting-to-opportunit
 Before any write, print a single plan:
 *"I'll write: <N> recaps · <S> stage edits (high-confidence only) · <L> last-touch updates · <C> new contacts. <U> meetings unmatched (will list separately). <K> low-confidence stage signals will surface as text only. Proceed? (yes / show plan in detail / no)."*
 
-If user picks "show plan in detail", walk through one example per write-type, confirm, then batch the rest. Never per-deal confirms beyond that.
+If user picks "show plan in detail":
+1. List **all** stage transitions by name: `<deal name> · <old stage> → <new stage>` for every planned stage edit.
+2. Show one example recap (the first deal).
+3. Then confirm: *"Apply all? (yes / skip stage edits / no)"*.
+
+Never per-deal confirms beyond that.
+
+**Auto-contact cap warning:** If unmatched-attendee count > 25, add to the confirm message: *"<N> new contacts detected (> 25 cap). I'll create 25 and add the rest to a review-list doc. Proceed?"* (e.g. "31 new contacts detected (> 25 cap). I'll create 25 and add the rest to a review-list doc. Proceed?")
 
 ---
 
@@ -186,9 +202,10 @@ Only runs if mode = Proactive (option a) OR Default-mode user opts in at Step 7 
 
 For each unique attendee email not found on the Contacts board:
 1. `create_item({ boardId: <contactsBoard>, itemName: "<First Last>", groupId: "new" })`.
-2. `change_item_column_values` to populate email, company (from email domain), the matching deal link (`board_relation` column → `<dealId>`), and `Source = Claude` on the board's source/status column. If no source/status column exists, prompt the user once: *"Add a `Source` status column on Contacts so we can flag plugin-created records? (yes / skip)"*. If skipped, contacts are still created but source isn't tracked.
+2. `change_item_column_values` to populate email, company (from email domain), and `Source = Claude` on the board's source/status column. If no source/status column exists, prompt the user once: *"Add a `Source` status column on Contacts so we can flag plugin-created records? (yes / skip)"*. If skipped, contacts are still created but source isn't tracked.
+3. Link the new contact to the matched deal via the `board_relation` column using `all_monday_api`. If this call fails (connect-board writes can fail silently), log the contact as "contact created, deal link pending — set manually" in the sync doc rather than stopping. Do not retry silently.
 
-Cap at 25 contacts per run. Above that, batch into a review-list doc rather than creating silently.
+Cap at 25 contacts per run. Above that, batch into a review-list doc rather than creating silently. (Flag this at Step 7 confirm time — see auto-contact cap warning above.)
 
 ---
 
@@ -197,11 +214,12 @@ Cap at 25 contacts per run. Above that, batch into a review-list doc rather than
 Only runs if mode = Proactive AND session-level approval was given.
 
 For commitments parsed in Step 6 with a parseable due-date within next 7 days:
-- `create_notification({ userId: <deal owner>, itemId: <dealId>, text: "Commitment due <date> on <deal>: <commitment>" })`.
+- `create_notification({ userId: <deal owner>, text: "Commitment due <date> on <deal>: <commitment>" })`.
+- If `create_notification` requires an `itemId`: use the **sync doc's item ID** (from Step 10's `create_doc` return value). Do **not** pin the notification to an arbitrary deal item when the doc covers cross-deal commitments.
 
 Hard rail: never write commitments to amount columns. Notifications only for proactive nudges (stage edits already handled in Step 7's batched plan, not here).
 
-If >20 nudges queued, batch into one `This week's commitments` doc (with `<!-- claude-skill-id: meeting-to-opportunity -->` in body) and notify once with a link.
+If >20 nudges queued, batch into one `This week's commitments` doc (with `<!-- claude-skill-id: meeting-to-opportunity -->` in body) and notify once with a link to the doc.
 
 ---
 
@@ -230,6 +248,9 @@ If >20 nudges queued, batch into one `This week's commitments` doc (with `<!-- c
 ## Contacts created (<N>)
 - <name> (<email>) → linked to <deal>
 
+## Contacts pending manual link (<N>)
+- <name> (<email>) — contact created, deal link pending — set manually
+
 ---
 Generated by Claude · <ISO timestamp>
 ```
@@ -246,6 +267,7 @@ One-line chat summary: `Synced <N> meetings to <M> deals. <K> unmatched, <L> con
 - **Type-based column resolution** for non-English boards.
 - **Batched confirms** (Step 7) — never per-meeting prompts.
 - **Internal-only meeting filter** — skips standups, 1:1s, retro meetings.
+- **`internal_domain` from Step 0** used throughout for internal/external attendee classification — not hard-coded to `@monday.com`.
 
 ---
 
@@ -259,7 +281,9 @@ One-line chat summary: `Synced <N> meetings to <M> deals. <K> unmatched, <L> con
 | Ambiguous match (≥2 candidates within 2 points) | Skip the write; log to sync doc as "ambiguous". |
 | Idempotency hit (same meeting-id in update) | Update existing content, don't duplicate. |
 | 429 on `get_notetaker_meetings` or `create_update` | Backoff 3x; halt on third with retry message. |
-| Contacts board missing | Skip β; log "no Contacts board" once in sync doc. |
+| Contacts board missing (β approved, Proactive mode) | Surface chat message before sync doc: "Auto-contact was approved but I couldn't find a Contacts board. Contacts not created. Run `/monday-crm:workspace-builder` to set one up." Continue with α recap. |
+| Contacts board missing (β not triggered) | Skip β; log "no Contacts board" once in sync doc. |
+| connect-boards write via `all_monday_api` fails | Skip link; log in sync doc as "contact created, deal link pending — set manually". |
 | Transcript empty / NoteTaker still processing | Skip that meeting; surface in sync doc as "transcript pending". |
 | Cross-board permission error | Skip just that deal/contact; continue with the rest. |
 
@@ -267,10 +291,12 @@ One-line chat summary: `Synced <N> meetings to <M> deals. <K> unmatched, <L> con
 
 ## Completion criteria
 
-- [ ] Step 0 (connector + NoteTaker) ran and passed.
-- [ ] Each matched deal got at most one new (or one updated) recap update (verified via skill-id + meeting-id comments).
+- [ ] Step 0 (connector + NoteTaker) ran and passed. `internal_domain` extracted.
+- [ ] Each matched deal got at most one new (or one updated) recap update (verified via `all_monday_api` items_by_id update-body scan).
 - [ ] Every recap body carries `<!-- claude-skill-id: meeting-to-opportunity -->` + `<!-- meeting-id: <id> -->` + `Generated by Claude` footer.
 - [ ] Sync summary doc exists (or printed to chat on failure).
 - [ ] Safety rail held: no deletes, no amount-column writes, no cross-workspace moves.
-- [ ] Stage edits (if any) ran inside the Step 7 batched plan; low-confidence transitions stayed as text only.
-- [ ] Contacts created (if β ran) carry `Source = Claude` and a link to the matched deal.
+- [ ] Stage edits (if any) ran inside the Step 7 batched plan; all stage transitions listed by name in "show plan in detail"; low-confidence transitions stayed as text only.
+- [ ] Contacts created (if β ran) carry `Source = Claude`; failed deal links logged in sync doc as "pending — set manually".
+- [ ] Auto-contact cap warning shown at confirm time if unmatched attendees > 25.
+- [ ] Notifications (if Proactive) pinned to sync doc item ID, not arbitrary deal items.

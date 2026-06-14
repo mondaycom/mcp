@@ -1,8 +1,8 @@
 # monday CRM — Claude plugin
 
-Seven skills for monday CRM power users. Each skill reads your live monday
-boards via the official monday MCP connector, synthesizes insights, and
-publishes a monday-native artifact (update, doc, or dashboard) — so work
+Run your monday CRM in plain language. Seven skills read your live monday
+boards via the official monday MCP connector, synthesize insights, and
+publish a monday-native artifact (update, doc, or dashboard) — so work
 stays inside monday.
 
 ## Skills
@@ -40,10 +40,14 @@ multi-step workflows.
 
 ## Install
 
-### From the official plugin directory (after acceptance)
+### From the community plugin directory (after acceptance)
 
 ```bash
-claude plugin install monday-crm@claude-plugins-official
+# Add the community marketplace (one-time)
+claude plugin marketplace add anthropics/claude-plugins-community
+
+# Install the plugin
+claude plugin install monday-crm@claude-community
 ```
 
 ### From a marketplace (GitHub)
@@ -96,7 +100,7 @@ Every skill supports three interaction modes:
 | Mode | Behavior |
 |---|---|
 | **Default** | Confirm before every write. Safe for first-time use. |
-| **Silent** | Skip confirms for α artifacts (the primary output). β extensions still ask. |
+| **Silent** | Skip confirmations for the skill's primary output. Extended actions (stage edits, contact creation) still ask. |
 | **Proactive** | Session-level approval for writes + extended actions (stage edits, contact creation, fix-tasks). |
 
 Set mode by saying e.g. "morning briefing in proactive mode". Default
