@@ -1,14 +1,14 @@
 ---
 name: morning-briefing
-description: Daily prioritized CRM pipeline briefing. Reads the user's monday deals board, ranks deals by new activity, stall age, and commitments due today, then publishes a timestamped `Morning Briefing` update on a pinned item or a new doc in the user's workspace. Use when someone says "what should I focus on today", "morning briefing", "what's hot in my pipeline", "what changed on my deals", "pipeline summary", or any variation of a daily CRM digest.
-argument-hint: "[optional: board name or ID, e.g. 'Deals' or '10046221612']"
+description: "This skill should be used when a CRM user asks for a daily pipeline overview, wants to know which deals need attention today, says 'catch me up on my deals', 'what deals need attention', 'what's due this week', 'any deals about to close or slip', 'morning briefing', 'pipeline summary', 'daily standup prep', or 'what should I focus on today'. It prioritizes deals by urgency, publishes the brief as a monday artifact, and optionally sends proactive nudges on stalled deals."
+argument-hint: "[optional: board name or ID, e.g. 'Deals' or '12345678']"
 user-invocable: true
 allowed-tools: [Read, AskUserQuestion, mcp__monday__get_user_context, mcp__monday__list_workspaces, mcp__monday__search, mcp__monday__get_board_info, mcp__monday__get_column_type_info, mcp__monday__get_board_items_page, mcp__monday__board_insights, mcp__monday__create_update, mcp__monday__create_doc, mcp__monday__create_notification, mcp__monday__list_users_and_teams, mcp__monday__all_monday_api]
 ---
 
 # Morning Briefing
 
-Produces a daily prioritized briefing over the user's monday CRM pipeline and **publishes it as a monday artifact** (update on a pinned item, or a doc in the user's workspace) so the briefing lives inside monday — not just in the chat. Replaces the five-minute "let me scan my deals" routine that power users (Kevin, Amit, Jaisy) automate via overnight Claude runs.
+Produces a daily prioritized briefing over the user's monday CRM pipeline and **publishes it as a monday artifact** (update on a pinned item, or a doc in the user's workspace) so the briefing lives inside monday — not just in the chat. Replaces the five-minute "let me scan my deals" routine that power users automate via overnight Claude runs.
 
 Flow: **Trigger → Gather → Synthesize → Publish (α, default) → Share (β, opt-in) → Proactive extension (opt-in)**.
 
@@ -69,9 +69,11 @@ Read the project/session context:
 - **Silent** — skip confirmations but stay on α scope.
 - **Proactive** — ask **once** at the top of the session: *"Proactive mode will post per-deal updates on stalled deals and notify you on commitments due today. (a) Approve all, (b) Review each, (c) Deny all?"*. Store the choice for the remainder of the session.
 
-If the user hasn't declared a mode, assume **Default**.
+If the user hasn't declared a mode, assume **Default**. To run in Silent mode, say 'morning briefing silent'. To run in Proactive mode, say 'morning briefing proactive' or include 'mode: proactive' in your project instructions.
 
 Hard safety rail regardless of mode: **no deletes, no cross-workspace moves, no amount-column writes**. Stage, owner, last-touch, and source column edits are allowed when bundled in a batched-confirm plan (Default mode) or under a session-level approval (Proactive mode).
+
+This skill operates on the authenticated user's context only — it does not support multi-user or admin-on-behalf-of flows.
 
 ---
 
@@ -86,7 +88,7 @@ Hard safety rail regardless of mode: **no deletes, no cross-workspace moves, no 
    - Call `mcp__monday__get_user_context`. Scan `relevantBoards` + `favorites` for names matching `deals|deal|opportunities|opportunity|pipeline|leads|sales`.
    - If one candidate → use it.
    - If multiple → `AskUserQuestion`: "Which board should I brief on?" + option "all of them".
-   - If zero → `mcp__monday__list_workspaces` → `mcp__monday__search("deal")`. Still zero → print: *"I don't see a CRM-shaped board in your workspaces. If you have one under a different name, tell me the name or ID. Otherwise see `/monday-crm:board-diagnosis` once a board is connected."* Stop.
+   - If zero → `mcp__monday__list_workspaces` → `mcp__monday__search("deal")`. Still zero → print: *"I don't see a CRM-shaped board in your workspaces. If you have one under a different name, tell me the name or ID. Otherwise see `/monday-crm:board-diagnosis` once a board is connected. To get started with monday CRM, visit monday.com/crm."* Stop.
 
 If the user picks "all", run Steps 3-7 per board and publish one combined α artifact.
 
@@ -107,7 +109,7 @@ If the user picks "all", run Steps 3-7 per board and publish one combined α art
 | Close probability | `numbers` | unit `%`, or title contains "probability", "%" | first `numbers` column with `%` unit |
 | Expected close date | `date` | title contains "close", "expected", "target" | earliest-named `date` column matching |
 | Last interaction | `date` | title contains "interaction", "activity", "touch", "contacted" | latest `date` column that's not close-date |
-| Forecast value | `formula` | title contains "forecast", "weighted" | skip if absent |
+| Forecast value | `formula` | title contains "forecast", "weighted" | optional — computed from value × probability if absent |
 
 3. For any column where type-match is ambiguous, call `mcp__monday__get_column_type_info` to confirm settings (e.g., `unit.symbol`, `labels[].is_done`).
 4. If a required column (stage, value, owner) is missing:
@@ -201,7 +203,7 @@ Pipeline totals:
 
 1. Search the user's personal workspace (or the deals board) for an item named `My Morning` (exact, case-insensitive). If found → `create_update` on that item.
 2. Else: `create_doc` in the user's personal workspace with title `Morning Briefing — <weekday>, <Mon DD>, <YYYY>`.
-3. **Idempotency:** before creating anything, search for an existing same-day artifact by exact title `Morning Briefing — <weekday>, <Mon DD>` AND containing the HTML comment `<!-- claude-skill-id: morning-briefing -->` in its body. If found, **update it in place** (`create_update` on the same item, or update the existing doc via `all_monday_api`). Never duplicate.
+3. **Idempotency:** before creating anything, search for an existing same-day artifact by exact title `Morning Briefing — <weekday>, <Mon DD>`. Note that `mcp__monday__search` searches item/board names only — it cannot search doc bodies. If `search` returns no exact-title match, call `all_monday_api` with an `items_page` query filtering by doc title match as a secondary check. If found, **update it in place** (`create_update` on the same item, or update the existing doc via `all_monday_api`). Never duplicate. If search returns ambiguous results (multiple title matches), accept a possible duplicate and add a day-count suffix to the title (e.g. `Morning Briefing — Mon, Jun 9 — v2`).
 
 ### Brief content (the body of the update / doc)
 
@@ -278,6 +280,12 @@ After the artifact is published (or attempted), also print the brief in chat as 
 
 Only runs if mode = Proactive AND the session-level decision was "approve all" or "review each".
 
+**"Approve all" flow:** execute writes for all qualifying deals without further prompts.
+
+**"Review each" flow:** for each qualifying deal, print a one-line proposal before writing:
+- *"Post nudge to Nimbus Health (no activity 21d)?"* — wait for user response before moving to the next deal.
+- User responses: `yes` → execute; `no` → skip and move on; `stop` → halt proactive writes entirely.
+
 For each deal in **Stale** bucket:
 - `create_update(itemId, text: "*Claude nudge:* No activity in <X> days. What's the next step?")`.
 
@@ -295,10 +303,10 @@ For each deal where the transcript / chat made a clear stage transition signal (
 
 ## Step 10: Close the loop
 
-**Goal:** Leave a clean audit trail for Tom (and for red-flag monitoring post-GA).
+**Goal:** Leave a clean audit trail.
 
 - Print a one-line summary: `Published Morning Briefing — <date>. <N> deals scanned, <N> actions posted, <N> pending.`
-- If any write failed mid-run: list which ones and say the user can re-run to retry; compensating delete is **only** required for batched multi-item writes (Step 9) that were partially written before halt.
+- If any write failed mid-run: list the written items in chat for manual cleanup. Do not attempt compensating deletes.
 
 ---
 
@@ -306,7 +314,7 @@ For each deal where the transcript / chat made a clear stage transition signal (
 
 - **No title prefix.** Artifact discoverability is via the `Generated by Claude · <ISO timestamp>` footer and the embedded `<!-- claude-skill-id: <skill> -->` HTML comment in update/doc bodies. For items the plugin creates, use `Source = Claude` on a status column (auto-create the column with user confirm if missing).
 - **Idempotency before create.** Always search for same-day artifact (by title + skill-id comment) first. Update, don't duplicate.
-- **Safety rail.** No deletes, no amount-column writes, no cross-workspace moves. Stage/owner/last-touch/source edits OK in a batched-confirm plan.
+- **Safety rail.** No deletes, no amount-column writes, no cross-workspace moves. Stage/owner/last-touch/source edits OK in a batched-confirm plan. On partial write halt, list written items in chat for manual cleanup — no compensating deletes.
 - **Ask once per session**, not per deal, when entering Proactive mode.
 - **Type-based column resolution**, not name-based — global teams have non-English columns.
 
@@ -321,7 +329,7 @@ For each deal where the transcript / chat made a clear stage transition signal (
 | Board >10K items | Cap at 2K most-recent, flag sampling. |
 | MCP tool error (retryable) | Exponential backoff 3x; on third fail, skip that strand, surface partial brief with hygiene note. |
 | Same-day artifact exists | Update in place via item/doc ID. |
-| User halts mid-session | Keep writes up to halt; Step 9 batches roll back via `delete_item` only if the batched doc was partially created. |
+| User halts mid-session | Keep writes up to halt; list written items in chat for manual cleanup. Do not attempt compensating deletes. |
 | 429 rate limit | Backoff 3x, then *"monday is rate-limiting; retry in 60s or narrow to fewer boards."* Stop. |
 | Non-admin publish perms | Degrade `create_update` → `create_doc` → print-only. |
 | Multiple CRM boards | `AskUserQuestion` with "all of them" option. |
@@ -337,6 +345,6 @@ For each deal where the transcript / chat made a clear stage transition signal (
 - [ ] The artifact body carries the `Generated by Claude` footer + `<!-- claude-skill-id: morning-briefing -->` comment.
 - [ ] The chat mirror includes the artifact URL on the last line.
 - [ ] Any failed writes are listed in the final summary line.
-- [ ] Safety rail held: no deletes, no amount-column writes, no cross-workspace moves.
+- [ ] Safety rail held: no deletes attempted, no amount-column writes, no cross-workspace moves.
 - [ ] Stage/owner/last-touch edits (if any) ran inside a batched-confirm plan.
 - [ ] If Proactive mode ran, a single session-level decision was captured (not per-deal).
