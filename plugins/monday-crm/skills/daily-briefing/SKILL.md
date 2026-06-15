@@ -87,10 +87,10 @@ This skill operates on the authenticated user's context only — it does not sup
 2. If no argument:
    - Call `mcp__monday__get_user_context`. Scan `relevantBoards` + `favorites` for names matching `deals|deal|opportunities|opportunity|pipeline|leads|sales`.
    - If one candidate → use it.
-   - If multiple → `AskUserQuestion`: "Which board should I brief on?" + option "all of them".
+   - If multiple → auto-select the one with the most recent `updated_at` across its items (the board the user is actively working in). Note the selection in the brief's Data hygiene line: *"Briefing on [Board Name]. To brief a different board, pass its name as an argument."* Only ask via `AskUserQuestion` if `updated_at` is the same day or indeterminate across candidates.
    - If zero → `mcp__monday__list_workspaces` → `mcp__monday__search("deal")`. Still zero → print: *"I don't see a CRM-shaped board in your workspaces. If you have one under a different name, tell me the name or ID. Otherwise see `/monday-crm:data-cleanup` once a board is connected. To get started with monday CRM, visit monday.com/crm."* Stop.
 
-If the user picks "all", run Steps 3-7 per board and publish one combined α artifact.
+If the user explicitly picks "all", run Steps 3-7 per board and publish one combined α artifact.
 
 ---
 
@@ -332,7 +332,7 @@ For each deal where the transcript / chat made a clear stage transition signal (
 | User halts mid-session | Keep writes up to halt; list written items in chat for manual cleanup. Do not attempt compensating deletes. |
 | 429 rate limit | Backoff 3x, then *"monday is rate-limiting; retry in 60s or narrow to fewer boards."* Stop. |
 | Non-admin publish perms | Degrade `create_update` → `create_doc` → print-only. |
-| Multiple CRM boards | `AskUserQuestion` with "all of them" option. |
+| Multiple CRM boards | Auto-select most recently updated; note selection in Data hygiene. Ask only if dates are indeterminate. |
 | Non-English column names | Resolve by type via `get_column_type_info`. |
 | Proactive writes >20 | Batch into one review-list doc. |
 
