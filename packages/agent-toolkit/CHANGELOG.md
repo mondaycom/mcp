@@ -1,5 +1,14 @@
 # Changelog
 
+## 5.37.0
+
+### search — add UPDATES search type
+
+- Added `UPDATES` as a search type in the unified `search` tool, backed by the server-side `search { updates }` endpoint
+- `UPDATES` results return `id`, `title` (the update body), `itemId`, `boardId`, and `creatorId`, with optional `boardIds` and `creatorIds` filters to scope the search
+- Requires a `searchTerm` and has no listing fallback (errors propagate, like `ITEMS`)
+- This field is only available from API version `2026-10`, so the query pins `versionOverride: '2026-10'` with hand-written types (same approach as `list_automations`) until it is promoted to the codegen schema snapshot
+
 ## 5.24.0
 
 ### manage_automations — rename from manage_workflows
