@@ -1,7 +1,7 @@
 import { ToolInputType, ToolOutputType, ToolType } from 'src/core/tool';
 import { z } from 'zod';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { getBoards, getDocs, getFolders, searchItems } from './search-tool.graphql';
+import { getBoards, getDocs, getFolders, searchItems, searchWorkspaces } from './search-tool.graphql';
 import { searchBoardsDev, searchDocsDev } from './search-tool.graphql.dev';
 import {
   GetBoardsQuery,
@@ -12,6 +12,8 @@ import {
   GetFoldersQueryVariables,
   SearchItemsQuery,
   SearchItemsQueryVariables,
+  SearchWorkspacesQuery,
+  SearchWorkspacesQueryVariables,
 } from 'src/monday-graphql/generated/graphql/graphql';
 import {
   SearchBoardsDevQuery,
@@ -58,13 +60,13 @@ export class SearchTool extends BaseMondayApiTool<SearchToolInput> {
   });
 
   getDescription(): string {
-    return `Search within monday.com platform. Can search for boards, documents, items, folders.
+    return `Search within monday.com platform. Can search for boards, documents, folders, workspaces, and items.
 For searching/listing specific users and teams, use list_users_and_teams tool.
 For account-level info (plan, member count, products), use get_user_context tool.
-For workspaces, use list_workspaces tool.
 For groups, use get_board_info tool.
 ITEMS search requires a searchTerm and only returns id, title, and url.
-IMPORTANT: ids returned by this tool are prefixed with the type of the object (e.g doc-123, board-456, folder-789, item-321). When passing the ids to other tools, you need to remove the prefix and just pass the number.
+WORKSPACES search requires a searchTerm and only returns id, title, and description.
+IMPORTANT: ids returned by this tool are prefixed with the type of the object (e.g doc-123, board-456, folder-789, workspace-101, item-321). When passing the ids to other tools, you need to remove the prefix and just pass the number.
     `;
   }
 
@@ -73,7 +75,6 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
   }
 
   protected async executeInternal(input: ToolInputType<SearchToolInput>): Promise<ToolOutputType<never>> {
-    // Try the per-entity search endpoint for entities that support it (BOARD, DOCUMENTS, ITEMS)
     if (input.searchType !== GlobalSearchType.FOLDERS && input.searchTerm) {
       try {
         const data = await this.runSmartSearchAsync(input);
@@ -83,8 +84,8 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
         };
       } catch (error) {
         throwIfSearchTimeoutError(error);
-        // ITEMS has no listing fallback — propagate the error instead of falling through.
-        if (input.searchType === GlobalSearchType.ITEMS) {
+        // ITEMS and WORKSPACES have no listing fallback — propagate the error instead of falling through.
+        if (input.searchType === GlobalSearchType.ITEMS || input.searchType === GlobalSearchType.WORKSPACES) {
           throw error;
         }
       }
@@ -94,7 +95,7 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
       [GlobalSearchType.BOARD]: this.searchBoardsAsync.bind(this),
       [GlobalSearchType.DOCUMENTS]: this.searchDocsAsync.bind(this),
       [GlobalSearchType.FOLDERS]: this.searchFoldersAsync.bind(this),
-      // Items has no cross-board listing endpoint — only reachable when searchTerm is missing.
+      [GlobalSearchType.WORKSPACES]: () => { throw new Error('Workspaces search requires a searchTerm'); },
       [GlobalSearchType.ITEMS]: () => { throw new Error('Items search requires a searchTerm'); },
     };
 
@@ -120,6 +121,10 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
 
     if (input.searchType === GlobalSearchType.DOCUMENTS) {
       return this.searchDocsWithDevEndpointAsync(input.searchTerm!, input.limit, workspaceIds);
+    }
+
+    if (input.searchType === GlobalSearchType.WORKSPACES) {
+      return this.searchWorkspacesAsync(input.searchTerm!, input.limit);
     }
 
     if (input.searchType === GlobalSearchType.ITEMS) {
@@ -170,6 +175,25 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     return { items, wasFiltered: true };
   }
 
+  private async searchWorkspacesAsync(
+    query: string,
+    limit: number,
+  ): Promise<DataWithFilterInfo<SearchResult>> {
+    const variables: SearchWorkspacesQueryVariables = { query, limit };
+
+    const response = await this.mondayApi.request<SearchWorkspacesQuery>(searchWorkspaces, variables, {
+      timeout: SEARCH_TIMEOUT,
+    });
+
+    const items = response.search.workspaces.results.map((result) => ({
+      id: ObjectPrefixes.WORKSPACE + result.indexed_data.id,
+      title: result.indexed_data.name,
+      description: result.indexed_data.description || undefined,
+    }));
+
+    return { items, wasFiltered: true };
+  }
+
   private async searchItemsAsync(
     query: string,
     limit: number,
@@ -189,6 +213,8 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
 
     return { items, wasFiltered: true };
   }
+
+
 
   private async searchFoldersAsync(input: ToolInputType<SearchToolInput>): Promise<DataWithFilterInfo<SearchResult>> {
     const variables: GetFoldersQueryVariables = {
