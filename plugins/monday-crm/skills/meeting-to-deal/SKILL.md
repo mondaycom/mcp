@@ -46,14 +46,13 @@ Flow: **Trigger → Pull meetings → Match → Synthesize → Publish (α) → 
 
 ## Step 0: Connector check + NoteTaker availability
 
-**Goal:** Fail fast if either the monday MCP connector or NoteTaker is missing. Also extract `internal_domain` for use in Steps 4–5.
+**Goal:** Confirm the monday connector works and detect whether NoteTaker is available. Also extract `internal_domain` for use in Steps 4–5.
 
 1. Try `mcp__monday__get_user_context`. On error → standard install prompt, stop.
 2. Extract `internal_domain` from the user's email (e.g. `"kevin@monday.com"` → `"monday.com"`). Store for Steps 4–5. If email is absent from the response, `internal_domain` = `"monday.com"` (safe default).
 3. Try `mcp__monday__get_notetaker_meetings({ limit: 1 })`.
-4. If NoteTaker tool returns auth error or empty-by-permission:
-   - Print: *"NoteTaker isn't connected for this account, or you don't have meetings recorded yet. Set up NoteTaker at <monday-app>, then re-run."*
-   - Stop.
+4. If NoteTaker returns results → set `notetaker_available: true`. Continue to Step 1.
+5. If NoteTaker returns auth error, permission error, or empty-by-permission → set `notetaker_available: false`. **Do not stop.** The skill will collect meeting content from the user directly in Step 3.
 
 > **PAUSE**: do not write any `create_*` call before Step 6.
 
@@ -82,12 +81,34 @@ Hard safety rail regardless of mode: **no deletes, no amount-column writes, no c
 
 ## Step 3: Pull meetings
 
+### 3a — NoteTaker path (`notetaker_available: true`)
+
 `mcp__monday__get_notetaker_meetings({ since: <ISO>, until: <ISO>, limit: 50 })`. Cache transcripts + attendees + meeting metadata.
 
 Edge cases:
-- **0 meetings in window:** print *"No NoteTaker meetings found in `<window>`. Try a wider range, e.g. `last 7 days`."* (Also echo the default-window hint from Step 2 if no argument was supplied.) Stop.
+- **0 meetings in window:** don't stop — fall through to Step 3b to let the user provide meeting content manually. Print: *"No NoteTaker meetings found in `<window>`. You can paste meeting notes or describe what happened instead."*
 - **>50 meetings:** paginate up to 200, then cap and surface sampling note.
-- **Tool 429:** backoff 3x; on third failure stop with *"NoteTaker is rate-limiting; retry in 60s."*
+- **Tool 429:** backoff 3x; on third failure fall through to Step 3b.
+
+### 3b — Manual input path (`notetaker_available: false`, OR NoteTaker returned 0 meetings)
+
+Ask the user once via `AskUserQuestion`:
+
+> *"No NoteTaker recordings available. How would you like to provide meeting notes?"*
+> - **(a) Paste the transcript or notes here** — I'll read them from your next message
+> - **(b) Point me to a file** — provide the path and I'll read it
+> - **(c) Describe what happened** — tell me in free text (attendees, key points, commitments, next steps)
+> - **(d) Skip — nothing to log right now**
+
+If **(d)** → stop with: *"No meetings logged. Run this skill again when you have notes to add."*
+
+For **(a)** / **(b)** / **(c)**: treat the user-provided content as a single meeting entry. Structure it as:
+- `title`: first line of the notes, or ask if blank
+- `date`: today (or extract from notes if mentioned)
+- `attendees`: extract from notes, or ask once
+- `transcript_text`: the full provided content
+
+Cache as one entry in `meetings[]` with `source: "manual"` and continue to Step 4. The matching and recap flow works identically — the transcript is just from the user's input instead of NoteTaker.
 
 ---
 
@@ -275,8 +296,9 @@ One-line chat summary: `Synced <N> meetings to <M> deals. <K> unmatched, <L> con
 
 | Failure | Behavior |
 |---|---|
-| Connector / NoteTaker missing | Step 0 stops; print install link. |
-| 0 meetings in window | Step 3 stops; suggest wider window. |
+| Connector missing | Step 0 stops; print install link. |
+| NoteTaker unavailable | Step 3b: ask user for manual input — paste, file, or free-text description. |
+| 0 meetings in window (NoteTaker worked) | Step 3b fallback — prompt for manual input. |
 | No Deals board | Step 4 degrades — sync doc only, suggest `workspace-builder`. |
 | Ambiguous match (≥2 candidates within 2 points) | Skip the write; log to sync doc as "ambiguous". |
 | Idempotency hit (same meeting-id in update) | Update existing content, don't duplicate. |
