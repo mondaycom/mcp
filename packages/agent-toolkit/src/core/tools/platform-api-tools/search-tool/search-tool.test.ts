@@ -2,7 +2,7 @@ import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameAsync, callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
 import { SearchTool, searchSchema } from './search-tool';
 import { z, ZodTypeAny } from 'zod';
-import { GetBoardsQuery, GetDocsQuery, GetFoldersQuery, SearchItemsQuery } from 'src/monday-graphql/generated/graphql/graphql';
+import { GetBoardsQuery, GetDocsQuery, GetFoldersQuery, SearchItemsQuery, SearchWorkspacesQuery } from 'src/monday-graphql/generated/graphql/graphql';
 import { SearchBoardsDevQuery, SearchDocsDevQuery } from 'src/monday-graphql/generated/graphql.dev/graphql';
 import { GlobalSearchType, ObjectPrefixes, SearchResult } from './search-tool.types';
 
@@ -58,7 +58,7 @@ describe('SearchTool', () => {
       const description = tool.getDescription();
 
       expect(description).toContain('Search within monday.com platform');
-      expect(description).toContain('boards, documents, items, folders');
+      expect(description).toContain('boards, documents, folders, workspaces, and items');
       expect(description).toContain('IMPORTANT: ids returned by this tool are prefixed');
     });
   });
@@ -2020,6 +2020,142 @@ describe('SearchTool', () => {
       // Less than 100 items, no filtering occurs - returns all 3 items
       expect(parsedResult.data).toHaveLength(3);
       expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
+    });
+  });
+
+  describe('Workspace Search', () => {
+    const mockWorkspacesResponse: SearchWorkspacesQuery = {
+      search: {
+        workspaces: {
+          results: [
+            { id: '10', indexed_data: { id: '10', name: 'Marketing Workspace', description: 'For marketing team' } },
+            { id: '20', indexed_data: { id: '20', name: 'Engineering', description: 'Engineering workspace' } },
+          ],
+        },
+      },
+    };
+
+    it('should search workspaces when searchTerm is provided', async () => {
+      mocks.setResponse(mockWorkspacesResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.WORKSPACES,
+        searchTerm: 'Marketing',
+      };
+
+      const parsedResult = await callToolByNameAsync('search', args);
+
+      expect(parsedResult.data).toHaveLength(2);
+      expect(parsedResult.data[0]).toEqual({
+        id: 'workspace-10',
+        title: 'Marketing Workspace',
+        description: 'For marketing team',
+      });
+      expect(parsedResult.data[1]).toEqual({
+        id: 'workspace-20',
+        title: 'Engineering',
+        description: 'Engineering workspace',
+      });
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchWorkspaces'),
+        {
+          query: 'Marketing',
+          limit: 20,
+        },
+        expect.not.objectContaining({ versionOverride: 'dev' }),
+      );
+    });
+
+    it('should properly prefix workspace IDs', async () => {
+      mocks.setResponse(mockWorkspacesResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.WORKSPACES,
+        searchTerm: 'test',
+      };
+
+      const parsedResult = await callToolByNameAsync('search', args);
+
+      expect(parsedResult.data[0].id).toBe(`${ObjectPrefixes.WORKSPACE}10`);
+      expect(parsedResult.data[1].id).toBe(`${ObjectPrefixes.WORKSPACE}20`);
+    });
+
+    it('should handle empty results', async () => {
+      mocks.setResponse({ search: { workspaces: { results: [] } } });
+
+      const args: inputType = {
+        searchType: GlobalSearchType.WORKSPACES,
+        searchTerm: 'NonExistent',
+      };
+
+      const parsedResult = await callToolByNameAsync('search', args);
+
+      expect(parsedResult.data).toHaveLength(0);
+    });
+
+    it('should handle null description in workspace results', async () => {
+      const responseWithNullDesc: SearchWorkspacesQuery = {
+        search: {
+          workspaces: {
+            results: [
+              { id: '30', indexed_data: { id: '30', name: 'Sales Team', description: null } },
+            ],
+          },
+        },
+      };
+      mocks.setResponse(responseWithNullDesc);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.WORKSPACES,
+        searchTerm: 'Sales',
+      };
+
+      const parsedResult = await callToolByNameAsync('search', args);
+
+      expect(parsedResult.data[0].description).toBeUndefined();
+    });
+
+    it('should throw error when searchTerm is not provided for workspaces', async () => {
+      const args: inputType = {
+        searchType: GlobalSearchType.WORKSPACES,
+      };
+
+      const result = await callToolByNameRawAsync('search', args);
+
+      expect(result.content[0].text).toContain('Failed to execute tool search');
+      expect(result.content[0].text).toContain('Workspaces search requires a searchTerm');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+
+    it('should not fall back when the request fails for workspaces', async () => {
+      const errorMessage = 'Search endpoint unavailable';
+      mocks.getMockRequest().mockRejectedValueOnce(new Error(errorMessage));
+
+      const args: inputType = {
+        searchType: GlobalSearchType.WORKSPACES,
+        searchTerm: 'Marketing',
+      };
+
+      const result = await callToolByNameRawAsync('search', args);
+
+      expect(result.content[0].text).toContain('Failed to execute tool search');
+      expect(result.content[0].text).toContain(errorMessage);
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+    });
+
+    it('should throw when page > 1 (pagination not supported)', async () => {
+      const args: inputType = {
+        searchType: GlobalSearchType.WORKSPACES,
+        searchTerm: 'Marketing',
+        page: 5,
+      };
+
+      const result = await callToolByNameRawAsync('search', args);
+
+      expect(result.content[0].text).toContain('Failed to execute tool search');
+      expect(result.content[0].text).toContain('Pagination is not supported for search');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
   });
 });

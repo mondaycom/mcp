@@ -45,3 +45,20 @@ export const searchItems = gql`
     }
   }
 `;
+
+export const searchWorkspaces = gql`
+  query SearchWorkspaces($query: String!, $limit: Int) {
+    search {
+      workspaces(query: $query, limit: $limit) {
+        results {
+          id
+          indexed_data {
+            id
+            name
+            description
+          }
+        }
+      }
+    }
+  }
+`;
