@@ -6,7 +6,7 @@ import {
   CreateBlankAgentMutation,
   DeactivateAgentMutation,
   DeleteAgentMutation,
-  GetAgentsQuery,
+  GetCustomAgentsQuery,
   RunAgentMutation,
   UpdateAgentMutation,
 } from 'src/monday-graphql/generated/graphql.dev/graphql';
@@ -125,7 +125,7 @@ describe('ManageAgentTool', () => {
 
   describe('action: get', () => {
     it('should fetch a single agent when agent_id is provided', async () => {
-      mocks.setResponseOnce({ agents: [mockAgent] } as GetAgentsQuery);
+      mocks.setResponseOnce({ custom_agents: [mockAgent] } as GetCustomAgentsQuery);
 
       const result = await callToolByNameRawAsync('manage_agent', { action: 'get', agent_id: '7' });
       const parsed = parseToolResult(result);
@@ -134,19 +134,19 @@ describe('ManageAgentTool', () => {
     });
 
     it('should pass ids and versionOverride dev when fetching by agent_id', async () => {
-      mocks.setResponseOnce({ agents: [mockAgent] } as GetAgentsQuery);
+      mocks.setResponseOnce({ custom_agents: [mockAgent] } as GetCustomAgentsQuery);
 
       await callToolByNameRawAsync('manage_agent', { action: 'get', agent_id: '7' });
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-        expect.stringContaining('getAgents'),
+        expect.stringContaining('getCustomAgents'),
         { ids: ['7'] },
         expect.objectContaining({ versionOverride: 'dev' }),
       );
     });
 
     it('should return not-found message when agent does not exist', async () => {
-      mocks.setResponseOnce({ agents: [] } as GetAgentsQuery);
+      mocks.setResponseOnce({ custom_agents: [] } as GetCustomAgentsQuery);
 
       const result = await callToolByNameRawAsync('manage_agent', { action: 'get', agent_id: '999' });
 
@@ -154,7 +154,7 @@ describe('ManageAgentTool', () => {
     });
 
     it('should list agents when agent_id is omitted', async () => {
-      mocks.setResponseOnce({ agents: [mockAgent] } as GetAgentsQuery);
+      mocks.setResponseOnce({ custom_agents: [mockAgent] } as GetCustomAgentsQuery);
 
       const result = await callToolByNameRawAsync('manage_agent', { action: 'get' });
       const parsed = parseToolResult(result);
@@ -164,12 +164,12 @@ describe('ManageAgentTool', () => {
     });
 
     it('should pass limit 100 when listing agents', async () => {
-      mocks.setResponseOnce({ agents: [] } as GetAgentsQuery);
+      mocks.setResponseOnce({ custom_agents: [] } as GetCustomAgentsQuery);
 
       await callToolByNameRawAsync('manage_agent', { action: 'get' });
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-        expect.stringContaining('getAgents'),
+        expect.stringContaining('getCustomAgents'),
         { limit: 100 },
         expect.objectContaining({ versionOverride: 'dev' }),
       );
