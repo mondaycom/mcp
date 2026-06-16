@@ -15,7 +15,7 @@ Set "breakdown":
 - "totals": account/board-level counts { success, failure, total }.
 - "by_entity": per-automation and per-workflow breakdown for a given "runStatus" ("success" | "failure" | "exhausted", required). "excludeAutomationIds" omits specific automations from the breakdown (exclusion list).
 
-Required by breakdown: "by_entity" requires "runStatus"; omitting it is rejected. "totals" requires neither "runStatus" nor "excludeAutomationIds".
+Required by breakdown: "by_entity" requires "runStatus", omitting it is rejected. "totals" requires neither "runStatus" nor "excludeAutomationIds".
 
 Optional "userIds" narrows to specific creators.
 
@@ -24,7 +24,7 @@ Scope: pass "boardId" to target a specific board, or "accountWide": true for the
 export const getAutomationStatisticsToolSchema = {
   breakdown: z
     .enum(['totals', 'by_entity'])
-    .describe('totals = success/failure/total counts; by_entity = per automation/workflow'),
+    .describe('totals = success/failure/total counts, by_entity = per automation/workflow'),
   boardId: z.string().min(1).optional().describe('Target a specific board by numeric ID'),
   accountWide: z.boolean().optional().describe('Set true to query account-wide (required if no boardId)'),
   userIds: z.array(z.number().int()).optional().describe('Narrow to specific creator user IDs'),

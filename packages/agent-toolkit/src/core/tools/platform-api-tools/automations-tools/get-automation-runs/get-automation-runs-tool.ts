@@ -17,10 +17,10 @@ import {
 const TOOL_DESCRIPTION = `Read the run history of monday automations/workflows. Read-only.
 
 Set "mode":
-- "history": a paginated feed of individual runs (success/failure/exhausted, duration, error reason). Filter via "filters" (dateRange, stateFilter, automationIds, workflowEntityIds, itemId, entityKind, hostType). Use "nextPageOffset" to page (offset-only: add the number of runs returned to the previous offset).
+- "history": a paginated feed of individual runs (success/failure/exhausted, duration, error reason). Filter via "filters" (dateRange, stateFilter, automationIds, workflowEntityIds, itemId, entityKind, hostType). Use "nextPageOffset" to page (offset-only, add the number of runs returned to the previous offset).
 - "detail": one run by "triggerUuid" — its block steps and (for agent runs) MCP tool calls. Set "includeToolEvents": false to skip tool calls.
 
-Required by mode: "detail" requires "triggerUuid"; omitting it is rejected. "history" requires neither "triggerUuid" nor the detail-only offsets.
+Required by mode: "detail" requires "triggerUuid", omitting it is rejected. "history" requires neither "triggerUuid" nor the detail-only offsets.
 
 Scope: pass "boardId" to target a specific board, or "accountWide": true for the whole account. At least one must be provided.
 
@@ -45,7 +45,7 @@ const filtersSchema = z
   .optional();
 
 export const getAutomationRunsToolSchema = {
-  mode: z.enum(['history', 'detail']).describe('history = paginated run feed; detail = single run by triggerUuid'),
+  mode: z.enum(['history', 'detail']).describe('history = paginated run feed, detail = single run by triggerUuid'),
   boardId: z.string().min(1).optional().describe('Target a specific board by numeric ID'),
   accountWide: z.boolean().optional().describe('Set true to query account-wide (required if no boardId)'),
   nextPageOffset: z
