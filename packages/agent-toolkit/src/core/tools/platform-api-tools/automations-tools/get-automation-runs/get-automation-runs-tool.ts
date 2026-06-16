@@ -148,9 +148,21 @@ export class GetAutomationRunsTool extends BaseMondayApiTool<typeof getAutomatio
     const blockEventsOffset = input.blockEventsOffset ?? 0;
     const toolEventsOffset = input.toolEventsOffset ?? 0;
 
-    const runRes = await this.mondayApi.request<TriggerEventQueryResult>(getTriggerEventQuery, {
-      triggerUuid: input.triggerUuid,
-    });
+    const [runRes, blockRes, toolRes] = await Promise.all([
+      this.mondayApi.request<TriggerEventQueryResult>(getTriggerEventQuery, {
+        triggerUuid: input.triggerUuid,
+      }),
+      this.mondayApi.request<BlockEventsQueryResult>(getBlockEventsQuery, {
+        triggerUuid: input.triggerUuid,
+        nextPageOffset: blockEventsOffset,
+      }),
+      includeTools
+        ? this.mondayApi.request<ToolEventsQueryResult>(getToolEventsQuery, {
+            triggerUuid: input.triggerUuid,
+            nextPageOffset: toolEventsOffset,
+          })
+        : Promise.resolve(null),
+    ]);
 
     const run = runRes.trigger_event;
     if (!run) {
@@ -158,19 +170,6 @@ export class GetAutomationRunsTool extends BaseMondayApiTool<typeof getAutomatio
         content: { message: `No run found for triggerUuid ${input.triggerUuid}.`, triggerUuid: input.triggerUuid, found: false },
       };
     }
-
-    const [blockRes, toolRes] = await Promise.all([
-      this.mondayApi.request<BlockEventsQueryResult>(getBlockEventsQuery, {
-        triggerUuid: input.triggerUuid,
-        nextPageOffset: blockEventsOffset,
-      }),
-      includeTools
-        ? this.mondayApi.request<ToolEventsQueryResult>(getToolEventsQuery, {
-            trigger_uuid: input.triggerUuid,
-            next_page_offset: toolEventsOffset,
-          })
-        : Promise.resolve(null),
-    ]);
 
     const blockEvents = blockRes.block_events?.blockEvents ?? [];
     const toolEvents = toolRes?.tool_events?.tool_events ?? [];
@@ -194,15 +193,14 @@ export class GetAutomationRunsTool extends BaseMondayApiTool<typeof getAutomatio
 }
 
 function countByState(runs: TriggerEventData[]): Record<string, number> {
-  const counts: Record<string, number> = {};
-  for (const run of runs) {
+  return runs.reduce<Record<string, number>>((acc, run) => {
     const key = run.eventState ?? 'unknown';
-    counts[key] = (counts[key] ?? 0) + 1;
-  }
-  return counts;
+    acc[key] = (acc[key] ?? 0) + 1;
+    return acc;
+  }, {});
 }
 
 function formatCounts(counts: Record<string, number>): string {
-  const entries = Object.entries(counts);
-  return entries.length ? entries.map(([state, n]) => `${state}=${n}`).join(', ') : 'none';
+  const parts = Object.entries(counts).map(([state, n]) => `${state}=${n}`);
+  return parts.length ? parts.join(', ') : 'none';
 }

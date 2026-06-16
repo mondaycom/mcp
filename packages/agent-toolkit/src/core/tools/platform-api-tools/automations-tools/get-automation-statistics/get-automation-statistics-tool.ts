@@ -65,11 +65,14 @@ export class GetAutomationStatisticsTool extends BaseMondayApiTool<typeof getAut
       };
     }
 
+    const boardIdInt = input.boardId ? toBoardIdInt(input.boardId) : undefined;
+    const scope = input.boardId ? `board ${input.boardId}` : 'account-wide';
+
     try {
       if (input.breakdown === 'by_entity') {
-        return await this.runByEntity(input);
+        return await this.runByEntity(input, boardIdInt, scope);
       }
-      return await this.runTotals(input);
+      return await this.runTotals(input, boardIdInt, scope);
     } catch (error) {
       rethrowWithContext(error, 'get automation statistics');
     }
@@ -77,16 +80,15 @@ export class GetAutomationStatisticsTool extends BaseMondayApiTool<typeof getAut
 
   private async runTotals(
     input: ToolInputType<typeof getAutomationStatisticsToolSchema>,
+    boardIdInt: number | undefined,
+    scope: string,
   ): Promise<ToolOutputType<never>> {
-    const boardIdInt = input.boardId ? toBoardIdInt(input.boardId) : undefined;
-
     const res = await this.mondayApi.request<AccountTriggerStatisticsQueryResult>(
       getAccountTriggerStatisticsQuery,
       { filters: { board_id: boardIdInt, user_ids: input.userIds } },
     );
 
     const stats = res.account_trigger_statistics;
-    const scope = input.boardId ? `board ${input.boardId}` : 'account-wide';
     const message = `Totals (${scope}): success=${stats?.success ?? 0}, failure=${stats?.failure ?? 0}, total=${stats?.total ?? 0}.`;
 
     return {
@@ -96,14 +98,14 @@ export class GetAutomationStatisticsTool extends BaseMondayApiTool<typeof getAut
 
   private async runByEntity(
     input: ToolInputType<typeof getAutomationStatisticsToolSchema>,
+    boardIdInt: number | undefined,
+    scope: string,
   ): Promise<ToolOutputType<never>> {
     if (!input.runStatus) {
       return {
         content: { message: 'by_entity breakdown requires "runStatus" (success | failure | exhausted).' },
       };
     }
-
-    const boardIdInt = input.boardId ? toBoardIdInt(input.boardId) : undefined;
 
     const res = await this.mondayApi.request<AccountTriggersByEntityQueryResult>(
       getAccountTriggersByEntityQuery,
@@ -118,7 +120,6 @@ export class GetAutomationStatisticsTool extends BaseMondayApiTool<typeof getAut
     );
 
     const stats = res.account_triggers_statistics_by_entity_id;
-    const scope = input.boardId ? `board ${input.boardId}` : 'account-wide';
     const message = `By-entity '${input.runStatus}' statistics (${scope}).`;
 
     return {

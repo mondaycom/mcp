@@ -1,23 +1,27 @@
 import { gql } from 'graphql-request';
 
+const TRIGGER_EVENT_FIELDS = `
+  triggerUuid
+  eventState
+  eventKind
+  triggerStartedAt
+  createdAt
+  triggerDuration
+  errorReason
+  entityKind
+  hostType
+  hostInstanceId
+  billingActionsCount
+  creatorAppFeatureReferenceId
+  waitingForTriggerName
+  reignitionSubscriptionId
+`;
+
 export const getTriggerEventsQuery = gql`
   query GetTriggerEvents($nextPageOffset: Int, $filters: TriggerEventsFiltersInput) {
     trigger_events(nextPageOffset: $nextPageOffset, filters: $filters) {
       triggerEvents {
-        triggerUuid
-        eventState
-        eventKind
-        triggerStartedAt
-        createdAt
-        triggerDuration
-        errorReason
-        entityKind
-        hostType
-        hostInstanceId
-        billingActionsCount
-        creatorAppFeatureReferenceId
-        waitingForTriggerName
-        reignitionSubscriptionId
+        ${TRIGGER_EVENT_FIELDS}
       }
     }
   }
@@ -26,20 +30,7 @@ export const getTriggerEventsQuery = gql`
 export const getTriggerEventQuery = gql`
   query GetTriggerEvent($triggerUuid: String!) {
     trigger_event(triggerUuid: $triggerUuid) {
-      triggerUuid
-      eventState
-      eventKind
-      triggerStartedAt
-      createdAt
-      triggerDuration
-      errorReason
-      entityKind
-      hostType
-      hostInstanceId
-      billingActionsCount
-      creatorAppFeatureReferenceId
-      waitingForTriggerName
-      reignitionSubscriptionId
+      ${TRIGGER_EVENT_FIELDS}
     }
   }
 `;
