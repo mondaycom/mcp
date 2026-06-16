@@ -11,8 +11,8 @@ import {
   DeactivateAgentMutationVariables,
   DeleteAgentMutation,
   DeleteAgentMutationVariables,
-  GetAgentsQuery,
-  GetAgentsQueryVariables,
+  GetCustomAgentsQuery,
+  GetCustomAgentsQueryVariables,
   InactiveReason,
   RunAgentMutation,
   RunAgentMutationVariables,
@@ -26,7 +26,7 @@ import {
   createBlankAgentMutation,
   deactivateAgentMutation,
   deleteAgentMutation,
-  getAgentsQuery,
+  getCustomAgentsQuery,
   runAgentMutation,
   updateAgentMutation,
 } from '../shared/agents.graphql.dev';
@@ -205,12 +205,12 @@ RELATED TOOLS:
   private async handleGet(input: ToolInputType<typeof manageAgentToolSchema>): Promise<ToolOutputType<never>> {
     if (input.agent_id !== undefined) {
       try {
-        const { agents } = await this.mondayApi.request<GetAgentsQuery>(
-          getAgentsQuery,
-          { ids: [input.agent_id] } satisfies GetAgentsQueryVariables,
+        const { custom_agents } = await this.mondayApi.request<GetCustomAgentsQuery>(
+          getCustomAgentsQuery,
+          { ids: [input.agent_id] } satisfies GetCustomAgentsQueryVariables,
           { versionOverride: 'dev' },
         );
-        const agent = agents?.[0];
+        const agent = custom_agents?.[0];
         if (!agent) {
           return { content: `monday platform agent ${input.agent_id} not found, or the authenticated user does not have access to it.` };
         }
@@ -221,12 +221,12 @@ RELATED TOOLS:
     }
 
     try {
-      const { agents } = await this.mondayApi.request<GetAgentsQuery>(
-        getAgentsQuery,
-        { limit: 100 } satisfies GetAgentsQueryVariables,
+      const { custom_agents } = await this.mondayApi.request<GetCustomAgentsQuery>(
+        getCustomAgentsQuery,
+        { limit: 100 } satisfies GetCustomAgentsQueryVariables,
         { versionOverride: 'dev' },
       );
-      const list = agents ?? [];
+      const list = custom_agents ?? [];
       return {
         content: {
           message: 'monday platform agents owned by the authenticated user (limited to 100 — ask the user if they need more)',
