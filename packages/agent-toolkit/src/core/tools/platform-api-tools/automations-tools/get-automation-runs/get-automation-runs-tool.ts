@@ -148,10 +148,21 @@ export class GetAutomationRunsTool extends BaseMondayApiTool<typeof getAutomatio
     const blockEventsOffset = input.blockEventsOffset ?? 0;
     const toolEventsOffset = input.toolEventsOffset ?? 0;
 
-    const [runRes, blockRes, toolRes] = await Promise.all([
-      this.mondayApi.request<TriggerEventQueryResult>(getTriggerEventQuery, {
-        triggerUuid: input.triggerUuid,
-      }),
+    // Fetch the trigger first so a missing run returns the graceful not-found
+    // response — fanning out in one Promise.all would let a sibling API error
+    // reject the whole call and bypass the !run path below.
+    const runRes = await this.mondayApi.request<TriggerEventQueryResult>(getTriggerEventQuery, {
+      triggerUuid: input.triggerUuid,
+    });
+
+    const run = runRes.trigger_event;
+    if (!run) {
+      return {
+        content: { message: `No run found for triggerUuid ${input.triggerUuid}.`, triggerUuid: input.triggerUuid, found: false },
+      };
+    }
+
+    const [blockRes, toolRes] = await Promise.all([
       this.mondayApi.request<BlockEventsQueryResult>(getBlockEventsQuery, {
         triggerUuid: input.triggerUuid,
         nextPageOffset: blockEventsOffset,
@@ -163,13 +174,6 @@ export class GetAutomationRunsTool extends BaseMondayApiTool<typeof getAutomatio
           })
         : Promise.resolve(null),
     ]);
-
-    const run = runRes.trigger_event;
-    if (!run) {
-      return {
-        content: { message: `No run found for triggerUuid ${input.triggerUuid}.`, triggerUuid: input.triggerUuid, found: false },
-      };
-    }
 
     const blockEvents = blockRes.block_events?.blockEvents ?? [];
     const toolEvents = toolRes?.tool_events?.tool_events ?? [];
