@@ -9,17 +9,15 @@ import {
   AccountTriggersByEntityQueryResult,
 } from './automation-statistics-queries';
 
-const TOOL_DESCRIPTION = `Aggregate statistics for monday automation runs. Read-only.
+const TOOL_DESCRIPTION = `Aggregate automation run statistics. Read-only.
 
-Set "breakdown":
-- "totals": account/board-level counts { success, failure, total }.
-- "by_entity": per-automation and per-workflow breakdown for a given "runStatus" ("success" | "failure" | "exhausted", required). "excludeAutomationIds" omits specific automations from the breakdown (exclusion list).
+Breakdowns:
+- "totals": success/failure/total counts at the account or board level.
+- "by_entity": per-automation and per-workflow counts for a given "runStatus" (required: "success" | "failure" | "exhausted"). Use "excludeAutomationIds" to omit specific automations.
 
-Required by breakdown: "by_entity" requires "runStatus", omitting it is rejected. "totals" requires neither "runStatus" nor "excludeAutomationIds".
+Scope: provide "boardId" for a specific board or "accountWide": true. One is required.
 
-Optional "userIds" narrows to specific creators.
-
-Scope: pass "boardId" to target a specific board, or "accountWide": true for the whole account. At least one must be provided.`;
+Optional "userIds" narrows results to specific creators.`;
 
 export const getAutomationStatisticsToolSchema = {
   breakdown: z

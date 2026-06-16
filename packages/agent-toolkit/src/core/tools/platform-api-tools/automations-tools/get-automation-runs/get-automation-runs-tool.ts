@@ -14,17 +14,15 @@ import {
   TriggerEventData,
 } from './automation-runs-queries';
 
-const TOOL_DESCRIPTION = `Read the run history of monday automations/workflows. Read-only.
+const TOOL_DESCRIPTION = `Read automation/workflow run history. Read-only.
 
-Set "mode":
-- "history": a paginated feed of individual runs (success/failure/exhausted, duration, error reason). Filter via "filters" (dateRange, stateFilter, automationIds, workflowEntityIds, itemId, entityKind, hostType). Use "nextPageOffset" to page (offset-only, add the number of runs returned to the previous offset).
-- "detail": one run by "triggerUuid" — its block steps and (for agent runs) MCP tool calls. Set "includeToolEvents": false to skip tool calls.
+Modes:
+- "history": paginated run feed (state, duration, error reason). Use "filters" to narrow results and "nextPageOffset" to page (offset-only — next page = previous offset + returned count).
+- "detail": single run by "triggerUuid" (required) — returns block steps and MCP tool calls. Set "includeToolEvents": false to skip tool calls.
 
-Required by mode: "detail" requires "triggerUuid", omitting it is rejected. "history" requires neither "triggerUuid" nor the detail-only offsets.
+Scope: provide "boardId" for a specific board or "accountWide": true. One is required.
 
-Scope: pass "boardId" to target a specific board, or "accountWide": true for the whole account. At least one must be provided.
-
-Known "stateFilter"/eventState values: "success", "failure", "exhausted" (others may appear).`;
+Known event states: "success", "failure", "exhausted".`;
 
 const filtersSchema = z
   .object({
