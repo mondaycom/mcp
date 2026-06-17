@@ -4,7 +4,7 @@ import { SearchTool, searchSchema } from './search-tool';
 import { z, ZodTypeAny } from 'zod';
 import { GetBoardsQuery, GetDocsQuery, GetFoldersQuery, SearchItemsQuery, SearchWorkspacesQuery } from 'src/monday-graphql/generated/graphql/graphql';
 import { SearchBoardsDevQuery, SearchDocsDevQuery } from 'src/monday-graphql/generated/graphql.dev/graphql';
-import { SearchUpdatesQuery } from './search-tool.graphql.2026-10';
+import { SearchUpdatesQuery, SearchTimelineItemsQuery } from './search-tool.graphql.2026-10';
 import { GlobalSearchType, ObjectPrefixes, SearchResult } from './search-tool.types';
 
 export type inputType = z.objectInputType<typeof searchSchema, ZodTypeAny>;
@@ -59,7 +59,7 @@ describe('SearchTool', () => {
       const description = tool.getDescription();
 
       expect(description).toContain('Search within monday.com platform');
-      expect(description).toContain('boards, documents, folders, workspaces, updates, and items');
+      expect(description).toContain('boards, documents, folders, workspaces, updates, items, and timeline items');
       expect(description).toContain('IMPORTANT: ids returned by this tool are prefixed');
     });
   });
@@ -2311,6 +2311,142 @@ describe('SearchTool', () => {
       const args: inputType = {
         searchType: GlobalSearchType.UPDATES,
         searchTerm: 'Deploy',
+        page: 5,
+      };
+
+      const result = await callToolByNameRawAsync('search', args);
+
+      expect(result.content[0].text).toContain('Failed to execute tool search');
+      expect(result.content[0].text).toContain('Pagination is not supported for search');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Timeline Items Search', () => {
+    const mockTimelineItemsResponse: SearchTimelineItemsQuery = {
+      search: {
+        timeline_items: {
+          results: [
+            { id: '10', indexed_data: { id: '10', title: 'Kickoff email', summary: 'Project kickoff summary' } },
+            { id: '20', indexed_data: { id: '20', title: 'Weekly sync', summary: 'Notes from the weekly sync' } },
+          ],
+        },
+      },
+    };
+
+    it('should search timeline items when searchTerm is provided', async () => {
+      mocks.setResponse(mockTimelineItemsResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.TIMELINE_ITEMS,
+        searchTerm: 'kickoff',
+      };
+
+      const parsedResult = await callToolByNameAsync('search', args);
+
+      expect(parsedResult.data).toHaveLength(2);
+      expect(parsedResult.data[0]).toEqual({
+        id: 'timeline-item-10',
+        title: 'Kickoff email',
+        description: 'Project kickoff summary',
+      });
+      expect(parsedResult.data[1]).toEqual({
+        id: 'timeline-item-20',
+        title: 'Weekly sync',
+        description: 'Notes from the weekly sync',
+      });
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchTimelineItems'),
+        {
+          query: 'kickoff',
+          limit: 20,
+        },
+        expect.objectContaining({ versionOverride: '2026-10' }),
+      );
+    });
+
+    it('should properly prefix timeline item IDs', async () => {
+      mocks.setResponse(mockTimelineItemsResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.TIMELINE_ITEMS,
+        searchTerm: 'test',
+      };
+
+      const parsedResult = await callToolByNameAsync('search', args);
+
+      expect(parsedResult.data[0].id).toBe(`${ObjectPrefixes.TIMELINE_ITEM}10`);
+      expect(parsedResult.data[1].id).toBe(`${ObjectPrefixes.TIMELINE_ITEM}20`);
+    });
+
+    it('should handle empty results', async () => {
+      mocks.setResponse({ search: { timeline_items: { results: [] } } });
+
+      const args: inputType = {
+        searchType: GlobalSearchType.TIMELINE_ITEMS,
+        searchTerm: 'NonExistent',
+      };
+
+      const parsedResult = await callToolByNameAsync('search', args);
+
+      expect(parsedResult.data).toHaveLength(0);
+    });
+
+    it('should omit description when timeline item summary is empty', async () => {
+      const responseWithEmptySummary: SearchTimelineItemsQuery = {
+        search: {
+          timeline_items: {
+            results: [
+              { id: '30', indexed_data: { id: '30', title: 'Untitled note', summary: '' } },
+            ],
+          },
+        },
+      };
+      mocks.setResponse(responseWithEmptySummary);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.TIMELINE_ITEMS,
+        searchTerm: 'note',
+      };
+
+      const parsedResult = await callToolByNameAsync('search', args);
+
+      expect(parsedResult.data[0].description).toBeUndefined();
+    });
+
+    it('should throw error when searchTerm is not provided for timeline items', async () => {
+      const args: inputType = {
+        searchType: GlobalSearchType.TIMELINE_ITEMS,
+      };
+
+      const result = await callToolByNameRawAsync('search', args);
+
+      expect(result.content[0].text).toContain('Failed to execute tool search');
+      expect(result.content[0].text).toContain('Timeline items search requires a searchTerm');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+
+    it('should not fall back when the request fails for timeline items', async () => {
+      const errorMessage = 'Search endpoint unavailable';
+      mocks.getMockRequest().mockRejectedValueOnce(new Error(errorMessage));
+
+      const args: inputType = {
+        searchType: GlobalSearchType.TIMELINE_ITEMS,
+        searchTerm: 'kickoff',
+      };
+
+      const result = await callToolByNameRawAsync('search', args);
+
+      expect(result.content[0].text).toContain('Failed to execute tool search');
+      expect(result.content[0].text).toContain(errorMessage);
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+    });
+
+    it('should throw when page > 1 (pagination not supported)', async () => {
+      const args: inputType = {
+        searchType: GlobalSearchType.TIMELINE_ITEMS,
+        searchTerm: 'kickoff',
         page: 5,
       };
 

@@ -25,6 +25,9 @@ import {
   searchUpdates,
   SearchUpdatesQuery,
   SearchUpdatesQueryVariables,
+  searchTimelineItems,
+  SearchTimelineItemsQuery,
+  SearchTimelineItemsQueryVariables,
 } from './search-tool.graphql.2026-10';
 import { normalizeString } from 'src/utils/string.utils';
 import { DataWithFilterInfo, GlobalSearchType, ObjectPrefixes, SearchResult } from './search-tool.types';
@@ -79,14 +82,15 @@ export class SearchTool extends BaseMondayApiTool<SearchToolInput> {
   });
 
   getDescription(): string {
-    return `Search within monday.com platform. Can search for boards, documents, folders, workspaces, updates, and items.
+    return `Search within monday.com platform. Can search for boards, documents, folders, workspaces, updates, items, and timeline items.
 For searching/listing specific users and teams, use list_users_and_teams tool.
 For account-level info (plan, member count, products), use get_user_context tool.
 For groups, use get_board_info tool.
 ITEMS search requires a searchTerm and only returns id, title, and url.
 WORKSPACES search requires a searchTerm and only returns id, title, and description.
 UPDATES search requires a searchTerm and returns id, title (the update body), itemId, boardId, and creatorId. Optionally scope it with boardIds and/or creatorIds.
-IMPORTANT: ids returned by this tool are prefixed with the type of the object (e.g doc-123, board-456, folder-789, workspace-101, update-303, item-321). When passing the ids to other tools, you need to remove the prefix and just pass the number.
+TIMELINE_ITEMS search requires a searchTerm and only returns id, title, and description.
+IMPORTANT: ids returned by this tool are prefixed with the type of the object (e.g doc-123, board-456, folder-789, workspace-101, update-303, item-321, timeline-item-654). When passing the ids to other tools, you need to remove the prefix and just pass the number.
     `;
   }
 
@@ -104,11 +108,12 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
         };
       } catch (error) {
         throwIfSearchTimeoutError(error);
-        // ITEMS, WORKSPACES and UPDATES have no listing fallback — propagate the error instead of falling through.
+        // ITEMS, WORKSPACES, UPDATES, and TIMELINE_ITEMS have no listing fallback — propagate the error instead of falling through.
         if (
           input.searchType === GlobalSearchType.ITEMS ||
           input.searchType === GlobalSearchType.WORKSPACES ||
-          input.searchType === GlobalSearchType.UPDATES
+          input.searchType === GlobalSearchType.UPDATES ||
+          input.searchType === GlobalSearchType.TIMELINE_ITEMS
         ) {
           throw error;
         }
@@ -122,6 +127,7 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
       [GlobalSearchType.WORKSPACES]: () => { throw new Error('Workspaces search requires a searchTerm'); },
       [GlobalSearchType.UPDATES]: () => { throw new Error('Updates search requires a searchTerm'); },
       [GlobalSearchType.ITEMS]: () => { throw new Error('Items search requires a searchTerm'); },
+      [GlobalSearchType.TIMELINE_ITEMS]: () => { throw new Error('Timeline items search requires a searchTerm'); },
     };
 
     const data = await handlers[input.searchType](input);
@@ -160,6 +166,10 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
 
     if (input.searchType === GlobalSearchType.ITEMS) {
       return this.searchItemsAsync(input.searchTerm!, input.limit, workspaceIds);
+    }
+
+    if (input.searchType === GlobalSearchType.TIMELINE_ITEMS) {
+      return this.searchTimelineItemsAsync(input.searchTerm!, input.limit);
     }
 
     throw new Error(`Unsupported search type for smart search: ${input.searchType}`);
@@ -269,7 +279,25 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     return { items, wasFiltered: true };
   }
 
+  private async searchTimelineItemsAsync(
+    query: string,
+    limit: number,
+  ): Promise<DataWithFilterInfo<SearchResult>> {
+    const variables: SearchTimelineItemsQueryVariables = { query, limit };
 
+    const response = await this.mondayApi.request<SearchTimelineItemsQuery>(searchTimelineItems, variables, {
+      versionOverride: '2026-10',
+      timeout: SEARCH_TIMEOUT,
+    });
+
+    const items = response.search.timeline_items.results.map((result) => ({
+      id: ObjectPrefixes.TIMELINE_ITEM + result.indexed_data.id,
+      title: result.indexed_data.title,
+      description: result.indexed_data.summary || undefined,
+    }));
+
+    return { items, wasFiltered: true };
+  }
 
   private async searchFoldersAsync(input: ToolInputType<SearchToolInput>): Promise<DataWithFilterInfo<SearchResult>> {
     const variables: GetFoldersQueryVariables = {

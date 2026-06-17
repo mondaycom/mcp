@@ -21,6 +21,7 @@ export enum ObjectPrefixes {
   WORKSPACE = 'workspace-',
   UPDATE = 'update-',
   ITEM = 'item-',
+  TIMELINE_ITEM = 'timeline-item-',
 }
 
 export enum GlobalSearchType {
@@ -30,6 +31,7 @@ export enum GlobalSearchType {
   WORKSPACES = 'WORKSPACES',
   UPDATES = 'UPDATES',
   ITEMS = 'ITEMS',
+  TIMELINE_ITEMS = 'TIMELINE_ITEMS',
 
   // Why other types are not included:
   // FORMS = 'FORMS', // forms are not supported
