@@ -75,6 +75,8 @@ import { AgentCatalogTool } from './agents-tools/agent-catalog/agent-catalog-too
 import { ListAutomationsTool } from './automations-tools/list-automations/list-automations-tool';
 import { ManageAutomationsTool } from './automations-tools/manage-automations/manage-automations-tool';
 import { CreateAutomationTool } from './automations-tools/create-automation/create-automation-tool';
+import { GetAutomationRunsTool } from './automations-tools/get-automation-runs/get-automation-runs-tool';
+import { GetAutomationStatisticsTool } from './automations-tools/get-automation-statistics/get-automation-statistics-tool';
 import { CreateWorkflowBuilderTool } from './workflow-builder-tools/create-workflow/create-workflow-tool';
 import { UpdateWorkflowTool } from './workflow-builder-tools/update-workflow/update-workflow-tool';
 import { PlanWorkflowTool } from './workflow-builder-tools/plan-workflow/plan-workflow-tool';
@@ -163,6 +165,8 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   ManageAutomationsTool,
   // Cast: ctor signature (api, apiToken, context?) doesn't match BaseMondayApiToolConstructor.
   CreateAutomationTool as unknown as BaseMondayApiToolConstructor,
+  GetAutomationRunsTool,
+  GetAutomationStatisticsTool,
   // Workflow Builder Tools
   CreateWorkflowBuilderTool,
   // Cast: ctor signature (api, apiToken, context?) doesn't match BaseMondayApiToolConstructor.
