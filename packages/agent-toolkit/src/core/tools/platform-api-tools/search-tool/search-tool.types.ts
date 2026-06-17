@@ -3,6 +3,10 @@ export interface SearchResult {
   title: string;
   url?: string;
   description?: string;
+  // updates
+  itemId?: string;
+  boardId?: string;
+  creatorId?: string;
 }
 
 export interface DataWithFilterInfo<T> {
@@ -15,6 +19,7 @@ export enum ObjectPrefixes {
   DOCUMENT = 'doc-',
   FOLDER = 'folder-',
   WORKSPACE = 'workspace-',
+  UPDATE = 'update-',
   ITEM = 'item-',
 }
 
@@ -23,11 +28,11 @@ export enum GlobalSearchType {
   DOCUMENTS = 'DOCUMENTS',
   FOLDERS = 'FOLDERS',
   WORKSPACES = 'WORKSPACES',
+  UPDATES = 'UPDATES',
   ITEMS = 'ITEMS',
 
   // Why other types are not included:
   // FORMS = 'FORMS', // forms are not supported
-  // USERS = 'USERS', // already supported by list_users_and_teams tool
   // TEAMS = 'TEAMS', // already supported by list_users_and_teams tool
   // GROUPS = 'GROUPS', // already supported by get_board_info tool
 }
