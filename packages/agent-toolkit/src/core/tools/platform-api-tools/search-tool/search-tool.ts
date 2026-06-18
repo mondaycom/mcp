@@ -1,7 +1,7 @@
 import { ToolInputType, ToolOutputType, ToolType } from 'src/core/tool';
 import { z } from 'zod';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { getBoards, getDocs, getFolders, searchItems } from './search-tool.graphql';
+import { getBoards, getDocs, getFolders, searchItems, searchWorkspaces } from './search-tool.graphql';
 import { searchBoardsDev, searchDocsDev } from './search-tool.graphql.dev';
 import {
   GetBoardsQuery,
@@ -12,6 +12,8 @@ import {
   GetFoldersQueryVariables,
   SearchItemsQuery,
   SearchItemsQueryVariables,
+  SearchWorkspacesQuery,
+  SearchWorkspacesQueryVariables,
 } from 'src/monday-graphql/generated/graphql/graphql';
 import {
   SearchBoardsDevQuery,
@@ -19,6 +21,11 @@ import {
   SearchDocsDevQuery,
   SearchDocsDevQueryVariables,
 } from 'src/monday-graphql/generated/graphql.dev/graphql';
+import {
+  searchUpdates,
+  SearchUpdatesQuery,
+  SearchUpdatesQueryVariables,
+} from './search-tool.graphql.2026-10';
 import { normalizeString } from 'src/utils/string.utils';
 import { DataWithFilterInfo, GlobalSearchType, ObjectPrefixes, SearchResult } from './search-tool.types';
 import { LOAD_INTO_MEMORY_LIMIT, MAX_FOLDERS_LIMIT, SEARCH_LIMIT } from './search-tool.consts';
@@ -43,6 +50,20 @@ export const searchSchema = {
     .describe(
       'The ids of the workspaces to search in. [IMPORTANT] Only pass this param if user explicitly asked to search within specific workspaces.',
     ),
+
+  // for updates
+  boardIds: z
+    .array(z.number())
+    .optional()
+    .describe(
+      'The ids of the boards to scope the search to. [IMPORTANT] Only applies to UPDATES search, and only pass it if the user explicitly asked to search within specific boards.',
+    ),
+  creatorIds: z
+    .array(z.number())
+    .optional()
+    .describe(
+      'The ids of the users whose updates to search. [IMPORTANT] Only applies to UPDATES search, and only pass it if the user explicitly asked to search updates by specific authors.',
+    ),
 };
 
 export type SearchToolInput = typeof searchSchema;
@@ -58,13 +79,14 @@ export class SearchTool extends BaseMondayApiTool<SearchToolInput> {
   });
 
   getDescription(): string {
-    return `Search within monday.com platform. Can search for boards, documents, items, folders.
+    return `Search within monday.com platform. Can search for boards, documents, folders, workspaces, updates, and items.
 For searching/listing specific users and teams, use list_users_and_teams tool.
 For account-level info (plan, member count, products), use get_user_context tool.
-For workspaces, use list_workspaces tool.
 For groups, use get_board_info tool.
 ITEMS search requires a searchTerm and only returns id, title, and url.
-IMPORTANT: ids returned by this tool are prefixed with the type of the object (e.g doc-123, board-456, folder-789, item-321). When passing the ids to other tools, you need to remove the prefix and just pass the number.
+WORKSPACES search requires a searchTerm and only returns id, title, and description.
+UPDATES search requires a searchTerm and returns id, title (the update body), itemId, boardId, and creatorId. Optionally scope it with boardIds and/or creatorIds.
+IMPORTANT: ids returned by this tool are prefixed with the type of the object (e.g doc-123, board-456, folder-789, workspace-101, update-303, item-321). When passing the ids to other tools, you need to remove the prefix and just pass the number.
     `;
   }
 
@@ -73,7 +95,6 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
   }
 
   protected async executeInternal(input: ToolInputType<SearchToolInput>): Promise<ToolOutputType<never>> {
-    // Try the per-entity search endpoint for entities that support it (BOARD, DOCUMENTS, ITEMS)
     if (input.searchType !== GlobalSearchType.FOLDERS && input.searchTerm) {
       try {
         const data = await this.runSmartSearchAsync(input);
@@ -83,8 +104,12 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
         };
       } catch (error) {
         throwIfSearchTimeoutError(error);
-        // ITEMS has no listing fallback — propagate the error instead of falling through.
-        if (input.searchType === GlobalSearchType.ITEMS) {
+        // ITEMS, WORKSPACES and UPDATES have no listing fallback — propagate the error instead of falling through.
+        if (
+          input.searchType === GlobalSearchType.ITEMS ||
+          input.searchType === GlobalSearchType.WORKSPACES ||
+          input.searchType === GlobalSearchType.UPDATES
+        ) {
           throw error;
         }
       }
@@ -94,7 +119,8 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
       [GlobalSearchType.BOARD]: this.searchBoardsAsync.bind(this),
       [GlobalSearchType.DOCUMENTS]: this.searchDocsAsync.bind(this),
       [GlobalSearchType.FOLDERS]: this.searchFoldersAsync.bind(this),
-      // Items has no cross-board listing endpoint — only reachable when searchTerm is missing.
+      [GlobalSearchType.WORKSPACES]: () => { throw new Error('Workspaces search requires a searchTerm'); },
+      [GlobalSearchType.UPDATES]: () => { throw new Error('Updates search requires a searchTerm'); },
       [GlobalSearchType.ITEMS]: () => { throw new Error('Items search requires a searchTerm'); },
     };
 
@@ -120,6 +146,16 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
 
     if (input.searchType === GlobalSearchType.DOCUMENTS) {
       return this.searchDocsWithDevEndpointAsync(input.searchTerm!, input.limit, workspaceIds);
+    }
+
+    if (input.searchType === GlobalSearchType.WORKSPACES) {
+      return this.searchWorkspacesAsync(input.searchTerm!, input.limit);
+    }
+
+    if (input.searchType === GlobalSearchType.UPDATES) {
+      const boardIds = input.boardIds?.map((id) => id.toString());
+      const creatorIds = input.creatorIds?.map((id) => id.toString());
+      return this.searchUpdatesAsync(input.searchTerm!, input.limit, boardIds, creatorIds);
     }
 
     if (input.searchType === GlobalSearchType.ITEMS) {
@@ -170,6 +206,49 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     return { items, wasFiltered: true };
   }
 
+  private async searchWorkspacesAsync(
+    query: string,
+    limit: number,
+  ): Promise<DataWithFilterInfo<SearchResult>> {
+    const variables: SearchWorkspacesQueryVariables = { query, limit };
+
+    const response = await this.mondayApi.request<SearchWorkspacesQuery>(searchWorkspaces, variables, {
+      timeout: SEARCH_TIMEOUT,
+    });
+
+    const items = response.search.workspaces.results.map((result) => ({
+      id: ObjectPrefixes.WORKSPACE + result.indexed_data.id,
+      title: result.indexed_data.name,
+      description: result.indexed_data.description || undefined,
+    }));
+
+    return { items, wasFiltered: true };
+  }
+
+  private async searchUpdatesAsync(
+    query: string,
+    limit: number,
+    boardIds?: string[],
+    creatorIds?: string[],
+  ): Promise<DataWithFilterInfo<SearchResult>> {
+    const variables: SearchUpdatesQueryVariables = { query, limit, boardIds, creatorIds };
+
+    const response = await this.mondayApi.request<SearchUpdatesQuery>(searchUpdates, variables, {
+      versionOverride: '2026-10',
+      timeout: SEARCH_TIMEOUT,
+    });
+
+    const items = response.search.updates.results.map((result) => ({
+      id: ObjectPrefixes.UPDATE + result.indexed_data.id,
+      title: result.indexed_data.body,
+      itemId: result.indexed_data.item_id,
+      boardId: result.indexed_data.board_id,
+      creatorId: result.indexed_data.creator_id,
+    }));
+
+    return { items, wasFiltered: true };
+  }
+
   private async searchItemsAsync(
     query: string,
     limit: number,
@@ -189,6 +268,8 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
 
     return { items, wasFiltered: true };
   }
+
+
 
   private async searchFoldersAsync(input: ToolInputType<SearchToolInput>): Promise<DataWithFilterInfo<SearchResult>> {
     const variables: GetFoldersQueryVariables = {

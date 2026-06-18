@@ -2,8 +2,8 @@ import { gql } from 'graphql-request';
 
 // ─── Shared fragment ──────────────────────────────────────────────────────────
 
-export const agentFieldsFragment = gql`
-  fragment AgentFields on Agent {
+export const customAgentFieldsFragment = gql`
+  fragment CustomAgentFields on CustomAgent {
     id
     kind
     state
@@ -25,52 +25,52 @@ export const agentFieldsFragment = gql`
 
 // ─── Agent CRUD ───────────────────────────────────────────────────────────────
 
-export const getAgentsQuery = gql`
-  ${agentFieldsFragment}
+export const getCustomAgentsQuery = gql`
+  ${customAgentFieldsFragment}
 
-  query getAgents($ids: [ID!], $limit: Int) {
-    agents(ids: $ids, limit: $limit) {
-      ...AgentFields
+  query getCustomAgents($ids: [ID!], $limit: Int) {
+    custom_agents(ids: $ids, limit: $limit) {
+      ...CustomAgentFields
     }
   }
 `;
 
 export const createAgentMutation = gql`
-  ${agentFieldsFragment}
+  ${customAgentFieldsFragment}
 
   mutation createAgent($input: CreateAgentInput!) {
     create_agent(input: $input) {
-      ...AgentFields
+      ...CustomAgentFields
     }
   }
 `;
 
 export const createBlankAgentMutation = gql`
-  ${agentFieldsFragment}
+  ${customAgentFieldsFragment}
 
   mutation createBlankAgent($input: CreateBlankAgentInput) {
     create_blank_agent(input: $input) {
-      ...AgentFields
+      ...CustomAgentFields
     }
   }
 `;
 
 export const updateAgentMutation = gql`
-  ${agentFieldsFragment}
+  ${customAgentFieldsFragment}
 
   mutation updateAgent($id: ID!, $input: UpdateAgentInput!) {
     update_agent(id: $id, input: $input) {
-      ...AgentFields
+      ...CustomAgentFields
     }
   }
 `;
 
 export const deleteAgentMutation = gql`
-  ${agentFieldsFragment}
+  ${customAgentFieldsFragment}
 
   mutation deleteAgent($id: ID!) {
     delete_agent(id: $id) {
-      ...AgentFields
+      ...CustomAgentFields
     }
   }
 `;
