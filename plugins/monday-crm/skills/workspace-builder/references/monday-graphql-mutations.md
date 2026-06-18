@@ -50,6 +50,20 @@ Use only for confirmed default-group cleanup on freshly-created boards. In Defau
 
 ---
 
+## Get CRM product ID (run in Step 0)
+
+```graphql
+{ account { products { id kind } } }
+```
+
+Returns all account products with their **numeric IDs**. Find `kind: "crm"` and cache its `id`. This ID is account-specific — do not hardcode it. Pass it as `accountProductId` when calling `create_workspace` to tie the workspace to the monday CRM product.
+
+**Why numeric ID and not `"crm"`:** The `create_workspace` mutation takes `account_product_id` as an `ID` scalar (numeric). The `kind` field is a display/routing key, not the API identifier. Passing `"crm"` silently creates a generic workspace with no product association.
+
+**Note on board type:** CRM boards in monday.com are standard `public` boards at the API level (`board_kind: "public"`, `type: "board"`). There is no `custom_object` board kind in the public GraphQL API. The CRM product experience is determined by the workspace's product association, not the individual board type.
+
+---
+
 ## Notes
 
 - `board_id` and `group_id` are integers in the API but strings in some contexts — pass as integers in the mutation.

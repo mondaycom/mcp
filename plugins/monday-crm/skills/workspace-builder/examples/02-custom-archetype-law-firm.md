@@ -101,4 +101,4 @@ Adding example items to `Matters`...
 
 Done. Created 2 boards, 15 columns, 5 seed items. Doc: [CRM Setup — Jun 11](https://monday.com/…)
 
-When you have a few real matters in, run `/monday-crm:morning-briefing` to start your daily case prioritization.
+When you have a few real matters in, run `/monday-crm:daily-briefing` to start your daily case prioritization.
