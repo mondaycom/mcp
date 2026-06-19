@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { callToolByNameAsync, callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
 import { ColumnType } from '../../../../monday-graphql/generated/graphql/graphql';
 import { ZodTypeAny } from 'zod';
-import { FullBoardDataToolSchema } from './full-board-data-tool';
+import { FullBoardDataTool, FullBoardDataToolSchema } from './full-board-data-tool';
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
 
 export type inputType = z.objectInputType<FullBoardDataToolSchema, ZodTypeAny>;
@@ -14,6 +14,14 @@ describe('Full Board Data Tool', () => {
     jest.clearAllMocks();
     mocks = createMockApiClient();
     jest.spyOn(MondayAgentToolkit.prototype as any, 'createApiClient').mockReturnValue(mocks.mockApiClient);
+  });
+
+  it('describes when to use the tool without an internal-use warning', () => {
+    const tool = new FullBoardDataTool(mocks.mockApiClient);
+
+    expect(tool.getDescription()).toContain('complete board data');
+    expect(tool.getDescription()).toContain('Prefer narrower board tools');
+    expect(tool.getDescription()).not.toContain('INTERNAL USE ONLY');
   });
 
   const mockBoardResponse = {
@@ -298,7 +306,9 @@ describe('Full Board Data Tool', () => {
     };
 
     const result = await callToolByNameRawAsync('get_full_board_data', args);
-    expect(result.content[0].text).toContain('Failed to get full board data: Invalid board ID, Insufficient permissions');
+    expect(result.content[0].text).toContain(
+      'Failed to get full board data: Invalid board ID, Insufficient permissions',
+    );
   });
 
   it('Extracts user IDs from people column values', async () => {
@@ -364,5 +374,4 @@ describe('Full Board Data Tool', () => {
     expect(userIdsCall).toContain('user789');
     expect(userIdsCall).not.toContain('team456');
   });
-
 });
