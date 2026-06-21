@@ -15,7 +15,10 @@ export const useTemplateToolSchema = {
   boardKind: z
     .nativeEnum(BoardKind)
     .optional()
-    .describe('Board kind for created boards (public / private / share). Omit to use the API default.'),
+    .describe(
+      'Board kind applied to all boards created by the template (public / private / share). ' +
+        'For workspace templates this sets the kind for every board in the installation. Omit to use the API default.',
+    ),
 };
 
 export class UseTemplateTool extends BaseMondayApiTool<typeof useTemplateToolSchema, never> {
