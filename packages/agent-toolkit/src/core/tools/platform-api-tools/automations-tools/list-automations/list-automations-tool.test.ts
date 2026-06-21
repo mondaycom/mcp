@@ -120,6 +120,22 @@ describe('ListAutomationsTool', () => {
     );
   });
 
+  it('should omit legacyAutomations when the provider returns a best-effort error marker', async () => {
+    mocks.setResponseOnce({
+      board_automations: {
+        cursor: null,
+        legacy_automations: { error: 'Legacy automations could not be retrieved.' },
+        items: [mockBoardAutomation],
+      },
+    });
+
+    const result = await callToolByNameRawAsync('list_automations', { boardId: '1234567890' });
+    const parsed = parseToolResult(result);
+
+    expect(parsed).not.toHaveProperty('legacyAutomations');
+    expect(parsed.workflows).toEqual([expectedWorkflow]);
+  });
+
   it('should omit legacyAutomations from output when none are returned', async () => {
     mocks.setResponseOnce({ board_automations: { cursor: null, items: [mockBoardAutomation] } });
 

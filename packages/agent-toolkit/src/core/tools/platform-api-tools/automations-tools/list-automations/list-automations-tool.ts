@@ -25,6 +25,18 @@ function normalizeUserId(userId: BoardAutomation['user_id']): BoardAutomation['u
   return Number.isNaN(parsedUserId) ? userId : parsedUserId;
 }
 
+// The provider's legacy fetch is best-effort: it yields an `{ error }` marker instead of
+// throwing when the internal endpoint fails. Surface real data only; treat the marker as absent.
+function extractLegacyAutomations(legacy: unknown): unknown {
+  if (legacy == null) {
+    return null;
+  }
+  if (typeof legacy === 'object' && 'error' in legacy) {
+    return null;
+  }
+  return legacy;
+}
+
 function mapBoardAutomationToWorkflow(automation: BoardAutomation): WorkflowOutput {
   const { active, user_id: userId, ...workflow } = automation;
 
@@ -85,7 +97,10 @@ When NOT to use: Do not call this tool to get general board information unrelate
 
       const workflows = (res.board_automations?.items ?? []).map(mapBoardAutomationToWorkflow);
       const nextCursor = res.board_automations?.cursor ?? null;
-      const legacyAutomations = includeLegacy ? res.board_automations?.legacy_automations ?? null : null;
+      // legacy_automations is best-effort on the provider: on failure it returns an { error }
+      // marker rather than throwing. Drop that so the model never renders an error as an
+      // automation — the field is already optional ("present both groups" applies to real data).
+      const legacyAutomations = includeLegacy ? extractLegacyAutomations(res.board_automations?.legacy_automations) : null;
 
       return {
         content: {
