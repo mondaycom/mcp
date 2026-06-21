@@ -74,12 +74,17 @@ import { ManageAgentTriggersTool } from './agents-tools/manage-agent-triggers/ma
 import { ManageAgentSkillsTool } from './agents-tools/manage-agent-skills/manage-agent-skills-tool';
 import { ManageAgentKnowledgeTool } from './agents-tools/manage-agent-knowledge/manage-agent-knowledge-tool';
 import { AgentCatalogTool } from './agents-tools/agent-catalog/agent-catalog-tool';
-import { ListAutomationsTool } from './workflows-tools/list-workflows/list-workflows-tool';
-import { ManageWorkflowsTool } from './workflows-tools/manage-workflows/manage-workflows-tool';
-import { CreateAutomationTool } from './workflows-tools/create-automation/create-automation-tool';
+import { ListAutomationsTool } from './automations-tools/list-automations/list-automations-tool';
+import { ManageAutomationsTool } from './automations-tools/manage-automations/manage-automations-tool';
+import { CreateAutomationTool } from './automations-tools/create-automation/create-automation-tool';
+import { GetAutomationRunsTool } from './automations-tools/get-automation-runs/get-automation-runs-tool';
+import { GetAutomationStatisticsTool } from './automations-tools/get-automation-statistics/get-automation-statistics-tool';
 import { CreateWorkflowBuilderTool } from './workflow-builder-tools/create-workflow/create-workflow-tool';
 import { UpdateWorkflowTool } from './workflow-builder-tools/update-workflow/update-workflow-tool';
+import { PlanWorkflowTool } from './workflow-builder-tools/plan-workflow/plan-workflow-tool';
 import { PublishWorkflowTool } from './workflow-builder-tools/publish-workflow/publish-workflow-tool';
+import { ConfigureAiColumnTool } from './configure-ai-column-tool/configure-ai-column-tool';
+import { RemoveAiFromColumnTool } from './remove-ai-from-column-tool/remove-ai-from-column-tool';
 
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteItemTool,
@@ -159,16 +164,22 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   ManageAgentSkillsTool,
   ManageAgentKnowledgeTool,
   AgentCatalogTool,
-  // Workflows (subgraph still on dev API version)
+  // Automations (subgraph still on dev API version)
   ListAutomationsTool,
-  ManageWorkflowsTool,
+  ManageAutomationsTool,
   // Cast: ctor signature (api, apiToken, context?) doesn't match BaseMondayApiToolConstructor.
   CreateAutomationTool as unknown as BaseMondayApiToolConstructor,
+  GetAutomationRunsTool,
+  GetAutomationStatisticsTool,
   // Workflow Builder Tools
   CreateWorkflowBuilderTool,
   // Cast: ctor signature (api, apiToken, context?) doesn't match BaseMondayApiToolConstructor.
   UpdateWorkflowTool as unknown as BaseMondayApiToolConstructor,
+  PlanWorkflowTool as unknown as BaseMondayApiToolConstructor,
   PublishWorkflowTool,
+  // AI Column Tools
+  ConfigureAiColumnTool,
+  RemoveAiFromColumnTool,
 ];
 
 export * from './all-monday-api-tool';
@@ -241,13 +252,17 @@ export * from './get-notetaker-meetings-tool/get-notetaker-meetings-tool';
 export * from './fetch-file-content-tool/fetch-file-content-tool';
 // monday Platform Agents
 export * from './agents-tools';
-// Workflows
-export * from './workflows-tools';
+// Automations
+export * from './automations-tools';
 // Workflow Builder Tools
 export * from './workflow-builder-tools/create-workflow/create-workflow-tool';
 export * from './workflow-builder-tools/update-workflow/update-workflow-tool';
+export * from './workflow-builder-tools/plan-workflow/plan-workflow-tool';
 export * from './workflow-builder-tools/publish-workflow/publish-workflow-tool';
 // Dashboard Tools
 export * from './dashboard-tools';
+// AI Column Tools
+export * from './configure-ai-column-tool/configure-ai-column-tool';
+export * from './remove-ai-from-column-tool/remove-ai-from-column-tool';
 // Monday Dev Tools
 export * from '../monday-dev-tools';

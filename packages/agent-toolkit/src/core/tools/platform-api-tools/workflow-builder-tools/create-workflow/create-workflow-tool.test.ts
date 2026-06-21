@@ -1,6 +1,7 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '../../test-utils/mock-api-client';
 import { CreateWorkflowMutation } from '../../../../../monday-graphql/generated/graphql.dev/graphql';
+import { CreateWorkflowBuilderTool } from './create-workflow-tool';
 
 describe('CreateWorkflowBuilderTool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
@@ -145,5 +146,13 @@ describe('CreateWorkflowBuilderTool', () => {
     const result = await callToolByNameRawAsync('create_workflow', { workspaceId: '42' });
 
     expect(result.content[0].text).toContain('Failed to create Workflow Builder workflow');
+  });
+
+  it('should include custom_objects URL guidance in description', () => {
+    const tool = new CreateWorkflowBuilderTool(mocks.mockApiClient);
+    const desc = tool.getDescription();
+
+    expect(desc).toContain('custom_objects/');
+    expect(desc).not.toContain('/workflows/');
   });
 });

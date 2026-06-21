@@ -2,8 +2,9 @@ import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameAsync, callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
 import { SearchTool, searchSchema } from './search-tool';
 import { z, ZodTypeAny } from 'zod';
-import { GetBoardsQuery, GetDocsQuery, GetFoldersQuery } from 'src/monday-graphql/generated/graphql/graphql';
+import { GetBoardsQuery, GetDocsQuery, GetFoldersQuery, SearchItemsQuery, SearchWorkspacesQuery } from 'src/monday-graphql/generated/graphql/graphql';
 import { SearchBoardsDevQuery, SearchDocsDevQuery } from 'src/monday-graphql/generated/graphql.dev/graphql';
+import { SearchUpdatesQuery } from './search-tool.graphql.2026-10';
 import { GlobalSearchType, ObjectPrefixes, SearchResult } from './search-tool.types';
 
 export type inputType = z.objectInputType<typeof searchSchema, ZodTypeAny>;
@@ -58,7 +59,7 @@ describe('SearchTool', () => {
       const description = tool.getDescription();
 
       expect(description).toContain('Search within monday.com platform');
-      expect(description).toContain('boards, documents, forms, folders');
+      expect(description).toContain('boards, documents, folders, workspaces, updates, and items');
       expect(description).toContain('IMPORTANT: ids returned by this tool are prefixed');
     });
   });
@@ -1104,6 +1105,190 @@ describe('SearchTool', () => {
     });
   });
 
+  describe('Items Search Handler', () => {
+    const mockItemsResponse: SearchItemsQuery = {
+      search: {
+        items: {
+          results: [
+            {
+              id: '111',
+              indexed_data: { id: '111', name: 'Item One', url: 'https://monday.com/boards/1/pulses/111' },
+            },
+            {
+              id: '222',
+              indexed_data: { id: '222', name: 'Item Two', url: 'https://monday.com/boards/1/pulses/222' },
+            },
+          ],
+        },
+      },
+    };
+
+    it('should call SearchItems when searchTerm is provided for items', async () => {
+      mocks.setResponse(mockItemsResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.ITEMS,
+        searchTerm: 'Item',
+      };
+
+      const parsedResult = await callToolByNameAsync('search', args);
+
+      expect(parsedResult.data).toHaveLength(2);
+      expect(parsedResult.data[0]).toEqual({
+        id: 'item-111',
+        title: 'Item One',
+        url: 'https://monday.com/boards/1/pulses/111',
+      });
+      expect(parsedResult.data[1]).toEqual({
+        id: 'item-222',
+        title: 'Item Two',
+        url: 'https://monday.com/boards/1/pulses/222',
+      });
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchItems'),
+        {
+          query: 'Item',
+          limit: 20,
+          workspaceIds: undefined,
+        },
+        expect.not.objectContaining({ versionOverride: 'dev' }),
+      );
+    });
+
+    it('should properly prefix item IDs', async () => {
+      mocks.setResponse(mockItemsResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.ITEMS,
+        searchTerm: 'Item',
+      };
+
+      const parsedResult = await callToolByNameAsync('search', args);
+
+      expect(parsedResult.data[0].id).toBe(`${ObjectPrefixes.ITEM}111`);
+      expect(parsedResult.data[1].id).toBe(`${ObjectPrefixes.ITEM}222`);
+    });
+
+    it('should pass custom limit to the request', async () => {
+      mocks.setResponse(mockItemsResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.ITEMS,
+        searchTerm: 'Item',
+        limit: 10,
+      };
+
+      await callToolByNameAsync('search', args);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchItems'),
+        expect.objectContaining({ limit: 10 }),
+        expect.any(Object),
+      );
+    });
+
+    it('should pass workspace IDs to the request', async () => {
+      mocks.setResponse(mockItemsResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.ITEMS,
+        searchTerm: 'Item',
+        workspaceIds: [12345, 67890],
+      };
+
+      await callToolByNameAsync('search', args);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchItems'),
+        expect.objectContaining({ workspaceIds: ['12345', '67890'] }),
+        expect.any(Object),
+      );
+    });
+
+    it('should not include disclaimer for items', async () => {
+      mocks.setResponse(mockItemsResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.ITEMS,
+        searchTerm: 'Item',
+      };
+
+      const parsedResult = await callToolByNameAsync('search', args);
+
+      expect(parsedResult.disclaimer).toBeUndefined();
+    });
+
+    it('should handle empty results', async () => {
+      mocks.setResponse({ search: { items: { results: [] } } });
+
+      const args: inputType = {
+        searchType: GlobalSearchType.ITEMS,
+        searchTerm: 'NonExistent',
+      };
+
+      const parsedResult = await callToolByNameAsync('search', args);
+
+      expect(parsedResult.data).toHaveLength(0);
+    });
+
+    it('should throw error when searchTerm is not provided for items', async () => {
+      const args: inputType = {
+        searchType: GlobalSearchType.ITEMS,
+      };
+
+      const result = await callToolByNameRawAsync('search', args);
+
+      expect(result.content[0].text).toContain('Failed to execute tool search');
+      expect(result.content[0].text).toContain('Items search requires a searchTerm');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+
+    it('should throw error when searchTerm is empty string for items', async () => {
+      const args: inputType = {
+        searchType: GlobalSearchType.ITEMS,
+        searchTerm: '',
+      };
+
+      const result = await callToolByNameRawAsync('search', args);
+
+      expect(result.content[0].text).toContain('Failed to execute tool search');
+      expect(result.content[0].text).toContain('Items search requires a searchTerm');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+
+    it('should not fall back when the request fails for items', async () => {
+      const errorMessage = 'Search endpoint unavailable';
+      mocks.getMockRequest().mockRejectedValueOnce(new Error(errorMessage));
+
+      const args: inputType = {
+        searchType: GlobalSearchType.ITEMS,
+        searchTerm: 'Item',
+      };
+
+      const result = await callToolByNameRawAsync('search', args);
+
+      expect(result.content[0].text).toContain('Failed to execute tool search');
+      expect(result.content[0].text).toContain(errorMessage);
+      // Only one call: items search. No fallback.
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+    });
+
+    it('should throw when page > 1 (pagination not supported, no listing fallback)', async () => {
+      const args: inputType = {
+        searchType: GlobalSearchType.ITEMS,
+        searchTerm: 'Item',
+        page: 5,
+      };
+
+      const result = await callToolByNameRawAsync('search', args);
+
+      expect(result.content[0].text).toContain('Failed to execute tool search');
+      expect(result.content[0].text).toContain('Pagination is not supported for search');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+  });
+
   describe('Unsupported Search Type', () => {
     it('should throw error for unsupported search type', async () => {
       const args: Omit<inputType, 'searchType'> & { searchType: string } = {
@@ -1836,6 +2021,304 @@ describe('SearchTool', () => {
       // Less than 100 items, no filtering occurs - returns all 3 items
       expect(parsedResult.data).toHaveLength(3);
       expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
+    });
+  });
+
+  describe('Workspace Search', () => {
+    const mockWorkspacesResponse: SearchWorkspacesQuery = {
+      search: {
+        workspaces: {
+          results: [
+            { id: '10', indexed_data: { id: '10', name: 'Marketing Workspace', description: 'For marketing team' } },
+            { id: '20', indexed_data: { id: '20', name: 'Engineering', description: 'Engineering workspace' } },
+          ],
+        },
+      },
+    };
+
+    it('should search workspaces when searchTerm is provided', async () => {
+      mocks.setResponse(mockWorkspacesResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.WORKSPACES,
+        searchTerm: 'Marketing',
+      };
+
+      const parsedResult = await callToolByNameAsync('search', args);
+
+      expect(parsedResult.data).toHaveLength(2);
+      expect(parsedResult.data[0]).toEqual({
+        id: 'workspace-10',
+        title: 'Marketing Workspace',
+        description: 'For marketing team',
+      });
+      expect(parsedResult.data[1]).toEqual({
+        id: 'workspace-20',
+        title: 'Engineering',
+        description: 'Engineering workspace',
+      });
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchWorkspaces'),
+        {
+          query: 'Marketing',
+          limit: 20,
+        },
+        expect.not.objectContaining({ versionOverride: 'dev' }),
+      );
+    });
+
+    it('should properly prefix workspace IDs', async () => {
+      mocks.setResponse(mockWorkspacesResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.WORKSPACES,
+        searchTerm: 'test',
+      };
+
+      const parsedResult = await callToolByNameAsync('search', args);
+
+      expect(parsedResult.data[0].id).toBe(`${ObjectPrefixes.WORKSPACE}10`);
+      expect(parsedResult.data[1].id).toBe(`${ObjectPrefixes.WORKSPACE}20`);
+    });
+
+    it('should handle empty results', async () => {
+      mocks.setResponse({ search: { workspaces: { results: [] } } });
+
+      const args: inputType = {
+        searchType: GlobalSearchType.WORKSPACES,
+        searchTerm: 'NonExistent',
+      };
+
+      const parsedResult = await callToolByNameAsync('search', args);
+
+      expect(parsedResult.data).toHaveLength(0);
+    });
+
+    it('should handle null description in workspace results', async () => {
+      const responseWithNullDesc: SearchWorkspacesQuery = {
+        search: {
+          workspaces: {
+            results: [
+              { id: '30', indexed_data: { id: '30', name: 'Sales Team', description: null } },
+            ],
+          },
+        },
+      };
+      mocks.setResponse(responseWithNullDesc);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.WORKSPACES,
+        searchTerm: 'Sales',
+      };
+
+      const parsedResult = await callToolByNameAsync('search', args);
+
+      expect(parsedResult.data[0].description).toBeUndefined();
+    });
+
+    it('should throw error when searchTerm is not provided for workspaces', async () => {
+      const args: inputType = {
+        searchType: GlobalSearchType.WORKSPACES,
+      };
+
+      const result = await callToolByNameRawAsync('search', args);
+
+      expect(result.content[0].text).toContain('Failed to execute tool search');
+      expect(result.content[0].text).toContain('Workspaces search requires a searchTerm');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+
+    it('should not fall back when the request fails for workspaces', async () => {
+      const errorMessage = 'Search endpoint unavailable';
+      mocks.getMockRequest().mockRejectedValueOnce(new Error(errorMessage));
+
+      const args: inputType = {
+        searchType: GlobalSearchType.WORKSPACES,
+        searchTerm: 'Marketing',
+      };
+
+      const result = await callToolByNameRawAsync('search', args);
+
+      expect(result.content[0].text).toContain('Failed to execute tool search');
+      expect(result.content[0].text).toContain(errorMessage);
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+    });
+
+    it('should throw when page > 1 (pagination not supported)', async () => {
+      const args: inputType = {
+        searchType: GlobalSearchType.WORKSPACES,
+        searchTerm: 'Marketing',
+        page: 5,
+      };
+
+      const result = await callToolByNameRawAsync('search', args);
+
+      expect(result.content[0].text).toContain('Failed to execute tool search');
+      expect(result.content[0].text).toContain('Pagination is not supported for search');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Update Search', () => {
+    const mockUpdatesResponse: SearchUpdatesQuery = {
+      search: {
+        updates: {
+          results: [
+            {
+              id: '10',
+              indexed_data: {
+                id: '10',
+                body: 'Deploy is done',
+                creator_id: '501',
+                item_id: '901',
+                board_id: '801',
+              },
+            },
+            {
+              id: '20',
+              indexed_data: {
+                id: '20',
+                body: 'Reviewing the PR',
+                creator_id: '502',
+                item_id: '902',
+                board_id: '802',
+              },
+            },
+          ],
+        },
+      },
+    };
+
+    it('should search updates when searchTerm is provided', async () => {
+      mocks.setResponse(mockUpdatesResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.UPDATES,
+        searchTerm: 'Deploy',
+      };
+
+      const parsedResult = await callToolByNameAsync('search', args);
+
+      expect(parsedResult.data).toHaveLength(2);
+      expect(parsedResult.data[0]).toEqual({
+        id: 'update-10',
+        title: 'Deploy is done',
+        itemId: '901',
+        boardId: '801',
+        creatorId: '501',
+      });
+      expect(parsedResult.data[1]).toEqual({
+        id: 'update-20',
+        title: 'Reviewing the PR',
+        itemId: '902',
+        boardId: '802',
+        creatorId: '502',
+      });
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchUpdates'),
+        {
+          query: 'Deploy',
+          limit: 20,
+          boardIds: undefined,
+          creatorIds: undefined,
+        },
+        expect.objectContaining({ versionOverride: '2026-10' }),
+      );
+    });
+
+    it('should properly prefix update IDs', async () => {
+      mocks.setResponse(mockUpdatesResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.UPDATES,
+        searchTerm: 'test',
+      };
+
+      const parsedResult = await callToolByNameAsync('search', args);
+
+      expect(parsedResult.data[0].id).toBe(`${ObjectPrefixes.UPDATE}10`);
+      expect(parsedResult.data[1].id).toBe(`${ObjectPrefixes.UPDATE}20`);
+    });
+
+    it('should pass boardIds and creatorIds to the updates query', async () => {
+      mocks.setResponse(mockUpdatesResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.UPDATES,
+        searchTerm: 'Deploy',
+        boardIds: [801, 802],
+        creatorIds: [501],
+      };
+
+      await callToolByNameAsync('search', args);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchUpdates'),
+        {
+          query: 'Deploy',
+          limit: 20,
+          boardIds: ['801', '802'],
+          creatorIds: ['501'],
+        },
+        expect.objectContaining({ versionOverride: '2026-10' }),
+      );
+    });
+
+    it('should handle empty results', async () => {
+      mocks.setResponse({ search: { updates: { results: [] } } });
+
+      const args: inputType = {
+        searchType: GlobalSearchType.UPDATES,
+        searchTerm: 'NonExistent',
+      };
+
+      const parsedResult = await callToolByNameAsync('search', args);
+
+      expect(parsedResult.data).toHaveLength(0);
+    });
+
+    it('should throw error when searchTerm is not provided for updates', async () => {
+      const args: inputType = {
+        searchType: GlobalSearchType.UPDATES,
+      };
+
+      const result = await callToolByNameRawAsync('search', args);
+
+      expect(result.content[0].text).toContain('Failed to execute tool search');
+      expect(result.content[0].text).toContain('Updates search requires a searchTerm');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+
+    it('should not fall back when the request fails for updates', async () => {
+      const errorMessage = 'Search endpoint unavailable';
+      mocks.getMockRequest().mockRejectedValueOnce(new Error(errorMessage));
+
+      const args: inputType = {
+        searchType: GlobalSearchType.UPDATES,
+        searchTerm: 'Deploy',
+      };
+
+      const result = await callToolByNameRawAsync('search', args);
+
+      expect(result.content[0].text).toContain('Failed to execute tool search');
+      expect(result.content[0].text).toContain(errorMessage);
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+    });
+
+    it('should throw when page > 1 (pagination not supported)', async () => {
+      const args: inputType = {
+        searchType: GlobalSearchType.UPDATES,
+        searchTerm: 'Deploy',
+        page: 5,
+      };
+
+      const result = await callToolByNameRawAsync('search', args);
+
+      expect(result.content[0].text).toContain('Failed to execute tool search');
+      expect(result.content[0].text).toContain('Pagination is not supported for search');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
   });
 });

@@ -1,5 +1,6 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '../../test-utils/mock-api-client';
+import { PublishWorkflowTool } from './publish-workflow-tool';
 
 describe('PublishWorkflowTool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
@@ -103,5 +104,13 @@ describe('PublishWorkflowTool', () => {
     });
 
     expect(result.content[0].text).toContain('Failed to publish workflow');
+  });
+
+  it('should include custom_objects URL guidance in description', () => {
+    const tool = new PublishWorkflowTool(mocks.mockApiClient);
+    const desc = tool.getDescription();
+
+    expect(desc).toContain('custom_objects/');
+    expect(desc).not.toContain('/workflows/');
   });
 });

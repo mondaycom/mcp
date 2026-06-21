@@ -1,0 +1,34 @@
+{
+  "name": "monday-mcp",
+  "version": "0.1.0",
+  "description": "monday.com plugin marketplace for AI coding assistants. Hosts the monday MCP server and Claude Code plugins built on top of it. First plugin: monday-crm — five skills for monday CRM users (daily briefing, forecast, meeting-to-deal, workspace builder, data cleanup).",
+  "owner": {
+    "name": "monday.com",
+    "url": "https://monday.com"
+  },
+  "plugins": [
+    {
+      "name": "monday-crm",
+      "description": "Run your sales pipeline in monday CRM from plain language. Start the day with a ranked deal briefing, build a forecast, turn meeting notes into deal updates, set up a CRM workspace from scratch, and keep your data clean — every result written straight back into monday as a real board, dashboard, or doc. Built on the official monday MCP connector.",
+      "source": "./plugins/monday-crm",
+      "category": "crm",
+      "version": "0.3.0",
+      "author": {
+        "name": "monday.com"
+      },
+      "license": "MIT",
+      "keywords": [
+        "monday",
+        "monday-crm",
+        "crm",
+        "sales",
+        "pipeline",
+        "forecast",
+        "daily-briefing",
+        "meeting-to-deal",
+        "data-cleanup",
+        "workspace-builder"
+      ]
+    }
+  ]
+}

@@ -9,7 +9,7 @@ import { MondayAgentToolkitConfig } from '../core/monday-agent-toolkit';
 import { ManageToolsTool } from '../core/tools/platform-api-tools/manage-tools-tool';
 import { DynamicToolManager } from './dynamic-tool-manager';
 import { API_VERSION } from 'src/utils/version.utils';
-import { stringifyIfObject } from 'src/utils/object.utils';
+import { formatToolError } from '../utils/error.utils';
 
 export interface GetToolsOptions {
   schemaFormat?: 'zod' | 'json';
@@ -20,8 +20,9 @@ export interface GetToolsOptions {
  */
 export class MondayAgentToolkit extends McpServer {
   private readonly mondayApiClient: ApiClient;
-  private readonly mondayApiToken: string;
+  private readonly mondayApiToken: string | (() => string);
   private readonly context?: MondayAgentToolkitConfig['context'];
+  private readonly toolkitConfig: MondayAgentToolkitConfig;
   private readonly dynamicToolManager: DynamicToolManager = new DynamicToolManager();
   private toolInstances: Tool<any, any>[] = [];
   private managementTool: Tool<any, any> | null = null;
@@ -45,8 +46,11 @@ export class MondayAgentToolkit extends McpServer {
       },
     );
 
-    this.mondayApiClient = this.createApiClient(config);
     this.mondayApiToken = config.mondayApiToken;
+    this.toolkitConfig = config;
+    const resolvedToken = typeof config.mondayApiToken === 'function' ? config.mondayApiToken() : config.mondayApiToken;
+    this.mondayApiClient = this.createApiClient(resolvedToken, config);
+
     this.context = {
       ...config.context,
       apiVersion: config.mondayApiVersion ?? API_VERSION,
@@ -55,12 +59,16 @@ export class MondayAgentToolkit extends McpServer {
     this.registerTools(config);
   }
 
+  private createApiClientFromToken(): ApiClient {
+    return this.createApiClient((this.mondayApiToken as () => string)(), this.toolkitConfig);
+  }
+
   /**
    * Create and configure the Monday API client
    */
-  private createApiClient(config: MondayAgentToolkitConfig): ApiClient {
+  private createApiClient(token: string, config: MondayAgentToolkitConfig): ApiClient {
     return new ApiClient({
-      token: config.mondayApiToken,
+      token,
       apiVersion: config.mondayApiVersion ?? API_VERSION,
       endpoint: config.mondayApiEndpoint,
       requestConfig: {
@@ -107,7 +115,7 @@ export class MondayAgentToolkit extends McpServer {
    */
   private initializeTools(config: MondayAgentToolkitConfig): Tool<any, any>[] {
     const instanceOptions = {
-      apiClient: this.mondayApiClient,
+      apiClient: typeof this.mondayApiToken === 'function' ? () => this.createApiClientFromToken() : this.mondayApiClient,
       apiToken: this.mondayApiToken,
       context: this.context,
     };
@@ -298,11 +306,7 @@ export class MondayAgentToolkit extends McpServer {
           return this.formatToolResult(result.content);
         }
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        return {
-          content: [{ type: 'text', text: `Error: ${errorMessage}` }],
-          isError: true,
-        };
+        return formatToolError(error);
       }
     };
   }
@@ -347,16 +351,9 @@ export class MondayAgentToolkit extends McpServer {
    * Handle tool execution errors
    */
   private handleToolError(error: unknown, toolName: string): CallToolResult {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Failed to execute tool ${toolName}: ${errorMessage}`,
-        },
-      ],
-      isError: true,
-    };
+    return formatToolError(error, {
+      toolName,
+      errorPrefix: `Failed to execute tool ${toolName}: `,
+    });
   }
 }
