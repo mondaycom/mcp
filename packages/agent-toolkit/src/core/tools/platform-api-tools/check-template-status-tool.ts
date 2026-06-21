@@ -57,7 +57,7 @@ export class CheckTemplateStatusTool extends BaseMondayApiTool<typeof checkTempl
         content: {
           status: UseTemplateStatus.Complete,
           board_ids: status.board_ids,
-          board_ids_map: status.board_ids_map ?? null,
+          board_ids_map: status.board_ids_map,
           message: `Template application complete. ${status.board_ids.length} board(s) created.`,
         },
       };
@@ -67,7 +67,7 @@ export class CheckTemplateStatusTool extends BaseMondayApiTool<typeof checkTempl
         content: {
           status: UseTemplateStatus.Failed,
           board_ids: [],
-          board_ids_map: null,
+          board_ids_map: [],
           message: 'Template application failed. Please try again.',
         },
       };
@@ -77,7 +77,7 @@ export class CheckTemplateStatusTool extends BaseMondayApiTool<typeof checkTempl
         content: {
           status: status.status,
           board_ids: [],
-          board_ids_map: null,
+          board_ids_map: [],
           message: `Template application ${status.status === UseTemplateStatus.InProgress ? 'in progress' : 'pending'}. Board IDs will be available once complete.`,
         },
       };
@@ -86,7 +86,7 @@ export class CheckTemplateStatusTool extends BaseMondayApiTool<typeof checkTempl
       content: {
         status: status.status,
         board_ids: [],
-        board_ids_map: null,
+        board_ids_map: [],
         message: `Unexpected status: ${status.status}. Poll again or contact support.`,
       },
     };

@@ -525,7 +525,10 @@ export const useTemplateStatus = gql`
       process_id
       status
       board_ids
-      board_ids_map
+      board_ids_map {
+        source_board_id
+        created_board_id
+      }
     }
   }
 `;

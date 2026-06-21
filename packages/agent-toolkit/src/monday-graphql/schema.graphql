@@ -509,8 +509,16 @@ type UseTemplateStatusType {
   is_failed: Boolean!
   "Board IDs are populated incrementally during the metadata phase. Boards exist as empty shells until status is COMPLETE. Safe to store these IDs early, but do not read or write board content until COMPLETE."
   board_ids: [ID!]!
-  "Map of source board ID (string) to created board ID (string)."
-  board_ids_map: JSON
+  "Mapping of each source (template) board ID to the newly created board ID."
+  board_ids_map: [BoardIdMapping!]!
+}
+
+"Mapping of a source (template) board ID to the newly created board ID."
+type BoardIdMapping {
+  "The source (template) board ID."
+  source_board_id: ID!
+  "The newly created board ID."
+  created_board_id: ID!
 }
 
 "The `Int` scalar type represents non-fractional signed whole numeric values. Int can represent values between -(2^31) and 2^31 - 1."
