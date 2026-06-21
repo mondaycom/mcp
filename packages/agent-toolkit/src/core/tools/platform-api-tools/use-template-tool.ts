@@ -16,8 +16,11 @@ export const useTemplateToolSchema = {
     .nativeEnum(BoardKind)
     .optional()
     .describe(
-      'Board kind applied to all boards created by the template (public / private / share). ' +
-        'For workspace templates this sets the kind for every board in the installation. Omit to use the API default.',
+      'Visibility applied to all boards created by the template. ' +
+        'public = visible to all account members (API default); ' +
+        'private = visible only to owner and explicitly added members; ' +
+        'share = accessible to guests outside the account via a link. ' +
+        'For workspace templates this setting applies to every board in the installation. Omit to use the API default (public).',
     ),
 };
 
