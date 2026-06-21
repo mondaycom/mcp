@@ -520,7 +520,7 @@ export const useTemplate = gql`
 `;
 
 export const useTemplateStatus = gql`
-  query useTemplateStatus($processId: String!) {
+  query useTemplateStatus($processId: ID!) {
     template_installation_status(process_id: $processId) {
       process_id
       status

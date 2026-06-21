@@ -485,7 +485,7 @@ formToken: String!): ResponseForm
   "Get the status of a use_template async operation. Returns null if the process_id is invalid, expired, or unauthorized."
   template_installation_status(
     "The process_id returned by use_template."
-    process_id: String!
+    process_id: ID!
   ): UseTemplateStatusType
 }
 
