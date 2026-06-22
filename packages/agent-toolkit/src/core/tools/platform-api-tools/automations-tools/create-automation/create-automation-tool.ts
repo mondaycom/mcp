@@ -29,8 +29,8 @@ export class CreateAutomationTool extends BaseMondayApiTool<typeof createAutomat
   });
 
   constructor(
-    api: ApiClient,
-    private readonly apiToken: string,
+    api: ApiClient | (() => ApiClient),
+    private readonly apiToken: string | (() => string),
     context?: MondayApiToolContext,
   ) {
     super(api, context);
@@ -106,10 +106,11 @@ Actions:
     input: ToolInputType<typeof createAutomationToolSchema>,
   ): Promise<ToolOutputType<never>> {
     try {
+      const apiToken = typeof this.apiToken === 'function' ? this.apiToken() : this.apiToken;
       const response = await fetch(LITE_BUILDER_AGENT_URL, {
         method: 'POST',
         headers: {
-          Authorization: this.apiToken,
+          Authorization: apiToken,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
