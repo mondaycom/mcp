@@ -29,8 +29,8 @@ export class PlanWorkflowTool extends BaseMondayApiTool<typeof planWorkflowToolS
   });
 
   constructor(
-    api: ApiClient,
-    private readonly apiToken: string,
+    api: ApiClient | (() => ApiClient),
+    private readonly apiToken: string | (() => string),
     context?: MondayApiToolContext,
   ) {
     super(api, context);
@@ -59,10 +59,11 @@ Returns:
     input: ToolInputType<typeof planWorkflowToolSchema>,
   ): Promise<ToolOutputType<never>> {
     try {
+      const apiToken = typeof this.apiToken === 'function' ? this.apiToken() : this.apiToken;
       const response = await fetch(WORKFLOW_PLANNER_AGENT_URL, {
         method: 'POST',
         headers: {
-          Authorization: this.apiToken,
+          Authorization: apiToken,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ prompt: input.prompt }),

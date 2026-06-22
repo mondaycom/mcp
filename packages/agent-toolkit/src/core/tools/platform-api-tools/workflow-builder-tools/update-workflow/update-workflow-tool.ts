@@ -39,8 +39,8 @@ export class UpdateWorkflowTool extends BaseMondayApiTool<typeof updateWorkflowT
   });
 
   constructor(
-    api: ApiClient,
-    private readonly apiToken: string,
+    api: ApiClient | (() => ApiClient),
+    private readonly apiToken: string | (() => string),
     context?: MondayApiToolContext,
   ) {
     super(api, context);
@@ -76,10 +76,11 @@ Note: the workflow runs only after it is published to live version.
     input: ToolInputType<typeof updateWorkflowToolSchema>,
   ): Promise<ToolOutputType<never>> {
     try {
+      const apiToken = typeof this.apiToken === 'function' ? this.apiToken() : this.apiToken;
       const response = await fetch(WORKFLOW_BUILDER_AGENT_URL, {
         method: 'POST',
         headers: {
-          Authorization: this.apiToken,
+          Authorization: apiToken,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
