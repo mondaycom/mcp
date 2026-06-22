@@ -4,7 +4,8 @@ import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { buildClientSchema, GraphQLSchema, IntrospectionQuery, parse, validate } from 'graphql';
 import { ApiClient } from '@mondaydotcomorg/api';
 import { introspectionQuery } from '../../../monday-graphql';
-import { API_VERSION, rethrowWithContext } from '../../../utils';
+import { API_VERSION } from '../../../utils/version.utils';
+import { rethrowWithContext } from '../../../utils/error.utils';
 
 export const allMondayApiToolSchema = {
   query: z.string().describe('Custom GraphQL query/mutation. you need to provide the full query / mutation'),
