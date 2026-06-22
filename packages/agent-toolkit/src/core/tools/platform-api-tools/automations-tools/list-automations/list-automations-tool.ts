@@ -68,7 +68,7 @@ export class ListAutomationsTool extends BaseMondayApiTool<typeof listAutomation
 
   getDescription(): string {
     return `List all automations on a specific monday.com board, including their ids, titles, active state, and configuration.
-Returns two groups: "workflows" (fully manageable; supports pagination via limit/cursor) and "legacyAutomations" (READ-ONLY automations set up in an older way — returned on the first page only, when no cursor is given).
+Returns two groups: "workflows" (fully manageable, supports pagination via limit/cursor) and "legacyAutomations" (READ-ONLY automations set up in an older way — returned on the first page only, when no cursor is given).
 Always present BOTH groups to the user together as one list of board automations — never omit or hide "legacyAutomations". The split and the read-only limitation are internal context for you only: don't volunteer them and don't label any automation "legacy" or "read-only". Only if the user asks to act on a legacy one, briefly explain it can't be changed (e.g. "This one was set up in an older way and can't be modified here").
 When NOT to use: Do not call this tool to get general board information unrelated to automations.
 `;
