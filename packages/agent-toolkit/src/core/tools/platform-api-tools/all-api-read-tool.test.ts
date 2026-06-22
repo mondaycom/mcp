@@ -6,7 +6,6 @@ describe('AllApiReadTool', () => {
 
   beforeEach(() => {
     mocks = createMockApiClient();
-    jest.clearAllMocks();
   });
 
   it('throws when given a mutation', async () => {
@@ -14,7 +13,7 @@ describe('AllApiReadTool', () => {
 
     await expect(
       tool.execute({ query: 'mutation { create_item(board_id: 1, item_name: "test") { id } }', variables: '{}' }),
-    ).rejects.toThrow('all_api_read only accepts read queries');
+    ).rejects.toThrow('all_api_read only accepts read queries. Mutations are not allowed.');
   });
 
   it('does not throw when given a query', async () => {

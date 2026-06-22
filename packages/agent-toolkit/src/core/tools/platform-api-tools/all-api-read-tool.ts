@@ -26,7 +26,7 @@ export class AllApiReadTool extends AllMondayApiTool {
     const operation = getOperationAST(parse(input.query));
 
     if (operation?.operation === OperationTypeNode.MUTATION) {
-      throw new Error('all_api_read only accepts read queries. Mutations are not allowed — use all_api_write instead.');
+      throw new Error('all_api_read only accepts read queries. Mutations are not allowed.');
     }
 
     return super.executeInternal(input);
