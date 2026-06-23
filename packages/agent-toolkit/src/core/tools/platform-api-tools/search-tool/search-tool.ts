@@ -89,7 +89,7 @@ For groups, use get_board_info tool.
 ITEMS search requires a searchTerm and only returns id, title, and url.
 WORKSPACES search requires a searchTerm and only returns id, title, and description.
 UPDATES search requires a searchTerm and returns id, title (the update body), itemId, boardId, and creatorId. Optionally scope it with boardIds and/or creatorIds.
-TIMELINE_ITEMS search requires a searchTerm and only returns id, title, and description.
+TIMELINE_ITEMS search requires a searchTerm and returns id, title, summary, and content.
 IMPORTANT: ids returned by this tool are prefixed with the type of the object (e.g doc-123, board-456, folder-789, workspace-101, update-303, item-321, timeline-item-654). When passing the ids to other tools, you need to remove the prefix and just pass the number.
     `;
   }
@@ -108,13 +108,13 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
         };
       } catch (error) {
         throwIfSearchTimeoutError(error);
-        // ITEMS, WORKSPACES, UPDATES, and TIMELINE_ITEMS have no listing fallback — propagate the error instead of falling through.
-        if (
-          input.searchType === GlobalSearchType.ITEMS ||
-          input.searchType === GlobalSearchType.WORKSPACES ||
-          input.searchType === GlobalSearchType.UPDATES ||
-          input.searchType === GlobalSearchType.TIMELINE_ITEMS
-        ) {
+        const searchTypesWithNoFallback = [
+          GlobalSearchType.ITEMS,
+          GlobalSearchType.WORKSPACES,
+          GlobalSearchType.UPDATES,
+          GlobalSearchType.TIMELINE_ITEMS,
+        ];
+        if (searchTypesWithNoFallback.includes(input.searchType)) {
           throw error;
         }
       }
@@ -293,10 +293,11 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     const items = response.search.timeline_items.results.map((result) => ({
       id: ObjectPrefixes.TIMELINE_ITEM + result.indexed_data.id,
       title: result.indexed_data.title,
-      description: result.indexed_data.summary || undefined,
+      summary: result.indexed_data.summary || undefined,
+      content: result.indexed_data.content || undefined,
     }));
 
-    return { items, wasFiltered: true };
+    return { items, wasFiltered: false };
   }
 
   private async searchFoldersAsync(input: ToolInputType<SearchToolInput>): Promise<DataWithFilterInfo<SearchResult>> {

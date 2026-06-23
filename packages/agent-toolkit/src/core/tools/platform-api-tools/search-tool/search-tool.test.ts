@@ -2327,8 +2327,8 @@ describe('SearchTool', () => {
       search: {
         timeline_items: {
           results: [
-            { id: '10', indexed_data: { id: '10', title: 'Kickoff email', summary: 'Project kickoff summary' } },
-            { id: '20', indexed_data: { id: '20', title: 'Weekly sync', summary: 'Notes from the weekly sync' } },
+            { id: '10', indexed_data: { id: '10', title: 'Kickoff email', summary: 'Project kickoff summary', content: 'Full kickoff email body' } },
+            { id: '20', indexed_data: { id: '20', title: 'Weekly sync', summary: 'Notes from the weekly sync', content: 'Full weekly sync notes' } },
           ],
         },
       },
@@ -2348,12 +2348,14 @@ describe('SearchTool', () => {
       expect(parsedResult.data[0]).toEqual({
         id: 'timeline-item-10',
         title: 'Kickoff email',
-        description: 'Project kickoff summary',
+        summary: 'Project kickoff summary',
+        content: 'Full kickoff email body',
       });
       expect(parsedResult.data[1]).toEqual({
         id: 'timeline-item-20',
         title: 'Weekly sync',
-        description: 'Notes from the weekly sync',
+        summary: 'Notes from the weekly sync',
+        content: 'Full weekly sync notes',
       });
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
@@ -2393,12 +2395,12 @@ describe('SearchTool', () => {
       expect(parsedResult.data).toHaveLength(0);
     });
 
-    it('should omit description when timeline item summary is empty', async () => {
+    it('should omit summary and content when empty', async () => {
       const responseWithEmptySummary: SearchTimelineItemsQuery = {
         search: {
           timeline_items: {
             results: [
-              { id: '30', indexed_data: { id: '30', title: 'Untitled note', summary: '' } },
+              { id: '30', indexed_data: { id: '30', title: 'Untitled note', summary: '', content: '' } },
             ],
           },
         },
@@ -2412,7 +2414,8 @@ describe('SearchTool', () => {
 
       const parsedResult = await callToolByNameAsync('search', args);
 
-      expect(parsedResult.data[0].description).toBeUndefined();
+      expect(parsedResult.data[0].summary).toBeUndefined();
+      expect(parsedResult.data[0].content).toBeUndefined();
     });
 
     it('should throw error when searchTerm is not provided for timeline items', async () => {

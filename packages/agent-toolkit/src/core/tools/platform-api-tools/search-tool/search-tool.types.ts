@@ -3,6 +3,8 @@ export interface SearchResult {
   title: string;
   url?: string;
   description?: string;
+  summary?: string;
+  content?: string;
   // updates
   itemId?: string;
   boardId?: string;

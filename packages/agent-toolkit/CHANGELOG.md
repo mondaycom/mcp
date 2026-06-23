@@ -6,7 +6,7 @@
 
 - Adds `TIMELINE_ITEMS` as a search type in the unified `search` tool, backed by the platform's `search { timeline_items }` endpoint
 - Only available from API version `2026-10`; query pins `versionOverride: '2026-10'` with hand-written types (same approach as `UPDATES`)
-- Requires a `searchTerm`; returns `id` (prefixed `timeline-item-`), `title`, and `description` (the timeline item summary)
+- Requires a `searchTerm`; returns `id` (prefixed `timeline-item-`), `title`, `summary`, and `content`
 - No listing fallback — errors propagate, and `page > 1` is rejected, matching `ITEMS`/`WORKSPACES`/`UPDATES`
 
 ## 5.37.0

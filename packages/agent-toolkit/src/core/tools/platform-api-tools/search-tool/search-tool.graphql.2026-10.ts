@@ -62,6 +62,7 @@ export const searchTimelineItems = gql`
             id
             title
             summary
+            content
           }
         }
       }
@@ -73,6 +74,7 @@ export interface SearchIndexedTimelineItem {
   readonly id: string;
   readonly title: string;
   readonly summary: string;
+  readonly content: string;
 }
 
 export interface SearchTimelineItemsQuery {
