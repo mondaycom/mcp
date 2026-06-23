@@ -27,7 +27,9 @@ export class CheckTemplateStatusTool extends BaseMondayApiTool<typeof checkTempl
       'Check the status of a use_template operation. ' +
       'Poll after calling use_template — wait 5–10 seconds between polls. ' +
       'Status values: PENDING | IN_PROGRESS | COMPLETE | FAILED. ' +
-      'Wait for status=COMPLETE before working with board IDs — boards exist but are empty during IN_PROGRESS. ' +
+      'Stop polling when status is COMPLETE (boards ready) or FAILED (unrecoverable). ' +
+      'Give up after ~5 minutes if neither terminal status is reached. ' +
+      'Board IDs are only available once COMPLETE — boards exist but are empty during IN_PROGRESS. ' +
       'Returns null if process_id is invalid or expired (1-hour TTL).'
     );
   }
@@ -41,7 +43,9 @@ export class CheckTemplateStatusTool extends BaseMondayApiTool<typeof checkTempl
   ): Promise<ToolOutputType<never>> {
     const variables: UseTemplateStatusQueryVariables = { processId: input.processId };
 
-    const res = await this.mondayApi.request<UseTemplateStatusQuery>(useTemplateStatus, variables);
+    const res = await this.mondayApi.request<UseTemplateStatusQuery>(useTemplateStatus, variables, {
+      versionOverride: '2026-10',
+    });
     const status = res.template_installation_status;
 
     if (!status) {

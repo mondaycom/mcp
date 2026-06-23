@@ -61,14 +61,22 @@ export class UseTemplateTool extends BaseMondayApiTool<typeof useTemplateToolSch
     const processId = res.use_template?.process_id;
 
     if (processId == null) {
-      return { content: 'Failed to start template application. The request was rejected.' };
+      return {
+        content: {
+          processId: null,
+          message: 'Failed to start template application. The request was rejected.',
+        },
+      };
     }
 
     return {
-      content:
-        `Template application started. Process ID: ${processId}. ` +
-        `Poll check_template_status("${processId}") every 5–10 seconds. ` +
-        `Stop on COMPLETE (boards ready) or FAILED (unrecoverable). Give up after ~5 minutes.`,
+      content: {
+        processId,
+        message:
+          `Template application started. ` +
+          `Poll check_template_status with processId every 5–10 seconds. ` +
+          `Stop on COMPLETE (boards ready) or FAILED (unrecoverable). Give up after ~5 minutes.`,
+      },
     };
   }
 }
