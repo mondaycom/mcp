@@ -1,6 +1,6 @@
 # Changelog
 
-## 5.38.0
+## 5.40.0
 
 ### search — add TIMELINE_ITEMS search type
 
