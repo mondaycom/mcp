@@ -1,6 +1,6 @@
 {
   "name": "monday-ai",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "monday.com AI repository",
   "private": true,
   "packageManager": "yarn@1.22.21",
