@@ -17,8 +17,8 @@ export const useTemplateToolSchema = {
     .optional()
     .describe(
       'Visibility applied to all boards created by the template. ' +
-        'public = visible to all account members (API default); ' +
-        'private = visible only to owner and explicitly added members; ' +
+        'public = visible to all account members (API default). ' +
+        'private = visible only to owner and explicitly added members. ' +
         'share = accessible to guests outside the account via a link. ' +
         'For workspace templates this setting applies to every board in the installation. Omit to use the API default (public).',
     ),
