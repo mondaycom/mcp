@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../../tool';
 import { BaseMondayApiTool, MondayApiToolContext, createMondayApiAnnotations } from '../../base-monday-api-tool';
 import { rethrowWithContext } from '../../../../../utils';
-import { WORKFLOW_PLANNER_AGENT_URL } from '../constants';
+import { PLATFORM_AGENT_SERVICE_NAME, resolveMondayFetch, WORKFLOW_PLANNER_AGENT_PATH } from '../../ai-agent.utils';
 
 const REQUEST_TIMEOUT_MS = 180_000;
 
@@ -60,7 +60,10 @@ Returns:
   ): Promise<ToolOutputType<never>> {
     try {
       const apiToken = typeof this.apiToken === 'function' ? this.apiToken() : this.apiToken;
-      const response = await fetch(WORKFLOW_PLANNER_AGENT_URL, {
+      const mondayFetch = resolveMondayFetch(this.context);
+      const response = await mondayFetch({
+        serviceName: PLATFORM_AGENT_SERVICE_NAME,
+        path: WORKFLOW_PLANNER_AGENT_PATH,
         method: 'POST',
         headers: {
           Authorization: apiToken,
