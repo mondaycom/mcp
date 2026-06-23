@@ -83,7 +83,7 @@ Note: the workflow runs only after it is published to live version.
         path: WORKFLOW_BUILDER_AGENT_PATH,
         method: 'POST',
         headers: {
-          Authorization: apiToken,
+          ...(this.context?.fetchConfig?.fetch ? {} : { Authorization: apiToken }),
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({

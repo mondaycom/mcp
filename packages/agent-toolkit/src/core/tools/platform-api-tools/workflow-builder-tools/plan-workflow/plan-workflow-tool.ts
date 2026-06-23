@@ -66,7 +66,7 @@ Returns:
         path: WORKFLOW_PLANNER_AGENT_PATH,
         method: 'POST',
         headers: {
-          Authorization: apiToken,
+          ...(this.context?.fetchConfig?.fetch ? {} : { Authorization: apiToken }),
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ prompt: input.prompt }),
