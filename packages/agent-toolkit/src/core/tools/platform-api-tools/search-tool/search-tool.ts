@@ -297,7 +297,7 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
       content: result.indexed_data.content || undefined,
     }));
 
-    return { items, wasFiltered: false };
+    return { items, wasFiltered: true };
   }
 
   private async searchFoldersAsync(input: ToolInputType<SearchToolInput>): Promise<DataWithFilterInfo<SearchResult>> {
