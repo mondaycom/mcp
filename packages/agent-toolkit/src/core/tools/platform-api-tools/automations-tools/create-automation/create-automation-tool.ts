@@ -3,8 +3,8 @@ import { z } from 'zod';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../../tool';
 import { BaseMondayApiTool, MondayApiToolContext, createMondayApiAnnotations } from '../../base-monday-api-tool';
 import { rethrowWithContext } from '../../../../../utils';
+import { LITE_BUILDER_AGENT_PATH, PLATFORM_AGENT_SERVICE_NAME, resolveMondayFetch } from '../../ai-agent.utils';
 
-const LITE_BUILDER_AGENT_URL = 'https://api.monday.com/platform-ai-gateway/agents/lite-builder';
 const REQUEST_TIMEOUT_MS = 180_000;
 
 export const createAutomationToolSchema = {
@@ -107,10 +107,13 @@ Actions:
   ): Promise<ToolOutputType<never>> {
     try {
       const apiToken = typeof this.apiToken === 'function' ? this.apiToken() : this.apiToken;
-      const response = await fetch(LITE_BUILDER_AGENT_URL, {
+      const mondayFetch = resolveMondayFetch(this.context);
+      const response = await mondayFetch({
+        serviceName: PLATFORM_AGENT_SERVICE_NAME,
+        path: LITE_BUILDER_AGENT_PATH,
         method: 'POST',
         headers: {
-          Authorization: apiToken,
+          ...(this.context?.fetchConfig?.fetch ? {} : { Authorization: apiToken }),
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
