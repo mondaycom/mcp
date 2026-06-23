@@ -16,6 +16,21 @@ export type ToolsConfiguration = {
   enableToolManager?: boolean;
 };
 
+export type MondayFetchRequest = {
+  serviceName: string;
+  path: string;
+  method?: string;
+  headers?: Record<string, string>;
+  body?: string;
+  signal?: AbortSignal;
+};
+
+export type MondayFetch = (request: MondayFetchRequest) => Promise<Response>;
+
+export type FetchConfig = {
+  fetch?: MondayFetch;
+};
+
 export type MondayAgentToolkitConfig = {
   mondayApiToken: ApiClientConfig['token'] | (() => string);
   mondayApiVersion?: ApiClientConfig['apiVersion'];
@@ -23,4 +38,5 @@ export type MondayAgentToolkitConfig = {
   mondayApiRequestConfig?: ApiClientConfig['requestConfig'];
   toolsConfiguration?: ToolsConfiguration;
   context?: MondayApiToolContext;
+  fetchConfig?: FetchConfig;
 };
