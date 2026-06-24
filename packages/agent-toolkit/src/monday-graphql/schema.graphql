@@ -482,6 +482,43 @@ behaviors: [String!]): [UserConfig!]
   "Fetch a form by its token. The returned form includes all the details of the form such as its settings, questions, title, etc. Use this endpoint when you need to retrieve complete form data for display or processing. Requires that the requesting user has read access to the associated board."
   form(  "The unique identifier token for the form. This token is used to securely access the form and can be found in the form URL."
 formToken: String!): ResponseForm
+  "Get the status of a use_template async operation. Returns null if the process_id is invalid, expired, or unauthorized."
+  template_installation_status(
+    "The process_id returned by use_template."
+    process_id: ID!
+  ): UseTemplateStatusType
+}
+
+"Lifecycle status of a use_template async operation."
+enum UseTemplateStatus {
+  "Job queued, not yet started."
+  PENDING
+  "Boards being created."
+  IN_PROGRESS
+  "All boards fully ready."
+  COMPLETE
+  "Duplication failed; any partial boards were rolled back."
+  FAILED
+}
+
+"Status of a use_template async operation."
+type UseTemplateStatusType {
+  process_id: String!
+  status: UseTemplateStatus!
+  is_complete: Boolean!
+  is_failed: Boolean!
+  "Board IDs are populated incrementally during the metadata phase. Boards exist as empty shells until status is COMPLETE. Safe to store these IDs early, but do not read or write board content until COMPLETE."
+  board_ids: [ID!]!
+  "Mapping of each source (template) board ID to the newly created board ID."
+  board_ids_map: [BoardIdMapping!]!
+}
+
+"Mapping of a source (template) board ID to the newly created board ID."
+type BoardIdMapping {
+  "The source (template) board ID."
+  source_board_id: ID!
+  "The newly created board ID."
+  created_board_id: ID!
 }
 
 "The `Int` scalar type represents non-fractional signed whole numeric values. Int can represent values between -(2^31) and 2^31 - 1."
