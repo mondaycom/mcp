@@ -329,7 +329,9 @@ limit: Int = 25,   "A list of associated board or object’s unique identifier."
 object_ids: [ID!],   "Property to order by (created_at / used_at)."
 order_by: DocsOrderBy,   "Page number to get, starting at 1."
 page: Int = 1,   "A list of workspace ids the documents are contained in."
-workspace_ids: [ID]): [Document]
+workspace_ids: [ID],   "The ID of the item that contains the doc column. Must be used together with column_id."
+item_id: ID,   "The column ID of the doc column on the item. Must be used together with item_id."
+column_id: String): [Document]
   "Get a collection of folders. Note: This query won't return folders from closed workspaces to which you are not subscribed"
   folders(  "A list of folders unique identifiers."
 ids: [ID!],   "Number of items to get, the default is 25."
