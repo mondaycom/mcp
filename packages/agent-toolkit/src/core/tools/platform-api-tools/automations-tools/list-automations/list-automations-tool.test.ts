@@ -59,7 +59,7 @@ describe('ListAutomationsTool', () => {
 
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
       expect.stringContaining('board_automations'),
-      { boardIds: ['1234567890'], limit: 100 },
+      { boardIds: ['1234567890'], limit: 100, includeLegacy: true },
       expect.objectContaining({ versionOverride: '2026-10' }),
     );
     expect(mocks.getMockRequest().mock.calls[0][0]).not.toContain('HostType');
@@ -81,7 +81,7 @@ describe('ListAutomationsTool', () => {
 
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
       expect.stringContaining('board_automations'),
-      { boardIds: ['1234567890'], cursor: '50', limit: 50 },
+      { boardIds: ['1234567890'], cursor: '50', limit: 50, includeLegacy: false },
       expect.objectContaining({ versionOverride: '2026-10' }),
     );
   });
@@ -94,6 +94,55 @@ describe('ListAutomationsTool', () => {
 
     expect(parsed.workflows).toEqual([]);
     expect(parsed.message).toContain('0');
+  });
+
+  it('should include legacy automations on the first page', async () => {
+    const legacy = { note: 'older automations', automations: [{ id: 1 }], recipes: { recipes: [] } };
+    mocks.setResponseOnce({
+      board_automations: { cursor: null, legacy_automations: legacy, items: [mockBoardAutomation] },
+    });
+
+    const result = await callToolByNameRawAsync('list_automations', { boardId: '1234567890' });
+    const parsed = parseToolResult(result);
+
+    expect(parsed.legacyAutomations).toEqual(legacy);
+  });
+
+  it('should request legacy automations only when no cursor is provided', async () => {
+    mocks.setResponseOnce({ board_automations: { cursor: null, items: [] } });
+
+    await callToolByNameRawAsync('list_automations', { boardId: '1234567890', cursor: '50' });
+
+    expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+      expect.stringContaining('board_automations'),
+      expect.objectContaining({ includeLegacy: false }),
+      expect.anything(),
+    );
+  });
+
+  it('should omit legacyAutomations when the provider returns a best-effort error marker', async () => {
+    mocks.setResponseOnce({
+      board_automations: {
+        cursor: null,
+        legacy_automations: { error: 'Legacy automations could not be retrieved.' },
+        items: [mockBoardAutomation],
+      },
+    });
+
+    const result = await callToolByNameRawAsync('list_automations', { boardId: '1234567890' });
+    const parsed = parseToolResult(result);
+
+    expect(parsed).not.toHaveProperty('legacyAutomations');
+    expect(parsed.workflows).toEqual([expectedWorkflow]);
+  });
+
+  it('should omit legacyAutomations from output when none are returned', async () => {
+    mocks.setResponseOnce({ board_automations: { cursor: null, items: [mockBoardAutomation] } });
+
+    const result = await callToolByNameRawAsync('list_automations', { boardId: '1234567890' });
+    const parsed = parseToolResult(result);
+
+    expect(parsed).not.toHaveProperty('legacyAutomations');
   });
 
   it('should propagate GraphQL errors with operation context', async () => {
