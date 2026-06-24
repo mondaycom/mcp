@@ -1459,6 +1459,15 @@ export enum BoardHierarchy {
   MultiLevel = 'multi_level'
 }
 
+/** Mapping of a source (template) board ID to the newly created board ID. */
+export type BoardIdMapping = {
+  __typename?: 'BoardIdMapping';
+  /** The newly created board ID. */
+  created_board_id: Scalars['ID']['output'];
+  /** The source (template) board ID. */
+  source_board_id: Scalars['ID']['output'];
+};
+
 /** Inferred metadata associated with a board, such as custom terminology settings. */
 export type BoardInferredMetadata = {
   __typename?: 'BoardInferredMetadata';
@@ -8381,6 +8390,8 @@ export type Query = {
   tags?: Maybe<Array<Maybe<Tag>>>;
   /** Get a collection of teams. */
   teams?: Maybe<Array<Maybe<Team>>>;
+  /** Get the status of a use_template async operation. Returns null if the process_id is invalid, expired, or unauthorized. */
+  template_installation_status?: Maybe<UseTemplateStatusType>;
   /** Fetches timeline items for a given item */
   timeline?: Maybe<TimelineResponse>;
   timeline_item?: Maybe<TimelineItem>;
@@ -8859,6 +8870,12 @@ export type QueryTagsArgs = {
 /** Root query type for the Dependencies service */
 export type QueryTeamsArgs = {
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryTemplate_Installation_StatusArgs = {
+  process_id: Scalars['ID']['input'];
 };
 
 
@@ -10769,6 +10786,31 @@ export type UploadJobInit = {
   upload_url?: Maybe<Scalars['String']['output']>;
 };
 
+/** Lifecycle status of a use_template async operation. */
+export enum UseTemplateStatus {
+  /** All boards fully ready. */
+  Complete = 'COMPLETE',
+  /** Duplication failed; any partial boards were rolled back. */
+  Failed = 'FAILED',
+  /** Boards being created. */
+  InProgress = 'IN_PROGRESS',
+  /** Job queued, not yet started. */
+  Pending = 'PENDING'
+}
+
+/** Status of a use_template async operation. */
+export type UseTemplateStatusType = {
+  __typename?: 'UseTemplateStatusType';
+  /** Board IDs are populated incrementally during the metadata phase. Boards exist as empty shells until status is COMPLETE. Safe to store these IDs early, but do not read or write board content until COMPLETE. */
+  board_ids: Array<Scalars['ID']['output']>;
+  /** Mapping of each source (template) board ID to the newly created board ID. */
+  board_ids_map: Array<BoardIdMapping>;
+  is_complete: Scalars['Boolean']['output'];
+  is_failed: Scalars['Boolean']['output'];
+  process_id: Scalars['String']['output'];
+  status: UseTemplateStatus;
+};
+
 /** A monday.com user. */
 export type User = {
   __typename?: 'User';
@@ -11529,6 +11571,12 @@ export type __Schema = {
   directives: Array<__Directive>;
 };
 
+
+/** A GraphQL Schema defines the capabilities of a GraphQL server. It exposes all available types and directives on the server, as well as the entry points for query, mutation, and subscription operations. */
+export type __SchemaDirectivesArgs = {
+  includeDeprecated?: Scalars['Boolean']['input'];
+};
+
 /**
  * The fundamental unit of any GraphQL Schema is the type. There are many kinds of types in GraphQL as represented by the `__TypeKind` enum.
  *
@@ -11546,6 +11594,7 @@ export type __Type = {
   enumValues?: Maybe<Array<__EnumValue>>;
   inputFields?: Maybe<Array<__InputValue>>;
   ofType?: Maybe<__Type>;
+  isOneOf?: Maybe<Scalars['Boolean']['output']>;
 };
 
 
@@ -11648,6 +11697,8 @@ export type __Directive = {
   isRepeatable: Scalars['Boolean']['output'];
   locations: Array<__DirectiveLocation>;
   args: Array<__InputValue>;
+  isDeprecated: Scalars['Boolean']['output'];
+  deprecationReason?: Maybe<Scalars['String']['output']>;
 };
 
 
@@ -11699,7 +11750,9 @@ export enum __DirectiveLocation {
   /** Location adjacent to an input object type definition. */
   InputObject = 'INPUT_OBJECT',
   /** Location adjacent to an input object field definition. */
-  InputFieldDefinition = 'INPUT_FIELD_DEFINITION'
+  InputFieldDefinition = 'INPUT_FIELD_DEFINITION',
+  /** Location adjacent to a directive definition. */
+  DirectiveDefinition = 'DIRECTIVE_DEFINITION'
 }
 
 export type GetSprintsByIdsQueryVariables = Exact<{
@@ -12752,6 +12805,23 @@ export type GetWorkspaceInfoQueryVariables = Exact<{
 
 export type GetWorkspaceInfoQuery = { __typename?: 'Query', workspaces?: Array<{ __typename?: 'Workspace', id?: string | null, name: string, description?: string | null, kind?: WorkspaceKind | null, created_at?: any | null, state?: State | null, is_default_workspace?: boolean | null, owners_subscribers?: Array<{ __typename?: 'User', id: string, name: string, email: string } | null> | null } | null> | null, boards?: Array<{ __typename?: 'Board', id: string, name: string, board_folder_id?: string | null } | null> | null, docs?: Array<{ __typename?: 'Document', id: string, name: string, doc_folder_id?: string | null } | null> | null, folders?: Array<{ __typename?: 'Folder', id: string, name: string } | null> | null };
 
+export type UseTemplateMutationVariables = Exact<{
+  templateId: Scalars['Int']['input'];
+  destinationWorkspaceId?: InputMaybe<Scalars['Int']['input']>;
+  destinationName?: InputMaybe<Scalars['String']['input']>;
+  boardKind?: InputMaybe<BoardKind>;
+}>;
+
+
+export type UseTemplateMutation = { __typename?: 'Mutation', use_template?: { __typename?: 'Template', process_id?: string | null } | null };
+
+export type UseTemplateStatusQueryVariables = Exact<{
+  processId: Scalars['ID']['input'];
+}>;
+
+
+export type UseTemplateStatusQuery = { __typename?: 'Query', template_installation_status?: { __typename?: 'UseTemplateStatusType', process_id: string, status: UseTemplateStatus, board_ids: Array<string>, board_ids_map: Array<{ __typename?: 'BoardIdMapping', source_board_id: string, created_board_id: string }> } | null };
+
 export const ItemDataFragmentFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"ItemDataFragment"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Item"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}},{"kind":"Field","name":{"kind":"Name","value":"column_values"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnIds"}}}],"directives":[{"kind":"Directive","name":{"kind":"Name","value":"include"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"if"},"value":{"kind":"Variable","name":{"kind":"Name","value":"includeColumns"}}}]}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"text"}},{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"FormulaValue"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"display_value"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BoardRelationValue"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"linked_items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"board"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"description"},"directives":[{"kind":"Directive","name":{"kind":"Name","value":"include"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"if"},"value":{"kind":"Variable","name":{"kind":"Name","value":"includeDescription"}}}]}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"blocks"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"content"}}]}}]}}]}}]} as unknown as DocumentNode<ItemDataFragmentFragment, unknown>;
 export const UserDetailsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserDetails"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"User"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"enabled"}},{"kind":"Field","name":{"kind":"Name","value":"is_admin"}},{"kind":"Field","name":{"kind":"Name","value":"is_guest"}},{"kind":"Field","name":{"kind":"Name","value":"is_pending"}},{"kind":"Field","name":{"kind":"Name","value":"is_verified"}},{"kind":"Field","name":{"kind":"Name","value":"is_view_only"}},{"kind":"Field","name":{"kind":"Name","value":"join_date"}},{"kind":"Field","name":{"kind":"Name","value":"last_activity"}},{"kind":"Field","name":{"kind":"Name","value":"location"}},{"kind":"Field","name":{"kind":"Name","value":"mobile_phone"}},{"kind":"Field","name":{"kind":"Name","value":"phone"}},{"kind":"Field","name":{"kind":"Name","value":"photo_thumb"}},{"kind":"Field","name":{"kind":"Name","value":"time_zone_identifier"}},{"kind":"Field","name":{"kind":"Name","value":"utc_hours_diff"}}]}}]} as unknown as DocumentNode<UserDetailsFragment, unknown>;
 export const UserTeamMembershipFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"UserTeamMembership"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Team"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"is_guest"}},{"kind":"Field","name":{"kind":"Name","value":"picture_url"}}]}}]} as unknown as DocumentNode<UserTeamMembershipFragment, unknown>;
@@ -12886,3 +12956,5 @@ export const CreateTimelineItemDocument = {"kind":"Document","definitions":[{"ki
 export const FetchCustomActivityDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"fetchCustomActivity"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"custom_activity"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"color"}},{"kind":"Field","name":{"kind":"Name","value":"icon_id"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"type"}}]}}]}}]} as unknown as DocumentNode<FetchCustomActivityQuery, FetchCustomActivityQueryVariables>;
 export const ExportMarkdownFromDocDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"exportMarkdownFromDoc"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"docId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"blockIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"export_markdown_from_doc"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"docId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"docId"}}},{"kind":"Argument","name":{"kind":"Name","value":"blockIds"},"value":{"kind":"Variable","name":{"kind":"Name","value":"blockIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"markdown"}},{"kind":"Field","name":{"kind":"Name","value":"error"}}]}}]}}]} as unknown as DocumentNode<ExportMarkdownFromDocQuery, ExportMarkdownFromDocQueryVariables>;
 export const GetWorkspaceInfoDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getWorkspaceInfo"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspace_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"workspaces"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"ListValue","values":[{"kind":"Variable","name":{"kind":"Name","value":"workspace_id"}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"is_default_workspace"}},{"kind":"Field","name":{"kind":"Name","value":"owners_subscribers"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"email"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"boards"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"workspace_ids"},"value":{"kind":"ListValue","values":[{"kind":"Variable","name":{"kind":"Name","value":"workspace_id"}}]}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"100"}},{"kind":"Argument","name":{"kind":"Name","value":"order_by"},"value":{"kind":"EnumValue","value":"used_at"}},{"kind":"Argument","name":{"kind":"Name","value":"state"},"value":{"kind":"EnumValue","value":"active"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"board_folder_id"}}]}},{"kind":"Field","name":{"kind":"Name","value":"docs"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"workspace_ids"},"value":{"kind":"ListValue","values":[{"kind":"Variable","name":{"kind":"Name","value":"workspace_id"}}]}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"100"}},{"kind":"Argument","name":{"kind":"Name","value":"order_by"},"value":{"kind":"EnumValue","value":"used_at"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"doc_folder_id"}}]}},{"kind":"Field","name":{"kind":"Name","value":"folders"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"workspace_ids"},"value":{"kind":"ListValue","values":[{"kind":"Variable","name":{"kind":"Name","value":"workspace_id"}}]}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"100"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]} as unknown as DocumentNode<GetWorkspaceInfoQuery, GetWorkspaceInfoQueryVariables>;
+export const UseTemplateDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"useTemplate"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"templateId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"destinationWorkspaceId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"destinationName"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardKind"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"BoardKind"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"use_template"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"template_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"templateId"}}},{"kind":"Argument","name":{"kind":"Name","value":"destination_workspace_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"destinationWorkspaceId"}}},{"kind":"Argument","name":{"kind":"Name","value":"destination_name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"destinationName"}}},{"kind":"Argument","name":{"kind":"Name","value":"board_kind"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardKind"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"process_id"}}]}}]}}]} as unknown as DocumentNode<UseTemplateMutation, UseTemplateMutationVariables>;
+export const UseTemplateStatusDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"useTemplateStatus"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"processId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"template_installation_status"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"process_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"processId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"process_id"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"board_ids"}},{"kind":"Field","name":{"kind":"Name","value":"board_ids_map"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"source_board_id"}},{"kind":"Field","name":{"kind":"Name","value":"created_board_id"}}]}}]}}]}}]} as unknown as DocumentNode<UseTemplateStatusQuery, UseTemplateStatusQueryVariables>;
