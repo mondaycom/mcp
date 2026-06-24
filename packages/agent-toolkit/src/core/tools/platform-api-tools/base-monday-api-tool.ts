@@ -3,6 +3,7 @@ import { ZodRawShape } from 'zod';
 import { ToolAnnotations } from '@modelcontextprotocol/sdk/types';
 import { SessionContext } from '../../executable';
 import { Tool, ToolInputType, ToolOutputType, ToolType } from '../../tool';
+import { FetchConfig } from '../../monday-agent-toolkit';
 
 export type MondayApiToolContext = {
   // Operational context
@@ -13,6 +14,8 @@ export type MondayApiToolContext = {
   agentType?: string;
   agentClientName?: string;
   clientRedirectUris?: string[];
+
+  fetchConfig?: FetchConfig;
 };
 
 export type BaseMondayApiToolConstructor = new (api: ApiClient) => BaseMondayApiTool<any>;
