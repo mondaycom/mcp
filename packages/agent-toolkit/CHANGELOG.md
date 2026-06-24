@@ -1,5 +1,14 @@
 # Changelog
 
+## 5.41.1
+
+### search — improve field descriptions to reduce incorrect tool usage
+
+- Clarified required vs optional fields per search type
+- Listed exact valid enum values for `searchType`
+- Added format guidance for array parameters
+- Removed misleading pagination hint from `page` description
+
 ## 5.37.0
 
 ### search — add UPDATES search type
