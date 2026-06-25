@@ -1,6 +1,6 @@
 # Changelog
 
-## 5.40.0
+## 5.42.0
 
 ### search — add TIMELINE_ITEMS search type
 
@@ -8,6 +8,15 @@
 - Only available from API version `2026-10`; query pins `versionOverride: '2026-10'` with hand-written types (same approach as `UPDATES`)
 - Requires a `searchTerm`; returns `id` (prefixed `timeline-item-`), `title`, `summary`, and `content`
 - No listing fallback — errors propagate, and `page > 1` is rejected, matching `ITEMS`/`WORKSPACES`/`UPDATES`
+
+## 5.41.1
+
+### search — improve field descriptions to reduce incorrect tool usage
+
+- Clarified required vs optional fields per search type
+- Listed exact valid enum values for `searchType`
+- Added format guidance for array parameters
+- Removed misleading pagination hint from `page` description
 
 ## 5.37.0
 

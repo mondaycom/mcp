@@ -59,7 +59,9 @@ describe('SearchTool', () => {
       const description = tool.getDescription();
 
       expect(description).toContain('Search within monday.com platform');
-      expect(description).toContain('boards, documents, folders, workspaces, updates, items, and timeline items');
+      expect(description).toContain('Supported searchType values: BOARD, DOCUMENTS, FOLDERS, WORKSPACES, UPDATES, ITEMS, TIMELINE_ITEMS');
+      expect(description).toContain('FOLDERS search requires workspaceIds');
+      expect(description).toContain('TIMELINE_ITEMS search requires a searchTerm');
       expect(description).toContain('IMPORTANT: ids returned by this tool are prefixed');
     });
   });
