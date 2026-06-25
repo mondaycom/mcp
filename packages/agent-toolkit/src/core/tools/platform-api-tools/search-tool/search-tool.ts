@@ -33,22 +33,35 @@ import { SEARCH_TIMEOUT } from 'src/utils/time.utils';
 import { rethrowWithContext, throwIfSearchTimeoutError } from 'src/utils/error.utils';
 
 export const searchSchema = {
-  searchTerm: z.string().optional().describe('The search term to use for the search.'),
-  searchType: z.nativeEnum(GlobalSearchType).describe('The type of search to perform.'),
+  searchTerm: z
+    .string()
+    .optional()
+    .describe(
+      'The search term to use. Required for ITEMS, WORKSPACES, and UPDATES searches. Optional for BOARD, DOCUMENTS, and FOLDERS (omitting it lists all results).',
+    ),
+  searchType: z
+    .nativeEnum(GlobalSearchType)
+    .describe('The type of search to perform. Valid values: BOARD, DOCUMENTS, FOLDERS, WORKSPACES, UPDATES, ITEMS.'),
   limit: z
     .number()
     .max(SEARCH_LIMIT)
     .optional()
     .default(SEARCH_LIMIT)
-    .describe(`The number of items to get. The max and default value is ${SEARCH_LIMIT}.`),
-  page: z.number().optional().default(1).describe('The page number to get. The default value is 1.'),
+    .describe(`The number of items to get. Maximum is ${SEARCH_LIMIT} — do not exceed this value.`),
+  page: z
+    .number()
+    .optional()
+    .default(1)
+    .describe(
+      'Page number for listing without a searchTerm (BOARD/DOCUMENTS only). Pagination is NOT supported when searchTerm is provided.',
+    ),
 
   // for boards and docs
   workspaceIds: z
     .array(z.number())
     .optional()
     .describe(
-      'The ids of the workspaces to search in. [IMPORTANT] Only pass this param if user explicitly asked to search within specific workspaces.',
+      'Array of workspace IDs (numbers) to search in. Required for FOLDERS search. For BOARD and DOCUMENTS search, only pass this if the user explicitly asked to search within specific workspaces. Example: [12345, 67890].',
     ),
 
   // for updates
@@ -56,13 +69,13 @@ export const searchSchema = {
     .array(z.number())
     .optional()
     .describe(
-      'The ids of the boards to scope the search to. [IMPORTANT] Only applies to UPDATES search, and only pass it if the user explicitly asked to search within specific boards.',
+      'Array of board IDs (numbers) to scope the search to. Only applies to UPDATES search, and only pass it if the user explicitly asked to search within specific boards. Example: [12345, 67890].',
     ),
   creatorIds: z
     .array(z.number())
     .optional()
     .describe(
-      'The ids of the users whose updates to search. [IMPORTANT] Only applies to UPDATES search, and only pass it if the user explicitly asked to search updates by specific authors.',
+      'Array of user IDs (numbers) whose updates to search. Only applies to UPDATES search, and only pass it if the user explicitly asked to search updates by specific authors. Example: [12345, 67890].',
     ),
 };
 
@@ -79,13 +92,14 @@ export class SearchTool extends BaseMondayApiTool<SearchToolInput> {
   });
 
   getDescription(): string {
-    return `Search within monday.com platform. Can search for boards, documents, folders, workspaces, updates, and items.
+    return `Search within monday.com platform. Supported searchType values: BOARD, DOCUMENTS, FOLDERS, WORKSPACES, UPDATES, ITEMS.
 For searching/listing specific users and teams, use list_users_and_teams tool.
 For account-level info (plan, member count, products), use get_user_context tool.
 For groups, use get_board_info tool.
 ITEMS search requires a searchTerm and only returns id, title, and url.
 WORKSPACES search requires a searchTerm and only returns id, title, and description.
 UPDATES search requires a searchTerm and returns id, title (the update body), itemId, boardId, and creatorId. Optionally scope it with boardIds and/or creatorIds.
+FOLDERS search requires workspaceIds and only returns id and title.
 IMPORTANT: ids returned by this tool are prefixed with the type of the object (e.g doc-123, board-456, folder-789, workspace-101, update-303, item-321). When passing the ids to other tools, you need to remove the prefix and just pass the number.
     `;
   }
