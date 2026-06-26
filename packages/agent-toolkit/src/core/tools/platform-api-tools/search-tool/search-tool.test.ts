@@ -2,7 +2,7 @@ import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameAsync, callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
 import { SearchTool, searchSchema } from './search-tool';
 import { z, ZodTypeAny } from 'zod';
-import { GetBoardsQuery, GetDocsQuery, GetFoldersQuery, SearchItemsQuery, SearchWorkspacesQuery } from 'src/monday-graphql/generated/graphql/graphql';
+import { GetFoldersQuery, SearchItemsQuery, SearchWorkspacesQuery } from 'src/monday-graphql/generated/graphql/graphql';
 import { SearchBoardsDevQuery, SearchDocsDevQuery } from 'src/monday-graphql/generated/graphql.dev/graphql';
 import { SearchUpdatesQuery, SearchTimelineItemsQuery } from './search-tool.graphql.2026-10';
 import { GlobalSearchType, ObjectPrefixes, SearchResult } from './search-tool.types';
@@ -18,20 +18,28 @@ describe('SearchTool', () => {
     jest.spyOn(MondayAgentToolkit.prototype as any, 'createApiClient').mockReturnValue(mocks.mockApiClient);
   });
 
-  const mockBoardsResponse: GetBoardsQuery = {
-    boards: [
-      { id: '123', name: 'Test Board 1', url: 'https://monday.com/boards/123' },
-      { id: '456', name: 'Test Board 2', url: 'https://monday.com/boards/456' },
-      { id: '789', name: 'Another Board', url: 'https://monday.com/boards/789' },
-    ],
+  const mockDevBoardsResponse: SearchBoardsDevQuery = {
+    search: {
+      boards: {
+        results: [
+          { id: '123', indexed_data: { id: '123', name: 'Test Board 1', url: 'https://monday.com/boards/123' } },
+          { id: '456', indexed_data: { id: '456', name: 'Test Board 2', url: 'https://monday.com/boards/456' } },
+          { id: '789', indexed_data: { id: '789', name: 'Another Board', url: 'https://monday.com/boards/789' } },
+        ],
+      },
+    },
   };
 
-  const mockDocsResponse: GetDocsQuery = {
-    docs: [
-      { id: '111', name: 'Document 1', url: 'https://monday.com/docs/111' },
-      { id: '222', name: 'Document 2', url: 'https://monday.com/docs/222' },
-      { id: '333', name: 'Test Doc', url: 'https://monday.com/docs/333' },
-    ],
+  const mockDevDocsResponse: SearchDocsDevQuery = {
+    search: {
+      docs: {
+        results: [
+          { id: '111', indexed_data: { id: '111', name: 'Document 1' } },
+          { id: '222', indexed_data: { id: '222', name: 'Document 2' } },
+          { id: '333', indexed_data: { id: '333', name: 'Test Doc' } },
+        ],
+      },
+    },
   };
 
   const mockFoldersResponse: GetFoldersQuery = {
@@ -61,7 +69,7 @@ describe('SearchTool', () => {
       expect(description).toContain('Search within monday.com platform');
       expect(description).toContain('Supported searchType values: BOARD, DOCUMENTS, FOLDERS, WORKSPACES, UPDATES, ITEMS, TIMELINE_ITEMS');
       expect(description).toContain('FOLDERS search requires workspaceIds');
-      expect(description).toContain('TIMELINE_ITEMS search requires a searchTerm');
+      expect(description).toContain('TIMELINE_ITEMS search returns id, title, summary, and content');
       expect(description).toContain('IMPORTANT: ids returned by this tool are prefixed');
     });
   });
@@ -69,7 +77,6 @@ describe('SearchTool', () => {
   describe('Schema Validation', () => {
     it('should reject missing searchType', async () => {
       const args: Partial<inputType> = {
-        // searchType is missing
         searchTerm: 'test',
       };
 
@@ -81,22 +88,48 @@ describe('SearchTool', () => {
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
 
-    it('should accept valid searchType', async () => {
-      mocks.setResponse(mockBoardsResponse);
-
-      const args: inputType = {
+    it('should reject missing searchTerm for BOARD search', async () => {
+      const args: Partial<inputType> = {
         searchType: GlobalSearchType.BOARD,
+        // searchTerm is missing
       };
 
-      const parsedResult = await callToolByNameAsync('search', args);
+      const result = await callToolByNameRawAsync('search', args);
 
-      expect(parsedResult.data).toBeDefined();
-      expect(mocks.getMockRequest()).toHaveBeenCalled();
+      expect(result.content[0].text).toContain('Failed to execute tool search: Invalid arguments');
+      expect(result.content[0].text).toContain('searchTerm');
+      expect(result.content[0].text).toContain('Required');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+
+    it('should reject missing searchTerm for DOCUMENTS search', async () => {
+      const args: Partial<inputType> = {
+        searchType: GlobalSearchType.DOCUMENTS,
+      };
+
+      const result = await callToolByNameRawAsync('search', args);
+
+      expect(result.content[0].text).toContain('Failed to execute tool search: Invalid arguments');
+      expect(result.content[0].text).toContain('searchTerm');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+
+    it('should reject empty string searchTerm', async () => {
+      const args: Partial<inputType> = {
+        searchType: GlobalSearchType.BOARD,
+        searchTerm: '',
+      };
+
+      const result = await callToolByNameRawAsync('search', args);
+
+      expect(result.content[0].text).toContain('Failed to execute tool search: Invalid arguments');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
 
     it('should validate limit does not exceed SEARCH_LIMIT (20)', async () => {
       const args: Partial<inputType> = {
         searchType: GlobalSearchType.BOARD,
+        searchTerm: 'test',
         limit: 21, // exceeds max
       };
 
@@ -107,10 +140,11 @@ describe('SearchTool', () => {
     });
 
     it('should accept limit at exactly SEARCH_LIMIT (20)', async () => {
-      mocks.setResponse(mockBoardsResponse);
+      mocks.setResponse(mockDevBoardsResponse);
 
       const args: inputType = {
         searchType: GlobalSearchType.BOARD,
+        searchTerm: 'test',
         limit: 20,
       };
 
@@ -118,15 +152,28 @@ describe('SearchTool', () => {
 
       expect(mocks.getMockRequest()).toHaveBeenCalled();
     });
+
+    it('should reject unsupported search type', async () => {
+      const args: Omit<inputType, 'searchType'> & { searchType: string } = {
+        searchType: 'UNSUPPORTED_TYPE',
+        searchTerm: 'test',
+      };
+
+      const result = await callToolByNameRawAsync('search', args);
+
+      expect(result.content[0].text).toContain('Failed to execute tool search: Invalid arguments');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
   });
 
   describe('Board Search Handler', () => {
     describe('Success Cases', () => {
-      it('should search boards with default parameters', async () => {
-        mocks.setResponse(mockBoardsResponse);
+      it('should search boards with searchTerm via dev endpoint', async () => {
+        mocks.setResponse(mockDevBoardsResponse);
 
         const args: inputType = {
           searchType: GlobalSearchType.BOARD,
+          searchTerm: 'Test',
         };
 
         const parsedResult = await callToolByNameAsync('search', args);
@@ -143,123 +190,23 @@ describe('SearchTool', () => {
           url: 'https://monday.com/boards/456',
         });
 
-        expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetBoards'), {
-          page: 1,
-          limit: 20,
-          workspace_ids: undefined,
-        });
-      });
-
-      it('should search boards with custom limit and page', async () => {
-        mocks.setResponse(mockBoardsResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.BOARD,
-          limit: 15,
-          page: 2,
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        expect(parsedResult.data).toBeDefined();
-        expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetBoards'), {
-          page: 2,
-          limit: 15,
-          workspace_ids: undefined,
-        });
-      });
-
-      it('should search boards with workspace_ids filter', async () => {
-        mocks.setResponse(mockBoardsResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.BOARD,
-          workspaceIds: [12345, 67890],
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        expect(parsedResult.data).toBeDefined();
-        expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetBoards'), {
-          page: 1,
-          limit: 20,
-          workspace_ids: ['12345', '67890'],
-        });
-      });
-
-      it('should search boards with searchTerm but NOT filter when less than SEARCH_LIMIT items (fallback path)', async () => {
-        const largeBoardsResponse: GetBoardsQuery = {
-          boards: [
-            { id: '1', name: 'Test Board Alpha', url: 'https://monday.com/boards/1' },
-            { id: '2', name: 'Another Board', url: 'https://monday.com/boards/2' },
-            { id: '3', name: 'Test Board Beta', url: 'https://monday.com/boards/3' },
-            { id: '4', name: 'Test Board Gamma', url: 'https://monday.com/boards/4' },
-          ],
-        };
-
-        // Dev endpoint fails, then fallback succeeds
-        mocks.getMockRequest()
-          .mockRejectedValueOnce(new Error('Dev endpoint unavailable'))
-          .mockResolvedValueOnce(largeBoardsResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.BOARD,
-          searchTerm: 'Test Board',
-          limit: 2,
-          page: 1,
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        // With less than SEARCH_LIMIT items, no filtering occurs - returns all items
-        expect(parsedResult.data).toHaveLength(4);
-        expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
-
-        // Should have tried dev endpoint first, then fallen back to GetBoards
-        expect(mocks.getMockRequest()).toHaveBeenNthCalledWith(2, expect.stringContaining('query GetBoards'), {
-          page: 1,
-          limit: 1000,
-          workspace_ids: undefined,
-        });
-      });
-
-      it('should handle empty boards response', async () => {
-        const emptyResponse: GetBoardsQuery = {
-          boards: [],
-        };
-
-        mocks.setResponse(emptyResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.BOARD,
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        expect(parsedResult.data).toHaveLength(0);
-      });
-
-      it('should handle null boards response', async () => {
-        const nullResponse: GetBoardsQuery = {
-          boards: null as any,
-        };
-
-        mocks.setResponse(nullResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.BOARD,
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        expect(parsedResult.data).toHaveLength(0);
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchBoardsDev'),
+          {
+            query: 'Test',
+            limit: 20,
+            workspaceIds: undefined,
+          },
+          expect.objectContaining({ versionOverride: 'dev' }),
+        );
       });
 
       it('should properly prefix board IDs', async () => {
-        mocks.setResponse(mockBoardsResponse);
+        mocks.setResponse(mockDevBoardsResponse);
 
         const args: inputType = {
           searchType: GlobalSearchType.BOARD,
+          searchTerm: 'Test',
         };
 
         const parsedResult = await callToolByNameAsync('search', args);
@@ -268,325 +215,143 @@ describe('SearchTool', () => {
         expect(parsedResult.data[1].id).toBe(`${ObjectPrefixes.BOARD}456`);
         expect(parsedResult.data[2].id).toBe(`${ObjectPrefixes.BOARD}789`);
       });
-    });
 
-    describe('Virtual Pagination with Search Term - Fallback Path (Less than 100 items)', () => {
-      it('should NOT filter when less than SEARCH_LIMIT items - returns all items', async () => {
-        const manyBoardsResponse: GetBoardsQuery = {
-          boards: Array.from({ length: 10 }, (_, i) => ({
-            id: `${i + 1}`,
-            name: `Board ${i + 1}`,
-            url: `https://monday.com/boards/${i + 1}`,
-          })),
-        };
-
-        // Dev endpoint fails, then fallback succeeds
-        mocks.getMockRequest()
-          .mockRejectedValueOnce(new Error('Dev endpoint unavailable'))
-          .mockResolvedValueOnce(manyBoardsResponse);
+      it('should pass workspaceIds filter to dev endpoint', async () => {
+        mocks.setResponse(mockDevBoardsResponse);
 
         const args: inputType = {
           searchType: GlobalSearchType.BOARD,
-          searchTerm: 'Board',
-          limit: 3,
-          page: 1,
+          searchTerm: 'Test',
+          workspaceIds: [12345, 67890],
         };
 
-        const parsedResult = await callToolByNameAsync('search', args);
+        await callToolByNameAsync('search', args);
 
-        // With less than SEARCH_LIMIT items, no filtering occurs - returns all 10 items
-        expect(parsedResult.data).toHaveLength(10);
-        expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchBoardsDev'),
+          expect.objectContaining({
+            workspaceIds: ['12345', '67890'],
+          }),
+          expect.objectContaining({ versionOverride: 'dev' }),
+        );
       });
 
-      it('should NOT filter when less than SEARCH_LIMIT items even with different page (fallback on page > 1)', async () => {
-        const manyBoardsResponse: GetBoardsQuery = {
-          boards: Array.from({ length: 10 }, (_, i) => ({
-            id: `${i + 1}`,
-            name: `Board ${i + 1}`,
-            url: `https://monday.com/boards/${i + 1}`,
-          })),
-        };
-
-        // page > 1 causes dev endpoint to throw, falls back to old implementation
-        mocks.setResponse(manyBoardsResponse);
+      it('should pass custom limit to dev endpoint', async () => {
+        mocks.setResponse(mockDevBoardsResponse);
 
         const args: inputType = {
           searchType: GlobalSearchType.BOARD,
-          searchTerm: 'Board',
-          limit: 3,
-          page: 2,
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        // With less than SEARCH_LIMIT items, no filtering occurs - returns all 10 items
-        expect(parsedResult.data).toHaveLength(10);
-        expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
-      });
-
-      it('should NOT filter when less than SEARCH_LIMIT items with mixed names', async () => {
-        const boardsResponse: GetBoardsQuery = {
-          boards: [
-            { id: '1', name: 'TEST Board', url: 'https://monday.com/boards/1' },
-            { id: '2', name: 'test board', url: 'https://monday.com/boards/2' },
-            { id: '3', name: 'TeSt BoArD', url: 'https://monday.com/boards/3' },
-          ],
-        };
-
-        // Dev endpoint fails, then fallback succeeds
-        mocks.getMockRequest()
-          .mockRejectedValueOnce(new Error('Dev endpoint unavailable'))
-          .mockResolvedValueOnce(boardsResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.BOARD,
-          searchTerm: 'test board',
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        // With less than SEARCH_LIMIT items, returns all items without filtering
-        expect(parsedResult.data).toHaveLength(3);
-        expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
-      });
-
-      it('should NOT filter when less than SEARCH_LIMIT items even with non-matching search term', async () => {
-        const boardsResponse: GetBoardsQuery = {
-          boards: [
-            { id: '1', name: 'Project Alpha', url: 'https://monday.com/boards/1' },
-            { id: '2', name: 'Project Beta', url: 'https://monday.com/boards/2' },
-            { id: '3', name: 'Task List', url: 'https://monday.com/boards/3' },
-            { id: '4', name: 'Project Gamma', url: 'https://monday.com/boards/4' },
-            { id: '5', name: 'Another Task', url: 'https://monday.com/boards/5' },
-          ],
-        };
-
-        // Dev endpoint fails, then fallback succeeds
-        mocks.getMockRequest()
-          .mockRejectedValueOnce(new Error('Dev endpoint unavailable'))
-          .mockResolvedValueOnce(boardsResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.BOARD,
-          searchTerm: 'Project',
-          limit: 2,
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        // With less than SEARCH_LIMIT items, returns all 5 items (no filtering)
-        expect(parsedResult.data).toHaveLength(5);
-        expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
-      });
-    });
-
-    describe('Virtual Pagination with Filtering - Fallback Path (More than SEARCH_LIMIT items)', () => {
-      it('should filter and paginate when more than SEARCH_LIMIT items - page 1', async () => {
-        const largeBoardsResponse: GetBoardsQuery = {
-          boards: Array.from({ length: 150 }, (_, i) => ({
-            id: `${i + 1}`,
-            name: `Board ${i + 1}`,
-            url: `https://monday.com/boards/${i + 1}`,
-          })),
-        };
-
-        // Dev endpoint fails, then fallback succeeds
-        mocks.getMockRequest()
-          .mockRejectedValueOnce(new Error('Dev endpoint unavailable'))
-          .mockResolvedValueOnce(largeBoardsResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.BOARD,
-          searchTerm: 'Board',
-          limit: 10,
-          page: 1,
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        // With more than SEARCH_LIMIT items, filtering occurs
-        expect(parsedResult.data).toHaveLength(10);
-        expect(parsedResult.data[0].title).toBe('Board 1');
-        expect(parsedResult.data[9].title).toBe('Board 10');
-        expect(parsedResult.disclaimer).toBeUndefined();
-      });
-
-      it('should filter and paginate when more than SEARCH_LIMIT items - page 2 (fallback on page > 1)', async () => {
-        const largeBoardsResponse: GetBoardsQuery = {
-          boards: Array.from({ length: 150 }, (_, i) => ({
-            id: `${i + 1}`,
-            name: `Board ${i + 1}`,
-            url: `https://monday.com/boards/${i + 1}`,
-          })),
-        };
-
-        // page > 1 causes dev endpoint to throw, falls back to old implementation
-        mocks.setResponse(largeBoardsResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.BOARD,
-          searchTerm: 'Board',
-          limit: 10,
-          page: 2,
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        // Page 2 should contain items 11-20
-        expect(parsedResult.data).toHaveLength(10);
-        expect(parsedResult.data[0].title).toBe('Board 11');
-        expect(parsedResult.data[9].title).toBe('Board 20');
-        expect(parsedResult.disclaimer).toBeUndefined();
-      });
-
-      it('should filter out non-matching items when more than SEARCH_LIMIT items', async () => {
-        const largeBoardsResponse: GetBoardsQuery = {
-          boards: [
-            ...Array.from({ length: 80 }, (_, i) => ({
-              id: `${i + 1}`,
-              name: `Project ${i + 1}`,
-              url: `https://monday.com/boards/${i + 1}`,
-            })),
-            ...Array.from({ length: 30 }, (_, i) => ({
-              id: `${i + 81}`,
-              name: `Task ${i + 1}`,
-              url: `https://monday.com/boards/${i + 81}`,
-            })),
-          ],
-        };
-
-        // Dev endpoint fails, then fallback succeeds
-        mocks.getMockRequest()
-          .mockRejectedValueOnce(new Error('Dev endpoint unavailable'))
-          .mockResolvedValueOnce(largeBoardsResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.BOARD,
-          searchTerm: 'Project',
-          limit: 20,
-          page: 1,
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        // Should only return items matching 'Project' (80 total, showing first 20)
-        expect(parsedResult.data).toHaveLength(20);
-        expect(parsedResult.data[0].title).toBe('Project 1');
-        expect(parsedResult.data[19].title).toBe('Project 20');
-        // Verify no 'Task' items are included
-        parsedResult.data.forEach((result: SearchResult) => {
-          expect(result.title).toContain('Project');
-        });
-        expect(parsedResult.disclaimer).toBeUndefined();
-      });
-
-      it('should handle case-insensitive filtering when more than SEARCH_LIMIT items', async () => {
-        const largeBoardsResponse: GetBoardsQuery = {
-          boards: Array.from({ length: 150 }, (_, i) => ({
-            id: `${i + 1}`,
-            name: i % 3 === 0 ? `TEST Board ${i + 1}` : i % 3 === 1 ? `test board ${i + 1}` : `TeSt BoArD ${i + 1}`,
-            url: `https://monday.com/boards/${i + 1}`,
-          })),
-        };
-
-        // Dev endpoint fails, then fallback succeeds
-        mocks.getMockRequest()
-          .mockRejectedValueOnce(new Error('Dev endpoint unavailable'))
-          .mockResolvedValueOnce(largeBoardsResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.BOARD,
-          searchTerm: 'test board',
+          searchTerm: 'Test',
           limit: 15,
-          page: 1,
+        };
+
+        await callToolByNameAsync('search', args);
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchBoardsDev'),
+          expect.objectContaining({ limit: 15 }),
+          expect.objectContaining({ versionOverride: 'dev' }),
+        );
+      });
+
+      it('should not include disclaimer in result', async () => {
+        mocks.setResponse(mockDevBoardsResponse);
+
+        const args: inputType = {
+          searchType: GlobalSearchType.BOARD,
+          searchTerm: 'Test',
         };
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        // Should match all case variations
-        expect(parsedResult.data).toHaveLength(15);
-        parsedResult.data.forEach((result: SearchResult) => {
-          expect(result.title.toLowerCase()).toContain('test board');
-        });
         expect(parsedResult.disclaimer).toBeUndefined();
       });
 
-      it('should return empty results when page exceeds filtered results (fallback on page > 1)', async () => {
-        const largeBoardsResponse: GetBoardsQuery = {
-          boards: Array.from({ length: 150 }, (_, i) => ({
-            id: `${i + 1}`,
-            name: `Board ${i + 1}`,
-            url: `https://monday.com/boards/${i + 1}`,
-          })),
-        };
-
-        // page > 1 causes dev endpoint to throw, falls back to old implementation
-        mocks.setResponse(largeBoardsResponse);
+      it('should handle empty results from dev endpoint', async () => {
+        mocks.setResponse({ search: { boards: { results: [] } } });
 
         const args: inputType = {
           searchType: GlobalSearchType.BOARD,
-          searchTerm: 'Board',
-          limit: 10,
-          page: 100, // Way beyond available pages
+          searchTerm: 'NonExistent',
         };
 
         const parsedResult = await callToolByNameAsync('search', args);
 
         expect(parsedResult.data).toHaveLength(0);
-        expect(parsedResult.disclaimer).toBeUndefined();
       });
 
-      it('should handle partial last page when more than SEARCH_LIMIT items (fallback on page > 1)', async () => {
-        const largeBoardsResponse: GetBoardsQuery = {
-          boards: Array.from({ length: 125 }, (_, i) => ({
-            id: `${i + 1}`,
-            name: `Board ${i + 1}`,
-            url: `https://monday.com/boards/${i + 1}`,
-          })),
-        };
-
-        // page > 1 causes dev endpoint to throw, falls back to old implementation
-        mocks.setResponse(largeBoardsResponse);
+      it('should return correct result format with message and data', async () => {
+        mocks.setResponse(mockDevBoardsResponse);
 
         const args: inputType = {
           searchType: GlobalSearchType.BOARD,
-          searchTerm: 'Board',
-          limit: 10,
-          page: 13, // Last page should have 5 items
+          searchTerm: 'Test',
         };
 
-        const parsedResult = await callToolByNameAsync('search', args);
+        const result = await callToolByNameAsync('search', args);
 
-        // Page 13: items 121-125 (5 items)
-        expect(parsedResult.data).toHaveLength(5);
-        expect(parsedResult.data[0].title).toBe('Board 121');
-        expect(parsedResult.data[4].title).toBe('Board 125');
-        expect(parsedResult.disclaimer).toBeUndefined();
+        expect(result.message).toBe('Search results');
+        expect(result.data).toBeDefined();
       });
     });
 
     describe('Error Handling', () => {
-      it('should handle GraphQL error for boards', async () => {
-        const errorMessage = 'GraphQL error: Failed to fetch boards';
-        mocks.setError(errorMessage);
+      it('should propagate dev endpoint errors without fallback', async () => {
+        const errorMessage = 'Dev endpoint unavailable';
+        mocks.getMockRequest().mockRejectedValueOnce(new Error(errorMessage));
 
         const args: inputType = {
           searchType: GlobalSearchType.BOARD,
+          searchTerm: 'Test',
         };
 
         const result = await callToolByNameRawAsync('search', args);
 
         expect(result.content[0].text).toContain('Failed to execute tool search');
         expect(result.content[0].text).toContain(errorMessage);
+        // Only one call — no fallback
+        expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
       });
 
-      it('should handle network error for boards', async () => {
-        const errorMessage = 'Network error: Connection timeout';
+      it('should propagate timeout errors without fallback', async () => {
+        const errorMessage = 'Request timeout';
+        mocks.getMockRequest().mockRejectedValueOnce(new Error(errorMessage));
+
+        const args: inputType = {
+          searchType: GlobalSearchType.BOARD,
+          searchTerm: 'Test',
+        };
+
+        const result = await callToolByNameRawAsync('search', args);
+
+        expect(result.content[0].text).toContain('Failed to execute tool search');
+        expect(result.content[0].text).toContain(errorMessage);
+        expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+      });
+
+      it('should translate AbortError into user-friendly timeout message', async () => {
+        const abortError = new Error('The operation was aborted');
+        abortError.name = 'AbortError';
+        mocks.getMockRequest().mockRejectedValueOnce(abortError);
+
+        const args: inputType = {
+          searchType: GlobalSearchType.BOARD,
+          searchTerm: 'Test',
+        };
+
+        const result = await callToolByNameRawAsync('search', args);
+
+        expect(result.content[0].text).toContain('Search has timed out, try providing alternative search term');
+        expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+      });
+
+      it('should propagate GraphQL error directly', async () => {
+        const errorMessage = 'GraphQL error: Failed to fetch boards';
         mocks.setError(errorMessage);
 
         const args: inputType = {
           searchType: GlobalSearchType.BOARD,
+          searchTerm: 'Test',
         };
 
         const result = await callToolByNameRawAsync('search', args);
@@ -599,11 +364,12 @@ describe('SearchTool', () => {
 
   describe('Documents Search Handler', () => {
     describe('Success Cases', () => {
-      it('should search documents with default parameters', async () => {
-        mocks.setResponse(mockDocsResponse);
+      it('should search documents with searchTerm via dev endpoint', async () => {
+        mocks.setResponse(mockDevDocsResponse);
 
         const args: inputType = {
           searchType: GlobalSearchType.DOCUMENTS,
+          searchTerm: 'Document',
         };
 
         const parsedResult = await callToolByNameAsync('search', args);
@@ -612,130 +378,29 @@ describe('SearchTool', () => {
         expect(parsedResult.data[0]).toEqual({
           id: 'doc-111',
           title: 'Document 1',
-          url: 'https://monday.com/docs/111',
         });
         expect(parsedResult.data[1]).toEqual({
           id: 'doc-222',
           title: 'Document 2',
-          url: 'https://monday.com/docs/222',
         });
 
-        expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetDocs'), {
-          page: 1,
-          limit: 20,
-          workspace_ids: undefined,
-        });
-      });
-
-      it('should search documents with custom limit and page', async () => {
-        mocks.setResponse(mockDocsResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.DOCUMENTS,
-          limit: 15,
-          page: 3,
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        expect(parsedResult.data).toBeDefined();
-        expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetDocs'), {
-          page: 3,
-          limit: 15,
-          workspace_ids: undefined,
-        });
-      });
-
-      it('should search documents with workspace_ids filter', async () => {
-        mocks.setResponse(mockDocsResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.DOCUMENTS,
-          workspaceIds: [11111, 22222],
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        expect(parsedResult.data).toBeDefined();
-        expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetDocs'), {
-          page: 1,
-          limit: 20,
-          workspace_ids: ['11111', '22222'],
-        });
-      });
-
-      it('should search documents with searchTerm but NOT filter when less than SEARCH_LIMIT items (fallback path)', async () => {
-        const largeDocsResponse: GetDocsQuery = {
-          docs: [
-            { id: '1', name: 'Test Document Alpha', url: 'https://monday.com/docs/1' },
-            { id: '2', name: 'Another Doc', url: 'https://monday.com/docs/2' },
-            { id: '3', name: 'Test Document Beta', url: 'https://monday.com/docs/3' },
-            { id: '4', name: 'Test Document Gamma', url: 'https://monday.com/docs/4' },
-          ],
-        };
-
-        // Dev endpoint fails, then fallback succeeds
-        mocks.getMockRequest()
-          .mockRejectedValueOnce(new Error('Dev endpoint unavailable'))
-          .mockResolvedValueOnce(largeDocsResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.DOCUMENTS,
-          searchTerm: 'Test Document',
-          limit: 2,
-          page: 1,
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        // With less than SEARCH_LIMIT items, no filtering occurs - returns all items
-        expect(parsedResult.data).toHaveLength(4);
-        expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
-
-        expect(mocks.getMockRequest()).toHaveBeenNthCalledWith(2, expect.stringContaining('query GetDocs'), {
-          page: 1,
-          limit: 1000,
-          workspace_ids: undefined,
-        });
-      });
-
-      it('should handle empty documents response', async () => {
-        const emptyResponse: GetDocsQuery = {
-          docs: [],
-        };
-
-        mocks.setResponse(emptyResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.DOCUMENTS,
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        expect(parsedResult.data).toHaveLength(0);
-      });
-
-      it('should handle null documents response', async () => {
-        const nullResponse: GetDocsQuery = {
-          docs: null as any,
-        };
-
-        mocks.setResponse(nullResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.DOCUMENTS,
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        expect(parsedResult.data).toHaveLength(0);
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchDocsDev'),
+          {
+            query: 'Document',
+            limit: 20,
+            workspaceIds: undefined,
+          },
+          expect.objectContaining({ versionOverride: 'dev' }),
+        );
       });
 
       it('should properly prefix document IDs', async () => {
-        mocks.setResponse(mockDocsResponse);
+        mocks.setResponse(mockDevDocsResponse);
 
         const args: inputType = {
           searchType: GlobalSearchType.DOCUMENTS,
+          searchTerm: 'Document',
         };
 
         const parsedResult = await callToolByNameAsync('search', args);
@@ -745,18 +410,32 @@ describe('SearchTool', () => {
         expect(parsedResult.data[2].id).toBe(`${ObjectPrefixes.DOCUMENT}333`);
       });
 
-      it('should handle documents with null url', async () => {
-        const docsWithNullUrl: GetDocsQuery = {
-          docs: [
-            { id: '111', name: 'Document 1', url: null },
-            { id: '222', name: 'Document 2', url: undefined },
-          ],
-        };
-
-        mocks.setResponse(docsWithNullUrl);
+      it('should pass workspaceIds filter to dev endpoint', async () => {
+        mocks.setResponse(mockDevDocsResponse);
 
         const args: inputType = {
           searchType: GlobalSearchType.DOCUMENTS,
+          searchTerm: 'Document',
+          workspaceIds: [11111, 22222],
+        };
+
+        await callToolByNameAsync('search', args);
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchDocsDev'),
+          expect.objectContaining({
+            workspaceIds: ['11111', '22222'],
+          }),
+          expect.objectContaining({ versionOverride: 'dev' }),
+        );
+      });
+
+      it('should not include url field for documents (dev endpoint response has no url)', async () => {
+        mocks.setResponse(mockDevDocsResponse);
+
+        const args: inputType = {
+          searchType: GlobalSearchType.DOCUMENTS,
+          searchTerm: 'Document',
         };
 
         const parsedResult = await callToolByNameAsync('search', args);
@@ -764,83 +443,58 @@ describe('SearchTool', () => {
         expect(parsedResult.data[0].url).toBeUndefined();
         expect(parsedResult.data[1].url).toBeUndefined();
       });
-    });
 
-    describe('Virtual Pagination with Filtering - Fallback Path (More than SEARCH_LIMIT items)', () => {
-      it('should filter and paginate documents when more than SEARCH_LIMIT items', async () => {
-        const largeDocs: GetDocsQuery = {
-          docs: Array.from({ length: 150 }, (_, i) => ({
-            id: `${i + 1}`,
-            name: `Document ${i + 1}`,
-            url: `https://monday.com/docs/${i + 1}`,
-          })),
-        };
-
-        // Dev endpoint fails, then fallback succeeds
-        mocks.getMockRequest()
-          .mockRejectedValueOnce(new Error('Dev endpoint unavailable'))
-          .mockResolvedValueOnce(largeDocs);
+      it('should not include disclaimer in result', async () => {
+        mocks.setResponse(mockDevDocsResponse);
 
         const args: inputType = {
           searchType: GlobalSearchType.DOCUMENTS,
           searchTerm: 'Document',
-          limit: 10,
-          page: 1,
         };
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.data).toHaveLength(10);
-        expect(parsedResult.data[0].title).toBe('Document 1');
-        expect(parsedResult.data[9].title).toBe('Document 10');
         expect(parsedResult.disclaimer).toBeUndefined();
       });
 
-      it('should filter out non-matching documents when more than SEARCH_LIMIT items', async () => {
-        const largeDocs: GetDocsQuery = {
-          docs: [
-            ...Array.from({ length: 90 }, (_, i) => ({
-              id: `${i + 1}`,
-              name: `Report ${i + 1}`,
-              url: `https://monday.com/docs/${i + 1}`,
-            })),
-            ...Array.from({ length: 20 }, (_, i) => ({
-              id: `${i + 91}`,
-              name: `Guide ${i + 1}`,
-              url: `https://monday.com/docs/${i + 91}`,
-            })),
-          ],
-        };
-
-        // Dev endpoint fails, then fallback succeeds
-        mocks.getMockRequest()
-          .mockRejectedValueOnce(new Error('Dev endpoint unavailable'))
-          .mockResolvedValueOnce(largeDocs);
+      it('should handle empty results', async () => {
+        mocks.setResponse({ search: { docs: { results: [] } } });
 
         const args: inputType = {
           searchType: GlobalSearchType.DOCUMENTS,
-          searchTerm: 'Report',
-          limit: 15,
-          page: 1,
+          searchTerm: 'NonExistent',
         };
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.data).toHaveLength(15);
-        parsedResult.data.forEach((result: SearchResult) => {
-          expect(result.title).toContain('Report');
-        });
-        expect(parsedResult.disclaimer).toBeUndefined();
+        expect(parsedResult.data).toHaveLength(0);
       });
     });
 
     describe('Error Handling', () => {
+      it('should propagate dev endpoint errors without fallback', async () => {
+        const errorMessage = 'Dev endpoint unavailable';
+        mocks.getMockRequest().mockRejectedValueOnce(new Error(errorMessage));
+
+        const args: inputType = {
+          searchType: GlobalSearchType.DOCUMENTS,
+          searchTerm: 'Document',
+        };
+
+        const result = await callToolByNameRawAsync('search', args);
+
+        expect(result.content[0].text).toContain('Failed to execute tool search');
+        expect(result.content[0].text).toContain(errorMessage);
+        expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+      });
+
       it('should handle GraphQL error for documents', async () => {
         const errorMessage = 'GraphQL error: Failed to fetch documents';
         mocks.setError(errorMessage);
 
         const args: inputType = {
           searchType: GlobalSearchType.DOCUMENTS,
+          searchTerm: 'Document',
         };
 
         const result = await callToolByNameRawAsync('search', args);
@@ -853,136 +507,27 @@ describe('SearchTool', () => {
 
   describe('Folders Search Handler', () => {
     describe('Success Cases', () => {
-      it('should search folders with default parameters', async () => {
+      it('should search folders with searchTerm and workspaceIds via getFolders query', async () => {
         mocks.setResponse(mockFoldersResponse);
 
         const args: inputType = {
           searchType: GlobalSearchType.FOLDERS,
+          searchTerm: 'Folder',
           workspaceIds: [1],
         };
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.data).toHaveLength(3);
-        expect(parsedResult.data[0]).toEqual({
-          id: 'folder-100',
-          title: 'Folder 1',
-        });
-        expect(parsedResult.data[1]).toEqual({
-          id: 'folder-200',
-          title: 'Folder 2',
-        });
-
-        expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetFolders'), {
-          page: 1,
-          limit: 20,
-          workspace_ids: ['1'],
-        });
-      });
-
-      it('should search folders with custom limit and page', async () => {
-        mocks.setResponse(mockFoldersResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.FOLDERS,
-          workspaceIds: [1],
-          limit: 10,
-          page: 5,
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query GetFolders'),
+          {
+            page: 1,
+            limit: 100,
+            workspace_ids: ['1'],
+          },
+        );
 
         expect(parsedResult.data).toBeDefined();
-        expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetFolders'), {
-          page: 5,
-          limit: 10,
-          workspace_ids: ['1'],
-        });
-      });
-
-      it('should search folders with workspace_ids filter', async () => {
-        mocks.setResponse(mockFoldersResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.FOLDERS,
-          workspaceIds: [99999],
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        expect(parsedResult.data).toBeDefined();
-        expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetFolders'), {
-          page: 1,
-          limit: 20,
-          workspace_ids: ['99999'],
-        });
-      });
-
-      it('should search folders with searchTerm but NOT filter when less than SEARCH_LIMIT items', async () => {
-        const largeFoldersResponse: GetFoldersQuery = {
-          folders: [
-            { id: '1', name: 'Test Folder Alpha' },
-            { id: '2', name: 'Another Folder' },
-            { id: '3', name: 'Test Folder Beta' },
-            { id: '4', name: 'Test Folder Gamma' },
-          ],
-        };
-
-        mocks.setResponse(largeFoldersResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.FOLDERS,
-          workspaceIds: [1],
-          searchTerm: 'Test Folder',
-          limit: 2,
-          page: 1,
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        // With less than SEARCH_LIMIT items, no filtering occurs - returns all items
-        expect(parsedResult.data).toHaveLength(4);
-        expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
-
-        expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetFolders'), {
-          page: 1,
-          limit: 100, // MAX_FOLDERS_LIMIT, not SEARCH_LIMIT
-          workspace_ids: ['1'],
-        });
-      });
-
-      it('should handle empty folders response', async () => {
-        const emptyResponse: GetFoldersQuery = {
-          folders: [],
-        };
-
-        mocks.setResponse(emptyResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.FOLDERS,
-          workspaceIds: [1],
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        expect(parsedResult.data).toHaveLength(0);
-      });
-
-      it('should handle null folders response', async () => {
-        const nullResponse: GetFoldersQuery = {
-          folders: null as any,
-        };
-
-        mocks.setResponse(nullResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.FOLDERS,
-          workspaceIds: [1],
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        expect(parsedResult.data).toHaveLength(0);
       });
 
       it('should properly prefix folder IDs', async () => {
@@ -990,6 +535,7 @@ describe('SearchTool', () => {
 
         const args: inputType = {
           searchType: GlobalSearchType.FOLDERS,
+          searchTerm: 'Folder',
           workspaceIds: [1],
         };
 
@@ -1005,6 +551,7 @@ describe('SearchTool', () => {
 
         const args: inputType = {
           searchType: GlobalSearchType.FOLDERS,
+          searchTerm: 'Folder',
           workspaceIds: [1],
         };
 
@@ -1014,88 +561,137 @@ describe('SearchTool', () => {
         expect(parsedResult.data[1].url).toBeUndefined();
         expect(parsedResult.data[2].url).toBeUndefined();
       });
-    });
 
-    describe('Virtual Pagination with Filtering (More than SEARCH_LIMIT items)', () => {
-      it('should filter and paginate folders when more than SEARCH_LIMIT items', async () => {
-        const largeFolders: GetFoldersQuery = {
-          folders: Array.from({ length: 150 }, (_, i) => ({
-            id: `${i + 1}`,
-            name: `Folder ${i + 1}`,
-          })),
-        };
-
-        mocks.setResponse(largeFolders);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.FOLDERS,
-          workspaceIds: [1],
-          searchTerm: 'Folder',
-          limit: 10,
-          page: 1,
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        expect(parsedResult.data).toHaveLength(10);
-        expect(parsedResult.data[0].title).toBe('Folder 1');
-        expect(parsedResult.data[9].title).toBe('Folder 10');
-        expect(parsedResult.disclaimer).toBeUndefined();
-      });
-
-      it('should filter out non-matching folders when more than SEARCH_LIMIT items', async () => {
-        const largeFolders: GetFoldersQuery = {
+      it('should filter results by searchTerm (case-insensitive)', async () => {
+        const foldersResponse: GetFoldersQuery = {
           folders: [
-            ...Array.from({ length: 85 }, (_, i) => ({
-              id: `${i + 1}`,
-              name: `Archive ${i + 1}`,
-            })),
-            ...Array.from({ length: 25 }, (_, i) => ({
-              id: `${i + 86}`,
-              name: `Active ${i + 1}`,
-            })),
+            { id: '1', name: 'Test Folder Alpha' },
+            { id: '2', name: 'Another Folder' },
+            { id: '3', name: 'TEST FOLDER BETA' },
+            { id: '4', name: 'Completely Unrelated' },
+            { id: '5', name: 'test folder gamma' },
           ],
         };
 
-        mocks.setResponse(largeFolders);
+        mocks.setResponse(foldersResponse);
 
         const args: inputType = {
           searchType: GlobalSearchType.FOLDERS,
+          searchTerm: 'test folder',
           workspaceIds: [1],
-          searchTerm: 'Archive',
-          limit: 20,
-          page: 1,
         };
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.data).toHaveLength(20);
+        // Only folders matching 'test folder' (case-insensitive) should be returned
+        expect(parsedResult.data).toHaveLength(3);
         parsedResult.data.forEach((result: SearchResult) => {
-          expect(result.title).toContain('Archive');
+          expect(result.title.toLowerCase()).toContain('test folder');
         });
-        expect(parsedResult.disclaimer).toBeUndefined();
+      });
+
+      it('should respect limit param when slicing filtered results', async () => {
+        const foldersResponse: GetFoldersQuery = {
+          folders: Array.from({ length: 50 }, (_, i) => ({
+            id: `${i + 1}`,
+            name: `Test Folder ${i + 1}`,
+          })),
+        };
+
+        mocks.setResponse(foldersResponse);
+
+        const args: inputType = {
+          searchType: GlobalSearchType.FOLDERS,
+          searchTerm: 'Test Folder',
+          workspaceIds: [1],
+          limit: 10,
+        };
+
+        const parsedResult = await callToolByNameAsync('search', args);
+
+        // All 50 match, but limit is 10
+        expect(parsedResult.data).toHaveLength(10);
+      });
+
+      it('should return matching folders when some do not match searchTerm', async () => {
+        const foldersResponse: GetFoldersQuery = {
+          folders: [
+            { id: '1', name: 'Marketing Folder' },
+            { id: '2', name: 'Engineering Folder' },
+            { id: '3', name: 'Marketing Assets' },
+            { id: '4', name: 'Design Folder' },
+          ],
+        };
+
+        mocks.setResponse(foldersResponse);
+
+        const args: inputType = {
+          searchType: GlobalSearchType.FOLDERS,
+          searchTerm: 'Marketing',
+          workspaceIds: [1],
+        };
+
+        const parsedResult = await callToolByNameAsync('search', args);
+
+        expect(parsedResult.data).toHaveLength(2);
+        parsedResult.data.forEach((result: SearchResult) => {
+          expect(result.title).toContain('Marketing');
+        });
+      });
+
+      it('should handle empty folders response', async () => {
+        mocks.setResponse({ folders: [] });
+
+        const args: inputType = {
+          searchType: GlobalSearchType.FOLDERS,
+          searchTerm: 'Test',
+          workspaceIds: [1],
+        };
+
+        const parsedResult = await callToolByNameAsync('search', args);
+
+        expect(parsedResult.data).toHaveLength(0);
+      });
+
+      it('should handle null folders response', async () => {
+        mocks.setResponse({ folders: null });
+
+        const args: inputType = {
+          searchType: GlobalSearchType.FOLDERS,
+          searchTerm: 'Test',
+          workspaceIds: [1],
+        };
+
+        const parsedResult = await callToolByNameAsync('search', args);
+
+        expect(parsedResult.data).toHaveLength(0);
+      });
+
+      it('should handle multiple workspace IDs', async () => {
+        mocks.setResponse(mockFoldersResponse);
+
+        const args: inputType = {
+          searchType: GlobalSearchType.FOLDERS,
+          searchTerm: 'Folder',
+          workspaceIds: [1, 2, 3],
+        };
+
+        await callToolByNameAsync('search', args);
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query GetFolders'),
+          expect.objectContaining({
+            workspace_ids: ['1', '2', '3'],
+          }),
+        );
       });
     });
 
     describe('Error Handling', () => {
-      it('should handle GraphQL error for folders', async () => {
-        const errorMessage = 'GraphQL error: Failed to fetch folders';
-        mocks.setError(errorMessage);
-
-        const args: inputType = {
+      it('should throw error when workspaceIds are not provided for folder search', async () => {
+        const args: Partial<inputType> = {
           searchType: GlobalSearchType.FOLDERS,
-          workspaceIds: [1],
-        };
-
-        const result = await callToolByNameRawAsync('search', args);
-
-        expect(result.content[0].text).toContain('Failed to execute tool search');
-        expect(result.content[0].text).toContain(errorMessage);
-      });
-
-      it('should throw error when workspace_ids are not provided for folder search', async () => {
-        const args: inputType = {
-          searchType: GlobalSearchType.FOLDERS,
+          searchTerm: 'Test',
         };
 
         const result = await callToolByNameRawAsync('search', args);
@@ -1103,6 +699,22 @@ describe('SearchTool', () => {
         expect(result.content[0].text).toContain('Failed to execute tool search');
         expect(result.content[0].text).toContain('Searching for folders require specifying workspace ids');
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+      });
+
+      it('should handle GraphQL error for folders', async () => {
+        const errorMessage = 'GraphQL error: Failed to fetch folders';
+        mocks.setError(errorMessage);
+
+        const args: inputType = {
+          searchType: GlobalSearchType.FOLDERS,
+          searchTerm: 'Test',
+          workspaceIds: [1],
+        };
+
+        const result = await callToolByNameRawAsync('search', args);
+
+        expect(result.content[0].text).toContain('Failed to execute tool search');
+        expect(result.content[0].text).toContain(errorMessage);
       });
     });
   });
@@ -1125,7 +737,7 @@ describe('SearchTool', () => {
       },
     };
 
-    it('should call SearchItems when searchTerm is provided for items', async () => {
+    it('should search items with searchTerm via searchItems query', async () => {
       mocks.setResponse(mockItemsResponse);
 
       const args: inputType = {
@@ -1190,7 +802,7 @@ describe('SearchTool', () => {
       );
     });
 
-    it('should pass workspace IDs to the request', async () => {
+    it('should pass workspaceIds to the request', async () => {
       mocks.setResponse(mockItemsResponse);
 
       const args: inputType = {
@@ -1234,31 +846,6 @@ describe('SearchTool', () => {
       expect(parsedResult.data).toHaveLength(0);
     });
 
-    it('should throw error when searchTerm is not provided for items', async () => {
-      const args: inputType = {
-        searchType: GlobalSearchType.ITEMS,
-      };
-
-      const result = await callToolByNameRawAsync('search', args);
-
-      expect(result.content[0].text).toContain('Failed to execute tool search');
-      expect(result.content[0].text).toContain('Items search requires a searchTerm');
-      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
-    });
-
-    it('should throw error when searchTerm is empty string for items', async () => {
-      const args: inputType = {
-        searchType: GlobalSearchType.ITEMS,
-        searchTerm: '',
-      };
-
-      const result = await callToolByNameRawAsync('search', args);
-
-      expect(result.content[0].text).toContain('Failed to execute tool search');
-      expect(result.content[0].text).toContain('Items search requires a searchTerm');
-      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
-    });
-
     it('should not fall back when the request fails for items', async () => {
       const errorMessage = 'Search endpoint unavailable';
       mocks.getMockRequest().mockRejectedValueOnce(new Error(errorMessage));
@@ -1272,761 +859,12 @@ describe('SearchTool', () => {
 
       expect(result.content[0].text).toContain('Failed to execute tool search');
       expect(result.content[0].text).toContain(errorMessage);
-      // Only one call: items search. No fallback.
+      // Only one call — no fallback
       expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
     });
-
-    it('should throw when page > 1 (pagination not supported, no listing fallback)', async () => {
-      const args: inputType = {
-        searchType: GlobalSearchType.ITEMS,
-        searchTerm: 'Item',
-        page: 5,
-      };
-
-      const result = await callToolByNameRawAsync('search', args);
-
-      expect(result.content[0].text).toContain('Failed to execute tool search');
-      expect(result.content[0].text).toContain('Pagination is not supported for search');
-      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
-    });
   });
 
-  describe('Unsupported Search Type', () => {
-    it('should throw error for unsupported search type', async () => {
-      const args: Omit<inputType, 'searchType'> & { searchType: string } = {
-        searchType: 'UNSUPPORTED_TYPE',
-      };
-
-      const result = await callToolByNameRawAsync('search', args);
-
-      expect(result.content[0].text).toContain('Failed to execute tool search: Invalid arguments');
-      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('Dev Endpoint Search (per-entity namespace)', () => {
-    const mockDevBoardsResponse: SearchBoardsDevQuery = {
-      search: {
-        boards: {
-          results: [
-            { id: '123', indexed_data: { id: '123', name: 'Test Board 1', url: 'https://monday.com/boards/123' } },
-            { id: '456', indexed_data: { id: '456', name: 'Test Board 2', url: 'https://monday.com/boards/456' } },
-          ],
-        },
-      },
-    };
-
-    const mockDevDocsResponse: SearchDocsDevQuery = {
-      search: {
-        docs: {
-          results: [
-            { id: '111', indexed_data: { id: '111', name: 'Document 1' } },
-            { id: '222', indexed_data: { id: '222', name: 'Document 2' } },
-          ],
-        },
-      },
-    };
-
-    describe('Board Search via Dev Endpoint', () => {
-      it('should use dev endpoint when searchTerm is provided for boards', async () => {
-        mocks.setResponse(mockDevBoardsResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.BOARD,
-          searchTerm: 'Test',
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        expect(parsedResult.data).toHaveLength(2);
-        expect(parsedResult.data[0]).toEqual({
-          id: 'board-123',
-          title: 'Test Board 1',
-          url: 'https://monday.com/boards/123',
-        });
-        expect(parsedResult.data[1]).toEqual({
-          id: 'board-456',
-          title: 'Test Board 2',
-          url: 'https://monday.com/boards/456',
-        });
-
-        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query SearchBoardsDev'),
-          {
-            query: 'Test',
-            limit: 20,
-            workspaceIds: undefined,
-          },
-          expect.objectContaining({ versionOverride: 'dev' }),
-        );
-      });
-
-      it('should properly prefix board IDs from dev endpoint', async () => {
-        mocks.setResponse(mockDevBoardsResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.BOARD,
-          searchTerm: 'Test',
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        expect(parsedResult.data[0].id).toBe(`${ObjectPrefixes.BOARD}123`);
-        expect(parsedResult.data[1].id).toBe(`${ObjectPrefixes.BOARD}456`);
-      });
-
-      it('should pass custom limit to dev endpoint', async () => {
-        mocks.setResponse(mockDevBoardsResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.BOARD,
-          searchTerm: 'Test',
-          limit: 15,
-        };
-
-        await callToolByNameAsync('search', args);
-
-        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query SearchBoardsDev'),
-          expect.objectContaining({
-            limit: 15,
-          }),
-          expect.objectContaining({ versionOverride: 'dev' }),
-        );
-      });
-
-      it('should pass workspace IDs to dev endpoint', async () => {
-        mocks.setResponse(mockDevBoardsResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.BOARD,
-          searchTerm: 'Test',
-          workspaceIds: [12345, 67890],
-        };
-
-        await callToolByNameAsync('search', args);
-
-        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query SearchBoardsDev'),
-          expect.objectContaining({
-            workspaceIds: ['12345', '67890'],
-          }),
-          expect.objectContaining({ versionOverride: 'dev' }),
-        );
-      });
-
-      it('should not include disclaimer when using dev endpoint', async () => {
-        mocks.setResponse(mockDevBoardsResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.BOARD,
-          searchTerm: 'Test',
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        expect(parsedResult.disclaimer).toBeUndefined();
-      });
-
-      it('should handle empty results from dev endpoint', async () => {
-        mocks.setResponse({ search: { boards: { results: [] } } });
-
-        const args: inputType = {
-          searchType: GlobalSearchType.BOARD,
-          searchTerm: 'NonExistent',
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        expect(parsedResult.data).toHaveLength(0);
-      });
-    });
-
-    describe('Document Search via Dev Endpoint', () => {
-      it('should use dev endpoint when searchTerm is provided for documents', async () => {
-        mocks.setResponse(mockDevDocsResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.DOCUMENTS,
-          searchTerm: 'Document',
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        expect(parsedResult.data).toHaveLength(2);
-        expect(parsedResult.data[0]).toEqual({
-          id: 'doc-111',
-          title: 'Document 1',
-        });
-        expect(parsedResult.data[1]).toEqual({
-          id: 'doc-222',
-          title: 'Document 2',
-        });
-
-        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query SearchDocsDev'),
-          {
-            query: 'Document',
-            limit: 20,
-            workspaceIds: undefined,
-          },
-          expect.objectContaining({ versionOverride: 'dev' }),
-        );
-      });
-
-      it('should properly prefix document IDs from dev endpoint', async () => {
-        mocks.setResponse(mockDevDocsResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.DOCUMENTS,
-          searchTerm: 'Document',
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        expect(parsedResult.data[0].id).toBe(`${ObjectPrefixes.DOCUMENT}111`);
-        expect(parsedResult.data[1].id).toBe(`${ObjectPrefixes.DOCUMENT}222`);
-      });
-
-      it('should not include url field for documents from dev endpoint', async () => {
-        mocks.setResponse(mockDevDocsResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.DOCUMENTS,
-          searchTerm: 'Document',
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        // Documents from dev endpoint don't include url in the response
-        expect(parsedResult.data[0].url).toBeUndefined();
-        expect(parsedResult.data[1].url).toBeUndefined();
-      });
-    });
-
-    describe('Pagination Restrictions', () => {
-      it('should throw error when page > 1 for dev endpoint and fall back to old implementation', async () => {
-        // First call (dev endpoint) will throw due to page > 1, then fall back to old implementation
-        mocks.setResponse(mockBoardsResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.BOARD,
-          searchTerm: 'Test',
-          page: 2,
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        // Falls back to old implementation which uses GetBoards query
-        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query GetBoards'),
-          expect.any(Object),
-        );
-        expect(parsedResult.data).toBeDefined();
-      });
-
-      it('should work normally with page = 1 for dev endpoint', async () => {
-        mocks.setResponse(mockDevBoardsResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.BOARD,
-          searchTerm: 'Test',
-          page: 1,
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query SearchBoardsDev'),
-          expect.any(Object),
-          expect.objectContaining({ versionOverride: 'dev' })
-        );
-        expect(parsedResult.data).toHaveLength(2);
-      });
-    });
-
-    describe('Fallback Behavior', () => {
-      it('should fall back to old implementation when dev endpoint throws error', async () => {
-        // First call throws an error, second call succeeds with old implementation
-        mocks.getMockRequest()
-          .mockRejectedValueOnce(new Error('Dev endpoint unavailable'))
-          .mockResolvedValueOnce(mockBoardsResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.BOARD,
-          searchTerm: 'Test',
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        // Should have called dev endpoint first, then fallen back to GetBoards
-        expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
-        expect(mocks.getMockRequest()).toHaveBeenNthCalledWith(
-          1,
-          expect.stringContaining('query SearchBoardsDev'),
-          expect.any(Object),
-          expect.objectContaining({ versionOverride: 'dev' })
-        );
-        expect(mocks.getMockRequest()).toHaveBeenNthCalledWith(
-          2,
-          expect.stringContaining('query GetBoards'),
-          expect.any(Object),
-        );
-
-        // Results should come from fallback
-        expect(parsedResult.data).toBeDefined();
-      });
-
-      it('should not use dev endpoint for FOLDERS type', async () => {
-        mocks.setResponse(mockFoldersResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.FOLDERS,
-          workspaceIds: [1],
-          searchTerm: 'Test',
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        // Should use GetFolders query, not per-entity search
-        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query GetFolders'),
-          expect.any(Object),
-        );
-        expect(parsedResult.data).toBeDefined();
-      });
-
-      it('should not use dev endpoint when searchTerm is not provided', async () => {
-        mocks.setResponse(mockBoardsResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.BOARD,
-          // No searchTerm provided
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        // Should use GetBoards query directly
-        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query GetBoards'),
-          expect.any(Object),
-        );
-        expect(parsedResult.data).toBeDefined();
-      });
-
-      it('should not use dev endpoint when searchTerm is empty string', async () => {
-        mocks.setResponse(mockBoardsResponse);
-
-        const args: inputType = {
-          searchType: GlobalSearchType.BOARD,
-          searchTerm: '',
-        };
-
-        const parsedResult = await callToolByNameAsync('search', args);
-
-        // Empty string is falsy, should use GetBoards query directly
-        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query GetBoards'),
-          expect.any(Object),
-        );
-        expect(parsedResult.data).toBeDefined();
-      });
-    });
-  });
-
-  describe('getPagingParamsForSearch (fallback path)', () => {
-    it('should return high limit and page 1 when searchTerm is provided (fallback on page > 1)', async () => {
-      // page > 1 causes dev endpoint to throw, falls back to old implementation
-      mocks.setResponse(mockBoardsResponse);
-
-      const args: inputType = {
-        searchType: GlobalSearchType.BOARD,
-        searchTerm: 'test',
-        limit: 15,
-        page: 3,
-      };
-
-      await callToolByNameAsync('search', args);
-
-      // When searchTerm is present, fallback should override to page 1 and limit 1000
-      expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetBoards'), {
-        page: 1,
-        limit: 1000,
-        workspace_ids: undefined,
-      });
-    });
-
-    it('should return original limit and page when searchTerm is not provided', async () => {
-      mocks.setResponse(mockBoardsResponse);
-
-      const args: inputType = {
-        searchType: GlobalSearchType.BOARD,
-        limit: 15,
-        page: 3,
-      };
-
-      await callToolByNameAsync('search', args);
-
-      expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetBoards'), {
-        page: 3,
-        limit: 15,
-        workspace_ids: undefined,
-      });
-    });
-
-    it('should return original limit and page when searchTerm is empty string', async () => {
-      mocks.setResponse(mockBoardsResponse);
-
-      const args: inputType = {
-        searchType: GlobalSearchType.BOARD,
-        searchTerm: '',
-        limit: 15,
-        page: 3,
-      };
-
-      await callToolByNameAsync('search', args);
-
-      // Empty string is falsy, so should use original page and limit
-      expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetBoards'), {
-        page: 3,
-        limit: 15,
-        workspace_ids: undefined,
-      });
-    });
-  });
-
-  describe('searchAndVirtuallyPaginate (fallback path)', () => {
-    it('should return all items when count is less than 100', async () => {
-      const smallResponse: GetBoardsQuery = {
-        boards: [
-          { id: '1', name: 'Board 1', url: 'https://monday.com/boards/1' },
-          { id: '2', name: 'Board 2', url: 'https://monday.com/boards/2' },
-        ],
-      };
-
-      // Dev endpoint fails, then fallback succeeds
-      mocks.getMockRequest()
-        .mockRejectedValueOnce(new Error('Dev endpoint unavailable'))
-        .mockResolvedValueOnce(smallResponse);
-
-      const args: inputType = {
-        searchType: GlobalSearchType.BOARD,
-        searchTerm: 'Board',
-        limit: 10,
-      };
-
-      const parsedResult = await callToolByNameAsync('search', args);
-
-      // Less than 100 items, returns all without filtering
-      expect(parsedResult.data).toHaveLength(2);
-      expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
-    });
-
-    it('should slice results correctly for page 1 when more than SEARCH_LIMIT items', async () => {
-      const largeResponse: GetBoardsQuery = {
-        boards: Array.from({ length: 120 }, (_, i) => ({
-          id: `${i + 1}`,
-          name: `Board ${i + 1}`,
-          url: `https://monday.com/boards/${i + 1}`,
-        })),
-      };
-
-      // Dev endpoint fails, then fallback succeeds
-      mocks.getMockRequest()
-        .mockRejectedValueOnce(new Error('Dev endpoint unavailable'))
-        .mockResolvedValueOnce(largeResponse);
-
-      const args: inputType = {
-        searchType: GlobalSearchType.BOARD,
-        searchTerm: 'Board',
-        limit: 5,
-        page: 1,
-      };
-
-      const parsedResult = await callToolByNameAsync('search', args);
-
-      expect(parsedResult.data).toHaveLength(5);
-      expect(parsedResult.data[0].title).toBe('Board 1');
-      expect(parsedResult.data[4].title).toBe('Board 5');
-      expect(parsedResult.disclaimer).toBeUndefined();
-    });
-
-    it('should slice results correctly for page 2 when more than SEARCH_LIMIT items (fallback on page > 1)', async () => {
-      const largeResponse: GetBoardsQuery = {
-        boards: Array.from({ length: 120 }, (_, i) => ({
-          id: `${i + 1}`,
-          name: `Board ${i + 1}`,
-          url: `https://monday.com/boards/${i + 1}`,
-        })),
-      };
-
-      // page > 1 causes dev endpoint to throw, falls back to old implementation
-      mocks.setResponse(largeResponse);
-
-      const args: inputType = {
-        searchType: GlobalSearchType.BOARD,
-        searchTerm: 'Board',
-        limit: 5,
-        page: 2,
-      };
-
-      const parsedResult = await callToolByNameAsync('search', args);
-
-      expect(parsedResult.data).toHaveLength(5);
-      expect(parsedResult.data[0].title).toBe('Board 6');
-      expect(parsedResult.data[4].title).toBe('Board 10');
-      expect(parsedResult.disclaimer).toBeUndefined();
-    });
-
-    it('should slice results correctly for last partial page when more than SEARCH_LIMIT items (fallback on page > 1)', async () => {
-      const largeResponse: GetBoardsQuery = {
-        boards: Array.from({ length: 112 }, (_, i) => ({
-          id: `${i + 1}`,
-          name: `Board ${i + 1}`,
-          url: `https://monday.com/boards/${i + 1}`,
-        })),
-      };
-
-      // page > 1 causes dev endpoint to throw, falls back to old implementation
-      mocks.setResponse(largeResponse);
-
-      const args: inputType = {
-        searchType: GlobalSearchType.BOARD,
-        searchTerm: 'Board',
-        limit: 5,
-        page: 23,
-      };
-
-      const parsedResult = await callToolByNameAsync('search', args);
-
-      // Page 23: items 111-112 (2 items)
-      expect(parsedResult.data).toHaveLength(2);
-      expect(parsedResult.data[0].title).toBe('Board 111');
-      expect(parsedResult.data[1].title).toBe('Board 112');
-      expect(parsedResult.disclaimer).toBeUndefined();
-    });
-
-    it('should return empty array when page exceeds available results with more than SEARCH_LIMIT items (fallback on page > 1)', async () => {
-      const largeResponse: GetBoardsQuery = {
-        boards: Array.from({ length: 115 }, (_, i) => ({
-          id: `${i + 1}`,
-          name: `Board ${i + 1}`,
-          url: `https://monday.com/boards/${i + 1}`,
-        })),
-      };
-
-      // page > 1 causes dev endpoint to throw, falls back to old implementation
-      mocks.setResponse(largeResponse);
-
-      const args: inputType = {
-        searchType: GlobalSearchType.BOARD,
-        searchTerm: 'Board',
-        limit: 5,
-        page: 100, // way beyond available data
-      };
-
-      const parsedResult = await callToolByNameAsync('search', args);
-
-      expect(parsedResult.data).toHaveLength(0);
-      expect(parsedResult.disclaimer).toBeUndefined();
-    });
-
-    it('should handle special characters in search term when less than SEARCH_LIMIT items', async () => {
-      const boardsResponse: GetBoardsQuery = {
-        boards: [
-          { id: '1', name: 'Board (Test)', url: 'https://monday.com/boards/1' },
-          { id: '2', name: 'Board [Draft]', url: 'https://monday.com/boards/2' },
-          { id: '3', name: 'Board-Final', url: 'https://monday.com/boards/3' },
-        ],
-      };
-
-      // Dev endpoint fails, then fallback succeeds
-      mocks.getMockRequest()
-        .mockRejectedValueOnce(new Error('Dev endpoint unavailable'))
-        .mockResolvedValueOnce(boardsResponse);
-
-      const args: inputType = {
-        searchType: GlobalSearchType.BOARD,
-        searchTerm: 'Board',
-      };
-
-      const parsedResult = await callToolByNameAsync('search', args);
-
-      // Less than 100 items, returns all
-      expect(parsedResult.data).toHaveLength(3);
-      expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
-    });
-
-    it('should handle empty search term as no filter', async () => {
-      // Mock returns only 2 items as per the pagination parameters
-      const boardsResponse: GetBoardsQuery = {
-        boards: [
-          { id: '1', name: 'Alpha', url: 'https://monday.com/boards/1' },
-          { id: '2', name: 'Beta', url: 'https://monday.com/boards/2' },
-        ],
-      };
-
-      mocks.setResponse(boardsResponse);
-
-      const args: inputType = {
-        searchType: GlobalSearchType.BOARD,
-        searchTerm: '',
-        limit: 2,
-        page: 1,
-      };
-
-      const parsedResult = await callToolByNameAsync('search', args);
-
-      // Empty string is falsy, so regular pagination (not virtual) - API returns 2 items
-      expect(parsedResult.data).toHaveLength(2);
-    });
-  });
-
-  describe('Default Values', () => {
-    it('should use default limit of 20 when not specified', async () => {
-      mocks.setResponse(mockBoardsResponse);
-
-      const args: Partial<inputType> = {
-        searchType: GlobalSearchType.BOARD,
-      };
-
-      await callToolByNameAsync('search', args);
-
-      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-        expect.stringContaining('query GetBoards'),
-        expect.objectContaining({
-          limit: 20,
-        }),
-      );
-    });
-
-    it('should use default page of 1 when not specified', async () => {
-      mocks.setResponse(mockBoardsResponse);
-
-      const args: Partial<inputType> = {
-        searchType: GlobalSearchType.BOARD,
-      };
-
-      await callToolByNameAsync('search', args);
-
-      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-        expect.stringContaining('query GetBoards'),
-        expect.objectContaining({
-          page: 1,
-        }),
-      );
-    });
-  });
-
-  describe('Edge Cases', () => {
-    it('should handle boards with null name fields gracefully', async () => {
-      const boardsWithNullNames: GetBoardsQuery = {
-        boards: [{ id: '1', name: null as any, url: 'https://monday.com/boards/1' }],
-      };
-
-      mocks.setResponse(boardsWithNullNames);
-
-      const args: inputType = {
-        searchType: GlobalSearchType.BOARD,
-      };
-
-      const parsedResult = await callToolByNameAsync('search', args);
-
-      expect(parsedResult.data).toHaveLength(1);
-      expect(parsedResult.data[0].title).toBeNull();
-    });
-
-    it('should handle documents with null name fields gracefully', async () => {
-      const docsWithNullNames: GetDocsQuery = {
-        docs: [{ id: '1', name: null as any, url: 'https://monday.com/docs/1' }],
-      };
-
-      mocks.setResponse(docsWithNullNames);
-
-      const args: inputType = {
-        searchType: GlobalSearchType.DOCUMENTS,
-      };
-
-      const parsedResult = await callToolByNameAsync('search', args);
-
-      expect(parsedResult.data).toHaveLength(1);
-      expect(parsedResult.data[0].title).toBeNull();
-    });
-
-    it('should handle folders with null name fields gracefully', async () => {
-      const foldersWithNullNames: GetFoldersQuery = {
-        folders: [{ id: '1', name: null as any }],
-      };
-
-      mocks.setResponse(foldersWithNullNames);
-
-      const args: inputType = {
-        searchType: GlobalSearchType.FOLDERS,
-        workspaceIds: [1],
-      };
-
-      const parsedResult = await callToolByNameAsync('search', args);
-
-      expect(parsedResult.data).toHaveLength(1);
-      expect(parsedResult.data[0].title).toBeNull();
-    });
-
-    it('should handle multiple workspace IDs', async () => {
-      mocks.setResponse(mockBoardsResponse);
-
-      const args: inputType = {
-        searchType: GlobalSearchType.BOARD,
-        workspaceIds: [1, 2, 3, 4, 5],
-      };
-
-      await callToolByNameAsync('search', args);
-
-      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-        expect.stringContaining('query GetBoards'),
-        expect.objectContaining({
-          workspace_ids: ['1', '2', '3', '4', '5'],
-        }),
-      );
-    });
-
-    it('should handle limit of 1', async () => {
-      // Mock returns only 1 item as per the pagination parameters
-      const singleBoardResponse: GetBoardsQuery = {
-        boards: [{ id: '123', name: 'Test Board 1', url: 'https://monday.com/boards/123' }],
-      };
-
-      mocks.setResponse(singleBoardResponse);
-
-      const args: inputType = {
-        searchType: GlobalSearchType.BOARD,
-        limit: 1,
-      };
-
-      const parsedResult = await callToolByNameAsync('search', args);
-
-      expect(parsedResult.data).toHaveLength(1);
-    });
-
-    it('should handle very high page number with less than SEARCH_LIMIT results - returns all (fallback on page > 1)', async () => {
-      // page > 1 causes dev endpoint to throw, falls back to old implementation
-      mocks.setResponse(mockBoardsResponse);
-
-      const args: inputType = {
-        searchType: GlobalSearchType.BOARD,
-        searchTerm: 'Board',
-        limit: 2,
-        page: 1000,
-      };
-
-      const parsedResult = await callToolByNameAsync('search', args);
-
-      // Less than 100 items, no filtering occurs - returns all 3 items
-      expect(parsedResult.data).toHaveLength(3);
-      expect(parsedResult.disclaimer).toBe('[IMPORTANT]Items were not filtered. Please perform the filtering.');
-    });
-  });
-
-  describe('Workspace Search', () => {
+  describe('Workspaces Search Handler', () => {
     const mockWorkspacesResponse: SearchWorkspacesQuery = {
       search: {
         workspaces: {
@@ -2038,7 +876,7 @@ describe('SearchTool', () => {
       },
     };
 
-    it('should search workspaces when searchTerm is provided', async () => {
+    it('should search workspaces with searchTerm via searchWorkspaces query', async () => {
       mocks.setResponse(mockWorkspacesResponse);
 
       const args: inputType = {
@@ -2119,18 +957,6 @@ describe('SearchTool', () => {
       expect(parsedResult.data[0].description).toBeUndefined();
     });
 
-    it('should throw error when searchTerm is not provided for workspaces', async () => {
-      const args: inputType = {
-        searchType: GlobalSearchType.WORKSPACES,
-      };
-
-      const result = await callToolByNameRawAsync('search', args);
-
-      expect(result.content[0].text).toContain('Failed to execute tool search');
-      expect(result.content[0].text).toContain('Workspaces search requires a searchTerm');
-      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
-    });
-
     it('should not fall back when the request fails for workspaces', async () => {
       const errorMessage = 'Search endpoint unavailable';
       mocks.getMockRequest().mockRejectedValueOnce(new Error(errorMessage));
@@ -2146,23 +972,9 @@ describe('SearchTool', () => {
       expect(result.content[0].text).toContain(errorMessage);
       expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
     });
-
-    it('should throw when page > 1 (pagination not supported)', async () => {
-      const args: inputType = {
-        searchType: GlobalSearchType.WORKSPACES,
-        searchTerm: 'Marketing',
-        page: 5,
-      };
-
-      const result = await callToolByNameRawAsync('search', args);
-
-      expect(result.content[0].text).toContain('Failed to execute tool search');
-      expect(result.content[0].text).toContain('Pagination is not supported for search');
-      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
-    });
   });
 
-  describe('Update Search', () => {
+  describe('Updates Search Handler', () => {
     const mockUpdatesResponse: SearchUpdatesQuery = {
       search: {
         updates: {
@@ -2192,7 +1004,7 @@ describe('SearchTool', () => {
       },
     };
 
-    it('should search updates when searchTerm is provided', async () => {
+    it('should search updates with searchTerm via searchUpdates query (versionOverride: 2026-10)', async () => {
       mocks.setResponse(mockUpdatesResponse);
 
       const args: inputType = {
@@ -2281,18 +1093,6 @@ describe('SearchTool', () => {
       expect(parsedResult.data).toHaveLength(0);
     });
 
-    it('should throw error when searchTerm is not provided for updates', async () => {
-      const args: inputType = {
-        searchType: GlobalSearchType.UPDATES,
-      };
-
-      const result = await callToolByNameRawAsync('search', args);
-
-      expect(result.content[0].text).toContain('Failed to execute tool search');
-      expect(result.content[0].text).toContain('Updates search requires a searchTerm');
-      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
-    });
-
     it('should not fall back when the request fails for updates', async () => {
       const errorMessage = 'Search endpoint unavailable';
       mocks.getMockRequest().mockRejectedValueOnce(new Error(errorMessage));
@@ -2308,23 +1108,9 @@ describe('SearchTool', () => {
       expect(result.content[0].text).toContain(errorMessage);
       expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
     });
-
-    it('should throw when page > 1 (pagination not supported)', async () => {
-      const args: inputType = {
-        searchType: GlobalSearchType.UPDATES,
-        searchTerm: 'Deploy',
-        page: 5,
-      };
-
-      const result = await callToolByNameRawAsync('search', args);
-
-      expect(result.content[0].text).toContain('Failed to execute tool search');
-      expect(result.content[0].text).toContain('Pagination is not supported for search');
-      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
-    });
   });
 
-  describe('Timeline Items Search', () => {
+  describe('Timeline Items Search Handler', () => {
     const mockTimelineItemsResponse: SearchTimelineItemsQuery = {
       search: {
         timeline_items: {
@@ -2336,7 +1122,7 @@ describe('SearchTool', () => {
       },
     };
 
-    it('should search timeline items when searchTerm is provided', async () => {
+    it('should search timeline items with searchTerm via searchTimelineItems query (versionOverride: 2026-10)', async () => {
       mocks.setResponse(mockTimelineItemsResponse);
 
       const args: inputType = {
@@ -2420,18 +1206,6 @@ describe('SearchTool', () => {
       expect(parsedResult.data[0].content).toBeUndefined();
     });
 
-    it('should throw error when searchTerm is not provided for timeline items', async () => {
-      const args: inputType = {
-        searchType: GlobalSearchType.TIMELINE_ITEMS,
-      };
-
-      const result = await callToolByNameRawAsync('search', args);
-
-      expect(result.content[0].text).toContain('Failed to execute tool search');
-      expect(result.content[0].text).toContain('Timeline items search requires a searchTerm');
-      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
-    });
-
     it('should not fall back when the request fails for timeline items', async () => {
       const errorMessage = 'Search endpoint unavailable';
       mocks.getMockRequest().mockRejectedValueOnce(new Error(errorMessage));
@@ -2447,19 +1221,116 @@ describe('SearchTool', () => {
       expect(result.content[0].text).toContain(errorMessage);
       expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
     });
+  });
 
-    it('should throw when page > 1 (pagination not supported)', async () => {
+  describe('Default Values', () => {
+    it('should use default limit of 20 when not specified', async () => {
+      mocks.setResponse(mockDevBoardsResponse);
+
       const args: inputType = {
-        searchType: GlobalSearchType.TIMELINE_ITEMS,
-        searchTerm: 'kickoff',
-        page: 5,
+        searchType: GlobalSearchType.BOARD,
+        searchTerm: 'Test',
       };
 
-      const result = await callToolByNameRawAsync('search', args);
+      await callToolByNameAsync('search', args);
 
-      expect(result.content[0].text).toContain('Failed to execute tool search');
-      expect(result.content[0].text).toContain('Pagination is not supported for search');
-      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchBoardsDev'),
+        expect.objectContaining({
+          limit: 20,
+        }),
+        expect.any(Object),
+      );
+    });
+  });
+
+  describe('Edge Cases', () => {
+    it('should handle limit of 1', async () => {
+      mocks.setResponse({ search: { boards: { results: [{ id: '123', indexed_data: { id: '123', name: 'Test Board 1', url: 'https://monday.com/boards/123' } }] } } });
+
+      const args: inputType = {
+        searchType: GlobalSearchType.BOARD,
+        searchTerm: 'Test',
+        limit: 1,
+      };
+
+      const parsedResult = await callToolByNameAsync('search', args);
+
+      expect(parsedResult.data).toHaveLength(1);
+    });
+
+    it('should handle boards with null name fields gracefully', async () => {
+      mocks.setResponse({
+        search: {
+          boards: {
+            results: [{ id: '1', indexed_data: { id: '1', name: null as any, url: 'https://monday.com/boards/1' } }],
+          },
+        },
+      });
+
+      const args: inputType = {
+        searchType: GlobalSearchType.BOARD,
+        searchTerm: 'Test',
+      };
+
+      const parsedResult = await callToolByNameAsync('search', args);
+
+      expect(parsedResult.data).toHaveLength(1);
+      expect(parsedResult.data[0].title).toBeNull();
+    });
+
+    it('should handle documents with null name fields gracefully', async () => {
+      mocks.setResponse({
+        search: {
+          docs: {
+            results: [{ id: '1', indexed_data: { id: '1', name: null as any } }],
+          },
+        },
+      });
+
+      const args: inputType = {
+        searchType: GlobalSearchType.DOCUMENTS,
+        searchTerm: 'Doc',
+      };
+
+      const parsedResult = await callToolByNameAsync('search', args);
+
+      expect(parsedResult.data).toHaveLength(1);
+      expect(parsedResult.data[0].title).toBeNull();
+    });
+
+    it('should handle folders with null name fields gracefully', async () => {
+      mocks.setResponse({ folders: [{ id: '1', name: null as any }] });
+
+      const args: inputType = {
+        searchType: GlobalSearchType.FOLDERS,
+        searchTerm: 'Test',
+        workspaceIds: [1],
+      };
+
+      const parsedResult = await callToolByNameAsync('search', args);
+
+      expect(parsedResult.data).toHaveLength(0); // null name filtered out by searchTerm match
+    });
+
+    it('should handle multiple workspace IDs for board search', async () => {
+      mocks.setResponse(mockDevBoardsResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.BOARD,
+        searchTerm: 'Test',
+        workspaceIds: [1, 2, 3, 4, 5],
+      };
+
+      await callToolByNameAsync('search', args);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchBoardsDev'),
+        expect.objectContaining({
+          workspaceIds: ['1', '2', '3', '4', '5'],
+        }),
+        expect.any(Object),
+      );
     });
   });
 });
