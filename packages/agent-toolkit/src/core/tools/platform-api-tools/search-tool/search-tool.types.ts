@@ -11,11 +11,6 @@ export interface SearchResult {
   creatorId?: string;
 }
 
-export interface DataWithFilterInfo<T> {
-  items: T[];
-  wasFiltered: boolean;
-}
-
 export enum ObjectPrefixes {
   BOARD = 'board-',
   DOCUMENT = 'doc-',
