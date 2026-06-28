@@ -1,7 +1,15 @@
 import { ToolInputType, ToolOutputType, ToolType } from 'src/core/tool';
 import { z } from 'zod';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { getBoards, getDocs, getFolders, searchItems, searchWorkspaces } from './search-tool.graphql';
+import {
+  getBoards,
+  getDocs,
+  getFolders,
+  searchItems,
+  searchWorkspaces,
+  searchUpdates,
+  searchTimelineItems,
+} from './search-tool.graphql';
 import { searchBoardsDev, searchDocsDev } from './search-tool.graphql.dev';
 import {
   GetBoardsQuery,
@@ -14,6 +22,10 @@ import {
   SearchItemsQueryVariables,
   SearchWorkspacesQuery,
   SearchWorkspacesQueryVariables,
+  SearchUpdatesQuery,
+  SearchUpdatesQueryVariables,
+  SearchTimelineItemsQuery,
+  SearchTimelineItemsQueryVariables,
 } from 'src/monday-graphql/generated/graphql/graphql';
 import {
   SearchBoardsDevQuery,
@@ -21,14 +33,6 @@ import {
   SearchDocsDevQuery,
   SearchDocsDevQueryVariables,
 } from 'src/monday-graphql/generated/graphql.dev/graphql';
-import {
-  searchUpdates,
-  SearchUpdatesQuery,
-  SearchUpdatesQueryVariables,
-  searchTimelineItems,
-  SearchTimelineItemsQuery,
-  SearchTimelineItemsQueryVariables,
-} from './search-tool.graphql.2026-10';
 import { normalizeString } from 'src/utils/string.utils';
 import { DataWithFilterInfo, GlobalSearchType, ObjectPrefixes, SearchResult } from './search-tool.types';
 import { LOAD_INTO_MEMORY_LIMIT, MAX_FOLDERS_LIMIT, SEARCH_LIMIT } from './search-tool.consts';
@@ -120,7 +124,7 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
         const data = await this.runSmartSearchAsync(input);
 
         return {
-          content: { message: "Search results", data: data.items },
+          content: { message: 'Search results', data: data.items },
         };
       } catch (error) {
         throwIfSearchTimeoutError(error);
@@ -136,27 +140,43 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
       }
     }
 
-    const handlers: Record<GlobalSearchType, (input: ToolInputType<SearchToolInput>) => Promise<DataWithFilterInfo<SearchResult>>> = {
+    const handlers: Record<
+      GlobalSearchType,
+      (input: ToolInputType<SearchToolInput>) => Promise<DataWithFilterInfo<SearchResult>>
+    > = {
       [GlobalSearchType.BOARD]: this.searchBoardsAsync.bind(this),
       [GlobalSearchType.DOCUMENTS]: this.searchDocsAsync.bind(this),
       [GlobalSearchType.FOLDERS]: this.searchFoldersAsync.bind(this),
-      [GlobalSearchType.WORKSPACES]: () => { throw new Error('Workspaces search requires a searchTerm'); },
-      [GlobalSearchType.UPDATES]: () => { throw new Error('Updates search requires a searchTerm'); },
-      [GlobalSearchType.ITEMS]: () => { throw new Error('Items search requires a searchTerm'); },
-      [GlobalSearchType.TIMELINE_ITEMS]: () => { throw new Error('Timeline items search requires a searchTerm'); },
+      [GlobalSearchType.WORKSPACES]: () => {
+        throw new Error('Workspaces search requires a searchTerm');
+      },
+      [GlobalSearchType.UPDATES]: () => {
+        throw new Error('Updates search requires a searchTerm');
+      },
+      [GlobalSearchType.ITEMS]: () => {
+        throw new Error('Items search requires a searchTerm');
+      },
+      [GlobalSearchType.TIMELINE_ITEMS]: () => {
+        throw new Error('Timeline items search requires a searchTerm');
+      },
     };
 
     const data = await handlers[input.searchType](input);
 
     return {
-      content: { message: "Search results", disclaimer: data.wasFiltered || !input.searchTerm ? undefined : '[IMPORTANT]Items were not filtered. Please perform the filtering.', data: data.items },
+      content: {
+        message: 'Search results',
+        disclaimer:
+          data.wasFiltered || !input.searchTerm
+            ? undefined
+            : '[IMPORTANT]Items were not filtered. Please perform the filtering.',
+        data: data.items,
+      },
     };
   }
 
-  private async runSmartSearchAsync(
-    input: ToolInputType<SearchToolInput>,
-  ): Promise<DataWithFilterInfo<SearchResult>> {
-    if(input.page > 1) {
+  private async runSmartSearchAsync(input: ToolInputType<SearchToolInput>): Promise<DataWithFilterInfo<SearchResult>> {
+    if (input.page > 1) {
       throw new Error('Pagination is not supported for search, increase the limit parameter instead');
     }
 
@@ -232,10 +252,7 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     return { items, wasFiltered: true };
   }
 
-  private async searchWorkspacesAsync(
-    query: string,
-    limit: number,
-  ): Promise<DataWithFilterInfo<SearchResult>> {
+  private async searchWorkspacesAsync(query: string, limit: number): Promise<DataWithFilterInfo<SearchResult>> {
     const variables: SearchWorkspacesQueryVariables = { query, limit };
 
     const response = await this.mondayApi.request<SearchWorkspacesQuery>(searchWorkspaces, variables, {
@@ -260,7 +277,6 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     const variables: SearchUpdatesQueryVariables = { query, limit, boardIds, creatorIds };
 
     const response = await this.mondayApi.request<SearchUpdatesQuery>(searchUpdates, variables, {
-      versionOverride: '2026-10',
       timeout: SEARCH_TIMEOUT,
     });
 
@@ -295,14 +311,10 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     return { items, wasFiltered: true };
   }
 
-  private async searchTimelineItemsAsync(
-    query: string,
-    limit: number,
-  ): Promise<DataWithFilterInfo<SearchResult>> {
+  private async searchTimelineItemsAsync(query: string, limit: number): Promise<DataWithFilterInfo<SearchResult>> {
     const variables: SearchTimelineItemsQueryVariables = { query, limit };
 
     const response = await this.mondayApi.request<SearchTimelineItemsQuery>(searchTimelineItems, variables, {
-      versionOverride: '2026-10',
       timeout: SEARCH_TIMEOUT,
     });
 
@@ -323,7 +335,7 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     };
     variables.workspace_ids ??= [];
 
-    if(variables.workspace_ids.length === 0) {
+    if (variables.workspace_ids.length === 0) {
       rethrowWithContext(new Error('Searching for folders require specifying workspace ids'), 'search folders');
     }
 
@@ -383,7 +395,10 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     return result;
   }
 
-  private getPagingParamsForSearch(input: ToolInputType<SearchToolInput>, maxLimitForEntity: number = LOAD_INTO_MEMORY_LIMIT): { page: number; limit: number } {
+  private getPagingParamsForSearch(
+    input: ToolInputType<SearchToolInput>,
+    maxLimitForEntity: number = LOAD_INTO_MEMORY_LIMIT,
+  ): { page: number; limit: number } {
     return {
       page: input.searchTerm ? 1 : input.page,
       limit: input.searchTerm ? Math.min(LOAD_INTO_MEMORY_LIMIT, maxLimitForEntity) : input.limit,

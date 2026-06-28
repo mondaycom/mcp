@@ -25,7 +25,7 @@ describe('ConfigureAiColumnTool', () => {
       expect(parsed.column_id).toBe('status_col');
     });
 
-    it('should pass versionOverride 2026-10 and correct variables', async () => {
+    it('should pass correct variables', async () => {
       mocks.setResponseOnce({ configure_categorize_ai_column: { column_id: 'col1' } });
 
       await callToolByNameRawAsync('configure_ai_column', {
@@ -46,7 +46,6 @@ describe('ConfigureAiColumnTool', () => {
           sourceColumnId: 'text_col',
           additionalInstructions: 'Use: Bug, Feature, Chore',
         }),
-        expect.objectContaining({ versionOverride: '2026-10' }),
       );
     });
 
@@ -152,7 +151,6 @@ describe('ConfigureAiColumnTool', () => {
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.stringContaining('ConfigureImproveTextAiColumn'),
         expect.objectContaining({ length: 'longer' }),
-        expect.objectContaining({ versionOverride: '2026-10' }),
       );
     });
   });
@@ -256,7 +254,6 @@ describe('ConfigureAiColumnTool', () => {
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.stringContaining('ConfigureWriteMeAiColumn'),
         expect.objectContaining({ length: 'sentence', tone: 'casual' }),
-        expect.objectContaining({ versionOverride: '2026-10' }),
       );
     });
 
@@ -317,7 +314,6 @@ describe('ConfigureAiColumnTool', () => {
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.stringContaining('ConfigurePersonAssignmentAiColumn'),
         expect.objectContaining({ groups }),
-        expect.objectContaining({ versionOverride: '2026-10' }),
       );
     });
 
@@ -348,7 +344,6 @@ describe('ConfigureAiColumnTool', () => {
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({ extraSettings: { run_backfill: false } }),
-        expect.any(Object),
       );
     });
 
@@ -365,7 +360,6 @@ describe('ConfigureAiColumnTool', () => {
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({ extraSettings: undefined }),
-        expect.any(Object),
       );
     });
   });

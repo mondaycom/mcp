@@ -33,7 +33,6 @@ export class UpdateFormTool extends BaseMondayApiTool<typeof updateFormToolSchem
     [FormActions.activate, this.helpers.activateForm.bind(this.helpers)],
     [FormActions.createTag, this.helpers.createTag.bind(this.helpers)],
     [FormActions.deleteTag, this.helpers.deleteTag.bind(this.helpers)],
-    [FormActions.updateTag, this.helpers.updateTag.bind(this.helpers)],
     [FormActions.updateAppearance, this.helpers.updateAppearance.bind(this.helpers)],
     [FormActions.updateAccessibility, this.helpers.updateAccessibility.bind(this.helpers)],
     [FormActions.updateFeatures, this.helpers.updateFeatures.bind(this.helpers)],

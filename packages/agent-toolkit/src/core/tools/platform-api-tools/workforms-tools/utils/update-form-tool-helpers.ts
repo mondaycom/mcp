@@ -25,8 +25,6 @@ import {
   UpdateFormHeaderMutationVariables,
   UpdateFormQuestionOrderMutation,
   UpdateFormQuestionOrderMutationVariables,
-  UpdateFormTagMutation,
-  UpdateFormTagMutationVariables,
 } from '../../../../../monday-graphql/generated/graphql/graphql';
 import {
   activateForm,
@@ -40,7 +38,6 @@ import {
   updateFormFeatures,
   updateFormHeader,
   updateFormQuestionOrder,
-  updateFormTag,
 } from '../workforms.graphql';
 import { ToolInputType, ToolOutputType } from '../../../../tool';
 import { ApiClient } from '@mondaydotcomorg/api';
@@ -131,7 +128,6 @@ export class UpdateFormToolHelpers {
       formToken: input.formToken,
       tag: {
         name: input.tag.name,
-        value: input.tag.value,
       },
     };
 
@@ -169,40 +165,6 @@ export class UpdateFormToolHelpers {
 
     return {
       content: { message: 'Tag deleted', form_token: input.formToken, tag_id: input.tag.id, action_name: 'deleteTag' },
-    };
-  }
-
-  async updateTag(input: ToolInputType<typeof updateFormToolSchema>): Promise<ToolOutputType<never>> {
-    if (!input.tag) {
-      return {
-        content: 'Tag is required for the action "updateTag" in the update form tool.',
-      };
-    }
-
-    if (!input.tag.id || !input.tag.value) {
-      return {
-        content: 'Tag id and value are required for the action "updateTag" in the update form tool.',
-      };
-    }
-
-    const variables: UpdateFormTagMutationVariables = {
-      formToken: input.formToken,
-      tagId: input.tag.id,
-      tag: {
-        value: input.tag.value,
-      },
-    };
-
-    const res = await this.mondayApi.request<UpdateFormTagMutation>(updateFormTag, variables);
-
-    if (!res.update_form_tag) {
-      return {
-        content: `Unable to update tag with id: ${input.tag.id}.`,
-      };
-    }
-
-    return {
-      content: { message: 'Tag updated', form_token: input.formToken, tag_id: input.tag.id, action_name: 'updateTag' },
     };
   }
 

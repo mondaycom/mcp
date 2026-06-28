@@ -36,7 +36,16 @@ const AI_BLOCK_TYPES = [
 
 const SOURCE_TYPES = ['item_name', 'thread', 'column', 'emails_and_activities'] as const;
 
-const TONES = ['empathic', 'promotional', 'confident', 'professional', 'natural', 'casual', 'friendly', 'same'] as const;
+const TONES = [
+  'empathic',
+  'promotional',
+  'confident',
+  'professional',
+  'natural',
+  'casual',
+  'friendly',
+  'same',
+] as const;
 
 const OUTPUT_LENGTHS = ['sentence', 'paragraph', 'brief', 'in_depth'] as const;
 
@@ -45,64 +54,112 @@ const IMPROVER_LENGTHS = ['same', 'shorter', 'longer'] as const;
 const REFINEMENT_LEVELS = ['minimal_changes', 'moderate_changes', 'high_creativity'] as const;
 
 const LANGUAGES = [
-  'english', 'spanish', 'french', 'german', 'hebrew', 'chinese', 'korean', 'arabic',
-  'bengali', 'danish', 'dutch', 'hindi', 'indonesian', 'italian', 'japanese', 'norwegian',
-  'polish', 'portuguese', 'russian', 'swedish', 'thai', 'turkish', 'vietnamese',
+  'english',
+  'spanish',
+  'french',
+  'german',
+  'hebrew',
+  'chinese',
+  'korean',
+  'arabic',
+  'bengali',
+  'danish',
+  'dutch',
+  'hindi',
+  'indonesian',
+  'italian',
+  'japanese',
+  'norwegian',
+  'polish',
+  'portuguese',
+  'russian',
+  'swedish',
+  'thai',
+  'turkish',
+  'vietnamese',
 ] as const;
 
 const ENTITY_TYPES = [
-  'email_address', 'first_name', 'last_name', 'phone_number', 'company_name',
-  'domain_name', 'url', 'date', 'time', 'year', 'custom',
+  'email_address',
+  'first_name',
+  'last_name',
+  'phone_number',
+  'company_name',
+  'domain_name',
+  'url',
+  'date',
+  'time',
+  'year',
+  'custom',
 ] as const;
 
 export const configureAiColumnToolSchema = {
   board_id: z.number().describe('The ID of the board containing the column'),
   column_id: z.string().describe('The ID of the column to configure with AI'),
-  block_type: z.enum(AI_BLOCK_TYPES).describe(
-    'The AI block type to configure. See tool description for which fields apply to each block.',
-  ),
-  source_type: z.enum(SOURCE_TYPES).optional().describe(
-    'Where the AI reads input. Required for all blocks except open_block and write_me. Values: item_name (item name), thread (updates/comments), column (another column — requires source_column_id), emails_and_activities (categorize only).',
-  ),
-  source_column_id: z.string().optional().describe(
-    'The ID of the source column. Required when source_type is "column".',
-  ),
-  additional_instructions: z.string().max(3000).optional().describe(
-    'Custom instructions for categorize/summarize/extract blocks (max 3000 chars).',
-  ),
-  target_language: z.enum(LANGUAGES).optional().describe(
-    'Required for translate block. The target language to translate text into.',
-  ),
-  tone: z.enum(TONES).optional().describe(
-    'Writing tone. Required for write_me, optional for improve_text.',
-  ),
-  output_length: z.enum(OUTPUT_LENGTHS).optional().describe(
-    'Required for write_me block. Approximate desired output length.',
-  ),
-  improver_length: z.enum(IMPROVER_LENGTHS).optional().describe(
-    'For improve_text only. Desired length relative to input text.',
-  ),
-  refinement_type: z.enum(REFINEMENT_LEVELS).optional().describe(
-    'For improve_text only. Level of text refinement to apply.',
-  ),
-  entity_type: z.enum(ENTITY_TYPES).optional().describe(
-    'Required for extract block. Type of entity to extract from text.',
-  ),
-  custom_instructions: z.string().max(3000).optional().describe(
-    'Required for extract when entity_type is "custom". Describes what to extract (max 3000 chars).',
-  ),
-  ai_query: z.string().max(3000).optional().describe(
-    'Required for open_block and write_me. Natural-language prompt. Reference columns via {pulse.column_id}, item name via {pulse.name}, subitems via {pulse.subitem.column_id}. Max 3000 chars.',
-  ),
-  groups: z.array(z.object({
-    user_ids: z.array(z.number()).describe('Array of user IDs in this group'),
-    description: z.string().describe('Description of this group (e.g., role, team name, or assignment criteria)'),
-  })).optional().describe(
-    'Required for person_assignment. Array of groups, each with user_ids and a description.',
-  ),
-  run_backfill: z.boolean().optional().describe(
-    'Whether to immediately apply AI to existing items (up to 200). Defaults to true.',
-  ),
+  block_type: z
+    .enum(AI_BLOCK_TYPES)
+    .describe('The AI block type to configure. See tool description for which fields apply to each block.'),
+  source_type: z
+    .enum(SOURCE_TYPES)
+    .optional()
+    .describe(
+      'Where the AI reads input. Required for all blocks except open_block and write_me. Values: item_name (item name), thread (updates/comments), column (another column — requires source_column_id), emails_and_activities (categorize only).',
+    ),
+  source_column_id: z
+    .string()
+    .optional()
+    .describe('The ID of the source column. Required when source_type is "column".'),
+  additional_instructions: z
+    .string()
+    .max(3000)
+    .optional()
+    .describe('Custom instructions for categorize/summarize/extract blocks (max 3000 chars).'),
+  target_language: z
+    .enum(LANGUAGES)
+    .optional()
+    .describe('Required for translate block. The target language to translate text into.'),
+  tone: z.enum(TONES).optional().describe('Writing tone. Required for write_me, optional for improve_text.'),
+  output_length: z
+    .enum(OUTPUT_LENGTHS)
+    .optional()
+    .describe('Required for write_me block. Approximate desired output length.'),
+  improver_length: z
+    .enum(IMPROVER_LENGTHS)
+    .optional()
+    .describe('For improve_text only. Desired length relative to input text.'),
+  refinement_type: z
+    .enum(REFINEMENT_LEVELS)
+    .optional()
+    .describe('For improve_text only. Level of text refinement to apply.'),
+  entity_type: z
+    .enum(ENTITY_TYPES)
+    .optional()
+    .describe('Required for extract block. Type of entity to extract from text.'),
+  custom_instructions: z
+    .string()
+    .max(3000)
+    .optional()
+    .describe('Required for extract when entity_type is "custom". Describes what to extract (max 3000 chars).'),
+  ai_query: z
+    .string()
+    .max(3000)
+    .optional()
+    .describe(
+      'Required for open_block and write_me. Natural-language prompt. Reference columns via {pulse.column_id}, item name via {pulse.name}, subitems via {pulse.subitem.column_id}. Max 3000 chars.',
+    ),
+  groups: z
+    .array(
+      z.object({
+        user_ids: z.array(z.number()).describe('Array of user IDs in this group'),
+        description: z.string().describe('Description of this group (e.g., role, team name, or assignment criteria)'),
+      }),
+    )
+    .optional()
+    .describe('Required for person_assignment. Array of groups, each with user_ids and a description.'),
+  run_backfill: z
+    .boolean()
+    .optional()
+    .describe('Whether to immediately apply AI to existing items (up to 200). Defaults to true.'),
 };
 
 export type ConfigureAiColumnToolInput = typeof configureAiColumnToolSchema;
@@ -194,20 +251,19 @@ RELATED TOOLS:
     extraSettings?: { run_backfill: boolean },
   ): Promise<ToolOutputType<never>> {
     this.validateSourceType(input, 'categorize');
-    const res = await this.mondayApi.request<ConfigureCategorizeAiColumnMutation>(
-      configureCategorizeAiColumnMutation,
-      {
-        boardId: boardId.toString(),
-        columnId: input.column_id,
-        sourceType: input.source_type,
-        sourceColumnId: input.source_column_id,
-        additionalInstructions: input.additional_instructions,
-        extraSettings,
-      },
-      { versionOverride: '2026-10' },
-    );
+    const res = await this.mondayApi.request<ConfigureCategorizeAiColumnMutation>(configureCategorizeAiColumnMutation, {
+      boardId: boardId.toString(),
+      columnId: input.column_id,
+      sourceType: input.source_type,
+      sourceColumnId: input.source_column_id,
+      additionalInstructions: input.additional_instructions,
+      extraSettings,
+    });
     return {
-      content: { message: 'AI column configured successfully', column_id: res.configure_categorize_ai_column?.column_id },
+      content: {
+        message: 'AI column configured successfully',
+        column_id: res.configure_categorize_ai_column?.column_id,
+      },
     };
   }
 
@@ -217,20 +273,19 @@ RELATED TOOLS:
     extraSettings?: { run_backfill: boolean },
   ): Promise<ToolOutputType<never>> {
     this.validateSourceType(input, 'summarize');
-    const res = await this.mondayApi.request<ConfigureSummarizeAiColumnMutation>(
-      configureSummarizeAiColumnMutation,
-      {
-        boardId: boardId.toString(),
-        columnId: input.column_id,
-        sourceType: input.source_type,
-        sourceColumnId: input.source_column_id,
-        additionalInstructions: input.additional_instructions,
-        extraSettings,
-      },
-      { versionOverride: '2026-10' },
-    );
+    const res = await this.mondayApi.request<ConfigureSummarizeAiColumnMutation>(configureSummarizeAiColumnMutation, {
+      boardId: boardId.toString(),
+      columnId: input.column_id,
+      sourceType: input.source_type,
+      sourceColumnId: input.source_column_id,
+      additionalInstructions: input.additional_instructions,
+      extraSettings,
+    });
     return {
-      content: { message: 'AI column configured successfully', column_id: res.configure_summarize_ai_column?.column_id },
+      content: {
+        message: 'AI column configured successfully',
+        column_id: res.configure_summarize_ai_column?.column_id,
+      },
     };
   }
 
@@ -243,20 +298,19 @@ RELATED TOOLS:
     if (!input.target_language) {
       throw new Error('target_language is required for translate block');
     }
-    const res = await this.mondayApi.request<ConfigureTranslateAiColumnMutation>(
-      configureTranslateAiColumnMutation,
-      {
-        boardId: boardId.toString(),
-        columnId: input.column_id,
-        sourceType: input.source_type,
-        sourceColumnId: input.source_column_id,
-        targetLanguage: input.target_language,
-        extraSettings,
-      },
-      { versionOverride: '2026-10' },
-    );
+    const res = await this.mondayApi.request<ConfigureTranslateAiColumnMutation>(configureTranslateAiColumnMutation, {
+      boardId: boardId.toString(),
+      columnId: input.column_id,
+      sourceType: input.source_type,
+      sourceColumnId: input.source_column_id,
+      targetLanguage: input.target_language,
+      extraSettings,
+    });
     return {
-      content: { message: 'AI column configured successfully', column_id: res.configure_translate_ai_column?.column_id },
+      content: {
+        message: 'AI column configured successfully',
+        column_id: res.configure_translate_ai_column?.column_id,
+      },
     };
   }
 
@@ -278,10 +332,12 @@ RELATED TOOLS:
         refinementType: input.refinement_type,
         extraSettings,
       },
-      { versionOverride: '2026-10' },
     );
     return {
-      content: { message: 'AI column configured successfully', column_id: res.configure_improve_text_ai_column?.column_id },
+      content: {
+        message: 'AI column configured successfully',
+        column_id: res.configure_improve_text_ai_column?.column_id,
+      },
     };
   }
 
@@ -297,20 +353,16 @@ RELATED TOOLS:
     if (input.entity_type === 'custom' && !input.custom_instructions) {
       throw new Error('custom_instructions is required for extract block when entity_type is "custom"');
     }
-    const res = await this.mondayApi.request<ConfigureExtractAiColumnMutation>(
-      configureExtractAiColumnMutation,
-      {
-        boardId: boardId.toString(),
-        columnId: input.column_id,
-        sourceType: input.source_type,
-        sourceColumnId: input.source_column_id,
-        entityType: input.entity_type,
-        customInstructions: input.custom_instructions,
-        additionalInstructions: input.additional_instructions,
-        extraSettings,
-      },
-      { versionOverride: '2026-10' },
-    );
+    const res = await this.mondayApi.request<ConfigureExtractAiColumnMutation>(configureExtractAiColumnMutation, {
+      boardId: boardId.toString(),
+      columnId: input.column_id,
+      sourceType: input.source_type,
+      sourceColumnId: input.source_column_id,
+      entityType: input.entity_type,
+      customInstructions: input.custom_instructions,
+      additionalInstructions: input.additional_instructions,
+      extraSettings,
+    });
     return {
       content: { message: 'AI column configured successfully', column_id: res.configure_extract_ai_column?.column_id },
     };
@@ -324,18 +376,17 @@ RELATED TOOLS:
     if (!input.ai_query) {
       throw new Error('ai_query is required for open_block block');
     }
-    const res = await this.mondayApi.request<ConfigureOpenBlockAiColumnMutation>(
-      configureOpenBlockAiColumnMutation,
-      {
-        boardId: boardId.toString(),
-        columnId: input.column_id,
-        aiQuery: input.ai_query,
-        extraSettings,
-      },
-      { versionOverride: '2026-10' },
-    );
+    const res = await this.mondayApi.request<ConfigureOpenBlockAiColumnMutation>(configureOpenBlockAiColumnMutation, {
+      boardId: boardId.toString(),
+      columnId: input.column_id,
+      aiQuery: input.ai_query,
+      extraSettings,
+    });
     return {
-      content: { message: 'AI column configured successfully', column_id: res.configure_open_block_ai_column?.column_id },
+      content: {
+        message: 'AI column configured successfully',
+        column_id: res.configure_open_block_ai_column?.column_id,
+      },
     };
   }
 
@@ -353,18 +404,14 @@ RELATED TOOLS:
     if (!input.output_length) {
       throw new Error('output_length is required for write_me block');
     }
-    const res = await this.mondayApi.request<ConfigureWriteMeAiColumnMutation>(
-      configureWriteMeAiColumnMutation,
-      {
-        boardId: boardId.toString(),
-        columnId: input.column_id,
-        aiQuery: input.ai_query,
-        tone: input.tone,
-        length: input.output_length,
-        extraSettings,
-      },
-      { versionOverride: '2026-10' },
-    );
+    const res = await this.mondayApi.request<ConfigureWriteMeAiColumnMutation>(configureWriteMeAiColumnMutation, {
+      boardId: boardId.toString(),
+      columnId: input.column_id,
+      aiQuery: input.ai_query,
+      tone: input.tone,
+      length: input.output_length,
+      extraSettings,
+    });
     return {
       content: { message: 'AI column configured successfully', column_id: res.configure_write_me_ai_column?.column_id },
     };
@@ -389,10 +436,12 @@ RELATED TOOLS:
         groups: input.groups,
         extraSettings,
       },
-      { versionOverride: '2026-10' },
     );
     return {
-      content: { message: 'AI column configured successfully', column_id: res.configure_person_assignment_ai_column?.column_id },
+      content: {
+        message: 'AI column configured successfully',
+        column_id: res.configure_person_assignment_ai_column?.column_id,
+      },
     };
   }
 }
