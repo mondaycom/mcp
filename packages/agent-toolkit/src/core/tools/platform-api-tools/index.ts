@@ -1,5 +1,6 @@
 import { AllMondayApiTool } from './all-monday-api-tool';
 import { AllApiReadTool } from './all-api-read-tool';
+import { AllApiWriteTool } from './all-api-write-tool';
 import { BaseMondayApiToolConstructor } from './base-monday-api-tool';
 import { ChangeItemColumnValuesTool } from './change-item-column-values-tool';
 import { GetObjectSchemasTool } from './get-object-schemas-tool/get-object-schemas-tool';
@@ -115,6 +116,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteColumnTool,
   AllMondayApiTool,
   AllApiReadTool,
+  AllApiWriteTool,
   GetGraphQLSchemaTool,
   GetColumnTypeInfoTool,
   GetTypeDetailsTool,
@@ -186,6 +188,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
 
 export * from './all-monday-api-tool';
 export * from './all-api-read-tool';
+export * from './all-api-write-tool';
 export * from './get-object-schemas-tool/get-object-schemas-tool';
 export * from './create-object-schema-tool/create-object-schema-tool';
 export * from './update-object-schema-tool/update-object-schema-tool';
