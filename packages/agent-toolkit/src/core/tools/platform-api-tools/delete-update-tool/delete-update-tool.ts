@@ -20,7 +20,7 @@ export class DeleteUpdateTool extends BaseMondayApiTool<typeof deleteUpdateToolS
   });
 
   getDescription(): string {
-    return 'Delete an update (comment/post) from a monday.com item. Only updates created by the agent user can be deleted.';
+    return 'Delete an update (comment/post) from a monday.com item.';
   }
 
   getInputSchema(): typeof deleteUpdateToolSchema {
