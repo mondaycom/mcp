@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import {
-  UseTemplateStatus,
+  TemplateInstallationStatus,
   UseTemplateStatusQuery,
   UseTemplateStatusQueryVariables,
 } from '../../../monday-graphql/generated/graphql/graphql';
@@ -43,9 +43,7 @@ export class CheckTemplateStatusTool extends BaseMondayApiTool<typeof checkTempl
   ): Promise<ToolOutputType<never>> {
     const variables: UseTemplateStatusQueryVariables = { processId: input.processId };
 
-    const res = await this.mondayApi.request<UseTemplateStatusQuery>(useTemplateStatus, variables, {
-      versionOverride: '2026-10',
-    });
+    const res = await this.mondayApi.request<UseTemplateStatusQuery>(useTemplateStatus, variables);
     const status = res.template_installation_status;
 
     if (!status) {
@@ -56,33 +54,33 @@ export class CheckTemplateStatusTool extends BaseMondayApiTool<typeof checkTempl
         },
       };
     }
-    if (status.status === UseTemplateStatus.Complete) {
+    if (status.status === TemplateInstallationStatus.Complete) {
       return {
         content: {
-          status: UseTemplateStatus.Complete,
+          status: TemplateInstallationStatus.Complete,
           board_ids: status.board_ids,
           board_ids_map: status.board_ids_map,
           message: `Template application complete. ${status.board_ids.length} board(s) created.`,
         },
       };
     }
-    if (status.status === UseTemplateStatus.Failed) {
+    if (status.status === TemplateInstallationStatus.Failed) {
       return {
         content: {
-          status: UseTemplateStatus.Failed,
+          status: TemplateInstallationStatus.Failed,
           board_ids: [],
           board_ids_map: [],
           message: 'Template application failed. Please try again.',
         },
       };
     }
-    if (status.status === UseTemplateStatus.Pending || status.status === UseTemplateStatus.InProgress) {
+    if (status.status === TemplateInstallationStatus.Pending || status.status === TemplateInstallationStatus.InProgress) {
       return {
         content: {
           status: status.status,
           board_ids: [],
           board_ids_map: [],
-          message: `Template application ${status.status === UseTemplateStatus.InProgress ? 'in progress' : 'pending'}. Board IDs will be available once complete.`,
+          message: `Template application ${status.status === TemplateInstallationStatus.InProgress ? 'in progress' : 'pending'}. Board IDs will be available once complete.`,
         },
       };
     }

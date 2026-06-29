@@ -64,7 +64,7 @@ const QuestionCompleteFragment = gql`
     ...QuestionBasic
     ...QuestionOptions
     ...QuestionSettings
-    showIfRules
+    show_if_rules
   }
   ${QuestionBasicFragment}
   ${QuestionOptionsFragment}
@@ -174,7 +174,6 @@ const FormTagFragment = gql`
   fragment FormTag on FormTag {
     id
     name
-    value
     columnId
   }
 `;
@@ -355,12 +354,6 @@ export const createFormTag = gql`
     }
   }
   ${FormTagFragment}
-`;
-
-export const updateFormTag = gql`
-  mutation updateFormTag($formToken: String!, $tagId: String!, $tag: UpdateFormTagInput!) {
-    update_form_tag(formToken: $formToken, tagId: $tagId, tag: $tag)
-  }
 `;
 
 export const updateFormAppearance = gql`

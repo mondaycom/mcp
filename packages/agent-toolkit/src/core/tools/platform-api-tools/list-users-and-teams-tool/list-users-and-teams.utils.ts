@@ -2,27 +2,31 @@ import { FormattedResponse, isExtendedTeam, UserTeam } from './types';
 
 // Configuration for optional team member fields: [fieldName, displayLabel]
 const optionalTeamMemberFields: Array<[string, string]> = [
-  ['is_pending', 'Pending'],
-  ['is_verified', 'Verified'],
-  ['is_view_only', 'View Only'],
-  ['join_date', 'Join Date'],
+  ['is_email_confirmed', 'Email Confirmed'],
+  ['became_active_at', 'Became Active At'],
   ['last_activity', 'Last Activity'],
   ['location', 'Location'],
   ['mobile_phone', 'Mobile Phone'],
   ['phone', 'Phone'],
-  ['photo_thumb', 'Photo Thumb'],
   ['time_zone_identifier', 'Timezone'],
   ['utc_hours_diff', 'UTC Hours Diff'],
 ];
 
 // For optional fields - returns array of formatted strings
 function formatOptionalUserFields(user: Record<string, any>, prefix = ''): string[] {
-  return optionalTeamMemberFields
+  const fields = optionalTeamMemberFields
     .filter(([fieldName]) => {
       const value = user[fieldName];
       return value !== undefined && value !== null;
     })
     .map(([fieldName, displayLabel]) => `${prefix}${displayLabel}: ${user[fieldName]}`);
+
+  const photoThumb = user.photo_url?.thumb;
+  if (photoThumb) {
+    fields.push(`${prefix}Photo Thumb: ${photoThumb}`);
+  }
+
+  return fields;
 }
 
 export const formatUsersAndTeams = (data: FormattedResponse): string => {
@@ -37,9 +41,8 @@ export const formatUsersAndTeams = (data: FormattedResponse): string => {
         sections.push(`  Name: ${user.name}`);
         sections.push(`  Email: ${user.email}`);
         sections.push(`  Title: ${user.title || 'N/A'}`);
-        sections.push(`  Enabled: ${user.enabled}`);
-        sections.push(`  Admin: ${user.is_admin || false}`);
-        sections.push(`  Guest: ${user.is_guest || false}`);
+        sections.push(`  Status: ${user.status || 'N/A'}`);
+        sections.push(`  Kind: ${user.kind || 'N/A'}`);
         // Add optional fields that exist and have values
         sections.push(...formatOptionalUserFields(user, '  '));
 
@@ -88,8 +91,7 @@ export const formatUsersAndTeams = (data: FormattedResponse): string => {
                   `Name: ${user.name}`,
                   `Email: ${user.email}`,
                   `Title: ${user.title || 'N/A'}`,
-                  `Admin: ${user.is_admin || false}`,
-                  `Guest: ${user.is_guest || false}`,
+                  `Kind: ${user.kind || 'N/A'}`,
                   // Add all optional fields that exist and have values
                   ...formatOptionalUserFields(user),
                 ];

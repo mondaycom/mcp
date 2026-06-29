@@ -57,11 +57,11 @@ describe('ListAutomationsTool', () => {
 
     await callToolByNameRawAsync('list_automations', { boardId: '1234567890' });
 
-    expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-      expect.stringContaining('board_automations'),
-      { boardIds: ['1234567890'], limit: 100, includeLegacy: true },
-      expect.objectContaining({ versionOverride: '2026-10' }),
-    );
+    expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('board_automations'), {
+      boardIds: ['1234567890'],
+      limit: 100,
+      includeLegacy: true,
+    });
     expect(mocks.getMockRequest().mock.calls[0][0]).not.toContain('HostType');
   });
 
@@ -79,11 +79,12 @@ describe('ListAutomationsTool', () => {
 
     await callToolByNameRawAsync('list_automations', { boardId: '1234567890', cursor: '50', limit: 50 });
 
-    expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-      expect.stringContaining('board_automations'),
-      { boardIds: ['1234567890'], cursor: '50', limit: 50, includeLegacy: false },
-      expect.objectContaining({ versionOverride: '2026-10' }),
-    );
+    expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('board_automations'), {
+      boardIds: ['1234567890'],
+      cursor: '50',
+      limit: 50,
+      includeLegacy: false,
+    });
   });
 
   it('should default workflows to an empty array when board_automations items are null', async () => {
@@ -116,7 +117,6 @@ describe('ListAutomationsTool', () => {
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
       expect.stringContaining('board_automations'),
       expect.objectContaining({ includeLegacy: false }),
-      expect.anything(),
     );
   });
 
