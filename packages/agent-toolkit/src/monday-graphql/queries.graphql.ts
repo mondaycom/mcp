@@ -1,5 +1,13 @@
 import { gql } from 'graphql-request';
 
+export const deleteUpdate = gql`
+  mutation DeleteUpdate($id: ID!) {
+    delete_update(id: $id) {
+      id
+    }
+  }
+`;
+
 export const deleteItem = gql`
   mutation DeleteItem($id: ID!) {
     delete_item(item_id: $id) {
