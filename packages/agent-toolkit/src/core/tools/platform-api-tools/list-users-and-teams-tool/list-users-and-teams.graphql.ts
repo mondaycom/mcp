@@ -12,17 +12,14 @@ const userDetailsFragment = gql`
     name
     title
     email
-    enabled
+    status
 
     # User Status & Permissions
-    is_admin
-    is_guest
-    is_pending
-    is_verified
-    is_view_only
+    kind
+    is_email_confirmed
 
     # Timestamps
-    join_date
+    became_active_at
     last_activity
 
     # Contact Information
@@ -31,7 +28,9 @@ const userDetailsFragment = gql`
     phone
 
     #Photo url
-    photo_thumb
+    photo_url {
+      thumb
+    }
 
     #Timezone details
     time_zone_identifier
@@ -82,17 +81,17 @@ const teamMemberFragment = gql`
     name
     email
     title
-    is_admin
-    is_guest
-    is_pending
-    is_verified
-    is_view_only
-    join_date
+    kind
+    status
+    is_email_confirmed
+    became_active_at
     last_activity
     location
     mobile_phone
     phone
-    photo_thumb
+    photo_url {
+      thumb
+    }
     time_zone_identifier
     utc_hours_diff
   }
@@ -105,8 +104,7 @@ const teamMemberSimplifiedFragment = gql`
     name
     email
     title
-    is_admin
-    is_guest
+    kind
   }
 `;
 
@@ -247,10 +245,11 @@ export const getCurrentUser = gql`
       id
       name
       title
-      enabled
-      is_admin
-      is_guest
-      photo_thumb
+      status
+      kind
+      photo_url {
+        thumb
+      }
     }
   }
 `;

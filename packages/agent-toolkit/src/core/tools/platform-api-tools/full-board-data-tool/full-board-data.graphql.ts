@@ -50,7 +50,9 @@ export const getUsersByIdsQuery = gql`
     users(ids: $userIds) {
       id
       name
-      photo_tiny
+      photo_url {
+        tiny
+      }
     }
   }
 `;

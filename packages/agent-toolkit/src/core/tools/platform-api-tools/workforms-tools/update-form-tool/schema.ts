@@ -9,7 +9,6 @@ export enum FormActions {
   setFormPassword = 'setFormPassword',
   createTag = 'createTag',
   deleteTag = 'deleteTag',
-  updateTag = 'updateTag',
   updateAppearance = 'updateAppearance',
   updateAccessibility = 'updateAccessibility',
   updateFeatures = 'updateFeatures',
@@ -20,7 +19,6 @@ export enum FormActions {
 const tagSchema = z.object({
   id: z.string().describe(GraphQLDescriptions.form.properties.tags.id).optional(),
   name: z.string().describe(GraphQLDescriptions.form.properties.tags.name).optional(),
-  value: z.string().describe(GraphQLDescriptions.form.properties.tags.value).optional(),
   columnId: z.string().describe(GraphQLDescriptions.form.properties.tags.columnId).optional(),
 });
 

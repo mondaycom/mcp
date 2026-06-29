@@ -226,6 +226,16 @@ limit: Int,   "Number of events to skip for pagination"
 offset: Int,   "Field to order by (default: createdAt)"
 order_by: String,   "Order direction: ASC or DESC (default: DESC)"
 order_direction: String): EventsExport
+  "Get all dependency predecessors for a specific item, including dependency type and lag per edge"
+  item_dependency(  "The ID of the board containing the item"
+board_id: ID!,   "The ID of the item to get predecessors for"
+item_id: ID!): ItemDependency
+  "Get all dependency predecessors for every item on a board, paginated. Each item includes its predecessor edges with dependency type and lag."
+  board_dependencies(  "The ID of the board to get dependencies for"
+board_id: ID!,   "Maximum number of items to return per page (default: 25, max: 500)"
+limit: Int = 25,   "Page number, starting from 1"
+page: Int = 1,   "Whether to include items that have no predecessor dependencies (default: true)"
+include_items_without_predecessors: Boolean = true): BoardDependencies
   "Retrieves blocks for the published version of a specific article if the requesting user has permission to access it. Returns paginated blocks in their position order. Will return an error if the user lacks the required permissions."
   article_blocks(  "The unique identifier of the article object. Can be used to reference this specific object in queries and mutations. This ID can be found in the article's URL."
 object_id: ID!,   "Maximum number of blocks to return per article. Defaults to 25."
@@ -257,6 +267,46 @@ query: String!,   "The maximum number of results to return."
 limit: Int = 5): KnowledgeBaseAnswer
   "Get all personal list items by list ID"
   favorites: [GraphqlHierarchyObjectItem!]
+  "Get board automations. Filter by ids (specific automation IDs) or board_ids (up to 1 board). Omit all filters to get all account automations."
+  board_automations(  "Automation IDs to fetch (max 100)"
+ids: [ID!],   "Board IDs to filter by (max 1)"
+board_ids: [ID!],   "Max number of automations to return"
+limit: Int,   "Cursor from a previous page for pagination"
+cursor: String): AutomationsPage!
+  "Search analytics events by identifier"
+  analytics_events(  "The identifier to search for"
+identifier: String!,   "Filter by campaign ID"
+campaign_id: ID,   "Filter by event type"
+event_type: CampaignsAnalyticsEventKind,   "Maximum number of events to return (max 1000)"
+limit: Int!,   "Pagination token for the next page"
+next_token: String): CampaignsAnalyticsEventsResponse
+  "List email campaigns for the current account with optional filtering and sorting"
+  campaigns(  "Maximum number of campaigns to return (max 200)"
+limit: Int,   "Filter by campaign status(es)"
+status: [CampaignsStatusKind!],   "Filter by campaign name (partial match)"
+name: String,   "Filter campaigns sent after this date"
+sent_after: Date,   "Filter campaigns sent before this date"
+sent_before: Date,   "Field to sort by"
+sort_field: CampaignsSortField,   "Sort direction (defaults to DESC)"
+sort_order: CampaignsSortOrder): [CampaignsEmailCampaign!]
+  "Get a single email campaign by ID"
+  campaign(id: ID!): CampaignsEmailCampaign
+  "Get the brand kit for the current account"
+  brand_kit: CampaignsBrandKit
+  "List market insights for the current account"
+  insights(  "Maximum number of insights to return (max 200)"
+limit: Int): [CampaignsInsight!]
+  "Get a single market insight by ID"
+  insight(id: ID!): CampaignsInsight
+  "List audience segments for the current account"
+  segments(  "Maximum number of segments to return (max 200)"
+limit: Int): [CampaignsSegment!]
+  "Get a single audience segment by ID"
+  segment(id: ID!): CampaignsSegment
+  "Get marketing channels settings for the current account"
+  settings: CampaignsSettings
+  "Usage metrics for the current account"
+  usage: CampaignsUsage
   marketplace_app_discounts(  "The id of an app"
 app_id: ID!): [MarketplaceAppDiscount!]!
   app_subscriptions(  "The ID of an app"
@@ -374,6 +424,9 @@ ids: [ID!]): [Tag]
   "Get a collection of teams."
   teams(  "A list of teams unique identifiers."
 ids: [ID!]): [Team]
+  "Get the status of a use_template async operation. Returns null if the process_id is invalid, expired, or unauthorized."
+  template_installation_status(  "The process_id returned by use_template."
+process_id: ID!): TemplateInstallationStatusResult
   "Get users."
   users(  "Filter by user IDs."
 ids: [ID!],   "Filter by user name. Uses fuzzy search unless combined with `user_kind`, `kind`, or `emails` args, then uses exact search."
@@ -482,43 +535,6 @@ behaviors: [String!]): [UserConfig!]
   "Fetch a form by its token. The returned form includes all the details of the form such as its settings, questions, title, etc. Use this endpoint when you need to retrieve complete form data for display or processing. Requires that the requesting user has read access to the associated board."
   form(  "The unique identifier token for the form. This token is used to securely access the form and can be found in the form URL."
 formToken: String!): ResponseForm
-  "Get the status of a use_template async operation. Returns null if the process_id is invalid, expired, or unauthorized."
-  template_installation_status(
-    "The process_id returned by use_template."
-    process_id: ID!
-  ): UseTemplateStatusType
-}
-
-"Lifecycle status of a use_template async operation."
-enum UseTemplateStatus {
-  "Job queued, not yet started."
-  PENDING
-  "Boards being created."
-  IN_PROGRESS
-  "All boards fully ready."
-  COMPLETE
-  "Duplication failed; any partial boards were rolled back."
-  FAILED
-}
-
-"Status of a use_template async operation."
-type UseTemplateStatusType {
-  process_id: String!
-  status: UseTemplateStatus!
-  is_complete: Boolean!
-  is_failed: Boolean!
-  "Board IDs are populated incrementally during the metadata phase. Boards exist as empty shells until status is COMPLETE. Safe to store these IDs early, but do not read or write board content until COMPLETE."
-  board_ids: [ID!]!
-  "Mapping of each source (template) board ID to the newly created board ID."
-  board_ids_map: [BoardIdMapping!]!
-}
-
-"Mapping of a source (template) board ID to the newly created board ID."
-type BoardIdMapping {
-  "The source (template) board ID."
-  source_board_id: ID!
-  "The newly created board ID."
-  created_board_id: ID!
 }
 
 "The `Int` scalar type represents non-fractional signed whole numeric values. Int can represent values between -(2^31) and 2^31 - 1."
@@ -551,6 +567,8 @@ type ActivityLog {
   data: String
   "The timestamp when the activity log entry was created"
   created_at: String
+  "Groups all activity log entries belonging to the same logical session (e.g. agent conversation)"
+  correlation_id: ID
 }
 
 "A monday.com user."
@@ -561,7 +579,11 @@ type User {
   activity_logs(from: String, to: String, board_ids: [ID!], limit: Int,   """
   Filter by event types (e.g. "create_pulse", "delete_pulse")
   """
-event_types: [String!],   "Cursor for fetching the next page, obtained from a previous response"
+event_types: [String!],   "Filter by correlation IDs to retrieve all events belonging to the same logical session"
+correlation_ids: [ID!],   """
+  Filter by entity types (e.g. "pulse" (item), "board", "update", etc.)
+  """
+entities: [String!],   "Cursor for fetching the next page, obtained from a previous response"
 cursor: String): UserActivityLogsPage
   "The department the user is a member of (if any)"
   department: Department
@@ -583,22 +605,6 @@ cursor: String): UserActivityLogsPage
   custom_field_values: [CustomFieldValue]
   "The user's email address."
   email: String!
-  "Is the user enabled or not."
-  enabled: Boolean! @deprecated(reason: "This field is deprecated. Please use status instead.")
-  "The token of the user for email to board."
-  encrypt_api_token: String @deprecated(reason: "This field is deprecated and will be removed in later versions.")
-  "Is the user an account admin."
-  is_admin: Boolean @deprecated(reason: "This field is deprecated. Please use kind instead.")
-  "Is the user a guest or not."
-  is_guest: Boolean @deprecated(reason: "This field is deprecated. Please use kind instead.")
-  "Is the user a pending user"
-  is_pending: Boolean @deprecated(reason: "This field is deprecated. Please use status instead.")
-  "Is user verified his email."
-  is_verified: Boolean @deprecated(reason: "This field is deprecated. Please use is_email_confirmed instead.")
-  "Is the user a view only user or not."
-  is_view_only: Boolean @deprecated(reason: "This field is deprecated. Please use kind instead.")
-  "The date the user joined the account."
-  join_date: Date @deprecated(reason: "This field is deprecated. Please use became_active_at instead.")
   "Last date & time when user was active"
   last_activity: Date
   "The user's location."
@@ -611,18 +617,6 @@ cursor: String): UserActivityLogsPage
   out_of_office: OutOfOffice
   "The user's phone number."
   phone: String
-  "The user's photo in the original size."
-  photo_original: String @deprecated(reason: "This field is deprecated. Please use photo_url.original instead.")
-  "The user's photo in small size (150x150)."
-  photo_small: String @deprecated(reason: "This field is deprecated. Please use photo_url.small instead.")
-  "The user's photo in thumbnail size (100x100)."
-  photo_thumb: String @deprecated(reason: "This field is deprecated. Please use photo_url.thumb instead.")
-  "The user's photo in small thumbnail size (50x50)."
-  photo_thumb_small: String @deprecated(reason: "This field is deprecated. Please use photo_url.thumb_small instead.")
-  "The user's photo in tiny size (30x30)."
-  photo_tiny: String @deprecated(reason: "This field is deprecated. Please use photo_url.tiny instead.")
-  "The product to which the user signed up to first."
-  sign_up_product_kind: String @deprecated(reason: "This field is deprecated and will be removed in later versions.")
   "The teams the user is a member in."
   teams(  "A list of teams unique identifiers."
 ids: [ID!]): [Team]
@@ -675,6 +669,94 @@ type Mutation {
   execute_integration_block(  "The ID of the integration block instance to execute"
 block_instance_id: ID!,   "The field values to pass to the integration block"
 inbound_field_values: JSON!): IntegrationExecutionResult
+  "Configures a column to categorize items based on content analysis."
+  configure_categorize_ai_column(  "The ID of the board containing the column."
+board_id: ID!,   "The ID of the column to configure with AI."
+column_id: ID!,   "Where the AI reads its input data from."
+source_type: AiColumnSource!,   """
+  The ID of the source column. Required when source_type is "column".
+  """
+source_column_id: ID,   "Optional settings controlling backfill behavior."
+extra_settings: AiColumnExtraSettingsInput,   "Custom categorization rules or non-standard scales. Max 3000 characters."
+additional_instructions: String): AiColumnResult
+  "Configures a column to generate concise summaries of input text."
+  configure_summarize_ai_column(  "The ID of the board containing the column."
+board_id: ID!,   "The ID of the column to configure with AI."
+column_id: ID!,   "Where the AI reads its input data from."
+source_type: AiColumnSource!,   """
+  The ID of the source column. Required when source_type is "column".
+  """
+source_column_id: ID,   "Optional settings controlling backfill behavior."
+extra_settings: AiColumnExtraSettingsInput,   "Format requirements or focus areas. Max 3000 characters."
+additional_instructions: String): AiColumnResult
+  "Configures a column to translate text to a target language."
+  configure_translate_ai_column(  "The ID of the board containing the column."
+board_id: ID!,   "The ID of the column to configure with AI."
+column_id: ID!,   "Where the AI reads its input data from."
+source_type: AiColumnSource!,   """
+  The ID of the source column. Required when source_type is "column".
+  """
+source_column_id: ID,   "Optional settings controlling backfill behavior."
+extra_settings: AiColumnExtraSettingsInput,   "The language to translate text into."
+target_language: AiColumnLanguage!): AiColumnResult
+  "Configures a column to rewrite or improve text quality."
+  configure_improve_text_ai_column(  "The ID of the board containing the column."
+board_id: ID!,   "The ID of the column to configure with AI."
+column_id: ID!,   "Where the AI reads its input data from."
+source_type: AiColumnSource!,   """
+  The ID of the source column. Required when source_type is "column".
+  """
+source_column_id: ID,   "Optional settings controlling backfill behavior."
+extra_settings: AiColumnExtraSettingsInput,   "The desired writing style."
+tone: AiColumnTone,   "The desired output length relative to input."
+length: AiColumnImproverLength,   "The type of improvement to apply."
+refinement_type: AiColumnRefinementLevel): AiColumnResult
+  "Configures a column to extract structured information from text."
+  configure_extract_ai_column(  "The ID of the board containing the column."
+board_id: ID!,   "The ID of the column to configure with AI."
+column_id: ID!,   "Where the AI reads its input data from."
+source_type: AiColumnSource!,   """
+  The ID of the source column. Required when source_type is "column".
+  """
+source_column_id: ID,   "Optional settings controlling backfill behavior."
+extra_settings: AiColumnExtraSettingsInput,   """
+  The type of entity to extract. Use "custom" for non-preset entities.
+  """
+entity_type: AiColumnEntity!,   """
+  Required when entity_type is "custom". A short descriptive phrase of what to extract. Max 3000 characters.
+  """
+custom_instructions: String,   """
+  Contextual qualifiers (e.g., "of the boss", "from the signature"). Max 3000 characters.
+  """
+additional_instructions: String): AiColumnResult
+  "Configures a column with a custom AI prompt for complex or flexible operations."
+  configure_open_block_ai_column(  "The ID of the board containing the column."
+board_id: ID!,   "The ID of the column to configure with AI."
+column_id: ID!,   "Optional settings controlling backfill behavior."
+extra_settings: AiColumnExtraSettingsInput,   "The natural-language instruction for the AI. Reference columns using {pulse.column_id} syntax (e.g., {pulse.text_col}). Use {pulse.name} for item name, {pulse.subitem.column_id} for subitems. Max 3000 characters."
+ai_query: String!): AiColumnResult
+  "Configures a column to generate new text content from a prompt."
+  configure_write_me_ai_column(  "The ID of the board containing the column."
+board_id: ID!,   "The ID of the column to configure with AI."
+column_id: ID!,   "Optional settings controlling backfill behavior."
+extra_settings: AiColumnExtraSettingsInput,   "The prompt guiding content generation. Reference columns using {pulse.column_id} syntax (e.g., {pulse.text_col}). Use {pulse.name} for item name, {pulse.subitem.column_id} for subitems. Max 3000 characters."
+ai_query: String!,   "The desired writing tone/style."
+tone: AiColumnTone!,   "The approximate desired output length."
+length: AiColumnOutputLength!): AiColumnResult
+  "Configures a column to assign a person to items based on context."
+  configure_person_assignment_ai_column(  "The ID of the board containing the column."
+board_id: ID!,   "The ID of the column to configure with AI."
+column_id: ID!,   "Where the AI reads its input data from."
+source_type: AiColumnSource!,   """
+  The ID of the source column. Required when source_type is "column".
+  """
+source_column_id: ID,   "Optional settings controlling backfill behavior."
+extra_settings: AiColumnExtraSettingsInput,   "People or teams available for assignment."
+groups: [AiColumnPersonGroupInput!]!): AiColumnResult
+  "Removes AI configuration from a column, deleting all associated automation recipes."
+  remove_ai_from_column(  "The ID of the board containing the column."
+board_id: ID!,   "The ID of the column to remove AI from."
+column_id: ID!): AiColumnRemoveResult
   "Create a new table view"
   create_view_table(  "The ID of the board"
 board_id: ID!,   "The name of the view"
@@ -1051,6 +1133,10 @@ input: DeleteFavoriteInput!): DeleteFavoriteInputResultType
   "Update the position of an object in favorites"
   update_favorite_position(  "The input for updating the favorite object position"
 input: UpdateObjectHierarchyPositionInput!): UpdateFavoriteResultType
+  "Delete a board automation by ID."
+  delete_board_automation(  "The ID of the automation to delete"
+id: ID!,   "The board ID the automation belongs to"
+board_id: ID!): BoardAutomationDeleteResult!
   "Create a marketplace app discount"
   create_marketplace_app_discount(  "The id of an app"
 app_id: ID!,   "Slug of an account"
@@ -1120,6 +1206,10 @@ input: InstallAppInput!): InstallAppResponse
   "Uninstalls an app from the current account. Requires account admin permission."
   uninstall_app(  "The app identifier (numeric ID or slug)"
 app_identifier: ID!): AppDeletionResponse
+  "Promotes the latest draft app version of an app to live. Promotion is asynchronous — poll the returned version's status field (via the app query) until it transitions to LIVE. Only app collaborators can perform this action."
+  promote_app(  "The identifier of the app whose draft version should be promoted"
+app_id: ID!,   "Optional: the specific app version to promote. Defaults to the latest draft version"
+app_version_id: ID): DeveloperAppVersion
   "Add a file to a column value."
   add_file_to_column(  "The column to add the file to."
 column_id: String!,   "The file to upload."
@@ -1530,13 +1620,18 @@ relations: [ObjectRelationInput!]!): [ObjectRelation!]
   delete_object_relation(  "ID of the source object"
 source_object_id: ID!,   "ID of the relation to delete. If not provided, deletes all relations for the source object."
 relation_id: ID): Int
+  "Run a prompt against an AI model and return the completion response. For more advanced capabilities, use Models REST API."
+  run_prompt(  "The user prompt to send to the model."
+prompt: String!,   "Configuration for the AI completion."
+config: RunPromptConfigInput): RunPromptResult
   "Connect an existing project to a portfolio. When a callback_url is provided the mutation returns immediately with a process_id, and the result is POSTed to that URL once the operation completes. The callback payload is: { is_success: boolean, process_id: string, portfolio_item_id?: string }."
   connect_project_to_portfolio(  "The ID of the project to connect"
 projectBoardId: ID!,   "The ID of the portfolio to connect to"
 portfolioBoardId: ID!,   "Optional URL to receive a POST request when the operation completes. Enables async mode: the mutation returns immediately with a process_id."
 callback_url: String): ConnectProjectResult
-  "Create a new portfolio"
-  create_portfolio(boardName: String!, boardPrivacy: String!, destinationWorkspaceId: Int): CreatePortfolioResult
+  "Create a new portfolio. When a callback_url is provided the mutation returns immediately with a process_id, and the portfolio_id is POSTed to that URL once the portfolio is actually created. The callback payload is: { is_success: boolean, process_id: string, portfolio_id?: number }."
+  create_portfolio(boardName: String!, boardPrivacy: String!, destinationWorkspaceId: Int,   "Optional URL to receive a POST request when the portfolio is created. Enables async mode: the mutation returns immediately with a process_id; the portfolio_id is delivered via the callback."
+callback_url: String): CreatePortfolioResult
   "Update attributes (Job Role, Skills, or Location) for multiple resources in the directory"
   update_directory_resources_attributes(  "The attribute type to update (JOB_ROLE, SKILLS, or LOCATION)"
 attribute: DirectoryResourceAttribute!,   "The values of the attribute to update"
@@ -1587,7 +1682,7 @@ service_user_id: ID!): Boolean
   "Revokes all existing tokens and generates a new API token for a service user."
   regenerate_service_user_token(  "The ID of the service user whose token to regenerate."
 service_user_id: ID!): String
-  "Creates a new service user with a read-only API token."
+  "Creates a new service user."
   create_service_user(  "Display name for the service user."
 name: String!,   "Optional title/description for the service user."
 title: String): CreateServiceUserResult
@@ -1654,11 +1749,6 @@ formToken: String!): FormShortenedLink
   create_form_tag(  "The unique identifier token for the form. Required for all form-specific operations."
 formToken: String!,   "The tag data to create"
 tag: CreateFormTagInput!): FormTag
-  "Update an existing tag in a form"
-  update_form_tag(  "The unique identifier token for the form. Required for all form-specific operations."
-formToken: String!,   "The unique identifier for the tag"
-tagId: String!,   "The tag data to create"
-tag: UpdateFormTagInput!): Boolean @deprecated(reason: "Updating tag values is no longer supported after version 2026-07.")
   "Delete a tag from a form"
   delete_form_tag(  "The unique identifier token for the form. Required for all form-specific operations."
 formToken: String!,   "The unique identifier for the tag"
@@ -1684,11 +1774,8 @@ input: SetFormPasswordInput!): ResponseForm
 "A date."
 scalar Date
 
-"Result of executing an integration block"
-type IntegrationExecutionResult {
-  "The output fields returned by the integration block execution"
-  output_fields: JSON
-}
+"A file"
+scalar File
 
 "An ISO 8601-encoded datetime (e.g., 2024-04-09T13:45:30Z)"
 scalar ISO8601DateTime
@@ -1696,8 +1783,179 @@ scalar ISO8601DateTime
 "A JSON formatted string."
 scalar JSON
 
-"A file"
-scalar File
+"Result of executing an integration block"
+type IntegrationExecutionResult {
+  "The output fields returned by the integration block execution"
+  output_fields: JSON
+}
+
+"Type of entity to extract from text."
+enum AiColumnEntity {
+  "Extract email addresses."
+  email_address
+  "Extract first names."
+  first_name
+  "Extract last names."
+  last_name
+  "Extract phone numbers."
+  phone_number
+  "Extract company names."
+  company_name
+  "Extract domain names."
+  domain_name
+  "Extract URLs."
+  url
+  "Extract dates."
+  date
+  "Extract times."
+  time
+  "Extract years."
+  year
+  "Extract a custom entity defined by custom_instructions."
+  custom
+}
+
+"Optional settings controlling backfill behavior when configuring an AI column."
+input AiColumnExtraSettingsInput {
+  "Whether to immediately apply the AI automation to existing items. Defaults to true."
+  run_backfill: Boolean
+}
+
+"Desired output length relative to the input text."
+enum AiColumnImproverLength {
+  "Keep approximately the same length as input."
+  same
+  "Make the output shorter than the input."
+  shorter
+  "Make the output longer than the input."
+  longer
+}
+
+"Target language for translation."
+enum AiColumnLanguage {
+  "English."
+  english
+  "Spanish."
+  spanish
+  "French."
+  french
+  "German."
+  german
+  "Hebrew."
+  hebrew
+  "Chinese."
+  chinese
+  "Korean."
+  korean
+  "Arabic."
+  arabic
+  "Bengali."
+  bengali
+  "Danish."
+  danish
+  "Dutch."
+  dutch
+  "Hindi."
+  hindi
+  "Indonesian."
+  indonesian
+  "Italian."
+  italian
+  "Japanese."
+  japanese
+  "Norwegian."
+  norwegian
+  "Polish."
+  polish
+  "Portuguese."
+  portuguese
+  "Russian."
+  russian
+  "Swedish."
+  swedish
+  "Thai."
+  thai
+  "Turkish."
+  turkish
+  "Vietnamese."
+  vietnamese
+}
+
+"Approximate desired length of generated text."
+enum AiColumnOutputLength {
+  "Output approximately one sentence."
+  sentence
+  "Output approximately one paragraph."
+  paragraph
+  "Output a brief, concise response."
+  brief
+  "Output a detailed, in-depth response."
+  in_depth
+}
+
+"A group of people available for AI-based assignment."
+input AiColumnPersonGroupInput {
+  "Array of user IDs in this group."
+  user_ids: [Int!]!
+  "Description of this group (e.g., role, team name, or assignment criteria)."
+  description: String!
+}
+
+"Level of text refinement to apply."
+enum AiColumnRefinementLevel {
+  "Apply only minor corrections and improvements."
+  minimal_changes
+  "Restructure and improve while preserving intent."
+  moderate_changes
+  "Substantially rewrite with creative freedom."
+  high_creativity
+}
+
+"The result of removing AI configuration from a column."
+type AiColumnRemoveResult {
+  "The ID of the column that had AI removed."
+  column_id: ID!
+  "Whether the AI configuration was successfully removed."
+  success: Boolean!
+}
+
+"The result of configuring AI on a column."
+type AiColumnResult {
+  "The ID of the column that was configured."
+  column_id: ID!
+}
+
+"The data source for AI column processing."
+enum AiColumnSource {
+  "Use the item name as the AI input source."
+  item_name
+  "Use the item update thread as the AI input source."
+  thread
+  "Use a specific column value as the AI input source."
+  column
+  "Use emails and activities associated with the item as the AI input source."
+  emails_and_activities
+}
+
+"Writing tone/style for AI text generation."
+enum AiColumnTone {
+  "Warm, understanding, and emotionally aware tone."
+  empathic
+  "Persuasive, marketing-oriented tone."
+  promotional
+  "Assertive and authoritative tone."
+  confident
+  "Formal, business-appropriate tone."
+  professional
+  "Conversational, everyday tone."
+  natural
+  "Relaxed, informal tone."
+  casual
+  "Approachable, personable tone."
+  friendly
+  "Preserve the same tone as the input text."
+  same
+}
 
 type AuditEventCatalogueEntry {
   name: String
@@ -1869,6 +2127,8 @@ type BlockEvent {
   current_iteration: Int
   "Total number of iterations configured for the loop"
   max_iterations: Int
+  "Whether the block was executed as part of a test run"
+  is_test_run: Boolean
 }
 
 "A page of block events"
@@ -1957,6 +2217,8 @@ type TriggerEvent {
   hostInstanceId: String
   "Original creator feature reference ID"
   creatorAppFeatureReferenceId: String
+  "Whether the trigger was fired as part of a test run"
+  is_test_run: Boolean
 }
 
 "Filters for querying trigger events"
@@ -2571,6 +2833,18 @@ enum CustomActivityIcon {
   UTENCILS
 }
 
+"Email metadata for email-type timeline items."
+type EmailTimelineItemMetadata {
+  "The email sender address."
+  from: String
+  "List of recipient email addresses."
+  to: [String!]
+  "List of CC email addresses."
+  cc: [String!]
+  "List of BCC email addresses."
+  bcc: [String!]
+}
+
 type TimelineItem {
   id: ID
   type: String
@@ -2588,7 +2862,12 @@ type TimelineItem {
   content: String
   "The creation date of the timeline item."
   created_at: Date!
+  "Type-specific metadata for the timeline item. Populated based on the timeline item type."
+  metadata: TimelineItemMetadata
 }
+
+"Type-specific metadata union for timeline items."
+union TimelineItemMetadata = EmailTimelineItemMetadata
 
 type TimelineItemsPage {
   "The timeline items in the current page"
@@ -3352,6 +3631,14 @@ input UpdateDepartmentOptionsInput {
   reserved_seats: Int
 }
 
+"Paginated list of items with their dependency predecessor edges for a board"
+type BoardDependencies {
+  "List of items with their predecessor edges for the current page"
+  items: [ItemDependency!]
+  "Total number of items across all pages"
+  total_count: Int
+}
+
 "The complete graph export for a board"
 type BoardGraphExport {
   "The ID of the board"
@@ -3396,6 +3683,16 @@ type DependencyColumnConfigResult {
   board_id: ID
   "Array of dependency column configurations"
   dependency_columns: [DependencyColumnConfig!]
+}
+
+"A dependency edge representing a predecessor relationship between two items"
+type DependencyEdge {
+  "The ID of the predecessor item"
+  source_item_id: ID
+  "The type of dependency relationship (FS, SS, FF, SF)"
+  dependency_type: DependencyRelation
+  "The lag in days between the predecessor and dependent item (can be negative)"
+  lag: Int
 }
 
 "Input type for updating a single pulse dependency value"
@@ -3456,6 +3753,14 @@ type EventsExport {
   limit: Int
   "The offset from which events are returned"
   offset: Int
+}
+
+"An item and all its dependency predecessor edges"
+type ItemDependency {
+  "The ID of the item"
+  item_id: ID
+  "List of predecessor dependency edges for this item"
+  predecessors: [DependencyEdge!]
 }
 
 "Metadata wrapper containing payload information for dependency configuration"
@@ -4358,6 +4663,486 @@ input UpdateObjectHierarchyPositionInput {
   newPosition: ObjectDynamicPositionInput
 }
 
+"A page of automations with cursor for pagination"
+type AutomationsPage {
+  "Opaque cursor for fetching the next page. Null if no more results."
+  cursor: String
+  "The automations in this page"
+  items: [BoardAutomation!]
+  "Read-only automations on this board that were set up in an older way. These ARE automations on the user's board — always list and describe them together with `items`, never omit them. They cannot be activated, deactivated, edited, or deleted. Resolved only for board-scoped queries (null otherwise); best-effort, so it may carry an error marker instead of data."
+  legacy_automations: JSON
+}
+
+"A board automation"
+type BoardAutomation {
+  "Automation ID"
+  id: ID
+  "Creator user ID"
+  user_id: ID
+  "Whether the automation is active"
+  active: Boolean
+  "Automation title"
+  title: String
+  "Automation description"
+  description: String
+  "Creation timestamp"
+  created_at: String
+  "Last update timestamp"
+  updated_at: String
+  "Host data (board ID and type)"
+  workflow_host_data: JSON
+  "Workflow block definitions"
+  workflow_blocks: JSON
+  "Workflow variable definitions"
+  workflow_variables: JSON
+  "Automation importance level"
+  importance: Int
+  "Notice message for the automation"
+  notice_message: String
+  "Template reference ID if created from template"
+  template_reference_id: ID
+}
+
+"Result of deleting a board automation"
+type BoardAutomationDeleteResult {
+  "Whether the deletion was successful"
+  is_success: Boolean
+}
+
+"Additional quota allocated beyond the base plan limit"
+type CampaignsAdditionalQuota {
+  "Amount of additional quota consumed"
+  consumed: Int
+  "Additional quota limit"
+  limit: Int
+  "Timestamp when additional quota expires"
+  expired_at: Date
+}
+
+"A campaign analytics event"
+type CampaignsAnalyticsEvent {
+  "Unique event identifier"
+  id: ID
+  "Unique identifier for this event"
+  identifier: String
+  "ID of the associated campaign"
+  campaign_id: ID
+  "ID of the associated variant"
+  variant_id: ID
+  "Timestamp when the event was created"
+  created_at: Date
+  "Type of analytics event"
+  type: CampaignsAnalyticsEventKind
+  "Parsed reason for bounced emails"
+  parsed_reason: String
+}
+
+"Types of analytics events for campaigns"
+enum CampaignsAnalyticsEventKind {
+  "Email was bounced back"
+  EMAIL_BOUNCED
+  "Email was successfully delivered"
+  EMAIL_DELIVERED
+  "Email was sent"
+  EMAIL_SENT
+  "Recipient marked email as spam"
+  EMAIL_RECIPIENT_COMPLAINT
+  "Recipient unsubscribed"
+  EMAIL_RECIPIENT_UNSUBSCRIBED
+  "email_recipient_group_unsubscribed"
+  EMAIL_RECIPIENT_GROUP_UNSUBSCRIBED
+  "email_recipient_group_resubscribed"
+  EMAIL_RECIPIENT_GROUP_RESUBSCRIBED
+  "Email was dropped before sending"
+  EMAIL_DROPPED
+  "Email was opened by recipient"
+  EMAIL_OPENED
+  "Link in email was clicked by recipient"
+  EMAIL_CLICKED
+}
+
+"Paginated analytics events response"
+type CampaignsAnalyticsEventsResponse {
+  "List of analytics events"
+  data: [CampaignsAnalyticsEvent!]
+  "Token for pagination to retrieve next batch"
+  next_token: String
+}
+
+"Aggregated analytics summary for an email campaign"
+type CampaignsAnalyticsSummary {
+  "Total emails sent"
+  total_sent: Int
+  "Total emails delivered"
+  total_delivered: Int
+  "Total number of email opens"
+  total_opens: Int
+  "Number of unique opens"
+  unique_opens: Int
+  "Total number of link clicks"
+  total_clicks: Int
+  "Number of unique clicks"
+  unique_clicks: Int
+  "Total unsubscribes"
+  total_unsubscribes: Int
+  "Number of unique unsubscribes"
+  unique_unsubscribes: Int
+  "Total emails not delivered"
+  total_undelivered: Int
+  "Number of unique undelivered"
+  unique_undelivered: Int
+  "Total spam complaints"
+  total_spam_reports: Int
+  "Number of unique spam reports"
+  unique_spam_reports: Int
+}
+
+"A brand color in a brand kit"
+type CampaignsBrandColor {
+  "Unique color identifier"
+  id: ID
+  "Hex color code"
+  hex_code: String
+  "Category of the brand color"
+  kind: CampaignsBrandColorKind
+}
+
+"Types of brand colors"
+enum CampaignsBrandColorKind {
+  "Primary brand color"
+  PRIMARY
+  "Secondary brand color"
+  SECONDARY
+  "Accent brand color"
+  ACCENT
+  "Text color"
+  TEXT
+  "Other brand color"
+  OTHER
+}
+
+"A brand image in a brand kit"
+type CampaignsBrandImage {
+  "Unique image identifier"
+  id: ID
+  "Name of the image"
+  name: String
+  "Alternative text for the image"
+  alt_text: String
+  "Category of the brand image"
+  kind: CampaignsBrandImageKind
+  "Current status of the image"
+  status: CampaignsBrandImageStatus
+  "Size of the image in bytes"
+  size_bytes: Int
+  "MIME type of the image"
+  mime_type: String
+  "Width of the image in pixels"
+  width: Int
+  "Height of the image in pixels"
+  height: Int
+  "URL to access the image"
+  remote_url: String
+}
+
+"Types of brand images"
+enum CampaignsBrandImageKind {
+  "Primary brand logo"
+  PRIMARY_LOGO
+  "Secondary brand logo"
+  SECONDARY_LOGO
+  "Image attachment"
+  ATTACHMENT
+}
+
+"Status of a brand image"
+enum CampaignsBrandImageStatus {
+  "Image pending confirmation"
+  PENDING
+  "Image confirmed"
+  CONFIRMED
+}
+
+"A brand kit containing colors and images for an account"
+type CampaignsBrandKit {
+  "Unique brand kit identifier"
+  id: ID
+  "Name of the brand kit"
+  name: String
+  "Status of the brand kit"
+  status: String
+  "Timestamp when the brand kit was created"
+  created_at: Date
+  "Timestamp when the brand kit was last updated"
+  updated_at: Date
+  "Colors in this brand kit"
+  brand_colors: [CampaignsBrandColor!]
+  "Images in this brand kit"
+  brand_images: [CampaignsBrandImage!]
+}
+
+"Company information for email campaigns"
+type CampaignsCompanyInformation {
+  "Company name"
+  company_name: String
+  "Company website URL"
+  company_website_url: String
+  "Whether physical address was AI generated"
+  physical_address_is_ai_generated: Boolean
+  "Physical mailing address"
+  physical_address: CampaignsPhysicalAddress
+}
+
+"Marketing contacts board configuration"
+type CampaignsContactsBoard {
+  "ID of the board"
+  board_id: ID
+  "ID of the email column"
+  email_column_id: ID
+  "ID of the email subscription column"
+  email_subscription_column_id: ID
+}
+
+"An email campaign"
+type CampaignsEmailCampaign {
+  "Unique campaign identifier"
+  id: ID
+  "Name of the campaign"
+  name: String
+  "Current status of the campaign"
+  status: CampaignsStatusKind
+  "Timestamp when the campaign was sent"
+  sent_on: Date
+  "Timestamp when the campaign was created"
+  created_at: Date
+  "Timestamp when the campaign was last updated"
+  updated_at: Date
+  "Analytics summary for the campaign"
+  summary: CampaignsAnalyticsSummary
+  "User who created the campaign"
+  created_by: User
+  "Email subject line"
+  subject: String
+  "Preview text shown in email clients"
+  preview_text: String
+  "When the campaign should be sent"
+  schedule_type: CampaignsScheduleKind
+  "Scheduled time for sending"
+  scheduled_time: Date
+  "IDs of segments targeted by this campaign"
+  segment_ids: [ID!]
+  "URL of the campaign email template preview image"
+  preview_image: String
+  "HTML content of the email template"
+  template_html: String
+}
+
+"A market insight"
+type CampaignsInsight {
+  "Unique insight identifier"
+  id: ID
+  "Title of the insight"
+  title: String
+  "Summary of the insight"
+  summary: String
+  "Target audience for the insight"
+  target_audience: String
+  "Rationale for the target audience"
+  audience_rationale: String
+  "Assessment of campaign worthiness"
+  campaign_worthiness: String
+  "Timestamp of the insight"
+  timestamp: String
+  "Source of the insight"
+  source: String
+  "Raw context data for the insight"
+  raw_context: String
+  "Timestamp when the insight was created"
+  created_at: Date
+  "Timestamp when the insight was last updated"
+  updated_at: Date
+  "Current status of the insight"
+  status: CampaignsInsightStatusKind
+  "Classification type of the insight"
+  type: CampaignsInsightClassificationKind
+}
+
+"Classification type of an insight"
+enum CampaignsInsightClassificationKind {
+  "Competitor move insight"
+  COMPETITOR_MOVE
+  "Market trend insight"
+  MARKET_TREND
+  "Customer behavior insight"
+  CUSTOMER_BEHAVIOR
+  "Emerging technology insight"
+  EMERGING_TECHNOLOGY
+  "Regulatory change insight"
+  REGULATORY_CHANGE
+  "Product launch insight"
+  PRODUCT_LAUNCH
+  "Crisis or event insight"
+  CRISIS_EVENT
+  "Other type of insight"
+  OTHER
+}
+
+"Status of an insight"
+enum CampaignsInsightStatusKind {
+  "active"
+  ACTIVE
+  "consumed"
+  CONSUMED
+  "dismissed"
+  DISMISSED
+}
+
+"A physical mailing address"
+type CampaignsPhysicalAddress {
+  "Street address"
+  street_address: String
+  "ZIP code"
+  zip_code: String
+  "City name"
+  city: String
+  "Country name"
+  country: String
+  "State or province"
+  state: String
+}
+
+"When the campaign should be sent"
+enum CampaignsScheduleKind {
+  "Send immediately"
+  NOW
+  "Send at scheduled time"
+  LATER
+}
+
+"An audience segment"
+type CampaignsSegment {
+  "Unique segment identifier"
+  id: ID
+  "Name of the segment"
+  name: String
+  "Type of the segment"
+  type: String
+  "Timestamp when the segment was created"
+  created_at: Date
+  "Timestamp when the segment was last updated"
+  updated_at: Date
+  "User who created the segment"
+  created_by: User
+  "ID of the data source"
+  data_source_id: ID
+  "Entity ID from the data source"
+  data_source_entity_id: ID
+  "Entity type from the data source"
+  data_source_entity_type: String
+}
+
+"Marketing channels settings for the current account"
+type CampaignsSettings {
+  "Company information settings"
+  company_information: CampaignsCompanyInformation
+  "Unsubscribe page configuration"
+  unsubscribe_page: CampaignsUnsubscribePage
+  "Unsubscribe footer configuration"
+  unsubscribe_footer: CampaignsUnsubscribeFooter
+  "Marketing contacts board configuration"
+  contacts_board: CampaignsContactsBoard
+}
+
+"Fields available for sorting campaigns"
+enum CampaignsSortField {
+  "Sort by campaign name"
+  NAME
+  "Sort by creation date"
+  CREATED_AT
+}
+
+"Sort direction"
+enum CampaignsSortOrder {
+  "Ascending order"
+  ASC
+  "Descending order"
+  DESC
+}
+
+"Status of a campaign"
+enum CampaignsStatusKind {
+  "Campaign is being generated"
+  GENERATING
+  "Campaign is in draft state"
+  DRAFT
+  "Campaign is ready to send"
+  READY_TO_SEND
+  "Campaign is currently sending"
+  SENDING
+  "Campaign is scheduled for later"
+  SCHEDULED
+  "Campaign has been sent"
+  SENT
+  "Campaign is ongoing"
+  ONGOING
+  "Campaign failed"
+  FAILED
+  "Campaign is on hold"
+  ON_HOLD
+  "Campaign is blocked"
+  BLOCKED
+  "Campaign is processing"
+  PROCESSING
+}
+
+"Unsubscribe footer configuration"
+type CampaignsUnsubscribeFooter {
+  "Whether removal is allowed"
+  allow_removal: Boolean
+}
+
+"Unsubscribe page configuration"
+type CampaignsUnsubscribePage {
+  "Page title"
+  title: String
+  "Page body content"
+  body: String
+}
+
+"Account-level usage metrics across all resource domains"
+type CampaignsUsage {
+  "Email sends usage metrics"
+  email_sends: CampaignsUsageForDomain
+  "Marketing contacts usage metrics"
+  marketing_contacts: CampaignsUsageForDomain
+  "Whether this is a touch account"
+  is_touch_account: Boolean
+}
+
+"Usage metrics for a single resource domain"
+type CampaignsUsageForDomain {
+  "Metering bucket and service identifier"
+  key: CampaignsUsageKey
+  "Amount of resources consumed"
+  consumed: Int
+  "Resource usage limit"
+  limit: Int
+  "End date of the billing period"
+  end_date: String
+  "Whether usage is blocked due to limit exceeded"
+  blocked: Boolean
+  "Additional quota allocation"
+  additional_quota: CampaignsAdditionalQuota
+}
+
+"Identifies the metering bucket and service"
+type CampaignsUsageKey {
+  "Metering bucket name"
+  bucket_name: String
+  "Service name"
+  service: String
+}
+
 "Subscription object"
 type AppSubscriptionDetails {
   "The ID of an account"
@@ -4956,6 +5741,8 @@ type AppType {
   photo_url_small: String
   "The app kind"
   kind: AppKind
+  "All versions of this app with their current status. Use this to poll promotion progress."
+  versions: [DeveloperAppVersion!]
   "The app status (i.e. is live?)"
   status: AppStatus
   "The latest version type"
@@ -4979,6 +5766,18 @@ type AppType {
 live_version_only: Boolean = false,   "Number of items to get, the default is 25."
 limit: Int = 25,   "Page number to get, starting at 1."
 page: Int = 1): [AppFeatureType!]
+}
+
+"The lifecycle status of an app version"
+enum AppVersionStatus {
+  "Version is in development and not yet live"
+  DRAFT
+  "Version is live and available to users"
+  LIVE
+  "Version has been superseded by a newer version"
+  DEPRECATED
+  "Version is in the process of being promoted"
+  PROMOTING
 }
 
 "Input for creating an app with its configuration data."
@@ -5013,6 +5812,14 @@ type CreateAppResponse {
   client_secret: String
   "The app's signing secret used for webhook signature verification"
   signing_secret: String
+}
+
+"An app version"
+type DeveloperAppVersion {
+  "The unique identifier of the app version"
+  id: ID
+  "The current lifecycle status of this app version"
+  status: AppVersionStatus
 }
 
 "Input for installing an app on the current account."
@@ -5389,6 +6196,14 @@ enum BoardHierarchy {
   multi_level
 }
 
+"Maps a source board ID to the newly created board ID produced by a template installation."
+type BoardIdMapping {
+  "The newly created board ID."
+  created_board_id: ID!
+  "The source (template) board ID."
+  source_board_id: ID!
+}
+
 "The board kinds available."
 enum BoardKind {
   "Private boards."
@@ -5674,9 +6489,21 @@ type DateValue implements ColumnValue {
   value: JSON
 }
 
+"Represents a dependency link between two items, including the relationship type and lag."
+type DependencyLink {
+  "The dependency relationship type (0=FS, 1=SS, 2=FF, 3=SF)."
+  dependency_type: Int
+  "The lag in days between the dependent items."
+  lag: Int
+  "The ID of the linked dependent item."
+  linked_item_id: ID!
+}
+
 type DependencyValue implements ColumnValue {
   "The column that this value belongs to."
   column: Column!
+  "The linked items with dependency metadata (type and lag)."
+  dependency_links: [DependencyLink!]!
   "A string representing all the names of the linked items, separated by commas"
   display_value: String!
   "The column's unique identifier."
@@ -6776,6 +7603,8 @@ page: Int): [User]
   name: String!
   "Whether the team is a guest team"
   is_guest: Boolean
+  "The team's creation date as an ISO 8601 string."
+  created_at: String
 }
 
 type TeamValue implements ColumnValue {
@@ -6800,6 +7629,40 @@ type TeamValue implements ColumnValue {
 type Template {
   "The template process unique identifier for async operations."
   process_id: String
+}
+
+"Lifecycle status of a template installation async operation."
+enum TemplateInstallationStatus {
+  "All boards fully ready."
+  COMPLETE
+  "Duplication failed. Any partial boards were rolled back."
+  FAILED
+  "Boards being created."
+  IN_PROGRESS
+  "Job queued, not yet started."
+  PENDING
+}
+
+"Status of a template installation async operation."
+type TemplateInstallationStatusResult {
+  """
+  Board IDs are populated incrementally during the metadata phase as each board
+  is created, and complete by the time per-board content jobs start. Boards
+  exist as empty shells (no items, broken mirror columns, no automations) until
+  status is COMPLETE. Safe to store these IDs early, but do not read or write
+  board content until COMPLETE.
+  """
+  board_ids: [ID!]!
+  "Mapping of each source (template) board ID to the newly created board ID."
+  board_ids_map: [BoardIdMapping!]!
+  "True iff status is COMPLETE."
+  is_complete: Boolean!
+  "True iff status is FAILED."
+  is_failed: Boolean!
+  "The process_id returned by use_template."
+  process_id: ID!
+  "Lifecycle status (PENDING / IN_PROGRESS / COMPLETE / FAILED)."
+  status: TemplateInstallationStatus!
 }
 
 type TextValue implements ColumnValue {
@@ -7677,6 +8540,34 @@ input UpdateObjectInput {
   relations: [ObjectRelationInput!]
 }
 
+"Available AI model tiers."
+enum AiModel {
+  "The Monday Fast model."
+  MONDAY_FAST
+  "The Monday Standard model."
+  MONDAY_STANDARD
+  "The Monday Powerful model."
+  MONDAY_POWERFUL
+}
+
+"Configuration options for the AI completion request."
+input RunPromptConfigInput {
+  "The AI model to use for the completion."
+  model: AiModel
+  "An optional system prompt to set context for the model."
+  system_prompt: String
+  "Sampling temperature between 0 and 1."
+  temperature: Float
+  "Maximum number of tokens to generate."
+  max_tokens: Int
+}
+
+"The result of running a prompt against an AI model."
+type RunPromptResult {
+  "The generated text content from the model."
+  content: String
+}
+
 "API usage data."
 type DailyAnalytics {
   "Last time the API usage data was updated."
@@ -7695,6 +8586,16 @@ type DailyLimit {
   base: Int
   "Total daily limit."
   total: Int
+  "Daily-limit add-on details for the account."
+  addon: DailyLimitAddon
+}
+
+"Platform API daily-limit add-on details."
+type DailyLimitAddon {
+  "Whether the account owns an active daily-limit add-on."
+  is_active: Boolean!
+  "Number of daily-limit add-on units the account owns."
+  quantity: Int!
 }
 
 "The Platform API's data."
@@ -7749,6 +8650,8 @@ type CreatePortfolioResult {
   success: Boolean
   "A message describing the result of the operation."
   message: String
+  "Unique process ID for tracking this request. Included in the callback payload when the operation completes."
+  process_id: ID
 }
 
 type AggregateBasicAggregationResult {
@@ -8054,6 +8957,60 @@ type SearchIndexedItem {
   workspace_id: ID
 }
 
+"Timeline item data stored in the search index."
+type SearchIndexedTimelineItem {
+  "Timeline item ID."
+  id: ID!
+  "ID of the account owning this timeline item."
+  account_id: ID!
+  "ID of the item this timeline item belongs to."
+  item_id: ID!
+  "ID of the board containing this timeline item."
+  board_id: ID
+  "Timeline item type (e.g. email, googleCalendar)."
+  type: String!
+  "Product kind the timeline item originates from (e.g. service, crm)."
+  product_kind: String!
+  "Timeline item title."
+  title: String!
+  "Timeline item summary."
+  summary: String!
+  "Timeline item full content body."
+  content: String!
+  "ISO timestamp when the timeline item was created."
+  created_at: ISO8601DateTime!
+  "ISO timestamp when the timeline item was last modified."
+  updated_at: ISO8601DateTime!
+}
+
+"Update data stored in the search index."
+type SearchIndexedUpdate {
+  "Update ID."
+  id: ID!
+  "Update content (HTML formatted)."
+  body: String!
+  "ID of the user who created the update."
+  creator_id: ID!
+  "ID of the item this update belongs to."
+  item_id: ID!
+  "ID of the board containing this update."
+  board_id: ID!
+  "ISO timestamp when the update was created."
+  created_at: String!
+  "ISO timestamp when the update was last modified."
+  updated_at: String!
+}
+
+"User data stored in the search index."
+type SearchIndexedUser {
+  "User ID."
+  id: ID!
+  "The user's full name."
+  name: String!
+  "The user's email address."
+  email: String!
+}
+
 "Workspace data stored in the search index."
 type SearchIndexedWorkspace {
   "Workspace ID."
@@ -8109,6 +9066,20 @@ limit: Int = 10,   "Date range filter."
 date_range: CrossEntityDateRangeInput,   "Controls the trade-off between search quality and response time. Defaults to balanced."
 strategy: SearchStrategy,   "Filter documents to specific workspace IDs."
 workspace_ids: [ID!]): SearchDocResults!
+  "Search for updates."
+  updates(  "The search query string."
+query: String!,   "Maximum number of results to return (default 10, max 20)."
+limit: Int = 10,   "Date range filter."
+date_range: CrossEntityDateRangeInput,   "Controls the trade-off between search quality and response time. Defaults to balanced."
+strategy: SearchStrategy,   "Filter updates to specific board IDs."
+board_ids: [ID!],   "Filter updates to those authored by specific creator (user) IDs."
+creator_ids: [ID!]): SearchUpdateResults!
+  "Search for users."
+  users(  "The search query string."
+query: String!,   "Maximum number of results to return (default 10, max 20)."
+limit: Int = 10,   "Date range filter."
+date_range: CrossEntityDateRangeInput,   "Controls the trade-off between search quality and response time. Defaults to balanced."
+strategy: SearchStrategy): SearchUserResults!
   "Search for workspaces."
   workspaces(  "The search query string."
 query: String!,   "Maximum number of results to return (default 10, max 20)."
@@ -8117,6 +9088,17 @@ date_range: CrossEntityDateRangeInput,   "Controls the trade-off between search 
 strategy: SearchStrategy,   "Filter to specific workspace IDs."
 workspace_ids: [ID!],   "Filter workspaces by kind (open or closed)."
 kind: String): SearchWorkspaceResults!
+  "Search for timeline items."
+  timeline_items(  "The search query string."
+query: String!,   "Maximum number of results to return (default 10, max 20)."
+limit: Int = 10,   "Controls the trade-off between search quality and response time. Defaults to balanced."
+strategy: SearchStrategy = BALANCED,   "Date range filter."
+date_range: CrossEntityDateRangeInput,   "Filter timeline items to specific board IDs."
+board_ids: [ID!],   "Filter timeline items to specific workspace IDs."
+workspace_ids: [ID!],   "Filter timeline items to specific item IDs."
+item_ids: [ID!],   "Filter by timeline item type (e.g. email, googleCalendar)."
+type: TimelineItemKind,   "Filter by product kind (e.g. crm, service)."
+product_kind: TimelineItemProductKind): SearchTimelineItemResults!
 }
 
 "Controls the trade-off between search quality and response time."
@@ -8129,18 +9111,126 @@ enum SearchStrategy {
   QUALITY
 }
 
+"A single timelineitem search result with indexed and live data."
+type SearchTimelineItemResult {
+  "Unique identifier of the timelineitem."
+  id: ID!
+  "TimelineItem data from the search index."
+  indexed_data: SearchIndexedTimelineItem!
+  "Live timelineitem data via federation. Null when the referenced timelineitem cannot be resolved by the owning subgraph (e.g. deleted, not accessible to the caller, or indexing lag)."
+  live_data: TimelineItem
+}
+
+"Wrapper for a list of timelineitem search results."
+type SearchTimelineItemResults {
+  "List of timelineitem search results."
+  results: [SearchTimelineItemResult!]!
+}
+
+"A single update search result with indexed and live data."
+type SearchUpdateResult {
+  "Unique identifier of the update."
+  id: ID!
+  "Update data from the search index."
+  indexed_data: SearchIndexedUpdate!
+  "Live update data via federation. Null when the referenced update cannot be resolved by the owning subgraph (e.g. deleted, not accessible to the caller, or indexing lag)."
+  live_data: Update
+}
+
+"Wrapper for a list of update search results."
+type SearchUpdateResults {
+  "List of update search results."
+  results: [SearchUpdateResult!]!
+}
+
+"A single user search result with indexed and live data."
+type SearchUserResult {
+  "Unique identifier of the user."
+  id: ID!
+  "User data from the search index."
+  indexed_data: SearchIndexedUser!
+  "Live user data via federation. Null when the referenced user cannot be resolved by the owning subgraph (e.g. deleted, not accessible to the caller, or indexing lag)."
+  live_data: User
+}
+
+"Wrapper for a list of user search results."
+type SearchUserResults {
+  "List of user search results."
+  results: [SearchUserResult!]!
+}
+
 "A single workspace search result."
 type SearchWorkspaceResult {
   "Unique identifier of the workspace."
   id: ID!
   "Workspace data from the search index."
   indexed_data: SearchIndexedWorkspace!
+  "Live workspace data via federation. Null when the referenced workspace cannot be resolved by the owning subgraph (e.g. deleted, not accessible to the caller, or indexing lag)."
+  live_data: Workspace
 }
 
 "Wrapper for a list of workspace search results."
 type SearchWorkspaceResults {
   "List of workspace search results."
   results: [SearchWorkspaceResult!]!
+}
+
+"Kind of timeline item."
+enum TimelineItemKind {
+  "Email communication"
+  email
+  "Google Calendar event"
+  googleCalendar
+  "Outlook Calendar event"
+  outlookCalendar
+  "Zoom meeting"
+  zoom
+  "General activity"
+  activity
+  "Custom activity"
+  custom
+  "Note"
+  note
+  "Video meeting"
+  videoMeeting
+  "Phone call"
+  phoneCall
+  "Meeting"
+  meeting
+  "AI assistant interaction"
+  aiAssistant
+  "AI-generated reply"
+  aiReply
+  "Portal interaction"
+  portal
+  "Demo email"
+  demoEmail
+  "AI-generated summary"
+  aiSummary
+  "Form submission"
+  form
+  "Portfolio status update"
+  portfolio_status
+  "Sequences email"
+  sequencesEmail
+  "Outreach expert phone call"
+  outreachExpertPhoneCall
+  "outreachExpertPhoneCallV2"
+  outreachExpertPhoneCallV2
+  "Merged tickets"
+  mergedTickets
+  "Custom internal app interaction"
+  customInternalApp
+  "Campaign event"
+  campaigns
+}
+
+"Product kind that owns the timeline item."
+enum TimelineItemProductKind {
+  "Service product"
+  service
+  "CRM product"
+  crm
 }
 
 "Input for enrolling multiple items to a single sequence"
@@ -8416,8 +9506,6 @@ enum BaseRoleName {
 type CreateServiceUserResult {
   "The created service user."
   user: User
-  "The API token for the created service user. Null if token generation failed."
-  token: String
 }
 
 "Attributes of the team to be created."
@@ -8752,8 +9840,14 @@ enum UserKindFilter {
   PERSONAL_AGENT_MEMBER
   "A agent signup user user."
   AGENT_SIGNUP_USER
+  "A external agent member user."
+  EXTERNAL_AGENT_MEMBER
+  "A external agent detached member user."
+  EXTERNAL_AGENT_DETACHED_MEMBER
   "A service user user."
   SERVICE_USER
+  "A vibe user user."
+  VIBE_USER
   "A portal user."
   PORTAL
   "A portfolio api user user."
@@ -8784,7 +9878,7 @@ enum UserKindFilter {
   DEPENDENCIES_API_USER
   "A historical tracking backfill api user user."
   HISTORICAL_TRACKING_BACKFILL_API_USER
-  "A group representing admin, member, guest, view-only, and agent member users."
+  "A group representing admin, member, guest, view-only, agent member, service, and vibe users."
   BASIC
 }
 
@@ -8919,8 +10013,6 @@ enum ConditionOperator {
 input CreateFormTagInput {
   "The name of the tag. Must be unique within the form and not reserved."
   name: String!
-  "The value of the tag"
-  value: String
 }
 
 input CreateQuestionInput {
@@ -9188,16 +10280,8 @@ enum FormFontSize {
   Large
 }
 
-"String specifying the form display format. Can be a step by step form or a classic one page form."
-enum FormFormat {
-  OneByOne
-  Classic
-}
-
 "Object containing form structure and presentation settings."
 type FormLayout {
-  "String specifying the form display format. Can be a step by step form or a classic one page form."
-  format: FormFormat
   "The layout style of the form (Card or Flat)."
   type: FormLayoutStyle
   "String controlling text and content alignment."
@@ -9208,8 +10292,6 @@ type FormLayout {
 
 "Object containing form structure and presentation settings."
 input FormLayoutInput {
-  "String specifying the form display format. Can be a step by step form or a classic one page form."
-  format: FormFormat
   "The layout style of the form (Card or Flat)."
   type: FormLayoutStyle
   "String controlling text and content alignment."
@@ -9350,7 +10432,7 @@ type FormQuestion {
   settings: FormQuestionSettings
   options: [FormQuestionOption!]
   "Conditional logic rules that control when this question is displayed based on other question answers."
-  showIfRules: JSON
+  show_if_rules: JSON
   "The ID of the page block this question belongs to. Used in multi-page forms to assign questions to specific pages."
   page_block_id: ID
 }
@@ -9582,8 +10664,6 @@ type FormTag {
   id: String!
   "The name of the tag"
   name: String!
-  "The value of the tag"
-  value: String
   "The ID of the column this tag is associated with"
   columnId: String!
 }
@@ -9751,11 +10831,6 @@ input UpdateFormSettingsInput {
   accessibility: FormAccessibilityInput
   "Boolean enabling anonymous response collection. When true, respondent identity is not captured or stored with form submissions."
   is_anonymous: Boolean
-}
-
-input UpdateFormTagInput {
-  "The value of the tag"
-  value: String
 }
 
 input UpdateQuestionInput {
