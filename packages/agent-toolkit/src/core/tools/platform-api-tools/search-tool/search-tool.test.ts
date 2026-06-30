@@ -5,7 +5,7 @@ import { z, ZodTypeAny } from 'zod';
 import { GetFoldersQuery, SearchItemsQuery, SearchWorkspacesQuery } from 'src/monday-graphql/generated/graphql/graphql';
 import { SearchBoardsDevQuery, SearchDocsDevQuery } from 'src/monday-graphql/generated/graphql.dev/graphql';
 import { SearchUpdatesQuery, SearchTimelineItemsQuery } from './search-tool.graphql.2026-10';
-import { GlobalSearchType, ObjectPrefixes, SearchResult } from './search-tool.types';
+import { GlobalSearchType, SearchResult } from './search-tool.types';
 
 export type inputType = z.objectInputType<typeof searchSchema, ZodTypeAny>;
 
@@ -70,7 +70,7 @@ describe('SearchTool', () => {
       expect(description).toContain('Supported searchType values: BOARD, DOCUMENTS, FOLDERS, WORKSPACES, UPDATES, ITEMS, TIMELINE_ITEMS');
       expect(description).toContain('FOLDERS search requires workspaceIds');
       expect(description).toContain('TIMELINE_ITEMS search returns id, title, summary, and content');
-      expect(description).toContain('IMPORTANT: ids returned by this tool are prefixed');
+      expect(description).not.toContain('IMPORTANT: ids returned by this tool are prefixed');
     });
   });
 
@@ -180,12 +180,12 @@ describe('SearchTool', () => {
 
         expect(parsedResult.data).toHaveLength(3);
         expect(parsedResult.data[0]).toEqual({
-          id: 'board-123',
+          id: '123',
           title: 'Test Board 1',
           url: 'https://monday.com/boards/123',
         });
         expect(parsedResult.data[1]).toEqual({
-          id: 'board-456',
+          id: '456',
           title: 'Test Board 2',
           url: 'https://monday.com/boards/456',
         });
@@ -201,7 +201,7 @@ describe('SearchTool', () => {
         );
       });
 
-      it('should properly prefix board IDs', async () => {
+      it('should return raw IDs without prefix', async () => {
         mocks.setResponse(mockDevBoardsResponse);
 
         const args: inputType = {
@@ -211,9 +211,9 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.data[0].id).toBe(`${ObjectPrefixes.BOARD}123`);
-        expect(parsedResult.data[1].id).toBe(`${ObjectPrefixes.BOARD}456`);
-        expect(parsedResult.data[2].id).toBe(`${ObjectPrefixes.BOARD}789`);
+        expect(parsedResult.data[0].id).toBe('123');
+        expect(parsedResult.data[1].id).toBe('456');
+        expect(parsedResult.data[2].id).toBe('789');
       });
 
       it('should pass workspaceIds filter to dev endpoint', async () => {
@@ -376,11 +376,11 @@ describe('SearchTool', () => {
 
         expect(parsedResult.data).toHaveLength(3);
         expect(parsedResult.data[0]).toEqual({
-          id: 'doc-111',
+          id: '111',
           title: 'Document 1',
         });
         expect(parsedResult.data[1]).toEqual({
-          id: 'doc-222',
+          id: '222',
           title: 'Document 2',
         });
 
@@ -395,7 +395,7 @@ describe('SearchTool', () => {
         );
       });
 
-      it('should properly prefix document IDs', async () => {
+      it('should return raw IDs without prefix', async () => {
         mocks.setResponse(mockDevDocsResponse);
 
         const args: inputType = {
@@ -405,9 +405,9 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.data[0].id).toBe(`${ObjectPrefixes.DOCUMENT}111`);
-        expect(parsedResult.data[1].id).toBe(`${ObjectPrefixes.DOCUMENT}222`);
-        expect(parsedResult.data[2].id).toBe(`${ObjectPrefixes.DOCUMENT}333`);
+        expect(parsedResult.data[0].id).toBe('111');
+        expect(parsedResult.data[1].id).toBe('222');
+        expect(parsedResult.data[2].id).toBe('333');
       });
 
       it('should pass workspaceIds filter to dev endpoint', async () => {
@@ -530,7 +530,7 @@ describe('SearchTool', () => {
         expect(parsedResult.data).toBeDefined();
       });
 
-      it('should properly prefix folder IDs', async () => {
+      it('should return raw IDs without prefix', async () => {
         mocks.setResponse(mockFoldersResponse);
 
         const args: inputType = {
@@ -541,9 +541,9 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(parsedResult.data[0].id).toBe(`${ObjectPrefixes.FOLDER}100`);
-        expect(parsedResult.data[1].id).toBe(`${ObjectPrefixes.FOLDER}200`);
-        expect(parsedResult.data[2].id).toBe(`${ObjectPrefixes.FOLDER}300`);
+        expect(parsedResult.data[0].id).toBe('100');
+        expect(parsedResult.data[1].id).toBe('200');
+        expect(parsedResult.data[2].id).toBe('300');
       });
 
       it('should not include url field for folders', async () => {
@@ -749,12 +749,12 @@ describe('SearchTool', () => {
 
       expect(parsedResult.data).toHaveLength(2);
       expect(parsedResult.data[0]).toEqual({
-        id: 'item-111',
+        id: '111',
         title: 'Item One',
         url: 'https://monday.com/boards/1/pulses/111',
       });
       expect(parsedResult.data[1]).toEqual({
-        id: 'item-222',
+        id: '222',
         title: 'Item Two',
         url: 'https://monday.com/boards/1/pulses/222',
       });
@@ -770,7 +770,7 @@ describe('SearchTool', () => {
       );
     });
 
-    it('should properly prefix item IDs', async () => {
+    it('should return raw IDs without prefix', async () => {
       mocks.setResponse(mockItemsResponse);
 
       const args: inputType = {
@@ -780,8 +780,8 @@ describe('SearchTool', () => {
 
       const parsedResult = await callToolByNameAsync('search', args);
 
-      expect(parsedResult.data[0].id).toBe(`${ObjectPrefixes.ITEM}111`);
-      expect(parsedResult.data[1].id).toBe(`${ObjectPrefixes.ITEM}222`);
+      expect(parsedResult.data[0].id).toBe('111');
+      expect(parsedResult.data[1].id).toBe('222');
     });
 
     it('should pass custom limit to the request', async () => {
@@ -888,12 +888,12 @@ describe('SearchTool', () => {
 
       expect(parsedResult.data).toHaveLength(2);
       expect(parsedResult.data[0]).toEqual({
-        id: 'workspace-10',
+        id: '10',
         title: 'Marketing Workspace',
         description: 'For marketing team',
       });
       expect(parsedResult.data[1]).toEqual({
-        id: 'workspace-20',
+        id: '20',
         title: 'Engineering',
         description: 'Engineering workspace',
       });
@@ -908,7 +908,7 @@ describe('SearchTool', () => {
       );
     });
 
-    it('should properly prefix workspace IDs', async () => {
+    it('should return raw IDs without prefix', async () => {
       mocks.setResponse(mockWorkspacesResponse);
 
       const args: inputType = {
@@ -918,8 +918,8 @@ describe('SearchTool', () => {
 
       const parsedResult = await callToolByNameAsync('search', args);
 
-      expect(parsedResult.data[0].id).toBe(`${ObjectPrefixes.WORKSPACE}10`);
-      expect(parsedResult.data[1].id).toBe(`${ObjectPrefixes.WORKSPACE}20`);
+      expect(parsedResult.data[0].id).toBe('10');
+      expect(parsedResult.data[1].id).toBe('20');
     });
 
     it('should handle empty results', async () => {
@@ -1016,14 +1016,14 @@ describe('SearchTool', () => {
 
       expect(parsedResult.data).toHaveLength(2);
       expect(parsedResult.data[0]).toEqual({
-        id: 'update-10',
+        id: '10',
         title: 'Deploy is done',
         itemId: '901',
         boardId: '801',
         creatorId: '501',
       });
       expect(parsedResult.data[1]).toEqual({
-        id: 'update-20',
+        id: '20',
         title: 'Reviewing the PR',
         itemId: '902',
         boardId: '802',
@@ -1042,7 +1042,7 @@ describe('SearchTool', () => {
       );
     });
 
-    it('should properly prefix update IDs', async () => {
+    it('should return raw IDs without prefix', async () => {
       mocks.setResponse(mockUpdatesResponse);
 
       const args: inputType = {
@@ -1052,8 +1052,8 @@ describe('SearchTool', () => {
 
       const parsedResult = await callToolByNameAsync('search', args);
 
-      expect(parsedResult.data[0].id).toBe(`${ObjectPrefixes.UPDATE}10`);
-      expect(parsedResult.data[1].id).toBe(`${ObjectPrefixes.UPDATE}20`);
+      expect(parsedResult.data[0].id).toBe('10');
+      expect(parsedResult.data[1].id).toBe('20');
     });
 
     it('should pass boardIds and creatorIds to the updates query', async () => {
@@ -1134,13 +1134,13 @@ describe('SearchTool', () => {
 
       expect(parsedResult.data).toHaveLength(2);
       expect(parsedResult.data[0]).toEqual({
-        id: 'timeline-item-10',
+        id: '10',
         title: 'Kickoff email',
         summary: 'Project kickoff summary',
         content: 'Full kickoff email body',
       });
       expect(parsedResult.data[1]).toEqual({
-        id: 'timeline-item-20',
+        id: '20',
         title: 'Weekly sync',
         summary: 'Notes from the weekly sync',
         content: 'Full weekly sync notes',
@@ -1156,7 +1156,7 @@ describe('SearchTool', () => {
       );
     });
 
-    it('should properly prefix timeline item IDs', async () => {
+    it('should return raw IDs without prefix', async () => {
       mocks.setResponse(mockTimelineItemsResponse);
 
       const args: inputType = {
@@ -1166,8 +1166,8 @@ describe('SearchTool', () => {
 
       const parsedResult = await callToolByNameAsync('search', args);
 
-      expect(parsedResult.data[0].id).toBe(`${ObjectPrefixes.TIMELINE_ITEM}10`);
-      expect(parsedResult.data[1].id).toBe(`${ObjectPrefixes.TIMELINE_ITEM}20`);
+      expect(parsedResult.data[0].id).toBe('10');
+      expect(parsedResult.data[1].id).toBe('20');
     });
 
     it('should handle empty results', async () => {

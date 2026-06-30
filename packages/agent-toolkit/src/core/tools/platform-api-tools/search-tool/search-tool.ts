@@ -26,7 +26,7 @@ import {
   SearchTimelineItemsQueryVariables,
 } from './search-tool.graphql.2026-10';
 import { normalizeString } from 'src/utils/string.utils';
-import { GlobalSearchType, ObjectPrefixes, SearchResult } from './search-tool.types';
+import { GlobalSearchType, SearchResult } from './search-tool.types';
 import { MAX_FOLDERS_LIMIT, SEARCH_LIMIT } from './search-tool.consts';
 import { SEARCH_TIMEOUT } from 'src/utils/time.utils';
 import { rethrowWithContext, throwIfSearchTimeoutError } from 'src/utils/error.utils';
@@ -94,7 +94,6 @@ WORKSPACES search returns id, title, and description.
 UPDATES search returns id, title (the update body), itemId, boardId, and creatorId. Optionally scope it with boardIds and/or creatorIds.
 TIMELINE_ITEMS search returns id, title, summary, and content.
 FOLDERS search requires workspaceIds and returns id and title.
-IMPORTANT: ids returned by this tool are prefixed with the type of the object (e.g doc-123, board-456, folder-789, workspace-101, update-303, item-321, timeline-item-654). When passing the ids to other tools, you need to remove the prefix and just pass the number.
   `;
   }
 
@@ -164,7 +163,7 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     });
 
     return response.search.boards.results.map((result) => ({
-      id: ObjectPrefixes.BOARD + result.indexed_data.id,
+      id: result.indexed_data.id,
       title: result.indexed_data.name,
       url: result.indexed_data.url,
     }));
@@ -183,7 +182,7 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     });
 
     return response.search.docs.results.map((result) => ({
-      id: ObjectPrefixes.DOCUMENT + result.indexed_data.id,
+      id: result.indexed_data.id,
       title: result.indexed_data.name,
     }));
   }
@@ -199,7 +198,7 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     });
 
     return response.search.workspaces.results.map((result) => ({
-      id: ObjectPrefixes.WORKSPACE + result.indexed_data.id,
+      id: result.indexed_data.id,
       title: result.indexed_data.name,
       description: result.indexed_data.description || undefined,
     }));
@@ -219,7 +218,7 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     });
 
     return response.search.updates.results.map((result) => ({
-      id: ObjectPrefixes.UPDATE + result.indexed_data.id,
+      id: result.indexed_data.id,
       title: result.indexed_data.body,
       itemId: result.indexed_data.item_id,
       boardId: result.indexed_data.board_id,
@@ -239,7 +238,7 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     });
 
     return response.search.items.results.map((result) => ({
-      id: ObjectPrefixes.ITEM + result.indexed_data.id,
+      id: result.indexed_data.id,
       title: result.indexed_data.name,
       url: result.indexed_data.url,
     }));
@@ -257,7 +256,7 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
     });
 
     return response.search.timeline_items.results.map((result) => ({
-      id: ObjectPrefixes.TIMELINE_ITEM + result.indexed_data.id,
+      id: result.indexed_data.id,
       title: result.indexed_data.title,
       summary: result.indexed_data.summary || undefined,
       content: result.indexed_data.content || undefined,
@@ -289,7 +288,7 @@ IMPORTANT: ids returned by this tool are prefixed with the type of the object (e
       .filter((folder) => folder?.id)
       .slice(0, input.limit)
       .map((folder) => ({
-        id: ObjectPrefixes.FOLDER + folder!.id,
+        id: folder!.id,
         title: folder!.name,
       }));
   }
