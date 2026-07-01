@@ -2,8 +2,7 @@ import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameAsync, callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
 import { SearchTool, searchSchema } from './search-tool';
 import { z, ZodTypeAny } from 'zod';
-import { GetFoldersQuery, SearchItemsQuery, SearchWorkspacesQuery } from 'src/monday-graphql/generated/graphql/graphql';
-import { SearchBoardsDevQuery, SearchDocsDevQuery } from 'src/monday-graphql/generated/graphql.dev/graphql';
+import { GetFoldersQuery, SearchBoardsQuery, SearchDocsQuery, SearchItemsQuery, SearchWorkspacesQuery } from 'src/monday-graphql/generated/graphql/graphql';
 import { SearchUpdatesQuery, SearchTimelineItemsQuery } from './search-tool.graphql.2026-10';
 import { GlobalSearchType, SearchResult } from './search-tool.types';
 
@@ -18,7 +17,7 @@ describe('SearchTool', () => {
     jest.spyOn(MondayAgentToolkit.prototype as any, 'createApiClient').mockReturnValue(mocks.mockApiClient);
   });
 
-  const mockDevBoardsResponse: SearchBoardsDevQuery = {
+  const mockDevBoardsResponse: SearchBoardsQuery = {
     search: {
       boards: {
         results: [
@@ -30,7 +29,7 @@ describe('SearchTool', () => {
     },
   };
 
-  const mockDevDocsResponse: SearchDocsDevQuery = {
+  const mockDevDocsResponse: SearchDocsQuery = {
     search: {
       docs: {
         results: [
@@ -168,7 +167,7 @@ describe('SearchTool', () => {
 
   describe('Board Search Handler', () => {
     describe('Success Cases', () => {
-      it('should search boards with searchTerm via dev endpoint', async () => {
+      it('should search boards with searchTerm', async () => {
         mocks.setResponse(mockDevBoardsResponse);
 
         const args: inputType = {
@@ -191,13 +190,13 @@ describe('SearchTool', () => {
         });
 
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query SearchBoardsDev'),
+          expect.stringContaining('query SearchBoards'),
           {
             query: 'Test',
             limit: 20,
             workspaceIds: undefined,
           },
-          expect.objectContaining({ versionOverride: 'dev' }),
+          expect.objectContaining({ timeout: expect.any(Number) }),
         );
       });
 
@@ -216,7 +215,7 @@ describe('SearchTool', () => {
         expect(parsedResult.data[2].id).toBe('789');
       });
 
-      it('should pass workspaceIds filter to dev endpoint', async () => {
+      it('should pass workspaceIds filter', async () => {
         mocks.setResponse(mockDevBoardsResponse);
 
         const args: inputType = {
@@ -228,15 +227,15 @@ describe('SearchTool', () => {
         await callToolByNameAsync('search', args);
 
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query SearchBoardsDev'),
+          expect.stringContaining('query SearchBoards'),
           expect.objectContaining({
             workspaceIds: ['12345', '67890'],
           }),
-          expect.objectContaining({ versionOverride: 'dev' }),
+          expect.objectContaining({ timeout: expect.any(Number) }),
         );
       });
 
-      it('should pass custom limit to dev endpoint', async () => {
+      it('should pass custom limit', async () => {
         mocks.setResponse(mockDevBoardsResponse);
 
         const args: inputType = {
@@ -248,9 +247,9 @@ describe('SearchTool', () => {
         await callToolByNameAsync('search', args);
 
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query SearchBoardsDev'),
+          expect.stringContaining('query SearchBoards'),
           expect.objectContaining({ limit: 15 }),
-          expect.objectContaining({ versionOverride: 'dev' }),
+          expect.objectContaining({ timeout: expect.any(Number) }),
         );
       });
 
@@ -267,7 +266,7 @@ describe('SearchTool', () => {
         expect(parsedResult.disclaimer).toBeUndefined();
       });
 
-      it('should handle empty results from dev endpoint', async () => {
+      it('should handle empty results', async () => {
         mocks.setResponse({ search: { boards: { results: [] } } });
 
         const args: inputType = {
@@ -296,8 +295,8 @@ describe('SearchTool', () => {
     });
 
     describe('Error Handling', () => {
-      it('should propagate dev endpoint errors without fallback', async () => {
-        const errorMessage = 'Dev endpoint unavailable';
+      it('should propagate errors without fallback', async () => {
+        const errorMessage = 'Endpoint unavailable';
         mocks.getMockRequest().mockRejectedValueOnce(new Error(errorMessage));
 
         const args: inputType = {
@@ -309,7 +308,6 @@ describe('SearchTool', () => {
 
         expect(result.content[0].text).toContain('Failed to execute tool search');
         expect(result.content[0].text).toContain(errorMessage);
-        // Only one call — no fallback
         expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
       });
 
@@ -364,7 +362,7 @@ describe('SearchTool', () => {
 
   describe('Documents Search Handler', () => {
     describe('Success Cases', () => {
-      it('should search documents with searchTerm via dev endpoint', async () => {
+      it('should search documents with searchTerm', async () => {
         mocks.setResponse(mockDevDocsResponse);
 
         const args: inputType = {
@@ -385,13 +383,13 @@ describe('SearchTool', () => {
         });
 
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query SearchDocsDev'),
+          expect.stringContaining('query SearchDocs'),
           {
             query: 'Document',
             limit: 20,
             workspaceIds: undefined,
           },
-          expect.objectContaining({ versionOverride: 'dev' }),
+          expect.objectContaining({ timeout: expect.any(Number) }),
         );
       });
 
@@ -410,7 +408,7 @@ describe('SearchTool', () => {
         expect(parsedResult.data[2].id).toBe('333');
       });
 
-      it('should pass workspaceIds filter to dev endpoint', async () => {
+      it('should pass workspaceIds filter', async () => {
         mocks.setResponse(mockDevDocsResponse);
 
         const args: inputType = {
@@ -422,15 +420,15 @@ describe('SearchTool', () => {
         await callToolByNameAsync('search', args);
 
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query SearchDocsDev'),
+          expect.stringContaining('query SearchDocs'),
           expect.objectContaining({
             workspaceIds: ['11111', '22222'],
           }),
-          expect.objectContaining({ versionOverride: 'dev' }),
+          expect.objectContaining({ timeout: expect.any(Number) }),
         );
       });
 
-      it('should not include url field for documents (dev endpoint response has no url)', async () => {
+      it('should not include url field for documents', async () => {
         mocks.setResponse(mockDevDocsResponse);
 
         const args: inputType = {
@@ -472,8 +470,8 @@ describe('SearchTool', () => {
     });
 
     describe('Error Handling', () => {
-      it('should propagate dev endpoint errors without fallback', async () => {
-        const errorMessage = 'Dev endpoint unavailable';
+      it('should propagate errors without fallback', async () => {
+        const errorMessage = 'Endpoint unavailable';
         mocks.getMockRequest().mockRejectedValueOnce(new Error(errorMessage));
 
         const args: inputType = {
@@ -1235,7 +1233,7 @@ describe('SearchTool', () => {
       await callToolByNameAsync('search', args);
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-        expect.stringContaining('query SearchBoardsDev'),
+        expect.stringContaining('query SearchBoards'),
         expect.objectContaining({
           limit: 20,
         }),
@@ -1325,7 +1323,7 @@ describe('SearchTool', () => {
       await callToolByNameAsync('search', args);
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-        expect.stringContaining('query SearchBoardsDev'),
+        expect.stringContaining('query SearchBoards'),
         expect.objectContaining({
           workspaceIds: ['1', '2', '3', '4', '5'],
         }),

@@ -1,22 +1,19 @@
 import { ToolInputType, ToolOutputType, ToolType } from 'src/core/tool';
 import { z } from 'zod';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { getFolders, searchItems, searchWorkspaces } from './search-tool.graphql';
-import { searchBoardsDev, searchDocsDev } from './search-tool.graphql.dev';
+import { getFolders, searchBoards, searchDocs, searchItems, searchWorkspaces } from './search-tool.graphql';
 import {
   GetFoldersQuery,
   GetFoldersQueryVariables,
+  SearchBoardsQuery,
+  SearchBoardsQueryVariables,
+  SearchDocsQuery,
+  SearchDocsQueryVariables,
   SearchItemsQuery,
   SearchItemsQueryVariables,
   SearchWorkspacesQuery,
   SearchWorkspacesQueryVariables,
 } from 'src/monday-graphql/generated/graphql/graphql';
-import {
-  SearchBoardsDevQuery,
-  SearchBoardsDevQueryVariables,
-  SearchDocsDevQuery,
-  SearchDocsDevQueryVariables,
-} from 'src/monday-graphql/generated/graphql.dev/graphql';
 import {
   searchUpdates,
   SearchUpdatesQuery,
@@ -122,11 +119,11 @@ FOLDERS search requires workspaceIds and returns id and title.
     const workspaceIds = input.workspaceIds?.map((id) => id.toString());
 
     if (input.searchType === GlobalSearchType.BOARD) {
-      return this.searchBoardsWithDevEndpointAsync(input.searchTerm, input.limit, workspaceIds);
+      return this.searchBoardsAsync(input.searchTerm, input.limit, workspaceIds);
     }
 
     if (input.searchType === GlobalSearchType.DOCUMENTS) {
-      return this.searchDocsWithDevEndpointAsync(input.searchTerm, input.limit, workspaceIds);
+      return this.searchDocsAsync(input.searchTerm, input.limit, workspaceIds);
     }
 
     if (input.searchType === GlobalSearchType.WORKSPACES) {
@@ -150,15 +147,14 @@ FOLDERS search requires workspaceIds and returns id and title.
     throw new Error(`Unsupported search type for smart search: ${input.searchType}`);
   }
 
-  private async searchBoardsWithDevEndpointAsync(
+  private async searchBoardsAsync(
     query: string,
     limit: number,
     workspaceIds?: string[],
   ): Promise<SearchResult[]> {
-    const variables: SearchBoardsDevQueryVariables = { query, limit, workspaceIds };
+    const variables: SearchBoardsQueryVariables = { query, limit, workspaceIds };
 
-    const response = await this.mondayApi.request<SearchBoardsDevQuery>(searchBoardsDev, variables, {
-      versionOverride: 'dev',
+    const response = await this.mondayApi.request<SearchBoardsQuery>(searchBoards, variables, {
       timeout: SEARCH_TIMEOUT,
     });
 
@@ -169,15 +165,14 @@ FOLDERS search requires workspaceIds and returns id and title.
     }));
   }
 
-  private async searchDocsWithDevEndpointAsync(
+  private async searchDocsAsync(
     query: string,
     limit: number,
     workspaceIds?: string[],
   ): Promise<SearchResult[]> {
-    const variables: SearchDocsDevQueryVariables = { query, limit, workspaceIds };
+    const variables: SearchDocsQueryVariables = { query, limit, workspaceIds };
 
-    const response = await this.mondayApi.request<SearchDocsDevQuery>(searchDocsDev, variables, {
-      versionOverride: 'dev',
+    const response = await this.mondayApi.request<SearchDocsQuery>(searchDocs, variables, {
       timeout: SEARCH_TIMEOUT,
     });
 
