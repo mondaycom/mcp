@@ -1,5 +1,5 @@
 import { GraphQLErrorResponse } from '../graphql-error.types';
-import { buildToolErrorStructuredContent, formatToolError, rethrowWithContext } from '../error.utils';
+import { ToolValidationError, buildToolErrorStructuredContent, formatToolError, rethrowWithContext } from '../error.utils';
 
 const toToolkitError = (contentText: string): Error => {
   const message = contentText.startsWith('Error: ') ? contentText.slice('Error: '.length) : contentText;
@@ -424,6 +424,47 @@ describe('error.utils', () => {
       };
 
       expect(buildToolErrorStructuredContent(error).headers).toBeUndefined();
+    });
+  });
+
+  describe('ToolValidationError', () => {
+    it('emits errors[] with the code for classification in observability', () => {
+      const structured = buildToolErrorStructuredContent(
+        new ToolValidationError('Invalid JSON in columnValues', 'INVALID_COLUMN_VALUES_JSON'),
+        { toolName: 'create_item' },
+      );
+
+      expect(structured).toEqual({
+        message: 'Invalid JSON in columnValues',
+        tool: 'create_item',
+        errors: [{ code: 'INVALID_COLUMN_VALUES_JSON' }],
+      });
+    });
+
+    it('formatToolError surfaces the code in structuredContent.errors', () => {
+      const result = formatToolError(
+        new ToolValidationError(
+          'Cannot specify both parentItemId and duplicateFromItemId. Please provide only one of these parameters.',
+          'INVALID_ARGUMENTS_COMBINATION',
+        ),
+        { toolName: 'create_item' },
+      );
+
+      expect(result.isError).toBe(true);
+      expect(result.structuredContent).toEqual({
+        message:
+          'Cannot specify both parentItemId and duplicateFromItemId. Please provide only one of these parameters.',
+        tool: 'create_item',
+        errors: [{ code: 'INVALID_ARGUMENTS_COMBINATION' }],
+      });
+    });
+
+    it('preserves the code and message', () => {
+      const err = new ToolValidationError('boom', 'EMPTY_API_RESPONSE');
+      expect(err.code).toBe('EMPTY_API_RESPONSE');
+      expect(err.message).toBe('boom');
+      expect(err.name).toBe('ToolValidationError');
+      expect(err).toBeInstanceOf(Error);
     });
   });
 
