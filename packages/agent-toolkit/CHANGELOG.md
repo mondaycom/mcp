@@ -1,5 +1,15 @@
 # Changelog
 
+## 5.46.0
+
+### search — remove fallback, make searchTerm required, and promote boards/docs to stable API
+
+- `searchTerm` is now required (`z.string().min(1)`) for all search types — agents that previously omitted it to browse must use `workspace_info` instead
+- Removed the legacy `getBoards`/`getDocs` listing queries and the fallback path that activated when the dev search endpoint failed; all results now come directly from the search endpoint
+- Removed the `page` parameter and virtual pagination logic; removed `LOAD_INTO_MEMORY_LIMIT` constant and `DataWithFilterInfo` type
+- Boards and docs search GraphQL queries promoted from `versionOverride: 'dev'` to the stable default schema endpoint; `search-tool.graphql.dev.ts` deleted
+- IDs in search results are now returned as raw values — the `ObjectPrefixes` type and all prefixing logic removed since cross-entity search no longer exists
+
 ## 5.42.0
 
 ### search — add TIMELINE_ITEMS search type
