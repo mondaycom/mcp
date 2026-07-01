@@ -11,21 +11,6 @@ export interface SearchResult {
   creatorId?: string;
 }
 
-export interface DataWithFilterInfo<T> {
-  items: T[];
-  wasFiltered: boolean;
-}
-
-export enum ObjectPrefixes {
-  BOARD = 'board-',
-  DOCUMENT = 'doc-',
-  FOLDER = 'folder-',
-  WORKSPACE = 'workspace-',
-  UPDATE = 'update-',
-  ITEM = 'item-',
-  TIMELINE_ITEM = 'timeline-item-',
-}
-
 export enum GlobalSearchType {
   BOARD = 'BOARD',
   DOCUMENTS = 'DOCUMENTS',
