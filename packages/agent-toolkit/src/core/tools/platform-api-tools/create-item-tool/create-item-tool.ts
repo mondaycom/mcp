@@ -11,7 +11,7 @@ import { createSubitem } from './create-subitem.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { ChangeItemColumnValuesTool } from '../change-item-column-values-tool';
-import { rethrowWithContext } from '../../../../utils';
+import { ToolValidationError, rethrowWithContext } from '../../../../utils';
 
 export const createItemToolSchema = {
   name: z.string().describe("The name of the new item to be created, must be relevant to the user's request"),
@@ -66,8 +66,9 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
     const boardId = this.context?.boardId ?? (input as ToolInputType<typeof createItemInBoardToolSchema>).boardId;
 
     if (input.duplicateFromItemId && input.parentItemId) {
-      throw new Error(
+      throw new ToolValidationError(
         'Cannot specify both parentItemId and duplicateFromItemId. Please provide only one of these parameters.',
+        'INVALID_ARGUMENTS_COMBINATION',
       );
     }
 
@@ -93,14 +94,14 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
       const duplicateRes = await this.mondayApi.request<DuplicateItemMutation>(duplicateItem, duplicateVariables);
 
       if (!duplicateRes.duplicate_item?.id) {
-        throw new Error('Failed to duplicate item: no item duplicated');
+        throw new ToolValidationError('Failed to duplicate item: no item duplicated', 'EMPTY_API_RESPONSE');
       }
 
       let columnValuesParsed;
       try {
         columnValuesParsed = JSON.parse(input.columnValues);
       } catch (error) {
-        throw new Error('Invalid JSON in columnValues');
+        throw new ToolValidationError('Invalid JSON in columnValues', 'INVALID_COLUMN_VALUES_JSON');
       }
 
       const columnValuesAndName = {
@@ -135,7 +136,7 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
       const res = await this.mondayApi.request<CreateSubitemMutation>(createSubitem, variables);
 
       if (!res.create_subitem?.id) {
-        throw new Error('Failed to create subitem: no subitem created');
+        throw new ToolValidationError('Failed to create subitem: no subitem created', 'EMPTY_API_RESPONSE');
       }
 
       return {

@@ -1,6 +1,22 @@
 import { CallToolResult } from '@modelcontextprotocol/sdk/types';
 import { GraphQLErrorResponse, ToolErrorStructuredContent } from './graphql-error.types';
 
+/**
+ * Error thrown by tool code (not by the monday API) when input is invalid or a
+ * pre-condition fails. Carries a stable, short `code` that flows into the
+ * tool's structuredContent.errors[] so observability can classify it instead of
+ * bucketing it as "unclassified".
+ */
+export class ToolValidationError extends Error {
+  readonly code: string;
+
+  constructor(message: string, code: string) {
+    super(message);
+    this.name = 'ToolValidationError';
+    this.code = code;
+  }
+}
+
 export function rethrowWithContext(error: unknown, operation: string): never {
   const graphQLErrors = (error as GraphQLErrorResponse)?.response?.errors
     ?.map((e) => {
@@ -49,6 +65,14 @@ export function buildToolErrorStructuredContent(
 ): ToolErrorStructuredContent {
   const response = (error as GraphQLErrorResponse)?.response;
   const rawMessage = error instanceof Error ? error.message : String(error);
+
+  if (error instanceof ToolValidationError) {
+    return {
+      message: rawMessage,
+      tool: options?.toolName,
+      errors: [{ code: error.code }],
+    };
+  }
 
   if (response?.errors?.length) {
     const headers = Object.keys(response.headers || {}).length > 0
