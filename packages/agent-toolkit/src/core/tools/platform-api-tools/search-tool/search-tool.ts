@@ -1,7 +1,15 @@
 import { ToolInputType, ToolOutputType, ToolType } from 'src/core/tool';
 import { z } from 'zod';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { getFolders, searchBoards, searchDocs, searchItems, searchWorkspaces, searchUpdates, searchTimelineItems } from './search-tool.graphql';
+import {
+  getFolders,
+  searchBoards,
+  searchDocs,
+  searchItems,
+  searchWorkspaces,
+  searchUpdates,
+  searchTimelineItems,
+} from './search-tool.graphql';
 import {
   GetFoldersQuery,
   GetFoldersQueryVariables,
@@ -25,10 +33,7 @@ import { SEARCH_TIMEOUT } from 'src/utils/time.utils';
 import { rethrowWithContext, throwIfSearchTimeoutError } from 'src/utils/error.utils';
 
 export const searchSchema = {
-  searchTerm: z
-    .string()
-    .min(1)
-    .describe('The search term to use.'),
+  searchTerm: z.string().min(1).describe('The search term to use.'),
   searchType: z
     .nativeEnum(GlobalSearchType)
     .describe(
@@ -98,20 +103,18 @@ FOLDERS search requires workspaceIds and returns id and title.
     try {
       if (input.searchType === GlobalSearchType.FOLDERS) {
         const data = await this.searchFoldersAsync(input);
-        return { content: { message: "Search results", data } };
+        return { content: { message: 'Search results', data } };
       }
 
       const data = await this.runSmartSearchAsync(input);
-      return { content: { message: "Search results", data } };
+      return { content: { message: 'Search results', data } };
     } catch (error) {
       throwIfSearchTimeoutError(error);
       throw error;
     }
   }
 
-  private async runSmartSearchAsync(
-    input: ToolInputType<SearchToolInput>,
-  ): Promise<SearchResult[]> {
+  private async runSmartSearchAsync(input: ToolInputType<SearchToolInput>): Promise<SearchResult[]> {
     const workspaceIds = input.workspaceIds?.map((id) => id.toString());
 
     if (input.searchType === GlobalSearchType.BOARD) {
@@ -143,11 +146,7 @@ FOLDERS search requires workspaceIds and returns id and title.
     throw new Error(`Unsupported search type for smart search: ${input.searchType}`);
   }
 
-  private async searchBoardsAsync(
-    query: string,
-    limit: number,
-    workspaceIds?: string[],
-  ): Promise<SearchResult[]> {
+  private async searchBoardsAsync(query: string, limit: number, workspaceIds?: string[]): Promise<SearchResult[]> {
     const variables: SearchBoardsQueryVariables = { query, limit, workspaceIds };
 
     const response = await this.mondayApi.request<SearchBoardsQuery>(searchBoards, variables, {
@@ -161,11 +160,7 @@ FOLDERS search requires workspaceIds and returns id and title.
     }));
   }
 
-  private async searchDocsAsync(
-    query: string,
-    limit: number,
-    workspaceIds?: string[],
-  ): Promise<SearchResult[]> {
+  private async searchDocsAsync(query: string, limit: number, workspaceIds?: string[]): Promise<SearchResult[]> {
     const variables: SearchDocsQueryVariables = { query, limit, workspaceIds };
 
     const response = await this.mondayApi.request<SearchDocsQuery>(searchDocs, variables, {
@@ -178,10 +173,7 @@ FOLDERS search requires workspaceIds and returns id and title.
     }));
   }
 
-  private async searchWorkspacesAsync(
-    query: string,
-    limit: number,
-  ): Promise<SearchResult[]> {
+  private async searchWorkspacesAsync(query: string, limit: number): Promise<SearchResult[]> {
     const variables: SearchWorkspacesQueryVariables = { query, limit };
 
     const response = await this.mondayApi.request<SearchWorkspacesQuery>(searchWorkspaces, variables, {
@@ -216,11 +208,7 @@ FOLDERS search requires workspaceIds and returns id and title.
     }));
   }
 
-  private async searchItemsAsync(
-    query: string,
-    limit: number,
-    workspaceIds?: string[],
-  ): Promise<SearchResult[]> {
+  private async searchItemsAsync(query: string, limit: number, workspaceIds?: string[]): Promise<SearchResult[]> {
     const variables: SearchItemsQueryVariables = { query, limit, workspaceIds };
 
     const response = await this.mondayApi.request<SearchItemsQuery>(searchItems, variables, {
@@ -234,10 +222,7 @@ FOLDERS search requires workspaceIds and returns id and title.
     }));
   }
 
-  private async searchTimelineItemsAsync(
-    query: string,
-    limit: number,
-  ): Promise<SearchResult[]> {
+  private async searchTimelineItemsAsync(query: string, limit: number): Promise<SearchResult[]> {
     const variables: SearchTimelineItemsQueryVariables = { query, limit };
 
     const response = await this.mondayApi.request<SearchTimelineItemsQuery>(searchTimelineItems, variables, {
@@ -270,7 +255,7 @@ FOLDERS search requires workspaceIds and returns id and title.
 
     const normalizedSearchTerm = normalizeString(input.searchTerm);
     const filteredFolders = folders.filter(
-      (folder) => folder?.name && normalizeString(folder.name).includes(normalizedSearchTerm)
+      (folder) => folder?.name && normalizeString(folder.name).includes(normalizedSearchTerm),
     );
 
     return filteredFolders

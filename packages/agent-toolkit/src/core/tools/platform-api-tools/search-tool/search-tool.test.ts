@@ -2,7 +2,15 @@ import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameAsync, callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
 import { SearchTool, searchSchema } from './search-tool';
 import { z, ZodTypeAny } from 'zod';
-import { GetFoldersQuery, SearchBoardsQuery, SearchDocsQuery, SearchItemsQuery, SearchWorkspacesQuery, SearchUpdatesQuery, SearchTimelineItemsQuery } from 'src/monday-graphql/generated/graphql/graphql';
+import {
+  GetFoldersQuery,
+  SearchBoardsQuery,
+  SearchDocsQuery,
+  SearchItemsQuery,
+  SearchWorkspacesQuery,
+  SearchUpdatesQuery,
+  SearchTimelineItemsQuery,
+} from 'src/monday-graphql/generated/graphql/graphql';
 import { GlobalSearchType, SearchResult } from './search-tool.types';
 
 export type inputType = z.objectInputType<typeof searchSchema, ZodTypeAny>;
@@ -65,7 +73,9 @@ describe('SearchTool', () => {
       const description = tool.getDescription();
 
       expect(description).toContain('Search within monday.com platform');
-      expect(description).toContain('Supported searchType values: BOARD, DOCUMENTS, FOLDERS, WORKSPACES, UPDATES, ITEMS, TIMELINE_ITEMS');
+      expect(description).toContain(
+        'Supported searchType values: BOARD, DOCUMENTS, FOLDERS, WORKSPACES, UPDATES, ITEMS, TIMELINE_ITEMS',
+      );
       expect(description).toContain('FOLDERS search requires workspaceIds');
       expect(description).toContain('TIMELINE_ITEMS search returns id, title, summary, and content');
       expect(description).not.toContain('IMPORTANT: ids returned by this tool are prefixed');
@@ -515,14 +525,11 @@ describe('SearchTool', () => {
 
         const parsedResult = await callToolByNameAsync('search', args);
 
-        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query GetFolders'),
-          {
-            page: 1,
-            limit: 100,
-            workspace_ids: ['1'],
-          },
-        );
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetFolders'), {
+          page: 1,
+          limit: 100,
+          workspace_ids: ['1'],
+        });
 
         expect(parsedResult.data).toBeDefined();
       });
@@ -936,9 +943,7 @@ describe('SearchTool', () => {
       const responseWithNullDesc: SearchWorkspacesQuery = {
         search: {
           workspaces: {
-            results: [
-              { id: '30', indexed_data: { id: '30', name: 'Sales Team', description: null } },
-            ],
+            results: [{ id: '30', indexed_data: { id: '30', name: 'Sales Team', description: null } }],
           },
         },
       };
@@ -1112,8 +1117,24 @@ describe('SearchTool', () => {
       search: {
         timeline_items: {
           results: [
-            { id: '10', indexed_data: { id: '10', title: 'Kickoff email', summary: 'Project kickoff summary', content: 'Full kickoff email body' } },
-            { id: '20', indexed_data: { id: '20', title: 'Weekly sync', summary: 'Notes from the weekly sync', content: 'Full weekly sync notes' } },
+            {
+              id: '10',
+              indexed_data: {
+                id: '10',
+                title: 'Kickoff email',
+                summary: 'Project kickoff summary',
+                content: 'Full kickoff email body',
+              },
+            },
+            {
+              id: '20',
+              indexed_data: {
+                id: '20',
+                title: 'Weekly sync',
+                summary: 'Notes from the weekly sync',
+                content: 'Full weekly sync notes',
+              },
+            },
           ],
         },
       },
@@ -1184,9 +1205,7 @@ describe('SearchTool', () => {
       const responseWithEmptySummary: SearchTimelineItemsQuery = {
         search: {
           timeline_items: {
-            results: [
-              { id: '30', indexed_data: { id: '30', title: 'Untitled note', summary: '', content: '' } },
-            ],
+            results: [{ id: '30', indexed_data: { id: '30', title: 'Untitled note', summary: '', content: '' } }],
           },
         },
       };
@@ -1243,7 +1262,15 @@ describe('SearchTool', () => {
 
   describe('Edge Cases', () => {
     it('should handle limit of 1', async () => {
-      mocks.setResponse({ search: { boards: { results: [{ id: '123', indexed_data: { id: '123', name: 'Test Board 1', url: 'https://monday.com/boards/123' } }] } } });
+      mocks.setResponse({
+        search: {
+          boards: {
+            results: [
+              { id: '123', indexed_data: { id: '123', name: 'Test Board 1', url: 'https://monday.com/boards/123' } },
+            ],
+          },
+        },
+      });
 
       const args: inputType = {
         searchType: GlobalSearchType.BOARD,
