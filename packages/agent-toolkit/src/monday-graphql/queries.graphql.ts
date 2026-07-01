@@ -9,8 +9,20 @@ export const deleteItem = gql`
 `;
 
 export const createItem = gql`
-  mutation createItem($boardId: ID!, $itemName: String!, $groupId: String, $columnValues: JSON) {
-    create_item(board_id: $boardId, item_name: $itemName, group_id: $groupId, column_values: $columnValues) {
+  mutation createItem(
+    $boardId: ID!
+    $itemName: String!
+    $groupId: String
+    $columnValues: JSON
+    $createLabelsIfMissing: Boolean
+  ) {
+    create_item(
+      board_id: $boardId
+      item_name: $itemName
+      group_id: $groupId
+      column_values: $columnValues
+      create_labels_if_missing: $createLabelsIfMissing
+    ) {
       id
       name
       url
