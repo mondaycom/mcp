@@ -267,12 +267,11 @@ describe('UpdateFormTool', () => {
 
   describe('Create Tag Action', () => {
     describe('Success Cases', () => {
-      it('should create a tag with name and value', async () => {
+      it('should create a tag with a name', async () => {
         const createTagResponse = {
           create_form_tag: {
             id: 'tag_123',
             name: 'utm_source',
-            value: 'google',
             columnId: 'column_456',
           },
         };
@@ -284,7 +283,6 @@ describe('UpdateFormTool', () => {
           formToken: 'token_123',
           tag: {
             name: 'utm_source',
-            value: 'google',
           },
         };
 
@@ -302,40 +300,8 @@ describe('UpdateFormTool', () => {
           formToken: 'token_123',
           tag: {
             name: 'utm_source',
-            value: 'google',
           },
         });
-      });
-
-      it('should create a tag with name only (no value)', async () => {
-        const createTagResponse = {
-          create_form_tag: {
-            id: 'tag_456',
-            name: 'campaign',
-            value: undefined,
-            columnId: 'column_789',
-          },
-        };
-
-        mocks.setResponse(createTagResponse);
-
-        const args: inputType = {
-          action: FormActions.createTag,
-          formToken: 'token_123',
-          tag: {
-            name: 'campaign',
-          },
-        };
-
-        const result = await callToolByNameRawAsync('update_form', args);
-
-        const parsed = parseToolResult(result);
-        expect(parsed.message).toContain('Tag successfully added');
-        expect(parsed.data.name).toBe('campaign');
-
-        const mockCall = mocks.getMockRequest().mock.calls[0];
-        expect(mockCall[1].tag.name).toBe('campaign');
-        expect(mockCall[1].tag.value).toBeUndefined();
       });
     });
 
@@ -358,8 +324,8 @@ describe('UpdateFormTool', () => {
           action: FormActions.createTag,
           formToken: 'token_123',
           tag: {
-            value: 'test_value',
             // name is missing
+            columnId: 'column_456',
           },
         };
 
@@ -380,7 +346,6 @@ describe('UpdateFormTool', () => {
           formToken: 'token_123',
           tag: {
             name: 'existing_tag',
-            value: 'value',
           },
         };
 
@@ -495,172 +460,6 @@ describe('UpdateFormTool', () => {
 
         expect(result.content[0].text).toContain('Failed to execute tool update_form');
         expect(result.content[0].text).toContain(errorMessage);
-      });
-    });
-  });
-
-  describe('Update Tag Action', () => {
-    describe('Success Cases', () => {
-      it('should update a tag successfully', async () => {
-        const updateTagResponse = {
-          update_form_tag: {
-            id: 'tag_123',
-            name: 'utm_source',
-            value: 'updated_value',
-            columnId: 'column_456',
-          },
-        };
-
-        mocks.setResponse(updateTagResponse);
-
-        const args: inputType = {
-          action: FormActions.updateTag,
-          formToken: 'token_123',
-          tag: {
-            id: 'tag_123',
-            value: 'updated_value',
-          },
-        };
-
-        const result = await callToolByNameRawAsync('update_form', args);
-
-        const parsed = parseToolResult(result);
-        expect(parsed.message).toContain('Tag updated');
-        expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
-
-        const mockCall = mocks.getMockRequest().mock.calls[0];
-        expect(mockCall[0]).toContain('mutation updateFormTag');
-        expect(mockCall[1]).toEqual({
-          formToken: 'token_123',
-          tagId: 'tag_123',
-          tag: {
-            value: 'updated_value',
-          },
-        });
-      });
-
-      it('should update a tag with different value', async () => {
-        const updateTagResponse = {
-          update_form_tag: {
-            id: 'tag_456',
-            name: 'campaign',
-            value: 'summer_2024',
-            columnId: 'column_789',
-          },
-        };
-
-        mocks.setResponse(updateTagResponse);
-
-        const args: inputType = {
-          action: FormActions.updateTag,
-          formToken: 'token_456',
-          tag: {
-            id: 'tag_456',
-            value: 'summer_2024',
-          },
-        };
-
-        const result = await callToolByNameRawAsync('update_form', args);
-
-        const parsed = parseToolResult(result);
-        expect(parsed.message).toContain('Tag updated');
-
-        const mockCall = mocks.getMockRequest().mock.calls[0];
-        expect(mockCall[1].tagId).toBe('tag_456');
-        expect(mockCall[1].tag.value).toBe('summer_2024');
-      });
-    });
-
-    describe('Validation Errors', () => {
-      it('should return error when tag is missing', async () => {
-        const args: inputType = {
-          action: FormActions.updateTag,
-          formToken: 'token_123',
-          // tag is missing
-        };
-
-        const result = await callToolByNameRawAsync('update_form', args);
-
-        expect(result.content[0].text).toBe('Tag is required for the action "updateTag" in the update form tool.');
-        expect(mocks.getMockRequest()).not.toHaveBeenCalled();
-      });
-
-      it('should return error when tag id is missing', async () => {
-        const args: inputType = {
-          action: FormActions.updateTag,
-          formToken: 'token_123',
-          tag: {
-            value: 'test_value',
-            // id is missing
-          },
-        };
-
-        const result = await callToolByNameRawAsync('update_form', args);
-
-        expect(result.content[0].text).toBe(
-          'Tag id and value are required for the action "updateTag" in the update form tool.',
-        );
-        expect(mocks.getMockRequest()).not.toHaveBeenCalled();
-      });
-
-      it('should return error when tag value is missing', async () => {
-        const args: inputType = {
-          action: FormActions.updateTag,
-          formToken: 'token_123',
-          tag: {
-            id: 'tag_123',
-            // value is missing
-          },
-        };
-
-        const result = await callToolByNameRawAsync('update_form', args);
-
-        expect(result.content[0].text).toBe(
-          'Tag id and value are required for the action "updateTag" in the update form tool.',
-        );
-        expect(mocks.getMockRequest()).not.toHaveBeenCalled();
-      });
-    });
-
-    describe('GraphQL Errors', () => {
-      it('should handle GraphQL request exception', async () => {
-        const errorMessage = 'Tag not found';
-        mocks.setError(errorMessage);
-
-        const args: inputType = {
-          action: FormActions.updateTag,
-          formToken: 'token_123',
-          tag: {
-            id: 'nonexistent_tag',
-            value: 'new_value',
-          },
-        };
-
-        const result = await callToolByNameRawAsync('update_form', args);
-
-        expect(result.content[0].text).toContain('Failed to execute tool update_form');
-        expect(result.content[0].text).toContain(errorMessage);
-      });
-
-      it('should handle GraphQL mutation returning null', async () => {
-        const updateTagResponse = {
-          update_form_tag: null,
-        };
-
-        mocks.setResponse(updateTagResponse);
-
-        const args: inputType = {
-          action: FormActions.updateTag,
-          formToken: 'token_123',
-          tag: {
-            id: 'tag_123',
-            value: 'new_value',
-          },
-        };
-
-        const result = await callToolByNameRawAsync('update_form', args);
-
-        expect(result.content[0].text).toBe('Unable to update tag with id: tag_123.');
       });
     });
   });

@@ -91,16 +91,16 @@ When NOT to use: Do not call this tool to get general board information unrelate
         ...(input.cursor ? { cursor: input.cursor } : {}),
       };
 
-      const res = await this.mondayApi.request<BoardAutomationsQuery>(getBoardAutomationsQuery, variables, {
-        versionOverride: '2026-10',
-      });
+      const res = await this.mondayApi.request<BoardAutomationsQuery>(getBoardAutomationsQuery, variables);
 
       const workflows = (res.board_automations?.items ?? []).map(mapBoardAutomationToWorkflow);
       const nextCursor = res.board_automations?.cursor ?? null;
       // legacy_automations is best-effort on the provider: on failure it returns an { error }
       // marker rather than throwing. Drop that so the model never renders an error as an
       // automation — the field is already optional ("present both groups" applies to real data).
-      const legacyAutomations = includeLegacy ? extractLegacyAutomations(res.board_automations?.legacy_automations) : null;
+      const legacyAutomations = includeLegacy
+        ? extractLegacyAutomations(res.board_automations?.legacy_automations)
+        : null;
 
       return {
         content: {

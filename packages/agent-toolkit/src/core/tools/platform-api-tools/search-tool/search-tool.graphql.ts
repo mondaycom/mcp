@@ -75,3 +75,40 @@ export const searchWorkspaces = gql`
     }
   }
 `;
+
+export const searchUpdates = gql`
+  query SearchUpdates($query: String!, $limit: Int, $boardIds: [ID!], $creatorIds: [ID!]) {
+    search {
+      updates(query: $query, limit: $limit, board_ids: $boardIds, creator_ids: $creatorIds) {
+        results {
+          id
+          indexed_data {
+            id
+            body
+            creator_id
+            item_id
+            board_id
+          }
+        }
+      }
+    }
+  }
+`;
+
+export const searchTimelineItems = gql`
+  query SearchTimelineItems($query: String!, $limit: Int) {
+    search {
+      timeline_items(query: $query, limit: $limit) {
+        results {
+          id
+          indexed_data {
+            id
+            title
+            summary
+            content
+          }
+        }
+      }
+    }
+  }
+`;

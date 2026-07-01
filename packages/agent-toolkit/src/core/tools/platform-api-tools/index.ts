@@ -1,5 +1,6 @@
 import { AllMondayApiTool } from './all-monday-api-tool';
 import { AllApiReadTool } from './all-api-read-tool';
+import { AllApiWriteTool } from './all-api-write-tool';
 import { BaseMondayApiToolConstructor } from './base-monday-api-tool';
 import { ChangeItemColumnValuesTool } from './change-item-column-values-tool';
 import { GetObjectSchemasTool } from './get-object-schemas-tool/get-object-schemas-tool';
@@ -30,6 +31,7 @@ import { CreateGroupTool } from './create-group/create-group-tool';
 import { CreateItemTool } from './create-item-tool/create-item-tool';
 import { CreateTimelineItemTool } from './create-timeline-item-tool';
 import { CreateUpdateTool } from './create-update-tool/create-update-tool';
+import { DeleteUpdateTool } from './delete-update-tool/delete-update-tool';
 import { GetUpdatesTool } from './get-updates-tool/get-updates-tool';
 import { DeleteColumnTool } from './delete-column-tool';
 import { DeleteItemTool } from './delete-item-tool';
@@ -92,6 +94,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   GetBoardItemsPageTool,
   CreateItemTool,
   CreateUpdateTool,
+  DeleteUpdateTool,
   GetUpdatesTool,
   CreateUpdateInMondayTool,
   GetBoardSchemaTool,
@@ -115,6 +118,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteColumnTool,
   AllMondayApiTool,
   AllApiReadTool,
+  AllApiWriteTool,
   GetGraphQLSchemaTool,
   GetColumnTypeInfoTool,
   GetTypeDetailsTool,
@@ -186,6 +190,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
 
 export * from './all-monday-api-tool';
 export * from './all-api-read-tool';
+export * from './all-api-write-tool';
 export * from './get-object-schemas-tool/get-object-schemas-tool';
 export * from './create-object-schema-tool/create-object-schema-tool';
 export * from './update-object-schema-tool/update-object-schema-tool';
@@ -211,6 +216,7 @@ export * from './create-notification-tool/create-notification-tool';
 export * from './create-item-tool/create-item-tool';
 export * from './create-timeline-item-tool';
 export * from './create-update-tool/create-update-tool';
+export * from './delete-update-tool/delete-update-tool';
 export * from './get-updates-tool/get-updates-tool';
 export * from './create-view-tool/create-view-tool';
 export * from './update-view-tool/update-view-tool';

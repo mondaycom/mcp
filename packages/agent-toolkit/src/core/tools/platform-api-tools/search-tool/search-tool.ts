@@ -1,7 +1,7 @@
 import { ToolInputType, ToolOutputType, ToolType } from 'src/core/tool';
 import { z } from 'zod';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { getFolders, searchBoards, searchDocs, searchItems, searchWorkspaces } from './search-tool.graphql';
+import { getFolders, searchBoards, searchDocs, searchItems, searchWorkspaces, searchUpdates, searchTimelineItems } from './search-tool.graphql';
 import {
   GetFoldersQuery,
   GetFoldersQueryVariables,
@@ -13,15 +13,11 @@ import {
   SearchItemsQueryVariables,
   SearchWorkspacesQuery,
   SearchWorkspacesQueryVariables,
-} from 'src/monday-graphql/generated/graphql/graphql';
-import {
-  searchUpdates,
   SearchUpdatesQuery,
   SearchUpdatesQueryVariables,
-  searchTimelineItems,
   SearchTimelineItemsQuery,
   SearchTimelineItemsQueryVariables,
-} from './search-tool.graphql.2026-10';
+} from 'src/monday-graphql/generated/graphql/graphql';
 import { normalizeString } from 'src/utils/string.utils';
 import { GlobalSearchType, SearchResult } from './search-tool.types';
 import { MAX_FOLDERS_LIMIT, SEARCH_LIMIT } from './search-tool.consts';
@@ -208,7 +204,6 @@ FOLDERS search requires workspaceIds and returns id and title.
     const variables: SearchUpdatesQueryVariables = { query, limit, boardIds, creatorIds };
 
     const response = await this.mondayApi.request<SearchUpdatesQuery>(searchUpdates, variables, {
-      versionOverride: '2026-10',
       timeout: SEARCH_TIMEOUT,
     });
 
@@ -246,7 +241,6 @@ FOLDERS search requires workspaceIds and returns id and title.
     const variables: SearchTimelineItemsQueryVariables = { query, limit };
 
     const response = await this.mondayApi.request<SearchTimelineItemsQuery>(searchTimelineItems, variables, {
-      versionOverride: '2026-10',
       timeout: SEARCH_TIMEOUT,
     });
 

@@ -2,8 +2,7 @@ import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameAsync, callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
 import { SearchTool, searchSchema } from './search-tool';
 import { z, ZodTypeAny } from 'zod';
-import { GetFoldersQuery, SearchBoardsQuery, SearchDocsQuery, SearchItemsQuery, SearchWorkspacesQuery } from 'src/monday-graphql/generated/graphql/graphql';
-import { SearchUpdatesQuery, SearchTimelineItemsQuery } from './search-tool.graphql.2026-10';
+import { GetFoldersQuery, SearchBoardsQuery, SearchDocsQuery, SearchItemsQuery, SearchWorkspacesQuery, SearchUpdatesQuery, SearchTimelineItemsQuery } from 'src/monday-graphql/generated/graphql/graphql';
 import { GlobalSearchType, SearchResult } from './search-tool.types';
 
 export type inputType = z.objectInputType<typeof searchSchema, ZodTypeAny>;
@@ -1002,7 +1001,7 @@ describe('SearchTool', () => {
       },
     };
 
-    it('should search updates with searchTerm via searchUpdates query (versionOverride: 2026-10)', async () => {
+    it('should search updates with searchTerm via searchUpdates query', async () => {
       mocks.setResponse(mockUpdatesResponse);
 
       const args: inputType = {
@@ -1036,7 +1035,7 @@ describe('SearchTool', () => {
           boardIds: undefined,
           creatorIds: undefined,
         },
-        expect.objectContaining({ versionOverride: '2026-10' }),
+        expect.objectContaining({ timeout: expect.any(Number) }),
       );
     });
 
@@ -1074,7 +1073,7 @@ describe('SearchTool', () => {
           boardIds: ['801', '802'],
           creatorIds: ['501'],
         },
-        expect.objectContaining({ versionOverride: '2026-10' }),
+        expect.objectContaining({ timeout: expect.any(Number) }),
       );
     });
 
@@ -1120,7 +1119,7 @@ describe('SearchTool', () => {
       },
     };
 
-    it('should search timeline items with searchTerm via searchTimelineItems query (versionOverride: 2026-10)', async () => {
+    it('should search timeline items with searchTerm via searchTimelineItems query', async () => {
       mocks.setResponse(mockTimelineItemsResponse);
 
       const args: inputType = {
@@ -1150,7 +1149,7 @@ describe('SearchTool', () => {
           query: 'kickoff',
           limit: 20,
         },
-        expect.objectContaining({ versionOverride: '2026-10' }),
+        expect.objectContaining({ timeout: expect.any(Number) }),
       );
     });
 

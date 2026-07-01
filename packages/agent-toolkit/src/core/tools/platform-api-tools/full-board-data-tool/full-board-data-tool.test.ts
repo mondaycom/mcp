@@ -100,12 +100,12 @@ describe('Full Board Data Tool', () => {
       {
         id: 'user1',
         name: 'John Doe',
-        photo_tiny: 'https://example.com/user1.jpg',
+        photo_url: { tiny: 'https://example.com/user1.jpg' },
       },
       {
         id: 'user2',
         name: 'Jane Smith',
-        photo_tiny: 'https://example.com/user2.jpg',
+        photo_url: { tiny: 'https://example.com/user2.jpg' },
       },
     ],
   };
@@ -143,12 +143,12 @@ describe('Full Board Data Tool', () => {
     expect(parsedResult.board.items[0].updates[0].creator).toEqual({
       id: 'user1',
       name: 'John Doe',
-      photo_tiny: 'https://example.com/user1.jpg',
+      photo_url: { tiny: 'https://example.com/user1.jpg' },
     });
     expect(parsedResult.board.items[0].updates[1].creator).toEqual({
       id: 'user2',
       name: 'Jane Smith',
-      photo_tiny: 'https://example.com/user2.jpg',
+      photo_url: { tiny: 'https://example.com/user2.jpg' },
     });
 
     // Verify negative creator IDs are not enriched but update is still present
@@ -336,8 +336,8 @@ describe('Full Board Data Tool', () => {
 
     const mockPeopleUsersResponse = {
       users: [
-        { id: 'user123', name: 'John Doe', photo_tiny: 'https://example.com/user123.jpg' },
-        { id: 'user789', name: 'Jane Smith', photo_tiny: 'https://example.com/user789.jpg' },
+        { id: 'user123', name: 'John Doe', photo_url: { tiny: 'https://example.com/user123.jpg' } },
+        { id: 'user789', name: 'Jane Smith', photo_url: { tiny: 'https://example.com/user789.jpg' } },
       ],
     };
 
