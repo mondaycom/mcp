@@ -10,10 +10,16 @@ describe('AllApiWriteTool', () => {
 
   it('throws when given a query', async () => {
     const tool = new AllApiWriteTool(mocks.mockApiClient);
+    const sessionContext = { metadata: {} as Record<string, unknown> };
 
     await expect(
-      tool.execute({ query: 'query { boards { id } }', variables: '{}' }),
+      tool.execute({ query: 'query { boards { id } }', variables: '{}' }, sessionContext),
     ).rejects.toThrow('all_api_write only accepts mutations. Read queries are not allowed.');
+
+    expect(sessionContext.metadata).toEqual({
+      graphql_query_count: 1,
+      graphql_mutation_count: 0,
+    });
   });
 
   it('does not throw when given a mutation', async () => {

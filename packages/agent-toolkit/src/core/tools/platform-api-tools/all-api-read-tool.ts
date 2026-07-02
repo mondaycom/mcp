@@ -23,7 +23,10 @@ export class AllApiReadTool extends AllMondayApiTool {
   }
 
   protected async executeInternal(input: ToolInputType<typeof allMondayApiToolSchema>): Promise<ToolOutputType<never>> {
-    const operation = getOperationAST(parse(input.query));
+    const documentAST = parse(input.query);
+    this.recordGraphqlOperationCounts(documentAST);
+
+    const operation = getOperationAST(documentAST);
 
     if (operation?.operation === OperationTypeNode.MUTATION) {
       throw new Error('all_api_read only accepts read queries. Mutations are not allowed.');

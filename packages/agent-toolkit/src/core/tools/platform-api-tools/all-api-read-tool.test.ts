@@ -10,10 +10,19 @@ describe('AllApiReadTool', () => {
 
   it('throws when given a mutation', async () => {
     const tool = new AllApiReadTool(mocks.mockApiClient);
+    const sessionContext = { metadata: {} as Record<string, unknown> };
 
     await expect(
-      tool.execute({ query: 'mutation { create_item(board_id: 1, item_name: "test") { id } }', variables: '{}' }),
+      tool.execute(
+        { query: 'mutation { create_item(board_id: 1, item_name: "test") { id } }', variables: '{}' },
+        sessionContext,
+      ),
     ).rejects.toThrow('all_api_read only accepts read queries. Mutations are not allowed.');
+
+    expect(sessionContext.metadata).toEqual({
+      graphql_query_count: 0,
+      graphql_mutation_count: 1,
+    });
   });
 
   it('does not throw when given a query', async () => {

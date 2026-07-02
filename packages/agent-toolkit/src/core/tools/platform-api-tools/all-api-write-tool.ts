@@ -23,7 +23,10 @@ export class AllApiWriteTool extends AllMondayApiTool {
   }
 
   protected async executeInternal(input: ToolInputType<typeof allMondayApiToolSchema>): Promise<ToolOutputType<never>> {
-    const operation = getOperationAST(parse(input.query));
+    const documentAST = parse(input.query);
+    this.recordGraphqlOperationCounts(documentAST);
+
+    const operation = getOperationAST(documentAST);
 
     if (operation && operation.operation !== OperationTypeNode.MUTATION) {
       throw new Error('all_api_write only accepts mutations. Read queries are not allowed.');
