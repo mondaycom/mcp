@@ -17,8 +17,8 @@ describe('AllApiWriteTool', () => {
     ).rejects.toThrow('all_api_write only accepts mutations. Read queries are not allowed.');
 
     expect(sessionContext.metadata).toEqual({
-      graphql_query_count: 1,
-      graphql_mutation_count: 0,
+      graphql_queries: { boards: 1 },
+      graphql_mutations: {},
     });
   });
 

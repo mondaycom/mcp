@@ -25,8 +25,8 @@ describe('AllMondayApiTool', () => {
     ).rejects.toThrow('Cannot query field "thisFieldDoesNotExist" on type "Query".');
 
     expect(sessionContext.metadata).toEqual({
-      graphql_query_count: 1,
-      graphql_mutation_count: 0,
+      graphql_queries: { thisFieldDoesNotExist: 1 },
+      graphql_mutations: {},
     });
   });
 
@@ -51,8 +51,23 @@ describe('AllMondayApiTool', () => {
     );
 
     expect(sessionContext.metadata).toEqual({
-      graphql_query_count: 1,
-      graphql_mutation_count: 1,
+      graphql_queries: { GetBoards: 1 },
+      graphql_mutations: { CreateItem: 1 },
+    });
+  });
+
+  it('uses root field name when operation is anonymous', async () => {
+    const mockRequest = jest.fn().mockResolvedValue({ boards: [{ id: '1' }] });
+    const tool = new AllMondayApiTool({ request: mockRequest } as unknown as ApiClient);
+    jest.spyOn(tool as unknown as { validateOperation: () => Promise<string[]> }, 'validateOperation').mockResolvedValue([]);
+
+    const sessionContext = { metadata: {} as Record<string, unknown> };
+
+    await tool.execute({ query: 'query { boards { id } }', variables: '{}' }, sessionContext);
+
+    expect(sessionContext.metadata).toEqual({
+      graphql_queries: { boards: 1 },
+      graphql_mutations: {},
     });
   });
 });

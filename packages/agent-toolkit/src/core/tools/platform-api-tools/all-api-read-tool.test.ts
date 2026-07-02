@@ -20,8 +20,8 @@ describe('AllApiReadTool', () => {
     ).rejects.toThrow('all_api_read only accepts read queries. Mutations are not allowed.');
 
     expect(sessionContext.metadata).toEqual({
-      graphql_query_count: 0,
-      graphql_mutation_count: 1,
+      graphql_queries: {},
+      graphql_mutations: { create_item: 1 },
     });
   });
 

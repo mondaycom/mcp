@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { BaseMondayApiTool, MondayApiToolContext, createMondayApiAnnotations } from './base-monday-api-tool';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
-import { buildClientSchema, DocumentNode, GraphQLSchema, IntrospectionQuery, parse, validate } from 'graphql';
+import { buildClientSchema, DocumentNode, GraphQLSchema, IntrospectionQuery, OperationDefinitionNode, parse, validate } from 'graphql';
 import { ApiClient } from '@mondaydotcomorg/api';
 import { introspectionQuery } from '../../../monday-graphql';
 import { API_VERSION } from '../../../utils/version.utils';
@@ -66,32 +66,47 @@ export class AllMondayApiTool extends BaseMondayApiTool<typeof allMondayApiToolS
   }
 
   protected countGraphqlOperations(documentAST: DocumentNode): {
-    graphql_query_count: number;
-    graphql_mutation_count: number;
+    graphql_queries: Record<string, number>;
+    graphql_mutations: Record<string, number>;
   } {
-    let graphql_query_count = 0;
-    let graphql_mutation_count = 0;
+    const graphql_queries: Record<string, number> = {};
+    const graphql_mutations: Record<string, number> = {};
 
     for (const definition of documentAST.definitions) {
       if (definition.kind !== 'OperationDefinition') {
         continue;
       }
 
+      const operationKey = this.getGraphqlOperationKey(definition);
+
       if (definition.operation === 'mutation') {
-        graphql_mutation_count++;
+        graphql_mutations[operationKey] = (graphql_mutations[operationKey] ?? 0) + 1;
       } else if (definition.operation === 'query') {
-        graphql_query_count++;
+        graphql_queries[operationKey] = (graphql_queries[operationKey] ?? 0) + 1;
       }
     }
 
-    return { graphql_query_count, graphql_mutation_count };
+    return { graphql_queries, graphql_mutations };
+  }
+
+  private getGraphqlOperationKey(definition: OperationDefinitionNode): string {
+    if (definition.name?.value) {
+      return definition.name.value;
+    }
+
+    const firstSelection = definition.selectionSet.selections[0];
+    if (firstSelection?.kind === 'Field') {
+      return firstSelection.name.value;
+    }
+
+    return '<anonymous>';
   }
 
   protected recordGraphqlOperationCounts(documentAST: DocumentNode): void {
-    const { graphql_query_count, graphql_mutation_count } = this.countGraphqlOperations(documentAST);
+    const { graphql_queries, graphql_mutations } = this.countGraphqlOperations(documentAST);
     this.sessionContext.metadata ??= {};
-    this.sessionContext.metadata.graphql_query_count = graphql_query_count;
-    this.sessionContext.metadata.graphql_mutation_count = graphql_mutation_count;
+    this.sessionContext.metadata.graphql_queries = graphql_queries;
+    this.sessionContext.metadata.graphql_mutations = graphql_mutations;
   }
 
   private async validateOperation(documentAST: DocumentNode, version: string): Promise<string[]> {
