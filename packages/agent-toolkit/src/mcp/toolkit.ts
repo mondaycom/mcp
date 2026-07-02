@@ -341,10 +341,6 @@ export class MondayAgentToolkit extends McpServer {
     return inputSchema;
   }
 
-  private isToolErrorContent(content: Record<string, unknown>): boolean {
-    return typeof content.error === 'string' && Array.isArray(content.errors) && content.errors.length > 0;
-  }
-
   /**
    * Format the tool result into the expected MCP format
    */
@@ -352,20 +348,6 @@ export class MondayAgentToolkit extends McpServer {
     if (typeof content === 'string') {
       return {
         content: [{ type: 'text', text: content }],
-      };
-    }
-
-    if (this.isToolErrorContent(content)) {
-      const errorMessage = content.error as string;
-      const errors = content.errors as Record<string, unknown>[];
-
-      return {
-        isError: true,
-        structuredContent: {
-          message: errorMessage,
-          errors,
-        },
-        content: [{ type: 'text', text: errorMessage }],
       };
     }
 
