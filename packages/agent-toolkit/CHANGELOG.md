@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.49.0
+
+### search — normalize searchType and limit inputs
+
+- `searchType` now accepts lowercase and plural variants (e.g. `"boards"`, `"docs"`, `"workspace"`) and normalizes them to the canonical enum value via `z.preprocess()`
+- `limit` values exceeding the maximum (20) are clamped instead of rejected, preventing unnecessary validation errors
+- These two normalizations address ~12k weekly validation errors caused by LLMs passing non-canonical input values
+
 ## 5.46.0
 
 ### search — remove fallback, make searchTerm required, and promote boards/docs to stable API
