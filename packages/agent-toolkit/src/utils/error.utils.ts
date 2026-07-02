@@ -7,6 +7,8 @@ import { GraphQLErrorResponse, ToolErrorStructuredContent } from './graphql-erro
  * tool's structuredContent.errors[] so observability can classify it instead of
  * bucketing it as "unclassified".
  */
+export const INVALID_TOOL_ARGS_CODE = 'INVALID_TOOL_ARGS';
+
 export class ToolValidationError extends Error {
   readonly code: string;
 
@@ -18,6 +20,10 @@ export class ToolValidationError extends Error {
 }
 
 export function rethrowWithContext(error: unknown, operation: string): never {
+  if (error instanceof ToolValidationError) {
+    throw error;
+  }
+
   const graphQLErrors = (error as GraphQLErrorResponse)?.response?.errors
     ?.map((e) => {
       const { code, error_data } = e.extensions ?? {};
@@ -59,6 +65,32 @@ export function formatToolError(
   };
 }
 
+export function buildErrorEntry(error: unknown, path: unknown[] = []): Record<string, unknown> {
+  const rawMessage = error instanceof Error ? error.message : String(error);
+  const gqlEntry = (error as GraphQLErrorResponse)?.response?.errors?.[0];
+
+  if (gqlEntry) {
+    return {
+      ...(gqlEntry.extensions ?? {}),
+      message: gqlEntry.message ?? rawMessage,
+      path,
+    };
+  }
+
+  if (error instanceof ToolValidationError) {
+    return {
+      code: error.code,
+      message: rawMessage,
+      path,
+    };
+  }
+
+  return {
+    message: rawMessage,
+    path,
+  };
+}
+
 export function buildToolErrorStructuredContent(
   error: unknown,
   options?: { toolName?: string },
@@ -70,7 +102,15 @@ export function buildToolErrorStructuredContent(
     return {
       message: rawMessage,
       tool: options?.toolName,
-      errors: [{ code: error.code }],
+      errors: [buildErrorEntry(error)],
+    };
+  }
+
+  if (rawMessage.startsWith('Invalid arguments:')) {
+    return {
+      message: rawMessage,
+      tool: options?.toolName,
+      errors: [buildErrorEntry(new ToolValidationError(rawMessage, INVALID_TOOL_ARGS_CODE))],
     };
   }
 

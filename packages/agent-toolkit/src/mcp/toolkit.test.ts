@@ -1031,7 +1031,7 @@ describe('MondayAgentToolkit', () => {
       const result = await tool.handler({ input: 'test' });
 
       expect(result).toEqual({
-        structuredContent: { message: 'Test error' },
+        structuredContent: { message: 'Test error', tool: 'mcp-error-tool' },
         content: [{ type: 'text', text: 'Error: Test error' }],
         isError: true,
       });

@@ -81,6 +81,17 @@ describe('error.utils', () => {
 
       expect(() => rethrowWithContext(error, 'create group')).toThrow('Failed to create group: Unknown error');
     });
+    it('preserves ToolValidationError without wrapping', () => {
+      const error = new ToolValidationError('Invalid JSON in columnValues', 'INVALID_COLUMN_VALUES_JSON');
+
+      try {
+        rethrowWithContext(error, 'duplicate item');
+      } catch (caught) {
+        expect(caught).toBe(error);
+        expect((caught as ToolValidationError).code).toBe('INVALID_COLUMN_VALUES_JSON');
+        expect((caught as ToolValidationError).message).toBe('Invalid JSON in columnValues');
+      }
+    });
   });
 
   describe('Standard Error instances', () => {
@@ -437,7 +448,7 @@ describe('error.utils', () => {
       expect(structured).toEqual({
         message: 'Invalid JSON in columnValues',
         tool: 'create_item',
-        errors: [{ code: 'INVALID_COLUMN_VALUES_JSON' }],
+        errors: [{ code: 'INVALID_COLUMN_VALUES_JSON', message: 'Invalid JSON in columnValues', path: [] }],
       });
     });
 
@@ -455,7 +466,14 @@ describe('error.utils', () => {
         message:
           'Cannot specify both parentItemId and duplicateFromItemId. Please provide only one of these parameters.',
         tool: 'create_item',
-        errors: [{ code: 'INVALID_ARGUMENTS_COMBINATION' }],
+        errors: [
+          {
+            code: 'INVALID_ARGUMENTS_COMBINATION',
+            message:
+              'Cannot specify both parentItemId and duplicateFromItemId. Please provide only one of these parameters.',
+            path: [],
+          },
+        ],
       });
     });
 
@@ -530,6 +548,13 @@ describe('error.utils', () => {
 
         expect(result.structuredContent).toEqual({
           message: 'Invalid arguments: [\n  {\n    "code": "invalid_type",\n    "expected": "number",\n    "received": "string",\n    "path": ["boardId"],\n    "message": "Expected number, received string"\n  }\n]',
+          errors: [
+            {
+              code: 'INVALID_TOOL_ARGS',
+              message: 'Invalid arguments: [\n  {\n    "code": "invalid_type",\n    "expected": "number",\n    "received": "string",\n    "path": ["boardId"],\n    "message": "Expected number, received string"\n  }\n]',
+              path: [],
+            },
+          ],
         });
         expect(result.content?.[0]?.text).toBe(contentText);
       });
