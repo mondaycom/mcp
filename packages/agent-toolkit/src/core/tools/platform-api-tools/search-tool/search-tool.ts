@@ -28,23 +28,25 @@ import {
 } from 'src/monday-graphql/generated/graphql/graphql';
 import { normalizeString } from 'src/utils/string.utils';
 import { GlobalSearchType, SearchResult } from './search-tool.types';
-import { MAX_FOLDERS_LIMIT, SEARCH_LIMIT } from './search-tool.consts';
+import { MAX_FOLDERS_LIMIT, SEARCH_LIMIT, SEARCH_TYPE_ALIASES } from './search-tool.consts';
 import { SEARCH_TIMEOUT } from 'src/utils/time.utils';
 import { rethrowWithContext, throwIfSearchTimeoutError } from 'src/utils/error.utils';
 
 export const searchSchema = {
   searchTerm: z.string().min(1).describe('The search term to use.'),
   searchType: z
-    .nativeEnum(GlobalSearchType)
+    .preprocess(
+      (val) => (typeof val === 'string' ? (SEARCH_TYPE_ALIASES[val.toUpperCase()] ?? val.toUpperCase()) : val),
+      z.nativeEnum(GlobalSearchType),
+    )
     .describe(
       'The type of search to perform. Valid values: BOARD, DOCUMENTS, FOLDERS, WORKSPACES, UPDATES, ITEMS, TIMELINE_ITEMS.',
     ),
   limit: z
-    .number()
-    .max(SEARCH_LIMIT)
+    .preprocess((val) => (typeof val === 'number' && val > SEARCH_LIMIT ? SEARCH_LIMIT : val), z.number())
     .optional()
     .default(SEARCH_LIMIT)
-    .describe(`The number of items to get. Maximum is ${SEARCH_LIMIT} — do not exceed this value.`),
+    .describe(`The number of items to get. Maximum is ${SEARCH_LIMIT}.`),
 
   // for boards and docs
   workspaceIds: z
