@@ -65,32 +65,6 @@ export function formatToolError(
   };
 }
 
-export function buildErrorEntry(error: unknown, path: unknown[] = []): Record<string, unknown> {
-  const rawMessage = error instanceof Error ? error.message : String(error);
-  const gqlEntry = (error as GraphQLErrorResponse)?.response?.errors?.[0];
-
-  if (gqlEntry) {
-    return {
-      ...(gqlEntry.extensions ?? {}),
-      message: gqlEntry.message ?? rawMessage,
-      path,
-    };
-  }
-
-  if (error instanceof ToolValidationError) {
-    return {
-      code: error.code,
-      message: rawMessage,
-      path,
-    };
-  }
-
-  return {
-    message: rawMessage,
-    path,
-  };
-}
-
 export function buildToolErrorStructuredContent(
   error: unknown,
   options?: { toolName?: string },
@@ -102,15 +76,7 @@ export function buildToolErrorStructuredContent(
     return {
       message: rawMessage,
       tool: options?.toolName,
-      errors: [buildErrorEntry(error)],
-    };
-  }
-
-  if (rawMessage.startsWith('Invalid arguments:')) {
-    return {
-      message: rawMessage,
-      tool: options?.toolName,
-      errors: [buildErrorEntry(new ToolValidationError(rawMessage, INVALID_TOOL_ARGS_CODE))],
+      errors: [{ code: error.code, message: rawMessage, path: [] }],
     };
   }
 

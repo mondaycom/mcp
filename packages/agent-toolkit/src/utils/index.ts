@@ -6,7 +6,6 @@ export { API_VERSION } from './version.utils';
 export {
   INVALID_TOOL_ARGS_CODE,
   ToolValidationError,
-  buildErrorEntry,
   buildToolErrorStructuredContent,
   formatToolError,
   rethrowWithContext,

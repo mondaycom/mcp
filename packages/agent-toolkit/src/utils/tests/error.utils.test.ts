@@ -1,5 +1,5 @@
 import { GraphQLErrorResponse } from '../graphql-error.types';
-import { ToolValidationError, buildToolErrorStructuredContent, formatToolError, rethrowWithContext } from '../error.utils';
+import { ToolValidationError, INVALID_TOOL_ARGS_CODE, buildToolErrorStructuredContent, formatToolError, rethrowWithContext } from '../error.utils';
 
 const toToolkitError = (contentText: string): Error => {
   const message = contentText.startsWith('Error: ') ? contentText.slice('Error: '.length) : contentText;
@@ -541,22 +541,16 @@ describe('error.utils', () => {
 
     describe('observability-fixtures.md — Shape C local validation', () => {
       it('Zod invalid_tool_args', () => {
-        const contentText =
-          'Error: Invalid arguments: [\n  {\n    "code": "invalid_type",\n    "expected": "number",\n    "received": "string",\n    "path": ["boardId"],\n    "message": "Expected number, received string"\n  }\n]';
+        const message =
+          'Invalid arguments: [\n  {\n    "code": "invalid_type",\n    "expected": "number",\n    "received": "string",\n    "path": ["boardId"],\n    "message": "Expected number, received string"\n  }\n]';
 
-        const result = formatToolError(toToolkitError(contentText));
+        const result = formatToolError(new ToolValidationError(message, INVALID_TOOL_ARGS_CODE));
 
         expect(result.structuredContent).toEqual({
-          message: 'Invalid arguments: [\n  {\n    "code": "invalid_type",\n    "expected": "number",\n    "received": "string",\n    "path": ["boardId"],\n    "message": "Expected number, received string"\n  }\n]',
-          errors: [
-            {
-              code: 'INVALID_TOOL_ARGS',
-              message: 'Invalid arguments: [\n  {\n    "code": "invalid_type",\n    "expected": "number",\n    "received": "string",\n    "path": ["boardId"],\n    "message": "Expected number, received string"\n  }\n]',
-              path: [],
-            },
-          ],
+          message,
+          errors: [{ code: INVALID_TOOL_ARGS_CODE, message, path: [] }],
         });
-        expect(result.content?.[0]?.text).toBe(contentText);
+        expect(result.content?.[0]?.text).toBe(`Error: ${message}`);
       });
 
       it('local GraphQL validation', () => {
