@@ -10,3 +10,4 @@ export {
   rethrowWithContext,
   throwIfSearchTimeoutError,
 } from './error.utils';
+export { runWithConcurrency } from './concurrency.utils';

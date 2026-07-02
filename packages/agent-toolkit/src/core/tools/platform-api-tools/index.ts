@@ -29,6 +29,7 @@ import { CreateCustomActivityTool } from './create-custom-activity-tool';
 import { CreateNotificationTool } from './create-notification-tool/create-notification-tool';
 import { CreateGroupTool } from './create-group/create-group-tool';
 import { CreateItemTool } from './create-item-tool/create-item-tool';
+import { CreateItemsTool } from './create-items-tool/create-items-tool';
 import { CreateTimelineItemTool } from './create-timeline-item-tool';
 import { CreateUpdateTool } from './create-update-tool/create-update-tool';
 import { DeleteUpdateTool } from './delete-update-tool/delete-update-tool';
@@ -93,6 +94,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteItemTool,
   GetBoardItemsPageTool,
   CreateItemTool,
+  CreateItemsTool,
   CreateUpdateTool,
   DeleteUpdateTool,
   GetUpdatesTool,
@@ -214,6 +216,7 @@ export * from './create-group/create-group-tool';
 export * from './create-custom-activity-tool';
 export * from './create-notification-tool/create-notification-tool';
 export * from './create-item-tool/create-item-tool';
+export * from './create-items-tool/create-items-tool';
 export * from './create-timeline-item-tool';
 export * from './create-update-tool/create-update-tool';
 export * from './delete-update-tool/delete-update-tool';

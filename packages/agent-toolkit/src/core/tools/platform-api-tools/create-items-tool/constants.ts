@@ -1,0 +1,2 @@
+export const MAX_ITEMS_PER_CALL = 20;
+export const CONCURRENCY_LIMIT = 5;
