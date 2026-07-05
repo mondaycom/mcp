@@ -2,8 +2,8 @@ import { z } from 'zod';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { CreateItemTool } from '../create-item-tool/create-item-tool';
-import { runWithConcurrency } from '../../../../utils';
-import { MAX_ITEMS_PER_CALL, CONCURRENCY_LIMIT } from './constants';
+import { runWithRateLimitCircuit } from '../../../../utils';
+import { MAX_ITEMS_PER_CALL, CONCURRENCY_LIMIT, RATE_LIMIT_SKIPPED_CODE } from './constants';
 
 type PerItemResult =
   | { index: number; error: string; _errorEntry: Record<string, unknown>; [k: string]: unknown }
@@ -90,28 +90,33 @@ export class CreateItemsTool extends BaseMondayApiTool<CreateItemsToolInput> {
   protected async executeInternal(input: ToolInputType<CreateItemsToolInput>): Promise<ToolOutputType<never>> {
     const boardId = this.context?.boardId ?? (input as ToolInputType<typeof createItemsInBoardToolSchema>).boardId;
     const singleTool = new CreateItemTool(this.mondayApi, { boardId });
+    const skipMessage = 'Skipped: a previous item hit the minute rate limit; this item was not attempted';
 
     const tasks = input.items.map((item, index) => async (): Promise<PerItemResult> => {
-      try {
-        const result = await singleTool.execute({
-          name: item.name,
-          columnValues: item.columnValues,
-          groupId: item.groupId,
-          parentItemId: item.parentItemId,
-          duplicateFromItemId: item.duplicateFromItemId,
-          createLabelsIfMissing: item.createLabelsIfMissing,
-        });
-        return { index, ...(result.content as Record<string, unknown>) };
-      } catch (error) {
-        return {
-          index,
-          error: error instanceof Error ? error.message : String(error),
-          _errorEntry: extractErrorEntry(error, index),
-        };
-      }
+      const result = await singleTool.execute({
+        name: item.name,
+        columnValues: item.columnValues,
+        groupId: item.groupId,
+        parentItemId: item.parentItemId,
+        duplicateFromItemId: item.duplicateFromItemId,
+        createLabelsIfMissing: item.createLabelsIfMissing,
+      });
+      return { index, ...(result.content as Record<string, unknown>) };
     });
 
-    const raw = await runWithConcurrency(tasks, CONCURRENCY_LIMIT);
+    const raw = await runWithRateLimitCircuit(tasks, {
+      limit: CONCURRENCY_LIMIT,
+      onSkipped: (index) => ({
+        index,
+        error: skipMessage,
+        _errorEntry: { code: RATE_LIMIT_SKIPPED_CODE, message: skipMessage, path: ['results', index] },
+      }),
+      onError: (error, index) => ({
+        index,
+        error: error instanceof Error ? error.message : String(error),
+        _errorEntry: extractErrorEntry(error, index),
+      }),
+    });
 
     const errors = raw
       .filter(r => 'error' in r)

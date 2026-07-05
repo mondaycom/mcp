@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { createMockApiClient } from '../test-utils/mock-api-client';
 import { CreateItemsTool, createItemsInBoardToolSchema } from './create-items-tool';
-import { MAX_ITEMS_PER_CALL } from './constants';
+import { CONCURRENCY_LIMIT, MAX_ITEMS_PER_CALL } from './constants';
 
 describe('Create Items Tool Behaviour', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
@@ -279,6 +279,132 @@ describe('Create Items Tool Behaviour', () => {
       });
       const c = result.content as any;
       expect(c).not.toHaveProperty('errors');
+    });
+  });
+
+  describe('Rate limit abort', () => {
+    const rateLimit429 = () => {
+      const err = new Error('GraphQL Error');
+      (err as any).response = {
+        errors: [{ message: 'Rate limit exceeded' }],
+        status: 429,
+      };
+      return err;
+    };
+
+    it('stops firing new items once a 429 is observed and marks the queued items as skipped', async () => {
+      mocks.getMockRequest().mockRejectedValue(rateLimit429());
+
+      const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
+      const total = CONCURRENCY_LIMIT + 5;
+      const items = Array.from({ length: total }, (_, i) => ({
+        name: `item ${i}`,
+        groupId: 'topics',
+        columnValues: '{}',
+      }));
+
+      const result = await tool.execute({ items });
+      const c = result.content as any;
+
+      expect(c.results).toHaveLength(total);
+      expect(mocks.getMockRequest().mock.calls.length).toBeLessThanOrEqual(CONCURRENCY_LIMIT);
+
+      const skipped = c.results.filter((r: any) => typeof r.error === 'string' && r.error.includes('Skipped'));
+      expect(skipped.length).toBeGreaterThan(0);
+      expect(c.errors).toEqual(
+        expect.arrayContaining([expect.objectContaining({ code: 'RATE_LIMIT_SKIPPED' })]),
+      );
+    });
+
+    it('mid-batch 429 causes queued tail items to be skipped while in-flight items still return their real results', async () => {
+      const deferreds: Array<{ resolve: (v: any) => void; reject: (e: any) => void }> = [];
+      const mockRequest = mocks.getMockRequest();
+      mockRequest.mockImplementation(
+        () =>
+          new Promise((resolve, reject) => {
+            deferreds.push({ resolve, reject });
+          }),
+      );
+
+      const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
+      const total = CONCURRENCY_LIMIT + 5;
+      const items = Array.from({ length: total }, (_, i) => ({
+        name: `item-${i}`,
+        groupId: 'topics',
+        columnValues: '{}',
+      }));
+
+      const resultPromise = tool.execute({ items });
+
+      await new Promise((r) => setTimeout(r, 0));
+      expect(deferreds.length).toBe(CONCURRENCY_LIMIT);
+
+      const failedIndex = 5;
+      deferreds[failedIndex].reject(rateLimit429());
+
+      await new Promise((r) => setTimeout(r, 0));
+      expect(deferreds.length).toBe(CONCURRENCY_LIMIT);
+
+      for (let i = 0; i < CONCURRENCY_LIMIT; i++) {
+        if (i === failedIndex) {
+          continue;
+        }
+        deferreds[i].resolve({
+          create_item: {
+            id: `id-${i}`,
+            name: `item-${i}`,
+            url: `https://monday.com/boards/456/pulses/id-${i}`,
+          },
+        });
+      }
+
+      const result = await resultPromise;
+      const c = result.content as any;
+
+      expect(c.summary).toEqual({
+        total,
+        created: CONCURRENCY_LIMIT - 1,
+        failed: total - (CONCURRENCY_LIMIT - 1),
+      });
+
+      for (let i = 0; i < CONCURRENCY_LIMIT; i++) {
+        if (i === failedIndex) {
+          continue;
+        }
+        expect(c.results[i]).toMatchObject({ index: i, item_id: `id-${i}` });
+        expect(c.results[i].error).toBeUndefined();
+      }
+
+      expect(c.results[failedIndex]).toMatchObject({ index: failedIndex });
+      expect(c.results[failedIndex].error).toContain('Rate limit');
+
+      for (let i = CONCURRENCY_LIMIT; i < total; i++) {
+        expect(c.results[i]).toMatchObject({ index: i });
+        expect(c.results[i].error).toContain('Skipped');
+      }
+
+      expect(mockRequest.mock.calls.length).toBe(CONCURRENCY_LIMIT);
+    });
+
+    it('does not trip on non-rate-limit errors (status != 429)', async () => {
+      const err = new Error('GraphQL Error');
+      (err as any).response = {
+        errors: [{ message: 'Invalid column values', extensions: { code: 'ColumnValueException' } }],
+        status: 200,
+      };
+      mocks.getMockRequest().mockRejectedValueOnce(err);
+      mocks.getMockRequest().mockResolvedValueOnce(itemResponse('2', 'B'));
+
+      const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
+      const result = await tool.execute({
+        items: [
+          { name: 'A', groupId: 'topics', columnValues: '{}' },
+          { name: 'B', groupId: 'topics', columnValues: '{}' },
+        ],
+      });
+
+      const c = result.content as any;
+      expect(c.results[1]).toMatchObject({ index: 1, item_id: '2' });
     });
   });
 

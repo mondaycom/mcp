@@ -7,7 +7,9 @@ export {
   ToolValidationError,
   buildToolErrorStructuredContent,
   formatToolError,
+  isRateLimitError,
   rethrowWithContext,
   throwIfSearchTimeoutError,
 } from './error.utils';
-export { runWithConcurrency } from './concurrency.utils';
+export { runWithConcurrency, runWithRateLimitCircuit } from './concurrency.utils';
+export type { RateLimitCircuitOptions } from './concurrency.utils';
