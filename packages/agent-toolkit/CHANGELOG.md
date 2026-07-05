@@ -1,5 +1,41 @@
 # Changelog
 
+## 5.49.0
+
+### search — normalize searchType and limit inputs
+
+- `searchType` now accepts lowercase and plural variants (e.g. `"boards"`, `"docs"`, `"workspace"`) and normalizes them to the canonical enum value via `z.preprocess()`
+- `limit` values exceeding the maximum (20) are clamped instead of rejected, preventing unnecessary validation errors
+- These two normalizations address ~12k weekly validation errors caused by LLMs passing non-canonical input values
+
+## 5.46.0
+
+### search — remove fallback, make searchTerm required, and promote boards/docs to stable API
+
+- `searchTerm` is now required (`z.string().min(1)`) for all search types — agents that previously omitted it to browse must use `workspace_info` instead
+- Removed the legacy `getBoards`/`getDocs` listing queries and the fallback path that activated when the dev search endpoint failed; all results now come directly from the search endpoint
+- Removed the `page` parameter and virtual pagination logic; removed `LOAD_INTO_MEMORY_LIMIT` constant and `DataWithFilterInfo` type
+- Boards and docs search GraphQL queries promoted from `versionOverride: 'dev'` to the stable default schema endpoint; `search-tool.graphql.dev.ts` deleted
+- IDs in search results are now returned as raw values — the `ObjectPrefixes` type and all prefixing logic removed since cross-entity search no longer exists
+
+## 5.42.0
+
+### search — add TIMELINE_ITEMS search type
+
+- Adds `TIMELINE_ITEMS` as a search type in the unified `search` tool, backed by the platform's `search { timeline_items }` endpoint
+- Only available from API version `2026-10`; query pins `versionOverride: '2026-10'` with hand-written types (same approach as `UPDATES`)
+- Requires a `searchTerm`; returns `id` (prefixed `timeline-item-`), `title`, `summary`, and `content`
+- No listing fallback — errors propagate, and `page > 1` is rejected, matching `ITEMS`/`WORKSPACES`/`UPDATES`
+
+## 5.41.1
+
+### search — improve field descriptions to reduce incorrect tool usage
+
+- Clarified required vs optional fields per search type
+- Listed exact valid enum values for `searchType`
+- Added format guidance for array parameters
+- Removed misleading pagination hint from `page` description
+
 ## 5.37.0
 
 ### search — add UPDATES search type

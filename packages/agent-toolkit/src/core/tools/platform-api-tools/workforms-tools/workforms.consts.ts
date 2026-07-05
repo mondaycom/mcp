@@ -33,9 +33,8 @@ export const GraphQLDescriptions = {
       tags: {
         description:
           'Array of tracking tags for categorization and analytics (e.g., UTM parameters for marketing tracking).',
-        id: 'Required for update/delete. Auto-generated.',
+        id: 'Required for delete. Auto-generated.',
         name: 'Required for create. Cannot be updated.',
-        value: 'Required for create/update.',
         columnId: 'Auto-generated. Cannot be updated.',
       },
     },
@@ -45,7 +44,7 @@ export const GraphQLDescriptions = {
       input: 'Complete form configuration object containing properties to create or update.',
       questions: 'All question IDs in order. Must include every existing ID. Required for updateQuestionOrder.',
       questionId: 'Question ID. Required for update/delete.',
-      tag: 'Tag to create/update/delete. Delete: id only. Create: name+value (id/columnId auto-generated). Update: id+new value.',
+      tag: 'Tag to create/delete. Delete: id only. Create: name (id/columnId auto-generated).',
       form: {
         describe: 'Form data to update (patch semantics).',
         appearance: 'Patch. Required for updateAppearance.',
@@ -154,18 +153,15 @@ export const GraphQLDescriptions = {
     operations: {
       createTag: 'Create a new tag for a form. Tags are used to categorize and track responses. (e.g. UTM tags)',
       deleteTag: 'Delete a tag from a form',
-      updateTag: 'Update an existing tag in a form',
     },
     properties: {
       id: 'The unique identifier for the tag',
       name: 'The name of the tag',
-      value: 'The value of the tag',
       columnId: 'The ID of the column this tag is associated with',
     },
     inputs: {
       tagInput: 'The tag data to create',
       name: 'The name of the tag. Must be unique within the form and not reserved.',
-      value: 'The value of the tag',
       deleteTagInput: 'Options for deleting the tag',
     },
   },

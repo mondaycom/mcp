@@ -469,8 +469,25 @@ agent_id: ID!): [AgentActiveTrigger!]
   "Returns the knowledge configuration of an agent — boards/docs it has access to and uploaded files. Board and doc names are not included; use the board/doc subgraph queries to resolve them."
   agent_knowledge(  "Unique identifier of the agent"
 id: ID!): AgentKnowledge
+  "List artifacts an agent created during runs. Board and doc names are not included; use the board/doc subgraph queries to resolve them."
+  agent_artifacts(  "Unique identifier of the agent"
+agent_id: ID!,   "Optional filter by artifact type"
+artifact_type: AgentArtifactKind,   "Optional max number of artifacts to return (default 100, max 1000)"
+limit: Int): [AgentArtifact!]
   "List all skills available to attach to an agent. Use the returned id to call add_skill_to_agent."
   agent_skills_catalog: [AgentSkillCatalogEntry!]
+  "List runs for an agent. Provide run_ids or a positive limit (or both)."
+  agent_runs(  "ID of the agent whose runs to fetch."
+agent_id: ID!,   "Fetch specific run IDs."
+run_ids: [ID!],   "Max runs to return. Max 100."
+limit: Int,   "Filter by run status."
+status: [RunStatus!],   "Filter by run source."
+source: [RunSource!],   "Runs started at or after this time."
+from: Date,   "Runs started at or before this time."
+to: Date): [AgentRun!]
+  "Fetch a single agent run event by ID. Returns null if not found or not accessible."
+  agent_run_event(  "The event ID to fetch."
+event_id: ID!): AgentRunEvent
   "Get an app by ID or slug."
   app(  "The ID or slug of the app"
 id: ID!): AppType
@@ -698,21 +715,24 @@ planner_id: ID!): [AllocatedResource!]
   "Returns active work schedules for the caller's account"
   work_schedules(  "Filter by specific work schedule IDs (max 100)"
 ids: [ID!],   "Number of items to return per page; default 20, max 500"
-limit: Int = 20,   "Filter by work schedule name"
+limit: Int,   "Filter by work schedule name"
 name: String,   "Cursor returned by a previous work_schedules call to fetch the next page"
 cursor: String): WorkSchedulePage
   "Returns active time off schedules for the caller's account"
   time_offs(  "Filter by specific time off schedule IDs (max 100)"
 ids: [ID!],   "Number of items to return per page; default 20, max 500"
-limit: Int = 20,   "Filter by time off schedule name"
+limit: Int,   "Filter by time off schedule name"
 name: String,   "Cursor returned by a previous time_offs call to fetch the next page"
 cursor: String): TimesOffPage
-  "Returns users availability: work schedule and time offs schedule"
-  users_availability(  "Filter by specific user IDs"
-user_ids: [ID!],   "Number of items to return per page; max 500"
-limit: Int = 25): UsersAvailability
+  "Returns resources availability: work schedule and time offs schedule for users and teams"
+  resources_availability(  "Filter by specific user IDs (max 100)"
+user_ids: [ID!],   "Filter by specific team IDs (max 100)"
+team_ids: [ID!]): ResourcesAvailability
   "Returns the account-level default work schedule and time off schedule"
   account_availability_defaults: AccountAvailabilityDefaults
+  "Returns personal PTO collections for the requested users; maximum 100 user IDs per call"
+  user_pto(  "IDs of the users to fetch PTO for; maximum 100 per call"
+user_ids: [ID!]!): [UserPto!]
   "Returns utilization report for resources: either grouped by attribute or ungrouped with per-resource data. Use inline fragments to query the appropriate fields."
   utilization_report(  "Time range, effort types, optional groupBy, filters, resourceIds, and options."
 input: UtilizationReportInput!): UtilizationReport
@@ -760,6 +780,10 @@ task_id: ID!): [TaskDecisionChangelogEvent!]
 task_id: ID!): Task
   "Get all roles for the account"
   account_roles: [AccountRole!]
+  "Retrieves agent users and their subscriber memberships."
+  agents(  "The IDs of the agent users to retrieve. When omitted, returns up to 100 agents."
+ids: [ID!],   "Maximum number of agents to return when ids is not provided (default: 100, max: 200)."
+limit: Int): [Agent!]
   "Retrieves API tokens for the given service users."
   service_user_tokens(  "The IDs of the service users."
 service_user_ids: [ID!]!): [ServiceUserToken!]
@@ -781,6 +805,14 @@ pagination: WorkflowAutomationsPaginationInput): LiveWorkflowAutomationsPage!
   "Fetch a form by its token. The returned form includes all the details of the form such as its settings, questions, title, etc. Use this endpoint when you need to retrieve complete form data for display or processing. Requires that the requesting user has read access to the associated board."
   form(  "The unique identifier token for the form. This token is used to securely access the form and can be found in the form URL."
 formToken: String!): ResponseForm
+  "Get a single artifact by ID"
+  artifact(  "Artifact ID"
+id: ID!): Artifact
+  "Get artifacts filtered by object or run. Pass exactly one of object_id or run_id."
+  artifacts(  "Fetch artifacts by a list of IDs"
+ids: [ID!],   "Filter artifacts by object ID"
+object_id: ID,   "Filter artifacts by run ID"
+run_id: ID): [Artifact!]!
 }
 
 "The `Int` scalar type represents non-fractional signed whole numeric values. Int can represent values between -(2^31) and 2^31 - 1."
@@ -813,6 +845,8 @@ type ActivityLog {
   data: String
   "The timestamp when the activity log entry was created"
   created_at: String
+  "Groups all activity log entries belonging to the same logical session (e.g. agent conversation)"
+  correlation_id: ID
 }
 
 "A monday.com user."
@@ -823,7 +857,11 @@ type User {
   activity_logs(from: String, to: String, board_ids: [ID!], limit: Int,   """
   Filter by event types (e.g. "create_pulse", "delete_pulse")
   """
-event_types: [String!],   "Cursor for fetching the next page, obtained from a previous response"
+event_types: [String!],   "Filter by correlation IDs to retrieve all events belonging to the same logical session"
+correlation_ids: [ID!],   """
+  Filter by entity types (e.g. "pulse" (item), "board", "update", etc.)
+  """
+entities: [String!],   "Cursor for fetching the next page, obtained from a previous response"
 cursor: String): UserActivityLogsPage
   "The department the user is a member of (if any)"
   department: Department
@@ -868,6 +906,8 @@ ids: [ID!]): [Team]
   url: String!
   "The user's utc hours difference."
   utc_hours_diff: Float
+  "The agents the user is a member of, optionally filtered by one or more roles."
+  agents(roles: [AgentMembershipRole!]): [UserAgentMembership!]!
   "The unique identifier of the account the user belongs to."
   account_id: ID!
   "The kind of the user."
@@ -1029,6 +1069,10 @@ id: ID!): DeactivateWorkflowResult
 id: ID!,   "ID of the user to transfer ownership to"
 to_user_id: ID!,   "Whether to notify users about the ownership change"
 notify_users: Boolean = false): ChangeWorkflowOwnerResult
+  "Detach managed workflows from a template for a given host instance"
+  detach_workflows_from_template(  "Host instance ID (e.g. board ID)"
+host_instance_id: ID!,   "Host type (e.g. BOARD)"
+host_type: HostType!): DetachWorkflowsFromTemplateResult
   "Create a new table view"
   create_view_table(  "The ID of the board"
 board_id: ID!,   "The name of the view"
@@ -1521,6 +1565,9 @@ input: ConnectExternalAgentSyncInput!): ConnectExternalAgentResult
   "Disconnect an external agent by its ID"
   disconnect_external_agent(  "The ID of the agent to disconnect"
 id: ID!): DisconnectExternalAgentPayload
+  "Update mutable fields of an existing custom agent (owner only). callback_url is only valid for CUSTOM_AGENT type."
+  update_custom_agent(  "The agent ID and fields to update"
+input: UpdateCustomAgentInput!): UpdateCustomAgentPayload
   "Add workspace object to favorites"
   create_favorite(  "The input for adding an object to the favorites"
 input: CreateFavoriteInput!): CreateFavoriteResultType
@@ -1610,6 +1657,32 @@ field_values: JSON): MutationResult
   remove_trigger_from_agent(  "Unique identifier of the agent"
 agent_id: ID!,   "The node_id of the trigger to remove — from agent_active_triggers"
 node_id: ID!): MutationResult
+  "Creates or updates a job on an agent. A job carries its own name, instructions, and enabled state, and owns a set of triggers. Omit job_id to create a new job; pass an existing job_id to update it."
+  upsert_job_on_agent(  "Unique identifier of the agent"
+agent_id: ID!,   "Existing job id to update. Omit to create a new job."
+job_id: ID,   "Job name. Derived from triggers/instructions when omitted on create."
+name: String,   "Instructions the agent should follow when this job runs."
+instructions: String,   "Whether the job is enabled. Defaults to true on create."
+enabled: Boolean,   "Triggers to create/update under the job: an array of { block_reference_id, field_values?, node_id?, enabled? }. field_values shape depends on the trigger type — see agent_triggers_catalog."
+triggers: JSON): UpsertJobOnAgentResult
+  "Removes a job from an agent by job_id, along with its triggers. Returns { success: true } on success."
+  remove_job_from_agent(  "Unique identifier of the agent"
+agent_id: ID!,   "The id of the job to remove"
+job_id: ID!): MutationResult
+  "Creates or updates a single trigger under a job. Omit trigger_id to create a new trigger; pass an existing trigger_id to update it. Changes are saved immediately and take effect shortly after."
+  upsert_trigger_on_job(  "Unique identifier of the agent"
+agent_id: ID!,   "Id of the job that owns the trigger"
+job_id: ID!,   "Existing trigger id to update. Omit to create a new trigger."
+trigger_id: ID,   "Reference id of the trigger block type"
+block_reference_id: ID!,   "Trigger field values. The shape depends on the trigger type — see agent_triggers_catalog."
+field_values: JSON,   "Workflow node position. Assigned by the server when omitted."
+node_id: ID,   "Whether the trigger is enabled. Defaults to true on create."
+enabled: Boolean): UpsertTriggerOnJobResult
+  "Removes a single trigger from a job by trigger_id. The change is saved immediately and takes effect shortly after. Returns { success: true } on success."
+  remove_trigger_from_job(  "Unique identifier of the agent"
+agent_id: ID!,   "Id of the job that owns the trigger"
+job_id: ID!,   "The id of the trigger to remove"
+trigger_id: ID!): MutationResult
   "Grant an agent access to a monday.com board or doc. Creates a draft version, applies the change, and promotes to live."
   add_agent_resource_access(  "Unique identifier of the agent"
 id: ID!,   "The ID of the board or doc to add"
@@ -2108,6 +2181,10 @@ relations: [ObjectRelationInput!]!): [ObjectRelation!]
   delete_object_relation(  "ID of the source object"
 source_object_id: ID!,   "ID of the relation to delete. If not provided, deletes all relations for the source object."
 relation_id: ID): Int
+  "Run a prompt against an AI model and return the completion response. For more advanced capabilities, use Models REST API."
+  run_prompt(  "The user prompt to send to the model."
+prompt: String!,   "Configuration for the AI completion."
+config: RunPromptConfigInput): RunPromptResult
   "Connect an existing project to a portfolio. When a callback_url is provided the mutation returns immediately with a process_id, and the result is POSTed to that URL once the operation completes. The callback payload is: { is_success: boolean, process_id: string, portfolio_item_id?: string }."
   connect_project_to_portfolio(  "The ID of the project to connect"
 projectBoardId: ID!,   "The ID of the portfolio to connect to"
@@ -2150,12 +2227,13 @@ input: UpdateWorkScheduleInput!): WorkScheduleResult!
   "Soft-delete one or more work schedules; maximum 100 IDs per call"
   delete_work_schedule(  "IDs of work schedules to delete; maximum 100 items per call"
 ids: [ID!]!): [WorkScheduleDeleteResult!]
-  "Assign a work schedule to multiple users. Returns one result per user, allowing partial success. Pass the account default schedule ID to revert users to the account default. Maximum 100 user IDs per call."
+  "Assign a work schedule to multiple users and/or teams. Returns per-resource outcomes split by resource kind, allowing partial success. Pass the account default schedule ID to revert resources to the account default. Maximum 100 user IDs and 100 team IDs per call."
   assign_work_schedule(  "Users and work schedule to assign; maximum 100 user IDs per call"
-input: AssignWorkScheduleInput!): [AssignWorkScheduleUserResult!]
-  "Remove explicit work schedule assignments from multiple users; maximum 100 user IDs per call. Returns one result per user, allowing partial success."
+input: AssignWorkScheduleInput!): AssignWorkScheduleResult
+  "Remove explicit work schedule assignments from multiple users and/or teams. Returns per-resource outcomes split by resource kind, allowing partial success. Maximum 100 user IDs and 100 team IDs per call."
   unassign_work_schedule(  "IDs of users to remove work schedule assignments from; maximum 100 items per call"
-user_ids: [ID!]!): [AssignWorkScheduleUserResult!]
+user_ids: [ID!],   "IDs of teams to remove work schedule assignments from; maximum 100 items per call"
+team_ids: [ID!]): AssignWorkScheduleResult
   "Create one or more named time off schedules for the account; maximum 100 inputs per call"
   create_time_off(  "Time off schedules to create; maximum 100 items per call"
 inputs: [CreateTimeOffInput!]!): [TimeOffResult!]
@@ -2166,12 +2244,13 @@ input: UpdateTimeOffInput!): TimeOffResult
   "Soft-delete one or more time off schedules; maximum 100 IDs per call"
   delete_time_off(  "IDs of time off schedules to delete; maximum 100 items per call"
 ids: [ID!]!): [TimeOffDeleteResult!]
-  "Assign a time off schedule to multiple users. Returns one result per user, allowing partial success. Pass the account default time off ID to revert users to the account default. Maximum 100 user IDs per call."
-  assign_time_off(  "Users and time off schedule to assign; maximum 100 user IDs per call"
-input: AssignTimeOffInput!): [AssignTimeOffUserResult!]
-  "Remove explicit time off assignments from multiple users; maximum 100 user IDs per call. Returns one result per user, allowing partial success."
+  "Assign a time off schedule to multiple users and/or teams. Returns per-resource outcomes split by resource kind, allowing partial success. Pass the account default time off ID to revert resources to the account default. Maximum 100 user IDs and 100 team IDs per call."
+  assign_time_off(  "Users and/or teams and time off schedule to assign; maximum 100 user IDs and 100 team IDs per call"
+input: AssignTimeOffInput!): AssignTimeOffResult
+  "Remove explicit time off assignments from multiple users and/or teams. Returns per-resource outcomes split by resource kind, allowing partial success. Maximum 100 user IDs and 100 team IDs per call."
   unassign_time_off(  "IDs of users to remove time off assignments from; maximum 100 items per call"
-user_ids: [ID!]!): [AssignTimeOffUserResult!]!
+user_ids: [ID!],   "IDs of teams to remove time off assignments from; maximum 100 items per call"
+team_ids: [ID!]): AssignTimeOffResult!
   "Add one or more non-working date entries to a time off schedule; maximum 100 inputs per call"
   create_time_off_entry(  "Entries to create; maximum 100 items per call"
 inputs: [CreateTimeOffEntryInput!]!): [TimeOffEntryResult!]
@@ -2181,12 +2260,15 @@ inputs: [UpdateTimeOffEntryInput!]!): [TimeOffEntryResult!]
   "Soft-delete one or more time off entries; maximum 100 IDs per call"
   delete_time_off_entry(  "IDs of time off entries to delete; maximum 100 items per call"
 ids: [ID!]!): [TimeOffEntryDeleteResult!]
-  "Assign the same work schedule and time off schedule to multiple users; maximum 100 user IDs per call. Returns one result per user, allowing partial success."
-  assign_user_availability(  "Users and schedules to assign; maximum 100 user IDs per call"
-input: AssignUserAvailabilityInput!): [UserAvailabilityResult!]
-  "Remove explicit work schedule and/or time off assignments from multiple users; maximum 100 user IDs per call. Returns one result per user, allowing partial success."
-  unassign_user_availability(  "Users to unassign; maximum 100 user IDs per call"
-input: UnassignUserAvailabilityInput!): [UserAvailabilityResult!]
+  "Create one or more PTO entries for users; maximum 100 inputs per call"
+  create_pto_entry(  "PTO entries to create; maximum 100 items per call"
+inputs: [CreatePtoEntryInput!]!): [TimeOffEntryResult!]
+  "Update the name or date range of existing PTO entries; maximum 100 inputs per call"
+  update_pto_entry(  "PTO entries to update; maximum 100 inputs per call"
+inputs: [UpdatePtoEntryInput!]!): [TimeOffEntryResult!]
+  "Soft-delete one or more PTO entries; maximum 100 IDs per call"
+  delete_pto_entry(  "IDs of PTO entries to delete; maximum 100 items per call"
+ids: [ID!]!): [TimeOffEntryDeleteResult!]
   "Enroll multiple items to a single sequence. Maximum 50 items per request."
   enroll_items_to_sequence(  "Input for enrolling multiple items to a single sequence"
 input: EnrollToSequenceInput!): EnrollToSequenceResult
@@ -2361,6 +2443,31 @@ formToken: String!,   "The password to set for the form. Must be at least 1 char
 input: SetFormPasswordInput!): ResponseForm
 }
 
+"A monday.com agent."
+type Agent {
+  "The ID of the agent."
+  id: ID
+  "The agent's user data."
+  user: User!
+  "The users and teams subscribed to this agent."
+  subscribers(  "Maximum number of subscribers to return."
+limit: Int,   "Filter subscribers by entity type. Accepts one or more values."
+entity: [AgentSubscriberKind!],   "Filter subscribers by role. Accepts one or more values."
+roles: [AgentMembershipRole!]): [AgentSubscriber!]!
+}
+
+"A date."
+scalar Date
+
+"A file"
+scalar File
+
+"An ISO 8601-encoded datetime (e.g., 2024-04-09T13:45:30Z)"
+scalar ISO8601DateTime
+
+"A JSON formatted string."
+scalar JSON
+
 "Response from AI action request"
 type AiActionResponse {
   "The structured response data from the AI"
@@ -2393,16 +2500,93 @@ enum AllowedFileMime {
   IMAGE_GIF
   "WebP image"
   IMAGE_WEBP
+  "AVIF image"
+  IMAGE_AVIF
+  "HEIC image (iPhone/mobile)"
+  IMAGE_HEIC
+  "SVG vector image"
+  IMAGE_SVG
+  "MP4 video"
+  VIDEO_MP4
+  "WebM video"
+  VIDEO_WEBM
+  "QuickTime video"
+  VIDEO_QUICKTIME
+  "Ogg video"
+  VIDEO_OGG
   "PDF document"
   APPLICATION_PDF
   "CSV spreadsheet"
   TEXT_CSV
   "Excel spreadsheet"
   APPLICATION_XLSX
+  "Markdown document"
+  TEXT_MARKDOWN
+  "Plain text document"
+  TEXT_PLAIN
 }
 
-"A date."
-scalar Date
+"AI captioning status of a vibe asset"
+enum AssetCaptionStatus {
+  "Captioning has not been requested"
+  NONE
+  "Captioning is in progress"
+  PENDING
+  "Captioning completed successfully"
+  COMPLETED
+  "Captioning failed; asset is still usable"
+  FAILED
+}
+
+"ETag for a completed S3 upload part"
+input AssetCompletePartInput {
+  "Part number matching the part returned by asset_upload"
+  part_number: Int!
+  "ETag header value returned by S3 after uploading the part"
+  etag: String!
+}
+
+"Input for completing a multipart asset upload"
+input AssetCompleteUploadInput {
+  "Upload session ID from asset_upload"
+  upload_id: ID!
+  "Resolved filename from asset_upload"
+  filename: String!
+  "MIME type of the asset"
+  content_type: String!
+  "File size in bytes"
+  file_size: Int!
+  "Completed part ETags from S3"
+  parts: [AssetCompletePartInput!]!
+}
+
+"Presigned S3 URL for a single multipart upload part"
+type AssetPartUrl {
+  "Part number for multipart upload ordering"
+  part_number: Int
+  "Presigned S3 URL to upload this part directly"
+  url: String
+  "Byte range this part should contain"
+  size_range: AssetSizeRange!
+}
+
+"Byte range for a multipart upload part"
+type AssetSizeRange {
+  "Start byte offset of this upload part"
+  start: Int
+  "End byte offset of this upload part"
+  end: Int
+}
+
+"Result of initiating a multipart asset upload"
+type AssetUploadResult {
+  "Upload session ID — pass to asset_complete_upload once all parts are uploaded"
+  upload_id: ID
+  "Resolved filename (may differ from input if a collision was auto-suffixed)"
+  filename: String
+  "Presigned S3 URLs for each upload part"
+  parts: [AssetPartUrl!]!
+}
 
 "Result of enhancing a prompt with AI capabilities"
 type EnhancedPromptResult {
@@ -2420,6 +2604,8 @@ type FileUploadUrl {
   s3_key: String
   "When the presigned URL expires"
   expires_at: Date
+  "Assets-core upload session — present when vibe-assets-upload flag is ON and file_size was provided. Pass upload_id and part ETags to vibe.asset_complete_upload after uploading to each part URL."
+  asset_upload_result: AssetUploadResult
 }
 
 "Result of executing an integration block"
@@ -2427,12 +2613,6 @@ type IntegrationExecutionResult {
   "The output fields returned by the integration block execution"
   output_fields: JSON
 }
-
-"An ISO 8601-encoded datetime (e.g., 2024-04-09T13:45:30Z)"
-scalar ISO8601DateTime
-
-"A JSON formatted string."
-scalar JSON
 
 "Reference to a monday.com file-column asset for document extraction"
 input MondayAssetDocumentSourceInput {
@@ -2456,6 +2636,38 @@ type TokenUsage {
   prompt_tokens: Int
   "Tokens used in the completion"
   completion_tokens: Int
+}
+
+"An image or media asset uploaded to and shared across the account"
+type VibeAsset {
+  "Unique identifier for the vibe asset"
+  id: ID
+  "Vibe app this asset is scoped to, or null for account-level assets"
+  app_id: ID
+  "Asset ID in the assets-core platform service"
+  asset_id: ID
+  "Original filename of the uploaded asset"
+  filename: String
+  "MIME type of the asset (e.g. image/png)"
+  mime_type: String
+  "File size in bytes"
+  file_size: Int
+  "Permanent public CDN URL for the asset"
+  cdn_url: String
+  "Image width in pixels, populated after captioning"
+  width: Int
+  "Image height in pixels, populated after captioning"
+  height: Int
+  "AI-generated caption describing the asset content"
+  description: String
+  "AI-generated alt text for accessibility"
+  alt_text: String
+  "Current status of the AI captioning process"
+  caption_status: AssetCaptionStatus
+  "Timestamp when the asset was uploaded"
+  created_at: Date
+  "Timestamp when the asset was last updated"
+  updated_at: Date
 }
 
 "Namespace for all vibe-related mutations"
@@ -2485,7 +2697,14 @@ prompt: String!): EnhancedPromptResult!
   "Get a presigned URL to upload a file to S3"
   file_upload_url(  "Original file name"
 file_name: String!,   "MIME type of the file"
-mime_type: AllowedFileMime!): FileUploadUrl
+mime_type: AllowedFileMime!,   "File size in bytes. When provided, the response may include asset upload information."
+file_size: Int): FileUploadUrl
+  "Initiate a multipart upload for a vibe asset"
+  asset_upload(filename: String!, content_type: String!, file_size: Int!): AssetUploadResult
+  "Complete a multipart asset upload and persist the asset"
+  asset_complete_upload(input: AssetCompleteUploadInput!): VibeAsset
+  "Delete a vibe asset"
+  asset_delete(id: ID!): Boolean
 }
 
 "Configuration for enabling web search in AI requests"
@@ -2671,9 +2890,6 @@ enum AiColumnTone {
   "Preserve the same tone as the input text."
   same
 }
-
-"A file"
-scalar File
 
 "The type of entity that holds or owns an asset."
 enum AssetHolder {
@@ -3087,6 +3303,14 @@ type DependencyField {
   sourceFieldTypeUniqueKey: String
   "JSON key that the backend expects for this dependency value"
   targetFieldKey: String
+}
+
+"Result of detaching managed workflows from a template for a given host instance"
+type DetachWorkflowsFromTemplateResult {
+  "Number of workflows successfully detached from template"
+  workflows_detached_count: Int!
+  "Number of workflows that failed to detach"
+  workflows_failed_count: Int!
 }
 
 "Information about a field"
@@ -4457,6 +4681,10 @@ linked_board_id: ID!): [Item!]!
   updated_at: Date
   "The item's link"
   url: String!
+  """
+  Diagnostic field for the Cosmo entity-batch synthetic. Resolves to "pam:<batchId>:<itemId>", where batchId is unique per _entities request (per chunk) so a synthetic can verify items were split across >1 batch.
+  """
+  entity_batch_probe: String
 }
 
 type Like {
@@ -4620,6 +4848,18 @@ enum CustomActivityIcon {
   UTENCILS
 }
 
+"Email metadata for email-type timeline items."
+type EmailTimelineItemMetadata {
+  "The email sender address."
+  from: String
+  "List of recipient email addresses."
+  to: [String!]
+  "List of CC email addresses."
+  cc: [String!]
+  "List of BCC email addresses."
+  bcc: [String!]
+}
+
 type TimelineItem {
   id: ID
   type: String
@@ -4637,7 +4877,12 @@ type TimelineItem {
   content: String
   "The creation date of the timeline item."
   created_at: Date!
+  "Type-specific metadata for the timeline item. Populated based on the timeline item type."
+  metadata: TimelineItemMetadata
 }
+
+"Type-specific metadata union for timeline items."
+union TimelineItemMetadata = EmailTimelineItemMetadata
 
 type TimelineItemsPage {
   "The timeline items in the current page"
@@ -6936,6 +7181,22 @@ type ProviderResource {
   name: String
 }
 
+"Input for updating mutable fields of an existing custom agent"
+input UpdateCustomAgentInput {
+  "The ID of the custom agent to update"
+  agent_id: Int!
+  "New display name for the agent"
+  name: String
+  "New HTTPS callback URL for agent event notifications. Only valid for CUSTOM_AGENT type."
+  callback_url: String
+}
+
+"Payload returned after updating a custom agent"
+type UpdateCustomAgentPayload {
+  "Whether the update was successful"
+  success: Boolean
+}
+
 "Knowledge base answer generated from snippets using LLM."
 type KnowledgeBaseAnswer {
   "List of knowledge base snippets used to generate the answer."
@@ -7252,6 +7513,8 @@ type AutomationsPage {
   cursor: String
   "The automations in this page"
   items: [BoardAutomation!]
+  "Read-only automations on this board that were set up in an older way. These ARE automations on the user's board — always list and describe them together with `items`, never omit them. They cannot be activated, deactivated, edited, or deleted. Resolved only for board-scoped queries (null otherwise); best-effort, so it may carry an error marker instead of data."
+  legacy_automations: JSON
 }
 
 "A board automation"
@@ -8154,6 +8417,60 @@ type AgentActiveTrigger {
   field_summary: String
 }
 
+"An artifact created by an agent during a run"
+type AgentArtifact {
+  "Unique identifier of the artifact record"
+  id: ID!
+  "Whether the artifact is a monday.com entity or a generated asset"
+  origin: AgentArtifactOrigin!
+  "The type of artifact"
+  artifact_type: AgentArtifactKind!
+  "The external identifier of the artifact (e.g. board ID or asset ID)"
+  artifact_id: ID!
+  "Display name of the artifact"
+  name: String
+  "Deep link or asset URL for the artifact"
+  url: String
+  "CDN public URL when the artifact is published; null otherwise"
+  publish_url: String
+  "Type-specific metadata (e.g. boardId for items)"
+  metadata: JSON
+  "When the artifact was created"
+  created_at: Date!
+}
+
+"The type of artifact an agent created"
+enum AgentArtifactKind {
+  "A monday.com item"
+  ITEM
+  "A monday.com board"
+  BOARD
+  "A monday.com doc"
+  DOC
+  "A vibe app"
+  VIBE_APP
+  "A monday.com view"
+  VIEW
+  "A monday.com update"
+  UPDATE
+  "A generated HTML page"
+  HTML
+  "A generated image"
+  IMAGE
+  "A generated video"
+  VIDEO
+  "A generated audio file"
+  AUDIO
+}
+
+"The source of an agent artifact"
+enum AgentArtifactOrigin {
+  "A monday.com entity such as a board, item, or doc"
+  MONDAY_ENTITY
+  "A generated media file such as an image, video, or HTML page"
+  ASSET
+}
+
 "The kind of AI agent"
 enum AgentKind {
   "A personal agent owned by a specific user"
@@ -8228,6 +8545,155 @@ enum AgentModel {
   GPT_5_2
   "Gemini 2.5 Flash"
   GEMINI_2_5_FLASH
+}
+
+"A policy applied to an agent tool (e.g. requires human approval before execution)"
+type AgentPolicyInfo {
+  "The unique identifier of the policy"
+  id: ID!
+  "The tool or target this policy applies to"
+  target_id: ID
+  "The type of policy (e.g. requires_approval)"
+  policy_type: String!
+}
+
+"A policy to apply or remove from an agent tool"
+input AgentPolicyPatchInput {
+  "The tool name this policy targets"
+  target_id: ID!
+  "The type of policy (e.g. requires_approval)"
+  policy_type: String!
+  "Whether to enable or disable this policy"
+  enabled: Boolean!
+}
+
+"An execution record for a single agent run."
+type AgentRun {
+  "Unique run identifier."
+  run_id: ID
+  "The agent that executed this run."
+  agent_id: ID
+  "Current or final execution status."
+  status: RunStatus
+  "What triggered this run."
+  source: RunSource
+  "Auto-generated title for the run."
+  title: String
+  "Full narrative summary of the run."
+  summary: String
+  "Short summary of the run."
+  short_summary: String
+  "Terminal outcome label (e.g. success, failure, stopped)."
+  outcome_status: String
+  "Human-readable reason for the outcome."
+  outcome_reason: String
+  "Aggregate token consumption for the entire run."
+  total_tokens: AgentRunTokenUsage
+  "Total LLM cost for the run in USD."
+  total_cost: Float
+  "LLM models used during the run."
+  models_used: [String!]
+  "When the run started (epoch ms stored as Date)."
+  started_at: Date
+  "When the run ended."
+  completed_at: Date
+  "Run duration in milliseconds."
+  duration_ms: Float
+  "Number of steps executed."
+  steps_count: Int
+  "Number of tool calls made."
+  tool_calls_count: Int
+  "Capability IDs used during the run."
+  capabilities_used: [Int!]
+  "MCP server names used during the run."
+  mcp_servers_used: [String!]
+  "Raw trigger context as stored in OpenSearch."
+  trigger_context: JSON
+  "Raw outputs summary (resourcesCreated, resourcesModified, messagesSent)."
+  outputs: JSON
+  "User feedback rating: positive or negative."
+  feedback_rating: FeedbackRating
+  "Number of feedback submissions."
+  feedback_count: Int
+  "User who initiated this run."
+  triggered_by_user_id: ID
+  "Owner of the agent at run time."
+  owner_user_id: ID
+  "Agent user identity, if applicable."
+  agent_user_id: ID
+  "User identity the agent executed under."
+  executed_as_user_id: ID
+  "Ordered timeline of events for this run. Returns null when event data is unavailable."
+  events(  "Max number of events to return. Defaults to and capped at 200."
+limit: Int): [AgentRunEvent!]
+}
+
+"A single event emitted during an agent run."
+type AgentRunEvent {
+  "Unique event identifier."
+  event_id: ID
+  "The run this event belongs to."
+  run_id: ID
+  "The kind of event."
+  event_type: AgentRunEventKind
+  "Raw event payload as stored in OpenSearch."
+  data: JSON!
+  "Token consumption for this event, if applicable."
+  tokens: AgentRunTokenUsage
+  "LLM cost for this event in USD."
+  cost: Float
+  "LLM model used in this event, if any."
+  model: String
+  "When the event occurred."
+  timestamp: Date
+}
+
+"The kind of event emitted during an agent run."
+enum AgentRunEventKind {
+  "The run started."
+  RUN_STARTED
+  "The run completed."
+  RUN_COMPLETED
+  "The run failed."
+  RUN_FAILED
+  "The run was stopped."
+  RUN_STOPPED
+  "The execution plan was created."
+  PLAN_CREATED
+  "A step started."
+  STEP_STARTED
+  "A step completed."
+  STEP_COMPLETED
+  "A step failed."
+  STEP_FAILED
+  "A step is being retried."
+  STEP_RETRY
+  "A tool was invoked."
+  TOOL_CALLED
+  "A tool invocation completed."
+  TOOL_COMPLETED
+  "A tool invocation failed."
+  TOOL_FAILED
+  "The agent is reasoning."
+  THINKING
+  "The agent requested clarification from the user."
+  CLARIFICATION_REQUESTED
+  "Clarification was received from the user."
+  CLARIFICATION_RECEIVED
+  "The agent declared an action intent."
+  ACTION_INTENT
+  "Feedback was given on the run."
+  FEEDBACK_GIVEN
+  "A summary was generated for a completed step."
+  STEP_SUMMARY
+}
+
+"LLM token consumption for an agent run or event."
+type AgentRunTokenUsage {
+  "Input (prompt) tokens."
+  input: Int
+  "Output (completion) tokens."
+  output: Int
 }
 
 "A skill available for agents to use — browse the catalog, then attach by id."
@@ -8324,12 +8790,18 @@ type CustomAgent {
   agent_model: AgentModel
   "Reference IDs of skills attached to this agent. Use agent_skills_catalog to resolve full name and description."
   skill_ids: [ID!]!
+  "The app feature reference ID for this agent. Use this to construct the editor deep-link (/ai_agents/{app_feature_id}/editor). Populated by the agents query; null on mutation responses."
+  app_feature_id: ID
+  "The monday.com user ID of the dedicated agent user. Use this to link results to the user slice. Populated by the agents query; null on mutation responses."
+  agent_user_id: ID
   "The original user prompt used to create the agent"
   user_prompt: String
   "The current configuration version of the agent. Increments on each update."
   version_id: ID!
   "Knowledge files attached to the agent. Only populated on create mutation responses."
   knowledge: [AgentKnowledgeEntry!]
+  "Policies applied to this agent (e.g. tools that require human approval). Null when the feature flag is off."
+  policies: [AgentPolicyInfo!]
   "The timestamp when the agent was created. Null on create mutation responses — use the agent query to fetch it."
   created_at: Date
   "The timestamp when the agent was last updated. Null on create mutation responses — use the agent query to fetch it."
@@ -8348,6 +8820,14 @@ type CustomAgentProfile {
   avatar_url: String
   "Background color for the agent card"
   background_color: String
+}
+
+"User feedback on an agent run."
+enum FeedbackRating {
+  "Positive feedback."
+  POSITIVE
+  "Negative feedback."
+  NEGATIVE
 }
 
 "The reason an agent is inactive"
@@ -8374,6 +8854,8 @@ enum KnowledgeScope {
   BOARD
   "A monday.com doc"
   DOC
+  "A monday.com workspace"
+  WORKSPACE
 }
 
 "The source type of a knowledge entry"
@@ -8402,6 +8884,44 @@ type MutationResult {
 type RunAgentResult {
   "Correlation ID for the triggered run. Use this to track or look up the execution in downstream events or future run-status endpoints."
   trigger_uuid: String
+}
+
+"What triggered an agent run."
+enum RunSource {
+  "Triggered from a chat message."
+  CHAT
+  "Triggered via a user mention."
+  MENTION
+  "Triggered by an automation."
+  AUTOMATION
+  "Triggered on a schedule."
+  SCHEDULE
+  "Triggered via the API."
+  API
+  "Triggered by an item assignment."
+  ASSIGNED
+}
+
+"The execution status of an agent run."
+enum RunStatus {
+  "Run is currently in progress."
+  RUNNING
+  "Agent is planning its next steps."
+  THINKING
+  "Agent is executing steps."
+  EXECUTING
+  "Run is waiting for user clarification."
+  WAITING_CLARIFICATION
+  "Run is paused waiting for user confirmation before executing a destructive action."
+  NEEDS_CONFIRMATION
+  "Run completed successfully."
+  COMPLETED
+  "Run failed."
+  FAILED
+  "Run was stopped by the user."
+  STOPPED
+  "Run was stopped by the system (e.g. loop prevention)."
+  STOPPED_BY_SYSTEM
 }
 
 "Schema description for a trigger field that accepts a structured JSON value"
@@ -8434,6 +8954,30 @@ input UpdateAgentInput {
   plan: String
   "The LLM model the agent should use"
   agent_model: AgentModel
+  "Policies to enable or disable on agent tools (e.g. requires_approval)"
+  policies: [AgentPolicyPatchInput!]
+}
+
+"Result of upsert_job_on_agent — the resulting job id and the number of triggers written."
+type UpsertJobOnAgentResult {
+  "Whether the operation succeeded"
+  success: Boolean!
+  "The id of the created or updated job"
+  job_id: ID!
+  "Number of triggers created or updated under the job"
+  trigger_count: Int!
+}
+
+"Result of upsert_trigger_on_job — the resulting trigger id, owning job id and workflow node position."
+type UpsertTriggerOnJobResult {
+  "Whether the operation succeeded"
+  success: Boolean!
+  "The id of the created or updated trigger"
+  trigger_id: ID!
+  "The id of the job that owns the trigger"
+  job_id: ID!
+  "The workflow node position of the trigger"
+  node_id: ID!
 }
 
 "Response object for app deletion operations"
@@ -9444,9 +9988,21 @@ type DateValue implements ColumnValue {
   value: JSON
 }
 
+"Represents a dependency link between two items, including the relationship type and lag."
+type DependencyLink {
+  "The dependency relationship type (0=FS, 1=SS, 2=FF, 3=SF)."
+  dependency_type: Int
+  "The lag in days between the dependent items."
+  lag: Int
+  "The ID of the linked dependent item."
+  linked_item_id: ID!
+}
+
 type DependencyValue implements ColumnValue {
   "The column that this value belongs to."
   column: Column!
+  "The linked items with dependency metadata (type and lag)."
+  dependency_links: [DependencyLink!]!
   "A string representing all the names of the linked items, separated by commas"
   display_value: String!
   "The column's unique identifier."
@@ -11502,6 +12058,34 @@ input UpdateObjectInput {
   relations: [ObjectRelationInput!]
 }
 
+"Available AI model tiers."
+enum AiModel {
+  "The Monday Fast model."
+  MONDAY_FAST
+  "The Monday Standard model."
+  MONDAY_STANDARD
+  "The Monday Powerful model."
+  MONDAY_POWERFUL
+}
+
+"Configuration options for the AI completion request."
+input RunPromptConfigInput {
+  "The AI model to use for the completion."
+  model: AiModel
+  "An optional system prompt to set context for the model."
+  system_prompt: String
+  "Sampling temperature between 0 and 1."
+  temperature: Float
+  "Maximum number of tokens to generate."
+  max_tokens: Int
+}
+
+"The result of running a prompt against an AI model."
+type RunPromptResult {
+  "The generated text content from the model."
+  content: String
+}
+
 "API usage data."
 type DailyAnalytics {
   "Last time the API usage data was updated."
@@ -11520,6 +12104,16 @@ type DailyLimit {
   base: Int
   "Total daily limit."
   total: Int
+  "Daily-limit add-on details for the account."
+  addon: DailyLimitAddon
+}
+
+"Platform API daily-limit add-on details."
+type DailyLimitAddon {
+  "Whether the account owns an active daily-limit add-on."
+  is_active: Boolean!
+  "Number of daily-limit add-on units the account owns."
+  quantity: Int!
 }
 
 "The Platform API's data."
@@ -12642,6 +13236,10 @@ type AggregateHistoryResultSet {
   results: [AggregateHistoryDateResult!]
   "Boards that contributed to the merged results. Populated for union queries; empty for single-board TABLE queries."
   source_boards: [SourceBoardInfo!]
+  "When partial results are returned (some requested timestamps preceded the queryable range), the ISO 8601 date of the earliest available data. Null when the full requested range was served."
+  earliest_available: String
+  "Why the range was limited. Set alongside earliest_available; null when nothing was dropped."
+  range_limit_reason: HistoricalRangeLimitReason
 }
 
 "The value of an aggregate result entry. Can be an aggregation result or a group-by key."
@@ -12709,14 +13307,24 @@ input AggregateHistoryUnionInput {
   queries: [AggregateHistoryUnionQueryInput!]!
 }
 
-"A per-board sub-query within a union aggregate history query (board schema + column aliases only)."
+"A per-board sub-query within a union aggregate history query."
 input AggregateHistoryUnionQueryInput {
   "The board source. Must be type TABLE."
   from: AggregateHistoryTableFromInput!
   "Per-board select elements with unified aliases across sub-queries. Supports the full aggregate function set."
   select: [AggregateHistorySelectInput!]!
+  "Optional per-board filter. ANDed with the top-level query filter when both are present."
+  query: AggregateHistoryItemsQueryInput
   "Maximum results per board before cross-board merge."
   limit: Int
+}
+
+"The reason the queryable historical range starts later than the earliest requested timestamp."
+enum HistoricalRangeLimitReason {
+  "Data capture for this board began after the earliest requested timestamp."
+  DATA_LIMIT
+  "The earliest requested timestamp exceeds the account plan's maximum history window."
+  PLAN_LIMIT
 }
 
 "The raw value of a column for a historical item."
@@ -12903,6 +13511,10 @@ type ItemsHistoryResultSet {
   results: [ItemsHistoryItem!]
   "Cursor for the next page. Null if there are no more results."
   after: String
+  "When partial results are returned (some requested timestamps preceded the queryable range), the ISO 8601 date of the earliest available data. Null when the full requested range was served."
+  earliest_available: String
+  "Why the range was limited. Set alongside earliest_available; null when nothing was dropped."
+  range_limit_reason: HistoricalRangeLimitReason
 }
 
 "The value of a result entry. Either a raw column value or a function result."
@@ -13092,12 +13704,32 @@ input AllocationUpdateInput {
   resource_id: ID
 }
 
-"Input for assigning a time off schedule to multiple users"
+"Input for assigning a time off schedule to multiple users and/or teams"
 input AssignTimeOffInput {
   "IDs of the users to assign the time off schedule to; maximum 100 per call"
-  user_ids: [ID!]!
-  "ID of the time off schedule to assign; pass the account default time off ID to revert the user to the account default"
+  user_ids: [ID!]
+  "IDs of the teams to assign the time off schedule to; maximum 100 per call"
+  team_ids: [ID!]
+  "ID of the time off schedule to assign; pass the account default time off ID to revert the resource to the account default"
   time_off_id: ID!
+}
+
+"Per-resource outcomes of a time off assignment, split by resource kind"
+type AssignTimeOffResult {
+  "One result per user id passed to the mutation"
+  users: [AssignTimeOffUserResult!]!
+  "One result per team id passed to the mutation"
+  teams: [AssignTimeOffTeamResult!]!
+}
+
+"Result of a time off assignment for a single team. Batch mutations return one of these per requested team, allowing partial success."
+type AssignTimeOffTeamResult {
+  "ID of the team this result applies to"
+  team_id: ID!
+  "Whether the operation succeeded"
+  success: Boolean!
+  "Structured error details, null if the operation succeeded"
+  error: Error
 }
 
 "Result of a time off assignment for a single user. Batch mutations return one of these per requested user, allowing partial success."
@@ -13110,28 +13742,38 @@ type AssignTimeOffUserResult {
   error: Error
 }
 
-"Input for assigning a work schedule and/or time off schedule to multiple users"
-input AssignUserAvailabilityInput {
-  "IDs of the users to assign schedules to"
-  user_ids: [ID!]!
-  "ID of the work schedule to assign; omit to leave unchanged"
-  work_schedule_id: ID
-  "ID of the time off schedule to assign; omit to leave unchanged"
-  time_off_id: ID
-}
-
-"Input for assigning a work schedule to multiple users"
+"Input for assigning a work schedule to multiple users and/or teams"
 input AssignWorkScheduleInput {
   "IDs of the users to assign the work schedule to; maximum 100 per call"
-  user_ids: [ID!]!
-  "ID of the work schedule to assign; pass the account default schedule ID to revert the user to the account default"
+  user_ids: [ID!]
+  "IDs of the teams to assign the work schedule to; maximum 100 per call"
+  team_ids: [ID!]
+  "ID of the work schedule to assign; pass the account default schedule ID to revert to the account default"
   work_schedule_id: ID!
 }
 
-"Result of a work schedule assignment for a single user. Batch mutations return one of these per requested user, allowing partial success."
+"Per-resource outcomes of a work schedule assignment, split by resource kind"
+type AssignWorkScheduleResult {
+  "One result per user id passed to the mutation"
+  users: [AssignWorkScheduleUserResult!]
+  "One result per team id passed to the mutation"
+  teams: [AssignWorkScheduleTeamResult!]
+}
+
+"Per-team outcome of a work schedule assignment"
+type AssignWorkScheduleTeamResult {
+  "ID of the team this result applies to"
+  team_id: ID
+  "Whether the operation succeeded"
+  success: Boolean!
+  "Structured error details, null if the operation succeeded"
+  error: Error
+}
+
+"Per-user outcome of a work schedule assignment"
 type AssignWorkScheduleUserResult {
   "ID of the user this result applies to"
-  user_id: ID!
+  user_id: ID
   "Whether the operation succeeded"
   success: Boolean!
   "Structured error details, null if the operation succeeded"
@@ -13148,15 +13790,27 @@ type Attribute {
   is_active: Boolean!
 }
 
+"Input for creating a PTO entry for a user"
+input CreatePtoEntryInput {
+  "ID of the user to create the PTO entry for"
+  user_id: ID!
+  "Start date of the PTO period in YYYY-MM-DD format; must be within 1 year in the past and 20 years in the future"
+  start: String!
+  "End date of the PTO period in YYYY-MM-DD format; must be within 1 year in the past and 20 years in the future"
+  end: String!
+}
+
 "Input for adding a non-working date entry to a time off schedule"
 input CreateTimeOffEntryInput {
   "ID of the time off schedule to add this entry to"
   time_off_id: ID!
   "Display name for this time off entry"
   name: String!
-  "Start date of the non-working period in YYYY-MM-DD format"
+  "Start date of the non-working period in YYYY-MM-DD format; must be within 1 year in the past and 20 years in the future"
   start: String!
-  "End date of the non-working period in YYYY-MM-DD format"
+  "Type of the time off entry. Defaults to CUSTOM when omitted."
+  type: TimeOffEntryKind
+  "End date of the non-working period in YYYY-MM-DD format; must be within 1 year in the past and 20 years in the future"
   end: String!
 }
 
@@ -13328,6 +13982,32 @@ enum ResourceAttributeTypeKey {
   RESOURCE_MANAGER
 }
 
+"Resources availability with per-resource references and top-level schedule/time-off data"
+type ResourcesAvailability {
+  "Per-user availability references"
+  users_assignment: [UserAssignment!]!
+  "Per-team availability references"
+  teams_assignment: [TeamAssignment!]!
+  "All work schedules referenced by users_assignment or teams_assignment entries"
+  work_schedules: [WorkSchedule!]!
+  "All time off schedules referenced by users_assignment or teams_assignment entries"
+  time_offs: [TimeOff!]!
+  "ID of the account-level default work schedule"
+  default_work_schedule_id: ID!
+  "ID of the account-level default time off schedule"
+  default_time_off_id: ID!
+}
+
+"A team's assigned work schedule and time off schedule IDs"
+type TeamAssignment {
+  "ID of the team"
+  team_id: ID!
+  "ID of the work schedule assigned to this team"
+  work_schedule_id: ID!
+  "ID of the time off schedule assigned to this team"
+  time_off_id: ID!
+}
+
 "A named time off schedule with all its non-working date entries"
 type TimeOff {
   "Unique identifier of the time off schedule"
@@ -13344,6 +14024,8 @@ type TimeOff {
   updated_at: Date!
   "All non-working date entries in this time off schedule"
   entries: [TimeOffEntry!]!
+  "Whether any users are currently assigned to this time off schedule"
+  has_assignments: Boolean!
 }
 
 "Result of a time off schedule delete operation"
@@ -13364,6 +14046,8 @@ type TimeOffEntry {
   time_off_id: ID!
   "Display name for this time off entry"
   name: String!
+  "Type of the time off entry"
+  type: TimeOffEntryKind
   "Start date of the non-working period in YYYY-MM-DD format"
   start: String!
   "End date of the non-working period in YYYY-MM-DD format"
@@ -13390,10 +14074,20 @@ type TimeOffEntryDeleteResult {
 input TimeOffEntryInput {
   "Optional display name for this time off entry"
   name: String
-  "Start date of the non-working period in YYYY-MM-DD format"
+  "Type of the time off entry. Defaults to CUSTOM when omitted."
+  type: TimeOffEntryKind
+  "Start date of the non-working period in YYYY-MM-DD format; must be within 1 year in the past and 20 years in the future"
   start: String!
-  "End date of the non-working period in YYYY-MM-DD format"
+  "End date of the non-working period in YYYY-MM-DD format; must be within 1 year in the past and 20 years in the future"
   end: String!
+}
+
+"Type of a time off entry"
+enum TimeOffEntryKind {
+  "A custom non-working date entry"
+  CUSTOM
+  "A public holiday"
+  HOLIDAY
 }
 
 "Result of a time off entry create or update operation"
@@ -13424,16 +14118,6 @@ type TimesOffPage {
   cursor: String
 }
 
-"Input for removing work schedule and/or time off assignments from multiple users"
-input UnassignUserAvailabilityInput {
-  "IDs of the users to remove assignments from"
-  user_ids: [ID!]!
-  "Whether to remove the explicit work schedule assignment"
-  unassign_work_schedule: Boolean
-  "Whether to remove the explicit time off schedule assignment"
-  unassign_time_off: Boolean
-}
-
 "Result of a single allocation update operation"
 type UpdateAllocationResult {
   "Whether the operation succeeded"
@@ -13452,15 +14136,25 @@ type UpdateDirectoryResourceAttributesResponse {
   success: Boolean!
 }
 
+"Input for updating an existing PTO entry"
+input UpdatePtoEntryInput {
+  "ID of the PTO entry to update"
+  id: ID!
+  "New start date in YYYY-MM-DD format; must be within 1 year in the past and 20 years in the future"
+  start: String
+  "New end date in YYYY-MM-DD format; must be within 1 year in the past and 20 years in the future"
+  end: String
+}
+
 "Input for updating an existing time off entry"
 input UpdateTimeOffEntryInput {
   "ID of the time off entry to update"
   id: ID!
   "New display name for the time off entry"
   name: String
-  "New start date in YYYY-MM-DD format"
+  "New start date in YYYY-MM-DD format; must be within 1 year in the past and 20 years in the future"
   start: String
-  "New end date in YYYY-MM-DD format"
+  "New end date in YYYY-MM-DD format; must be within 1 year in the past and 20 years in the future"
   end: String
 }
 
@@ -13488,28 +14182,14 @@ type UserAssignment {
   time_off_id: ID!
 }
 
-"Result of a single user availability assignment. Batch assign/unassign mutations return one of these per requested user, allowing partial success — successful entries have user_availability populated and success=true; failed entries have user_availability=null, success=false, and a populated error."
-type UserAvailabilityResult {
-  "The updated user availability, null if the operation failed for this user"
-  user_availability: UserAssignment
-  "Whether the operation succeeded"
-  success: Boolean!
-  "Structured error details, null if the operation succeeded"
-  error: Error
-}
-
-"Users availability with per-user references and top-level schedule/time-off data"
-type UsersAvailability {
-  "Per-user availability references"
-  users_assignment: [UserAssignment!]!
-  "All work schedules referenced by users_assignment entries"
-  work_schedules: [WorkSchedule!]!
-  "All time off schedules referenced by users_assignment entries"
-  time_offs: [TimeOff!]!
-  "ID of the account-level default work schedule"
-  default_work_schedule_id: ID!
-  "ID of the account-level default time off schedule"
-  default_time_off_id: ID!
+"A user's personal time off collection with all its active PTO entries"
+type UserPto {
+  "ID of the user this PTO collection belongs to"
+  user_id: ID!
+  "ID of the user's personal time off record; null if the user has no PTO collection yet"
+  time_off_id: ID
+  "All active PTO entries for this user"
+  entries: [TimeOffEntry!]!
 }
 
 "Day of the week"
@@ -13546,6 +14226,8 @@ type WorkSchedule {
   updated_at: Date!
   "Per-weekday working hours for this schedule"
   days: [WorkScheduleDay!]!
+  "Whether any users are currently assigned to this work schedule"
+  has_assignments: Boolean!
 }
 
 "Per-weekday working hours for a work schedule"
@@ -13947,6 +14629,32 @@ type SearchIndexedItem {
   workspace_id: ID
 }
 
+"Timeline item data stored in the search index."
+type SearchIndexedTimelineItem {
+  "Timeline item ID."
+  id: ID!
+  "ID of the account owning this timeline item."
+  account_id: ID!
+  "ID of the item this timeline item belongs to."
+  item_id: ID!
+  "ID of the board containing this timeline item."
+  board_id: ID
+  "Timeline item type (e.g. email, googleCalendar)."
+  type: String!
+  "Product kind the timeline item originates from (e.g. service, crm)."
+  product_kind: String!
+  "Timeline item title."
+  title: String!
+  "Timeline item summary."
+  summary: String!
+  "Timeline item full content body."
+  content: String!
+  "ISO timestamp when the timeline item was created."
+  created_at: ISO8601DateTime!
+  "ISO timestamp when the timeline item was last modified."
+  updated_at: ISO8601DateTime!
+}
+
 "Update data stored in the search index."
 type SearchIndexedUpdate {
   "Update ID."
@@ -13963,6 +14671,16 @@ type SearchIndexedUpdate {
   created_at: String!
   "ISO timestamp when the update was last modified."
   updated_at: String!
+}
+
+"User data stored in the search index."
+type SearchIndexedUser {
+  "User ID."
+  id: ID!
+  "The user's full name."
+  name: String!
+  "The user's email address."
+  email: String!
 }
 
 "Workspace data stored in the search index."
@@ -14028,6 +14746,12 @@ date_range: CrossEntityDateRangeInput,   "Controls the trade-off between search 
 strategy: SearchStrategy,   "Filter updates to specific board IDs."
 board_ids: [ID!],   "Filter updates to those authored by specific creator (user) IDs."
 creator_ids: [ID!]): SearchUpdateResults!
+  "Search for users."
+  users(  "The search query string."
+query: String!,   "Maximum number of results to return (default 10, max 20)."
+limit: Int = 10,   "Date range filter."
+date_range: CrossEntityDateRangeInput,   "Controls the trade-off between search quality and response time. Defaults to balanced."
+strategy: SearchStrategy): SearchUserResults!
   "Search for workspaces."
   workspaces(  "The search query string."
 query: String!,   "Maximum number of results to return (default 10, max 20)."
@@ -14036,6 +14760,17 @@ date_range: CrossEntityDateRangeInput,   "Controls the trade-off between search 
 strategy: SearchStrategy,   "Filter to specific workspace IDs."
 workspace_ids: [ID!],   "Filter workspaces by kind (open or closed)."
 kind: String): SearchWorkspaceResults!
+  "Search for timeline items."
+  timeline_items(  "The search query string."
+query: String!,   "Maximum number of results to return (default 10, max 20)."
+limit: Int = 10,   "Controls the trade-off between search quality and response time. Defaults to balanced."
+strategy: SearchStrategy = BALANCED,   "Date range filter."
+date_range: CrossEntityDateRangeInput,   "Filter timeline items to specific board IDs."
+board_ids: [ID!],   "Filter timeline items to specific workspace IDs."
+workspace_ids: [ID!],   "Filter timeline items to specific item IDs."
+item_ids: [ID!],   "Filter by timeline item type (e.g. email, googleCalendar)."
+type: TimelineItemKind,   "Filter by product kind (e.g. crm, service)."
+product_kind: TimelineItemProductKind): SearchTimelineItemResults!
 }
 
 "Controls the trade-off between search quality and response time."
@@ -14046,6 +14781,22 @@ enum SearchStrategy {
   BALANCED
   "Best search quality with higher response time."
   QUALITY
+}
+
+"A single timelineitem search result with indexed and live data."
+type SearchTimelineItemResult {
+  "Unique identifier of the timelineitem."
+  id: ID!
+  "TimelineItem data from the search index."
+  indexed_data: SearchIndexedTimelineItem!
+  "Live timelineitem data via federation. Null when the referenced timelineitem cannot be resolved by the owning subgraph (e.g. deleted, not accessible to the caller, or indexing lag)."
+  live_data: TimelineItem
+}
+
+"Wrapper for a list of timelineitem search results."
+type SearchTimelineItemResults {
+  "List of timelineitem search results."
+  results: [SearchTimelineItemResult!]!
 }
 
 "A single update search result with indexed and live data."
@@ -14064,6 +14815,22 @@ type SearchUpdateResults {
   results: [SearchUpdateResult!]!
 }
 
+"A single user search result with indexed and live data."
+type SearchUserResult {
+  "Unique identifier of the user."
+  id: ID!
+  "User data from the search index."
+  indexed_data: SearchIndexedUser!
+  "Live user data via federation. Null when the referenced user cannot be resolved by the owning subgraph (e.g. deleted, not accessible to the caller, or indexing lag)."
+  live_data: User
+}
+
+"Wrapper for a list of user search results."
+type SearchUserResults {
+  "List of user search results."
+  results: [SearchUserResult!]!
+}
+
 "A single workspace search result."
 type SearchWorkspaceResult {
   "Unique identifier of the workspace."
@@ -14078,6 +14845,64 @@ type SearchWorkspaceResult {
 type SearchWorkspaceResults {
   "List of workspace search results."
   results: [SearchWorkspaceResult!]!
+}
+
+"Kind of timeline item."
+enum TimelineItemKind {
+  "Email communication"
+  email
+  "Google Calendar event"
+  googleCalendar
+  "Outlook Calendar event"
+  outlookCalendar
+  "Zoom meeting"
+  zoom
+  "General activity"
+  activity
+  "Custom activity"
+  custom
+  "Note"
+  note
+  "Video meeting"
+  videoMeeting
+  "Phone call"
+  phoneCall
+  "Meeting"
+  meeting
+  "AI assistant interaction"
+  aiAssistant
+  "AI-generated reply"
+  aiReply
+  "Portal interaction"
+  portal
+  "Demo email"
+  demoEmail
+  "AI-generated summary"
+  aiSummary
+  "Form submission"
+  form
+  "Portfolio status update"
+  portfolio_status
+  "Sequences email"
+  sequencesEmail
+  "Outreach expert phone call"
+  outreachExpertPhoneCall
+  "outreachExpertPhoneCallV2"
+  outreachExpertPhoneCallV2
+  "Merged tickets"
+  mergedTickets
+  "Custom internal app interaction"
+  customInternalApp
+  "Campaign event"
+  campaigns
+}
+
+"Product kind that owns the timeline item."
+enum TimelineItemProductKind {
+  "Service product"
+  service
+  "CRM product"
+  crm
 }
 
 "Input for enrolling multiple items to a single sequence"
@@ -14478,6 +15303,35 @@ type ActivateUsersResult {
   errors: [ActivateUsersError!]
 }
 
+"The level of access a user or team has for an agent."
+enum AgentMembershipRole {
+  "Owner-level access to the agent."
+  OWNER
+  "Member-level access to the agent."
+  MEMBER
+}
+
+"A subscriber of an agent — a user or team with an assigned role."
+type AgentSubscriber {
+  "The role assigned to the subscribed entity."
+  role: AgentMembershipRole
+  "Whether the subscribed entity is a user or a team."
+  type: AgentSubscriberKind
+  "The subscribed user or team."
+  entity: AgentSubscriberEntity!
+}
+
+"The user or team subscribed to an agent."
+union AgentSubscriberEntity = User | Team
+
+"The type of entity subscribed to an agent."
+enum AgentSubscriberKind {
+  "A user."
+  USER
+  "A team."
+  TEAM
+}
+
 "Error that occurred while changing team owners."
 type AssignTeamOwnersError {
   "The error message."
@@ -14742,6 +15596,14 @@ type UpdateUsersRoleResult {
   updated_users: [User!]
   "Errors that occurred during updating users role."
   errors: [UpdateUsersRoleError!]
+}
+
+"A user's agent memberships."
+type UserAgentMembership {
+  "The role assigned to the user in this agent subscription."
+  role: AgentMembershipRole
+  "The agent this membership belongs to."
+  agent: Agent!
 }
 
 "The attributes to update for a user."
@@ -16139,6 +17001,112 @@ input UpdateQuestionInput {
   title: String
   "Array of option objects for choice-based questions (single_select, multi_select). Required for select types."
   options: [QuestionOptionInput!]
+}
+
+"An artifact produced by or associated with a workstream run"
+type Artifact {
+  "Unique artifact identifier"
+  id: ID
+  "ID of the entity this artifact represents"
+  entity_id: ID
+  "Type of entity (e.g. board, doc)"
+  entity_type: String
+  "ID of the object this artifact belongs to"
+  object_id: ID
+  "Lifecycle state of the artifact"
+  state: ArtifactState
+  "ISO 8601 timestamp"
+  created_at: Date
+  "ISO 8601 timestamp"
+  updated_at: Date
+  "The latest asset for this artifact, fetched via the agent user context"
+  asset: ArtifactAsset
+  "Board preview data (columns + first N items) — only resolved for board-type artifacts"
+  board(limit: Int = 20): ArtifactBoard
+  "Doc data — only resolved for doc-type artifacts"
+  doc: ArtifactDoc
+  "Runs associated with this artifact"
+  runs: [ArtifactRun!]
+}
+
+"An asset associated with an artifact"
+type ArtifactAsset {
+  "Asset identifier"
+  id: ID
+  "Asset file name"
+  name: String
+  "Public URL to access the asset"
+  public_url: String
+}
+
+"Board preview data (columns + first N items)"
+type ArtifactBoard {
+  "Board name"
+  name: String
+  "Board columns"
+  columns: [ArtifactBoardColumn!]
+  "First N board items"
+  items: [ArtifactBoardItem!]
+}
+
+"A column definition in a board preview"
+type ArtifactBoardColumn {
+  "Column identifier"
+  id: ID
+  "Column title"
+  title: String
+  "Column type"
+  type: String
+}
+
+"A column value for a board preview item"
+type ArtifactBoardColumnValue {
+  "Column identifier"
+  id: ID
+  "Column type"
+  type: String
+  "Display text for the column value"
+  text: String
+  "Raw JSON value for the column"
+  value: String
+}
+
+"A board item in a board preview"
+type ArtifactBoardItem {
+  "Item identifier"
+  id: ID
+  "Item name"
+  name: String
+  "Column values for this item"
+  column_values: [ArtifactBoardColumnValue!]
+}
+
+"Doc preview data"
+type ArtifactDoc {
+  "Doc name"
+  name: String
+}
+
+"A run associated with an artifact"
+type ArtifactRun {
+  "Unique run identifier"
+  run_id: ID
+  "ID of the agent that produced this run"
+  agent_app_feature_id: ID
+  "ID of the asset produced by this run"
+  asset_id: ID
+  "ISO 8601 timestamp"
+  created_at: Date
+  "ISO 8601 timestamp"
+  updated_at: Date
+}
+
+"Lifecycle state of an artifact"
+enum ArtifactState {
+  "Artifact is active"
+  ACTIVE
+  "Artifact has been soft-deleted"
+  DELETED
 }
 
 scalar policy__Policy

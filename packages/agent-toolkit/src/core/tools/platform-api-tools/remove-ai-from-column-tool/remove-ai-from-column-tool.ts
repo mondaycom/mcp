@@ -34,14 +34,10 @@ Use get_board_schema to find column IDs before calling this tool.`;
 
   protected async executeInternal(input: ToolInputType<RemoveAiFromColumnToolInput>): Promise<ToolOutputType<never>> {
     try {
-      const res = await this.mondayApi.request<RemoveAiFromColumnMutation>(
-        removeAiFromColumnMutation,
-        {
-          boardId: input.board_id.toString(),
-          columnId: input.column_id,
-        },
-        { versionOverride: '2026-10' },
-      );
+      const res = await this.mondayApi.request<RemoveAiFromColumnMutation>(removeAiFromColumnMutation, {
+        boardId: input.board_id.toString(),
+        columnId: input.column_id,
+      });
 
       return {
         content: {

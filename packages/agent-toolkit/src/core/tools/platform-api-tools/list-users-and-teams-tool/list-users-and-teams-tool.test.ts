@@ -11,18 +11,15 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
             name: 'Luke Skywalker',
             title: 'Jedi Knight',
             email: 'luke@rebelalliance.com',
-            enabled: true,
-            is_admin: false,
-            is_guest: false,
-            is_pending: false,
-            is_verified: true,
-            is_view_only: false,
-            join_date: '1977-05-25',
+            status: 'ACTIVE',
+            kind: 'member',
+            is_email_confirmed: true,
+            became_active_at: '1977-05-25',
             last_activity: '1983-05-25',
             location: 'Tatooine',
             mobile_phone: '+1234567890',
             phone: '+1234567890',
-            photo_thumb: 'https://starwars.com/luke.jpg',
+            photo_url: { thumb: 'https://starwars.com/luke.jpg' },
             time_zone_identifier: 'Tatooine/Binary_Sunset',
             utc_hours_diff: -5,
             teams: [
@@ -53,8 +50,7 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
                 name: 'Luke Skywalker',
                 email: 'luke@rebelalliance.com',
                 title: 'Jedi Knight',
-                is_admin: false,
-                is_guest: false,
+                kind: 'member',
               },
             ],
           },
@@ -69,13 +65,10 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
       expect(result).toContain('Name: Luke Skywalker');
       expect(result).toContain('Email: luke@rebelalliance.com');
       expect(result).toContain('Title: Jedi Knight');
-      expect(result).toContain('Enabled: true');
-      expect(result).toContain('Admin: false');
-      expect(result).toContain('Guest: false');
-      expect(result).toContain('Pending: false');
-      expect(result).toContain('Verified: true');
-      expect(result).toContain('View Only: false');
-      expect(result).toContain('Join Date: 1977-05-25');
+      expect(result).toContain('Status: ACTIVE');
+      expect(result).toContain('Kind: member');
+      expect(result).toContain('Email Confirmed: true');
+      expect(result).toContain('Became Active At: 1977-05-25');
       expect(result).toContain('Last Activity: 1983-05-25');
       expect(result).toContain('Location: Tatooine');
       expect(result).toContain('Mobile Phone: +1234567890');
@@ -93,7 +86,7 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
       expect(result).toContain('- ID: 2, Name: Princess Leia, Email: leia@rebelalliance.com');
       expect(result).toContain('Members:');
       expect(result).toContain(
-        '- ID: 1, Name: Luke Skywalker, Email: luke@rebelalliance.com, Title: Jedi Knight, Admin: false, Guest: false',
+        '- ID: 1, Name: Luke Skywalker, Email: luke@rebelalliance.com, Title: Jedi Knight, Kind: member',
       );
     });
 
@@ -105,18 +98,15 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
             name: 'Obi-Wan Kenobi',
             title: 'Hermit',
             email: 'obiwan@exile.com',
-            enabled: true,
-            is_admin: false,
-            is_guest: false,
-            is_pending: false,
-            is_verified: true,
-            is_view_only: false,
-            join_date: '1977-05-25',
+            status: 'ACTIVE',
+            kind: 'member',
+            is_email_confirmed: true,
+            became_active_at: '1977-05-25',
             last_activity: '1983-05-25',
             location: 'Tatooine Desert',
             mobile_phone: '+9876543210',
             phone: '+9876543210',
-            photo_thumb: 'https://starwars.com/obiwan.jpg',
+            photo_url: { thumb: 'https://starwars.com/obiwan.jpg' },
             time_zone_identifier: 'Tatooine/Binary_Sunset',
             utc_hours_diff: -5,
             teams: null,
@@ -163,18 +153,15 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
             name: 'Han Solo',
             title: null,
             email: 'han@smuggler.com',
-            enabled: true,
-            is_admin: null,
-            is_guest: null,
-            is_pending: null,
-            is_verified: null,
-            is_view_only: null,
-            join_date: null,
+            status: 'ACTIVE',
+            kind: null,
+            is_email_confirmed: null,
+            became_active_at: null,
             last_activity: null,
             location: null,
             mobile_phone: null,
             phone: null,
-            photo_thumb: null,
+            photo_url: null,
             time_zone_identifier: null,
             utc_hours_diff: null,
             teams: null,
@@ -187,13 +174,14 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
 
       expect(result).toContain('Han Solo');
       expect(result).toContain('Title: N/A');
-      expect(result).toContain('Admin: false');
+      expect(result).toContain('Kind: N/A');
       // Optional fields with null values are not included in the output
-      expect(result).not.toContain('Join Date:');
+      expect(result).not.toContain('Became Active At:');
       expect(result).not.toContain('Location:');
       expect(result).not.toContain('Mobile Phone:');
       expect(result).not.toContain('Timezone:');
       expect(result).not.toContain('UTC Hours Diff:');
+      expect(result).not.toContain('Photo Thumb:');
     });
 
     it('should return appropriate message for empty data', () => {
@@ -226,18 +214,15 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
             name: 'Anakin Skywalker',
             title: 'Padawan',
             email: 'anakin@jediorder.com',
-            enabled: true,
-            is_admin: false,
-            is_guest: false,
-            is_pending: false,
-            is_verified: true,
-            is_view_only: false,
-            join_date: null,
+            status: 'ACTIVE',
+            kind: 'member',
+            is_email_confirmed: true,
+            became_active_at: null,
             last_activity: null,
             location: null,
             mobile_phone: null,
             phone: null,
-            photo_thumb: null,
+            photo_url: null,
             time_zone_identifier: null,
             utc_hours_diff: null,
             teams: null,
@@ -247,18 +232,15 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
             name: 'Yoda',
             title: 'Grand Master',
             email: 'yoda@jedicouncil.com',
-            enabled: true,
-            is_admin: true,
-            is_guest: false,
-            is_pending: false,
-            is_verified: true,
-            is_view_only: false,
-            join_date: null,
+            status: 'ACTIVE',
+            kind: 'admin',
+            is_email_confirmed: true,
+            became_active_at: null,
             last_activity: null,
             location: null,
             mobile_phone: null,
             phone: null,
-            photo_thumb: null,
+            photo_url: null,
             time_zone_identifier: null,
             utc_hours_diff: null,
             teams: null,
@@ -300,18 +282,15 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
             name: 'Emperor Palpatine',
             title: 'Sith Lord',
             email: 'emperor@empire.gov',
-            enabled: true,
-            is_admin: true,
-            is_guest: false,
-            is_pending: false,
-            is_verified: true,
-            is_view_only: false,
-            join_date: '1977-05-25',
+            status: 'ACTIVE',
+            kind: 'admin',
+            is_email_confirmed: true,
+            became_active_at: '1977-05-25',
             last_activity: '1983-05-25',
             location: 'Death Star',
             mobile_phone: null,
             phone: null,
-            photo_thumb: null,
+            photo_url: null,
             time_zone_identifier: 'Imperial/Standard_Time',
             utc_hours_diff: 0,
             teams: [
@@ -329,7 +308,7 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
       const result = formatUsersAndTeams(mockData);
 
       expect(result).toContain('Emperor Palpatine');
-      expect(result).toContain('Admin: true');
+      expect(result).toContain('Kind: admin');
       expect(result).toContain('Galactic Empire');
     });
 
@@ -341,18 +320,15 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
             name: 'C-3PO',
             title: 'Protocol Droid',
             email: 'c3po@droids.com',
-            enabled: true,
-            is_admin: false,
-            is_guest: false,
-            is_pending: false,
-            is_verified: true,
-            is_view_only: false,
-            join_date: '1977-05-25',
+            status: 'ACTIVE',
+            kind: 'member',
+            is_email_confirmed: true,
+            became_active_at: '1977-05-25',
             last_activity: '1983-05-25',
             location: 'Echo Base',
             mobile_phone: null,
             phone: null,
-            photo_thumb: null,
+            photo_url: null,
             time_zone_identifier: 'Hoth/Ice_Planet',
             utc_hours_diff: -5,
             teams: [
@@ -399,8 +375,7 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
                 name: 'Biggs Darklighter',
                 email: 'biggs@rebelalliance.com',
                 title: 'X-wing Pilot',
-                is_admin: false,
-                is_guest: false,
+                kind: 'member',
               },
             ],
           },
@@ -450,18 +425,15 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
             name: 'Master Yoda',
             title: 'Grand Master',
             email: 'yoda@jedicouncil.com',
-            enabled: true,
-            is_admin: true,
-            is_guest: false,
-            is_pending: false,
-            is_verified: true,
-            is_view_only: false,
-            join_date: '0001-01-01',
+            status: 'ACTIVE',
+            kind: 'admin',
+            is_email_confirmed: true,
+            became_active_at: '0001-01-01',
             last_activity: '2024-01-01',
             location: 'Dagobah',
             mobile_phone: null,
             phone: null,
-            photo_thumb: 'https://starwars.com/yoda.jpg',
+            photo_url: { thumb: 'https://starwars.com/yoda.jpg' },
             time_zone_identifier: 'Dagobah/Swamp_Time',
             utc_hours_diff: 0,
             teams: [
@@ -481,7 +453,7 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
       expect(result).toContain('Master Yoda');
       expect(result).toContain('Grand Master');
       expect(result).toContain('yoda@jedicouncil.com');
-      expect(result).toContain('Admin: true');
+      expect(result).toContain('Kind: admin');
       expect(result).toContain('Jedi Council');
       // Should contain Teams: for user's team memberships, but only one instance (not a separate Teams section)
       expect(result.split('Teams:').length).toBe(2); // Only one "Teams:" for user's teams
@@ -497,18 +469,15 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
             name: 'Test User',
             title: 'Developer',
             email: 'test@example.com',
-            enabled: true,
-            is_admin: true,
-            is_guest: false,
-            is_pending: false,
-            is_verified: true,
-            is_view_only: false,
-            join_date: '2024-01-01',
+            status: 'ACTIVE',
+            kind: 'admin',
+            is_email_confirmed: true,
+            became_active_at: '2024-01-01',
             last_activity: '2024-01-15',
             location: 'San Francisco',
             mobile_phone: '+1234567890',
             phone: '+0987654321',
-            photo_thumb: 'https://example.com/photo.jpg',
+            photo_url: { thumb: 'https://example.com/photo.jpg' },
             time_zone_identifier: 'America/Los_Angeles',
             utc_hours_diff: -8,
             teams: [
@@ -530,13 +499,10 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
       expect(result).toContain('Name: Test User');
       expect(result).toContain('Email: test@example.com');
       expect(result).toContain('Title: Developer');
-      expect(result).toContain('Enabled: true');
-      expect(result).toContain('Admin: true');
-      expect(result).toContain('Guest: false');
-      expect(result).toContain('Pending: false');
-      expect(result).toContain('Verified: true');
-      expect(result).toContain('View Only: false');
-      expect(result).toContain('Join Date: 2024-01-01');
+      expect(result).toContain('Status: ACTIVE');
+      expect(result).toContain('Kind: admin');
+      expect(result).toContain('Email Confirmed: true');
+      expect(result).toContain('Became Active At: 2024-01-01');
       expect(result).toContain('Last Activity: 2024-01-15');
       expect(result).toContain('Location: San Francisco');
       expect(result).toContain('Mobile Phone: +1234567890');
@@ -571,17 +537,14 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
                 name: 'Developer',
                 email: 'dev@example.com',
                 title: 'Senior Developer',
-                is_admin: false,
-                is_guest: false,
-                is_pending: false,
-                is_verified: true,
-                is_view_only: false,
-                join_date: '2024-01-01',
+                kind: 'member',
+                is_email_confirmed: true,
+                became_active_at: '2024-01-01',
                 last_activity: '2024-01-15',
                 location: 'Remote',
                 mobile_phone: '+1111111111',
                 phone: '+2222222222',
-                photo_thumb: 'https://example.com/dev.jpg',
+                photo_url: { thumb: 'https://example.com/dev.jpg' },
                 time_zone_identifier: 'America/New_York',
                 utc_hours_diff: -5,
               },
@@ -598,12 +561,9 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
       expect(result).toContain('Name: Developer');
       expect(result).toContain('Email: dev@example.com');
       expect(result).toContain('Title: Senior Developer');
-      expect(result).toContain('Admin: false');
-      expect(result).toContain('Guest: false');
-      expect(result).toContain('Pending: false');
-      expect(result).toContain('Verified: true');
-      expect(result).toContain('View Only: false');
-      expect(result).toContain('Join Date: 2024-01-01');
+      expect(result).toContain('Kind: member');
+      expect(result).toContain('Email Confirmed: true');
+      expect(result).toContain('Became Active At: 2024-01-01');
       expect(result).toContain('Last Activity: 2024-01-15');
       expect(result).toContain('Location: Remote');
       expect(result).toContain('Mobile Phone: +1111111111');

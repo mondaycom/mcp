@@ -9,7 +9,7 @@ import { MondayAgentToolkitConfig } from '../core/monday-agent-toolkit';
 import { ManageToolsTool } from '../core/tools/platform-api-tools/manage-tools-tool';
 import { DynamicToolManager } from './dynamic-tool-manager';
 import { API_VERSION } from 'src/utils/version.utils';
-import { formatToolError } from '../utils/error.utils';
+import { formatToolError, INVALID_TOOL_ARGS_CODE, ToolValidationError } from '../utils/error.utils';
 
 export interface GetToolsOptions {
   schemaFormat?: 'zod' | 'json';
@@ -146,7 +146,10 @@ export class MondayAgentToolkit extends McpServer {
           if (inputSchema) {
             const parsedArgs = z.object(inputSchema).safeParse(args);
             if (!parsedArgs.success) {
-              throw new Error(`Invalid arguments: ${parsedArgs.error.message}`);
+              throw new ToolValidationError(
+                `Invalid arguments: ${parsedArgs.error.message}`,
+                INVALID_TOOL_ARGS_CODE,
+              );
             }
             result = await tool.execute(parsedArgs.data);
           } else {
@@ -275,7 +278,10 @@ export class MondayAgentToolkit extends McpServer {
         // inputSchema is already a Zod schema object definition, so we wrap it with z.object()
         const parsedArgs = z.object(inputSchema).safeParse(params);
         if (!parsedArgs.success) {
-          throw new Error(`Invalid arguments: ${parsedArgs.error.message}`);
+          throw new ToolValidationError(
+            `Invalid arguments: ${parsedArgs.error.message}`,
+            INVALID_TOOL_ARGS_CODE,
+          );
         }
         const result = await tool.execute(parsedArgs.data);
         return result.content;
@@ -300,7 +306,10 @@ export class MondayAgentToolkit extends McpServer {
           // inputSchema is already a Zod schema object definition, so we wrap it with z.object()
           const parsedArgs = z.object(inputSchema).safeParse(params);
           if (!parsedArgs.success) {
-            throw new Error(`Invalid arguments: ${parsedArgs.error.message}`);
+            throw new ToolValidationError(
+              `Invalid arguments: ${parsedArgs.error.message}`,
+              INVALID_TOOL_ARGS_CODE,
+            );
           }
           const result = await tool.execute(parsedArgs.data, extra);
           return this.formatToolResult(result.content);
@@ -309,7 +318,7 @@ export class MondayAgentToolkit extends McpServer {
           return this.formatToolResult(result.content);
         }
       } catch (error) {
-        return formatToolError(error);
+        return formatToolError(error, { toolName: tool.name });
       }
     };
   }
@@ -338,15 +347,15 @@ export class MondayAgentToolkit extends McpServer {
    * Format the tool result into the expected MCP format
    */
   private formatToolResult(content: string | Record<string, any>): CallToolResult {
-    if(typeof content === 'string') {
+    if (typeof content === 'string') {
       return {
         content: [{ type: 'text', text: content }],
-      }
+      };
     }
-    
+
     return {
       structuredContent: content,
-      content: [{ type: 'text', text: JSON.stringify(content) }]
+      content: [{ type: 'text', text: JSON.stringify(content) }],
     };
   }
 

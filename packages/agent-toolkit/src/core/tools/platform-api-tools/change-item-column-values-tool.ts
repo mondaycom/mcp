@@ -6,6 +6,7 @@ import {
 import { changeItemColumnValues } from '../../../monday-graphql/queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
+import { ToolValidationError } from '../../../utils';
 
 export const changeItemColumnValuesToolSchema = {
   itemId: z.number().describe('The ID of the item to be updated'),
@@ -74,7 +75,10 @@ export class ChangeItemColumnValuesTool extends BaseMondayApiTool<ChangeItemColu
     try {
       changedColumnIds = Object.keys(JSON.parse(input.columnValues));
     } catch (e) {
-      throw new Error(`Invalid columnValues JSON: ${(e as Error).message}`);
+      throw new ToolValidationError(
+        `Invalid columnValues JSON: ${(e as Error).message}`,
+        'INVALID_COLUMN_VALUES_JSON',
+      );
     }
 
     const res = await this.mondayApi.request<ChangeItemColumnValuesMutation>(changeItemColumnValues, {

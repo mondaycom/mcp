@@ -4,6 +4,8 @@ export { extractTokenInfo, decodeJwtToken, MondayTokenPayload } from './token.ut
 export { TIME_IN_SECONDS, TIME_IN_MILLISECONDS, NANOSECONDS_PER_MILLISECOND } from './time.utils';
 export { API_VERSION } from './version.utils';
 export {
+  INVALID_TOOL_ARGS_CODE,
+  ToolValidationError,
   buildToolErrorStructuredContent,
   formatToolError,
   rethrowWithContext,

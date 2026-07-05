@@ -11,10 +11,14 @@ import { createSubitem } from './create-subitem.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { ChangeItemColumnValuesTool } from '../change-item-column-values-tool';
-import { rethrowWithContext } from '../../../../utils';
+import { ToolValidationError, rethrowWithContext } from '../../../../utils';
 
 export const createItemToolSchema = {
-  name: z.string().describe("The name of the new item to be created, must be relevant to the user's request"),
+  name: z
+    .string()
+    .min(1, 'Item name cannot be empty')
+    .max(255, 'Item name must be 255 characters or fewer')
+    .describe("The name of the new item to be created, must be relevant to the user's request. 1–255 characters."),
   groupId: z
     .string()
     .optional()
@@ -22,7 +26,13 @@ export const createItemToolSchema = {
   columnValues: z
     .string()
     .describe(
-      `A string containing the new column values for the item following this structure: {\\"column_id\\": \\"value\\",... you can change multiple columns at once, note that for status column you must use nested value with 'label' as a key and for date column use 'date' as key} - example: "{\\"text_column_id\\":\\"New text\\", \\"status_column_id\\":{\\"label\\":\\"Done\\"}, \\"date_column_id\\":{\\"date\\":\\"2023-05-25\\"},\\"dropdown_id\\":\\"value\\", \\"phone_id\\":\\"123-456-7890\\", \\"email_id\\":\\"test@example.com\\"}"`,
+      `A JSON string of column values, keyed by column id. Status and dropdown columns must use { "label": "..." } (or { "labels": ["...", "..."] } for multi-select dropdown). Date columns use { "date": "YYYY-MM-DD" }. Text/number/email/phone use plain strings. Example: "{\\"text_col\\":\\"hello\\", \\"status_col\\":{\\"label\\":\\"Done\\"}, \\"date_col\\":{\\"date\\":\\"2023-05-25\\"}, \\"dropdown_col\\":{\\"labels\\":[\\"A\\",\\"B\\"]}, \\"phone_col\\":\\"123-456-7890\\", \\"email_col\\":\\"test@example.com\\"}". If you don't know the exact label values or column ids, call get_board_info first.`,
+    ),
+  createLabelsIfMissing: z
+    .boolean()
+    .optional()
+    .describe(
+      'When true, missing status/dropdown labels referenced in columnValues will be auto-created on the board instead of erroring with ColumnValueException. Requires permission to change board structure. Use when the caller specifies label names that may not yet exist on the board.',
     ),
   parentItemId: z.number().optional().describe('The id of the parent item under which the new subitem will be created'),
   duplicateFromItemId: z
@@ -66,8 +76,9 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
     const boardId = this.context?.boardId ?? (input as ToolInputType<typeof createItemInBoardToolSchema>).boardId;
 
     if (input.duplicateFromItemId && input.parentItemId) {
-      throw new Error(
+      throw new ToolValidationError(
         'Cannot specify both parentItemId and duplicateFromItemId. Please provide only one of these parameters.',
+        'INVALID_ARGUMENTS_COMBINATION',
       );
     }
 
@@ -93,14 +104,14 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
       const duplicateRes = await this.mondayApi.request<DuplicateItemMutation>(duplicateItem, duplicateVariables);
 
       if (!duplicateRes.duplicate_item?.id) {
-        throw new Error('Failed to duplicate item: no item duplicated');
+        throw new ToolValidationError('Failed to duplicate item: no item duplicated', 'EMPTY_API_RESPONSE');
       }
 
       let columnValuesParsed;
       try {
         columnValuesParsed = JSON.parse(input.columnValues);
       } catch (error) {
-        throw new Error('Invalid JSON in columnValues');
+        throw new ToolValidationError('Invalid JSON in columnValues', 'INVALID_COLUMN_VALUES_JSON');
       }
 
       const columnValuesAndName = {
@@ -115,6 +126,7 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
       await changeColumnValuesTool.execute({
         itemId: parseInt(duplicateRes.duplicate_item.id),
         columnValues: JSON.stringify(columnValuesAndName),
+        createLabelsIfMissing: input.createLabelsIfMissing,
       });
 
       return {
@@ -130,12 +142,13 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
       parentItemId: input.parentItemId!.toString(),
       itemName: input.name,
       columnValues: input.columnValues,
+      createLabelsIfMissing: input.createLabelsIfMissing,
     };
     try {
       const res = await this.mondayApi.request<CreateSubitemMutation>(createSubitem, variables);
 
       if (!res.create_subitem?.id) {
-        throw new Error('Failed to create subitem: no subitem created');
+        throw new ToolValidationError('Failed to create subitem: no subitem created', 'EMPTY_API_RESPONSE');
       }
 
       return {
@@ -156,6 +169,7 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
         itemName: input.name,
         groupId: input.groupId,
         columnValues: input.columnValues,
+        createLabelsIfMissing: input.createLabelsIfMissing,
       };
 
       const res = await this.mondayApi.request<CreateItemMutation>(createItem, variables);
