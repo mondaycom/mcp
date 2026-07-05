@@ -1,7 +1,16 @@
 import { z } from 'zod';
 import { BaseMondayApiTool, MondayApiToolContext, createMondayApiAnnotations } from './base-monday-api-tool';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
-import { buildClientSchema, DocumentNode, GraphQLSchema, IntrospectionQuery, OperationDefinitionNode, parse, validate } from 'graphql';
+import {
+  buildClientSchema,
+  DocumentNode,
+  GraphQLSchema,
+  IntrospectionQuery,
+  OperationDefinitionNode,
+  OperationTypeNode,
+  parse,
+  validate,
+} from 'graphql';
 import { ApiClient } from '@mondaydotcomorg/api';
 import { introspectionQuery } from '../../../monday-graphql';
 import { API_VERSION } from '../../../utils/version.utils';
@@ -79,9 +88,9 @@ export class AllMondayApiTool extends BaseMondayApiTool<typeof allMondayApiToolS
 
       const operationKey = this.getGraphqlOperationKey(definition);
 
-      if (definition.operation === 'mutation') {
+      if (definition.operation === OperationTypeNode.MUTATION) {
         graphql_mutations[operationKey] = (graphql_mutations[operationKey] ?? 0) + 1;
-      } else if (definition.operation === 'query') {
+      } else if (definition.operation === OperationTypeNode.QUERY) {
         graphql_queries[operationKey] = (graphql_queries[operationKey] ?? 0) + 1;
       }
     }
