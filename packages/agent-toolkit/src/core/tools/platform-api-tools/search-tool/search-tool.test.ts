@@ -134,17 +134,22 @@ describe('SearchTool', () => {
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
 
-    it('should validate limit does not exceed SEARCH_LIMIT (20)', async () => {
+    it('should clamp limit exceeding SEARCH_LIMIT (20) to 20', async () => {
+      mocks.setResponse(mockDevBoardsResponse);
+
       const args: Partial<inputType> = {
         searchType: GlobalSearchType.BOARD,
         searchTerm: 'test',
-        limit: 21, // exceeds max
+        limit: 21,
       };
 
-      const result = await callToolByNameRawAsync('search', args);
+      await callToolByNameAsync('search', args as inputType);
 
-      expect(result.content[0].text).toContain('Failed to execute tool search: Invalid arguments');
-      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ limit: 20 }),
+        expect.anything(),
+      );
     });
 
     it('should accept limit at exactly SEARCH_LIMIT (20)', async () => {
@@ -1236,6 +1241,245 @@ describe('SearchTool', () => {
       expect(result.content[0].text).toContain('Failed to execute tool search');
       expect(result.content[0].text).toContain(errorMessage);
       expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('Input Normalization', () => {
+    describe('searchType normalization', () => {
+      it('should normalize "boards" (lowercase plural) to BOARD and execute successfully', async () => {
+        mocks.setResponse(mockDevBoardsResponse);
+
+        const args = {
+          searchType: 'boards',
+          searchTerm: 'Test',
+        } as any;
+
+        const parsedResult = await callToolByNameAsync('search', args);
+
+        expect(parsedResult.data).toHaveLength(3);
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchBoards'),
+          expect.any(Object),
+          expect.any(Object),
+        );
+      });
+
+      it('should normalize "board" (lowercase singular) to BOARD and execute successfully', async () => {
+        mocks.setResponse(mockDevBoardsResponse);
+
+        const args = {
+          searchType: 'board',
+          searchTerm: 'Test',
+        } as any;
+
+        const parsedResult = await callToolByNameAsync('search', args);
+
+        expect(parsedResult.data).toHaveLength(3);
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchBoards'),
+          expect.any(Object),
+          expect.any(Object),
+        );
+      });
+
+      it('should normalize "BOARDS" (uppercase plural) to BOARD and execute successfully', async () => {
+        mocks.setResponse(mockDevBoardsResponse);
+
+        const args = {
+          searchType: 'BOARDS',
+          searchTerm: 'Test',
+        } as any;
+
+        const parsedResult = await callToolByNameAsync('search', args);
+
+        expect(parsedResult.data).toHaveLength(3);
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchBoards'),
+          expect.any(Object),
+          expect.any(Object),
+        );
+      });
+
+      it('should normalize "docs" to DOCUMENTS and execute successfully', async () => {
+        mocks.setResponse(mockDevDocsResponse);
+
+        const args = {
+          searchType: 'docs',
+          searchTerm: 'Document',
+        } as any;
+
+        const parsedResult = await callToolByNameAsync('search', args);
+
+        expect(parsedResult.data).toHaveLength(3);
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchDocs'),
+          expect.any(Object),
+          expect.any(Object),
+        );
+      });
+
+      it('should normalize "items" to ITEMS and execute successfully', async () => {
+        mocks.setResponse({
+          search: {
+            items: {
+              results: [
+                {
+                  id: '111',
+                  indexed_data: { id: '111', name: 'Item One', url: 'https://monday.com/boards/1/pulses/111' },
+                },
+              ],
+            },
+          },
+        });
+
+        const args = {
+          searchType: 'items',
+          searchTerm: 'Item',
+        } as any;
+
+        const parsedResult = await callToolByNameAsync('search', args);
+
+        expect(parsedResult.data).toHaveLength(1);
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchItems'),
+          expect.any(Object),
+          expect.any(Object),
+        );
+      });
+
+      it('should normalize "workspace" to WORKSPACES and execute successfully', async () => {
+        mocks.setResponse({
+          search: {
+            workspaces: {
+              results: [
+                {
+                  id: '10',
+                  indexed_data: { id: '10', name: 'Marketing Workspace', description: 'For marketing team' },
+                },
+              ],
+            },
+          },
+        });
+
+        const args = {
+          searchType: 'workspace',
+          searchTerm: 'Marketing',
+        } as any;
+
+        const parsedResult = await callToolByNameAsync('search', args);
+
+        expect(parsedResult.data).toHaveLength(1);
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchWorkspaces'),
+          expect.any(Object),
+          expect.any(Object),
+        );
+      });
+
+      it('should normalize "timeline" to TIMELINE_ITEMS and execute successfully', async () => {
+        mocks.setResponse({
+          search: {
+            timeline_items: {
+              results: [
+                {
+                  id: '10',
+                  indexed_data: { id: '10', title: 'Kickoff email', summary: 'Summary', content: 'Content' },
+                },
+              ],
+            },
+          },
+        });
+
+        const args = {
+          searchType: 'timeline',
+          searchTerm: 'kickoff',
+        } as any;
+
+        const parsedResult = await callToolByNameAsync('search', args);
+
+        expect(parsedResult.data).toHaveLength(1);
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchTimelineItems'),
+          expect.any(Object),
+          expect.any(Object),
+        );
+      });
+    });
+
+    describe('limit normalization', () => {
+      it('should clamp limit of 50 to 20 and execute successfully', async () => {
+        mocks.setResponse(mockDevBoardsResponse);
+
+        const args = {
+          searchType: GlobalSearchType.BOARD,
+          searchTerm: 'Test',
+          limit: 50,
+        } as any;
+
+        const parsedResult = await callToolByNameAsync('search', args);
+
+        expect(parsedResult.data).toBeDefined();
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchBoards'),
+          expect.objectContaining({ limit: 20 }),
+          expect.any(Object),
+        );
+      });
+
+      it('should clamp limit of 100 to 20 and execute successfully', async () => {
+        mocks.setResponse(mockDevBoardsResponse);
+
+        const args = {
+          searchType: GlobalSearchType.BOARD,
+          searchTerm: 'Test',
+          limit: 100,
+        } as any;
+
+        const parsedResult = await callToolByNameAsync('search', args);
+
+        expect(parsedResult.data).toBeDefined();
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchBoards'),
+          expect.objectContaining({ limit: 20 }),
+          expect.any(Object),
+        );
+      });
+
+      it('should pass limit of 20 through unchanged', async () => {
+        mocks.setResponse(mockDevBoardsResponse);
+
+        const args: inputType = {
+          searchType: GlobalSearchType.BOARD,
+          searchTerm: 'Test',
+          limit: 20,
+        };
+
+        await callToolByNameAsync('search', args);
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchBoards'),
+          expect.objectContaining({ limit: 20 }),
+          expect.any(Object),
+        );
+      });
+
+      it('should pass limit of 5 through unchanged', async () => {
+        mocks.setResponse(mockDevBoardsResponse);
+
+        const args: inputType = {
+          searchType: GlobalSearchType.BOARD,
+          searchTerm: 'Test',
+          limit: 5,
+        };
+
+        await callToolByNameAsync('search', args);
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchBoards'),
+          expect.objectContaining({ limit: 5 }),
+          expect.any(Object),
+        );
+      });
     });
   });
 

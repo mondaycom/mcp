@@ -1,7 +1,16 @@
 import { z } from 'zod';
 import { BaseMondayApiTool, MondayApiToolContext, createMondayApiAnnotations } from './base-monday-api-tool';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
-import { buildClientSchema, GraphQLSchema, IntrospectionQuery, parse, validate } from 'graphql';
+import {
+  buildClientSchema,
+  DocumentNode,
+  GraphQLSchema,
+  IntrospectionQuery,
+  OperationDefinitionNode,
+  OperationTypeNode,
+  parse,
+  validate,
+} from 'graphql';
 import { ApiClient } from '@mondaydotcomorg/api';
 import { introspectionQuery } from '../../../monday-graphql';
 import { API_VERSION } from '../../../utils/version.utils';
@@ -65,9 +74,52 @@ export class AllMondayApiTool extends BaseMondayApiTool<typeof allMondayApiToolS
     }
   }
 
-  private async validateOperation(queryString: string, version: string): Promise<string[]> {
+  protected countGraphqlOperations(documentAST: DocumentNode): {
+    graphql_queries: Record<string, number>;
+    graphql_mutations: Record<string, number>;
+  } {
+    const graphql_queries: Record<string, number> = {};
+    const graphql_mutations: Record<string, number> = {};
+
+    for (const definition of documentAST.definitions) {
+      if (definition.kind !== 'OperationDefinition') {
+        continue;
+      }
+
+      const operationKey = this.getGraphqlOperationKey(definition);
+
+      if (definition.operation === OperationTypeNode.MUTATION) {
+        graphql_mutations[operationKey] = (graphql_mutations[operationKey] ?? 0) + 1;
+      } else if (definition.operation === OperationTypeNode.QUERY) {
+        graphql_queries[operationKey] = (graphql_queries[operationKey] ?? 0) + 1;
+      }
+    }
+
+    return { graphql_queries, graphql_mutations };
+  }
+
+  private getGraphqlOperationKey(definition: OperationDefinitionNode): string {
+    if (definition.name?.value) {
+      return definition.name.value;
+    }
+
+    const firstSelection = definition.selectionSet.selections[0];
+    if (firstSelection?.kind === 'Field') {
+      return firstSelection.name.value;
+    }
+
+    return '<anonymous>';
+  }
+
+  protected recordGraphqlOperationCounts(documentAST: DocumentNode): void {
+    const { graphql_queries, graphql_mutations } = this.countGraphqlOperations(documentAST);
+    this.sessionContext.metadata ??= {};
+    this.sessionContext.metadata.graphql_queries = graphql_queries;
+    this.sessionContext.metadata.graphql_mutations = graphql_mutations;
+  }
+
+  private async validateOperation(documentAST: DocumentNode, version: string): Promise<string[]> {
     const schema = await this.loadSchema(version);
-    const documentAST = parse(queryString);
     const errors = validate(schema, documentAST);
     return errors.map((error) => error.message);
   }
@@ -82,7 +134,10 @@ export class AllMondayApiTool extends BaseMondayApiTool<typeof allMondayApiToolS
       throw new Error(`Error parsing variables: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
 
-    const validationErrors = await this.validateOperation(query, this.context?.apiVersion ?? API_VERSION);
+    const documentAST = parse(query);
+    this.recordGraphqlOperationCounts(documentAST);
+
+    const validationErrors = await this.validateOperation(documentAST, this.context?.apiVersion ?? API_VERSION);
     if (validationErrors.length > 0) {
       throw new Error(validationErrors.join(', '));
     }
