@@ -1,5 +1,5 @@
 import { GraphQLErrorResponse } from '../graphql-error.types';
-import { ToolValidationError, INVALID_TOOL_ARGS_CODE, buildToolErrorStructuredContent, formatToolError, rethrowWithContext } from '../error.utils';
+import { ToolValidationError, INVALID_TOOL_ARGS_CODE, buildToolErrorStructuredContent, formatToolError, isRateLimitError, rethrowWithContext } from '../error.utils';
 
 const toToolkitError = (contentText: string): Error => {
   const message = contentText.startsWith('Error: ') ? contentText.slice('Error: '.length) : contentText;
@@ -703,6 +703,33 @@ describe('error.utils', () => {
 
         expect(structured).toEqual({ message: contentText.slice('Error: '.length) });
       });
+    });
+  });
+
+  describe('isRateLimitError', () => {
+    const withResponse = (response: unknown) => {
+      const err = new Error('boom');
+      (err as any).response = response;
+      return err;
+    };
+
+    it('returns true for HTTP status 429', () => {
+      const err = withResponse({ status: 429, errors: [{ message: 'rl' }] });
+      expect(isRateLimitError(err)).toBe(true);
+    });
+
+    it('returns false for status 200 regardless of error code', () => {
+      const err = withResponse({
+        status: 200,
+        errors: [{ extensions: { code: 'MINUTE_RATE_LIMIT_EXCEEDED' } }],
+      });
+      expect(isRateLimitError(err)).toBe(false);
+    });
+
+    it('returns false for errors without a response', () => {
+      expect(isRateLimitError(new Error('plain'))).toBe(false);
+      expect(isRateLimitError('string')).toBe(false);
+      expect(isRateLimitError(undefined)).toBe(false);
     });
   });
   });
