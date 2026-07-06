@@ -245,6 +245,7 @@ export class MondayAgentToolkit extends McpServer {
     description: string;
     schema: any;
     annotations: any;
+    tags?: string[];
     handler: (params: any, extra?: any) => Promise<CallToolResult>;
   }> {
     const allTools = [...this.toolInstances];
@@ -259,6 +260,7 @@ export class MondayAgentToolkit extends McpServer {
       description: tool.getDescription(),
       schema: this.getSchemaForTool(tool, options),
       annotations: tool.annotations,
+      tags: tool.tags,
       handler: this.createMcpToolHandler(tool),
     }));
   }

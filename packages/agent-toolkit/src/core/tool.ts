@@ -24,6 +24,8 @@ export interface Tool<Input extends ZodRawShape | undefined, Output extends Reco
   annotations: ToolAnnotations;
   /** Whether the tool is enabled by default. Defaults to true if not specified. */
   enabledByDefault?: boolean;
+  /** Discovery/filtering tags surfaced on the MCP tool (e.g. `'crm'`, `'automations'`). */
+  tags?: string[];
 
   getDescription(): string;
   getInputSchema(): Input;
