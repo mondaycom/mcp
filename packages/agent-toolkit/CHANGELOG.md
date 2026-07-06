@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.53.1
+
+### publish_workflow — restrict to explicit user request
+
+- Added "When to use" guidance to the tool description instructing the LLM to only call `publish_workflow` when the user explicitly asks to publish
+- After workflow creation/update, the LLM will suggest publishing and wait for user confirmation before proceeding
+
 ## 5.49.0
 
 ### search — normalize searchType and limit inputs
