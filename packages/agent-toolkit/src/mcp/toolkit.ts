@@ -9,7 +9,7 @@ import { MondayAgentToolkitConfig } from '../core/monday-agent-toolkit';
 import { ManageToolsTool } from '../core/tools/platform-api-tools/manage-tools-tool';
 import { DynamicToolManager } from './dynamic-tool-manager';
 import { API_VERSION } from 'src/utils/version.utils';
-import { stringifyIfObject } from 'src/utils/object.utils';
+import { formatToolError, INVALID_TOOL_ARGS_CODE, ToolValidationError } from '../utils/error.utils';
 
 export interface GetToolsOptions {
   schemaFormat?: 'zod' | 'json';
@@ -20,8 +20,9 @@ export interface GetToolsOptions {
  */
 export class MondayAgentToolkit extends McpServer {
   private readonly mondayApiClient: ApiClient;
-  private readonly mondayApiToken: string;
+  private readonly mondayApiToken: string | (() => string);
   private readonly context?: MondayAgentToolkitConfig['context'];
+  private readonly toolkitConfig: MondayAgentToolkitConfig;
   private readonly dynamicToolManager: DynamicToolManager = new DynamicToolManager();
   private toolInstances: Tool<any, any>[] = [];
   private managementTool: Tool<any, any> | null = null;
@@ -45,22 +46,30 @@ export class MondayAgentToolkit extends McpServer {
       },
     );
 
-    this.mondayApiClient = this.createApiClient(config);
     this.mondayApiToken = config.mondayApiToken;
+    this.toolkitConfig = config;
+    const resolvedToken = typeof config.mondayApiToken === 'function' ? config.mondayApiToken() : config.mondayApiToken;
+    this.mondayApiClient = this.createApiClient(resolvedToken, config);
+
     this.context = {
       ...config.context,
       apiVersion: config.mondayApiVersion ?? API_VERSION,
+      fetchConfig: config.fetchConfig ?? config.context?.fetchConfig,
     };
 
     this.registerTools(config);
   }
 
+  private createApiClientFromToken(): ApiClient {
+    return this.createApiClient((this.mondayApiToken as () => string)(), this.toolkitConfig);
+  }
+
   /**
    * Create and configure the Monday API client
    */
-  private createApiClient(config: MondayAgentToolkitConfig): ApiClient {
+  private createApiClient(token: string, config: MondayAgentToolkitConfig): ApiClient {
     return new ApiClient({
-      token: config.mondayApiToken,
+      token,
       apiVersion: config.mondayApiVersion ?? API_VERSION,
       endpoint: config.mondayApiEndpoint,
       requestConfig: {
@@ -107,7 +116,7 @@ export class MondayAgentToolkit extends McpServer {
    */
   private initializeTools(config: MondayAgentToolkitConfig): Tool<any, any>[] {
     const instanceOptions = {
-      apiClient: this.mondayApiClient,
+      apiClient: typeof this.mondayApiToken === 'function' ? () => this.createApiClientFromToken() : this.mondayApiClient,
       apiToken: this.mondayApiToken,
       context: this.context,
     };
@@ -137,7 +146,10 @@ export class MondayAgentToolkit extends McpServer {
           if (inputSchema) {
             const parsedArgs = z.object(inputSchema).safeParse(args);
             if (!parsedArgs.success) {
-              throw new Error(`Invalid arguments: ${parsedArgs.error.message}`);
+              throw new ToolValidationError(
+                `Invalid arguments: ${parsedArgs.error.message}`,
+                INVALID_TOOL_ARGS_CODE,
+              );
             }
             result = await tool.execute(parsedArgs.data);
           } else {
@@ -233,6 +245,7 @@ export class MondayAgentToolkit extends McpServer {
     description: string;
     schema: any;
     annotations: any;
+    tags?: string[];
     handler: (params: any, extra?: any) => Promise<CallToolResult>;
   }> {
     const allTools = [...this.toolInstances];
@@ -247,6 +260,7 @@ export class MondayAgentToolkit extends McpServer {
       description: tool.getDescription(),
       schema: this.getSchemaForTool(tool, options),
       annotations: tool.annotations,
+      tags: tool.tags,
       handler: this.createMcpToolHandler(tool),
     }));
   }
@@ -264,7 +278,10 @@ export class MondayAgentToolkit extends McpServer {
         // inputSchema is already a Zod schema object definition, so we wrap it with z.object()
         const parsedArgs = z.object(inputSchema).safeParse(params);
         if (!parsedArgs.success) {
-          throw new Error(`Invalid arguments: ${parsedArgs.error.message}`);
+          throw new ToolValidationError(
+            `Invalid arguments: ${parsedArgs.error.message}`,
+            INVALID_TOOL_ARGS_CODE,
+          );
         }
         const result = await tool.execute(parsedArgs.data);
         return result.content;
@@ -289,7 +306,10 @@ export class MondayAgentToolkit extends McpServer {
           // inputSchema is already a Zod schema object definition, so we wrap it with z.object()
           const parsedArgs = z.object(inputSchema).safeParse(params);
           if (!parsedArgs.success) {
-            throw new Error(`Invalid arguments: ${parsedArgs.error.message}`);
+            throw new ToolValidationError(
+              `Invalid arguments: ${parsedArgs.error.message}`,
+              INVALID_TOOL_ARGS_CODE,
+            );
           }
           const result = await tool.execute(parsedArgs.data, extra);
           return this.formatToolResult(result.content);
@@ -298,11 +318,7 @@ export class MondayAgentToolkit extends McpServer {
           return this.formatToolResult(result.content);
         }
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        return {
-          content: [{ type: 'text', text: `Error: ${errorMessage}` }],
-          isError: true,
-        };
+        return formatToolError(error, { toolName: tool.name });
       }
     };
   }
@@ -331,15 +347,15 @@ export class MondayAgentToolkit extends McpServer {
    * Format the tool result into the expected MCP format
    */
   private formatToolResult(content: string | Record<string, any>): CallToolResult {
-    if(typeof content === 'string') {
+    if (typeof content === 'string') {
       return {
         content: [{ type: 'text', text: content }],
-      }
+      };
     }
-    
+
     return {
       structuredContent: content,
-      content: [{ type: 'text', text: JSON.stringify(content) }]
+      content: [{ type: 'text', text: JSON.stringify(content) }],
     };
   }
 
@@ -347,16 +363,9 @@ export class MondayAgentToolkit extends McpServer {
    * Handle tool execution errors
    */
   private handleToolError(error: unknown, toolName: string): CallToolResult {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Failed to execute tool ${toolName}: ${errorMessage}`,
-        },
-      ],
-      isError: true,
-    };
+    return formatToolError(error, {
+      toolName,
+      errorPrefix: `Failed to execute tool ${toolName}: `,
+    });
   }
 }

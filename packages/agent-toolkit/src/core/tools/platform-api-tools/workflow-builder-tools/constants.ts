@@ -1,1 +1,6 @@
-export const WORKFLOW_BUILDER_AGENT_URL = 'https://api.monday.com/platform-ai-gateway/agents/workflow-builder';
+import { WORKFLOW_BUILDER_AGENT_PATH, WORKFLOW_PLANNER_AGENT_PATH } from '../ai-agent.utils';
+
+const PUBLIC_BASE_URL = 'https://api.monday.com';
+
+export const WORKFLOW_BUILDER_AGENT_URL = `${PUBLIC_BASE_URL}${WORKFLOW_BUILDER_AGENT_PATH}`;
+export const WORKFLOW_PLANNER_AGENT_URL = `${PUBLIC_BASE_URL}${WORKFLOW_PLANNER_AGENT_PATH}`;

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { createMockApiClient } from '../test-utils/mock-api-client';
-import { CreateItemTool } from './create-item-tool';
+import { CreateItemTool, createItemInBoardToolSchema } from './create-item-tool';
 import { ChangeItemColumnValuesTool } from '../change-item-column-values-tool';
 
 // Mock the ChangeItemColumnValuesTool
@@ -383,6 +383,115 @@ describe('Create Item Tool Behaviour', () => {
         ).rejects.toThrow(
           'Cannot specify both parentItemId and duplicateFromItemId. Please provide only one of these parameters.',
         );
+      });
+    });
+
+    describe('createLabelsIfMissing propagation', () => {
+      it('passes createLabelsIfMissing to createItem when true', async () => {
+        mocks.setResponse(successfulCreateItemResponse);
+
+        const tool = new CreateItemTool(mocks.mockApiClient, { boardId: 456 });
+
+        await tool.execute({
+          name: 'Test Item',
+          columnValues: '{"status_col":{"label":"Brand New Status"}}',
+          createLabelsIfMissing: true,
+        });
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('mutation createItem'), {
+          boardId: '456',
+          itemName: 'Test Item',
+          groupId: undefined,
+          columnValues: '{"status_col":{"label":"Brand New Status"}}',
+          createLabelsIfMissing: true,
+        });
+      });
+
+      it('passes createLabelsIfMissing to createSubitem when true', async () => {
+        mocks.setResponse({ create_subitem: { id: '111', name: 'sub', parent_item: { id: '999' } } });
+
+        const tool = new CreateItemTool(mocks.mockApiClient, { boardId: 456 });
+
+        await tool.execute({
+          name: 'Sub',
+          columnValues: '{"dropdown_col":{"label":"New Label"}}',
+          parentItemId: 999,
+          createLabelsIfMissing: true,
+        });
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('mutation createSubitem'), {
+          parentItemId: '999',
+          itemName: 'Sub',
+          columnValues: '{"dropdown_col":{"label":"New Label"}}',
+          createLabelsIfMissing: true,
+        });
+      });
+
+      it('forwards createLabelsIfMissing through the duplicate path to change_column_values', async () => {
+        mocks.setResponse({ duplicate_item: { id: '987654321', name: 'Duplicated Item' } });
+        mockChangeColumnValuesTool.execute.mockResolvedValue({ content: 'ok' });
+
+        const tool = new CreateItemTool(mocks.mockApiClient, { boardId: 456 });
+
+        await tool.execute({
+          name: 'Dup',
+          columnValues: '{"status_col":{"label":"Brand New"}}',
+          duplicateFromItemId: 123,
+          createLabelsIfMissing: true,
+        });
+
+        expect(mockChangeColumnValuesTool.execute).toHaveBeenCalledWith({
+          itemId: 987654321,
+          columnValues: '{"status_col":{"label":"Brand New"},"name":"Dup"}',
+          createLabelsIfMissing: true,
+        });
+      });
+    });
+
+    describe('Schema validation', () => {
+      const schema = z.object(createItemInBoardToolSchema);
+
+      it('rejects an empty name', () => {
+        const result = schema.safeParse({
+          boardId: 456,
+          name: '',
+          columnValues: '{}',
+        });
+        expect(result.success).toBe(false);
+        if (!result.success) {
+          expect(result.error.issues[0]?.message).toBe('Item name cannot be empty');
+        }
+      });
+
+      it('rejects a name over 255 characters (matches server InvalidItemNameException limit)', () => {
+        const result = schema.safeParse({
+          boardId: 456,
+          name: 'a'.repeat(256),
+          columnValues: '{}',
+        });
+        expect(result.success).toBe(false);
+        if (!result.success) {
+          expect(result.error.issues[0]?.message).toBe('Item name must be 255 characters or fewer');
+        }
+      });
+
+      it('accepts a 255-character name', () => {
+        const result = schema.safeParse({
+          boardId: 456,
+          name: 'a'.repeat(255),
+          columnValues: '{}',
+        });
+        expect(result.success).toBe(true);
+      });
+
+      it('accepts createLabelsIfMissing as an optional boolean', () => {
+        const result = schema.safeParse({
+          boardId: 456,
+          name: 'ok',
+          columnValues: '{}',
+          createLabelsIfMissing: true,
+        });
+        expect(result.success).toBe(true);
       });
     });
   });

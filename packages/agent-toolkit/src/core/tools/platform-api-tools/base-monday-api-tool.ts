@@ -3,6 +3,7 @@ import { ZodRawShape } from 'zod';
 import { ToolAnnotations } from '@modelcontextprotocol/sdk/types';
 import { SessionContext } from '../../executable';
 import { Tool, ToolInputType, ToolOutputType, ToolType } from '../../tool';
+import { FetchConfig } from '../../monday-agent-toolkit';
 
 export type MondayApiToolContext = {
   // Operational context
@@ -13,6 +14,8 @@ export type MondayApiToolContext = {
   agentType?: string;
   agentClientName?: string;
   clientRedirectUris?: string[];
+
+  fetchConfig?: FetchConfig;
 };
 
 export type BaseMondayApiToolConstructor = new (api: ApiClient) => BaseMondayApiTool<any>;
@@ -20,7 +23,7 @@ export type BaseMondayApiToolConstructor = new (api: ApiClient) => BaseMondayApi
 // Helper function to merge annotations with default openWorldHint
 export function createMondayApiAnnotations(annotations: ToolAnnotations): ToolAnnotations {
   return {
-    openWorldHint: true,
+    openWorldHint: false,
     ...annotations,
   };
 }
@@ -37,10 +40,15 @@ export abstract class BaseMondayApiTool<
 
   protected sessionContext: SessionContext = {};
 
-  constructor(
-    protected readonly mondayApi: ApiClient,
-    protected readonly context?: MondayApiToolContext,
-  ) {}
+  private readonly _mondayApiProvider: ApiClient | (() => ApiClient);
+
+  constructor(mondayApi: ApiClient | (() => ApiClient), protected readonly context?: MondayApiToolContext) {
+    this._mondayApiProvider = mondayApi;
+  }
+
+  protected get mondayApi(): ApiClient {
+    return typeof this._mondayApiProvider === 'function' ? this._mondayApiProvider() : this._mondayApiProvider;
+  }
 
   abstract getDescription(): string;
   abstract getInputSchema(): Input;

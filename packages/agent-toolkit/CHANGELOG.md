@@ -1,5 +1,92 @@
 # Changelog
 
+## 5.49.0
+
+### search — normalize searchType and limit inputs
+
+- `searchType` now accepts lowercase and plural variants (e.g. `"boards"`, `"docs"`, `"workspace"`) and normalizes them to the canonical enum value via `z.preprocess()`
+- `limit` values exceeding the maximum (20) are clamped instead of rejected, preventing unnecessary validation errors
+- These two normalizations address ~12k weekly validation errors caused by LLMs passing non-canonical input values
+
+## 5.46.0
+
+### search — remove fallback, make searchTerm required, and promote boards/docs to stable API
+
+- `searchTerm` is now required (`z.string().min(1)`) for all search types — agents that previously omitted it to browse must use `workspace_info` instead
+- Removed the legacy `getBoards`/`getDocs` listing queries and the fallback path that activated when the dev search endpoint failed; all results now come directly from the search endpoint
+- Removed the `page` parameter and virtual pagination logic; removed `LOAD_INTO_MEMORY_LIMIT` constant and `DataWithFilterInfo` type
+- Boards and docs search GraphQL queries promoted from `versionOverride: 'dev'` to the stable default schema endpoint; `search-tool.graphql.dev.ts` deleted
+- IDs in search results are now returned as raw values — the `ObjectPrefixes` type and all prefixing logic removed since cross-entity search no longer exists
+
+## 5.42.0
+
+### search — add TIMELINE_ITEMS search type
+
+- Adds `TIMELINE_ITEMS` as a search type in the unified `search` tool, backed by the platform's `search { timeline_items }` endpoint
+- Only available from API version `2026-10`; query pins `versionOverride: '2026-10'` with hand-written types (same approach as `UPDATES`)
+- Requires a `searchTerm`; returns `id` (prefixed `timeline-item-`), `title`, `summary`, and `content`
+- No listing fallback — errors propagate, and `page > 1` is rejected, matching `ITEMS`/`WORKSPACES`/`UPDATES`
+
+## 5.41.1
+
+### search — improve field descriptions to reduce incorrect tool usage
+
+- Clarified required vs optional fields per search type
+- Listed exact valid enum values for `searchType`
+- Added format guidance for array parameters
+- Removed misleading pagination hint from `page` description
+
+## 5.37.0
+
+### search — add UPDATES search type
+
+- Added `UPDATES` as a search type in the unified `search` tool, backed by the server-side `search { updates }` endpoint
+- `UPDATES` results return `id`, `title` (the update body), `itemId`, `boardId`, and `creatorId`, with optional `boardIds` and `creatorIds` filters to scope the search
+- Requires a `searchTerm` and has no listing fallback (errors propagate, like `ITEMS`)
+- This field is only available from API version `2026-10`, so the query pins `versionOverride: '2026-10'` with hand-written types (same approach as `list_automations`) until it is promoted to the codegen schema snapshot
+
+## 5.24.0
+
+### manage_automations — rename from manage_workflows
+
+- Renamed `manage_workflows` tool to `manage_automations` for consistency with `list_automations` and `create_automation`
+- Updated tool title and description accordingly; removed the now-unnecessary "Terminology: workflows = automations" note
+- No functional changes — activate, deactivate, and delete behaviour is unchanged
+
+### automations-tools — directory restructure
+
+- Renamed `workflows-tools/` → `automations-tools/` and `list-workflows/` → `list-automations/` to align directory names with tool naming convention
+- Removed stale note from `publish_workflow` description that incorrectly referenced `manage_automations` as a way to retrieve draft IDs
+
+## 5.22.0
+
+### plan_workflow — new tool
+
+- Adds `plan_workflow` MCP tool that calls the `workflow-planner` platform-agent proxy (`/platform-ai-gateway/agents/workflow-planner`)
+- Takes a single `prompt` (max 2000 chars) describing a process and returns a structured markdown plan: workflow breakdowns, block IDs, Mermaid diagrams, resource definitions, and assumption/gap notes
+- Use before `create_workflow` to understand how to decompose a complex process into individual workflows and which resources to create first
+- Adds `WORKFLOW_PLANNER_AGENT_URL` constant to `workflow-builder-tools/constants.ts`
+
+## 5.21.0
+
+### get_board_activity — add user_ids filter
+
+- Added optional `userIds` parameter to filter activity logs to actions performed by specific users
+- Updated GraphQL query (`GetBoardActivity`) to pass `user_ids` argument to `activity_logs`
+- Updated `getDescription()` to reflect the new filtering capabilities
+
+## 5.20.0
+
+### Add agent management tools
+
+Five new tools enabling agents to create and manage monday.com platform agents end-to-end:
+
+- `manage_agent` — full lifecycle management: `create` (AI mode via prompt), `create_blank` (manual mode), `get`, `update`, `delete`, `activate`, `deactivate`, `run`
+- `manage_agent_triggers` — manage per-agent triggers (when it runs): `list`, `add`, `remove`
+- `manage_agent_skills` — full skill lifecycle: `create` a new skill in the catalog, `add` to agent, `remove` from agent
+- `manage_agent_knowledge` — grant, update, or revoke an agent's access to boards and docs
+- `agent_catalog` (READ) — browse the account-wide catalog of available trigger types and skills before wiring them to an agent
+
 ## 5.19.0
 
 ### publish_workflow — surface validation error details

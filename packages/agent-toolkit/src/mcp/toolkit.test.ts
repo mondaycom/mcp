@@ -1031,6 +1031,7 @@ describe('MondayAgentToolkit', () => {
       const result = await tool.handler({ input: 'test' });
 
       expect(result).toEqual({
+        structuredContent: { message: 'Test error', tool: 'mcp-error-tool' },
         content: [{ type: 'text', text: 'Error: Test error' }],
         isError: true,
       });
@@ -1108,6 +1109,116 @@ describe('MondayAgentToolkit', () => {
       expect(toolkit.enableTool('non-existent-tool')).toBe(false);
       expect(toolkit.disableTool('non-existent-tool')).toBe(false);
       expect(toolkit.isToolEnabled('non-existent-tool')).toBe(false);
+    });
+  });
+
+  describe('Dynamic Token (function getter)', () => {
+    it('should accept a function as mondayApiToken', () => {
+      const tokenGetter = jest.fn().mockReturnValue('dynamic-token');
+
+      expect(() => {
+        new MondayAgentToolkit({
+          mondayApiToken: tokenGetter,
+        });
+      }).not.toThrow();
+
+      expect(tokenGetter).toHaveBeenCalled();
+    });
+
+    it('should resolve the token at construction time for initial ApiClient', () => {
+      const tokenGetter = jest.fn().mockReturnValue('resolved-token');
+
+      new MondayAgentToolkit({
+        mondayApiToken: tokenGetter,
+      });
+
+      expect(mockApiClient).toHaveBeenCalledWith(
+        expect.objectContaining({
+          token: 'resolved-token',
+        }),
+      );
+    });
+
+    it('should pass a factory function as apiClient to tools when token is a getter', () => {
+      const tokenGetter = jest.fn().mockReturnValue('dynamic-token');
+
+      new MondayAgentToolkit({
+        mondayApiToken: tokenGetter,
+      });
+
+      const instanceOptions = mockGetFilteredToolInstances.mock.calls[0][0];
+      expect(typeof instanceOptions.apiClient).toBe('function');
+    });
+
+    it('should pass the token getter as apiToken to tools', () => {
+      const tokenGetter = jest.fn().mockReturnValue('dynamic-token');
+
+      new MondayAgentToolkit({
+        mondayApiToken: tokenGetter,
+      });
+
+      const instanceOptions = mockGetFilteredToolInstances.mock.calls[0][0];
+      expect(instanceOptions.apiToken).toBe(tokenGetter);
+    });
+
+    it('should call token getter each time the apiClient factory is invoked', () => {
+      let callCount = 0;
+      const tokenGetter = jest.fn(() => `token-${++callCount}`);
+
+      new MondayAgentToolkit({
+        mondayApiToken: tokenGetter,
+      });
+
+      const instanceOptions = mockGetFilteredToolInstances.mock.calls[0][0];
+      const factory = instanceOptions.apiClient as () => ApiClient;
+
+      // Reset mock to isolate factory calls
+      mockApiClient.mockClear();
+      tokenGetter.mockClear();
+      callCount = 0;
+
+      factory();
+      expect(tokenGetter).toHaveBeenCalledTimes(1);
+      expect(mockApiClient).toHaveBeenCalledWith(expect.objectContaining({ token: 'token-1' }));
+
+      factory();
+      expect(tokenGetter).toHaveBeenCalledTimes(2);
+      expect(mockApiClient).toHaveBeenCalledWith(expect.objectContaining({ token: 'token-2' }));
+    });
+
+    it('should pass a static ApiClient when token is a plain string', () => {
+      new MondayAgentToolkit({
+        mondayApiToken: 'static-token',
+      });
+
+      const instanceOptions = mockGetFilteredToolInstances.mock.calls[0][0];
+      expect(typeof instanceOptions.apiClient).not.toBe('function');
+      expect(instanceOptions.apiToken).toBe('static-token');
+    });
+
+    it('should still support all toolkit features with a token getter', () => {
+      const mockTool = {
+        name: 'dynamic-tool',
+        type: ToolType.READ,
+        annotations: { audience: [] },
+        enabledByDefault: true,
+        getDescription: jest.fn().mockReturnValue('Dynamic tool'),
+        getInputSchema: jest.fn().mockReturnValue({}),
+        execute: jest.fn().mockResolvedValue({ content: 'OK' }),
+      };
+
+      mockGetFilteredToolInstances.mockReturnValue([mockTool]);
+
+      const toolkit = new MondayAgentToolkit({
+        mondayApiToken: () => 'dynamic-token',
+      });
+
+      expect(toolkit.getDynamicToolNames()).toContain('dynamic-tool');
+      expect(toolkit.isToolEnabled('dynamic-tool')).toBe(true);
+
+      const tools = toolkit.getToolsForMcp();
+      expect(tools).toHaveLength(1);
+      expect(tools[0].name).toBe('dynamic-tool');
     });
   });
 });

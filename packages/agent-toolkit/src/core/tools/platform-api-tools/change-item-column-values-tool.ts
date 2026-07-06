@@ -6,6 +6,7 @@ import {
 import { changeItemColumnValues } from '../../../monday-graphql/queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
+import { ToolValidationError } from '../../../utils';
 
 export const changeItemColumnValuesToolSchema = {
   itemId: z.number().describe('The ID of the item to be updated'),
@@ -70,10 +71,37 @@ export class ChangeItemColumnValuesTool extends BaseMondayApiTool<ChangeItemColu
       }),
     };
 
-    const res = await this.mondayApi.request<ChangeItemColumnValuesMutation>(changeItemColumnValues, variables);
+    let changedColumnIds: string[];
+    try {
+      changedColumnIds = Object.keys(JSON.parse(input.columnValues));
+    } catch (e) {
+      throw new ToolValidationError(
+        `Invalid columnValues JSON: ${(e as Error).message}`,
+        'INVALID_COLUMN_VALUES_JSON',
+      );
+    }
+
+    const res = await this.mondayApi.request<ChangeItemColumnValuesMutation>(changeItemColumnValues, {
+      ...variables,
+      columnIds: changedColumnIds,
+    });
+
+    const updatedColumnValues = res.change_multiple_column_values?.column_values?.reduce(
+      (acc: Record<string, string | null>, cv) => {
+        acc[cv.id] = cv.value ?? null;
+        return acc;
+      },
+      {},
+    );
 
     return {
-      content: { message: `Item ${res.change_multiple_column_values?.id} successfully updated`, item_id: res.change_multiple_column_values?.id, item_name: res.change_multiple_column_values?.name, item_url: res.change_multiple_column_values?.url },
+      content: {
+        message: `Item ${res.change_multiple_column_values?.id} successfully updated`,
+        item_id: res.change_multiple_column_values?.id,
+        item_name: res.change_multiple_column_values?.name,
+        item_url: res.change_multiple_column_values?.url,
+        column_values: updatedColumnValues,
+      },
     };
   }
 }

@@ -1,15 +1,23 @@
 import { z } from 'zod';
 import {
-  GetBoardAllActivityQuery,
-  GetBoardAllActivityQueryVariables,
+  GetBoardActivityQuery,
+  GetBoardActivityQueryVariables,
 } from '../../../../monday-graphql/generated/graphql/graphql';
-import { getBoardAllActivity } from './get-board-activity.graphql';
+import { getBoardActivity } from './get-board-activity.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './../base-monday-api-tool';
 import { TIME_IN_MILLISECONDS } from '../../../../utils';
 
 export const getBoardActivityToolSchema = {
   boardId: z.number().describe('The id of the board to get activity for'),
+  itemIds: z
+    .array(z.number())
+    .optional()
+    .describe('Filter activity to specific item ids. Omit to get activity for the whole board.'),
+  userIds: z
+    .array(z.number())
+    .optional()
+    .describe('Filter activity to actions performed by specific user ids.'),
   fromDate: z
     .string()
     .optional()
@@ -37,7 +45,7 @@ export class GetBoardActivityTool extends BaseMondayApiTool<typeof getBoardActiv
   private defaultLimit = 1000;
 
   getDescription(): string {
-    return 'Get board activity logs for a specified time range (defaults to last 30 days)';
+    return 'Get board activity logs for a specified time range (defaults to last 30 days). Optionally filter by item ids or user ids to avoid fetching activity for the entire board.';
   }
 
   getInputSchema(): typeof getBoardActivityToolSchema {
@@ -54,8 +62,10 @@ export class GetBoardActivityTool extends BaseMondayApiTool<typeof getBoardActiv
     const fromDate = input?.fromDate || thirtyDaysAgo.toISOString();
     const toDate = input?.toDate || now.toISOString();
 
-    const variables: GetBoardAllActivityQueryVariables = {
+    const variables: GetBoardActivityQueryVariables = {
       boardId: input.boardId.toString(),
+      itemIds: input.itemIds?.map(String),
+      userIds: input.userIds?.map(String),
       fromDate,
       toDate,
       limit: this.defaultLimit,
@@ -63,7 +73,7 @@ export class GetBoardActivityTool extends BaseMondayApiTool<typeof getBoardActiv
       includeData: input.includeData ?? false,
     };
 
-    const res = await this.mondayApi.request<GetBoardAllActivityQuery>(getBoardAllActivity, variables);
+    const res = await this.mondayApi.request<GetBoardActivityQuery>(getBoardActivity, variables);
 
     const activityLogs = res.boards?.[0]?.activity_logs;
 

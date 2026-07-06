@@ -1,4 +1,6 @@
 import { AllMondayApiTool } from './all-monday-api-tool';
+import { AllApiReadTool } from './all-api-read-tool';
+import { AllApiWriteTool } from './all-api-write-tool';
 import { BaseMondayApiToolConstructor } from './base-monday-api-tool';
 import { ChangeItemColumnValuesTool } from './change-item-column-values-tool';
 import { GetObjectSchemasTool } from './get-object-schemas-tool/get-object-schemas-tool';
@@ -10,6 +12,8 @@ import { ManageObjectSchemaBoardConnectionTool } from './manage-object-schema-bo
 import { ManageObjectSchemaColumnsTool } from './manage-object-schema-columns-tool/manage-object-schema-columns-tool';
 import { SetObjectSchemaColumnActiveStateTool } from './set-object-schema-column-active-state-tool/set-object-schema-column-active-state-tool';
 import { CreateBoardTool } from './create-board-tool';
+import { UseTemplateTool } from './use-template-tool';
+import { CheckTemplateStatusTool } from './check-template-status-tool';
 import { CreateViewTool } from './create-view-tool/create-view-tool';
 import { UpdateViewTool } from './update-view-tool/update-view-tool';
 import { CreateViewTableTool } from './create-view-table-tool/create-view-table-tool';
@@ -25,8 +29,10 @@ import { CreateCustomActivityTool } from './create-custom-activity-tool';
 import { CreateNotificationTool } from './create-notification-tool/create-notification-tool';
 import { CreateGroupTool } from './create-group/create-group-tool';
 import { CreateItemTool } from './create-item-tool/create-item-tool';
+import { CreateItemsTool } from './create-items-tool/create-items-tool';
 import { CreateTimelineItemTool } from './create-timeline-item-tool';
 import { CreateUpdateTool } from './create-update-tool/create-update-tool';
+import { DeleteUpdateTool } from './delete-update-tool/delete-update-tool';
 import { GetUpdatesTool } from './get-updates-tool/get-updates-tool';
 import { DeleteColumnTool } from './delete-column-tool';
 import { DeleteItemTool } from './delete-item-tool';
@@ -66,21 +72,30 @@ import { GetAssetUploadUrlTool } from './get-asset-upload-url-tool/get-asset-upl
 import { FinalizeAssetUploadTool } from './finalize-asset-upload-tool/finalize-asset-upload-tool';
 import { LinkBoardItemsWorkflowTool } from './link-board-items-workflow-tool/link-board-items-workflow-tool';
 import { FetchFileContentTool } from './fetch-file-content-tool/fetch-file-content-tool';
-import { GetAgentTool } from './agents-tools/get-agent/get-agent-tool';
-import { CreateAgentTool } from './agents-tools/create-agent/create-agent-tool';
-import { DeleteAgentTool } from './agents-tools/delete-agent/delete-agent-tool';
-import { ListAutomationsTool } from './workflows-tools/list-workflows/list-workflows-tool';
-import { ManageWorkflowsTool } from './workflows-tools/manage-workflows/manage-workflows-tool';
-import { CreateAutomationTool } from './workflows-tools/create-automation/create-automation-tool';
+import { ManageAgentTool } from './agents-tools/manage-agent/manage-agent-tool';
+import { ManageAgentTriggersTool } from './agents-tools/manage-agent-triggers/manage-agent-triggers-tool';
+import { ManageAgentSkillsTool } from './agents-tools/manage-agent-skills/manage-agent-skills-tool';
+import { ManageAgentKnowledgeTool } from './agents-tools/manage-agent-knowledge/manage-agent-knowledge-tool';
+import { AgentCatalogTool } from './agents-tools/agent-catalog/agent-catalog-tool';
+import { ListAutomationsTool } from './automations-tools/list-automations/list-automations-tool';
+import { ManageAutomationsTool } from './automations-tools/manage-automations/manage-automations-tool';
+import { CreateAutomationTool } from './automations-tools/create-automation/create-automation-tool';
+import { GetAutomationRunsTool } from './automations-tools/get-automation-runs/get-automation-runs-tool';
+import { GetAutomationStatisticsTool } from './automations-tools/get-automation-statistics/get-automation-statistics-tool';
 import { CreateWorkflowBuilderTool } from './workflow-builder-tools/create-workflow/create-workflow-tool';
 import { UpdateWorkflowTool } from './workflow-builder-tools/update-workflow/update-workflow-tool';
+import { PlanWorkflowTool } from './workflow-builder-tools/plan-workflow/plan-workflow-tool';
 import { PublishWorkflowTool } from './workflow-builder-tools/publish-workflow/publish-workflow-tool';
+import { ConfigureAiColumnTool } from './configure-ai-column-tool/configure-ai-column-tool';
+import { RemoveAiFromColumnTool } from './remove-ai-from-column-tool/remove-ai-from-column-tool';
 
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteItemTool,
   GetBoardItemsPageTool,
   CreateItemTool,
+  CreateItemsTool,
   CreateUpdateTool,
+  DeleteUpdateTool,
   GetUpdatesTool,
   CreateUpdateInMondayTool,
   GetBoardSchemaTool,
@@ -91,6 +106,8 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   ChangeItemColumnValuesTool,
   MoveItemToGroupTool,
   CreateBoardTool,
+  UseTemplateTool,
+  CheckTemplateStatusTool,
   CreateFormTool,
   UpdateFormTool,
   GetFormTool,
@@ -101,6 +118,8 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   CreateGroupTool,
   DeleteColumnTool,
   AllMondayApiTool,
+  AllApiReadTool,
+  AllApiWriteTool,
   GetGraphQLSchemaTool,
   GetColumnTypeInfoTool,
   GetTypeDetailsTool,
@@ -146,22 +165,32 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   LinkBoardItemsWorkflowTool,
   FetchFileContentTool,
   // monday Platform Agents (subgraph still on dev API version)
-  GetAgentTool,
-  CreateAgentTool,
-  DeleteAgentTool,
-  // Workflows (subgraph still on dev API version)
+  ManageAgentTool,
+  ManageAgentTriggersTool,
+  ManageAgentSkillsTool,
+  ManageAgentKnowledgeTool,
+  AgentCatalogTool,
+  // Automations (subgraph still on dev API version)
   ListAutomationsTool,
-  ManageWorkflowsTool,
+  ManageAutomationsTool,
   // Cast: ctor signature (api, apiToken, context?) doesn't match BaseMondayApiToolConstructor.
   CreateAutomationTool as unknown as BaseMondayApiToolConstructor,
+  GetAutomationRunsTool,
+  GetAutomationStatisticsTool,
   // Workflow Builder Tools
   CreateWorkflowBuilderTool,
   // Cast: ctor signature (api, apiToken, context?) doesn't match BaseMondayApiToolConstructor.
   UpdateWorkflowTool as unknown as BaseMondayApiToolConstructor,
+  PlanWorkflowTool as unknown as BaseMondayApiToolConstructor,
   PublishWorkflowTool,
+  // AI Column Tools
+  ConfigureAiColumnTool,
+  RemoveAiFromColumnTool,
 ];
 
 export * from './all-monday-api-tool';
+export * from './all-api-read-tool';
+export * from './all-api-write-tool';
 export * from './get-object-schemas-tool/get-object-schemas-tool';
 export * from './create-object-schema-tool/create-object-schema-tool';
 export * from './update-object-schema-tool/update-object-schema-tool';
@@ -172,6 +201,8 @@ export * from './manage-object-schema-columns-tool/manage-object-schema-columns-
 export * from './set-object-schema-column-active-state-tool/set-object-schema-column-active-state-tool';
 export * from './change-item-column-values-tool';
 export * from './create-board-tool';
+export * from './use-template-tool';
+export * from './check-template-status-tool';
 export * from './workforms-tools/create-form-tool';
 export * from './workforms-tools/update-form-tool';
 export * from './workforms-tools/get-form-tool';
@@ -183,8 +214,10 @@ export * from './create-group/create-group-tool';
 export * from './create-custom-activity-tool';
 export * from './create-notification-tool/create-notification-tool';
 export * from './create-item-tool/create-item-tool';
+export * from './create-items-tool/create-items-tool';
 export * from './create-timeline-item-tool';
 export * from './create-update-tool/create-update-tool';
+export * from './delete-update-tool/delete-update-tool';
 export * from './get-updates-tool/get-updates-tool';
 export * from './create-view-tool/create-view-tool';
 export * from './update-view-tool/update-view-tool';
@@ -227,13 +260,17 @@ export * from './finalize-asset-upload-tool/finalize-asset-upload-tool';
 export * from './fetch-file-content-tool/fetch-file-content-tool';
 // monday Platform Agents
 export * from './agents-tools';
-// Workflows
-export * from './workflows-tools';
+// Automations
+export * from './automations-tools';
 // Workflow Builder Tools
 export * from './workflow-builder-tools/create-workflow/create-workflow-tool';
 export * from './workflow-builder-tools/update-workflow/update-workflow-tool';
+export * from './workflow-builder-tools/plan-workflow/plan-workflow-tool';
 export * from './workflow-builder-tools/publish-workflow/publish-workflow-tool';
 // Dashboard Tools
 export * from './dashboard-tools';
+// AI Column Tools
+export * from './configure-ai-column-tool/configure-ai-column-tool';
+export * from './remove-ai-from-column-tool/remove-ai-from-column-tool';
 // Monday Dev Tools
 export * from '../monday-dev-tools';

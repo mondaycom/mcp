@@ -1,34 +1,29 @@
-/**
- * GraphQL error response structure
- */
-interface GraphQLErrorResponse {
-  response?: {
-    errors?: Array<{ message: string; extensions?: Record<string, unknown> }>;
-  };
-}
+import { CallToolResult } from '@modelcontextprotocol/sdk/types';
+import { GraphQLErrorResponse, ToolErrorStructuredContent } from './graphql-error.types';
 
 /**
- * Rethrows an error with a formatted message, extracting GraphQL errors if available.
- *
- * This utility handles two types of errors:
- * 1. GraphQL errors - extracts and joins error messages from response.errors
- * 2. Standard errors - uses the error message or falls back to 'Unknown error'
- *
- * @param error - The caught error (can be Error, GraphQL error response, or unknown)
- * @param operation - Description of the operation that failed (e.g., "create item", "update board")
- * @throws Always throws an Error with formatted message "Failed to {operation}: {error details}"
- *
- * @example
- * ```typescript
- * try {
- *   await mondayApi.createItem(...);
- * } catch (error) {
- *   rethrowWithContext(error, 'create item');
- * }
- * ```
+ * Error thrown by tool code (not by the monday API) when input is invalid or a
+ * pre-condition fails. Carries a stable, short `code` that flows into the
+ * tool's structuredContent.errors[] so observability can classify it instead of
+ * bucketing it as "unclassified".
  */
+export const INVALID_TOOL_ARGS_CODE = 'INVALID_TOOL_ARGS';
+
+export class ToolValidationError extends Error {
+  readonly code: string;
+
+  constructor(message: string, code: string) {
+    super(message);
+    this.name = 'ToolValidationError';
+    this.code = code;
+  }
+}
+
 export function rethrowWithContext(error: unknown, operation: string): never {
-  // Try to extract GraphQL errors from the response
+  if (error instanceof ToolValidationError) {
+    throw error;
+  }
+
   const graphQLErrors = (error as GraphQLErrorResponse)?.response?.errors
     ?.map((e) => {
       const { code, error_data } = e.extensions ?? {};
@@ -40,10 +35,11 @@ export function rethrowWithContext(error: unknown, operation: string): never {
     ?.join(', ');
 
   if (graphQLErrors) {
-    throw new Error(`Failed to ${operation}: ${graphQLErrors}`);
+    const formattedError = new Error(`Failed to ${operation}: ${graphQLErrors}`);
+    (formattedError as GraphQLErrorResponse).response = (error as GraphQLErrorResponse).response;
+    throw formattedError;
   }
 
-  // Fallback to standard error message
   const errorMessage = error instanceof Error ? error.message : 'Unknown error';
   throw new Error(`Failed to ${operation}: ${errorMessage}`);
 }
@@ -52,4 +48,65 @@ export function throwIfSearchTimeoutError(error: unknown): void {
   if (error instanceof Error && error.name === 'AbortError') {
     throw new Error('Search has timed out, try providing alternative search term');
   }
+}
+
+export function isRateLimitError(error: unknown): boolean {
+  const response = (error as GraphQLErrorResponse)?.response;
+  return response?.status === 429;
+}
+
+export function formatToolError(
+  error: unknown,
+  options?: { toolName?: string; errorPrefix?: string },
+): CallToolResult {
+  const rawMessage = error instanceof Error ? error.message : String(error);
+  const structured = buildToolErrorStructuredContent(error, { toolName: options?.toolName });
+  const prefix = options?.errorPrefix ?? 'Error: ';
+
+  return {
+    structuredContent: structured as unknown as Record<string, unknown>,
+    content: [{ type: 'text', text: `${prefix}${rawMessage}` }],
+    isError: true,
+  };
+}
+
+export function buildToolErrorStructuredContent(
+  error: unknown,
+  options?: { toolName?: string },
+): ToolErrorStructuredContent {
+  const response = (error as GraphQLErrorResponse)?.response;
+  const rawMessage = error instanceof Error ? error.message : String(error);
+
+  if (error instanceof ToolValidationError) {
+    return {
+      message: rawMessage,
+      tool: options?.toolName,
+      errors: [{ code: error.code, message: rawMessage, path: [] }],
+    };
+  }
+
+  if (response?.errors?.length) {
+    const headers = Object.keys(response.headers || {}).length > 0
+      ? response.headers
+      : undefined;
+
+    return {
+      message: rawMessage,
+      tool: options?.toolName,
+      ...(response.extensions ?? {}),
+      status: response.status,
+      headers,
+      ...(response.data != null ? { partial_success: true } : {}),
+      errors: response.errors.map((entry) => ({
+        message: entry.message,
+        path: entry.path,
+        ...(entry.extensions ?? {}),
+      })),
+    };
+  }
+
+  return {
+    message: rawMessage,
+    tool: options?.toolName,
+  };
 }

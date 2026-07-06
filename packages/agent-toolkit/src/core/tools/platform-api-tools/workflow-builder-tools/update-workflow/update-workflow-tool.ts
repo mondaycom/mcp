@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../../tool';
 import { BaseMondayApiTool, MondayApiToolContext, createMondayApiAnnotations } from '../../base-monday-api-tool';
 import { rethrowWithContext } from '../../../../../utils';
-import { WORKFLOW_BUILDER_AGENT_URL } from '../constants';
+import { PLATFORM_AGENT_SERVICE_NAME, resolveMondayFetch, WORKFLOW_BUILDER_AGENT_PATH } from '../../ai-agent.utils';
 
 const REQUEST_TIMEOUT_MS = 180_000;
 
@@ -39,8 +39,8 @@ export class UpdateWorkflowTool extends BaseMondayApiTool<typeof updateWorkflowT
   });
 
   constructor(
-    api: ApiClient,
-    private readonly apiToken: string,
+    api: ApiClient | (() => ApiClient),
+    private readonly apiToken: string | (() => string),
     context?: MondayApiToolContext,
   ) {
     super(api, context);
@@ -62,6 +62,8 @@ Returns:
 - workflowDraftId: the draft version ID (unchanged)
 - result: agent response describing the changes made
 
+Note: if directing the user to the workflow in the UI, the correct URL path is custom_objects/, not workflows/ — e.g. {account}.monday.com/custom_objects/{workflowObjectId}.
+
 Note: the workflow runs only after it is published to live version.
 `;
   }
@@ -74,10 +76,14 @@ Note: the workflow runs only after it is published to live version.
     input: ToolInputType<typeof updateWorkflowToolSchema>,
   ): Promise<ToolOutputType<never>> {
     try {
-      const response = await fetch(WORKFLOW_BUILDER_AGENT_URL, {
+      const apiToken = typeof this.apiToken === 'function' ? this.apiToken() : this.apiToken;
+      const mondayFetch = resolveMondayFetch(this.context);
+      const response = await mondayFetch({
+        serviceName: PLATFORM_AGENT_SERVICE_NAME,
+        path: WORKFLOW_BUILDER_AGENT_PATH,
         method: 'POST',
         headers: {
-          Authorization: this.apiToken,
+          ...(this.context?.fetchConfig?.fetch ? {} : { Authorization: apiToken }),
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({

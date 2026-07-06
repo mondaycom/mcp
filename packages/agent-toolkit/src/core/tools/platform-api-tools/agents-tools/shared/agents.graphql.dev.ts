@@ -1,7 +1,9 @@
 import { gql } from 'graphql-request';
 
-const agentFieldsFragment = gql`
-  fragment AgentFields on Agent {
+// ─── Shared fragment ──────────────────────────────────────────────────────────
+
+export const customAgentFieldsFragment = gql`
+  fragment CustomAgentFields on CustomAgent {
     id
     kind
     state
@@ -21,42 +23,169 @@ const agentFieldsFragment = gql`
   }
 `;
 
-export const getAgentsQuery = gql`
-  ${agentFieldsFragment}
+// ─── Agent CRUD ───────────────────────────────────────────────────────────────
 
-  query getAgents($ids: [ID!], $limit: Int) {
-    agents(ids: $ids, limit: $limit) {
-      ...AgentFields
+export const getCustomAgentsQuery = gql`
+  ${customAgentFieldsFragment}
+
+  query getCustomAgents($ids: [ID!], $limit: Int) {
+    custom_agents(ids: $ids, limit: $limit) {
+      ...CustomAgentFields
     }
   }
 `;
 
 export const createAgentMutation = gql`
-  ${agentFieldsFragment}
+  ${customAgentFieldsFragment}
 
   mutation createAgent($input: CreateAgentInput!) {
     create_agent(input: $input) {
-      ...AgentFields
+      ...CustomAgentFields
     }
   }
 `;
 
 export const createBlankAgentMutation = gql`
-  ${agentFieldsFragment}
+  ${customAgentFieldsFragment}
 
   mutation createBlankAgent($input: CreateBlankAgentInput) {
     create_blank_agent(input: $input) {
-      ...AgentFields
+      ...CustomAgentFields
+    }
+  }
+`;
+
+export const updateAgentMutation = gql`
+  ${customAgentFieldsFragment}
+
+  mutation updateAgent($id: ID!, $input: UpdateAgentInput!) {
+    update_agent(id: $id, input: $input) {
+      ...CustomAgentFields
     }
   }
 `;
 
 export const deleteAgentMutation = gql`
-  ${agentFieldsFragment}
+  ${customAgentFieldsFragment}
 
   mutation deleteAgent($id: ID!) {
     delete_agent(id: $id) {
-      ...AgentFields
+      ...CustomAgentFields
+    }
+  }
+`;
+
+// ─── State mutations ──────────────────────────────────────────────────────────
+
+export const activateAgentMutation = gql`
+  mutation activateAgent($id: ID!) {
+    activate_agent(id: $id) {
+      success
+    }
+  }
+`;
+
+export const deactivateAgentMutation = gql`
+  mutation deactivateAgent($id: ID!, $inactive_reason: InactiveReason) {
+    deactivate_agent(id: $id, inactive_reason: $inactive_reason) {
+      success
+    }
+  }
+`;
+
+export const runAgentMutation = gql`
+  mutation runAgent($id: ID!) {
+    run_agent(id: $id) {
+      trigger_uuid
+    }
+  }
+`;
+
+// ─── Capabilities — triggers ──────────────────────────────────────────────────
+
+export const getAgentActiveTriggersQuery = gql`
+  query getAgentActiveTriggers($agent_id: ID!) {
+    agent_active_triggers(agent_id: $agent_id) {
+      node_id
+      block_reference_id
+      name
+      description
+      field_summary
+    }
+  }
+`;
+
+export const addTriggerToAgentMutation = gql`
+  mutation addTriggerToAgent($agent_id: ID!, $block_reference_id: ID!, $field_values: JSON) {
+    add_trigger_to_agent(agent_id: $agent_id, block_reference_id: $block_reference_id, field_values: $field_values) {
+      success
+    }
+  }
+`;
+
+export const removeTriggerFromAgentMutation = gql`
+  mutation removeTriggerFromAgent($agent_id: ID!, $node_id: ID!) {
+    remove_trigger_from_agent(agent_id: $agent_id, node_id: $node_id) {
+      success
+    }
+  }
+`;
+
+// ─── Capabilities — skills ────────────────────────────────────────────────────
+
+export const addSkillToAgentMutation = gql`
+  mutation addSkillToAgent($agent_id: ID!, $skill_id: ID!) {
+    add_skill_to_agent(agent_id: $agent_id, skill_id: $skill_id) {
+      success
+    }
+  }
+`;
+
+export const removeSkillFromAgentMutation = gql`
+  mutation removeSkillFromAgent($agent_id: ID!, $skill_id: ID!) {
+    remove_skill_from_agent(agent_id: $agent_id, skill_id: $skill_id) {
+      success
+    }
+  }
+`;
+
+// ─── Catalog ──────────────────────────────────────────────────────────────────
+
+export const getAgentTriggersCatalogQuery = gql`
+  query getAgentTriggersCatalog($block_reference_ids: [ID!]) {
+    agent_triggers_catalog(block_reference_ids: $block_reference_ids) {
+      block_reference_id
+      name
+      description
+      field_schemas {
+        field_key
+        value_schema
+      }
+      required_fields {
+        field_key
+        depends_on
+        optional
+      }
+    }
+  }
+`;
+
+export const getAgentSkillsCatalogQuery = gql`
+  query getAgentSkillsCatalog {
+    agent_skills_catalog {
+      id
+      name
+      description
+    }
+  }
+`;
+
+export const createAgentSkillMutation = gql`
+  mutation createAgentSkill($name: String!, $content: String!, $description: String) {
+    create_agent_skill(name: $name, content: $content, description: $description) {
+      id
+      name
+      description
     }
   }
 `;
