@@ -6,7 +6,6 @@ import {
   DocumentNode,
   GraphQLSchema,
   IntrospectionQuery,
-  OperationDefinitionNode,
   OperationTypeNode,
   parse,
   validate,
@@ -86,29 +85,28 @@ export class AllMondayApiTool extends BaseMondayApiTool<typeof allMondayApiToolS
         continue;
       }
 
-      const operationKey = this.getGraphqlOperationKey(definition);
+      const counts =
+        definition.operation === OperationTypeNode.MUTATION
+          ? graphql_mutations
+          : definition.operation === OperationTypeNode.QUERY
+            ? graphql_queries
+            : null;
 
-      if (definition.operation === OperationTypeNode.MUTATION) {
-        graphql_mutations[operationKey] = (graphql_mutations[operationKey] ?? 0) + 1;
-      } else if (definition.operation === OperationTypeNode.QUERY) {
-        graphql_queries[operationKey] = (graphql_queries[operationKey] ?? 0) + 1;
+      if (!counts) {
+        continue;
+      }
+
+      for (const selection of definition.selectionSet.selections) {
+        if (selection.kind !== 'Field') {
+          continue;
+        }
+
+        const fieldKey = selection.name.value;
+        counts[fieldKey] = (counts[fieldKey] ?? 0) + 1;
       }
     }
 
     return { graphql_queries, graphql_mutations };
-  }
-
-  private getGraphqlOperationKey(definition: OperationDefinitionNode): string {
-    if (definition.name?.value) {
-      return definition.name.value;
-    }
-
-    const firstSelection = definition.selectionSet.selections[0];
-    if (firstSelection?.kind === 'Field') {
-      return firstSelection.name.value;
-    }
-
-    return '<anonymous>';
   }
 
   protected recordGraphqlOperationCounts(documentAST: DocumentNode): void {
