@@ -50,6 +50,11 @@ export function throwIfSearchTimeoutError(error: unknown): void {
   }
 }
 
+export function isRateLimitError(error: unknown): boolean {
+  const response = (error as GraphQLErrorResponse)?.response;
+  return response?.status === 429;
+}
+
 export function formatToolError(
   error: unknown,
   options?: { toolName?: string; errorPrefix?: string },
