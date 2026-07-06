@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.54.0
+
+### create_items — report items_count on sessionContext metadata
+
+- `create_items` now sets `sessionContext.metadata.items_count` to the number of items in the request, so BigBrain mcp-request events can track how many items agents send per call
+- Mirrors the observability pattern introduced for `all_monday_api`
+
 ## 5.49.0
 
 ### search — normalize searchType and limit inputs
