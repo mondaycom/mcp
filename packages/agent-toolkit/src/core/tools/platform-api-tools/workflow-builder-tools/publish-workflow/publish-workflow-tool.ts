@@ -42,7 +42,9 @@ export class PublishWorkflowTool extends BaseMondayApiTool<typeof publishWorkflo
   getDescription(): string {
     return `Publishes a workflow draft, promoting it to the live version.
 
-Use this after create_workflow (and optionally update_workflow) to make the workflow active. Before publishing, the workflow is validated — if it has missing or misconfigured steps, publish will fail with a WORKFLOW_VALIDATION_FAILED error that includes structured issue details: which step failed, the issue type, and which inputs are missing. Use those details to guide the user on what to fix before retrying.
+When to use: Only call this tool when the user explicitly asks to publish the workflow. After a workflow is created or updated successfully, suggest to the user that they can publish it and wait for their explicit confirmation before proceeding.
+
+Before publishing, the workflow is validated — if it has missing or misconfigured steps, publish will fail with a WORKFLOW_VALIDATION_FAILED error that includes structured issue details: which step failed, the issue type, and which inputs are missing. Use those details to guide the user on what to fix before retrying.
 
 Parameters:
 - workflowObjectId and workflowDraftId: returned by create_workflow — they identify which draft to publish.
