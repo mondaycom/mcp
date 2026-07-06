@@ -408,6 +408,51 @@ describe('Create Items Tool Behaviour', () => {
     });
   });
 
+  describe('Observability items count', () => {
+    it('records items_count on sessionContext metadata', async () => {
+      mocks.setResponses([itemResponse('1', 'A'), itemResponse('2', 'B'), itemResponse('3', 'C')]);
+      const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
+      const sessionContext = { metadata: {} as Record<string, unknown> };
+
+      await tool.execute(
+        {
+          items: [
+            { name: 'A', groupId: 'topics', columnValues: '{}' },
+            { name: 'B', groupId: 'topics', columnValues: '{}' },
+            { name: 'C', groupId: 'topics', columnValues: '{}' },
+          ],
+        },
+        sessionContext,
+      );
+
+      expect(sessionContext.metadata).toEqual({ items_count: 3 });
+    });
+
+    it('records items_count even when some items fail', async () => {
+      mocks.getMockRequest().mockResolvedValueOnce(itemResponse('1', 'A'));
+      const graphqlError = new Error('GraphQL Error');
+      (graphqlError as any).response = {
+        errors: [{ message: 'Invalid column values', extensions: { code: 'ColumnValueException' } }],
+      };
+      mocks.getMockRequest().mockRejectedValueOnce(graphqlError);
+
+      const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
+      const sessionContext = { metadata: {} as Record<string, unknown> };
+
+      await tool.execute(
+        {
+          items: [
+            { name: 'A', groupId: 'topics', columnValues: '{}' },
+            { name: 'B', groupId: 'topics', columnValues: '{}' },
+          ],
+        },
+        sessionContext,
+      );
+
+      expect(sessionContext.metadata).toEqual({ items_count: 2 });
+    });
+  });
+
   describe('Schema validation', () => {
     const schema = z.object(createItemsInBoardToolSchema);
 
