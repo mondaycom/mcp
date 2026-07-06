@@ -89,6 +89,8 @@ export class CreateItemsTool extends BaseMondayApiTool<CreateItemsToolInput> {
 
   protected async executeInternal(input: ToolInputType<CreateItemsToolInput>): Promise<ToolOutputType<never>> {
     const boardId = this.context?.boardId ?? (input as ToolInputType<typeof createItemsInBoardToolSchema>).boardId;
+    this.sessionContext.metadata ??= {};
+    this.sessionContext.metadata.items_count = input.items.length;
     const singleTool = new CreateItemTool(this.mondayApi, { boardId });
     const skipMessage = 'Skipped: a previous item hit the minute rate limit; this item was not attempted';
 
