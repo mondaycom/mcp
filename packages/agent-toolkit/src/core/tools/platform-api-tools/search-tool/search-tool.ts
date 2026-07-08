@@ -28,47 +28,124 @@ import {
 } from 'src/monday-graphql/generated/graphql/graphql';
 import { normalizeString } from 'src/utils/string.utils';
 import { GlobalSearchType, SearchResult } from './search-tool.types';
-import { MAX_FOLDERS_LIMIT, SEARCH_LIMIT, SEARCH_TYPE_ALIASES } from './search-tool.consts';
+import {
+  MAX_FOLDERS_LIMIT,
+  SEARCH_LIMIT,
+  SEARCH_TYPE_ALIASES,
+  SEARCH_TYPE_REDIRECTS,
+  SUPPORTED_SEARCH_TYPES_TEXT,
+  normalizeSearchType,
+} from './search-tool.consts';
 import { SEARCH_TIMEOUT } from 'src/utils/time.utils';
-import { rethrowWithContext, throwIfSearchTimeoutError } from 'src/utils/error.utils';
+import { throwIfSearchTimeoutError } from 'src/utils/error.utils';
+
+/** Map an alias/case/plural variant to a supported searchType, or pass the normalized value through. */
+function preprocessSearchType(val: unknown): unknown {
+  if (typeof val !== 'string') {
+    return val;
+  }
+  const normalized = normalizeSearchType(val);
+  return SEARCH_TYPE_ALIASES[normalized] ?? normalized;
+}
+
+/**
+ * Produce an actionable message for invalid searchType values: list the valid
+ * options, and when the value maps to a known intent (e.g. USERS, BOARD_ITEMS),
+ * point the caller at the right tool so it can self-correct on retry.
+ */
+function searchTypeErrorMap(issue: z.ZodIssueOptionalMessage, ctx: { defaultError: string }): { message: string } {
+  // Missing/null searchType surfaces as invalid_type with a type-name `received`.
+  if (issue.code === z.ZodIssueCode.invalid_type) {
+    if (issue.received === 'undefined' || issue.received === 'null') {
+      return { message: `searchType is required. Valid values: ${SUPPORTED_SEARCH_TYPES_TEXT}.` };
+    }
+    return { message: `searchType must be a string. Valid values: ${SUPPORTED_SEARCH_TYPES_TEXT}.` };
+  }
+
+  // A concrete-but-unsupported value surfaces as invalid_enum_value with the actual value in `received`.
+  if (issue.code === z.ZodIssueCode.invalid_enum_value) {
+    const received = String(issue.received);
+    const redirect = SEARCH_TYPE_REDIRECTS[normalizeSearchType(received)];
+    const base = `Invalid searchType "${received}". Valid values: ${SUPPORTED_SEARCH_TYPES_TEXT}.`;
+    return { message: redirect ? `${base} ${redirect}` : base };
+  }
+
+  return { message: ctx.defaultError };
+}
+
+/** Coerce a scalar or numeric-string id (or array of them) into a number array; treat null/undefined as omitted. */
+function coerceIdArray(val: unknown): unknown {
+  if (val === null || val === undefined) {
+    return undefined;
+  }
+  const arr = Array.isArray(val) ? val : [val];
+  return arr.map((entry) => {
+    if (typeof entry === 'string' && entry.trim() !== '' && !Number.isNaN(Number(entry))) {
+      return Number(entry);
+    }
+    return entry;
+  });
+}
+
+/** Coerce numeric strings to numbers and clamp to SEARCH_LIMIT; leave other values for zod to reject. */
+function preprocessLimit(val: unknown): unknown {
+  if (val === null || val === undefined) {
+    return undefined;
+  }
+  const num = typeof val === 'string' && val.trim() !== '' ? Number(val) : val;
+  if (typeof num === 'number' && !Number.isNaN(num)) {
+    return num > SEARCH_LIMIT ? SEARCH_LIMIT : num;
+  }
+  return val;
+}
+
+/**
+ * Optional array-of-numbers id field that also accepts a scalar or numeric
+ * strings. Typed explicitly so the wrapping ZodEffects doesn't blow TypeScript's
+ * inference depth in zodToJsonSchema.
+ */
+function optionalIdArray(description: string): z.ZodType<number[] | undefined, z.ZodTypeDef, unknown> {
+  const schema = z.preprocess(coerceIdArray, z.array(z.number()).optional()) as z.ZodType<
+    number[] | undefined,
+    z.ZodTypeDef,
+    unknown
+  >;
+  return schema.describe(description);
+}
+
+// searchType/limit use preprocess wrappers; annotate them explicitly so the
+// combined shape's ZodEffects don't push zodToJsonSchema past TS's inference depth.
+const searchTypeSchema: z.ZodType<GlobalSearchType, z.ZodTypeDef, unknown> = z
+  .preprocess(preprocessSearchType, z.nativeEnum(GlobalSearchType, { errorMap: searchTypeErrorMap }))
+  .describe(`The type of search to perform. Valid values: ${SUPPORTED_SEARCH_TYPES_TEXT}.`) as z.ZodType<
+  GlobalSearchType,
+  z.ZodTypeDef,
+  unknown
+>;
+
+const limitSchema: z.ZodType<number, z.ZodTypeDef, unknown> = z
+  .preprocess(preprocessLimit, z.number())
+  .optional()
+  .default(SEARCH_LIMIT)
+  .describe(`The number of items to get. Maximum is ${SEARCH_LIMIT}.`) as z.ZodType<number, z.ZodTypeDef, unknown>;
 
 export const searchSchema = {
   searchTerm: z.string().min(1).describe('The search term to use.'),
-  searchType: z
-    .preprocess(
-      (val) => (typeof val === 'string' ? (SEARCH_TYPE_ALIASES[val.toUpperCase()] ?? val.toUpperCase()) : val),
-      z.nativeEnum(GlobalSearchType),
-    )
-    .describe(
-      'The type of search to perform. Valid values: BOARD, DOCUMENTS, FOLDERS, WORKSPACES, UPDATES, ITEMS, TIMELINE_ITEMS.',
-    ),
-  limit: z
-    .preprocess((val) => (typeof val === 'number' && val > SEARCH_LIMIT ? SEARCH_LIMIT : val), z.number())
-    .optional()
-    .default(SEARCH_LIMIT)
-    .describe(`The number of items to get. Maximum is ${SEARCH_LIMIT}.`),
+  searchType: searchTypeSchema,
+  limit: limitSchema,
 
   // for boards and docs
-  workspaceIds: z
-    .array(z.number())
-    .optional()
-    .describe(
-      'Array of workspace IDs (numbers) to search in. Required for FOLDERS search. For BOARD and DOCUMENTS search, only pass this if the user explicitly asked to search within specific workspaces. Example: [12345, 67890].',
-    ),
+  workspaceIds: optionalIdArray(
+    'Array of workspace IDs (numbers) to search in. Optional for FOLDERS search (searches all accessible workspaces when omitted). For BOARD and DOCUMENTS search, only pass this if the user explicitly asked to search within specific workspaces. Example: [12345, 67890].',
+  ),
 
   // for updates
-  boardIds: z
-    .array(z.number())
-    .optional()
-    .describe(
-      'Array of board IDs (numbers) to scope the search to. Only applies to UPDATES search, and only pass it if the user explicitly asked to search within specific boards. Example: [12345, 67890].',
-    ),
-  creatorIds: z
-    .array(z.number())
-    .optional()
-    .describe(
-      'Array of user IDs (numbers) whose updates to search. Only applies to UPDATES search, and only pass it if the user explicitly asked to search updates by specific authors. Example: [12345, 67890].',
-    ),
+  boardIds: optionalIdArray(
+    'Array of board IDs (numbers) to scope the search to. Only applies to UPDATES search, and only pass it if the user explicitly asked to search within specific boards. Example: [12345, 67890].',
+  ),
+  creatorIds: optionalIdArray(
+    'Array of user IDs (numbers) whose updates to search. Only applies to UPDATES search, and only pass it if the user explicitly asked to search updates by specific authors. Example: [12345, 67890].',
+  ),
 };
 
 export type SearchToolInput = typeof searchSchema;
@@ -84,16 +161,17 @@ export class SearchTool extends BaseMondayApiTool<SearchToolInput> {
   });
 
   getDescription(): string {
-    return `Search within monday.com platform. Supported searchType values: BOARD, DOCUMENTS, FOLDERS, WORKSPACES, UPDATES, ITEMS, TIMELINE_ITEMS.
+    return `Search within monday.com platform. Supported searchType values: ${SUPPORTED_SEARCH_TYPES_TEXT}.
 For searching/listing specific users and teams, use list_users_and_teams tool.
 For account-level info (plan, member count, products), use get_user_context tool.
 For browsing all boards, docs, or folders within a workspace without a search term, use workspace_info tool.
 For groups, use get_board_info tool.
+For listing items within a specific board, use get_board_items_page tool. ITEMS search here queries items across the account.
 ITEMS search returns id, title, and url.
 WORKSPACES search returns id, title, and description.
 UPDATES search returns id, title (the update body), itemId, boardId, and creatorId. Optionally scope it with boardIds and/or creatorIds.
 TIMELINE_ITEMS search returns id, title, summary, and content.
-FOLDERS search requires workspaceIds and returns id and title.
+FOLDERS search returns id and title. Optionally scope it with workspaceIds, which searches all accessible workspaces when omitted.
   `;
   }
 
@@ -240,16 +318,15 @@ FOLDERS search requires workspaceIds and returns id and title.
   }
 
   private async searchFoldersAsync(input: ToolInputType<SearchToolInput>): Promise<SearchResult[]> {
-    const workspaceIds = input.workspaceIds?.map((id) => id.toString()) ?? [];
+    const workspaceIds = input.workspaceIds?.map((id) => id.toString());
 
-    if (workspaceIds.length === 0) {
-      rethrowWithContext(new Error('Searching for folders require specifying workspace ids'), 'search folders');
-    }
-
+    // When no workspaceIds are provided, search folders across all accessible
+    // workspaces rather than failing — the folders query treats workspace_ids as
+    // an optional filter.
     const variables: GetFoldersQueryVariables = {
       page: 1,
       limit: MAX_FOLDERS_LIMIT,
-      workspace_ids: workspaceIds,
+      workspace_ids: workspaceIds && workspaceIds.length > 0 ? workspaceIds : undefined,
     };
 
     const response = await this.mondayApi.request<GetFoldersQuery>(getFolders, variables);

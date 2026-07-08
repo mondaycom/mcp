@@ -1,5 +1,15 @@
 # Changelog
 
+## 5.57.0
+
+### search — reduce validation failures (actionable errors, folder fallback, input coercion)
+
+- `searchType` rejections now return an actionable message that lists the valid values and, when the value maps to a known intent, redirects to the right tool (e.g. `USERS` → `list_users_and_teams`, `BOARD_ITEMS` → `get_board_items_page`, `FORMS`/`DASHBOARDS` → not searchable) so callers can self-correct on retry
+- `searchType` normalization now also collapses separators/casing (e.g. `"board item"`, `"BOARD-ITEM"`) and adds `DOCUMENT`, `PULSE`/`PULSES` aliases
+- FOLDERS search no longer errors when `workspaceIds` is omitted — it searches across all accessible workspaces
+- `limit` accepts numeric strings (coerced then clamped); `workspaceIds`/`boardIds`/`creatorIds` accept a scalar or numeric strings and treat `null` as omitted
+- Targets the top post-deploy validation-error buckets observed in production search logs
+
 ## 5.54.1
 
 ### publish_workflow — restrict to explicit user request
