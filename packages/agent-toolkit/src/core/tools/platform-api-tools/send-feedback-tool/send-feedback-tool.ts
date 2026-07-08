@@ -66,7 +66,7 @@ export class SendFeedbackTool extends BaseMondayApiTool<typeof sendFeedbackToolS
   protected async executeInternal(
     input: ToolInputType<typeof sendFeedbackToolSchema>,
   ): Promise<ToolOutputType<never>> {
-    const tokenInfo = this.resolvedToken ? extractTokenInfo(this.resolvedToken) : {};
+    const { aai, uid, actid, rgn, tid } = this.resolvedToken ? extractTokenInfo(this.resolvedToken) : ({} as ReturnType<typeof extractTokenInfo>);
 
     trackEvent({
       name: 'mcp_feedback_submitted',
@@ -77,7 +77,11 @@ export class SendFeedbackTool extends BaseMondayApiTool<typeof sendFeedbackToolS
         ...(input.tool_name && { tool_name: input.tool_name }),
         ...(this.context?.agentType && { agent_type: this.context.agentType }),
         ...(this.context?.agentClientName && { agent_client_name: this.context.agentClientName }),
-        ...tokenInfo,
+        ...(actid !== undefined && { account_id: actid }),
+        ...(uid !== undefined && { user_id: uid }),
+        ...(aai !== undefined && { api_app_id: aai }),
+        ...(rgn !== undefined && { region: rgn }),
+        ...(tid !== undefined && { team_id: tid }),
       },
     });
 

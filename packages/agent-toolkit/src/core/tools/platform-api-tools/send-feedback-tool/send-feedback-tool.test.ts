@@ -82,6 +82,11 @@ describe('SendFeedbackTool', () => {
     });
 
     const eventData = mockTrackEvent.mock.calls[0][0].data;
-    expect(eventData).toMatchObject({ actid: 12345, uid: 67890, aai: 111, rgn: 'use1' });
+    expect(eventData).toMatchObject({ account_id: 12345, user_id: 67890, api_app_id: 111, region: 'use1', team_id: 222 });
+    expect(eventData).not.toHaveProperty('actid');
+    expect(eventData).not.toHaveProperty('uid');
+    expect(eventData).not.toHaveProperty('aai');
+    expect(eventData).not.toHaveProperty('rgn');
+    expect(eventData).not.toHaveProperty('tid');
   });
 });
