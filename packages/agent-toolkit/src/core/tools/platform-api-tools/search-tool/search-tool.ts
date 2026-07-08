@@ -33,7 +33,11 @@ import { SEARCH_TIMEOUT } from 'src/utils/time.utils';
 import { rethrowWithContext, throwIfSearchTimeoutError } from 'src/utils/error.utils';
 
 export const searchSchema = {
-  searchTerm: z.string().min(1).describe('The search term to use.'),
+  searchTerm: z
+    .string()
+    .trim()
+    .min(1, { message: 'searchTerm must be a non-empty search string.' })
+    .describe('The non-empty term to search for (at least one non-whitespace character).'),
   searchType: z
     .preprocess(
       (val) => (typeof val === 'string' ? (SEARCH_TYPE_ALIASES[val.toUpperCase()] ?? val.toUpperCase()) : val),

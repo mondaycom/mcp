@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.56.1
+
+### search — actionable error and whitespace handling for searchTerm
+
+- `searchTerm` validation now returns an actionable message (`searchTerm must be a non-empty search string.`) instead of the generic Zod `String must contain at least 1 character(s)`, helping agents recover from empty-term calls
+- `searchTerm` is now trimmed before validation, so whitespace-only values (e.g. `"   "`) are correctly rejected and surrounding whitespace is stripped from valid terms before querying
+
 ## 5.54.1
 
 ### publish_workflow — restrict to explicit user request
