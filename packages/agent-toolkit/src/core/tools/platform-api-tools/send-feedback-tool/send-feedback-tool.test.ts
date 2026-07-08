@@ -23,7 +23,7 @@ describe('SendFeedbackTool', () => {
     });
 
     const result = await tool.execute({
-      feedback_type: 'bug_report',
+      kind: 'bug',
       title: 'create_item fails on large boards',
       description: 'When the board has more than 500 items, create_item returns a timeout error.',
       tool_name: 'create_item',
@@ -33,7 +33,7 @@ describe('SendFeedbackTool', () => {
     expect(mockTrackEvent).toHaveBeenCalledWith({
       name: 'mcp_feedback_submitted',
       data: expect.objectContaining({
-        feedback_type: 'bug_report',
+        kind: 'bug',
         title: 'create_item fails on large boards',
         description: 'When the board has more than 500 items, create_item returns a timeout error.',
         tool_name: 'create_item',
@@ -51,7 +51,7 @@ describe('SendFeedbackTool', () => {
     const tool = new SendFeedbackTool(mocks.mockApiClient);
 
     await tool.execute({
-      feedback_type: 'feedback',
+      kind: 'feedback',
       title: 'Great tool!',
       description: 'Really helpful for automation.',
     });
@@ -76,7 +76,7 @@ describe('SendFeedbackTool', () => {
     const tool = new SendFeedbackTool(mocks.mockApiClient, token);
 
     await tool.execute({
-      feedback_type: 'feature_request',
+      kind: 'feature_request',
       title: 'Support batch operations',
       description: 'Allow updating multiple items at once.',
     });
