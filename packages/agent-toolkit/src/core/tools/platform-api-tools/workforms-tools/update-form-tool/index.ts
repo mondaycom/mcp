@@ -13,8 +13,6 @@ export class UpdateFormTool extends BaseMondayApiTool<typeof updateFormToolSchem
     idempotentHint: true,
   });
 
-  private helpers = new UpdateFormToolHelpers(this.mondayApi);
-
   getDescription(): string {
     return 'Update a monday.com form. Use the action field to specify the operation.';
   }
@@ -23,25 +21,30 @@ export class UpdateFormTool extends BaseMondayApiTool<typeof updateFormToolSchem
     return updateFormToolSchema;
   }
 
-  private readonly actionHandlers = new Map<
-    FormActions,
-    (input: ToolInputType<typeof updateFormToolSchema>) => Promise<ToolOutputType<never>>
-  >([
-    [FormActions.setFormPassword, this.helpers.setFormPassword.bind(this.helpers)],
-    [FormActions.shortenFormUrl, this.helpers.shortenFormUrl.bind(this.helpers)],
-    [FormActions.deactivate, this.helpers.deactivateForm.bind(this.helpers)],
-    [FormActions.activate, this.helpers.activateForm.bind(this.helpers)],
-    [FormActions.createTag, this.helpers.createTag.bind(this.helpers)],
-    [FormActions.deleteTag, this.helpers.deleteTag.bind(this.helpers)],
-    [FormActions.updateAppearance, this.helpers.updateAppearance.bind(this.helpers)],
-    [FormActions.updateAccessibility, this.helpers.updateAccessibility.bind(this.helpers)],
-    [FormActions.updateFeatures, this.helpers.updateFeatures.bind(this.helpers)],
-    [FormActions.updateQuestionOrder, this.helpers.updateQuestionOrder.bind(this.helpers)],
-    [FormActions.updateFormHeader, this.helpers.updateFormHeader.bind(this.helpers)],
-  ]);
+  // Build the action handlers lazily, per execution, so the ApiClient is resolved from the
+  // provider at call time (supports lazy/refreshed tokens) instead of being captured once at
+  // construction.
+  private buildActionHandlers(
+    helpers: UpdateFormToolHelpers,
+  ): Map<FormActions, (input: ToolInputType<typeof updateFormToolSchema>) => Promise<ToolOutputType<never>>> {
+    return new Map([
+      [FormActions.setFormPassword, helpers.setFormPassword.bind(helpers)],
+      [FormActions.shortenFormUrl, helpers.shortenFormUrl.bind(helpers)],
+      [FormActions.deactivate, helpers.deactivateForm.bind(helpers)],
+      [FormActions.activate, helpers.activateForm.bind(helpers)],
+      [FormActions.createTag, helpers.createTag.bind(helpers)],
+      [FormActions.deleteTag, helpers.deleteTag.bind(helpers)],
+      [FormActions.updateAppearance, helpers.updateAppearance.bind(helpers)],
+      [FormActions.updateAccessibility, helpers.updateAccessibility.bind(helpers)],
+      [FormActions.updateFeatures, helpers.updateFeatures.bind(helpers)],
+      [FormActions.updateQuestionOrder, helpers.updateQuestionOrder.bind(helpers)],
+      [FormActions.updateFormHeader, helpers.updateFormHeader.bind(helpers)],
+    ]);
+  }
 
   protected async executeInternal(input: ToolInputType<typeof updateFormToolSchema>): Promise<ToolOutputType<never>> {
-    const handler = this.actionHandlers.get(input.action);
+    const helpers = new UpdateFormToolHelpers(this.mondayApi);
+    const handler = this.buildActionHandlers(helpers).get(input.action);
 
     if (!handler) {
       return {

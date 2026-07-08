@@ -13,17 +13,6 @@ export class FormQuestionsEditorTool extends BaseMondayApiTool<typeof formQuesti
     idempotentHint: false,
   });
 
-  private helpers = new FormQuestionsEditorToolHelpers(this.mondayApi);
-
-  private readonly actionHandlers = new Map<
-    FormQuestionActions,
-    (input: ToolInputType<typeof formQuestionsEditorToolSchema>) => Promise<ToolOutputType<never>>
-  >([
-    [FormQuestionActions.Delete, this.helpers.deleteQuestion.bind(this.helpers)],
-    [FormQuestionActions.Update, this.helpers.updateQuestion.bind(this.helpers)],
-    [FormQuestionActions.Create, this.helpers.createQuestion.bind(this.helpers)],
-  ]);
-
   getDescription(): string {
     return 'Create, update, or delete a question in a monday.com form';
   }
@@ -32,10 +21,24 @@ export class FormQuestionsEditorTool extends BaseMondayApiTool<typeof formQuesti
     return formQuestionsEditorToolSchema;
   }
 
+  // Build the action handlers lazily, per execution, so the ApiClient is resolved from the
+  // provider at call time (supports lazy/refreshed tokens) instead of being captured once at
+  // construction.
+  private buildActionHandlers(
+    helpers: FormQuestionsEditorToolHelpers,
+  ): Map<FormQuestionActions, (input: ToolInputType<typeof formQuestionsEditorToolSchema>) => Promise<ToolOutputType<never>>> {
+    return new Map([
+      [FormQuestionActions.Delete, helpers.deleteQuestion.bind(helpers)],
+      [FormQuestionActions.Update, helpers.updateQuestion.bind(helpers)],
+      [FormQuestionActions.Create, helpers.createQuestion.bind(helpers)],
+    ]);
+  }
+
   protected async executeInternal(
     input: ToolInputType<typeof formQuestionsEditorToolSchema>,
   ): Promise<ToolOutputType<never>> {
-    const handler = this.actionHandlers.get(input.action);
+    const helpers = new FormQuestionsEditorToolHelpers(this.mondayApi);
+    const handler = this.buildActionHandlers(helpers).get(input.action);
 
     if (!handler) {
       return {
