@@ -1,7 +1,6 @@
 import { z } from 'zod';
-import { ApiClient } from '@mondaydotcomorg/api';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
-import { BaseMondayApiTool, createMondayApiAnnotations, MondayApiToolContext } from '../base-monday-api-tool';
+import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { trackEvent } from '../../../../utils/tracking.utils';
 import { extractTokenInfo } from '../../../../utils/token.utils';
 
@@ -15,9 +14,7 @@ export const sendFeedbackToolSchema = {
   title: z.string().describe(`A short summary of the feedback. ${PII_WARNING}`),
   description: z
     .string()
-    .describe(
-      `Full details — what happened, what was expected, or what is being requested. ${PII_WARNING}`,
-    ),
+    .describe(`Full details — what happened, what was expected, or what is being requested. ${PII_WARNING}`),
   tool_name: z
     .string()
     .optional()
@@ -33,22 +30,6 @@ export class SendFeedbackTool extends BaseMondayApiTool<typeof sendFeedbackToolS
     destructiveHint: false,
     idempotentHint: true,
   });
-
-  private readonly _apiToken?: string | (() => string);
-
-  constructor(
-    mondayApi: ApiClient | (() => ApiClient),
-    apiToken?: string | (() => string),
-    context?: MondayApiToolContext,
-  ) {
-    super(mondayApi, context);
-    this._apiToken = apiToken;
-  }
-
-  private get resolvedToken(): string | undefined {
-    if (!this._apiToken) return undefined;
-    return typeof this._apiToken === 'function' ? this._apiToken() : this._apiToken;
-  }
 
   getDescription(): string {
     return (
@@ -66,7 +47,10 @@ export class SendFeedbackTool extends BaseMondayApiTool<typeof sendFeedbackToolS
   protected async executeInternal(
     input: ToolInputType<typeof sendFeedbackToolSchema>,
   ): Promise<ToolOutputType<never>> {
-    const { aai, uid, actid, rgn, tid } = this.resolvedToken ? extractTokenInfo(this.resolvedToken) : ({} as ReturnType<typeof extractTokenInfo>);
+    const token: string | undefined = (this.mondayApi as any).token;
+    const { aai, uid, actid, rgn, tid } = token
+      ? extractTokenInfo(token)
+      : ({} as ReturnType<typeof extractTokenInfo>);
 
     trackEvent({
       name: 'mcp_feedback_submitted',

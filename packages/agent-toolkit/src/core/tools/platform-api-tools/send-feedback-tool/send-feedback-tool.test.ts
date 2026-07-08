@@ -17,7 +17,7 @@ describe('SendFeedbackTool', () => {
   });
 
   it('fires a mcp_feedback_submitted BigBrain event with all fields', async () => {
-    const tool = new SendFeedbackTool(mocks.mockApiClient, 'test-token', {
+    const tool = new SendFeedbackTool(mocks.mockApiClient, {
       agentType: 'monday_agent',
       agentClientName: 'my-client',
     });
@@ -63,8 +63,7 @@ describe('SendFeedbackTool', () => {
     expect(eventData).not.toHaveProperty('agent_client_name');
   });
 
-  it('extracts account and user id from a valid JWT token', async () => {
-    // JWT with payload: { actid: 12345, uid: 67890, aai: 111, tid: 222, rgn: 'use1', per: 'me:rw' }
+  it('extracts account and user id from the ApiClient token', async () => {
     const payload = { actid: 12345, uid: 67890, aai: 111, tid: 222, rgn: 'use1', per: 'me:rw' };
     const base64urlPayload = Buffer.from(JSON.stringify(payload))
       .toString('base64')
@@ -73,7 +72,8 @@ describe('SendFeedbackTool', () => {
       .replace(/=/g, '');
     const token = `eyJhbGciOiJIUzI1NiJ9.${base64urlPayload}.signature`;
 
-    const tool = new SendFeedbackTool(mocks.mockApiClient, token);
+    const mockClientWithToken = { ...mocks.mockApiClient, token };
+    const tool = new SendFeedbackTool(mockClientWithToken as any);
 
     await tool.execute({
       kind: 'feature_request',
