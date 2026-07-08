@@ -44,7 +44,14 @@ import { ApiClient } from '@mondaydotcomorg/api';
 import { updateFormToolSchema } from '../update-form-tool/schema';
 
 export class UpdateFormToolHelpers {
-  constructor(private mondayApi: ApiClient) {}
+  // Resolve the ApiClient lazily on every call. The tool's `mondayApi` getter mints a fresh
+  // client (with a freshly-signed, short-lived token) on each access; capturing the resolved
+  // client at construction would freeze a token that expires before the tool is invoked.
+  constructor(private readonly getMondayApi: () => ApiClient) {}
+
+  private get mondayApi(): ApiClient {
+    return this.getMondayApi();
+  }
 
   async setFormPassword(input: ToolInputType<typeof updateFormToolSchema>): Promise<ToolOutputType<never>> {
     if (!input.formPassword) {

@@ -13,7 +13,7 @@ export class FormQuestionsEditorTool extends BaseMondayApiTool<typeof formQuesti
     idempotentHint: false,
   });
 
-  private helpers = new FormQuestionsEditorToolHelpers(this.mondayApi);
+  private helpers = new FormQuestionsEditorToolHelpers(() => this.mondayApi);
 
   private readonly actionHandlers = new Map<
     FormQuestionActions,
