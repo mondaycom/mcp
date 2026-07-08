@@ -131,7 +131,38 @@ describe('SearchTool', () => {
       const result = await callToolByNameRawAsync('search', args);
 
       expect(result.content[0].text).toContain('Failed to execute tool search: Invalid arguments');
+      expect(result.content[0].text).toContain('searchTerm must be a non-empty search string.');
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+
+    it('should reject whitespace-only searchTerm', async () => {
+      const args: Partial<inputType> = {
+        searchType: GlobalSearchType.BOARD,
+        searchTerm: '   ',
+      };
+
+      const result = await callToolByNameRawAsync('search', args);
+
+      expect(result.content[0].text).toContain('Failed to execute tool search: Invalid arguments');
+      expect(result.content[0].text).toContain('searchTerm must be a non-empty search string.');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+
+    it('should trim surrounding whitespace from searchTerm before querying', async () => {
+      mocks.setResponse(mockDevBoardsResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.BOARD,
+        searchTerm: '  Test  ',
+      };
+
+      await callToolByNameAsync('search', args);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchBoards'),
+        expect.objectContaining({ query: 'Test' }),
+        expect.anything(),
+      );
     });
 
     it('should clamp limit exceeding SEARCH_LIMIT (20) to 20', async () => {
