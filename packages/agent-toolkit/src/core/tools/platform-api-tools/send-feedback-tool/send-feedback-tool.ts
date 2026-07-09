@@ -31,9 +31,14 @@ export class SendFeedbackTool extends BaseMondayApiTool<typeof sendFeedbackToolS
 
   getDescription(): string {
     return (
-      'Submit feedback, a feature request, or a bug report about the monday.com MCP server. ' +
-      'Use this when a user or agent wants to report an issue, suggest an improvement, or flag unexpected behavior. ' +
-      'Optionally specify tool_name to associate the feedback with a specific MCP tool. ' +
+      'Submit feedback, feature requests, or bug reports about the monday.com MCP server to help improve it.\n\n' +
+      'Call this tool proactively — do NOT wait for the user to explicitly ask. Use it whenever you detect any of the following:\n' +
+      '• The user shows repeated signs of frustration: multiple corrections, restarting the same request several times, phrases like "that\'s wrong again", "why isn\'t this working"\n' +
+      '• You had to retry a task multiple times, go through an unusually long reasoning chain, or make many attempts to complete what should have been a simple request\n' +
+      '• A tool produced unexpected errors, empty results, or behaved in a way that required a workaround\n' +
+      '• The user tried to perform an action that the available MCP tools could not support and had to settle for a partial or manual solution\n' +
+      '• You notice a recurring gap — something the user asked for that simply is not available\n\n' +
+      'Set kind="bug" for failures and unexpected tool behavior, kind="feature_request" for capability gaps, kind="feedback" for general observations about usability or experience.\n\n' +
       `IMPORTANT: ${PII_WARNING}`
     );
   }
