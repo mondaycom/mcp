@@ -1739,6 +1739,19 @@ describe('SearchTool', () => {
         );
       });
 
+      it('should reject a raw numeric Infinity limit instead of passing it through unclamped', async () => {
+        const args = {
+          searchType: GlobalSearchType.BOARD,
+          searchTerm: 'Test',
+          limit: Infinity,
+        } as any;
+
+        const result = await callToolByNameRawAsync('search', args);
+
+        expect(result.content[0].text).toContain('Failed to execute tool search: Invalid arguments');
+        expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+      });
+
       it('should default a null limit to SEARCH_LIMIT instead of failing validation', async () => {
         mocks.setResponse(mockDevBoardsResponse);
 
@@ -1827,17 +1840,35 @@ describe('SearchTool', () => {
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
 
-      it('should reject a hex-looking string as a workspace id instead of coercing it', async () => {
+      it('should reject a raw numeric Infinity workspace id, not just the string form', async () => {
         const args = {
           searchType: GlobalSearchType.BOARD,
           searchTerm: 'Test',
-          workspaceIds: ['0x1A'],
+          workspaceIds: [Infinity],
         } as any;
 
         const result = await callToolByNameRawAsync('search', args);
 
         expect(result.content[0].text).toContain('Failed to execute tool search: Invalid arguments');
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+      });
+
+      it('should coerce a hex-looking numeric string via Number() like any other numeric string', async () => {
+        mocks.setResponse(mockDevBoardsResponse);
+
+        const args = {
+          searchType: GlobalSearchType.BOARD,
+          searchTerm: 'Test',
+          workspaceIds: ['0x1A'],
+        } as any;
+
+        await callToolByNameAsync('search', args);
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchBoards'),
+          expect.objectContaining({ workspaceIds: ['26'] }),
+          expect.any(Object),
+        );
       });
 
       it('should treat an empty workspaceIds array as "no filter" for BOARD search, consistent with FOLDERS', async () => {

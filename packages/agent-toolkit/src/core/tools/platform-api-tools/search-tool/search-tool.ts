@@ -74,51 +74,36 @@ function searchTypeErrorMap(issue: z.ZodIssueOptionalMessage, ctx: { defaultErro
 }
 
 /**
- * Coerce a scalar or numeric-string id (or array of them) into a number array;
- * treat null/undefined as omitted. Only accepts strict integer strings (optional
- * leading `-`) that round-trip losslessly through `Number` — non-integer,
- * non-finite (e.g. "Infinity"), or hex-like (e.g. "0x1A") strings are left as-is
- * for zod to reject, rather than silently coercing them into a wrong or
- * unrelated numeric id.
+ * Reshape a scalar or array of ids into an array, treating null/undefined as
+ * omitted. Per-entry numeric coercion and validation (numeric strings, finite
+ * check) is handled by z.coerce.number().finite() in the array's element
+ * schema below, so this only normalizes the outer shape.
  */
-function coerceIdArray(val: unknown): unknown {
+function toIdArray(val: unknown): unknown {
   if (val === null || val === undefined) {
     return undefined;
   }
-  const arr = Array.isArray(val) ? val : [val];
-  return arr.map((entry) => {
-    if (typeof entry === 'string' && /^-?\d+$/.test(entry.trim())) {
-      const num = Number(entry.trim());
-      return Number.isSafeInteger(num) ? num : entry;
-    }
-    return entry;
-  });
+  return Array.isArray(val) ? val : [val];
 }
 
 /**
- * Coerce numeric strings to numbers and clamp to [1, SEARCH_LIMIT]; leave other
- * values for zod to reject. `null`/`undefined` resolve directly to SEARCH_LIMIT
- * (rather than passing `undefined` through) so a caller-supplied `null` behaves
- * identically to an omitted field instead of failing validation.
+ * `null`/`undefined` resolve directly to SEARCH_LIMIT (rather than passing
+ * `undefined` through) so a caller-supplied `null` behaves identically to an
+ * omitted field instead of failing validation. Numeric coercion, finiteness,
+ * and clamping happen in limitSchema below via z.coerce.number().finite().
  */
 function preprocessLimit(val: unknown): unknown {
-  if (val === null || val === undefined) {
-    return SEARCH_LIMIT;
-  }
-  const num = typeof val === 'string' && val.trim() !== '' ? Number(val) : val;
-  if (typeof num === 'number' && Number.isFinite(num)) {
-    return Math.min(Math.max(Math.trunc(num), 1), SEARCH_LIMIT);
-  }
-  return val;
+  return val === null || val === undefined ? SEARCH_LIMIT : val;
 }
 
 /**
  * Optional array-of-numbers id field that also accepts a scalar or numeric
- * strings. Typed explicitly so the wrapping ZodEffects doesn't blow TypeScript's
- * inference depth in zodToJsonSchema.
+ * strings; entries are coerced via z.coerce.number() and Infinity/NaN are
+ * rejected via .finite(). Typed explicitly so the wrapping ZodEffects doesn't
+ * blow TypeScript's inference depth in zodToJsonSchema.
  */
 function optionalIdArray(description: string): z.ZodType<number[] | undefined, z.ZodTypeDef, unknown> {
-  const schema = z.preprocess(coerceIdArray, z.array(z.number()).optional()) as z.ZodType<
+  const schema = z.preprocess(toIdArray, z.array(z.coerce.number().finite()).optional()) as z.ZodType<
     number[] | undefined,
     z.ZodTypeDef,
     unknown
@@ -142,7 +127,13 @@ const searchTypeSchema: z.ZodType<GlobalSearchType, z.ZodTypeDef, unknown> = z
 >;
 
 const limitSchema: z.ZodType<number, z.ZodTypeDef, unknown> = z
-  .preprocess(preprocessLimit, z.number())
+  .preprocess(
+    preprocessLimit,
+    z.coerce
+      .number()
+      .finite()
+      .transform((num) => Math.min(Math.max(Math.trunc(num), 1), SEARCH_LIMIT)),
+  )
   .optional()
   .default(SEARCH_LIMIT)
   .describe(`The number of items to get. Maximum is ${SEARCH_LIMIT}.`) as z.ZodType<number, z.ZodTypeDef, unknown>;
