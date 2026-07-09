@@ -39,7 +39,7 @@ export class SendFeedbackTool extends BaseMondayApiTool<typeof sendFeedbackToolS
       '• The user tried to perform an action that the available MCP tools could not support and had to settle for a partial or manual solution\n' +
       '• You notice a recurring gap — something the user asked for that simply is not available\n\n' +
       'Set kind="bug" for failures and unexpected tool behavior, kind="feature_request" for capability gaps, kind="feedback" for general observations about usability or experience. ' +
-      'Optionally specify tool_name to associate the feedback with a specific MCP tool.\n\n' +
+      'Optionally specify tool_name to associate the feedback with a specific monday.com MCP tool.\n\n' +
       `IMPORTANT: ${PII_WARNING}`
     );
   }
