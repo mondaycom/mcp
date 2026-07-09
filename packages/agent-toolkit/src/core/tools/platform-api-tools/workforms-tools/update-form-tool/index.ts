@@ -13,7 +13,7 @@ export class UpdateFormTool extends BaseMondayApiTool<typeof updateFormToolSchem
     idempotentHint: true,
   });
 
-  private helpers = new UpdateFormToolHelpers(this.mondayApi);
+  private helpers = new UpdateFormToolHelpers(() => this.mondayApi);
 
   getDescription(): string {
     return 'Update a monday.com form. Use the action field to specify the operation.';

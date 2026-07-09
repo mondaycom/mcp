@@ -44,7 +44,7 @@ import { ApiClient } from '@mondaydotcomorg/api';
 import { updateFormToolSchema } from '../update-form-tool/schema';
 
 export class UpdateFormToolHelpers {
-  constructor(private mondayApi: ApiClient) {}
+  constructor(private readonly getMondayApi: () => ApiClient) {}
 
   async setFormPassword(input: ToolInputType<typeof updateFormToolSchema>): Promise<ToolOutputType<never>> {
     if (!input.formPassword) {
@@ -60,7 +60,7 @@ export class UpdateFormToolHelpers {
       },
     };
 
-    await this.mondayApi.request<SetFormPasswordMutation>(setFormPassword, variables);
+    await this.getMondayApi().request<SetFormPasswordMutation>(setFormPassword, variables);
 
     return {
       content: {
@@ -76,7 +76,7 @@ export class UpdateFormToolHelpers {
       formToken: input.formToken,
     };
 
-    await this.mondayApi.request<ShortenFormUrlMutation>(shortenFormUrl, variables);
+    await this.getMondayApi().request<ShortenFormUrlMutation>(shortenFormUrl, variables);
 
     return {
       content: {
@@ -92,7 +92,7 @@ export class UpdateFormToolHelpers {
       formToken: input.formToken,
     };
 
-    await this.mondayApi.request<DeactivateFormMutation>(deactivateForm, variables);
+    await this.getMondayApi().request<DeactivateFormMutation>(deactivateForm, variables);
 
     return {
       content: { message: 'Form successfully deactivated', form_token: input.formToken, action_name: 'deactivateForm' },
@@ -104,7 +104,7 @@ export class UpdateFormToolHelpers {
       formToken: input.formToken,
     };
 
-    await this.mondayApi.request<ActivateFormMutation>(activateForm, variables);
+    await this.getMondayApi().request<ActivateFormMutation>(activateForm, variables);
 
     return {
       content: { message: 'Form successfully activated', form_token: input.formToken, action_name: 'activateForm' },
@@ -131,7 +131,7 @@ export class UpdateFormToolHelpers {
       },
     };
 
-    const res = await this.mondayApi.request<CreateFormTagMutation>(createFormTag, variables);
+    const res = await this.getMondayApi().request<CreateFormTagMutation>(createFormTag, variables);
 
     return {
       content: {
@@ -161,7 +161,7 @@ export class UpdateFormToolHelpers {
       tagId: input.tag.id,
     };
 
-    await this.mondayApi.request<DeleteFormTagMutation>(deleteFormTag, variables);
+    await this.getMondayApi().request<DeleteFormTagMutation>(deleteFormTag, variables);
 
     return {
       content: { message: 'Tag deleted', form_token: input.formToken, tag_id: input.tag.id, action_name: 'deleteTag' },
@@ -180,7 +180,7 @@ export class UpdateFormToolHelpers {
       appearance: input.form.appearance as FormAppearanceInput,
     };
 
-    const res = await this.mondayApi.request<UpdateFormAppearanceMutation>(updateFormAppearance, variables);
+    const res = await this.getMondayApi().request<UpdateFormAppearanceMutation>(updateFormAppearance, variables);
 
     return {
       content: {
@@ -204,7 +204,7 @@ export class UpdateFormToolHelpers {
       accessibility: input.form.accessibility as FormAccessibilityInput,
     };
 
-    const res = await this.mondayApi.request<UpdateFormAccessibilityMutation>(updateFormAccessibility, variables);
+    const res = await this.getMondayApi().request<UpdateFormAccessibilityMutation>(updateFormAccessibility, variables);
 
     return {
       content: {
@@ -231,7 +231,7 @@ export class UpdateFormToolHelpers {
       is_anonymous,
     };
 
-    const res = await this.mondayApi.request<UpdateFormFeaturesMutation>(updateFormFeatures, variables);
+    const res = await this.getMondayApi().request<UpdateFormFeaturesMutation>(updateFormFeatures, variables);
 
     return {
       content: {
@@ -256,7 +256,7 @@ export class UpdateFormToolHelpers {
       questions: input.form.questions as QuestionOrderInput[],
     };
 
-    const res = await this.mondayApi.request<UpdateFormQuestionOrderMutation>(updateFormQuestionOrder, variables);
+    const res = await this.getMondayApi().request<UpdateFormQuestionOrderMutation>(updateFormQuestionOrder, variables);
 
     return {
       content: {
@@ -281,7 +281,7 @@ export class UpdateFormToolHelpers {
       description: input.form.description,
     };
 
-    const res = await this.mondayApi.request<UpdateFormHeaderMutation>(updateFormHeader, variables);
+    const res = await this.getMondayApi().request<UpdateFormHeaderMutation>(updateFormHeader, variables);
 
     return {
       content: {
