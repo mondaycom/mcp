@@ -16,7 +16,7 @@ export const sendFeedbackToolSchema = {
   tool_name: z
     .string()
     .optional()
-    .describe('The name of the MCP tool this feedback is about, if applicable (e.g. "create_item")'),
+    .describe('The name of the monday.com MCP tool this feedback is about, if applicable (e.g. "create_item", "get_board_info"). Only include monday.com MCP tool names — do not reference tools from other connected services.'),
 };
 
 export class SendFeedbackTool extends BaseMondayApiTool<typeof sendFeedbackToolSchema> {
