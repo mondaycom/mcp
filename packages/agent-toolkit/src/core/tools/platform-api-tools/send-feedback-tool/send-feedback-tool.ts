@@ -26,7 +26,7 @@ export class SendFeedbackTool extends BaseMondayApiTool<typeof sendFeedbackToolS
   type = ToolType.WRITE;
   annotations = createMondayApiAnnotations({
     title: 'Send Feedback',
-    readOnlyHint: false,
+    readOnlyHint: true,
     destructiveHint: false,
     idempotentHint: true,
   });
@@ -47,25 +47,33 @@ export class SendFeedbackTool extends BaseMondayApiTool<typeof sendFeedbackToolS
   protected async executeInternal(
     input: ToolInputType<typeof sendFeedbackToolSchema>,
   ): Promise<ToolOutputType<never>> {
-    const token: string | undefined = (this.mondayApi as any).token;
-    const { aai, uid, actid, rgn, tid } = token
+    const apiClient = this.mondayApi;
+    const token = (apiClient as any)?.token;
+    const { aai, uid, actid, rgn } = token
       ? extractTokenInfo(token)
       : ({} as ReturnType<typeof extractTokenInfo>);
 
+    const agentType = this.context?.agentType;
+
     trackEvent({
       name: 'mcp_feedback_submitted',
+      kind: input.kind,
+      info1: input.title,
+      ...(agentType && { info2: agentType }),
+      ...(input.tool_name && { info3: input.tool_name }),
+      ...(actid !== undefined && { accountId: actid }),
+      ...(uid !== undefined && { userId: uid }),
       data: {
         kind: input.kind,
         title: input.title,
         description: input.description,
         ...(input.tool_name && { tool_name: input.tool_name }),
-        ...(this.context?.agentType && { agent_type: this.context.agentType }),
+        ...(agentType && { agent_type: agentType }),
         ...(this.context?.agentClientName && { agent_client_name: this.context.agentClientName }),
         ...(actid !== undefined && { account_id: actid }),
         ...(uid !== undefined && { user_id: uid }),
         ...(aai !== undefined && { api_app_id: aai }),
         ...(rgn !== undefined && { region: rgn }),
-        ...(tid !== undefined && { team_id: tid }),
       },
     });
 

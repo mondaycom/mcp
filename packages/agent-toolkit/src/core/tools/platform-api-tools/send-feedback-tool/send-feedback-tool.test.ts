@@ -32,6 +32,10 @@ describe('SendFeedbackTool', () => {
     expect(mockTrackEvent).toHaveBeenCalledTimes(1);
     expect(mockTrackEvent).toHaveBeenCalledWith({
       name: 'mcp_feedback_submitted',
+      kind: 'bug',
+      info1: 'create_item fails on large boards',
+      info2: 'monday_agent',
+      info3: 'create_item',
       data: expect.objectContaining({
         kind: 'bug',
         title: 'create_item fails on large boards',
@@ -82,11 +86,14 @@ describe('SendFeedbackTool', () => {
     });
 
     const eventData = mockTrackEvent.mock.calls[0][0].data;
-    expect(eventData).toMatchObject({ account_id: 12345, user_id: 67890, api_app_id: 111, region: 'use1', team_id: 222 });
+    // top-level root fields (camelCase params → pulse_ in request body)
+    const event = mockTrackEvent.mock.calls[0][0];
+    expect(event).toMatchObject({ accountId: 12345, userId: 67890 });
+    // data fields
+    expect(eventData).toMatchObject({ account_id: 12345, user_id: 67890, api_app_id: 111, region: 'use1' });
     expect(eventData).not.toHaveProperty('actid');
     expect(eventData).not.toHaveProperty('uid');
     expect(eventData).not.toHaveProperty('aai');
     expect(eventData).not.toHaveProperty('rgn');
-    expect(eventData).not.toHaveProperty('tid');
   });
 });
