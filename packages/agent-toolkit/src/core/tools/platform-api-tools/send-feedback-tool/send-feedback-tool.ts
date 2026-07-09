@@ -23,7 +23,7 @@ export const sendFeedbackToolSchema = {
 
 export class SendFeedbackTool extends BaseMondayApiTool<typeof sendFeedbackToolSchema> {
   name = 'send_feedback';
-  type = ToolType.WRITE;
+  type = ToolType.READ;
   annotations = createMondayApiAnnotations({
     title: 'Send Feedback',
     readOnlyHint: true,
