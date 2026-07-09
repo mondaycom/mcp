@@ -73,28 +73,41 @@ function searchTypeErrorMap(issue: z.ZodIssueOptionalMessage, ctx: { defaultErro
   return { message: ctx.defaultError };
 }
 
-/** Coerce a scalar or numeric-string id (or array of them) into a number array; treat null/undefined as omitted. */
+/**
+ * Coerce a scalar or numeric-string id (or array of them) into a number array;
+ * treat null/undefined as omitted. Only accepts strict integer strings (optional
+ * leading `-`) that round-trip losslessly through `Number` — non-integer,
+ * non-finite (e.g. "Infinity"), or hex-like (e.g. "0x1A") strings are left as-is
+ * for zod to reject, rather than silently coercing them into a wrong or
+ * unrelated numeric id.
+ */
 function coerceIdArray(val: unknown): unknown {
   if (val === null || val === undefined) {
     return undefined;
   }
   const arr = Array.isArray(val) ? val : [val];
   return arr.map((entry) => {
-    if (typeof entry === 'string' && entry.trim() !== '' && !Number.isNaN(Number(entry))) {
-      return Number(entry);
+    if (typeof entry === 'string' && /^-?\d+$/.test(entry.trim())) {
+      const num = Number(entry.trim());
+      return Number.isSafeInteger(num) ? num : entry;
     }
     return entry;
   });
 }
 
-/** Coerce numeric strings to numbers and clamp to SEARCH_LIMIT; leave other values for zod to reject. */
+/**
+ * Coerce numeric strings to numbers and clamp to [1, SEARCH_LIMIT]; leave other
+ * values for zod to reject. `null`/`undefined` resolve directly to SEARCH_LIMIT
+ * (rather than passing `undefined` through) so a caller-supplied `null` behaves
+ * identically to an omitted field instead of failing validation.
+ */
 function preprocessLimit(val: unknown): unknown {
   if (val === null || val === undefined) {
-    return undefined;
+    return SEARCH_LIMIT;
   }
   const num = typeof val === 'string' && val.trim() !== '' ? Number(val) : val;
-  if (typeof num === 'number' && !Number.isNaN(num)) {
-    return num > SEARCH_LIMIT ? SEARCH_LIMIT : num;
+  if (typeof num === 'number' && Number.isFinite(num)) {
+    return Math.min(Math.max(Math.trunc(num), 1), SEARCH_LIMIT);
   }
   return val;
 }
@@ -111,6 +124,11 @@ function optionalIdArray(description: string): z.ZodType<number[] | undefined, z
     unknown
   >;
   return schema.describe(description);
+}
+
+/** Normalize an empty id-string array to undefined so "no ids" consistently means "no filter" across search types. */
+function toFilterIds(ids?: string[]): string[] | undefined {
+  return ids && ids.length > 0 ? ids : undefined;
 }
 
 // searchType/limit use preprocess wrappers; annotate them explicitly so the
@@ -171,7 +189,7 @@ ITEMS search returns id, title, and url.
 WORKSPACES search returns id, title, and description.
 UPDATES search returns id, title (the update body), itemId, boardId, and creatorId. Optionally scope it with boardIds and/or creatorIds.
 TIMELINE_ITEMS search returns id, title, summary, and content.
-FOLDERS search returns id and title. Optionally scope it with workspaceIds, which searches all accessible workspaces when omitted.
+FOLDERS search returns id and title. Optionally scope it with workspaceIds, which searches all accessible workspaces when omitted. Pass workspaceIds to narrow the search if results may be truncated.
   `;
   }
 
@@ -182,8 +200,11 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
   protected async executeInternal(input: ToolInputType<SearchToolInput>): Promise<ToolOutputType<never>> {
     try {
       if (input.searchType === GlobalSearchType.FOLDERS) {
-        const data = await this.searchFoldersAsync(input);
-        return { content: { message: 'Search results', data } };
+        const { results, truncated } = await this.searchFoldersAsync(input);
+        const message = truncated
+          ? `Search results (truncated: only the first ${MAX_FOLDERS_LIMIT} folders across the searched workspaces were scanned. Narrow with workspaceIds for complete results.)`
+          : 'Search results';
+        return { content: { message, data: results } };
       }
 
       const data = await this.runSmartSearchAsync(input);
@@ -195,7 +216,7 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
   }
 
   private async runSmartSearchAsync(input: ToolInputType<SearchToolInput>): Promise<SearchResult[]> {
-    const workspaceIds = input.workspaceIds?.map((id) => id.toString());
+    const workspaceIds = toFilterIds(input.workspaceIds?.map((id) => id.toString()));
 
     if (input.searchType === GlobalSearchType.BOARD) {
       return this.searchBoardsAsync(input.searchTerm, input.limit, workspaceIds);
@@ -210,8 +231,8 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
     }
 
     if (input.searchType === GlobalSearchType.UPDATES) {
-      const boardIds = input.boardIds?.map((id) => id.toString());
-      const creatorIds = input.creatorIds?.map((id) => id.toString());
+      const boardIds = toFilterIds(input.boardIds?.map((id) => id.toString()));
+      const creatorIds = toFilterIds(input.creatorIds?.map((id) => id.toString()));
       return this.searchUpdatesAsync(input.searchTerm, input.limit, boardIds, creatorIds);
     }
 
@@ -317,8 +338,18 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
     }));
   }
 
-  private async searchFoldersAsync(input: ToolInputType<SearchToolInput>): Promise<SearchResult[]> {
-    const workspaceIds = input.workspaceIds?.map((id) => id.toString());
+  private async searchFoldersAsync(
+    input: ToolInputType<SearchToolInput>,
+  ): Promise<{ results: SearchResult[]; truncated: boolean }> {
+    const normalizedSearchTerm = normalizeString(input.searchTerm);
+    // A searchTerm made only of characters normalizeString strips (e.g. "###" or
+    // emoji) would otherwise normalize to '', and every string includes(''),
+    // turning the filter below into a no-op that returns unrelated folders.
+    if (!normalizedSearchTerm) {
+      return { results: [], truncated: false };
+    }
+
+    const workspaceIds = toFilterIds(input.workspaceIds?.map((id) => id.toString()));
 
     // When no workspaceIds are provided, search folders across all accessible
     // workspaces rather than failing — the folders query treats workspace_ids as
@@ -326,23 +357,24 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
     const variables: GetFoldersQueryVariables = {
       page: 1,
       limit: MAX_FOLDERS_LIMIT,
-      workspace_ids: workspaceIds && workspaceIds.length > 0 ? workspaceIds : undefined,
+      workspace_ids: workspaceIds,
     };
 
     const response = await this.mondayApi.request<GetFoldersQuery>(getFolders, variables);
     const folders = response.folders || [];
 
-    const normalizedSearchTerm = normalizeString(input.searchTerm);
     const filteredFolders = folders.filter(
       (folder) => folder?.name && normalizeString(folder.name).includes(normalizedSearchTerm),
     );
 
-    return filteredFolders
+    const results = filteredFolders
       .filter((folder) => folder?.id)
       .slice(0, input.limit)
       .map((folder) => ({
         id: folder!.id,
         title: folder!.name,
       }));
+
+    return { results, truncated: folders.length === MAX_FOLDERS_LIMIT };
   }
 }

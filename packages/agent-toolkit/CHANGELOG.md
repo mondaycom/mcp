@@ -9,6 +9,12 @@
 - FOLDERS search no longer errors when `workspaceIds` is omitted — it searches across all accessible workspaces
 - `limit` accepts numeric strings (coerced then clamped); `workspaceIds`/`boardIds`/`creatorIds` accept a scalar or numeric strings and treat `null` as omitted
 - Targets the top post-deploy validation-error buckets observed in production search logs
+- Fixed: a `searchTerm` that normalizes to an empty string (e.g. punctuation/emoji-only) no longer returns unfiltered folders
+- Fixed: FOLDERS search now reports when its 100-folder scan was truncated instead of silently dropping matches
+- Fixed: `limit` now enforces a lower bound (clamped to at least 1) and `null` correctly defaults instead of failing validation
+- Fixed: `workspaceIds`/`boardIds`/`creatorIds` no longer coerce non-finite or hex-like numeric strings (e.g. `"Infinity"`, `"0x1A"`) into ids
+- Fixed: `searchType` normalization only collapses separators, so garbage input (e.g. `"board!!!"`) is rejected instead of silently matching a valid value
+- Empty `workspaceIds`/`boardIds`/`creatorIds` arrays are now treated as "no filter" consistently across all search types, matching FOLDERS
 
 ## 5.54.1
 

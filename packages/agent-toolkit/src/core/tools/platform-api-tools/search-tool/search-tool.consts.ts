@@ -4,18 +4,20 @@ export const SEARCH_LIMIT = 20;
 export const MAX_FOLDERS_LIMIT = 100;
 
 /** Human-readable list of accepted searchType values, reused in descriptions and errors. */
-export const SUPPORTED_SEARCH_TYPES_TEXT = 'BOARD, DOCUMENTS, FOLDERS, WORKSPACES, UPDATES, ITEMS, TIMELINE_ITEMS';
+export const SUPPORTED_SEARCH_TYPES_TEXT = Object.values(GlobalSearchType).join(', ');
 
 /**
  * Canonicalize a raw searchType string so aliases and redirects match regardless
- * of case, pluralization punctuation, or separators (e.g. "board-item" and
- * "board items" both normalize to "BOARD_ITEM").
+ * of case or separators (e.g. "board-item" and "board items" both normalize to
+ * "BOARD_ITEM"). Only whitespace/hyphen/slash separators are collapsed — other
+ * punctuation is left in place so garbage input (e.g. "board!!!") doesn't get
+ * stripped down into an accidental match for a real value.
  */
 export function normalizeSearchType(value: string): string {
   return value
     .trim()
     .toUpperCase()
-    .replace(/[^A-Z0-9]+/g, '_')
+    .replace(/[\s\-/]+/g, '_')
     .replace(/^_+|_+$/g, '');
 }
 
