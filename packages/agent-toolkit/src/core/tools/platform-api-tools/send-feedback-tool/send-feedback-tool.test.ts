@@ -1,49 +1,32 @@
 import { createMockApiClient } from '../test-utils/mock-api-client';
 import { SendFeedbackTool } from './send-feedback-tool';
-import { trackEvent } from '../../../../utils/tracking.utils';
-
-jest.mock('../../../../utils/tracking.utils', () => ({
-  trackEvent: jest.fn(),
-}));
-
-const mockTrackEvent = trackEvent as jest.MockedFunction<typeof trackEvent>;
 
 describe('SendFeedbackTool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
 
   beforeEach(() => {
     mocks = createMockApiClient();
-    jest.clearAllMocks();
   });
 
-  it('fires a mcp_feedback_submitted BigBrain event with all fields', async () => {
-    const tool = new SendFeedbackTool(mocks.mockApiClient, {
-      agentType: 'monday_agent',
-      agentClientName: 'my-client',
-    });
+  it('sets session context metadata with all fields', async () => {
+    const tool = new SendFeedbackTool(mocks.mockApiClient);
+    const sessionContext = { metadata: {} as Record<string, unknown> };
 
-    const result = await tool.execute({
-      kind: 'bug',
-      title: 'create_item fails on large boards',
-      description: 'When the board has more than 500 items, create_item returns a timeout error.',
-      tool_name: 'create_item',
-    });
-
-    expect(mockTrackEvent).toHaveBeenCalledTimes(1);
-    expect(mockTrackEvent).toHaveBeenCalledWith({
-      name: 'mcp_feedback_submitted',
-      kind: 'bug',
-      info1: 'create_item fails on large boards',
-      info2: 'monday_agent',
-      info3: 'create_item',
-      data: expect.objectContaining({
+    const result = await tool.execute(
+      {
         kind: 'bug',
         title: 'create_item fails on large boards',
         description: 'When the board has more than 500 items, create_item returns a timeout error.',
         tool_name: 'create_item',
-        agent_type: 'monday_agent',
-        agent_client_name: 'my-client',
-      }),
+      },
+      sessionContext,
+    );
+
+    expect(sessionContext.metadata).toMatchObject({
+      kind: 'bug',
+      title: 'create_item fails on large boards',
+      description: 'When the board has more than 500 items, create_item returns a timeout error.',
+      tool_name: 'create_item',
     });
 
     expect(result.content).toEqual(
@@ -51,49 +34,24 @@ describe('SendFeedbackTool', () => {
     );
   });
 
-  it('omits optional fields when not provided', async () => {
+  it('omits tool_name from metadata when not provided', async () => {
     const tool = new SendFeedbackTool(mocks.mockApiClient);
+    const sessionContext = { metadata: {} as Record<string, unknown> };
 
-    await tool.execute({
+    await tool.execute(
+      {
+        kind: 'feedback',
+        title: 'Great tool!',
+        description: 'Really helpful for automation.',
+      },
+      sessionContext,
+    );
+
+    expect(sessionContext.metadata).not.toHaveProperty('tool_name');
+    expect(sessionContext.metadata).toMatchObject({
       kind: 'feedback',
       title: 'Great tool!',
       description: 'Really helpful for automation.',
     });
-
-    expect(mockTrackEvent).toHaveBeenCalledTimes(1);
-    const eventData = mockTrackEvent.mock.calls[0][0].data;
-    expect(eventData).not.toHaveProperty('tool_name');
-    expect(eventData).not.toHaveProperty('agent_type');
-    expect(eventData).not.toHaveProperty('agent_client_name');
-  });
-
-  it('extracts account and user id from the ApiClient token', async () => {
-    const payload = { actid: 12345, uid: 67890, aai: 111, tid: 222, rgn: 'use1', per: 'me:rw' };
-    const base64urlPayload = Buffer.from(JSON.stringify(payload))
-      .toString('base64')
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=/g, '');
-    const token = `eyJhbGciOiJIUzI1NiJ9.${base64urlPayload}.signature`;
-
-    const mockClientWithToken = { ...mocks.mockApiClient, token };
-    const tool = new SendFeedbackTool(mockClientWithToken as any);
-
-    await tool.execute({
-      kind: 'feature_request',
-      title: 'Support batch operations',
-      description: 'Allow updating multiple items at once.',
-    });
-
-    const eventData = mockTrackEvent.mock.calls[0][0].data;
-    // top-level root fields (camelCase params → pulse_ in request body)
-    const event = mockTrackEvent.mock.calls[0][0];
-    expect(event).toMatchObject({ accountId: 12345, userId: 67890 });
-    // data fields
-    expect(eventData).toMatchObject({ account_id: 12345, user_id: 67890, api_app_id: 111, region: 'use1' });
-    expect(eventData).not.toHaveProperty('actid');
-    expect(eventData).not.toHaveProperty('uid');
-    expect(eventData).not.toHaveProperty('aai');
-    expect(eventData).not.toHaveProperty('rgn');
   });
 });

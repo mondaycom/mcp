@@ -1,8 +1,6 @@
 import { z } from 'zod';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { trackEvent } from '../../../../utils/tracking.utils';
-import { extractTokenInfo } from '../../../../utils/token.utils';
 
 const PII_WARNING =
   'Do NOT include any personally identifiable information (PII) such as names, email addresses, phone numbers, or any other personal data.';
@@ -47,35 +45,13 @@ export class SendFeedbackTool extends BaseMondayApiTool<typeof sendFeedbackToolS
   protected async executeInternal(
     input: ToolInputType<typeof sendFeedbackToolSchema>,
   ): Promise<ToolOutputType<never>> {
-    const apiClient = this.mondayApi;
-    const token = (apiClient as any)?.token;
-    const { aai, uid, actid, rgn } = token
-      ? extractTokenInfo(token)
-      : ({} as ReturnType<typeof extractTokenInfo>);
-
-    const agentType = this.context?.agentType;
-
-    trackEvent({
-      name: 'mcp_feedback_submitted',
-      kind: input.kind,
-      info1: input.title,
-      ...(agentType && { info2: agentType }),
-      ...(input.tool_name && { info3: input.tool_name }),
-      ...(actid !== undefined && { accountId: actid }),
-      ...(uid !== undefined && { userId: uid }),
-      data: {
-        kind: input.kind,
-        title: input.title,
-        description: input.description,
-        ...(input.tool_name && { tool_name: input.tool_name }),
-        ...(agentType && { agent_type: agentType }),
-        ...(this.context?.agentClientName && { agent_client_name: this.context.agentClientName }),
-        ...(actid !== undefined && { account_id: actid }),
-        ...(uid !== undefined && { user_id: uid }),
-        ...(aai !== undefined && { api_app_id: aai }),
-        ...(rgn !== undefined && { region: rgn }),
-      },
-    });
+    this.sessionContext.metadata ??= {};
+    this.sessionContext.metadata.kind = input.kind;
+    this.sessionContext.metadata.title = input.title;
+    this.sessionContext.metadata.description = input.description;
+    if (input.tool_name) {
+      this.sessionContext.metadata.tool_name = input.tool_name;
+    }
 
     return {
       content: {
