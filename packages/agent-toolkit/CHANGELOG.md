@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.58.0
+
+### search — add DASHBOARDS (overviews) search type
+
+- Adds `DASHBOARDS` as a search type in the unified `search` tool (aliases: `dashboard`, `overview`, `overviews`), backed by the platform's `search { overviews }` endpoint
+- Returns `id` and `title`; optionally scoped by `workspaceIds` and/or `creatorIds`
+- `search.overviews` is only exposed in the `dev` API version, so the query lives in `search-tool.graphql.dev.ts` and pins `versionOverride: 'dev'` (same approach previously used for boards/docs). Move the query to `search-tool.graphql.ts` and drop the override once the field is promoted to a stable API version
+
 ## 5.56.1
 
 ### search — actionable error and whitespace handling for searchTerm
