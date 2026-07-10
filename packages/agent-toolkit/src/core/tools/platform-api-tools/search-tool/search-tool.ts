@@ -10,6 +10,7 @@ import {
   searchUpdates,
   searchTimelineItems,
 } from './search-tool.graphql';
+import { searchOverviewsDev } from './search-tool.graphql.dev';
 import {
   GetFoldersQuery,
   GetFoldersQueryVariables,
@@ -26,6 +27,10 @@ import {
   SearchTimelineItemsQuery,
   SearchTimelineItemsQueryVariables,
 } from 'src/monday-graphql/generated/graphql/graphql';
+import {
+  SearchOverviewsDevQuery,
+  SearchOverviewsDevQueryVariables,
+} from 'src/monday-graphql/generated/graphql.dev/graphql';
 import { normalizeString } from 'src/utils/string.utils';
 import { GlobalSearchType, SearchResult } from './search-tool.types';
 import { MAX_FOLDERS_LIMIT, SEARCH_LIMIT, SEARCH_TYPE_ALIASES } from './search-tool.consts';
@@ -44,7 +49,7 @@ export const searchSchema = {
       z.nativeEnum(GlobalSearchType),
     )
     .describe(
-      'The type of search to perform. Valid values: BOARD, DOCUMENTS, FOLDERS, WORKSPACES, UPDATES, ITEMS, TIMELINE_ITEMS.',
+      'The type of search to perform. Valid values: BOARD, DOCUMENTS, FOLDERS, WORKSPACES, UPDATES, ITEMS, TIMELINE_ITEMS, DASHBOARDS.',
     ),
   limit: z
     .preprocess((val) => (typeof val === 'number' && val > SEARCH_LIMIT ? SEARCH_LIMIT : val), z.number())
@@ -52,12 +57,12 @@ export const searchSchema = {
     .default(SEARCH_LIMIT)
     .describe(`The number of items to get. Maximum is ${SEARCH_LIMIT}.`),
 
-  // for boards and docs
+  // for boards, docs, and dashboards
   workspaceIds: z
     .array(z.number())
     .optional()
     .describe(
-      'Array of workspace IDs (numbers) to search in. Required for FOLDERS search. For BOARD and DOCUMENTS search, only pass this if the user explicitly asked to search within specific workspaces. Example: [12345, 67890].',
+      'Array of workspace IDs (numbers) to search in. Required for FOLDERS search. For BOARD, DOCUMENTS, and DASHBOARDS search, only pass this if the user explicitly asked to search within specific workspaces. Example: [12345, 67890].',
     ),
 
   // for updates
@@ -71,7 +76,7 @@ export const searchSchema = {
     .array(z.number())
     .optional()
     .describe(
-      'Array of user IDs (numbers) whose updates to search. Only applies to UPDATES search, and only pass it if the user explicitly asked to search updates by specific authors. Example: [12345, 67890].',
+      'Array of user IDs (numbers) whose items to search. Applies to UPDATES (filters by update author) and DASHBOARDS (filters by dashboard creator). Only pass it if the user explicitly asked to filter by specific creators. Example: [12345, 67890].',
     ),
 };
 
@@ -88,7 +93,7 @@ export class SearchTool extends BaseMondayApiTool<SearchToolInput> {
   });
 
   getDescription(): string {
-    return `Search within monday.com platform. Supported searchType values: BOARD, DOCUMENTS, FOLDERS, WORKSPACES, UPDATES, ITEMS, TIMELINE_ITEMS.
+    return `Search within monday.com platform. Supported searchType values: BOARD, DOCUMENTS, FOLDERS, WORKSPACES, UPDATES, ITEMS, TIMELINE_ITEMS, DASHBOARDS.
 For searching/listing specific users and teams, use list_users_and_teams tool.
 For account-level info (plan, member count, products), use get_user_context tool.
 For browsing all boards, docs, or folders within a workspace without a search term, use workspace_info tool.
@@ -97,6 +102,7 @@ ITEMS search returns id, title, and url.
 WORKSPACES search returns id, title, and description.
 UPDATES search returns id, title (the update body), itemId, boardId, and creatorId. Optionally scope it with boardIds and/or creatorIds.
 TIMELINE_ITEMS search returns id, title, summary, and content.
+DASHBOARDS search (also called "overviews") returns id and title. Optionally scope it with workspaceIds and/or creatorIds.
 FOLDERS search requires workspaceIds and returns id and title.
   `;
   }
@@ -147,6 +153,11 @@ FOLDERS search requires workspaceIds and returns id and title.
 
     if (input.searchType === GlobalSearchType.TIMELINE_ITEMS) {
       return this.searchTimelineItemsAsync(input.searchTerm, input.limit);
+    }
+
+    if (input.searchType === GlobalSearchType.DASHBOARDS) {
+      const creatorIds = input.creatorIds?.map((id) => id.toString());
+      return this.searchOverviewsAsync(input.searchTerm, input.limit, workspaceIds, creatorIds);
     }
 
     throw new Error(`Unsupported search type for smart search: ${input.searchType}`);
@@ -240,6 +251,26 @@ FOLDERS search requires workspaceIds and returns id and title.
       title: result.indexed_data.title,
       summary: result.indexed_data.summary || undefined,
       content: result.indexed_data.content || undefined,
+    }));
+  }
+
+  private async searchOverviewsAsync(
+    query: string,
+    limit: number,
+    workspaceIds?: string[],
+    creatorIds?: string[],
+  ): Promise<SearchResult[]> {
+    const variables: SearchOverviewsDevQueryVariables = { query, limit, workspaceIds, creatorIds };
+
+    // search.overviews is only available in the dev schema; drop versionOverride once promoted to stable.
+    const response = await this.mondayApi.request<SearchOverviewsDevQuery>(searchOverviewsDev, variables, {
+      versionOverride: 'dev',
+      timeout: SEARCH_TIMEOUT,
+    });
+
+    return response.search.overviews.results.map((result) => ({
+      id: result.indexed_data.id,
+      title: result.indexed_data.name,
     }));
   }
 

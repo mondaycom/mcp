@@ -13,4 +13,7 @@ export const SEARCH_TYPE_ALIASES: Record<string, GlobalSearchType> = {
   ITEM: GlobalSearchType.ITEMS,
   TIMELINE_ITEM: GlobalSearchType.TIMELINE_ITEMS,
   TIMELINE: GlobalSearchType.TIMELINE_ITEMS,
+  DASHBOARD: GlobalSearchType.DASHBOARDS,
+  OVERVIEW: GlobalSearchType.DASHBOARDS,
+  OVERVIEWS: GlobalSearchType.DASHBOARDS,
 };
