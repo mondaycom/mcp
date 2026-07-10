@@ -139,7 +139,12 @@ const limitSchema: z.ZodType<number, z.ZodTypeDef, unknown> = z
   .describe(`The number of items to get. Maximum is ${SEARCH_LIMIT}.`) as z.ZodType<number, z.ZodTypeDef, unknown>;
 
 export const searchSchema = {
-  searchTerm: z.string().min(1).describe('The search term to use.'),
+  searchTerm: z
+    .string()
+    .trim()
+    .describe(
+      'The term to search for. May be empty only for BOARD searches. Other search types require a non-empty term.',
+    ),
   searchType: searchTypeSchema,
   limit: limitSchema,
 
@@ -176,6 +181,7 @@ For account-level info (plan, member count, products), use get_user_context tool
 For browsing all boards, docs, or folders within a workspace without a search term, use workspace_info tool.
 For groups, use get_board_info tool.
 For listing items within a specific board, use get_board_items_page tool. ITEMS search here queries items across the account.
+BOARD search accepts an empty searchTerm. All other search types require a non-empty searchTerm.
 ITEMS search returns id, title, and url.
 WORKSPACES search returns id, title, and description.
 UPDATES search returns id, title (the update body), itemId, boardId, and creatorId. Optionally scope it with boardIds and/or creatorIds.
@@ -190,6 +196,10 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
 
   protected async executeInternal(input: ToolInputType<SearchToolInput>): Promise<ToolOutputType<never>> {
     try {
+      if (!input.searchTerm && input.searchType !== GlobalSearchType.BOARD) {
+        throw new Error('searchTerm must be a non-empty search string.');
+      }
+
       if (input.searchType === GlobalSearchType.FOLDERS) {
         const { results, truncated } = await this.searchFoldersAsync(input);
         const message = truncated

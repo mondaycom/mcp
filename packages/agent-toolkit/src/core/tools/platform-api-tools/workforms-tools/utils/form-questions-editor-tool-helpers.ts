@@ -12,7 +12,7 @@ import { ApiClient } from '@mondaydotcomorg/api';
 import { formQuestionsEditorToolSchema } from '../form-questions-editor-tool/schema';
 
 export class FormQuestionsEditorToolHelpers {
-  constructor(private mondayApi: ApiClient) {}
+  constructor(private readonly getMondayApi: () => ApiClient) {}
 
   async deleteQuestion(input: ToolInputType<typeof formQuestionsEditorToolSchema>): Promise<ToolOutputType<never>> {
     const questionId = input.questionId;
@@ -27,7 +27,7 @@ export class FormQuestionsEditorToolHelpers {
       questionId,
     };
 
-    await this.mondayApi.request<DeleteFormQuestionMutation>(deleteFormQuestion, deleteVariables);
+    await this.getMondayApi().request<DeleteFormQuestionMutation>(deleteFormQuestion, deleteVariables);
 
     return {
       content: { message: 'Question deleted', question_id: questionId, action_name: 'delete' },
@@ -55,7 +55,7 @@ export class FormQuestionsEditorToolHelpers {
       question,
     };
 
-    await this.mondayApi.request<UpdateFormQuestionMutation>(updateFormQuestion, updateVariables);
+    await this.getMondayApi().request<UpdateFormQuestionMutation>(updateFormQuestion, updateVariables);
 
     return {
       content: { message: 'Question updated', question_id: questionId, action_name: 'update' },
@@ -84,7 +84,7 @@ export class FormQuestionsEditorToolHelpers {
       },
     };
 
-    const result = await this.mondayApi.request<CreateFormQuestionMutation>(createFormQuestion, createVariables);
+    const result = await this.getMondayApi().request<CreateFormQuestionMutation>(createFormQuestion, createVariables);
 
     return {
       content: { message: 'Question created', question_id: result.create_form_question?.id, action_name: 'create' },
