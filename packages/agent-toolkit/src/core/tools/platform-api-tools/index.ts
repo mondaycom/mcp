@@ -3,6 +3,7 @@ import { AllApiReadTool } from './all-api-read-tool';
 import { AllApiWriteTool } from './all-api-write-tool';
 import { BaseMondayApiToolConstructor } from './base-monday-api-tool';
 import { ChangeItemColumnValuesTool } from './change-item-column-values-tool';
+import { ChangeItemColumnValuesBatchTool } from './change-item-column-values-batch-tool';
 import { GetObjectSchemasTool } from './get-object-schemas-tool/get-object-schemas-tool';
 import { CreateObjectSchemaTool } from './create-object-schema-tool/create-object-schema-tool';
 import { UpdateObjectSchemaTool } from './update-object-schema-tool/update-object-schema-tool';
@@ -105,6 +106,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   FullBoardDataTool,
   ListUsersAndTeamsTool,
   ChangeItemColumnValuesTool,
+  ChangeItemColumnValuesBatchTool,
   MoveItemToGroupTool,
   CreateBoardTool,
   UseTemplateTool,
@@ -202,6 +204,7 @@ export * from './manage-object-schema-board-connection-tool/manage-object-schema
 export * from './manage-object-schema-columns-tool/manage-object-schema-columns-tool';
 export * from './set-object-schema-column-active-state-tool/set-object-schema-column-active-state-tool';
 export * from './change-item-column-values-tool';
+export * from './change-item-column-values-batch-tool';
 export * from './create-board-tool';
 export * from './use-template-tool';
 export * from './check-template-status-tool';
