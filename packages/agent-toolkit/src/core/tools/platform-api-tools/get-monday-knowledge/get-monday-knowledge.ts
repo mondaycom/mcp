@@ -12,7 +12,7 @@ export const getMondayKnowledgeSchema = {
   kind: z
     .enum([KIND_DEVELOPER_DOCS, KIND_GENERAL])
     .describe(
-      'The knowledge domain to search. Use "developer_docs" for questions about building apps on monday.com (SDK, CLI, OAuth, manifest, deployment, API). Use "general" for questions about using monday.com (features, automations, UI, help center, settings).',
+      'The knowledge domain to search. Use "developer_docs" for questions about the monday.com API — GraphQL queries and mutations, authentication, rate limits, webhooks, schema, and API best practices. Use "general" for questions about using monday.com — features, automations, UI, help center, and settings.',
     ),
 };
 
