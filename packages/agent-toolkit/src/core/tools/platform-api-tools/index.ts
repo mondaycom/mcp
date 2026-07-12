@@ -89,6 +89,7 @@ import { PublishWorkflowTool } from './workflow-builder-tools/publish-workflow/p
 import { ConfigureAiColumnTool } from './configure-ai-column-tool/configure-ai-column-tool';
 import { RemoveAiFromColumnTool } from './remove-ai-from-column-tool/remove-ai-from-column-tool';
 import { SendFeedbackTool } from './send-feedback-tool/send-feedback-tool';
+import { GetMondayKnowledgeTool } from './get-monday-knowledge/get-monday-knowledge';
 
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteItemTool,
@@ -188,6 +189,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   ConfigureAiColumnTool,
   RemoveAiFromColumnTool,
   SendFeedbackTool,
+  GetMondayKnowledgeTool,
 ];
 
 export * from './all-monday-api-tool';
@@ -275,5 +277,6 @@ export * from './dashboard-tools';
 export * from './configure-ai-column-tool/configure-ai-column-tool';
 export * from './remove-ai-from-column-tool/remove-ai-from-column-tool';
 export * from './send-feedback-tool/send-feedback-tool';
+export * from './get-monday-knowledge/get-monday-knowledge';
 // Monday Dev Tools
 export * from '../monday-dev-tools';
