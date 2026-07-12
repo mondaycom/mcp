@@ -12,7 +12,7 @@ export const getMondayKnowledgeSchema = {
   kind: z
     .enum([KIND_DEVELOPER_DOCS, KIND_GENERAL])
     .describe(
-      'The knowledge domain to search. Use "developer_docs" for questions about the monday.com API — GraphQL queries and mutations, authentication, rate limits, webhooks, schema, and API best practices. Use "general" for questions about using monday.com — features, automations, UI, help center, and settings.',
+      'The knowledge domain to search. Use "developer_docs" for questions about the monday.com API — GraphQL queries and mutations, authentication, rate limits, webhooks, schema, API best practices, and building apps. Use "general" for questions about using monday.com — features, automations, UI, help center, and settings.',
     ),
 };
 
@@ -59,7 +59,7 @@ export class GetMondayKnowledgeTool extends BaseMondayApiTool<typeof getMondayKn
     return `Ask a question about monday.com and get an AI-generated answer from the official knowledge base.
 
 Use kind="general" for questions about using monday.com — features, automations, UI, help center, and settings. Returns cited source articles with links.
-Use kind="developer_docs" for questions about building apps on monday.com — SDK, CLI, OAuth, manifest, deployment, and API reference.
+Use kind="developer_docs" for questions about the monday.com API — GraphQL queries and mutations, authentication, rate limits, webhooks, schema, API best practices, and building apps.
 
 The kind enum is extensible — more domains (e.g. marketplace, release_notes) may be added in future versions.`;
   }
