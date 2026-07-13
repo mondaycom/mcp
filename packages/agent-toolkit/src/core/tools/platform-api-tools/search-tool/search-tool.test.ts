@@ -57,6 +57,19 @@ describe('SearchTool', () => {
     ],
   };
 
+  const mockUpdatesResponseForNull: SearchUpdatesQuery = {
+    search: {
+      updates: {
+        results: [
+          {
+            id: '10',
+            indexed_data: { id: '10', body: 'Deploy is done', creator_id: '501', item_id: '901', board_id: '801' },
+          },
+        ],
+      },
+    },
+  };
+
   describe('Tool Metadata', () => {
     it('should have correct tool metadata', () => {
       const tool = new SearchTool(mocks.mockApiClient);
@@ -77,7 +90,7 @@ describe('SearchTool', () => {
       expect(description).toContain(
         'Supported searchType values: BOARD, DOCUMENTS, FOLDERS, WORKSPACES, UPDATES, ITEMS, TIMELINE_ITEMS, DASHBOARDS',
       );
-      expect(description).toContain('FOLDERS search requires workspaceIds');
+      expect(description).toContain('FOLDERS search returns id and title');
       expect(description).toContain('TIMELINE_ITEMS search returns id, title, summary, and content');
       expect(description).toContain(
         'DASHBOARDS search (also called "overviews") returns id and title',
@@ -87,7 +100,7 @@ describe('SearchTool', () => {
   });
 
   describe('Schema Validation', () => {
-    it('should reject missing searchType', async () => {
+    it('should reject missing searchType with an actionable message', async () => {
       const args: Partial<inputType> = {
         searchTerm: 'test',
       };
@@ -95,8 +108,8 @@ describe('SearchTool', () => {
       const result = await callToolByNameRawAsync('search', args);
 
       expect(result.content[0].text).toContain('Failed to execute tool search: Invalid arguments');
-      expect(result.content[0].text).toContain('searchType');
-      expect(result.content[0].text).toContain('Required');
+      expect(result.content[0].text).toContain('searchType is required');
+      expect(result.content[0].text).toContain('BOARD, DOCUMENTS, FOLDERS, WORKSPACES, UPDATES, ITEMS, TIMELINE_ITEMS');
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
 
@@ -126,28 +139,38 @@ describe('SearchTool', () => {
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
 
-    it('should reject empty string searchTerm', async () => {
-      const args: Partial<inputType> = {
+    it('should reject an empty searchTerm for BOARD search', async () => {
+      const args: inputType = {
         searchType: GlobalSearchType.BOARD,
         searchTerm: '',
       };
 
       const result = await callToolByNameRawAsync('search', args);
 
-      expect(result.content[0].text).toContain('Failed to execute tool search: Invalid arguments');
       expect(result.content[0].text).toContain('searchTerm must be a non-empty search string.');
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
 
-    it('should reject whitespace-only searchTerm', async () => {
-      const args: Partial<inputType> = {
+    it('should reject a whitespace-only searchTerm for BOARD search', async () => {
+      const args: inputType = {
         searchType: GlobalSearchType.BOARD,
         searchTerm: '   ',
       };
 
       const result = await callToolByNameRawAsync('search', args);
 
-      expect(result.content[0].text).toContain('Failed to execute tool search: Invalid arguments');
+      expect(result.content[0].text).toContain('searchTerm must be a non-empty search string.');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+
+    it('should reject a whitespace-only searchTerm for non-BOARD searches', async () => {
+      const args: inputType = {
+        searchType: GlobalSearchType.DOCUMENTS,
+        searchTerm: '   ',
+      };
+
+      const result = await callToolByNameRawAsync('search', args);
+
       expect(result.content[0].text).toContain('searchTerm must be a non-empty search string.');
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
@@ -201,7 +224,7 @@ describe('SearchTool', () => {
       expect(mocks.getMockRequest()).toHaveBeenCalled();
     });
 
-    it('should reject unsupported search type', async () => {
+    it('should reject unsupported search type with valid values listed', async () => {
       const args: Omit<inputType, 'searchType'> & { searchType: string } = {
         searchType: 'UNSUPPORTED_TYPE',
         searchTerm: 'test',
@@ -210,6 +233,53 @@ describe('SearchTool', () => {
       const result = await callToolByNameRawAsync('search', args);
 
       expect(result.content[0].text).toContain('Failed to execute tool search: Invalid arguments');
+      expect(result.content[0].text).toContain('Invalid searchType');
+      expect(result.content[0].text).toContain('BOARD, DOCUMENTS, FOLDERS, WORKSPACES, UPDATES, ITEMS, TIMELINE_ITEMS');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+
+    it('should redirect USERS searchType to list_users_and_teams', async () => {
+      const args = { searchType: 'USERS', searchTerm: 'test' } as any;
+
+      const result = await callToolByNameRawAsync('search', args);
+
+      expect(result.content[0].text).toContain('Invalid searchType');
+      expect(result.content[0].text).toContain('list_users_and_teams');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+
+    it('should redirect BOARD_ITEMS searchType to get_board_items_page', async () => {
+      const args = { searchType: 'BOARD_ITEMS', searchTerm: 'test' } as any;
+
+      const result = await callToolByNameRawAsync('search', args);
+
+      expect(result.content[0].text).toContain('Invalid searchType');
+      expect(result.content[0].text).toContain('get_board_items_page');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+
+    it('should redirect FORMS searchType with a not-searchable message', async () => {
+      const args = { searchType: 'FORMS', searchTerm: 'test' } as any;
+
+      const result = await callToolByNameRawAsync('search', args);
+
+      expect(result.content[0].text).toContain('Invalid searchType');
+      expect(result.content[0].text).toContain('Forms are not searchable');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+
+    it('should echo the raw searchType in the error, not the normalized form, while still redirecting', async () => {
+      const args = { searchType: 'board item', searchTerm: 'test' } as any;
+
+      const result = await callToolByNameRawAsync('search', args);
+
+      // The error must echo exactly what the caller sent ("board item") so an
+      // agent can correlate the failure with its own request, rather than the
+      // internal normalized form ("BOARD_ITEM") that preprocessing derives.
+      expect(result.content[0].text).toContain('board item');
+      expect(result.content[0].text).not.toContain('BOARD_ITEM');
+      // The redirect still fires because the lookup re-normalizes the raw value.
+      expect(result.content[0].text).toContain('get_board_items_page');
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
   });
@@ -731,20 +801,103 @@ describe('SearchTool', () => {
       });
     });
 
-    describe('Error Handling', () => {
-      it('should throw error when workspaceIds are not provided for folder search', async () => {
+    describe('Success Cases (workspace fallback)', () => {
+      it('should search folders across all workspaces when workspaceIds are omitted', async () => {
+        mocks.setResponse(mockFoldersResponse);
+
         const args: Partial<inputType> = {
           searchType: GlobalSearchType.FOLDERS,
-          searchTerm: 'Test',
+          searchTerm: 'Folder',
+        };
+
+        const parsedResult = await callToolByNameAsync('search', args as inputType);
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetFolders'), {
+          page: 1,
+          limit: 100,
+          workspace_ids: undefined,
+        });
+        expect(parsedResult.data).toBeDefined();
+      });
+
+      it('should search folders across all workspaces when workspaceIds is an empty array', async () => {
+        mocks.setResponse(mockFoldersResponse);
+
+        const args: inputType = {
+          searchType: GlobalSearchType.FOLDERS,
+          searchTerm: 'Folder',
+          workspaceIds: [],
+        };
+
+        await callToolByNameAsync('search', args);
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query GetFolders'),
+          expect.objectContaining({ workspace_ids: undefined }),
+        );
+      });
+    });
+
+    describe('Empty-normalized searchTerm', () => {
+      it('should return no results for a punctuation-only searchTerm instead of every folder', async () => {
+        mocks.setResponse(mockFoldersResponse);
+
+        const args: inputType = {
+          searchType: GlobalSearchType.FOLDERS,
+          searchTerm: '###',
+        };
+
+        const parsedResult = await callToolByNameAsync('search', args);
+
+        expect(parsedResult.data).toHaveLength(0);
+        expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+      });
+
+      it('should reject a whitespace-only searchTerm for folder search', async () => {
+        const args: inputType = {
+          searchType: GlobalSearchType.FOLDERS,
+          searchTerm: '   ',
         };
 
         const result = await callToolByNameRawAsync('search', args);
 
-        expect(result.content[0].text).toContain('Failed to execute tool search');
-        expect(result.content[0].text).toContain('Searching for folders require specifying workspace ids');
+        expect(result.content[0].text).toContain('searchTerm must be a non-empty search string.');
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
+    });
 
+    describe('Truncation signal', () => {
+      it('should flag truncated results when exactly MAX_FOLDERS_LIMIT folders are returned', async () => {
+        const foldersResponse: GetFoldersQuery = {
+          folders: Array.from({ length: 100 }, (_, i) => ({ id: `${i + 1}`, name: `Folder ${i + 1}` })),
+        };
+        mocks.setResponse(foldersResponse);
+
+        const args: inputType = {
+          searchType: GlobalSearchType.FOLDERS,
+          searchTerm: 'Folder',
+        };
+
+        const parsedResult = await callToolByNameAsync('search', args);
+
+        expect(parsedResult.message).toContain('truncated');
+      });
+
+      it('should not flag truncation when fewer than MAX_FOLDERS_LIMIT folders are returned', async () => {
+        mocks.setResponse(mockFoldersResponse);
+
+        const args: inputType = {
+          searchType: GlobalSearchType.FOLDERS,
+          searchTerm: 'Folder',
+        };
+
+        const parsedResult = await callToolByNameAsync('search', args);
+
+        expect(parsedResult.message).toBe('Search results');
+      });
+    });
+
+    describe('Error Handling', () => {
       it('should handle GraphQL error for folders', async () => {
         const errorMessage = 'GraphQL error: Failed to fetch folders';
         mocks.setError(errorMessage);
@@ -1536,6 +1689,80 @@ describe('SearchTool', () => {
         );
       });
 
+      it('should normalize "document" to DOCUMENTS and execute successfully', async () => {
+        mocks.setResponse(mockDevDocsResponse);
+
+        const args = {
+          searchType: 'document',
+          searchTerm: 'Document',
+        } as any;
+
+        const parsedResult = await callToolByNameAsync('search', args);
+
+        expect(parsedResult.data).toHaveLength(3);
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchDocs'),
+          expect.any(Object),
+          expect.any(Object),
+        );
+      });
+
+      it('should normalize "pulses" to ITEMS and execute successfully', async () => {
+        mocks.setResponse({
+          search: {
+            items: {
+              results: [
+                {
+                  id: '111',
+                  indexed_data: { id: '111', name: 'Item One', url: 'https://monday.com/boards/1/pulses/111' },
+                },
+              ],
+            },
+          },
+        });
+
+        const args = {
+          searchType: 'pulses',
+          searchTerm: 'Item',
+        } as any;
+
+        const parsedResult = await callToolByNameAsync('search', args);
+
+        expect(parsedResult.data).toHaveLength(1);
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchItems'),
+          expect.any(Object),
+          expect.any(Object),
+        );
+      });
+
+      it('should normalize separator/case variants like "Board Item" via redirect', async () => {
+        const args = { searchType: 'Board Item', searchTerm: 'test' } as any;
+
+        const result = await callToolByNameRawAsync('search', args);
+
+        expect(result.content[0].text).toContain('get_board_items_page');
+        expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+      });
+
+      it('should reject garbage searchType with trailing punctuation instead of matching a valid value', async () => {
+        const args = { searchType: 'board!!!', searchTerm: 'test' } as any;
+
+        const result = await callToolByNameRawAsync('search', args);
+
+        expect(result.content[0].text).toContain('Invalid searchType');
+        expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+      });
+
+      it('should reject garbage searchType with embedded non-ASCII characters instead of matching an alias', async () => {
+        const args = { searchType: 'itemé', searchTerm: 'test' } as any;
+
+        const result = await callToolByNameRawAsync('search', args);
+
+        expect(result.content[0].text).toContain('Invalid searchType');
+        expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+      });
+
       it('should normalize "timeline" to TIMELINE_ITEMS and execute successfully', async () => {
         mocks.setResponse({
           search: {
@@ -1637,6 +1864,210 @@ describe('SearchTool', () => {
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(
           expect.stringContaining('query SearchBoards'),
           expect.objectContaining({ limit: 5 }),
+          expect.any(Object),
+        );
+      });
+
+      it('should coerce a numeric-string limit and clamp it', async () => {
+        mocks.setResponse(mockDevBoardsResponse);
+
+        const args = {
+          searchType: GlobalSearchType.BOARD,
+          searchTerm: 'Test',
+          limit: '50',
+        } as any;
+
+        await callToolByNameAsync('search', args);
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchBoards'),
+          expect.objectContaining({ limit: 20 }),
+          expect.any(Object),
+        );
+      });
+
+      it('should clamp a zero or negative limit up to 1 instead of passing it through', async () => {
+        mocks.setResponse(mockDevBoardsResponse);
+
+        const args = {
+          searchType: GlobalSearchType.BOARD,
+          searchTerm: 'Test',
+          limit: -5,
+        } as any;
+
+        await callToolByNameAsync('search', args);
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchBoards'),
+          expect.objectContaining({ limit: 1 }),
+          expect.any(Object),
+        );
+      });
+
+      it('should truncate a fractional limit to an integer', async () => {
+        mocks.setResponse(mockDevBoardsResponse);
+
+        const args = {
+          searchType: GlobalSearchType.BOARD,
+          searchTerm: 'Test',
+          limit: 5.9,
+        } as any;
+
+        await callToolByNameAsync('search', args);
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchBoards'),
+          expect.objectContaining({ limit: 5 }),
+          expect.any(Object),
+        );
+      });
+
+      it('should reject a raw numeric Infinity limit instead of passing it through unclamped', async () => {
+        const args = {
+          searchType: GlobalSearchType.BOARD,
+          searchTerm: 'Test',
+          limit: Infinity,
+        } as any;
+
+        const result = await callToolByNameRawAsync('search', args);
+
+        expect(result.content[0].text).toContain('Failed to execute tool search: Invalid arguments');
+        expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+      });
+
+      it('should default a null limit to SEARCH_LIMIT instead of failing validation', async () => {
+        mocks.setResponse(mockDevBoardsResponse);
+
+        const args = {
+          searchType: GlobalSearchType.BOARD,
+          searchTerm: 'Test',
+          limit: null,
+        } as any;
+
+        await callToolByNameAsync('search', args);
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchBoards'),
+          expect.objectContaining({ limit: 20 }),
+          expect.any(Object),
+        );
+      });
+    });
+
+    describe('id array normalization', () => {
+      it('should wrap a scalar workspaceId into an array of numbers', async () => {
+        mocks.setResponse(mockDevBoardsResponse);
+
+        const args = {
+          searchType: GlobalSearchType.BOARD,
+          searchTerm: 'Test',
+          workspaceIds: 12345,
+        } as any;
+
+        await callToolByNameAsync('search', args);
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchBoards'),
+          expect.objectContaining({ workspaceIds: ['12345'] }),
+          expect.any(Object),
+        );
+      });
+
+      it('should coerce numeric-string ids into numbers', async () => {
+        mocks.setResponse(mockDevBoardsResponse);
+
+        const args = {
+          searchType: GlobalSearchType.BOARD,
+          searchTerm: 'Test',
+          workspaceIds: ['12345', '67890'],
+        } as any;
+
+        await callToolByNameAsync('search', args);
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchBoards'),
+          expect.objectContaining({ workspaceIds: ['12345', '67890'] }),
+          expect.any(Object),
+        );
+      });
+
+      it('should treat null id arrays as omitted', async () => {
+        mocks.setResponse(mockUpdatesResponseForNull);
+
+        const args = {
+          searchType: GlobalSearchType.UPDATES,
+          searchTerm: 'Deploy',
+          boardIds: null,
+          creatorIds: null,
+        } as any;
+
+        await callToolByNameAsync('search', args);
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchUpdates'),
+          expect.objectContaining({ boardIds: undefined, creatorIds: undefined }),
+          expect.any(Object),
+        );
+      });
+
+      it('should reject "Infinity" as a workspace id instead of coercing it', async () => {
+        const args = {
+          searchType: GlobalSearchType.BOARD,
+          searchTerm: 'Test',
+          workspaceIds: ['Infinity'],
+        } as any;
+
+        const result = await callToolByNameRawAsync('search', args);
+
+        expect(result.content[0].text).toContain('Failed to execute tool search: Invalid arguments');
+        expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+      });
+
+      it('should reject a raw numeric Infinity workspace id, not just the string form', async () => {
+        const args = {
+          searchType: GlobalSearchType.BOARD,
+          searchTerm: 'Test',
+          workspaceIds: [Infinity],
+        } as any;
+
+        const result = await callToolByNameRawAsync('search', args);
+
+        expect(result.content[0].text).toContain('Failed to execute tool search: Invalid arguments');
+        expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+      });
+
+      it('should coerce a hex-looking numeric string via Number() like any other numeric string', async () => {
+        mocks.setResponse(mockDevBoardsResponse);
+
+        const args = {
+          searchType: GlobalSearchType.BOARD,
+          searchTerm: 'Test',
+          workspaceIds: ['0x1A'],
+        } as any;
+
+        await callToolByNameAsync('search', args);
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchBoards'),
+          expect.objectContaining({ workspaceIds: ['26'] }),
+          expect.any(Object),
+        );
+      });
+
+      it('should treat an empty workspaceIds array as "no filter" for BOARD search, consistent with FOLDERS', async () => {
+        mocks.setResponse(mockDevBoardsResponse);
+
+        const args: inputType = {
+          searchType: GlobalSearchType.BOARD,
+          searchTerm: 'Test',
+          workspaceIds: [],
+        };
+
+        await callToolByNameAsync('search', args);
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchBoards'),
+          expect.objectContaining({ workspaceIds: undefined }),
           expect.any(Object),
         );
       });
