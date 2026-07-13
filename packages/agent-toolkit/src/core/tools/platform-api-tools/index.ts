@@ -83,6 +83,8 @@ import { CreateAutomationTool } from './automations-tools/create-automation/crea
 import { GetAutomationRunsTool } from './automations-tools/get-automation-runs/get-automation-runs-tool';
 import { GetAutomationStatisticsTool } from './automations-tools/get-automation-statistics/get-automation-statistics-tool';
 import { CreateWorkflowBuilderTool } from './workflow-builder-tools/create-workflow/create-workflow-tool';
+import { GetWorkflowTool } from './workflow-builder-tools/get-workflow/get-workflow-tool';
+import { ListWorkflowsTool } from './workflow-builder-tools/list-workflows/list-workflows-tool';
 import { UpdateWorkflowTool } from './workflow-builder-tools/update-workflow/update-workflow-tool';
 import { PlanWorkflowTool } from './workflow-builder-tools/plan-workflow/plan-workflow-tool';
 import { PublishWorkflowTool } from './workflow-builder-tools/publish-workflow/publish-workflow-tool';
@@ -180,6 +182,8 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   GetAutomationStatisticsTool,
   // Workflow Builder Tools
   CreateWorkflowBuilderTool,
+  GetWorkflowTool,
+  ListWorkflowsTool,
   // Cast: ctor signature (api, apiToken, context?) doesn't match BaseMondayApiToolConstructor.
   UpdateWorkflowTool as unknown as BaseMondayApiToolConstructor,
   PlanWorkflowTool as unknown as BaseMondayApiToolConstructor,
@@ -266,6 +270,8 @@ export * from './agents-tools';
 export * from './automations-tools';
 // Workflow Builder Tools
 export * from './workflow-builder-tools/create-workflow/create-workflow-tool';
+export * from './workflow-builder-tools/get-workflow/get-workflow-tool';
+export * from './workflow-builder-tools/list-workflows/list-workflows-tool';
 export * from './workflow-builder-tools/update-workflow/update-workflow-tool';
 export * from './workflow-builder-tools/plan-workflow/plan-workflow-tool';
 export * from './workflow-builder-tools/publish-workflow/publish-workflow-tool';
