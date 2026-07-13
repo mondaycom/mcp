@@ -30,7 +30,7 @@ import { normalizeString } from 'src/utils/string.utils';
 import { GlobalSearchType, SearchResult } from './search-tool.types';
 import { MAX_FOLDERS_LIMIT, SEARCH_LIMIT, SEARCH_TYPE_ALIASES } from './search-tool.consts';
 import { SEARCH_TIMEOUT } from 'src/utils/time.utils';
-import { rethrowWithContext, throwIfSearchTimeoutError } from 'src/utils/error.utils';
+import { rethrowWithContext, throwIfSearchTimeoutError, ToolValidationError, MISSING_WORKSPACE_IDS_CODE, TOOL_EXECUTION_FAILED_CODE } from 'src/utils/error.utils';
 
 export const searchSchema = {
   searchTerm: z
@@ -149,7 +149,10 @@ FOLDERS search requires workspaceIds and returns id and title.
       return this.searchTimelineItemsAsync(input.searchTerm, input.limit);
     }
 
-    throw new Error(`Unsupported search type for smart search: ${input.searchType}`);
+    throw new ToolValidationError(
+      `Unsupported search type for smart search: ${input.searchType}`,
+      TOOL_EXECUTION_FAILED_CODE,
+    );
   }
 
   private async searchBoardsAsync(query: string, limit: number, workspaceIds?: string[]): Promise<SearchResult[]> {
@@ -247,7 +250,10 @@ FOLDERS search requires workspaceIds and returns id and title.
     const workspaceIds = input.workspaceIds?.map((id) => id.toString()) ?? [];
 
     if (workspaceIds.length === 0) {
-      rethrowWithContext(new Error('Searching for folders require specifying workspace ids'), 'search folders');
+      throw new ToolValidationError(
+        'Searching for folders require specifying workspace ids',
+        MISSING_WORKSPACE_IDS_CODE,
+      );
     }
 
     const variables: GetFoldersQueryVariables = {
