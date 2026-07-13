@@ -34,6 +34,9 @@ export const SEARCH_TYPE_ALIASES: Record<string, GlobalSearchType> = {
   PULSES: GlobalSearchType.ITEMS,
   TIMELINE_ITEM: GlobalSearchType.TIMELINE_ITEMS,
   TIMELINE: GlobalSearchType.TIMELINE_ITEMS,
+  DASHBOARD: GlobalSearchType.DASHBOARDS,
+  OVERVIEW: GlobalSearchType.DASHBOARDS,
+  OVERVIEWS: GlobalSearchType.DASHBOARDS,
 };
 
 /**
@@ -68,6 +71,4 @@ export const SEARCH_TYPE_REDIRECTS: Record<string, string> = {
   GROUPS: 'To list groups within a board, use the get_board_info tool.',
   FORM: 'Forms are not searchable.',
   FORMS: 'Forms are not searchable.',
-  DASHBOARD: 'Dashboards are not searchable.',
-  DASHBOARDS: 'Dashboards are not searchable.',
 };

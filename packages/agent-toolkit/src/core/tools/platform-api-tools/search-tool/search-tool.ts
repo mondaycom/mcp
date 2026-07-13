@@ -10,6 +10,7 @@ import {
   searchUpdates,
   searchTimelineItems,
 } from './search-tool.graphql';
+import { searchOverviewsDev } from './search-tool.graphql.dev';
 import {
   GetFoldersQuery,
   GetFoldersQueryVariables,
@@ -26,6 +27,10 @@ import {
   SearchTimelineItemsQuery,
   SearchTimelineItemsQueryVariables,
 } from 'src/monday-graphql/generated/graphql/graphql';
+import {
+  SearchOverviewsDevQuery,
+  SearchOverviewsDevQueryVariables,
+} from 'src/monday-graphql/generated/graphql.dev/graphql';
 import { normalizeString } from 'src/utils/string.utils';
 import { GlobalSearchType, SearchResult } from './search-tool.types';
 import {
@@ -159,9 +164,9 @@ export const searchSchema = {
   searchType: searchTypeSchema,
   limit: limitSchema,
 
-  // for boards and docs
+  // for boards, docs, and dashboards
   workspaceIds: optionalIdArray(
-    'Array of workspace IDs (numbers) to search in. Optional for FOLDERS search (searches all accessible workspaces when omitted). For BOARD and DOCUMENTS search, only pass this if the user explicitly asked to search within specific workspaces. Example: [12345, 67890].',
+    'Array of workspace IDs (numbers) to search in. Optional for FOLDERS search (searches all accessible workspaces when omitted). For BOARD, DOCUMENTS, and DASHBOARDS search, only pass this if the user explicitly asked to search within specific workspaces. Example: [12345, 67890].',
   ),
 
   // for updates
@@ -169,7 +174,7 @@ export const searchSchema = {
     'Array of board IDs (numbers) to scope the search to. Only applies to UPDATES search, and only pass it if the user explicitly asked to search within specific boards. Example: [12345, 67890].',
   ),
   creatorIds: optionalIdArray(
-    'Array of user IDs (numbers) whose updates to search. Only applies to UPDATES search, and only pass it if the user explicitly asked to search updates by specific authors. Example: [12345, 67890].',
+    'Array of user IDs (numbers) whose items to search. Applies to UPDATES (filters by update author) and DASHBOARDS (filters by dashboard creator). Only pass it if the user explicitly asked to filter by specific creators. Example: [12345, 67890].',
   ),
 };
 
@@ -196,6 +201,7 @@ ITEMS search returns id, title, and url.
 WORKSPACES search returns id, title, and description.
 UPDATES search returns id, title (the update body), itemId, boardId, and creatorId. Optionally scope it with boardIds and/or creatorIds.
 TIMELINE_ITEMS search returns id, title, summary, and content.
+DASHBOARDS search (also called "overviews") returns id and title. Optionally scope it with workspaceIds and/or creatorIds.
 FOLDERS search returns id and title. Optionally scope it with workspaceIds, which searches all accessible workspaces when omitted. Pass workspaceIds to narrow the search if results may be truncated.
   `;
   }
@@ -249,6 +255,11 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
 
     if (input.searchType === GlobalSearchType.TIMELINE_ITEMS) {
       return this.searchTimelineItemsAsync(input.searchTerm, input.limit);
+    }
+
+    if (input.searchType === GlobalSearchType.DASHBOARDS) {
+      const creatorIds = input.creatorIds?.map((id) => id.toString());
+      return this.searchOverviewsAsync(input.searchTerm, input.limit, workspaceIds, creatorIds);
     }
 
     throw new Error(`Unsupported search type for smart search: ${input.searchType}`);
@@ -342,6 +353,26 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
       title: result.indexed_data.title,
       summary: result.indexed_data.summary || undefined,
       content: result.indexed_data.content || undefined,
+    }));
+  }
+
+  private async searchOverviewsAsync(
+    query: string,
+    limit: number,
+    workspaceIds?: string[],
+    creatorIds?: string[],
+  ): Promise<SearchResult[]> {
+    const variables: SearchOverviewsDevQueryVariables = { query, limit, workspaceIds, creatorIds };
+
+    // search.overviews is only available in the dev schema; drop versionOverride once promoted to stable.
+    const response = await this.mondayApi.request<SearchOverviewsDevQuery>(searchOverviewsDev, variables, {
+      versionOverride: 'dev',
+      timeout: SEARCH_TIMEOUT,
+    });
+
+    return response.search.overviews.results.map((result) => ({
+      id: result.indexed_data.id,
+      title: result.indexed_data.name,
     }));
   }
 
