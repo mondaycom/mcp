@@ -135,38 +135,28 @@ describe('SearchTool', () => {
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
 
-    it('should allow an empty searchTerm for BOARD search', async () => {
-      mocks.setResponse(mockDevBoardsResponse);
-
+    it('should reject an empty searchTerm for BOARD search', async () => {
       const args: inputType = {
         searchType: GlobalSearchType.BOARD,
         searchTerm: '',
       };
 
-      await callToolByNameAsync('search', args);
+      const result = await callToolByNameRawAsync('search', args);
 
-      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-        expect.stringContaining('query SearchBoards'),
-        expect.objectContaining({ query: '' }),
-        expect.anything(),
-      );
+      expect(result.content[0].text).toContain('searchTerm must be a non-empty search string.');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
 
-    it('should trim a whitespace-only BOARD searchTerm to an empty query', async () => {
-      mocks.setResponse(mockDevBoardsResponse);
-
+    it('should reject a whitespace-only searchTerm for BOARD search', async () => {
       const args: inputType = {
         searchType: GlobalSearchType.BOARD,
         searchTerm: '   ',
       };
 
-      await callToolByNameAsync('search', args);
+      const result = await callToolByNameRawAsync('search', args);
 
-      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-        expect.stringContaining('query SearchBoards'),
-        expect.objectContaining({ query: '' }),
-        expect.anything(),
-      );
+      expect(result.content[0].text).toContain('searchTerm must be a non-empty search string.');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
 
     it('should reject a whitespace-only searchTerm for non-BOARD searches', async () => {

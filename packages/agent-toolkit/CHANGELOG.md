@@ -15,7 +15,7 @@
 - Fixed: `limit`/`workspaceIds`/`boardIds`/`creatorIds` no longer accept `Infinity` (as a string or a raw numeric literal) — numeric coercion now goes through `z.coerce.number().finite()` instead of hand-rolled regex/`Number.isFinite` checks, so both forms are rejected consistently. Hex-like strings (e.g. `"0x1A"`) are still accepted and coerced to their numeric value, same as any other numeric string — no special-casing
 - Fixed: `searchType` normalization only collapses separators, so garbage input (e.g. `"board!!!"`) is rejected instead of silently matching a valid value
 - Empty `workspaceIds`/`boardIds`/`creatorIds` arrays are now treated as "no filter" consistently across all search types, matching FOLDERS
-- `searchTerm` is trimmed for every search type; BOARD searches accept an empty trimmed term, while other search types reject it with an actionable error
+- `searchTerm` is trimmed and validated as non-empty for every search type, including BOARD
 
 ## 5.56.1
 
