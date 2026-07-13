@@ -11,6 +11,7 @@ import {
   SearchUpdatesQuery,
   SearchTimelineItemsQuery,
 } from 'src/monday-graphql/generated/graphql/graphql';
+import { SearchOverviewsDevQuery } from 'src/monday-graphql/generated/graphql.dev/graphql';
 import { GlobalSearchType, SearchResult } from './search-tool.types';
 
 export type inputType = z.objectInputType<typeof searchSchema, ZodTypeAny>;
@@ -74,10 +75,13 @@ describe('SearchTool', () => {
 
       expect(description).toContain('Search within monday.com platform');
       expect(description).toContain(
-        'Supported searchType values: BOARD, DOCUMENTS, FOLDERS, WORKSPACES, UPDATES, ITEMS, TIMELINE_ITEMS',
+        'Supported searchType values: BOARD, DOCUMENTS, FOLDERS, WORKSPACES, UPDATES, ITEMS, TIMELINE_ITEMS, DASHBOARDS',
       );
       expect(description).toContain('FOLDERS search requires workspaceIds');
       expect(description).toContain('TIMELINE_ITEMS search returns id, title, summary, and content');
+      expect(description).toContain(
+        'DASHBOARDS search (also called "overviews") returns id and title',
+      );
       expect(description).not.toContain('IMPORTANT: ids returned by this tool are prefixed');
     });
   });
@@ -1265,6 +1269,131 @@ describe('SearchTool', () => {
       const args: inputType = {
         searchType: GlobalSearchType.TIMELINE_ITEMS,
         searchTerm: 'kickoff',
+      };
+
+      const result = await callToolByNameRawAsync('search', args);
+
+      expect(result.content[0].text).toContain('Failed to execute tool search');
+      expect(result.content[0].text).toContain(errorMessage);
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('Dashboards (Overviews) Search Handler', () => {
+    const mockOverviewsResponse: SearchOverviewsDevQuery = {
+      search: {
+        overviews: {
+          results: [
+            { id: '1', indexed_data: { id: '1', name: 'Team Dashboard' } },
+            { id: '2', indexed_data: { id: '2', name: 'My private dashboard' } },
+          ],
+        },
+      },
+    };
+
+    it('should search dashboards with searchTerm', async () => {
+      mocks.setResponse(mockOverviewsResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.DASHBOARDS,
+        searchTerm: 'dashboard',
+      };
+
+      const parsedResult = await callToolByNameAsync('search', args);
+
+      expect(parsedResult.data).toHaveLength(2);
+      expect(parsedResult.data[0]).toEqual({
+        id: '1',
+        title: 'Team Dashboard',
+      });
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchOverviewsDev'),
+        {
+          query: 'dashboard',
+          limit: 20,
+          workspaceIds: undefined,
+          creatorIds: undefined,
+        },
+        expect.objectContaining({ timeout: expect.any(Number), versionOverride: 'dev' }),
+      );
+    });
+
+    it('should pass workspaceIds as strings when provided', async () => {
+      mocks.setResponse(mockOverviewsResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.DASHBOARDS,
+        searchTerm: 'dashboard',
+        workspaceIds: [99, 100],
+      };
+
+      await callToolByNameAsync('search', args);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchOverviewsDev'),
+        expect.objectContaining({ workspaceIds: ['99', '100'] }),
+        expect.anything(),
+      );
+    });
+
+    it('should pass creatorIds as strings when provided', async () => {
+      mocks.setResponse(mockOverviewsResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.DASHBOARDS,
+        searchTerm: 'dashboard',
+        creatorIds: [42, 43],
+      };
+
+      await callToolByNameAsync('search', args);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchOverviewsDev'),
+        expect.objectContaining({ creatorIds: ['42', '43'] }),
+        expect.anything(),
+      );
+    });
+
+    it('should handle empty results', async () => {
+      mocks.setResponse({ search: { overviews: { results: [] } } });
+
+      const args: inputType = {
+        searchType: GlobalSearchType.DASHBOARDS,
+        searchTerm: 'NonExistent',
+      };
+
+      const parsedResult = await callToolByNameAsync('search', args);
+
+      expect(parsedResult.data).toHaveLength(0);
+    });
+
+    it.each(['dashboard', 'dashboards', 'overview', 'overviews'])(
+      'should normalize "%s" alias to DASHBOARDS and execute successfully',
+      async (alias) => {
+        mocks.setResponse(mockOverviewsResponse);
+
+        const parsedResult = await callToolByNameAsync('search', {
+          searchType: alias,
+          searchTerm: 'team',
+        });
+
+        expect(parsedResult.data).toHaveLength(2);
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchOverviewsDev'),
+          expect.anything(),
+          expect.anything(),
+        );
+      },
+    );
+
+    it('should not fall back when the request fails for dashboards', async () => {
+      const errorMessage = 'Search endpoint unavailable';
+      mocks.getMockRequest().mockRejectedValueOnce(new Error(errorMessage));
+
+      const args: inputType = {
+        searchType: GlobalSearchType.DASHBOARDS,
+        searchTerm: 'dashboard',
       };
 
       const result = await callToolByNameRawAsync('search', args);

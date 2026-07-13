@@ -19,6 +19,8 @@ export enum GlobalSearchType {
   UPDATES = 'UPDATES',
   ITEMS = 'ITEMS',
   TIMELINE_ITEMS = 'TIMELINE_ITEMS',
+  // "Dashboards" is the product-facing term; "overviews" is the internal/technical name (both accepted, see aliases).
+  DASHBOARDS = 'DASHBOARDS',
 
   // Why other types are not included:
   // FORMS = 'FORMS', // forms are not supported
