@@ -39,13 +39,22 @@ import {
 import { SEARCH_TIMEOUT } from 'src/utils/time.utils';
 import { throwIfSearchTimeoutError } from 'src/utils/error.utils';
 
-/** Map an alias/case/plural variant to a supported searchType, or pass the normalized value through. */
+const SUPPORTED_SEARCH_TYPES = new Set<string>(Object.values(GlobalSearchType));
+
+/**
+ * Map an alias/case/plural variant to a supported searchType. Only resolved
+ * (valid) values are normalized; anything that doesn't resolve is passed through
+ * untouched so the raw input reaches the enum's errorMap as `received` and the
+ * validation message can echo exactly what the caller sent (e.g. "board item"),
+ * rather than the internal normalized form ("BOARD_ITEM").
+ */
 function preprocessSearchType(val: unknown): unknown {
   if (typeof val !== 'string') {
     return val;
   }
   const normalized = normalizeSearchType(val);
-  return SEARCH_TYPE_ALIASES[normalized] ?? normalized;
+  const resolved = SEARCH_TYPE_ALIASES[normalized] ?? normalized;
+  return SUPPORTED_SEARCH_TYPES.has(resolved) ? resolved : val;
 }
 
 /**
@@ -62,7 +71,10 @@ function searchTypeErrorMap(issue: z.ZodIssueOptionalMessage, ctx: { defaultErro
     return { message: `searchType must be a string. Valid values: ${SUPPORTED_SEARCH_TYPES_TEXT}.` };
   }
 
-  // A concrete-but-unsupported value surfaces as invalid_enum_value with the actual value in `received`.
+  // A concrete-but-unsupported value surfaces as invalid_enum_value. `received`
+  // is the caller's raw input (preprocessSearchType passes unresolved values
+  // through), so it's echoed verbatim in the message; the redirect lookup
+  // re-normalizes it to match a known intent.
   if (issue.code === z.ZodIssueCode.invalid_enum_value) {
     const received = String(issue.received);
     const redirect = SEARCH_TYPE_REDIRECTS[normalizeSearchType(received)];

@@ -263,6 +263,21 @@ describe('SearchTool', () => {
       expect(result.content[0].text).toContain('Forms are not searchable');
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
+
+    it('should echo the raw searchType in the error, not the normalized form, while still redirecting', async () => {
+      const args = { searchType: 'board item', searchTerm: 'test' } as any;
+
+      const result = await callToolByNameRawAsync('search', args);
+
+      // The error must echo exactly what the caller sent ("board item") so an
+      // agent can correlate the failure with its own request, rather than the
+      // internal normalized form ("BOARD_ITEM") that preprocessing derives.
+      expect(result.content[0].text).toContain('board item');
+      expect(result.content[0].text).not.toContain('BOARD_ITEM');
+      // The redirect still fires because the lookup re-normalizes the raw value.
+      expect(result.content[0].text).toContain('get_board_items_page');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
   });
 
   describe('Board Search Handler', () => {
