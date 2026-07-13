@@ -34,7 +34,7 @@ export class GetWorkflowTool extends BaseMondayApiTool<typeof getWorkflowToolSch
 
 Use this to inspect a standalone, workspace-level workflow's definition — its title, description, active state, and steps. Workflows are cross-board, workspace-level objects, distinct from board automations (use list_automations for those).
 
-Returns a "workflows" array; each entry has: id, title, description, active, created_at, updated_at, and steps (each step has node_id, block_reference_id, title). IDs that don't resolve to a workflow are omitted from the result.
+Returns a "workflows" array where each entry has id, title, description, active, created_at, updated_at, and steps (each step has node_id, block_reference_id, and title). IDs that don't resolve to a workflow are omitted from the result.
 
 Note: if directing the user to a workflow in the UI, the correct URL path is custom_objects/ — e.g. {account}.monday.com/custom_objects/{id}.
 `;
