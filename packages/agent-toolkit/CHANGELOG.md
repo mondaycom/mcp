@@ -1,6 +1,6 @@
 # Changelog
 
-## 5.57.0
+## 5.58.1
 
 ### search — reduce validation failures (actionable errors, folder fallback, input coercion)
 
