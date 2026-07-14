@@ -3,6 +3,22 @@
 All notable changes to the `monday-crm` Claude plugin are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.4.0] — 2026-07-12
+
+### Added
+- **`run-sequence`** — manage CRM sequences end-to-end: list, create, enroll contacts, activate/deactivate, duplicate, and track analytics. Requires `get-board-sequences` to be healthy on the connector (currently under investigation — 100% error rate on external connector as of Jul 7–11).
+- **`log-activity`** — log calls, meetings, and notes to CRM item timelines; read activity history; update existing entries. Degrades gracefully to free-text notes if structured activity tools are unavailable.
+- **`automate-crm`** — create and manage board automations in natural language; no block IDs or technical knowledge required. Uses real Kremer account usage data to surface the most common CRM automation patterns.
+
+### Changed
+- Plugin description updated to mention sequences, activities, and automations.
+- Added keywords: `sequence`, `automation`, `activity`, `timeline`.
+
+### Fixed
+- `log-activity`: corrected v2 CRM tool names in `allowed-tools` from underscore to hyphen format (e.g., `get-timeline-items` not `get_timeline_items`).
+
+---
+
 ## [0.3.0] — 2026-06-14
 
 ### Changed
@@ -44,13 +60,6 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 - setup skill example (`01-first-time-connect.md`).
-- Rubric scoring JSONs for all 7 skills (`plugin/tests/rubric/`).
-- Trigger-phrase activation test stub (`plugin/tests/results/activation-2026-06-04.md`) — blocked on Claude API access.
-- Phase reports: `phase1-grounding-notes.md`, `phase3-tool-parity-report.md`.
-
-### Fixed
-- Cowork UI bug: added Anthropic reviewer note to test via CLI/desktop, not Cowork.
-- SUBMISSION.md: Cowork bug entry now includes reviewer-facing guidance.
 
 ---
 
@@ -64,7 +73,4 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **workspace-builder** — CRM board setup from a business description.
 - **meeting-to-deal** — NoteTaker meeting transcripts → deal recaps + stage signals.
 - Bundled monday MCP connector (`.mcp.json` → `https://mcp.monday.com/mcp`, OAuth).
-- `setup` skill for first-run connector guidance.
 - `defaultEnabled: false` — user opts in after connecting the monday MCP.
-- Trigger-prompt test CSVs for 6 operational skills.
-- Example walkthroughs for all 7 skills.
