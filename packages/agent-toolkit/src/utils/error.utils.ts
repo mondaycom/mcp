@@ -8,6 +8,17 @@ import { GraphQLErrorResponse, ToolErrorStructuredContent } from './graphql-erro
  * bucketing it as "unclassified".
  */
 export const INVALID_TOOL_ARGS_CODE = 'INVALID_TOOL_ARGS';
+export const TOOL_EXECUTION_FAILED_CODE = 'TOOL_EXECUTION_FAILED';
+export const GRAPHQL_ERROR_CODE = 'GRAPHQL_ERROR';
+export const INVALID_VARIABLES_JSON_CODE = 'INVALID_VARIABLES_JSON';
+export const GRAPHQL_VALIDATION_FAILED_CODE = 'GRAPHQL_VALIDATION_FAILED';
+export const GRAPHQL_SCHEMA_LOAD_FAILED_CODE = 'GRAPHQL_SCHEMA_LOAD_FAILED';
+export const INVALID_OPERATION_TYPE_CODE = 'INVALID_OPERATION_TYPE';
+export const SEARCH_TIMEOUT_CODE = 'SEARCH_TIMEOUT';
+export const MISSING_WORKSPACE_IDS_CODE = 'MISSING_WORKSPACE_IDS';
+export const UPSTREAM_HTTP_ERROR_CODE = 'UPSTREAM_HTTP_ERROR';
+export const EMPTY_API_RESPONSE_CODE = 'EMPTY_API_RESPONSE';
+export const MISSING_REQUIRED_PARAMETER_CODE = 'MISSING_REQUIRED_PARAMETER';
 
 export class ToolValidationError extends Error {
   readonly code: string;
@@ -41,12 +52,15 @@ export function rethrowWithContext(error: unknown, operation: string): never {
   }
 
   const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-  throw new Error(`Failed to ${operation}: ${errorMessage}`);
+  throw new ToolValidationError(`Failed to ${operation}: ${errorMessage}`, TOOL_EXECUTION_FAILED_CODE);
 }
 
 export function throwIfSearchTimeoutError(error: unknown): void {
   if (error instanceof Error && error.name === 'AbortError') {
-    throw new Error('Search has timed out, try providing alternative search term');
+    throw new ToolValidationError(
+      'Search has timed out, try providing alternative search term',
+      SEARCH_TIMEOUT_CODE,
+    );
   }
 }
 
@@ -101,6 +115,7 @@ export function buildToolErrorStructuredContent(
         message: entry.message,
         path: entry.path,
         ...(entry.extensions ?? {}),
+        code: (entry.extensions?.code as string | undefined) ?? GRAPHQL_ERROR_CODE,
       })),
     };
   }
@@ -108,5 +123,6 @@ export function buildToolErrorStructuredContent(
   return {
     message: rawMessage,
     tool: options?.toolName,
+    errors: [{ code: TOOL_EXECUTION_FAILED_CODE, message: rawMessage, path: [] }],
   };
 }

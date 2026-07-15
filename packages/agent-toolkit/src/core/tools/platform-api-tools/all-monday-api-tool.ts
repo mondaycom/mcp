@@ -13,7 +13,7 @@ import {
 import { ApiClient } from '@mondaydotcomorg/api';
 import { introspectionQuery } from '../../../monday-graphql';
 import { API_VERSION } from '../../../utils/version.utils';
-import { rethrowWithContext } from '../../../utils/error.utils';
+import { rethrowWithContext, ToolValidationError, INVALID_VARIABLES_JSON_CODE, GRAPHQL_VALIDATION_FAILED_CODE, GRAPHQL_SCHEMA_LOAD_FAILED_CODE } from '../../../utils/error.utils';
 
 export const allMondayApiToolSchema = {
   query: z.string().describe('Custom GraphQL query/mutation. you need to provide the full query / mutation'),
@@ -69,7 +69,10 @@ export class AllMondayApiTool extends BaseMondayApiTool<typeof allMondayApiToolS
 
       return schema;
     } catch (error) {
-      throw new Error(`Failed to load GraphQL schema: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new ToolValidationError(
+        `Failed to load GraphQL schema: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        GRAPHQL_SCHEMA_LOAD_FAILED_CODE,
+      );
     }
   }
 
@@ -129,7 +132,10 @@ export class AllMondayApiTool extends BaseMondayApiTool<typeof allMondayApiToolS
     try {
       parsedVariables = JSON.parse(variables);
     } catch (error) {
-      throw new Error(`Error parsing variables: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new ToolValidationError(
+        `Error parsing variables: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        INVALID_VARIABLES_JSON_CODE,
+      );
     }
 
     const documentAST = parse(query);
@@ -137,7 +143,7 @@ export class AllMondayApiTool extends BaseMondayApiTool<typeof allMondayApiToolS
 
     const validationErrors = await this.validateOperation(documentAST, this.context?.apiVersion ?? API_VERSION);
     if (validationErrors.length > 0) {
-      throw new Error(validationErrors.join(', '));
+      throw new ToolValidationError(validationErrors.join(', '), GRAPHQL_VALIDATION_FAILED_CODE);
     }
 
     try {

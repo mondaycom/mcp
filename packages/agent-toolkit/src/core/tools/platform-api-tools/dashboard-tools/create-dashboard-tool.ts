@@ -7,6 +7,7 @@ import {
 import { createDashboard } from './dashboard-queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+import { rethrowWithContext, ToolValidationError, EMPTY_API_RESPONSE_CODE } from '../../../../utils';
 
 export const createDashboardToolSchema = {
   name: z.string().min(1, 'Dashboard name is required').describe('Human-readable dashboard title (UTF-8 chars)'),
@@ -67,7 +68,7 @@ export class CreateDashboardTool extends BaseMondayApiTool<typeof createDashboar
 
       // Check if the dashboard was created successfully
       if (!res.create_dashboard) {
-        throw new Error('Failed to create dashboard');
+        throw new ToolValidationError('Failed to create dashboard', EMPTY_API_RESPONSE_CODE);
       }
 
       const dashboard = res.create_dashboard;
@@ -76,8 +77,7 @@ export class CreateDashboardTool extends BaseMondayApiTool<typeof createDashboar
         content: { message: `Dashboard ${dashboard.id} successfully created`, dashboard_id: dashboard.id, dashboard_name: dashboard.name },
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      throw new Error(`Failed to create dashboard: ${errorMessage}`);
+      rethrowWithContext(error, 'create dashboard');
     }
   }
 }
