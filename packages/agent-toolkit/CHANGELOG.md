@@ -1,5 +1,30 @@
 # Changelog
 
+## 5.58.1
+
+### search — reduce validation failures (actionable errors, folder fallback, input coercion)
+
+- `searchType` rejections now return an actionable message that lists the valid values and, when the value maps to a known intent, redirects to the right tool (e.g. `USERS` → `list_users_and_teams`, `BOARD_ITEMS` → `get_board_items_page`, `FORMS` → not searchable) so callers can self-correct on retry
+- `searchType` normalization now also collapses separators/casing (e.g. `"board item"`, `"BOARD-ITEM"`) and adds `DOCUMENT`, `PULSE`/`PULSES` aliases
+- FOLDERS search no longer errors when `workspaceIds` is omitted — it searches across all accessible workspaces
+- `limit` accepts numeric strings (coerced then clamped); `workspaceIds`/`boardIds`/`creatorIds` accept a scalar or numeric strings and treat `null` as omitted
+- Targets the top post-deploy validation-error buckets observed in production search logs
+- Fixed: a `searchTerm` that normalizes to an empty string (e.g. punctuation/emoji-only) no longer returns unfiltered folders
+- Fixed: FOLDERS search now reports when its 100-folder scan was truncated instead of silently dropping matches
+- Fixed: `limit` now enforces a lower bound (clamped to at least 1) and `null` correctly defaults instead of failing validation
+- Fixed: `limit`/`workspaceIds`/`boardIds`/`creatorIds` no longer accept `Infinity` (as a string or a raw numeric literal) — numeric coercion now goes through `z.coerce.number().finite()` instead of hand-rolled regex/`Number.isFinite` checks, so both forms are rejected consistently. Hex-like strings (e.g. `"0x1A"`) are still accepted and coerced to their numeric value, same as any other numeric string — no special-casing
+- Fixed: `searchType` normalization only collapses separators, so garbage input (e.g. `"board!!!"`) is rejected instead of silently matching a valid value
+- Empty `workspaceIds`/`boardIds`/`creatorIds` arrays are now treated as "no filter" consistently across all search types, matching FOLDERS
+- `searchTerm` is trimmed and validated as non-empty for every search type, including BOARD
+
+## 5.58.0
+
+### search — add DASHBOARDS (overviews) search type
+
+- Adds `DASHBOARDS` as a search type in the unified `search` tool (aliases: `dashboard`, `overview`, `overviews`), backed by the platform's `search { overviews }` endpoint
+- Returns `id` and `title`; optionally scoped by `workspaceIds` and/or `creatorIds`
+- `search.overviews` is only exposed in the `dev` API version, so the query lives in `search-tool.graphql.dev.ts` and pins `versionOverride: 'dev'` (same approach previously used for boards/docs). Move the query to `search-tool.graphql.ts` and drop the override once the field is promoted to a stable API version
+
 ## 5.56.1
 
 ### search — actionable error and whitespace handling for searchTerm
@@ -163,13 +188,16 @@ Five new tools enabling agents to create and manage monday.com platform agents e
 ### Workforms tools — options schema and description updates
 
 **`form_questions_editor` options schema:**
+
 - `value` (optional) — internal option identifier. Required when updating options already assigned to board items.
 - `visible` (optional) — whether the option is visible to respondents.
 
 **`update-form-tool` schema:**
+
 - `page_block_id` on question order entries — assign questions to page blocks during reorder.
 
 **Description improvements:**
+
 - `selectOptions`: added max limits (SingleSelect: 40, MultiSelect: 500) and PUT semantics clarification.
 - `pageBlockId`: clarified that passing `null` removes the page block association.
 - Added descriptions for `selectOptionsValue`, `selectOptionsVisible`, `blockType`, `insertAfterQuestionId`, `existingColumnId`, `labelLimitCount`, `labelLimitCountEnabled`, `defaultAnswer`.

@@ -14655,6 +14655,42 @@ type SearchIndexedTimelineItem {
   updated_at: ISO8601DateTime!
 }
 
+"Overview data stored in the search index."
+type SearchIndexedOverview {
+  "Overview ID."
+  id: ID!
+  "Overview name."
+  name: String!
+  "Overview kind (public or private)."
+  kind: String!
+  "Overview state (active, archived, or deleted)."
+  state: String!
+  "Workspace ID this overview belongs to."
+  workspace_id: ID
+  "ID of the user who created the overview."
+  created_by: ID
+  "Creation timestamp."
+  created_at: String
+  "Last update timestamp."
+  updated_at: String
+}
+
+"A single overview search result."
+type SearchOverviewResult {
+  "Unique identifier of the overview."
+  id: ID!
+  "Overview data from the search index."
+  indexed_data: SearchIndexedOverview!
+  "Live overview data via federation. Null when the referenced overview cannot be resolved by the owning subgraph (e.g. deleted, not accessible to the caller, or indexing lag)."
+  live_data: Overview
+}
+
+"Results of an overviews search."
+type SearchOverviewResults {
+  "List of overview search results."
+  results: [SearchOverviewResult!]!
+}
+
 "Update data stored in the search index."
 type SearchIndexedUpdate {
   "Update ID."
@@ -14771,6 +14807,15 @@ workspace_ids: [ID!],   "Filter timeline items to specific item IDs."
 item_ids: [ID!],   "Filter by timeline item type (e.g. email, googleCalendar)."
 type: TimelineItemKind,   "Filter by product kind (e.g. crm, service)."
 product_kind: TimelineItemProductKind): SearchTimelineItemResults!
+  "Search for overviews (dashboards)."
+  overviews(  "The search query string."
+query: String!,   "Maximum number of results to return (default 10, max 20)."
+limit: Int = 10,   "Date range filter."
+date_range: CrossEntityDateRangeInput,   "Controls the trade-off between search quality and response time. Defaults to balanced."
+strategy: SearchStrategy,   "Filter to overviews in specific workspaces."
+workspace_ids: [ID!],   "Filter overviews by kind (public or private)."
+kinds: [String!],   "Filter overviews to those created by specific user IDs."
+creator_ids: [ID!]): SearchOverviewResults!
 }
 
 "Controls the trade-off between search quality and response time."
