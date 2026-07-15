@@ -42,7 +42,7 @@ import {
   normalizeSearchType,
 } from './search-tool.consts';
 import { SEARCH_TIMEOUT } from 'src/utils/time.utils';
-import { throwIfSearchTimeoutError } from 'src/utils/error.utils';
+import { throwIfSearchTimeoutError, ToolValidationError, TOOL_EXECUTION_FAILED_CODE } from 'src/utils/error.utils';
 
 const SUPPORTED_SEARCH_TYPES = new Set<string>(Object.values(GlobalSearchType));
 
@@ -262,7 +262,10 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
       return this.searchOverviewsAsync(input.searchTerm, input.limit, workspaceIds, creatorIds);
     }
 
-    throw new Error(`Unsupported search type for smart search: ${input.searchType}`);
+    throw new ToolValidationError(
+      `Unsupported search type for smart search: ${input.searchType}`,
+      TOOL_EXECUTION_FAILED_CODE,
+    );
   }
 
   private async searchBoardsAsync(query: string, limit: number, workspaceIds?: string[]): Promise<SearchResult[]> {
