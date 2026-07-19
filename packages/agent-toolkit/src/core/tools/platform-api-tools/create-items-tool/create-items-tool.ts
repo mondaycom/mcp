@@ -125,10 +125,16 @@ export class CreateItemsTool extends BaseMondayApiTool<CreateItemsToolInput> {
       .map((r) => r._errorEntry);
 
     const results = raw.map(({ _errorEntry, ...rest }) => rest);
+    const total = raw.length;
     const failed = errors.length;
-    const summary = { total: raw.length, created: raw.length - failed, failed };
+    const isPartialSuccess = failed > 0 && failed < total;
 
-    const content: Record<string, unknown> = { board_id: boardId, summary, results };
+    const content: Record<string, unknown> = {
+      board_id: boardId,
+      summary: { total, created: total - failed, failed },
+      is_partial_success: isPartialSuccess,
+      results,
+    };
 
     if (errors.length) {
       content.errors = errors;
