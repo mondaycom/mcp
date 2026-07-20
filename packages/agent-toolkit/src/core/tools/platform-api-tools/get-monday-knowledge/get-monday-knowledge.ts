@@ -2,7 +2,8 @@ import { z } from 'zod';
 import { ToolInputType, ToolOutputType, ToolType } from 'src/core/tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { rethrowWithContext } from 'src/utils/error.utils';
-import { knowledgeBaseSearchQuery, askDeveloperDocsQuery } from './get-monday-knowledge.graphql';
+import { knowledgeBaseSearchQuery } from './knowledge-base-search.graphql';
+import { askDeveloperDocsQuery } from './ask-developer-docs.graphql';
 import {
   KnowledgeBaseSearchQuery,
   KnowledgeBaseSearchQueryVariables,
