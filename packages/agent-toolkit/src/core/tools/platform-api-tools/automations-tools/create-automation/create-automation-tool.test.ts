@@ -132,10 +132,12 @@ describe('CreateAutomationTool', () => {
       boardId: '12345',
     });
 
-    expect(result.content[0].text).toContain('Failed to create automation');
     expect(result.content[0].text).toContain('HTTP 400');
     expect(result.content[0].text).toContain('PROMPT_INVALID');
     expect(result.content[0].text).toContain('Bad prompt');
+    expect(result.structuredContent).toMatchObject({
+      errors: [{ code: 'UPSTREAM_HTTP_ERROR' }],
+    });
   });
 
   it('wraps network/timeout errors with operation context', async () => {

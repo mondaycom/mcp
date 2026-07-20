@@ -7,6 +7,10 @@ export const getBoardItemsPage = gql`
     url
     created_at
     updated_at
+    group @include(if: $includeGroup) {
+      id
+      title
+    }
     column_values(ids: $columnIds) @include(if: $includeColumns) {
       id
       type
@@ -47,6 +51,7 @@ export const getBoardItemsPage = gql`
     $queryParams: ItemsQuery
     $includeSubItems: Boolean!
     $includeDescription: Boolean!
+    $includeGroup: Boolean!
   ) {
     boards(ids: [$boardId]) {
       id

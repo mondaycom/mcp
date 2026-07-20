@@ -108,6 +108,7 @@ describe('GetBoardItemsPageTool', () => {
               url: 'https://monday.com/boards/123456789/pulses/item1',
               created_at: '2024-01-15T10:30:00Z',
               updated_at: '2024-01-16T14:20:00Z',
+              group: { id: 'topics', title: 'Live' },
             },
             {
               id: 'item2',
@@ -115,6 +116,7 @@ describe('GetBoardItemsPageTool', () => {
               url: 'https://monday.com/boards/123456789/pulses/item2',
               created_at: '2024-01-14T09:15:00Z',
               updated_at: '2024-01-15T16:45:00Z',
+              group: { id: 'planned', title: 'Planned' },
             },
           ],
           cursor: null,
@@ -152,6 +154,7 @@ describe('GetBoardItemsPageTool', () => {
         url: 'https://monday.com/boards/123456789/pulses/item1',
         created_at: '2024-01-15T10:30:00Z',
         updated_at: '2024-01-16T14:20:00Z',
+        group: { id: 'topics', title: 'Live' },
       });
       expect(parsedResult.items[1]).toEqual({
         id: 'item2',
@@ -159,6 +162,7 @@ describe('GetBoardItemsPageTool', () => {
         url: 'https://monday.com/boards/123456789/pulses/item2',
         created_at: '2024-01-14T09:15:00Z',
         updated_at: '2024-01-15T16:45:00Z',
+        group: { id: 'planned', title: 'Planned' },
       });
       expect(parsedResult.pagination.has_more).toBe(false);
       expect(parsedResult.pagination.nextCursor).toBeNull();
@@ -170,6 +174,7 @@ describe('GetBoardItemsPageTool', () => {
         includeColumns: false,
         includeSubItems: false,
         includeDescription: false,
+        includeGroup: true,
       });
     });
 
@@ -188,6 +193,7 @@ describe('GetBoardItemsPageTool', () => {
         includeColumns: false,
         includeSubItems: false,
         includeDescription: false,
+        includeGroup: true,
       });
     });
 
@@ -207,6 +213,7 @@ describe('GetBoardItemsPageTool', () => {
         includeColumns: false,
         includeSubItems: false,
         includeDescription: false,
+        includeGroup: true,
       });
     });
   });
@@ -242,6 +249,7 @@ describe('GetBoardItemsPageTool', () => {
         queryParams: undefined,
         includeSubItems: false,
         includeDescription: false,
+        includeGroup: true,
       });
     });
 
@@ -274,6 +282,7 @@ describe('GetBoardItemsPageTool', () => {
         columnIds: undefined,
         includeSubItems: false,
         includeDescription: false,
+        includeGroup: true,
         queryParams: {
           ids: undefined,
           operator: 'and',
@@ -397,6 +406,26 @@ describe('GetBoardItemsPageTool', () => {
   });
 
   describe('Column Values Functionality', () => {
+    it('should omit group when includeGroup is false', async () => {
+      mocks.setResponse(successfulResponseWithoutColumns);
+
+      const parsedResult = await callToolByNameAsync('get_board_items_page', {
+        boardId: 123456789,
+        includeGroup: false,
+      });
+
+      expect(parsedResult.items[0].group).toBeUndefined();
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetBoardItemsPage'), {
+        boardId: '123456789',
+        limit: 25,
+        cursor: undefined,
+        includeColumns: false,
+        includeSubItems: false,
+        includeDescription: false,
+        includeGroup: false,
+      });
+    });
+
     it('should include column values when includeColumns is true', async () => {
       mocks.setResponse(successfulResponseWithItems);
 
@@ -437,6 +466,7 @@ describe('GetBoardItemsPageTool', () => {
         includeColumns: true,
         includeSubItems: false,
         includeDescription: false,
+        includeGroup: true,
       });
     });
 
@@ -892,6 +922,7 @@ describe('GetBoardItemsPageTool', () => {
           includeColumns: false,
           includeSubItems: includeSubItems,
           includeDescription: false,
+          includeGroup: true,
         });
       },
     );
@@ -926,6 +957,7 @@ describe('GetBoardItemsPageTool', () => {
         includeColumns: false,
         includeSubItems: true,
         includeDescription: false,
+        includeGroup: true,
       });
     });
   });

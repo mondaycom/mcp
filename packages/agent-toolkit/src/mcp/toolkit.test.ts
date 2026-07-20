@@ -5,7 +5,7 @@ import { ApiClient } from '@mondaydotcomorg/api';
 import { getFilteredToolInstances } from '../utils/tools/tools-filtering.utils';
 import { ManageToolsTool } from '../core/tools/platform-api-tools/manage-tools-tool';
 import { z } from 'zod';
-import { API_VERSION } from 'src/utils';
+import { API_VERSION, TOOL_EXECUTION_FAILED_CODE } from 'src/utils';
 
 // Mock the ApiClient
 jest.mock('@mondaydotcomorg/api', () => ({
@@ -1031,7 +1031,11 @@ describe('MondayAgentToolkit', () => {
       const result = await tool.handler({ input: 'test' });
 
       expect(result).toEqual({
-        structuredContent: { message: 'Test error', tool: 'mcp-error-tool' },
+        structuredContent: {
+          message: 'Test error',
+          tool: 'mcp-error-tool',
+          errors: [{ code: TOOL_EXECUTION_FAILED_CODE, message: 'Test error', path: [] }],
+        },
         content: [{ type: 'text', text: 'Error: Test error' }],
         isError: true,
       });

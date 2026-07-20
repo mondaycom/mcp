@@ -2,7 +2,7 @@ import { ApiClient } from '@mondaydotcomorg/api';
 import { z } from 'zod';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../../tool';
 import { BaseMondayApiTool, MondayApiToolContext, createMondayApiAnnotations } from '../../base-monday-api-tool';
-import { rethrowWithContext } from '../../../../../utils';
+import { rethrowWithContext, ToolValidationError, UPSTREAM_HTTP_ERROR_CODE } from '../../../../../utils';
 import { LITE_BUILDER_AGENT_PATH, PLATFORM_AGENT_SERVICE_NAME, resolveMondayFetch } from '../../ai-agent.utils';
 
 const REQUEST_TIMEOUT_MS = 180_000;
@@ -125,7 +125,10 @@ Actions:
 
       if (!response.ok) {
         const body = await response.text().catch(() => '');
-        throw new Error(`lite-builder responded with HTTP ${response.status}${body ? `: ${body}` : ''}`);
+        throw new ToolValidationError(
+          `lite-builder responded with HTTP ${response.status}${body ? `: ${body}` : ''}`,
+          UPSTREAM_HTTP_ERROR_CODE,
+        );
       }
 
       const body = (await response.json()) as Record<string, unknown>;

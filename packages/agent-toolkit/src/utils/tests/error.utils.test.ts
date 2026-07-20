@@ -1,10 +1,25 @@
 import { GraphQLErrorResponse } from '../graphql-error.types';
-import { ToolValidationError, INVALID_TOOL_ARGS_CODE, buildToolErrorStructuredContent, formatToolError, isRateLimitError, rethrowWithContext } from '../error.utils';
+import {
+  ToolValidationError,
+  INVALID_TOOL_ARGS_CODE,
+  TOOL_EXECUTION_FAILED_CODE,
+  GRAPHQL_ERROR_CODE,
+  buildToolErrorStructuredContent,
+  formatToolError,
+  isRateLimitError,
+  rethrowWithContext,
+} from '../error.utils';
 
 const toToolkitError = (contentText: string): Error => {
   const message = contentText.startsWith('Error: ') ? contentText.slice('Error: '.length) : contentText;
   return new Error(message);
 };
+
+const unclassifiedFallback = (message: string, extra?: Record<string, unknown>) => ({
+  message,
+  errors: [{ code: TOOL_EXECUTION_FAILED_CODE, message, path: [] }],
+  ...extra,
+});
 
 describe('error.utils', () => {
   describe('rethrowWithContext', () => {
@@ -249,9 +264,7 @@ describe('error.utils', () => {
     const result = formatToolError(new Error('Test error'));
 
     expect(result.isError).toBe(true);
-    expect(result.structuredContent).toEqual({
-      message: 'Test error',
-    });
+    expect(result.structuredContent).toEqual(unclassifiedFallback('Test error'));
     expect(result.content).toEqual([{ type: 'text', text: 'Error: Test error' }]);
   });
 
@@ -262,7 +275,7 @@ describe('error.utils', () => {
 
     const result = formatToolError(error);
 
-    expect(result.structuredContent).toEqual({ message });
+    expect(result.structuredContent).toEqual(unclassifiedFallback(message));
     expect(result.content?.[0]?.text).toBe(`Error: ${message}`);
   });
 
@@ -343,10 +356,7 @@ describe('error.utils', () => {
   it('should include tool name in structured content', () => {
     const result = formatToolError(new Error('Test error'), { toolName: 'get_board_info' });
 
-    expect(result.structuredContent).toEqual({
-      message: 'Test error',
-      tool: 'get_board_info',
-    });
+    expect(result.structuredContent).toEqual(unclassifiedFallback('Test error', { tool: 'get_board_info' }));
     expect(result.content?.[0]?.text).toBe('Error: Test error');
   });
 
@@ -356,10 +366,7 @@ describe('error.utils', () => {
       errorPrefix: 'Failed to execute tool search: ',
     });
 
-    expect(result.structuredContent).toEqual({
-      message: 'Invalid arguments',
-      tool: 'search',
-    });
+    expect(result.structuredContent).toEqual(unclassifiedFallback('Invalid arguments', { tool: 'search' }));
     expect(result.content?.[0]?.text).toBe('Failed to execute tool search: Invalid arguments');
   });
 
@@ -369,7 +376,7 @@ describe('error.utils', () => {
       errorPrefix: 'Failed to execute tool form_questions_editor: ',
     });
 
-    expect(result.structuredContent).toEqual({ message });
+    expect(result.structuredContent).toEqual(unclassifiedFallback(message));
     expect(result.content?.[0]?.text).toBe(`Failed to execute tool form_questions_editor: ${message}`);
   });
 
@@ -494,7 +501,7 @@ describe('error.utils', () => {
 
         const result = formatToolError(toToolkitError(contentText));
 
-        expect(result.structuredContent).toEqual({ message: contentText.slice('Error: '.length) });
+        expect(result.structuredContent).toEqual(unclassifiedFallback(contentText.slice('Error: '.length)));
         expect(result.content?.[0]?.text).toBe(contentText);
       });
 
@@ -504,7 +511,7 @@ describe('error.utils', () => {
 
         const result = formatToolError(toToolkitError(contentText));
 
-        expect(result.structuredContent).toEqual({ message: contentText.slice('Error: '.length) });
+        expect(result.structuredContent).toEqual(unclassifiedFallback(contentText.slice('Error: '.length)));
         expect(result.content?.[0]?.text).toBe(contentText);
       });
 
@@ -514,7 +521,7 @@ describe('error.utils', () => {
 
         const result = formatToolError(toToolkitError(contentText));
 
-        expect(result.structuredContent).toEqual({ message: contentText.slice('Error: '.length) });
+        expect(result.structuredContent).toEqual(unclassifiedFallback(contentText.slice('Error: '.length)));
         expect(result.content?.[0]?.text).toBe(contentText);
       });
 
@@ -524,7 +531,7 @@ describe('error.utils', () => {
 
         const result = formatToolError(toToolkitError(contentText));
 
-        expect(result.structuredContent).toEqual({ message: contentText.slice('Error: '.length) });
+        expect(result.structuredContent).toEqual(unclassifiedFallback(contentText.slice('Error: '.length)));
         expect(result.content?.[0]?.text).toBe(contentText);
       });
 
@@ -534,7 +541,7 @@ describe('error.utils', () => {
 
         const result = formatToolError(toToolkitError(contentText));
 
-        expect(result.structuredContent).toEqual({ message: contentText.slice('Error: '.length) });
+        expect(result.structuredContent).toEqual(unclassifiedFallback(contentText.slice('Error: '.length)));
         expect(result.content?.[0]?.text).toBe(contentText);
       });
     });
@@ -559,10 +566,11 @@ describe('error.utils', () => {
 
         const result = formatToolError(toToolkitError(contentText));
 
-        expect(result.structuredContent).toEqual({
-          message:
+        expect(result.structuredContent).toEqual(
+          unclassifiedFallback(
             'Unknown argument "board_ids" on field "Mutation.create_item". Did you mean "board_id"?, Field "create_item" argument "board_id" of type "ID!" is required, but it was not provided.',
-        });
+          ),
+        );
         expect(result.content?.[0]?.text).toBe(contentText);
       });
 
@@ -571,9 +579,9 @@ describe('error.utils', () => {
 
         const result = formatToolError(toToolkitError(contentText));
 
-        expect(result.structuredContent).toEqual({
-          message: 'Cannot query field "thisFieldDoesNotExist" on type "Query".',
-        });
+        expect(result.structuredContent).toEqual(
+          unclassifiedFallback('Cannot query field "thisFieldDoesNotExist" on type "Query".'),
+        );
         expect(result.content?.[0]?.text).toBe(contentText);
       });
 
@@ -583,9 +591,11 @@ describe('error.utils', () => {
 
         const result = formatToolError(toToolkitError(contentText));
 
-        expect(result.structuredContent).toEqual({
-          message: 'Invalid columnValues JSON: Unexpected token \'o\', "not-valid-json" is not valid JSON',
-        });
+        expect(result.structuredContent).toEqual(
+          unclassifiedFallback(
+            'Invalid columnValues JSON: Unexpected token \'o\', "not-valid-json" is not valid JSON',
+          ),
+        );
         expect(result.content?.[0]?.text).toBe(contentText);
       });
     });
@@ -630,7 +640,7 @@ describe('error.utils', () => {
 
         const structured = buildToolErrorStructuredContent(toToolkitError(contentText));
 
-        expect(structured).toEqual({ message: contentText.slice('Error: '.length) });
+        expect(structured).toEqual(unclassifiedFallback(contentText.slice('Error: '.length)));
       });
 
       it('subgraph rate limit full blob', () => {
@@ -639,7 +649,7 @@ describe('error.utils', () => {
 
         const structured = buildToolErrorStructuredContent(toToolkitError(contentText));
 
-        expect(structured).toEqual({ message: contentText.slice('Error: '.length) });
+        expect(structured).toEqual(unclassifiedFallback(contentText.slice('Error: '.length)));
       });
 
       it('multiple graphql errors in one response', () => {
@@ -673,7 +683,7 @@ describe('error.utils', () => {
 
         const structured = buildToolErrorStructuredContent(toToolkitError(contentText));
 
-        expect(structured).toEqual({ message: contentText.slice('Error: '.length) });
+        expect(structured).toEqual(unclassifiedFallback(contentText.slice('Error: '.length)));
       });
 
       it('timeout integration payload (no graphql message)', () => {
@@ -682,7 +692,7 @@ describe('error.utils', () => {
 
         const structured = buildToolErrorStructuredContent(toToolkitError(contentText));
 
-        expect(structured).toEqual({ message: contentText.slice('Error: '.length) });
+        expect(structured).toEqual(unclassifiedFallback(contentText.slice('Error: '.length)));
       });
 
       it('request timeout staging payload (fixture §7 — with graphql message)', () => {
@@ -691,7 +701,7 @@ describe('error.utils', () => {
 
         const result = formatToolError(toToolkitError(contentText));
 
-        expect(result.structuredContent).toEqual({ message: contentText.slice('Error: '.length) });
+        expect(result.structuredContent).toEqual(unclassifiedFallback(contentText.slice('Error: '.length)));
         expect(result.content?.[0]?.text).toBe(contentText);
       });
 
@@ -701,7 +711,7 @@ describe('error.utils', () => {
 
         const structured = buildToolErrorStructuredContent(toToolkitError(contentText));
 
-        expect(structured).toEqual({ message: contentText.slice('Error: '.length) });
+        expect(structured).toEqual(unclassifiedFallback(contentText.slice('Error: '.length)));
       });
     });
   });

@@ -2,7 +2,9 @@ import { z } from 'zod';
 import { GetTypeDetailsQuery } from 'src/monday-graphql/generated/graphql/graphql';
 import { generateTypeDetailsQuery } from '../../../monday-graphql/queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
-import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
+import { BaseMondayApiTool, createMondayApiAnnotations, MondayApiToolContext } from './base-monday-api-tool';
+import { ApiClient } from '@mondaydotcomorg/api';
+import { withPublicSchemaHeader } from './utils/api-client.utils';
 
 export const getTypeDetailsToolSchema = {
   typeName: z.string().describe('The name of the GraphQL type to get details for'),
@@ -17,6 +19,10 @@ export class GetTypeDetailsTool extends BaseMondayApiTool<typeof getTypeDetailsT
     destructiveHint: false,
     idempotentHint: true,
   });
+
+  constructor(mondayApi: ApiClient | (() => ApiClient), context?: MondayApiToolContext) {
+    super(typeof mondayApi === 'function' ? () => withPublicSchemaHeader(mondayApi()) : withPublicSchemaHeader(mondayApi), context);
+  }
 
   getDescription(): string {
     return 'Get detailed information about a specific GraphQL type from the monday.com API schema';

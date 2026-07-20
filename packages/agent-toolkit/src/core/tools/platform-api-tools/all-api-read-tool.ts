@@ -3,6 +3,7 @@ import { AllMondayApiTool, allMondayApiToolSchema } from './all-monday-api-tool'
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { createMondayApiAnnotations, MondayApiToolContext } from './base-monday-api-tool';
 import { ApiClient } from '@mondaydotcomorg/api';
+import { ToolValidationError, INVALID_OPERATION_TYPE_CODE } from '../../../utils/error.utils';
 
 export class AllApiReadTool extends AllMondayApiTool {
   name = 'all_api_read';
@@ -29,7 +30,10 @@ export class AllApiReadTool extends AllMondayApiTool {
     const operation = getOperationAST(documentAST);
 
     if (operation?.operation === OperationTypeNode.MUTATION) {
-      throw new Error('all_api_read only accepts read queries. Mutations are not allowed.');
+      throw new ToolValidationError(
+        'all_api_read only accepts read queries. Mutations are not allowed.',
+        INVALID_OPERATION_TYPE_CODE,
+      );
     }
 
     return super.executeInternal(input);

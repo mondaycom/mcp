@@ -8,6 +8,7 @@ import {
 import { createWidget } from './dashboard-queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+import { rethrowWithContext, ToolValidationError, EMPTY_API_RESPONSE_CODE, MISSING_REQUIRED_PARAMETER_CODE } from '../../../../utils';
 export const createWidgetToolSchema = {
   parent_container_id: z.string().describe('ID of the parent container (dashboard ID or board view ID)'),
   parent_container_type: z.nativeEnum(WidgetParentKind).describe('Type of parent container: DASHBOARD or BOARD_VIEW'),
@@ -60,7 +61,7 @@ export class CreateWidgetTool extends BaseMondayApiTool<typeof createWidgetToolS
 
   protected async executeInternal(input: ToolInputType<typeof createWidgetToolSchema>): Promise<ToolOutputType<never>> {
     if (!input.settings) {
-      throw new Error('You must pass the settings parameter');
+      throw new ToolValidationError('You must pass the settings parameter', MISSING_REQUIRED_PARAMETER_CODE);
     }
 
     try {
@@ -80,7 +81,7 @@ export class CreateWidgetTool extends BaseMondayApiTool<typeof createWidgetToolS
 
       // Check if the widget was created successfully
       if (!res.create_widget) {
-        throw new Error('Failed to create widget');
+        throw new ToolValidationError('Failed to create widget', EMPTY_API_RESPONSE_CODE);
       }
 
       const widget = res.create_widget;
@@ -95,8 +96,7 @@ export class CreateWidgetTool extends BaseMondayApiTool<typeof createWidgetToolS
         content: { message: `Widget ${widget.id} created`, widget_id: widget.id, widget_name: widget.name, dashboard_id: widget.parent?.id },
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      throw new Error(`Failed to create ${input.widget_kind} widget: ${errorMessage}`);
+      rethrowWithContext(error, `create ${input.widget_kind} widget`);
     }
   }
 }
