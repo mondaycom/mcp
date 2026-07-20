@@ -1,8 +1,14 @@
 import { z } from 'zod';
 import { ToolInputType, ToolOutputType, ToolType } from 'src/core/tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { knowledgeBaseSearchQuery } from './get-monday-knowledge.graphql';
-import { appsDocumentationQuery } from '../../monday-apps-tools/app-development-assistant/get-app-development-context.graphql';
+import { rethrowWithContext } from 'src/utils/error.utils';
+import { knowledgeBaseSearchQuery, askDeveloperDocsQuery } from './get-monday-knowledge.graphql';
+import {
+  KnowledgeBaseSearchQuery,
+  KnowledgeBaseSearchQueryVariables,
+  AskDeveloperDocsQuery,
+  AskDeveloperDocsQueryVariables,
+} from 'src/monday-graphql/generated/graphql/graphql';
 
 const KIND_DEVELOPER_DOCS = 'developer_docs' as const;
 const KIND_GENERAL = 'general' as const;
@@ -15,29 +21,6 @@ export const getMondayKnowledgeSchema = {
       'The knowledge domain to search. Use "developer_docs" for questions about the monday.com API — GraphQL queries and mutations, authentication, rate limits, webhooks, schema, API best practices, and building apps. Use "general" for questions about using monday.com — features, automations, UI, help center, and settings.',
     ),
 };
-
-interface AskDeveloperDocsResponse {
-  ask_developer_docs: {
-    id?: string;
-    question?: string;
-    answer: string;
-    conversation_id?: string;
-  } | null;
-}
-
-interface KnowledgeBaseSearchResponse {
-  knowledge_base_search: {
-    answer?: string | null;
-    raw_snippets: Array<{
-      id: string;
-      title?: string | null;
-      text?: string | null;
-      url?: string | null;
-      distance?: number | null;
-      parent_id?: string | null;
-    }>;
-  } | null;
-}
 
 interface KnowledgeSource {
   title: string;
@@ -59,9 +42,7 @@ export class GetMondayKnowledgeTool extends BaseMondayApiTool<typeof getMondayKn
     return `Ask a question about monday.com and get an AI-generated answer from the official knowledge base.
 
 Use kind="general" for questions about using monday.com — features, automations, UI, help center, and settings. Returns cited source articles with links.
-Use kind="developer_docs" for questions about the monday.com API — GraphQL queries and mutations, authentication, rate limits, webhooks, schema, API best practices, and building apps.
-
-The kind enum is extensible — more domains (e.g. marketplace, release_notes) may be added in future versions.`;
+Use kind="developer_docs" for questions about the monday.com API — GraphQL queries and mutations, authentication, rate limits, webhooks, schema, API best practices, and building apps.`;
   }
 
   getInputSchema() {
@@ -78,14 +59,12 @@ The kind enum is extensible — more domains (e.g. marketplace, release_notes) m
   }
 
   private async queryGeneralKnowledge(query: string): Promise<ToolOutputType<never>> {
-    const response = await this.mondayApi.request<KnowledgeBaseSearchResponse>(knowledgeBaseSearchQuery, {
-      query,
-      limit: 5,
-    });
+    const variables: KnowledgeBaseSearchQueryVariables = { query };
+    const response = await this.mondayApi.request<KnowledgeBaseSearchQuery>(knowledgeBaseSearchQuery, variables);
 
     const result = response.knowledge_base_search;
     if (!result?.answer) {
-      throw new Error('No answer found in the knowledge base. Try rephrasing your question.');
+      rethrowWithContext(new Error('No answer found in the knowledge base. Try rephrasing your question.'), 'get_monday_knowledge');
     }
 
     const sources: KnowledgeSource[] = (result.raw_snippets ?? [])
@@ -106,11 +85,12 @@ The kind enum is extensible — more domains (e.g. marketplace, release_notes) m
   }
 
   private async queryDeveloperDocs(query: string): Promise<ToolOutputType<never>> {
-    const response = await this.mondayApi.request<AskDeveloperDocsResponse>(appsDocumentationQuery, { query });
+    const variables: AskDeveloperDocsQueryVariables = { query };
+    const response = await this.mondayApi.request<AskDeveloperDocsQuery>(askDeveloperDocsQuery, variables);
 
     const result = response.ask_developer_docs;
     if (!result?.answer) {
-      throw new Error('No answer found in developer docs. Try rephrasing your question.');
+      rethrowWithContext(new Error('No answer found in developer docs. Try rephrasing your question.'), 'get_monday_knowledge');
     }
 
     return {

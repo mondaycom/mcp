@@ -93,7 +93,7 @@ describe('GetMondayKnowledgeTool', () => {
       );
     });
 
-    it('passes query and limit=5 to the API', async () => {
+    it('passes only query to the API without explicit limit', async () => {
       mocks.setResponse({
         knowledge_base_search: { answer: 'answer', raw_snippets: [] },
       });
@@ -103,7 +103,7 @@ describe('GetMondayKnowledgeTool', () => {
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.stringContaining('knowledge_base_search'),
-        { query: 'what is a board?', limit: 5 },
+        { query: 'what is a board?' },
       );
     });
   });
