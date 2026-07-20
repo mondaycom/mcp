@@ -43,8 +43,17 @@ export class AllMondayApiTool extends BaseMondayApiTool<typeof allMondayApiToolS
   });
   private static schemaCache: Record<string, GraphQLSchema> = {};
 
-  constructor(mondayApi: ApiClient, context?: MondayApiToolContext) {
-    super(mondayApi, context);
+  constructor(mondayApi: ApiClient | (() => ApiClient), context?: MondayApiToolContext) {
+    const withPublicSchema = (client: ApiClient): ApiClient => {
+      const { token, defaultApiVersion, defaultEndpoint, requestConfig } = client as any;
+      return new ApiClient({
+        token,
+        apiVersion: defaultApiVersion,
+        endpoint: defaultEndpoint,
+        requestConfig: { ...requestConfig, headers: { ...requestConfig?.headers, 'x-api-schema': 'public' } },
+      });
+    };
+    super(typeof mondayApi === 'function' ? () => withPublicSchema(mondayApi()) : withPublicSchema(mondayApi), context);
   }
 
   getDescription(): string {
