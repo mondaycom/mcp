@@ -55,6 +55,7 @@ type GetBoardItemsPageResultItem = {
   created_at: any;
   updated_at: any;
   column_values?: Record<string, any>;
+  group?: { id: string; title: string };
   item_description?: { id?: string | null; blocks: Array<{ id: string; type?: string | null; content?: any }> };
   subitems?: GetBoardItemsPageResultItem[];
 };
@@ -85,7 +86,13 @@ export const getBoardItemsPageToolSchema = {
     ),
   includeColumns: z.boolean().optional().default(false).describe(`Whether to include column values in the response.
 PERFORMANCE OPTIMIZATION: Only set this to true when you actually need the column data. Excluding columns significantly reduces token usage and improves response latency. If you only need to count items, get item IDs/names, or check if items exist, keep this false.`),
-
+  includeGroup: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe(
+      `Whether to include each item's board group (id and title) in the response. Set to false to reduce token usage when group membership is not needed.`,
+    ),
   includeItemDescription: z
     .boolean()
     .optional()
@@ -186,6 +193,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
       columnIds: input.columnIds,
       includeSubItems: input.includeSubItems,
       includeDescription: input.includeItemDescription,
+      includeGroup: input.includeGroup,
     };
 
     if (canIncludeFilters && (input.itemIds || input.filters || input.orderBy)) {
@@ -261,6 +269,13 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
       for (const cv of item.column_values) {
         itemResult.column_values[cv.id] = this.getColumnValueData(cv);
       }
+    }
+
+    if (input.includeGroup && 'group' in item && item.group) {
+      itemResult.group = {
+        id: item.group.id,
+        title: item.group.title,
+      };
     }
 
     if (input.includeItemDescription && 'description' in item && item.description) {
