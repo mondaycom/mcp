@@ -14,6 +14,7 @@ import { ApiClient } from '@mondaydotcomorg/api';
 import { introspectionQuery } from '../../../monday-graphql';
 import { API_VERSION } from '../../../utils/version.utils';
 import { rethrowWithContext, ToolValidationError, INVALID_VARIABLES_JSON_CODE, GRAPHQL_VALIDATION_FAILED_CODE, GRAPHQL_SCHEMA_LOAD_FAILED_CODE } from '../../../utils/error.utils';
+import { withPublicSchemaHeader } from './utils/api-client.utils';
 
 export const allMondayApiToolSchema = {
   query: z.string().describe('Custom GraphQL query/mutation. you need to provide the full query / mutation'),
@@ -44,16 +45,7 @@ export class AllMondayApiTool extends BaseMondayApiTool<typeof allMondayApiToolS
   private static schemaCache: Record<string, GraphQLSchema> = {};
 
   constructor(mondayApi: ApiClient | (() => ApiClient), context?: MondayApiToolContext) {
-    const withPublicSchema = (client: ApiClient): ApiClient => {
-      const { token, defaultApiVersion, defaultEndpoint, requestConfig } = client as any;
-      return new ApiClient({
-        token,
-        apiVersion: defaultApiVersion,
-        endpoint: defaultEndpoint,
-        requestConfig: { ...requestConfig, headers: { ...requestConfig?.headers, 'x-api-schema': 'public' } },
-      });
-    };
-    super(typeof mondayApi === 'function' ? () => withPublicSchema(mondayApi()) : withPublicSchema(mondayApi), context);
+    super(typeof mondayApi === 'function' ? () => withPublicSchemaHeader(mondayApi()) : withPublicSchemaHeader(mondayApi), context);
   }
 
   getDescription(): string {
