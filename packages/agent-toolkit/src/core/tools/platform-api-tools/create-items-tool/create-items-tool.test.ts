@@ -44,6 +44,7 @@ describe('Create Items Tool Behaviour', () => {
       const c = result.content as any;
       expect(c.board_id).toBe(456);
       expect(c.summary).toEqual({ total: 3, created: 3, failed: 0 });
+      expect(c.is_partial_success).toBe(false);
       expect(c.results).toEqual([
         expect.objectContaining({ index: 0, item_id: '1', item_name: 'A', board_id: 456 }),
         expect.objectContaining({ index: 1, item_id: '2', item_name: 'B', board_id: 456 }),
@@ -100,6 +101,7 @@ describe('Create Items Tool Behaviour', () => {
 
       const c = result.content as any;
       expect(c.summary).toEqual({ total: 3, created: 2, failed: 1 });
+      expect(c.is_partial_success).toBe(true);
       expect(c.results).toHaveLength(3);
       expect(c.results[0]).toMatchObject({ index: 0, item_id: '1' });
       expect(c.results[1]).toMatchObject({ index: 1 });
@@ -361,11 +363,9 @@ describe('Create Items Tool Behaviour', () => {
       const result = await resultPromise;
       const c = result.content as any;
 
-      expect(c.summary).toEqual({
-        total,
-        created: CONCURRENCY_LIMIT - 1,
-        failed: total - (CONCURRENCY_LIMIT - 1),
-      });
+      expect(c.results).toHaveLength(total);
+      const failedCount = c.results.filter((r: any) => r.error !== undefined).length;
+      expect(failedCount).toBe(total - (CONCURRENCY_LIMIT - 1));
 
       for (let i = 0; i < CONCURRENCY_LIMIT; i++) {
         if (i === failedIndex) {

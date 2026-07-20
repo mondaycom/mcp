@@ -6,7 +6,7 @@ import {
 import { changeItemColumnValues } from '../../../monday-graphql/queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
-import { ToolValidationError } from '../../../utils';
+import { ToolValidationError, rethrowWithContext } from '../../../utils';
 
 export const changeItemColumnValuesToolSchema = {
   itemId: z.number().describe('The ID of the item to be updated'),
@@ -44,8 +44,10 @@ export class ChangeItemColumnValuesTool extends BaseMondayApiTool<ChangeItemColu
 
   getDescription(): string {
     return (
-      'Change the column values of an item in a monday.com board. ' +
-      '[REQUIRED PRECONDITION]: For board-relation linking tasks, call link_board_items_workflow before using this tool.'
+      '[IMPORTANT] If you need to update multiple items in one call, use change_items_column_values instead of calling this tool in a loop. ' +
+      'Otherwise: change the column values of a single item in a monday.com board. ' +
+      "[REQUIRED PRECONDITION]: Before using this tool, if new columns were added to the board or if you are not familiar with the board's structure (column IDs, column types, status labels, etc.), first use get_board_info to understand the board metadata. This is essential for constructing valid column values. " +
+      'For board-relation linking tasks, call link_board_items_workflow before using this tool.'
     );
   }
 
@@ -71,9 +73,9 @@ export class ChangeItemColumnValuesTool extends BaseMondayApiTool<ChangeItemColu
       }),
     };
 
-    let changedColumnIds: string[];
+    let parsedColumnValues: unknown;
     try {
-      changedColumnIds = Object.keys(JSON.parse(input.columnValues));
+      parsedColumnValues = JSON.parse(input.columnValues);
     } catch (e) {
       throw new ToolValidationError(
         `Invalid columnValues JSON: ${(e as Error).message}`,
@@ -81,10 +83,24 @@ export class ChangeItemColumnValuesTool extends BaseMondayApiTool<ChangeItemColu
       );
     }
 
-    const res = await this.mondayApi.request<ChangeItemColumnValuesMutation>(changeItemColumnValues, {
-      ...variables,
-      columnIds: changedColumnIds,
-    });
+    if (parsedColumnValues === null || typeof parsedColumnValues !== 'object' || Array.isArray(parsedColumnValues)) {
+      throw new ToolValidationError(
+        'Invalid columnValues JSON: expected a JSON object keyed by column id',
+        'INVALID_COLUMN_VALUES_JSON',
+      );
+    }
+
+    const changedColumnIds = Object.keys(parsedColumnValues as Record<string, unknown>);
+
+    let res: ChangeItemColumnValuesMutation;
+    try {
+      res = await this.mondayApi.request<ChangeItemColumnValuesMutation>(changeItemColumnValues, {
+        ...variables,
+        columnIds: changedColumnIds,
+      });
+    } catch (error) {
+      rethrowWithContext(error, 'change column values');
+    }
 
     const updatedColumnValues = res.change_multiple_column_values?.column_values?.reduce(
       (acc: Record<string, string | null>, cv) => {
