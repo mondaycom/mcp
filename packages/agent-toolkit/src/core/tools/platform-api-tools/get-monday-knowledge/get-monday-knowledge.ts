@@ -70,6 +70,10 @@ Important: do not include PII data in the questions.`;
       rethrowWithContext(new Error('No answer found in the knowledge base. Try rephrasing your question.'), 'get_monday_knowledge');
     }
 
+    this.sessionContext.metadata ??= {};
+    this.sessionContext.metadata.query = query;
+    this.sessionContext.metadata.answer = result.answer;
+
     const sources: KnowledgeSource[] = (result.raw_snippets ?? [])
       .filter((s) => s.url && s.title)
       .map((s) => ({
@@ -95,6 +99,10 @@ Important: do not include PII data in the questions.`;
     if (!result?.answer) {
       rethrowWithContext(new Error('No answer found in developer docs. Try rephrasing your question.'), 'get_monday_knowledge');
     }
+
+    this.sessionContext.metadata ??= {};
+    this.sessionContext.metadata.query = query;
+    this.sessionContext.metadata.answer = result.answer;
 
     return {
       content: {
