@@ -43,7 +43,9 @@ export class GetMondayKnowledgeTool extends BaseMondayApiTool<typeof getMondayKn
     return `Ask a question about monday.com and get an AI-generated answer from the official knowledge base.
 
 Use kind="general" for questions about using monday.com — features, automations, UI, help center, and settings. Returns cited source articles with links.
-Use kind="developer_docs" for questions about the monday.com API — GraphQL queries and mutations, authentication, rate limits, webhooks, schema, API best practices, and building apps.`;
+Use kind="developer_docs" for questions about the monday.com API — GraphQL queries and mutations, authentication, rate limits, webhooks, schema, API best practices, and building apps.
+
+Important: do not include PII data in the questions.`;
   }
 
   getInputSchema() {
