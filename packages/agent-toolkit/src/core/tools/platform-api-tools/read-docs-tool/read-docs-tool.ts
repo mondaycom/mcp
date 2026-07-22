@@ -68,7 +68,7 @@ type CommentAnchorMap = Map<string, CommentAnchor>;
 const CONTENT_MODE = 'content' as const;
 const VERSION_HISTORY_MODE = 'version_history' as const;
 
-const QueryByIdEnum = z.enum(['ids', 'object_ids', 'workspace_ids']);
+const QueryByIdEnum = z.enum(['ids', 'object_ids', 'workspace_ids', 'item_column']);
 
 const MAX_DIFF_POINTS = 10;
 
@@ -131,6 +131,19 @@ export const readDocsToolSchema = {
       'Maximum number of comments (updates) to fetch per item when include_comments is true. Defaults to 50. Only used in content mode.',
     ),
 
+  item_id: z
+    .string()
+    .optional()
+    .describe(
+      'The ID of the item that contains the doc column. Required when type is "item_column".',
+    ),
+  column_id: z
+    .string()
+    .optional()
+    .describe(
+      'The column ID of the doc column on the item. Required when type is "item_column".',
+    ),
+
   // --- version_history mode fields ---
   version_history_limit: z
     .number()
@@ -173,9 +186,10 @@ export class ReadDocsTool extends BaseMondayApiTool<typeof readDocsToolSchema> {
     return `Get information about monday.com documents. Supports two modes:
 
 MODE: "content" (default) — Fetch documents with their full markdown content.
-- Requires: type ("ids" | "object_ids" | "workspace_ids") and ids array
+- Requires: type ("ids" | "object_ids" | "workspace_ids" | "item_column")
+- type "item_column": pass item_id and column_id to read a doc attached to a board item via a doc column (use when docs() by id returns empty).
+- type "ids" / "object_ids" / "workspace_ids": pass ids array. If type "ids" returns no results, automatically retries with object_ids.
 - Supports pagination via page/limit. Check has_more_pages in response.
-- If type "ids" returns no results, automatically retries with object_ids.
 - Set include_blocks: true to include block IDs, types, and positions in the response — required before calling update_doc.
 - Blocks default to 25 per page. Use blocks_limit and blocks_page to paginate through long documents.
 - Set include_comments: true to fetch all comments and replies on the document. Each comment is enriched with anchor info (block_id, selection_from, selection_length) indicating which block and text range it's attached to. Use comments_limit to control how many comments per item (default 50).
@@ -204,8 +218,15 @@ MODE: "version_history" — Fetch the edit history of a single document.
 
   private async executeContent(input: ToolInputType<typeof readDocsToolSchema>): Promise<ToolOutputType<never>> {
     try {
-      if (!input.type || !input.ids || input.ids.length === 0) {
-        return { content: 'Error: type and ids are required when mode is "content".' };
+      if (!input.type) {
+        return { content: 'Error: type is required when mode is "content".' };
+      }
+      if (input.type === 'item_column') {
+        if (!input.item_id || !input.column_id) {
+          return { content: 'Error: item_id and column_id are required when type is "item_column".' };
+        }
+      } else if (!input.ids || input.ids.length === 0) {
+        return { content: 'Error: ids is required when mode is "content" for type "ids", "object_ids", or "workspace_ids".' };
       }
 
       this.sessionContext.metadata = {
@@ -229,9 +250,18 @@ MODE: "version_history" — Fetch the edit history of a single document.
         case 'workspace_ids':
           workspace_ids = input.ids;
           break;
+        case 'item_column':
+          // item_id and column_id are wired into variables below; no ids needed
+          break;
       }
 
-      type ReadDocsVariables = ReadDocsQueryVariables & { includeBlocks: boolean; blocksLimit?: number; blocksPage?: number };
+      type ReadDocsVariables = ReadDocsQueryVariables & {
+        includeBlocks: boolean;
+        blocksLimit?: number;
+        blocksPage?: number;
+        item_id?: string;
+        column_id?: string;
+      };
 
       const includeBlocks = input.include_blocks ?? false;
       const blocksPagination = includeBlocks ? { blocksLimit: input.blocks_limit, blocksPage: input.blocks_page } : {};
@@ -244,11 +274,15 @@ MODE: "version_history" — Fetch the edit history of a single document.
         workspace_ids,
         includeBlocks,
         ...blocksPagination,
+        ...(input.type === 'item_column' && {
+          item_id: input.item_id,
+          column_id: input.column_id,
+        }),
       };
 
       let res = await this.mondayApi.request<ReadDocsQuery>(readDocs, variables);
 
-      if ((!res.docs || res.docs.length === 0) && ids) {
+      if ((!res.docs || res.docs.length === 0) && ids && input.type !== 'item_column') {
         const fallbackVariables: ReadDocsVariables = {
           ids: undefined,
           object_ids: ids,
