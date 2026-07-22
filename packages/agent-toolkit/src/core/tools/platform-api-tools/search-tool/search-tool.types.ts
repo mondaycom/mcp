@@ -8,6 +8,7 @@ export interface SearchResult {
   // updates
   itemId?: string;
   boardId?: string;
+  workspaceId?: string;
   creatorId?: string;
 }
 

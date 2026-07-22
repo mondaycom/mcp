@@ -90,6 +90,7 @@ describe('SearchTool', () => {
       expect(description).toContain(
         'Supported searchType values: BOARD, DOCUMENTS, FOLDERS, WORKSPACES, UPDATES, ITEMS, TIMELINE_ITEMS, DASHBOARDS',
       );
+      expect(description).toContain('ITEMS search returns id, title, url, boardId, and workspaceId');
       expect(description).toContain('FOLDERS search returns id and title');
       expect(description).toContain('TIMELINE_ITEMS search returns id, title, summary, and content');
       expect(description).toContain(
@@ -923,11 +924,23 @@ describe('SearchTool', () => {
           results: [
             {
               id: '111',
-              indexed_data: { id: '111', name: 'Item One', url: 'https://monday.com/boards/1/pulses/111' },
+              indexed_data: {
+                id: '111',
+                name: 'Item One',
+                url: 'https://monday.com/boards/1/pulses/111',
+                board_id: '801',
+                workspace_id: '101',
+              },
             },
             {
               id: '222',
-              indexed_data: { id: '222', name: 'Item Two', url: 'https://monday.com/boards/1/pulses/222' },
+              indexed_data: {
+                id: '222',
+                name: 'Item Two',
+                url: 'https://monday.com/boards/1/pulses/222',
+                board_id: null,
+                workspace_id: null,
+              },
             },
           ],
         },
@@ -949,6 +962,8 @@ describe('SearchTool', () => {
         id: '111',
         title: 'Item One',
         url: 'https://monday.com/boards/1/pulses/111',
+        boardId: '801',
+        workspaceId: '101',
       });
       expect(parsedResult.data[1]).toEqual({
         id: '222',

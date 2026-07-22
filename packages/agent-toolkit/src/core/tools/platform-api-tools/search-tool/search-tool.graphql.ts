@@ -19,6 +19,8 @@ export const searchItems = gql`
             id
             name
             url
+            board_id
+            workspace_id
           }
         }
       }

@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.61.3
+
+### search — propagate boardId and workspaceId for ITEMS
+
+- ITEMS search now returns `boardId` and `workspaceId` for each result (queried from the search index's `board_id`/`workspace_id`), so callers can locate an item's board and workspace without a follow-up lookup
+- Both fields are optional — omitted when the search index has no value for them
+- Updated the tool description to list the new fields
+
 ## 5.58.1
 
 ### search — reduce validation failures (actionable errors, folder fallback, input coercion)

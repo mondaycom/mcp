@@ -197,7 +197,7 @@ For account-level info (plan, member count, products), use get_user_context tool
 For browsing all boards, docs, or folders within a workspace without a search term, use workspace_info tool.
 For groups, use get_board_info tool.
 For listing items within a specific board, use get_board_items_page tool. ITEMS search here queries items across the account.
-ITEMS search returns id, title, and url.
+ITEMS search returns id, title, url, boardId, and workspaceId.
 WORKSPACES search returns id, title, and description.
 UPDATES search returns id, title (the update body), itemId, boardId, and creatorId. Optionally scope it with boardIds and/or creatorIds.
 TIMELINE_ITEMS search returns id, title, summary, and content.
@@ -341,6 +341,8 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
       id: result.indexed_data.id,
       title: result.indexed_data.name,
       url: result.indexed_data.url,
+      boardId: result.indexed_data.board_id ?? undefined,
+      workspaceId: result.indexed_data.workspace_id ?? undefined,
     }));
   }
 
