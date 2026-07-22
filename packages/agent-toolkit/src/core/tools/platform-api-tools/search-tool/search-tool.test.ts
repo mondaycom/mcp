@@ -90,11 +90,13 @@ describe('SearchTool', () => {
       expect(description).toContain(
         'Supported searchType values: BOARD, DOCUMENTS, FOLDERS, WORKSPACES, UPDATES, ITEMS, TIMELINE_ITEMS, DASHBOARDS',
       );
+      expect(description).toContain('BOARD search returns id, title, url, and workspaceId');
+      expect(description).toContain('DOCUMENTS search returns id, title, and workspaceId');
       expect(description).toContain('ITEMS search returns id, title, url, boardId, and workspaceId');
       expect(description).toContain('FOLDERS search returns id and title');
-      expect(description).toContain('TIMELINE_ITEMS search returns id, title, summary, and content');
+      expect(description).toContain('TIMELINE_ITEMS search returns id, title, summary, content, itemId, and boardId');
       expect(description).toContain(
-        'DASHBOARDS search (also called "overviews") returns id and title',
+        'DASHBOARDS search (also called "overviews") returns id, title, and workspaceId',
       );
       expect(description).not.toContain('IMPORTANT: ids returned by this tool are prefixed');
     });
@@ -320,6 +322,48 @@ describe('SearchTool', () => {
         );
       });
 
+      it('should propagate workspaceId when present, and omit it when the index has none', async () => {
+        mocks.setResponse({
+          search: {
+            boards: {
+              results: [
+                {
+                  id: '123',
+                  indexed_data: {
+                    id: '123',
+                    name: 'Test Board 1',
+                    url: 'https://monday.com/boards/123',
+                    workspace_id: '9001',
+                  },
+                },
+                {
+                  id: '456',
+                  indexed_data: {
+                    id: '456',
+                    name: 'Test Board 2',
+                    url: 'https://monday.com/boards/456',
+                    workspace_id: null,
+                  },
+                },
+              ],
+            },
+          },
+        });
+
+        const parsedResult = await callToolByNameAsync('search', {
+          searchType: GlobalSearchType.BOARD,
+          searchTerm: 'Test',
+        });
+
+        expect(parsedResult.data[0]).toEqual({
+          id: '123',
+          title: 'Test Board 1',
+          url: 'https://monday.com/boards/123',
+          workspaceId: '9001',
+        });
+        expect(parsedResult.data[1].workspaceId).toBeUndefined();
+      });
+
       it('should return raw IDs without prefix', async () => {
         mocks.setResponse(mockDevBoardsResponse);
 
@@ -511,6 +555,31 @@ describe('SearchTool', () => {
           },
           expect.objectContaining({ timeout: expect.any(Number) }),
         );
+      });
+
+      it('should propagate workspaceId when present, and omit it when the index has none', async () => {
+        mocks.setResponse({
+          search: {
+            docs: {
+              results: [
+                { id: '111', indexed_data: { id: '111', name: 'Document 1', workspace_id: '9001' } },
+                { id: '222', indexed_data: { id: '222', name: 'Document 2', workspace_id: null } },
+              ],
+            },
+          },
+        });
+
+        const parsedResult = await callToolByNameAsync('search', {
+          searchType: GlobalSearchType.DOCUMENTS,
+          searchTerm: 'Document',
+        });
+
+        expect(parsedResult.data[0]).toEqual({
+          id: '111',
+          title: 'Document 1',
+          workspaceId: '9001',
+        });
+        expect(parsedResult.data[1].workspaceId).toBeUndefined();
       });
 
       it('should return raw IDs without prefix', async () => {
@@ -1332,6 +1401,8 @@ describe('SearchTool', () => {
                 title: 'Kickoff email',
                 summary: 'Project kickoff summary',
                 content: 'Full kickoff email body',
+                item_id: '901',
+                board_id: '801',
               },
             },
             {
@@ -1341,6 +1412,8 @@ describe('SearchTool', () => {
                 title: 'Weekly sync',
                 summary: 'Notes from the weekly sync',
                 content: 'Full weekly sync notes',
+                item_id: '902',
+                board_id: null,
               },
             },
           ],
@@ -1364,12 +1437,16 @@ describe('SearchTool', () => {
         title: 'Kickoff email',
         summary: 'Project kickoff summary',
         content: 'Full kickoff email body',
+        itemId: '901',
+        boardId: '801',
       });
+      // board_id is null in the index for this result, so boardId is omitted
       expect(parsedResult.data[1]).toEqual({
         id: '20',
         title: 'Weekly sync',
         summary: 'Notes from the weekly sync',
         content: 'Full weekly sync notes',
+        itemId: '902',
       });
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
@@ -1413,7 +1490,9 @@ describe('SearchTool', () => {
       const responseWithEmptySummary: SearchTimelineItemsQuery = {
         search: {
           timeline_items: {
-            results: [{ id: '30', indexed_data: { id: '30', title: 'Untitled note', summary: '', content: '' } }],
+            results: [
+              { id: '30', indexed_data: { id: '30', title: 'Untitled note', summary: '', content: '', item_id: '903' } },
+            ],
           },
         },
       };
@@ -1485,6 +1564,31 @@ describe('SearchTool', () => {
         },
         expect.objectContaining({ timeout: expect.any(Number), versionOverride: 'dev' }),
       );
+    });
+
+    it('should propagate workspaceId when present, and omit it when the index has none', async () => {
+      mocks.setResponse({
+        search: {
+          overviews: {
+            results: [
+              { id: '1', indexed_data: { id: '1', name: 'Team Dashboard', workspace_id: '9001' } },
+              { id: '2', indexed_data: { id: '2', name: 'My private dashboard', workspace_id: null } },
+            ],
+          },
+        },
+      });
+
+      const parsedResult = await callToolByNameAsync('search', {
+        searchType: GlobalSearchType.DASHBOARDS,
+        searchTerm: 'dashboard',
+      });
+
+      expect(parsedResult.data[0]).toEqual({
+        id: '1',
+        title: 'Team Dashboard',
+        workspaceId: '9001',
+      });
+      expect(parsedResult.data[1].workspaceId).toBeUndefined();
     });
 
     it('should pass workspaceIds as strings when provided', async () => {

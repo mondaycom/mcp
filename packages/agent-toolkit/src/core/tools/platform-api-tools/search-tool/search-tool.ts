@@ -197,11 +197,13 @@ For account-level info (plan, member count, products), use get_user_context tool
 For browsing all boards, docs, or folders within a workspace without a search term, use workspace_info tool.
 For groups, use get_board_info tool.
 For listing items within a specific board, use get_board_items_page tool. ITEMS search here queries items across the account.
+BOARD search returns id, title, url, and workspaceId.
+DOCUMENTS search returns id, title, and workspaceId.
 ITEMS search returns id, title, url, boardId, and workspaceId.
 WORKSPACES search returns id, title, and description.
 UPDATES search returns id, title (the update body), itemId, boardId, and creatorId. Optionally scope it with boardIds and/or creatorIds.
-TIMELINE_ITEMS search returns id, title, summary, and content.
-DASHBOARDS search (also called "overviews") returns id and title. Optionally scope it with workspaceIds and/or creatorIds.
+TIMELINE_ITEMS search returns id, title, summary, content, itemId, and boardId.
+DASHBOARDS search (also called "overviews") returns id, title, and workspaceId. Optionally scope it with workspaceIds and/or creatorIds.
 FOLDERS search returns id and title. Optionally scope it with workspaceIds, which searches all accessible workspaces when omitted. Pass workspaceIds to narrow the search if results may be truncated.
   `;
   }
@@ -279,6 +281,7 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
       id: result.indexed_data.id,
       title: result.indexed_data.name,
       url: result.indexed_data.url,
+      workspaceId: result.indexed_data.workspace_id ?? undefined,
     }));
   }
 
@@ -292,6 +295,7 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
     return response.search.docs.results.map((result) => ({
       id: result.indexed_data.id,
       title: result.indexed_data.name,
+      workspaceId: result.indexed_data.workspace_id ?? undefined,
     }));
   }
 
@@ -358,6 +362,8 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
       title: result.indexed_data.title,
       summary: result.indexed_data.summary || undefined,
       content: result.indexed_data.content || undefined,
+      itemId: result.indexed_data.item_id,
+      boardId: result.indexed_data.board_id ?? undefined,
     }));
   }
 
@@ -378,6 +384,7 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
     return response.search.overviews.results.map((result) => ({
       id: result.indexed_data.id,
       title: result.indexed_data.name,
+      workspaceId: result.indexed_data.workspace_id ?? undefined,
     }));
   }
 

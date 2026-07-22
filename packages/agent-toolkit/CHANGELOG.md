@@ -2,11 +2,13 @@
 
 ## 5.61.3
 
-### search — propagate boardId and workspaceId for ITEMS
+### search — propagate location ids (board/workspace/item) across entities
 
-- ITEMS search now returns `boardId` and `workspaceId` for each result (queried from the search index's `board_id`/`workspace_id`), so callers can locate an item's board and workspace without a follow-up lookup
-- Both fields are optional — omitted when the search index has no value for them
-- Updated the tool description to list the new fields
+- ITEMS search now returns `boardId` and `workspaceId` for each result, so callers can locate an item's board and workspace without a follow-up lookup
+- BOARD, DOCUMENTS, and DASHBOARDS search now return `workspaceId`
+- TIMELINE_ITEMS search now returns `itemId` and `boardId`
+- All added ids come from the search index (`board_id`/`workspace_id`/`item_id`); the nullable ones are optional and omitted when the index has no value for them
+- Updated the tool description to list the fields each search type returns
 
 ## 5.58.1
 
