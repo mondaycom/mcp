@@ -55,7 +55,7 @@ export type ChangeItemsColumnValuesToolInput =
   | typeof changeItemsColumnValuesInBoardToolSchema;
 
 export class ChangeItemsColumnValuesTool extends BaseMondayApiTool<ChangeItemsColumnValuesToolInput> {
-  name = 'change_items_column_values';
+  name = 'update_items';
   type = ToolType.WRITE;
   annotations = createMondayApiAnnotations({
     title: 'Change Multiple Items Column Values',
