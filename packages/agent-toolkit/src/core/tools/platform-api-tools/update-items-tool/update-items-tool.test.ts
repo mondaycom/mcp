@@ -1,12 +1,12 @@
 import { z } from 'zod';
 import { createMockApiClient } from '../test-utils/mock-api-client';
 import {
-  ChangeItemsColumnValuesTool,
-  changeItemsColumnValuesInBoardToolSchema,
-} from './change-items-column-values-tool';
+  UpdateItemsTool,
+  updateItemsInBoardToolSchema,
+} from './update-items-tool';
 import { CONCURRENCY_LIMIT, MAX_UPDATES_PER_CALL } from './constants';
 
-describe('Change Items Column Values Tool Behaviour', () => {
+describe('Update Items Tool Behaviour', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
 
   beforeEach(() => {
@@ -27,7 +27,7 @@ describe('Change Items Column Values Tool Behaviour', () => {
     it('updates all items and returns per-update results with correct index and board_id', async () => {
       mocks.setResponses([changeResponse('1'), changeResponse('2'), changeResponse('3')]);
 
-      const tool = new ChangeItemsColumnValuesTool(mocks.mockApiClient, { boardId: 456 });
+      const tool = new UpdateItemsTool(mocks.mockApiClient, { boardId: 456 });
 
       const result = await tool.execute({
         updates: [
@@ -51,7 +51,7 @@ describe('Change Items Column Values Tool Behaviour', () => {
     it('passes columnValues verbatim and derived columnIds to the underlying mutation', async () => {
       mocks.setResponse(changeResponse('1'));
 
-      const tool = new ChangeItemsColumnValuesTool(mocks.mockApiClient, { boardId: 456 });
+      const tool = new UpdateItemsTool(mocks.mockApiClient, { boardId: 456 });
 
       await tool.execute({ updates: [{ itemId: 1, columnValues: '{"status":{"label":"Done"}}' }] });
 
@@ -70,7 +70,7 @@ describe('Change Items Column Values Tool Behaviour', () => {
   describe('Per-update routing', () => {
     it('applies different values per item', async () => {
       mocks.setResponses([changeResponse('1'), changeResponse('2')]);
-      const tool = new ChangeItemsColumnValuesTool(mocks.mockApiClient, { boardId: 456 });
+      const tool = new UpdateItemsTool(mocks.mockApiClient, { boardId: 456 });
 
       await tool.execute({
         updates: [
@@ -86,7 +86,7 @@ describe('Change Items Column Values Tool Behaviour', () => {
 
     it('applies the same value across items (bulk assign)', async () => {
       mocks.setResponses([changeResponse('1'), changeResponse('2'), changeResponse('3')]);
-      const tool = new ChangeItemsColumnValuesTool(mocks.mockApiClient, { boardId: 456 });
+      const tool = new UpdateItemsTool(mocks.mockApiClient, { boardId: 456 });
 
       const value = '{"person":{"personsAndTeams":[{"id":99,"kind":"person"}]}}';
       await tool.execute({
@@ -103,7 +103,7 @@ describe('Change Items Column Values Tool Behaviour', () => {
 
     it('routes each update to its own board via per-update boardId', async () => {
       mocks.setResponses([changeResponse('1'), changeResponse('2')]);
-      const tool = new ChangeItemsColumnValuesTool(mocks.mockApiClient, { boardId: 456 });
+      const tool = new UpdateItemsTool(mocks.mockApiClient, { boardId: 456 });
 
       await tool.execute({
         updates: [
@@ -119,7 +119,7 @@ describe('Change Items Column Values Tool Behaviour', () => {
 
     it('uses the batch default boardId and lets an update override it', async () => {
       mocks.setResponses([changeResponse('1'), changeResponse('2')]);
-      const tool = new ChangeItemsColumnValuesTool(mocks.mockApiClient);
+      const tool = new UpdateItemsTool(mocks.mockApiClient);
 
       const result = await tool.execute({
         boardId: 456,
@@ -140,7 +140,7 @@ describe('Change Items Column Values Tool Behaviour', () => {
 
     it('forwards createLabelsIfMissing per update independently', async () => {
       mocks.setResponses([changeResponse('1'), changeResponse('2')]);
-      const tool = new ChangeItemsColumnValuesTool(mocks.mockApiClient, { boardId: 456 });
+      const tool = new UpdateItemsTool(mocks.mockApiClient, { boardId: 456 });
 
       await tool.execute({
         updates: [
@@ -165,7 +165,7 @@ describe('Change Items Column Values Tool Behaviour', () => {
       mocks.getMockRequest().mockRejectedValueOnce(graphqlError);
       mocks.getMockRequest().mockResolvedValueOnce(changeResponse('3'));
 
-      const tool = new ChangeItemsColumnValuesTool(mocks.mockApiClient, { boardId: 456 });
+      const tool = new UpdateItemsTool(mocks.mockApiClient, { boardId: 456 });
 
       const result = await tool.execute({
         updates: [
@@ -194,7 +194,7 @@ describe('Change Items Column Values Tool Behaviour', () => {
       };
       mocks.setError(graphqlError);
 
-      const tool = new ChangeItemsColumnValuesTool(mocks.mockApiClient, { boardId: 456 });
+      const tool = new UpdateItemsTool(mocks.mockApiClient, { boardId: 456 });
       const result = await tool.execute({ updates: [{ itemId: 1, columnValues: '{"text":"a"}' }] });
       const c = result.content as any;
 
@@ -204,14 +204,14 @@ describe('Change Items Column Values Tool Behaviour', () => {
 
     it('does not leak the internal _errorEntry field into results[i]', async () => {
       mocks.setError('boom');
-      const tool = new ChangeItemsColumnValuesTool(mocks.mockApiClient, { boardId: 456 });
+      const tool = new UpdateItemsTool(mocks.mockApiClient, { boardId: 456 });
       const result = await tool.execute({ updates: [{ itemId: 1, columnValues: '{"text":"a"}' }] });
       const c = result.content as any;
       expect(c.results[0]).not.toHaveProperty('_errorEntry');
     });
 
     it('classifies invalid columnValues JSON per update via the single tool', async () => {
-      const tool = new ChangeItemsColumnValuesTool(mocks.mockApiClient, { boardId: 456 });
+      const tool = new UpdateItemsTool(mocks.mockApiClient, { boardId: 456 });
       const result = await tool.execute({ updates: [{ itemId: 1, columnValues: 'not valid json' }] });
       const c = result.content as any;
 
@@ -232,7 +232,7 @@ describe('Change Items Column Values Tool Behaviour', () => {
       mocks.getMockRequest().mockRejectedValueOnce(gqlErr);
       mocks.getMockRequest().mockResolvedValueOnce(changeResponse('3'));
 
-      const tool = new ChangeItemsColumnValuesTool(mocks.mockApiClient, { boardId: 456 });
+      const tool = new UpdateItemsTool(mocks.mockApiClient, { boardId: 456 });
       const result = await tool.execute({
         updates: [
           { itemId: 1, columnValues: '{"text":"a"}' },
@@ -254,7 +254,7 @@ describe('Change Items Column Values Tool Behaviour', () => {
       };
       mocks.setError(gqlErr);
 
-      const tool = new ChangeItemsColumnValuesTool(mocks.mockApiClient, { boardId: 456 });
+      const tool = new UpdateItemsTool(mocks.mockApiClient, { boardId: 456 });
       const result = await tool.execute({ updates: [{ itemId: 1, columnValues: '{"text":"a"}' }] });
       const c = result.content as any;
 
@@ -265,7 +265,7 @@ describe('Change Items Column Values Tool Behaviour', () => {
 
     it('omits errors[] entirely on full success', async () => {
       mocks.setResponses([changeResponse('1'), changeResponse('2')]);
-      const tool = new ChangeItemsColumnValuesTool(mocks.mockApiClient, { boardId: 456 });
+      const tool = new UpdateItemsTool(mocks.mockApiClient, { boardId: 456 });
       const result = await tool.execute({
         updates: [
           { itemId: 1, columnValues: '{"text":"a"}' },
@@ -279,7 +279,7 @@ describe('Change Items Column Values Tool Behaviour', () => {
 
   describe('Missing board resolution', () => {
     it('rejects the whole call when an update has no resolvable boardId', async () => {
-      const tool = new ChangeItemsColumnValuesTool(mocks.mockApiClient);
+      const tool = new UpdateItemsTool(mocks.mockApiClient);
 
       await expect(
         tool.execute({ updates: [{ itemId: 1, columnValues: '{"text":"a"}' }] }),
@@ -302,7 +302,7 @@ describe('Change Items Column Values Tool Behaviour', () => {
     it('stops firing new updates once a 429 is observed and marks queued updates as skipped', async () => {
       mocks.getMockRequest().mockRejectedValue(rateLimit429());
 
-      const tool = new ChangeItemsColumnValuesTool(mocks.mockApiClient, { boardId: 456 });
+      const tool = new UpdateItemsTool(mocks.mockApiClient, { boardId: 456 });
       const total = CONCURRENCY_LIMIT + 5;
       const updates = Array.from({ length: total }, (_, i) => ({
         itemId: i + 1,
@@ -331,7 +331,7 @@ describe('Change Items Column Values Tool Behaviour', () => {
       mocks.getMockRequest().mockRejectedValueOnce(err);
       mocks.getMockRequest().mockResolvedValueOnce(changeResponse('2'));
 
-      const tool = new ChangeItemsColumnValuesTool(mocks.mockApiClient, { boardId: 456 });
+      const tool = new UpdateItemsTool(mocks.mockApiClient, { boardId: 456 });
       const result = await tool.execute({
         updates: [
           { itemId: 1, columnValues: '{"text":"a"}' },
@@ -347,7 +347,7 @@ describe('Change Items Column Values Tool Behaviour', () => {
   describe('Observability metadata', () => {
     it('records items_count and is_partial_success=false on a full-success call', async () => {
       mocks.setResponses([changeResponse('1'), changeResponse('2')]);
-      const tool = new ChangeItemsColumnValuesTool(mocks.mockApiClient, { boardId: 456 });
+      const tool = new UpdateItemsTool(mocks.mockApiClient, { boardId: 456 });
       const sessionContext = { metadata: {} as Record<string, unknown> };
 
       await tool.execute(
@@ -371,7 +371,7 @@ describe('Change Items Column Values Tool Behaviour', () => {
       };
       mocks.getMockRequest().mockRejectedValueOnce(gqlErr);
 
-      const tool = new ChangeItemsColumnValuesTool(mocks.mockApiClient, { boardId: 456 });
+      const tool = new UpdateItemsTool(mocks.mockApiClient, { boardId: 456 });
       const sessionContext = { metadata: {} as Record<string, unknown> };
 
       await tool.execute(
@@ -389,7 +389,7 @@ describe('Change Items Column Values Tool Behaviour', () => {
 
     it('records is_partial_success=false when all updates fail (total failure)', async () => {
       mocks.setError('boom');
-      const tool = new ChangeItemsColumnValuesTool(mocks.mockApiClient, { boardId: 456 });
+      const tool = new UpdateItemsTool(mocks.mockApiClient, { boardId: 456 });
       const sessionContext = { metadata: {} as Record<string, unknown> };
 
       const result = await tool.execute(
@@ -405,7 +405,7 @@ describe('Change Items Column Values Tool Behaviour', () => {
   });
 
   describe('Schema validation', () => {
-    const schema = z.object(changeItemsColumnValuesInBoardToolSchema);
+    const schema = z.object(updateItemsInBoardToolSchema);
 
     it('rejects an update without columnValues', () => {
       const result = schema.safeParse({ boardId: 456, updates: [{ itemId: 1 }] });

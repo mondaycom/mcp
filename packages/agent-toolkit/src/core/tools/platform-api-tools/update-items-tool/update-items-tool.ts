@@ -30,7 +30,7 @@ const updateSchema = z.object({
     ),
 });
 
-export const changeItemsColumnValuesToolSchema = {
+export const updateItemsToolSchema = {
   updates: z
     .array(updateSchema)
     .min(1, 'updates must not be empty')
@@ -40,25 +40,25 @@ export const changeItemsColumnValuesToolSchema = {
     ),
 };
 
-export const changeItemsColumnValuesInBoardToolSchema = {
+export const updateItemsInBoardToolSchema = {
   boardId: z
     .number()
     .optional()
     .describe(
       'Optional default board id used for any update that does not set its own boardId. Each update can override it with its own boardId, so a single call can span multiple boards.',
     ),
-  ...changeItemsColumnValuesToolSchema,
+  ...updateItemsToolSchema,
 };
 
-export type ChangeItemsColumnValuesToolInput =
-  | typeof changeItemsColumnValuesToolSchema
-  | typeof changeItemsColumnValuesInBoardToolSchema;
+export type UpdateItemsToolInput =
+  | typeof updateItemsToolSchema
+  | typeof updateItemsInBoardToolSchema;
 
-export class ChangeItemsColumnValuesTool extends BaseMondayApiTool<ChangeItemsColumnValuesToolInput> {
-  name = 'change_items_column_values';
+export class UpdateItemsTool extends BaseMondayApiTool<UpdateItemsToolInput> {
+  name = 'update_items';
   type = ToolType.WRITE;
   annotations = createMondayApiAnnotations({
-    title: 'Change Multiple Items Column Values',
+    title: 'Update Multiple Items',
     readOnlyHint: false,
     destructiveHint: false,
     idempotentHint: true,
@@ -72,21 +72,21 @@ export class ChangeItemsColumnValuesTool extends BaseMondayApiTool<ChangeItemsCo
     );
   }
 
-  getInputSchema(): ChangeItemsColumnValuesToolInput {
+  getInputSchema(): UpdateItemsToolInput {
     if (this.context?.boardId) {
-      return changeItemsColumnValuesToolSchema;
+      return updateItemsToolSchema;
     }
-    return changeItemsColumnValuesInBoardToolSchema;
+    return updateItemsInBoardToolSchema;
   }
 
   protected async executeInternal(
-    input: ToolInputType<ChangeItemsColumnValuesToolInput>,
+    input: ToolInputType<UpdateItemsToolInput>,
   ): Promise<ToolOutputType<never>> {
     this.sessionContext.metadata ??= {};
     this.sessionContext.metadata.items_count = input.updates.length;
 
     const defaultBoardId =
-      this.context?.boardId ?? (input as ToolInputType<typeof changeItemsColumnValuesInBoardToolSchema>).boardId;
+      this.context?.boardId ?? (input as ToolInputType<typeof updateItemsInBoardToolSchema>).boardId;
 
     const resolvedBoardIds = input.updates.map((update) => update.boardId ?? defaultBoardId);
     const missingBoardIndexes = resolvedBoardIds
