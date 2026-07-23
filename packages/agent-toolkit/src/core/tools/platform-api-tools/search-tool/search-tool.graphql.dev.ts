@@ -11,6 +11,7 @@ export const searchOverviewsDev = gql`
           indexed_data {
             id
             name
+            workspace_id
           }
         }
       }

@@ -19,6 +19,8 @@ export const searchItems = gql`
             id
             name
             url
+            board_id
+            workspace_id
           }
         }
       }
@@ -36,6 +38,7 @@ export const searchBoards = gql`
             id
             name
             url
+            workspace_id
           }
         }
       }
@@ -52,6 +55,7 @@ export const searchDocs = gql`
           indexed_data {
             id
             name
+            workspace_id
           }
         }
       }
@@ -106,6 +110,8 @@ export const searchTimelineItems = gql`
             title
             summary
             content
+            item_id
+            board_id
           }
         }
       }
