@@ -35,6 +35,7 @@ import { normalizeString } from 'src/utils/string.utils';
 import { GlobalSearchType, SearchResult } from './search-tool.types';
 import {
   MAX_FOLDERS_LIMIT,
+  MISSING_SEARCH_TERM_TEXT,
   SEARCH_LIMIT,
   SEARCH_TYPE_ALIASES,
   SEARCH_TYPE_REDIRECTS,
@@ -42,7 +43,12 @@ import {
   normalizeSearchType,
 } from './search-tool.consts';
 import { SEARCH_TIMEOUT } from 'src/utils/time.utils';
-import { throwIfSearchTimeoutError, ToolValidationError, TOOL_EXECUTION_FAILED_CODE } from 'src/utils/error.utils';
+import {
+  throwIfSearchTimeoutError,
+  ToolValidationError,
+  TOOL_EXECUTION_FAILED_CODE,
+  MISSING_REQUIRED_PARAMETER_CODE,
+} from 'src/utils/error.utils';
 
 const SUPPORTED_SEARCH_TYPES = new Set<string>(Object.values(GlobalSearchType));
 
@@ -156,11 +162,20 @@ const limitSchema: z.ZodType<number, z.ZodTypeDef, unknown> = z
   .describe(`The number of items to get. Maximum is ${SEARCH_LIMIT}.`) as z.ZodType<number, z.ZodTypeDef, unknown>;
 
 export const searchSchema = {
+  // Optional at the schema level (rather than a required field) so a genuinely
+  // absent searchTerm is handled in executeInternal with the actionable,
+  // browse-oriented MISSING_SEARCH_TERM_TEXT instead of Zod's bare "Required".
+  // When searchTerm IS provided, .min(1) still rejects empty/whitespace with the
+  // original actionable message.
   searchTerm: z
     .string()
     .trim()
     .min(1, { message: 'searchTerm must be a non-empty search string.' })
-    .describe('The non-empty term to search for (at least one non-whitespace character).'),
+    .optional()
+    .describe(
+      'The search phrase — the text the search matches results against (e.g. a board name, item title, or keywords). ' +
+        'Required and must be non-empty. This is NOT a filter or an id — pass the words to look for.',
+    ),
   searchType: searchTypeSchema,
   limit: limitSchema,
 
@@ -192,6 +207,7 @@ export class SearchTool extends BaseMondayApiTool<SearchToolInput> {
 
   getDescription(): string {
     return `Search within monday.com platform. Supported searchType values: ${SUPPORTED_SEARCH_TYPES_TEXT}.
+searchTerm is the phrase the search matches against — the text/keywords to look for (e.g. a board name, item title, or a word from an update). It is required and must be non-empty. This tool has no "list everything" mode: to browse or list without a search phrase, use workspace_info (boards/docs/folders in a workspace) or get_board_items_page (items in a board) instead of calling search with an empty searchTerm.
 For searching/listing specific users and teams, use list_users_and_teams tool.
 For account-level info (plan, member count, products), use get_user_context tool.
 For browsing all boards, docs, or folders within a workspace without a search term, use workspace_info tool.
@@ -213,16 +229,24 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
   }
 
   protected async executeInternal(input: ToolInputType<SearchToolInput>): Promise<ToolOutputType<never>> {
+    // searchTerm is optional at the schema level so a missing term produces an
+    // actionable, browse-oriented error here rather than Zod's bare "Required".
+    // (An empty/whitespace term that IS present is already rejected by the schema.)
+    const { searchTerm } = input;
+    if (!searchTerm) {
+      throw new ToolValidationError(MISSING_SEARCH_TERM_TEXT, MISSING_REQUIRED_PARAMETER_CODE);
+    }
+
     try {
       if (input.searchType === GlobalSearchType.FOLDERS) {
-        const { results, truncated } = await this.searchFoldersAsync(input);
+        const { results, truncated } = await this.searchFoldersAsync(input, searchTerm);
         const message = truncated
           ? `Search results (truncated: only the first ${MAX_FOLDERS_LIMIT} folders across the searched workspaces were scanned. Narrow with workspaceIds for complete results.)`
           : 'Search results';
         return { content: { message, data: results } };
       }
 
-      const data = await this.runSmartSearchAsync(input);
+      const data = await this.runSmartSearchAsync(input, searchTerm);
       return { content: { message: 'Search results', data } };
     } catch (error) {
       throwIfSearchTimeoutError(error);
@@ -230,38 +254,41 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
     }
   }
 
-  private async runSmartSearchAsync(input: ToolInputType<SearchToolInput>): Promise<SearchResult[]> {
+  private async runSmartSearchAsync(
+    input: ToolInputType<SearchToolInput>,
+    searchTerm: string,
+  ): Promise<SearchResult[]> {
     const workspaceIds = toFilterIds(input.workspaceIds?.map((id) => id.toString()));
 
     if (input.searchType === GlobalSearchType.BOARD) {
-      return this.searchBoardsAsync(input.searchTerm, input.limit, workspaceIds);
+      return this.searchBoardsAsync(searchTerm, input.limit, workspaceIds);
     }
 
     if (input.searchType === GlobalSearchType.DOCUMENTS) {
-      return this.searchDocsAsync(input.searchTerm, input.limit, workspaceIds);
+      return this.searchDocsAsync(searchTerm, input.limit, workspaceIds);
     }
 
     if (input.searchType === GlobalSearchType.WORKSPACES) {
-      return this.searchWorkspacesAsync(input.searchTerm, input.limit);
+      return this.searchWorkspacesAsync(searchTerm, input.limit);
     }
 
     if (input.searchType === GlobalSearchType.UPDATES) {
       const boardIds = toFilterIds(input.boardIds?.map((id) => id.toString()));
       const creatorIds = toFilterIds(input.creatorIds?.map((id) => id.toString()));
-      return this.searchUpdatesAsync(input.searchTerm, input.limit, boardIds, creatorIds);
+      return this.searchUpdatesAsync(searchTerm, input.limit, boardIds, creatorIds);
     }
 
     if (input.searchType === GlobalSearchType.ITEMS) {
-      return this.searchItemsAsync(input.searchTerm, input.limit, workspaceIds);
+      return this.searchItemsAsync(searchTerm, input.limit, workspaceIds);
     }
 
     if (input.searchType === GlobalSearchType.TIMELINE_ITEMS) {
-      return this.searchTimelineItemsAsync(input.searchTerm, input.limit);
+      return this.searchTimelineItemsAsync(searchTerm, input.limit);
     }
 
     if (input.searchType === GlobalSearchType.DASHBOARDS) {
       const creatorIds = input.creatorIds?.map((id) => id.toString());
-      return this.searchOverviewsAsync(input.searchTerm, input.limit, workspaceIds, creatorIds);
+      return this.searchOverviewsAsync(searchTerm, input.limit, workspaceIds, creatorIds);
     }
 
     throw new ToolValidationError(
@@ -390,8 +417,9 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
 
   private async searchFoldersAsync(
     input: ToolInputType<SearchToolInput>,
+    searchTerm: string,
   ): Promise<{ results: SearchResult[]; truncated: boolean }> {
-    const normalizedSearchTerm = normalizeString(input.searchTerm);
+    const normalizedSearchTerm = normalizeString(searchTerm);
     // A searchTerm made only of characters normalizeString strips (e.g. "###" or
     // emoji) would otherwise normalize to '', and every string includes(''),
     // turning the filter below into a no-op that returns unrelated folders.
