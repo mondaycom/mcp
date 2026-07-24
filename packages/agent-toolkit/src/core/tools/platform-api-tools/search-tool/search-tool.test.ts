@@ -100,6 +100,18 @@ describe('SearchTool', () => {
       );
       expect(description).not.toContain('IMPORTANT: ids returned by this tool are prefixed');
     });
+
+    it('should explain that searchTerm is the phrase to match, required and non-empty, with a browse alternative', async () => {
+      const tool = new SearchTool(mocks.mockApiClient);
+      const description = tool.getDescription();
+
+      // The description must define searchTerm as the phrase the search matches
+      // against, and steer the model away from empty/absent searchTerm calls
+      // (the single largest source of validation failures).
+      expect(description).toContain('searchTerm is the phrase');
+      expect(description).toMatch(/required and must be non-empty/i);
+      expect(description).toContain('workspace_info');
+    });
   });
 
   describe('Schema Validation', () => {
@@ -116,7 +128,7 @@ describe('SearchTool', () => {
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
 
-    it('should reject missing searchTerm for BOARD search', async () => {
+    it('should reject missing searchTerm for BOARD search with an actionable, browse-oriented message', async () => {
       const args: Partial<inputType> = {
         searchType: GlobalSearchType.BOARD,
         // searchTerm is missing
@@ -124,21 +136,24 @@ describe('SearchTool', () => {
 
       const result = await callToolByNameRawAsync('search', args);
 
-      expect(result.content[0].text).toContain('Failed to execute tool search: Invalid arguments');
-      expect(result.content[0].text).toContain('searchTerm');
-      expect(result.content[0].text).toContain('Required');
+      expect(result.content[0].text).toContain('Failed to execute tool search');
+      expect(result.content[0].text).toContain('searchTerm is required');
+      // Points the caller at the right tool to browse/list without a term,
+      // so it can self-correct instead of retrying the same empty search.
+      expect(result.content[0].text).toContain('workspace_info');
+      expect(result.content[0].text).toContain('get_board_items_page');
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
 
-    it('should reject missing searchTerm for DOCUMENTS search', async () => {
+    it('should reject missing searchTerm for DOCUMENTS search with an actionable message', async () => {
       const args: Partial<inputType> = {
         searchType: GlobalSearchType.DOCUMENTS,
       };
 
       const result = await callToolByNameRawAsync('search', args);
 
-      expect(result.content[0].text).toContain('Failed to execute tool search: Invalid arguments');
-      expect(result.content[0].text).toContain('searchTerm');
+      expect(result.content[0].text).toContain('Failed to execute tool search');
+      expect(result.content[0].text).toContain('searchTerm is required');
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
 
@@ -283,6 +298,20 @@ describe('SearchTool', () => {
       expect(result.content[0].text).not.toContain('BOARD_ITEM');
       // The redirect still fires because the lookup re-normalizes the raw value.
       expect(result.content[0].text).toContain('get_board_items_page');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('query key is not an accepted alias for searchTerm', () => {
+    it('should reject a call that sends only `query` (unknown field) with the actionable missing-searchTerm message', async () => {
+      const args = {
+        searchType: GlobalSearchType.BOARD,
+        query: 'IT-439',
+      } as any;
+
+      const result = await callToolByNameRawAsync('search', args);
+
+      expect(result.content[0].text).toContain('searchTerm is required');
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
   });

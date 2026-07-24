@@ -7,6 +7,18 @@ export const MAX_FOLDERS_LIMIT = 100;
 export const SUPPORTED_SEARCH_TYPES_TEXT = Object.values(GlobalSearchType).join(', ');
 
 /**
+ * Actionable message for a missing/empty searchTerm. The tool has no "list
+ * everything" mode, so callers that omit the term (or send an empty one) are
+ * almost always trying to browse — point them at the tools that do that instead
+ * of re-failing the same empty search. Reused by the schema description and the
+ * runtime validation error so the guidance is identical in both places.
+ */
+export const MISSING_SEARCH_TERM_TEXT =
+  'searchTerm is required and must be a non-empty search string. ' +
+  'To browse or list without a search term, use workspace_info (for boards, docs, and folders in a workspace) ' +
+  'or get_board_items_page (for items within a specific board).';
+
+/**
  * Canonicalize a raw searchType string so aliases and redirects match regardless
  * of case or separators (e.g. "board-item" and "board items" both normalize to
  * "BOARD_ITEM"). Only whitespace/hyphen/slash separators are collapsed — other

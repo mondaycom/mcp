@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.61.4
+
+### search — clearer searchTerm guidance and an actionable missing-searchTerm error
+
+- Strengthened the tool description and the `searchTerm` field description to define `searchTerm` as the phrase the search matches against (the text/keywords to look for), state that it is required and non-empty, and clarify it is not a filter or an id. Directly targets the largest residual validation-error bucket: callers omitting the term or sending the wrong field
+- A missing `searchTerm` now returns an actionable, browse-oriented message pointing callers at `workspace_info` (boards/docs/folders) and `get_board_items_page` (items) instead of the generic "Required", so callers trying to list rather than search can self-correct. An empty/whitespace `searchTerm` keeps its existing non-empty message
+- Both the description and the error name the browse alternatives, so a caller with browse intent (no search phrase) is steered to the right tool
+
 ## 5.61.3
 
 ### search — propagate location ids (board/workspace/item) across entities
