@@ -576,6 +576,37 @@ describe('UpdateDocTool', () => {
     expect(mocks.getMockRequest()).not.toHaveBeenCalled();
   });
 
+  it('accepts delete_blocks with 100 block IDs', async () => {
+    const blockIds = Array.from({ length: 100 }, (_, index) => `block_${index}`);
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (isBatchDeleteMutation(query)) {
+        return Promise.resolve({ delete_doc_blocks: blockIds.map((id) => ({ id })) });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [{ operation_type: 'delete_blocks', block_ids: blockIds }],
+    });
+
+    expect(result.content[0].text).toContain('[OK] delete_blocks');
+    const batchCall = mocks.getMockRequest().mock.calls.find((call: any) => isBatchDeleteMutation(call[0]));
+    expect(batchCall[1]).toEqual({ blockIds });
+  });
+
+  it('rejects delete_blocks with more than 100 block IDs', async () => {
+    const blockIds = Array.from({ length: 101 }, (_, index) => `block_${index}`);
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [{ operation_type: 'delete_blocks', block_ids: blockIds }],
+    });
+
+    expect(result.content[0].text).toContain('Invalid arguments');
+    expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+  });
+
   // ─── replace_block ───────────────────────────────────────────────────────
 
   it('executes replace_block: delete then create', async () => {
