@@ -3,6 +3,14 @@ import { callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-
 
 const DELTA = [{ insert: { text: 'Hello' } }, { insert: { text: '\n' } }];
 
+function isBatchDeleteMutation(query: string): boolean {
+  return query.includes('mutation deleteDocBlocks');
+}
+
+function isSingleDeleteMutation(query: string): boolean {
+  return query.includes('mutation deleteDocBlock') && !isBatchDeleteMutation(query);
+}
+
 describe('UpdateDocTool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
 
@@ -395,39 +403,177 @@ describe('UpdateDocTool', () => {
     expect(result.content[0].text).toContain('[FAILED] create_block');
   });
 
-  // ─── delete_block ────────────────────────────────────────────────────────
+  // ─── delete_blocks ───────────────────────────────────────────────────────
 
-  it('executes delete_block operation', async () => {
+  it('executes delete_blocks operation with a single ID via delete_doc_blocks', async () => {
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
-      if (query.includes('mutation deleteDocBlock')) return Promise.resolve({ delete_doc_block: { id: 'block_del' } });
+      if (isBatchDeleteMutation(query)) {
+        return Promise.resolve({ delete_doc_blocks: [{ id: 'block_del' }] });
+      }
+      if (isSingleDeleteMutation(query)) {
+        throw new Error('deleteDocBlock should not be called for delete_blocks operation');
+      }
       return Promise.resolve({});
     });
 
     const result = await callToolByNameRawAsync('update_doc', {
       doc_id: 'doc_123',
-      operations: [{ operation_type: 'delete_block', block_id: 'block_del' }],
+      operations: [{ operation_type: 'delete_blocks', block_ids: ['block_del'] }],
     });
 
-    expect(result.content[0].text).toContain('[OK] delete_block');
+    expect(result.content[0].text).toContain('[OK] delete_blocks');
     expect(result.content[0].text).toContain('block_del');
 
     const calls = mocks.getMockRequest().mock.calls;
-    const deleteCall = calls.find((c: any) => c[0].includes('mutation deleteDocBlock'));
-    expect(deleteCall[1]).toEqual({ blockId: 'block_del' });
+    const batchCall = calls.find((c: any) => isBatchDeleteMutation(c[0]));
+    expect(batchCall[1]).toEqual({ blockIds: ['block_del'] });
+    expect(calls.some((c: any) => isSingleDeleteMutation(c[0]))).toBe(false);
   });
 
-  it('throws when delete_doc_block returns null', async () => {
+  it('throws when delete_doc_blocks returns null for single ID delete', async () => {
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
-      if (query.includes('mutation deleteDocBlock')) return Promise.resolve({ delete_doc_block: null });
+      if (isBatchDeleteMutation(query)) return Promise.resolve({ delete_doc_blocks: null });
       return Promise.resolve({});
     });
 
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [{ operation_type: 'delete_blocks', block_ids: ['blk'] }],
+    });
+
+    expect(result.content[0].text).toContain('[FAILED] delete_blocks');
+  });
+
+  it('executes delete_blocks with multiple IDs via delete_doc_blocks', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (isBatchDeleteMutation(query)) {
+        return Promise.resolve({
+          delete_doc_blocks: [{ id: 'b1' }, { id: 'b2' }, { id: 'b3' }],
+        });
+      }
+      if (isSingleDeleteMutation(query)) {
+        throw new Error('deleteDocBlock should not be called for batch delete');
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [{ operation_type: 'delete_blocks', block_ids: ['b1', 'b2', 'b3'] }],
+    });
+
+    expect(result.content[0].text).toContain('[OK] delete_blocks');
+    expect(result.content[0].text).toContain('3 block(s) deleted');
+    expect(result.content[0].text).toContain('b1, b2, b3');
+
+    const calls = mocks.getMockRequest().mock.calls;
+    const batchCall = calls.find((c: any) => isBatchDeleteMutation(c[0]));
+    expect(batchCall[1]).toEqual({ blockIds: ['b1', 'b2', 'b3'] });
+    expect(calls.some((c: any) => isSingleDeleteMutation(c[0]))).toBe(false);
+  });
+
+  it('executes consecutive delete_blocks operations separately', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string, vars?: { blockIds?: string[] }) => {
+      if (isBatchDeleteMutation(query)) {
+        const ids = vars?.blockIds ?? [];
+        return Promise.resolve({
+          delete_doc_blocks: ids.map((id) => ({ id })),
+        });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [
+        { operation_type: 'delete_blocks', block_ids: ['b1'] },
+        { operation_type: 'delete_blocks', block_ids: ['b2'] },
+        { operation_type: 'delete_blocks', block_ids: ['b3'] },
+      ],
+    });
+
+    expect(result.content[0].text).toContain('Completed 3/3');
+    expect(result.content[0].text).toContain('[OK] delete_blocks');
+
+    const calls = mocks.getMockRequest().mock.calls;
+    const batchCalls = calls.filter((c: any) => isBatchDeleteMutation(c[0]));
+    expect(batchCalls).toHaveLength(3);
+    expect(batchCalls[0][1]).toEqual({ blockIds: ['b1'] });
+    expect(batchCalls[1][1]).toEqual({ blockIds: ['b2'] });
+    expect(batchCalls[2][1]).toEqual({ blockIds: ['b3'] });
+  });
+
+  it('executes delete_blocks operations separated by other operations', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string, vars?: { blockIds?: string[] }) => {
+      if (isBatchDeleteMutation(query)) {
+        const ids = vars?.blockIds ?? [];
+        return Promise.resolve({
+          delete_doc_blocks: ids.map((id) => ({ id })),
+        });
+      }
+      if (query.includes('mutation updateDocBlock')) {
+        return Promise.resolve({ update_doc_block: { id: 'blk' } });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [
+        { operation_type: 'delete_blocks', block_ids: ['del_1'] },
+        {
+          operation_type: 'update_block',
+          block_id: 'blk',
+          content: { block_content_type: 'text', delta_format: DELTA },
+        },
+        { operation_type: 'delete_blocks', block_ids: ['del_2'] },
+      ],
+    });
+
+    expect(result.content[0].text).toContain('Completed 3/3');
+    expect(result.content[0].text).toContain('[OK] delete_blocks');
+    expect(result.content[0].text).toContain('[OK] update_block');
+
+    const calls = mocks.getMockRequest().mock.calls;
+    const batchCalls = calls.filter((c: any) => isBatchDeleteMutation(c[0]));
+    expect(batchCalls).toHaveLength(2);
+    expect(batchCalls[0][1]).toEqual({ blockIds: ['del_1'] });
+    expect(batchCalls[1][1]).toEqual({ blockIds: ['del_2'] });
+  });
+
+  it('throws when delete_doc_blocks returns empty', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (isBatchDeleteMutation(query)) return Promise.resolve({ delete_doc_blocks: [] });
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [{ operation_type: 'delete_blocks', block_ids: ['b1', 'b2'] }],
+    });
+
+    expect(result.content[0].text).toContain('[FAILED] delete_blocks');
+    expect(result.content[0].text).toContain('No response from delete_doc_blocks');
+  });
+
+  it('returns schema error when delete_block operation_type is used', async () => {
     const result = await callToolByNameRawAsync('update_doc', {
       doc_id: 'doc_123',
       operations: [{ operation_type: 'delete_block', block_id: 'blk' }],
     });
 
-    expect(result.content[0].text).toContain('[FAILED] delete_block');
+    expect(result.content[0].text).toContain('Invalid arguments');
+    expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+  });
+
+  it('returns schema error when delete_blocks has empty block_ids', async () => {
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [{ operation_type: 'delete_blocks', block_ids: [] }],
+    });
+
+    expect(result.content[0].text).toContain('Invalid arguments');
+    expect(mocks.getMockRequest()).not.toHaveBeenCalled();
   });
 
   // ─── replace_block ───────────────────────────────────────────────────────
@@ -435,7 +581,7 @@ describe('UpdateDocTool', () => {
   it('executes replace_block: delete then create', async () => {
     const callOrder: string[] = [];
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
-      if (query.includes('mutation deleteDocBlock')) {
+      if (isSingleDeleteMutation(query)) {
         callOrder.push('delete');
         return Promise.resolve({ delete_doc_block: { id: 'old_block' } });
       }
@@ -466,7 +612,7 @@ describe('UpdateDocTool', () => {
     expect(callOrder).toEqual(['delete', 'create']);
 
     const calls = mocks.getMockRequest().mock.calls;
-    const deleteCall = calls.find((c: any) => c[0].includes('mutation deleteDocBlock'));
+    const deleteCall = calls.find((c: any) => isSingleDeleteMutation(c[0]));
     expect(deleteCall[1]).toEqual({ blockId: 'old_block' });
 
     const createCall = calls.find((c: any) => c[0].includes('mutation createDocBlocks'));
@@ -476,7 +622,7 @@ describe('UpdateDocTool', () => {
 
   it('reports partial failure when replace_block delete succeeds but create fails', async () => {
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
-      if (query.includes('mutation deleteDocBlock')) return Promise.resolve({ delete_doc_block: { id: 'old_block' } });
+      if (isSingleDeleteMutation(query)) return Promise.resolve({ delete_doc_block: { id: 'old_block' } });
       if (query.includes('mutation createDocBlocks')) return Promise.resolve({ create_doc_blocks: [] });
       return Promise.resolve({});
     });
@@ -500,7 +646,7 @@ describe('UpdateDocTool', () => {
 
   it('reports failure when replace_block delete step fails', async () => {
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
-      if (query.includes('mutation deleteDocBlock')) return Promise.resolve({ delete_doc_block: null });
+      if (isSingleDeleteMutation(query)) return Promise.resolve({ delete_doc_block: null });
       return Promise.resolve({});
     });
 
@@ -592,7 +738,7 @@ describe('UpdateDocTool', () => {
 
   it('handles replace_block with asset_id image', async () => {
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
-      if (query.includes('mutation deleteDocBlock')) {
+      if (isSingleDeleteMutation(query)) {
         return Promise.resolve({ delete_doc_block: { id: 'old_img' } });
       }
       if (query.includes('mutation createDocBlocks')) {
@@ -629,7 +775,9 @@ describe('UpdateDocTool', () => {
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
       if (query.includes('mutation updateDocName')) return Promise.resolve({ update_doc_name: true });
       if (query.includes('mutation updateDocBlock')) return Promise.resolve({ update_doc_block: { id: 'blk' } });
-      if (query.includes('mutation deleteDocBlock')) return Promise.resolve({ delete_doc_block: { id: 'del_blk' } });
+      if (isBatchDeleteMutation(query)) {
+        return Promise.resolve({ delete_doc_blocks: [{ id: 'del_blk' }] });
+      }
       return Promise.resolve({});
     });
 
@@ -642,14 +790,14 @@ describe('UpdateDocTool', () => {
           block_id: 'blk',
           content: { block_content_type: 'text', delta_format: DELTA },
         },
-        { operation_type: 'delete_block', block_id: 'del_blk' },
+        { operation_type: 'delete_blocks', block_ids: ['del_blk'] },
       ],
     });
 
     expect(result.content[0].text).toContain('Completed 3/3');
     expect(result.content[0].text).toContain('[OK] set_name');
     expect(result.content[0].text).toContain('[OK] update_block');
-    expect(result.content[0].text).toContain('[OK] delete_block');
+    expect(result.content[0].text).toContain('[OK] delete_blocks');
   });
 
   it('stops at first failure (fail-fast) and does not execute subsequent operations', async () => {
@@ -657,9 +805,9 @@ describe('UpdateDocTool', () => {
 
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
       if (query.includes('mutation updateDocName')) return Promise.reject(new Error('Name service down'));
-      if (query.includes('mutation deleteDocBlock')) {
+      if (isBatchDeleteMutation(query)) {
         deleteCalled = true;
-        return Promise.resolve({ delete_doc_block: { id: 'blk' } });
+        return Promise.resolve({ delete_doc_blocks: [{ id: 'blk' }] });
       }
       return Promise.resolve({});
     });
@@ -668,7 +816,7 @@ describe('UpdateDocTool', () => {
       doc_id: 'doc_123',
       operations: [
         { operation_type: 'set_name', name: 'Title' },
-        { operation_type: 'delete_block', block_id: 'blk' },
+        { operation_type: 'delete_blocks', block_ids: ['blk'] },
       ],
     });
 

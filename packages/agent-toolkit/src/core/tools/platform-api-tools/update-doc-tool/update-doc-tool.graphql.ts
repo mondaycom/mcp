@@ -44,6 +44,15 @@ export const deleteDocBlock = gql`
   }
 `;
 
+// Delete multiple blocks in a single operation (max 100 per request)
+export const deleteDocBlocks = gql`
+  mutation deleteDocBlocks($blockIds: [ID!]!) {
+    delete_doc_blocks(block_ids: $blockIds) {
+      id
+    }
+  }
+`;
+
 // Get object_id (board ID) from a doc's internal ID
 export const getDocObjectIdByDocId = gql`
   query getDocObjectIdByDocId($docId: [ID!]) {

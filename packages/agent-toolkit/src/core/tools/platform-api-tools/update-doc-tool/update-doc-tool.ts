@@ -1,6 +1,7 @@
 import {
   updateDocBlock,
   deleteDocBlock,
+  deleteDocBlocks,
   createDocBlocks,
   updateDocName,
   addContentToDocFromMarkdown,
@@ -16,6 +17,8 @@ import {
   UpdateDocBlockMutationVariables,
   DeleteDocBlockMutation,
   DeleteDocBlockMutationVariables,
+  DeleteDocBlocksMutation,
+  DeleteDocBlocksMutationVariables,
   CreateDocBlocksMutation,
   CreateDocBlocksMutationVariables,
   UpdateDocNameMutation,
@@ -78,14 +81,14 @@ OPERATIONS:
 - add_markdown_content: Append markdown as blocks (or insert after a block). Best for text, headings, lists, simple tables — no block IDs needed.
 - update_block: Update content of an existing text, code, or list_item block in-place.
 - create_block: Create a new block at a precise position. Use parent_block_id to nest inside notice_box, table cell, or layout cell.
-- delete_block: Remove any block. The ONLY option for BOARD, WIDGET, DOC embed, and GIPHY blocks.
+- delete_blocks: Permanently delete 1–100 blocks in one call. Provide all block IDs in the block_ids array. The ONLY option for BOARD, WIDGET, DOC embed, and GIPHY blocks.
 - replace_block: Delete a block and create a new one in its place (use when update_block is not supported).
 - add_comment: Create a new comment or reply on the document (doc-level, block-level, or text-selection).
 
 WHEN TO USE EACH OPERATION:
 - text / code / list_item → update_block. Use replace_block to change subtype (e.g. NORMAL_TEXT→LARGE_TITLE)
 - divider / table / image / video / notice_box / layout → replace_block (properties immutable after creation)
-- BOARD / WIDGET / DOC / GIPHY → delete_block only
+- BOARD / WIDGET / DOC / GIPHY → delete_blocks only
 
 GETTING BLOCK IDs: Call read_docs with include_blocks: true — returns id, type, position, and content per block.
 
@@ -97,6 +100,8 @@ BLOCK CONTENT (delta_format): Array of insert ops. Last op MUST be {insert: {tex
 - Supported attributes: bold, italic, underline, strike, code, link, color, background (not applicable to mention/column_value ops)
 
 IMAGE WITH ASSET: For asset-based images, use create_block with block_type "image" and asset_id (instead of public_url). add_markdown_content does NOT support asset images — for mixed content, alternate add_markdown_content (text) and create_block (image) operations in sequence.
+
+BATCHING DELETES: delete_blocks accepts 1..100 IDs. Put ALL IDs in one operation's block_ids array. Never emit multiple delete_blocks operations in a row.
 
 COMMENTS:
 - add_comment: Create a new comment or reply on the document. Three scopes:
@@ -187,8 +192,8 @@ COMMENTS:
         return this.executeUpdateBlock(op.block_id, op.content as UpdateBlockContent);
       case 'create_block':
         return this.executeCreateBlock(docId, op.block as CreateBlock, op.after_block_id, op.parent_block_id);
-      case 'delete_block':
-        return this.executeDeleteBlock(op.block_id);
+      case 'delete_blocks':
+        return this.executeDeleteBlocks(op.block_ids);
       case 'replace_block':
         return this.executeReplaceBlock(
           docId,
@@ -300,6 +305,23 @@ COMMENTS:
       throw new Error('No response from delete_doc_block');
     }
     return `Block ${blockId} deleted`;
+  }
+
+  private async executeDeleteBlocks(blockIds: string[]): Promise<string> {
+    if (blockIds.length === 0) {
+      throw new Error('block_ids must not be empty');
+    }
+
+    const variables: DeleteDocBlocksMutationVariables = { blockIds };
+    const res = await this.mondayApi.request<DeleteDocBlocksMutation>(deleteDocBlocks, variables);
+
+    if (!res?.delete_doc_blocks || res.delete_doc_blocks.length === 0) {
+      throw new Error('No response from delete_doc_blocks');
+    }
+
+    const deletedIds = res.delete_doc_blocks.map((block) => block.id).join(', ');
+    const count = res.delete_doc_blocks.length;
+    return `${count} block(s) deleted (IDs: ${deletedIds})`;
   }
 
   private async resolveObjectId(docId: string, objectId?: string): Promise<string> {
