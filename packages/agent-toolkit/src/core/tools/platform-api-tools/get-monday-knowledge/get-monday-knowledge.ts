@@ -55,6 +55,8 @@ Important: do not include PII data in the questions.`;
   protected async executeInternal(
     input: ToolInputType<typeof getMondayKnowledgeSchema>,
   ): Promise<ToolOutputType<never>> {
+    this.sessionContext.metadata ??= {};
+    this.sessionContext.metadata.kind = input.kind;
     if (input.kind === KIND_DEVELOPER_DOCS) {
       return this.queryDeveloperDocs(input.query);
     }
