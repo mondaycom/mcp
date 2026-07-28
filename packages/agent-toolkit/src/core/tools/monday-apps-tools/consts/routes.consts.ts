@@ -47,7 +47,7 @@ export const API_ENDPOINTS = {
     GET_DEPLOYMENT_STATUS: (appVersionId: number) => `${CODE_URL}/${appVersionId}/deployments`,
     GET_DEPLOYMENT_SIGNED_URL: (appVersionId: number) => `${CODE_URL}/${appVersionId}/deployments/signed-url`,
     GET_ENV_KEYS: (appId: number) => `${CODE_URL}/${appId}/env-keys`,
-    MANAGE_ENV: (appId: number, key: string) => `${CODE_URL}/${appId}/env/${key}`,
+    MANAGE_ENV: (appId: number, key: string) => `${CODE_URL}/${appId}/env/${encodeURIComponent(key)}`,
   },
   PLATFORM_BUILDING_BLOCKS_SCHEMAS: {
     GET_ALL: `${MONDAY_APPS_DOMAIN}/apps_ms/public/platform-building-blocks-schemas`,
