@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.61.5
+
+### update_doc — bulk-only delete via delete_blocks (breaking)
+
+- **Breaking:** `update_doc` operation `delete_block` renamed to `delete_blocks` and always takes `block_ids: string[]` (1–100)
+- All public delete operations now use the `delete_doc_blocks` GraphQL mutation (single-block deletes included)
+- `replace_block` internally still uses `delete_doc_block` (no external impact)
+
 ## 5.61.4
 
 ### search — clearer searchTerm guidance and an actionable missing-searchTerm error

@@ -232,12 +232,14 @@ const CreateBlockOperation = z.object({
   block: CreateBlockSchema.describe('The block to create. Use block_type to select the block type.'),
 });
 
-const DeleteBlockOperation = z.object({
-  operation_type: z.literal('delete_block'),
-  block_id: z
-    .string()
+const DeleteBlocksOperation = z.object({
+  operation_type: z.literal('delete_blocks'),
+  block_ids: z
+    .array(z.string())
+    .min(1)
+    .max(100)
     .describe(
-      'ID of the block to permanently delete. Works for all block types including BOARD, WIDGET, DOC embed, GIPHY.',
+      'Block IDs to permanently delete (1–100 per call). Put ALL IDs for the delete into this single array — do NOT emit multiple delete_blocks operations back-to-back. Works for all block types including BOARD, WIDGET, DOC embed, GIPHY.',
     ),
 });
 
@@ -301,7 +303,7 @@ export const OperationSchema = z.discriminatedUnion('operation_type', [
   AddMarkdownContentOperation,
   UpdateBlockOperation,
   CreateBlockOperation,
-  DeleteBlockOperation,
+  DeleteBlocksOperation,
   ReplaceBlockOperation,
   AddCommentOperation,
 ]);
@@ -335,7 +337,7 @@ Operation types:
 - add_markdown_content: Append markdown as blocks (simplest for text/lists/tables).
 - update_block: Change content of an existing text/code/list/divider block.
 - create_block: Create a new block at a specific position (supports text, list_item, code, divider, page_break, image, video, notice_box, table, layout).
-- delete_block: Permanently remove a block. Works for ALL block types including BOARD, WIDGET, DOC embed, GIPHY.
+- delete_blocks: Permanently delete 1–100 blocks in one call. Provide all block IDs in the block_ids array. Works for all block types including BOARD, WIDGET, DOC embed, and GIPHY.
 - replace_block: Delete a block and create a new one in its place. Use for: changing image/video source, table restructure, notice_box theme change.
 - add_comment: Create a new comment or reply on the document. Use parent_update_id to reply to an existing comment. Format text with HTML. Uses the doc's backing board item.
 
@@ -347,13 +349,15 @@ WHEN TO USE WHICH:
 - Changing an image URL → replace_block (image URL is immutable after creation)
 - Changing video URL → replace_block
 - Restructuring a table → replace_block
-- BOARD/WIDGET/DOC/GIPHY blocks → delete_block only (no public API to create these)
+- BOARD/WIDGET/DOC/GIPHY blocks → delete_blocks only (no public API to create these)
 
 NESTING CONTENT IN CONTAINERS:
 - notice_box: Fully supported. Create the notice_box first, then in a separate call create child blocks with parent_block_id set to the notice_box ID. You cannot reference a block ID created in the same call.
 - table: Cell-level API nesting is NOT supported. To create a table with content, use add_markdown_content with a markdown table (e.g. "| H1 | H2 |\\n| --- | --- |\\n| A | B |"). This creates a pre-populated table in one shot. Empty tables created via create_block cannot have their cells populated through the API.
 - layout: Cell-level API nesting is NOT supported and there is no markdown equivalent. Layouts can only be created empty via create_block. No workaround exists to populate layout columns through the API.
 Deleting a container does NOT delete its children — delete children first for clean removal.
+
+BATCHING: delete_blocks accepts 1..100 IDs. Put ALL IDs in one operation's block_ids array. Never emit multiple delete_blocks operations in a row.
 
 Block IDs are available in the blocks array returned by read_docs.`,
     ),
