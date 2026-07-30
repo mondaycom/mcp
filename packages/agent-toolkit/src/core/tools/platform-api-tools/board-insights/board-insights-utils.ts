@@ -11,8 +11,42 @@ import {
   AggregateSelectFunctionName,
   ItemsQuery,
   ItemsQueryOrderBy,
+  ItemsQueryRuleOperator,
 } from 'src/monday-graphql/generated/graphql/graphql';
 import { transformativeFunctions } from './board-insights.consts';
+
+type BoardInsightsFilterRule = NonNullable<
+  ToolInputType<typeof boardInsightsToolSchema>['filters']
+>[number];
+
+function isScalar(value: unknown): value is string | number | boolean {
+  return typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean';
+}
+
+/** The `filterRulesSchema` is shared with `get_board_items_page`, which
+ *  legitimately uses `compareAttribute` for cross-column comparisons. The
+ *  aggregate resolver behind `board_insights` does not — for `between` it
+ *  expects the range as a two-element `compareValue` array. LLMs seeing the
+ *  shared schema cargo-cult `compareAttribute` as the range end, producing:
+ *      { operator: "between", compareValue: "<from>", compareAttribute: "<to>" }
+ *  which the resolver rejects with `{"operator":"BETWEEN__<to>","reason":"no_operator_config"}`.
+ *  Coerce that shape back into `compareValue: [from, to]` before dispatch. */
+function normalizeBetweenRule(rule: BoardInsightsFilterRule): BoardInsightsFilterRule {
+  if (rule.operator !== ItemsQueryRuleOperator.Between) {
+    return rule;
+  }
+  if (Array.isArray(rule.compareValue)) {
+    return rule;
+  }
+  if (!isScalar(rule.compareValue) || !isScalar(rule.compareAttribute)) {
+    return rule;
+  }
+  return {
+    ...rule,
+    compareValue: [String(rule.compareValue), String(rule.compareAttribute)],
+    compareAttribute: undefined,
+  };
+}
 
 export function handleFrom(input: ToolInputType<typeof boardInsightsToolSchema>): AggregateFromTableInput {
   return {
@@ -27,12 +61,15 @@ export function handleFilters(input: ToolInputType<typeof boardInsightsToolSchem
   }
   const filters: ItemsQuery = {};
   if (input.filters) {
-    filters.rules = input.filters.map((rule) => ({
-      column_id: rule.columnId,
-      compare_value: rule.compareValue,
-      operator: rule.operator,
-      compare_attribute: rule.compareAttribute,
-    }));
+    filters.rules = input.filters.map((rule) => {
+      const normalized = normalizeBetweenRule(rule);
+      return {
+        column_id: normalized.columnId,
+        compare_value: normalized.compareValue,
+        operator: normalized.operator,
+        compare_attribute: normalized.compareAttribute,
+      };
+    });
     filters.operator = input.filtersOperator;
   }
   if (input.orderBy) {

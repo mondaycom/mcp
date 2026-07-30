@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.61.7
+
+### board_insights — coerce `between` filters that split the range across compareValue + compareAttribute
+
+- `board_insights` shares `filterRulesSchema` with `get_board_items_page`, which exposes an optional `compareAttribute` for cross-column comparisons. The aggregate resolver behind `board_insights` doesn't support it — for `between` it needs the range as a two-element `compareValue` array.
+- Observed in production: agents produced `{operator: "between", compareValue: "<from>", compareAttribute: "<to>"}` and the resolver rejected the request with `{"operator":"BETWEEN__<to>","reason":"no_operator_config"}` (HTTP 400).
+- `handleFilters` in `board-insights-utils.ts` now detects that split shape and merges it back into `compareValue: [from, to]` before dispatch. Non-`between` rules and already-array `compareValue`s are untouched.
+
 ## 5.61.5
 
 ### update_doc — bulk-only delete via delete_blocks (breaking)

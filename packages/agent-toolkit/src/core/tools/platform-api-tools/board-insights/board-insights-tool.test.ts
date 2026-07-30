@@ -111,6 +111,92 @@ describe('Board Insights Tool', () => {
         });
       });
 
+      it('should coerce a `between` rule that split its range across compareValue + compareAttribute into a two-element compareValue array', () => {
+        const input = {
+          boardId: 123,
+          filters: [
+            {
+              columnId: 'date',
+              compareValue: '2026-07-01',
+              compareAttribute: '2026-07-31',
+              operator: ItemsQueryRuleOperator.Between,
+            },
+          ],
+          filtersOperator: ItemsQueryOperator.And,
+        };
+
+        const result = handleFilters(input as any);
+
+        expect(result).toEqual({
+          rules: [
+            {
+              column_id: 'date',
+              compare_value: ['2026-07-01', '2026-07-31'],
+              operator: ItemsQueryRuleOperator.Between,
+              compare_attribute: undefined,
+            },
+          ],
+          operator: ItemsQueryOperator.And,
+        });
+      });
+
+      it('should leave a `between` rule with an already-array compareValue untouched', () => {
+        const input = {
+          boardId: 123,
+          filters: [
+            {
+              columnId: 'date',
+              compareValue: ['2026-07-01', '2026-09-30'],
+              operator: ItemsQueryRuleOperator.Between,
+            },
+          ],
+          filtersOperator: ItemsQueryOperator.And,
+        };
+
+        const result = handleFilters(input as any);
+
+        expect(result).toEqual({
+          rules: [
+            {
+              column_id: 'date',
+              compare_value: ['2026-07-01', '2026-09-30'],
+              operator: ItemsQueryRuleOperator.Between,
+              compare_attribute: undefined,
+            },
+          ],
+          operator: ItemsQueryOperator.And,
+        });
+      });
+
+      it('should not coerce non-`between` rules that also carry a compareAttribute', () => {
+        const input = {
+          boardId: 123,
+          filters: [
+            {
+              columnId: 'person',
+              compareValue: [1234],
+              compareAttribute: 'id',
+              operator: ItemsQueryRuleOperator.AnyOf,
+            },
+          ],
+          filtersOperator: ItemsQueryOperator.And,
+        };
+
+        const result = handleFilters(input as any);
+
+        expect(result).toEqual({
+          rules: [
+            {
+              column_id: 'person',
+              compare_value: [1234],
+              compare_attribute: 'id',
+              operator: ItemsQueryRuleOperator.AnyOf,
+            },
+          ],
+          operator: ItemsQueryOperator.And,
+        });
+      });
+
       it('should include orderBy when provided', () => {
         const input = {
           boardId: 123,
