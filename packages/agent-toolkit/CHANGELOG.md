@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.61.7
+
+### search — scope ITEMS search by boardIds; accurate scoping docs
+
+- ITEMS search now accepts `boardIds` to scope results to specific boards (the `search.items` GraphQL query already supported `board_ids`); pass alongside or instead of `workspaceIds`
+- Fixed the `workspaceIds` field description, which omitted ITEMS even though ITEMS search already honored it — it now lists ITEMS alongside BOARD, DOCUMENTS, and DASHBOARDS
+- Updated the `boardIds` field description (now ITEMS and UPDATES) and the ITEMS line in the tool description to mention `workspaceIds`/`boardIds` scoping
+
 ## 5.61.5
 
 ### update_doc — bulk-only delete via delete_blocks (breaking)

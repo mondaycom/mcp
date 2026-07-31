@@ -10,9 +10,9 @@ export const getFolders = gql`
 `;
 
 export const searchItems = gql`
-  query SearchItems($query: String!, $limit: Int, $workspaceIds: [ID!]) {
+  query SearchItems($query: String!, $limit: Int, $workspaceIds: [ID!], $boardIds: [ID!]) {
     search {
-      items(query: $query, limit: $limit, workspace_ids: $workspaceIds) {
+      items(query: $query, limit: $limit, workspace_ids: $workspaceIds, board_ids: $boardIds) {
         results {
           id
           indexed_data {

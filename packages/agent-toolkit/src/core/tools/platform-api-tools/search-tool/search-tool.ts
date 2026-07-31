@@ -179,14 +179,14 @@ export const searchSchema = {
   searchType: searchTypeSchema,
   limit: limitSchema,
 
-  // for boards, docs, and dashboards
+  // for items, boards, docs, dashboards, and folders
   workspaceIds: optionalIdArray(
-    'Array of workspace IDs (numbers) to search in. Optional for FOLDERS search (searches all accessible workspaces when omitted). For BOARD, DOCUMENTS, and DASHBOARDS search, only pass this if the user explicitly asked to search within specific workspaces. Example: [12345, 67890].',
+    'Array of workspace IDs (numbers) to search in. Optional for FOLDERS search (searches all accessible workspaces when omitted). For ITEMS, BOARD, DOCUMENTS, and DASHBOARDS search, only pass this if the user explicitly asked to search within specific workspaces. Example: [12345, 67890].',
   ),
 
-  // for updates
+  // for items and updates
   boardIds: optionalIdArray(
-    'Array of board IDs (numbers) to scope the search to. Only applies to UPDATES search, and only pass it if the user explicitly asked to search within specific boards. Example: [12345, 67890].',
+    'Array of board IDs (numbers) to scope the search to. Applies to ITEMS and UPDATES search, and only pass it if the user explicitly asked to search within specific boards. Example: [12345, 67890].',
   ),
   creatorIds: optionalIdArray(
     'Array of user IDs (numbers) whose items to search. Applies to UPDATES (filters by update author) and DASHBOARDS (filters by dashboard creator). Only pass it if the user explicitly asked to filter by specific creators. Example: [12345, 67890].',
@@ -215,7 +215,7 @@ For groups, use get_board_info tool.
 For listing items within a specific board, use get_board_items_page tool. ITEMS search here queries items across the account.
 BOARD search returns id, title, url, and workspaceId.
 DOCUMENTS search returns id, title, and workspaceId.
-ITEMS search returns id, title, url, boardId, and workspaceId.
+ITEMS search returns id, title, url, boardId, and workspaceId. Optionally scope it with workspaceIds and/or boardIds.
 WORKSPACES search returns id, title, and description.
 UPDATES search returns id, title (the update body), itemId, boardId, and creatorId. Optionally scope it with boardIds and/or creatorIds.
 TIMELINE_ITEMS search returns id, title, summary, content, itemId, and boardId.
@@ -279,7 +279,8 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
     }
 
     if (input.searchType === GlobalSearchType.ITEMS) {
-      return this.searchItemsAsync(searchTerm, input.limit, workspaceIds);
+      const boardIds = toFilterIds(input.boardIds?.map((id) => id.toString()));
+      return this.searchItemsAsync(searchTerm, input.limit, workspaceIds, boardIds);
     }
 
     if (input.searchType === GlobalSearchType.TIMELINE_ITEMS) {
@@ -361,8 +362,13 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
     }));
   }
 
-  private async searchItemsAsync(query: string, limit: number, workspaceIds?: string[]): Promise<SearchResult[]> {
-    const variables: SearchItemsQueryVariables = { query, limit, workspaceIds };
+  private async searchItemsAsync(
+    query: string,
+    limit: number,
+    workspaceIds?: string[],
+    boardIds?: string[],
+  ): Promise<SearchResult[]> {
+    const variables: SearchItemsQueryVariables = { query, limit, workspaceIds, boardIds };
 
     const response = await this.mondayApi.request<SearchItemsQuery>(searchItems, variables, {
       timeout: SEARCH_TIMEOUT,
