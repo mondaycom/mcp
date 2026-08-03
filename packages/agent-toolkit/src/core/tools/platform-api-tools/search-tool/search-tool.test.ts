@@ -1130,6 +1130,43 @@ describe('SearchTool', () => {
       );
     });
 
+    it('should pass boardIds to the request', async () => {
+      mocks.setResponse(mockItemsResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.ITEMS,
+        searchTerm: 'Item',
+        boardIds: [801, 802],
+      };
+
+      await callToolByNameAsync('search', args);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchItems'),
+        expect.objectContaining({ boardIds: ['801', '802'] }),
+        expect.any(Object),
+      );
+    });
+
+    it('should pass both workspaceIds and boardIds to the request', async () => {
+      mocks.setResponse(mockItemsResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.ITEMS,
+        searchTerm: 'Item',
+        workspaceIds: [12345],
+        boardIds: [801],
+      };
+
+      await callToolByNameAsync('search', args);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchItems'),
+        expect.objectContaining({ workspaceIds: ['12345'], boardIds: ['801'] }),
+        expect.any(Object),
+      );
+    });
+
     it('should not include disclaimer for items', async () => {
       mocks.setResponse(mockItemsResponse);
 
