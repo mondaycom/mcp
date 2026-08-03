@@ -93,11 +93,10 @@ describe('SearchTool', () => {
       expect(description).toContain('BOARD search returns id, title, url, and workspaceId');
       expect(description).toContain('DOCUMENTS search returns id, title, and workspaceId');
       expect(description).toContain('ITEMS search returns id, title, url, boardId, and workspaceId');
+      expect(description).toContain('Optionally scope it with workspaceIds, boardIds, and/or creatorIds');
       expect(description).toContain('FOLDERS search returns id and title');
       expect(description).toContain('TIMELINE_ITEMS search returns id, title, summary, content, itemId, and boardId');
-      expect(description).toContain(
-        'DASHBOARDS search (also called "overviews") returns id, title, and workspaceId',
-      );
+      expect(description).toContain('DASHBOARDS search (also called "overviews") returns id, title, and workspaceId');
       expect(description).not.toContain('IMPORTANT: ids returned by this tool are prefixed');
     });
 
@@ -1167,6 +1166,65 @@ describe('SearchTool', () => {
       );
     });
 
+    // search.items(creator_ids:) only exists from the dev API version, so a creator-filtered
+    // search must switch to the dev operation while unfiltered searches stay on stable.
+    it('should pass creatorIds via the dev query with versionOverride', async () => {
+      mocks.setResponse(mockItemsResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.ITEMS,
+        searchTerm: 'Item',
+        creatorIds: [3, 4],
+      };
+
+      const parsedResult = await callToolByNameAsync('search', args);
+
+      expect(parsedResult.data).toHaveLength(2);
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchItemsByCreatorDev'),
+        expect.objectContaining({ creatorIds: ['3', '4'] }),
+        expect.objectContaining({ versionOverride: 'dev' }),
+      );
+    });
+
+    it('should combine creatorIds with workspaceIds and boardIds on the dev query', async () => {
+      mocks.setResponse(mockItemsResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.ITEMS,
+        searchTerm: 'Item',
+        workspaceIds: [12345],
+        boardIds: [801],
+        creatorIds: [3],
+      };
+
+      await callToolByNameAsync('search', args);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchItemsByCreatorDev'),
+        expect.objectContaining({ workspaceIds: ['12345'], boardIds: ['801'], creatorIds: ['3'] }),
+        expect.objectContaining({ versionOverride: 'dev' }),
+      );
+    });
+
+    it('should stay on the stable query when creatorIds is an empty array', async () => {
+      mocks.setResponse(mockItemsResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.ITEMS,
+        searchTerm: 'Item',
+        creatorIds: [],
+      };
+
+      await callToolByNameAsync('search', args);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchItems'),
+        expect.not.objectContaining({ creatorIds: expect.anything() }),
+        expect.not.objectContaining({ versionOverride: 'dev' }),
+      );
+    });
+
     it('should not include disclaimer for items', async () => {
       mocks.setResponse(mockItemsResponse);
 
@@ -1557,7 +1615,10 @@ describe('SearchTool', () => {
         search: {
           timeline_items: {
             results: [
-              { id: '30', indexed_data: { id: '30', title: 'Untitled note', summary: '', content: '', item_id: '903' } },
+              {
+                id: '30',
+                indexed_data: { id: '30', title: 'Untitled note', summary: '', content: '', item_id: '903' },
+              },
             ],
           },
         },

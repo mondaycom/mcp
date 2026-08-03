@@ -10,7 +10,7 @@ import {
   searchUpdates,
   searchTimelineItems,
 } from './search-tool.graphql';
-import { searchOverviewsDev } from './search-tool.graphql.dev';
+import { searchItemsByCreatorDev, searchOverviewsDev } from './search-tool.graphql.dev';
 import {
   GetFoldersQuery,
   GetFoldersQueryVariables,
@@ -28,6 +28,8 @@ import {
   SearchTimelineItemsQueryVariables,
 } from 'src/monday-graphql/generated/graphql/graphql';
 import {
+  SearchItemsByCreatorDevQuery,
+  SearchItemsByCreatorDevQueryVariables,
   SearchOverviewsDevQuery,
   SearchOverviewsDevQueryVariables,
 } from 'src/monday-graphql/generated/graphql.dev/graphql';
@@ -189,7 +191,7 @@ export const searchSchema = {
     'Array of board IDs (numbers) to scope the search to. Applies to ITEMS and UPDATES search, and only pass it if the user explicitly asked to search within specific boards. Example: [12345, 67890].',
   ),
   creatorIds: optionalIdArray(
-    'Array of user IDs (numbers) whose items to search. Applies to UPDATES (filters by update author) and DASHBOARDS (filters by dashboard creator). Only pass it if the user explicitly asked to filter by specific creators. Example: [12345, 67890].',
+    'Array of user IDs (numbers) to filter by creator. Applies to ITEMS (filters by item creator), UPDATES (filters by update author), and DASHBOARDS (filters by dashboard creator). Only pass it if the user explicitly asked to filter by specific creators. Example: [12345, 67890].',
   ),
 };
 
@@ -215,7 +217,7 @@ For groups, use get_board_info tool.
 For listing items within a specific board, use get_board_items_page tool. ITEMS search here queries items across the account.
 BOARD search returns id, title, url, and workspaceId.
 DOCUMENTS search returns id, title, and workspaceId.
-ITEMS search returns id, title, url, boardId, and workspaceId. Optionally scope it with workspaceIds and/or boardIds.
+ITEMS search returns id, title, url, boardId, and workspaceId. Optionally scope it with workspaceIds, boardIds, and/or creatorIds.
 WORKSPACES search returns id, title, and description.
 UPDATES search returns id, title (the update body), itemId, boardId, and creatorId. Optionally scope it with boardIds and/or creatorIds.
 TIMELINE_ITEMS search returns id, title, summary, content, itemId, and boardId.
@@ -280,7 +282,8 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
 
     if (input.searchType === GlobalSearchType.ITEMS) {
       const boardIds = toFilterIds(input.boardIds?.map((id) => id.toString()));
-      return this.searchItemsAsync(searchTerm, input.limit, workspaceIds, boardIds);
+      const creatorIds = toFilterIds(input.creatorIds?.map((id) => id.toString()));
+      return this.searchItemsAsync(searchTerm, input.limit, workspaceIds, boardIds, creatorIds);
     }
 
     if (input.searchType === GlobalSearchType.TIMELINE_ITEMS) {
@@ -367,12 +370,22 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
     limit: number,
     workspaceIds?: string[],
     boardIds?: string[],
+    creatorIds?: string[],
   ): Promise<SearchResult[]> {
-    const variables: SearchItemsQueryVariables = { query, limit, workspaceIds, boardIds };
-
-    const response = await this.mondayApi.request<SearchItemsQuery>(searchItems, variables, {
-      timeout: SEARCH_TIMEOUT,
-    });
+    // search.items(creator_ids:) is only available from the dev API version, so a creator-filtered
+    // search has to run against dev. Unfiltered searches stay on the stable version rather than
+    // moving every ITEMS search onto dev for the sake of one optional filter.
+    const response = creatorIds
+      ? await this.mondayApi.request<SearchItemsByCreatorDevQuery>(
+          searchItemsByCreatorDev,
+          { query, limit, workspaceIds, boardIds, creatorIds } satisfies SearchItemsByCreatorDevQueryVariables,
+          { versionOverride: 'dev', timeout: SEARCH_TIMEOUT },
+        )
+      : await this.mondayApi.request<SearchItemsQuery>(
+          searchItems,
+          { query, limit, workspaceIds, boardIds } satisfies SearchItemsQueryVariables,
+          { timeout: SEARCH_TIMEOUT },
+        );
 
     return response.search.items.results.map((result) => ({
       id: result.indexed_data.id,

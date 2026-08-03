@@ -1,5 +1,14 @@
 # Changelog
 
+## 5.62.0
+
+### search — filter ITEMS search by creatorIds
+
+- ITEMS search now accepts `creatorIds` to filter results to items created by specific users, alongside the existing `workspaceIds` and `boardIds` scoping
+- `creatorIds` now applies to ITEMS, UPDATES, and DASHBOARDS (field description updated accordingly)
+- `search.items(creator_ids:)` is only available from the `dev` API version, so a creator-filtered ITEMS search uses a dev-only `SearchItemsByCreatorDev` operation with `versionOverride: 'dev'`; unfiltered ITEMS searches stay on the stable version. Fold this back into `searchItems` and drop the override once the arg reaches a dated version
+- Requires DaPulse/search#2707, which removes the `public-internal` tag that kept `creator_ids` out of the public schema
+
 ## 5.61.7
 
 ### search — scope ITEMS search by boardIds; accurate scoping docs
