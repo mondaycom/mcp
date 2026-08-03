@@ -14,7 +14,6 @@ import { ApiClient } from '@mondaydotcomorg/api';
 import { introspectionQuery } from '../../../monday-graphql';
 import { API_VERSION } from '../../../utils/version.utils';
 import { rethrowWithContext, ToolValidationError, INVALID_VARIABLES_JSON_CODE, GRAPHQL_VALIDATION_FAILED_CODE, GRAPHQL_SCHEMA_LOAD_FAILED_CODE } from '../../../utils/error.utils';
-import { withPublicSchemaHeader } from './utils/api-client.utils';
 
 export const allMondayApiToolSchema = {
   query: z.string().describe('Custom GraphQL query/mutation. you need to provide the full query / mutation'),
@@ -45,7 +44,7 @@ export class AllMondayApiTool extends BaseMondayApiTool<typeof allMondayApiToolS
   private static schemaCache: Record<string, GraphQLSchema> = {};
 
   constructor(mondayApi: ApiClient | (() => ApiClient), context?: MondayApiToolContext) {
-    super(typeof mondayApi === 'function' ? () => withPublicSchemaHeader(mondayApi()) : withPublicSchemaHeader(mondayApi), context);
+    super(mondayApi, context);
   }
 
   getDescription(): string {
