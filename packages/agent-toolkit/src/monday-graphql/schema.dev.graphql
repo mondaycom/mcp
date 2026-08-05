@@ -14758,7 +14758,8 @@ limit: Int = 10,   "Date range filter."
 date_range: CrossEntityDateRangeInput,   "Controls the trade-off between search quality and response time. Defaults to balanced."
 strategy: SearchStrategy,   "Filter items to specific board IDs."
 board_ids: [ID!],   "Filter items to specific workspace IDs."
-workspace_ids: [ID!]): SearchItemResults!
+workspace_ids: [ID!],   "Filter items to those created by at least one of the given user IDs."
+creator_ids: [ID!]): SearchItemResults!
   "Search for boards."
   boards(  "The search query string."
 query: String!,   "Maximum number of results to return (default 10, max 20)."
