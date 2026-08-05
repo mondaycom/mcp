@@ -2,6 +2,8 @@
 
 # 🚀 monday.com MCP
 
+[![MCP Toplist](https://mcptoplist.com/badge/com.monday%2Fmonday.com.svg)](https://mcptoplist.com/server/com.monday%2Fmonday.com)
+
 <p>
   <a href="https://npmjs.com/package/@mondaydotcomorg/monday-api-mcp"><img src="https://img.shields.io/npm/v/@mondaydotcomorg/monday-api-mcp.svg?style=flat" alt="npm version"></a>
   <a href="https://github.com/mondaycom/mcp/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License"></a>
