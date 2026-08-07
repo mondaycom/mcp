@@ -35,11 +35,9 @@ export class GetAssetUploadUrlTool extends BaseMondayApiTool<typeof getAssetUplo
 
   getDescription(): string {
     return (
-      'Only call this tool if you can execute a direct HTTP PUT request with binary file data and read the ' +
-      'response headers (e.g. via a shell/curl or an HTTP client tool available to you). This tool only returns ' +
-      'a presigned upload URL — it does not perform the upload itself. If you do not have that capability in the ' +
-      'current context (e.g. a plain conversational chat with no shell/code execution), do not call this tool — ' +
-      'tell the user that direct file upload is not supported here instead.\n\n' +
+      'Only call this tool if you can execute a direct HTTP PUT with binary file data and read response headers ' +
+      "(e.g. via shell/curl). If you can't, tell the user direct file upload isn't supported here — " +
+      "don't call this tool.\n\n" +
       'Get a presigned URL to upload a file to monday.com. Returns an upload_id and upload_url.\n\n' +
       'After calling this tool, upload the file to the returned URL using an HTTP PUT request ' +
       'and capture the ETag header from the response:\n\n' +
