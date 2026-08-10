@@ -11,6 +11,8 @@ export const readDocs = gql`
     $includeBlocks: Boolean = false
     $blocksLimit: Int
     $blocksPage: Int
+    $item_id: ID
+    $column_id: String
   ) {
     docs(
       ids: $ids
@@ -19,6 +21,8 @@ export const readDocs = gql`
       order_by: $order_by
       page: $page
       workspace_ids: $workspace_ids
+      item_id: $item_id
+      column_id: $column_id
     ) {
       id
       object_id

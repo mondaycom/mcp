@@ -89,10 +89,16 @@ describe('ReadDocsTool', () => {
       expect(result.pagination.current_page).toBe(1);
     });
 
-    it('should return error when type or ids are missing in content mode', async () => {
+    it('should return error when type is missing in content mode', async () => {
       const result = await callToolByNameRawAsync(TOOL_NAME, { mode: 'content' });
 
-      expect(result.content[0].text).toContain('type and ids are required');
+      expect(result.content[0].text).toContain('type is required');
+    });
+
+    it('should return error when ids are missing for non-item_column type', async () => {
+      const result = await callToolByNameRawAsync(TOOL_NAME, { mode: 'content', type: 'ids' });
+
+      expect(result.content[0].text).toContain('ids is required');
     });
 
     it('should fall back to object_ids when ids returns no results', async () => {
@@ -122,6 +128,78 @@ describe('ReadDocsTool', () => {
 
       expect(result.content[0].text).toContain('Error reading documents');
       expect(result.content[0].text).toContain('Network error');
+    });
+  });
+
+  // ─── item_column type ────────────────────────────────────────────────────────
+
+  describe('item_column type', () => {
+    const ITEM_ID = '8386012534';
+    const COLUMN_ID = 'monday_doc_mkmt9fgg';
+
+    it('passes item_id and column_id to the API, not ids/object_ids', async () => {
+      mocks.mockRequest.mockResolvedValueOnce(mockDocsResponse).mockResolvedValueOnce(mockMarkdownResponse);
+
+      await callToolByNameAsync(TOOL_NAME, {
+        mode: 'content',
+        type: 'item_column',
+        item_id: ITEM_ID,
+        column_id: COLUMN_ID,
+      });
+
+      const firstCall = mocks.getMockRequest().mock.calls[0];
+      expect(firstCall[1]).toMatchObject({
+        item_id: ITEM_ID,
+        column_id: COLUMN_ID,
+        ids: undefined,
+        object_ids: undefined,
+      });
+    });
+
+    it('returns the doc content when found', async () => {
+      mocks.mockRequest.mockResolvedValueOnce(mockDocsResponse).mockResolvedValueOnce(mockMarkdownResponse);
+
+      const result = await callToolByNameAsync(TOOL_NAME, {
+        type: 'item_column',
+        item_id: ITEM_ID,
+        column_id: COLUMN_ID,
+      });
+
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].id).toBe(DOC_ID);
+    });
+
+    it('returns error when item_id is missing', async () => {
+      const result = await callToolByNameRawAsync(TOOL_NAME, {
+        type: 'item_column',
+        column_id: COLUMN_ID,
+      });
+
+      expect(result.content[0].text).toContain('item_id and column_id are required');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+
+    it('returns error when column_id is missing', async () => {
+      const result = await callToolByNameRawAsync(TOOL_NAME, {
+        type: 'item_column',
+        item_id: ITEM_ID,
+      });
+
+      expect(result.content[0].text).toContain('item_id and column_id are required');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+
+    it('does NOT fall back to object_ids when item_column returns no docs', async () => {
+      mocks.mockRequest.mockResolvedValueOnce(mockEmptyDocsResponse);
+
+      const result = await callToolByNameRawAsync(TOOL_NAME, {
+        type: 'item_column',
+        item_id: ITEM_ID,
+        column_id: COLUMN_ID,
+      });
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+      expect(result.content[0].text).toContain('No documents found');
     });
   });
 
