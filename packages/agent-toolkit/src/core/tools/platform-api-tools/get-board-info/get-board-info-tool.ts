@@ -12,6 +12,12 @@ import { NonDeprecatedColumnType } from 'src/utils/types';
 
 export const getBoardInfoToolSchema = {
   boardId: z.number().describe('The id of the board to get information for'),
+  compact: z
+    .boolean()
+    .optional()
+    .describe(
+      'Return a smaller response by omitting verbose column settings and board view settings/filter/sort details',
+    ),
 };
 
 export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolSchema | undefined> {
@@ -27,7 +33,7 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
   getDescription(): string {
     return (
       'Get comprehensive board information including metadata, structure, owners, and configuration. ' +
-      'Also returns the board\'s views (e.g. table views, filter views) — each view includes its id, name, type, and a structured filter object. '
+      "Also returns the board's views (e.g. table views, filter views) — each view includes its id, name, type, and a structured filter object. "
     );
   }
 
@@ -53,7 +59,7 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
     const subItemsBoard = await this.getSubItemsBoardAsync(board);
 
     return {
-      content: formatBoardInfoAsJson(board, subItemsBoard)
+      content: formatBoardInfoAsJson(board, subItemsBoard, { compact: input.compact }),
     };
   }
 
