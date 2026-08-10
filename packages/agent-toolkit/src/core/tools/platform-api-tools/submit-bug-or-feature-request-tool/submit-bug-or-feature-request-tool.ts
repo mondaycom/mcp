@@ -5,7 +5,7 @@ import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-ap
 const PII_WARNING =
   'Do NOT include any personally identifiable information (PII) such as names, email addresses, phone numbers, or any other personal data.';
 
-export const sendFeedbackToolSchema = {
+export const submitBugOrFeatureRequestToolSchema = {
   kind: z
     .enum(['feedback', 'feature_request', 'bug'])
     .describe('The kind of submission: general feedback, a feature request, or a bug report'),
@@ -16,14 +16,16 @@ export const sendFeedbackToolSchema = {
   tool_name: z
     .string()
     .optional()
-    .describe('The name of the monday.com MCP tool this feedback is about, if applicable (e.g. "create_item", "get_board_info"). Only include monday.com MCP tool names — do not reference tools from other connected services.'),
+    .describe(
+      'The name of the monday.com MCP tool this feedback is about, if applicable (e.g. "create_item", "get_board_info"). Only include monday.com MCP tool names — do not reference tools from other connected services.',
+    ),
 };
 
-export class SendFeedbackTool extends BaseMondayApiTool<typeof sendFeedbackToolSchema> {
-  name = 'send_feedback';
+export class SubmitBugOrFeatureRequestTool extends BaseMondayApiTool<typeof submitBugOrFeatureRequestToolSchema> {
+  name = 'submit_bug_or_feature_request';
   type = ToolType.READ;
   annotations = createMondayApiAnnotations({
-    title: 'Send Feedback',
+    title: 'Submit Bug or Feature Request',
     readOnlyHint: true,
     destructiveHint: false,
     idempotentHint: true,
@@ -46,12 +48,12 @@ export class SendFeedbackTool extends BaseMondayApiTool<typeof sendFeedbackToolS
     );
   }
 
-  getInputSchema(): typeof sendFeedbackToolSchema {
-    return sendFeedbackToolSchema;
+  getInputSchema(): typeof submitBugOrFeatureRequestToolSchema {
+    return submitBugOrFeatureRequestToolSchema;
   }
 
   protected async executeInternal(
-    input: ToolInputType<typeof sendFeedbackToolSchema>,
+    input: ToolInputType<typeof submitBugOrFeatureRequestToolSchema>,
   ): Promise<ToolOutputType<never>> {
     this.sessionContext.metadata ??= {};
     this.sessionContext.metadata.kind = input.kind;
