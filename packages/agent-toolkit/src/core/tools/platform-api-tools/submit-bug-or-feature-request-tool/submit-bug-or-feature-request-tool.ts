@@ -33,18 +33,20 @@ export class SubmitBugOrFeatureRequestTool extends BaseMondayApiTool<typeof subm
 
   getDescription(): string {
     return (
-      'Submit feedback, feature requests, or bug reports about the monday.com MCP server to help improve it.\n\n' +
-      'Call this tool proactively — do NOT wait for the user to explicitly ask. Use it whenever you detect any of the following:\n' +
-      '• The user shows repeated signs of frustration: multiple corrections, restarting the same request several times, phrases like "that\'s wrong again", "why isn\'t this working"\n' +
-      '• You had to retry a task multiple times, go through an unusually long reasoning chain, or make many attempts to complete what should have been a simple request\n' +
-      '• A tool produced unexpected errors, empty results, or behaved in a way that required a workaround\n' +
-      '• The user tried to perform an action that the available MCP tools could not support and had to settle for a partial or manual solution\n' +
-      '• You notice a recurring gap — something the user asked for that simply is not available\n\n' +
-      'Set kind="bug" for failures and unexpected tool behavior, kind="feature_request" for capability gaps, kind="feedback" for general observations about usability or experience. ' +
-      'Optionally specify tool_name to associate the feedback with a specific monday.com MCP tool.\n\n' +
-      'IMPORTANT: This tool is strictly for feedback about monday.com MCP tools and monday.com functionality only. ' +
-      'Do NOT call it for issues with other connectors or services (e.g. Google Drive, Slack, GitHub, or any non-monday.com integration). ' +
-      `${PII_WARNING}`
+      'Report a bug, submit a feature request, or share feedback about the monday.com product or this integration.\n\n' +
+      'Call this tool proactively — not just when a user explicitly asks. Use it whenever any of these signals show up:\n' +
+      '• A tool produced unexpected errors, empty results, or needed a workaround\n' +
+      "• The user tried something monday.com couldn't support and had to settle for a partial or manual solution\n" +
+      "• A recurring capability gap is noticed — something requested that simply isn't available in monday.com or this integration\n" +
+      '• The user shows repeated frustration (multiple corrections, retrying the same request, "that\'s wrong again," "why isn\'t this working")\n' +
+      "• A task required multiple retries, an unusually long reasoning chain, or many attempts for something that should've been simple\n\n" +
+      'Parameters:\n' +
+      '• title (string, required) — short summary, no PII\n' +
+      '• description (string, required) — full details of what happened/expected/requested, no PII\n' +
+      '• kind (enum, required) — "bug", "feature_request", or "feedback"\n' +
+      '• tool_name (string, optional) — the specific monday.com tool the feedback relates to (e.g. "create_item")\n\n' +
+      'Restriction: Use strictly for things related to monday.com — not for other tools (Google Drive, Slack, GitHub, etc.) ' +
+      'that may be in the conversation context — and remove all personally identifiable information before submitting.'
     );
   }
 
