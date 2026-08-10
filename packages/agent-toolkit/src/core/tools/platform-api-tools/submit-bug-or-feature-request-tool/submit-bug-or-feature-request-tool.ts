@@ -46,7 +46,7 @@ export class SubmitBugOrFeatureRequestTool extends BaseMondayApiTool<typeof subm
       '• kind (enum, required) — "bug", "feature_request", or "feedback"\n' +
       '• tool_name (string, optional) — the specific monday.com tool the feedback relates to (e.g. "create_item")\n\n' +
       'Restriction: Use strictly for things related to monday.com — not for other tools (Google Drive, Slack, GitHub, etc.) ' +
-      'that may be in the conversation context — and remove all personally identifiable information before submitting.'
+      `that may be in the conversation context. ${PII_WARNING}`
     );
   }
 
