@@ -181,18 +181,60 @@ export const searchSchema = {
   searchType: searchTypeSchema,
   limit: limitSchema,
 
-  // for items, boards, docs, dashboards, and folders
+  // for items, boards, docs, workspaces, dashboards, timeline_items, and folders
   workspaceIds: optionalIdArray(
-    'Array of workspace IDs (numbers) to search in. Optional for FOLDERS search (searches all accessible workspaces when omitted). For ITEMS, BOARD, DOCUMENTS, and DASHBOARDS search, only pass this if the user explicitly asked to search within specific workspaces. Example: [12345, 67890].',
+    'Array of workspace IDs (numbers) to search in. Optional for FOLDERS search (searches all accessible workspaces when omitted). For ITEMS, BOARD, DOCUMENTS, WORKSPACES, DASHBOARDS, and TIMELINE_ITEMS search, only pass this if the user explicitly asked to search within specific workspaces. Example: [12345, 67890].',
   ),
 
-  // for items and updates
+  // for items, boards, updates, and timeline_items
   boardIds: optionalIdArray(
-    'Array of board IDs (numbers) to scope the search to. Applies to ITEMS and UPDATES search, and only pass it if the user explicitly asked to search within specific boards. Example: [12345, 67890].',
+    'Array of board IDs (numbers) to scope the search to. Applies to ITEMS, BOARD, UPDATES, and TIMELINE_ITEMS search, and only pass it if the user explicitly asked to search within specific boards. Example: [12345, 67890].',
   ),
   creatorIds: optionalIdArray(
     'Array of user IDs (numbers) to filter by creator. Applies to ITEMS (filters by item creator), UPDATES (filters by update author), and DASHBOARDS (filters by dashboard creator). Only pass it if the user explicitly asked to filter by specific creators. Example: [12345, 67890].',
   ),
+
+  // for timeline_items
+  itemIds: optionalIdArray(
+    'Array of item IDs (numbers) to filter TIMELINE_ITEMS search to those belonging to specific items. Only applies to TIMELINE_ITEMS search. Example: [12345, 67890].',
+  ),
+
+  // for workspaces
+  workspaceKind: z
+    .enum(['open', 'closed'])
+    .optional()
+    .describe('Filter WORKSPACES search by workspace kind. Only applies to WORKSPACES search.'),
+
+  // for timeline_items
+  timelineItemType: z
+    .enum(['email', 'googleCalendar', 'outlookCalendar', 'zoom', 'activity'])
+    .optional()
+    .describe('Filter TIMELINE_ITEMS search by item type. Only applies to TIMELINE_ITEMS search.'),
+
+  // for timeline_items
+  timelineProductKind: z
+    .enum(['service', 'crm'])
+    .optional()
+    .describe('Filter TIMELINE_ITEMS search by product kind. Only applies to TIMELINE_ITEMS search.'),
+
+  // for dashboards
+  overviewKinds: z
+    .array(z.string())
+    .optional()
+    .describe('Filter DASHBOARDS search by kind (e.g. ["public"] or ["private"]). Only applies to DASHBOARDS search.'),
+
+  // for all SearchNamespace entities
+  dateRange: z
+    .object({
+      created_before: z.string().optional().describe('ISO8601 timestamp — only results created before this date.'),
+      created_after: z.string().optional().describe('ISO8601 timestamp — only results created after this date.'),
+      updated_before: z.string().optional().describe('ISO8601 timestamp — only results updated before this date.'),
+      updated_after: z.string().optional().describe('ISO8601 timestamp — only results updated after this date.'),
+    })
+    .optional()
+    .describe(
+      'Filter results by date. Applies to ITEMS, BOARD, DOCUMENTS, UPDATES, WORKSPACES, TIMELINE_ITEMS, and DASHBOARDS search. All fields are ISO8601 datetime strings and are optional.',
+    ),
 };
 
 export type SearchToolInput = typeof searchSchema;
@@ -223,6 +265,12 @@ UPDATES search returns id, title (the update body), itemId, boardId, and creator
 TIMELINE_ITEMS search returns id, title, summary, content, itemId, and boardId.
 DASHBOARDS search (also called "overviews") returns id, title, and workspaceId. Optionally scope it with workspaceIds and/or creatorIds.
 FOLDERS search returns id and title. Optionally scope it with workspaceIds, which searches all accessible workspaces when omitted. Pass workspaceIds to narrow the search if results may be truncated.
+BOARD search additionally accepts boardIds (filter to specific board IDs) and dateRange.
+WORKSPACES search additionally accepts workspaceIds (filter to specific workspaces), workspaceKind (open or closed), and dateRange.
+TIMELINE_ITEMS search additionally returns type, productKind, createdAt, updatedAt and accepts boardIds, workspaceIds, itemIds, timelineItemType, timelineProductKind, and dateRange.
+UPDATES search additionally returns createdAt, updatedAt and accepts dateRange.
+DASHBOARDS search additionally returns kind, state, createdBy, createdAt, updatedAt and accepts overviewKinds and dateRange.
+All SearchNamespace entities (except FOLDERS) support dateRange filtering.
   `;
   }
 
@@ -263,36 +311,48 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
     const workspaceIds = toFilterIds(input.workspaceIds?.map((id) => id.toString()));
 
     if (input.searchType === GlobalSearchType.BOARD) {
-      return this.searchBoardsAsync(searchTerm, input.limit, workspaceIds);
+      const boardIds = toFilterIds(input.boardIds?.map((id) => id.toString()));
+      return this.searchBoardsAsync(searchTerm, input.limit, workspaceIds, boardIds, input.dateRange);
     }
 
     if (input.searchType === GlobalSearchType.DOCUMENTS) {
-      return this.searchDocsAsync(searchTerm, input.limit, workspaceIds);
+      return this.searchDocsAsync(searchTerm, input.limit, workspaceIds, input.dateRange);
     }
 
     if (input.searchType === GlobalSearchType.WORKSPACES) {
-      return this.searchWorkspacesAsync(searchTerm, input.limit);
+      return this.searchWorkspacesAsync(searchTerm, input.limit, workspaceIds, input.workspaceKind, input.dateRange);
     }
 
     if (input.searchType === GlobalSearchType.UPDATES) {
       const boardIds = toFilterIds(input.boardIds?.map((id) => id.toString()));
       const creatorIds = toFilterIds(input.creatorIds?.map((id) => id.toString()));
-      return this.searchUpdatesAsync(searchTerm, input.limit, boardIds, creatorIds);
+      return this.searchUpdatesAsync(searchTerm, input.limit, boardIds, creatorIds, input.dateRange);
     }
 
     if (input.searchType === GlobalSearchType.ITEMS) {
       const boardIds = toFilterIds(input.boardIds?.map((id) => id.toString()));
       const creatorIds = toFilterIds(input.creatorIds?.map((id) => id.toString()));
-      return this.searchItemsAsync(searchTerm, input.limit, workspaceIds, boardIds, creatorIds);
+      return this.searchItemsAsync(searchTerm, input.limit, workspaceIds, boardIds, creatorIds, input.dateRange);
     }
 
     if (input.searchType === GlobalSearchType.TIMELINE_ITEMS) {
-      return this.searchTimelineItemsAsync(searchTerm, input.limit);
+      const boardIds = toFilterIds(input.boardIds?.map((id) => id.toString()));
+      const itemIds = toFilterIds(input.itemIds?.map((id) => id.toString()));
+      return this.searchTimelineItemsAsync(
+        searchTerm,
+        input.limit,
+        boardIds,
+        workspaceIds,
+        itemIds,
+        input.timelineItemType,
+        input.timelineProductKind,
+        input.dateRange,
+      );
     }
 
     if (input.searchType === GlobalSearchType.DASHBOARDS) {
       const creatorIds = input.creatorIds?.map((id) => id.toString());
-      return this.searchOverviewsAsync(searchTerm, input.limit, workspaceIds, creatorIds);
+      return this.searchOverviewsAsync(searchTerm, input.limit, workspaceIds, creatorIds, input.overviewKinds, input.dateRange);
     }
 
     throw new ToolValidationError(
@@ -301,8 +361,14 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
     );
   }
 
-  private async searchBoardsAsync(query: string, limit: number, workspaceIds?: string[]): Promise<SearchResult[]> {
-    const variables: SearchBoardsQueryVariables = { query, limit, workspaceIds };
+  private async searchBoardsAsync(
+    query: string,
+    limit: number,
+    workspaceIds?: string[],
+    boardIds?: string[],
+    dateRange?: ToolInputType<SearchToolInput>['dateRange'],
+  ): Promise<SearchResult[]> {
+    const variables: SearchBoardsQueryVariables = { query, limit, workspaceIds, boardIds, dateRange };
 
     const response = await this.mondayApi.request<SearchBoardsQuery>(searchBoards, variables, {
       timeout: SEARCH_TIMEOUT,
@@ -313,11 +379,18 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
       title: result.indexed_data.name,
       url: result.indexed_data.url,
       workspaceId: result.indexed_data.workspace_id ?? undefined,
+      description: result.indexed_data.description || undefined,
+      creatorId: result.indexed_data.creator_id ?? undefined,
     }));
   }
 
-  private async searchDocsAsync(query: string, limit: number, workspaceIds?: string[]): Promise<SearchResult[]> {
-    const variables: SearchDocsQueryVariables = { query, limit, workspaceIds };
+  private async searchDocsAsync(
+    query: string,
+    limit: number,
+    workspaceIds?: string[],
+    dateRange?: ToolInputType<SearchToolInput>['dateRange'],
+  ): Promise<SearchResult[]> {
+    const variables: SearchDocsQueryVariables = { query, limit, workspaceIds, dateRange };
 
     const response = await this.mondayApi.request<SearchDocsQuery>(searchDocs, variables, {
       timeout: SEARCH_TIMEOUT,
@@ -330,8 +403,14 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
     }));
   }
 
-  private async searchWorkspacesAsync(query: string, limit: number): Promise<SearchResult[]> {
-    const variables: SearchWorkspacesQueryVariables = { query, limit };
+  private async searchWorkspacesAsync(
+    query: string,
+    limit: number,
+    workspaceIds?: string[],
+    kind?: string,
+    dateRange?: ToolInputType<SearchToolInput>['dateRange'],
+  ): Promise<SearchResult[]> {
+    const variables: SearchWorkspacesQueryVariables = { query, limit, workspaceIds, kind, dateRange };
 
     const response = await this.mondayApi.request<SearchWorkspacesQuery>(searchWorkspaces, variables, {
       timeout: SEARCH_TIMEOUT,
@@ -341,6 +420,8 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
       id: result.indexed_data.id,
       title: result.indexed_data.name,
       description: result.indexed_data.description || undefined,
+      kind: result.indexed_data.kind,
+      state: result.indexed_data.state,
     }));
   }
 
@@ -349,8 +430,9 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
     limit: number,
     boardIds?: string[],
     creatorIds?: string[],
+    dateRange?: ToolInputType<SearchToolInput>['dateRange'],
   ): Promise<SearchResult[]> {
-    const variables: SearchUpdatesQueryVariables = { query, limit, boardIds, creatorIds };
+    const variables: SearchUpdatesQueryVariables = { query, limit, boardIds, creatorIds, dateRange };
 
     const response = await this.mondayApi.request<SearchUpdatesQuery>(searchUpdates, variables, {
       timeout: SEARCH_TIMEOUT,
@@ -362,6 +444,8 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
       itemId: result.indexed_data.item_id,
       boardId: result.indexed_data.board_id,
       creatorId: result.indexed_data.creator_id,
+      createdAt: result.indexed_data.created_at,
+      updatedAt: result.indexed_data.updated_at,
     }));
   }
 
@@ -371,6 +455,7 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
     workspaceIds?: string[],
     boardIds?: string[],
     creatorIds?: string[],
+    dateRange?: ToolInputType<SearchToolInput>['dateRange'],
   ): Promise<SearchResult[]> {
     // search.items(creator_ids:) is only available from the dev API version, so a creator-filtered
     // search has to run against dev. Unfiltered searches stay on the stable version rather than
@@ -378,12 +463,12 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
     const response = creatorIds
       ? await this.mondayApi.request<SearchItemsByCreatorDevQuery>(
           searchItemsByCreatorDev,
-          { query, limit, workspaceIds, boardIds, creatorIds } satisfies SearchItemsByCreatorDevQueryVariables,
+          { query, limit, workspaceIds, boardIds, creatorIds, dateRange } satisfies SearchItemsByCreatorDevQueryVariables,
           { versionOverride: 'dev', timeout: SEARCH_TIMEOUT },
         )
       : await this.mondayApi.request<SearchItemsQuery>(
           searchItems,
-          { query, limit, workspaceIds, boardIds } satisfies SearchItemsQueryVariables,
+          { query, limit, workspaceIds, boardIds, dateRange } satisfies SearchItemsQueryVariables,
           { timeout: SEARCH_TIMEOUT },
         );
 
@@ -396,8 +481,26 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
     }));
   }
 
-  private async searchTimelineItemsAsync(query: string, limit: number): Promise<SearchResult[]> {
-    const variables: SearchTimelineItemsQueryVariables = { query, limit };
+  private async searchTimelineItemsAsync(
+    query: string,
+    limit: number,
+    boardIds?: string[],
+    workspaceIds?: string[],
+    itemIds?: string[],
+    type?: string,
+    productKind?: string,
+    dateRange?: ToolInputType<SearchToolInput>['dateRange'],
+  ): Promise<SearchResult[]> {
+    const variables: SearchTimelineItemsQueryVariables = {
+      query,
+      limit,
+      boardIds,
+      workspaceIds,
+      itemIds,
+      type: type as SearchTimelineItemsQueryVariables['type'],
+      productKind: productKind as SearchTimelineItemsQueryVariables['productKind'],
+      dateRange,
+    };
 
     const response = await this.mondayApi.request<SearchTimelineItemsQuery>(searchTimelineItems, variables, {
       timeout: SEARCH_TIMEOUT,
@@ -410,6 +513,10 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
       content: result.indexed_data.content || undefined,
       itemId: result.indexed_data.item_id,
       boardId: result.indexed_data.board_id ?? undefined,
+      type: result.indexed_data.type,
+      productKind: result.indexed_data.product_kind,
+      createdAt: result.indexed_data.created_at,
+      updatedAt: result.indexed_data.updated_at,
     }));
   }
 
@@ -418,8 +525,10 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
     limit: number,
     workspaceIds?: string[],
     creatorIds?: string[],
+    kinds?: string[],
+    dateRange?: ToolInputType<SearchToolInput>['dateRange'],
   ): Promise<SearchResult[]> {
-    const variables: SearchOverviewsDevQueryVariables = { query, limit, workspaceIds, creatorIds };
+    const variables: SearchOverviewsDevQueryVariables = { query, limit, workspaceIds, creatorIds, kinds, dateRange };
 
     // search.overviews is only available in the dev schema; drop versionOverride once promoted to stable.
     const response = await this.mondayApi.request<SearchOverviewsDevQuery>(searchOverviewsDev, variables, {
@@ -431,6 +540,11 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
       id: result.indexed_data.id,
       title: result.indexed_data.name,
       workspaceId: result.indexed_data.workspace_id ?? undefined,
+      kind: result.indexed_data.kind,
+      state: result.indexed_data.state,
+      createdBy: result.indexed_data.created_by ?? undefined,
+      createdAt: result.indexed_data.created_at ?? undefined,
+      updatedAt: result.indexed_data.updated_at ?? undefined,
     }));
   }
 

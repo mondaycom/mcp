@@ -11,6 +11,7 @@ export const searchItemsByCreatorDev = gql`
     $workspaceIds: [ID!]
     $boardIds: [ID!]
     $creatorIds: [ID!]
+    $dateRange: CrossEntityDateRangeInput
   ) {
     search {
       items(
@@ -19,6 +20,7 @@ export const searchItemsByCreatorDev = gql`
         workspace_ids: $workspaceIds
         board_ids: $boardIds
         creator_ids: $creatorIds
+        date_range: $dateRange
       ) {
         results {
           id
@@ -38,15 +40,34 @@ export const searchItemsByCreatorDev = gql`
 // search.overviews is only available in the dev schema; move this query into search-tool.graphql.ts
 // and drop the versionOverride once the field is promoted to a stable API version.
 export const searchOverviewsDev = gql`
-  query SearchOverviewsDev($query: String!, $limit: Int, $workspaceIds: [ID!], $creatorIds: [ID!]) {
+  query SearchOverviewsDev(
+    $query: String!
+    $limit: Int
+    $workspaceIds: [ID!]
+    $creatorIds: [ID!]
+    $kinds: [String!]
+    $dateRange: CrossEntityDateRangeInput
+  ) {
     search {
-      overviews(query: $query, limit: $limit, workspace_ids: $workspaceIds, creator_ids: $creatorIds) {
+      overviews(
+        query: $query
+        limit: $limit
+        workspace_ids: $workspaceIds
+        creator_ids: $creatorIds
+        kinds: $kinds
+        date_range: $dateRange
+      ) {
         results {
           id
           indexed_data {
             id
             name
             workspace_id
+            kind
+            state
+            created_by
+            created_at
+            updated_at
           }
         }
       }

@@ -20406,6 +20406,7 @@ export type SearchItemsByCreatorDevQueryVariables = Exact<{
   workspaceIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
   boardIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
   creatorIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+  dateRange?: InputMaybe<CrossEntityDateRangeInput>;
 }>;
 
 
@@ -20416,10 +20417,12 @@ export type SearchOverviewsDevQueryVariables = Exact<{
   limit?: InputMaybe<Scalars['Int']['input']>;
   workspaceIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
   creatorIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+  kinds?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
+  dateRange?: InputMaybe<CrossEntityDateRangeInput>;
 }>;
 
 
-export type SearchOverviewsDevQuery = { __typename?: 'Query', search: { __typename?: 'SearchNamespace', overviews: { __typename?: 'SearchOverviewResults', results: Array<{ __typename?: 'SearchOverviewResult', id: string, indexed_data: { __typename?: 'SearchIndexedOverview', id: string, name: string, workspace_id?: string | null } }> } } };
+export type SearchOverviewsDevQuery = { __typename?: 'Query', search: { __typename?: 'SearchNamespace', overviews: { __typename?: 'SearchOverviewResults', results: Array<{ __typename?: 'SearchOverviewResult', id: string, indexed_data: { __typename?: 'SearchIndexedOverview', id: string, name: string, workspace_id?: string | null, kind: string, state: string, created_by?: string | null, created_at?: string | null, updated_at?: string | null } }> } } };
 
 export type BatchUndoMutationVariables = Exact<{
   boardId: Scalars['ID']['input'];

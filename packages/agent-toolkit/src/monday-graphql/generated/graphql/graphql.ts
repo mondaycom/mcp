@@ -13468,6 +13468,7 @@ export type SearchItemsQueryVariables = Exact<{
   limit?: InputMaybe<Scalars['Int']['input']>;
   workspaceIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
   boardIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+  dateRange?: InputMaybe<CrossEntityDateRangeInput>;
 }>;
 
 
@@ -13477,15 +13478,18 @@ export type SearchBoardsQueryVariables = Exact<{
   query: Scalars['String']['input'];
   limit?: InputMaybe<Scalars['Int']['input']>;
   workspaceIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+  boardIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+  dateRange?: InputMaybe<CrossEntityDateRangeInput>;
 }>;
 
 
-export type SearchBoardsQuery = { __typename?: 'Query', search: { __typename?: 'SearchNamespace', boards: { __typename?: 'SearchBoardResults', results: Array<{ __typename?: 'SearchBoardResult', id: string, indexed_data: { __typename?: 'SearchIndexedBoard', id: string, name: string, url: string, workspace_id?: string | null } }> } } };
+export type SearchBoardsQuery = { __typename?: 'Query', search: { __typename?: 'SearchNamespace', boards: { __typename?: 'SearchBoardResults', results: Array<{ __typename?: 'SearchBoardResult', id: string, indexed_data: { __typename?: 'SearchIndexedBoard', id: string, name: string, url: string, workspace_id?: string | null, description?: string | null, creator_id?: string | null } }> } } };
 
 export type SearchDocsQueryVariables = Exact<{
   query: Scalars['String']['input'];
   limit?: InputMaybe<Scalars['Int']['input']>;
   workspaceIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+  dateRange?: InputMaybe<CrossEntityDateRangeInput>;
 }>;
 
 
@@ -13494,28 +13498,38 @@ export type SearchDocsQuery = { __typename?: 'Query', search: { __typename?: 'Se
 export type SearchWorkspacesQueryVariables = Exact<{
   query: Scalars['String']['input'];
   limit?: InputMaybe<Scalars['Int']['input']>;
+  workspaceIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+  kind?: InputMaybe<Scalars['String']['input']>;
+  dateRange?: InputMaybe<CrossEntityDateRangeInput>;
 }>;
 
 
-export type SearchWorkspacesQuery = { __typename?: 'Query', search: { __typename?: 'SearchNamespace', workspaces: { __typename?: 'SearchWorkspaceResults', results: Array<{ __typename?: 'SearchWorkspaceResult', id: string, indexed_data: { __typename?: 'SearchIndexedWorkspace', id: string, name: string, description?: string | null } }> } } };
+export type SearchWorkspacesQuery = { __typename?: 'Query', search: { __typename?: 'SearchNamespace', workspaces: { __typename?: 'SearchWorkspaceResults', results: Array<{ __typename?: 'SearchWorkspaceResult', id: string, indexed_data: { __typename?: 'SearchIndexedWorkspace', id: string, name: string, description?: string | null, kind: string, state: string } }> } } };
 
 export type SearchUpdatesQueryVariables = Exact<{
   query: Scalars['String']['input'];
   limit?: InputMaybe<Scalars['Int']['input']>;
   boardIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
   creatorIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+  dateRange?: InputMaybe<CrossEntityDateRangeInput>;
 }>;
 
 
-export type SearchUpdatesQuery = { __typename?: 'Query', search: { __typename?: 'SearchNamespace', updates: { __typename?: 'SearchUpdateResults', results: Array<{ __typename?: 'SearchUpdateResult', id: string, indexed_data: { __typename?: 'SearchIndexedUpdate', id: string, body: string, creator_id: string, item_id: string, board_id: string } }> } } };
+export type SearchUpdatesQuery = { __typename?: 'Query', search: { __typename?: 'SearchNamespace', updates: { __typename?: 'SearchUpdateResults', results: Array<{ __typename?: 'SearchUpdateResult', id: string, indexed_data: { __typename?: 'SearchIndexedUpdate', id: string, body: string, creator_id: string, item_id: string, board_id: string, created_at: string, updated_at: string } }> } } };
 
 export type SearchTimelineItemsQueryVariables = Exact<{
   query: Scalars['String']['input'];
   limit?: InputMaybe<Scalars['Int']['input']>;
+  boardIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+  workspaceIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+  itemIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+  type?: InputMaybe<TimelineItemKind>;
+  productKind?: InputMaybe<TimelineItemProductKind>;
+  dateRange?: InputMaybe<CrossEntityDateRangeInput>;
 }>;
 
 
-export type SearchTimelineItemsQuery = { __typename?: 'Query', search: { __typename?: 'SearchNamespace', timeline_items: { __typename?: 'SearchTimelineItemResults', results: Array<{ __typename?: 'SearchTimelineItemResult', id: string, indexed_data: { __typename?: 'SearchIndexedTimelineItem', id: string, title: string, summary: string, content: string, item_id: string, board_id?: string | null } }> } } };
+export type SearchTimelineItemsQuery = { __typename?: 'Query', search: { __typename?: 'SearchNamespace', timeline_items: { __typename?: 'SearchTimelineItemResults', results: Array<{ __typename?: 'SearchTimelineItemResult', id: string, indexed_data: { __typename?: 'SearchIndexedTimelineItem', id: string, title: string, summary: string, content: string, item_id: string, board_id?: string | null, type: string, product_kind: string, created_at: string, updated_at: string } }> } } };
 
 export type SetObjectSchemaColumnActiveStateMutationVariables = Exact<{
   objectSchemaId?: InputMaybe<Scalars['ID']['input']>;
