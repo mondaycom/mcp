@@ -1,7 +1,7 @@
 import { createMockApiClient } from '../test-utils/mock-api-client';
-import { SendFeedbackTool } from './send-feedback-tool';
+import { SubmitBugOrFeatureRequestTool } from './submit-bug-or-feature-request-tool';
 
-describe('SendFeedbackTool', () => {
+describe('SubmitBugOrFeatureRequestTool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
 
   beforeEach(() => {
@@ -9,7 +9,7 @@ describe('SendFeedbackTool', () => {
   });
 
   it('sets session context metadata with all fields', async () => {
-    const tool = new SendFeedbackTool(mocks.mockApiClient);
+    const tool = new SubmitBugOrFeatureRequestTool(mocks.mockApiClient);
     const sessionContext = { metadata: {} as Record<string, unknown> };
 
     const result = await tool.execute(
@@ -35,7 +35,7 @@ describe('SendFeedbackTool', () => {
   });
 
   it('omits tool_name from metadata when not provided', async () => {
-    const tool = new SendFeedbackTool(mocks.mockApiClient);
+    const tool = new SubmitBugOrFeatureRequestTool(mocks.mockApiClient);
     const sessionContext = { metadata: {} as Record<string, unknown> };
 
     await tool.execute(

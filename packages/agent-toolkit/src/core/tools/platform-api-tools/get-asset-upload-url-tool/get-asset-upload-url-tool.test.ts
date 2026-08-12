@@ -79,5 +79,6 @@ describe('GetAssetUploadUrlTool', () => {
     expect(tool.getDescription()).toContain('curl');
     expect(tool.getDescription()).toContain('ETag');
     expect(tool.getDescription()).toContain('finalize_asset_upload');
+    expect(tool.getDescription()).toContain('Only call this tool if you can execute a direct HTTP PUT');
   });
 });

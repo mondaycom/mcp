@@ -85,7 +85,7 @@ import { GetAutomationRunsTool } from './automations-tools/get-automation-runs/g
 import { GetAutomationStatisticsTool } from './automations-tools/get-automation-statistics/get-automation-statistics-tool';
 import { ConfigureAiColumnTool } from './configure-ai-column-tool/configure-ai-column-tool';
 import { RemoveAiFromColumnTool } from './remove-ai-from-column-tool/remove-ai-from-column-tool';
-import { SendFeedbackTool } from './send-feedback-tool/send-feedback-tool';
+import { SubmitBugOrFeatureRequestTool } from './submit-bug-or-feature-request-tool/submit-bug-or-feature-request-tool';
 import { GetMondayKnowledgeTool } from './get-monday-knowledge/get-monday-knowledge';
 
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
@@ -180,7 +180,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   // AI Column Tools
   ConfigureAiColumnTool,
   RemoveAiFromColumnTool,
-  SendFeedbackTool,
+  SubmitBugOrFeatureRequestTool,
   GetMondayKnowledgeTool,
 ];
 
@@ -264,7 +264,7 @@ export * from './dashboard-tools';
 // AI Column Tools
 export * from './configure-ai-column-tool/configure-ai-column-tool';
 export * from './remove-ai-from-column-tool/remove-ai-from-column-tool';
-export * from './send-feedback-tool/send-feedback-tool';
+export * from './submit-bug-or-feature-request-tool/submit-bug-or-feature-request-tool';
 export * from './get-monday-knowledge/get-monday-knowledge';
 // Monday Dev Tools
 export * from '../monday-dev-tools';
