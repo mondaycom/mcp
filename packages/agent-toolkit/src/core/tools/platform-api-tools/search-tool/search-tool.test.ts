@@ -63,7 +63,15 @@ describe('SearchTool', () => {
         results: [
           {
             id: '10',
-            indexed_data: { id: '10', body: 'Deploy is done', creator_id: '501', item_id: '901', board_id: '801' },
+            indexed_data: {
+              id: '10',
+              body: 'Deploy is done',
+              creator_id: '501',
+              item_id: '901',
+              board_id: '801',
+              created_at: '2025-01-15T10:30:00Z',
+              updated_at: '2025-01-15T10:45:00Z',
+            },
           },
         ],
       },
@@ -392,6 +400,66 @@ describe('SearchTool', () => {
         expect(parsedResult.data[1].workspaceId).toBeUndefined();
       });
 
+      it('should propagate description and creatorId when present, and omit them when the index has none', async () => {
+        const responseWithDescriptions: SearchBoardsQuery = {
+          search: {
+            boards: {
+              results: [
+                {
+                  id: '123',
+                  indexed_data: {
+                    id: '123',
+                    name: 'Test Board 1',
+                    url: 'https://monday.com/boards/123',
+                    description: 'Tracks the Q1 roadmap',
+                    creator_id: '501',
+                  },
+                },
+                {
+                  id: '456',
+                  indexed_data: {
+                    id: '456',
+                    name: 'Test Board 2',
+                    url: 'https://monday.com/boards/456',
+                    description: null,
+                    creator_id: null,
+                  },
+                },
+                // An empty-string description is treated as "no description" (mapped with `|| undefined`).
+                {
+                  id: '789',
+                  indexed_data: {
+                    id: '789',
+                    name: 'Another Board',
+                    url: 'https://monday.com/boards/789',
+                    description: '',
+                    creator_id: '502',
+                  },
+                },
+              ],
+            },
+          },
+        };
+        mocks.setResponse(responseWithDescriptions);
+
+        const parsedResult = await callToolByNameAsync('search', {
+          searchType: GlobalSearchType.BOARD,
+          searchTerm: 'Test',
+        });
+
+        expect(parsedResult.data[0]).toEqual({
+          id: '123',
+          title: 'Test Board 1',
+          url: 'https://monday.com/boards/123',
+          description: 'Tracks the Q1 roadmap',
+          creatorId: '501',
+        });
+        expect(parsedResult.data[1].description).toBeUndefined();
+        expect(parsedResult.data[1].creatorId).toBeUndefined();
+        expect(parsedResult.data[2].description).toBeUndefined();
+        expect(parsedResult.data[2].creatorId).toBe('502');
+      });
+
       it('should return raw IDs without prefix', async () => {
         mocks.setResponse(mockDevBoardsResponse);
 
@@ -422,6 +490,46 @@ describe('SearchTool', () => {
           expect.stringContaining('query SearchBoards'),
           expect.objectContaining({
             workspaceIds: ['12345', '67890'],
+          }),
+          expect.objectContaining({ timeout: expect.any(Number) }),
+        );
+      });
+
+      it('should pass boardIds filter', async () => {
+        mocks.setResponse(mockDevBoardsResponse);
+
+        const args: inputType = {
+          searchType: GlobalSearchType.BOARD,
+          searchTerm: 'Test',
+          boardIds: [123, 456],
+        };
+
+        await callToolByNameAsync('search', args);
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchBoards'),
+          expect.objectContaining({
+            boardIds: ['123', '456'],
+          }),
+          expect.objectContaining({ timeout: expect.any(Number) }),
+        );
+      });
+
+      it('should pass dateRange filter', async () => {
+        mocks.setResponse(mockDevBoardsResponse);
+
+        const args: inputType = {
+          searchType: GlobalSearchType.BOARD,
+          searchTerm: 'Test',
+          dateRange: { created_after: '2025-01-01T00:00:00Z', updated_before: '2025-02-01T00:00:00Z' },
+        };
+
+        await callToolByNameAsync('search', args);
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchBoards'),
+          expect.objectContaining({
+            dateRange: { created_after: '2025-01-01T00:00:00Z', updated_before: '2025-02-01T00:00:00Z' },
           }),
           expect.objectContaining({ timeout: expect.any(Number) }),
         );
@@ -1166,6 +1274,26 @@ describe('SearchTool', () => {
       );
     });
 
+    it('should pass dateRange to the request', async () => {
+      mocks.setResponse(mockItemsResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.ITEMS,
+        searchTerm: 'Item',
+        dateRange: { created_after: '2025-01-01T00:00:00Z', created_before: '2025-02-01T00:00:00Z' },
+      };
+
+      await callToolByNameAsync('search', args);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchItems'),
+        expect.objectContaining({
+          dateRange: { created_after: '2025-01-01T00:00:00Z', created_before: '2025-02-01T00:00:00Z' },
+        }),
+        expect.any(Object),
+      );
+    });
+
     // search.items(creator_ids:) only exists from the dev API version, so a creator-filtered
     // search must switch to the dev operation while unfiltered searches stay on stable.
     it('should pass creatorIds via the dev query with versionOverride', async () => {
@@ -1274,8 +1402,26 @@ describe('SearchTool', () => {
       search: {
         workspaces: {
           results: [
-            { id: '10', indexed_data: { id: '10', name: 'Marketing Workspace', description: 'For marketing team' } },
-            { id: '20', indexed_data: { id: '20', name: 'Engineering', description: 'Engineering workspace' } },
+            {
+              id: '10',
+              indexed_data: {
+                id: '10',
+                name: 'Marketing Workspace',
+                description: 'For marketing team',
+                kind: 'open',
+                state: 'active',
+              },
+            },
+            {
+              id: '20',
+              indexed_data: {
+                id: '20',
+                name: 'Engineering',
+                description: 'Engineering workspace',
+                kind: 'closed',
+                state: 'active',
+              },
+            },
           ],
         },
       },
@@ -1296,11 +1442,15 @@ describe('SearchTool', () => {
         id: '10',
         title: 'Marketing Workspace',
         description: 'For marketing team',
+        kind: 'open',
+        state: 'active',
       });
       expect(parsedResult.data[1]).toEqual({
         id: '20',
         title: 'Engineering',
         description: 'Engineering workspace',
+        kind: 'closed',
+        state: 'active',
       });
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
@@ -1327,6 +1477,97 @@ describe('SearchTool', () => {
       expect(parsedResult.data[1].id).toBe('20');
     });
 
+    it('should return kind and state from the workspace index', async () => {
+      mocks.setResponse(mockWorkspacesResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.WORKSPACES,
+        searchTerm: 'Marketing',
+      };
+
+      const parsedResult = await callToolByNameAsync('search', args);
+
+      expect(parsedResult.data[0].kind).toBe('open');
+      expect(parsedResult.data[0].state).toBe('active');
+      expect(parsedResult.data[1].kind).toBe('closed');
+      expect(parsedResult.data[1].state).toBe('active');
+    });
+
+    it('should pass workspaceIds to the workspaces query', async () => {
+      mocks.setResponse(mockWorkspacesResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.WORKSPACES,
+        searchTerm: 'Marketing',
+        workspaceIds: [10, 20],
+      };
+
+      await callToolByNameAsync('search', args);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchWorkspaces'),
+        expect.objectContaining({ workspaceIds: ['10', '20'] }),
+        expect.objectContaining({ timeout: expect.any(Number) }),
+      );
+    });
+
+    it('should pass workspaceKind through as the kind argument', async () => {
+      mocks.setResponse(mockWorkspacesResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.WORKSPACES,
+        searchTerm: 'Marketing',
+        workspaceKind: 'open',
+      };
+
+      await callToolByNameAsync('search', args);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchWorkspaces'),
+        expect.objectContaining({ kind: 'open' }),
+        expect.objectContaining({ timeout: expect.any(Number) }),
+      );
+    });
+
+    // workspaceKind is deliberately z.string() rather than a narrowed enum: search.workspaces(kind:)
+    // is a plain String in the schema and WorkspaceKind carries a third value ("template") beyond the
+    // two named in the argument description, so "template" must not be rejected.
+    it('should accept workspaceKind "template" and forward it', async () => {
+      mocks.setResponse(mockWorkspacesResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.WORKSPACES,
+        searchTerm: 'Marketing',
+        workspaceKind: 'template',
+      };
+
+      await callToolByNameAsync('search', args);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchWorkspaces'),
+        expect.objectContaining({ kind: 'template' }),
+        expect.objectContaining({ timeout: expect.any(Number) }),
+      );
+    });
+
+    it('should pass dateRange to the workspaces query', async () => {
+      mocks.setResponse(mockWorkspacesResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.WORKSPACES,
+        searchTerm: 'Marketing',
+        dateRange: { updated_after: '2025-01-01T00:00:00Z' },
+      };
+
+      await callToolByNameAsync('search', args);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchWorkspaces'),
+        expect.objectContaining({ dateRange: { updated_after: '2025-01-01T00:00:00Z' } }),
+        expect.objectContaining({ timeout: expect.any(Number) }),
+      );
+    });
+
     it('should handle empty results', async () => {
       mocks.setResponse({ search: { workspaces: { results: [] } } });
 
@@ -1344,7 +1585,12 @@ describe('SearchTool', () => {
       const responseWithNullDesc: SearchWorkspacesQuery = {
         search: {
           workspaces: {
-            results: [{ id: '30', indexed_data: { id: '30', name: 'Sales Team', description: null } }],
+            results: [
+              {
+                id: '30',
+                indexed_data: { id: '30', name: 'Sales Team', description: null, kind: 'open', state: 'active' },
+              },
+            ],
           },
         },
       };
@@ -1390,6 +1636,8 @@ describe('SearchTool', () => {
                 creator_id: '501',
                 item_id: '901',
                 board_id: '801',
+                created_at: '2025-01-15T10:30:00Z',
+                updated_at: '2025-01-15T10:45:00Z',
               },
             },
             {
@@ -1400,6 +1648,8 @@ describe('SearchTool', () => {
                 creator_id: '502',
                 item_id: '902',
                 board_id: '802',
+                created_at: '2025-01-16T09:00:00Z',
+                updated_at: '2025-01-16T09:15:00Z',
               },
             },
           ],
@@ -1424,6 +1674,8 @@ describe('SearchTool', () => {
         itemId: '901',
         boardId: '801',
         creatorId: '501',
+        createdAt: '2025-01-15T10:30:00Z',
+        updatedAt: '2025-01-15T10:45:00Z',
       });
       expect(parsedResult.data[1]).toEqual({
         id: '20',
@@ -1431,6 +1683,8 @@ describe('SearchTool', () => {
         itemId: '902',
         boardId: '802',
         creatorId: '502',
+        createdAt: '2025-01-16T09:00:00Z',
+        updatedAt: '2025-01-16T09:15:00Z',
       });
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
@@ -1483,6 +1737,42 @@ describe('SearchTool', () => {
       );
     });
 
+    it('should pass dateRange to the updates query', async () => {
+      mocks.setResponse(mockUpdatesResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.UPDATES,
+        searchTerm: 'Deploy',
+        dateRange: { created_after: '2025-01-01T00:00:00Z', updated_before: '2025-02-01T00:00:00Z' },
+      };
+
+      await callToolByNameAsync('search', args);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchUpdates'),
+        expect.objectContaining({
+          dateRange: { created_after: '2025-01-01T00:00:00Z', updated_before: '2025-02-01T00:00:00Z' },
+        }),
+        expect.objectContaining({ timeout: expect.any(Number) }),
+      );
+    });
+
+    it('should return createdAt and updatedAt from the update index', async () => {
+      mocks.setResponse(mockUpdatesResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.UPDATES,
+        searchTerm: 'Deploy',
+      };
+
+      const parsedResult = await callToolByNameAsync('search', args);
+
+      expect(parsedResult.data[0].createdAt).toBe('2025-01-15T10:30:00Z');
+      expect(parsedResult.data[0].updatedAt).toBe('2025-01-15T10:45:00Z');
+      expect(parsedResult.data[1].createdAt).toBe('2025-01-16T09:00:00Z');
+      expect(parsedResult.data[1].updatedAt).toBe('2025-01-16T09:15:00Z');
+    });
+
     it('should handle empty results', async () => {
       mocks.setResponse({ search: { updates: { results: [] } } });
 
@@ -1527,6 +1817,10 @@ describe('SearchTool', () => {
                 content: 'Full kickoff email body',
                 item_id: '901',
                 board_id: '801',
+                type: 'email',
+                product_kind: 'crm',
+                created_at: '2025-01-15T10:30:00Z',
+                updated_at: '2025-01-15T10:45:00Z',
               },
             },
             {
@@ -1538,6 +1832,10 @@ describe('SearchTool', () => {
                 content: 'Full weekly sync notes',
                 item_id: '902',
                 board_id: null,
+                type: 'meeting',
+                product_kind: 'crm',
+                created_at: '2025-01-16T09:00:00Z',
+                updated_at: '2025-01-16T09:15:00Z',
               },
             },
           ],
@@ -1563,6 +1861,10 @@ describe('SearchTool', () => {
         content: 'Full kickoff email body',
         itemId: '901',
         boardId: '801',
+        type: 'email',
+        productKind: 'crm',
+        createdAt: '2025-01-15T10:30:00Z',
+        updatedAt: '2025-01-15T10:45:00Z',
       });
       // board_id is null in the index for this result, so boardId is omitted
       expect(parsedResult.data[1]).toEqual({
@@ -1571,6 +1873,10 @@ describe('SearchTool', () => {
         summary: 'Notes from the weekly sync',
         content: 'Full weekly sync notes',
         itemId: '902',
+        type: 'meeting',
+        productKind: 'crm',
+        createdAt: '2025-01-16T09:00:00Z',
+        updatedAt: '2025-01-16T09:15:00Z',
       });
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
@@ -1597,6 +1903,154 @@ describe('SearchTool', () => {
       expect(parsedResult.data[1].id).toBe('20');
     });
 
+    it('should return type, productKind, createdAt and updatedAt from the timeline item index', async () => {
+      mocks.setResponse(mockTimelineItemsResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.TIMELINE_ITEMS,
+        searchTerm: 'kickoff',
+      };
+
+      const parsedResult = await callToolByNameAsync('search', args);
+
+      expect(parsedResult.data[0].type).toBe('email');
+      expect(parsedResult.data[0].productKind).toBe('crm');
+      expect(parsedResult.data[0].createdAt).toBe('2025-01-15T10:30:00Z');
+      expect(parsedResult.data[0].updatedAt).toBe('2025-01-15T10:45:00Z');
+      expect(parsedResult.data[1].type).toBe('meeting');
+      expect(parsedResult.data[1].productKind).toBe('crm');
+      expect(parsedResult.data[1].createdAt).toBe('2025-01-16T09:00:00Z');
+      expect(parsedResult.data[1].updatedAt).toBe('2025-01-16T09:15:00Z');
+    });
+
+    it('should pass boardIds, workspaceIds and itemIds to the timeline items query', async () => {
+      mocks.setResponse(mockTimelineItemsResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.TIMELINE_ITEMS,
+        searchTerm: 'kickoff',
+        boardIds: [801, 802],
+        workspaceIds: [101],
+        itemIds: [901, 902],
+      };
+
+      await callToolByNameAsync('search', args);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchTimelineItems'),
+        expect.objectContaining({
+          boardIds: ['801', '802'],
+          workspaceIds: ['101'],
+          itemIds: ['901', '902'],
+        }),
+        expect.objectContaining({ timeout: expect.any(Number) }),
+      );
+    });
+
+    it('should pass timelineItemType as type and timelineProductKind as productKind', async () => {
+      mocks.setResponse(mockTimelineItemsResponse);
+
+      const args: Omit<inputType, 'timelineItemType' | 'timelineProductKind'> & {
+        timelineItemType: string;
+        timelineProductKind: string;
+      } = {
+        searchType: GlobalSearchType.TIMELINE_ITEMS,
+        searchTerm: 'kickoff',
+        timelineItemType: 'email',
+        timelineProductKind: 'crm',
+      };
+
+      await callToolByNameAsync('search', args);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchTimelineItems'),
+        expect.objectContaining({ type: 'email', productKind: 'crm' }),
+        expect.objectContaining({ timeout: expect.any(Number) }),
+      );
+    });
+
+    it('should pass dateRange to the timeline items query', async () => {
+      mocks.setResponse(mockTimelineItemsResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.TIMELINE_ITEMS,
+        searchTerm: 'kickoff',
+        dateRange: { created_after: '2025-01-01T00:00:00Z' },
+      };
+
+      await callToolByNameAsync('search', args);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchTimelineItems'),
+        expect.objectContaining({ dateRange: { created_after: '2025-01-01T00:00:00Z' } }),
+        expect.objectContaining({ timeout: expect.any(Number) }),
+      );
+    });
+
+    // timelineItemType is derived from the schema's TimelineItemKind enum (23 values) rather than a
+    // hand-written subset, so less obvious kinds must not be rejected.
+    it.each(['note', 'phoneCall', 'aiSummary'])('should accept timelineItemType "%s" and forward it', async (kind) => {
+      mocks.setResponse(mockTimelineItemsResponse);
+
+      const args: Omit<inputType, 'timelineItemType'> & { timelineItemType: string } = {
+        searchType: GlobalSearchType.TIMELINE_ITEMS,
+        searchTerm: 'kickoff',
+        timelineItemType: kind,
+      };
+
+      await callToolByNameAsync('search', args);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchTimelineItems'),
+        expect.objectContaining({ type: kind }),
+        expect.objectContaining({ timeout: expect.any(Number) }),
+      );
+    });
+
+    it('should reject an invalid timelineItemType', async () => {
+      const args: Omit<inputType, 'timelineItemType'> & { timelineItemType: string } = {
+        searchType: GlobalSearchType.TIMELINE_ITEMS,
+        searchTerm: 'kickoff',
+        timelineItemType: 'nonsense',
+      };
+
+      const result = await callToolByNameRawAsync('search', args);
+
+      expect(result.content[0].text).toContain('Failed to execute tool search: Invalid arguments');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+
+    it('should accept timelineProductKind "crm" and forward it', async () => {
+      mocks.setResponse(mockTimelineItemsResponse);
+
+      const args: Omit<inputType, 'timelineProductKind'> & { timelineProductKind: string } = {
+        searchType: GlobalSearchType.TIMELINE_ITEMS,
+        searchTerm: 'kickoff',
+        timelineProductKind: 'crm',
+      };
+
+      await callToolByNameAsync('search', args);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchTimelineItems'),
+        expect.objectContaining({ productKind: 'crm' }),
+        expect.objectContaining({ timeout: expect.any(Number) }),
+      );
+    });
+
+    it('should reject an invalid timelineProductKind', async () => {
+      const args: Omit<inputType, 'timelineProductKind'> & { timelineProductKind: string } = {
+        searchType: GlobalSearchType.TIMELINE_ITEMS,
+        searchTerm: 'kickoff',
+        timelineProductKind: 'nope',
+      };
+
+      const result = await callToolByNameRawAsync('search', args);
+
+      expect(result.content[0].text).toContain('Failed to execute tool search: Invalid arguments');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+
     it('should handle empty results', async () => {
       mocks.setResponse({ search: { timeline_items: { results: [] } } });
 
@@ -1617,7 +2071,17 @@ describe('SearchTool', () => {
             results: [
               {
                 id: '30',
-                indexed_data: { id: '30', title: 'Untitled note', summary: '', content: '', item_id: '903' },
+                indexed_data: {
+                  id: '30',
+                  title: 'Untitled note',
+                  summary: '',
+                  content: '',
+                  item_id: '903',
+                  type: 'note',
+                  product_kind: 'crm',
+                  created_at: '2025-01-17T08:00:00Z',
+                  updated_at: '2025-01-17T08:05:00Z',
+                },
               },
             ],
           },
@@ -1658,8 +2122,8 @@ describe('SearchTool', () => {
       search: {
         overviews: {
           results: [
-            { id: '1', indexed_data: { id: '1', name: 'Team Dashboard' } },
-            { id: '2', indexed_data: { id: '2', name: 'My private dashboard' } },
+            { id: '1', indexed_data: { id: '1', name: 'Team Dashboard', kind: 'public', state: 'active' } },
+            { id: '2', indexed_data: { id: '2', name: 'My private dashboard', kind: 'private', state: 'active' } },
           ],
         },
       },
@@ -1679,6 +2143,8 @@ describe('SearchTool', () => {
       expect(parsedResult.data[0]).toEqual({
         id: '1',
         title: 'Team Dashboard',
+        kind: 'public',
+        state: 'active',
       });
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
@@ -1752,6 +2218,137 @@ describe('SearchTool', () => {
         expect.objectContaining({ creatorIds: ['42', '43'] }),
         expect.anything(),
       );
+    });
+
+    it('should pass overviewKinds through as the kinds argument', async () => {
+      mocks.setResponse(mockOverviewsResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.DASHBOARDS,
+        searchTerm: 'dashboard',
+        overviewKinds: ['public', 'private'],
+      };
+
+      await callToolByNameAsync('search', args);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchOverviewsDev'),
+        expect.objectContaining({ kinds: ['public', 'private'] }),
+        expect.anything(),
+      );
+    });
+
+    it('should omit the kinds argument when overviewKinds is an empty array', async () => {
+      mocks.setResponse(mockOverviewsResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.DASHBOARDS,
+        searchTerm: 'dashboard',
+        overviewKinds: [],
+      };
+
+      await callToolByNameAsync('search', args);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchOverviewsDev'),
+        expect.not.objectContaining({ kinds: expect.anything() }),
+        expect.anything(),
+      );
+    });
+
+    it('should omit the creatorIds argument when creatorIds is an empty array', async () => {
+      mocks.setResponse(mockOverviewsResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.DASHBOARDS,
+        searchTerm: 'dashboard',
+        creatorIds: [],
+      };
+
+      await callToolByNameAsync('search', args);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchOverviewsDev'),
+        expect.not.objectContaining({ creatorIds: expect.anything() }),
+        expect.anything(),
+      );
+    });
+
+    it('should pass dateRange to the overviews query', async () => {
+      mocks.setResponse(mockOverviewsResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.DASHBOARDS,
+        searchTerm: 'dashboard',
+        dateRange: { created_after: '2025-01-01T00:00:00Z' },
+      };
+
+      await callToolByNameAsync('search', args);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchOverviewsDev'),
+        expect.objectContaining({ dateRange: { created_after: '2025-01-01T00:00:00Z' } }),
+        expect.anything(),
+      );
+    });
+
+    it('should return kind, state, createdBy, createdAt and updatedAt, omitting the nullable ones when absent', async () => {
+      const responseWithAuditFields: SearchOverviewsDevQuery = {
+        search: {
+          overviews: {
+            results: [
+              {
+                id: '1',
+                indexed_data: {
+                  id: '1',
+                  name: 'Team Dashboard',
+                  workspace_id: '9001',
+                  kind: 'public',
+                  state: 'active',
+                  created_by: '501',
+                  created_at: '2025-01-15T10:30:00Z',
+                  updated_at: '2025-01-15T10:45:00Z',
+                },
+              },
+              {
+                id: '2',
+                indexed_data: {
+                  id: '2',
+                  name: 'My private dashboard',
+                  kind: 'private',
+                  state: 'archived',
+                  created_by: null,
+                  created_at: null,
+                  updated_at: null,
+                },
+              },
+            ],
+          },
+        },
+      };
+      mocks.setResponse(responseWithAuditFields);
+
+      const parsedResult = await callToolByNameAsync('search', {
+        searchType: GlobalSearchType.DASHBOARDS,
+        searchTerm: 'dashboard',
+      });
+
+      expect(parsedResult.data[0]).toEqual({
+        id: '1',
+        title: 'Team Dashboard',
+        workspaceId: '9001',
+        kind: 'public',
+        state: 'active',
+        createdBy: '501',
+        createdAt: '2025-01-15T10:30:00Z',
+        updatedAt: '2025-01-15T10:45:00Z',
+      });
+      expect(parsedResult.data[1]).toEqual({
+        id: '2',
+        title: 'My private dashboard',
+        kind: 'private',
+        state: 'archived',
+      });
     });
 
     it('should handle empty results', async () => {

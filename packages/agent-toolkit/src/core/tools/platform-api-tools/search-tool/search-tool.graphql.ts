@@ -18,13 +18,7 @@ export const searchItems = gql`
     $dateRange: CrossEntityDateRangeInput
   ) {
     search {
-      items(
-        query: $query
-        limit: $limit
-        workspace_ids: $workspaceIds
-        board_ids: $boardIds
-        date_range: $dateRange
-      ) {
+      items(query: $query, limit: $limit, workspace_ids: $workspaceIds, board_ids: $boardIds, date_range: $dateRange) {
         results {
           id
           indexed_data {
@@ -49,13 +43,7 @@ export const searchBoards = gql`
     $dateRange: CrossEntityDateRangeInput
   ) {
     search {
-      boards(
-        query: $query
-        limit: $limit
-        workspace_ids: $workspaceIds
-        board_ids: $boardIds
-        date_range: $dateRange
-      ) {
+      boards(query: $query, limit: $limit, workspace_ids: $workspaceIds, board_ids: $boardIds, date_range: $dateRange) {
         results {
           id
           indexed_data {
@@ -73,19 +61,9 @@ export const searchBoards = gql`
 `;
 
 export const searchDocs = gql`
-  query SearchDocs(
-    $query: String!
-    $limit: Int
-    $workspaceIds: [ID!]
-    $dateRange: CrossEntityDateRangeInput
-  ) {
+  query SearchDocs($query: String!, $limit: Int, $workspaceIds: [ID!], $dateRange: CrossEntityDateRangeInput) {
     search {
-      docs(
-        query: $query
-        limit: $limit
-        workspace_ids: $workspaceIds
-        date_range: $dateRange
-      ) {
+      docs(query: $query, limit: $limit, workspace_ids: $workspaceIds, date_range: $dateRange) {
         results {
           id
           indexed_data {
@@ -108,13 +86,7 @@ export const searchWorkspaces = gql`
     $dateRange: CrossEntityDateRangeInput
   ) {
     search {
-      workspaces(
-        query: $query
-        limit: $limit
-        workspace_ids: $workspaceIds
-        kind: $kind
-        date_range: $dateRange
-      ) {
+      workspaces(query: $query, limit: $limit, workspace_ids: $workspaceIds, kind: $kind, date_range: $dateRange) {
         results {
           id
           indexed_data {
@@ -139,13 +111,7 @@ export const searchUpdates = gql`
     $dateRange: CrossEntityDateRangeInput
   ) {
     search {
-      updates(
-        query: $query
-        limit: $limit
-        board_ids: $boardIds
-        creator_ids: $creatorIds
-        date_range: $dateRange
-      ) {
+      updates(query: $query, limit: $limit, board_ids: $boardIds, creator_ids: $creatorIds, date_range: $dateRange) {
         results {
           id
           indexed_data {

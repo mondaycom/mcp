@@ -26,6 +26,8 @@ import {
   SearchUpdatesQueryVariables,
   SearchTimelineItemsQuery,
   SearchTimelineItemsQueryVariables,
+  TimelineItemKind,
+  TimelineItemProductKind,
 } from 'src/monday-graphql/generated/graphql/graphql';
 import {
   SearchItemsByCreatorDevQuery,
@@ -199,29 +201,39 @@ export const searchSchema = {
     'Array of item IDs (numbers) to filter TIMELINE_ITEMS search to those belonging to specific items. Only applies to TIMELINE_ITEMS search. Example: [12345, 67890].',
   ),
 
-  // for workspaces
+  // for workspaces. search.workspaces(kind:) is a plain String in the schema, not the WorkspaceKind
+  // enum, so it is not narrowed here — WorkspaceKind itself already carries a third value
+  // (`template`) beyond the two named in the argument's description, and the search index may accept
+  // values this tool cannot enumerate reliably.
   workspaceKind: z
-    .enum(['open', 'closed'])
+    .string()
     .optional()
-    .describe('Filter WORKSPACES search by workspace kind. Only applies to WORKSPACES search.'),
+    .describe(
+      'Filter WORKSPACES search by workspace kind, e.g. "open", "closed", or "template". Only applies to WORKSPACES search.',
+    ),
 
-  // for timeline_items
+  // for timeline_items. Derived from the schema enums rather than a hand-written list so the accepted
+  // values cannot drift from the API as new timeline item kinds are added.
   timelineItemType: z
-    .enum(['email', 'googleCalendar', 'outlookCalendar', 'zoom', 'activity'])
+    .nativeEnum(TimelineItemKind)
     .optional()
-    .describe('Filter TIMELINE_ITEMS search by item type. Only applies to TIMELINE_ITEMS search.'),
+    .describe(
+      'Filter TIMELINE_ITEMS search by item type (e.g. "email", "note", "meeting"). Only applies to TIMELINE_ITEMS search.',
+    ),
 
   // for timeline_items
   timelineProductKind: z
-    .enum(['service', 'crm'])
+    .nativeEnum(TimelineItemProductKind)
     .optional()
     .describe('Filter TIMELINE_ITEMS search by product kind. Only applies to TIMELINE_ITEMS search.'),
 
-  // for dashboards
+  // for dashboards. search.overviews(kinds:) is [String!], and the casing differs between layers
+  // (the DashboardKind enum is uppercase while the search index documents lowercase), so the values
+  // are passed through untouched instead of being narrowed to a guess.
   overviewKinds: z
     .array(z.string())
     .optional()
-    .describe('Filter DASHBOARDS search by kind (e.g. ["public"] or ["private"]). Only applies to DASHBOARDS search.'),
+    .describe('Filter DASHBOARDS search by kind, e.g. ["public"] or ["private"]. Only applies to DASHBOARDS search.'),
 
   // for all SearchNamespace entities
   dateRange: z
@@ -265,8 +277,8 @@ UPDATES search returns id, title (the update body), itemId, boardId, and creator
 TIMELINE_ITEMS search returns id, title, summary, content, itemId, and boardId.
 DASHBOARDS search (also called "overviews") returns id, title, and workspaceId. Optionally scope it with workspaceIds and/or creatorIds.
 FOLDERS search returns id and title. Optionally scope it with workspaceIds, which searches all accessible workspaces when omitted. Pass workspaceIds to narrow the search if results may be truncated.
-BOARD search additionally accepts boardIds (filter to specific board IDs) and dateRange.
-WORKSPACES search additionally accepts workspaceIds (filter to specific workspaces), workspaceKind (open or closed), and dateRange.
+BOARD search additionally returns description, creatorId and accepts boardIds (filter to specific board IDs) and dateRange.
+WORKSPACES search additionally returns kind, state and accepts workspaceIds (filter to specific workspaces), workspaceKind (e.g. open, closed, template), and dateRange.
 TIMELINE_ITEMS search additionally returns type, productKind, createdAt, updatedAt and accepts boardIds, workspaceIds, itemIds, timelineItemType, timelineProductKind, and dateRange.
 UPDATES search additionally returns createdAt, updatedAt and accepts dateRange.
 DASHBOARDS search additionally returns kind, state, createdBy, createdAt, updatedAt and accepts overviewKinds and dateRange.
@@ -351,8 +363,9 @@ All SearchNamespace entities (except FOLDERS) support dateRange filtering.
     }
 
     if (input.searchType === GlobalSearchType.DASHBOARDS) {
-      const creatorIds = input.creatorIds?.map((id) => id.toString());
-      return this.searchOverviewsAsync(searchTerm, input.limit, workspaceIds, creatorIds, input.overviewKinds, input.dateRange);
+      const creatorIds = toFilterIds(input.creatorIds?.map((id) => id.toString()));
+      const kinds = toFilterIds(input.overviewKinds);
+      return this.searchOverviewsAsync(searchTerm, input.limit, workspaceIds, creatorIds, kinds, input.dateRange);
     }
 
     throw new ToolValidationError(
@@ -463,7 +476,14 @@ All SearchNamespace entities (except FOLDERS) support dateRange filtering.
     const response = creatorIds
       ? await this.mondayApi.request<SearchItemsByCreatorDevQuery>(
           searchItemsByCreatorDev,
-          { query, limit, workspaceIds, boardIds, creatorIds, dateRange } satisfies SearchItemsByCreatorDevQueryVariables,
+          {
+            query,
+            limit,
+            workspaceIds,
+            boardIds,
+            creatorIds,
+            dateRange,
+          } satisfies SearchItemsByCreatorDevQueryVariables,
           { versionOverride: 'dev', timeout: SEARCH_TIMEOUT },
         )
       : await this.mondayApi.request<SearchItemsQuery>(
@@ -487,8 +507,8 @@ All SearchNamespace entities (except FOLDERS) support dateRange filtering.
     boardIds?: string[],
     workspaceIds?: string[],
     itemIds?: string[],
-    type?: string,
-    productKind?: string,
+    type?: TimelineItemKind,
+    productKind?: TimelineItemProductKind,
     dateRange?: ToolInputType<SearchToolInput>['dateRange'],
   ): Promise<SearchResult[]> {
     const variables: SearchTimelineItemsQueryVariables = {
@@ -497,8 +517,8 @@ All SearchNamespace entities (except FOLDERS) support dateRange filtering.
       boardIds,
       workspaceIds,
       itemIds,
-      type: type as SearchTimelineItemsQueryVariables['type'],
-      productKind: productKind as SearchTimelineItemsQueryVariables['productKind'],
+      type,
+      productKind,
       dateRange,
     };
 
