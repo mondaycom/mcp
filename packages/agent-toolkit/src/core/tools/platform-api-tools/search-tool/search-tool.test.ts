@@ -13,6 +13,7 @@ import {
 } from 'src/monday-graphql/generated/graphql/graphql';
 import { SearchOverviewsDevQuery } from 'src/monday-graphql/generated/graphql.dev/graphql';
 import { GlobalSearchType, SearchResult } from './search-tool.types';
+import { searchBoards, searchTimelineItems } from './search-tool.graphql';
 
 export type inputType = z.objectInputType<typeof searchSchema, ZodTypeAny>;
 
@@ -424,6 +425,41 @@ describe('SearchTool', () => {
             workspaceIds: ['12345', '67890'],
           }),
           expect.objectContaining({ timeout: expect.any(Number) }),
+        );
+      });
+
+      it('should pass boardIds to the searchBoards request', async () => {
+        mocks.setResponse({
+          search: { boards: { results: [] } },
+        });
+
+        await callToolByNameAsync('search', {
+          searchTerm: 'test',
+          searchType: GlobalSearchType.BOARD,
+          boardIds: [111, 222],
+        });
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          searchBoards,
+          expect.objectContaining({ boardIds: ['111', '222'] }),
+          expect.anything(),
+        );
+      });
+
+      it('should send boardIds as undefined when not supplied for BOARD search', async () => {
+        mocks.setResponse({
+          search: { boards: { results: [] } },
+        });
+
+        await callToolByNameAsync('search', {
+          searchTerm: 'test',
+          searchType: GlobalSearchType.BOARD,
+        });
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          searchBoards,
+          expect.objectContaining({ boardIds: undefined }),
+          expect.anything(),
         );
       });
 
@@ -1580,6 +1616,41 @@ describe('SearchTool', () => {
           limit: 20,
         },
         expect.objectContaining({ timeout: expect.any(Number) }),
+      );
+    });
+
+    it('should pass boardIds to the searchTimelineItems request', async () => {
+      mocks.setResponse({
+        search: { timeline_items: { results: [] } },
+      });
+
+      await callToolByNameAsync('search', {
+        searchTerm: 'test',
+        searchType: GlobalSearchType.TIMELINE_ITEMS,
+        boardIds: [333],
+      });
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        searchTimelineItems,
+        expect.objectContaining({ boardIds: ['333'] }),
+        expect.anything(),
+      );
+    });
+
+    it('should send boardIds as undefined when not supplied for TIMELINE_ITEMS search', async () => {
+      mocks.setResponse({
+        search: { timeline_items: { results: [] } },
+      });
+
+      await callToolByNameAsync('search', {
+        searchTerm: 'test',
+        searchType: GlobalSearchType.TIMELINE_ITEMS,
+      });
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        searchTimelineItems,
+        expect.objectContaining({ boardIds: undefined }),
+        expect.anything(),
       );
     });
 

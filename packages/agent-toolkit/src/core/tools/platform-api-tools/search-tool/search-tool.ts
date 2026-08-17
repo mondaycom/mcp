@@ -186,9 +186,9 @@ export const searchSchema = {
     'Array of workspace IDs (numbers) to search in. Optional for FOLDERS search (searches all accessible workspaces when omitted). For ITEMS, BOARD, DOCUMENTS, and DASHBOARDS search, only pass this if the user explicitly asked to search within specific workspaces. Example: [12345, 67890].',
   ),
 
-  // for items and updates
+  // for boards, items, updates, and timeline items
   boardIds: optionalIdArray(
-    'Array of board IDs (numbers) to scope the search to. Applies to ITEMS and UPDATES search, and only pass it if the user explicitly asked to search within specific boards. Example: [12345, 67890].',
+    'Array of board IDs (numbers) to scope the search to. Applies to BOARD, ITEMS, UPDATES, and TIMELINE_ITEMS search. Only pass it if the user explicitly asked to search within specific boards. Example: [12345, 67890].',
   ),
   creatorIds: optionalIdArray(
     'Array of user IDs (numbers) to filter by creator. Applies to ITEMS (filters by item creator), UPDATES (filters by update author), and DASHBOARDS (filters by dashboard creator). Only pass it if the user explicitly asked to filter by specific creators. Example: [12345, 67890].',
@@ -215,12 +215,12 @@ For account-level info (plan, member count, products), use get_user_context tool
 For browsing all boards, docs, or folders within a workspace without a search term, use workspace_info tool.
 For groups, use get_board_info tool.
 For listing items within a specific board, use get_board_items_page tool. ITEMS search here queries items across the account.
-BOARD search returns id, title, url, and workspaceId.
+BOARD search returns id, title, url, and workspaceId. Optionally scope it with boardIds.
 DOCUMENTS search returns id, title, and workspaceId.
 ITEMS search returns id, title, url, boardId, and workspaceId. Optionally scope it with workspaceIds, boardIds, and/or creatorIds.
 WORKSPACES search returns id, title, and description.
 UPDATES search returns id, title (the update body), itemId, boardId, and creatorId. Optionally scope it with boardIds and/or creatorIds.
-TIMELINE_ITEMS search returns id, title, summary, content, itemId, and boardId.
+TIMELINE_ITEMS search returns id, title, summary, content, itemId, and boardId. Optionally scope it with boardIds.
 DASHBOARDS search (also called "overviews") returns id, title, and workspaceId. Optionally scope it with workspaceIds and/or creatorIds.
 FOLDERS search returns id and title. Optionally scope it with workspaceIds, which searches all accessible workspaces when omitted. Pass workspaceIds to narrow the search if results may be truncated.
   `;
@@ -263,7 +263,8 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
     const workspaceIds = toFilterIds(input.workspaceIds?.map((id) => id.toString()));
 
     if (input.searchType === GlobalSearchType.BOARD) {
-      return this.searchBoardsAsync(searchTerm, input.limit, workspaceIds);
+      const boardIds = toFilterIds(input.boardIds?.map((id) => id.toString()));
+      return this.searchBoardsAsync(searchTerm, input.limit, workspaceIds, boardIds);
     }
 
     if (input.searchType === GlobalSearchType.DOCUMENTS) {
@@ -287,7 +288,8 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
     }
 
     if (input.searchType === GlobalSearchType.TIMELINE_ITEMS) {
-      return this.searchTimelineItemsAsync(searchTerm, input.limit);
+      const boardIds = toFilterIds(input.boardIds?.map((id) => id.toString()));
+      return this.searchTimelineItemsAsync(searchTerm, input.limit, boardIds);
     }
 
     if (input.searchType === GlobalSearchType.DASHBOARDS) {
@@ -301,8 +303,13 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
     );
   }
 
-  private async searchBoardsAsync(query: string, limit: number, workspaceIds?: string[]): Promise<SearchResult[]> {
-    const variables: SearchBoardsQueryVariables = { query, limit, workspaceIds };
+  private async searchBoardsAsync(
+    query: string,
+    limit: number,
+    workspaceIds?: string[],
+    boardIds?: string[],
+  ): Promise<SearchResult[]> {
+    const variables: SearchBoardsQueryVariables = { query, limit, workspaceIds, boardIds };
 
     const response = await this.mondayApi.request<SearchBoardsQuery>(searchBoards, variables, {
       timeout: SEARCH_TIMEOUT,
@@ -396,8 +403,8 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
     }));
   }
 
-  private async searchTimelineItemsAsync(query: string, limit: number): Promise<SearchResult[]> {
-    const variables: SearchTimelineItemsQueryVariables = { query, limit };
+  private async searchTimelineItemsAsync(query: string, limit: number, boardIds?: string[]): Promise<SearchResult[]> {
+    const variables: SearchTimelineItemsQueryVariables = { query, limit, boardIds };
 
     const response = await this.mondayApi.request<SearchTimelineItemsQuery>(searchTimelineItems, variables, {
       timeout: SEARCH_TIMEOUT,

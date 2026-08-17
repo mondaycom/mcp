@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.64.1
+
+### search — scope BOARD and TIMELINE_ITEMS search by boardIds
+
+- BOARD and TIMELINE_ITEMS search now accept `boardIds` to scope results to specific boards (the corresponding GraphQL queries already supported `board_ids`)
+- Updated the `boardIds` field description to list BOARD, ITEMS, UPDATES, and TIMELINE_ITEMS
+- Updated the BOARD and TIMELINE_ITEMS lines in the tool description to mention optional `boardIds` scoping
+
 ## 5.64.0
 
 ### send_feedback renamed to submit_bug_or_feature_request (breaking)
