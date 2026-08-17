@@ -1,5 +1,21 @@
 # Changelog
 
+## 5.64.0
+
+### send_feedback renamed to submit_bug_or_feature_request (breaking)
+
+- **Breaking:** the `send_feedback` tool is now `submit_bug_or_feature_request`. The name leads with the two intents callers most often have, so it is picked up more reliably than the vaguer "send feedback"
+- Renamed to match across the codebase: `SendFeedbackTool` → `SubmitBugOrFeatureRequestTool`, `sendFeedbackToolSchema` → `submitBugOrFeatureRequestToolSchema`, annotation title `Send Feedback` → `Submit Bug or Feature Request`, and the directory/files `send-feedback-tool/` → `submit-bug-or-feature-request-tool/`
+- Rewrote the tool description: it now covers the monday.com product as well as this integration, leads the proactive-call signals with tool errors and capability gaps (frustration and retry signals moved last), spells out the parameters inline, and folds the non-monday.com and PII restrictions into a single closing line
+- Input schema and behavior are unchanged — `kind` still accepts `feedback`, `feature_request`, and `bug`
+
+## 5.62.1
+
+### get_asset_upload_url — require capability check before calling
+
+- Prepended a precondition to the tool description: only call `get_asset_upload_url` if the caller can execute a direct HTTP PUT with binary data and read response headers; otherwise it should tell the user direct file upload isn't supported instead of calling the tool
+- Addresses a metrics gap where `get_asset_upload_url` was called far more often than `finalize_asset_upload` completed, consistent with callers (e.g. plain conversational chat agents without shell/HTTP execution) generating presigned URLs they have no way to actually use
+
 ## 5.62.0
 
 ### search — filter ITEMS search by creatorIds
