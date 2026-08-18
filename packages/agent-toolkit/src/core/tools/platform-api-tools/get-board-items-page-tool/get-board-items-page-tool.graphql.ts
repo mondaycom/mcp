@@ -7,6 +7,9 @@ export const getBoardItemsPage = gql`
     url
     created_at
     updated_at
+    parent_item {
+      id
+    }
     group @include(if: $includeGroup) {
       id
       title
@@ -64,6 +67,7 @@ export const getBoardItemsPage = gql`
     boards(ids: [$boardId]) {
       id
       name
+      hierarchy_type
       items_page(limit: $limit, cursor: $cursor, query_params: $queryParams) {
         items {
           ...ItemDataFragment
