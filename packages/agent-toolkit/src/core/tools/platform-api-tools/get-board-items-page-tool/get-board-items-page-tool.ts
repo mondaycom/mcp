@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import {
+  BatteryValue,
   BoardRelationValue,
   FormulaValue,
   GetBoardItemsPageQuery,
@@ -310,6 +311,11 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
 
       case NonDeprecatedColumnType.Mirror:
         return COLUMN_VALUE_NOT_SUPPORTED_MESSAGE;
+    }
+
+    // BatteryValue is a rollup Status column on MLS boards — its __typename differs from StatusValue
+    if ('battery_value' in cv) {
+      return (cv as BatteryValue).battery_value;
     }
 
     // fallback logic for most column types

@@ -11,11 +11,12 @@ export const getBoardItemsPage = gql`
       id
       title
     }
-    column_values(ids: $columnIds) @include(if: $includeColumns) {
+    column_values(ids: $columnIds, capabilities: [CALCULATED]) @include(if: $includeColumns) {
       id
       type
       text
       value
+      is_leaf
 
       ... on FormulaValue {
         display_value
@@ -29,6 +30,13 @@ export const getBoardItemsPage = gql`
             id
             name
           }
+        }
+      }
+
+      ... on BatteryValue {
+        battery_value {
+          key
+          count
         }
       }
     }
