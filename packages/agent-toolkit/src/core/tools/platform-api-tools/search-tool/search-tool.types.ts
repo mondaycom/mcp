@@ -5,11 +5,21 @@ export interface SearchResult {
   description?: string;
   summary?: string;
   content?: string;
-  // updates
   itemId?: string;
   boardId?: string;
   workspaceId?: string;
   creatorId?: string;
+  // boards
+  createdAt?: string;
+  updatedAt?: string;
+  // workspaces, overviews
+  kind?: string;
+  state?: string;
+  // overviews
+  createdBy?: string;
+  // timeline_items
+  type?: string;
+  productKind?: string;
 }
 
 export enum GlobalSearchType {

@@ -10,9 +10,15 @@ export const getFolders = gql`
 `;
 
 export const searchItems = gql`
-  query SearchItems($query: String!, $limit: Int, $workspaceIds: [ID!], $boardIds: [ID!]) {
+  query SearchItems(
+    $query: String!
+    $limit: Int
+    $workspaceIds: [ID!]
+    $boardIds: [ID!]
+    $dateRange: CrossEntityDateRangeInput
+  ) {
     search {
-      items(query: $query, limit: $limit, workspace_ids: $workspaceIds, board_ids: $boardIds) {
+      items(query: $query, limit: $limit, workspace_ids: $workspaceIds, board_ids: $boardIds, date_range: $dateRange) {
         results {
           id
           indexed_data {
@@ -29,9 +35,15 @@ export const searchItems = gql`
 `;
 
 export const searchBoards = gql`
-  query SearchBoards($query: String!, $limit: Int, $workspaceIds: [ID!], $boardIds: [ID!]) {
+  query SearchBoards(
+    $query: String!
+    $limit: Int
+    $workspaceIds: [ID!]
+    $boardIds: [ID!]
+    $dateRange: CrossEntityDateRangeInput
+  ) {
     search {
-      boards(query: $query, limit: $limit, workspace_ids: $workspaceIds, board_ids: $boardIds) {
+      boards(query: $query, limit: $limit, workspace_ids: $workspaceIds, board_ids: $boardIds, date_range: $dateRange) {
         results {
           id
           indexed_data {
@@ -39,6 +51,8 @@ export const searchBoards = gql`
             name
             url
             workspace_id
+            description
+            creator_id
           }
         }
       }
@@ -47,9 +61,9 @@ export const searchBoards = gql`
 `;
 
 export const searchDocs = gql`
-  query SearchDocs($query: String!, $limit: Int, $workspaceIds: [ID!]) {
+  query SearchDocs($query: String!, $limit: Int, $workspaceIds: [ID!], $dateRange: CrossEntityDateRangeInput) {
     search {
-      docs(query: $query, limit: $limit, workspace_ids: $workspaceIds) {
+      docs(query: $query, limit: $limit, workspace_ids: $workspaceIds, date_range: $dateRange) {
         results {
           id
           indexed_data {
@@ -64,15 +78,23 @@ export const searchDocs = gql`
 `;
 
 export const searchWorkspaces = gql`
-  query SearchWorkspaces($query: String!, $limit: Int) {
+  query SearchWorkspaces(
+    $query: String!
+    $limit: Int
+    $workspaceIds: [ID!]
+    $kind: String
+    $dateRange: CrossEntityDateRangeInput
+  ) {
     search {
-      workspaces(query: $query, limit: $limit) {
+      workspaces(query: $query, limit: $limit, workspace_ids: $workspaceIds, kind: $kind, date_range: $dateRange) {
         results {
           id
           indexed_data {
             id
             name
             description
+            kind
+            state
           }
         }
       }
@@ -81,9 +103,15 @@ export const searchWorkspaces = gql`
 `;
 
 export const searchUpdates = gql`
-  query SearchUpdates($query: String!, $limit: Int, $boardIds: [ID!], $creatorIds: [ID!]) {
+  query SearchUpdates(
+    $query: String!
+    $limit: Int
+    $boardIds: [ID!]
+    $creatorIds: [ID!]
+    $dateRange: CrossEntityDateRangeInput
+  ) {
     search {
-      updates(query: $query, limit: $limit, board_ids: $boardIds, creator_ids: $creatorIds) {
+      updates(query: $query, limit: $limit, board_ids: $boardIds, creator_ids: $creatorIds, date_range: $dateRange) {
         results {
           id
           indexed_data {
@@ -92,6 +120,8 @@ export const searchUpdates = gql`
             creator_id
             item_id
             board_id
+            created_at
+            updated_at
           }
         }
       }
@@ -100,9 +130,27 @@ export const searchUpdates = gql`
 `;
 
 export const searchTimelineItems = gql`
-  query SearchTimelineItems($query: String!, $limit: Int, $boardIds: [ID!]) {
+  query SearchTimelineItems(
+    $query: String!
+    $limit: Int
+    $boardIds: [ID!]
+    $workspaceIds: [ID!]
+    $itemIds: [ID!]
+    $type: TimelineItemKind
+    $productKind: TimelineItemProductKind
+    $dateRange: CrossEntityDateRangeInput
+  ) {
     search {
-      timeline_items(query: $query, limit: $limit, board_ids: $boardIds) {
+      timeline_items(
+        query: $query
+        limit: $limit
+        board_ids: $boardIds
+        workspace_ids: $workspaceIds
+        item_ids: $itemIds
+        type: $type
+        product_kind: $productKind
+        date_range: $dateRange
+      ) {
         results {
           id
           indexed_data {
@@ -112,6 +160,10 @@ export const searchTimelineItems = gql`
             content
             item_id
             board_id
+            type
+            product_kind
+            created_at
+            updated_at
           }
         }
       }
