@@ -16,6 +16,7 @@ export const getBoardInfo = gql`
       updated_at
 
       # Board Configuration
+      hierarchy_type
       item_terminology
       items_count
       items_limit
