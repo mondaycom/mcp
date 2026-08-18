@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.64.2
+
+### get_board_items_page — return BatteryValue rollup status on MLS parent items
+
+- Status columns that roll up from subitems on MLS boards are returned as `BatteryValue` (`battery_value: [{ key, count }, ...]`), not flattened to text or raw JSON
+- The query now requests `column_values` with `capabilities: [CALCULATED]`, plus `is_leaf` and the `BatteryValue` fragment
+- Leaf/subitem status columns are unchanged and still resolve via `text`
+
 ## 5.64.1
 
 ### search — scope BOARD and TIMELINE_ITEMS search by boardIds
