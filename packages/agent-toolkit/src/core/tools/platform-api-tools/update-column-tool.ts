@@ -36,9 +36,8 @@ export const updateColumnToolSchema = {
     .describe('The type of the column being updated. Must match the existing column type.'),
   revision: z
     .string()
-    .optional()
     .describe(
-      'The current revision of the column. Optional — if omitted, the tool fetches the latest revision from get_board_schema automatically. Required for optimistic concurrency control when you already have a fresh revision.',
+      'Required. Current column revision from get_board_schema. Used for optimistic concurrency control — if the column changed since you read it, the request fails with REVISION_MISMATCH and you must re-fetch the latest revision before retrying.',
     ),
   columnTitle: z.string().optional().describe('The new title of the column. If omitted, the title is unchanged.'),
   columnDescription: z
@@ -49,7 +48,7 @@ export const updateColumnToolSchema = {
     .string()
     .optional()
     .describe(
-      'Type-specific configuration as a JSON string. Use get_column_type_info for the JSON schema for the given column type. If omitted, settings are unchanged. For status columns, label descriptions are limited to 80 characters. For dropdown columns, prefer adding labels without resending the full labels list — the tool converts new labels to safe MODIFY_LABELS actions.',
+      'Type-specific configuration as a JSON string. Use get_column_type_info for the JSON schema. If omitted, settings are unchanged. For status columns: fetch label ids from get_board_schema (not from item column values); existing labels must include id, new labels must omit id; descriptions are limited to 80 characters. For dropdown columns: do not resend the full labels list when adding one label — the tool converts new labels to MODIFY_LABELS actions.',
     ),
   itemId: z
     .union([z.number(), z.string()])
@@ -82,9 +81,11 @@ export class UpdateColumnTool extends BaseMondayApiTool<UpdateColumnToolInput> {
     return (
       'Update properties of an existing monday.com column (title, description, settings). ' +
       'Do NOT use this tool to change item column values — use change_item_column_values for that. ' +
-      'Revision is optional; the tool auto-fetches it when omitted and retries once on REVISION_MISMATCH. ' +
-      'For status label updates, keep label descriptions under 80 characters. ' +
-      'For dropdown label updates, send only new labels or use MODIFY_LABELS actions — do not resend the entire labels list unless you intend to replace all labels.'
+      'Always call get_board_schema first to obtain the current revision and label ids. ' +
+      'Revision is required for optimistic concurrency control. If the update fails with REVISION_MISMATCH, re-fetch the revision and retry once. ' +
+      'For status labels: use label ids from get_board_schema for existing labels; new labels must not include id. Do not reuse ids from item column values. ' +
+      'Keep status label descriptions under 80 characters. ' +
+      'For dropdown labels: add labels via MODIFY_LABELS actions — do not resend the entire labels list unless you intend to replace all labels.'
     );
   }
 
@@ -120,16 +121,6 @@ export class UpdateColumnTool extends BaseMondayApiTool<UpdateColumnToolInput> {
 
     const { settings: sanitizedSettings, warnings } = sanitizeColumnSettings(input.columnType, parsedSettings);
 
-    let revision = input.revision;
-    if (!revision) {
-      revision = await fetchColumnRevision(
-        (query, variables) => this.mondayApi.request(query, variables),
-        getBoardSchema,
-        boardIdString,
-        input.columnId,
-      );
-    }
-
     const executeUpdate = async (currentRevision: string) => {
       const variables: UpdateColumnMutationVariables = {
         boardId: boardIdString,
@@ -147,7 +138,7 @@ export class UpdateColumnTool extends BaseMondayApiTool<UpdateColumnToolInput> {
     try {
       let res: UpdateColumnMutation;
       try {
-        res = await executeUpdate(revision);
+        res = await executeUpdate(input.revision);
       } catch (error) {
         if (!isRevisionMismatchError(error)) {
           throw error;

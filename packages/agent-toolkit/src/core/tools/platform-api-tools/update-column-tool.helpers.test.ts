@@ -66,18 +66,17 @@ describe('update-column-tool.helpers', () => {
       expect(dropdown.warnings[0]).toContain('MODIFY_LABELS actions');
     });
 
-    it('coerces status label settings into API shape (labels array) and strips label ids', () => {
+    it('keeps status label ids in array settings and strips unsupported top-level keys', () => {
       const status = sanitizeColumnSettings('status', {
         labels: [
           { id: 15, label: 'A', description: 'x'.repeat(120), color: 'dark_orange', index: 1 },
         ],
-        // Extra keys should be stripped for the API update_status_column_settings input.
         done_colors: [15],
       } as any);
 
       const labels = status.settings?.labels as any[];
       expect(Object.keys(status.settings ?? {})).toEqual(['labels']);
-      expect(labels[0].id).toBeUndefined();
+      expect(labels[0].id).toBe(15);
       expect(labels[0].description).toHaveLength(80);
       expect(status.warnings[0]).toContain('Truncated status label descriptions');
     });

@@ -109,35 +109,13 @@ function mapStatusColorVarNameToEnum(varName: unknown): string | undefined {
 
 function normalizeStatusColumnSettings(settings: ColumnSettings): ColumnSettings {
   // API expects UpdateStatusColumnSettingsInput => { labels: [ ... ] }.
-  // The tool sometimes receives a richer "UI state" object with extra keys or
-  // labels as an object map. We coerce it into the API shape and remove label ids
-  // to avoid "new labels shouldn't include id" failures.
+  // Agents sometimes send extra top-level keys or a UI object map for labels.
   const labels = settings.labels;
 
-  // Already in API shape: coerce each label and remove id (best-effort).
+  // Already in API array shape: keep label ids (required for existing labels) and
+  // strip unsupported top-level keys such as done_colors or labels_colors.
   if (Array.isArray(labels)) {
-    const normalized = (labels as StatusLabel[]).map((label) => {
-      const {
-        id: _ignoredId,
-        label: labelText,
-        color,
-        index,
-        description,
-        is_done,
-        is_deactivated,
-      } = label;
-
-      return {
-        label: labelText,
-        color,
-        index,
-        ...(typeof description === 'string' ? { description } : {}),
-        ...(typeof is_done === 'boolean' ? { is_done } : {}),
-        ...(typeof is_deactivated === 'boolean' ? { is_deactivated } : {}),
-      };
-    });
-
-    return { labels: normalized };
+    return { labels };
   }
 
   // UI object shape: { labels: {<id>: <text>}, labels_positions_v2, labels_colors, done_colors, ... }
@@ -175,7 +153,10 @@ function normalizeStatusColumnSettings(settings: ColumnSettings): ColumnSettings
           return undefined;
         }
 
+        const parsedId = Number(key);
+
         return {
+          ...(Number.isFinite(parsedId) ? { id: parsedId } : {}),
           label: labelText,
           color,
           index,
@@ -183,7 +164,8 @@ function normalizeStatusColumnSettings(settings: ColumnSettings): ColumnSettings
         };
       })
       .filter(
-        (x): x is { label: string; color: string | undefined; index: number | undefined; is_done?: boolean } => x !== undefined,
+        (x): x is { id?: number; label: string; color: string | undefined; index: number | undefined; is_done?: boolean } =>
+          x !== undefined,
       )
       .sort((a, b) => (a.index ?? 0) - (b.index ?? 0));
 

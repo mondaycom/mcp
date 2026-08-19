@@ -1,33 +1,24 @@
-import { createMockApiClient } from './test-utils/mock-api-client';
 import { UpdateColumnTool } from './update-column-tool';
+
+function createMockApiClient() {
+  const mockRequest = jest.fn();
+  return {
+    mockApiClient: { request: mockRequest } as any,
+    mockRequest,
+    setResponses: (responses: any[]) => {
+      responses.forEach((response) => {
+        mockRequest.mockResolvedValueOnce(response);
+      });
+    },
+    getMockRequest: () => mockRequest,
+  };
+}
 
 describe('UpdateColumnTool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
 
   beforeEach(() => {
     mocks = createMockApiClient();
-  });
-
-  it('auto-fetches revision when omitted', async () => {
-    mocks.setResponses([
-      {
-        boards: [{ columns: [{ id: 'status_col', revision: 'rev-1' }] }],
-      },
-      {
-        update_column: { id: 'status_col', title: 'Status', revision: 'rev-2' },
-      },
-    ]);
-
-    const tool = new UpdateColumnTool(mocks.mockApiClient);
-    const result = await tool.execute({
-      boardId: 123,
-      columnId: 'status_col',
-      columnType: 'status' as any,
-      columnSettings: JSON.stringify({ labels: [{ label: 'Done', color: 1, index: 0 }] }),
-    });
-
-    expect((result.content as any).revision).toBe('rev-2');
-    expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
   });
 
   it('retries once after REVISION_MISMATCH', async () => {
@@ -69,9 +60,6 @@ describe('UpdateColumnTool', () => {
   it('sanitizes status label descriptions before calling the API', async () => {
     mocks.setResponses([
       {
-        boards: [{ columns: [{ id: 'status_col', revision: 'rev-1' }] }],
-      },
-      {
         update_column: { id: 'status_col', title: 'Status', revision: 'rev-2' },
       },
     ]);
@@ -82,20 +70,18 @@ describe('UpdateColumnTool', () => {
       boardId: 123,
       columnId: 'status_col',
       columnType: 'status' as any,
+      revision: 'rev-1',
       columnSettings: JSON.stringify({
         labels: [{ label: 'Verified', description: longDescription, color: 'grass_green', index: 0 }],
       }),
     });
 
-    const updateCall = mocks.getMockRequest().mock.calls[1];
+    const updateCall = mocks.getMockRequest().mock.calls[0];
     expect(updateCall[1].columnSettings.labels[0].description).toHaveLength(80);
   });
 
   it('converts dropdown label additions to MODIFY_LABELS actions', async () => {
     mocks.setResponses([
-      {
-        boards: [{ columns: [{ id: 'dropdown_col', revision: 'rev-1' }] }],
-      },
       {
         update_column: { id: 'dropdown_col', title: 'Dropdown', revision: 'rev-2' },
       },
@@ -106,12 +92,13 @@ describe('UpdateColumnTool', () => {
       boardId: 123,
       columnId: 'dropdown_col',
       columnType: 'dropdown' as any,
+      revision: 'rev-1',
       columnSettings: JSON.stringify({
         labels: [{ id: 1, label: 'Existing', is_deactivated: false }, { label: 'TARA', is_deactivated: false }],
       }),
     });
 
-    const updateCall = mocks.getMockRequest().mock.calls[1];
+    const updateCall = mocks.getMockRequest().mock.calls[0];
     expect(updateCall[1].columnSettings.action).toEqual({
       type: 'MODIFY_LABELS',
       payload: [{ type: 'CREATE', label: { name: 'TARA' } }],
@@ -127,6 +114,7 @@ describe('UpdateColumnTool', () => {
         boardId: 123,
         columnId: 'status_col',
         columnType: 'status' as any,
+        revision: 'rev-1',
         itemId: 456,
         value: { label: 'Done' },
       }),
