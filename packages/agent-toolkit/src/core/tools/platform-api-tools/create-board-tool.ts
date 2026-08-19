@@ -29,7 +29,7 @@ export class CreateBoardTool extends BaseMondayApiTool<typeof createBoardToolSch
   });
 
   getDescription(): string {
-    return 'Create a monday.com board. For multi-level board requests use useMlsTemplate=true. For dataset board requests use useDatasetTemplate=true. Do not set both flags to true.';
+    return 'Create a monday.com board';
   }
 
   getInputSchema(): typeof createBoardToolSchema {
@@ -37,10 +37,6 @@ export class CreateBoardTool extends BaseMondayApiTool<typeof createBoardToolSch
   }
 
   protected async executeInternal(input: ToolInputType<typeof createBoardToolSchema>): Promise<ToolOutputType<never>> {
-    if (input.useMlsTemplate && input.useDatasetTemplate) {
-      throw new Error('useMlsTemplate and useDatasetTemplate cannot both be true');
-    }
-
     const variables: CreateBoardMutationVariables = {
       boardName: input.boardName,
       boardKind: input.boardKind,
