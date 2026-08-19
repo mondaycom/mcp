@@ -1,7 +1,4 @@
 import { z } from 'zod';
-import mammoth from 'mammoth';
-import ExcelJS from 'exceljs';
-import { getDocumentProxy, extractText } from 'unpdf';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { getItemAssets } from './fetch-file-content-tool.graphql';
@@ -108,36 +105,39 @@ async function downloadWithSizeLimit(url: string): Promise<Buffer> {
 }
 
 async function extractTextFromPdf(buffer: Buffer): Promise<string> {
+  const { getDocumentProxy, extractText } = await import('unpdf');
   const pdf = await getDocumentProxy(new Uint8Array(buffer));
   const { text } = await extractText(pdf, { mergePages: true });
   return text;
 }
 
 async function extractTextFromWord(buffer: Buffer): Promise<string> {
+  const mammoth = (await import('mammoth')).default;
   const result = await mammoth.extractRawText({ buffer });
   return result.value;
 }
 
-function cellToString(value: ExcelJS.CellValue): string {
+function cellToString(value: any): string {
   if (value === null || value === undefined) return '';
   if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'string') return String(value);
   if (value instanceof Date) return value.toISOString();
   if (typeof value === 'object') {
-    if ('result' in value) return cellToString((value as ExcelJS.CellFormulaValue).result as ExcelJS.CellValue);
-    if ('richText' in value) return (value as ExcelJS.CellRichTextValue).richText.map((r) => r.text).join('');
-    if ('hyperlink' in value) return (value as ExcelJS.CellHyperlinkValue).text ?? '';
+    if ('result' in value) return cellToString((value as any).result);
+    if ('richText' in value) return (value as any).richText.map((r: any) => r.text).join('');
+    if ('hyperlink' in value) return (value as any).text ?? '';
   }
   return '';
 }
 
 async function extractTextFromExcel(buffer: Buffer): Promise<string> {
+  const ExcelJS = (await import('exceljs')).default;
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(buffer);
   const parts: string[] = [];
-  workbook.eachSheet((sheet) => {
+  workbook.eachSheet((sheet: any) => {
     const rows: string[] = [];
-    sheet.eachRow((row) => {
-      const values = (row.values as ExcelJS.CellValue[]).slice(1);
+    sheet.eachRow((row: any) => {
+      const values = (row.values as any[]).slice(1);
       rows.push(values.map(cellToString).join(','));
     });
     parts.push(`=== Sheet: ${sheet.name} ===\n${rows.join('\n')}`);
