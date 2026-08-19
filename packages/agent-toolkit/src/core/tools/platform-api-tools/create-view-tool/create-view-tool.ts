@@ -67,6 +67,8 @@ export class CreateViewTool extends BaseMondayApiTool<typeof createViewToolSchem
   getDescription(): string {
     return `Create a new board view (tab) with optional filters and sorting. This creates a saved view on a monday.com board that users can switch to.
 
+[REQUIRED PRECONDITION]: If you pass filters or sorting, call get_board_info first to get the board column IDs, column types, and status label indexes. Filter rules reference real column IDs and, for status columns, numeric label indexes — do not guess them.
+
 Filter operators: any_of, not_any_of, is_empty, is_not_empty, greater_than, lower_than, between, contains_text, not_contains_text
 
 Example filter for people column: { "rules": [{ "column_id": "people", "compare_value": ["person-12345"], "operator": "any_of" }] }

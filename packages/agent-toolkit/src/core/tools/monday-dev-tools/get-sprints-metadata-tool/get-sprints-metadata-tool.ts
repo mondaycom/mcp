@@ -67,7 +67,10 @@ A table of sprints with the following information:
 ## Parameters:
 - **limit**: Number of sprints to retrieve (default: ${DEFAULT_LIMIT}, max: ${MAX_LIMIT})
 
-Requires the Main Sprints board ID of the monday-dev containing your sprints.`;
+Requires the Main Sprints board ID of the monday-dev containing your sprints. If you do not already have it, call get_monday_dev_sprints_boards first to discover it.
+
+## Call this before:
+- get_sprint_summary — this tool returns the Sprint IDs that get_sprint_summary requires. Never guess a sprint ID.`;
   }
 
   getInputSchema(): typeof getSprintsMetadataToolSchema {
