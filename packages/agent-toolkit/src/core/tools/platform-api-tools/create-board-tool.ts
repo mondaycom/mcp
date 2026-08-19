@@ -14,8 +14,8 @@ export const createBoardToolSchema = {
   boardDescription: z.string().optional().describe('The description of the board to create'),
   workspaceId: z.string().optional().describe('The ID of the workspace to create the board in'),
   boardOwnerIds: z.array(z.string()).optional().describe('Optional list of user IDs to set as board owners'),
-  useMlsTemplate: z.boolean().optional().describe('If true, creates a board from the MLS template'),
-  useDatasetTemplate: z.boolean().optional().describe('If true, creates a board from the dataset template'),
+  useMlsTemplate: z.boolean().optional().describe('Set to true to create a multi-level board using the MLS template'),
+  useDatasetTemplate: z.boolean().optional().describe('Set to true to create a board from the dataset template'),
 };
 
 export class CreateBoardTool extends BaseMondayApiTool<typeof createBoardToolSchema, never> {
@@ -29,7 +29,7 @@ export class CreateBoardTool extends BaseMondayApiTool<typeof createBoardToolSch
   });
 
   getDescription(): string {
-    return 'Create a monday.com board';
+    return 'Create a monday.com board. For multi-level board requests use useMlsTemplate=true. For dataset board requests use useDatasetTemplate=true. Do not set both flags to true.';
   }
 
   getInputSchema(): typeof createBoardToolSchema {
@@ -37,6 +37,10 @@ export class CreateBoardTool extends BaseMondayApiTool<typeof createBoardToolSch
   }
 
   protected async executeInternal(input: ToolInputType<typeof createBoardToolSchema>): Promise<ToolOutputType<never>> {
+    if (input.useMlsTemplate && input.useDatasetTemplate) {
+      throw new Error('useMlsTemplate and useDatasetTemplate cannot both be true');
+    }
+
     const variables: CreateBoardMutationVariables = {
       boardName: input.boardName,
       boardKind: input.boardKind,

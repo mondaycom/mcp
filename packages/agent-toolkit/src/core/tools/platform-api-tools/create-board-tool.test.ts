@@ -91,4 +91,18 @@ describe('CreateBoardTool', () => {
       workspaceId: undefined,
     });
   });
+
+  it('throws when both template flags are true', async () => {
+    mocks.setResponse(successfulResponse);
+    const tool = new CreateBoardTool(mocks.mockApiClient);
+
+    await expect(
+      tool.execute({
+        boardName: 'Test Board',
+        boardKind: BoardKind.Public,
+        useMlsTemplate: true,
+        useDatasetTemplate: true,
+      }),
+    ).rejects.toThrow('useMlsTemplate and useDatasetTemplate cannot both be true');
+  });
 });
