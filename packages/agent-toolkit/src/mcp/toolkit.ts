@@ -23,7 +23,7 @@ export class MondayAgentToolkit extends McpServer {
   private readonly mondayApiToken: string | (() => string);
   private readonly context?: MondayAgentToolkitConfig['context'];
   private readonly toolkitConfig: MondayAgentToolkitConfig;
-  private readonly omitContentWhenStructured: boolean;
+  private readonly omitContentWhenStructured: boolean | (() => boolean);
   private readonly dynamicToolManager: DynamicToolManager = new DynamicToolManager();
   private toolInstances: Tool<any, any>[] = [];
   private managementTool: Tool<any, any> | null = null;
@@ -355,7 +355,12 @@ export class MondayAgentToolkit extends McpServer {
       };
     }
 
-    if (this.omitContentWhenStructured) {
+    const shouldOmitContent =
+      typeof this.omitContentWhenStructured === 'function'
+        ? this.omitContentWhenStructured()
+        : this.omitContentWhenStructured === true;
+
+    if (shouldOmitContent) {
       return {
         structuredContent: content,
       } as CallToolResult;

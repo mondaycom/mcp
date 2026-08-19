@@ -1125,6 +1125,71 @@ describe('MondayAgentToolkit', () => {
       expect(result).not.toHaveProperty('content');
     });
 
+    it('should omit content mirror when omitContentWhenStructured is a function returning true', async () => {
+      const objectPayload = { foo: 'bar', n: 42 };
+      const mockTool = {
+        name: 'object-result-tool-omit-fn',
+        type: ToolType.READ,
+        annotations: { audience: [] },
+        enabledByDefault: true,
+        getDescription: jest.fn().mockReturnValue('Object result tool'),
+        getInputSchema: jest.fn().mockReturnValue({}),
+        execute: jest.fn().mockResolvedValue({ content: objectPayload }),
+      };
+
+      mockGetFilteredToolInstances.mockReturnValue([mockTool]);
+
+      const toolkit = new MondayAgentToolkit({
+        mondayApiToken: 'test-token',
+        omitContentWhenStructured: () => true,
+      });
+
+      const [tool] = toolkit.getToolsForMcp();
+      const result = await tool.handler({});
+
+      expect(result).toEqual({
+        structuredContent: objectPayload,
+      });
+      expect(result).not.toHaveProperty('content');
+    });
+
+    it('should re-evaluate omitContentWhenStructured function on each tool call', async () => {
+      const objectPayload = { foo: 'bar', n: 42 };
+      const mockTool = {
+        name: 'object-result-tool-reeval',
+        type: ToolType.READ,
+        annotations: { audience: [] },
+        enabledByDefault: true,
+        getDescription: jest.fn().mockReturnValue('Object result tool'),
+        getInputSchema: jest.fn().mockReturnValue({}),
+        execute: jest.fn().mockResolvedValue({ content: objectPayload }),
+      };
+
+      mockGetFilteredToolInstances.mockReturnValue([mockTool]);
+
+      let omit = false;
+      const toolkit = new MondayAgentToolkit({
+        mondayApiToken: 'test-token',
+        omitContentWhenStructured: () => omit,
+      });
+
+      const [tool] = toolkit.getToolsForMcp();
+
+      const first = await tool.handler({});
+      expect(first).toEqual({
+        structuredContent: objectPayload,
+        content: [{ type: 'text', text: JSON.stringify(objectPayload) }],
+      });
+
+      omit = true;
+
+      const second = await tool.handler({});
+      expect(second).toEqual({
+        structuredContent: objectPayload,
+      });
+      expect(second).not.toHaveProperty('content');
+    });
+
     it('should handle tools without input schema in MCP format', async () => {
       const mockTool = {
         name: 'no-schema-mcp-tool',
