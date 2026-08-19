@@ -23,6 +23,7 @@ export class MondayAgentToolkit extends McpServer {
   private readonly mondayApiToken: string | (() => string);
   private readonly context?: MondayAgentToolkitConfig['context'];
   private readonly toolkitConfig: MondayAgentToolkitConfig;
+  private readonly omitContentWhenStructured: boolean;
   private readonly dynamicToolManager: DynamicToolManager = new DynamicToolManager();
   private toolInstances: Tool<any, any>[] = [];
   private managementTool: Tool<any, any> | null = null;
@@ -48,6 +49,7 @@ export class MondayAgentToolkit extends McpServer {
 
     this.mondayApiToken = config.mondayApiToken;
     this.toolkitConfig = config;
+    this.omitContentWhenStructured = config.omitContentWhenStructured ?? false;
     const resolvedToken = typeof config.mondayApiToken === 'function' ? config.mondayApiToken() : config.mondayApiToken;
     this.mondayApiClient = this.createApiClient(resolvedToken, config);
 
@@ -351,6 +353,12 @@ export class MondayAgentToolkit extends McpServer {
       return {
         content: [{ type: 'text', text: content }],
       };
+    }
+
+    if (this.omitContentWhenStructured) {
+      return {
+        structuredContent: content,
+      } as CallToolResult;
     }
 
     return {

@@ -39,4 +39,5 @@ export type MondayAgentToolkitConfig = {
   toolsConfiguration?: ToolsConfiguration;
   context?: MondayApiToolContext;
   fetchConfig?: FetchConfig;
+  omitContentWhenStructured?: boolean;
 };

@@ -1070,6 +1070,61 @@ describe('MondayAgentToolkit', () => {
       expect(toolNames).toContain('manage-tools');
     });
 
+    it('should return both structuredContent and content mirror for object results by default', async () => {
+      const objectPayload = { foo: 'bar', n: 42 };
+      const mockTool = {
+        name: 'object-result-tool',
+        type: ToolType.READ,
+        annotations: { audience: [] },
+        enabledByDefault: true,
+        getDescription: jest.fn().mockReturnValue('Object result tool'),
+        getInputSchema: jest.fn().mockReturnValue({}),
+        execute: jest.fn().mockResolvedValue({ content: objectPayload }),
+      };
+
+      mockGetFilteredToolInstances.mockReturnValue([mockTool]);
+
+      const toolkit = new MondayAgentToolkit({
+        mondayApiToken: 'test-token',
+      });
+
+      const [tool] = toolkit.getToolsForMcp();
+      const result = await tool.handler({});
+
+      expect(result).toEqual({
+        structuredContent: objectPayload,
+        content: [{ type: 'text', text: JSON.stringify(objectPayload) }],
+      });
+    });
+
+    it('should omit content mirror when omitContentWhenStructured is true', async () => {
+      const objectPayload = { foo: 'bar', n: 42 };
+      const mockTool = {
+        name: 'object-result-tool-omit',
+        type: ToolType.READ,
+        annotations: { audience: [] },
+        enabledByDefault: true,
+        getDescription: jest.fn().mockReturnValue('Object result tool'),
+        getInputSchema: jest.fn().mockReturnValue({}),
+        execute: jest.fn().mockResolvedValue({ content: objectPayload }),
+      };
+
+      mockGetFilteredToolInstances.mockReturnValue([mockTool]);
+
+      const toolkit = new MondayAgentToolkit({
+        mondayApiToken: 'test-token',
+        omitContentWhenStructured: true,
+      });
+
+      const [tool] = toolkit.getToolsForMcp();
+      const result = await tool.handler({});
+
+      expect(result).toEqual({
+        structuredContent: objectPayload,
+      });
+      expect(result).not.toHaveProperty('content');
+    });
+
     it('should handle tools without input schema in MCP format', async () => {
       const mockTool = {
         name: 'no-schema-mcp-tool',
