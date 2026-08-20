@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.64.4
+
+### Point `create_view` filters at `get_column_type_info` guidelines
+
+`create_view`'s description now tells callers to fetch filter guidelines via `get_column_type_info` with `fetchMode: "guidelines"` (`data.guidelines.filter`) before sending filter rules, matching the precondition already stated on `get_board_items_page` and `board_insights`.
+
 ## 5.64.3
 
 ### Spell out prerequisite tool ordering in tool descriptions

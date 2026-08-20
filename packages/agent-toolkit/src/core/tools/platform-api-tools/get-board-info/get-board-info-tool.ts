@@ -30,7 +30,8 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
       'Also returns the board\'s views (e.g. table views, filter views) — each view includes its id, name, type, and a structured filter object. ' +
       'The response includes hierarchy_type which indicates if the board is a multi-level board ("multi_level") where items can have nested subitems up to 5 levels deep on the same board. On multi-level boards, subitems share the same columns as parent items and subItemColumns will be null. ' +
       'Call this FIRST whenever you are not already familiar with a board structure (column IDs, column types, status labels), before reading or writing its data with get_board_items_page, board_insights, create_item, create_items, update_items, or change_item_column_values — those tools declare it as a required precondition. ' +
-      'Also use the views it returns to resolve a view referenced by name, and as the source of view ids for update_view and update_view_table.'
+      'Also use the views it returns to resolve a view referenced by name, and as the source of view ids for update_view and update_view_table. ' +
+      'Each column\'s "settings" field is the raw API value for that existing column, shown so you can read current labels/config — it is NOT the format expected by the columnSettings parameter of create_column or update_column. Never copy a column\'s "settings" object verbatim into columnSettings; use get_column_type_info with fetchMode "schema" to get the correct shape for the column type you are creating or updating.'
     );
   }
 

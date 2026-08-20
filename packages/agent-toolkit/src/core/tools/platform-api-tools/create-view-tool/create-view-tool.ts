@@ -10,6 +10,7 @@ import {
 import { createView } from './create-view-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+import { ColumnTypeInfoFetchMode } from '../get-column-type-info/get-column-type-info-fetch-mode';
 
 export const createViewToolSchema = {
   boardId: z.string().describe('The board ID to create the view on'),
@@ -67,7 +68,7 @@ export class CreateViewTool extends BaseMondayApiTool<typeof createViewToolSchem
   getDescription(): string {
     return `Create a new board view (tab) with optional filters and sorting. This creates a saved view on a monday.com board that users can switch to.
 
-[REQUIRED PRECONDITION]: If you pass filters or sorting, call get_board_info first to get the board column IDs, column types, and status label indexes. Filter rules reference real column IDs and, for status columns, numeric label indexes — do not guess them.
+[REQUIRED PRECONDITION]: If you pass filters or sorting, call get_board_info first to get the board column IDs, column types, and status label indexes. Filter rules reference real column IDs and, for status columns, numeric label indexes — do not guess them. Before sending the filters, use get_column_type_info with fetchMode "${ColumnTypeInfoFetchMode.Guidelines}" and use data.guidelines.filter (null if that type has no documented rules).
 
 Filter operators: any_of, not_any_of, is_empty, is_not_empty, greater_than, lower_than, between, contains_text, not_contains_text
 
