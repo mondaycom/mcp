@@ -71,6 +71,8 @@ export class UpdateViewTool extends BaseMondayApiTool<typeof updateViewToolSchem
   getDescription(): string {
     return `Update an existing board view (tab) — change its name, filter rules, or sort order. Provide only the fields you want to change. Omitted fields are left unchanged.
 
+[REQUIRED PRECONDITION]: Call get_board_info first — it returns the board views (so you can resolve the viewId, including from a view name the user mentioned) along with the column IDs, column types, and status label indexes that filter rules reference.
+
 Filter operators: any_of, not_any_of, is_empty, is_not_empty, greater_than, lower_than, between, contains_text, not_contains_text
 
 Example filter for people column: { "rules": [{ "column_id": "people", "compare_value": ["person-12345"], "operator": "any_of" }] }

@@ -14,7 +14,7 @@ export const updateColumnToolSchema = {
   revision: z
     .string()
     .describe(
-      'The current revision of the column, obtained from get_board_schema. Used for optimistic concurrency control: if the column changed since you read it, the request will fail and you should re-fetch the latest revision before retrying.',
+      'The current revision of the column, obtained from get_board_schema or get_board_info. Used for optimistic concurrency control: if the column changed since you read it, the request will fail and you should re-fetch the latest revision before retrying.',
     ),
   columnTitle: z.string().optional().describe('The new title of the column. If omitted, the title is unchanged.'),
   columnDescription: z
@@ -47,7 +47,11 @@ export class UpdateColumnTool extends BaseMondayApiTool<UpdateColumnToolInput> {
   });
 
   getDescription(): string {
-    return 'Update properties of an existing monday.com column (title, description, settings). Uses optimistic concurrency control via the revision field — fetch the current revision via get_board_schema first, then call this tool. If the update fails because the revision is stale, re-fetch and try again.';
+    return (
+      'Update properties of an existing monday.com column (title, description, settings). ' +
+      '[REQUIRED PRECONDITION]: Uses optimistic concurrency control via the revision field — fetch the column id, type, and current revision via get_board_schema or get_board_info first, then call this tool. If the update fails because the revision is stale, re-fetch and try again. ' +
+      `[REQUIRED PRECONDITION]: If you are changing columnSettings, also call get_column_type_info with fetchMode "${ColumnTypeInfoFetchMode.Schema}" for that column type first to learn the valid settings structure.`
+    );
   }
 
   getInputSchema(): UpdateColumnToolInput {
