@@ -28,7 +28,7 @@ export class DeleteColumnTool extends BaseMondayApiTool<DeleteColumnToolInput> {
   getDescription(): string {
     return (
       'Delete a column from a monday.com board. This is irreversible — the column and all of its values are removed. ' +
-      '[REQUIRED PRECONDITION]: Call get_board_schema first to resolve the exact columnId and confirm you are deleting the intended column. Never guess a column id.'
+      '[REQUIRED PRECONDITION]: Call get_board_schema or get_board_info first to resolve the exact columnId and confirm you are deleting the intended column. Never guess a column id.'
     );
   }
 
