@@ -25,7 +25,7 @@ export class GetTypeDetailsTool extends BaseMondayApiTool<typeof getTypeDetailsT
   }
 
   getDescription(): string {
-    return 'Get detailed information about a specific GraphQL type from the monday.com API schema, including its fields, input fields, and enum values. Call this after get_graphql_schema and BEFORE crafting an operation for all_monday_api, all_api_read, or all_api_write, so the fields and arguments you send actually exist.';
+    return 'Get detailed information about a specific GraphQL type from the monday.com API schema, including its fields, input fields, and enum values. Call this with a known type name to confirm its exact fields, arguments, and enum values before referencing that type in an operation for all_monday_api, all_api_read, or all_api_write, so the fields and arguments you send actually exist.';
   }
 
   getInputSchema(): typeof getTypeDetailsToolSchema {
