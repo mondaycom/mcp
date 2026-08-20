@@ -29,7 +29,10 @@ export class GetObjectSchemasTool extends BaseMondayApiTool<typeof getObjectSche
   });
 
   getDescription(): string {
-    return 'Retrieve account-level object schemas by their IDs or names. Schemas define the structure and columns of boards. Provide ids or names to filter specific schemas. Omit both to list all schemas (paginated).';
+    return (
+      'Retrieve account-level object schemas by their IDs or names. Schemas define the structure and columns of boards. Provide ids or names to filter specific schemas. Omit both to list all schemas (paginated). ' +
+      'Call this FIRST to resolve schema ids, column ids, and the current revision before any tool that modifies an existing schema: update_object_schema (which requires the revision returned here), manage_object_schema_columns with action=update, set_object_schema_column_active_state, delete_object_schema_columns, delete_object_schema, and manage_object_schema_board_connection.'
+    );
   }
 
   getInputSchema(): typeof getObjectSchemasToolSchema {

@@ -28,7 +28,7 @@ export class CreateObjectSchemaTool extends BaseMondayApiTool<typeof createObjec
   });
 
   getDescription(): string {
-    return 'Create a new account-level object schema. Schemas define the structure and columns of boards.';
+    return 'Create a new account-level object schema. Schemas define the structure and columns of boards. If you are nesting this schema under an existing one, call get_object_schemas first to resolve parentId. This tool creates the schema only — add its columns afterwards with manage_object_schema_columns, and attach boards with manage_object_schema_board_connection.';
   }
 
   getInputSchema(): typeof createObjectSchemaToolSchema {

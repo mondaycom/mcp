@@ -50,7 +50,8 @@ The sprint summary content including:
 - **AI Recommendations**: Action items, process improvements, retrospective focus areas
 
 ## Requirements:
-- Sprint must be completed and must be created after 1/1/2025 
+- Sprint must be completed and must be created after 1/1/2025
+- Requires a sprintId. [REQUIRED PRECONDITION]: call get_sprints_metadata first to list the sprints on the board and resolve the sprintId (and to confirm the sprint is completed). If you do not know the sprints board ID either, start with get_monday_dev_sprints_boards.
 
 ## Important Note:
 When viewing the section "Completed by Assignee", you'll see user IDs in the format "@user-12345678". the 8 digits after the @is the user ID. To retrieve the actual owner names, use the list_users_and_teams tool with the user ID and set includeTeams=false for optimal performance.

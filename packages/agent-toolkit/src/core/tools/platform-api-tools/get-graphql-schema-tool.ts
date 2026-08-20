@@ -23,7 +23,7 @@ export class GetGraphQLSchemaTool extends BaseMondayApiTool<typeof getGraphQLSch
   });
 
   getDescription(): string {
-    return 'Fetch the monday.com GraphQL schema structure including query and mutation definitions. This tool returns available query fields, mutation fields, and a list of GraphQL types in the schema. You can filter results by operation type (read/write) to focus on either queries or mutations.';
+    return 'Fetch the monday.com GraphQL schema structure including query and mutation definitions. This tool returns available query fields, mutation fields, and a list of GraphQL types in the schema. You can filter results by operation type (read/write) to focus on either queries or mutations. Call this — together with get_type_details for the specific types you use — BEFORE crafting an operation for all_monday_api, all_api_read, or all_api_write. Do not hand-write a query or mutation against a guessed schema.';
   }
 
   getInputSchema(): typeof getGraphQLSchemaToolSchema {
