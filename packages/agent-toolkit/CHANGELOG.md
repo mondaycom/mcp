@@ -1,5 +1,21 @@
 # Changelog
 
+## 5.64.2
+
+### get_board_items_page — return BatteryValue rollup status on MLS parent items
+
+- Status columns that roll up from subitems on MLS boards are returned as `BatteryValue` (`battery_value: [{ key, count }, ...]`), not flattened to text or raw JSON
+- The query now requests `column_values` with `capabilities: [CALCULATED]`, plus `is_leaf` and the `BatteryValue` fragment
+- Leaf/subitem status columns are unchanged and still resolve via `text`
+
+## 5.64.1
+
+### search — scope BOARD and TIMELINE_ITEMS search by boardIds
+
+- BOARD and TIMELINE_ITEMS search now accept `boardIds` to scope results to specific boards (the corresponding GraphQL queries already supported `board_ids`)
+- Updated the `boardIds` field description to list BOARD, ITEMS, UPDATES, and TIMELINE_ITEMS
+- Updated the BOARD and TIMELINE_ITEMS lines in the tool description to mention optional `boardIds` scoping
+
 ## 5.64.0
 
 ### send_feedback renamed to submit_bug_or_feature_request (breaking)

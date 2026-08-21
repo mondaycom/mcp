@@ -7,15 +7,19 @@ export const getBoardItemsPage = gql`
     url
     created_at
     updated_at
+    parent_item {
+      id
+    }
     group @include(if: $includeGroup) {
       id
       title
     }
-    column_values(ids: $columnIds) @include(if: $includeColumns) {
+    column_values(ids: $columnIds, capabilities: [CALCULATED]) @include(if: $includeColumns) {
       id
       type
       text
       value
+      is_leaf
 
       ... on FormulaValue {
         display_value
@@ -29,6 +33,13 @@ export const getBoardItemsPage = gql`
             id
             name
           }
+        }
+      }
+
+      ... on BatteryValue {
+        battery_value {
+          key
+          count
         }
       }
     }
@@ -56,6 +67,7 @@ export const getBoardItemsPage = gql`
     boards(ids: [$boardId]) {
       id
       name
+      hierarchy_type
       items_page(limit: $limit, cursor: $cursor, query_params: $queryParams) {
         items {
           ...ItemDataFragment

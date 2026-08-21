@@ -86,6 +86,8 @@ export const createBoard = gql`
     $boardDescription: String
     $workspaceId: ID
     $boardOwnerIds: [ID!]
+    $useMlsTemplate: Boolean
+    $useDatasetTemplate: Boolean
   ) {
     create_board(
       board_kind: $boardKind
@@ -93,6 +95,8 @@ export const createBoard = gql`
       description: $boardDescription
       workspace_id: $workspaceId
       board_owner_ids: $boardOwnerIds
+      use_mls_template: $useMlsTemplate
+      use_dataset_template: $useDatasetTemplate
       empty: true
     ) {
       id

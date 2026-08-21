@@ -27,7 +27,8 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
   getDescription(): string {
     return (
       'Get comprehensive board information including metadata, structure, owners, and configuration. ' +
-      'Also returns the board\'s views (e.g. table views, filter views) — each view includes its id, name, type, and a structured filter object. '
+      'Also returns the board\'s views (e.g. table views, filter views) — each view includes its id, name, type, and a structured filter object. ' +
+      'The response includes hierarchy_type which indicates if the board is a multi-level board ("multi_level") where items can have nested subitems up to 5 levels deep on the same board. On multi-level boards, subitems share the same columns as parent items and subItemColumns will be null.'
     );
   }
 
@@ -64,6 +65,12 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
     }
 
     const subItemsBoardId = subTasksColumn.settings.boardIds[0];
+
+    // On MLS boards, boardIds[0] is the board's own ID (self-reference) —
+    // subitems live on the same board, so no separate query is needed.
+    if (subItemsBoardId === board.id) {
+      return null;
+    }
 
     const response = await this.mondayApi.request<GetBoardInfoJustColumnsQuery>(getBoardInfoJustColumns, {
       boardId: subItemsBoardId,
