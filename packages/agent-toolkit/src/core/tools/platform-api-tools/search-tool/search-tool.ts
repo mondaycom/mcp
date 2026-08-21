@@ -181,9 +181,9 @@ export const searchSchema = {
   searchType: searchTypeSchema,
   limit: limitSchema,
 
-  // for items, boards, docs, dashboards, and folders
+  // for items, boards, docs, dashboards, folders, updates, and timeline items
   workspaceIds: optionalIdArray(
-    'Array of workspace IDs (numbers) to search in. Optional for FOLDERS search (searches all accessible workspaces when omitted). For ITEMS, BOARD, DOCUMENTS, and DASHBOARDS search, only pass this if the user explicitly asked to search within specific workspaces. Example: [12345, 67890].',
+    'Array of workspace IDs (numbers) to search in. Optional for FOLDERS search (searches all accessible workspaces when omitted). For ITEMS, BOARD, DOCUMENTS, DASHBOARDS, UPDATES, and TIMELINE_ITEMS search, only pass this if the user explicitly asked to search within specific workspaces. Example: [12345, 67890].',
   ),
 
   // for boards, items, updates, and timeline items
@@ -219,8 +219,8 @@ BOARD search returns id, title, url, and workspaceId. Optionally scope it with b
 DOCUMENTS search returns id, title, and workspaceId.
 ITEMS search returns id, title, url, boardId, and workspaceId. Optionally scope it with workspaceIds, boardIds, and/or creatorIds.
 WORKSPACES search returns id, title, and description.
-UPDATES search returns id, title (the update body), itemId, boardId, and creatorId. Optionally scope it with boardIds and/or creatorIds.
-TIMELINE_ITEMS search returns id, title, summary, content, itemId, and boardId. Optionally scope it with boardIds.
+UPDATES search returns id, title (the update body), itemId, boardId, and creatorId. Optionally scope it with workspaceIds, boardIds, and/or creatorIds.
+TIMELINE_ITEMS search returns id, title, summary, content, itemId, and boardId. Optionally scope it with workspaceIds and/or boardIds.
 DASHBOARDS search (also called "overviews") returns id, title, and workspaceId. Optionally scope it with workspaceIds and/or creatorIds.
 FOLDERS search returns id and title. Optionally scope it with workspaceIds, which searches all accessible workspaces when omitted. Pass workspaceIds to narrow the search if results may be truncated.
   `;
@@ -278,7 +278,7 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
     if (input.searchType === GlobalSearchType.UPDATES) {
       const boardIds = toFilterIds(input.boardIds?.map((id) => id.toString()));
       const creatorIds = toFilterIds(input.creatorIds?.map((id) => id.toString()));
-      return this.searchUpdatesAsync(searchTerm, input.limit, boardIds, creatorIds);
+      return this.searchUpdatesAsync(searchTerm, input.limit, workspaceIds, boardIds, creatorIds);
     }
 
     if (input.searchType === GlobalSearchType.ITEMS) {
@@ -289,7 +289,7 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
 
     if (input.searchType === GlobalSearchType.TIMELINE_ITEMS) {
       const boardIds = toFilterIds(input.boardIds?.map((id) => id.toString()));
-      return this.searchTimelineItemsAsync(searchTerm, input.limit, boardIds);
+      return this.searchTimelineItemsAsync(searchTerm, input.limit, workspaceIds, boardIds);
     }
 
     if (input.searchType === GlobalSearchType.DASHBOARDS) {
@@ -354,10 +354,11 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
   private async searchUpdatesAsync(
     query: string,
     limit: number,
+    workspaceIds?: string[],
     boardIds?: string[],
     creatorIds?: string[],
   ): Promise<SearchResult[]> {
-    const variables: SearchUpdatesQueryVariables = { query, limit, boardIds, creatorIds };
+    const variables: SearchUpdatesQueryVariables = { query, limit, workspaceIds, boardIds, creatorIds };
 
     const response = await this.mondayApi.request<SearchUpdatesQuery>(searchUpdates, variables, {
       timeout: SEARCH_TIMEOUT,
@@ -403,8 +404,13 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
     }));
   }
 
-  private async searchTimelineItemsAsync(query: string, limit: number, boardIds?: string[]): Promise<SearchResult[]> {
-    const variables: SearchTimelineItemsQueryVariables = { query, limit, boardIds };
+  private async searchTimelineItemsAsync(
+    query: string,
+    limit: number,
+    workspaceIds?: string[],
+    boardIds?: string[],
+  ): Promise<SearchResult[]> {
+    const variables: SearchTimelineItemsQueryVariables = { query, limit, workspaceIds, boardIds };
 
     const response = await this.mondayApi.request<SearchTimelineItemsQuery>(searchTimelineItems, variables, {
       timeout: SEARCH_TIMEOUT,
