@@ -1474,6 +1474,7 @@ describe('SearchTool', () => {
         {
           query: 'Deploy',
           limit: 20,
+          workspaceIds: undefined,
           boardIds: undefined,
           creatorIds: undefined,
         },
@@ -1495,12 +1496,13 @@ describe('SearchTool', () => {
       expect(parsedResult.data[1].id).toBe('20');
     });
 
-    it('should pass boardIds and creatorIds to the updates query', async () => {
+    it('should pass workspaceIds, boardIds and creatorIds to the updates query', async () => {
       mocks.setResponse(mockUpdatesResponse);
 
       const args: inputType = {
         searchType: GlobalSearchType.UPDATES,
         searchTerm: 'Deploy',
+        workspaceIds: [9001],
         boardIds: [801, 802],
         creatorIds: [501],
       };
@@ -1512,6 +1514,7 @@ describe('SearchTool', () => {
         {
           query: 'Deploy',
           limit: 20,
+          workspaceIds: ['9001'],
           boardIds: ['801', '802'],
           creatorIds: ['501'],
         },
@@ -1614,6 +1617,8 @@ describe('SearchTool', () => {
         {
           query: 'kickoff',
           limit: 20,
+          workspaceIds: undefined,
+          boardIds: undefined,
         },
         expect.objectContaining({ timeout: expect.any(Number) }),
       );
@@ -1637,6 +1642,24 @@ describe('SearchTool', () => {
       );
     });
 
+    it('should pass workspaceIds to the searchTimelineItems request', async () => {
+      mocks.setResponse({
+        search: { timeline_items: { results: [] } },
+      });
+
+      await callToolByNameAsync('search', {
+        searchTerm: 'test',
+        searchType: GlobalSearchType.TIMELINE_ITEMS,
+        workspaceIds: [9001, 9002],
+      });
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        searchTimelineItems,
+        expect.objectContaining({ workspaceIds: ['9001', '9002'] }),
+        expect.anything(),
+      );
+    });
+
     it('should send boardIds as undefined when not supplied for TIMELINE_ITEMS search', async () => {
       mocks.setResponse({
         search: { timeline_items: { results: [] } },
@@ -1649,7 +1672,7 @@ describe('SearchTool', () => {
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         searchTimelineItems,
-        expect.objectContaining({ boardIds: undefined }),
+        expect.objectContaining({ boardIds: undefined, workspaceIds: undefined }),
         expect.anything(),
       );
     });

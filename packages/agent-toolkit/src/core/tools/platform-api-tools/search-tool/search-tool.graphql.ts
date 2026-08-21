@@ -81,9 +81,21 @@ export const searchWorkspaces = gql`
 `;
 
 export const searchUpdates = gql`
-  query SearchUpdates($query: String!, $limit: Int, $boardIds: [ID!], $creatorIds: [ID!]) {
+  query SearchUpdates(
+    $query: String!
+    $limit: Int
+    $workspaceIds: [ID!]
+    $boardIds: [ID!]
+    $creatorIds: [ID!]
+  ) {
     search {
-      updates(query: $query, limit: $limit, board_ids: $boardIds, creator_ids: $creatorIds) {
+      updates(
+        query: $query
+        limit: $limit
+        workspace_ids: $workspaceIds
+        board_ids: $boardIds
+        creator_ids: $creatorIds
+      ) {
         results {
           id
           indexed_data {
@@ -100,9 +112,9 @@ export const searchUpdates = gql`
 `;
 
 export const searchTimelineItems = gql`
-  query SearchTimelineItems($query: String!, $limit: Int, $boardIds: [ID!]) {
+  query SearchTimelineItems($query: String!, $limit: Int, $workspaceIds: [ID!], $boardIds: [ID!]) {
     search {
-      timeline_items(query: $query, limit: $limit, board_ids: $boardIds) {
+      timeline_items(query: $query, limit: $limit, workspace_ids: $workspaceIds, board_ids: $boardIds) {
         results {
           id
           indexed_data {
