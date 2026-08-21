@@ -5018,8 +5018,7 @@ export type DataView = {
 
 /** The kind of object that authorizes access to a data view. */
 export enum DataViewAuthorizationKind {
-  Board = 'BOARD',
-  Overview = 'OVERVIEW'
+  Board = 'BOARD'
 }
 
 /** The authorization object associated with a data view. */
