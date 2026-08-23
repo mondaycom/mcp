@@ -10,6 +10,7 @@ import {
 import { createViewTable } from './create-view-table-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+import { ColumnTypeInfoFetchMode } from '../get-column-type-info/get-column-type-info-fetch-mode';
 
 const columnPropertySchema = z.object({
   column_id: z.string().describe('The ID of the column'),
@@ -111,7 +112,7 @@ export class CreateViewTableTool extends BaseMondayApiTool<typeof createViewTabl
   getDescription(): string {
     return `Create a new table-type board view with optional filters, sort, tags, and table-specific settings (column visibility/order and group-by). Use this instead of create_view when you need to configure table-specific settings. For a simple table view, create_view also works.
 
-[REQUIRED PRECONDITION]: Call get_board_info first to get the board column IDs, column types, and status label indexes. Filters, sort, column_properties, column_order, and group_by all reference real column IDs — do not guess them.
+[REQUIRED PRECONDITION]: Call get_board_info first to get the board column IDs, column types, and status label indexes. Filters, sort, column_properties, column_order, and group_by all reference real column IDs — do not guess them. This is required even if you are not passing filters, since column_properties/column_order/group_by need real column IDs too. If you pass filters, also use get_column_type_info with fetchMode "${ColumnTypeInfoFetchMode.Guidelines}" and use data.guidelines.filter (null if that type has no documented rules) before sending them — do not guess compare_value/operator rules per column type.
 
 Filter operators: any_of, not_any_of, is_empty, is_not_empty, greater_than, lower_than, between, contains_text, not_contains_text
 
