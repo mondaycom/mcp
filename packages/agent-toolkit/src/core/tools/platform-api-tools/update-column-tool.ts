@@ -14,7 +14,7 @@ export const updateColumnToolSchema = {
   revision: z
     .string()
     .describe(
-      'The current revision of the column, obtained from get_board_schema. Used for optimistic concurrency control: if the column changed since you read it, the request will fail and you should re-fetch the latest revision before retrying.',
+      'The current revision of the column. Get it from get_board_schema (preferred) or get_board_info. Used for optimistic concurrency control — if the column changed since you read it, the request fails and you must re-fetch the latest revision before retrying. After a successful update_column, use the new revision from the response for any further update to this column, not the one you started with.',
     ),
   columnTitle: z.string().optional().describe('The new title of the column. If omitted, the title is unchanged.'),
   columnDescription: z
@@ -25,7 +25,7 @@ export const updateColumnToolSchema = {
     .string()
     .optional()
     .describe(
-      `Type-specific configuration as a JSON string. Use get_column_type_info with fetchMode "${ColumnTypeInfoFetchMode.Schema}" for the JSON schema for the given column type. If omitted, settings are unchanged.`,
+      'Type-specific configuration as a JSON string. If omitted, settings are unchanged. Shape depends on columnType — see tool description for how to obtain it.',
     ),
 };
 
@@ -47,7 +47,12 @@ export class UpdateColumnTool extends BaseMondayApiTool<UpdateColumnToolInput> {
   });
 
   getDescription(): string {
-    return 'Update properties of an existing monday.com column (title, description, settings). Uses optimistic concurrency control via the revision field — fetch the current revision via get_board_schema first, then call this tool. If the update fails because the revision is stale, re-fetch and try again.';
+    return (
+      'Update properties of an existing monday.com column (title, description, settings). ' +
+      '[REQUIRED PRECONDITION]: Uses optimistic concurrency control via the revision field — fetch the column id, type, and current revision via get_board_schema first (preferred), or get_board_info if you already have it, then call this tool. If the update fails because the revision is stale, re-fetch and try again. After a successful update, use the new revision returned in the response for any further update to this column, not the one you started with. ' +
+      `[REQUIRED PRECONDITION]: If you are changing columnSettings, also call get_column_type_info with fetchMode "${ColumnTypeInfoFetchMode.Schema}" for that column type first to learn the valid settings structure. columnSettings is the flat payload for that column type (e.g. {"labels": [...]}) — not get_board_info's column.settings object copied as-is, and not wrapped again as {"settings": {"labels": [...]}}. ` +
+      'To edit existing status or dropdown labels (rename, recolor, or reorder): first call get_board_info to read that column\'s current settings.labels, where each existing label\'s id lives. Editing an existing label requires sending its id in that label\'s entry — omitting it fails validation, since only a brand-new label can omit id. Status labels need the full label shape (id, label, color, index, and so on), not just a renamed string. Never invent an id — reuse the ids from get_board_info and add new labels without one. Flow: get_board_info for the revision and current settings.labels with ids, get_column_type_info (schema mode) for the valid shape, then build columnSettings.labels reusing existing ids and adding new labels without id.'
+    );
   }
 
   getInputSchema(): UpdateColumnToolInput {

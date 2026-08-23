@@ -1,5 +1,19 @@
 # Changelog
 
+## 5.64.6
+
+### Spell out prerequisite tool ordering for board, view, and column tools
+
+Discovery tools (schema/id/revision lookups) and the write tools that depend on them often didn't state the ordering between them, so callers guessed column ids, revisions, and settings shapes instead of fetching them first. Prerequisites are now stated on both sides of each pair — the upstream tool says what it should be called before, the downstream tool says what to call first. No input schemas or behavior changed.
+
+- `get_column_type_info` — now names all three settings writers it precedes (`create_column`, `update_column`, `manage_object_schema_columns`) instead of only `create_column`
+- `create_column` / `update_column` — call `get_column_type_info` before populating `columnSettings` (previously only stated on the field description). `update_column` keeps the existing revision precondition
+- `get_board_schema` / `delete_column` — `get_board_schema` documents the column id + revision it supplies to `update_column`, `delete_column`, `configure_ai_column`, and `remove_ai_from_column`, and points to `get_board_info` for broader metadata. `delete_column` now requires resolving the id first and notes the deletion is irreversible
+- `get_board_info` — states it is the required precondition already declared by `get_board_items_page`, `board_insights`, `create_item`, `create_items`, `update_items`, and `change_item_column_values`, and that its views are the source of view ids
+- `get_board_info` — also warns that a column's returned `settings` value is the raw API shape for that existing column and must not be copied verbatim into the `columnSettings` parameter of `create_column` / `update_column`, which was producing doubly-nested `{"settings": {...}}` payloads and schema validation failures
+- `create_view` / `create_view_table` / `update_view` / `update_view_table` — call `get_board_info` first for column ids, status label indexes, and (for updates) the `viewId`
+- `create_view` — fetch filter guidelines via `get_column_type_info` with `fetchMode: "guidelines"` (`data.guidelines.filter`) before sending filter rules, matching the precondition already stated on `get_board_items_page` and `board_insights`
+
 ## 5.64.5
 
 ### Spell out prerequisite tool ordering for object schema, form, automation, sprint, and dynamic API tools

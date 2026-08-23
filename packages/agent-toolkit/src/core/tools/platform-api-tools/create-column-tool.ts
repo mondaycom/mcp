@@ -13,9 +13,7 @@ export const createColumnToolSchema = {
   columnSettings: z
     .string()
     .optional()
-    .describe(
-      `Column-specific configuration settings as a JSON string. Use get_column_type_info with fetchMode "${ColumnTypeInfoFetchMode.Schema}" for the JSON schema for the given column type.`,
-    ),
+    .describe('Column-specific configuration settings as a JSON string. Shape depends on columnType — see tool description for how to obtain it.'),
 };
 
 export const createColumnInBoardToolSchema = {
@@ -36,7 +34,11 @@ export class CreateColumnTool extends BaseMondayApiTool<CreateColumnToolInput> {
   });
 
   getDescription(): string {
-    return 'Create a new column in a monday.com board';
+    return (
+      'Create a new column in a monday.com board. ' +
+      `[REQUIRED PRECONDITION]: If the column needs type-specific configuration (columnSettings) — e.g. status/dropdown labels, formula definitions, number units — first call get_column_type_info with fetchMode "${ColumnTypeInfoFetchMode.Schema}" for that column type to learn the valid settings structure. Do not guess the settings shape. ` +
+      'To give the new column AI behavior, create it here first, then call configure_ai_column.'
+    );
   }
 
   getInputSchema(): CreateColumnToolInput {
