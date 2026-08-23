@@ -13,9 +13,7 @@ export const createColumnToolSchema = {
   columnSettings: z
     .string()
     .optional()
-    .describe(
-      `Column-specific configuration settings as a JSON string. Use get_column_type_info with fetchMode "${ColumnTypeInfoFetchMode.Schema}" for the JSON schema for the given column type.`,
-    ),
+    .describe('Column-specific configuration settings as a JSON string. Shape depends on columnType — see tool description for how to obtain it.'),
 };
 
 export const createColumnInBoardToolSchema = {

@@ -13,9 +13,7 @@ export const updateColumnToolSchema = {
     .describe('The type of the column being updated. Must match the existing column type.'),
   revision: z
     .string()
-    .describe(
-      'The current revision of the column, obtained from get_board_schema or get_board_info. Used for optimistic concurrency control: if the column changed since you read it, the request will fail and you should re-fetch the latest revision before retrying.',
-    ),
+    .describe('The current revision of the column, used for optimistic concurrency control — see tool description for how to obtain and refresh it.'),
   columnTitle: z.string().optional().describe('The new title of the column. If omitted, the title is unchanged.'),
   columnDescription: z
     .string()
@@ -25,7 +23,7 @@ export const updateColumnToolSchema = {
     .string()
     .optional()
     .describe(
-      `Type-specific configuration as a JSON string. Use get_column_type_info with fetchMode "${ColumnTypeInfoFetchMode.Schema}" for the JSON schema for the given column type. If omitted, settings are unchanged.`,
+      'Type-specific configuration as a JSON string. If omitted, settings are unchanged. Shape depends on columnType — see tool description for how to obtain it.',
     ),
 };
 
