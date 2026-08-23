@@ -1,5 +1,19 @@
 # Changelog
 
+## 5.64.5
+
+### Spell out prerequisite tool ordering for object schema, form, automation, sprint, and dynamic API tools
+
+Discovery tools (schema/id/revision lookups) and the write tools that depend on them often didn't state the ordering between them, so callers guessed schema ids, column ids, revisions, question ids, tag ids, automation ids, and sprint ids instead of fetching them first. Prerequisites are now stated on both sides of each pair — the upstream tool says what it should be called before, the downstream tool says what to call first. No input schemas or behavior changed.
+
+- `get_object_schemas` — listed as the resolver for schema ids, column ids, and revisions ahead of `update_object_schema`, `manage_object_schema_columns`, `set_object_schema_column_active_state`, `delete_object_schema_columns`, `delete_object_schema`, and `manage_object_schema_board_connection`. The matching precondition was added to `manage_object_schema_columns` (update), `set_object_schema_column_active_state`, and `delete_object_schema_columns`
+- `create_object_schema` — resolve `parentId` via `get_object_schemas`, and notes columns/boards are added afterwards
+- `get_form` / `update_form` / `form_questions_editor` — `get_form` states it precedes `create_form_submission`, `form_questions_editor`, and `update_form`, and the two writers now require it for question ids, tag ids, and current settings
+- `get_type_details` — documents that it returns fields, input fields, and enum values, and that it should be used to confirm a type's shape before referencing that type in an operation for `all_monday_api`, `all_api_read`, or `all_api_write`. It takes a known type name and is not gated on any other lookup. `get_graphql_schema` is unchanged
+- `list_automations` — stated as the only way to resolve an automation id before `manage_automations`
+- `get_board_activity` — call with `includeData=true` before `undo_action` to get the `action_record_uuid`
+- `get_sprints_metadata` / `get_sprint_summary` — `get_sprints_metadata` points back to `get_monday_dev_sprints_boards` for the board id and forward to `get_sprint_summary` for the sprint ids it supplies. `get_sprint_summary` now requires resolving `sprintId` there
+
 ## 5.64.4
 
 ### search — scope UPDATES and TIMELINE_ITEMS search by workspaceIds

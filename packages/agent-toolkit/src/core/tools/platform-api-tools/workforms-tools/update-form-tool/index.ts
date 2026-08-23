@@ -16,7 +16,7 @@ export class UpdateFormTool extends BaseMondayApiTool<typeof updateFormToolSchem
   private helpers = new UpdateFormToolHelpers(() => this.mondayApi);
 
   getDescription(): string {
-    return 'Update a monday.com form. Use the action field to specify the operation.';
+    return 'Update a monday.com form. Use the action field to specify the operation. [REQUIRED PRECONDITION]: Call get_form first to read the current form state — you need it to resolve the formToken, and for actions that reference existing entities (updateQuestionOrder needs the question ids, deleteTag needs the tag id) or that overwrite existing settings (updateAppearance, updateAccessibility, updateFeatures, updateFormHeader).';
   }
 
   getInputSchema(): typeof updateFormToolSchema {
