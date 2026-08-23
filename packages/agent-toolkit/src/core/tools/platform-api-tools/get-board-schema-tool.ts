@@ -21,7 +21,7 @@ export class GetBoardSchemaTool extends BaseMondayApiTool<typeof getBoardSchemaT
   getDescription(): string {
     return (
       'Get board schema (columns and groups) by board id. Returns each column id, title, type, and revision, plus each group id and title. ' +
-      'Call this BEFORE any tool that targets an existing column by id: update_column (which also needs the revision returned here), delete_column, configure_ai_column, and remove_ai_from_column — get_board_info returns the same column id/type/revision fields and also satisfies this precondition, but prefer this tool when you only need columns and groups, not the rest of the board. ' +
+      'Call this before tools that need a column id, type, and revision resolved from schema: update_column (which also needs the revision returned here), delete_column, configure_ai_column, and remove_ai_from_column — get_board_info returns the same column id/type/revision fields and also satisfies this precondition, but prefer this tool when you only need columns and groups, not the rest of the board. ' +
       'For broader board metadata (owners, views, and their filters) use get_board_info instead.'
     );
   }

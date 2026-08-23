@@ -10,6 +10,7 @@ import {
 import { updateViewTable } from './update-view-table-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+import { ColumnTypeInfoFetchMode } from '../get-column-type-info/get-column-type-info-fetch-mode';
 
 const columnPropertySchema = z.object({
   column_id: z.string().describe('The ID of the column'),
@@ -112,7 +113,7 @@ export class UpdateViewTableTool extends BaseMondayApiTool<typeof updateViewTabl
   getDescription(): string {
     return `Update an existing table-type board view — change its name, filters, sort, tags, or table-specific settings (column visibility/order and group-by). Provide only the fields you want to change. Omitted fields are left unchanged.
 
-[REQUIRED PRECONDITION]: Call get_board_info first — it returns the board views (so you can resolve the viewId, including from a view name the user mentioned) along with the column IDs, column types, and status label indexes that filters, column_properties, column_order, and group_by reference.
+[REQUIRED PRECONDITION]: Call get_board_info first — it returns the board views (so you can resolve the viewId, including from a view name the user mentioned) along with the column IDs, column types, and status label indexes that filters, sort, column_properties, column_order, and group_by reference. If you pass filters, also use get_column_type_info with fetchMode "${ColumnTypeInfoFetchMode.Guidelines}" and use data.guidelines.filter (null if that type has no documented rules) before sending them — do not guess compare_value/operator rules per column type.
 
 Filter operators: any_of, not_any_of, is_empty, is_not_empty, greater_than, lower_than, between, contains_text, not_contains_text
 
