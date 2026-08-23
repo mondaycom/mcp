@@ -45,7 +45,10 @@ export class GetBoardActivityTool extends BaseMondayApiTool<typeof getBoardActiv
   private defaultLimit = 1000;
 
   getDescription(): string {
-    return 'Get board activity logs for a specified time range (defaults to last 30 days). Optionally filter by item ids or user ids to avoid fetching activity for the entire board. Call this with includeData=true BEFORE undo_action — it is the source of the action_record_uuid that identifies the action to undo.';
+    return (
+      'Get board activity logs for a specified time range (defaults to last 30 days). Optionally filter by item ids or user ids to avoid fetching activity for the entire board. ' +
+      '[REQUIRED PRECONDITION]: Call this with includeData=true before undo_action — it is the source of the action_record_uuid that identifies the action to undo.'
+    );
   }
 
   getInputSchema(): typeof getBoardActivityToolSchema {
