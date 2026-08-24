@@ -35,7 +35,7 @@ export const filterRulesSchema = z
   )
   .optional()
   .describe(
-    `The configuration of filters to apply on the items. Use get_board_info for column ids and types on the board. Before sending the filters, use get_column_type_info with fetchMode "${ColumnTypeInfoFetchMode.Guidelines}" and use data.guidelines.filter (null if that type has no documented rules).`,
+    `The configuration of filters to apply on the items. Use get_board_info with filters.columns.only for column ids and types on the board. Before sending the filters, use get_column_type_info with fetchMode "${ColumnTypeInfoFetchMode.Guidelines}" and use data.guidelines.filter (null if that type has no documented rules).`,
   );
 
 export const filtersOperatorSchema = z
