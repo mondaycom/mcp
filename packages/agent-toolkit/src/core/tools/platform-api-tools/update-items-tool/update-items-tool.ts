@@ -68,7 +68,7 @@ export class UpdateItemsTool extends BaseMondayApiTool<UpdateItemsToolInput> {
     return (
       `Update column values for up to ${MAX_UPDATES_PER_CALL} items in a single call. Each update targets one item by itemId and sets one or more column values on it. Each update is independent - it can target its own board via boardId and set its own column values, so a single call can update many items across multiple boards, apply the same value to many items, or apply different values per item. Each update returns its own item_id and item_url on success or a raw error message on failure. ` +
       'To link board-relation columns, call link_board_items_workflow before using this tool. ' +
-      '[REQUIRED PRECONDITION]: Before using this tool, if you are not familiar with the board structure (column IDs, column types, status labels), first use get_board_info to understand the board metadata. This is essential for constructing valid column values.'
+      '[REQUIRED PRECONDITION]: Before using this tool, if you are not familiar with the board structure (column IDs, column types, status labels), first use get_board_info with filters.columns.only to get column metadata without fetching views. This is essential for constructing valid column values.'
     );
   }
 

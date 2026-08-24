@@ -1,7 +1,13 @@
 import { gql } from 'graphql-request';
 
 export const getBoardInfo = gql`
-  query GetBoardInfo($boardId: ID!) {
+  query GetBoardInfo(
+    $boardId: ID!
+    $columnIds: [String]
+    $viewIds: [ID!]
+    $includeColumns: Boolean!
+    $includeViews: Boolean!
+  ) {
     boards(ids: [$boardId]) {
       # Basic Board Metadata
       id
@@ -38,8 +44,8 @@ export const getBoardInfo = gql`
 
       board_folder_id
 
-      # All Columns with Full Metadata
-      columns {
+      # Columns (optionally filtered by id; omitted entirely when includeColumns is false)
+      columns(ids: $columnIds) @include(if: $includeColumns) {
         id
         title
         description
@@ -78,14 +84,27 @@ export const getBoardInfo = gql`
         id
       }
 
-      # Board Views (filters, sorts, and display configurations)
-      views {
+      # Views (optionally filtered by id; omitted entirely when includeViews is false)
+      views(ids: $viewIds) @include(if: $includeViews) {
         id
         name
         type
         settings
         filter
         sort
+      }
+    }
+  }
+`;
+
+/** Lean view index — id/name only, no settings/filter/sort (avoids multi-MB payloads on large boards). */
+export const getBoardInfoViewIndex = gql`
+  query GetBoardInfoViewIndex($boardId: ID!) {
+    boards(ids: [$boardId]) {
+      id
+      views {
+        id
+        name
       }
     }
   }

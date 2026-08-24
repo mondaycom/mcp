@@ -1,5 +1,20 @@
 # Changelog
 
+## 5.64.7
+
+### get_board_info — nested filters to shrink large responses
+
+On boards with hundreds of columns or views, a full `get_board_info` payload can be multi-MB (mostly `views[].settings`). Callers can now shape the response with nested filters:
+
+- `filters.columns.ids` — return only those columns
+- `filters.columns.only` — omit views and return only columns (`@include` skips the views selection in GraphQL)
+- `filters.views.ids` — return only those views
+- `filters.views.names` — resolve names via a lean id/name index query, then fetch only matching views (avoids downloading every view's settings)
+- `filters.views.only` — omit columns and return only views (`@include` skips the columns selection in GraphQL)
+- Unmatched view names are reported; if none match, the tool lists available view names
+
+Related tool descriptions now tell the model to pass `filters.views.names` when the user named specific views (`update_view`, `update_view_table`, `get_board_items_page`) and to use `filters.columns.only` when they only need columns (`create_view`, `create_view_table`, `board_insights`, `create_item`, `create_items`, `update_items`, `change_item_column_values`, `update_column`, `get_board_schema`).
+
 ## 5.64.6
 
 ### Spell out prerequisite tool ordering for board, view, and column tools
