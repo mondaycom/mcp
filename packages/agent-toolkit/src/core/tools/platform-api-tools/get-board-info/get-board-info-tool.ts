@@ -51,6 +51,15 @@ export const getBoardInfoToolSchema = {
     .describe('Optional response-shaping filters for large boards. Omit to return the full board info payload.'),
 };
 
+type ResolvedBoardInfoFilters = {
+  columnIds: string[] | undefined;
+  viewIds: string[] | undefined;
+  includeColumns: boolean;
+  includeViews: boolean;
+  unmatchedViewNames: string[];
+  availableViewNames: string[];
+};
+
 export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolSchema | undefined> {
   name = 'get_board_info';
   type = ToolType.READ;
@@ -78,11 +87,11 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
   }
 
   protected async executeInternal(input: ToolInputType<typeof getBoardInfoToolSchema>): Promise<ToolOutputType<never>> {
-    const { columnIds, viewIds, unmatchedViewNames, availableViewNames } = await this.resolveFiltersAsync(input);
+    const { columnIds, viewIds, includeColumns, includeViews, unmatchedViewNames, availableViewNames } =
+      await this.resolveFiltersAsync(input);
 
-    if (input.filters?.views?.names?.length && viewIds !== undefined && viewIds.length === 0) {
-      const available =
-        availableViewNames.length > 0 ? availableViewNames.join(', ') : '(none)';
+    if (input.filters?.views?.names?.length && includeViews && viewIds !== undefined && viewIds.length === 0) {
+      const available = availableViewNames.length > 0 ? availableViewNames.join(', ') : '(none)';
       return {
         content:
           `None of the requested view names matched on board ${input.boardId}. ` +
@@ -92,8 +101,10 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
 
     const variables: GetBoardInfoQueryVariables = {
       boardId: input.boardId.toString(),
-      columnIds,
-      viewIds,
+      columnIds: includeColumns ? columnIds : undefined,
+      viewIds: includeViews ? viewIds : undefined,
+      includeColumns,
+      includeViews,
     };
 
     const res = await this.mondayApi.request<GetBoardInfoQuery>(getBoardInfo, variables);
@@ -106,7 +117,7 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
       };
     }
 
-    const subItemsBoard = await this.getSubItemsBoardAsync(board);
+    const subItemsBoard = includeColumns ? await this.getSubItemsBoardAsync(board) : null;
 
     return {
       content: formatBoardInfoAsJson(board, subItemsBoard, unmatchedViewNames),
@@ -114,28 +125,31 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
   }
 
   /**
-   * Resolves nested filters into GraphQL ids, using a lean view id/name index query when names were provided.
+   * Resolves nested filters into GraphQL ids + @include flags.
+   * Uses a lean view id/name index query when names were provided.
    */
   private async resolveFiltersAsync(
     input: ToolInputType<typeof getBoardInfoToolSchema>,
-  ): Promise<{
-    columnIds: string[] | undefined;
-    viewIds: string[] | undefined;
-    unmatchedViewNames: string[];
-    availableViewNames: string[];
-  }> {
+  ): Promise<ResolvedBoardInfoFilters> {
     const columnsFilter = input.filters?.columns;
     const viewsFilter = input.filters?.views;
     const columnsOnly = Boolean(columnsFilter?.only);
     const viewsOnly = Boolean(viewsFilter?.only);
     const hasViewIds = viewsFilter?.ids !== undefined;
     const hasViewNames = Boolean(viewsFilter?.names?.length);
-    const columnIds = viewsOnly ? [] : columnsFilter?.ids;
 
-    if (columnsOnly && viewsOnly) {
+    // Both only flags → include both sections (treat as narrowed, not mutually exclusive).
+    const includeColumns = !viewsOnly || columnsOnly;
+    const includeViews = !columnsOnly || viewsOnly;
+
+    const columnIds = includeColumns ? columnsFilter?.ids : undefined;
+
+    if (!includeViews) {
       return {
-        columnIds: columnsFilter?.ids,
-        viewIds: viewsFilter?.ids,
+        columnIds,
+        viewIds: undefined,
+        includeColumns,
+        includeViews,
         unmatchedViewNames: [],
         availableViewNames: [],
       };
@@ -144,7 +158,9 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
     if (!hasViewIds && !hasViewNames) {
       return {
         columnIds,
-        viewIds: columnsOnly ? [] : undefined,
+        viewIds: undefined,
+        includeColumns,
+        includeViews,
         unmatchedViewNames: [],
         availableViewNames: [],
       };
@@ -154,6 +170,8 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
       return {
         columnIds,
         viewIds: viewsFilter?.ids ?? [],
+        includeColumns,
+        includeViews,
         unmatchedViewNames: [],
         availableViewNames: [],
       };
@@ -170,7 +188,14 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
     const { viewIds: namedIds, unmatchedViewNames } = resolveViewIdsByName(indexedViews, viewsFilter?.names ?? []);
     const merged = [...new Set([...(viewsFilter?.ids ?? []), ...namedIds])];
 
-    return { columnIds, viewIds: merged, unmatchedViewNames, availableViewNames };
+    return {
+      columnIds,
+      viewIds: merged,
+      includeColumns,
+      includeViews,
+      unmatchedViewNames,
+      availableViewNames,
+    };
   }
 
   private async getSubItemsBoardAsync(board: BoardInfoData): Promise<BoardInfoJustColumnsData | null> {

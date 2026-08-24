@@ -16,6 +16,9 @@ export const formatBoardInfoAsJson = (
 ): BoardInfoResponse => ({
   board: {
     ...board,
+    // @include(false) omits these fields from the GraphQL response — normalize to empty arrays.
+    columns: board.columns ?? [],
+    views: board.views ?? [],
     subItemColumns: subItemsBoard?.columns ?? undefined,
   },
   ...(unmatchedViewNames && unmatchedViewNames.length > 0 ? { unmatchedViewNames } : {}),

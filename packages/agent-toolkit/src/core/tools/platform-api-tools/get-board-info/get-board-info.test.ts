@@ -386,6 +386,8 @@ describe('GetBoardInfoTool filtering', () => {
       boardId: '123',
       columnIds: ['status'],
       viewIds: ['view_1'],
+      includeColumns: true,
+      includeViews: true,
     });
   });
 
@@ -417,6 +419,8 @@ describe('GetBoardInfoTool filtering', () => {
       boardId: '123',
       columnIds: undefined,
       viewIds: ['view_1'],
+      includeColumns: true,
+      includeViews: true,
     });
 
     const parsed = parseToolResult(result);
@@ -450,8 +454,8 @@ describe('GetBoardInfoTool filtering', () => {
     expect(result.content[0].text).toContain('P&C Lost');
   });
 
-  it('omits views when filters.columns.only is true', async () => {
-    mocks.setResponse({ boards: [boardPayload] });
+  it('skips the views selection when filters.columns.only is true', async () => {
+    mocks.setResponse({ boards: [{ ...boardPayload, views: undefined }] });
 
     await callToolByNameRawAsync('get_board_info', {
       boardId: 123,
@@ -463,12 +467,14 @@ describe('GetBoardInfoTool filtering', () => {
     expect(mocks.getMockRequest().mock.calls[0][1]).toEqual({
       boardId: '123',
       columnIds: ['status'],
-      viewIds: [],
+      viewIds: undefined,
+      includeColumns: true,
+      includeViews: false,
     });
   });
 
-  it('omits columns when filters.views.only is true', async () => {
-    mocks.setResponse({ boards: [boardPayload] });
+  it('skips the columns selection when filters.views.only is true', async () => {
+    mocks.setResponse({ boards: [{ ...boardPayload, columns: undefined }] });
 
     await callToolByNameRawAsync('get_board_info', {
       boardId: 123,
@@ -479,8 +485,10 @@ describe('GetBoardInfoTool filtering', () => {
 
     expect(mocks.getMockRequest().mock.calls[0][1]).toEqual({
       boardId: '123',
-      columnIds: [],
+      columnIds: undefined,
       viewIds: ['view_1'],
+      includeColumns: false,
+      includeViews: true,
     });
   });
 });
