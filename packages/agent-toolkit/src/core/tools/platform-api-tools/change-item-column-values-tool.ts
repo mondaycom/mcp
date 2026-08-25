@@ -44,6 +44,7 @@ export class ChangeItemColumnValuesTool extends BaseMondayApiTool<ChangeItemColu
 
   getDescription(): string {
     return (
+      'Change the column values of a single item on a monday.com board. ' +
       '[IMPORTANT] If you need to update multiple items in one call, use update_items instead of calling this tool in a loop. ' +
       'Otherwise: change the column values of a single item in a monday.com board. ' +
       "[REQUIRED PRECONDITION]: Before using this tool, if new columns were added to the board or if you are not familiar with the board's structure (column IDs, column types, status labels, etc.), first use get_board_info with filters.columns.only to get column metadata without fetching views. This is essential for constructing valid column values. " +

@@ -51,7 +51,9 @@ export class GetSprintsMetadataTool extends BaseMondayApiTool<typeof getSprintsM
   });
 
   getDescription(): string {
-    return `Get comprehensive sprint metadata from a monday-dev sprints board including:
+    return `List the sprints of a monday-dev sprints board with their metadata.
+
+Returns comprehensive sprint metadata including:
 
 ## Data Retrieved:
 A table of sprints with the following information:

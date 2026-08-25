@@ -1,5 +1,19 @@
 # Changelog
 
+## 5.65.0
+
+### Short, self-explaining first sentence for every monday tool description
+
+Deferred-tool listings show only the first sentence of a tool's description, so that sentence has to say what the tool does on its own. Audited every monday tool description (platform API + monday-dev; app tools untouched) and fixed the ones that opened with something else:
+
+- `create_item` — was `[IMPORTANT] use create_items instead…`; now leads with what the tool creates
+- `change_item_column_values` — was `[IMPORTANT] use update_items instead…`; now leads with what it changes
+- `get_asset_upload_url` — was a capability precondition; the presigned-URL summary moved to the front
+- `link_board_items_workflow` — was `When to use: …`; now leads with a one-line statement of what it returns
+- `get_sprints_metadata` — was one long sentence running into a markdown section list; now a one-line summary followed by the details
+
+No behavior changes — descriptions only; all the original guidance is kept, just reordered.
+
 ## 5.64.7
 
 ### get_board_info — nested filters to shrink large responses
