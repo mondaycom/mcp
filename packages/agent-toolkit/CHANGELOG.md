@@ -1,5 +1,20 @@
 # Changelog
 
+## 5.65.1
+
+### create_notification — report failures instead of swallowing them
+
+`create_notification` caught every error and returned the plain string `Failed to send notification to user <id>` as its result. Because the MCP layer only marks a call as an error when the tool *throws*, that string was delivered as a **success** — callers could not distinguish a delivered notification from a failed one, and the underlying cause was discarded entirely.
+
+- Errors now go through `rethrowWithContext(error, 'send notification to user <id>')`, the same path already used by `create_update` and `delete_update`. GraphQL failures surface their real messages plus `extensions.code` / `error_data`, and reach the client as `isError: true` with JSON `structuredContent`: `{ message, tool, status, errors: [{ code, message, path }] }`
+- Added an empty-response guard — the API can return `create_notification: null` with no GraphQL error, which previously reported success. It now throws a `ToolValidationError` coded `EMPTY_API_RESPONSE` naming the likely cause: a `target_id` / `target_type` mismatch (`Post` expects an update/reply id, `Project` expects an item/board id)
+- Success output is a JSON object with `notification_id`, `user_id`, `target_id`, `target_type`, and `text` (previously only `message`, `user_id`, `text`). The mutation now selects `id` so the created notification can be identified
+- No input schema changes. Callers that treated the old failure string as a soft failure will now see a thrown error
+
+### all_api_read — drop get_graphql_schema from the stated prerequisites
+
+- `all_api_read` no longer names `get_graphql_schema` as a prerequisite, leaving `get_type_details` as the single lookup to call before crafting a query (and fixing the plural "tools" left behind by the removal). `all_api_write` and `all_monday_api` still name both tools
+
 ## 5.65.0
 
 ### Short, self-explaining first sentence for every monday tool description
