@@ -11,6 +11,10 @@
 - Success output is a JSON object with `notification_id`, `user_id`, `target_id`, `target_type`, and `text` (previously only `message`, `user_id`, `text`). The mutation now selects `id` so the created notification can be identified
 - No input schema changes. Callers that treated the old failure string as a soft failure will now see a thrown error
 
+### all_api_read — drop get_graphql_schema from the stated prerequisites
+
+- `all_api_read` no longer names `get_graphql_schema` as a prerequisite, leaving `get_type_details` as the single lookup to call before crafting a query (and fixing the plural "tools" left behind by the removal). `all_api_write` and `all_monday_api` still name both tools
+
 ## 5.65.0
 
 ### Short, self-explaining first sentence for every monday tool description

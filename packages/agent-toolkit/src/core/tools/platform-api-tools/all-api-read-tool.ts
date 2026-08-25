@@ -20,7 +20,7 @@ export class AllApiReadTool extends AllMondayApiTool {
   }
 
   getDescription(): string {
-    return 'Execute read-only GraphQL queries against the monday.com API. Only queries are accepted — mutations are rejected with an error before the request is sent. Use get_graphql_schema and get_type_details tools first to understand the schema before crafting your query.';
+    return 'Execute read-only GraphQL queries against the monday.com API. Only queries are accepted — mutations are rejected with an error before the request is sent. Use the get_type_details tool first to understand the schema before crafting your query.';
   }
 
   protected async executeInternal(input: ToolInputType<typeof allMondayApiToolSchema>): Promise<ToolOutputType<never>> {
