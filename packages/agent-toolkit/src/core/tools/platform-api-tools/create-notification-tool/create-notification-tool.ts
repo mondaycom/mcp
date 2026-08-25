@@ -1,8 +1,13 @@
 import { z } from 'zod';
-import { CreateNotificationMutation, NotificationTargetType } from 'src/monday-graphql/generated/graphql/graphql';
+import {
+  CreateNotificationMutation,
+  CreateNotificationMutationVariables,
+  NotificationTargetType,
+} from '../../../../monday-graphql/generated/graphql/graphql';
 import { createNotification } from './create-notification.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+import { EMPTY_API_RESPONSE_CODE, rethrowWithContext, ToolValidationError } from '../../../../utils';
 
 export const createNotificationToolSchema = {
   user_id: z.string().describe('The user ID to send the notification to'),
@@ -34,7 +39,7 @@ export class CreateNotificationTool extends BaseMondayApiTool<typeof createNotif
   protected async executeInternal(
     input: ToolInputType<typeof createNotificationToolSchema>,
   ): Promise<ToolOutputType<never>> {
-    const variables = {
+    const variables: CreateNotificationMutationVariables = {
       user_id: input.user_id,
       target_id: input.target_id,
       text: input.text,
@@ -42,15 +47,27 @@ export class CreateNotificationTool extends BaseMondayApiTool<typeof createNotif
     };
 
     try {
-      const createResult: CreateNotificationMutation = await this.mondayApi.request(createNotification, variables);
+      const res = await this.mondayApi.request<CreateNotificationMutation>(createNotification, variables);
+
+      if (!res.create_notification?.id) {
+        throw new ToolValidationError(
+          `No notification was created for user ${input.user_id} on ${input.target_type} target ${input.target_id}. Verify the user has access to the target and that target_id matches target_type ("Post" for an update/reply id, "Project" for an item/board id).`,
+          EMPTY_API_RESPONSE_CODE,
+        );
+      }
 
       return {
-        content: { message: "Notification sent", user_id: input.user_id, text: input.text },
+        content: {
+          message: `Notification ${res.create_notification.id} sent to user ${input.user_id}`,
+          notification_id: res.create_notification.id,
+          user_id: input.user_id,
+          target_id: input.target_id,
+          target_type: input.target_type,
+          text: res.create_notification.text ?? input.text,
+        },
       };
     } catch (error) {
-      return {
-        content: `Failed to send notification to user ${input.user_id}`,
-      };
+      rethrowWithContext(error, `send notification to user ${input.user_id}`);
     }
   }
 }
