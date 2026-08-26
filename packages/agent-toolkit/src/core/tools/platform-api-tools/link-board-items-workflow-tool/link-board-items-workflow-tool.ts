@@ -42,6 +42,7 @@ export class LinkBoardItemsWorkflowTool extends BaseMondayApiTool<typeof linkBoa
 
   getDescription(): string {
     return (
+      'Get the required playbook for linking items across boards via board-relation columns. ' +
       'When to use: any board-relation / cross-board linking task. ' +
       '**Hard gate — you MUST call this BEFORE get_board_items_page, or ' +
       'change_item_column_values in the same turn. No discovery, matching, or write happens first.** ' +
