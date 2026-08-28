@@ -5,13 +5,12 @@ import { z, ZodTypeAny } from 'zod';
 import {
   GetFoldersQuery,
   SearchBoardsQuery,
-  SearchDocsQuery,
   SearchItemsQuery,
   SearchWorkspacesQuery,
   SearchUpdatesQuery,
   SearchTimelineItemsQuery,
 } from 'src/monday-graphql/generated/graphql/graphql';
-import { SearchOverviewsDevQuery } from 'src/monday-graphql/generated/graphql.dev/graphql';
+import { SearchDocsDevQuery, SearchOverviewsDevQuery } from 'src/monday-graphql/generated/graphql.dev/graphql';
 import { GlobalSearchType, SearchResult } from './search-tool.types';
 import { searchBoards, searchTimelineItems } from './search-tool.graphql';
 
@@ -38,7 +37,7 @@ describe('SearchTool', () => {
     },
   };
 
-  const mockDevDocsResponse: SearchDocsQuery = {
+  const mockDevDocsResponse: SearchDocsDevQuery = {
     search: {
       docs: {
         results: [
@@ -92,7 +91,7 @@ describe('SearchTool', () => {
         'Supported searchType values: BOARD, DOCUMENTS, FOLDERS, WORKSPACES, UPDATES, ITEMS, TIMELINE_ITEMS, DASHBOARDS',
       );
       expect(description).toContain('BOARD search returns id, title, url, and workspaceId');
-      expect(description).toContain('DOCUMENTS search returns id, title, and workspaceId');
+      expect(description).toContain('DOCUMENTS search returns id, title, workspaceId, and highlights');
       expect(description).toContain('ITEMS search returns id, title, url, boardId, and workspaceId');
       expect(description).toContain('Optionally scope it with workspaceIds, boardIds, and/or creatorIds');
       expect(description).toContain('FOLDERS search returns id and title');
@@ -611,13 +610,13 @@ describe('SearchTool', () => {
         });
 
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query SearchDocs'),
+          expect.stringContaining('query SearchDocsDev'),
           {
             query: 'Document',
             limit: 20,
             workspaceIds: undefined,
           },
-          expect.objectContaining({ timeout: expect.any(Number) }),
+          expect.objectContaining({ timeout: expect.any(Number), versionOverride: 'dev' }),
         );
       });
 
@@ -673,12 +672,69 @@ describe('SearchTool', () => {
         await callToolByNameAsync('search', args);
 
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query SearchDocs'),
+          expect.stringContaining('query SearchDocsDev'),
           expect.objectContaining({
             workspaceIds: ['11111', '22222'],
           }),
-          expect.objectContaining({ timeout: expect.any(Number) }),
+          expect.objectContaining({ timeout: expect.any(Number), versionOverride: 'dev' }),
         );
+      });
+
+      it('should return highlights when present in the response', async () => {
+        const responseWithHighlights: SearchDocsDevQuery = {
+          search: {
+            docs: {
+              results: [
+                {
+                  id: '111',
+                  indexed_data: {
+                    id: '111',
+                    name: 'Document 1',
+                    workspace_id: '9001',
+                    highlights: [
+                      { field: 'doc_name', fragments: ['<em>Document</em> 1'] },
+                      { field: 'content', fragments: ['first <em>match</em>', 'second <em>match</em>'] },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        };
+        mocks.setResponse(responseWithHighlights);
+
+        const parsedResult = await callToolByNameAsync('search', {
+          searchType: GlobalSearchType.DOCUMENTS,
+          searchTerm: 'Document',
+        });
+
+        expect(parsedResult.data[0].highlights).toEqual([
+          { field: 'doc_name', fragments: ['<em>Document</em> 1'] },
+          { field: 'content', fragments: ['first <em>match</em>', 'second <em>match</em>'] },
+        ]);
+      });
+
+      it('should omit highlights when null in the response', async () => {
+        const responseWithoutHighlights: SearchDocsDevQuery = {
+          search: {
+            docs: {
+              results: [
+                {
+                  id: '111',
+                  indexed_data: { id: '111', name: 'Document 1', highlights: null },
+                },
+              ],
+            },
+          },
+        };
+        mocks.setResponse(responseWithoutHighlights);
+
+        const parsedResult = await callToolByNameAsync('search', {
+          searchType: GlobalSearchType.DOCUMENTS,
+          searchTerm: 'Document',
+        });
+
+        expect(parsedResult.data[0].highlights).toBeUndefined();
       });
 
       it('should not include url field for documents', async () => {
@@ -1965,7 +2021,7 @@ describe('SearchTool', () => {
 
         expect(parsedResult.data).toHaveLength(3);
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query SearchDocs'),
+          expect.stringContaining('query SearchDocsDev'),
           expect.any(Object),
           expect.any(Object),
         );
@@ -2041,7 +2097,7 @@ describe('SearchTool', () => {
 
         expect(parsedResult.data).toHaveLength(3);
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query SearchDocs'),
+          expect.stringContaining('query SearchDocsDev'),
           expect.any(Object),
           expect.any(Object),
         );

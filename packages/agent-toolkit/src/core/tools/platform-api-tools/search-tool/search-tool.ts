@@ -4,20 +4,17 @@ import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-ap
 import {
   getFolders,
   searchBoards,
-  searchDocs,
   searchItems,
   searchWorkspaces,
   searchUpdates,
   searchTimelineItems,
 } from './search-tool.graphql';
-import { searchItemsByCreatorDev, searchOverviewsDev } from './search-tool.graphql.dev';
+import { searchDocsDev, searchItemsByCreatorDev, searchOverviewsDev } from './search-tool.graphql.dev';
 import {
   GetFoldersQuery,
   GetFoldersQueryVariables,
   SearchBoardsQuery,
   SearchBoardsQueryVariables,
-  SearchDocsQuery,
-  SearchDocsQueryVariables,
   SearchItemsQuery,
   SearchItemsQueryVariables,
   SearchWorkspacesQuery,
@@ -28,6 +25,8 @@ import {
   SearchTimelineItemsQueryVariables,
 } from 'src/monday-graphql/generated/graphql/graphql';
 import {
+  SearchDocsDevQuery,
+  SearchDocsDevQueryVariables,
   SearchItemsByCreatorDevQuery,
   SearchItemsByCreatorDevQueryVariables,
   SearchOverviewsDevQuery,
@@ -216,7 +215,7 @@ For browsing all boards, docs, or folders within a workspace without a search te
 For groups, use get_board_info tool.
 For listing items within a specific board, use get_board_items_page tool. ITEMS search here queries items across the account.
 BOARD search returns id, title, url, and workspaceId. Optionally scope it with boardIds.
-DOCUMENTS search returns id, title, and workspaceId.
+DOCUMENTS search returns id, title, workspaceId, and highlights. highlights is an array of { field, fragments } entries where fragments contain matched text snippets with <em> tags around matched terms. highlights may be null when no lexical match was made.
 ITEMS search returns id, title, url, boardId, and workspaceId. Optionally scope it with workspaceIds, boardIds, and/or creatorIds.
 WORKSPACES search returns id, title, and description.
 UPDATES search returns id, title (the update body), itemId, boardId, and creatorId. Optionally scope it with workspaceIds, boardIds, and/or creatorIds.
@@ -324,9 +323,12 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
   }
 
   private async searchDocsAsync(query: string, limit: number, workspaceIds?: string[]): Promise<SearchResult[]> {
-    const variables: SearchDocsQueryVariables = { query, limit, workspaceIds };
+    const variables: SearchDocsDevQueryVariables = { query, limit, workspaceIds };
 
-    const response = await this.mondayApi.request<SearchDocsQuery>(searchDocs, variables, {
+    // search.docs.indexed_data.highlights is only available from the dev API version;
+    // drop versionOverride once highlights reaches a dated version.
+    const response = await this.mondayApi.request<SearchDocsDevQuery>(searchDocsDev, variables, {
+      versionOverride: 'dev',
       timeout: SEARCH_TIMEOUT,
     });
 
@@ -334,6 +336,7 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
       id: result.indexed_data.id,
       title: result.indexed_data.name,
       workspaceId: result.indexed_data.workspace_id ?? undefined,
+      highlights: result.indexed_data.highlights?.map((h) => ({ field: h.field, fragments: [...h.fragments] })),
     }));
   }
 
