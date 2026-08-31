@@ -35,29 +35,6 @@ export const searchItemsByCreatorDev = gql`
   }
 `;
 
-// search.docs.indexed_data.highlights is only available from the dev API version; move this query
-// into search-tool.graphql.ts and drop the versionOverride once highlights reaches a dated version.
-export const searchDocsDev = gql`
-  query SearchDocsDev($query: String!, $limit: Int, $workspaceIds: [ID!]) {
-    search {
-      docs(query: $query, limit: $limit, workspace_ids: $workspaceIds) {
-        results {
-          id
-          indexed_data {
-            id
-            name
-            workspace_id
-            highlights {
-              field
-              fragments
-            }
-          }
-        }
-      }
-    }
-  }
-`;
-
 // search.overviews is only available in the dev schema; move this query into search-tool.graphql.ts
 // and drop the versionOverride once the field is promoted to a stable API version.
 export const searchOverviewsDev = gql`

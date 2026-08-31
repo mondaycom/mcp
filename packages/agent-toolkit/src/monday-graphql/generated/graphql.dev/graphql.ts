@@ -4709,6 +4709,101 @@ export type ConditionalFormattingTargetInput = {
   entire_row?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
+/** An already-answered field that this step’s options are listed against */
+export type ConfigureIntegrationFieldDependency = {
+  __typename?: 'ConfigureIntegrationFieldDependency';
+  /** The inbound field key holding the value */
+  field_key?: Maybe<Scalars['String']['output']>;
+  /** The field type whose options the value came from; null for primitives */
+  field_type_reference_id?: Maybe<Scalars['ID']['output']>;
+  /** What that value is called, when it has a name */
+  label?: Maybe<Scalars['String']['output']>;
+  /** The chosen value, JSON-encoded */
+  value_json?: Maybe<Scalars['String']['output']>;
+};
+
+/** What was stored for a step, echoed back so a reloaded card renders the answer */
+export type ConfigureIntegrationFieldSavedScope = {
+  __typename?: 'ConfigureIntegrationFieldSavedScope';
+  /** The chosen values, one entry per pick */
+  entries: Array<ConfigureIntegrationFieldValue>;
+  /** How the value is sourced: "pinned" (we hold it) or "app_supplied" (the app passes it) */
+  mode?: Maybe<Scalars['String']['output']>;
+};
+
+/** One question of the batched field-configuration card */
+export type ConfigureIntegrationFieldStep = {
+  __typename?: 'ConfigureIntegrationFieldStep';
+  /** Whether to offer letting the app choose the value per call */
+  allow_app_decide?: Maybe<Scalars['Boolean']['output']>;
+  /** The block instance this step configures */
+  block_instance_id?: Maybe<Scalars['ID']['output']>;
+  /** The block whose field is being configured */
+  block_reference_id?: Maybe<Scalars['ID']['output']>;
+  /** Fields this step’s options depend on that still hold no value */
+  blocked_by: Array<Scalars['String']['output']>;
+  /** The credentials the options are listed with; absent until the block is connected */
+  credentials_id?: Maybe<Scalars['ID']['output']>;
+  /** What the field holds now, already described for display */
+  current_value_display?: Maybe<Scalars['String']['output']>;
+  /** Values from earlier answers that this step’s options are listed against */
+  dependency_selections: Array<ConfigureIntegrationFieldDependency>;
+  /** The inbound field key this step configures */
+  field_key?: Maybe<Scalars['String']['output']>;
+  /** The field’s display name */
+  field_title?: Maybe<Scalars['String']['output']>;
+  /** The marketplace app the block belongs to */
+  integration_app_name?: Maybe<Scalars['String']['output']>;
+  /** The block’s name */
+  integration_name?: Maybe<Scalars['String']['output']>;
+  /** Whether the field takes more than one value */
+  is_array?: Maybe<Scalars['Boolean']['output']>;
+  /** What to ask the user */
+  question?: Maybe<Scalars['String']['output']>;
+  /** What the user decided, once they have */
+  saved_scope?: Maybe<ConfigureIntegrationFieldSavedScope>;
+  /** Whether the user moved past this step without deciding */
+  skipped?: Maybe<Scalars['Boolean']['output']>;
+  /** Supporting line under the question */
+  subtitle?: Maybe<Scalars['String']['output']>;
+};
+
+/** Input for committing one step of the batched integration field configuration card */
+export type ConfigureIntegrationFieldStepInput = {
+  /** The ID of the AI app */
+  ai_app_id: Scalars['ID']['input'];
+  /** The block instance this step configures */
+  block_instance_id: Scalars['ID']['input'];
+  /** The inbound field key this step configures */
+  field_key: Scalars['String']['input'];
+  /** The value the user chose for this field. Omit it when the step was skipped. */
+  field_value_scope?: InputMaybe<Scalars['JSON']['input']>;
+  /** Whether the user moved past this step without deciding. Nothing is written when true. */
+  skipped?: InputMaybe<Scalars['Boolean']['input']>;
+  /** The configure_integration_fields tool call being answered */
+  tool_call_id: Scalars['ID']['input'];
+};
+
+/** The card’s refreshed steps after one of them was committed */
+export type ConfigureIntegrationFieldStepResult = {
+  __typename?: 'ConfigureIntegrationFieldStepResult';
+  /** The first step still holding no answer */
+  active_step_index?: Maybe<Scalars['Int']['output']>;
+  /** The ID of the AI app */
+  ai_app_id?: Maybe<Scalars['ID']['output']>;
+  /** Every step of the card, with this one marked answered and the rest recomputed against what it unblocked */
+  steps: Array<ConfigureIntegrationFieldStep>;
+};
+
+/** One value the user chose for a field */
+export type ConfigureIntegrationFieldValue = {
+  __typename?: 'ConfigureIntegrationFieldValue';
+  /** What the value is called, when it has a name */
+  label?: Maybe<Scalars['String']['output']>;
+  /** The chosen value, JSON-encoded */
+  value_json?: Maybe<Scalars['String']['output']>;
+};
+
 /** Severity of a schedule conflict. */
 export enum ConflictSeverity {
   Full = 'FULL',
@@ -17992,13 +18087,13 @@ export type SearchDateRangeLegacyInput = {
   updatedBefore?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
 };
 
-/** A single field highlight entry containing matched text fragments. */
-export type SearchDocHighlightEntry = {
-  __typename?: 'SearchDocHighlightEntry';
-  /** Indexed field name (e.g. doc_name, content). */
-  field: Scalars['String']['output'];
-  /** Highlighted text fragments with <em> tags around matched terms. */
-  fragments: Array<Scalars['String']['output']>;
+/** Matched text snippets per searchable document field. */
+export type SearchDocHighlights = {
+  __typename?: 'SearchDocHighlights';
+  /** Highlighted fragments from the document content with <em> tags around matched terms. Non-empty only for lexical matches. */
+  content?: Maybe<Array<Scalars['String']['output']>>;
+  /** Highlighted fragments from the document name with <em> tags around matched terms. Non-empty only for lexical matches. */
+  name?: Maybe<Array<Scalars['String']['output']>>;
 };
 
 /** A single doc search result with indexed and live data. */
@@ -18064,8 +18159,8 @@ export type SearchIndexedBoard = {
 /** Document data stored in the search index. */
 export type SearchIndexedDoc = {
   __typename?: 'SearchIndexedDoc';
-  /** Matched text snippets per field. Each entry contains a field name and its highlighted fragments with <em> tags around matched terms. */
-  highlights?: Maybe<Array<SearchDocHighlightEntry>>;
+  /** Matched text snippets per searchable field. Null for non-lexical results. */
+  highlights?: Maybe<SearchDocHighlights>;
   /** Document ID. */
   id: Scalars['ID']['output'];
   /** Document name. */
@@ -21188,6 +21283,7 @@ export type UserActivity_LogsArgs = {
 export type UserAgentsArgs = {
   after_id?: InputMaybe<Scalars['ID']['input']>;
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  include_org_level_agents?: InputMaybe<Scalars['Boolean']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   roles?: InputMaybe<Array<AgentMembershipRole>>;
 };
@@ -23826,15 +23922,6 @@ export type SearchItemsByCreatorDevQueryVariables = Exact<{
 
 export type SearchItemsByCreatorDevQuery = { __typename?: 'Query', search: { __typename?: 'SearchNamespace', items: { __typename?: 'SearchItemResults', results: Array<{ __typename?: 'SearchItemResult', id: string, indexed_data: { __typename?: 'SearchIndexedItem', id: string, name: string, url: string, board_id?: string | null, workspace_id?: string | null } }> } } };
 
-export type SearchDocsDevQueryVariables = Exact<{
-  query: Scalars['String']['input'];
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  workspaceIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
-}>;
-
-
-export type SearchDocsDevQuery = { __typename?: 'Query', search: { __typename?: 'SearchNamespace', docs: { __typename?: 'SearchDocResults', results: Array<{ __typename?: 'SearchDocResult', id: string, indexed_data: { __typename?: 'SearchIndexedDoc', id: string, name: string, workspace_id?: string | null, highlights?: Array<{ __typename?: 'SearchDocHighlightEntry', field: string, fragments: Array<string> }> | null } }> } } };
-
 export type SearchOverviewsDevQueryVariables = Exact<{
   query: Scalars['String']['input'];
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -23907,7 +23994,6 @@ export const CreateUploadDocument = {"kind":"Document","definitions":[{"kind":"O
 export const SearchItemsDevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchItemsDev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"board_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"results"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchItemsDevQuery, SearchItemsDevQueryVariables>;
 export const RemoveAiFromColumnDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RemoveAiFromColumn"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"remove_ai_from_column"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"board_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}},{"kind":"Argument","name":{"kind":"Name","value":"column_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"column_id"}},{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<RemoveAiFromColumnMutation, RemoveAiFromColumnMutationVariables>;
 export const SearchItemsByCreatorDevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchItemsByCreatorDev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"creatorIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"workspace_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}}},{"kind":"Argument","name":{"kind":"Name","value":"board_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardIds"}}},{"kind":"Argument","name":{"kind":"Name","value":"creator_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"creatorIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"results"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"indexed_data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"board_id"}},{"kind":"Field","name":{"kind":"Name","value":"workspace_id"}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchItemsByCreatorDevQuery, SearchItemsByCreatorDevQueryVariables>;
-export const SearchDocsDevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchDocsDev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"docs"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"workspace_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"results"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"indexed_data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"workspace_id"}},{"kind":"Field","name":{"kind":"Name","value":"highlights"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"field"}},{"kind":"Field","name":{"kind":"Name","value":"fragments"}}]}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchDocsDevQuery, SearchDocsDevQueryVariables>;
 export const SearchOverviewsDevDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchOverviewsDev"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"creatorIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"overviews"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"workspace_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}}},{"kind":"Argument","name":{"kind":"Name","value":"creator_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"creatorIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"results"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"indexed_data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"workspace_id"}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchOverviewsDevQuery, SearchOverviewsDevQueryVariables>;
 export const BatchUndoDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"BatchUndo"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"undoRecordId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"batch_undo"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"board_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}},{"kind":"Argument","name":{"kind":"Name","value":"undo_record_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"undoRecordId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}}]}}]}}]} as unknown as DocumentNode<BatchUndoMutation, BatchUndoMutationVariables>;
 export const GetUserContextDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getUserContext"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"me"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"account"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"tier"}},{"kind":"Field","name":{"kind":"Name","value":"active_members_count"}},{"kind":"Field","name":{"kind":"Name","value":"is_during_trial"}},{"kind":"Field","name":{"kind":"Name","value":"products"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"tier"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"favorites"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"object"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"type"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"intelligence"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"relevant_boards"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"10"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"board"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"relevant_people"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"10"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetUserContextQuery, GetUserContextQueryVariables>;

@@ -5,12 +5,13 @@ import { z, ZodTypeAny } from 'zod';
 import {
   GetFoldersQuery,
   SearchBoardsQuery,
+  SearchDocsQuery,
   SearchItemsQuery,
   SearchWorkspacesQuery,
   SearchUpdatesQuery,
   SearchTimelineItemsQuery,
 } from 'src/monday-graphql/generated/graphql/graphql';
-import { SearchDocsDevQuery, SearchOverviewsDevQuery } from 'src/monday-graphql/generated/graphql.dev/graphql';
+import { SearchOverviewsDevQuery } from 'src/monday-graphql/generated/graphql.dev/graphql';
 import { GlobalSearchType, SearchResult } from './search-tool.types';
 import { searchBoards, searchTimelineItems } from './search-tool.graphql';
 
@@ -37,7 +38,7 @@ describe('SearchTool', () => {
     },
   };
 
-  const mockDevDocsResponse: SearchDocsDevQuery = {
+  const mockDevDocsResponse: SearchDocsQuery = {
     search: {
       docs: {
         results: [
@@ -610,13 +611,13 @@ describe('SearchTool', () => {
         });
 
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query SearchDocsDev'),
+          expect.stringContaining('query SearchDocs'),
           {
             query: 'Document',
             limit: 20,
             workspaceIds: undefined,
           },
-          expect.objectContaining({ timeout: expect.any(Number), versionOverride: 'dev' }),
+          expect.objectContaining({ timeout: expect.any(Number) }),
         );
       });
 
@@ -672,16 +673,16 @@ describe('SearchTool', () => {
         await callToolByNameAsync('search', args);
 
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query SearchDocsDev'),
+          expect.stringContaining('query SearchDocs'),
           expect.objectContaining({
             workspaceIds: ['11111', '22222'],
           }),
-          expect.objectContaining({ timeout: expect.any(Number), versionOverride: 'dev' }),
+          expect.objectContaining({ timeout: expect.any(Number) }),
         );
       });
 
       it('should return highlights when present in the response', async () => {
-        const responseWithHighlights: SearchDocsDevQuery = {
+        const responseWithHighlights: SearchDocsQuery = {
           search: {
             docs: {
               results: [
@@ -691,10 +692,10 @@ describe('SearchTool', () => {
                     id: '111',
                     name: 'Document 1',
                     workspace_id: '9001',
-                    highlights: [
-                      { field: 'doc_name', fragments: ['<em>Document</em> 1'] },
-                      { field: 'content', fragments: ['first <em>match</em>', 'second <em>match</em>'] },
-                    ],
+                    highlights: {
+                      name: ['<em>Document</em> 1'],
+                      content: ['first <em>match</em>', 'second <em>match</em>'],
+                    },
                   },
                 },
               ],
@@ -709,13 +710,40 @@ describe('SearchTool', () => {
         });
 
         expect(parsedResult.data[0].highlights).toEqual([
-          { field: 'doc_name', fragments: ['<em>Document</em> 1'] },
+          { field: 'name', fragments: ['<em>Document</em> 1'] },
           { field: 'content', fragments: ['first <em>match</em>', 'second <em>match</em>'] },
         ]);
       });
 
+      it('should omit a highlight field with no fragments', async () => {
+        const responseWithPartialHighlights: SearchDocsQuery = {
+          search: {
+            docs: {
+              results: [
+                {
+                  id: '111',
+                  indexed_data: {
+                    id: '111',
+                    name: 'Document 1',
+                    highlights: { name: null, content: ['some <em>match</em>'] },
+                  },
+                },
+              ],
+            },
+          },
+        };
+        mocks.setResponse(responseWithPartialHighlights);
+
+        const parsedResult = await callToolByNameAsync('search', {
+          searchType: GlobalSearchType.DOCUMENTS,
+          searchTerm: 'Document',
+        });
+
+        expect(parsedResult.data[0].highlights).toEqual([{ field: 'content', fragments: ['some <em>match</em>'] }]);
+      });
+
       it('should omit highlights when null in the response', async () => {
-        const responseWithoutHighlights: SearchDocsDevQuery = {
+        const responseWithoutHighlights: SearchDocsQuery = {
           search: {
             docs: {
               results: [
@@ -2021,7 +2049,7 @@ describe('SearchTool', () => {
 
         expect(parsedResult.data).toHaveLength(3);
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query SearchDocsDev'),
+          expect.stringContaining('query SearchDocs'),
           expect.any(Object),
           expect.any(Object),
         );
@@ -2097,7 +2125,7 @@ describe('SearchTool', () => {
 
         expect(parsedResult.data).toHaveLength(3);
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query SearchDocsDev'),
+          expect.stringContaining('query SearchDocs'),
           expect.any(Object),
           expect.any(Object),
         );

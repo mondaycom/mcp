@@ -252,7 +252,7 @@ export type ActivityLog = {
 /** Entry point for internal activity log queries */
 export type ActivityLogInternalQueries = {
   __typename?: 'ActivityLogInternalQueries';
-  /** Event counts grouped by board or user in a single aggregation request (no per-entity fan-out). board_ids is always required. Provide user_ids to count specific users; omit them (with group_by USER) to discover the top-N users active on the given boards. */
+  /** Event counts grouped by board or user in a single aggregation request (no per-entity fan-out). group_by BOARD always requires board_ids; group_by USER needs a scope — board_ids, user_ids, or document_ids. Provide user_ids to count specific users; omit them (with group_by USER) to discover the top-N users active on the given scope. */
   event_counts?: Maybe<EventCountsResult>;
   /** Internal activity log entries for boards or users — skips authorization, entity whitelisting, and always includes boardless events */
   logs?: Maybe<ActivityLogsPage>;
@@ -263,6 +263,7 @@ export type ActivityLogInternalQueries = {
 export type ActivityLogInternalQueriesEvent_CountsArgs = {
   board_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   correlation_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  document_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   entities?: InputMaybe<Array<Scalars['String']['input']>>;
   event_types?: InputMaybe<Array<Scalars['String']['input']>>;
   from?: InputMaybe<Scalars['String']['input']>;
@@ -279,6 +280,7 @@ export type ActivityLogInternalQueriesLogsArgs = {
   board_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   correlation_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   cursor?: InputMaybe<Scalars['String']['input']>;
+  document_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   entities?: InputMaybe<Array<Scalars['String']['input']>>;
   event_types?: InputMaybe<Array<Scalars['String']['input']>>;
   from?: InputMaybe<Scalars['String']['input']>;
@@ -339,6 +341,15 @@ export type AddAllocationsToResourcesResponse = {
   __typename?: 'AddAllocationsToResourcesResponse';
   /** Per-item results for each allocation in the request */
   results: Array<AllocationToResourceResult>;
+};
+
+/** Result of promoting an existing asset to a workspace left-pane object */
+export type AddAssetToLeftPaneResult = {
+  __typename?: 'AddAssetToLeftPaneResult';
+  /** ID of the stream artifact row */
+  artifact_id?: Maybe<Scalars['ID']['output']>;
+  /** ID of the workspace object */
+  object_id?: Maybe<Scalars['ID']['output']>;
 };
 
 /** A successfully added allocated resource */
@@ -2612,6 +2623,13 @@ export enum BoardKind {
   Share = 'share'
 }
 
+/** The privacy kind for a board */
+export enum BoardKindInput {
+  Private = 'PRIVATE',
+  Public = 'PUBLIC',
+  Share = 'SHARE'
+}
+
 /** Manually set metadata associated with a board. */
 export type BoardManualMetadata = {
   __typename?: 'BoardManualMetadata';
@@ -3461,6 +3479,12 @@ export type Cell = {
   block_id: Scalars['String']['output'];
 };
 
+export type ChangeBoardKindResult = {
+  __typename?: 'ChangeBoardKindResult';
+  board_kind: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+};
+
 /** The result of adding users to / removing users from a team. */
 export type ChangeTeamMembershipsResult = {
   __typename?: 'ChangeTeamMembershipsResult';
@@ -3528,6 +3552,8 @@ export type ChatMessage = {
   temporal_namespace?: Maybe<Scalars['String']['output']>;
   /** Temporal workflow run id for the turn that produced this message. Gated behind the same trace-exposure flag as langsmith_trace_id. The workflow id is the vibe app id; clients build the Temporal UI URL from the run id, namespace, app id, env and region. */
   temporal_run_id?: Maybe<Scalars['ID']['output']>;
+  /** Turn identity id for the turn that produced this message. Null for messages predating V3. */
+  turn_id?: Maybe<Scalars['ID']['output']>;
   /** The date and time the object was last updated */
   updated_at?: Maybe<Scalars['Date']['output']>;
   /** ID of the user who sent or received this message */
@@ -3961,6 +3987,160 @@ export type Complexity = {
 /** Logical operator for combining rules or conditions. Must be OR — the question is shown if any rule or condition is satisfied. */
 export enum ConditionOperator {
   Or = 'OR'
+}
+
+/** A single conditional formatting condition that defines when and how to highlight rows or cells */
+export type ConditionalFormattingConditionInput = {
+  /** The formatting to apply when this condition matches */
+  formatting?: InputMaybe<ConditionalFormattingFormattingInput>;
+  /** Unique identifier for the condition (client-generated GUID) */
+  id?: InputMaybe<Scalars['String']['input']>;
+  /** Rules that trigger this condition */
+  rules?: InputMaybe<Array<ConditionalFormattingRuleBucketInput>>;
+  /** What to highlight when the condition matches */
+  target?: InputMaybe<ConditionalFormattingTargetInput>;
+};
+
+export type ConditionalFormattingFormattingInput = {
+  /** Color name(s) to apply as highlight (e.g. ["orange"], ["dark_red", "done-green"]) */
+  highlight_color?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+export type ConditionalFormattingRuleBucketInput = {
+  /** Logical operator (e.g. ANY_OF, ALL_OF) */
+  operator?: InputMaybe<Scalars['String']['input']>;
+  /** The rule definition */
+  rule?: InputMaybe<ConditionalFormattingRuleInput>;
+  /** Bucket type (e.g. RULE) */
+  type?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type ConditionalFormattingRuleContextInput = {
+  /** Board ID the column belongs to */
+  board_id?: InputMaybe<Scalars['ID']['input']>;
+  /** ID of the column to evaluate */
+  column_id?: InputMaybe<Scalars['String']['input']>;
+  /** Type of the column (e.g. color, text, date) */
+  column_type?: InputMaybe<Scalars['String']['input']>;
+  /** Column attribute to compare against */
+  compare_attribute?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type ConditionalFormattingRuleInput = {
+  /** Array of internal label IDs to match against (e.g. [2] for Stuck) */
+  compare_value?: InputMaybe<Scalars['JSON']['input']>;
+  /** The column context for this rule */
+  context?: InputMaybe<ConditionalFormattingRuleContextInput>;
+  /** Rule type (e.g. BOARD_COLUMN) */
+  type?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type ConditionalFormattingTargetInput = {
+  /** Column IDs to highlight */
+  column_ids?: InputMaybe<Array<Scalars['String']['input']>>;
+  /** Whether to highlight the entire row */
+  entire_row?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+/** An already-answered field that this step’s options are listed against */
+export type ConfigureIntegrationFieldDependency = {
+  __typename?: 'ConfigureIntegrationFieldDependency';
+  /** The inbound field key holding the value */
+  field_key?: Maybe<Scalars['String']['output']>;
+  /** The field type whose options the value came from; null for primitives */
+  field_type_reference_id?: Maybe<Scalars['ID']['output']>;
+  /** What that value is called, when it has a name */
+  label?: Maybe<Scalars['String']['output']>;
+  /** The chosen value, JSON-encoded */
+  value_json?: Maybe<Scalars['String']['output']>;
+};
+
+/** What was stored for a step, echoed back so a reloaded card renders the answer */
+export type ConfigureIntegrationFieldSavedScope = {
+  __typename?: 'ConfigureIntegrationFieldSavedScope';
+  /** The chosen values, one entry per pick */
+  entries: Array<ConfigureIntegrationFieldValue>;
+  /** How the value is sourced: "pinned" (we hold it) or "app_supplied" (the app passes it) */
+  mode?: Maybe<Scalars['String']['output']>;
+};
+
+/** One question of the batched field-configuration card */
+export type ConfigureIntegrationFieldStep = {
+  __typename?: 'ConfigureIntegrationFieldStep';
+  /** Whether to offer letting the app choose the value per call */
+  allow_app_decide?: Maybe<Scalars['Boolean']['output']>;
+  /** The block instance this step configures */
+  block_instance_id?: Maybe<Scalars['ID']['output']>;
+  /** The block whose field is being configured */
+  block_reference_id?: Maybe<Scalars['ID']['output']>;
+  /** Fields this step’s options depend on that still hold no value */
+  blocked_by: Array<Scalars['String']['output']>;
+  /** The credentials the options are listed with; absent until the block is connected */
+  credentials_id?: Maybe<Scalars['ID']['output']>;
+  /** What the field holds now, already described for display */
+  current_value_display?: Maybe<Scalars['String']['output']>;
+  /** Values from earlier answers that this step’s options are listed against */
+  dependency_selections: Array<ConfigureIntegrationFieldDependency>;
+  /** The inbound field key this step configures */
+  field_key?: Maybe<Scalars['String']['output']>;
+  /** The field’s display name */
+  field_title?: Maybe<Scalars['String']['output']>;
+  /** The marketplace app the block belongs to */
+  integration_app_name?: Maybe<Scalars['String']['output']>;
+  /** The block’s name */
+  integration_name?: Maybe<Scalars['String']['output']>;
+  /** Whether the field takes more than one value */
+  is_array?: Maybe<Scalars['Boolean']['output']>;
+  /** What to ask the user */
+  question?: Maybe<Scalars['String']['output']>;
+  /** What the user decided, once they have */
+  saved_scope?: Maybe<ConfigureIntegrationFieldSavedScope>;
+  /** Whether the user moved past this step without deciding */
+  skipped?: Maybe<Scalars['Boolean']['output']>;
+  /** Supporting line under the question */
+  subtitle?: Maybe<Scalars['String']['output']>;
+};
+
+/** Input for committing one step of the batched integration field configuration card */
+export type ConfigureIntegrationFieldStepInput = {
+  /** The ID of the AI app */
+  ai_app_id: Scalars['ID']['input'];
+  /** The block instance this step configures */
+  block_instance_id: Scalars['ID']['input'];
+  /** The inbound field key this step configures */
+  field_key: Scalars['String']['input'];
+  /** The value the user chose for this field. Omit it when the step was skipped. */
+  field_value_scope?: InputMaybe<Scalars['JSON']['input']>;
+  /** Whether the user moved past this step without deciding. Nothing is written when true. */
+  skipped?: InputMaybe<Scalars['Boolean']['input']>;
+  /** The configure_integration_fields tool call being answered */
+  tool_call_id: Scalars['ID']['input'];
+};
+
+/** The card’s refreshed steps after one of them was committed */
+export type ConfigureIntegrationFieldStepResult = {
+  __typename?: 'ConfigureIntegrationFieldStepResult';
+  /** The first step still holding no answer */
+  active_step_index?: Maybe<Scalars['Int']['output']>;
+  /** The ID of the AI app */
+  ai_app_id?: Maybe<Scalars['ID']['output']>;
+  /** Every step of the card, with this one marked answered and the rest recomputed against what it unblocked */
+  steps: Array<ConfigureIntegrationFieldStep>;
+};
+
+/** One value the user chose for a field */
+export type ConfigureIntegrationFieldValue = {
+  __typename?: 'ConfigureIntegrationFieldValue';
+  /** What the value is called, when it has a name */
+  label?: Maybe<Scalars['String']['output']>;
+  /** The chosen value, JSON-encoded */
+  value_json?: Maybe<Scalars['String']['output']>;
+};
+
+/** Severity of a schedule conflict. */
+export enum ConflictSeverity {
+  Full = 'FULL',
+  Partial = 'PARTIAL'
 }
 
 /** Connect input for a custom external agent. callback_url is optional — omit to create a detached agent (identity only, not executable via webhook). */
@@ -5018,7 +5198,9 @@ export type DataView = {
 
 /** The kind of object that authorizes access to a data view. */
 export enum DataViewAuthorizationKind {
-  Board = 'BOARD'
+  Board = 'BOARD',
+  Overview = 'OVERVIEW',
+  VibeApp = 'VIBE_APP'
 }
 
 /** The authorization object associated with a data view. */
@@ -6337,6 +6519,15 @@ export enum ExternalWidget {
   Listview = 'LISTVIEW',
   Number = 'NUMBER'
 }
+
+/** Information about a failed team board role update, including the team ID and the error encountered. */
+export type FailedTeamBoardRoleUpdate = {
+  __typename?: 'FailedTeamBoardRoleUpdate';
+  /** The error message describing why the role update failed. */
+  error: Scalars['String']['output'];
+  /** The ID of the team whose board role update failed. */
+  team_id: Scalars['ID']['output'];
+};
 
 /** Information about a failed user board role update, including the user ID and the error encountered. */
 export type FailedUserBoardRoleUpdate = {
@@ -9471,6 +9662,8 @@ export type Mutation = {
   bulk_delete_items?: Maybe<BulkDeleteInit>;
   /** Execute multiple object schema column actions in a single request. Actions are executed sequentially in the order provided. If any action fails, execution stops and an error is returned. */
   bulk_object_schema_column_actions?: Maybe<Array<ObjectSchemaActionResult>>;
+  /** Change the privacy kind (public / private / shareable) of a board */
+  change_board_kind?: Maybe<ChangeBoardKindResult>;
   /** Change a column's properties */
   change_column_metadata?: Maybe<Column>;
   /** Change a column's title */
@@ -9672,6 +9865,8 @@ export type Mutation = {
   duplicate_group?: Maybe<Group>;
   /** Duplicate an item. */
   duplicate_item?: Maybe<Item>;
+  /** Duplicate an existing board subset/view */
+  duplicate_view?: Maybe<BoardView>;
   edit_update: Update;
   /** Enroll multiple items to a single sequence. Maximum 50 items per request. */
   enroll_items_to_sequence?: Maybe<EnrollToSequenceResult>;
@@ -9712,6 +9907,8 @@ export type Mutation = {
   remove_team_owners?: Maybe<RemoveTeamOwnersResult>;
   /** Remove users from team. */
   remove_users_from_team?: Maybe<ChangeTeamMembershipsResult>;
+  /** Restore a deleted board subset/view */
+  restore_view?: Maybe<BoardView>;
   /** Revokes all API tokens for a service user. */
   revoke_service_user_tokens?: Maybe<Scalars['Boolean']['output']>;
   /** Run a prompt against an AI model and return the completion response. For more advanced capabilities, use Models REST API. */
@@ -9805,6 +10002,10 @@ export type Mutation = {
   update_status_column?: Maybe<Column>;
   /** Update managed column of type status mutation. */
   update_status_managed_column?: Maybe<StatusManagedColumn>;
+  /** Update board roles for multiple teams. */
+  update_teams_board_role?: Maybe<UpdateTeamsBoardRoleResponse>;
+  /** Update board roles for multiple users. */
+  update_users_board_role?: Maybe<UpdateUsersBoardRoleResponse>;
   /** Updates the role of the specified users. */
   update_users_role?: Maybe<UpdateUsersRoleResult>;
   /** Update a validation rule */
@@ -10034,6 +10235,13 @@ export type MutationBulk_Object_Schema_Column_ActionsArgs = {
   actions: Array<ObjectSchemaActionInput>;
   object_schema_id?: InputMaybe<Scalars['ID']['input']>;
   object_schema_name?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationChange_Board_KindArgs = {
+  board_id: Scalars['ID']['input'];
+  kind: BoardKindInput;
 };
 
 
@@ -10905,6 +11113,13 @@ export type MutationDuplicate_ItemArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationDuplicate_ViewArgs = {
+  board_id: Scalars['ID']['input'];
+  view_id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationEdit_UpdateArgs = {
   body: Scalars['String']['input'];
   id: Scalars['ID']['input'];
@@ -11066,6 +11281,13 @@ export type MutationRemove_Team_OwnersArgs = {
 export type MutationRemove_Users_From_TeamArgs = {
   team_id: Scalars['ID']['input'];
   user_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationRestore_ViewArgs = {
+  board_id: Scalars['ID']['input'];
+  view_id: Scalars['ID']['input'];
 };
 
 
@@ -11442,6 +11664,22 @@ export type MutationUpdate_Status_Managed_ColumnArgs = {
   revision: Scalars['Int']['input'];
   settings?: InputMaybe<UpdateStatusColumnSettingsInput>;
   title?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUpdate_Teams_Board_RoleArgs = {
+  board_id: Scalars['ID']['input'];
+  role_name: BoardBasicRoleName;
+  team_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUpdate_Users_Board_RoleArgs = {
+  board_id: Scalars['ID']['input'];
+  role_name: BoardBasicRoleName;
+  user_ids: Array<Scalars['ID']['input']>;
 };
 
 
@@ -12603,6 +12841,13 @@ export type ProgressValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
+/** All schedule conflicts detected on a project. */
+export type ProjectScheduleConflicts = {
+  __typename?: 'ProjectScheduleConflicts';
+  /** Conflicts found. Empty array when no conflicts exist. */
+  conflicts: Array<ScheduleConflict>;
+};
+
 /** A prompt suggestion for a vibe */
 export type PromptSuggestion = {
   __typename?: 'PromptSuggestion';
@@ -12951,6 +13196,8 @@ export type Query = {
   webhooks?: Maybe<Array<Maybe<Webhook>>>;
   /** Get a collection of workspaces. */
   workspaces?: Maybe<Array<Maybe<Workspace>>>;
+  /** Returns true if connecting source_item_id -> target_item_id would create an MLS rollup cycle */
+  would_create_mls_rollup_cycle: Scalars['Boolean']['output'];
 };
 
 
@@ -13583,6 +13830,14 @@ export type QueryWorkspacesArgs = {
   state?: InputMaybe<State>;
 };
 
+
+/** Root query type for the Dependencies service */
+export type QueryWould_Create_Mls_Rollup_CycleArgs = {
+  board_id: Scalars['ID']['input'];
+  source_item_id: Scalars['ID']['input'];
+  target_item_id: Scalars['ID']['input'];
+};
+
 export type QuestionOptionInput = {
   /** The display text for the option shown to respondents. Must be at least 1 character long. */
   label: Scalars['String']['input'];
@@ -14102,6 +14357,17 @@ export type SaveWorkspaceAsTemplateResponse = {
   template_id?: Maybe<Scalars['Int']['output']>;
 };
 
+/** A detected schedule conflict between a task timeline and a resource availability. */
+export type ScheduleConflict = {
+  __typename?: 'ScheduleConflict';
+  /** The task with the conflict. */
+  pulse_id: Scalars['ID']['output'];
+  /** The resource whose schedule conflicts with the task timeline. */
+  resource_id: Scalars['ID']['output'];
+  /** Whether the resource is fully or partially unavailable within the task timeline. */
+  severity?: Maybe<ConflictSeverity>;
+};
+
 /** notification settings scope types, the options are account user defaults or user private settings */
 export enum ScopeType {
   AccountNewUserDefaults = 'AccountNewUserDefaults',
@@ -14167,6 +14433,15 @@ export type SearchDateRangeLegacyInput = {
   updatedBefore?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
 };
 
+/** Matched text snippets per searchable document field. */
+export type SearchDocHighlights = {
+  __typename?: 'SearchDocHighlights';
+  /** Highlighted fragments from the document content with <em> tags around matched terms. Non-empty only for lexical matches. */
+  content?: Maybe<Array<Scalars['String']['output']>>;
+  /** Highlighted fragments from the document name with <em> tags around matched terms. Non-empty only for lexical matches. */
+  name?: Maybe<Array<Scalars['String']['output']>>;
+};
+
 /** A single doc search result with indexed and live data. */
 export type SearchDocResult = {
   __typename?: 'SearchDocResult';
@@ -14193,11 +14468,17 @@ export enum SearchField {
   BoardOwnerId = 'BOARD_OWNER_ID',
   BoardWithPulseViewPermissions = 'BOARD_WITH_PULSE_VIEW_PERMISSIONS',
   CreatedBy = 'CREATED_BY',
+  GroupId = 'GROUP_ID',
+  GroupName = 'GROUP_NAME',
   ItemsDates = 'ITEMS_DATES',
   ItemsNumerics = 'ITEMS_NUMERICS',
   ItemFreeText = 'ITEM_FREE_TEXT',
+  ItemId = 'ITEM_ID',
+  ItemLabels = 'ITEM_LABELS',
   ItemName = 'ITEM_NAME',
+  ItemReferencedEmails = 'ITEM_REFERENCED_EMAILS',
   ItemStatuses = 'ITEM_STATUSES',
+  ItemTags = 'ITEM_TAGS',
   LastUpdatedBy = 'LAST_UPDATED_BY',
   Persons = 'PERSONS',
   UpdatedAt = 'UPDATED_AT',
@@ -14224,6 +14505,8 @@ export type SearchIndexedBoard = {
 /** Document data stored in the search index. */
 export type SearchIndexedDoc = {
   __typename?: 'SearchIndexedDoc';
+  /** Matched text snippets per searchable field. Null for non-lexical results. */
+  highlights?: Maybe<SearchDocHighlights>;
   /** Document ID. */
   id: Scalars['ID']['output'];
   /** Document name. */
@@ -15204,7 +15487,7 @@ export type StatusValue = ColumnValue & {
 /** Result of stopping a run-once workflow execution */
 export type StopWorkflowRunOnceResult = {
   __typename?: 'StopWorkflowRunOnceResult';
-  /** Explanation when 'stopped' is false. For example, 'no_active_test_run' means no execution was in progress. */
+  /** Explanation when 'stopped' is false. For example, 'no_active_run_once' means no execution was in progress. */
   reason?: Maybe<Scalars['String']['output']>;
   /** Whether a running execution was successfully stopped. Returns false if no execution was active. */
   stopped: Scalars['Boolean']['output'];
@@ -16848,6 +17131,18 @@ export type UpdateTaskInput = {
   status?: InputMaybe<TaskStatus>;
   /** The task title */
   title?: InputMaybe<Scalars['String']['input']>;
+};
+
+/**
+ * Response type for updating multiple teams' board roles. Contains information
+ * about which teams were successfully updated and which failed.
+ */
+export type UpdateTeamsBoardRoleResponse = {
+  __typename?: 'UpdateTeamsBoardRoleResponse';
+  /** List of failed team updates with error details. */
+  failed_teams: Array<FailedTeamBoardRoleUpdate>;
+  /** List of IDs of teams whose board roles were successfully updated. */
+  successful_team_ids: Array<Scalars['ID']['output']>;
 };
 
 /** Input for updating an existing time off entry */
@@ -20174,7 +20469,7 @@ export type SearchDocsQueryVariables = Exact<{
 }>;
 
 
-export type SearchDocsQuery = { __typename?: 'Query', search: { __typename?: 'SearchNamespace', docs: { __typename?: 'SearchDocResults', results: Array<{ __typename?: 'SearchDocResult', id: string, indexed_data: { __typename?: 'SearchIndexedDoc', id: string, name: string, workspace_id?: string | null } }> } } };
+export type SearchDocsQuery = { __typename?: 'Query', search: { __typename?: 'SearchNamespace', docs: { __typename?: 'SearchDocResults', results: Array<{ __typename?: 'SearchDocResult', id: string, indexed_data: { __typename?: 'SearchIndexedDoc', id: string, name: string, workspace_id?: string | null, highlights?: { __typename?: 'SearchDocHighlights', name?: Array<string> | null, content?: Array<string> | null } | null } }> } } };
 
 export type SearchWorkspacesQueryVariables = Exact<{
   query: Scalars['String']['input'];
@@ -20788,7 +21083,7 @@ export const GetDocVersionDiffDocument = {"kind":"Document","definitions":[{"kin
 export const GetFoldersDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetFolders"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"page"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspace_ids"}},"type":{"kind":"ListType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"folders"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"page"},"value":{"kind":"Variable","name":{"kind":"Name","value":"page"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"workspace_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspace_ids"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]} as unknown as DocumentNode<GetFoldersQuery, GetFoldersQueryVariables>;
 export const SearchItemsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchItems"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"workspace_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}}},{"kind":"Argument","name":{"kind":"Name","value":"board_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"results"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"indexed_data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"board_id"}},{"kind":"Field","name":{"kind":"Name","value":"workspace_id"}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchItemsQuery, SearchItemsQueryVariables>;
 export const SearchBoardsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchBoards"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"boards"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"workspace_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}}},{"kind":"Argument","name":{"kind":"Name","value":"board_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"results"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"indexed_data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"workspace_id"}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchBoardsQuery, SearchBoardsQueryVariables>;
-export const SearchDocsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchDocs"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"docs"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"workspace_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"results"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"indexed_data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"workspace_id"}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchDocsQuery, SearchDocsQueryVariables>;
+export const SearchDocsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchDocs"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"docs"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"workspace_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"results"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"indexed_data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"workspace_id"}},{"kind":"Field","name":{"kind":"Name","value":"highlights"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"content"}}]}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchDocsQuery, SearchDocsQueryVariables>;
 export const SearchWorkspacesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchWorkspaces"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"workspaces"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"results"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"indexed_data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchWorkspacesQuery, SearchWorkspacesQueryVariables>;
 export const SearchUpdatesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchUpdates"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"creatorIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updates"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"workspace_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}}},{"kind":"Argument","name":{"kind":"Name","value":"board_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardIds"}}},{"kind":"Argument","name":{"kind":"Name","value":"creator_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"creatorIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"results"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"indexed_data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"body"}},{"kind":"Field","name":{"kind":"Name","value":"creator_id"}},{"kind":"Field","name":{"kind":"Name","value":"item_id"}},{"kind":"Field","name":{"kind":"Name","value":"board_id"}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchUpdatesQuery, SearchUpdatesQueryVariables>;
 export const SearchTimelineItemsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchTimelineItems"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"timeline_items"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"workspace_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceIds"}}},{"kind":"Argument","name":{"kind":"Name","value":"board_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"results"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"indexed_data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"summary"}},{"kind":"Field","name":{"kind":"Name","value":"content"}},{"kind":"Field","name":{"kind":"Name","value":"item_id"}},{"kind":"Field","name":{"kind":"Name","value":"board_id"}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<SearchTimelineItemsQuery, SearchTimelineItemsQueryVariables>;
