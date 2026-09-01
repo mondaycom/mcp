@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.67.0
+
+### get_user_context — include relevant docs
+
+`get_user_context` now returns `relevantDocs` alongside `relevantBoards` and `relevantPeople`: the user's most loaded docs ranked by frequency and recency. Each entry includes `id` (document ID for API calls), `name`, and `objectId` (the identifier in the doc URL).
+
 ## 5.66.0
 
 ### search — expose highlights on DOCUMENTS results
