@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.66.0
+
+### search — expose highlights on DOCUMENTS results
+
+DOCUMENTS search now returns `highlights`: an array of `{ field, fragments }` entries, where `fragments` contain matched text snippets with `<em>` tags around matched terms. `field` is one of `name` or `content`. `highlights` is omitted when there's no lexical match.
+
 ## 5.65.1
 
 ### create_notification — report failures instead of swallowing them
