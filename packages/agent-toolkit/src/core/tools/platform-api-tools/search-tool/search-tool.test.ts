@@ -92,7 +92,7 @@ describe('SearchTool', () => {
         'Supported searchType values: BOARD, DOCUMENTS, FOLDERS, WORKSPACES, UPDATES, ITEMS, TIMELINE_ITEMS, DASHBOARDS',
       );
       expect(description).toContain('BOARD search returns id, title, url, and workspaceId');
-      expect(description).toContain('DOCUMENTS search returns id, title, and workspaceId');
+      expect(description).toContain('DOCUMENTS search returns id, title, workspaceId, and highlights');
       expect(description).toContain('ITEMS search returns id, title, url, boardId, and workspaceId');
       expect(description).toContain('Optionally scope it with workspaceIds, boardIds, and/or creatorIds');
       expect(description).toContain('FOLDERS search returns id and title');
@@ -679,6 +679,90 @@ describe('SearchTool', () => {
           }),
           expect.objectContaining({ timeout: expect.any(Number) }),
         );
+      });
+
+      it('should return highlights when present in the response', async () => {
+        const responseWithHighlights: SearchDocsQuery = {
+          search: {
+            docs: {
+              results: [
+                {
+                  id: '111',
+                  indexed_data: {
+                    id: '111',
+                    name: 'Document 1',
+                    workspace_id: '9001',
+                    highlights: {
+                      name: ['<em>Document</em> 1'],
+                      content: ['first <em>match</em>', 'second <em>match</em>'],
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        };
+        mocks.setResponse(responseWithHighlights);
+
+        const parsedResult = await callToolByNameAsync('search', {
+          searchType: GlobalSearchType.DOCUMENTS,
+          searchTerm: 'Document',
+        });
+
+        expect(parsedResult.data[0].highlights).toEqual([
+          { field: 'name', fragments: ['<em>Document</em> 1'] },
+          { field: 'content', fragments: ['first <em>match</em>', 'second <em>match</em>'] },
+        ]);
+      });
+
+      it('should omit a highlight field with no fragments', async () => {
+        const responseWithPartialHighlights: SearchDocsQuery = {
+          search: {
+            docs: {
+              results: [
+                {
+                  id: '111',
+                  indexed_data: {
+                    id: '111',
+                    name: 'Document 1',
+                    highlights: { name: null, content: ['some <em>match</em>'] },
+                  },
+                },
+              ],
+            },
+          },
+        };
+        mocks.setResponse(responseWithPartialHighlights);
+
+        const parsedResult = await callToolByNameAsync('search', {
+          searchType: GlobalSearchType.DOCUMENTS,
+          searchTerm: 'Document',
+        });
+
+        expect(parsedResult.data[0].highlights).toEqual([{ field: 'content', fragments: ['some <em>match</em>'] }]);
+      });
+
+      it('should omit highlights when null in the response', async () => {
+        const responseWithoutHighlights: SearchDocsQuery = {
+          search: {
+            docs: {
+              results: [
+                {
+                  id: '111',
+                  indexed_data: { id: '111', name: 'Document 1', highlights: null },
+                },
+              ],
+            },
+          },
+        };
+        mocks.setResponse(responseWithoutHighlights);
+
+        const parsedResult = await callToolByNameAsync('search', {
+          searchType: GlobalSearchType.DOCUMENTS,
+          searchTerm: 'Document',
+        });
+
+        expect(parsedResult.data[0].highlights).toBeUndefined();
       });
 
       it('should not include url field for documents', async () => {

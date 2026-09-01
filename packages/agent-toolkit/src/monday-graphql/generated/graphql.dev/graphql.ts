@@ -16033,6 +16033,15 @@ export type SearchBoardResults = {
   results: Array<SearchBoardResult>;
 };
 
+/** Matched text snippets per searchable document field. */
+export type SearchDocHighlights = {
+  __typename?: 'SearchDocHighlights';
+  /** Highlighted fragments from the document content with <em> tags around matched terms. Non-empty only for lexical matches. */
+  content?: Maybe<Array<Scalars['String']['output']>>;
+  /** Highlighted fragments from the document name with <em> tags around matched terms. Non-empty only for lexical matches. */
+  name?: Maybe<Array<Scalars['String']['output']>>;
+};
+
 /** A single doc search result with indexed and live data. */
 export type SearchDocResult = {
   __typename?: 'SearchDocResult';
@@ -16071,6 +16080,8 @@ export type SearchIndexedBoard = {
 /** Document data stored in the search index. */
 export type SearchIndexedDoc = {
   __typename?: 'SearchIndexedDoc';
+  /** Matched text snippets per searchable field. Null for non-lexical results. */
+  highlights?: Maybe<SearchDocHighlights>;
   /** Document ID. */
   id: Scalars['ID']['output'];
   /** Document name. */

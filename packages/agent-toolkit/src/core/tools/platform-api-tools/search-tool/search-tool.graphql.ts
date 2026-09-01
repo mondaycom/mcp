@@ -56,6 +56,10 @@ export const searchDocs = gql`
             id
             name
             workspace_id
+            highlights {
+              name
+              content
+            }
           }
         }
       }

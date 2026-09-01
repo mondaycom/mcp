@@ -2460,6 +2460,14 @@ type SearchIndexedBoard {
   url: String!
 }
 
+"Matched text snippets per searchable document field."
+type SearchDocHighlights {
+  "Highlighted fragments from the document name with <em> tags around matched terms. Non-empty only for lexical matches."
+  name: [String!]
+  "Highlighted fragments from the document content with <em> tags around matched terms. Non-empty only for lexical matches."
+  content: [String!]
+}
+
 "Document data stored in the search index."
 type SearchIndexedDoc {
   "Document ID."
@@ -2468,6 +2476,8 @@ type SearchIndexedDoc {
   name: String!
   "ID of the workspace containing this document."
   workspace_id: ID
+  "Matched text snippets per searchable field. Null for non-lexical results."
+  highlights: SearchDocHighlights
 }
 
 "Item data stored in the search index."
