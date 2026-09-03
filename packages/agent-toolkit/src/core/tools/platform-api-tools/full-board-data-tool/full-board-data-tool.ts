@@ -31,7 +31,7 @@ export class FullBoardDataTool extends BaseMondayApiTool<typeof fullBoardDataToo
   });
 
   getDescription(): string {
-    return `INTERNAL USE ONLY - DO NOT CALL THIS TOOL DIRECTLY. This tool is exclusively triggered by UI components and should never be invoked directly by the agent.`;
+    return `Fetch complete board data for UI display workflows. Use this only when another monday.com tool explicitly asks for full board data before showing a table. Otherwise prefer narrower board or item tools.`;
   }
 
   getInputSchema(): typeof fullBoardDataToolSchema {
