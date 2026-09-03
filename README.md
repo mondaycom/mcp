@@ -138,6 +138,29 @@ To interact with monday.com's API, you'll need an API token:
 }
 ```
 
+#### For GitHub Copilot CLI on macOS
+
+If your MCP client starts the server from a non-interactive shell, make sure it runs with Node 20. The repository's `.nvmrc` pins `v20.18.1`, and the MCP package requires Node 20 or newer.
+
+When using `nvm`, load it before starting the local server:
+
+```json
+{
+  "mcpServers": {
+    "monday-api-mcp": {
+      "command": "bash",
+      "args": [
+        "-lc",
+        "export NVM_DIR=\"$HOME/.nvm\" && . \"$NVM_DIR/nvm.sh\" && nvm use 20 >/dev/null && npx @mondaydotcomorg/monday-api-mcp@latest"
+      ],
+      "env": {
+        "MONDAY_TOKEN": "your_monday_api_token"
+      }
+    }
+  }
+}
+```
+
 #### For Gemini CLI
 
 To get started with [Gemini CLI](https://geminicli.com), you can use the
