@@ -4,7 +4,7 @@ import { getUserContextQuery } from './user-context.graphql.dev';
 import { getFavoriteDetailsQuery } from './user-context.graphql';
 import { GetUserContextQuery } from '../../../../monday-graphql/generated/graphql.dev/graphql';
 import { GetFavoriteDetailsQuery, GraphqlMondayObject } from '../../../../monday-graphql/generated/graphql/graphql';
-import { Favorite, RelevantBoard, RelevantPerson } from './user-context-tool.types';
+import { Favorite, RelevantBoard, RelevantDoc, RelevantPerson } from './user-context-tool.types';
 import { TYPE_TO_QUERY_VAR, TYPE_TO_RESPONSE_KEY } from './user-context-tool.consts';
 
 export class UserContextTool extends BaseMondayApiTool<undefined> {
@@ -18,7 +18,7 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
   });
 
   getDescription(): string {
-    return `Fetch current user information, account information, and their relevant items (boards, folders, workspaces, dashboards).
+    return `Fetch current user information, account information, and their relevant items (boards, docs, folders, workspaces, dashboards).
 
     Use this tool to:
     - Get context about who the current user is (id, name, title)
@@ -26,6 +26,7 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
     - Get the number of active members in the account (returns active_members_count)
     - Discover user's favorite boards, folders, workspaces, and dashboards
     - Get user's most relevant boards based on visit frequency and recency
+    - Get user's most relevant docs based on load frequency and recency
     - Get user's most relevant people based on interaction frequency and recency
     - Reduce the need for search requests by knowing user's commonly accessed items
     `;
@@ -50,18 +51,28 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
 
     const enrichedFavorites = await this.fetchFavorites(favorites || []);
     const relevantBoards = this.extractRelevantBoards(intelligence);
+    const relevantDocs = this.extractRelevantDocs(intelligence);
     const relevantPeople = this.extractRelevantPeople(intelligence);
 
     const { account, ...user } = me;
-    const accountContext = account ? {
-      tier: account.tier,
-      active_members_count: account.active_members_count,
-      is_during_trial: account.is_during_trial,
-      products: account.products?.filter(Boolean).map(p => ({ kind: p!.kind, tier: p!.tier })) ?? [],
-    } : null;
+    const accountContext = account
+      ? {
+          tier: account.tier,
+          active_members_count: account.active_members_count,
+          is_during_trial: account.is_during_trial,
+          products: account.products?.filter(Boolean).map((p) => ({ kind: p!.kind, tier: p!.tier })) ?? [],
+        }
+      : null;
 
-    const output = { user, account: accountContext, favorites: enrichedFavorites, relevantBoards, relevantPeople };
-    return { content: { message: "User context", ...output } };
+    const output = {
+      user,
+      account: accountContext,
+      favorites: enrichedFavorites,
+      relevantBoards,
+      relevantDocs,
+      relevantPeople,
+    };
+    return { content: { message: 'User context', ...output } };
   }
 
   private async fetchFavorites(favorites: NonNullable<GetUserContextQuery['favorites']>): Promise<Favorite[]> {
@@ -109,6 +120,22 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
     return result;
   }
 
+  private extractRelevantDocs(intelligence: GetUserContextQuery['intelligence']): RelevantDoc[] {
+    if (!intelligence?.relevant_docs) {
+      return [];
+    }
+
+    const result: RelevantDoc[] = [];
+
+    for (const rd of intelligence.relevant_docs) {
+      if (rd?.id && rd?.document?.name) {
+        result.push({ id: rd.id, name: rd.document.name, objectId: rd.object_id });
+      }
+    }
+
+    return result;
+  }
+
   private extractRelevantPeople(intelligence: GetUserContextQuery['intelligence']): RelevantPerson[] {
     if (!intelligence?.relevant_people) {
       return [];
@@ -125,7 +152,9 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
     return result;
   }
 
-  private groupByType(favorites: NonNullable<GetUserContextQuery['favorites']>): Partial<Record<GraphqlMondayObject, string[]>> {
+  private groupByType(
+    favorites: NonNullable<GetUserContextQuery['favorites']>,
+  ): Partial<Record<GraphqlMondayObject, string[]>> {
     const result: Partial<Record<GraphqlMondayObject, string[]>> = {};
 
     for (const favorite of favorites) {

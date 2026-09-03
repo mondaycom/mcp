@@ -21,11 +21,7 @@ describe('UserContextTool', () => {
         tier: 'enterprise',
         active_members_count: 150,
         is_during_trial: false,
-        products: [
-          { kind: 'core', tier: 'enterprise' },
-          { kind: 'crm', tier: 'enterprise' },
-          null,
-        ],
+        products: [{ kind: 'core', tier: 'enterprise' }, { kind: 'crm', tier: 'enterprise' }, null],
       },
     },
     favorites: [
@@ -39,6 +35,10 @@ describe('UserContextTool', () => {
       relevant_boards: [
         { id: '100', board: { name: 'Top Board' } },
         { id: '101', board: { name: 'Recent Board' } },
+      ],
+      relevant_docs: [
+        { id: '300', object_id: '3001', document: { name: 'Product Spec' } },
+        { id: '301', object_id: '3011', document: { name: 'Meeting Notes' } },
       ],
       relevant_people: [
         { id: '200', user: { name: 'Alice Smith' } },
@@ -57,7 +57,7 @@ describe('UserContextTool', () => {
     dashboards: [{ id: '30', name: 'Q1 Dashboard' }],
   };
 
-  it('should fetch user context, favorites, and relevant boards', async () => {
+  it('should fetch user context, favorites, relevant boards, and relevant docs', async () => {
     mocks.setResponseOnce(mockUserContextResponse);
     mocks.setResponseOnce(mockFavoriteDetailsQuery);
 
@@ -90,6 +90,10 @@ describe('UserContextTool', () => {
         { id: '100', name: 'Top Board' },
         { id: '101', name: 'Recent Board' },
       ],
+      relevantDocs: [
+        { id: '300', name: 'Product Spec', objectId: '3001' },
+        { id: '301', name: 'Meeting Notes', objectId: '3011' },
+      ],
       relevantPeople: [
         { id: '200', name: 'Alice Smith' },
         { id: '201', name: 'Bob Jones' },
@@ -106,21 +110,22 @@ describe('UserContextTool', () => {
       {},
       expect.objectContaining({ versionOverride: 'dev' }),
     );
-    expect(mocks.getMockRequest()).toHaveBeenNthCalledWith(
-      2,
-      expect.stringContaining('getFavoriteDetails'),
-      {
-        boardIds: ['1', '2'],
-        folderIds: ['10'],
-        workspaceIds: ['20'],
-        dashboardIds: ['30'],
-      },
-    );
+    expect(mocks.getMockRequest()).toHaveBeenNthCalledWith(2, expect.stringContaining('getFavoriteDetails'), {
+      boardIds: ['1', '2'],
+      folderIds: ['10'],
+      workspaceIds: ['20'],
+      dashboardIds: ['30'],
+    });
   });
 
   it('should handle empty favorites and no relevant boards', async () => {
     mocks.setResponseOnce({
-      me: { id: '123', name: 'John Doe', title: null, account: { tier: 'free', active_members_count: 1, is_during_trial: true, products: [] } },
+      me: {
+        id: '123',
+        name: 'John Doe',
+        title: null,
+        account: { tier: 'free', active_members_count: 1, is_during_trial: true, products: [] },
+      },
       favorites: [],
       intelligence: null,
     });
@@ -142,6 +147,7 @@ describe('UserContextTool', () => {
       },
       favorites: [],
       relevantBoards: [],
+      relevantDocs: [],
       relevantPeople: [],
     };
 
@@ -152,12 +158,26 @@ describe('UserContextTool', () => {
 
   it('should filter out null items from details response', async () => {
     mocks.setResponseOnce({
-      me: { id: '123', name: 'John Doe', title: 'Dev', account: { tier: 'pro', active_members_count: 50, is_during_trial: false, products: [{ kind: 'core', tier: 'pro' }] } },
+      me: {
+        id: '123',
+        name: 'John Doe',
+        title: 'Dev',
+        account: {
+          tier: 'pro',
+          active_members_count: 50,
+          is_during_trial: false,
+          products: [{ kind: 'core', tier: 'pro' }],
+        },
+      },
       favorites: [{ object: { id: '1', type: GraphqlMondayObject.Board } }],
       intelligence: {
         relevant_boards: [
           { id: '200', board: { name: 'Active Board' } },
           { id: '300', board: null }, // Should be filtered out
+        ],
+        relevant_docs: [
+          { id: '600', object_id: '6001', document: { name: 'Active Doc' } },
+          { id: '700', object_id: '7001', document: null }, // Should be filtered out
         ],
         relevant_people: [
           { id: '400', user: { name: 'Valid Person' } },
@@ -189,6 +209,7 @@ describe('UserContextTool', () => {
       },
       favorites: [{ id: '1', name: 'Valid Board', type: 'Board' }],
       relevantBoards: [{ id: '200', name: 'Active Board' }],
+      relevantDocs: [{ id: '600', name: 'Active Doc', objectId: '6001' }],
       relevantPeople: [{ id: '400', name: 'Valid Person' }],
     };
 
