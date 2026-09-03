@@ -31,7 +31,7 @@ export class FullBoardDataTool extends BaseMondayApiTool<typeof fullBoardDataToo
   });
 
   getDescription(): string {
-    return `INTERNAL USE ONLY - DO NOT CALL THIS TOOL DIRECTLY. This tool is exclusively triggered by UI components and should never be invoked directly by the agent.`;
+    return `Fetch complete board data for UI-driven workflows that need items, updates, replies, people values, and user details in one response. Prefer narrower board tools for conversational requests that do not need the full board payload.`;
   }
 
   getInputSchema(): typeof fullBoardDataToolSchema {
@@ -152,7 +152,7 @@ export class FullBoardDataTool extends BaseMondayApiTool<typeof fullBoardDataToo
       };
 
       return {
-        content: result
+        content: result,
       };
     } catch (error) {
       rethrowWithContext(error, 'get full board data');
