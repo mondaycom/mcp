@@ -5,6 +5,7 @@ export const getBoardInfo = gql`
     $boardId: ID!
     $columnIds: [String]
     $viewIds: [ID!]
+    $viewType: String
     $includeColumns: Boolean!
     $includeViews: Boolean!
   ) {
@@ -85,13 +86,14 @@ export const getBoardInfo = gql`
       }
 
       # Views (optionally filtered by id; omitted entirely when includeViews is false)
-      views(ids: $viewIds) @include(if: $includeViews) {
+      views(ids: $viewIds, type: $viewType) @include(if: $includeViews) {
         id
         name
         type
         settings
         filter
         sort
+        view_specific_data_str
       }
     }
   }

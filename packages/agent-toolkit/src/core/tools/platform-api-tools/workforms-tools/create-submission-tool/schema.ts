@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { FORM_TOKEN_DESCRIPTION } from '../utils/form-token';
 
 const phoneAnswerSchema = z.object({
   phone: z.string().describe('The phone number.'),
@@ -102,11 +103,7 @@ const formAnswerInputSchema = z
   );
 
 export const createSubmissionToolSchema = {
-  form_token: z
-    .string()
-    .describe(
-      'The unique token identifying the WorkForm. Can be a bare token, a full WorkForm URL (e.g. https://forms.monday.com/forms/abc123?r=use1), or a shortened wkf.ms URL (e.g. https://wkf.ms/4tqP28t). Shortened URLs are automatically resolved by following the redirect.',
-    ),
+  form_token: z.string().min(1).describe(FORM_TOKEN_DESCRIPTION),
   answers: z
     .array(formAnswerInputSchema)
     .describe('Array of answers to submit. Each answer specifies a question_id and the value for that question type.'),

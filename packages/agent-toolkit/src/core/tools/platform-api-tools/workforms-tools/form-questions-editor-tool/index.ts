@@ -2,6 +2,7 @@ import { ToolInputType, ToolOutputType, ToolType } from '../../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../../base-monday-api-tool';
 import { FormQuestionActions } from '../workforms.types';
 import { formQuestionsEditorToolSchema } from './schema';
+import { resolveFormToken } from '../utils/form-token';
 import { FormQuestionsEditorToolHelpers } from '../utils/form-questions-editor-tool-helpers';
 export class FormQuestionsEditorTool extends BaseMondayApiTool<typeof formQuestionsEditorToolSchema, never> {
   name = 'form_questions_editor';
@@ -43,6 +44,14 @@ export class FormQuestionsEditorTool extends BaseMondayApiTool<typeof formQuesti
       };
     }
 
-    return await handler(input);
+    const resolution = await resolveFormToken(input.formToken);
+
+    if (!resolution.ok) {
+      return {
+        content: resolution.message,
+      };
+    }
+
+    return await handler({ ...input, formToken: resolution.token });
   }
 }

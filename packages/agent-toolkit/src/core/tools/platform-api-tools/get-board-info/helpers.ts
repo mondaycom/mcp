@@ -3,11 +3,46 @@ import { GetBoardInfoJustColumnsQuery, GetBoardInfoQuery } from '../../../../mon
 export type BoardInfoData = NonNullable<NonNullable<GetBoardInfoQuery['boards']>[0]>;
 export type BoardInfoJustColumnsData = NonNullable<NonNullable<GetBoardInfoJustColumnsQuery['boards']>[0]>;
 export type ColumnInfo = NonNullable<BoardInfoJustColumnsData['columns']>[0];
+export type ViewInfo = NonNullable<BoardInfoData['views']>[0];
+export type ViewInfoResponse = Omit<NonNullable<ViewInfo>, 'view_specific_data_str'> & {
+  view_specific_data?: Record<string, unknown>;
+};
 
 export interface BoardInfoResponse {
-  board: BoardInfoData & { subItemColumns: ColumnInfo[] | undefined };
+  board: Omit<BoardInfoData, 'views'> & {
+    views: Array<ViewInfoResponse | null>;
+    subItemColumns: ColumnInfo[] | undefined;
+  };
   unmatchedViewNames?: string[];
 }
+
+const parseViewSpecificData = (raw: string | null | undefined): Record<string, unknown> | undefined => {
+  if (!raw) {
+    return undefined;
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return undefined;
+    }
+    const data = parsed as Record<string, unknown>;
+    return Object.keys(data).length > 0 ? data : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+export const formatView = (view: ViewInfo): ViewInfoResponse | null => {
+  if (!view) {
+    return null;
+  }
+
+  const { view_specific_data_str: raw, ...rest } = view;
+  const viewSpecificData = parseViewSpecificData(raw);
+
+  return viewSpecificData ? { ...rest, view_specific_data: viewSpecificData } : rest;
+};
 
 export const formatBoardInfoAsJson = (
   board: BoardInfoData,
@@ -18,7 +53,7 @@ export const formatBoardInfoAsJson = (
     ...board,
     // @include(false) omits these fields from the GraphQL response — normalize to empty arrays.
     columns: board.columns ?? [],
-    views: board.views ?? [],
+    views: (board.views ?? []).map(formatView),
     subItemColumns: subItemsBoard?.columns ?? undefined,
   },
   ...(unmatchedViewNames && unmatchedViewNames.length > 0 ? { unmatchedViewNames } : {}),

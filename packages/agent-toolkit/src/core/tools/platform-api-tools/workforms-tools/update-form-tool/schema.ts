@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { GraphQLDescriptions } from '../workforms.consts';
+import { FORM_TOKEN_DESCRIPTION } from '../utils/form-token';
 import { Alignment, BackgroundType, Direction, FontSize, Format, LogoPosition, LogoSize } from '../workforms.types';
 
 export enum FormActions {
@@ -160,7 +161,7 @@ const formSchema = z.object({
 });
 
 export const updateFormToolSchema = {
-  formToken: z.string(),
+  formToken: z.string().min(1).describe(FORM_TOKEN_DESCRIPTION),
   action: z.nativeEnum(FormActions).describe(GraphQLDescriptions.form.operations.updateForm.action),
   formPassword: z.string().describe(GraphQLDescriptions.formSettings.operations.setFormPassword).optional(),
   tag: tagSchema.describe(GraphQLDescriptions.form.inputs.tag).optional(),

@@ -47,7 +47,7 @@ describe('FormQuestionsEditorTool', () => {
 
         const args: inputType = {
           action: FormQuestionActions.Create,
-          formToken: 'form_token_123',
+          formToken: 'bbbbbbbb000000000000000000000123',
           question: {
             type: FormQuestionType.ShortText,
             title: 'What is your name?',
@@ -66,7 +66,7 @@ describe('FormQuestionsEditorTool', () => {
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[0]).toContain('mutation createFormQuestion');
         expect(mockCall[1]).toEqual({
-          formToken: 'form_token_123',
+          formToken: 'bbbbbbbb000000000000000000000123',
           question: {
             type: FormQuestionType.ShortText,
             title: 'What is your name?',
@@ -98,7 +98,7 @@ describe('FormQuestionsEditorTool', () => {
 
         const args: inputType = {
           action: FormQuestionActions.Create,
-          formToken: 'form_token_123',
+          formToken: 'bbbbbbbb000000000000000000000123',
           question: {
             type: FormQuestionType.Email,
             title: 'Email Address',
@@ -162,7 +162,7 @@ describe('FormQuestionsEditorTool', () => {
 
         const args: inputType = {
           action: FormQuestionActions.Create,
-          formToken: 'form_token_123',
+          formToken: 'bbbbbbbb000000000000000000000123',
           question: {
             type: FormQuestionType.SingleSelect,
             title: 'Choose your favorite color',
@@ -208,7 +208,7 @@ describe('FormQuestionsEditorTool', () => {
 
         const args: inputType = {
           action: FormQuestionActions.Create,
-          formToken: 'form_token_123',
+          formToken: 'bbbbbbbb000000000000000000000123',
           question: {
             type: FormQuestionType.Date,
             title: 'Select a date',
@@ -257,7 +257,7 @@ describe('FormQuestionsEditorTool', () => {
 
         const args: inputType = {
           action: FormQuestionActions.Create,
-          formToken: 'form_token_123',
+          formToken: 'bbbbbbbb000000000000000000000123',
           question: {
             type: FormQuestionType.Phone,
             title: 'Phone Number',
@@ -289,7 +289,7 @@ describe('FormQuestionsEditorTool', () => {
       it('should return error when question is missing', async () => {
         const args: inputType = {
           action: FormQuestionActions.Create,
-          formToken: 'form_token_123',
+          formToken: 'bbbbbbbb000000000000000000000123',
           // question is missing
         };
 
@@ -302,7 +302,7 @@ describe('FormQuestionsEditorTool', () => {
       it('should return error when title is missing from question', async () => {
         const args: inputType = {
           action: FormQuestionActions.Create,
-          formToken: 'form_token_123',
+          formToken: 'bbbbbbbb000000000000000000000123',
           question: {
             type: FormQuestionType.ShortText,
             // title is missing
@@ -336,7 +336,7 @@ describe('FormQuestionsEditorTool', () => {
       it('should handle missing action via schema validation', async () => {
         const args: Partial<inputType> = {
           // action is missing
-          formToken: 'form_token_123',
+          formToken: 'bbbbbbbb000000000000000000000123',
           question: {
             type: FormQuestionType.ShortText,
             title: 'Test',
@@ -359,7 +359,7 @@ describe('FormQuestionsEditorTool', () => {
 
         const args: inputType = {
           action: FormQuestionActions.Create,
-          formToken: 'form_token_123',
+          formToken: 'bbbbbbbb000000000000000000000123',
           question: {
             type: FormQuestionType.ShortText,
             title: 'Test Question',
@@ -381,7 +381,7 @@ describe('FormQuestionsEditorTool', () => {
 
         const args: inputType = {
           action: FormQuestionActions.Create,
-          formToken: 'form_token_123',
+          formToken: 'bbbbbbbb000000000000000000000123',
           question: {
             type: FormQuestionType.ShortText,
             title: 'Test Question',
@@ -415,7 +415,7 @@ describe('FormQuestionsEditorTool', () => {
 
         const args: inputType = {
           action: FormQuestionActions.Update,
-          formToken: 'form_token_123',
+          formToken: 'bbbbbbbb000000000000000000000123',
           questionId: 'question_123',
           question: {
             type: FormQuestionType.ShortText,
@@ -438,7 +438,7 @@ describe('FormQuestionsEditorTool', () => {
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[0]).toContain('mutation updateFormQuestion');
         expect(mockCall[1]).toEqual({
-          formToken: 'form_token_123',
+          formToken: 'bbbbbbbb000000000000000000000123',
           questionId: 'question_123',
           question: {
             type: FormQuestionType.ShortText,
@@ -468,7 +468,7 @@ describe('FormQuestionsEditorTool', () => {
 
         const args: inputType = {
           action: FormQuestionActions.Update,
-          formToken: 'form_token_123',
+          formToken: 'bbbbbbbb000000000000000000000123',
           questionId: 'question_456',
           question: {
             type: FormQuestionType.Email,
@@ -512,7 +512,7 @@ describe('FormQuestionsEditorTool', () => {
 
         const args: inputType = {
           action: FormQuestionActions.Update,
-          formToken: 'form_token_123',
+          formToken: 'bbbbbbbb000000000000000000000123',
           questionId: 'question_789',
           question: {
             type: FormQuestionType.Date,
@@ -556,7 +556,7 @@ describe('FormQuestionsEditorTool', () => {
 
         const args: inputType = {
           action: FormQuestionActions.Update,
-          formToken: 'form_token_123',
+          formToken: 'bbbbbbbb000000000000000000000123',
           questionId: 'question_visible',
           question: {
             type: FormQuestionType.ShortText,
@@ -583,7 +583,7 @@ describe('FormQuestionsEditorTool', () => {
       it('should return error when questionId is missing', async () => {
         const args: inputType = {
           action: FormQuestionActions.Update,
-          formToken: 'form_token_123',
+          formToken: 'bbbbbbbb000000000000000000000123',
           // questionId is missing
           question: {
             type: FormQuestionType.ShortText,
@@ -600,7 +600,7 @@ describe('FormQuestionsEditorTool', () => {
       it('should return error when question is missing', async () => {
         const args: inputType = {
           action: FormQuestionActions.Update,
-          formToken: 'form_token_123',
+          formToken: 'bbbbbbbb000000000000000000000123',
           questionId: 'question_123',
           // question is missing
         };
@@ -619,7 +619,7 @@ describe('FormQuestionsEditorTool', () => {
 
         const args: inputType = {
           action: FormQuestionActions.Update,
-          formToken: 'form_token_123',
+          formToken: 'bbbbbbbb000000000000000000000123',
           questionId: 'question_123',
           question: {
             type: FormQuestionType.ShortText,
@@ -642,7 +642,7 @@ describe('FormQuestionsEditorTool', () => {
 
         const args: inputType = {
           action: FormQuestionActions.Update,
-          formToken: 'form_token_123',
+          formToken: 'bbbbbbbb000000000000000000000123',
           questionId: 'question_123',
           question: {
             type: FormQuestionType.ShortText,
@@ -673,7 +673,7 @@ describe('FormQuestionsEditorTool', () => {
 
         const args: inputType = {
           action: FormQuestionActions.Delete,
-          formToken: 'form_token_123',
+          formToken: 'bbbbbbbb000000000000000000000123',
           questionId: 'question_to_delete',
         };
 
@@ -689,7 +689,7 @@ describe('FormQuestionsEditorTool', () => {
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[0]).toContain('mutation deleteFormQuestion');
         expect(mockCall[1]).toEqual({
-          formToken: 'form_token_123',
+          formToken: 'bbbbbbbb000000000000000000000123',
           questionId: 'question_to_delete',
         });
       });
@@ -703,7 +703,7 @@ describe('FormQuestionsEditorTool', () => {
 
         const args: inputType = {
           action: FormQuestionActions.Delete,
-          formToken: 'form_token_456',
+          formToken: 'bbbbbbbb000000000000000000000456',
           questionId: 'another_question_id',
         };
 
@@ -724,7 +724,7 @@ describe('FormQuestionsEditorTool', () => {
       it('should return error when questionId is missing', async () => {
         const args: inputType = {
           action: FormQuestionActions.Delete,
-          formToken: 'form_token_123',
+          formToken: 'bbbbbbbb000000000000000000000123',
           // questionId is missing
         };
 
@@ -742,7 +742,7 @@ describe('FormQuestionsEditorTool', () => {
 
         const args: inputType = {
           action: FormQuestionActions.Delete,
-          formToken: 'form_token_123',
+          formToken: 'bbbbbbbb000000000000000000000123',
           questionId: 'question_to_delete',
         };
 
@@ -758,7 +758,7 @@ describe('FormQuestionsEditorTool', () => {
 
         const args: inputType = {
           action: FormQuestionActions.Delete,
-          formToken: 'form_token_123',
+          formToken: 'bbbbbbbb000000000000000000000123',
           questionId: 'question_restricted',
         };
 
@@ -777,7 +777,7 @@ describe('FormQuestionsEditorTool', () => {
 
         const args: inputType = {
           action: FormQuestionActions.Delete,
-          formToken: 'form_token_123',
+          formToken: 'bbbbbbbb000000000000000000000123',
           questionId: 'question_to_delete',
         };
 
@@ -797,7 +797,7 @@ describe('FormQuestionsEditorTool', () => {
     it('should return error for unknown action', async () => {
       const args: Omit<inputType, 'action'> & { action: string } = {
         action: 'unknown_action',
-        formToken: 'form_token_123',
+        formToken: 'bbbbbbbb000000000000000000000123',
       };
 
       const result = await callToolByNameRawAsync('form_questions_editor', args);
@@ -829,7 +829,7 @@ describe('FormQuestionsEditorTool', () => {
 
       const args: inputType = {
         action: FormQuestionActions.Create,
-        formToken: 'form_token_123',
+        formToken: 'bbbbbbbb000000000000000000000123',
         question: {
           type: FormQuestionType.MultiSelect,
           title: 'Select multiple options',
@@ -874,7 +874,7 @@ describe('FormQuestionsEditorTool', () => {
 
       const args: inputType = {
         action: FormQuestionActions.Create,
-        formToken: 'form_token_123',
+        formToken: 'bbbbbbbb000000000000000000000123',
         question: {
           type: FormQuestionType.Boolean,
           title: 'Agree to terms',
@@ -918,7 +918,7 @@ describe('FormQuestionsEditorTool', () => {
 
       const args: inputType = {
         action: FormQuestionActions.Create,
-        formToken: 'form_token_123',
+        formToken: 'bbbbbbbb000000000000000000000123',
         question: {
           type: FormQuestionType.Location,
           title: 'Your location',
@@ -961,7 +961,7 @@ describe('FormQuestionsEditorTool', () => {
 
       const args: inputType = {
         action: FormQuestionActions.Create,
-        formToken: 'form_token_123',
+        formToken: 'bbbbbbbb000000000000000000000123',
         question: {
           type: FormQuestionType.Link,
           title: 'Website URL',
@@ -1002,7 +1002,7 @@ describe('FormQuestionsEditorTool', () => {
 
       const args: inputType = {
         action: FormQuestionActions.Create,
-        formToken: 'form_token_123',
+        formToken: 'bbbbbbbb000000000000000000000123',
         question: {
           type: FormQuestionType.LongText,
           title: 'Tell us more',
@@ -1041,7 +1041,7 @@ describe('FormQuestionsEditorTool', () => {
 
       const args: inputType = {
         action: FormQuestionActions.Create,
-        formToken: 'form_token_123',
+        formToken: 'bbbbbbbb000000000000000000000123',
         question: {
           type: FormQuestionType.Number,
           title: 'Enter a number',
@@ -1077,7 +1077,7 @@ describe('FormQuestionsEditorTool', () => {
 
       const args: inputType = {
         action: FormQuestionActions.Create,
-        formToken: 'form_token_123',
+        formToken: 'bbbbbbbb000000000000000000000123',
         question: {
           type: FormQuestionType.ShortText,
           title: 'Other details',
@@ -1125,7 +1125,7 @@ describe('FormQuestionsEditorTool', () => {
 
       const args: inputType = {
         action: FormQuestionActions.Update,
-        formToken: 'form_token_123',
+        formToken: 'bbbbbbbb000000000000000000000123',
         questionId: 'question_123',
         question: {
           type: FormQuestionType.LongText,
@@ -1171,7 +1171,7 @@ describe('FormQuestionsEditorTool', () => {
 
       const args: inputType = {
         action: FormQuestionActions.Create,
-        formToken: 'form_token_123',
+        formToken: 'bbbbbbbb000000000000000000000123',
         question: {
           type: FormQuestionType.ShortText,
           title: 'Conditional question',
@@ -1214,7 +1214,7 @@ describe('FormQuestionsEditorTool', () => {
     it('should handle empty string questionId', async () => {
       const args: inputType = {
         action: FormQuestionActions.Delete,
-        formToken: 'form_token_123',
+        formToken: 'bbbbbbbb000000000000000000000123',
         questionId: '',
       };
 
@@ -1225,7 +1225,7 @@ describe('FormQuestionsEditorTool', () => {
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
 
-    it('should handle empty string formToken via schema validation', async () => {
+    it('should reject an empty string formToken without calling the API', async () => {
       const args: inputType = {
         action: FormQuestionActions.Create,
         formToken: '',
@@ -1237,15 +1237,30 @@ describe('FormQuestionsEditorTool', () => {
 
       const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-      // Empty string passes schema validation (it's a string), but fails at API level
-      expect(result.content[0].text).toContain('Failed to execute tool form_questions_editor');
-      expect(mocks.getMockRequest()).toHaveBeenCalled();
+      expect(result.content[0].text).toContain('formToken');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+
+    it('should reject a malformed formToken without calling the API', async () => {
+      const args: inputType = {
+        action: FormQuestionActions.Create,
+        formToken: '279015847',
+        question: {
+          type: FormQuestionType.ShortText,
+          title: 'Test',
+        },
+      };
+
+      const result = await callToolByNameRawAsync('form_questions_editor', args);
+
+      expect(result.content[0].text).toContain('is not a valid form token');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
 
     it('should handle question with empty title', async () => {
       const args: inputType = {
         action: FormQuestionActions.Create,
-        formToken: 'form_token_123',
+        formToken: 'bbbbbbbb000000000000000000000123',
         question: {
           type: FormQuestionType.ShortText,
           title: '',
@@ -1262,7 +1277,7 @@ describe('FormQuestionsEditorTool', () => {
     it('should handle whitespace-only title', async () => {
       const args: inputType = {
         action: FormQuestionActions.Create,
-        formToken: 'form_token_123',
+        formToken: 'bbbbbbbb000000000000000000000123',
         question: {
           type: FormQuestionType.ShortText,
           title: '   ',

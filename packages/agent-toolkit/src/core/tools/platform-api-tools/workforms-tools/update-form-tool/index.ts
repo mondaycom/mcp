@@ -2,6 +2,7 @@
 import { ToolInputType, ToolOutputType, ToolType } from '../../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../../base-monday-api-tool';
 import { FormActions, updateFormToolSchema } from './schema';
+import { resolveFormToken } from '../utils/form-token';
 import { UpdateFormToolHelpers } from '../utils/update-form-tool-helpers';
 export class UpdateFormTool extends BaseMondayApiTool<typeof updateFormToolSchema, never> {
   name = 'update_form';
@@ -16,7 +17,7 @@ export class UpdateFormTool extends BaseMondayApiTool<typeof updateFormToolSchem
   private helpers = new UpdateFormToolHelpers(() => this.mondayApi);
 
   getDescription(): string {
-    return 'Update a monday.com form. Use the action field to specify the operation. [REQUIRED PRECONDITION]: Call get_form first to read the current form state — you need it to resolve the formToken, and for actions that reference existing entities (updateQuestionOrder needs the question ids, deleteTag needs the tag id) or that overwrite existing settings (updateAppearance, updateAccessibility, updateFeatures, updateFormHeader).';
+    return 'Update a monday.com form. Use the action field to specify the operation. [REQUIRED PRECONDITION]: Call get_form first to read the current form state — you need it to confirm the formToken points at the intended form, and for actions that reference existing entities (updateQuestionOrder needs the question ids, deleteTag needs the tag id) or that overwrite existing settings (updateAppearance, updateAccessibility, updateFeatures, updateFormHeader).';
   }
 
   getInputSchema(): typeof updateFormToolSchema {
@@ -49,6 +50,14 @@ export class UpdateFormTool extends BaseMondayApiTool<typeof updateFormToolSchem
       };
     }
 
-    return await handler(input);
+    const resolution = await resolveFormToken(input.formToken);
+
+    if (!resolution.ok) {
+      return {
+        content: resolution.message,
+      };
+    }
+
+    return await handler({ ...input, formToken: resolution.token });
   }
 }

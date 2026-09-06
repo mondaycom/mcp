@@ -1,4 +1,3 @@
-import axios from 'axios';
 import {
   CreateFormSubmissionMutation,
   CreateFormSubmissionMutationVariables,
@@ -6,6 +5,7 @@ import {
 import { ToolInputType, ToolOutputType, ToolType } from '../../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../../base-monday-api-tool';
 import { rethrowWithContext } from '../../../../../utils';
+import { resolveFormToken } from '../utils/form-token';
 import { createSubmissionMutationDev } from './create-submission-tool.graphql.dev';
 import { createSubmissionToolSchema } from './schema';
 
@@ -28,7 +28,7 @@ export class CreateSubmissionTool extends BaseMondayApiTool<typeof createSubmiss
       '- Take note of pages and question order to present questions in the correct sequence.\n' +
       'Gather all answers upfront before calling this tool — do not submit one question at a time. ' +
       'Accepts a bare form token, a full WorkForm URL (e.g. https://forms.monday.com/forms/{form_token}?r=use1), or a shortened wkf.ms URL ' +
-      '(e.g. https://wkf.ms/4tqP28t) — shortened URLs are automatically resolved by following the redirect. ' +
+      '(e.g. https://wkf.ms/exampleAbc) — shortened URLs are automatically resolved by following the redirect. ' +
       'Returns the submission ID.'
     );
   }
@@ -37,41 +37,18 @@ export class CreateSubmissionTool extends BaseMondayApiTool<typeof createSubmiss
     return createSubmissionToolSchema;
   }
 
-  private extractTokenFromUrl(url: string): string | null {
-    const match = url.match(/\/forms\/([^/?]+)/);
-    return match ? match[1] : null;
-  }
-
-  private async resolveFormToken(formTokenOrUrl: string): Promise<string | null> {
-    // Shortened wkf.ms URL — follow the redirect to get the full URL
-    if (formTokenOrUrl.includes('wkf.ms')) {
-      const response = await axios.head(formTokenOrUrl, { maxRedirects: 0, validateStatus: (s) => s < 400 });
-      const location = response.headers['location'];
-      if (!location) {
-        return null;
-      }
-      return this.extractTokenFromUrl(location);
-    }
-    // Full URL with /forms/<token>
-    if (formTokenOrUrl.startsWith('http://') || formTokenOrUrl.startsWith('https://')) {
-      return this.extractTokenFromUrl(formTokenOrUrl);
-    }
-    // Bare token
-    return formTokenOrUrl;
-  }
-
   protected async executeInternal(
     input: ToolInputType<typeof createSubmissionToolSchema>,
   ): Promise<ToolOutputType<never>> {
-    const formToken = await this.resolveFormToken(input.form_token);
+    const resolution = await resolveFormToken(input.form_token);
 
-    if (!formToken) {
+    if (!resolution.ok) {
       return {
-        content:
-          `Could not resolve a WorkForm token from "${input.form_token}". ` +
-          `Please provide a valid WorkForm token or full WorkForm URL (e.g. https://forms.monday.com/forms/abc123).`,
+        content: resolution.message,
       };
     }
+
+    const formToken = resolution.token;
 
     const variables: CreateFormSubmissionMutationVariables = {
       form_token: formToken,
