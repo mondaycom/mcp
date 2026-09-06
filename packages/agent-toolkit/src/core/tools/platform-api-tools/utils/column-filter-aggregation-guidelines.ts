@@ -1,6 +1,13 @@
 import { AggregateSelectFunctionName } from '../../../../monday-graphql/generated/graphql/graphql';
 
 export const filteringGuidelinesByColumnType: Record<string, string> = {
+  group: `Filters items by the board group they belong to. The columnId is the literal string "group" - a group id such as "group_mm6wsvcc" is NEVER a valid columnId. For filtering by group id, use any_of or not_any_of. Use an array of group ids, as returned in an item's group.id or by get_board_info.
+EXAMPLES:
+  ✅ Correct: {"columnId": "group", "compareValue": ["group_mm6wsvcc"], "operator": "any_of"} // group id goes in compareValue
+  ✅ Correct: {"columnId": "group", "compareValue": ["group_mm6wsvcc", "group_mm4w1e0n"], "operator": "any_of"} // several groups
+  ❌ Wrong: {"columnId": "group_mm6wsvcc", "compareValue": "group_mm6wsvcc"} // group id used as the columnId
+  ❌ Wrong: {"columnId": "group", "compareValue": "Backlog", "operator": "any_of"} // group title instead of group id`,
+
   last_updated: `Supported operators: any_of, not_any_of. CompareValue should be either:
   - "TODAY" - requires to also specify compareAttribute: "UPDATED_AT"
   - "YESTERDAY" - requires to also specify compareAttribute: "UPDATED_AT"
