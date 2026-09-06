@@ -1,5 +1,24 @@
 # Changelog
 
+## 5.68.0
+
+### form tools — validate and normalize the form token locally
+
+`formToken` was declared as a bare `z.string()` with no description and no format check, so any string reached the API and came back as `InvalidFormToken` — a pure format rejection thrown by the workforms `/^[a-f0-9]{32}$/i` middleware before any lookup. Over a two-week production window this was the largest single error bucket for `get_form` (1,285 calls) and it hit every MCP client. Three causes, all self-inflicted: no format constraint on the input, a tool description whose worked example (`abc123def456ghi789`) was itself invalid and which called the token "alphanumeric", and a response that returns a numeric `id` immediately before `token`.
+
+- New shared resolver `workforms-tools/utils/form-token.ts` is the single source of truth for the token format, normalization, and parameter description. Applied to `get_form`, `update_form`, `form_questions_editor`, and `create_form_submission`, replacing the private copy that only `create_form_submission` had
+- A full form URL (`https://forms.monday.com/forms/{token}?r=use1`) or a shortened `wkf.ms` link is now accepted and resolved to the token, following the redirect for short links. 31% of the observed failures were URL-shaped and now succeed
+- Anything that cannot be a token is rejected locally, with no network round-trip, and the error names the expected format and where to get a real token
+- Tool descriptions no longer teach an invalid example, and `update_form` no longer says to call `get_form` "to resolve the formToken" — that was circular, since `get_form` needs the token as input
+
+### get_board_info — expose the form token and filter views by type
+
+Nothing in the toolkit could produce a form token: `view_specific_data_str` is the only GraphQL field that carries one, and it was not selected. Agents had no way to obtain a token at all, which is why the majority of the failures above were bare guesses at board ids, view ids, and Bitly slugs.
+
+- Form views now include `view_specific_data` — `{ token, disabled, region }` — parsed into a real object rather than a JSON string. Non-form views omit the key entirely instead of returning an empty object, so the payload cost is zero for every other view type
+- New `filters.views.type` narrows the response to a single view type. `{"type": "FormBoardView", "only": true}` reaches a form token from a board id alone, with no view id required, and avoids downloading every view's `settings`
+- `get_form` documents this as a `[REQUIRED PRECONDITION]`, following the same convention as `create_column` and `get_column_type_info`
+
 ## 5.67.0
 
 ### get_user_context — include relevant docs

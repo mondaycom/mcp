@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { GraphQLDescriptions } from '../workforms.consts';
+import { FORM_TOKEN_DESCRIPTION } from '../utils/form-token';
 import { FormQuestionActions } from '../workforms.types';
 import {
   ConditionOperator,
@@ -111,7 +112,7 @@ const questionSchema = z.object({
 
 export const formQuestionsEditorToolSchema = {
   action: z.nativeEnum(FormQuestionActions).describe(GraphQLDescriptions.question.actions.type),
-  formToken: z.string(),
+  formToken: z.string().min(1).describe(FORM_TOKEN_DESCRIPTION),
   questionId: z.string().describe(GraphQLDescriptions.commonArgs.questionId).optional(),
   question: questionSchema.describe(GraphQLDescriptions.question.actions.question).optional(),
 };

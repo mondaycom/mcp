@@ -26,7 +26,7 @@ describe('UpdateFormTool', () => {
         const activateFormResponse = {
           activate_form: {
             id: 'form_123',
-            token: 'token_123',
+            token: 'aaaaaaaa000000000000000000000123',
             active: true,
           },
         };
@@ -35,7 +35,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.activate,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
         };
 
         const result = await callToolByNameRawAsync('update_form', args);
@@ -46,7 +46,7 @@ describe('UpdateFormTool', () => {
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[0]).toContain('mutation activateForm');
         expect(mockCall[1]).toEqual({
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
         });
       });
     });
@@ -58,7 +58,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.activate,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
         };
 
         const result = await callToolByNameRawAsync('update_form', args);
@@ -75,7 +75,7 @@ describe('UpdateFormTool', () => {
         const deactivateFormResponse = {
           deactivate_form: {
             id: 'form_123',
-            token: 'token_123',
+            token: 'aaaaaaaa000000000000000000000123',
             active: false,
           },
         };
@@ -84,7 +84,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.deactivate,
-          formToken: 'token_456',
+          formToken: 'aaaaaaaa000000000000000000000456',
         };
 
         const result = await callToolByNameRawAsync('update_form', args);
@@ -96,7 +96,7 @@ describe('UpdateFormTool', () => {
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[0]).toContain('mutation deactivateForm');
         expect(mockCall[1]).toEqual({
-          formToken: 'token_456',
+          formToken: 'aaaaaaaa000000000000000000000456',
         });
       });
     });
@@ -108,7 +108,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.deactivate,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
         };
 
         const result = await callToolByNameRawAsync('update_form', args);
@@ -132,7 +132,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.shortenFormUrl,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
         };
 
         const result = await callToolByNameRawAsync('update_form', args);
@@ -144,7 +144,7 @@ describe('UpdateFormTool', () => {
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[0]).toContain('mutation shortenFormUrl');
         expect(mockCall[1]).toEqual({
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
         });
       });
     });
@@ -156,7 +156,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.shortenFormUrl,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
         };
 
         const result = await callToolByNameRawAsync('update_form', args);
@@ -182,7 +182,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.setFormPassword,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           formPassword: 'securePassword123',
         };
 
@@ -195,7 +195,7 @@ describe('UpdateFormTool', () => {
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[0]).toContain('mutation setFormPassword');
         expect(mockCall[1]).toEqual({
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           input: {
             password: 'securePassword123',
           },
@@ -215,7 +215,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.setFormPassword,
-          formToken: 'token_456',
+          formToken: 'aaaaaaaa000000000000000000000456',
           formPassword: 'newPassword456',
         };
 
@@ -233,7 +233,7 @@ describe('UpdateFormTool', () => {
       it('should return error when formPassword is missing', async () => {
         const args: inputType = {
           action: FormActions.setFormPassword,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           // formPassword is missing
         };
 
@@ -253,7 +253,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.setFormPassword,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           formPassword: 'weak',
         };
 
@@ -280,7 +280,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.createTag,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           tag: {
             name: 'utm_source',
           },
@@ -297,7 +297,7 @@ describe('UpdateFormTool', () => {
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[0]).toContain('mutation createFormTag');
         expect(mockCall[1]).toEqual({
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           tag: {
             name: 'utm_source',
           },
@@ -309,7 +309,7 @@ describe('UpdateFormTool', () => {
       it('should return error when tag is missing', async () => {
         const args: inputType = {
           action: FormActions.createTag,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           // tag is missing
         };
 
@@ -322,7 +322,7 @@ describe('UpdateFormTool', () => {
       it('should return error when tag name is missing', async () => {
         const args: inputType = {
           action: FormActions.createTag,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           tag: {
             // name is missing
             columnId: 'column_456',
@@ -343,7 +343,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.createTag,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           tag: {
             name: 'existing_tag',
           },
@@ -368,7 +368,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.deleteTag,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           tag: {
             id: 'tag_to_delete',
           },
@@ -383,7 +383,7 @@ describe('UpdateFormTool', () => {
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[0]).toContain('mutation deleteFormTag');
         expect(mockCall[1]).toEqual({
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           tagId: 'tag_to_delete',
         });
       });
@@ -397,7 +397,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.deleteTag,
-          formToken: 'token_456',
+          formToken: 'aaaaaaaa000000000000000000000456',
           tag: {
             id: 'another_tag_id',
           },
@@ -417,7 +417,7 @@ describe('UpdateFormTool', () => {
       it('should return error when tag is missing', async () => {
         const args: inputType = {
           action: FormActions.deleteTag,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           // tag is missing
         };
 
@@ -430,7 +430,7 @@ describe('UpdateFormTool', () => {
       it('should return error when tag id is missing', async () => {
         const args: inputType = {
           action: FormActions.deleteTag,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           tag: {
             // id is missing
           },
@@ -450,7 +450,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.deleteTag,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           tag: {
             id: 'nonexistent_tag',
           },
@@ -502,7 +502,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.updateAppearance,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           form: {
             appearance: {
               background: {
@@ -542,7 +542,7 @@ describe('UpdateFormTool', () => {
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[0]).toContain('mutation updateFormAppearance');
-        expect(mockCall[1].formToken).toBe('token_123');
+        expect(mockCall[1].formToken).toBe('aaaaaaaa000000000000000000000123');
         expect(mockCall[1].appearance.primaryColor).toBe('#007bff');
       });
 
@@ -560,7 +560,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.updateAppearance,
-          formToken: 'token_456',
+          formToken: 'aaaaaaaa000000000000000000000456',
           form: {
             appearance: {
               primaryColor: '#ff0000',
@@ -595,7 +595,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.updateAppearance,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           form: {
             appearance: {
               background: {
@@ -621,7 +621,7 @@ describe('UpdateFormTool', () => {
       it('should return error when appearance is missing', async () => {
         const args: inputType = {
           action: FormActions.updateAppearance,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           form: {
             // appearance is missing
           },
@@ -638,7 +638,7 @@ describe('UpdateFormTool', () => {
       it('should return error when form is missing', async () => {
         const args: inputType = {
           action: FormActions.updateAppearance,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           // form is missing
         };
 
@@ -658,7 +658,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.updateAppearance,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           form: {
             appearance: {
               primaryColor: 'invalid_color',
@@ -690,7 +690,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.updateAccessibility,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           form: {
             accessibility: {
               language: 'en',
@@ -709,7 +709,7 @@ describe('UpdateFormTool', () => {
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[0]).toContain('mutation updateFormAccessibility');
         expect(mockCall[1]).toEqual({
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           accessibility: {
             language: 'en',
             logoAltText: 'Company Logo',
@@ -730,7 +730,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.updateAccessibility,
-          formToken: 'token_456',
+          formToken: 'aaaaaaaa000000000000000000000456',
           form: {
             accessibility: {
               language: 'es',
@@ -752,7 +752,7 @@ describe('UpdateFormTool', () => {
       it('should return error when accessibility is missing', async () => {
         const args: inputType = {
           action: FormActions.updateAccessibility,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           form: {
             // accessibility is missing
           },
@@ -769,7 +769,7 @@ describe('UpdateFormTool', () => {
       it('should return error when form is missing', async () => {
         const args: inputType = {
           action: FormActions.updateAccessibility,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           // form is missing
         };
 
@@ -789,7 +789,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.updateAccessibility,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           form: {
             accessibility: {
               language: 'invalid_lang',
@@ -831,7 +831,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.updateFeatures,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           form: {
             features: {
               afterSubmissionView: {
@@ -876,7 +876,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.updateFeatures,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           form: {
             features: {
               closeDate: {
@@ -911,7 +911,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.updateFeatures,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           form: {
             features: {
               password: {
@@ -945,7 +945,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.updateFeatures,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           form: {
             features: {
               requireLogin: {
@@ -981,7 +981,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.updateFeatures,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           form: {
             features: {
               responseLimit: {
@@ -1021,7 +1021,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.updateFeatures,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           form: {
             features: {
               preSubmissionView: {
@@ -1063,7 +1063,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.updateFeatures,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           form: {
             features: {
               monday: {
@@ -1098,7 +1098,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.updateFeatures,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           form: {
             features: {
               reCaptchaChallenge: true,
@@ -1127,7 +1127,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.updateFeatures,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           form: {
             features: {
               ai_translate: { enabled: true },
@@ -1156,7 +1156,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.updateFeatures,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           form: {
             features: {
               monday: { allow_create_item: true },
@@ -1183,7 +1183,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.updateFeatures,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           form: {
             features: {
               is_anonymous: true,
@@ -1213,7 +1213,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.updateFeatures,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           form: {
             features: {
               is_anonymous: false,
@@ -1234,7 +1234,7 @@ describe('UpdateFormTool', () => {
       it('should return error when features is missing', async () => {
         const args: inputType = {
           action: FormActions.updateFeatures,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           form: {
             // features is missing
           },
@@ -1251,7 +1251,7 @@ describe('UpdateFormTool', () => {
       it('should return error when form is missing', async () => {
         const args: inputType = {
           action: FormActions.updateFeatures,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           // form is missing
         };
 
@@ -1271,7 +1271,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.updateFeatures,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           form: {
             features: {
               responseLimit: {
@@ -1303,7 +1303,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.updateQuestionOrder,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           form: {
             questions: [{ id: 'question_3' }, { id: 'question_1' }, { id: 'question_2' }],
           },
@@ -1319,7 +1319,7 @@ describe('UpdateFormTool', () => {
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[0]).toContain('mutation updateFormQuestionOrder');
         expect(mockCall[1]).toEqual({
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           questions: [{ id: 'question_3' }, { id: 'question_1' }, { id: 'question_2' }],
         });
       });
@@ -1335,7 +1335,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.updateQuestionOrder,
-          formToken: 'token_456',
+          formToken: 'aaaaaaaa000000000000000000000456',
           form: {
             questions: [{ id: 'q_a' }, { id: 'q_b' }, { id: 'q_c' }, { id: 'q_d' }],
           },
@@ -1355,7 +1355,7 @@ describe('UpdateFormTool', () => {
       it('should return error when questions is missing', async () => {
         const args: inputType = {
           action: FormActions.updateQuestionOrder,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           form: {
             // questions is missing
           },
@@ -1372,7 +1372,7 @@ describe('UpdateFormTool', () => {
       it('should return error when form is missing', async () => {
         const args: inputType = {
           action: FormActions.updateQuestionOrder,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           // form is missing
         };
 
@@ -1392,7 +1392,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.updateQuestionOrder,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           form: {
             questions: [{ id: 'nonexistent_question' }],
           },
@@ -1412,7 +1412,7 @@ describe('UpdateFormTool', () => {
         const updateFormHeaderResponse = {
           update_form: {
             id: 'form_123',
-            token: 'token_123',
+            token: 'aaaaaaaa000000000000000000000123',
             title: 'New Form Title',
             description: 'New Form Description',
           },
@@ -1422,7 +1422,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.updateFormHeader,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           form: {
             title: 'New Form Title',
             description: 'New Form Description',
@@ -1439,7 +1439,7 @@ describe('UpdateFormTool', () => {
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[0]).toContain('mutation updateFormHeader');
         expect(mockCall[1]).toEqual({
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           title: 'New Form Title',
           description: 'New Form Description',
         });
@@ -1449,7 +1449,7 @@ describe('UpdateFormTool', () => {
         const updateFormHeaderResponse = {
           update_form: {
             id: 'form_456',
-            token: 'token_456',
+            token: 'aaaaaaaa000000000000000000000456',
             title: 'Updated Title',
             description: null,
           },
@@ -1459,7 +1459,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.updateFormHeader,
-          formToken: 'token_456',
+          formToken: 'aaaaaaaa000000000000000000000456',
           form: {
             title: 'Updated Title',
           },
@@ -1478,7 +1478,7 @@ describe('UpdateFormTool', () => {
         const updateFormHeaderResponse = {
           update_form: {
             id: 'form_789',
-            token: 'token_789',
+            token: 'aaaaaaaa000000000000000000000789',
             title: 'Existing Title',
             description: 'Updated Description',
           },
@@ -1488,7 +1488,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.updateFormHeader,
-          formToken: 'token_789',
+          formToken: 'aaaaaaaa000000000000000000000789',
           form: {
             description: 'Updated Description',
           },
@@ -1508,7 +1508,7 @@ describe('UpdateFormTool', () => {
       it('should return error when both title and description are missing', async () => {
         const args: inputType = {
           action: FormActions.updateFormHeader,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           form: {
             // both title and description are missing
           },
@@ -1525,7 +1525,7 @@ describe('UpdateFormTool', () => {
       it('should return error when form is missing', async () => {
         const args: inputType = {
           action: FormActions.updateFormHeader,
-          formToken: 'token_123',
+          formToken: 'aaaaaaaa000000000000000000000123',
           // form is missing
         };
 
@@ -1545,7 +1545,7 @@ describe('UpdateFormTool', () => {
 
         const args: inputType = {
           action: FormActions.updateFormHeader,
-          formToken: 'nonexistent_token',
+          formToken: 'cccccccc00000000000000000000dead',
           form: {
             title: 'New Title',
           },
@@ -1563,7 +1563,7 @@ describe('UpdateFormTool', () => {
     it('should return error for unknown action', async () => {
       const args: Omit<inputType, 'action'> & { action: string } = {
         action: 'unknown_action',
-        formToken: 'token_123',
+        formToken: 'aaaaaaaa000000000000000000000123',
       };
 
       const result = await callToolByNameRawAsync('update_form', args);
@@ -1591,7 +1591,7 @@ describe('UpdateFormTool', () => {
     it('should handle missing action via schema validation', async () => {
       const args: Partial<inputType> = {
         // action is missing
-        formToken: 'token_123',
+        formToken: 'aaaaaaaa000000000000000000000123',
       };
 
       const result = await callToolByNameRawAsync('update_form', args);
@@ -1604,9 +1604,7 @@ describe('UpdateFormTool', () => {
   });
 
   describe('Edge Cases', () => {
-    it('should handle empty string formToken', async () => {
-      mocks.setError('Invalid form token');
-
+    it('should reject an empty string formToken without calling the API', async () => {
       const args: inputType = {
         action: FormActions.activate,
         formToken: '',
@@ -1614,15 +1612,40 @@ describe('UpdateFormTool', () => {
 
       const result = await callToolByNameRawAsync('update_form', args);
 
-      // Empty string passes schema validation (it's a string), but fails at API level
-      expect(result.content[0].text).toContain('Failed to execute tool update_form');
-      expect(mocks.getMockRequest()).toHaveBeenCalled();
+      expect(result.content[0].text).toContain('formToken');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+
+    it('should reject a malformed formToken without calling the API', async () => {
+      const args: inputType = {
+        action: FormActions.activate,
+        formToken: '279015847',
+      };
+
+      const result = await callToolByNameRawAsync('update_form', args);
+
+      expect(result.content[0].text).toContain('is not a valid form token');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+
+    it('should extract the formToken from a full form URL', async () => {
+      mocks.setResponse({ activate_form: true });
+
+      const args: inputType = {
+        action: FormActions.activate,
+        formToken: 'https://forms.monday.com/forms/aaaaaaaa000000000000000000000123?r=use1',
+      };
+
+      await callToolByNameRawAsync('update_form', args);
+
+      const mockCall = mocks.getMockRequest().mock.calls[0];
+      expect(mockCall[1]).toMatchObject({ formToken: 'aaaaaaaa000000000000000000000123' });
     });
 
     it('should handle empty string formPassword', async () => {
       const args: inputType = {
         action: FormActions.setFormPassword,
-        formToken: 'token_123',
+        formToken: 'aaaaaaaa000000000000000000000123',
         formPassword: '',
       };
 
@@ -1638,7 +1661,7 @@ describe('UpdateFormTool', () => {
     it('should handle empty tag object', async () => {
       const args: inputType = {
         action: FormActions.createTag,
-        formToken: 'token_123',
+        formToken: 'aaaaaaaa000000000000000000000123',
         tag: {},
       };
 
@@ -1651,7 +1674,7 @@ describe('UpdateFormTool', () => {
     it('should handle empty form object for updateAppearance', async () => {
       const args: inputType = {
         action: FormActions.updateAppearance,
-        formToken: 'token_123',
+        formToken: 'aaaaaaaa000000000000000000000123',
         form: {},
       };
 
@@ -1677,7 +1700,7 @@ describe('UpdateFormTool', () => {
 
       const args: inputType = {
         action: FormActions.updateAppearance,
-        formToken: 'token_123',
+        formToken: 'aaaaaaaa000000000000000000000123',
         form: {
           appearance: {
             primaryColor: undefined,

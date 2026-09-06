@@ -8,8 +8,10 @@ jest.mock('axios');
 
 type inputType = z.objectInputType<typeof createSubmissionToolSchema, ZodTypeAny>;
 
+const VALID_TOKEN = 'aaaaaaaa000000000000000000000123';
+
 const BASE_ARGS: inputType = {
-  form_token: 'test_form_token',
+  form_token: VALID_TOKEN,
   answers: [{ question_id: 'q1', short_text: 'Hello' }],
   form_timezone_offset: 0,
 };
@@ -37,7 +39,7 @@ describe('CreateSubmissionTool', () => {
       await callToolByNameRawAsync('create_form_submission', BASE_ARGS);
 
       const mockCall = mocks.getMockRequest().mock.calls[0];
-      expect(mockCall[1]).toMatchObject({ form_token: 'test_form_token' });
+      expect(mockCall[1]).toMatchObject({ form_token: VALID_TOKEN });
     });
 
     it('should extract the token from a full form URL', async () => {
@@ -45,34 +47,34 @@ describe('CreateSubmissionTool', () => {
 
       const args: inputType = {
         ...BASE_ARGS,
-        form_token: 'https://forms.monday.com/forms/test_form_token?r=use1&foo=bar',
+        form_token: `https://forms.monday.com/forms/${VALID_TOKEN}?r=use1&foo=bar`,
       };
 
       await callToolByNameRawAsync('create_form_submission', args);
 
       const mockCall = mocks.getMockRequest().mock.calls[0];
-      expect(mockCall[1]).toMatchObject({ form_token: 'test_form_token' });
+      expect(mockCall[1]).toMatchObject({ form_token: VALID_TOKEN });
     });
 
     it('should resolve a wkf.ms shortened URL and extract the token', async () => {
       mockAxiosHead.mockResolvedValue({
-        headers: { location: 'https://forms.monday.com/forms/test_form_token?r=use1' },
+        headers: { location: `https://forms.monday.com/forms/${VALID_TOKEN}?r=use1` },
       });
       mocks.setResponse({ create_form_submission: { id: 'sub_1' } });
 
       const args: inputType = {
         ...BASE_ARGS,
-        form_token: 'https://wkf.ms/4tqP28t',
+        form_token: 'https://wkf.ms/exampleAbc',
       };
 
       await callToolByNameRawAsync('create_form_submission', args);
 
       expect(mockAxiosHead).toHaveBeenCalledWith(
-        'https://wkf.ms/4tqP28t',
+        'https://wkf.ms/exampleAbc',
         expect.objectContaining({ maxRedirects: 0 }),
       );
       const mockCall = mocks.getMockRequest().mock.calls[0];
-      expect(mockCall[1]).toMatchObject({ form_token: 'test_form_token' });
+      expect(mockCall[1]).toMatchObject({ form_token: VALID_TOKEN });
     });
 
     it('should return an error when wkf.ms redirect does not resolve to a form URL', async () => {
@@ -80,12 +82,12 @@ describe('CreateSubmissionTool', () => {
 
       const args: inputType = {
         ...BASE_ARGS,
-        form_token: 'https://wkf.ms/4tqP28t',
+        form_token: 'https://wkf.ms/exampleAbc',
       };
 
       const result = await callToolByNameRawAsync('create_form_submission', args);
 
-      expect(result.content[0].text).toContain('Could not resolve a WorkForm token');
+      expect(result.content[0].text).toContain('is not a valid form token');
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
 
@@ -97,7 +99,7 @@ describe('CreateSubmissionTool', () => {
 
       const result = await callToolByNameRawAsync('create_form_submission', args);
 
-      expect(result.content[0].text).toContain('Could not resolve a WorkForm token');
+      expect(result.content[0].text).toContain('is not a valid form token');
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
   });

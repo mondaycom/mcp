@@ -304,6 +304,84 @@ describe('formatBoardInfoAsJson - views', () => {
   });
 });
 
+describe('formatBoardInfoAsJson - view_specific_data', () => {
+  const viewWithSpecificData = (raw: string | null | undefined) =>
+    ({
+      id: '123',
+      views: [
+        {
+          id: 'view_1',
+          name: 'Contact Form',
+          type: 'FormBoardView',
+          settings: {},
+          filter: null,
+          sort: [],
+          view_specific_data_str: raw,
+        },
+      ],
+    }) as unknown as BoardInfoData;
+
+  it('parses a form view token into a structured view_specific_data object', () => {
+    const raw = JSON.stringify({ token: 'aaaaaaaa000000000000000000000123', disabled: false, region: 'use1' });
+
+    const result = formatBoardInfoAsJson(viewWithSpecificData(raw), null) as any;
+
+    expect(result.board.views[0].view_specific_data).toEqual({
+      token: 'aaaaaaaa000000000000000000000123',
+      disabled: false,
+      region: 'use1',
+    });
+  });
+
+  it('never exposes the stringified form of the field', () => {
+    const raw = JSON.stringify({ token: 'aaaaaaaa000000000000000000000123', disabled: false, region: 'use1' });
+
+    const result = formatBoardInfoAsJson(viewWithSpecificData(raw), null) as any;
+
+    expect(result.board.views[0]).not.toHaveProperty('view_specific_data_str');
+  });
+
+  it('omits view_specific_data for non-form views, which the API returns as "{}"', () => {
+    const result = formatBoardInfoAsJson(viewWithSpecificData('{}'), null) as any;
+
+    expect(result.board.views[0]).not.toHaveProperty('view_specific_data');
+    expect(result.board.views[0].id).toBe('view_1');
+  });
+
+  it.each([
+    ['unparseable json', 'not json at all'],
+    ['a json array', '[]'],
+    ['a json null', 'null'],
+    ['an empty string', ''],
+    ['a missing field', undefined],
+  ])('omits view_specific_data for %s', (_label, raw) => {
+    const result = formatBoardInfoAsJson(viewWithSpecificData(raw), null) as any;
+
+    expect(result.board.views[0]).not.toHaveProperty('view_specific_data');
+  });
+
+  it('preserves the other view fields alongside the parsed data', () => {
+    const raw = JSON.stringify({ token: 'aaaaaaaa000000000000000000000123' });
+
+    const result = formatBoardInfoAsJson(viewWithSpecificData(raw), null) as any;
+
+    expect(result.board.views[0]).toMatchObject({
+      id: 'view_1',
+      name: 'Contact Form',
+      type: 'FormBoardView',
+      filter: null,
+    });
+  });
+
+  it('keeps null view entries as null', () => {
+    const board = { id: '123', views: [null] } as unknown as BoardInfoData;
+
+    const result = formatBoardInfoAsJson(board, null) as any;
+
+    expect(result.board.views).toEqual([null]);
+  });
+});
+
 describe('normalizeViewName / resolveViewIdsByName', () => {
   it('normalizes case, trim, and escaped ampersands', () => {
     expect(normalizeViewName('  P\\&C Shopping  ')).toBe('p&c shopping');
@@ -388,6 +466,44 @@ describe('GetBoardInfoTool filtering', () => {
       viewIds: ['view_1'],
       includeColumns: true,
       includeViews: true,
+    });
+  });
+
+  it('passes filters.views.type through without needing any view id', async () => {
+    mocks.setResponse({ boards: [boardPayload] });
+
+    await callToolByNameRawAsync('get_board_info', {
+      boardId: 123,
+      filters: {
+        views: { type: 'FormBoardView', only: true },
+      },
+    });
+
+    expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+    expect(mocks.getMockRequest().mock.calls[0][1]).toEqual({
+      boardId: '123',
+      columnIds: undefined,
+      viewIds: undefined,
+      viewType: 'FormBoardView',
+      includeColumns: false,
+      includeViews: true,
+    });
+  });
+
+  it('drops the view type filter when the views section is excluded', async () => {
+    mocks.setResponse({ boards: [boardPayload] });
+
+    await callToolByNameRawAsync('get_board_info', {
+      boardId: 123,
+      filters: {
+        views: { type: 'FormBoardView' },
+        columns: { only: true },
+      },
+    });
+
+    expect(mocks.getMockRequest().mock.calls[0][1]).toMatchObject({
+      viewType: undefined,
+      includeViews: false,
     });
   });
 
