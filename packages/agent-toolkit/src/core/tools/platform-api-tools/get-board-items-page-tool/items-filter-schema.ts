@@ -16,7 +16,11 @@ import {
 export const filterRulesSchema = z
   .array(
     z.object({
-      columnId: z.string().describe('The id of the column to filter by'),
+      columnId: z
+        .string()
+        .describe(
+          'The id of the column to filter by. One non-column id is also accepted: "group", which filters by board group and takes the group id (e.g. "group_mm6wsvcc") as its compareValue. A group id is never a valid columnId itself.',
+        ),
       compareAttribute: z
         .string()
         .optional()

@@ -1,5 +1,19 @@
 # Changelog
 
+## 5.68.0
+
+### Make the "group" filter column discoverable
+
+Filtering items by board group has always worked - `filters: [{"columnId": "group", "compareValue": ["group_mm6wsvcc"]}]` - but it was documented nowhere: not in the tool description, not in the input schema, and `get_board_info` does not return `group` among a board's columns. Models could only get it right from prior knowledge of the monday API.
+
+This produced 21% of `get_board_items_page`'s `ResourceNotFoundException` errors across 191 accounts: `includeGroup` hands the model each item's `group.id`, and with no documented way to filter on it, models put the group id in `filters[].columnId` and got "Column not found". In 81% of those cases the model then abandoned filtering and paged through the whole board.
+
+Descriptions only, no filtering behavior or schema-shape change:
+
+- `get_board_items_page` description gains a GROUP FILTERING section with the exact filter rule to use, and states that a group id is never a valid `columnId`.
+- `filters[].columnId` states that `group` is accepted alongside real board column ids.
+- `get_column_type_info` returns filter guidelines for `columnType: "group"`, which previously returned `filter: null` even though `group` is a member of the column-type enum.
+
 ## 5.67.0
 
 ### get_user_context — include relevant docs
