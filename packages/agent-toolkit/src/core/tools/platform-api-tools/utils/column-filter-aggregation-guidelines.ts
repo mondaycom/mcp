@@ -23,7 +23,8 @@ EXAMPLES:
   ✅ Correct: {"columnId": "__last_updated__", "compareValue": ["DAYS", 7], "operator": "within_the_last", "compareAttribute": "UPDATED_AT"} // updated in the last 7 days
   ❌ Wrong: {"columnId": "last_updated", "compareValue": ["TODAY"], "operator": "any_of", "compareAttribute": "UPDATED_AT"} // missing the underscores around last_updated
   ❌ Wrong: {"columnId": "__last_updated__", "compareValue": ["TODAY"], "operator": "any_of"} // missing required compareAttribute
-  ❌ Wrong: {"columnId": "__last_updated__", "compareValue": "TODAY", "operator": "any_of", "compareAttribute": "UPDATED_AT"} // not using array for any_of operator`,
+  ❌ Wrong: {"columnId": "__last_updated__", "compareValue": "TODAY", "operator": "any_of", "compareAttribute": "UPDATED_AT"} // not using array for any_of operator
+  ❌ Wrong: {"columnId": "__last_updated__", "compareValue": ["DAYS", 7], "operator": "within_the_last"} // within_the_last also requires compareAttribute: "UPDATED_AT"`,
 
   creation_log: `The columnId is the literal string "__creation_log__", with two underscores before and after. Supported operators: any_of, not_any_of, within_the_last. With any_of and not_any_of, compareValue should be either:
   - "TODAY" - requires to also specify compareAttribute: "CREATED_AT"
@@ -38,7 +39,8 @@ EXAMPLES:
   ✅ Correct: {"columnId": "__creation_log__", "compareValue": ["THIS_WEEK"], "operator": "not_any_of", "compareAttribute": "CREATED_AT"} // items not created this week
   ✅ Correct: {"columnId": "__creation_log__", "compareValue": ["DAYS", 30], "operator": "within_the_last", "compareAttribute": "CREATED_AT"} // created in the last 30 days
   ❌ Wrong: {"columnId": "creation_log", "compareValue": ["TODAY"], "operator": "any_of", "compareAttribute": "CREATED_AT"} // missing the underscores around creation_log
-  ❌ Wrong: {"columnId": "__creation_log__", "compareValue": ["TODAY"], "operator": "any_of"} // missing required compareAttribute`,
+  ❌ Wrong: {"columnId": "__creation_log__", "compareValue": ["TODAY"], "operator": "any_of"} // missing required compareAttribute
+  ❌ Wrong: {"columnId": "__creation_log__", "compareValue": ["DAYS", 30], "operator": "within_the_last"} // within_the_last also requires compareAttribute: "CREATED_AT"`,
 
   item_id: `The columnId is the literal string "__item_id__", with two underscores before and after. Prefer the tool's own itemIds argument when you simply want a known set of items - use this filter only when combining an item-id restriction with other filter rules. Supported operators: any_of, not_any_of. CompareValue is an array of item ids as strings.
 EXAMPLES:
@@ -61,7 +63,8 @@ EXAMPLES:
   ❌ Wrong: {"columnId": "date", "compareValue": "2025-01-01", "operator": "any_of"} // missing EXACT string for exact date
   ❌ Wrong: {"columnId": "date", "compareValue": ["TODAY"], "operator": "greater_than"} // using array with single value operator
   ❌ Wrong: {"columnId": "date", "compareValue": 7, "operator": "within_the_last"} // a bare number is not a valid window, use ["DAYS", 7]
-  ❌ Wrong: {"columnId": "date", "compareValue": ["EXACT", "2025-01-01"], "operator": "within_the_next"} // within_the_next takes a [UNIT, AMOUNT] window, never an exact date`,
+  ❌ Wrong: {"columnId": "date", "compareValue": ["EXACT", "2025-01-01"], "operator": "within_the_next"} // within_the_next takes a [UNIT, AMOUNT] window, never an exact date
+  ❌ Wrong: {"columnId": "date", "compareValue": "one_week", "compareAttribute": "WEEKS", "operator": "within_the_last"} // the unit belongs inside compareValue, never in compareAttribute`,
 
   email: `Supported operators: any_of, not_any_of, is_empty, is_not_empty, contains_text, not_contains_text. CompareValue can be:
   - empty string "" when searching for blank values

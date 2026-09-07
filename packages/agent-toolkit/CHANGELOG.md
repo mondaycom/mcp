@@ -2,29 +2,33 @@
 
 ## 5.69.0
 
-### Document the virtual column ids for creation time, update time and item id
+### Document the virtual column ids and the [UNIT, AMOUNT] rolling window
 
-Filtering or sorting by when an item was created or updated needs the column ids `__creation_log__` and `__last_updated__`, which `get_board_info` never returns. Models used the bare `ColumnType` enum names instead and got `ResourceNotFoundException`. Our own `last_updated` filter guideline also taught the wrong id.
+Two undocumented parts of `filters` and `orderBy` on `get_board_items_page`. Descriptions only, no schema or behavior change.
+
+**Virtual column ids.** Filtering or sorting by when an item was created or updated needs the column ids `__creation_log__` and `__last_updated__`, which `get_board_info` never returns. Models used the bare `ColumnType` enum names instead and got `ResourceNotFoundException`. Our own `last_updated` filter guideline also taught the wrong id.
 
 Measured over 7 days on `get_board_items_page`, against a 3.0% baseline error rate for ordinary column ids: bare `creation_log` 26.6% over 1,931 calls, bare `last_updated` 30.1% over 1,420, bare `item_id` 9.7% over 504. The underscored forms sit at 0.2-0.3% over ~16,000 calls. Roughly 1,000 avoidable errors a week across ~900 accounts, 752 of them in `orderBy`.
 
-Descriptions only, no schema or behavior change:
+**Rolling windows.** `within_the_last` and `within_the_next` were documented nowhere. `filterOperatorGuidelinesSection()` is the only operator guidance always included and it listed every operator except these two, so models invented `compareValue` shapes: a bare `7`, `"one_week"`, `["PAST_DATETIME", "2"]`, `["EXACT_RANGE"]`. The API expects a two item array of `[UNIT, AMOUNT]` with UNIT one of `DAYS`, `WORKDAYS`, `WEEKS`, `MONTHS`.
+
+Measured over 12 hours on `get_board_items_page`, deduped: 251 calls used one of the two operators. 240 of them sent a `compareValue` that was not a `[UNIT, AMOUNT]` array, and 221 of those failed (92%), 118 with `INTERNAL_SERVER_ERROR`. The 9 calls that did send a well-formed window returned no errors at all. Over the most recent 6 hours those malformed calls came from 101 accounts and produced 36% of every `INTERNAL_SERVER_ERROR` on the tool, against 243 `INTERNAL_SERVER_ERROR`s over the tool's 111,737 calls (0.22%).
+
+A wrong window does not always become a 500 - it can also surface as `InvalidArgumentException` carrying `no_operator_config`, which is an ordinary `errors[]` response. The post-release re-measure should track the total error rate for these two operators, not the 500 rate alone.
+
+Changes:
 
 - `get_column_type_info` filter guidelines document two new column types, `creation_log` and `item_id`, and the `last_updated` examples now use `__last_updated__`. This is where the per-type operator and `compareValue` rules live.
 - `orderBy[].columnId` names the two time ids. It previously read only "The id of the column to order by", which is where most of these failures came from.
 - `filters[].columnId` names the four virtual columns.
 - The `get_board_items_page` description replaces its GROUP FILTERING paragraph with a single VIRTUAL COLUMNS line covering all four ids and pointing at `get_column_type_info` for their rules. The tool description is now shorter than in 5.68.0.
 - The `group` guideline gains a counter-example for `__group__`. That is a separate pre-existing failure (~300 calls/day at 98% error) which this release documents but does not fix.
-
-### Document the [UNIT, AMOUNT] window for within_the_last and within_the_next
-
-The two rolling-window operators were documented nowhere. `filterOperatorGuidelinesSection()` is the only operator guidance always included and it listed every operator except these two, so models invented `compareValue` shapes: a bare `7`, `"one_month"`, `["PAST_DATETIME", "one_month"]`, `["EXACT_RANGE"]`. The API expects a two item array of `[UNIT, AMOUNT]` with UNIT one of `DAYS`, `WORKDAYS`, `WEEKS`, `MONTHS`.
-
-Measured over 12 hours on `get_board_items_page`, deduped: 176 calls used these two operators and 106 of them returned `INTERNAL_SERVER_ERROR` (60.2%) across 65 accounts, about 45% of all 500s on the tool. Every other filter rule sits at 0.01%. Payloads that already contained a unit token failed at 7.7% versus 70.1% for the rest, so the shape is the cause and not the operator.
-
-- The operator guidelines state the contract for both operators, including the unit list.
+- The operator guidelines state the `[UNIT, AMOUNT]` contract for both window operators, including the unit list.
 - `date`, `last_updated` and `creation_log` list `within_the_last` / `within_the_next` among their supported operators and show one window example each.
-- `filters[].compareValue` names the exception in one clause, since the per-type guidelines are only reachable through `get_column_type_info`.
+- `filters[].compareValue` names the window exception in one clause, since the per-type guidelines are only reachable through `get_column_type_info`.
+- Counter-examples for the two mistakes visible in production. Putting the unit in `compareAttribute` makes the rule engine look up the operator key `WITHIN_THE_LAST__WEEKS`, which does not exist. Using `within_the_last` on `__creation_log__` or `__last_updated__` without `compareAttribute` looks up bare `WITHIN_THE_LAST`, where the registered keys are `WITHIN_THE_LAST__CREATED_AT` and `WITHIN_THE_LAST__UPDATED_AT`. Both fail with `no_operator_config`.
+
+Note: on the accounts routed through the monolith's `FilterRulesService`, a `date` column window is rejected before it reaches the rule engine, because that path accepts only `["TODAY"]`, `["TOMORROW"]` and `["EXACT", "YYYY-MM-DD"]`. That is fixed separately in the monolith and should land first.
 
 ## 5.68.0
 
