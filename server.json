@@ -27,18 +27,6 @@
           "isSecret": true
         }
       ]
-    },
-    {
-      "type": "sse",
-      "url": "https://mcp.monday.com/sse",
-      "headers": [
-        {
-          "name": "Authorization",
-          "description": "monday.com API token (format: 'Bearer your_token_here' or just 'your_token_here')",
-          "isRequired": false,
-          "isSecret": true
-        }
-      ]
     }
   ]
 }
