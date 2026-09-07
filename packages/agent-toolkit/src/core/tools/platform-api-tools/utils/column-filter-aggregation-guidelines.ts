@@ -9,36 +9,25 @@ EXAMPLES:
   ❌ Wrong: {"columnId": "__group__", "compareValue": ["group_mm6wsvcc"], "operator": "any_of"} // the columnId is exactly "group", with no surrounding underscores
   ❌ Wrong: {"columnId": "group", "compareValue": "Backlog", "operator": "any_of"} // group title instead of group id`,
 
-  last_updated: `The columnId is the literal string "__last_updated__", with two underscores before and after. Supported operators: any_of, not_any_of, within_the_last. With any_of and not_any_of, compareValue should be either:
-  - "TODAY" - requires to also specify compareAttribute: "UPDATED_AT"
-  - "YESTERDAY" - requires to also specify compareAttribute: "UPDATED_AT"
-  - "THIS_WEEK" - requires to also specify compareAttribute: "UPDATED_AT"
-  - "LAST_WEEK" - requires to also specify compareAttribute: "UPDATED_AT"
-  - "THIS_MONTH" - requires to also specify compareAttribute: "UPDATED_AT"
-  - "LAST_MONTH" - requires to also specify compareAttribute: "UPDATED_AT"
+  last_updated: `The columnId is the literal string "__last_updated__", with two underscores before and after. Supported operators: any_of, not_any_of, within_the_last. With any_of and not_any_of, compareValue is an array holding one of "TODAY", "YESTERDAY", "THIS_WEEK", "THIS_MONTH". Optionally pair it with compareAttribute: "UPDATED_AT" to compare the update date rather than the person who updated. For any other range, including the previous week or month, use within_the_last with a [UNIT, AMOUNT] window.
 This id is also the correct one to use in orderBy to sort items by when they were last updated.
 EXAMPLES:
-  ✅ Correct: {"columnId": "__last_updated__", "compareValue": ["TODAY"], "operator": "any_of", "compareAttribute": "UPDATED_AT"} // using TODAY with correct compareAttribute
+  ✅ Correct: {"columnId": "__last_updated__", "compareValue": ["TODAY"], "operator": "any_of", "compareAttribute": "UPDATED_AT"} // updated today
   ✅ Correct: {"columnId": "__last_updated__", "compareValue": ["THIS_WEEK"], "operator": "not_any_of", "compareAttribute": "UPDATED_AT"} // using THIS_WEEK with not_any_of
   ✅ Correct: {"columnId": "__last_updated__", "compareValue": ["DAYS", 7], "operator": "within_the_last", "compareAttribute": "UPDATED_AT"} // updated in the last 7 days
+  ✅ Correct: {"columnId": "__last_updated__", "compareValue": ["WEEKS", 1], "operator": "within_the_last", "compareAttribute": "UPDATED_AT"} // updated in the previous week
   ❌ Wrong: {"columnId": "last_updated", "compareValue": ["TODAY"], "operator": "any_of", "compareAttribute": "UPDATED_AT"} // missing the underscores around last_updated
-  ❌ Wrong: {"columnId": "__last_updated__", "compareValue": ["TODAY"], "operator": "any_of"} // missing required compareAttribute
+  ❌ Wrong: {"columnId": "__last_updated__", "compareValue": ["LAST_MONTH"], "operator": "any_of", "compareAttribute": "UPDATED_AT"} // LAST_MONTH and LAST_WEEK match no items, use within_the_last with ["MONTHS", 1] or ["WEEKS", 1]
   ❌ Wrong: {"columnId": "__last_updated__", "compareValue": "TODAY", "operator": "any_of", "compareAttribute": "UPDATED_AT"} // not using array for any_of operator`,
 
-  creation_log: `The columnId is the literal string "__creation_log__", with two underscores before and after. Supported operators: any_of, not_any_of, within_the_last. With any_of and not_any_of, compareValue should be either:
-  - "TODAY" - requires to also specify compareAttribute: "CREATED_AT"
-  - "YESTERDAY" - requires to also specify compareAttribute: "CREATED_AT"
-  - "THIS_WEEK" - requires to also specify compareAttribute: "CREATED_AT"
-  - "LAST_WEEK" - requires to also specify compareAttribute: "CREATED_AT"
-  - "THIS_MONTH" - requires to also specify compareAttribute: "CREATED_AT"
-  - "LAST_MONTH" - requires to also specify compareAttribute: "CREATED_AT"
+  creation_log: `The columnId is the literal string "__creation_log__", with two underscores before and after. Supported operators: any_of, not_any_of, within_the_last. With any_of and not_any_of, compareValue is an array holding one of "TODAY", "YESTERDAY", "THIS_WEEK", "THIS_MONTH". Optionally pair it with compareAttribute: "CREATED_AT" to compare the creation date rather than the person who created the item. For any other range, including the previous week or month, use within_the_last with a [UNIT, AMOUNT] window.
 This id is also the correct one to use in orderBy to sort items by creation time.
 EXAMPLES:
   ✅ Correct: {"columnId": "__creation_log__", "compareValue": ["TODAY"], "operator": "any_of", "compareAttribute": "CREATED_AT"} // items created today
   ✅ Correct: {"columnId": "__creation_log__", "compareValue": ["THIS_WEEK"], "operator": "not_any_of", "compareAttribute": "CREATED_AT"} // items not created this week
   ✅ Correct: {"columnId": "__creation_log__", "compareValue": ["DAYS", 30], "operator": "within_the_last", "compareAttribute": "CREATED_AT"} // created in the last 30 days
   ❌ Wrong: {"columnId": "creation_log", "compareValue": ["TODAY"], "operator": "any_of", "compareAttribute": "CREATED_AT"} // missing the underscores around creation_log
-  ❌ Wrong: {"columnId": "__creation_log__", "compareValue": ["TODAY"], "operator": "any_of"} // missing required compareAttribute
+  ❌ Wrong: {"columnId": "__creation_log__", "compareValue": ["LAST_MONTH"], "operator": "any_of", "compareAttribute": "CREATED_AT"} // LAST_MONTH and LAST_WEEK match no items, use within_the_last with ["MONTHS", 1] or ["WEEKS", 1]
   ❌ Wrong: {"columnId": "__creation_log__", "compareValue": ["PAST_DATETIME", "14"], "operator": "within_the_last"} // PAST_DATETIME is not a unit, use ["DAYS", 14]`,
 
   item_id: `The columnId is the literal string "__item_id__", with two underscores before and after. Prefer the tool's own itemIds argument when you simply want a known set of items - use this filter only when combining an item-id restriction with other filter rules. Supported operators: any_of, not_any_of. CompareValue is an array of item ids as strings.

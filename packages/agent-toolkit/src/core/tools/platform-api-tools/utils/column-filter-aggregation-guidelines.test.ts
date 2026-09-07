@@ -54,6 +54,21 @@ describe('column-filter-aggregation-guidelines', () => {
       expect(operatorSection).toMatch(/❌.*"compareValue": 7, "operator": "within_the_last"/);
     });
 
+    it.each(['last_updated', 'creation_log'])(
+      '%s never presents LAST_WEEK or LAST_MONTH as a valid compareValue',
+      (columnType) => {
+        const guideline = getFilterGuidelineForColumnType(columnType)!;
+
+        const correctExamples = guideline.split('\n').filter((line) => line.includes('✅'));
+        for (const example of correctExamples) {
+          expect(example).not.toContain('LAST_WEEK');
+          expect(example).not.toContain('LAST_MONTH');
+        }
+
+        expect(guideline).toMatch(/❌.*LAST_MONTH/);
+      },
+    );
+
     it('group takes no surrounding underscores and flags __group__ as wrong', () => {
       const guideline = getFilterGuidelineForColumnType('group')!;
 

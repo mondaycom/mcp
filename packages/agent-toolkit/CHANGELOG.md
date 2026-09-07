@@ -11,6 +11,9 @@ Descriptions only, no schema or behavior change.
 - The operator guidelines state the `[UNIT, AMOUNT]` contract for `within_the_last` and `within_the_next`, with UNIT one of `DAYS`, `WORKDAYS`, `WEEKS`, `MONTHS`. Both operators were documented nowhere before, so models invented shapes like a bare `7`, which returns `INTERNAL_SERVER_ERROR`.
 - `date`, `creation_log` and `last_updated` list the two window operators and show one example each.
 - The `get_board_items_page` description replaces its GROUP FILTERING paragraph with a shorter VIRTUAL COLUMNS line pointing at `get_column_type_info`.
+- `LAST_WEEK` and `LAST_MONTH` are no longer listed as valid `compareValue` keywords for `creation_log` and `last_updated`. Verified against production: both return zero items on boards that do have matching items, while `TODAY`, `YESTERDAY`, `THIS_WEEK` and `THIS_MONTH` return the right ones. Models are pointed at `within_the_last` with `["WEEKS", 1]` or `["MONTHS", 1]` instead, which does work.
+- `compareAttribute` is no longer described as required on those two types. Omitting it returns the same correct results, so the guidelines now present it as optional and say what it selects.
+- The VIRTUAL COLUMNS line said "the latter three are also valid in orderBy", which wrongly excluded `group`. All four are valid in `orderBy` - confirmed in `sort_settings_service.rb` and against production.
 
 ## 5.68.0
 
