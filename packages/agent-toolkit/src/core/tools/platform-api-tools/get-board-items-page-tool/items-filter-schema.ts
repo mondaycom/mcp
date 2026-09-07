@@ -28,7 +28,7 @@ export const filterRulesSchema = z
       compareValue: z
         .union([z.string(), z.number(), z.boolean(), z.array(z.union([z.string(), z.number()]))])
         .describe(
-          'The value to compare the attribute to. This can be a string or index value depending on the column type.',
+          'The value to compare the attribute to. This can be a string or index value depending on the column type. The operators within_the_last and within_the_next are the exception: they take a two item array of [UNIT, AMOUNT] such as ["DAYS", 7].',
         ),
       operator: z
         .nativeEnum(ItemsQueryRuleOperator)

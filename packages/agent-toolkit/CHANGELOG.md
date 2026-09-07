@@ -16,6 +16,16 @@ Descriptions only, no schema or behavior change:
 - The `get_board_items_page` description replaces its GROUP FILTERING paragraph with a single VIRTUAL COLUMNS line covering all four ids and pointing at `get_column_type_info` for their rules. The tool description is now shorter than in 5.68.0.
 - The `group` guideline gains a counter-example for `__group__`. That is a separate pre-existing failure (~300 calls/day at 98% error) which this release documents but does not fix.
 
+### Document the [UNIT, AMOUNT] window for within_the_last and within_the_next
+
+The two rolling-window operators were documented nowhere. `filterOperatorGuidelinesSection()` is the only operator guidance always included and it listed every operator except these two, so models invented `compareValue` shapes: a bare `7`, `"one_month"`, `["PAST_DATETIME", "one_month"]`, `["EXACT_RANGE"]`. The API expects a two item array of `[UNIT, AMOUNT]` with UNIT one of `DAYS`, `WORKDAYS`, `WEEKS`, `MONTHS`.
+
+Measured over 12 hours on `get_board_items_page`, deduped: 176 calls used these two operators and 106 of them returned `INTERNAL_SERVER_ERROR` (60.2%) across 65 accounts, about 45% of all 500s on the tool. Every other filter rule sits at 0.01%. Payloads that already contained a unit token failed at 7.7% versus 70.1% for the rest, so the shape is the cause and not the operator.
+
+- The operator guidelines state the contract for both operators, including the unit list.
+- `date`, `last_updated` and `creation_log` list `within_the_last` / `within_the_next` among their supported operators and show one window example each.
+- `filters[].compareValue` names the exception in one clause, since the per-type guidelines are only reachable through `get_column_type_info`.
+
 ## 5.68.0
 
 ### Make the "group" filter column discoverable

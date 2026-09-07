@@ -41,6 +41,19 @@ describe('column-filter-aggregation-guidelines', () => {
       }
     });
 
+    it('within_the_last and within_the_next document the [UNIT, AMOUNT] window', () => {
+      const operatorSection = buildFilterGuidelinesForColumnType('date')!;
+
+      expect(operatorSection).toContain('within_the_last');
+      expect(operatorSection).toContain('within_the_next');
+      expect(operatorSection).toContain('[UNIT, AMOUNT]');
+      expect(operatorSection).toContain('"DAYS"');
+      expect(operatorSection).toContain('"WORKDAYS"');
+      expect(operatorSection).toContain('"WEEKS"');
+      expect(operatorSection).toContain('"MONTHS"');
+      expect(operatorSection).toMatch(/❌.*"compareValue": 7, "operator": "within_the_last"/);
+    });
+
     it('group takes no surrounding underscores and flags __group__ as wrong', () => {
       const guideline = getFilterGuidelineForColumnType('group')!;
 
