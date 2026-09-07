@@ -26,7 +26,9 @@ Changes:
 - The operator guidelines state the `[UNIT, AMOUNT]` contract for both window operators, including the unit list.
 - `date`, `last_updated` and `creation_log` list `within_the_last` / `within_the_next` among their supported operators and show one window example each.
 - `filters[].compareValue` names the window exception in one clause, since the per-type guidelines are only reachable through `get_column_type_info`.
-- Counter-examples for the two mistakes visible in production. Putting the unit in `compareAttribute` makes the rule engine look up the operator key `WITHIN_THE_LAST__WEEKS`, which does not exist. Using `within_the_last` on `__creation_log__` or `__last_updated__` without `compareAttribute` looks up bare `WITHIN_THE_LAST`, where the registered keys are `WITHIN_THE_LAST__CREATED_AT` and `WITHIN_THE_LAST__UPDATED_AT`. Both fail with `no_operator_config`.
+- Counter-examples for the two mistakes visible in production: the unit placed in `compareAttribute` instead of inside `compareValue`, and `["PAST_DATETIME", "14"]` in place of a unit. Both are rejected as `no_operator_config`.
+
+All of the above was verified by hand against production. `["DAYS", 7]` and `["WORKDAYS", 7]` both work on a `date` column, and `within_the_next` returns 1 item for `["DAYS", 7]` against 2 for `["WORKDAYS", 7]` on a board whose next two dates are 3 and 8 calendar days out, which is the weekday arithmetic. `within_the_last` with `["MONTHS", 1]` works on both `__creation_log__` and `__last_updated__`, with or without `compareAttribute`. A bare `7` returns `INTERNAL_SERVER_ERROR` (`request_id 2f853a86-07f9-9a00-b57f-b0f7c9e0cc11`).
 
 Note: on the accounts routed through the monolith's `FilterRulesService`, a `date` column window is rejected before it reaches the rule engine, because that path accepts only `["TODAY"]`, `["TOMORROW"]` and `["EXACT", "YYYY-MM-DD"]`. That is fixed separately in the monolith and should land first.
 

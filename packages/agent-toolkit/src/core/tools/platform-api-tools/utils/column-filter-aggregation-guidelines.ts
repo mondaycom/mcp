@@ -23,8 +23,7 @@ EXAMPLES:
   ✅ Correct: {"columnId": "__last_updated__", "compareValue": ["DAYS", 7], "operator": "within_the_last", "compareAttribute": "UPDATED_AT"} // updated in the last 7 days
   ❌ Wrong: {"columnId": "last_updated", "compareValue": ["TODAY"], "operator": "any_of", "compareAttribute": "UPDATED_AT"} // missing the underscores around last_updated
   ❌ Wrong: {"columnId": "__last_updated__", "compareValue": ["TODAY"], "operator": "any_of"} // missing required compareAttribute
-  ❌ Wrong: {"columnId": "__last_updated__", "compareValue": "TODAY", "operator": "any_of", "compareAttribute": "UPDATED_AT"} // not using array for any_of operator
-  ❌ Wrong: {"columnId": "__last_updated__", "compareValue": ["DAYS", 7], "operator": "within_the_last"} // within_the_last also requires compareAttribute: "UPDATED_AT"`,
+  ❌ Wrong: {"columnId": "__last_updated__", "compareValue": "TODAY", "operator": "any_of", "compareAttribute": "UPDATED_AT"} // not using array for any_of operator`,
 
   creation_log: `The columnId is the literal string "__creation_log__", with two underscores before and after. Supported operators: any_of, not_any_of, within_the_last. With any_of and not_any_of, compareValue should be either:
   - "TODAY" - requires to also specify compareAttribute: "CREATED_AT"
@@ -40,7 +39,7 @@ EXAMPLES:
   ✅ Correct: {"columnId": "__creation_log__", "compareValue": ["DAYS", 30], "operator": "within_the_last", "compareAttribute": "CREATED_AT"} // created in the last 30 days
   ❌ Wrong: {"columnId": "creation_log", "compareValue": ["TODAY"], "operator": "any_of", "compareAttribute": "CREATED_AT"} // missing the underscores around creation_log
   ❌ Wrong: {"columnId": "__creation_log__", "compareValue": ["TODAY"], "operator": "any_of"} // missing required compareAttribute
-  ❌ Wrong: {"columnId": "__creation_log__", "compareValue": ["DAYS", 30], "operator": "within_the_last"} // within_the_last also requires compareAttribute: "CREATED_AT"`,
+  ❌ Wrong: {"columnId": "__creation_log__", "compareValue": ["PAST_DATETIME", "14"], "operator": "within_the_last"} // PAST_DATETIME is not a unit, use ["DAYS", 14]`,
 
   item_id: `The columnId is the literal string "__item_id__", with two underscores before and after. Prefer the tool's own itemIds argument when you simply want a known set of items - use this filter only when combining an item-id restriction with other filter rules. Supported operators: any_of, not_any_of. CompareValue is an array of item ids as strings.
 EXAMPLES:
