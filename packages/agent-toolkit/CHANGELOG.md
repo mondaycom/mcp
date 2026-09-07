@@ -1,5 +1,40 @@
 # Changelog
 
+## 5.69.0
+
+### Document the virtual column ids and the [UNIT, AMOUNT] rolling window
+
+Descriptions only, no schema or behavior change.
+
+- `filters[].columnId` and `orderBy[].columnId` name the virtual column ids `__creation_log__`, `__last_updated__`, `__item_id__` and `group`, which `get_board_info` does not return.
+- `get_column_type_info` gains filter guidelines for `creation_log` and `item_id`, and the `last_updated` examples now use `__last_updated__` instead of the bare enum name.
+- The operator guidelines state the `[UNIT, AMOUNT]` contract for `within_the_last` and `within_the_next`, with UNIT one of `DAYS`, `WORKDAYS`, `WEEKS`, `MONTHS`. Both operators were documented nowhere before, so models invented shapes like a bare `7`, which returns `INTERNAL_SERVER_ERROR`.
+- `date`, `creation_log` and `last_updated` list the two window operators and show one example each.
+- The `get_board_items_page` description replaces its GROUP FILTERING paragraph with a shorter VIRTUAL COLUMNS line pointing at `get_column_type_info`.
+- `LAST_WEEK` and `LAST_MONTH` are no longer listed as valid `compareValue` keywords for `creation_log` and `last_updated`. Verified against production: both return zero items on boards that do have matching items, while `TODAY`, `YESTERDAY`, `THIS_WEEK` and `THIS_MONTH` return the right ones. Models are pointed at `within_the_last` with `["WEEKS", 1]` or `["MONTHS", 1]` instead, which does work.
+- `compareAttribute` is no longer described as required on those two types. Omitting it returns the same correct results, so the guidelines now present it as optional and say what it selects.
+- The VIRTUAL COLUMNS line said "the latter three are also valid in orderBy", which wrongly excluded `group`. All four are valid in `orderBy` - confirmed in `sort_settings_service.rb` and against production.
+
+## 5.68.0
+
+### Make the "group" filter column discoverable
+
+Filtering items by board group has always worked - `filters: [{"columnId": "group", "compareValue": ["group_mm6wsvcc"]}]` - but it was documented nowhere: not in the tool description, not in the input schema, and `get_board_info` does not return `group` among a board's columns. Models could only get it right from prior knowledge of the monday API.
+
+This produced 21% of `get_board_items_page`'s `ResourceNotFoundException` errors across 191 accounts: `includeGroup` hands the model each item's `group.id`, and with no documented way to filter on it, models put the group id in `filters[].columnId` and got "Column not found". In 81% of those cases the model then abandoned filtering and paged through the whole board.
+
+Descriptions only, no filtering behavior or schema-shape change:
+
+- `get_board_items_page` description gains a GROUP FILTERING section with the exact filter rule to use, and states that a group id is never a valid `columnId`.
+- `filters[].columnId` states that `group` is accepted alongside real board column ids.
+- `get_column_type_info` returns filter guidelines for `columnType: "group"`, which previously returned `filter: null` even though `group` is a member of the column-type enum.
+
+## 5.67.0
+
+### get_user_context — include relevant docs
+
+`get_user_context` now returns `relevantDocs` alongside `relevantBoards` and `relevantPeople`: the user's most loaded docs ranked by frequency and recency. Each entry includes `id` (document ID for API calls), `name`, and `objectId` (the identifier in the doc URL).
+
 ## 5.66.0
 
 ### search — expose highlights on DOCUMENTS results

@@ -7410,6 +7410,9 @@ type Intelligence {
   "Top visited boards ranked by relevance (frequency + recency)."
   relevant_boards(  "Maximum number of boards to return. Default: 10, Max: 50."
 limit: Int): [RelevantBoard!]
+  "Top loaded docs ranked by relevance (frequency + recency)."
+  relevant_docs(  "Maximum number of docs to return. Default: 10, Max: 50."
+limit: Int): [RelevantDoc!]
   "Top related users ranked by relevance (multi-signal frequency + recency)."
   relevant_people(  "Maximum number of users to return. Default: 10, Max: 50."
 limit: Int): [RelevantPerson!]
@@ -7427,6 +7430,16 @@ type RelevantBoard {
   id: ID
   "Board details resolved via federation from the boards subgraph."
   board: Board
+}
+
+"A doc ranked by relevance based on load frequency and recency."
+type RelevantDoc {
+  "Document ID"
+  id: ID
+  "Document object ID — the identifier that appears in the doc's URL."
+  object_id: ID
+  "Document details resolved via federation from the docs subgraph."
+  document: Document
 }
 
 "A user ranked by relevance based on interaction frequency and recency."

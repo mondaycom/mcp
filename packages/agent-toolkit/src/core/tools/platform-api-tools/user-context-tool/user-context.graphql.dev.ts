@@ -29,6 +29,13 @@ export const getUserContextQuery = gql`
           name
         }
       }
+      relevant_docs(limit: 10) {
+        id
+        object_id
+        document {
+          name
+        }
+      }
       relevant_people(limit: 10) {
         id
         user {

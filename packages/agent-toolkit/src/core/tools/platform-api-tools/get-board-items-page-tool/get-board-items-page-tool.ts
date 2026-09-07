@@ -129,7 +129,11 @@ PERFORMANCE OPTIMIZATION: Only set this to true when you actually need the colum
   orderBy: z
     .array(
       z.object({
-        columnId: z.string().describe('The id of the column to order by'),
+        columnId: z
+          .string()
+          .describe(
+            'The id of the column to order by. Also accepts "__creation_log__" and "__last_updated__" to sort by item creation or update time - get_board_info does not return them, but they are valid on every board.',
+          ),
         direction: z
           .nativeEnum(ItemsOrderByDirection)
           .optional()
@@ -161,6 +165,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
       'To retrieve an item description (the rich-text body/details of a monday.com item), set includeItemDescription to true — the response will include the item description document blocks with their content, type, and id. Use this whenever the user asks about an item description, body, details, or notes. ' +
       '[MULTI-LEVEL BOARDS]: The response includes hierarchy_type on the board ("multi_level" for MLS boards) and parent_item_id on each item. On multi-level boards, items form a tree (up to 5 levels). Use includeSubItems to get all descendants (returned flat with parent_item_id to reconstruct the tree). Top-level items have no parent_item_id. Subitems reference their parent. ' +
       '[REQUIRED PRECONDITION]: Before using this tool, if new columns were added to the board or if you are not familiar with the board structure (column IDs, column types, status labels, etc.), first use get_board_info with filters.columns.only to get column metadata without fetching views. This is essential for constructing proper filters and knowing which columns are available. ' +
+      '[VIRTUAL COLUMNS]: Four filterable columns exist that get_board_info never returns - "group" (the item\'s board group), "__creation_log__" (creation time), "__last_updated__" (update time) and "__item_id__" (item id). All four are also valid in orderBy, e.g. "__creation_log__" with direction "desc" to sort newest-first. Call get_column_type_info with the matching column type for each one\'s compareValue and operator rules. ' +
       '[REQUIRED PRECONDITION]: For board-relation / cross-board linking tasks, call link_board_items_workflow before using this tool. ' +
       'VIEW-BASED FILTERING: If the user refers to a board view by name (e.g. "show me items in the Overdue view"), first call get_board_info with filters.views.names set to that view name (avoids downloading all views on large boards), extract the matching view\'s filter field, then pass it as the filters argument here.'
     );
