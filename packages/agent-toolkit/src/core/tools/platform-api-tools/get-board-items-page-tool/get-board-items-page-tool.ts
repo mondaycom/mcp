@@ -129,7 +129,11 @@ PERFORMANCE OPTIMIZATION: Only set this to true when you actually need the colum
   orderBy: z
     .array(
       z.object({
-        columnId: z.string().describe('The id of the column to order by'),
+        columnId: z
+          .string()
+          .describe(
+            'The id of the column to order by. To sort by item creation or update time use the virtual ids "__creation_log__" and "__last_updated__" - two underscores before and after. get_board_info does not list them, but they are valid on every board.',
+          ),
         direction: z
           .nativeEnum(ItemsOrderByDirection)
           .optional()
@@ -161,7 +165,10 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
       'To retrieve an item description (the rich-text body/details of a monday.com item), set includeItemDescription to true — the response will include the item description document blocks with their content, type, and id. Use this whenever the user asks about an item description, body, details, or notes. ' +
       '[MULTI-LEVEL BOARDS]: The response includes hierarchy_type on the board ("multi_level" for MLS boards) and parent_item_id on each item. On multi-level boards, items form a tree (up to 5 levels). Use includeSubItems to get all descendants (returned flat with parent_item_id to reconstruct the tree). Top-level items have no parent_item_id. Subitems reference their parent. ' +
       '[REQUIRED PRECONDITION]: Before using this tool, if new columns were added to the board or if you are not familiar with the board structure (column IDs, column types, status labels, etc.), first use get_board_info with filters.columns.only to get column metadata without fetching views. This is essential for constructing proper filters and knowing which columns are available. ' +
-      '[GROUP FILTERING]: To get only the items of one board group, add a filter rule with columnId "group" and the group id as compareValue, e.g. filters: [{"columnId": "group", "compareValue": ["group_mm6wsvcc"]}]. Group ids come from an item\'s group.id or from get_board_info. A group id is never a valid columnId. ' +
+      '[GROUP FILTERING]: To get only the items of one board group, add a filter rule with columnId "group" and the group id as compareValue, e.g. filters: [{"columnId": "group", "compareValue": ["group_mm6wsvcc"]}]. Group ids come from an item\'s group.id or from get_board_info. The columnId is exactly "group" - a group id is never a valid columnId, and neither is "__group__" with underscores. ' +
+      '[CREATION AND UPDATE TIME]: To filter or sort by when an item was created or last updated, use the virtual column ids "__creation_log__" and "__last_updated__". Both take two underscores before and after the word. get_board_info never lists them, but both filters and orderBy accept them on every board. ' +
+      'To sort newest-first: orderBy: [{"columnId": "__creation_log__", "direction": "desc"}]. To filter: filters: [{"columnId": "__last_updated__", "compareValue": ["TODAY"], "operator": "any_of", "compareAttribute": "UPDATED_AT"}] - when comparing a date, pair them with compareAttribute "CREATED_AT" and "UPDATED_AT" respectively, since both columns hold a person as well as a date. ' +
+      'A third virtual column, "__item_id__", filters by item id, but prefer the top-level itemIds argument unless you need it combined with other filter rules. ' +
       '[REQUIRED PRECONDITION]: For board-relation / cross-board linking tasks, call link_board_items_workflow before using this tool. ' +
       'VIEW-BASED FILTERING: If the user refers to a board view by name (e.g. "show me items in the Overdue view"), first call get_board_info with filters.views.names set to that view name (avoids downloading all views on large boards), extract the matching view\'s filter field, then pass it as the filters argument here.'
     );

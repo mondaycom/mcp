@@ -24,4 +24,32 @@ describe('column-filter-aggregation-guidelines', () => {
   it('buildFilterGuidelinesForColumnType returns null when type has no docs', () => {
     expect(buildFilterGuidelinesForColumnType('unsupported_type_xyz')).toBeNull();
   });
+
+  describe('virtual column ids', () => {
+    it.each([
+      ['last_updated', '__last_updated__'],
+      ['creation_log', '__creation_log__'],
+      ['item_id', '__item_id__'],
+    ])('%s guidelines teach the underscored id %s in every correct example', (columnType, expectedId) => {
+      const guideline = getFilterGuidelineForColumnType(columnType)!;
+      expect(guideline).toContain(expectedId);
+
+      const correctExamples = guideline.split('\n').filter((line) => line.includes('✅'));
+      expect(correctExamples.length).toBeGreaterThan(0);
+      for (const example of correctExamples) {
+        expect(example).toContain(`"columnId": "${expectedId}"`);
+      }
+    });
+
+    it('group takes no surrounding underscores and flags __group__ as wrong', () => {
+      const guideline = getFilterGuidelineForColumnType('group')!;
+
+      const correctExamples = guideline.split('\n').filter((line) => line.includes('✅'));
+      for (const example of correctExamples) {
+        expect(example).toContain('"columnId": "group"');
+      }
+
+      expect(guideline).toMatch(/❌.*__group__/);
+    });
+  });
 });

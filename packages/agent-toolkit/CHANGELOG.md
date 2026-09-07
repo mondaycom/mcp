@@ -1,5 +1,36 @@
 # Changelog
 
+## 5.69.0
+
+### Teach the double-underscore ids for creation_log, last_updated and item_id
+
+Filtering or sorting by item creation/update time needs the virtual column ids `__creation_log__` and `__last_updated__`, which `get_board_info` never returns. Models reached for the bare `ColumnType` enum member names instead — and our own `last_updated` filter guideline used `"columnId": "last_updated"` verbatim in its ✅ examples, which was observed being copied character-for-character in production.
+
+Measured over 7 days on `get_board_items_page`, against a baseline error rate of 3.0% for ordinary column ids in `filters` and 2.3% in `orderBy`:
+
+| columnId | calls | errors | error rate |
+|---|---|---|---|
+| `__creation_log__` (filters + orderBy) | 9,928 | 16 | 0.2% |
+| `__last_updated__` (filters + orderBy) | 6,218 | 19 | 0.3% |
+| bare `creation_log` | 1,931 | 513 | 26.6% |
+| bare `last_updated` | 1,420 | 427 | 30.1% |
+| bare `item_id` | 504 | 49 | 9.7% |
+| `pulse_id` | 42 | 40 | 95.2% |
+
+~1,000 avoidable `ResourceNotFoundException`s a week across ~900 accounts. `orderBy` accounts for the majority of them (752), since sorting newest-first is the common phrasing of the request.
+
+Descriptions only, no schema or behavior change:
+
+- `get_board_items_page` description gains a CREATION AND UPDATE TIME section naming both ids and showing an `orderBy` and a `filters` example.
+- `orderBy[].columnId` description now documents the two virtual ids. It previously read only "The id of the column to order by", which is where most of these failures came from.
+- `filters[].columnId` names all four virtual columns and what each one's `compareValue` holds.
+- `get_column_type_info` filter guidelines for `last_updated` now use `__last_updated__` in every ✅ example, and two new column types are documented: `creation_log` and `item_id`.
+- The `group` guideline gains an explicit ❌ for `__group__`, and the tool description notes `group` is the one virtual column that takes no underscores. `__group__` is a pre-existing failure of its own — ~300 calls/day at 98% error across 72 accounts — and is not caused by the 5.68.0 group documentation, which it predates by at least a week.
+
+The always-visible descriptions state the correct ids positively and do not enumerate the rejected spellings. `"__creation_log__", two underscores before and after` already fully specifies the id, so naming the bare form again adds tokens without adding information. Two negations are kept because they carry something the positive cannot: `group` takes *no* underscores (it contradicts the rule the other three ids establish, so omitting it would make `__group__` worse), and the group id is not itself the `columnId` (the value a model reaches for by default — the 5.68.0 finding). The per-type `get_column_type_info` guidelines keep their ❌ examples, which are that file's existing format for every column type.
+
+Note: bare type-name ids in the other guideline examples (`status`, `date`, `text`, `numbers`, ...) were deliberately left as-is. They read like placeholders but are frequently real ids, because monday names the first column of a type after the type. Measured error rates are at or below baseline — `status` is 1.4% over 3,535 calls, `date` 1.6% over 790 — so they are not a source of failures.
+
 ## 5.68.0
 
 ### Make the "group" filter column discoverable
