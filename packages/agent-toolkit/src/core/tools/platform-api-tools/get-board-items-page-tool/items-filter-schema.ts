@@ -19,11 +19,7 @@ export const filterRulesSchema = z
       columnId: z
         .string()
         .describe(
-          'The id of the column to filter by. Four virtual columns are also accepted even though get_board_info does not return them. ' +
-            '"group" filters by board group and takes the group id (e.g. "group_mm6wsvcc") as its compareValue - the columnId is exactly "group", not the group id itself, and with no surrounding underscores. ' +
-            '"__creation_log__" filters by item creation time, paired with compareAttribute "CREATED_AT" when comparing a date. ' +
-            '"__last_updated__" filters by item update time, paired with compareAttribute "UPDATED_AT". ' +
-            '"__item_id__" takes an array of item ids as compareValue.',
+          'The id of the column to filter by. Also accepts four virtual columns that get_board_info does not return: "group" (the group id goes in compareValue, e.g. "group_mm6wsvcc" - the columnId itself is always the literal "group"), "__creation_log__", "__last_updated__" and "__item_id__".',
         ),
       compareAttribute: z
         .string()
