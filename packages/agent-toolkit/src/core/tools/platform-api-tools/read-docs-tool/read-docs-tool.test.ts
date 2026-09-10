@@ -95,7 +95,19 @@ describe('ReadDocsTool', () => {
       expect(result.content[0].text).toContain('type and ids are required');
     });
 
-    it('should fall back to object_ids when ids returns no results', async () => {
+    it('should query object_ids first when type is "ids"', async () => {
+      mocks.mockRequest.mockResolvedValueOnce(mockDocsResponse).mockResolvedValueOnce(mockMarkdownResponse);
+
+      await callToolByNameAsync(TOOL_NAME, { type: 'ids', ids: [DOC_ID] });
+
+      expect(mocks.getMockRequest().mock.calls[0][1]).toMatchObject({
+        object_ids: [DOC_ID],
+        ids: undefined,
+      });
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
+    });
+
+    it('should fall back to ids when object_ids returns no results', async () => {
       mocks.mockRequest
         .mockResolvedValueOnce(mockEmptyDocsResponse)
         .mockResolvedValueOnce(mockDocsResponse)
@@ -105,6 +117,34 @@ describe('ReadDocsTool', () => {
 
       expect(result.data).toHaveLength(1);
       expect(mocks.getMockRequest()).toHaveBeenCalledTimes(3);
+      const calls = mocks.getMockRequest().mock.calls;
+      expect(calls[0][1]).toMatchObject({ object_ids: [DOC_ID], ids: undefined });
+      expect(calls[1][1]).toMatchObject({ ids: [DOC_ID], object_ids: undefined });
+    });
+
+    it('should query object_ids without a retry when type is "object_ids"', async () => {
+      mocks.mockRequest.mockResolvedValueOnce(mockEmptyDocsResponse);
+
+      await callToolByNameRawAsync(TOOL_NAME, { type: 'object_ids', ids: ['obj_456'] });
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+      expect(mocks.getMockRequest().mock.calls[0][1]).toMatchObject({
+        object_ids: ['obj_456'],
+        ids: undefined,
+      });
+    });
+
+    it('should query workspace_ids without a retry', async () => {
+      mocks.mockRequest.mockResolvedValueOnce(mockEmptyDocsResponse);
+
+      await callToolByNameRawAsync(TOOL_NAME, { type: 'workspace_ids', ids: ['ws_1'] });
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+      expect(mocks.getMockRequest().mock.calls[0][1]).toMatchObject({
+        workspace_ids: ['ws_1'],
+        ids: undefined,
+        object_ids: undefined,
+      });
     });
 
     it('should return no documents message when nothing found', async () => {
@@ -636,7 +676,7 @@ describe('ReadDocsTool', () => {
       expect(result.data[0].blocks_pagination.count).toBe(7);
     });
 
-    it('should forward blocks_limit and blocks_page through the fallback object_ids retry', async () => {
+    it('should forward blocks_limit and blocks_page through the fallback ids retry', async () => {
       mocks.mockRequest
         .mockResolvedValueOnce(mockEmptyDocsResponse)
         .mockResolvedValueOnce(mockDocsWithBlocksResponse)
@@ -651,7 +691,7 @@ describe('ReadDocsTool', () => {
       });
 
       const calls = mocks.getMockRequest().mock.calls;
-      expect(calls[1][1]).toMatchObject({ blocksLimit: 10, blocksPage: 3, object_ids: [DOC_ID], ids: undefined });
+      expect(calls[1][1]).toMatchObject({ blocksLimit: 10, blocksPage: 3, ids: [DOC_ID], object_ids: undefined });
     });
 
     it('should not forward blocksLimit/blocksPage to GraphQL when include_blocks is false', async () => {
