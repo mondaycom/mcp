@@ -1,5 +1,18 @@
 # Changelog
 
+## 5.70.0
+
+### read_docs — try object_ids before ids
+
+A doc is addressable by two identifiers, `id` and `object_id`, and the number exposed in the doc URL is the `object_id` — so callers routinely pass an object_id while declaring `type: "ids"`. The lookup order now matches that reality.
+
+- For `type: "ids"`, `object_ids` is attempted first and `ids` is the fallback, so a mislabeled object_id resolves on the first request
+- `type: "object_ids"` and `type: "workspace_ids"` are unchanged and still issue a single request with no retry
+- `getDescription()` and the `type` field description now state that the number in a doc URL is the `object_id` rather than the `id`, and that results carry both so callers can pass the matching one
+- Added test coverage for the lookup order, the fallback direction, and for `type: "object_ids"` / `type: "workspace_ids"`
+
+No input schema changes, and no behaviour change for correctly labelled calls.
+
 ## 5.69.1
 
 ### Default `retrieval_only` to `true` for `get_monday_knowledge` developer docs queries

@@ -83,7 +83,7 @@ export const readDocsToolSchema = {
 
   // --- content mode fields ---
   type: QueryByIdEnum.optional().describe(
-    'Query type for content mode: "ids", "object_ids", or "workspace_ids". Required when mode is "content".',
+    'Query type for content mode: "ids" (the doc id), "object_ids" (the number visible in the doc URL), or "workspace_ids". Required when mode is "content". If the ID came from a doc URL it is an object_id — use "object_ids".',
   ),
   ids: z
     .array(z.string())
@@ -175,7 +175,9 @@ export class ReadDocsTool extends BaseMondayApiTool<typeof readDocsToolSchema> {
 MODE: "content" (default) — Fetch documents with their full markdown content.
 - Requires: type ("ids" | "object_ids" | "workspace_ids") and ids array
 - Supports pagination via page/limit. Check has_more_pages in response.
-- If type "ids" returns no results, automatically retries with object_ids.
+- A doc has two identifiers: "id" and "object_id". The number in a doc URL (https://<account>.monday.com/docs/5097882226) is the object_id, NOT the id — prefer type "object_ids" when working from a URL.
+- If type "ids" returns no results, the other identifier is tried automatically, so a mislabeled ID still resolves.
+- Results include both id and object_id — pass the matching one to other tools rather than guessing.
 - Set include_blocks: true to include block IDs, types, and positions in the response — required before calling update_doc.
 - Blocks default to 25 per page. Use blocks_limit and blocks_page to paginate through long documents.
 - Set include_comments: true to fetch all comments and replies on the document. Each comment is enriched with anchor info (block_id, selection_from, selection_length) indicating which block and text range it's attached to. Use comments_limit to control how many comments per item (default 50).
@@ -215,13 +217,16 @@ MODE: "version_history" — Fetch the edit history of a single document.
         include_blocks: input.include_blocks ?? false,
       };
 
-      let ids: string[] | undefined;
       let object_ids: string[] | undefined;
       let workspace_ids: string[] | undefined;
+      let doc_ids: string[] | undefined;
 
       switch (input.type) {
         case 'ids':
-          ids = input.ids;
+          // The number in a doc URL is the object_id, so most values passed here are object_ids.
+          // Try that first and fall back to the doc id.
+          object_ids = input.ids;
+          doc_ids = input.ids;
           break;
         case 'object_ids':
           object_ids = input.ids;
@@ -236,7 +241,7 @@ MODE: "version_history" — Fetch the edit history of a single document.
       const includeBlocks = input.include_blocks ?? false;
       const blocksPagination = includeBlocks ? { blocksLimit: input.blocks_limit, blocksPage: input.blocks_page } : {};
       const variables: ReadDocsVariables = {
-        ids,
+        ids: undefined,
         object_ids,
         limit: input.limit || 25,
         order_by: input.order_by,
@@ -248,10 +253,10 @@ MODE: "version_history" — Fetch the edit history of a single document.
 
       let res = await this.mondayApi.request<ReadDocsQuery>(readDocs, variables);
 
-      if ((!res.docs || res.docs.length === 0) && ids) {
+      if ((!res.docs || res.docs.length === 0) && doc_ids) {
         const fallbackVariables: ReadDocsVariables = {
-          ids: undefined,
-          object_ids: ids,
+          ids: doc_ids,
+          object_ids: undefined,
           limit: input.limit || 25,
           order_by: input.order_by,
           page: input.page,
