@@ -252,7 +252,7 @@ export type ActivityLog = {
 /** Entry point for internal activity log queries */
 export type ActivityLogInternalQueries = {
   __typename?: 'ActivityLogInternalQueries';
-  /** Event counts grouped by board or user in a single aggregation request (no per-entity fan-out). board_ids is always required. Provide user_ids to count specific users; omit them (with group_by USER) to discover the top-N users active on the given boards. */
+  /** Event counts grouped by board or user in a single aggregation request (no per-entity fan-out). group_by BOARD always requires board_ids; group_by USER needs a scope — board_ids, user_ids, or document_ids. Provide user_ids to count specific users; omit them (with group_by USER) to discover the top-N users active on the given scope. */
   event_counts?: Maybe<EventCountsResult>;
   /** Internal activity log entries for boards or users — skips authorization, entity whitelisting, and always includes boardless events */
   logs?: Maybe<ActivityLogsPage>;
@@ -263,6 +263,7 @@ export type ActivityLogInternalQueries = {
 export type ActivityLogInternalQueriesEvent_CountsArgs = {
   board_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   correlation_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  document_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   entities?: InputMaybe<Array<Scalars['String']['input']>>;
   event_types?: InputMaybe<Array<Scalars['String']['input']>>;
   from?: InputMaybe<Scalars['String']['input']>;
@@ -279,6 +280,7 @@ export type ActivityLogInternalQueriesLogsArgs = {
   board_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   correlation_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   cursor?: InputMaybe<Scalars['String']['input']>;
+  document_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   entities?: InputMaybe<Array<Scalars['String']['input']>>;
   event_types?: InputMaybe<Array<Scalars['String']['input']>>;
   from?: InputMaybe<Scalars['String']['input']>;
@@ -339,6 +341,36 @@ export type AddAllocationsToResourcesResponse = {
   __typename?: 'AddAllocationsToResourcesResponse';
   /** Per-item results for each allocation in the request */
   results: Array<AllocationToResourceResult>;
+};
+
+/** Result of promoting an existing asset to a workspace left-pane object */
+export type AddAssetToLeftPaneResult = {
+  __typename?: 'AddAssetToLeftPaneResult';
+  /** ID of the stream artifact row */
+  artifact_id?: Maybe<Scalars['ID']['output']>;
+  /** ID of the workspace object */
+  object_id?: Maybe<Scalars['ID']['output']>;
+};
+
+/** Input for adding a tool to an already-connected integration */
+export type AddIntegrationToolInput = {
+  /** The ID of the AI app */
+  ai_app_id: Scalars['ID']['input'];
+  /** The block-app-feature reference ID of the tool to add */
+  block_reference_id: Scalars['ID']['input'];
+};
+
+/** Result of adding an integration tool */
+export type AddIntegrationToolResult = {
+  __typename?: 'AddIntegrationToolResult';
+  /** The block reference ID */
+  block_reference_id?: Maybe<Scalars['ID']['output']>;
+  /** The ID of the created or existing instance */
+  instance_id?: Maybe<Scalars['ID']['output']>;
+  /** Whether the operation succeeded */
+  success?: Maybe<Scalars['Boolean']['output']>;
+  /** True if the tool was already active or was restored from a disabled state (config preserved, no reconfiguration needed). False if a brand new instance was created (needs configuration). */
+  was_restored?: Maybe<Scalars['Boolean']['output']>;
 };
 
 /** A successfully added allocated resource */
@@ -2086,6 +2118,14 @@ export type BatchExtendTrialPeriod = {
   success: Scalars['Boolean']['output'];
 };
 
+/** Input for a single submission request in a batch create. */
+export type BatchSubmissionRequestInput = {
+  /** Agent user ID to submit */
+  agent_user_id: Scalars['ID']['input'];
+  /** Optional description */
+  description?: InputMaybe<Scalars['String']['input']>;
+};
+
 /** The result of a batch undo operation. */
 export type BatchUndoResult = {
   __typename?: 'BatchUndoResult';
@@ -2270,6 +2310,8 @@ export type Board = {
   __typename?: 'Board';
   /** The user's permission level for this board (view / edit). */
   access_level: BoardAccessLevel;
+  /** Activity log entries for this board with enhanced filtering and pagination (last 90 days only). Requests for data older than 90 days will return a validation error. */
+  activity_log?: Maybe<BoardActivityLogsPage>;
   /** The board log events. */
   activity_logs?: Maybe<Array<Maybe<ActivityLogType>>>;
   /** The board's folder unique identifier. */
@@ -2355,6 +2397,21 @@ export type Board = {
 
 
 /** A monday.com board. */
+export type BoardActivity_LogArgs = {
+  column_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  correlation_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  event_types?: InputMaybe<Array<Scalars['String']['input']>>;
+  from?: InputMaybe<Scalars['String']['input']>;
+  group_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  item_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  to?: InputMaybe<Scalars['String']['input']>;
+  user_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+};
+
+
+/** A monday.com board. */
 export type BoardActivity_LogsArgs = {
   column_ids?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
   from?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
@@ -2433,6 +2490,15 @@ export enum BoardAccessLevel {
   Edit = 'edit',
   View = 'view'
 }
+
+/** A page of board activity log entries */
+export type BoardActivityLogsPage = {
+  __typename?: 'BoardActivityLogsPage';
+  /** Cursor to pass to fetch the next page, null if this is the last page */
+  cursor?: Maybe<Scalars['String']['output']>;
+  /** The activity log entries for this page */
+  logs?: Maybe<Array<ActivityLog>>;
+};
 
 /** The board attributes available. */
 export enum BoardAttributes {
@@ -2610,6 +2676,13 @@ export enum BoardKind {
   Private = 'private',
   Public = 'public',
   Share = 'share'
+}
+
+/** The privacy kind for a board */
+export enum BoardKindInput {
+  Private = 'PRIVATE',
+  Public = 'PUBLIC',
+  Share = 'SHARE'
 }
 
 /** Manually set metadata associated with a board. */
@@ -3461,6 +3534,12 @@ export type Cell = {
   block_id: Scalars['String']['output'];
 };
 
+export type ChangeBoardKindResult = {
+  __typename?: 'ChangeBoardKindResult';
+  board_kind: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+};
+
 /** The result of adding users to / removing users from a team. */
 export type ChangeTeamMembershipsResult = {
   __typename?: 'ChangeTeamMembershipsResult';
@@ -3528,6 +3607,8 @@ export type ChatMessage = {
   temporal_namespace?: Maybe<Scalars['String']['output']>;
   /** Temporal workflow run id for the turn that produced this message. Gated behind the same trace-exposure flag as langsmith_trace_id. The workflow id is the vibe app id; clients build the Temporal UI URL from the run id, namespace, app id, env and region. */
   temporal_run_id?: Maybe<Scalars['ID']['output']>;
+  /** Turn identity id for the turn that produced this message. Null for messages predating V3. */
+  turn_id?: Maybe<Scalars['ID']['output']>;
   /** The date and time the object was last updated */
   updated_at?: Maybe<Scalars['Date']['output']>;
   /** ID of the user who sent or received this message */
@@ -3671,6 +3752,8 @@ export type ChildBoardDataViewSource = {
   __typename?: 'ChildBoardDataViewSource';
   /** The parent schema source identifier. */
   parent_source_id?: Maybe<DataViewSourceId>;
+  /** Whether this source has the main (items) or subitem relation type. */
+  relation_type?: Maybe<DataViewSourceRelationType>;
   /** The source identifier. */
   source_id?: Maybe<DataViewSourceId>;
 };
@@ -3961,6 +4044,160 @@ export type Complexity = {
 /** Logical operator for combining rules or conditions. Must be OR — the question is shown if any rule or condition is satisfied. */
 export enum ConditionOperator {
   Or = 'OR'
+}
+
+/** A single conditional formatting condition that defines when and how to highlight rows or cells */
+export type ConditionalFormattingConditionInput = {
+  /** The formatting to apply when this condition matches */
+  formatting?: InputMaybe<ConditionalFormattingFormattingInput>;
+  /** Unique identifier for the condition (client-generated GUID) */
+  id?: InputMaybe<Scalars['String']['input']>;
+  /** Rules that trigger this condition */
+  rules?: InputMaybe<Array<ConditionalFormattingRuleBucketInput>>;
+  /** What to highlight when the condition matches */
+  target?: InputMaybe<ConditionalFormattingTargetInput>;
+};
+
+export type ConditionalFormattingFormattingInput = {
+  /** Color name(s) to apply as highlight (e.g. ["orange"], ["dark_red", "done-green"]) */
+  highlight_color?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+export type ConditionalFormattingRuleBucketInput = {
+  /** Logical operator (e.g. ANY_OF, ALL_OF) */
+  operator?: InputMaybe<Scalars['String']['input']>;
+  /** The rule definition */
+  rule?: InputMaybe<ConditionalFormattingRuleInput>;
+  /** Bucket type (e.g. RULE) */
+  type?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type ConditionalFormattingRuleContextInput = {
+  /** Board ID the column belongs to */
+  board_id?: InputMaybe<Scalars['ID']['input']>;
+  /** ID of the column to evaluate */
+  column_id?: InputMaybe<Scalars['String']['input']>;
+  /** Type of the column (e.g. color, text, date) */
+  column_type?: InputMaybe<Scalars['String']['input']>;
+  /** Column attribute to compare against */
+  compare_attribute?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type ConditionalFormattingRuleInput = {
+  /** Array of internal label IDs to match against (e.g. [2] for Stuck) */
+  compare_value?: InputMaybe<Scalars['JSON']['input']>;
+  /** The column context for this rule */
+  context?: InputMaybe<ConditionalFormattingRuleContextInput>;
+  /** Rule type (e.g. BOARD_COLUMN) */
+  type?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type ConditionalFormattingTargetInput = {
+  /** Column IDs to highlight */
+  column_ids?: InputMaybe<Array<Scalars['String']['input']>>;
+  /** Whether to highlight the entire row */
+  entire_row?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+/** An already-answered field that this step’s options are listed against */
+export type ConfigureIntegrationFieldDependency = {
+  __typename?: 'ConfigureIntegrationFieldDependency';
+  /** The inbound field key holding the value */
+  field_key?: Maybe<Scalars['String']['output']>;
+  /** The field type whose options the value came from; null for primitives */
+  field_type_reference_id?: Maybe<Scalars['ID']['output']>;
+  /** What that value is called, when it has a name */
+  label?: Maybe<Scalars['String']['output']>;
+  /** The chosen value, JSON-encoded */
+  value_json?: Maybe<Scalars['String']['output']>;
+};
+
+/** What was stored for a step, echoed back so a reloaded card renders the answer */
+export type ConfigureIntegrationFieldSavedScope = {
+  __typename?: 'ConfigureIntegrationFieldSavedScope';
+  /** The chosen values, one entry per pick */
+  entries: Array<ConfigureIntegrationFieldValue>;
+  /** How the value is sourced: "pinned" (we hold it) or "app_supplied" (the app passes it) */
+  mode?: Maybe<Scalars['String']['output']>;
+};
+
+/** One question of the batched field-configuration card */
+export type ConfigureIntegrationFieldStep = {
+  __typename?: 'ConfigureIntegrationFieldStep';
+  /** Whether to offer letting the app choose the value per call */
+  allow_app_decide?: Maybe<Scalars['Boolean']['output']>;
+  /** The block instance this step configures */
+  block_instance_id?: Maybe<Scalars['ID']['output']>;
+  /** The block whose field is being configured */
+  block_reference_id?: Maybe<Scalars['ID']['output']>;
+  /** Fields this step’s options depend on that still hold no value */
+  blocked_by: Array<Scalars['String']['output']>;
+  /** The credentials the options are listed with; absent until the block is connected */
+  credentials_id?: Maybe<Scalars['ID']['output']>;
+  /** What the field holds now, already described for display */
+  current_value_display?: Maybe<Scalars['String']['output']>;
+  /** Values from earlier answers that this step’s options are listed against */
+  dependency_selections: Array<ConfigureIntegrationFieldDependency>;
+  /** The inbound field key this step configures */
+  field_key?: Maybe<Scalars['String']['output']>;
+  /** The field’s display name */
+  field_title?: Maybe<Scalars['String']['output']>;
+  /** The marketplace app the block belongs to */
+  integration_app_name?: Maybe<Scalars['String']['output']>;
+  /** The block’s name */
+  integration_name?: Maybe<Scalars['String']['output']>;
+  /** Whether the field takes more than one value */
+  is_array?: Maybe<Scalars['Boolean']['output']>;
+  /** What to ask the user */
+  question?: Maybe<Scalars['String']['output']>;
+  /** What the user decided, once they have */
+  saved_scope?: Maybe<ConfigureIntegrationFieldSavedScope>;
+  /** Whether the user moved past this step without deciding */
+  skipped?: Maybe<Scalars['Boolean']['output']>;
+  /** Supporting line under the question */
+  subtitle?: Maybe<Scalars['String']['output']>;
+};
+
+/** Input for committing one step of the batched integration field configuration card */
+export type ConfigureIntegrationFieldStepInput = {
+  /** The ID of the AI app */
+  ai_app_id: Scalars['ID']['input'];
+  /** The block instance this step configures */
+  block_instance_id: Scalars['ID']['input'];
+  /** The inbound field key this step configures */
+  field_key: Scalars['String']['input'];
+  /** The value the user chose for this field. Omit it when the step was skipped. */
+  field_value_scope?: InputMaybe<Scalars['JSON']['input']>;
+  /** Whether the user moved past this step without deciding. Nothing is written when true. */
+  skipped?: InputMaybe<Scalars['Boolean']['input']>;
+  /** The configure_integration_fields tool call being answered */
+  tool_call_id: Scalars['ID']['input'];
+};
+
+/** The card’s refreshed steps after one of them was committed */
+export type ConfigureIntegrationFieldStepResult = {
+  __typename?: 'ConfigureIntegrationFieldStepResult';
+  /** The first step still holding no answer */
+  active_step_index?: Maybe<Scalars['Int']['output']>;
+  /** The ID of the AI app */
+  ai_app_id?: Maybe<Scalars['ID']['output']>;
+  /** Every step of the card, with this one marked answered and the rest recomputed against what it unblocked */
+  steps: Array<ConfigureIntegrationFieldStep>;
+};
+
+/** One value the user chose for a field */
+export type ConfigureIntegrationFieldValue = {
+  __typename?: 'ConfigureIntegrationFieldValue';
+  /** What the value is called, when it has a name */
+  label?: Maybe<Scalars['String']['output']>;
+  /** The chosen value, JSON-encoded */
+  value_json?: Maybe<Scalars['String']['output']>;
+};
+
+/** Severity of a schedule conflict. */
+export enum ConflictSeverity {
+  Full = 'FULL',
+  Partial = 'PARTIAL'
 }
 
 /** Connect input for a custom external agent. callback_url is optional — omit to create a detached agent (identity only, not executable via webhook). */
@@ -4705,8 +4942,8 @@ export type CredentialsCreatedInput = {
   credentials_key: Scalars['String']['input'];
   /** The reference ID for the credentials */
   credentials_reference_id: Scalars['ID']['input'];
-  /** The ID of the CTA message */
-  message_id: Scalars['ID']['input'];
+  /** The ID of the CTA message (optional when connecting from settings) */
+  message_id?: InputMaybe<Scalars['ID']['input']>;
   /** Optional variable key for updating existing variable */
   variable_key?: InputMaybe<Scalars['ID']['input']>;
 };
@@ -4927,6 +5164,8 @@ export type DailyLimit = {
   addon?: Maybe<DailyLimitAddon>;
   /** Base daily limit. */
   base?: Maybe<Scalars['Int']['output']>;
+  /** Consumed daily limit. */
+  consumption?: Maybe<Scalars['Int']['output']>;
   /** Total daily limit. */
   total?: Maybe<Scalars['Int']['output']>;
 };
@@ -4994,7 +5233,7 @@ export type DataView = {
   account_id?: Maybe<Scalars['ID']['output']>;
   /** Whether the data view is archived. */
   archived?: Maybe<Scalars['Boolean']['output']>;
-  /** The authorization object associated with the data view. */
+  /** The authorization object associated with a data view. */
   authorization_object?: Maybe<DataViewAuthorizationObject>;
   /** The date and time of creation. */
   created_at?: Maybe<Scalars['Date']['output']>;
@@ -5010,6 +5249,12 @@ export type DataView = {
   revision?: Maybe<Scalars['Int']['output']>;
   /** The paginated sources of the data view. */
   sources?: Maybe<DataViewPaginatedSources>;
+  /** The materialized view id for the subitem relation type. */
+  subitems_mv_id?: Maybe<Scalars['ID']['output']>;
+  /** The materialized view state for the subitem relation type. */
+  subitems_mv_state?: Maybe<Scalars['String']['output']>;
+  /** The target schema for the subitem relation type. */
+  subitems_target?: Maybe<DataViewTarget>;
   /** The target schema of the data view. */
   target?: Maybe<DataViewTarget>;
   /** The date and time of the last update. */
@@ -5018,7 +5263,9 @@ export type DataView = {
 
 /** The kind of object that authorizes access to a data view. */
 export enum DataViewAuthorizationKind {
-  Board = 'BOARD'
+  Board = 'BOARD',
+  Overview = 'OVERVIEW',
+  VibeApp = 'VIBE_APP'
 }
 
 /** The authorization object associated with a data view. */
@@ -5203,6 +5450,8 @@ export type DataViewSourceIdInput = {
 export type DataViewSourceInput = {
   /** The column mappings for this source. If omitted, mappings are auto-calculated by the server. */
   mappings?: InputMaybe<Array<DataViewColumnMappingInput>>;
+  /** main (default) or subitem — the source relation type. */
+  relation_type?: InputMaybe<DataViewSourceRelationType>;
   /** The source identifier. */
   source_id: DataViewSourceIdInput;
 };
@@ -5212,6 +5461,20 @@ export enum DataViewSourceKind {
   Board = 'BOARD',
   DataEntity = 'DATA_ENTITY'
 }
+
+/** The relation type of a data view source. */
+export enum DataViewSourceRelationType {
+  Main = 'MAIN',
+  Subitem = 'SUBITEM'
+}
+
+/** A source already attached to a data view, whose column mappings are being replaced. Unlike DataViewSourceInput, mappings are required: omitting them would leave the stored mappings untouched, making the update a no-op. */
+export type DataViewSourceUpdateInput = {
+  /** The full set of column mappings for this source. Replaces the stored mappings entirely. */
+  mappings: Array<DataViewColumnMappingInput>;
+  /** The source identifier. Must already be attached to the data view. */
+  source_id: DataViewSourceIdInput;
+};
 
 /** The target schema of a data view, defining the unified column structure. */
 export type DataViewTarget = {
@@ -6161,6 +6424,8 @@ export type EntityDataViewSource = {
   errors?: Maybe<Array<DataViewSourceError>>;
   /** The column mappings for this source. */
   mappings?: Maybe<Array<DataViewColumnMapping>>;
+  /** Whether this source has the main (items) or subitem relation type. */
+  relation_type?: Maybe<DataViewSourceRelationType>;
   /** The source identifier. */
   source_id?: Maybe<DataViewSourceId>;
 };
@@ -6225,10 +6490,10 @@ export type EventsExport = {
   total?: Maybe<Scalars['Int']['output']>;
 };
 
-/** Reference to a started async board export. Use the job_id with fetch_export_job_status to poll until COMPLETED or FAILED. */
+/** Reference to a started async board export. Poll export_job_status with the job_id until the status is COMPLETED, FAILED, or CANCELLED. fetch_export_job_status is a deprecated alias reachable only on dev. */
 export type ExportAsyncJob = {
   __typename?: 'ExportAsyncJob';
-  /** Opaque identifier for this export job. Pass to fetch_export_job_status. */
+  /** Opaque identifier for this export job. Pass to export_job_status. */
   job_id?: Maybe<Scalars['ID']['output']>;
 };
 
@@ -6251,14 +6516,24 @@ export enum ExportFailureReason {
   NotFound = 'NOT_FOUND'
 }
 
+/** A completed synchronous board export, ready to download. */
+export type ExportFile = {
+  __typename?: 'ExportFile';
+  /** Presigned URL to download the exported file. */
+  download_url?: Maybe<Scalars['String']['output']>;
+  /** When download_url stops working, ISO 8601. Re-export to get a new URL. */
+  expires_at?: Maybe<Scalars['String']['output']>;
+};
+
 /** Output format for the exported board file. */
 export enum ExportFormat {
   Csv = 'CSV',
   Xlsx = 'XLSX'
 }
 
-/** Lifecycle status of an async board export job. Polling clients should treat COMPLETED and FAILED as terminal. */
+/** Lifecycle status of an async board export job. Polling clients should treat COMPLETED, FAILED, and CANCELLED as terminal. */
 export enum ExportJobStatus {
+  Cancelled = 'CANCELLED',
   Completed = 'COMPLETED',
   Failed = 'FAILED',
   Running = 'RUNNING'
@@ -6267,13 +6542,13 @@ export enum ExportJobStatus {
 /** Status of an async board export job, including download URL when completed. */
 export type ExportJobStatusInfo = {
   __typename?: 'ExportJobStatusInfo';
-  /** Presigned S3 download URL, available only when status is COMPLETED and the export completed within the last hour. Returns null after 1 hour — re-trigger the export to get a new one. */
+  /** Presigned S3 download URL, available only when the job completed successfully and the URL has not yet expired. Returns null once expired — re-trigger the export to get a new one. */
   download_url?: Maybe<Scalars['String']['output']>;
-  /** Human-readable error detail. Populated only when status is FAILED and the reason exposes safe text. */
+  /** Human-readable error detail. Populated only when the job failed and the reason exposes safe text. */
   failure_message?: Maybe<Scalars['String']['output']>;
-  /** Structured reason for failure. Populated only when status is FAILED. */
+  /** Structured reason for failure. Populated only when the job failed. */
   failure_reason?: Maybe<ExportFailureReason>;
-  /** Current job status. Terminal values: COMPLETED, FAILED. */
+  /** Current job status. Terminal values: COMPLETED, FAILED, CANCELLED. */
   status?: Maybe<ExportJobStatus>;
 };
 
@@ -6306,6 +6581,9 @@ export type ExportOptionsInput = {
   people_column_format?: InputMaybe<PeopleColumnFormat>;
 };
 
+/** Result of create_board_export. Either a completed synchronous export (ExportFile) or a started async job (ExportAsyncJob). The server chooses which branch to return; callers MUST handle both. Use ... on ExportFile { download_url } and ... on ExportAsyncJob { job_id }. */
+export type ExportResult = ExportAsyncJob | ExportFile;
+
 /** Result of a single operation */
 export type ExtendTrialPeriod = {
   __typename?: 'ExtendTrialPeriod';
@@ -6337,6 +6615,15 @@ export enum ExternalWidget {
   Listview = 'LISTVIEW',
   Number = 'NUMBER'
 }
+
+/** Information about a failed team board role update, including the team ID and the error encountered. */
+export type FailedTeamBoardRoleUpdate = {
+  __typename?: 'FailedTeamBoardRoleUpdate';
+  /** The error message describing why the role update failed. */
+  error: Scalars['String']['output'];
+  /** The ID of the team whose board role update failed. */
+  team_id: Scalars['ID']['output'];
+};
 
 /** Information about a failed user board role update, including the user ID and the error encountered. */
 export type FailedUserBoardRoleUpdate = {
@@ -7773,6 +8060,28 @@ export type HourValue = ColumnValue & {
   updated_at?: Maybe<Scalars['Date']['output']>;
   /** The column's raw value in JSON format. */
   value?: Maybe<Scalars['JSON']['output']>;
+};
+
+/** Error details for a failed image action request */
+export type ImageActionError = {
+  __typename?: 'ImageActionError';
+  /** Machine-readable error code */
+  code?: Maybe<Scalars['String']['output']>;
+  /** Human-readable error message */
+  message?: Maybe<Scalars['String']['output']>;
+};
+
+/** Response from a runtime image-generation action request */
+export type ImageActionResponse = {
+  __typename?: 'ImageActionResponse';
+  /** Permanent CDN URL of the generated image (present only when success is true) */
+  cdn_url?: Maybe<Scalars['String']['output']>;
+  /** Error details, present only when success is false */
+  error?: Maybe<ImageActionError>;
+  /** Whether the request was successful */
+  success?: Maybe<Scalars['Boolean']['output']>;
+  /** Token usage information */
+  usage?: Maybe<TokenUsage>;
 };
 
 /** Input for creating image blocks */
@@ -9471,6 +9780,8 @@ export type Mutation = {
   bulk_delete_items?: Maybe<BulkDeleteInit>;
   /** Execute multiple object schema column actions in a single request. Actions are executed sequentially in the order provided. If any action fails, execution stops and an error is returned. */
   bulk_object_schema_column_actions?: Maybe<Array<ObjectSchemaActionResult>>;
+  /** Change the privacy kind (public / private / shareable) of a board */
+  change_board_kind?: Maybe<ChangeBoardKindResult>;
   /** Change a column's properties */
   change_column_metadata?: Maybe<Column>;
   /** Change a column's title */
@@ -9519,6 +9830,8 @@ export type Mutation = {
   create_article?: Maybe<ArticleMetadata>;
   /** Create a new board. */
   create_board?: Maybe<Board>;
+  /** Export a board. Returns ExportFile (sync) or ExportAsyncJob (async) based on board size and server conditions. The server chooses which branch to return; the choice is not part of the contract and may be retuned without notice. Callers MUST handle both branches. Sync: use download_url directly. Async: poll export_job_status until COMPLETED, FAILED, or CANCELLED. The exported file is always CSV. */
+  create_board_export?: Maybe<ExportResult>;
   /** Generic mutation for creating any column type with validation. Supports creating column with properties like title, description, and type-specific defaults/settings. The mutation validates input against the column type's schema before applying changes. Use get_column_type_schema query to understand available properties for each column type. */
   create_column?: Maybe<Column>;
   create_custom_activity?: Maybe<CustomActivity>;
@@ -9672,6 +9985,8 @@ export type Mutation = {
   duplicate_group?: Maybe<Group>;
   /** Duplicate an item. */
   duplicate_item?: Maybe<Item>;
+  /** Duplicate an existing board subset/view */
+  duplicate_view?: Maybe<BoardView>;
   edit_update: Update;
   /** Enroll multiple items to a single sequence. Maximum 50 items per request. */
   enroll_items_to_sequence?: Maybe<EnrollToSequenceResult>;
@@ -9712,6 +10027,8 @@ export type Mutation = {
   remove_team_owners?: Maybe<RemoveTeamOwnersResult>;
   /** Remove users from team. */
   remove_users_from_team?: Maybe<ChangeTeamMembershipsResult>;
+  /** Restore a deleted board subset/view */
+  restore_view?: Maybe<BoardView>;
   /** Revokes all API tokens for a service user. */
   revoke_service_user_tokens?: Maybe<Scalars['Boolean']['output']>;
   /** Run a prompt against an AI model and return the completion response. For more advanced capabilities, use Models REST API. */
@@ -9805,6 +10122,10 @@ export type Mutation = {
   update_status_column?: Maybe<Column>;
   /** Update managed column of type status mutation. */
   update_status_managed_column?: Maybe<StatusManagedColumn>;
+  /** Update board roles for multiple teams. */
+  update_teams_board_role?: Maybe<UpdateTeamsBoardRoleResponse>;
+  /** Update board roles for multiple users. */
+  update_users_board_role?: Maybe<UpdateUsersBoardRoleResponse>;
   /** Updates the role of the specified users. */
   update_users_role?: Maybe<UpdateUsersRoleResult>;
   /** Update a validation rule */
@@ -10038,6 +10359,13 @@ export type MutationBulk_Object_Schema_Column_ActionsArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationChange_Board_KindArgs = {
+  board_id: Scalars['ID']['input'];
+  kind: BoardKindInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationChange_Column_MetadataArgs = {
   board_id: Scalars['ID']['input'];
   column_id: Scalars['String']['input'];
@@ -10260,6 +10588,15 @@ export type MutationCreate_BoardArgs = {
   use_dataset_template?: InputMaybe<Scalars['Boolean']['input']>;
   use_mls_template?: InputMaybe<Scalars['Boolean']['input']>;
   workspace_id?: InputMaybe<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationCreate_Board_ExportArgs = {
+  board_id: Scalars['ID']['input'];
+  columns_order?: InputMaybe<Array<Scalars['String']['input']>>;
+  export_options?: InputMaybe<ExportOptionsInput>;
+  time_zone?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -10905,6 +11242,13 @@ export type MutationDuplicate_ItemArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationDuplicate_ViewArgs = {
+  board_id: Scalars['ID']['input'];
+  view_id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationEdit_UpdateArgs = {
   body: Scalars['String']['input'];
   id: Scalars['ID']['input'];
@@ -11066,6 +11410,13 @@ export type MutationRemove_Team_OwnersArgs = {
 export type MutationRemove_Users_From_TeamArgs = {
   team_id: Scalars['ID']['input'];
   user_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationRestore_ViewArgs = {
+  board_id: Scalars['ID']['input'];
+  view_id: Scalars['ID']['input'];
 };
 
 
@@ -11442,6 +11793,22 @@ export type MutationUpdate_Status_Managed_ColumnArgs = {
   revision: Scalars['Int']['input'];
   settings?: InputMaybe<UpdateStatusColumnSettingsInput>;
   title?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUpdate_Teams_Board_RoleArgs = {
+  board_id: Scalars['ID']['input'];
+  role_name: BoardBasicRoleName;
+  team_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUpdate_Users_Board_RoleArgs = {
+  board_id: Scalars['ID']['input'];
+  role_name: BoardBasicRoleName;
+  user_ids: Array<Scalars['ID']['input']>;
 };
 
 
@@ -12603,6 +12970,13 @@ export type ProgressValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
+/** All schedule conflicts detected on a project. */
+export type ProjectScheduleConflicts = {
+  __typename?: 'ProjectScheduleConflicts';
+  /** Conflicts found. Empty array when no conflicts exist. */
+  conflicts: Array<ScheduleConflict>;
+};
+
 /** A prompt suggestion for a vibe */
 export type PromptSuggestion = {
   __typename?: 'PromptSuggestion';
@@ -12839,6 +13213,8 @@ export type Query = {
   export_events?: Maybe<EventsExport>;
   /** Export the dependency graph for a specific board */
   export_graph?: Maybe<BoardGraphExport>;
+  /** Fetch the status of an async board export job. Returns null for unknown or cross-account job IDs (a foreign-account job is indistinguishable from a missing one). Poll until status is COMPLETED (use download_url), FAILED (read failure_reason), or CANCELLED. */
+  export_job_status?: Maybe<ExportJobStatusInfo>;
   /** Converts document content into standard markdown format for external use, backup, or processing. Exports the entire document by default, or specific blocks if block IDs are provided. Use this to extract content for integration with other systems, create backups, generate reports, or process document content with external tools. The output is clean, portable markdown that preserves formatting and structure. */
   export_markdown_from_doc?: Maybe<ExportMarkdownResult>;
   /** Get all personal list items by list ID */
@@ -12951,6 +13327,8 @@ export type Query = {
   webhooks?: Maybe<Array<Maybe<Webhook>>>;
   /** Get a collection of workspaces. */
   workspaces?: Maybe<Array<Maybe<Workspace>>>;
+  /** Returns true if connecting source_item_id -> target_item_id would create an MLS rollup cycle */
+  would_create_mls_rollup_cycle: Scalars['Boolean']['output'];
 };
 
 
@@ -13057,6 +13435,7 @@ export type QueryArticlesArgs = {
 /** Root query type for the Dependencies service */
 export type QueryAsk_Developer_DocsArgs = {
   query: Scalars['String']['input'];
+  retrieval_only?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 
@@ -13234,6 +13613,12 @@ export type QueryExport_EventsArgs = {
 /** Root query type for the Dependencies service */
 export type QueryExport_GraphArgs = {
   boardId: Scalars['String']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryExport_Job_StatusArgs = {
+  job_id: Scalars['ID']['input'];
 };
 
 
@@ -13583,6 +13968,14 @@ export type QueryWorkspacesArgs = {
   state?: InputMaybe<State>;
 };
 
+
+/** Root query type for the Dependencies service */
+export type QueryWould_Create_Mls_Rollup_CycleArgs = {
+  board_id: Scalars['ID']['input'];
+  source_item_id: Scalars['ID']['input'];
+  target_item_id: Scalars['ID']['input'];
+};
+
 export type QuestionOptionInput = {
   /** The display text for the option shown to respondents. Must be at least 1 character long. */
   label: Scalars['String']['input'];
@@ -13791,6 +14184,25 @@ export type RemoteOptionsResponse = {
   options?: Maybe<Array<Option>>;
 };
 
+/** Input for removing integration tool instances */
+export type RemoveIntegrationToolsInput = {
+  /** The ID of the AI app */
+  ai_app_id: Scalars['ID']['input'];
+  /** Block reference IDs of tools to remove */
+  block_reference_ids: Array<Scalars['ID']['input']>;
+  /** When true, also nulls the credentials variable for the removed tools (full disconnect) */
+  null_credentials?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+/** Result of removing integration tools */
+export type RemoveIntegrationToolsResult = {
+  __typename?: 'RemoveIntegrationToolsResult';
+  /** Number of instances removed */
+  removed_count?: Maybe<Scalars['Int']['output']>;
+  /** Whether the operation succeeded */
+  success?: Maybe<Scalars['Boolean']['output']>;
+};
+
 /** Error that occurred while removing team owners. */
 export type RemoveTeamOwnersError = {
   __typename?: 'RemoveTeamOwnersError';
@@ -13905,6 +14317,15 @@ export enum ResourceType {
   Post = 'POST',
   PostRef = 'POST_REF'
 }
+
+/** Recurring weekly work-schedule mask for a resource. Does not account for time-offs or specific dates. */
+export type ResourceWorkWeekday = {
+  __typename?: 'ResourceWorkWeekday';
+  /** Sunday-first length-7 mask of active work days for the resource work schedule */
+  active_weekdays: Array<Scalars['Boolean']['output']>;
+  /** Resource ID */
+  resource_id: Scalars['ID']['output'];
+};
 
 /** Resources availability with per-resource references and top-level schedule/time-off data */
 export type ResourcesAvailability = {
@@ -14102,6 +14523,17 @@ export type SaveWorkspaceAsTemplateResponse = {
   template_id?: Maybe<Scalars['Int']['output']>;
 };
 
+/** A detected schedule conflict between a task timeline and a resource availability. */
+export type ScheduleConflict = {
+  __typename?: 'ScheduleConflict';
+  /** The task with the conflict. */
+  pulse_id: Scalars['ID']['output'];
+  /** The resource whose schedule conflicts with the task timeline. */
+  resource_id: Scalars['ID']['output'];
+  /** Whether the resource is fully or partially unavailable within the task timeline. */
+  severity?: Maybe<ConflictSeverity>;
+};
+
 /** notification settings scope types, the options are account user defaults or user private settings */
 export enum ScopeType {
   AccountNewUserDefaults = 'AccountNewUserDefaults',
@@ -14202,11 +14634,17 @@ export enum SearchField {
   BoardOwnerId = 'BOARD_OWNER_ID',
   BoardWithPulseViewPermissions = 'BOARD_WITH_PULSE_VIEW_PERMISSIONS',
   CreatedBy = 'CREATED_BY',
+  GroupId = 'GROUP_ID',
+  GroupName = 'GROUP_NAME',
   ItemsDates = 'ITEMS_DATES',
   ItemsNumerics = 'ITEMS_NUMERICS',
   ItemFreeText = 'ITEM_FREE_TEXT',
+  ItemId = 'ITEM_ID',
+  ItemLabels = 'ITEM_LABELS',
   ItemName = 'ITEM_NAME',
+  ItemReferencedEmails = 'ITEM_REFERENCED_EMAILS',
   ItemStatuses = 'ITEM_STATUSES',
+  ItemTags = 'ITEM_TAGS',
   LastUpdatedBy = 'LAST_UPDATED_BY',
   Persons = 'PERSONS',
   UpdatedAt = 'UPDATED_AT',
@@ -14626,9 +15064,11 @@ export type SearchWorkspaceResults = {
 
 /** Parameters for sending a message to a channel. */
 export type SendMessageInput = {
+  /** UUIDs returned by completed channel uploads. Supports up to 10 attachments per message. */
+  asset_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   /** ID of the channel to send the message to. */
   channel_id: Scalars['ID']['input'];
-  /** Structured message content (text blocks, mentions, attachments). Must conform to the MessageContent schema from @mondaydotcomorg/chat-contracts. */
+  /** Structured message content (text blocks and mentions). Must conform to the MessageContent schema from @mondaydotcomorg/chat-contracts. */
   content: Scalars['JSON']['input'];
   /** Client-generated UUID for this message. Re-sending the same message_id is idempotent — the original message is returned without creating a duplicate. If omitted, a UUID is generated server-side (retries will not be idempotent). */
   message_id?: InputMaybe<Scalars['ID']['input']>;
@@ -15070,6 +15510,8 @@ export type StandaloneBoardDataViewSource = {
   errors?: Maybe<Array<DataViewSourceError>>;
   /** The column mappings for this source. */
   mappings?: Maybe<Array<DataViewColumnMapping>>;
+  /** Whether this source has the main (items) or subitem relation type. */
+  relation_type?: Maybe<DataViewSourceRelationType>;
   /** The source identifier. */
   source_id?: Maybe<DataViewSourceId>;
 };
@@ -15215,7 +15657,7 @@ export type StatusValue = ColumnValue & {
 /** Result of stopping a run-once workflow execution */
 export type StopWorkflowRunOnceResult = {
   __typename?: 'StopWorkflowRunOnceResult';
-  /** Explanation when 'stopped' is false. For example, 'no_active_test_run' means no execution was in progress. */
+  /** Explanation when 'stopped' is false. For example, 'no_active_run_once' means no execution was in progress. */
   reason?: Maybe<Scalars['String']['output']>;
   /** Whether a running execution was successfully stopped. Returns false if no execution was active. */
   stopped: Scalars['Boolean']['output'];
@@ -16193,8 +16635,8 @@ export type ToolFieldsConfiguredInput = {
   block_instance_id: Scalars['ID']['input'];
   /** The chosen values per inbound field key. An empty object lifts every constraint. */
   field_value_scopes: Scalars['JSON']['input'];
-  /** The ID of the CTA message being answered */
-  message_id: Scalars['ID']['input'];
+  /** The ID of the CTA message being answered (optional when configuring from settings) */
+  message_id?: InputMaybe<Scalars['ID']['input']>;
 };
 
 /** Result of saving an integration block instance field configuration */
@@ -16254,7 +16696,7 @@ export enum TransformationType {
 /** Result of checking eligibility to transition a vibe app to external mode */
 export type TransitionToExternalEligibility = {
   __typename?: 'TransitionToExternalEligibility';
-  /** Whether the current user owns all boards connected to this app */
+  /** Whether the current user may publish this app to the public web — they hold the account permission and own all boards connected to this app */
   is_eligible?: Maybe<Scalars['Boolean']['output']>;
 };
 
@@ -16382,6 +16824,13 @@ export type UndoResult = {
   message?: Maybe<Scalars['String']['output']>;
   /** Whether the undo was successfully initiated */
   success?: Maybe<Scalars['Boolean']['output']>;
+};
+
+/** Result of removing an agent from the saved list */
+export type UnsaveAgentResult = {
+  __typename?: 'UnsaveAgentResult';
+  /** The agent user id of the agent that was removed from the saved list */
+  agent_user_id?: Maybe<Scalars['ID']['output']>;
 };
 
 /** Result of the unsubscribe_teams_from_agent mutation. */
@@ -16859,6 +17308,18 @@ export type UpdateTaskInput = {
   status?: InputMaybe<TaskStatus>;
   /** The task title */
   title?: InputMaybe<Scalars['String']['input']>;
+};
+
+/**
+ * Response type for updating multiple teams' board roles. Contains information
+ * about which teams were successfully updated and which failed.
+ */
+export type UpdateTeamsBoardRoleResponse = {
+  __typename?: 'UpdateTeamsBoardRoleResponse';
+  /** List of failed team updates with error details. */
+  failed_teams: Array<FailedTeamBoardRoleUpdate>;
+  /** List of IDs of teams whose board roles were successfully updated. */
+  successful_team_ids: Array<Scalars['ID']['output']>;
 };
 
 /** Input for updating an existing time off entry */
@@ -17507,6 +17968,7 @@ export type UserRequest = {
 export enum UserRequestKind {
   NotifyPlanCloseToLimit = 'notify_plan_close_to_limit',
   RequestToMakeAppPublic = 'request_to_make_app_public',
+  RequestToPublishApp = 'request_to_publish_app',
   RequestToUpgradeBeforeAppsUnpublish = 'request_to_upgrade_before_apps_unpublish',
   RequestToUpgradeBoardConnection = 'request_to_upgrade_board_connection',
   RequestToUpgradePlan = 'request_to_upgrade_plan',
@@ -18065,6 +18527,17 @@ export type VibeAsset = {
   width?: Maybe<Scalars['Int']['output']>;
 };
 
+/** An integration the app holds valid OAuth credentials for (even if all tools are disabled) */
+export type VibeAuthenticatedIntegration = {
+  __typename?: 'VibeAuthenticatedIntegration';
+  /** Provider/app name, e.g. "Gmail" */
+  app_name?: Maybe<Scalars['String']['output']>;
+  /** The credentials reference ID */
+  credentials_reference_id?: Maybe<Scalars['ID']['output']>;
+  /** App icon URL */
+  icon_url?: Maybe<Scalars['String']['output']>;
+};
+
 /** A single operation within a batch write. */
 export type VibeBatchOpInput = {
   /** Target collection. */
@@ -18152,6 +18625,31 @@ export type VibeConnectedIntegration = {
   /** What the tool does, as published by the block app feature */
   tool_description?: Maybe<Scalars['String']['output']>;
   /** Human-readable tool name, e.g. "Send Slack message". Null when the block app feature no longer resolves */
+  tool_name?: Maybe<Scalars['String']['output']>;
+};
+
+/** Detailed integration instance with configuration data for the settings UI */
+export type VibeConnectedIntegrationDetail = {
+  __typename?: 'VibeConnectedIntegrationDetail';
+  /** Provider/app name, e.g. "Slack" */
+  app_name?: Maybe<Scalars['String']['output']>;
+  /** The block-app-feature reference id */
+  block_reference_id?: Maybe<Scalars['ID']['output']>;
+  /** The credentials ID for building CredentialsValues for remote options fetching */
+  credentials_id?: Maybe<Scalars['ID']['output']>;
+  /** Credentials reference ID for grouping instances by integration */
+  credentials_reference_id?: Maybe<Scalars['ID']['output']>;
+  /** JSON-encoded configured remote options (channels, boards, triggers) for this tool */
+  field_value_scopes?: Maybe<Scalars['String']['output']>;
+  /** App icon URL */
+  icon_url?: Maybe<Scalars['String']['output']>;
+  /** The DB id of the block instance, used to target mutations */
+  instance_id?: Maybe<Scalars['ID']['output']>;
+  /** UUID identifier of the block instance */
+  instance_key?: Maybe<Scalars['String']['output']>;
+  /** What the tool does */
+  tool_description?: Maybe<Scalars['String']['output']>;
+  /** Human-readable tool name */
   tool_name?: Maybe<Scalars['String']['output']>;
 };
 
@@ -18251,6 +18749,8 @@ export type VibeMutations = {
   enhance_prompt: EnhancedPromptResult;
   /** Get a presigned URL to upload a file to S3 */
   file_upload_url?: Maybe<FileUploadUrl>;
+  /** Generate an image at runtime and store it in the app asset library */
+  generate_image: ImageActionResponse;
   /** Rollback an AI app to an older specific version */
   rollback_to_version?: Maybe<SuccessResponse>;
 };
@@ -18308,6 +18808,15 @@ export type VibeMutationsFile_Upload_UrlArgs = {
   file_name: Scalars['String']['input'];
   file_size?: InputMaybe<Scalars['Int']['input']>;
   mime_type: AllowedFileMime;
+};
+
+
+/** Namespace for all vibe-related mutations */
+export type VibeMutationsGenerate_ImageArgs = {
+  app_id: Scalars['ID']['input'];
+  aspect_ratio?: InputMaybe<Scalars['String']['input']>;
+  prompt: Scalars['String']['input'];
+  session_tracker?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -19932,6 +20441,7 @@ export type GetColumnTypeSchemaQuery = { __typename?: 'Query', get_column_type_s
 
 export type AskDeveloperDocsQueryVariables = Exact<{
   query: Scalars['String']['input'];
+  retrieval_only?: InputMaybe<Scalars['Boolean']['input']>;
 }>;
 
 
@@ -20773,7 +21283,7 @@ export const GetBoardInfoViewIndexDocument = {"kind":"Document","definitions":[{
 export const GetBoardInfoJustColumnsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetBoardInfoJustColumns"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"boards"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"ListValue","values":[{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"columns"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"settings"}},{"kind":"Field","name":{"kind":"Name","value":"revision"}}]}}]}}]}}]} as unknown as DocumentNode<GetBoardInfoJustColumnsQuery, GetBoardInfoJustColumnsQueryVariables>;
 export const GetBoardItemsPageDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetBoardItemsPage"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"cursor"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"includeColumns"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"queryParams"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ItemsQuery"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"includeSubItems"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"includeDescription"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"includeGroup"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"boards"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"ListValue","values":[{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"hierarchy_type"}},{"kind":"Field","name":{"kind":"Name","value":"items_page"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"cursor"},"value":{"kind":"Variable","name":{"kind":"Name","value":"cursor"}}},{"kind":"Argument","name":{"kind":"Name","value":"query_params"},"value":{"kind":"Variable","name":{"kind":"Name","value":"queryParams"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"ItemDataFragment"}},{"kind":"Field","name":{"kind":"Name","value":"subitems"},"directives":[{"kind":"Directive","name":{"kind":"Name","value":"include"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"if"},"value":{"kind":"Variable","name":{"kind":"Name","value":"includeSubItems"}}}]}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"ItemDataFragment"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"cursor"}}]}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"ItemDataFragment"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Item"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}},{"kind":"Field","name":{"kind":"Name","value":"parent_item"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}},{"kind":"Field","name":{"kind":"Name","value":"group"},"directives":[{"kind":"Directive","name":{"kind":"Name","value":"include"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"if"},"value":{"kind":"Variable","name":{"kind":"Name","value":"includeGroup"}}}]}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}},{"kind":"Field","name":{"kind":"Name","value":"column_values"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnIds"}}},{"kind":"Argument","name":{"kind":"Name","value":"capabilities"},"value":{"kind":"ListValue","values":[{"kind":"EnumValue","value":"CALCULATED"}]}}],"directives":[{"kind":"Directive","name":{"kind":"Name","value":"include"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"if"},"value":{"kind":"Variable","name":{"kind":"Name","value":"includeColumns"}}}]}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"text"}},{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"is_leaf"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"FormulaValue"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"display_value"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BoardRelationValue"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"linked_items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"board"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"BatteryValue"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"battery_value"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"key"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"description"},"directives":[{"kind":"Directive","name":{"kind":"Name","value":"include"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"if"},"value":{"kind":"Variable","name":{"kind":"Name","value":"includeDescription"}}}]}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"blocks"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"content"}}]}}]}}]}}]} as unknown as DocumentNode<GetBoardItemsPageQuery, GetBoardItemsPageQueryVariables>;
 export const GetColumnTypeSchemaDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetColumnTypeSchema"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"type"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ColumnType"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"get_column_type_schema"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"type"}}}]}]}}]} as unknown as DocumentNode<GetColumnTypeSchemaQuery, GetColumnTypeSchemaQueryVariables>;
-export const AskDeveloperDocsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"AskDeveloperDocs"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"ask_developer_docs"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"question"}},{"kind":"Field","name":{"kind":"Name","value":"answer"}},{"kind":"Field","name":{"kind":"Name","value":"conversation_id"}}]}}]}}]} as unknown as DocumentNode<AskDeveloperDocsQuery, AskDeveloperDocsQueryVariables>;
+export const AskDeveloperDocsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"AskDeveloperDocs"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"retrieval_only"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}},"defaultValue":{"kind":"BooleanValue","value":true}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"ask_developer_docs"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"retrieval_only"},"value":{"kind":"Variable","name":{"kind":"Name","value":"retrieval_only"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"question"}},{"kind":"Field","name":{"kind":"Name","value":"answer"}},{"kind":"Field","name":{"kind":"Name","value":"conversation_id"}}]}}]}}]} as unknown as DocumentNode<AskDeveloperDocsQuery, AskDeveloperDocsQueryVariables>;
 export const KnowledgeBaseSearchDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"KnowledgeBaseSearch"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"knowledge_base_search"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"answer"}},{"kind":"Field","name":{"kind":"Name","value":"raw_snippets"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"text"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"distance"}},{"kind":"Field","name":{"kind":"Name","value":"parent_id"}}]}}]}}]}}]} as unknown as DocumentNode<KnowledgeBaseSearchQuery, KnowledgeBaseSearchQueryVariables>;
 export const GetObjectSchemasDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetObjectSchemas"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"ids"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"names"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"page"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"excludeCreatedByMonday"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"get_object_schemas"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"ids"}}},{"kind":"Argument","name":{"kind":"Name","value":"names"},"value":{"kind":"Variable","name":{"kind":"Name","value":"names"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"page"},"value":{"kind":"Variable","name":{"kind":"Name","value":"page"}}},{"kind":"Argument","name":{"kind":"Name","value":"exclude_created_by_monday"},"value":{"kind":"Variable","name":{"kind":"Name","value":"excludeCreatedByMonday"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"parent_id"}},{"kind":"Field","name":{"kind":"Name","value":"revision"}},{"kind":"Field","name":{"kind":"Name","value":"account_id"}},{"kind":"Field","name":{"kind":"Name","value":"connected_boards_count"}}]}}]}}]} as unknown as DocumentNode<GetObjectSchemasQuery, GetObjectSchemasQueryVariables>;
 export const GetItemUpdatesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetItemUpdates"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"itemId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"page"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"includeReplies"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"includeAssets"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"ListValue","values":[{"kind":"Variable","name":{"kind":"Name","value":"itemId"}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"updates"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"page"},"value":{"kind":"Variable","name":{"kind":"Name","value":"page"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"text_body"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}},{"kind":"Field","name":{"kind":"Name","value":"item_id"}},{"kind":"Field","name":{"kind":"Name","value":"creator"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"replies"},"directives":[{"kind":"Directive","name":{"kind":"Name","value":"include"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"if"},"value":{"kind":"Variable","name":{"kind":"Name","value":"includeReplies"}}}]}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"text_body"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}},{"kind":"Field","name":{"kind":"Name","value":"creator"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"assets"},"directives":[{"kind":"Directive","name":{"kind":"Name","value":"include"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"if"},"value":{"kind":"Variable","name":{"kind":"Name","value":"includeAssets"}}}]}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"file_extension"}},{"kind":"Field","name":{"kind":"Name","value":"file_size"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetItemUpdatesQuery, GetItemUpdatesQueryVariables>;

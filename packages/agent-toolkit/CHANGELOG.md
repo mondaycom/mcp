@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.69.1
+
+### Default `retrieval_only` to `true` for `get_monday_knowledge` developer docs queries
+
+`ask_developer_docs` now defaults to `retrieval_only: true`, returning the most relevant documentation content directly instead of a summarized AI answer.
+
 ## 5.69.0
 
 ### Document the virtual column ids and the [UNIT, AMOUNT] rolling window

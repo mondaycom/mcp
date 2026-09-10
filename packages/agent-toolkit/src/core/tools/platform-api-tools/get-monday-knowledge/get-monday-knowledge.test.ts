@@ -138,7 +138,7 @@ describe('GetMondayKnowledgeTool', () => {
       );
     });
 
-    it('passes only query to the ask_developer_docs API', async () => {
+    it('passes query and retrieval_only to the ask_developer_docs API', async () => {
       mocks.setResponse({
         ask_developer_docs: { answer: 'answer', id: '1', question: 'q', conversation_id: 'c' },
       });
@@ -148,7 +148,7 @@ describe('GetMondayKnowledgeTool', () => {
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.stringContaining('ask_developer_docs'),
-        { query: 'how to deploy?' },
+        { query: 'how to deploy?', retrieval_only: true },
       );
     });
   });

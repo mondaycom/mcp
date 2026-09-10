@@ -94,7 +94,7 @@ Important: do not include PII data in the questions.`;
   }
 
   private async queryDeveloperDocs(query: string): Promise<ToolOutputType<never>> {
-    const variables: AskDeveloperDocsQueryVariables = { query };
+    const variables: AskDeveloperDocsQueryVariables = { query, retrieval_only: true };
     const response = await this.mondayApi.request<AskDeveloperDocsQuery>(askDeveloperDocsQuery, variables);
 
     const result = response.ask_developer_docs;
