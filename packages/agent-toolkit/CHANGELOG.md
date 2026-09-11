@@ -1,5 +1,14 @@
 # Changelog
 
+## 5.69.2
+
+### Fix guests not being able to open files uploaded with `finalize_asset_upload`
+
+`finalize_asset_upload` wrote `assetId` into the file column as a string. monday.com compares that value against the asset's own numeric id when it decides whether a file column grants access to a file, and a string never matches, so guests on boards with permission rules saw "File not found or deleted" for every file uploaded through this tool. `complete_upload.id` is a GraphQL `ID`, which the API serializes as a string, so the tool now coerces it with `Number()` before writing `assetId`. The returned `asset_id` is coerced the same way.
+
+- `isImage` is now sent as well, so image uploads render a thumbnail in the cell.
+- `column_id` is now passed to `complete_upload`, so the asset is recorded as column bound rather than left with no columnless metadata.
+
 ## 5.69.1
 
 ### Default `retrieval_only` to `true` for `get_monday_knowledge` developer docs queries

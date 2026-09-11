@@ -2,7 +2,7 @@ import { createMockApiClient } from '../test-utils/mock-api-client';
 import { FinalizeAssetUploadTool } from './finalize-asset-upload-tool';
 
 const MOCK_ASSET = {
-  id: 987654,
+  id: '987654',
   filename: 'report.pdf',
   content_type: 'application/pdf',
   file_size: 1024,
@@ -50,28 +50,65 @@ describe('FinalizeAssetUploadTool', () => {
           upload_id: 'uuid-upload-123',
           holder: { type: 'ITEM', id: '42' },
           board_id: '100',
+          column_id: 'file_mkvvv9cm',
           parts: [{ part_number: 1, etag: '"abc123etag"' }],
         },
       },
       expect.objectContaining({ versionOverride: 'dev' }),
     );
 
-    expect(mocks.mockRequest).toHaveBeenNthCalledWith(
-      2,
-      expect.anything(),
-      {
-        boardId: '100',
-        itemId: '42',
-        columnId: 'file_mkvvv9cm',
-        value: JSON.stringify({
-          added_file: {
-            fileType: 'ASSET',
-            name: 'report.pdf',
-            assetId: '987654',
-          },
-        }),
-      },
-    );
+    expect(mocks.mockRequest).toHaveBeenNthCalledWith(2, expect.anything(), {
+      boardId: '100',
+      itemId: '42',
+      columnId: 'file_mkvvv9cm',
+      value: JSON.stringify({
+        added_file: {
+          fileType: 'ASSET',
+          name: 'report.pdf',
+          assetId: 987654,
+          isImage: false,
+        },
+      }),
+    });
+  });
+
+  it('writes assetId as a number so monday.com column permission checks match it', async () => {
+    mocks.mockRequest.mockResolvedValueOnce({ complete_upload: MOCK_ASSET });
+    mocks.mockRequest.mockResolvedValueOnce({ change_column_value: { id: '42' } });
+
+    const tool = new FinalizeAssetUploadTool(mocks.mockApiClient);
+    await tool.execute({
+      uploadId: 'uuid-upload-123',
+      etag: '"abc123etag"',
+      boardId: '100',
+      itemId: '42',
+      columnId: 'file_mkvvv9cm',
+    });
+
+    const changeColumnValueArgs = mocks.mockRequest.mock.calls[1][1] as { value: string };
+    const addedFile = JSON.parse(changeColumnValueArgs.value).added_file;
+
+    expect(typeof addedFile.assetId).toBe('number');
+    expect(addedFile.assetId).toBe(987654);
+  });
+
+  it('marks image uploads as images', async () => {
+    mocks.mockRequest.mockResolvedValueOnce({
+      complete_upload: { ...MOCK_ASSET, filename: 'diagram.png', content_type: 'image/png' },
+    });
+    mocks.mockRequest.mockResolvedValueOnce({ change_column_value: { id: '42' } });
+
+    const tool = new FinalizeAssetUploadTool(mocks.mockApiClient);
+    await tool.execute({
+      uploadId: 'uuid-upload-123',
+      etag: '"abc123etag"',
+      boardId: '100',
+      itemId: '42',
+      columnId: 'file_mkvvv9cm',
+    });
+
+    const changeColumnValueArgs = mocks.mockRequest.mock.calls[1][1] as { value: string };
+    expect(JSON.parse(changeColumnValueArgs.value).added_file.isImage).toBe(true);
   });
 
   it('propagates complete_upload errors', async () => {
@@ -89,7 +126,13 @@ describe('FinalizeAssetUploadTool', () => {
     const tool = new FinalizeAssetUploadTool(mocks.mockApiClient);
 
     await expect(
-      tool.execute({ uploadId: 'uuid-upload-123', etag: '"abc123etag"', boardId: '100', itemId: '42', columnId: 'bad_col' }),
+      tool.execute({
+        uploadId: 'uuid-upload-123',
+        etag: '"abc123etag"',
+        boardId: '100',
+        itemId: '42',
+        columnId: 'bad_col',
+      }),
     ).rejects.toThrow('Column not found');
   });
 
