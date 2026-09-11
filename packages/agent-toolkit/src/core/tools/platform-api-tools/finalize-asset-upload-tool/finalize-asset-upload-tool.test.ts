@@ -2,7 +2,7 @@ import { createMockApiClient } from '../test-utils/mock-api-client';
 import { FinalizeAssetUploadTool } from './finalize-asset-upload-tool';
 
 const MOCK_ASSET = {
-  id: 987654,
+  id: '987654',
   filename: 'report.pdf',
   content_type: 'application/pdf',
   file_size: 1024,

@@ -14,7 +14,7 @@ export const finalizeAssetUploadSchema = {
 
 interface CompleteUploadMutation {
   complete_upload: {
-    id: number;
+    id: string; // GraphQL ID scalar; serialized as a string even though the underlying id is numeric
     filename: string;
     content_type: string;
     file_size: number;
@@ -80,7 +80,7 @@ export class FinalizeAssetUploadTool extends BaseMondayApiTool<typeof finalizeAs
       added_file: {
         fileType: 'ASSET',
         name: asset.filename,
-        assetId: asset.id,
+        assetId: Number(asset.id),
         isImage: asset.content_type?.startsWith('image/') ?? false,
       },
     });
@@ -94,7 +94,7 @@ export class FinalizeAssetUploadTool extends BaseMondayApiTool<typeof finalizeAs
 
     return {
       content: {
-        asset_id: asset.id,
+        asset_id: Number(asset.id),
         filename: asset.filename,
         content_type: asset.content_type,
         file_size: asset.file_size,
