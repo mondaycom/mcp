@@ -62,6 +62,7 @@ export class FinalizeAssetUploadTool extends BaseMondayApiTool<typeof finalizeAs
           upload_id: input.uploadId,
           holder: { type: 'ITEM', id: input.itemId },
           board_id: input.boardId,
+          column_id: input.columnId,
           parts: [{ part_number: 1, etag: input.etag }],
         },
       },
@@ -71,11 +72,16 @@ export class FinalizeAssetUploadTool extends BaseMondayApiTool<typeof finalizeAs
 
     const asset = completeRes.complete_upload;
 
+    // assetId must be a number. monday.com compares it against the asset's own
+    // numeric id when deciding whether a file column grants access to a file, and
+    // a string never matches, which hides the file from guests on boards that have
+    // permission rules.
     const value = JSON.stringify({
       added_file: {
         fileType: 'ASSET',
         name: asset.filename,
-        assetId: String(asset.id),
+        assetId: asset.id,
+        isImage: asset.content_type?.startsWith('image/') ?? false,
       },
     });
 
