@@ -13623,7 +13623,8 @@ query: String!,   "Maximum number of results to return (default 10, max 20)."
 limit: Int = 10,   "Date range filter."
 date_range: CrossEntityDateRangeInput,   "Controls the trade-off between search quality and response time. Defaults to balanced."
 strategy: SearchStrategy,   "Filter documents to specific workspace IDs."
-workspace_ids: [ID!]): SearchDocResults!
+workspace_ids: [ID!],   "Filter documents to specific document IDs, as they appear in document URLs. At most 512 IDs, more are rejected."
+ids: [ID!]): SearchDocResults!
   "Search for overviews (dashboards)."
   overviews(  "The search query string."
 query: String!,   "Maximum number of results to return (default 10, max 20)."
