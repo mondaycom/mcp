@@ -25,7 +25,7 @@ jobs:
           registry-url: https://registry.npmjs.org/
 
       - name: Update npm for OIDC trusted publishing support
-        run: npm install -g npm@latest
+        run: npm install -g npm@11
 
       - name: Install Yarn
         run: npm install -g yarn@1.22.21
