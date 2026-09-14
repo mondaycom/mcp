@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.70.1
+
+Re-publish: `5.70.0` never reached the npm registry due to a CI publishing pipeline issue (npm trusted-publishing/2FA-bypass token migration). No functional changes from `5.70.0`.
+
 ## 5.70.0
 
 ### search — scope DOCUMENTS search to specific documents with `docIds`
