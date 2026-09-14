@@ -11,6 +11,9 @@ jobs:
   publish-npm:
     environment: prod
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v3
         with:
@@ -20,6 +23,9 @@ jobs:
         with:
           node-version: '20.18.1'
           registry-url: https://registry.npmjs.org/
+
+      - name: Update npm for OIDC trusted publishing support
+        run: npm install -g npm@latest
 
       - name: Install Yarn
         run: npm install -g yarn@1.22.21
@@ -44,12 +50,9 @@ jobs:
       - name: Publish changed packages
         if: steps.changed.outputs.packages != '[]'
         run: |
-          echo "//registry.npmjs.org/:_authToken=$NODE_AUTH_TOKEN" > .npmrc
           PACKAGES=$(echo '${{ steps.changed.outputs.packages }}' | jq -r '.[]')
           for PKG in $PACKAGES; do
             cd packages/$PKG
-            yarn publish --access public
+            npm publish --access public --provenance
             cd ../..
           done
-        env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
