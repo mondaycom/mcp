@@ -47,9 +47,9 @@ export const searchBoards = gql`
 `;
 
 export const searchDocs = gql`
-  query SearchDocs($query: String!, $limit: Int, $workspaceIds: [ID!]) {
+  query SearchDocs($query: String!, $limit: Int, $workspaceIds: [ID!], $docIds: [ID!]) {
     search {
-      docs(query: $query, limit: $limit, workspace_ids: $workspaceIds) {
+      docs(query: $query, limit: $limit, workspace_ids: $workspaceIds, ids: $docIds) {
         results {
           id
           indexed_data {

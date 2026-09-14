@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.70.0
+
+### search — scope DOCUMENTS search to specific documents with `docIds`
+
+`search` accepts a new optional `docIds` argument, forwarded to `search.docs(ids:)`. It scopes a DOCUMENTS search to the given documents (ids as they appear in document URLs, at most 512), which lets a caller ask which of a known set of documents mention a term instead of searching the whole account. It combines with `workspaceIds`, and like the other id filters an empty array or `null` means "no filter".
+
+`search.docs(ids:)` exists from API version `2026-10`, which is the version the toolkit pins.
+
 ## 5.69.1
 
 ### Default `retrieval_only` to `true` for `get_monday_knowledge` developer docs queries

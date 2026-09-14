@@ -210,6 +210,11 @@ export const searchSchema = {
   creatorIds: optionalIdArray(
     'Array of user IDs (numbers) to filter by creator. Applies to ITEMS (filters by item creator), UPDATES (filters by update author), and DASHBOARDS (filters by dashboard creator). Only pass it if the user explicitly asked to filter by specific creators. Example: [12345, 67890].',
   ),
+
+  // for docs
+  docIds: optionalIdArray(
+    'Array of document IDs (numbers), as they appear in document URLs, to scope the search to. Applies to DOCUMENTS search, with at most 512 ids. Use it to search within a known set of documents, for example to find which of them mention a term. Only pass it if the user explicitly asked to search within specific documents. Example: [12345, 67890].',
+  ),
 };
 
 export type SearchToolInput = typeof searchSchema;
@@ -233,7 +238,7 @@ For browsing all boards, docs, or folders within a workspace without a search te
 For groups, use get_board_info tool.
 For listing items within a specific board, use get_board_items_page tool. ITEMS search here queries items across the account.
 BOARD search returns id, title, url, and workspaceId. Optionally scope it with boardIds.
-DOCUMENTS search returns id, title, workspaceId, and highlights. highlights is an array of { field, fragments } entries (field is "name" or "content") where fragments contain matched text snippets with <em> tags around matched terms. highlights is omitted when no lexical match was made.
+DOCUMENTS search returns id, title, workspaceId, and highlights. highlights is an array of { field, fragments } entries (field is "name" or "content") where fragments contain matched text snippets with <em> tags around matched terms. highlights is omitted when no lexical match was made. Optionally scope it with workspaceIds and/or docIds.
 ITEMS search returns id, title, url, boardId, and workspaceId. Optionally scope it with workspaceIds, boardIds, and/or creatorIds.
 WORKSPACES search returns id, title, and description.
 UPDATES search returns id, title (the update body), itemId, boardId, and creatorId. Optionally scope it with workspaceIds, boardIds, and/or creatorIds.
@@ -285,7 +290,8 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
     }
 
     if (input.searchType === GlobalSearchType.DOCUMENTS) {
-      return this.searchDocsAsync(searchTerm, input.limit, workspaceIds);
+      const docIds = toFilterIds(input.docIds?.map((id) => id.toString()));
+      return this.searchDocsAsync(searchTerm, input.limit, workspaceIds, docIds);
     }
 
     if (input.searchType === GlobalSearchType.WORKSPACES) {
@@ -340,8 +346,13 @@ FOLDERS search returns id and title. Optionally scope it with workspaceIds, whic
     }));
   }
 
-  private async searchDocsAsync(query: string, limit: number, workspaceIds?: string[]): Promise<SearchResult[]> {
-    const variables: SearchDocsQueryVariables = { query, limit, workspaceIds };
+  private async searchDocsAsync(
+    query: string,
+    limit: number,
+    workspaceIds?: string[],
+    docIds?: string[],
+  ): Promise<SearchResult[]> {
+    const variables: SearchDocsQueryVariables = { query, limit, workspaceIds, docIds };
 
     const response = await this.mondayApi.request<SearchDocsQuery>(searchDocs, variables, {
       timeout: SEARCH_TIMEOUT,

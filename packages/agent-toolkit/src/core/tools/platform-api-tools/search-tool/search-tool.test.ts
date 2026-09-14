@@ -93,6 +93,7 @@ describe('SearchTool', () => {
       );
       expect(description).toContain('BOARD search returns id, title, url, and workspaceId');
       expect(description).toContain('DOCUMENTS search returns id, title, workspaceId, and highlights');
+      expect(description).toContain('Optionally scope it with workspaceIds and/or docIds');
       expect(description).toContain('ITEMS search returns id, title, url, boardId, and workspaceId');
       expect(description).toContain('Optionally scope it with workspaceIds, boardIds, and/or creatorIds');
       expect(description).toContain('FOLDERS search returns id and title');
@@ -611,11 +612,12 @@ describe('SearchTool', () => {
         });
 
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query SearchDocs'),
+          expect.stringContaining('query SearchDocs('),
           {
             query: 'Document',
             limit: 20,
             workspaceIds: undefined,
+            docIds: undefined,
           },
           expect.objectContaining({ timeout: expect.any(Number) }),
         );
@@ -677,6 +679,98 @@ describe('SearchTool', () => {
           expect.objectContaining({
             workspaceIds: ['11111', '22222'],
           }),
+          expect.objectContaining({ timeout: expect.any(Number) }),
+        );
+      });
+
+      it('should pass docIds to the searchDocs request', async () => {
+        mocks.setResponse(mockDevDocsResponse);
+
+        const args: inputType = {
+          searchType: GlobalSearchType.DOCUMENTS,
+          searchTerm: 'Document',
+          docIds: [111, 222],
+        };
+
+        const parsedResult = await callToolByNameAsync('search', args);
+
+        expect(parsedResult.data).toHaveLength(3);
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchDocs('),
+          expect.objectContaining({ docIds: ['111', '222'] }),
+          expect.objectContaining({ timeout: expect.any(Number) }),
+        );
+      });
+
+      it('should combine docIds with workspaceIds', async () => {
+        mocks.setResponse(mockDevDocsResponse);
+
+        const args: inputType = {
+          searchType: GlobalSearchType.DOCUMENTS,
+          searchTerm: 'Document',
+          workspaceIds: [11111],
+          docIds: [111],
+        };
+
+        await callToolByNameAsync('search', args);
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchDocs('),
+          expect.objectContaining({ workspaceIds: ['11111'], docIds: ['111'] }),
+          expect.objectContaining({ timeout: expect.any(Number) }),
+        );
+      });
+
+      it('should send docIds as undefined when given an empty array', async () => {
+        mocks.setResponse(mockDevDocsResponse);
+
+        const args: inputType = {
+          searchType: GlobalSearchType.DOCUMENTS,
+          searchTerm: 'Document',
+          docIds: [],
+        };
+
+        await callToolByNameAsync('search', args);
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchDocs('),
+          expect.objectContaining({ docIds: undefined }),
+          expect.objectContaining({ timeout: expect.any(Number) }),
+        );
+      });
+
+      it('should treat a null docIds as omitted', async () => {
+        mocks.setResponse(mockDevDocsResponse);
+
+        const args = {
+          searchType: GlobalSearchType.DOCUMENTS,
+          searchTerm: 'Document',
+          docIds: null,
+        } as any;
+
+        await callToolByNameAsync('search', args);
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchDocs('),
+          expect.objectContaining({ docIds: undefined }),
+          expect.objectContaining({ timeout: expect.any(Number) }),
+        );
+      });
+
+      it('should accept a single docId passed as a scalar', async () => {
+        mocks.setResponse(mockDevDocsResponse);
+
+        const args = {
+          searchType: GlobalSearchType.DOCUMENTS,
+          searchTerm: 'Document',
+          docIds: 111,
+        } as any;
+
+        await callToolByNameAsync('search', args);
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchDocs('),
+          expect.objectContaining({ docIds: ['111'] }),
           expect.objectContaining({ timeout: expect.any(Number) }),
         );
       });
