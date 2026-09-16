@@ -132,7 +132,7 @@ PERFORMANCE OPTIMIZATION: Only set this to true when you actually need the colum
         columnId: z
           .string()
           .describe(
-            'The id of the column to order by. Also accepts "__creation_log__" and "__last_updated__" to sort by item creation or update time - get_board_info does not return them, but they are valid on every board.',
+            'Ordinary column ids are board-specific. Use get_board_info with filters.columns.only to get them for the current board. Also accepts four virtual columns that get_board_info does not return: "group", "__creation_log__", "__last_updated__" and "__item_id__".',
           ),
         direction: z
           .nativeEnum(ItemsOrderByDirection)

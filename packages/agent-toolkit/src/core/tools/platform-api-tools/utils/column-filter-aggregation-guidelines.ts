@@ -7,6 +7,7 @@ EXAMPLES:
   ✅ Correct: {"columnId": "group", "compareValue": ["group_mm6wsvcc", "group_mm4w1e0n"], "operator": "any_of"} // several groups
   ❌ Wrong: {"columnId": "group_mm6wsvcc", "compareValue": "group_mm6wsvcc"} // group id used as the columnId
   ❌ Wrong: {"columnId": "__group__", "compareValue": ["group_mm6wsvcc"], "operator": "any_of"} // the columnId is exactly "group", with no surrounding underscores
+  ❌ Wrong: {"columnId": "group_id", "compareValue": ["group_mm6wsvcc"], "operator": "any_of"} // use the virtual column id "group" for board-group membership
   ❌ Wrong: {"columnId": "group", "compareValue": "Backlog", "operator": "any_of"} // group title instead of group id`,
 
   last_updated: `The columnId is the literal string "__last_updated__", with two underscores before and after. Supported operators: any_of, not_any_of, within_the_last, between. With any_of and not_any_of, use compareAttribute "UPDATED_AT" and a compareValue array holding one of "TODAY", "YESTERDAY", "THIS_WEEK", "THIS_MONTH". With within_the_last, use compareAttribute "UPDATED_AT" and a [UNIT, AMOUNT] window. With between, use compareAttribute "UPDATED_AT" and a two item array of "YYYY-MM-DD" dates [FROM, TO].
@@ -18,6 +19,8 @@ EXAMPLES:
   ✅ Correct: {"columnId": "__last_updated__", "compareValue": ["WEEKS", 1], "operator": "within_the_last", "compareAttribute": "UPDATED_AT"} // updated in the last week
   ✅ Correct: {"columnId": "__last_updated__", "compareValue": ["2025-01-01", "2025-03-31"], "operator": "between", "compareAttribute": "UPDATED_AT"} // updated in Q1
   ❌ Wrong: {"columnId": "last_updated", "compareValue": ["TODAY"], "operator": "any_of", "compareAttribute": "UPDATED_AT"} // missing the underscores around last_updated
+  ❌ Wrong: {"columnId": "__last_updated", "compareValue": ["TODAY"], "operator": "any_of", "compareAttribute": "UPDATED_AT"} // missing one trailing underscore
+  ❌ Wrong: {"columnId": "updated_at", "compareValue": ["TODAY"], "operator": "any_of", "compareAttribute": "UPDATED_AT"} // use __last_updated__ for the item's update time
   ❌ Wrong: {"columnId": "__last_updated__", "compareValue": ["LAST_MONTH"], "operator": "any_of", "compareAttribute": "UPDATED_AT"} // LAST_MONTH and LAST_WEEK match no items, use within_the_last with ["MONTHS", 1] or ["WEEKS", 1]
   ❌ Wrong: {"columnId": "__last_updated__", "compareValue": "TODAY", "operator": "any_of", "compareAttribute": "UPDATED_AT"} // not using array for any_of operator
   ❌ Wrong: {"columnId": "__last_updated__", "compareValue": ["2025-01-01", "2025-03-31"], "operator": "between"} // missing UPDATED_AT`,
@@ -30,6 +33,7 @@ EXAMPLES:
   ✅ Correct: {"columnId": "__creation_log__", "compareValue": ["DAYS", 30], "operator": "within_the_last", "compareAttribute": "CREATED_AT"} // created in the last 30 days
   ✅ Correct: {"columnId": "__creation_log__", "compareValue": ["2025-01-01", "2025-03-31"], "operator": "between", "compareAttribute": "CREATED_AT"} // created in Q1
   ❌ Wrong: {"columnId": "creation_log", "compareValue": ["TODAY"], "operator": "any_of", "compareAttribute": "CREATED_AT"} // missing the underscores around creation_log
+  ❌ Wrong: {"columnId": "created_at", "compareValue": ["TODAY"], "operator": "any_of", "compareAttribute": "CREATED_AT"} // use __creation_log__ for the item's creation time
   ❌ Wrong: {"columnId": "__creation_log__", "compareValue": ["LAST_MONTH"], "operator": "any_of", "compareAttribute": "CREATED_AT"} // LAST_MONTH and LAST_WEEK match no items, use within_the_last with ["MONTHS", 1] or ["WEEKS", 1]
   ❌ Wrong: {"columnId": "__creation_log__", "compareValue": ["PAST_DATETIME", "14"], "operator": "within_the_last"} // PAST_DATETIME is not a unit, use ["DAYS", 14]
   ❌ Wrong: {"columnId": "__creation_log__", "compareValue": ["2025-01-01", "2025-03-31"], "operator": "between"} // missing CREATED_AT`,
@@ -39,6 +43,7 @@ EXAMPLES:
   ✅ Correct: {"columnId": "__item_id__", "compareValue": ["3208003201"], "operator": "any_of"} // filtering by a single item id
   ✅ Correct: {"columnId": "__item_id__", "compareValue": ["3208003201", "3208003202"], "operator": "not_any_of"} // excluding several item ids
   ❌ Wrong: {"columnId": "item_id", "compareValue": ["3208003201"], "operator": "any_of"} // missing the underscores around item_id
+  ❌ Wrong: {"columnId": "parent_item_id", "compareValue": ["3208003201"], "operator": "any_of"} // parent_item_id describes item hierarchy in the response
   ❌ Wrong: {"columnId": "pulse_id", "compareValue": ["3208003201"], "operator": "any_of"} // pulse_id is an internal name, not a filterable id`,
 
   date: `Supported operators: any_of, not_any_of, between, greater_than, greater_than_or_equals, lower_than, lower_than_or_equal, within_the_last, within_the_next, is_empty, is_not_empty. CompareValue should be either:

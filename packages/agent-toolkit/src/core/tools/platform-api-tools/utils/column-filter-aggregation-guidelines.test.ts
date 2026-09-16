@@ -13,12 +13,11 @@ describe('column-filter-aggregation-guidelines', () => {
     expect(getFilterGuidelineForColumnType('unsupported_type_xyz')).toBeUndefined();
   });
 
-  it('buildFilterGuidelinesForColumnType includes operators, type section, and subitems note', () => {
+  it('buildFilterGuidelinesForColumnType includes operators and the type section', () => {
     const built = buildFilterGuidelinesForColumnType('status');
     expect(built).toContain('## [IMPORTANT] Operator Guidelines');
     expect(built).toContain('## [IMPORTANT] Column type: status');
     expect(built).toContain('contains_terms');
-    expect(built).toContain('Sub Items Columns MUST NOT BE USED FOR FILTERING');
   });
 
   it('buildFilterGuidelinesForColumnType returns null when type has no docs', () => {

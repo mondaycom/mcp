@@ -8,6 +8,7 @@
 - Documented the date-range format and compare attributes for date, timeline, creation log and last-updated
   filters.
 - Expanded the date guidelines with the supported range and empty-value operators.
+- Clarified board-specific column ids and the virtual ids available for filtering and sorting.
 
 ## 5.70.1
 

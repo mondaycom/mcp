@@ -19,7 +19,7 @@ export const filterRulesSchema = z
       columnId: z
         .string()
         .describe(
-          'The id of the column to filter by. Also accepts four virtual columns that get_board_info does not return: "group" (the group id goes in compareValue, e.g. "group_mm6wsvcc" - the columnId itself is always the literal "group"), "__creation_log__", "__last_updated__" and "__item_id__".',
+          'Ordinary column ids are board-specific. Use get_board_info with filters.columns.only to get them for the current board. Also accepts four virtual columns that get_board_info does not return: "group" (the group id goes in compareValue, e.g. "group_mm6wsvcc" - the columnId itself is always the literal "group"), "__creation_log__", "__last_updated__" and "__item_id__".',
         ),
       compareAttribute: z
         .string()
