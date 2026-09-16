@@ -9,20 +9,20 @@ EXAMPLES:
   ❌ Wrong: {"columnId": "__group__", "compareValue": ["group_mm6wsvcc"], "operator": "any_of"} // the columnId is exactly "group", with no surrounding underscores
   ❌ Wrong: {"columnId": "group", "compareValue": "Backlog", "operator": "any_of"} // group title instead of group id`,
 
-  last_updated: `The columnId is the literal string "__last_updated__", with two underscores before and after. Supported operators: any_of, not_any_of, within_the_last, between. With any_of and not_any_of, compareValue is an array holding one of "TODAY", "YESTERDAY", "THIS_WEEK", "THIS_MONTH". Optionally pair it with compareAttribute: "UPDATED_AT" to compare the update date rather than the person who updated. With within_the_last, use compareAttribute "UPDATED_AT" and a [UNIT, AMOUNT] window. With between, use compareAttribute "UPDATED_AT" and a two item array of "YYYY-MM-DD" dates [FROM, TO].
+  last_updated: `The columnId is the literal string "__last_updated__", with two underscores before and after. Supported operators: any_of, not_any_of, within_the_last, between. With any_of and not_any_of, use compareAttribute "UPDATED_AT" and a compareValue array holding one of "TODAY", "YESTERDAY", "THIS_WEEK", "THIS_MONTH". With within_the_last, use compareAttribute "UPDATED_AT" and a [UNIT, AMOUNT] window. With between, use compareAttribute "UPDATED_AT" and a two item array of "YYYY-MM-DD" dates [FROM, TO].
 This id is also the correct one to use in orderBy to sort items by when they were last updated.
 EXAMPLES:
   ✅ Correct: {"columnId": "__last_updated__", "compareValue": ["TODAY"], "operator": "any_of", "compareAttribute": "UPDATED_AT"} // updated today
   ✅ Correct: {"columnId": "__last_updated__", "compareValue": ["THIS_WEEK"], "operator": "not_any_of", "compareAttribute": "UPDATED_AT"} // using THIS_WEEK with not_any_of
   ✅ Correct: {"columnId": "__last_updated__", "compareValue": ["DAYS", 7], "operator": "within_the_last", "compareAttribute": "UPDATED_AT"} // updated in the last 7 days
-  ✅ Correct: {"columnId": "__last_updated__", "compareValue": ["WEEKS", 1], "operator": "within_the_last", "compareAttribute": "UPDATED_AT"} // updated in the previous week
+  ✅ Correct: {"columnId": "__last_updated__", "compareValue": ["WEEKS", 1], "operator": "within_the_last", "compareAttribute": "UPDATED_AT"} // updated in the last week
   ✅ Correct: {"columnId": "__last_updated__", "compareValue": ["2025-01-01", "2025-03-31"], "operator": "between", "compareAttribute": "UPDATED_AT"} // updated in Q1
   ❌ Wrong: {"columnId": "last_updated", "compareValue": ["TODAY"], "operator": "any_of", "compareAttribute": "UPDATED_AT"} // missing the underscores around last_updated
   ❌ Wrong: {"columnId": "__last_updated__", "compareValue": ["LAST_MONTH"], "operator": "any_of", "compareAttribute": "UPDATED_AT"} // LAST_MONTH and LAST_WEEK match no items, use within_the_last with ["MONTHS", 1] or ["WEEKS", 1]
   ❌ Wrong: {"columnId": "__last_updated__", "compareValue": "TODAY", "operator": "any_of", "compareAttribute": "UPDATED_AT"} // not using array for any_of operator
   ❌ Wrong: {"columnId": "__last_updated__", "compareValue": ["2025-01-01", "2025-03-31"], "operator": "between"} // missing UPDATED_AT`,
 
-  creation_log: `The columnId is the literal string "__creation_log__", with two underscores before and after. Supported operators: any_of, not_any_of, within_the_last, between. With any_of and not_any_of, compareValue is an array holding one of "TODAY", "YESTERDAY", "THIS_WEEK", "THIS_MONTH". Optionally pair it with compareAttribute: "CREATED_AT" to compare the creation date rather than the person who created the item. With within_the_last, use compareAttribute "CREATED_AT" and a [UNIT, AMOUNT] window. With between, use compareAttribute "CREATED_AT" and a two item array of "YYYY-MM-DD" dates [FROM, TO].
+  creation_log: `The columnId is the literal string "__creation_log__", with two underscores before and after. Supported operators: any_of, not_any_of, within_the_last, between. With any_of and not_any_of, use compareAttribute "CREATED_AT" and a compareValue array holding one of "TODAY", "YESTERDAY", "THIS_WEEK", "THIS_MONTH". With within_the_last, use compareAttribute "CREATED_AT" and a [UNIT, AMOUNT] window. With between, use compareAttribute "CREATED_AT" and a two item array of "YYYY-MM-DD" dates [FROM, TO].
 This id is also the correct one to use in orderBy to sort items by creation time.
 EXAMPLES:
   ✅ Correct: {"columnId": "__creation_log__", "compareValue": ["TODAY"], "operator": "any_of", "compareAttribute": "CREATED_AT"} // items created today
@@ -83,12 +83,12 @@ EXAMPLES:
   ❌ Wrong: {"columnId": "location", "compareValue": "New York", "operator": "contains_text"} // location columns cannot be text filtered
   ❌ Wrong: {"columnId": "location", "compareValue": ["New York"], "operator": "any_of"} // any_of is not supported for location`,
 
-  board_relation: `A connect boards column. Supported operators: any_of, not_any_of, contains_text, not_contains_text, starts_with, is_empty, is_not_empty. With any_of and not_any_of, compareValue is an array of the linked item ids as strings. With the text operators, compareValue is a single string matched against the linked items' names.
+  board_relation: `A connect boards column. Supported operators: any_of, not_any_of, contains_text, not_contains_text, starts_with, is_empty, is_not_empty. With any_of and not_any_of, compareValue is an array of the linked item ids as numbers. With the text operators, compareValue is a single string matched against the linked items' names.
 EXAMPLES:
-  ✅ Correct: {"columnId": "board_relation", "compareValue": ["3208003201"], "operator": "any_of"} // linked to a specific item
+  ✅ Correct: {"columnId": "board_relation", "compareValue": [3208003201], "operator": "any_of"} // linked to a specific item
   ✅ Correct: {"columnId": "board_relation", "compareValue": "Acme", "operator": "contains_text"} // linked item name contains text
   ✅ Correct: {"columnId": "board_relation", "compareValue": [], "operator": "is_empty"} // nothing linked
-  ❌ Wrong: {"columnId": "board_relation", "compareValue": "3208003201", "operator": "any_of"} // not using array with any_of operator
+  ❌ Wrong: {"columnId": "board_relation", "compareValue": 3208003201, "operator": "any_of"} // not using array with any_of operator
   ❌ Wrong: {"columnId": "board_relation", "compareValue": "Acme", "operator": "ends_with"} // ends_with is not supported for this column`,
 
   subtasks: `Supported operators: is_empty, is_not_empty. CompareValue is an empty array. To filter on subitem values, query the subitems board directly using its own boardId.
