@@ -176,7 +176,7 @@ Specific operators expect specific compareValue types:
 - CompareValue MUST BE SENT AS AN ARRAY WHEN USED WITH  any_of, not_any_of, between operators
 - CompareValue MUST BE SENT AS AN EMPTY ARRAY WHEN USED WITH is_empty, is_not_empty
 - CompareValue MUST BE SENT AS EITHER SINGLE STRING OR SINGLE NUMBER WHEN USED WITH greater_than, greater_than_or_equals, lower_than, lower_than_or_equal
-- CompareValue MUST BE SENT AS SINGLE STRING WHEN USED WITH contains_terms, not_contains_text, contains_text, starts_with, ends_with operators
+- CompareValue MUST BE SENT AS SINGLE STRING WHEN USED WITH contains_terms, not_contains_text, contains_text, starts_with operators
 - CompareValue MUST BE SENT AS A TWO ITEM ARRAY OF [UNIT, AMOUNT] WHEN USED WITH within_the_last, within_the_next operators, where UNIT is one of "DAYS", "WORKDAYS", "WEEKS", "MONTHS" and AMOUNT is a number, e.g. ["DAYS", 7] for the last or next 7 days
 - CompareValue MUST BE SENT AS A TWO ITEM ARRAY OF plain "YYYY-MM-DD" dates [FROM, TO] WHEN USED WITH between`;
 }
