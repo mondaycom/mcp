@@ -1,5 +1,15 @@
 # Changelog
 
+## 5.70.2
+
+### Document supported board filter operators
+
+- Added filter guidelines for timeline, location, connect boards and subitems columns.
+- Documented the date-range format and compare attributes for date, timeline, creation log and last-updated
+  filters.
+- Expanded the date guidelines with the supported range and empty-value operators.
+- Clarified board-specific column ids and the virtual ids available for filtering and sorting.
+
 ## 5.70.1
 
 Re-publish: `5.70.0` never reached the npm registry due to a CI publishing pipeline issue (npm trusted-publishing/2FA-bypass token migration, then a stale `repository.url` failing provenance verification). No functional changes from `5.70.0`.
