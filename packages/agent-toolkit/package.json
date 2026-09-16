@@ -45,7 +45,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/mondaycom/monday-ai/tree/master/packages/agent-toolkit"
+    "url": "https://github.com/mondaycom/mcp/tree/master/packages/agent-toolkit"
   },
   "dependencies": {
     "@mondaydotcomorg/api": "^13.0.0",
