@@ -14,7 +14,7 @@ export const finalizeAssetUploadSchema = {
 
 interface CompleteUploadMutation {
   complete_upload: {
-    id: number;
+    id: string; // GraphQL ID scalar; serialized as a string even though the underlying id is numeric
     filename: string;
     content_type: string;
     file_size: number;
@@ -71,11 +71,16 @@ export class FinalizeAssetUploadTool extends BaseMondayApiTool<typeof finalizeAs
 
     const asset = completeRes.complete_upload;
 
+    // assetId must be a number. monday.com compares it against the asset's own
+    // numeric id when deciding whether a file column grants access to a file, and
+    // a string never matches, which hides the file from guests on boards that have
+    // permission rules.
     const value = JSON.stringify({
       added_file: {
         fileType: 'ASSET',
         name: asset.filename,
-        assetId: String(asset.id),
+        assetId: Number(asset.id),
+        isImage: asset.content_type?.startsWith('image/') ?? false,
       },
     });
 
@@ -88,7 +93,7 @@ export class FinalizeAssetUploadTool extends BaseMondayApiTool<typeof finalizeAs
 
     return {
       content: {
-        asset_id: asset.id,
+        asset_id: Number(asset.id),
         filename: asset.filename,
         content_type: asset.content_type,
         file_size: asset.file_size,
