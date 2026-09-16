@@ -1,5 +1,14 @@
 # Changelog
 
+## 5.70.2
+
+### Document supported board filter operators
+
+- Added filter guidelines for timeline, location, connect boards and subitems columns.
+- Documented the date-range format and compare attributes for date, timeline, creation log and last-updated
+  filters.
+- Expanded the date guidelines with the supported range and empty-value operators.
+
 ## 5.69.1
 
 ### Default `retrieval_only` to `true` for `get_monday_knowledge` developer docs queries
