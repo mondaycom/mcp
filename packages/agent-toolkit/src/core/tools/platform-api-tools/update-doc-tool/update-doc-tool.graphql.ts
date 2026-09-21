@@ -18,7 +18,7 @@ export const addContentToDocFromMarkdown = gql`
 
 export const getDocByObjectId = gql`
   query getDocIdByObjectId($objectId: [ID!]) {
-    docs(object_ids: $objectId) {
+    docs(object_ids: $objectId, limit: 1) {
       id
     }
   }
@@ -56,7 +56,7 @@ export const deleteDocBlocks = gql`
 // Get object_id (board ID) from a doc's internal ID
 export const getDocObjectIdByDocId = gql`
   query getDocObjectIdByDocId($docId: [ID!]) {
-    docs(ids: $docId) {
+    docs(ids: $docId, limit: 1) {
       id
       object_id
     }
@@ -81,7 +81,7 @@ export const getDocBoardItem = gql`
 // Fetch all blocks of a doc (with raw JSON content) to read current block state before modifying it
 export const getDocBlockContent = gql`
   query getDocBlockContent($docId: [ID!]) {
-    docs(ids: $docId) {
+    docs(ids: $docId, limit: 1) {
       blocks {
         id
         type

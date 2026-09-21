@@ -69,7 +69,7 @@ export const getDocVersionHistory = gql`
 
 export const getDocComments = gql`
   query GetDocComments($boardId: ID!, $itemsLimit: Int, $updatesLimit: Int) {
-    boards(ids: [$boardId]) {
+    boards(ids: [$boardId], limit: 1) {
       items_page(limit: $itemsLimit) {
         items {
           id

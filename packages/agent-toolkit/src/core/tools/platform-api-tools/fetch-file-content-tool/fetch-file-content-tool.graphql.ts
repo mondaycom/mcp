@@ -2,7 +2,7 @@ import { gql } from 'graphql-request';
 
 export const getItemAssets = gql`
   query GetItemAssets($itemId: [ID!]!, $columnId: [String!]!) {
-    items(ids: $itemId) {
+    items(ids: $itemId, limit: 1) {
       assets(column_ids: $columnId) {
         public_url
         name

@@ -3,7 +3,7 @@ import { gql } from 'graphql-request';
 // Get item board and its columns (used to discover or create a doc column for item-attached docs)
 export const getItemBoard = gql`
   query getItemBoard($itemId: ID!) {
-    items(ids: [$itemId]) {
+    items(ids: [$itemId], limit: 1) {
       id
       board {
         id

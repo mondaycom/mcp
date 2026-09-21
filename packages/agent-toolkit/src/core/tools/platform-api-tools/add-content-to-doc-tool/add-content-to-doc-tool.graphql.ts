@@ -14,7 +14,7 @@ export const addContentToDocFromMarkdown = gql`
 // Lightweight query to resolve object_id to doc id
 export const getDocByObjectId = gql`
   query getDocByObjectId($objectId: [ID!]) {
-    docs(object_ids: $objectId) {
+    docs(object_ids: $objectId, limit: 1) {
       id
       name
       url
@@ -24,7 +24,7 @@ export const getDocByObjectId = gql`
 
 export const getDocById = gql`
   query getDocById($docId: [ID!]) {
-    docs(ids: $docId) {
+    docs(ids: $docId, limit: 1) {
       id
       name
       url
