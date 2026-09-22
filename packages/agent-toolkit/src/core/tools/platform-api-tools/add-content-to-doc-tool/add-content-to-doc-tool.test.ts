@@ -52,7 +52,7 @@ describe('AddContentToDocTool', () => {
 
       const getDocCall = mockCalls.find((call: any) => call[0].includes('query getDocById'));
       expect(getDocCall).toBeDefined();
-      expect(getDocCall[1]).toEqual({ docId: ['doc_123'] });
+      expect(getDocCall[1]).toEqual({ docId: 'doc_123' });
 
       const addContentCall = mockCalls.find((call: any) => call[0].includes('mutation addContentToDocFromMarkdown'));
       expect(addContentCall).toBeDefined();
@@ -99,7 +99,7 @@ describe('AddContentToDocTool', () => {
 
       const resolveCall = mockCalls.find((call: any) => call[0].includes('query getDocByObjectId'));
       expect(resolveCall).toBeDefined();
-      expect(resolveCall[1]).toEqual({ objectId: ['obj_789'] });
+      expect(resolveCall[1]).toEqual({ objectId: 'obj_789' });
 
       const addContentCall = mockCalls.find((call: any) => call[0].includes('mutation addContentToDocFromMarkdown'));
       expect(addContentCall).toBeDefined();

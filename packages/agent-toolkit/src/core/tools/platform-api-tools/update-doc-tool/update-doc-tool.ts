@@ -133,7 +133,7 @@ COMMENTS:
       let docId = input.doc_id;
       if (!docId) {
         const res = await this.mondayApi.request<GetDocByObjectIdQuery>(getDocByObjectId, {
-          objectId: [input.object_id],
+          objectId: input.object_id,
         });
         const doc = res.docs?.[0];
         if (!doc) {
@@ -328,7 +328,7 @@ COMMENTS:
     if (objectId) return objectId;
 
     const res = await this.mondayApi.request<GetDocObjectIdByDocIdQuery>(getDocObjectIdByDocId, {
-      docId: [docId],
+      docId,
     });
     const doc = res.docs?.[0];
     if (!doc?.object_id) {
@@ -352,7 +352,7 @@ COMMENTS:
   private async fetchAllBlockContent(
     docId: string,
   ): Promise<Array<{ id: string; type: string; content: Record<string, unknown> }>> {
-    const res = await this.mondayApi.request<GetDocBlockContentQuery>(getDocBlockContent, { docId: [docId] });
+    const res = await this.mondayApi.request<GetDocBlockContentQuery>(getDocBlockContent, { docId });
     const blocks = (res.docs?.[0]?.blocks ?? []).filter((b): b is NonNullable<typeof b> => b != null);
     return blocks.map((block) => {
       // GraphQL JSON scalar may return content as a string — parse it

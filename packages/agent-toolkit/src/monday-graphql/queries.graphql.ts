@@ -31,7 +31,7 @@ export const createItem = gql`
 `;
 export const getBoardSchema = gql`
   query getBoardSchema($boardId: ID!) {
-    boards(ids: [$boardId]) {
+    boards(ids: [$boardId], limit: 1) {
       groups {
         id
         title
@@ -486,7 +486,7 @@ export const exportMarkdownFromDoc = gql`
 
 export const getWorkspaceInfo = gql`
   query getWorkspaceInfo($workspace_id: ID!) {
-    workspaces(ids: [$workspace_id]) {
+    workspaces(ids: [$workspace_id], limit: 1) {
       id
       name
       description

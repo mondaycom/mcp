@@ -8,7 +8,7 @@ export const getBoardInfo = gql`
     $includeColumns: Boolean!
     $includeViews: Boolean!
   ) {
-    boards(ids: [$boardId]) {
+    boards(ids: [$boardId], limit: 1) {
       # Basic Board Metadata
       id
       name
@@ -100,7 +100,7 @@ export const getBoardInfo = gql`
 /** Lean view index — id/name only, no settings/filter/sort (avoids multi-MB payloads on large boards). */
 export const getBoardInfoViewIndex = gql`
   query GetBoardInfoViewIndex($boardId: ID!) {
-    boards(ids: [$boardId]) {
+    boards(ids: [$boardId], limit: 1) {
       id
       views {
         id
@@ -112,7 +112,7 @@ export const getBoardInfoViewIndex = gql`
 
 export const getBoardInfoJustColumns = gql`
   query GetBoardInfoJustColumns($boardId: ID!) {
-    boards(ids: [$boardId]) {
+    boards(ids: [$boardId], limit: 1) {
       columns {
         id
         title

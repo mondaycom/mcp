@@ -64,7 +64,7 @@ export const getBoardItemsPage = gql`
     $includeDescription: Boolean!
     $includeGroup: Boolean!
   ) {
-    boards(ids: [$boardId]) {
+    boards(ids: [$boardId], limit: 1) {
       id
       name
       hierarchy_type
