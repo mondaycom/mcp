@@ -5,7 +5,9 @@ import {
   GetBoardInfoQueryVariables,
   GetBoardInfoViewIndexQuery,
 } from '../../../../monday-graphql/generated/graphql/graphql';
+import { GetBoardKnowledgeQuery } from '../../../../monday-graphql/generated/graphql.dev/graphql';
 import { getBoardInfo, getBoardInfoJustColumns, getBoardInfoViewIndex } from './get-board-info.graphql';
+import { getBoardKnowledge } from './get-board-info.graphql.dev';
 import {
   BoardInfoData,
   BoardInfoJustColumnsData,
@@ -73,6 +75,7 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
   getDescription(): string {
     return (
       'Get comprehensive board information including metadata, structure, owners, and configuration. ' +
+      'Also returns generated board knowledge when available, including human-readable business context, workflow and status meanings, column purposes, people roles, and related boards. Knowledge is best-effort and may be null while it is unavailable or still being generated. ' +
       'Also returns the board\'s views (e.g. table views, filter views) — each view includes its id, name, type, and a structured filter object. ' +
       'On large boards, ALWAYS narrow the response: use filters.views.names or filters.views.ids when you only need specific views, and/or filters.columns.ids when you only need specific columns. Set filters.views.only or filters.columns.only when you want just that section — full views[].settings across many views can be multi-MB. ' +
       'The response includes hierarchy_type which indicates if the board is a multi-level board ("multi_level") where items can have nested subitems up to 5 levels deep on the same board. On multi-level boards, subitems share the same columns as parent items and subItemColumns will be null. ' +
@@ -107,7 +110,16 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
       includeViews,
     };
 
-    const res = await this.mondayApi.request<GetBoardInfoQuery>(getBoardInfo, variables);
+    const boardRequest = this.mondayApi.request<GetBoardInfoQuery>(getBoardInfo, variables);
+    const knowledgeRequest = this.mondayApi
+      .request<GetBoardKnowledgeQuery>(
+        getBoardKnowledge,
+        { boardId: input.boardId.toString() },
+        { versionOverride: 'dev' },
+      )
+      .catch(() => null);
+
+    const [res, knowledgeRes] = await Promise.all([boardRequest, knowledgeRequest]);
 
     const board = res.boards?.[0];
 
@@ -120,7 +132,12 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
     const subItemsBoard = includeColumns ? await this.getSubItemsBoardAsync(board) : null;
 
     return {
-      content: formatBoardInfoAsJson(board, subItemsBoard, unmatchedViewNames),
+      content: formatBoardInfoAsJson(
+        board,
+        subItemsBoard,
+        unmatchedViewNames,
+        knowledgeRes?.entity_knowledge ?? null,
+      ),
     };
   }
 
