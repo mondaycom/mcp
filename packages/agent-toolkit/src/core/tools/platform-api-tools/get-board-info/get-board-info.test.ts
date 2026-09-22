@@ -484,7 +484,7 @@ describe('GetBoardInfoTool filtering', () => {
       includeColumns: true,
       includeViews: true,
     });
-    expect(mocks.getMockRequest().mock.calls[1][2]).toEqual({ versionOverride: 'dev' });
+    expect(mocks.getMockRequest().mock.calls[1][2]).toEqual({ versionOverride: 'dev', timeout: 1_000 });
   });
 
   it('resolves filters.views.names via a lean index query then fetches by id', async () => {

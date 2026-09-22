@@ -115,7 +115,7 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
       .request<GetBoardKnowledgeQuery>(
         getBoardKnowledge,
         { boardId: input.boardId.toString() },
-        { versionOverride: 'dev' },
+        { versionOverride: 'dev', timeout: 1_000 },
       )
       .catch(() => null);
 
