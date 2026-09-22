@@ -2,7 +2,7 @@ import { gql } from 'graphql-request';
 
 export const boardInsights = gql`
   query aggregateBoardInsights($query: AggregateQueryInput!, $boardId: ID!) {
-    boards(ids: [$boardId]) {
+    boards(ids: [$boardId], limit: 1) {
       name
       url
     }

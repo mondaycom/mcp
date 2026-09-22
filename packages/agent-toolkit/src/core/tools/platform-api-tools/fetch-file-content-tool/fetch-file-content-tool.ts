@@ -256,8 +256,8 @@ When NOT to use:
     const { item_id, column_id, file_name, offset = 0 } = input;
 
     const response = await this.mondayApi.request<GetItemAssetsResponse>(getItemAssets, {
-      itemId: [item_id],
-      columnId: [column_id],
+      itemId: item_id,
+      columnId: column_id,
     });
 
     const assets = response?.items?.[0]?.assets;

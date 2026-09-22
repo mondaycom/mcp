@@ -425,7 +425,7 @@ MODE: "version_history" — Fetch the edit history of a single document.
 
       const [commentsRes, blocksRes] = await Promise.all([
         this.mondayApi.request<GetDocCommentsQuery>(getDocComments, variables),
-        this.mondayApi.request<GetDocBlockContentQuery>(getDocBlockContent, { docId: [docId] }).catch(() => null),
+        this.mondayApi.request<GetDocBlockContentQuery>(getDocBlockContent, { docId }).catch(() => null),
       ]);
 
       const items = commentsRes.boards?.[0]?.items_page?.items;

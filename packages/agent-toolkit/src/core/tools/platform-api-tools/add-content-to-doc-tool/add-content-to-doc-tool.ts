@@ -77,14 +77,14 @@ USAGE EXAMPLES:
       // Resolve object_id to doc_id if needed
       if (!input.doc_id) {
         const res = await this.mondayApi.request<GetDocByObjectIdQuery>(getDocByObjectId, {
-          objectId: [input.object_id],
+          objectId: input.object_id,
         });
 
         doc = res.docs?.[0] ?? null!;
-        
+
       } else {
         const res = await this.mondayApi.request<GetDocByIdQuery>(getDocById, {
-          docId: [input.doc_id],
+          docId: input.doc_id,
         });
 
         doc = res.docs?.[0] ?? null!;
