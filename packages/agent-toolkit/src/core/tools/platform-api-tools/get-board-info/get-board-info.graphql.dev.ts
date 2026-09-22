@@ -12,7 +12,7 @@ export const getBoardKnowledge = gql`
         kind
         confidence
         body_markdown
-        data_json
+        data: data_json
       }
     }
   }

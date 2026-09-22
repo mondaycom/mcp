@@ -7,6 +7,7 @@ import {
 } from './helpers';
 import { BoardViewAccessLevel, State, BoardKind, WorkspaceKind } from '../../../../monday-graphql/generated/graphql/graphql';
 import {
+  EntityKnowledgeSectionKey,
   EntityKnowledgeSectionKind,
   EntityKnowledgeStatus,
 } from '../../../../monday-graphql/generated/graphql.dev/graphql';
@@ -180,36 +181,36 @@ describe('formatBoardInfoAsJson - knowledge', () => {
     views: [],
   } as unknown as BoardInfoData;
 
-  it('renders structured knowledge as readable markdown', () => {
+  it('returns structured knowledge as JSON', () => {
     const knowledge: BoardKnowledgeData = {
       summary: 'Engineering; primary workflow: Status',
       status: EntityKnowledgeStatus.Fresh,
       age_seconds: 120,
       sections: [
         {
-          key: 'business-context',
+          key: EntityKnowledgeSectionKey.BusinessContext,
           title: 'Business Context',
           kind: EntityKnowledgeSectionKind.Structured,
           confidence: 0.9,
           body_markdown: null,
-          data_json: JSON.stringify({
+          data: {
             vertical: 'Engineering',
             goal: 'Track product delivery',
-          }),
+          },
         },
         {
-          key: 'column-dictionary',
+          key: EntityKnowledgeSectionKey.ColumnDictionary,
           title: 'Column Dictionary',
           kind: EntityKnowledgeSectionKind.Structured,
           confidence: 0.8,
           body_markdown: null,
-          data_json: JSON.stringify({
+          data: {
             status: {
               title: 'Status',
               type: 'status',
               semanticRole: 'Tracks the delivery stage.',
             },
-          }),
+          },
         },
       ],
     };
@@ -220,38 +221,63 @@ describe('formatBoardInfoAsJson - knowledge', () => {
       summary: 'Engineering; primary workflow: Status',
       status: EntityKnowledgeStatus.Fresh,
       ageSeconds: 120,
-      markdown:
-        '## Business Context\n\n' +
-        '- **vertical:** Engineering\n' +
-        '- **goal:** Track product delivery\n\n' +
-        '## Column Dictionary\n\n' +
-        '- **status:**\n' +
-        '  - **title:** Status\n' +
-        '  - **type:** status\n' +
-        '  - **semanticRole:** Tracks the delivery stage.',
+      sections: [
+        {
+          key: EntityKnowledgeSectionKey.BusinessContext,
+          title: 'Business Context',
+          kind: EntityKnowledgeSectionKind.Structured,
+          confidence: 0.9,
+          bodyMarkdown: null,
+          data: {
+            vertical: 'Engineering',
+            goal: 'Track product delivery',
+          },
+        },
+        {
+          key: EntityKnowledgeSectionKey.ColumnDictionary,
+          title: 'Column Dictionary',
+          kind: EntityKnowledgeSectionKind.Structured,
+          confidence: 0.8,
+          bodyMarkdown: null,
+          data: {
+            status: {
+              title: 'Status',
+              type: 'status',
+              semanticRole: 'Tracks the delivery stage.',
+            },
+          },
+        },
+      ],
     });
   });
 
-  it('does not fail when structured knowledge contains invalid JSON', () => {
+  it('preserves Markdown section bodies', () => {
     const knowledge: BoardKnowledgeData = {
       summary: null,
       status: EntityKnowledgeStatus.Stale,
       age_seconds: null,
       sections: [
         {
-          key: 'column-dictionary',
-          title: 'Column Dictionary',
-          kind: EntityKnowledgeSectionKind.Structured,
+          key: EntityKnowledgeSectionKey.BusinessContext,
+          title: 'Business Context',
+          kind: EntityKnowledgeSectionKind.Markdown,
           confidence: 0.5,
-          body_markdown: null,
-          data_json: '{invalid',
+          body_markdown: 'Tracks engineering delivery.',
+          data: null,
         },
       ],
     };
 
     const result = formatBoardInfoAsJson(board, null, undefined, knowledge);
 
-    expect(result.knowledge?.markdown).toBe('## Column Dictionary\n\n_Structured data unavailable._');
+    expect(result.knowledge?.sections[0]).toEqual({
+      key: EntityKnowledgeSectionKey.BusinessContext,
+      title: 'Business Context',
+      kind: EntityKnowledgeSectionKind.Markdown,
+      confidence: 0.5,
+      bodyMarkdown: 'Tracks engineering delivery.',
+      data: null,
+    });
   });
 });
 
@@ -613,12 +639,12 @@ describe('GetBoardInfoTool filtering', () => {
         age_seconds: 30,
         sections: [
           {
-            key: 'business-context',
+            key: EntityKnowledgeSectionKey.BusinessContext,
             title: 'Business Context',
             kind: EntityKnowledgeSectionKind.Structured,
             confidence: 0.9,
             body_markdown: null,
-            data_json: JSON.stringify({ goal: 'Ship product work' }),
+            data: { goal: 'Ship product work' },
           },
         ],
       },
@@ -629,7 +655,16 @@ describe('GetBoardInfoTool filtering', () => {
       summary: 'Engineering delivery',
       status: EntityKnowledgeStatus.Fresh,
       ageSeconds: 30,
-      markdown: '## Business Context\n\n- **goal:** Ship product work',
+      sections: [
+        {
+          key: EntityKnowledgeSectionKey.BusinessContext,
+          title: 'Business Context',
+          kind: EntityKnowledgeSectionKind.Structured,
+          confidence: 0.9,
+          bodyMarkdown: null,
+          data: { goal: 'Ship product work' },
+        },
+      ],
     });
   });
 
