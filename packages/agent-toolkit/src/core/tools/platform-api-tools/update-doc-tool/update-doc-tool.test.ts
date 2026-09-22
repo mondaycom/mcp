@@ -68,7 +68,7 @@ describe('UpdateDocTool', () => {
     const calls = mocks.getMockRequest().mock.calls;
     const resolveCall = calls.find((c: any) => c[0].includes('query getDocIdByObjectId'));
     expect(resolveCall).toBeDefined();
-    expect(resolveCall[1]).toEqual({ objectId: ['obj_abc'] });
+    expect(resolveCall[1]).toEqual({ objectId: 'obj_abc' });
   });
 
   it('returns error when object_id resolves to no document', async () => {
