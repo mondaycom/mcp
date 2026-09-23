@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.71.1
+
+### Make `get_asset_upload_url` compatible with Copilot Studio
+
+- Emit `minimum: 1` for `fileSize` instead of the unsupported numeric `exclusiveMinimum`.
+
 ## 5.71.0
 
 ### Add generated board knowledge to `get_board_info`
