@@ -14,6 +14,7 @@ import {
 import { NonDeprecatedColumnType } from 'src/utils/types';
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '../test-utils/mock-api-client';
+import { GET_BOARD_INFO_ENTITY_KNOWLEDGE_FLAG, GetBoardInfoTool } from './get-board-info-tool';
 
 describe('formatBoardInfoAsJson - board structure', () => {
   it('should include core board fields and nested relations', () => {
@@ -278,6 +279,12 @@ describe('formatBoardInfoAsJson - knowledge', () => {
       bodyMarkdown: 'Tracks engineering delivery.',
       data: null,
     });
+  });
+
+  it('omits knowledge when it is disabled', () => {
+    const result = formatBoardInfoAsJson(board, null, undefined, null, false);
+
+    expect(result).not.toHaveProperty('knowledge');
   });
 });
 
@@ -679,5 +686,27 @@ describe('GetBoardInfoTool filtering', () => {
 
     expect(parsed.board.id).toBe('123');
     expect(parsed.knowledge).toBeNull();
+  });
+
+  it('skips and omits board knowledge when the feature flag is disabled', async () => {
+    const flagChecker = jest.fn().mockReturnValue(false);
+    mocks.setResponse({ boards: [boardPayload] });
+
+    const result = await callToolByNameRawAsync(
+      'get_board_info',
+      { boardId: 123 },
+      { mondayApiToken: 'test-token', flagChecker },
+    );
+    const parsed = parseToolResult(result);
+
+    expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+    expect(parsed).not.toHaveProperty('knowledge');
+    expect(flagChecker).toHaveBeenCalledWith(GET_BOARD_INFO_ENTITY_KNOWLEDGE_FLAG);
+  });
+
+  it('does not advertise board knowledge when the feature flag is disabled', () => {
+    const tool = new GetBoardInfoTool(mocks.mockApiClient, 'test-token', { flagChecker: () => false });
+
+    expect(tool.getDescription()).not.toContain('generated board knowledge');
   });
 });

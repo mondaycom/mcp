@@ -7,6 +7,7 @@
 - Fetches `entity_knowledge` in parallel with the existing board query.
 - Returns available business context, workflow meanings, column purposes, people roles, and related boards as structured JSON.
 - Treats missing or failed knowledge reads as optional so board metadata remains available.
+- Supports an optional toolkit `flagChecker` to skip and omit board knowledge during rollout.
 
 ## 5.70.2
 

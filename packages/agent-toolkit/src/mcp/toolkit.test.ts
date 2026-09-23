@@ -73,6 +73,7 @@ describe('MondayAgentToolkit', () => {
     });
 
     it('should initialize with full configuration', () => {
+      const flagChecker = jest.fn().mockReturnValue(true);
       const config = {
         mondayApiToken: 'test-token',
         mondayApiVersion: '2023-10',
@@ -88,6 +89,7 @@ describe('MondayAgentToolkit', () => {
           include: ['tool1', 'tool2'],
           enableDynamicApiTools: true,
         } as ToolsConfiguration,
+        flagChecker,
       };
 
       const toolkit = new MondayAgentToolkit(config);
@@ -111,6 +113,7 @@ describe('MondayAgentToolkit', () => {
           apiToken: 'test-token',
           context: {
             apiVersion: '2023-10',
+            flagChecker,
           },
         },
         config.toolsConfiguration,

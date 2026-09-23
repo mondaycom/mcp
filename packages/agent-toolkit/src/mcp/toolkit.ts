@@ -55,6 +55,7 @@ export class MondayAgentToolkit extends McpServer {
       ...config.context,
       apiVersion: config.mondayApiVersion ?? API_VERSION,
       fetchConfig: config.fetchConfig ?? config.context?.fetchConfig,
+      ...(config.flagChecker ? { flagChecker: config.flagChecker } : {}),
     };
 
     this.registerTools(config);

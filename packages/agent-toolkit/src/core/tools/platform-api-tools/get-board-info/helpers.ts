@@ -25,7 +25,7 @@ export interface BoardKnowledgeResponse {
 
 export interface BoardInfoResponse {
   board: BoardInfoData & { subItemColumns: ColumnInfo[] | undefined };
-  knowledge: BoardKnowledgeResponse | null;
+  knowledge?: BoardKnowledgeResponse | null;
   unmatchedViewNames?: string[];
 }
 
@@ -34,6 +34,7 @@ export const formatBoardInfoAsJson = (
   subItemsBoard: BoardInfoJustColumnsData | null,
   unmatchedViewNames?: string[],
   knowledge?: BoardKnowledgeData | null,
+  includeKnowledge = true,
 ): BoardInfoResponse => ({
   board: {
     ...board,
@@ -42,7 +43,7 @@ export const formatBoardInfoAsJson = (
     views: board.views ?? [],
     subItemColumns: subItemsBoard?.columns ?? undefined,
   },
-  knowledge: knowledge ? formatBoardKnowledge(knowledge) : null,
+  ...(includeKnowledge ? { knowledge: knowledge ? formatBoardKnowledge(knowledge) : null } : {}),
   ...(unmatchedViewNames && unmatchedViewNames.length > 0 ? { unmatchedViewNames } : {}),
 });
 

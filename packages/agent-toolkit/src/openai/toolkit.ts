@@ -22,6 +22,7 @@ export class MondayAgentToolkit {
     this.context = {
       ...config.context,
       apiVersion: config.mondayApiVersion ?? API_VERSION,
+      ...(config.flagChecker ? { flagChecker: config.flagChecker } : {}),
     };
 
     this.tools = this.initializeTools(config);
