@@ -1,8 +1,20 @@
-import { formatBoardInfoAsJson, BoardInfoData, normalizeViewName, resolveViewIdsByName } from './helpers';
+import {
+  formatBoardInfoAsJson,
+  BoardInfoData,
+  BoardKnowledgeData,
+  normalizeViewName,
+  resolveViewIdsByName,
+} from './helpers';
 import { BoardViewAccessLevel, State, BoardKind, WorkspaceKind } from '../../../../monday-graphql/generated/graphql/graphql';
+import {
+  EntityKnowledgeSectionKey,
+  EntityKnowledgeSectionKind,
+  EntityKnowledgeStatus,
+} from '../../../../monday-graphql/generated/graphql.dev/graphql';
 import { NonDeprecatedColumnType } from 'src/utils/types';
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '../test-utils/mock-api-client';
+import { GET_BOARD_INFO_ENTITY_KNOWLEDGE_FLAG, GetBoardInfoTool } from './get-board-info-tool';
 
 describe('formatBoardInfoAsJson - board structure', () => {
   it('should include core board fields and nested relations', () => {
@@ -72,7 +84,8 @@ describe('formatBoardInfoAsJson - board structure', () => {
     expect(result.board.workspace?.name).toBe('Development Team');
     expect(result.board.columns).toHaveLength(2);
     expect(result.board.subItemColumns).toBeUndefined();
-    expect(Object.keys(result)).toEqual(['board']);
+    expect(Object.keys(result)).toEqual(['board', 'knowledge']);
+    expect(result.knowledge).toBeNull();
   });
 
   it('should handle minimal board data', () => {
@@ -103,7 +116,8 @@ describe('formatBoardInfoAsJson - board structure', () => {
 
     expect(result.board.name).toBe('Minimal Board');
     expect(result.board.columns).toEqual([]);
-    expect(Object.keys(result)).toEqual(['board']);
+    expect(Object.keys(result)).toEqual(['board', 'knowledge']);
+    expect(result.knowledge).toBeNull();
   });
 
   it('should attach subItemColumns when sub-items board is provided', () => {
@@ -157,6 +171,82 @@ describe('formatBoardInfoAsJson - board structure', () => {
     expect(result.board.columns).toHaveLength(1);
     expect(result.board.subItemColumns).toHaveLength(1);
     expect(result.board.subItemColumns?.[0]?.id).toBe('sub_col_1');
+  });
+});
+
+describe('formatBoardInfoAsJson - knowledge', () => {
+  const board = {
+    id: '123',
+    name: 'Test Board',
+    columns: [],
+    views: [],
+  } as unknown as BoardInfoData;
+
+  it('returns structured knowledge as JSON', () => {
+    const knowledge: BoardKnowledgeData = {
+      summary: 'Engineering; primary workflow: Status',
+      status: EntityKnowledgeStatus.Fresh,
+      age_seconds: 120,
+      sections: [
+        {
+          key: EntityKnowledgeSectionKey.BusinessContext,
+          title: 'Business Context',
+          kind: EntityKnowledgeSectionKind.Structured,
+          confidence: 0.9,
+          body_markdown: null,
+          data: {
+            vertical: 'Engineering',
+            goal: 'Track product delivery',
+          },
+        },
+        {
+          key: EntityKnowledgeSectionKey.ColumnDictionary,
+          title: 'Column Dictionary',
+          kind: EntityKnowledgeSectionKind.Structured,
+          confidence: 0.8,
+          body_markdown: null,
+          data: {
+            status: {
+              title: 'Status',
+              type: 'status',
+              semanticRole: 'Tracks the delivery stage.',
+            },
+          },
+        },
+      ],
+    };
+
+    const result = formatBoardInfoAsJson(board, null, undefined, knowledge);
+
+    expect(result.knowledge).toEqual(knowledge);
+  });
+
+  it('preserves Markdown section bodies', () => {
+    const knowledge: BoardKnowledgeData = {
+      summary: null,
+      status: EntityKnowledgeStatus.Stale,
+      age_seconds: null,
+      sections: [
+        {
+          key: EntityKnowledgeSectionKey.BusinessContext,
+          title: 'Business Context',
+          kind: EntityKnowledgeSectionKind.Markdown,
+          confidence: 0.5,
+          body_markdown: 'Tracks engineering delivery.',
+          data: null,
+        },
+      ],
+    };
+
+    const result = formatBoardInfoAsJson(board, null, undefined, knowledge);
+
+    expect(result.knowledge?.sections?.[0]).toEqual(knowledge.sections?.[0]);
+  });
+
+  it('omits knowledge when it is disabled', () => {
+    const result = formatBoardInfoAsJson(board, null, undefined, null, false);
+
+    expect(result).not.toHaveProperty('knowledge');
   });
 });
 
@@ -381,7 +471,7 @@ describe('GetBoardInfoTool filtering', () => {
       },
     });
 
-    expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+    expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
     expect(mocks.getMockRequest().mock.calls[0][1]).toEqual({
       boardId: '123',
       columnIds: ['status'],
@@ -389,6 +479,7 @@ describe('GetBoardInfoTool filtering', () => {
       includeColumns: true,
       includeViews: true,
     });
+    expect(mocks.getMockRequest().mock.calls[1][2]).toEqual({ versionOverride: 'dev', timeout: 1_000 });
   });
 
   it('resolves filters.views.names via a lean index query then fetches by id', async () => {
@@ -405,6 +496,7 @@ describe('GetBoardInfoTool filtering', () => {
         ],
       },
       { boards: [boardPayload] },
+      { entity_knowledge: null },
     ]);
 
     const result = await callToolByNameRawAsync('get_board_info', {
@@ -414,7 +506,7 @@ describe('GetBoardInfoTool filtering', () => {
       },
     });
 
-    expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
+    expect(mocks.getMockRequest()).toHaveBeenCalledTimes(3);
     expect(mocks.getMockRequest().mock.calls[1][1]).toEqual({
       boardId: '123',
       columnIds: undefined,
@@ -490,5 +582,105 @@ describe('GetBoardInfoTool filtering', () => {
       includeColumns: false,
       includeViews: true,
     });
+  });
+
+  it('fetches board knowledge in parallel with board info', async () => {
+    let resolveBoard: (value: unknown) => void;
+    let resolveKnowledge: (value: unknown) => void;
+    const boardResponse = new Promise((resolve) => {
+      resolveBoard = resolve;
+    });
+    const knowledgeResponse = new Promise((resolve) => {
+      resolveKnowledge = resolve;
+    });
+    mocks.getMockRequest().mockReturnValueOnce(boardResponse).mockReturnValueOnce(knowledgeResponse);
+
+    const resultPromise = callToolByNameRawAsync('get_board_info', { boardId: 123 });
+    await new Promise<void>((resolve) => setImmediate(resolve));
+
+    expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
+
+    resolveBoard!({ boards: [boardPayload] });
+    resolveKnowledge!({
+      entity_knowledge: {
+        summary: 'Engineering delivery',
+        status: EntityKnowledgeStatus.Fresh,
+        age_seconds: 30,
+        sections: [
+          {
+            key: EntityKnowledgeSectionKey.BusinessContext,
+            title: 'Business Context',
+            kind: EntityKnowledgeSectionKind.Structured,
+            confidence: 0.9,
+            body_markdown: null,
+            data: { goal: 'Ship product work' },
+          },
+        ],
+      },
+    });
+
+    const parsed = parseToolResult(await resultPromise);
+    expect(parsed.knowledge).toEqual({
+      summary: 'Engineering delivery',
+      status: EntityKnowledgeStatus.Fresh,
+      age_seconds: 30,
+      sections: [
+        {
+          key: EntityKnowledgeSectionKey.BusinessContext,
+          title: 'Business Context',
+          kind: EntityKnowledgeSectionKind.Structured,
+          confidence: 0.9,
+          body_markdown: null,
+          data: { goal: 'Ship product work' },
+        },
+      ],
+    });
+  });
+
+  it('returns board info when the knowledge request fails', async () => {
+    const error = new Error('Knowledge unavailable');
+    const logger = { warn: jest.fn() };
+    mocks
+      .getMockRequest()
+      .mockResolvedValueOnce({ boards: [boardPayload] })
+      .mockRejectedValueOnce(error);
+
+    const result = await callToolByNameRawAsync(
+      'get_board_info',
+      { boardId: 123 },
+      { mondayApiToken: 'test-token', deps: { logger } },
+    );
+    const parsed = parseToolResult(result);
+
+    expect(parsed.board.id).toBe('123');
+    expect(parsed.knowledge).toBeNull();
+    expect(logger.warn).toHaveBeenCalledWith(
+      { err: error, boardId: 123, timeoutMs: 1_000 },
+      'Failed to fetch board knowledge',
+    );
+  });
+
+  it('skips and omits board knowledge when the feature flag is disabled', async () => {
+    const flagChecker = jest.fn().mockReturnValue(false);
+    mocks.setResponse({ boards: [boardPayload] });
+
+    const result = await callToolByNameRawAsync(
+      'get_board_info',
+      { boardId: 123 },
+      { mondayApiToken: 'test-token', deps: { flagChecker } },
+    );
+    const parsed = parseToolResult(result);
+
+    expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+    expect(parsed).not.toHaveProperty('knowledge');
+    expect(flagChecker).toHaveBeenCalledWith(GET_BOARD_INFO_ENTITY_KNOWLEDGE_FLAG);
+  });
+
+  it('does not advertise board knowledge when the feature flag is disabled', () => {
+    const tool = new GetBoardInfoTool(mocks.mockApiClient, 'test-token', {
+      deps: { flagChecker: () => false },
+    });
+
+    expect(tool.getDescription()).not.toContain('generated board knowledge');
   });
 });

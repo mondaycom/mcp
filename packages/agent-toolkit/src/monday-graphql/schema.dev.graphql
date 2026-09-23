@@ -18302,8 +18302,9 @@ type EntityKnowledge {
   ttl_seconds: Int
   "When this knowledge document is next due for revalidation."
   expires_at: Date
-  "The sections making up this knowledge document (e.g. structure, column dictionary, business context)."
-  sections: [EntityKnowledgeSection!]
+  "The sections making up this knowledge document. Pass `keys` to return only those sections."
+  sections(  "When set, only sections with these keys are returned. Omit to return every known section."
+keys: [EntityKnowledgeSectionKey!]): [EntityKnowledgeSection!]
 }
 
 "Coarse access classification of an entity knowledge document."
@@ -18314,8 +18315,8 @@ enum EntityKnowledgeAccessTier {
 
 "One section of an entity knowledge document — a self-contained facet such as structure or column dictionary."
 type EntityKnowledgeSection {
-  "The section's stable identifier (e.g. `structure`, `column-dictionary`)."
-  key: String
+  "The section's stable identifier."
+  key: EntityKnowledgeSectionKey
   "The section's human-readable title."
   title: String
   "Whether this section carries prose Markdown or a structured JSON payload."
@@ -18327,9 +18328,25 @@ type EntityKnowledgeSection {
   "The prose Markdown body. Present only when `kind` is MARKDOWN."
   body_markdown: String
   """
-  The structured payload, JSON-encoded as a string. Present only when `kind` is STRUCTURED. Example: `{"columns":[{"id":"status","title":"Status","type":"status"}]}`.
+  The structured payload as a JSON object. Present only when `kind` is STRUCTURED. Example shape: `{ "columns": [{ "id": "status", "title": "Status", "type": "status" }] }`.
   """
-  data_json: String
+  data_json: JSON
+}
+
+"A knowledge-document section's stable identifier."
+enum EntityKnowledgeSectionKey {
+  COLUMN_DICTIONARY
+  BUSINESS_CONTEXT
+  RELATED_BOARDS
+  PEOPLE_ROLES
+  LIFECYCLE_WORKFLOW
+  OVERVIEW
+  BUSINESS_GOAL
+  DETECTED_WORKFLOWS
+  PEOPLE_AND_ROLES
+  BOARD_DOCS_MAP
+  WORKDOC_METADATA
+  EXTRACTED_KNOWLEDGE
 }
 
 "A section's body shape."

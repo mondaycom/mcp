@@ -31,6 +31,17 @@ export type FetchConfig = {
   fetch?: MondayFetch;
 };
 
+export type FlagChecker = (flagKey: string) => boolean;
+
+export type ToolkitLogger = {
+  warn(fields: Record<string, unknown>, message: string): void;
+};
+
+export type MondayAgentToolkitDeps = {
+  flagChecker?: FlagChecker;
+  logger?: ToolkitLogger;
+};
+
 export type MondayAgentToolkitConfig = {
   mondayApiToken: ApiClientConfig['token'] | (() => string);
   mondayApiVersion?: ApiClientConfig['apiVersion'];
@@ -39,4 +50,5 @@ export type MondayAgentToolkitConfig = {
   toolsConfiguration?: ToolsConfiguration;
   context?: MondayApiToolContext;
   fetchConfig?: FetchConfig;
+  deps?: MondayAgentToolkitDeps;
 };

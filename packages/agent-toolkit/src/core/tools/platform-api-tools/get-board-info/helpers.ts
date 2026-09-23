@@ -1,11 +1,14 @@
 import { GetBoardInfoJustColumnsQuery, GetBoardInfoQuery } from '../../../../monday-graphql/generated/graphql/graphql';
+import { GetBoardKnowledgeQuery } from '../../../../monday-graphql/generated/graphql.dev/graphql';
 
 export type BoardInfoData = NonNullable<NonNullable<GetBoardInfoQuery['boards']>[0]>;
 export type BoardInfoJustColumnsData = NonNullable<NonNullable<GetBoardInfoJustColumnsQuery['boards']>[0]>;
 export type ColumnInfo = NonNullable<BoardInfoJustColumnsData['columns']>[0];
+export type BoardKnowledgeData = NonNullable<GetBoardKnowledgeQuery['entity_knowledge']>;
 
 export interface BoardInfoResponse {
   board: BoardInfoData & { subItemColumns: ColumnInfo[] | undefined };
+  knowledge?: BoardKnowledgeData | null;
   unmatchedViewNames?: string[];
 }
 
@@ -13,6 +16,8 @@ export const formatBoardInfoAsJson = (
   board: BoardInfoData,
   subItemsBoard: BoardInfoJustColumnsData | null,
   unmatchedViewNames?: string[],
+  knowledge?: BoardKnowledgeData | null,
+  includeKnowledge = true,
 ): BoardInfoResponse => ({
   board: {
     ...board,
@@ -21,6 +26,7 @@ export const formatBoardInfoAsJson = (
     views: board.views ?? [],
     subItemColumns: subItemsBoard?.columns ?? undefined,
   },
+  ...(includeKnowledge ? { knowledge: knowledge ?? null } : {}),
   ...(unmatchedViewNames && unmatchedViewNames.length > 0 ? { unmatchedViewNames } : {}),
 });
 

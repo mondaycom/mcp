@@ -1,5 +1,14 @@
 # Changelog
 
+## 5.71.0
+
+### Add generated board knowledge to `get_board_info`
+
+- Fetches `entity_knowledge` in parallel with the existing board query.
+- Returns available business context, workflow meanings, column purposes, people roles, and related boards as structured JSON.
+- Treats missing or failed knowledge reads as optional so board metadata remains available.
+- Supports optional toolkit dependencies for rollout flag checks and structured logging of failed knowledge reads.
+
 ## 5.70.2
 
 ### Document supported board filter operators
