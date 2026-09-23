@@ -218,38 +218,7 @@ describe('formatBoardInfoAsJson - knowledge', () => {
 
     const result = formatBoardInfoAsJson(board, null, undefined, knowledge);
 
-    expect(result.knowledge).toEqual({
-      summary: 'Engineering; primary workflow: Status',
-      status: EntityKnowledgeStatus.Fresh,
-      ageSeconds: 120,
-      sections: [
-        {
-          key: EntityKnowledgeSectionKey.BusinessContext,
-          title: 'Business Context',
-          kind: EntityKnowledgeSectionKind.Structured,
-          confidence: 0.9,
-          bodyMarkdown: null,
-          data: {
-            vertical: 'Engineering',
-            goal: 'Track product delivery',
-          },
-        },
-        {
-          key: EntityKnowledgeSectionKey.ColumnDictionary,
-          title: 'Column Dictionary',
-          kind: EntityKnowledgeSectionKind.Structured,
-          confidence: 0.8,
-          bodyMarkdown: null,
-          data: {
-            status: {
-              title: 'Status',
-              type: 'status',
-              semanticRole: 'Tracks the delivery stage.',
-            },
-          },
-        },
-      ],
-    });
+    expect(result.knowledge).toEqual(knowledge);
   });
 
   it('preserves Markdown section bodies', () => {
@@ -271,14 +240,7 @@ describe('formatBoardInfoAsJson - knowledge', () => {
 
     const result = formatBoardInfoAsJson(board, null, undefined, knowledge);
 
-    expect(result.knowledge?.sections[0]).toEqual({
-      key: EntityKnowledgeSectionKey.BusinessContext,
-      title: 'Business Context',
-      kind: EntityKnowledgeSectionKind.Markdown,
-      confidence: 0.5,
-      bodyMarkdown: 'Tracks engineering delivery.',
-      data: null,
-    });
+    expect(result.knowledge?.sections?.[0]).toEqual(knowledge.sections?.[0]);
   });
 
   it('omits knowledge when it is disabled', () => {
@@ -661,14 +623,14 @@ describe('GetBoardInfoTool filtering', () => {
     expect(parsed.knowledge).toEqual({
       summary: 'Engineering delivery',
       status: EntityKnowledgeStatus.Fresh,
-      ageSeconds: 30,
+      age_seconds: 30,
       sections: [
         {
           key: EntityKnowledgeSectionKey.BusinessContext,
           title: 'Business Context',
           kind: EntityKnowledgeSectionKind.Structured,
           confidence: 0.9,
-          bodyMarkdown: null,
+          body_markdown: null,
           data: { goal: 'Ship product work' },
         },
       ],

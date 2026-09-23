@@ -5,27 +5,10 @@ export type BoardInfoData = NonNullable<NonNullable<GetBoardInfoQuery['boards']>
 export type BoardInfoJustColumnsData = NonNullable<NonNullable<GetBoardInfoJustColumnsQuery['boards']>[0]>;
 export type ColumnInfo = NonNullable<BoardInfoJustColumnsData['columns']>[0];
 export type BoardKnowledgeData = NonNullable<GetBoardKnowledgeQuery['entity_knowledge']>;
-type BoardKnowledgeSectionData = NonNullable<BoardKnowledgeData['sections']>[number];
-
-export interface BoardKnowledgeSectionResponse {
-  key: BoardKnowledgeSectionData['key'];
-  title: string | null;
-  kind: BoardKnowledgeSectionData['kind'];
-  confidence: number | null;
-  bodyMarkdown: string | null;
-  data: unknown | null;
-}
-
-export interface BoardKnowledgeResponse {
-  summary: string | null;
-  status: BoardKnowledgeData['status'];
-  ageSeconds: number | null;
-  sections: BoardKnowledgeSectionResponse[];
-}
 
 export interface BoardInfoResponse {
   board: BoardInfoData & { subItemColumns: ColumnInfo[] | undefined };
-  knowledge?: BoardKnowledgeResponse | null;
+  knowledge?: BoardKnowledgeData | null;
   unmatchedViewNames?: string[];
 }
 
@@ -43,22 +26,8 @@ export const formatBoardInfoAsJson = (
     views: board.views ?? [],
     subItemColumns: subItemsBoard?.columns ?? undefined,
   },
-  ...(includeKnowledge ? { knowledge: knowledge ? formatBoardKnowledge(knowledge) : null } : {}),
+  ...(includeKnowledge ? { knowledge: knowledge ?? null } : {}),
   ...(unmatchedViewNames && unmatchedViewNames.length > 0 ? { unmatchedViewNames } : {}),
-});
-
-const formatBoardKnowledge = (knowledge: BoardKnowledgeData): BoardKnowledgeResponse => ({
-  summary: knowledge.summary ?? null,
-  status: knowledge.status,
-  ageSeconds: knowledge.age_seconds ?? null,
-  sections: (knowledge.sections ?? []).map((section) => ({
-    key: section.key,
-    title: section.title ?? null,
-    kind: section.kind,
-    confidence: section.confidence ?? null,
-    bodyMarkdown: section.body_markdown ?? null,
-    data: section.data ?? null,
-  })),
 });
 
 export const normalizeViewName = (name: string): string =>
