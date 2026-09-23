@@ -20,6 +20,7 @@ import { BaseMondayApiTool, createMondayApiAnnotations, MondayApiToolContext } f
 import { NonDeprecatedColumnType } from 'src/utils/types';
 
 export const GET_BOARD_INFO_ENTITY_KNOWLEDGE_FLAG = 'mcp-get-board-info-entity-knowledge';
+const BOARD_KNOWLEDGE_TIMEOUT_MS = 1_000;
 
 export const getBoardInfoToolSchema = {
   boardId: z.number().describe('The id of the board to get information for'),
@@ -132,9 +133,15 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
           .request<GetBoardKnowledgeQuery>(
             getBoardKnowledge,
             { boardId: input.boardId.toString() },
-            { versionOverride: 'dev', timeout: 1_000 },
+            { versionOverride: 'dev', timeout: BOARD_KNOWLEDGE_TIMEOUT_MS },
           )
-          .catch(() => null)
+          .catch((err: unknown) => {
+            this.context?.deps?.logger?.warn(
+              { err, boardId: input.boardId, timeoutMs: BOARD_KNOWLEDGE_TIMEOUT_MS },
+              'Failed to fetch board knowledge',
+            );
+            return null;
+          })
       : Promise.resolve(null);
 
     const [res, knowledgeRes] = await Promise.all([boardRequest, knowledgeRequest]);
@@ -161,7 +168,7 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
   }
 
   private shouldIncludeKnowledge(): boolean {
-    return this.context?.flagChecker?.(GET_BOARD_INFO_ENTITY_KNOWLEDGE_FLAG) ?? true;
+    return this.context?.deps?.flagChecker?.(GET_BOARD_INFO_ENTITY_KNOWLEDGE_FLAG) ?? true;
   }
 
   /**

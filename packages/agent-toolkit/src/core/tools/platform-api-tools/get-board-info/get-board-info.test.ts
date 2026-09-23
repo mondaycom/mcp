@@ -676,16 +676,26 @@ describe('GetBoardInfoTool filtering', () => {
   });
 
   it('returns board info when the knowledge request fails', async () => {
+    const error = new Error('Knowledge unavailable');
+    const logger = { warn: jest.fn() };
     mocks
       .getMockRequest()
       .mockResolvedValueOnce({ boards: [boardPayload] })
-      .mockRejectedValueOnce(new Error('Knowledge unavailable'));
+      .mockRejectedValueOnce(error);
 
-    const result = await callToolByNameRawAsync('get_board_info', { boardId: 123 });
+    const result = await callToolByNameRawAsync(
+      'get_board_info',
+      { boardId: 123 },
+      { mondayApiToken: 'test-token', deps: { logger } },
+    );
     const parsed = parseToolResult(result);
 
     expect(parsed.board.id).toBe('123');
     expect(parsed.knowledge).toBeNull();
+    expect(logger.warn).toHaveBeenCalledWith(
+      { err: error, boardId: 123, timeoutMs: 1_000 },
+      'Failed to fetch board knowledge',
+    );
   });
 
   it('skips and omits board knowledge when the feature flag is disabled', async () => {
@@ -695,7 +705,7 @@ describe('GetBoardInfoTool filtering', () => {
     const result = await callToolByNameRawAsync(
       'get_board_info',
       { boardId: 123 },
-      { mondayApiToken: 'test-token', flagChecker },
+      { mondayApiToken: 'test-token', deps: { flagChecker } },
     );
     const parsed = parseToolResult(result);
 
@@ -705,7 +715,9 @@ describe('GetBoardInfoTool filtering', () => {
   });
 
   it('does not advertise board knowledge when the feature flag is disabled', () => {
-    const tool = new GetBoardInfoTool(mocks.mockApiClient, 'test-token', { flagChecker: () => false });
+    const tool = new GetBoardInfoTool(mocks.mockApiClient, 'test-token', {
+      deps: { flagChecker: () => false },
+    });
 
     expect(tool.getDescription()).not.toContain('generated board knowledge');
   });

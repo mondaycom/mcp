@@ -89,7 +89,7 @@ describe('MondayAgentToolkit', () => {
           include: ['tool1', 'tool2'],
           enableDynamicApiTools: true,
         } as ToolsConfiguration,
-        flagChecker,
+        deps: { flagChecker },
       };
 
       const toolkit = new MondayAgentToolkit(config);
@@ -113,7 +113,7 @@ describe('MondayAgentToolkit', () => {
           apiToken: 'test-token',
           context: {
             apiVersion: '2023-10',
-            flagChecker,
+            deps: { flagChecker },
           },
         },
         config.toolsConfiguration,

@@ -22,7 +22,7 @@ export class MondayAgentToolkit {
     this.context = {
       ...config.context,
       apiVersion: config.mondayApiVersion ?? API_VERSION,
-      ...(config.flagChecker ? { flagChecker: config.flagChecker } : {}),
+      ...(config.deps ? { deps: { ...config.context?.deps, ...config.deps } } : {}),
     };
 
     this.tools = this.initializeTools(config);

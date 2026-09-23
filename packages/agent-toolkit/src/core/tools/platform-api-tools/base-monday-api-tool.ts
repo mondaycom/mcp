@@ -3,7 +3,7 @@ import { ZodRawShape } from 'zod';
 import { ToolAnnotations } from '@modelcontextprotocol/sdk/types';
 import { SessionContext } from '../../executable';
 import { Tool, ToolInputType, ToolOutputType, ToolType } from '../../tool';
-import type { FetchConfig, FlagChecker } from '../../monday-agent-toolkit';
+import type { FetchConfig, MondayAgentToolkitDeps } from '../../monday-agent-toolkit';
 
 export type MondayApiToolContext = {
   // Operational context
@@ -16,7 +16,7 @@ export type MondayApiToolContext = {
   clientRedirectUris?: string[];
 
   fetchConfig?: FetchConfig;
-  flagChecker?: FlagChecker;
+  deps?: MondayAgentToolkitDeps;
 };
 
 export type BaseMondayApiToolConstructor = new (api: ApiClient) => BaseMondayApiTool<any>;
