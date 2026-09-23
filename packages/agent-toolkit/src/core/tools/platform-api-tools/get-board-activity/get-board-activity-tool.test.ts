@@ -37,7 +37,7 @@ describe('GetBoardActivityTool', () => {
     });
   });
 
-  it('includes data field only when includeData is true', async () => {
+  it('includes data field parsed as an object when includeData is true', async () => {
     mocks.setResponse({ boards: [mockBoard] });
     const tool = new GetBoardActivityTool(mocks.mockApiClient);
 
@@ -49,8 +49,8 @@ describe('GetBoardActivityTool', () => {
       board_name: 'Test Board',
       board_url: 'https://monday.com/boards/1',
       data: [
-        { created_at: '2024-01-01T00:00:00Z', event: 'create_pulse', entity: 'pulse', user_id: '123', data: '{"key":"value"}' },
-        { created_at: '2024-01-02T00:00:00Z', event: 'update_pulse', entity: 'pulse', user_id: '456', data: '{"foo":"bar"}' },
+        { created_at: '2024-01-01T00:00:00Z', event: 'create_pulse', entity: 'pulse', user_id: '123', data: { key: 'value' } },
+        { created_at: '2024-01-02T00:00:00Z', event: 'update_pulse', entity: 'pulse', user_id: '456', data: { foo: 'bar' } },
       ],
     });
   });
@@ -120,6 +120,41 @@ describe('GetBoardActivityTool', () => {
         userIds: [],
       }),
     );
+  });
+
+  it('trims redundant previous_value from data payloads when includeData is true', async () => {
+    const files = [
+      { assetId: 1, name: 'a.pdf' },
+      { assetId: 2, name: 'b.pdf' },
+    ];
+    const heavyBoard = {
+      name: 'Heavy Board',
+      url: 'https://monday.com/boards/9',
+      activity_logs: [
+        {
+          created_at: '2024-03-01T00:00:00Z',
+          event: 'update_column_value',
+          entity: 'pulse',
+          user_id: '77',
+          data: JSON.stringify({
+            action_record_uuid: 'uuid-abc',
+            column_id: 'files',
+            previous_value: files,
+            value: files,
+          }),
+        },
+      ],
+    };
+    mocks.setResponse({ boards: [heavyBoard] });
+    const tool = new GetBoardActivityTool(mocks.mockApiClient);
+
+    const result = await tool.execute({ boardId: 9, includeData: true });
+    const row = (result.content as { data: Array<{ data: Record<string, unknown> }> }).data[0];
+
+    expect(row.data.action_record_uuid).toBe('uuid-abc');
+    expect(row.data.value).toEqual(files);
+    expect(row.data.previous_value).toBeUndefined();
+    expect(row.data.previous_value_omitted).toBe('equals_value');
   });
 
   it('propagates API errors', async () => {
