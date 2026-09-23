@@ -6,12 +6,7 @@ import { createUploadMutationDev } from './get-asset-upload-url.graphql.dev';
 export const getAssetUploadUrlSchema = {
   fileName: z.string().describe('The name of the file to upload, including extension (e.g. "report.pdf")'),
   contentType: z.string().describe('The MIME type of the file (e.g. "application/pdf", "image/png", "text/plain")'),
-  fileSize: z
-    .number()
-    .int()
-    .positive()
-    .max(524288000)
-    .describe('The file size in bytes. Maximum 500MB (524288000 bytes)'),
+  fileSize: z.number().int().min(1).max(524288000).describe('The file size in bytes. Maximum 500MB (524288000 bytes)'),
 };
 
 interface CreateUploadMutation {

@@ -1,5 +1,7 @@
+import { z } from 'zod';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 import { createMockApiClient } from '../test-utils/mock-api-client';
-import { GetAssetUploadUrlTool } from './get-asset-upload-url-tool';
+import { getAssetUploadUrlSchema, GetAssetUploadUrlTool } from './get-asset-upload-url-tool';
 
 describe('GetAssetUploadUrlTool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
@@ -80,5 +82,20 @@ describe('GetAssetUploadUrlTool', () => {
     expect(tool.getDescription()).toContain('ETag');
     expect(tool.getDescription()).toContain('finalize_asset_upload');
     expect(tool.getDescription()).toContain('Only call this tool if you can execute a direct HTTP PUT');
+  });
+
+  it('emits a Copilot-compatible file size schema', () => {
+    const schema = zodToJsonSchema(z.object(getAssetUploadUrlSchema));
+
+    expect(schema).toMatchObject({
+      properties: {
+        fileSize: {
+          type: 'integer',
+          minimum: 1,
+          maximum: 524288000,
+          description: 'The file size in bytes. Maximum 500MB (524288000 bytes)',
+        },
+      },
+    });
   });
 });
