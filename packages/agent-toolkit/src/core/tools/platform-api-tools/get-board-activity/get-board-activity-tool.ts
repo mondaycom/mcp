@@ -4,6 +4,7 @@ import {
   GetBoardActivityQueryVariables,
 } from '../../../../monday-graphql/generated/graphql/graphql';
 import { getBoardActivity } from './get-board-activity.graphql';
+import { trimActivityData } from './trim-activity-data';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './../base-monday-api-tool';
 import { TIME_IN_MILLISECONDS } from '../../../../utils';
@@ -28,7 +29,7 @@ export const getBoardActivityToolSchema = {
     .optional()
     .default(false)
     .describe(
-      'Whether to include the raw data payload for each activity entry. The data field contains the full before/after state of changes and can be very large. Only set to true when you need the detailed change data.',
+      'Whether to include the parsed data payload for each activity entry. The data field contains the full before/after state of changes and can be very large. Only set to true when you need the detailed change data. When true, `data` is returned as a parsed object (not a JSON string); if `previous_value` equals `value` in a row, `previous_value` is dropped and `previous_value_omitted: "equals_value"` is added in its place.',
     ),
 };
 
@@ -102,7 +103,7 @@ export class GetBoardActivityTool extends BaseMondayApiTool<typeof getBoardActiv
             event: log.event,
             entity: log.entity,
             user_id: log.user_id,
-            ...(includeData && log.data ? { data: log.data } : {}),
+            ...(includeData && log.data ? { data: trimActivityData(log.data) } : {}),
           })),
       },
     };
