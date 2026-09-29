@@ -10,6 +10,8 @@ export interface DeploymentStatusResponse extends MondayApiResponse {
 export const getDeploymentStatusSchema = z.object({
   appVersionId: z
     .number()
+    .int()
+    .min(1)
     .describe(
       'The unique identifier of the app version to check deployment status for. Use this after running mapps code:push to monitor the deployment progress and verify it completed successfully',
     ),

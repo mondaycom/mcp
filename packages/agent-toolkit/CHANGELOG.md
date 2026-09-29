@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.71.2
+
+### Validate `appVersionId` in `monday_apps_get_deployment_status`
+
+- Require a positive integer, so invalid IDs are rejected before any API request is made.
+- Emit `type: integer` with `minimum: 1` rather than `exclusiveMinimum`, keeping the schema Copilot Studio compatible.
+
 ## 5.71.1
 
 ### Make `get_asset_upload_url` compatible with Copilot Studio
