@@ -35,6 +35,7 @@ import { CreateTimelineItemTool } from './create-timeline-item-tool';
 import { CreateUpdateTool } from './create-update-tool/create-update-tool';
 import { DeleteUpdateTool } from './delete-update-tool/delete-update-tool';
 import { GetUpdatesTool } from './get-updates-tool/get-updates-tool';
+import { DeleteBoardTool } from './delete-board-tool';
 import { DeleteColumnTool } from './delete-column-tool';
 import { DeleteItemTool } from './delete-item-tool';
 import { FetchCustomActivityTool } from './fetch-custom-activity-tool';
@@ -117,6 +118,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   UpdateColumnTool,
   CreateGroupTool,
   DeleteColumnTool,
+  DeleteBoardTool,
   AllMondayApiTool,
   AllApiReadTool,
   AllApiWriteTool,

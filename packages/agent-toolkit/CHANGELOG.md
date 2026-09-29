@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.72.0
+
+### Add `delete_board` tool
+
+- New WRITE tool that deletes a monday.com board using the `delete_board` mutation.
+- Mirrors the existing `delete_item` / `delete_column` tools and is marked as destructive.
+- Resolves the board id from the tool context when available, otherwise requires an explicit `boardId`.
+
 ## 5.71.2
 
 ### Validate `appVersionId` in `monday_apps_get_deployment_status`

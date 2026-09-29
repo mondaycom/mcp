@@ -135,6 +135,14 @@ export const deleteColumn = gql`
   }
 `;
 
+export const deleteBoard = gql`
+  mutation deleteBoard($boardId: ID!) {
+    delete_board(board_id: $boardId) {
+      id
+    }
+  }
+`;
+
 export const updateColumn = gql`
   mutation updateColumn(
     $boardId: ID!
