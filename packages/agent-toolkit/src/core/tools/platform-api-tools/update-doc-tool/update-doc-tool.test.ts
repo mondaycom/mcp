@@ -18,11 +18,11 @@ describe('UpdateDocTool', () => {
 
   // ─── Validation ───────────────────────────────────────────────────────────
 
-  it('returns error when neither doc_id nor object_id is provided', async () => {
+  it('returns error when no way to identify the doc is provided', async () => {
     const result = await callToolByNameRawAsync('update_doc', {
       operations: [{ operation_type: 'set_name', name: 'New Name' }],
     });
-    expect(result.content[0].text).toContain('Error: Either doc_id or object_id must be provided');
+    expect(result.content[0].text).toContain('Either doc_id, object_id, or board_id (with view_id) must be provided');
     expect(mocks.getMockRequest()).not.toHaveBeenCalled();
   });
 
@@ -75,6 +75,85 @@ describe('UpdateDocTool', () => {
     });
 
     expect(result.content[0].text).toContain('No document found for object_id missing_obj');
+  });
+
+  // ─── Board view resolution ────────────────────────────────────────────────
+
+  it('resolves board_id and view_id to the doc behind the board view', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query boardViewDocs')) {
+        return Promise.resolve({ board_view_docs: [{ id: 'view_doc_1', object_id: 'view_obj_1', name: 'Specs' }] });
+      }
+      if (query.includes('mutation updateDocName')) return Promise.resolve({ update_doc_name: true });
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      board_id: '18429976879',
+      view_id: '279510271',
+      operations: [{ operation_type: 'set_name', name: 'Renamed' }],
+    });
+
+    expect(result.content[0].text).toContain('Doc ID: view_doc_1');
+
+    const calls = mocks.getMockRequest().mock.calls;
+    const resolveCall = calls.find((c: any) => c[0].includes('query boardViewDocs'));
+    expect(resolveCall[1]).toMatchObject({ boardId: '18429976879', viewId: '279510271' });
+  });
+
+  it('returns error when the board view holds no doc', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query boardViewDocs')) return Promise.resolve({ board_view_docs: [] });
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      board_id: '111',
+      view_id: '222',
+      operations: [{ operation_type: 'set_name', name: 'X' }],
+    });
+
+    expect(result.content[0].text).toContain('No doc found for view 222 on board 111');
+  });
+
+  it('asks for a view_id when the board has more than one doc view', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('query boardViewDocs')) {
+        return Promise.resolve({
+          board_view_docs: [
+            { id: 'doc_a', object_id: 'obj_a', name: 'Specs' },
+            { id: 'doc_b', object_id: 'obj_b', name: 'Retro' },
+          ],
+        });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      board_id: '111',
+      operations: [{ operation_type: 'set_name', name: 'X' }],
+    });
+
+    expect(result.content[0].text).toContain('has 2 doc views (Specs, Retro)');
+    expect(result.content[0].text).toContain('Pass view_id');
+  });
+
+  it('prefers doc_id over board_id when both are provided', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('mutation updateDocName')) return Promise.resolve({ update_doc_name: true });
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      board_id: '111',
+      view_id: '222',
+      operations: [{ operation_type: 'set_name', name: 'X' }],
+    });
+
+    expect(result.content[0].text).toContain('Doc ID: doc_123');
+    const calls = mocks.getMockRequest().mock.calls;
+    expect(calls.find((c: any) => c[0].includes('query boardViewDocs'))).toBeUndefined();
   });
 
   // ─── set_name ────────────────────────────────────────────────────────────

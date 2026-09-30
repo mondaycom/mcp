@@ -28,6 +28,7 @@ import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { buildUpdateBlockContent, buildCreateBlockInput, applyCommentToDelta } from './update-doc-tool.helpers';
 import { updateDocToolSchema, UpdateBlockContent, CreateBlock } from './update-doc-tool.schema';
+import { resolveBoardViewDoc } from '../utils/board-view-doc.utils';
 import { mentionsListSchema } from '../create-update-tool/create-update-tool';
 
 export { updateDocToolSchema };
@@ -71,7 +72,9 @@ export class UpdateDocTool extends BaseMondayApiTool<typeof updateDocToolSchema>
   });
 
   getDescription(): string {
-    return `Update an existing monday.com document. Provide doc_id (preferred) or object_id, plus an ordered operations array (executed sequentially, stops on first failure).
+    return `Update an existing monday.com document. Provide doc_id (preferred), object_id, or board_id + view_id, plus an ordered operations array (executed sequentially, stops on first failure).
+
+IDENTIFYING THE DOC: A doc can live in a workspace, on an item, or as a board view. For a doc that lives as a board view, you only have a board URL — pass board_id and view_id from https://<slug>.monday.com/boards/<board_id>/views/<view_id> and they will be resolved to the doc.
 
 OPERATIONS:
 - set_name: Rename the document.
@@ -112,8 +115,8 @@ COMMENTS:
   }
 
   protected async executeInternal(input: ToolInputType<typeof updateDocToolSchema>): Promise<ToolOutputType<never>> {
-    if (!input.doc_id && !input.object_id) {
-      return { content: 'Error: Either doc_id or object_id must be provided.' };
+    if (!input.doc_id && !input.object_id && !input.board_id) {
+      return { content: 'Error: Either doc_id, object_id, or board_id (with view_id) must be provided.' };
     }
 
     this.sessionContext.metadata = {
@@ -121,18 +124,31 @@ COMMENTS:
       operation_types: input.operations?.map((op) => op.operation_type),
       operation_count: input.operations?.length ?? 0,
       ...(input.object_id && { object_id: input.object_id }),
+      ...(input.board_id && { board_id: input.board_id, view_id: input.view_id }),
     };
 
     try {
-      // Resolve doc_id from object_id if needed
       let docId = input.doc_id;
+      let objectId = input.object_id;
+
+      // A doc that lives as a board view has to be resolved through its board first.
+      if (!docId && !objectId && input.board_id) {
+        const resolved = await resolveBoardViewDoc(this.mondayApi, input.board_id, input.view_id);
+        if (!resolved.ok) {
+          return { content: `Error: ${resolved.error}` };
+        }
+        docId = resolved.doc.id;
+        objectId = resolved.doc.object_id;
+      }
+
+      // Resolve doc_id from object_id if needed
       if (!docId) {
         const res = await this.mondayApi.request<GetDocByObjectIdQuery>(getDocByObjectId, {
-          objectId: [input.object_id],
+          objectId: [objectId],
         });
         const doc = res.docs?.[0];
         if (!doc) {
-          return { content: `Error: No document found for object_id ${input.object_id}.` };
+          return { content: `Error: No document found for object_id ${objectId}.` };
         }
         docId = doc.id;
       }
@@ -143,7 +159,7 @@ COMMENTS:
       for (let i = 0; i < input.operations.length; i++) {
         const op = input.operations[i];
         try {
-          const result = await this.executeOperation(docId, op, input.object_id);
+          const result = await this.executeOperation(docId, op, objectId);
           results.push(`- [OK] ${op.operation_type}${result ? `: ${result}` : ''}`);
         } catch (err) {
           const errMsg = err instanceof Error ? err.message : 'Unknown error';

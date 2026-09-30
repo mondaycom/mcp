@@ -323,6 +323,20 @@ export const updateDocToolSchema = {
     .describe(
       'The document object ID (the object_id field from read_docs, visible in the document URL). Resolved to doc_id.',
     ),
+  board_id: z
+    .string()
+    .min(1)
+    .optional()
+    .describe(
+      'For a doc that lives as a board view: the <board_id> in https://<slug>.monday.com/boards/<board_id>/views/<view_id>. Pair with view_id. Use this instead of doc_id/object_id when all you have is a board view URL.',
+    ),
+  view_id: z
+    .string()
+    .min(1)
+    .optional()
+    .describe(
+      'For a doc that lives as a board view: the <view_id> in https://<slug>.monday.com/boards/<board_id>/views/<view_id>. Requires board_id.',
+    ),
   operations: z
     .array(OperationSchema)
     .min(1)

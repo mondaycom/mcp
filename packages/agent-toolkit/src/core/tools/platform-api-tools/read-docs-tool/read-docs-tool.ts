@@ -13,6 +13,7 @@ import { getDocVersionHistory, getDocVersionDiff } from './read-docs-tool.graphq
 import { getDocBlockContent } from '../update-doc-tool/update-doc-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+import { fetchBoardViewDocs, noDocsFoundMessage } from '../utils/board-view-doc.utils';
 
 // Types for the GetDocComments query (manually defined as codegen has a pre-existing conflict)
 type GetDocCommentsQueryVariables = {
@@ -83,8 +84,20 @@ export const readDocsToolSchema = {
 
   // --- content mode fields ---
   type: QueryByIdEnum.optional().describe(
-    'Query type for content mode: "ids", "object_ids", or "workspace_ids". Required when mode is "content".',
+    'Query type for content mode: "ids", "object_ids", or "workspace_ids". Required when mode is "content", unless board_id is provided.',
   ),
+  board_id: z
+    .string()
+    .optional()
+    .describe(
+      'For docs that live as a board view: the <board_id> in https://<slug>.monday.com/boards/<board_id>/views/<view_id>. Use this instead of type/ids when all you have is a board view URL. Only used in content mode.',
+    ),
+  view_id: z
+    .string()
+    .optional()
+    .describe(
+      'For a doc that lives as a board view: the <view_id> in https://<slug>.monday.com/boards/<board_id>/views/<view_id>. Requires board_id. Omit to read every doc view of the board.',
+    ),
   ids: z
     .array(z.string())
     .optional()
@@ -174,6 +187,7 @@ export class ReadDocsTool extends BaseMondayApiTool<typeof readDocsToolSchema> {
 
 MODE: "content" (default) — Fetch documents with their full markdown content.
 - Requires: type ("ids" | "object_ids" | "workspace_ids") and ids array
+- For a doc that lives as a board view, pass board_id and view_id instead of type/ids. They are the ids in the board URL: https://<slug>.monday.com/boards/<board_id>/views/<view_id>. Omit view_id to read every doc view of the board. Such docs cannot be found by type "ids"/"object_ids".
 - Supports pagination via page/limit. Check has_more_pages in response.
 - If type "ids" returns no results, automatically retries with object_ids.
 - Set include_blocks: true to include block IDs, types, and positions in the response — required before calling update_doc.
@@ -204,8 +218,10 @@ MODE: "version_history" — Fetch the edit history of a single document.
 
   private async executeContent(input: ToolInputType<typeof readDocsToolSchema>): Promise<ToolOutputType<never>> {
     try {
-      if (!input.type || !input.ids || input.ids.length === 0) {
-        return { content: 'Error: type and ids are required when mode is "content".' };
+      if (!input.board_id && (!input.type || !input.ids || input.ids.length === 0)) {
+        return {
+          content: 'Error: type and ids are required when mode is "content", unless board_id is provided.',
+        };
       }
 
       this.sessionContext.metadata = {
@@ -213,6 +229,7 @@ MODE: "version_history" — Fetch the edit history of a single document.
         mode: input.mode ?? CONTENT_MODE,
         include_comments: input.include_comments ?? false,
         include_blocks: input.include_blocks ?? false,
+        ...(input.board_id && { board_id: input.board_id, view_id: input.view_id }),
       };
 
       let ids: string[] | undefined;
@@ -245,6 +262,36 @@ MODE: "version_history" — Fetch the edit history of a single document.
         includeBlocks,
         ...blocksPagination,
       };
+
+      // A doc that lives as a board view is resolved through its board, and the resolution already
+      // returns the doc itself - the docs() query cannot be used as a second hop for it.
+      if (input.board_id) {
+        const docs = await fetchBoardViewDocs(this.mondayApi, input.board_id, input.view_id, {
+          includeBlocks,
+          blocksLimit: input.blocks_limit,
+          blocksPage: input.blocks_page,
+        });
+
+        if (docs.length === 0) {
+          return { content: noDocsFoundMessage(input.board_id, input.view_id) };
+        }
+
+        this.sessionContext.metadata = {
+          ...this.sessionContext.metadata,
+          doc_ids: docs.map((doc) => doc.id),
+          object_ids: docs.flatMap((doc) => (doc.object_id ? [doc.object_id] : [])),
+        };
+
+        return this.enrichDocsWithMarkdown(
+          docs,
+          variables,
+          includeBlocks,
+          input.include_comments ?? false,
+          input.comments_limit ?? 50,
+          input.blocks_limit,
+          input.blocks_page,
+        );
+      }
 
       let res = await this.mondayApi.request<ReadDocsQuery>(readDocs, variables);
 

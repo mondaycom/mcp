@@ -487,13 +487,62 @@ describe('AddContentToDocTool', () => {
       expect(result.content[0].text).toContain('Resolution service unavailable');
     });
 
-    it('should return error when neither doc_id nor object_id is provided', async () => {
+    it('should return error when no way to identify the doc is provided', async () => {
       const result = await callToolByNameRawAsync('add_content_to_doc', {
         markdown: 'Content',
       });
 
-      expect(result.content[0].text).toContain('Error: Either doc_id or object_id must be provided');
+      expect(result.content[0].text).toContain(
+        'Either doc_id, object_id, or board_id (with view_id) must be provided',
+      );
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+
+    it('should resolve board_id and view_id to the doc behind the board view', async () => {
+      jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+        if (query.includes('query boardViewDocs')) {
+          return Promise.resolve({
+            board_view_docs: [
+              { id: 'view_doc_1', object_id: 'view_obj_1', name: 'Specs', url: 'https://example.com/specs' },
+            ],
+          });
+        }
+        if (query.includes('mutation addContentToDocFromMarkdown')) {
+          return Promise.resolve({
+            add_content_to_doc_from_markdown: { success: true, block_ids: ['block_9'], error: null },
+          });
+        }
+        return Promise.resolve({});
+      });
+
+      const result = await callToolByNameRawAsync('add_content_to_doc', {
+        board_id: '18429976879',
+        view_id: '279510271',
+        markdown: 'Some content',
+      });
+
+      const parsed = parseToolResult(result);
+      expect(parsed.message).toContain('Successfully added content to document view_doc_1');
+      expect(parsed.doc_name).toBe('Specs');
+
+      const mockCalls = mocks.getMockRequest().mock.calls;
+      const resolveCall = mockCalls.find((call: any) => call[0].includes('query boardViewDocs'));
+      expect(resolveCall[1]).toMatchObject({ boardId: '18429976879', viewId: '279510271' });
+    });
+
+    it('should return error when the board view holds no doc', async () => {
+      jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+        if (query.includes('query boardViewDocs')) return Promise.resolve({ board_view_docs: [] });
+        return Promise.resolve({});
+      });
+
+      const result = await callToolByNameRawAsync('add_content_to_doc', {
+        board_id: '111',
+        view_id: '222',
+        markdown: 'Content',
+      });
+
+      expect(result.content[0].text).toContain('No doc found for view 222 on board 111');
     });
 
     it('should return schema error when markdown is missing', async () => {

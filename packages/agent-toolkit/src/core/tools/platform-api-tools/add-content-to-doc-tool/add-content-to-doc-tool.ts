@@ -10,6 +10,7 @@ import {
 } from '../../../../monday-graphql/generated/graphql/graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+import { resolveBoardViewDoc } from '../utils/board-view-doc.utils';
 
 interface Document {
   id: string;
@@ -29,6 +30,20 @@ export const addContentToDocToolSchema = {
     .optional()
     .describe(
       'The document object ID (the object_id field from read_docs, also visible in the document URL). Will be resolved to a doc_id. Provide this OR doc_id.',
+    ),
+  board_id: z
+    .string()
+    .min(1)
+    .optional()
+    .describe(
+      'For a doc that lives as a board view: the <board_id> in https://<slug>.monday.com/boards/<board_id>/views/<view_id>. Pair with view_id. Use this instead of doc_id/object_id when all you have is a board view URL.',
+    ),
+  view_id: z
+    .string()
+    .min(1)
+    .optional()
+    .describe(
+      'For a doc that lives as a board view: the <view_id> in https://<slug>.monday.com/boards/<board_id>/views/<view_id>. Requires board_id.',
     ),
   markdown: z.string().describe('Markdown content to add to the document.'),
   after_block_id: z
@@ -50,13 +65,15 @@ export class AddContentToDocTool extends BaseMondayApiTool<typeof addContentToDo
   getDescription(): string {
     return `Add markdown content to an existing monday.com document.
 
-IDENTIFICATION: Provide either doc_id or object_id to identify the document:
+IDENTIFICATION: Provide doc_id, object_id, or board_id + view_id to identify the document:
 - doc_id: The document ID (the id field returned by read_docs). Takes priority if both provided.
 - object_id: The document object ID (the object_id field from read_docs, also visible in the document URL). Will be resolved to a doc_id.
+- board_id + view_id: For a doc that lives as a board view, taken from https://<slug>.monday.com/boards/<board_id>/views/<view_id>. Such docs have no usable doc_id/object_id until they are resolved through their board.
 
 USAGE EXAMPLES:
 - By doc_id: { doc_id: "123", markdown: "# New Section\\nContent here" }
 - By object_id: { object_id: "456", markdown: "# New Section\\nContent here" }
+- By board view: { board_id: "18429976879", view_id: "279510271", markdown: "# New Section\\nContent here" }
 - Insert after block: { doc_id: "123", markdown: "Inserted content", after_block_id: "block_789" }`;
   }
 
@@ -67,15 +84,21 @@ USAGE EXAMPLES:
   protected async executeInternal(
     input: ToolInputType<typeof addContentToDocToolSchema>,
   ): Promise<ToolOutputType<never>> {
-    if (!input.doc_id && !input.object_id) {
-      return { content: 'Error: Either doc_id or object_id must be provided.' };
+    if (!input.doc_id && !input.object_id && !input.board_id) {
+      return { content: 'Error: Either doc_id, object_id, or board_id (with view_id) must be provided.' };
     }
 
     try {
       let doc: Document = null!;
 
-      // Resolve object_id to doc_id if needed
-      if (!input.doc_id) {
+      // A doc that lives as a board view has to be resolved through its board first.
+      if (!input.doc_id && !input.object_id && input.board_id) {
+        const resolved = await resolveBoardViewDoc(this.mondayApi, input.board_id, input.view_id);
+        if (!resolved.ok) {
+          return { content: `Error: ${resolved.error}` };
+        }
+        doc = resolved.doc;
+      } else if (!input.doc_id) {
         const res = await this.mondayApi.request<GetDocByObjectIdQuery>(getDocByObjectId, {
           objectId: [input.object_id],
         });
@@ -99,6 +122,7 @@ USAGE EXAMPLES:
         ...this.sessionContext.metadata,
         doc_id: doc.id,
         ...(input.object_id && { object_id: input.object_id }),
+        ...(input.board_id && { board_id: input.board_id, view_id: input.view_id }),
       };
 
       const variables: AddContentToDocFromMarkdownMutationVariables = {
