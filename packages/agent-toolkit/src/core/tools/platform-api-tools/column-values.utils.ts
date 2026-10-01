@@ -8,7 +8,7 @@ export const COLUMN_VALUES_FORMAT_GUIDE =
   'people: {"personsAndTeams": [{"id": 123, "kind": "person"}]}, where kind is "person" or "team". ' +
   'board_relation: {"item_ids": [123]}. tags: {"tag_ids": [123]}. checkbox: {"checked": "true"}. ' +
   'link: {"url": "https://...", "text": "..."}. location: {"lat": "40.7", "lng": "-74.0", "address": "..."}, lat and lng are required strings, an address alone fails. ' +
-  'email: {"email": "a@b.com", "text": "a@b.com"}. phone: {"phone": "+12125551234", "countryShortName": "US"}, digits only with no spaces or dashes, uppercase ISO-2 country code. ' +
+  'email: {"email": "a@b.com", "text": "a@b.com"}. phone: {"phone": "+12125551234", "countryShortName": "US"}, digits only with an optional leading + and no spaces or dashes, uppercase ISO-2 country code. ' +
   'Plain strings fail for email and phone. null clears a column. ' +
   'Example: {"text_col": "New text", "status_col": {"label": "Done"}, "dropdown_col": {"labels": ["A"]}, "date_col": {"date": "2023-05-25"}}';
 
