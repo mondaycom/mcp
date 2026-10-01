@@ -1,5 +1,19 @@
 # Changelog
 
+## 5.71.3
+
+### Fix column-value failures in `change_item_column_values`, `update_items`, `create_item` and `create_items`
+
+- Unwrap double-encoded `columnValues` (a JSON string whose content is itself a JSON string) before sending it to the API. These calls previously never succeeded.
+- Share one column-value format guide across the four tools. Dropdowns use `{"labels": [...]}` even for one value; the old `update_items`, `create_item` and `create_items` text said `{"label": "..."}`, which the API rejects.
+- Document the people, board_relation, tags, long_text, timeline, checkbox, link, location, email and phone formats, and require column ids and labels from `get_board_info`.
+- Replace the escaped-quote example, which encouraged double encoding, with a plain JSON object.
+
+### Clarify `move_item_to_group.groupId` and `read_docs.type`
+
+- `groupId` must be a group on the item's board, read from `get_board_info`.
+- `read_docs` defaults to `object_ids`, the number in a doc URL.
+
 ## 5.71.2
 
 ### Validate `appVersionId` in `monday_apps_get_deployment_status`

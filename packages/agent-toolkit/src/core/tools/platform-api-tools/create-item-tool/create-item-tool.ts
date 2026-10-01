@@ -11,6 +11,7 @@ import { createSubitem } from './create-subitem.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { ChangeItemColumnValuesTool } from '../change-item-column-values-tool';
+import { COLUMN_VALUES_FORMAT_GUIDE, unwrapDoubleEncodedColumnValues } from '../column-values.utils';
 import { ToolValidationError, rethrowWithContext } from '../../../../utils';
 
 export const createItemToolSchema = {
@@ -23,11 +24,7 @@ export const createItemToolSchema = {
     .string()
     .optional()
     .describe('The id of the group id to which the new item will be added, if its not clearly specified, leave empty'),
-  columnValues: z
-    .string()
-    .describe(
-      `A JSON string of column values, keyed by column id. Status and dropdown columns must use { "label": "..." } (or { "labels": ["...", "..."] } for multi-select dropdown). Date columns use { "date": "YYYY-MM-DD" }. Text/number/email/phone use plain strings. Example: "{\\"text_col\\":\\"hello\\", \\"status_col\\":{\\"label\\":\\"Done\\"}, \\"date_col\\":{\\"date\\":\\"2023-05-25\\"}, \\"dropdown_col\\":{\\"labels\\":[\\"A\\",\\"B\\"]}, \\"phone_col\\":\\"123-456-7890\\", \\"email_col\\":\\"test@example.com\\"}". If you don't know the exact label values or column ids, call get_board_info first.`,
-    ),
+  columnValues: z.string().describe(COLUMN_VALUES_FORMAT_GUIDE),
   createLabelsIfMissing: z
     .boolean()
     .optional()
@@ -111,7 +108,7 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
 
       let columnValuesParsed;
       try {
-        columnValuesParsed = JSON.parse(input.columnValues);
+        columnValuesParsed = JSON.parse(unwrapDoubleEncodedColumnValues(input.columnValues));
       } catch (error) {
         throw new ToolValidationError('Invalid JSON in columnValues', 'INVALID_COLUMN_VALUES_JSON');
       }
@@ -143,7 +140,7 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
     const variables = {
       parentItemId: input.parentItemId!.toString(),
       itemName: input.name,
-      columnValues: input.columnValues,
+      columnValues: unwrapDoubleEncodedColumnValues(input.columnValues),
       createLabelsIfMissing: input.createLabelsIfMissing,
     };
     try {
@@ -170,7 +167,7 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
         boardId: boardId.toString(),
         itemName: input.name,
         groupId: input.groupId,
-        columnValues: input.columnValues,
+        columnValues: unwrapDoubleEncodedColumnValues(input.columnValues),
         createLabelsIfMissing: input.createLabelsIfMissing,
       };
 

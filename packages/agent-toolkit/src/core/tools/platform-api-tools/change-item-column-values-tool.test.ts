@@ -59,6 +59,27 @@ describe('ChangeItemColumnValuesTool', () => {
       );
     });
 
+    it('sends a double-encoded columnValues payload to the API as a plain JSON object', async () => {
+      mocks.setResponse(mockMutationResponse);
+
+      await tool.execute(
+        {
+          boardId: 18414630189,
+          itemId: 12093604112,
+          columnValues: JSON.stringify('{"color_mm3nhhab":{"label":"Stuck"}}'),
+        },
+        undefined as any,
+      );
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          columnValues: '{"color_mm3nhhab":{"label":"Stuck"}}',
+          columnIds: ['color_mm3nhhab'],
+        }),
+      );
+    });
+
     it('throws meaningful error for invalid columnValues JSON', async () => {
       await expect(
         tool.execute(

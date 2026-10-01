@@ -65,6 +65,19 @@ describe('Create Item Tool Behaviour', () => {
         });
       });
 
+      it('Unwraps double-encoded columnValues before creating the item', async () => {
+        mocks.setResponse(successfulCreateItemResponse);
+
+        const tool = new CreateItemTool(mocks.mockApiClient, { boardId: 456 });
+
+        await tool.execute({ name: 'Test Item', columnValues: JSON.stringify('{"text_column":"Test Value"}') });
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('mutation createItem'),
+          expect.objectContaining({ columnValues: '{"text_column":"Test Value"}' }),
+        );
+      });
+
       it('Successfully creates a new item without groupId', async () => {
         mocks.setResponse(successfulCreateItemResponse);
 
