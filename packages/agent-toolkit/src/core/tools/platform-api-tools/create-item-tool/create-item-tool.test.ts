@@ -242,7 +242,7 @@ describe('Create Item Tool Behaviour', () => {
             columnValues: 'invalid json',
             duplicateFromItemId: 123,
           }),
-        ).rejects.toThrow('Invalid JSON in columnValues');
+        ).rejects.toThrow('Invalid columnValues JSON');
       });
 
       it('Throws error when duplicate item returns no item', async () => {

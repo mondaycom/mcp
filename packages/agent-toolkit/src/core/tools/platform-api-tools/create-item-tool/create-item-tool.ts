@@ -71,7 +71,8 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
     return createItemInBoardToolSchema;
   }
 
-  protected async executeInternal(input: ToolInputType<CreateItemToolInput>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(rawInput: ToolInputType<CreateItemToolInput>): Promise<ToolOutputType<never>> {
+    const input = { ...rawInput, columnValues: unwrapDoubleEncodedColumnValues(rawInput.columnValues) };
     const boardId = this.context?.boardId ?? (input as ToolInputType<typeof createItemInBoardToolSchema>).boardId;
 
     if (input.duplicateFromItemId && input.parentItemId) {
@@ -108,9 +109,12 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
 
       let columnValuesParsed;
       try {
-        columnValuesParsed = JSON.parse(unwrapDoubleEncodedColumnValues(input.columnValues));
+        columnValuesParsed = JSON.parse(input.columnValues);
       } catch (error) {
-        throw new ToolValidationError('Invalid JSON in columnValues', 'INVALID_COLUMN_VALUES_JSON');
+        throw new ToolValidationError(
+          'Invalid columnValues JSON: expected a JSON object keyed by column id',
+          'INVALID_COLUMN_VALUES_JSON',
+        );
       }
 
       const columnValuesAndName = {
@@ -129,7 +133,13 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
       });
 
       return {
-        content: { message: `Item ${duplicateRes.duplicate_item.id} duplicated from ${input.duplicateFromItemId}`, item_id: duplicateRes.duplicate_item.id, item_name: duplicateRes.duplicate_item.name, item_url: duplicateRes.duplicate_item .url, board_id: boardId },
+        content: {
+          message: `Item ${duplicateRes.duplicate_item.id} duplicated from ${input.duplicateFromItemId}`,
+          item_id: duplicateRes.duplicate_item.id,
+          item_name: duplicateRes.duplicate_item.name,
+          item_url: duplicateRes.duplicate_item.url,
+          board_id: boardId,
+        },
       };
     } catch (error) {
       rethrowWithContext(error, 'duplicate item');
@@ -140,7 +150,7 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
     const variables = {
       parentItemId: input.parentItemId!.toString(),
       itemName: input.name,
-      columnValues: unwrapDoubleEncodedColumnValues(input.columnValues),
+      columnValues: input.columnValues,
       createLabelsIfMissing: input.createLabelsIfMissing,
     };
     try {
@@ -151,7 +161,12 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
       }
 
       return {
-        content: { message: `Subitem ${res.create_subitem.id} created under ${input.parentItemId}`, item_id: res.create_subitem.id, item_name: res.create_subitem.name, item_url: res.create_subitem.url },
+        content: {
+          message: `Subitem ${res.create_subitem.id} created under ${input.parentItemId}`,
+          item_id: res.create_subitem.id,
+          item_name: res.create_subitem.name,
+          item_url: res.create_subitem.url,
+        },
       };
     } catch (error) {
       rethrowWithContext(error, 'create subitem');
@@ -167,14 +182,20 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
         boardId: boardId.toString(),
         itemName: input.name,
         groupId: input.groupId,
-        columnValues: unwrapDoubleEncodedColumnValues(input.columnValues),
+        columnValues: input.columnValues,
         createLabelsIfMissing: input.createLabelsIfMissing,
       };
 
       const res = await this.mondayApi.request<CreateItemMutation>(createItem, variables);
 
       return {
-        content: { message: `Item ${res.create_item?.id} successfully created`, item_id: res.create_item?.id, item_name: res.create_item?.name, item_url: res.create_item?.url, board_id: boardId },
+        content: {
+          message: `Item ${res.create_item?.id} successfully created`,
+          item_id: res.create_item?.id,
+          item_name: res.create_item?.name,
+          item_url: res.create_item?.url,
+          board_id: boardId,
+        },
       };
     } catch (error) {
       rethrowWithContext(error, 'create item');

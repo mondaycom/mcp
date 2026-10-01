@@ -6,7 +6,8 @@
 
 - Unwrap double-encoded `columnValues` (a JSON string whose content is itself a JSON string) before sending it to the API. These calls previously never succeeded.
 - Share one column-value format guide across the four tools. Dropdowns use `{"labels": [...]}` even for one value; the old `update_items`, `create_item` and `create_items` text said `{"label": "..."}`, which the API rejects.
-- Document the people, board_relation, tags, long_text, timeline, checkbox, link, location, email and phone formats, and require column ids and labels from `get_board_info`.
+- Document the people, board_relation, tags, long_text, timeline, checkbox, link, location, email and phone formats, status `index` and dropdown `ids`, and clearing with `null`. Column ids and labels must come from `get_board_info`, and people ids from `list_users_and_teams`.
+- `create_item` now reports invalid JSON as `Invalid columnValues JSON`, the same text as `change_item_column_values`.
 - Replace the escaped-quote example, which encouraged double encoding, with a plain JSON object.
 
 ### Clarify `move_item_to_group.groupId` and `read_docs.type`
