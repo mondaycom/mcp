@@ -83,7 +83,7 @@ export const readDocsToolSchema = {
 
   // --- content mode fields ---
   type: QueryByIdEnum.optional().describe(
-    'Query type for content mode: "ids", "object_ids", or "workspace_ids". Required when mode is "content".',
+    'Query type for content mode: "ids", "object_ids", or "workspace_ids". Required when mode is "content". Default to "object_ids" — the number in a doc URL is an object_id. Use "ids" only for the internal doc id field returned by read_docs, and "workspace_ids" only to list all docs in a workspace.',
   ),
   ids: z
     .array(z.string())

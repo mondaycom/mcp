@@ -11,6 +11,7 @@ import { createSubitem } from './create-subitem.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { ChangeItemColumnValuesTool } from '../change-item-column-values-tool';
+import { COLUMN_VALUES_FORMAT_GUIDE, unwrapDoubleEncodedColumnValues } from '../column-values.utils';
 import { ToolValidationError, rethrowWithContext } from '../../../../utils';
 
 export const createItemToolSchema = {
@@ -23,11 +24,7 @@ export const createItemToolSchema = {
     .string()
     .optional()
     .describe('The id of the group id to which the new item will be added, if its not clearly specified, leave empty'),
-  columnValues: z
-    .string()
-    .describe(
-      `A JSON string of column values, keyed by column id. Status and dropdown columns must use { "label": "..." } (or { "labels": ["...", "..."] } for multi-select dropdown). Date columns use { "date": "YYYY-MM-DD" }. Text/number/email/phone use plain strings. Example: "{\\"text_col\\":\\"hello\\", \\"status_col\\":{\\"label\\":\\"Done\\"}, \\"date_col\\":{\\"date\\":\\"2023-05-25\\"}, \\"dropdown_col\\":{\\"labels\\":[\\"A\\",\\"B\\"]}, \\"phone_col\\":\\"123-456-7890\\", \\"email_col\\":\\"test@example.com\\"}". If you don't know the exact label values or column ids, call get_board_info first.`,
-    ),
+  columnValues: z.string().describe(COLUMN_VALUES_FORMAT_GUIDE),
   createLabelsIfMissing: z
     .boolean()
     .optional()
@@ -74,7 +71,8 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
     return createItemInBoardToolSchema;
   }
 
-  protected async executeInternal(input: ToolInputType<CreateItemToolInput>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(rawInput: ToolInputType<CreateItemToolInput>): Promise<ToolOutputType<never>> {
+    const input = { ...rawInput, columnValues: unwrapDoubleEncodedColumnValues(rawInput.columnValues) };
     const boardId = this.context?.boardId ?? (input as ToolInputType<typeof createItemInBoardToolSchema>).boardId;
 
     if (input.duplicateFromItemId && input.parentItemId) {
@@ -113,7 +111,10 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
       try {
         columnValuesParsed = JSON.parse(input.columnValues);
       } catch (error) {
-        throw new ToolValidationError('Invalid JSON in columnValues', 'INVALID_COLUMN_VALUES_JSON');
+        throw new ToolValidationError(
+          'Invalid columnValues JSON: expected a JSON object keyed by column id',
+          'INVALID_COLUMN_VALUES_JSON',
+        );
       }
 
       const columnValuesAndName = {
@@ -132,7 +133,13 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
       });
 
       return {
-        content: { message: `Item ${duplicateRes.duplicate_item.id} duplicated from ${input.duplicateFromItemId}`, item_id: duplicateRes.duplicate_item.id, item_name: duplicateRes.duplicate_item.name, item_url: duplicateRes.duplicate_item .url, board_id: boardId },
+        content: {
+          message: `Item ${duplicateRes.duplicate_item.id} duplicated from ${input.duplicateFromItemId}`,
+          item_id: duplicateRes.duplicate_item.id,
+          item_name: duplicateRes.duplicate_item.name,
+          item_url: duplicateRes.duplicate_item.url,
+          board_id: boardId,
+        },
       };
     } catch (error) {
       rethrowWithContext(error, 'duplicate item');
@@ -154,7 +161,12 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
       }
 
       return {
-        content: { message: `Subitem ${res.create_subitem.id} created under ${input.parentItemId}`, item_id: res.create_subitem.id, item_name: res.create_subitem.name, item_url: res.create_subitem.url },
+        content: {
+          message: `Subitem ${res.create_subitem.id} created under ${input.parentItemId}`,
+          item_id: res.create_subitem.id,
+          item_name: res.create_subitem.name,
+          item_url: res.create_subitem.url,
+        },
       };
     } catch (error) {
       rethrowWithContext(error, 'create subitem');
@@ -177,7 +189,13 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
       const res = await this.mondayApi.request<CreateItemMutation>(createItem, variables);
 
       return {
-        content: { message: `Item ${res.create_item?.id} successfully created`, item_id: res.create_item?.id, item_name: res.create_item?.name, item_url: res.create_item?.url, board_id: boardId },
+        content: {
+          message: `Item ${res.create_item?.id} successfully created`,
+          item_id: res.create_item?.id,
+          item_name: res.create_item?.name,
+          item_url: res.create_item?.url,
+          board_id: boardId,
+        },
       };
     } catch (error) {
       rethrowWithContext(error, 'create item');
