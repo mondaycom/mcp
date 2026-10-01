@@ -5,6 +5,7 @@ import { boardInsights } from './board-insights.graphql';
 import {
   AggregateBoardInsightsQueryVariables,
   AggregateBoardInsightsQuery,
+  AggregateSelectFunctionName,
   ItemsOrderByDirection,
 } from 'src/monday-graphql/generated/graphql/graphql';
 import { handleFilters, handleFrom, handleSelectAndGroupByElements } from './board-insights-utils';
@@ -21,7 +22,12 @@ export const boardInsightsToolSchema = {
           .enum(BoardInsightsAggregationFunction)
           .describe('The function of the aggregation. For simple column value leave undefined')
           .optional(),
-        columnId: z.string().describe('The id of the column to aggregate'),
+        columnId: z
+          .string()
+          .describe(
+            `The id of the column to aggregate. Required for every function except ${AggregateSelectFunctionName.CountItems}, which counts items and takes no column.`,
+          )
+          .optional(),
       }),
     )
     .describe(
@@ -80,6 +86,11 @@ export class BoardInsightsTool extends BaseMondayApiTool<typeof boardInsightsToo
   ): Promise<ToolOutputType<never>> {
     if (!input.aggregations) {
       return { content: 'Input must contain the "aggregations" field.' };
+    }
+    if (input.aggregations.some((a) => !a.columnId && a.function !== AggregateSelectFunctionName.CountItems)) {
+      return {
+        content: `Every aggregation must have a "columnId", except the ${AggregateSelectFunctionName.CountItems} function.`,
+      };
     }
 
     const { selectElements, groupByElements } = handleSelectAndGroupByElements(input);

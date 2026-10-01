@@ -1212,6 +1212,46 @@ describe('Board Insights Tool', () => {
       );
     });
 
+    it('should count items without a columnId', async () => {
+      mocks.setResponseOnce({
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
+        aggregate: { results: [{ entries: [{ alias: 'COUNT_ITEMS_0', value: { result: 7 } }] }] },
+      });
+
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
+
+      const result = await tool.execute({
+        boardId: 123456,
+        aggregations: [{ function: AggregateSelectFunctionName.CountItems }],
+        filtersOperator: ItemsQueryOperator.And,
+        limit: DEFAULT_LIMIT,
+      });
+
+      expect((result.content as any).data[0].COUNT_ITEMS_0).toBe(7);
+      const select = mocks.getMockRequest().mock.calls[0][1].query.select;
+      expect(select).toEqual([
+        {
+          type: AggregateSelectElementType.Function,
+          function: { function: AggregateSelectFunctionName.CountItems, params: [] },
+          as: 'COUNT_ITEMS_0',
+        },
+      ]);
+    });
+
+    it('should reject a non-COUNT_ITEMS aggregation without a columnId', async () => {
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
+
+      const result = await tool.execute({
+        boardId: 123456,
+        aggregations: [{ function: AggregateSelectFunctionName.Sum }],
+        filtersOperator: ItemsQueryOperator.And,
+        limit: DEFAULT_LIMIT,
+      });
+
+      expect(result.content).toContain('must have a "columnId"');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+
     it('should count items with filters applied', async () => {
       const mockResponse = {
         boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],

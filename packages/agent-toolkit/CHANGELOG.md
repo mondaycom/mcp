@@ -14,6 +14,10 @@
 - `groupId` must be a group on the item's board, read from `get_board_info`.
 - `read_docs` defaults to `object_ids`, the number in a doc URL.
 
+### Make `board_insights.aggregations[].columnId` optional for `COUNT_ITEMS`
+
+- A plain item count no longer needs a column. Every other function still requires `columnId`, and the tool rejects the call before any API request if it is missing.
+
 ## 5.71.2
 
 ### Validate `appVersionId` in `monday_apps_get_deployment_status`
