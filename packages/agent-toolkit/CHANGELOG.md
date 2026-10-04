@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.72.0
+
+### Add `restore_item` tool
+
+- Restores a previously deleted monday.com item from the recycle bin back to its original board and group.
+- Takes an `itemId` and calls the `restore_item` mutation; the inverse of `delete_item`.
+
 ## 5.71.1
 
 ### Make `get_asset_upload_url` compatible with Copilot Studio

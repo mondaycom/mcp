@@ -8,6 +8,15 @@ export const deleteItem = gql`
   }
 `;
 
+export const restoreItem = gql`
+  mutation RestoreItem($itemId: ID!) {
+    restore_item(item_id: $itemId) {
+      id
+      name
+    }
+  }
+`;
+
 export const createItem = gql`
   mutation createItem(
     $boardId: ID!

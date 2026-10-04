@@ -37,6 +37,7 @@ import { DeleteUpdateTool } from './delete-update-tool/delete-update-tool';
 import { GetUpdatesTool } from './get-updates-tool/get-updates-tool';
 import { DeleteColumnTool } from './delete-column-tool';
 import { DeleteItemTool } from './delete-item-tool';
+import { RestoreItemTool } from './restore-item-tool';
 import { FetchCustomActivityTool } from './fetch-custom-activity-tool';
 import { FullBoardDataTool } from './full-board-data-tool/full-board-data-tool';
 import { GetBoardActivityTool } from './get-board-activity/get-board-activity-tool';
@@ -90,6 +91,7 @@ import { GetMondayKnowledgeTool } from './get-monday-knowledge/get-monday-knowle
 
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteItemTool,
+  RestoreItemTool,
   GetBoardItemsPageTool,
   CreateItemTool,
   CreateItemsTool,
@@ -222,6 +224,7 @@ export * from './create-view-table-tool/create-view-table-tool';
 export * from './update-view-table-tool/update-view-table-tool';
 export * from './delete-column-tool';
 export * from './delete-item-tool';
+export * from './restore-item-tool';
 export * from './fetch-custom-activity-tool';
 export * from './full-board-data-tool/full-board-data-tool';
 export * from './undo-action-tool/undo-action-tool';
