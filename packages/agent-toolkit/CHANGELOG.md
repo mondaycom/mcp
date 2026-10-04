@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.71.5
+
+### Reuse the `create_items` per-item error shape for missing names
+
+- Missing-name errors in `create_items` now use path `["results", <index>]`, the same shape as the tool's other per-item errors, instead of `["items", <index>, "name"]`.
+- Per-item `ToolValidationError`s in `create_items` (for example, both `parentItemId` and `duplicateFromItemId` set) now include their `code` in `errors[]`.
+
 ## 5.71.4
 
 ### Make `create_items` work in Copilot Studio

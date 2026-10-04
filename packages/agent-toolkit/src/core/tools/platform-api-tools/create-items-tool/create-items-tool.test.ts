@@ -272,6 +272,27 @@ describe('Create Items Tool Behaviour', () => {
       ]);
     });
 
+    it('carries the code of a per-item ToolValidationError into errors[]', async () => {
+      mocks.setResponse(itemResponse('1', 'A'));
+      const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
+      const result = await tool.execute({
+        items: [
+          { name: 'A', groupId: 'topics', columnValues: '{}' },
+          { name: 'B', parentItemId: 1, duplicateFromItemId: 2, columnValues: '{}' },
+        ],
+      });
+      const c = result.content as any;
+
+      expect(c.errors).toEqual([
+        {
+          code: 'INVALID_ARGUMENTS_COMBINATION',
+          message:
+            'Cannot specify both parentItemId and duplicateFromItemId. Please provide only one of these parameters.',
+          path: ['results', 1],
+        },
+      ]);
+    });
+
     it('omits errors[] entirely on full success', async () => {
       mocks.setResponses([itemResponse('1', 'A'), itemResponse('2', 'B')]);
       const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
@@ -466,8 +487,8 @@ describe('Create Items Tool Behaviour', () => {
       expect(error).toBeInstanceOf(ToolValidationError);
       expect(error.message).toBe('2 of 3 items are missing the required name field');
       expect(buildToolErrorStructuredContent(error, { toolName: 'create_items' }).errors).toEqual([
-        { code: 'MISSING_REQUIRED_PARAMETER', message: 'Item name is required', path: ['items', 1, 'name'] },
-        { code: 'MISSING_REQUIRED_PARAMETER', message: 'Item name is required', path: ['items', 2, 'name'] },
+        { code: 'MISSING_REQUIRED_PARAMETER', message: 'Item name is required', path: ['results', 1] },
+        { code: 'MISSING_REQUIRED_PARAMETER', message: 'Item name is required', path: ['results', 2] },
       ]);
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
