@@ -9,7 +9,11 @@ import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api
 
 export const moveItemToGroupToolSchema = {
   itemId: z.number().describe('The id of the item to which the update will be added'),
-  groupId: z.string().describe('The id of the group to which the item will be moved'),
+  groupId: z
+    .string()
+    .describe(
+      "The id of the group to which the item will be moved. Must be a group on the item's board, read from get_board_info in this run — never guessed from the group title.",
+    ),
 };
 
 export class MoveItemToGroupTool extends BaseMondayApiTool<typeof moveItemToGroupToolSchema> {

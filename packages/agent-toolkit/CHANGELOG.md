@@ -1,12 +1,31 @@
 # Changelog
 
-## 5.71.3
+## 5.71.4
 
 ### Make `create_items` work in Copilot Studio
 
 - Item rows no longer declare `required` fields in the JSON Schema. Copilot Studio never sent calls whose array rows had required fields, and asked the user for values the model had already filled (#499).
 - `name` is still required: items without one are rejected before any API request, with `MISSING_REQUIRED_PARAMETER`.
 - `columnValues` now defaults to `"{}"`.
+
+## 5.71.3
+
+### Fix column-value failures in `change_item_column_values`, `update_items`, `create_item` and `create_items`
+
+- Unwrap double-encoded `columnValues` (a JSON string whose content is itself a JSON string) before sending it to the API. These calls previously never succeeded.
+- Share one column-value format guide across the four tools. Dropdowns use `{"labels": [...]}` even for one value; the old `update_items`, `create_item` and `create_items` text said `{"label": "..."}`, which the API rejects.
+- Document the people, board_relation, tags, long_text, timeline, checkbox, link, location, email and phone formats, status `index` and dropdown `ids`, and clearing with `null`. Column ids and labels must come from `get_board_info`, and people ids from `list_users_and_teams`.
+- `create_item` now reports invalid JSON as `Invalid columnValues JSON`, the same text as `change_item_column_values`.
+- Replace the escaped-quote example, which encouraged double encoding, with a plain JSON object.
+
+### Clarify `move_item_to_group.groupId` and `read_docs.type`
+
+- `groupId` must be a group on the item's board, read from `get_board_info`.
+- `read_docs` defaults to `object_ids`, the number in a doc URL.
+
+### Make `board_insights.aggregations[].columnId` optional for `COUNT_ITEMS`
+
+- A plain item count no longer needs a column. Every other function still requires `columnId`, and the tool rejects the call before any API request if it is missing.
 
 ## 5.71.2
 

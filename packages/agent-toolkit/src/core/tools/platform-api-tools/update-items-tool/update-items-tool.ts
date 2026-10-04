@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { ChangeItemColumnValuesTool } from '../change-item-column-values-tool';
+import { COLUMN_VALUES_FORMAT_GUIDE } from '../column-values.utils';
 import { runWithRateLimitCircuit, ToolValidationError, GRAPHQL_ERROR_CODE } from '../../../../utils';
 import { MAX_UPDATES_PER_CALL, CONCURRENCY_LIMIT, RATE_LIMIT_SKIPPED_CODE } from './constants';
 
@@ -14,7 +15,7 @@ const updateSchema = z.object({
   columnValues: z
     .string()
     .describe(
-      'A JSON object string of the new column values for this item, keyed by column id. Status and dropdown columns use { "label": "..." } (or { "labels": ["..."] } for multi-select dropdown). Date columns use { "date": "YYYY-MM-DD" }. Text, number, email and phone use plain strings. Example: "{\\"text_col\\":\\"hello\\",\\"status_col\\":{\\"label\\":\\"Done\\"}}". To change the item name include a "name" key. If unfamiliar with the board columns or labels, call get_board_info first.',
+      `The new column values for this item, keyed by column id. To change the item name include a "name" key. ${COLUMN_VALUES_FORMAT_GUIDE}`,
     ),
   boardId: z
     .number()

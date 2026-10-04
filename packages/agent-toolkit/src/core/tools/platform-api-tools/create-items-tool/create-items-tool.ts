@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { CreateItemTool } from '../create-item-tool/create-item-tool';
+import { COLUMN_VALUES_FORMAT_GUIDE } from '../column-values.utils';
 import { runWithRateLimitCircuit, ToolValidationError, MISSING_REQUIRED_PARAMETER_CODE } from '../../../../utils';
 import { MAX_ITEMS_PER_CALL, CONCURRENCY_LIMIT, RATE_LIMIT_SKIPPED_CODE } from './constants';
 
@@ -24,7 +25,7 @@ export const createItemsToolSchema = {
           .string()
           .default('{}')
           .describe(
-            'A JSON string of column values for this item, keyed by column id. Same shape as create_item.columnValues (status/dropdown use { "label": "..." } or { "labels": [...] }, date uses { "date": "YYYY-MM-DD" }, text/number/email/phone are plain strings). Example: "{\\"status_col\\":{\\"label\\":\\"Done\\"}}". Defaults to "{}" (no column values). If unfamiliar with the board columns/labels, call get_board_info first.',
+            `Column values for this item, keyed by column id. Defaults to "{}" (no column values). ${COLUMN_VALUES_FORMAT_GUIDE}`,
           ),
         groupId: z
           .string()
