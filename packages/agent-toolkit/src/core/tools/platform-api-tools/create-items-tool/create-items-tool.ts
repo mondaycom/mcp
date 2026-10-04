@@ -93,7 +93,9 @@ export class CreateItemsTool extends BaseMondayApiTool<CreateItemsToolInput> {
 
   protected async executeInternal(input: ToolInputType<CreateItemsToolInput>): Promise<ToolOutputType<never>> {
     const missingNames = input.items.flatMap((item, index) =>
-      item.name === undefined ? [{ message: 'Item name is required', path: ['items', index, 'name'] }] : [],
+      item.name === undefined
+        ? [extractErrorEntry(new ToolValidationError('Item name is required', MISSING_REQUIRED_PARAMETER_CODE), index)]
+        : [],
     );
     if (missingNames.length) {
       throw new ToolValidationError(
@@ -169,6 +171,7 @@ function extractErrorEntry(error: unknown, index: number): Record<string, unknow
   )?.response?.errors?.[0];
   const rawMessage = error instanceof Error ? error.message : String(error);
   return {
+    ...(error instanceof ToolValidationError ? { code: error.code } : {}),
     ...(gqlEntry?.extensions ?? {}),
     message: gqlEntry?.message ?? rawMessage,
     path: ['results', index],
