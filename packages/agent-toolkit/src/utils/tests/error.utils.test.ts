@@ -459,6 +459,25 @@ describe('error.utils', () => {
       });
     });
 
+    it('emits one errors[] entry per field when given, defaulting each code to the error code', () => {
+      const structured = buildToolErrorStructuredContent(
+        new ToolValidationError('Missing names', 'MISSING_REQUIRED_PARAMETER', [
+          { message: 'Item name is required', path: ['items', 1, 'name'] },
+          { code: 'OTHER_CODE', message: 'Other', path: ['items', 2] },
+        ]),
+        { toolName: 'create_items' },
+      );
+
+      expect(structured).toEqual({
+        message: 'Missing names',
+        tool: 'create_items',
+        errors: [
+          { code: 'MISSING_REQUIRED_PARAMETER', message: 'Item name is required', path: ['items', 1, 'name'] },
+          { code: 'OTHER_CODE', message: 'Other', path: ['items', 2] },
+        ],
+      });
+    });
+
     it('formatToolError surfaces the code in structuredContent.errors', () => {
       const result = formatToolError(
         new ToolValidationError(

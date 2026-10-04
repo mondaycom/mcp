@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { zodToJsonSchema } from 'zod-to-json-schema';
+import { buildToolErrorStructuredContent, ToolValidationError } from '../../../../utils';
 import { createMockApiClient } from '../test-utils/mock-api-client';
 import { CreateItemsTool, createItemsInBoardToolSchema } from './create-items-tool';
 import { CONCURRENCY_LIMIT, MAX_ITEMS_PER_CALL } from './constants';
@@ -453,12 +455,42 @@ describe('Create Items Tool Behaviour', () => {
     });
   });
 
+  describe('Handler validation', () => {
+    it('rejects items without a name before any API request', async () => {
+      const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
+
+      const error = await tool
+        .execute({ items: [{ name: 'A', columnValues: '{}' }, { columnValues: '{}' }, { columnValues: '{}' }] })
+        .catch((e) => e);
+
+      expect(error).toBeInstanceOf(ToolValidationError);
+      expect(error.message).toBe('2 of 3 items are missing the required name field');
+      expect(buildToolErrorStructuredContent(error, { toolName: 'create_items' }).errors).toEqual([
+        { code: 'MISSING_REQUIRED_PARAMETER', message: 'Item name is required', path: ['items', 1, 'name'] },
+        { code: 'MISSING_REQUIRED_PARAMETER', message: 'Item name is required', path: ['items', 2, 'name'] },
+      ]);
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+  });
+
   describe('Schema validation', () => {
     const schema = z.object(createItemsInBoardToolSchema);
 
-    it('rejects an item without columnValues', () => {
+    it('defaults columnValues to "{}" when omitted', () => {
       const result = schema.safeParse({ boardId: 456, items: [{ name: 'A' }] });
-      expect(result.success).toBe(false);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.items[0].columnValues).toBe('{}');
+      }
+    });
+
+    it('emits item rows without required fields, so Copilot Studio sends the call (#499)', () => {
+      const jsonSchema = zodToJsonSchema(schema as any) as any;
+      const row = jsonSchema.properties.items.items;
+
+      expect(row.required).toBeUndefined();
+      expect(row.properties.columnValues.default).toBe('{}');
+      expect(jsonSchema.required).toEqual(['boardId', 'items']);
     });
 
     it('rejects an empty items array', () => {

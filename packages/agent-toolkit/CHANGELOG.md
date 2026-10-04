@@ -1,5 +1,14 @@
 # Changelog
 
+## 5.71.4
+
+### Make `create_items` work in Copilot Studio
+
+- Item rows no longer declare `required` fields in the JSON Schema. Copilot Studio never sent calls whose array rows had required fields, and asked the user for values the model had already filled (#499).
+- `name` is still required: items without one are rejected before any API request, with one `MISSING_REQUIRED_PARAMETER` entry per item in `structuredContent.errors[]`, at path `["items", <index>, "name"]`.
+- `ToolValidationError` takes optional per-field error entries.
+- `columnValues` now defaults to `"{}"`.
+
 ## 5.71.3
 
 ### Fix column-value failures in `change_item_column_values`, `update_items`, `create_item` and `create_items`
