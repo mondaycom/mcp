@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
+import { buildToolErrorStructuredContent, ToolValidationError } from '../../../../utils';
 import { createMockApiClient } from '../test-utils/mock-api-client';
 import { CreateItemsTool, createItemsInBoardToolSchema } from './create-items-tool';
 import { CONCURRENCY_LIMIT, MAX_ITEMS_PER_CALL } from './constants';
@@ -458,9 +459,16 @@ describe('Create Items Tool Behaviour', () => {
     it('rejects items without a name before any API request', async () => {
       const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
 
-      await expect(
-        tool.execute({ items: [{ name: 'A', columnValues: '{}' }, { columnValues: '{}' }, { columnValues: '{}' }] }),
-      ).rejects.toThrow('Missing required field: items[1].name, items[2].name');
+      const error = await tool
+        .execute({ items: [{ name: 'A', columnValues: '{}' }, { columnValues: '{}' }, { columnValues: '{}' }] })
+        .catch((e) => e);
+
+      expect(error).toBeInstanceOf(ToolValidationError);
+      expect(error.message).toBe('2 of 3 items are missing the required name field');
+      expect(buildToolErrorStructuredContent(error, { toolName: 'create_items' }).errors).toEqual([
+        { code: 'MISSING_REQUIRED_PARAMETER', message: 'Item name is required', path: ['items', 1, 'name'] },
+        { code: 'MISSING_REQUIRED_PARAMETER', message: 'Item name is required', path: ['items', 2, 'name'] },
+      ]);
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
   });

@@ -93,12 +93,13 @@ export class CreateItemsTool extends BaseMondayApiTool<CreateItemsToolInput> {
 
   protected async executeInternal(input: ToolInputType<CreateItemsToolInput>): Promise<ToolOutputType<never>> {
     const missingNames = input.items.flatMap((item, index) =>
-      item.name === undefined ? [`items[${index}].name`] : [],
+      item.name === undefined ? [{ message: 'Item name is required', path: ['items', index, 'name'] }] : [],
     );
     if (missingNames.length) {
       throw new ToolValidationError(
-        `Missing required field: ${missingNames.join(', ')}`,
+        `${missingNames.length} of ${input.items.length} items are missing the required name field`,
         MISSING_REQUIRED_PARAMETER_CODE,
+        missingNames,
       );
     }
 
