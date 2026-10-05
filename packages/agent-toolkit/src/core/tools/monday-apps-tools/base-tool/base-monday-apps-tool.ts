@@ -1,6 +1,4 @@
 import axios, { AxiosRequestConfig } from 'axios';
-import * as crypto from 'crypto';
-import * as https from 'https';
 import { ZodRawShape } from 'zod';
 import { Tool, ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { MondayAppsToolCategory } from '../consts/apps.consts';
@@ -97,12 +95,6 @@ export abstract class BaseMondayAppsTool<
     };
 
     try {
-      // Create a custom HTTPS agent to handle self-signed certificates
-      const httpsAgent = new https.Agent({
-        secureOptions: crypto.constants.SSL_OP_LEGACY_SERVER_CONNECT,
-        rejectUnauthorized: false,
-      });
-
       const axiosConfig: AxiosRequestConfig = {
         method,
         url: endpoint,
@@ -110,7 +102,6 @@ export abstract class BaseMondayAppsTool<
         headers: headersWithToken,
         params: query,
         timeout,
-        httpsAgent,
       };
 
       const response = await axios.request<T>(axiosConfig);
@@ -146,11 +137,6 @@ export abstract class BaseMondayAppsTool<
     }
 
     try {
-      const httpsAgent = new https.Agent({
-        secureOptions: crypto.constants.SSL_OP_LEGACY_SERVER_CONNECT,
-        rejectUnauthorized: false,
-      });
-
       const response = await axios.post<{ data?: T; errors?: Array<{ message: string }> }>(
         API_ENDPOINTS.MONDAY_API_GRAPHQL,
         {
@@ -164,7 +150,6 @@ export abstract class BaseMondayAppsTool<
             'API-Version': API_VERSION,
           },
           timeout: APPS_MS_TIMEOUT_IN_MS,
-          httpsAgent,
         },
       );
 

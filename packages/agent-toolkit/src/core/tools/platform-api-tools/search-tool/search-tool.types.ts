@@ -1,3 +1,8 @@
+export interface SearchHighlightEntry {
+  field: string;
+  fragments: string[];
+}
+
 export interface SearchResult {
   id: string;
   title: string;
@@ -5,6 +10,7 @@ export interface SearchResult {
   description?: string;
   summary?: string;
   content?: string;
+  highlights?: SearchHighlightEntry[];
   // updates
   itemId?: string;
   boardId?: string;

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import {
+  BatteryValue,
   BoardRelationValue,
   FormulaValue,
   GetBoardItemsPageQuery,
@@ -39,6 +40,7 @@ type GetBoardItemsPageResult = {
   board: {
     id?: string;
     name?: string;
+    hierarchy_type?: string | null;
   };
   items: GetBoardItemsPageResultItem[];
   pagination: {
@@ -54,6 +56,7 @@ type GetBoardItemsPageResultItem = {
   url?: string;
   created_at: any;
   updated_at: any;
+  parent_item_id?: string | null;
   column_values?: Record<string, any>;
   group?: { id: string; title: string };
   item_description?: { id?: string | null; blocks: Array<{ id: string; type?: string | null; content?: any }> };
@@ -126,7 +129,11 @@ PERFORMANCE OPTIMIZATION: Only set this to true when you actually need the colum
   orderBy: z
     .array(
       z.object({
-        columnId: z.string().describe('The id of the column to order by'),
+        columnId: z
+          .string()
+          .describe(
+            'Ordinary column ids are board-specific. Use get_board_info with filters.columns.only to get them for the current board. Also accepts four virtual columns that get_board_info does not return: "group", "__creation_log__", "__last_updated__" and "__item_id__".',
+          ),
         direction: z
           .nativeEnum(ItemsOrderByDirection)
           .optional()
@@ -156,9 +163,11 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
       'Returns structured JSON with item details, creation/update timestamps, and pagination info. ' +
       'Use the nextCursor parameter from the response to get the next page of results when has_more is true. ' +
       'To retrieve an item description (the rich-text body/details of a monday.com item), set includeItemDescription to true — the response will include the item description document blocks with their content, type, and id. Use this whenever the user asks about an item description, body, details, or notes. ' +
-      '[REQUIRED PRECONDITION]: Before using this tool, if new columns were added to the board or if you are not familiar with the board structure (column IDs, column types, status labels, etc.), first use get_board_info to understand the board metadata. This is essential for constructing proper filters and knowing which columns are available. ' +
+      '[MULTI-LEVEL BOARDS]: The response includes hierarchy_type on the board ("multi_level" for MLS boards) and parent_item_id on each item. On multi-level boards, items form a tree (up to 5 levels). Use includeSubItems to get all descendants (returned flat with parent_item_id to reconstruct the tree). Top-level items have no parent_item_id. Subitems reference their parent. ' +
+      '[REQUIRED PRECONDITION]: Before using this tool, if new columns were added to the board or if you are not familiar with the board structure (column IDs, column types, status labels, etc.), first use get_board_info with filters.columns.only to get column metadata without fetching views. This is essential for constructing proper filters and knowing which columns are available. ' +
+      '[VIRTUAL COLUMNS]: Four filterable columns exist that get_board_info never returns - "group" (the item\'s board group), "__creation_log__" (creation time), "__last_updated__" (update time) and "__item_id__" (item id). All four are also valid in orderBy, e.g. "__creation_log__" with direction "desc" to sort newest-first. Call get_column_type_info with the matching column type for each one\'s compareValue and operator rules. ' +
       '[REQUIRED PRECONDITION]: For board-relation / cross-board linking tasks, call link_board_items_workflow before using this tool. ' +
-      'VIEW-BASED FILTERING: If the user refers to a board view by name (e.g. "show me items in the Overdue view"), first call get_board_info to get the board views, find the matching view by name, then extract its filter field and pass it as the filters argument here.'
+      'VIEW-BASED FILTERING: If the user refers to a board view by name (e.g. "show me items in the Overdue view"), first call get_board_info with filters.views.names set to that view name (avoids downloading all views on large boards), extract the matching view\'s filter field, then pass it as the filters argument here.'
     );
   }
 
@@ -243,6 +252,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
       board: {
         id: board?.id,
         name: board?.name,
+        hierarchy_type: (board as any)?.hierarchy_type || null,
       },
       items: items.map((item) => this.mapItem(item, input)),
       pagination: {
@@ -256,12 +266,14 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
   }
 
   private mapItem(item: Item | SubItem, input: ToolInputType<GetBoardItemsPageToolInput>): GetBoardItemsPageResultItem {
+    const parentItemId = (item as any).parent_item?.id || null;
     const itemResult: GetBoardItemsPageResultItem = {
       id: item.id,
       name: item.name,
       url: item.url,
       created_at: item.created_at,
       updated_at: item.updated_at,
+      ...(parentItemId && { parent_item_id: parentItemId }),
     };
 
     if (input.includeColumns && item.column_values) {
@@ -310,6 +322,11 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
 
       case NonDeprecatedColumnType.Mirror:
         return COLUMN_VALUE_NOT_SUPPORTED_MESSAGE;
+    }
+
+    // BatteryValue is a rollup Status column on MLS boards — its __typename differs from StatusValue
+    if ('battery_value' in cv) {
+      return (cv as BatteryValue).battery_value;
     }
 
     // fallback logic for most column types

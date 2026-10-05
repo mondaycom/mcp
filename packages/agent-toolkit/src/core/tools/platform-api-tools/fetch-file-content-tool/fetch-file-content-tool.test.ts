@@ -154,7 +154,7 @@ describe('FetchFileContentTool', () => {
 
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
       expect.stringContaining('query GetItemAssets'),
-      { itemId: ['item_1'], columnId: ['files_mkv'] },
+      { itemId: 'item_1', columnId: 'files_mkv' },
     );
   });
 

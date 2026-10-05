@@ -1,6 +1,4 @@
 import axios from 'axios';
-import * as crypto from 'crypto';
-import * as https from 'https';
 import { API_ENDPOINTS } from '../../consts/routes.consts';
 
 export interface AppFeatureSchemaDefinition {
@@ -79,19 +77,11 @@ export class AppFeatureSchemaManager {
    */
   private async fetchSchemas(): Promise<void> {
     try {
-      // Create a custom HTTPS agent to handle self-signed certificates
-      // Uses the same mechanism as base-monday-apps-tool.ts
-      const httpsAgent = new https.Agent({
-        secureOptions: crypto.constants.SSL_OP_LEGACY_SERVER_CONNECT,
-        rejectUnauthorized: false,
-      });
-
       const response = await axios.get<AppFeatureSchemaDefinition[]>(this.SCHEMA_ENDPOINT, {
         timeout: 5000, // 5 second timeout
         headers: {
           Accept: 'application/json',
         },
-        httpsAgent,
       });
 
       // Clear existing schemas and errors

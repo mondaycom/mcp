@@ -40,6 +40,7 @@ export class SetObjectSchemaColumnActiveStateTool extends BaseMondayApiTool<type
   getDescription(): string {
     return (
       'Set the active state of a column on an account-level object schema. ' +
+      '[REQUIRED PRECONDITION]: Call get_object_schemas first to resolve the schema id, the column id, and its current active state. ' +
       'deactivate: soft-disables the column, preventing it from being used on new boards. The column is not deleted and can be restored. ' +
       'reactivate: restores a previously deactivated column, making it available again.'
     );

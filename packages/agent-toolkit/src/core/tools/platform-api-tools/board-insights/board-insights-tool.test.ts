@@ -1212,6 +1212,46 @@ describe('Board Insights Tool', () => {
       );
     });
 
+    it('should count items without a columnId', async () => {
+      mocks.setResponseOnce({
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
+        aggregate: { results: [{ entries: [{ alias: 'COUNT_ITEMS_0', value: { result: 7 } }] }] },
+      });
+
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
+
+      const result = await tool.execute({
+        boardId: 123456,
+        aggregations: [{ function: AggregateSelectFunctionName.CountItems }],
+        filtersOperator: ItemsQueryOperator.And,
+        limit: DEFAULT_LIMIT,
+      });
+
+      expect((result.content as any).data[0].COUNT_ITEMS_0).toBe(7);
+      const select = mocks.getMockRequest().mock.calls[0][1].query.select;
+      expect(select).toEqual([
+        {
+          type: AggregateSelectElementType.Function,
+          function: { function: AggregateSelectFunctionName.CountItems, params: [] },
+          as: 'COUNT_ITEMS_0',
+        },
+      ]);
+    });
+
+    it('should reject a non-COUNT_ITEMS aggregation without a columnId', async () => {
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
+
+      const result = await tool.execute({
+        boardId: 123456,
+        aggregations: [{ function: AggregateSelectFunctionName.Sum }],
+        filtersOperator: ItemsQueryOperator.And,
+        limit: DEFAULT_LIMIT,
+      });
+
+      expect(result.content).toContain('must have a "columnId"');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+
     it('should count items with filters applied', async () => {
       const mockResponse = {
         boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
@@ -1279,7 +1319,7 @@ describe('Board Insights Tool', () => {
       expect(tool.getDescription()).toBe(
         "This tool allows you to calculate insights about board's data by filtering, grouping and aggregating columns. For example, you can get the total number of items in a board, the number of items in each status, the number of items in each column, etc. " +
           "Use this tool when you need to get a summary of the board's data, for example, you want to know the total number of items in a board, the number of items in each status, the number of items in each column, etc." +
-          "[REQUIRED PRECONDITION]: Before using this tool, if new columns were added to the board or if you are not familiar with the board's structure (column IDs, column types, status labels, etc.), first use get_board_info to understand the board metadata. This is essential for constructing proper filters and knowing which columns are available." +
+          "[REQUIRED PRECONDITION]: Before using this tool, if new columns were added to the board or if you are not familiar with the board's structure (column IDs, column types, status labels, etc.), first use get_board_info with filters.columns.only to get column metadata without fetching views. This is essential for constructing proper filters and knowing which columns are available." +
           "[IMPORTANT]: For some columns, human-friendly label is returned inside 'LABEL_<column_id' field. E.g. for column with id 'status_123' the label is returned inside 'LABEL_status_123' field.",
       );
       expect(tool.annotations.title).toBe('Get Board Insights');

@@ -13,6 +13,7 @@ import {
 } from 'src/monday-graphql/generated/graphql/graphql';
 import { SearchOverviewsDevQuery } from 'src/monday-graphql/generated/graphql.dev/graphql';
 import { GlobalSearchType, SearchResult } from './search-tool.types';
+import { searchBoards, searchTimelineItems } from './search-tool.graphql';
 
 export type inputType = z.objectInputType<typeof searchSchema, ZodTypeAny>;
 
@@ -91,13 +92,13 @@ describe('SearchTool', () => {
         'Supported searchType values: BOARD, DOCUMENTS, FOLDERS, WORKSPACES, UPDATES, ITEMS, TIMELINE_ITEMS, DASHBOARDS',
       );
       expect(description).toContain('BOARD search returns id, title, url, and workspaceId');
-      expect(description).toContain('DOCUMENTS search returns id, title, and workspaceId');
+      expect(description).toContain('DOCUMENTS search returns id, title, workspaceId, and highlights');
+      expect(description).toContain('Optionally scope it with workspaceIds and/or docIds');
       expect(description).toContain('ITEMS search returns id, title, url, boardId, and workspaceId');
+      expect(description).toContain('Optionally scope it with workspaceIds, boardIds, and/or creatorIds');
       expect(description).toContain('FOLDERS search returns id and title');
       expect(description).toContain('TIMELINE_ITEMS search returns id, title, summary, content, itemId, and boardId');
-      expect(description).toContain(
-        'DASHBOARDS search (also called "overviews") returns id, title, and workspaceId',
-      );
+      expect(description).toContain('DASHBOARDS search (also called "overviews") returns id, title, and workspaceId');
       expect(description).not.toContain('IMPORTANT: ids returned by this tool are prefixed');
     });
 
@@ -428,6 +429,41 @@ describe('SearchTool', () => {
         );
       });
 
+      it('should pass boardIds to the searchBoards request', async () => {
+        mocks.setResponse({
+          search: { boards: { results: [] } },
+        });
+
+        await callToolByNameAsync('search', {
+          searchTerm: 'test',
+          searchType: GlobalSearchType.BOARD,
+          boardIds: [111, 222],
+        });
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          searchBoards,
+          expect.objectContaining({ boardIds: ['111', '222'] }),
+          expect.anything(),
+        );
+      });
+
+      it('should send boardIds as undefined when not supplied for BOARD search', async () => {
+        mocks.setResponse({
+          search: { boards: { results: [] } },
+        });
+
+        await callToolByNameAsync('search', {
+          searchTerm: 'test',
+          searchType: GlobalSearchType.BOARD,
+        });
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          searchBoards,
+          expect.objectContaining({ boardIds: undefined }),
+          expect.anything(),
+        );
+      });
+
       it('should pass custom limit', async () => {
         mocks.setResponse(mockDevBoardsResponse);
 
@@ -576,11 +612,12 @@ describe('SearchTool', () => {
         });
 
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('query SearchDocs'),
+          expect.stringContaining('query SearchDocs('),
           {
             query: 'Document',
             limit: 20,
             workspaceIds: undefined,
+            docIds: undefined,
           },
           expect.objectContaining({ timeout: expect.any(Number) }),
         );
@@ -644,6 +681,182 @@ describe('SearchTool', () => {
           }),
           expect.objectContaining({ timeout: expect.any(Number) }),
         );
+      });
+
+      it('should pass docIds to the searchDocs request', async () => {
+        mocks.setResponse(mockDevDocsResponse);
+
+        const args: inputType = {
+          searchType: GlobalSearchType.DOCUMENTS,
+          searchTerm: 'Document',
+          docIds: [111, 222],
+        };
+
+        const parsedResult = await callToolByNameAsync('search', args);
+
+        expect(parsedResult.data).toHaveLength(3);
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchDocs('),
+          expect.objectContaining({ docIds: ['111', '222'] }),
+          expect.objectContaining({ timeout: expect.any(Number) }),
+        );
+      });
+
+      it('should combine docIds with workspaceIds', async () => {
+        mocks.setResponse(mockDevDocsResponse);
+
+        const args: inputType = {
+          searchType: GlobalSearchType.DOCUMENTS,
+          searchTerm: 'Document',
+          workspaceIds: [11111],
+          docIds: [111],
+        };
+
+        await callToolByNameAsync('search', args);
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchDocs('),
+          expect.objectContaining({ workspaceIds: ['11111'], docIds: ['111'] }),
+          expect.objectContaining({ timeout: expect.any(Number) }),
+        );
+      });
+
+      it('should send docIds as undefined when given an empty array', async () => {
+        mocks.setResponse(mockDevDocsResponse);
+
+        const args: inputType = {
+          searchType: GlobalSearchType.DOCUMENTS,
+          searchTerm: 'Document',
+          docIds: [],
+        };
+
+        await callToolByNameAsync('search', args);
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchDocs('),
+          expect.objectContaining({ docIds: undefined }),
+          expect.objectContaining({ timeout: expect.any(Number) }),
+        );
+      });
+
+      it('should treat a null docIds as omitted', async () => {
+        mocks.setResponse(mockDevDocsResponse);
+
+        const args = {
+          searchType: GlobalSearchType.DOCUMENTS,
+          searchTerm: 'Document',
+          docIds: null,
+        } as any;
+
+        await callToolByNameAsync('search', args);
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchDocs('),
+          expect.objectContaining({ docIds: undefined }),
+          expect.objectContaining({ timeout: expect.any(Number) }),
+        );
+      });
+
+      it('should accept a single docId passed as a scalar', async () => {
+        mocks.setResponse(mockDevDocsResponse);
+
+        const args = {
+          searchType: GlobalSearchType.DOCUMENTS,
+          searchTerm: 'Document',
+          docIds: 111,
+        } as any;
+
+        await callToolByNameAsync('search', args);
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('query SearchDocs('),
+          expect.objectContaining({ docIds: ['111'] }),
+          expect.objectContaining({ timeout: expect.any(Number) }),
+        );
+      });
+
+      it('should return highlights when present in the response', async () => {
+        const responseWithHighlights: SearchDocsQuery = {
+          search: {
+            docs: {
+              results: [
+                {
+                  id: '111',
+                  indexed_data: {
+                    id: '111',
+                    name: 'Document 1',
+                    workspace_id: '9001',
+                    highlights: {
+                      name: ['<em>Document</em> 1'],
+                      content: ['first <em>match</em>', 'second <em>match</em>'],
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        };
+        mocks.setResponse(responseWithHighlights);
+
+        const parsedResult = await callToolByNameAsync('search', {
+          searchType: GlobalSearchType.DOCUMENTS,
+          searchTerm: 'Document',
+        });
+
+        expect(parsedResult.data[0].highlights).toEqual([
+          { field: 'name', fragments: ['<em>Document</em> 1'] },
+          { field: 'content', fragments: ['first <em>match</em>', 'second <em>match</em>'] },
+        ]);
+      });
+
+      it('should omit a highlight field with no fragments', async () => {
+        const responseWithPartialHighlights: SearchDocsQuery = {
+          search: {
+            docs: {
+              results: [
+                {
+                  id: '111',
+                  indexed_data: {
+                    id: '111',
+                    name: 'Document 1',
+                    highlights: { name: null, content: ['some <em>match</em>'] },
+                  },
+                },
+              ],
+            },
+          },
+        };
+        mocks.setResponse(responseWithPartialHighlights);
+
+        const parsedResult = await callToolByNameAsync('search', {
+          searchType: GlobalSearchType.DOCUMENTS,
+          searchTerm: 'Document',
+        });
+
+        expect(parsedResult.data[0].highlights).toEqual([{ field: 'content', fragments: ['some <em>match</em>'] }]);
+      });
+
+      it('should omit highlights when null in the response', async () => {
+        const responseWithoutHighlights: SearchDocsQuery = {
+          search: {
+            docs: {
+              results: [
+                {
+                  id: '111',
+                  indexed_data: { id: '111', name: 'Document 1', highlights: null },
+                },
+              ],
+            },
+          },
+        };
+        mocks.setResponse(responseWithoutHighlights);
+
+        const parsedResult = await callToolByNameAsync('search', {
+          searchType: GlobalSearchType.DOCUMENTS,
+          searchTerm: 'Document',
+        });
+
+        expect(parsedResult.data[0].highlights).toBeUndefined();
       });
 
       it('should not include url field for documents', async () => {
@@ -1130,6 +1343,102 @@ describe('SearchTool', () => {
       );
     });
 
+    it('should pass boardIds to the request', async () => {
+      mocks.setResponse(mockItemsResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.ITEMS,
+        searchTerm: 'Item',
+        boardIds: [801, 802],
+      };
+
+      await callToolByNameAsync('search', args);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchItems'),
+        expect.objectContaining({ boardIds: ['801', '802'] }),
+        expect.any(Object),
+      );
+    });
+
+    it('should pass both workspaceIds and boardIds to the request', async () => {
+      mocks.setResponse(mockItemsResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.ITEMS,
+        searchTerm: 'Item',
+        workspaceIds: [12345],
+        boardIds: [801],
+      };
+
+      await callToolByNameAsync('search', args);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchItems'),
+        expect.objectContaining({ workspaceIds: ['12345'], boardIds: ['801'] }),
+        expect.any(Object),
+      );
+    });
+
+    // search.items(creator_ids:) only exists from the dev API version, so a creator-filtered
+    // search must switch to the dev operation while unfiltered searches stay on stable.
+    it('should pass creatorIds via the dev query with versionOverride', async () => {
+      mocks.setResponse(mockItemsResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.ITEMS,
+        searchTerm: 'Item',
+        creatorIds: [3, 4],
+      };
+
+      const parsedResult = await callToolByNameAsync('search', args);
+
+      expect(parsedResult.data).toHaveLength(2);
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchItemsByCreatorDev'),
+        expect.objectContaining({ creatorIds: ['3', '4'] }),
+        expect.objectContaining({ versionOverride: 'dev' }),
+      );
+    });
+
+    it('should combine creatorIds with workspaceIds and boardIds on the dev query', async () => {
+      mocks.setResponse(mockItemsResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.ITEMS,
+        searchTerm: 'Item',
+        workspaceIds: [12345],
+        boardIds: [801],
+        creatorIds: [3],
+      };
+
+      await callToolByNameAsync('search', args);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchItemsByCreatorDev'),
+        expect.objectContaining({ workspaceIds: ['12345'], boardIds: ['801'], creatorIds: ['3'] }),
+        expect.objectContaining({ versionOverride: 'dev' }),
+      );
+    });
+
+    it('should stay on the stable query when creatorIds is an empty array', async () => {
+      mocks.setResponse(mockItemsResponse);
+
+      const args: inputType = {
+        searchType: GlobalSearchType.ITEMS,
+        searchTerm: 'Item',
+        creatorIds: [],
+      };
+
+      await callToolByNameAsync('search', args);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query SearchItems'),
+        expect.not.objectContaining({ creatorIds: expect.anything() }),
+        expect.not.objectContaining({ versionOverride: 'dev' }),
+      );
+    });
+
     it('should not include disclaimer for items', async () => {
       mocks.setResponse(mockItemsResponse);
 
@@ -1343,6 +1652,7 @@ describe('SearchTool', () => {
         {
           query: 'Deploy',
           limit: 20,
+          workspaceIds: undefined,
           boardIds: undefined,
           creatorIds: undefined,
         },
@@ -1364,12 +1674,13 @@ describe('SearchTool', () => {
       expect(parsedResult.data[1].id).toBe('20');
     });
 
-    it('should pass boardIds and creatorIds to the updates query', async () => {
+    it('should pass workspaceIds, boardIds and creatorIds to the updates query', async () => {
       mocks.setResponse(mockUpdatesResponse);
 
       const args: inputType = {
         searchType: GlobalSearchType.UPDATES,
         searchTerm: 'Deploy',
+        workspaceIds: [9001],
         boardIds: [801, 802],
         creatorIds: [501],
       };
@@ -1381,6 +1692,7 @@ describe('SearchTool', () => {
         {
           query: 'Deploy',
           limit: 20,
+          workspaceIds: ['9001'],
           boardIds: ['801', '802'],
           creatorIds: ['501'],
         },
@@ -1483,8 +1795,63 @@ describe('SearchTool', () => {
         {
           query: 'kickoff',
           limit: 20,
+          workspaceIds: undefined,
+          boardIds: undefined,
         },
         expect.objectContaining({ timeout: expect.any(Number) }),
+      );
+    });
+
+    it('should pass boardIds to the searchTimelineItems request', async () => {
+      mocks.setResponse({
+        search: { timeline_items: { results: [] } },
+      });
+
+      await callToolByNameAsync('search', {
+        searchTerm: 'test',
+        searchType: GlobalSearchType.TIMELINE_ITEMS,
+        boardIds: [333],
+      });
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        searchTimelineItems,
+        expect.objectContaining({ boardIds: ['333'] }),
+        expect.anything(),
+      );
+    });
+
+    it('should pass workspaceIds to the searchTimelineItems request', async () => {
+      mocks.setResponse({
+        search: { timeline_items: { results: [] } },
+      });
+
+      await callToolByNameAsync('search', {
+        searchTerm: 'test',
+        searchType: GlobalSearchType.TIMELINE_ITEMS,
+        workspaceIds: [9001, 9002],
+      });
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        searchTimelineItems,
+        expect.objectContaining({ workspaceIds: ['9001', '9002'] }),
+        expect.anything(),
+      );
+    });
+
+    it('should send boardIds as undefined when not supplied for TIMELINE_ITEMS search', async () => {
+      mocks.setResponse({
+        search: { timeline_items: { results: [] } },
+      });
+
+      await callToolByNameAsync('search', {
+        searchTerm: 'test',
+        searchType: GlobalSearchType.TIMELINE_ITEMS,
+      });
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        searchTimelineItems,
+        expect.objectContaining({ boardIds: undefined, workspaceIds: undefined }),
+        expect.anything(),
       );
     });
 
@@ -1520,7 +1887,10 @@ describe('SearchTool', () => {
         search: {
           timeline_items: {
             results: [
-              { id: '30', indexed_data: { id: '30', title: 'Untitled note', summary: '', content: '', item_id: '903' } },
+              {
+                id: '30',
+                indexed_data: { id: '30', title: 'Untitled note', summary: '', content: '', item_id: '903' },
+              },
             ],
           },
         },

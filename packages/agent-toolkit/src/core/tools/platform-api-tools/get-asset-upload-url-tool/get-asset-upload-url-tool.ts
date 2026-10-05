@@ -6,7 +6,7 @@ import { createUploadMutationDev } from './get-asset-upload-url.graphql.dev';
 export const getAssetUploadUrlSchema = {
   fileName: z.string().describe('The name of the file to upload, including extension (e.g. "report.pdf")'),
   contentType: z.string().describe('The MIME type of the file (e.g. "application/pdf", "image/png", "text/plain")'),
-  fileSize: z.number().int().positive().max(524288000).describe('The file size in bytes. Maximum 500MB (524288000 bytes)'),
+  fileSize: z.number().int().min(1).max(524288000).describe('The file size in bytes. Maximum 500MB (524288000 bytes)'),
 };
 
 interface CreateUploadMutation {
@@ -31,6 +31,9 @@ export class GetAssetUploadUrlTool extends BaseMondayApiTool<typeof getAssetUplo
   getDescription(): string {
     return (
       'Get a presigned URL to upload a file to monday.com. Returns an upload_id and upload_url.\n\n' +
+      'Only call this tool if you can execute a direct HTTP PUT with binary file data and read response headers ' +
+      "(e.g. via shell/curl). If you can't, tell the user direct file upload isn't supported here — " +
+      "don't call this tool.\n\n" +
       'After calling this tool, upload the file to the returned URL using an HTTP PUT request ' +
       'and capture the ETag header from the response:\n\n' +
       'curl -i -X PUT "<upload_url>" \\\n' +
@@ -47,7 +50,9 @@ export class GetAssetUploadUrlTool extends BaseMondayApiTool<typeof getAssetUplo
     return getAssetUploadUrlSchema;
   }
 
-  protected async executeInternal(input: ToolInputType<typeof getAssetUploadUrlSchema>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(
+    input: ToolInputType<typeof getAssetUploadUrlSchema>,
+  ): Promise<ToolOutputType<never>> {
     const res = await this.mondayApi.request<CreateUploadMutation>(
       createUploadMutationDev,
       {

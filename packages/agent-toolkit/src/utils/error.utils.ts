@@ -1,5 +1,5 @@
 import { CallToolResult } from '@modelcontextprotocol/sdk/types';
-import { GraphQLErrorResponse, ToolErrorStructuredContent } from './graphql-error.types';
+import { GraphQLErrorResponse, ToolErrorEntry, ToolErrorStructuredContent } from './graphql-error.types';
 
 /**
  * Error thrown by tool code (not by the monday API) when input is invalid or a
@@ -22,11 +22,14 @@ export const MISSING_REQUIRED_PARAMETER_CODE = 'MISSING_REQUIRED_PARAMETER';
 
 export class ToolValidationError extends Error {
   readonly code: string;
+  /** Per-field entries for structuredContent.errors[]; each defaults to `code`. Omit for a single entry. */
+  readonly errors?: ToolErrorEntry[];
 
-  constructor(message: string, code: string) {
+  constructor(message: string, code: string, errors?: ToolErrorEntry[]) {
     super(message);
     this.name = 'ToolValidationError';
     this.code = code;
+    this.errors = errors;
   }
 }
 
@@ -95,7 +98,9 @@ export function buildToolErrorStructuredContent(
     return {
       message: rawMessage,
       tool: options?.toolName,
-      errors: [{ code: error.code, message: rawMessage, path: [] }],
+      errors: error.errors?.length
+        ? error.errors.map((entry) => ({ code: error.code, ...entry }))
+        : [{ code: error.code, message: rawMessage, path: [] }],
     };
   }
 

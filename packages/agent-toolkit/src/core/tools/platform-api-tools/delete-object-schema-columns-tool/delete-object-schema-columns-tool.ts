@@ -32,7 +32,7 @@ export class DeleteObjectSchemaColumnsTool extends BaseMondayApiTool<typeof dele
   });
 
   getDescription(): string {
-    return 'Permanently delete columns from an account-level object schema. Only allowed when no boards are connected to the schema. Use manage_object_schema_column with action=deactivate for a reversible alternative.';
+    return 'Permanently delete columns from an account-level object schema. Only allowed when no boards are connected to the schema. Use manage_object_schema_column with action=deactivate for a reversible alternative. [REQUIRED PRECONDITION]: Call get_object_schemas first to resolve the schema id and the exact column ids — this deletion is irreversible, so never guess ids.';
   }
 
   getInputSchema(): typeof deleteObjectSchemaColumnsToolSchema {

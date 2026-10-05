@@ -14,6 +14,8 @@ export const createBoardToolSchema = {
   boardDescription: z.string().optional().describe('The description of the board to create'),
   workspaceId: z.string().optional().describe('The ID of the workspace to create the board in'),
   boardOwnerIds: z.array(z.string()).optional().describe('Optional list of user IDs to set as board owners'),
+  useMlsTemplate: z.boolean().optional().describe('Set to true to create a multi-level board using the MLS template'),
+  useDatasetTemplate: z.boolean().optional().describe('Set to true to create a board from the dataset template'),
 };
 
 export class CreateBoardTool extends BaseMondayApiTool<typeof createBoardToolSchema, never> {
@@ -41,6 +43,8 @@ export class CreateBoardTool extends BaseMondayApiTool<typeof createBoardToolSch
       boardDescription: input.boardDescription,
       workspaceId: input.workspaceId,
       ...(input.boardOwnerIds !== undefined ? { boardOwnerIds: input.boardOwnerIds } : {}),
+      ...(input.useMlsTemplate !== undefined ? { useMlsTemplate: input.useMlsTemplate } : {}),
+      ...(input.useDatasetTemplate !== undefined ? { useDatasetTemplate: input.useDatasetTemplate } : {}),
     };
 
     const res = await this.mondayApi.request<CreateBoardMutation>(createBoard, variables);

@@ -16,7 +16,11 @@ import {
 export const filterRulesSchema = z
   .array(
     z.object({
-      columnId: z.string().describe('The id of the column to filter by'),
+      columnId: z
+        .string()
+        .describe(
+          'Ordinary column ids are board-specific. Use get_board_info with filters.columns.only to get them for the current board. Also accepts four virtual columns that get_board_info does not return: "group" (the group id goes in compareValue, e.g. "group_mm6wsvcc" - the columnId itself is always the literal "group"), "__creation_log__", "__last_updated__" and "__item_id__".',
+        ),
       compareAttribute: z
         .string()
         .optional()
@@ -24,7 +28,7 @@ export const filterRulesSchema = z
       compareValue: z
         .union([z.string(), z.number(), z.boolean(), z.array(z.union([z.string(), z.number()]))])
         .describe(
-          'The value to compare the attribute to. This can be a string or index value depending on the column type.',
+          'The value to compare the attribute to. This can be a string or index value depending on the column type. The operators within_the_last and within_the_next are the exception: they take a two item array of [UNIT, AMOUNT] such as ["DAYS", 7].',
         ),
       operator: z
         .nativeEnum(ItemsQueryRuleOperator)
@@ -35,7 +39,7 @@ export const filterRulesSchema = z
   )
   .optional()
   .describe(
-    `The configuration of filters to apply on the items. Use get_board_info for column ids and types on the board. Before sending the filters, use get_column_type_info with fetchMode "${ColumnTypeInfoFetchMode.Guidelines}" and use data.guidelines.filter (null if that type has no documented rules).`,
+    `The configuration of filters to apply on the items. Use get_board_info with filters.columns.only for column ids and types on the board. Before sending the filters, use get_column_type_info with fetchMode "${ColumnTypeInfoFetchMode.Guidelines}" and use data.guidelines.filter (null if that type has no documented rules).`,
   );
 
 export const filtersOperatorSchema = z

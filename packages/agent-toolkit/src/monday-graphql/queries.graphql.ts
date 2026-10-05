@@ -31,7 +31,7 @@ export const createItem = gql`
 `;
 export const getBoardSchema = gql`
   query getBoardSchema($boardId: ID!) {
-    boards(ids: [$boardId]) {
+    boards(ids: [$boardId], limit: 1) {
       groups {
         id
         title
@@ -86,6 +86,8 @@ export const createBoard = gql`
     $boardDescription: String
     $workspaceId: ID
     $boardOwnerIds: [ID!]
+    $useMlsTemplate: Boolean
+    $useDatasetTemplate: Boolean
   ) {
     create_board(
       board_kind: $boardKind
@@ -93,6 +95,8 @@ export const createBoard = gql`
       description: $boardDescription
       workspace_id: $workspaceId
       board_owner_ids: $boardOwnerIds
+      use_mls_template: $useMlsTemplate
+      use_dataset_template: $useDatasetTemplate
       empty: true
     ) {
       id
@@ -482,7 +486,7 @@ export const exportMarkdownFromDoc = gql`
 
 export const getWorkspaceInfo = gql`
   query getWorkspaceInfo($workspace_id: ID!) {
-    workspaces(ids: [$workspace_id]) {
+    workspaces(ids: [$workspace_id], limit: 1) {
       id
       name
       description

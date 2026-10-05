@@ -37,6 +37,27 @@ describe('CreateBoardTool', () => {
     });
   });
 
+  it('includes template flags in variables when provided', async () => {
+    mocks.setResponse(successfulResponse);
+    const tool = new CreateBoardTool(mocks.mockApiClient);
+
+    await tool.execute({
+      boardName: 'Test Board',
+      boardKind: BoardKind.Public,
+      useMlsTemplate: true,
+      useDatasetTemplate: false,
+    });
+
+    expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('mutation createBoard'), {
+      boardName: 'Test Board',
+      boardKind: BoardKind.Public,
+      boardDescription: undefined,
+      workspaceId: undefined,
+      useMlsTemplate: true,
+      useDatasetTemplate: false,
+    });
+  });
+
   it('does not include boardOwnerIds in variables when not provided', async () => {
     mocks.setResponse(successfulResponse);
     const tool = new CreateBoardTool(mocks.mockApiClient);
@@ -53,4 +74,22 @@ describe('CreateBoardTool', () => {
       workspaceId: undefined,
     });
   });
+
+  it('does not include template flags in variables when not provided', async () => {
+    mocks.setResponse(successfulResponse);
+    const tool = new CreateBoardTool(mocks.mockApiClient);
+
+    await tool.execute({
+      boardName: 'Test Board',
+      boardKind: BoardKind.Public,
+    });
+
+    expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('mutation createBoard'), {
+      boardName: 'Test Board',
+      boardKind: BoardKind.Public,
+      boardDescription: undefined,
+      workspaceId: undefined,
+    });
+  });
+
 });

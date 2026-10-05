@@ -1,6 +1,6 @@
 {
   "name": "@mondaydotcomorg/monday-api-mcp",
-  "version": "3.3.0",
+  "version": "3.3.1",
   "description": "MCP server for using the monday.com API",
   "mcpName": "com.monday/monday.com",
   "license": "MIT",
@@ -21,7 +21,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/mondaycom/monday-ai/tree/master/packages/monday-api-mcp"
+    "url": "https://github.com/mondaycom/mcp/tree/master/packages/monday-api-mcp"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.13.2",

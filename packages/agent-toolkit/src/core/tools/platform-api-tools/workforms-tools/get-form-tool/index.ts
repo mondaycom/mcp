@@ -15,7 +15,10 @@ export class GetFormTool extends BaseMondayApiTool<typeof getFormToolSchema, nev
   });
 
   getDescription(): string {
-    return "Get a monday.com form by its form token. Form tokens can be extracted from the form's url. Given a form url, such as https://forms.monday.com/forms/abc123def456ghi789?r=use1, the formToken is the alphanumeric string that appears right after /forms/ and before the ?. In the example, the formToken is abc123def456ghi789.";
+    return (
+      "Get a monday.com form by its form token, including its pages, questions, question ids, settings, and conditional showIfRules. Form tokens can be extracted from the form's url. Given a form url, such as https://forms.monday.com/forms/abc123def456ghi789?r=use1, the formToken is the alphanumeric string that appears right after /forms/ and before the ?. In the example, the formToken is abc123def456ghi789. " +
+      'Call this FIRST before any tool that acts on an existing form: create_form_submission (to know the questions and their constraints), form_questions_editor (to resolve question ids and current structure), and update_form (to see the current settings before changing them).'
+    );
   }
 
   getInputSchema(): typeof getFormToolSchema {

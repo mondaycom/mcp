@@ -61,7 +61,7 @@ export const manageObjectSchemaColumnsToolSchema = {
     .describe(
       'The operation to perform on columns. ' +
         `create: adds new columns to the schema. Each column requires type and title. Call get_column_type_info with fetchMode "${ColumnTypeInfoFetchMode.Schema}" first to understand valid defaults per column type. ` +
-        'update: modifies existing columns. Each entry must include column_id. Only send the columns you want to modify — other columns are unaffected. ' +
+        'update: modifies existing columns. Each entry must include column_id — call get_object_schemas first to resolve the schema id and the exact column ids. Only send the columns you want to modify — other columns are unaffected. ' +
         'Use opt_out_by_default=true to opt a column out (stop auto-adding to boards), or opt_out_by_default=false to opt in (restore auto-adding).',
     ),
   objectSchemaId: z.string().optional().describe('The ID of the object schema. Either objectSchemaId or objectSchemaName must be provided.'),
@@ -83,7 +83,7 @@ export class ManageObjectSchemaColumnsTool extends BaseMondayApiTool<typeof mana
     return (
       'Create or update columns on an account-level object schema. Column changes are propagated to all boards connected to the schema. ' +
       `create: adds new columns. Each column requires type and title. Call get_column_type_info with fetchMode "${ColumnTypeInfoFetchMode.Schema}" first to understand valid defaults per column type. ` +
-      'update: modifies existing columns. Each entry must include column_id. Only send the columns you want to modify — other columns are unaffected. ' +
+      'update: modifies existing columns. Each entry must include column_id — call get_object_schemas first to resolve the schema id and the exact column ids. Only send the columns you want to modify — other columns are unaffected. ' +
       'Use opt_out_by_default=true to stop a column from being auto-added to boards (opt out), or opt_out_by_default=false to restore auto-adding (opt in).'
     );
   }

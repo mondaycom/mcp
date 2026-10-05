@@ -22,7 +22,7 @@ Flow: **Trigger → Detect intent (log / read / update) → Resolve CRM item →
 ## Knowledge
 - Timeline = the activity feed on any CRM item (deal, contact, lead, account).
 - Activity types: calls, meetings, notes, emails (read-only from timeline), custom types per account.
-- `get-activity-insights` is Sidekick-only — not available on the public connector. Skip it; surface raw timeline data instead.
+- For aggregated stats (team totals, rep comparisons), use the **activity-insights** skill — `get-activity-insights` is more efficient than counting raw timeline items.
 - Timeline items are append-only in the UI; the API allows updates to existing entries.
 - `update-timeline-item` visibility on external connector is unconfirmed — degrade gracefully if it fails.
 
@@ -40,6 +40,7 @@ Flow: **Trigger → Detect intent (log / read / update) → Resolve CRM item →
 - **From run-sequence:** when a sequence triggers a manual call step, suggest logging the call outcome.
 - **To morning-briefing:** logged activities feed the daily brief's "recent activity" section.
 - **From daily-briefing:** brief surfaces items with no activity in N days → suggest logging.
+- **To activity-insights:** when the user asks about team totals or rep comparisons rather than a specific item's history.
 
 ---
 
@@ -156,7 +157,7 @@ If the tool call fails, fall back to `create_timeline_note` with the same conten
 2. Parse time filter from argument (this week / last 7 days / today / default last 10).
 3. Format output as a table with Date, Type, Summary columns.
 4. If zero activities: *"No activities on <item name> in <window>. Want to log one now?"*
-5. Do NOT call `get-activity-insights` — it's Sidekick-only.
+5. For team-wide aggregated stats (totals by rep or type), use the **activity-insights** skill instead.
 
 ---
 
@@ -199,7 +200,6 @@ If the tool call fails, fall back to `create_timeline_note` with the same conten
 | Update fails | Surface error; suggest editing in monday CRM UI. |
 | Timeline empty on read | Offer to log a new activity. |
 | Tool unavailable (Gateway) | *"Activity logging tools aren't available on the connector yet — use the monday CRM UI for now."* |
-| `get-activity-insights` called | Never call it — Sidekick-only boundary. |
 
 ---
 
@@ -212,4 +212,3 @@ If the tool call fails, fall back to `create_timeline_note` with the same conten
 - [ ] Structured activities used when available; notes as fallback.
 - [ ] No timeline entries deleted (hard rail).
 - [ ] Errors surfaced with actionable guidance.
-- [ ] `get-activity-insights` never called.

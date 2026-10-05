@@ -5,6 +5,7 @@ import { boardInsights } from './board-insights.graphql';
 import {
   AggregateBoardInsightsQueryVariables,
   AggregateBoardInsightsQuery,
+  AggregateSelectFunctionName,
   ItemsOrderByDirection,
 } from 'src/monday-graphql/generated/graphql/graphql';
 import { handleFilters, handleFrom, handleSelectAndGroupByElements } from './board-insights-utils';
@@ -21,7 +22,12 @@ export const boardInsightsToolSchema = {
           .enum(BoardInsightsAggregationFunction)
           .describe('The function of the aggregation. For simple column value leave undefined')
           .optional(),
-        columnId: z.string().describe('The id of the column to aggregate'),
+        columnId: z
+          .string()
+          .describe(
+            `The id of the column to aggregate. Required for every function except ${AggregateSelectFunctionName.CountItems}, which counts items and takes no column.`,
+          )
+          .optional(),
       }),
     )
     .describe(
@@ -66,7 +72,7 @@ export class BoardInsightsTool extends BaseMondayApiTool<typeof boardInsightsToo
     return (
       "This tool allows you to calculate insights about board's data by filtering, grouping and aggregating columns. For example, you can get the total number of items in a board, the number of items in each status, the number of items in each column, etc. " +
       "Use this tool when you need to get a summary of the board's data, for example, you want to know the total number of items in a board, the number of items in each status, the number of items in each column, etc." +
-      "[REQUIRED PRECONDITION]: Before using this tool, if new columns were added to the board or if you are not familiar with the board's structure (column IDs, column types, status labels, etc.), first use get_board_info to understand the board metadata. This is essential for constructing proper filters and knowing which columns are available." +
+      "[REQUIRED PRECONDITION]: Before using this tool, if new columns were added to the board or if you are not familiar with the board's structure (column IDs, column types, status labels, etc.), first use get_board_info with filters.columns.only to get column metadata without fetching views. This is essential for constructing proper filters and knowing which columns are available." +
       "[IMPORTANT]: For some columns, human-friendly label is returned inside 'LABEL_<column_id' field. E.g. for column with id 'status_123' the label is returned inside 'LABEL_status_123' field."
     );
   }
@@ -80,6 +86,11 @@ export class BoardInsightsTool extends BaseMondayApiTool<typeof boardInsightsToo
   ): Promise<ToolOutputType<never>> {
     if (!input.aggregations) {
       return { content: 'Input must contain the "aggregations" field.' };
+    }
+    if (input.aggregations.some((a) => !a.columnId && a.function !== AggregateSelectFunctionName.CountItems)) {
+      return {
+        content: `Every aggregation must have a "columnId", except the ${AggregateSelectFunctionName.CountItems} function.`,
+      };
     }
 
     const { selectElements, groupByElements } = handleSelectAndGroupByElements(input);

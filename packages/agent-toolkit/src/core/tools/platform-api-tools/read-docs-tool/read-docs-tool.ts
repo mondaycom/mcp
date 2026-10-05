@@ -84,7 +84,7 @@ export const readDocsToolSchema = {
 
   // --- content mode fields ---
   type: QueryByIdEnum.optional().describe(
-    'Query type for content mode: "ids", "object_ids", or "workspace_ids". Required when mode is "content", unless board_id is provided.',
+    'Query type for content mode: "ids", "object_ids", or "workspace_ids". Required when mode is "content", unless board_id is provided. Default to "object_ids" — the number in a doc URL is an object_id. Use "ids" only for the internal doc id field returned by read_docs, and "workspace_ids" only to list all docs in a workspace.',
   ),
   board_id: z
     .string()
@@ -248,7 +248,11 @@ MODE: "version_history" — Fetch the edit history of a single document.
           break;
       }
 
-      type ReadDocsVariables = ReadDocsQueryVariables & { includeBlocks: boolean; blocksLimit?: number; blocksPage?: number };
+      type ReadDocsVariables = ReadDocsQueryVariables & {
+        includeBlocks: boolean;
+        blocksLimit?: number;
+        blocksPage?: number;
+      };
 
       const includeBlocks = input.include_blocks ?? false;
       const blocksPagination = includeBlocks ? { blocksLimit: input.blocks_limit, blocksPage: input.blocks_page } : {};
@@ -319,8 +323,8 @@ MODE: "version_history" — Fetch the edit history of a single document.
 
       this.sessionContext.metadata = {
         ...this.sessionContext.metadata,
-        doc_ids: res.docs.flatMap((d) => d ? [d.id] : []),
-        object_ids: res.docs.flatMap((d) => d?.object_id ? [d.object_id] : []),
+        doc_ids: res.docs.flatMap((d) => (d ? [d.id] : [])),
+        object_ids: res.docs.flatMap((d) => (d?.object_id ? [d.object_id] : [])),
       };
 
       return this.enrichDocsWithMarkdown(
@@ -472,7 +476,7 @@ MODE: "version_history" — Fetch the edit history of a single document.
 
       const [commentsRes, blocksRes] = await Promise.all([
         this.mondayApi.request<GetDocCommentsQuery>(getDocComments, variables),
-        this.mondayApi.request<GetDocBlockContentQuery>(getDocBlockContent, { docId: [docId] }).catch(() => null),
+        this.mondayApi.request<GetDocBlockContentQuery>(getDocBlockContent, { docId }).catch(() => null),
       ]);
 
       const items = commentsRes.boards?.[0]?.items_page?.items;
@@ -481,9 +485,7 @@ MODE: "version_history" — Fetch the edit history of a single document.
       // Build anchor map from block content (graceful degradation: if blocks fetch fails, comments still work without anchors)
       let anchorMap: CommentAnchorMap = new Map();
       if (blocksRes) {
-        const rawBlocks = (blocksRes.docs?.[0]?.blocks ?? []).filter(
-          (b): b is NonNullable<typeof b> => b != null,
-        );
+        const rawBlocks = (blocksRes.docs?.[0]?.blocks ?? []).filter((b): b is NonNullable<typeof b> => b != null);
         const parsedBlocks = rawBlocks.map((block) => {
           let content: Record<string, unknown>;
           if (typeof block.content === 'string') {

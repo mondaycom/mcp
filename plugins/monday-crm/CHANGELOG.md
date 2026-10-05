@@ -3,6 +3,16 @@
 All notable changes to the `monday-crm` Claude plugin are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.5.0] — 2026-08-05
+
+### Added
+- **`activity-insights`** — analyze CRM activity data across the team: rep performance, call/email/meeting volume, per-type breakdowns, and rep comparisons. Uses `get-activity-insights` (now available on the external connector after `DaPulse/crm-mcp` PR #287) to return aggregated counts server-side. Synthesizes results as natural language; redirects item-level content questions to `get-timeline-items`.
+
+### Changed
+- `log-activity`: removed "Sidekick-only" guard on `get-activity-insights`; the tool is now available on the public connector. Step 4 (Read) now routes aggregate/team queries to the `activity-insights` skill. Added `activity-insights` to cross-skill handoffs.
+
+---
+
 ## [0.4.0] — 2026-07-12
 
 ### Added

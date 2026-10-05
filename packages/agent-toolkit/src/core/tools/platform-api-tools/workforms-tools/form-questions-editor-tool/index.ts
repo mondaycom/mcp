@@ -25,7 +25,7 @@ export class FormQuestionsEditorTool extends BaseMondayApiTool<typeof formQuesti
   ]);
 
   getDescription(): string {
-    return 'Create, update, or delete a question in a monday.com form';
+    return 'Create, update, or delete a question in a monday.com form. [REQUIRED PRECONDITION]: For update and delete, call get_form first to resolve the exact question id and see its current type and settings — never guess a question id. For create, get_form shows the existing questions so you do not duplicate one.';
   }
 
   getInputSchema(): typeof formQuestionsEditorToolSchema {
