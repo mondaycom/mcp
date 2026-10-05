@@ -10,6 +10,10 @@ type BoardViewDocsQuery = {
   board_view_docs?: Array<BoardViewDoc | null> | null;
 };
 
+// board_view_docs is introduced in 2027-01, so it is absent from the toolkit's default version and
+// has to be requested explicitly. Drop this override once 2027-01 becomes the stable version.
+const BOARD_VIEW_DOCS_API_VERSION = '2027-01';
+
 export type BoardViewDocsOptions = {
   includeBlocks?: boolean;
   blocksLimit?: number;
@@ -27,13 +31,17 @@ export async function fetchBoardViewDocs(
   viewId?: string,
   options: BoardViewDocsOptions = {},
 ): Promise<BoardViewDoc[]> {
-  const res = await mondayApi.request<BoardViewDocsQuery>(boardViewDocs, {
-    boardId,
-    viewId,
-    includeBlocks: options.includeBlocks ?? false,
-    blocksLimit: options.blocksLimit,
-    blocksPage: options.blocksPage,
-  });
+  const res = await mondayApi.request<BoardViewDocsQuery>(
+    boardViewDocs,
+    {
+      boardId,
+      viewId,
+      includeBlocks: options.includeBlocks ?? false,
+      blocksLimit: options.blocksLimit,
+      blocksPage: options.blocksPage,
+    },
+    { versionOverride: BOARD_VIEW_DOCS_API_VERSION },
+  );
   return (res.board_view_docs ?? []).filter((doc): doc is BoardViewDoc => doc != null);
 }
 

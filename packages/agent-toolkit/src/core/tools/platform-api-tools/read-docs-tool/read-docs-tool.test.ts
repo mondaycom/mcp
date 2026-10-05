@@ -143,6 +143,8 @@ describe('ReadDocsTool', () => {
         1,
         expect.anything(),
         expect.objectContaining({ boardId: BOARD_ID, viewId: VIEW_ID }),
+        // board_view_docs is absent from the default version, so it must be requested explicitly.
+        { versionOverride: '2027-01' },
       );
     });
 
@@ -159,6 +161,7 @@ describe('ReadDocsTool', () => {
         1,
         expect.anything(),
         expect.objectContaining({ boardId: BOARD_ID, viewId: undefined }),
+        { versionOverride: '2027-01' },
       );
     });
 
@@ -199,6 +202,7 @@ describe('ReadDocsTool', () => {
         1,
         expect.anything(),
         expect.objectContaining({ includeBlocks: true }),
+        { versionOverride: '2027-01' },
       );
     });
   });
