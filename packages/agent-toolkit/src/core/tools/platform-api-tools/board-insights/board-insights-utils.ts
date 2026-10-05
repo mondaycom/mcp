@@ -12,7 +12,7 @@ import {
   ItemsQuery,
   ItemsQueryOrderBy,
 } from 'src/monday-graphql/generated/graphql/graphql';
-import { transformativeFunctions } from './board-insights.consts';
+import { noColumnFunctions, transformativeFunctions } from './board-insights.consts';
 
 export function handleFrom(input: ToolInputType<typeof boardInsightsToolSchema>): AggregateFromTableInput {
   return {
@@ -51,19 +51,17 @@ function handleSelectFunctionElement(
   functionName: AggregateSelectFunctionName,
   columnId: string | undefined,
 ): AggregateSelectFunctionInput {
-  // special case: count items has no params
   return {
     function: functionName,
-    params:
-      functionName === AggregateSelectFunctionName.CountItems
-        ? []
-        : [
-            {
-              type: AggregateSelectElementType.Column,
-              column: handleSelectColumnElement(columnId!),
-              as: columnId!,
-            },
-          ],
+    params: noColumnFunctions.has(functionName)
+      ? []
+      : [
+          {
+            type: AggregateSelectElementType.Column,
+            column: handleSelectColumnElement(columnId!),
+            as: columnId!,
+          },
+        ],
   };
 }
 
@@ -74,39 +72,53 @@ export function handleOrderBy(input: ToolInputType<typeof boardInsightsToolSchem
   }));
 }
 
-export function handleSelectAndGroupByElements(input: ToolInputType<typeof boardInsightsToolSchema>): {
+export function handleSelectAndGroupByElements(
+  input: ToolInputType<typeof boardInsightsToolSchema>,
+  peopleColumnIds: Set<string> = new Set(),
+): {
   selectElements: AggregateSelectElementInput[];
   groupByElements: AggregateGroupByElementInput[];
 } {
   const aliasKeyMap: Record<string, number> = {};
 
-  const groupByElements: AggregateGroupByElementInput[] =
-    input.groupBy?.map((columnId) => ({
-      column_id: columnId,
-    })) || [];
+  // PERSON is not supported on people columns; grouping by the column with its LABEL returns the names
+  const isPersonOnPeopleColumn = (aggregation: { function?: AggregateSelectFunctionName; columnId?: string }) =>
+    aggregation.function === AggregateSelectFunctionName.Person && peopleColumnIds.has(aggregation.columnId!);
+  const aggregations = input.aggregations!.filter((aggregation) => !isPersonOnPeopleColumn(aggregation));
+  const groupBy = [
+    ...new Set([
+      ...(input.groupBy ?? []),
+      ...input.aggregations!.filter(isPersonOnPeopleColumn).map((aggregation) => aggregation.columnId!),
+    ]),
+  ];
+
+  const groupByElements: AggregateGroupByElementInput[] = groupBy.map((columnId) => ({
+    column_id: columnId,
+  }));
 
   const columnsWithLabelFunction = new Set<string>(
-    input
-      .aggregations!.filter((aggregation) => aggregation.function === AggregateSelectFunctionName.Label)
+    aggregations
+      .filter((aggregation) => aggregation.function === AggregateSelectFunctionName.Label)
       .map((aggregation) => aggregation.columnId!),
   );
 
   // select human-friendly label if not specified
-  const labelAggregations =
-    input.groupBy
-      ?.filter((columnId) => !columnsWithLabelFunction.has(columnId))
-      .map((columnId) => ({
-        function: AggregateSelectFunctionName.Label,
-        columnId: columnId,
-      })) ?? [];
+  const labelAggregations = groupBy
+    .filter((columnId) => !columnsWithLabelFunction.has(columnId))
+    .map((columnId) => ({
+      function: AggregateSelectFunctionName.Label,
+      columnId: columnId,
+    }));
 
-  const aggregationsToBuild = input.aggregations!.concat(labelAggregations);
+  const aggregationsToBuild = aggregations.concat(labelAggregations);
 
   const selectElements = aggregationsToBuild.map((aggregation) => {
     // handle a function
     if (aggregation.function) {
       // create a unique alias for the select element
-      const elementKey = aggregation.columnId ? `${aggregation.function}_${aggregation.columnId}` : aggregation.function;
+      const elementKey = aggregation.columnId
+        ? `${aggregation.function}_${aggregation.columnId}`
+        : aggregation.function;
       const aliasKeyIndex = aliasKeyMap[elementKey] || 0;
       aliasKeyMap[elementKey] = aliasKeyIndex + 1;
       const alias = `${elementKey}_${aliasKeyIndex}`;

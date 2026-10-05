@@ -1,15 +1,18 @@
 import { z } from 'zod';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { boardInsights } from './board-insights.graphql';
+import { boardInsights, boardInsightsColumnTypes } from './board-insights.graphql';
 import {
   AggregateBoardInsightsQueryVariables,
   AggregateBoardInsightsQuery,
   AggregateSelectFunctionName,
+  BoardInsightsColumnTypesQuery,
+  BoardInsightsColumnTypesQueryVariables,
+  ColumnType,
   ItemsOrderByDirection,
 } from 'src/monday-graphql/generated/graphql/graphql';
 import { handleFilters, handleFrom, handleSelectAndGroupByElements } from './board-insights-utils';
-import { BoardInsightsAggregationFunction, DEFAULT_LIMIT, MAX_LIMIT } from './board-insights.consts';
+import { BoardInsightsAggregationFunction, DEFAULT_LIMIT, MAX_LIMIT, noColumnFunctions } from './board-insights.consts';
 import { filterRulesSchema, filtersOperatorSchema } from '../get-board-items-page-tool';
 import { ColumnTypeInfoFetchMode } from '../get-column-type-info/get-column-type-info-fetch-mode';
 
@@ -20,12 +23,14 @@ export const boardInsightsToolSchema = {
       z.object({
         function: z
           .enum(BoardInsightsAggregationFunction)
-          .describe('The function of the aggregation. For simple column value leave undefined')
+          .describe(
+            `The function of the aggregation. For simple column value leave undefined. To group by a People column, put the column in groupBy without a function. Its names are returned in LABEL_<column_id>. ${AggregateSelectFunctionName.Person} applies only to creation log, last updated and vote columns.`,
+          )
           .optional(),
         columnId: z
           .string()
           .describe(
-            `The id of the column to aggregate. Required for every function except ${AggregateSelectFunctionName.CountItems}, which counts items and takes no column.`,
+            `The id of the column to aggregate. Required for every function except ${AggregateSelectFunctionName.CountItems} and ${AggregateSelectFunctionName.CountSubitems}, which take no column.`,
           )
           .optional(),
       }),
@@ -87,13 +92,14 @@ export class BoardInsightsTool extends BaseMondayApiTool<typeof boardInsightsToo
     if (!input.aggregations) {
       return { content: 'Input must contain the "aggregations" field.' };
     }
-    if (input.aggregations.some((a) => !a.columnId && a.function !== AggregateSelectFunctionName.CountItems)) {
+    if (input.aggregations.some((a) => !a.columnId && !noColumnFunctions.has(a.function!))) {
       return {
-        content: `Every aggregation must have a "columnId", except the ${AggregateSelectFunctionName.CountItems} function.`,
+        content: `Every aggregation must have a "columnId", except the ${AggregateSelectFunctionName.CountItems} and ${AggregateSelectFunctionName.CountSubitems} functions.`,
       };
     }
 
-    const { selectElements, groupByElements } = handleSelectAndGroupByElements(input);
+    const peopleColumnIds = await this.getPeopleColumnIds(input);
+    const { selectElements, groupByElements } = handleSelectAndGroupByElements(input, peopleColumnIds);
     const filters = handleFilters(input);
     const from = handleFrom(input);
 
@@ -138,5 +144,20 @@ export class BoardInsightsTool extends BaseMondayApiTool<typeof boardInsightsToo
         data: rows,
       },
     };
+  }
+
+  private async getPeopleColumnIds(input: ToolInputType<typeof boardInsightsToolSchema>): Promise<Set<string>> {
+    const personColumnIds = input
+      .aggregations!.filter((a) => a.function === AggregateSelectFunctionName.Person)
+      .map((a) => a.columnId!);
+    if (!personColumnIds.length) {
+      return new Set();
+    }
+    const variables: BoardInsightsColumnTypesQueryVariables = {
+      boardId: String(input.boardId),
+      columnIds: personColumnIds,
+    };
+    const res = await this.mondayApi.request<BoardInsightsColumnTypesQuery>(boardInsightsColumnTypes, variables);
+    return new Set((res.boards?.[0]?.columns ?? []).filter((c) => c?.type === ColumnType.People).map((c) => c!.id));
   }
 }

@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.71.6
+
+### Fix `board_insights` PERSON on People columns and COUNT_SUBITEMS
+
+- `PERSON` on a People column is sent as a group by on the column, and the names come back in `LABEL_<column_id>`. The aggregation service does not support `PERSON` on People columns and rejected these calls. `PERSON` on creation log, last updated and vote columns is unchanged.
+- `COUNT_SUBITEMS` is sent with no params and no longer needs a `columnId`. The aggregation service rejected every `COUNT_SUBITEMS` call that had a column param.
+
 ## 5.71.5
 
 ### Reuse the `create_items` per-item error shape for missing names

@@ -23,3 +23,14 @@ export const boardInsights = gql`
     }
   }
 `;
+
+export const boardInsightsColumnTypes = gql`
+  query boardInsightsColumnTypes($boardId: ID!, $columnIds: [String!]) {
+    boards(ids: [$boardId], limit: 1) {
+      columns(ids: $columnIds) {
+        id
+        type
+      }
+    }
+  }
+`;

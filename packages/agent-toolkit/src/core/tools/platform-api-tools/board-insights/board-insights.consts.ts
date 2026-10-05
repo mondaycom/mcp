@@ -56,3 +56,8 @@ export const aggregativeFunctions = new Set([
   AggregateSelectFunctionName.Max,
   AggregateSelectFunctionName.MinMax,
 ]);
+
+export const noColumnFunctions = new Set([
+  AggregateSelectFunctionName.CountItems,
+  AggregateSelectFunctionName.CountSubitems,
+]);

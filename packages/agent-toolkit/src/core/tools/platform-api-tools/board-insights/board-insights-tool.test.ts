@@ -527,6 +527,50 @@ describe('Board Insights Tool', () => {
         // GroupBy should contain both person and the LABEL_person_0
         expect(result.groupByElements).toEqual([{ column_id: 'person' }, { column_id: 'LABEL_person_0' }]);
       });
+
+      it('should send COUNT_SUBITEMS with no params', () => {
+        const input = {
+          boardId: 123,
+          aggregations: [{ columnId: 'subitems', function: AggregateSelectFunctionName.CountSubitems }],
+        };
+
+        const result = handleSelectAndGroupByElements(input as any);
+
+        expect(result.selectElements).toEqual([
+          {
+            type: AggregateSelectElementType.Function,
+            function: { function: AggregateSelectFunctionName.CountSubitems, params: [] },
+            as: 'COUNT_SUBITEMS_subitems_0',
+          },
+        ]);
+      });
+
+      it('should group by a people column with its LABEL instead of PERSON', () => {
+        const input = {
+          boardId: 123,
+          aggregations: [
+            { columnId: 'owner', function: AggregateSelectFunctionName.Person },
+            { function: AggregateSelectFunctionName.CountItems },
+          ],
+        };
+
+        const result = handleSelectAndGroupByElements(input as any, new Set(['owner']));
+
+        expect(result.selectElements.map((element) => element.as)).toEqual(['COUNT_ITEMS_0', 'LABEL_owner_0', 'owner']);
+        expect(result.groupByElements).toEqual([{ column_id: 'owner' }, { column_id: 'LABEL_owner_0' }]);
+      });
+
+      it('should keep PERSON for columns that are not people columns', () => {
+        const input = {
+          boardId: 123,
+          aggregations: [{ columnId: 'creation_log', function: AggregateSelectFunctionName.Person }],
+        };
+
+        const result = handleSelectAndGroupByElements(input as any, new Set(['owner']));
+
+        expect(result.selectElements.map((element) => element.as)).toEqual(['PERSON_creation_log_0']);
+        expect(result.groupByElements).toEqual([{ column_id: 'PERSON_creation_log_0' }]);
+      });
     });
   });
 
@@ -1250,6 +1294,112 @@ describe('Board Insights Tool', () => {
 
       expect(result.content).toContain('must have a "columnId"');
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+
+    it('should count subitems without a columnId', async () => {
+      mocks.setResponseOnce({
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
+        aggregate: { results: [{ entries: [{ alias: 'COUNT_SUBITEMS_0', value: { result: 3 } }] }] },
+      });
+
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
+
+      const result = await tool.execute({
+        boardId: 123456,
+        aggregations: [{ function: AggregateSelectFunctionName.CountSubitems }],
+        filtersOperator: ItemsQueryOperator.And,
+        limit: DEFAULT_LIMIT,
+      });
+
+      expect((result.content as any).data[0].COUNT_SUBITEMS_0).toBe(3);
+      expect(mocks.getMockRequest().mock.calls[0][1].query.select).toEqual([
+        {
+          type: AggregateSelectElementType.Function,
+          function: { function: AggregateSelectFunctionName.CountSubitems, params: [] },
+          as: 'COUNT_SUBITEMS_0',
+        },
+      ]);
+    });
+
+    it('should replace PERSON on a people column with a group by on the column', async () => {
+      mocks.setResponses([
+        { boards: [{ columns: [{ id: 'owner', type: 'people' }] }] },
+        {
+          boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
+          aggregate: {
+            results: [
+              {
+                entries: [
+                  { alias: 'COUNT_ITEMS_0', value: { result: 4 } },
+                  { alias: 'LABEL_owner_0', value: { value: 'Alice' } },
+                ],
+              },
+            ],
+          },
+        },
+      ]);
+
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
+
+      const result = await tool.execute({
+        boardId: 123456,
+        aggregations: [
+          { columnId: 'owner', function: AggregateSelectFunctionName.Person },
+          { function: AggregateSelectFunctionName.CountItems },
+        ],
+        filtersOperator: ItemsQueryOperator.And,
+        limit: DEFAULT_LIMIT,
+      });
+
+      expect((result.content as any).data[0]).toEqual({ COUNT_ITEMS_0: 4, LABEL_owner_0: 'Alice' });
+      const [columnTypesCall, aggregateCall] = mocks.getMockRequest().mock.calls;
+      expect(columnTypesCall[1]).toEqual({ boardId: '123456', columnIds: ['owner'] });
+      expect(aggregateCall[1].query.select.map((element: any) => element.as)).toEqual([
+        'COUNT_ITEMS_0',
+        'LABEL_owner_0',
+        'owner',
+      ]);
+      expect(aggregateCall[1].query.group_by).toEqual([{ column_id: 'owner' }, { column_id: 'LABEL_owner_0' }]);
+    });
+
+    it('should keep PERSON on a creation log column', async () => {
+      mocks.setResponses([
+        { boards: [{ columns: [{ id: 'creation_log', type: 'creation_log' }] }] },
+        {
+          boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
+          aggregate: { results: [{ entries: [{ alias: 'PERSON_creation_log_0', value: { value: 'Alice' } }] }] },
+        },
+      ]);
+
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
+
+      await tool.execute({
+        boardId: 123456,
+        aggregations: [{ columnId: 'creation_log', function: AggregateSelectFunctionName.Person }],
+        filtersOperator: ItemsQueryOperator.And,
+        limit: DEFAULT_LIMIT,
+      });
+
+      const aggregateCall = mocks.getMockRequest().mock.calls[1];
+      expect(aggregateCall[1].query.select[0].function.function).toBe(AggregateSelectFunctionName.Person);
+    });
+
+    it('should not fetch column types when there is no PERSON aggregation', async () => {
+      mocks.setResponseOnce({
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
+        aggregate: { results: [{ entries: [{ alias: 'COUNT_ITEMS_0', value: { result: 1 } }] }] },
+      });
+
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
+
+      await tool.execute({
+        boardId: 123456,
+        aggregations: [{ function: AggregateSelectFunctionName.CountItems }],
+        filtersOperator: ItemsQueryOperator.And,
+        limit: DEFAULT_LIMIT,
+      });
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
     });
 
     it('should count items with filters applied', async () => {
