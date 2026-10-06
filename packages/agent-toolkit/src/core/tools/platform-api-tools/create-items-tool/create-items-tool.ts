@@ -3,7 +3,7 @@ import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { CreateItemTool } from '../create-item-tool/create-item-tool';
 import { COLUMN_VALUES_FORMAT_GUIDE } from '../column-values.utils';
-import { runWithRateLimitCircuit } from '../../../../utils';
+import { runWithRateLimitCircuit, ToolValidationError, MISSING_REQUIRED_PARAMETER_CODE } from '../../../../utils';
 import { MAX_ITEMS_PER_CALL, CONCURRENCY_LIMIT, RATE_LIMIT_SKIPPED_CODE } from './constants';
 
 type PerItemResult =
@@ -18,11 +18,14 @@ export const createItemsToolSchema = {
           .string()
           .min(1, 'Item name cannot be empty')
           .max(255, 'Item name must be 255 characters or fewer')
-          .describe('The name of the item to be created. 1-255 characters.'),
+          // Optional in the schema only: Copilot Studio never sends calls whose array rows have required fields (#499).
+          .optional()
+          .describe('Required. The name of the item to be created. 1-255 characters.'),
         columnValues: z
           .string()
+          .default('{}')
           .describe(
-            `Column values for this item, keyed by column id. Pass "{}" if no column values should be set. ${COLUMN_VALUES_FORMAT_GUIDE}`,
+            `Column values for this item, keyed by column id. Defaults to "{}" (no column values). ${COLUMN_VALUES_FORMAT_GUIDE}`,
           ),
         groupId: z
           .string()
@@ -89,6 +92,19 @@ export class CreateItemsTool extends BaseMondayApiTool<CreateItemsToolInput> {
   }
 
   protected async executeInternal(input: ToolInputType<CreateItemsToolInput>): Promise<ToolOutputType<never>> {
+    const missingNames = input.items.flatMap((item, index) =>
+      item.name === undefined
+        ? [extractErrorEntry(new ToolValidationError('Item name is required', MISSING_REQUIRED_PARAMETER_CODE), index)]
+        : [],
+    );
+    if (missingNames.length) {
+      throw new ToolValidationError(
+        `${missingNames.length} of ${input.items.length} items are missing the required name field`,
+        MISSING_REQUIRED_PARAMETER_CODE,
+        missingNames,
+      );
+    }
+
     const boardId = this.context?.boardId ?? (input as ToolInputType<typeof createItemsInBoardToolSchema>).boardId;
     this.sessionContext.metadata ??= {};
     this.sessionContext.metadata.items_count = input.items.length;
@@ -97,7 +113,7 @@ export class CreateItemsTool extends BaseMondayApiTool<CreateItemsToolInput> {
 
     const tasks = input.items.map((item, index) => async (): Promise<PerItemResult> => {
       const result = await singleTool.execute({
-        name: item.name,
+        name: item.name as string,
         columnValues: item.columnValues,
         groupId: item.groupId,
         parentItemId: item.parentItemId,
@@ -155,6 +171,7 @@ function extractErrorEntry(error: unknown, index: number): Record<string, unknow
   )?.response?.errors?.[0];
   const rawMessage = error instanceof Error ? error.message : String(error);
   return {
+    ...(error instanceof ToolValidationError ? { code: error.code } : {}),
     ...(gqlEntry?.extensions ?? {}),
     message: gqlEntry?.message ?? rawMessage,
     path: ['results', index],

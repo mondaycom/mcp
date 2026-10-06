@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { zodToJsonSchema } from 'zod-to-json-schema';
+import { buildToolErrorStructuredContent, ToolValidationError } from '../../../../utils';
 import { createMockApiClient } from '../test-utils/mock-api-client';
 import { CreateItemsTool, createItemsInBoardToolSchema } from './create-items-tool';
 import { CONCURRENCY_LIMIT, MAX_ITEMS_PER_CALL } from './constants';
@@ -270,6 +272,27 @@ describe('Create Items Tool Behaviour', () => {
       ]);
     });
 
+    it('carries the code of a per-item ToolValidationError into errors[]', async () => {
+      mocks.setResponse(itemResponse('1', 'A'));
+      const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
+      const result = await tool.execute({
+        items: [
+          { name: 'A', groupId: 'topics', columnValues: '{}' },
+          { name: 'B', parentItemId: 1, duplicateFromItemId: 2, columnValues: '{}' },
+        ],
+      });
+      const c = result.content as any;
+
+      expect(c.errors).toEqual([
+        {
+          code: 'INVALID_ARGUMENTS_COMBINATION',
+          message:
+            'Cannot specify both parentItemId and duplicateFromItemId. Please provide only one of these parameters.',
+          path: ['results', 1],
+        },
+      ]);
+    });
+
     it('omits errors[] entirely on full success', async () => {
       mocks.setResponses([itemResponse('1', 'A'), itemResponse('2', 'B')]);
       const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
@@ -453,12 +476,42 @@ describe('Create Items Tool Behaviour', () => {
     });
   });
 
+  describe('Handler validation', () => {
+    it('rejects items without a name before any API request', async () => {
+      const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
+
+      const error = await tool
+        .execute({ items: [{ name: 'A', columnValues: '{}' }, { columnValues: '{}' }, { columnValues: '{}' }] })
+        .catch((e) => e);
+
+      expect(error).toBeInstanceOf(ToolValidationError);
+      expect(error.message).toBe('2 of 3 items are missing the required name field');
+      expect(buildToolErrorStructuredContent(error, { toolName: 'create_items' }).errors).toEqual([
+        { code: 'MISSING_REQUIRED_PARAMETER', message: 'Item name is required', path: ['results', 1] },
+        { code: 'MISSING_REQUIRED_PARAMETER', message: 'Item name is required', path: ['results', 2] },
+      ]);
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+  });
+
   describe('Schema validation', () => {
     const schema = z.object(createItemsInBoardToolSchema);
 
-    it('rejects an item without columnValues', () => {
+    it('defaults columnValues to "{}" when omitted', () => {
       const result = schema.safeParse({ boardId: 456, items: [{ name: 'A' }] });
-      expect(result.success).toBe(false);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.items[0].columnValues).toBe('{}');
+      }
+    });
+
+    it('emits item rows without required fields, so Copilot Studio sends the call (#499)', () => {
+      const jsonSchema = zodToJsonSchema(schema as any) as any;
+      const row = jsonSchema.properties.items.items;
+
+      expect(row.required).toBeUndefined();
+      expect(row.properties.columnValues.default).toBe('{}');
+      expect(jsonSchema.required).toEqual(['boardId', 'items']);
     });
 
     it('rejects an empty items array', () => {
