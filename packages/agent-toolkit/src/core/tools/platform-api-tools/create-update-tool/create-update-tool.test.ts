@@ -72,6 +72,52 @@ describe('Create Update Tool', () => {
     });
   });
 
+  describe('reply to a reply', () => {
+    const replyToReplyError = () =>
+      Object.assign(new Error('GraphQL Error'), {
+        response: {
+          errors: [{ message: 'Cannot create a reply on another reply', extensions: { code: 'REPLY_TO_REPLY_NOT_ALLOWED' } }],
+        },
+      });
+
+    it('posts the reply on the parent update of the given reply', async () => {
+      const mockRequest = mocks.getMockRequest();
+      mockRequest
+        .mockRejectedValueOnce(replyToReplyError())
+        .mockResolvedValueOnce({ items: [{ updates: [{ id: '1', replies: [] }, { id: '2', replies: [{ id: '555' }] }] }] })
+        .mockResolvedValueOnce(successfulResponse);
+      const tool = new CreateUpdateTool(mocks.mockApiClient);
+
+      const result = await tool.execute({ itemId: 456, body: 'Reply', parentId: 555 });
+
+      expect((result.content as any).update_id).toBe('123456789');
+      expect(mockRequest).toHaveBeenCalledTimes(3);
+      expect(mockRequest).toHaveBeenNthCalledWith(2, expect.stringContaining('query getItemUpdateReplyIds'), { itemId: '456' });
+      expect(mockRequest).toHaveBeenLastCalledWith(expect.stringContaining('mutation createUpdate'), expect.objectContaining({ parentId: '2' }));
+    });
+
+    it('rethrows the original error when the reply is not found on the item', async () => {
+      mocks
+        .getMockRequest()
+        .mockRejectedValueOnce(replyToReplyError())
+        .mockResolvedValueOnce({ items: [{ updates: [{ id: '1', replies: [{ id: '9' }] }] }] });
+      const tool = new CreateUpdateTool(mocks.mockApiClient);
+
+      await expect(tool.execute({ itemId: 456, body: 'Reply', parentId: 555 })).rejects.toThrow(
+        /Cannot create a reply on another reply/,
+      );
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not look up a parent for other errors', async () => {
+      mocks.setError(Object.assign(new Error('GraphQL Error'), { response: { errors: [{ message: 'Item not found' }] } }));
+      const tool = new CreateUpdateTool(mocks.mockApiClient);
+
+      await expect(tool.execute({ itemId: 456, body: 'Reply', parentId: 555 })).rejects.toThrow(/Item not found/);
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it('Throws error when API returns no update ID', async () => {
     mocks.setResponse({ create_update: null });
     const tool = new CreateUpdateTool(mocks.mockApiClient);
