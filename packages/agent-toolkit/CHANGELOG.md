@@ -1,5 +1,14 @@
 # Changelog
 
+## 5.73.0
+
+### Read several items in one `get_updates` call, and fix date-only ranges
+
+- New optional `objectIds` (up to 25 item ids, Item objectType only) fetches updates for several items in one request. Results are grouped per item (`item_id`, `url`, `updates`), and `limit` and `page` apply to each item.
+- A date-only `toDate` now means the end of that day (`T23:59:59Z`). It used to mean the start of the day, so the last day of a range was left out and a same-day range was empty.
+- Update and reply bodies over 2000 characters are truncated and flagged with `text_body_truncated: true`.
+- The description suggests a date range for Board queries that include item updates.
+
 ## 5.72.0
 
 ### Add `create_updates` and resolve reply-to-reply in `create_update`
