@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.71.7
+
+### Actionable not-found errors in `move_item_to_group`
+
+- When the item or group is not found, the error tells the model to re-read group ids with `get_board_info` and not to retry the same ids.
+- Fixed the `itemId` description, which was copied from `create_update`, and stated that the tool cannot move items between boards.
+
 ## 5.71.5
 
 ### Reuse the `create_items` per-item error shape for missing names
