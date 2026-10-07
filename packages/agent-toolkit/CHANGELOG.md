@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.71.8
+
+### Default omitted GraphQL variables
+
+- `all_monday_api`, `all_api_read`, and `all_api_write` now default omitted `variables` to `"{}"`.
+
 ## 5.71.7
 
 ### Make board knowledge opt-in
