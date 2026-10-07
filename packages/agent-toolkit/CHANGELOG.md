@@ -1,11 +1,17 @@
 # Changelog
 
-## 5.71.8
+## 5.71.9
 
 ### Clearer `move_item_to_group` description and error context
 
 - Failed moves now report as `Failed to move item to group: ...` and keep the API error code and `error_data`.
 - Fixed the `itemId` description, which was copied from `create_update`, and stated that the tool cannot move items between boards.
+
+## 5.71.8
+
+### Default omitted GraphQL variables
+
+- `all_monday_api`, `all_api_read`, and `all_api_write` now default omitted `variables` to `"{}"`.
 
 ## 5.71.7
 
