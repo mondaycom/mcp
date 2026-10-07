@@ -1,10 +1,17 @@
 # Changelog
 
-## 5.71.7
+## 5.71.8
 
 ### Default omitted GraphQL variables
 
 - `all_monday_api`, `all_api_read`, and `all_api_write` now default omitted `variables` to `"{}"`.
+
+## 5.71.7
+
+### Make board knowledge opt-in
+
+- `get_board_info` now fetches generated board knowledge only when `includeKnowledge` is true.
+- The optional input remains in the tool schema during gradual rollout so cached schemas stay stable.
 
 ## 5.71.5
 
