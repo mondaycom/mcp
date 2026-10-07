@@ -471,7 +471,7 @@ describe('GetBoardInfoTool filtering', () => {
       },
     });
 
-    expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
+    expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
     expect(mocks.getMockRequest().mock.calls[0][1]).toEqual({
       boardId: '123',
       columnIds: ['status'],
@@ -479,7 +479,6 @@ describe('GetBoardInfoTool filtering', () => {
       includeColumns: true,
       includeViews: true,
     });
-    expect(mocks.getMockRequest().mock.calls[1][2]).toEqual({ versionOverride: 'dev', timeout: 1_000 });
   });
 
   it('resolves filters.views.names via a lean index query then fetches by id', async () => {
@@ -496,7 +495,6 @@ describe('GetBoardInfoTool filtering', () => {
         ],
       },
       { boards: [boardPayload] },
-      { entity_knowledge: null },
     ]);
 
     const result = await callToolByNameRawAsync('get_board_info', {
@@ -506,7 +504,7 @@ describe('GetBoardInfoTool filtering', () => {
       },
     });
 
-    expect(mocks.getMockRequest()).toHaveBeenCalledTimes(3);
+    expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
     expect(mocks.getMockRequest().mock.calls[1][1]).toEqual({
       boardId: '123',
       columnIds: undefined,
@@ -595,7 +593,7 @@ describe('GetBoardInfoTool filtering', () => {
     });
     mocks.getMockRequest().mockReturnValueOnce(boardResponse).mockReturnValueOnce(knowledgeResponse);
 
-    const resultPromise = callToolByNameRawAsync('get_board_info', { boardId: 123 });
+    const resultPromise = callToolByNameRawAsync('get_board_info', { boardId: 123, includeKnowledge: true });
     await new Promise<void>((resolve) => setImmediate(resolve));
 
     expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
@@ -647,7 +645,7 @@ describe('GetBoardInfoTool filtering', () => {
 
     const result = await callToolByNameRawAsync(
       'get_board_info',
-      { boardId: 123 },
+      { boardId: 123, includeKnowledge: true },
       { mondayApiToken: 'test-token', deps: { logger } },
     );
     const parsed = parseToolResult(result);
@@ -660,27 +658,38 @@ describe('GetBoardInfoTool filtering', () => {
     );
   });
 
-  it('skips and omits board knowledge when the feature flag is disabled', async () => {
+  it('does not fetch board knowledge unless requested', async () => {
+    mocks.setResponse({ boards: [boardPayload] });
+
+    const result = await callToolByNameRawAsync('get_board_info', { boardId: 123 });
+    const parsed = parseToolResult(result);
+
+    expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+    expect(parsed).not.toHaveProperty('knowledge');
+  });
+
+  it('returns null without fetching board knowledge when the feature flag is disabled', async () => {
     const flagChecker = jest.fn().mockReturnValue(false);
     mocks.setResponse({ boards: [boardPayload] });
 
     const result = await callToolByNameRawAsync(
       'get_board_info',
-      { boardId: 123 },
+      { boardId: 123, includeKnowledge: true },
       { mondayApiToken: 'test-token', deps: { flagChecker } },
     );
     const parsed = parseToolResult(result);
 
     expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
-    expect(parsed).not.toHaveProperty('knowledge');
+    expect(parsed.knowledge).toBeNull();
     expect(flagChecker).toHaveBeenCalledWith(GET_BOARD_INFO_ENTITY_KNOWLEDGE_FLAG);
   });
 
-  it('does not advertise board knowledge when the feature flag is disabled', () => {
+  it('keeps the stable input schema but does not advertise board knowledge when the feature flag is disabled', () => {
     const tool = new GetBoardInfoTool(mocks.mockApiClient, 'test-token', {
       deps: { flagChecker: () => false },
     });
 
+    expect(tool.getInputSchema()).toHaveProperty('includeKnowledge');
     expect(tool.getDescription()).not.toContain('generated board knowledge');
   });
 });

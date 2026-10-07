@@ -1,11 +1,18 @@
 # Changelog
 
+## 5.71.8
+
+### Clearer `move_item_to_group` description and error context
+
+- Failed moves now report as `Failed to move item to group: ...` and keep the API error code and `error_data`.
+- Fixed the `itemId` description, which was copied from `create_update`, and stated that the tool cannot move items between boards.
+
 ## 5.71.7
 
-### Actionable not-found errors in `move_item_to_group`
+### Make board knowledge opt-in
 
-- When the item or group is not found, the error tells the model to re-read group ids with `get_board_info` and not to retry the same ids.
-- Fixed the `itemId` description, which was copied from `create_update`, and stated that the tool cannot move items between boards.
+- `get_board_info` now fetches generated board knowledge only when `includeKnowledge` is true.
+- The optional input remains in the tool schema during gradual rollout so cached schemas stay stable.
 
 ## 5.71.5
 
