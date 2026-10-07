@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.71.7
+
+### Make board knowledge opt-in
+
+- `get_board_info` now fetches generated board knowledge only when `includeKnowledge` is true.
+- The optional input remains in the tool schema during gradual rollout so cached schemas stay stable.
+
 ## 5.71.5
 
 ### Reuse the `create_items` per-item error shape for missing names
