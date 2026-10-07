@@ -7,6 +7,12 @@
 - New `create_updates` tool posts up to 40 updates per call, 10 at a time, with per-entry results like `update_items`. Each entry uses the `create_update` schema.
 - `create_update` with a `parentId` that is itself a reply (`REPLY_TO_REPLY_NOT_ALLOWED`) now posts on the top-level update that contains it.
 
+## 5.71.8
+
+### Default omitted GraphQL variables
+
+- `all_monday_api`, `all_api_read`, and `all_api_write` now default omitted `variables` to `"{}"`.
+
 ## 5.71.7
 
 ### Make board knowledge opt-in
