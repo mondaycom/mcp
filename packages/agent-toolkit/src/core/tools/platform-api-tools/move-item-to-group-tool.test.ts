@@ -25,16 +25,13 @@ describe('MoveItemToGroupTool', () => {
     expect(result.content).toBe('Item 123 successfully moved to group topics');
   });
 
-  it.each(['ResourceNotFoundException', 'InvalidItemIdException'])(
-    'tells the model to re-read the board groups on %s',
-    async (code) => {
-      mocks.setError(graphQLError('Resource not found', code));
+  it('propagates the API error code', async () => {
+    mocks.setError(graphQLError('Resource not found', 'ResourceNotFoundException'));
 
-      await expect(tool.execute({ itemId: 123, groupId: 'group_stale' }, undefined as any)).rejects.toThrow(
-        /get_board_info and do not retry the same ids\): Resource not found/,
-      );
-    },
-  );
+    await expect(tool.execute({ itemId: 123, groupId: 'group_stale' }, undefined as any)).rejects.toThrow(
+      'Failed to move item to group: Resource not found (details: {"code":"ResourceNotFoundException"})',
+    );
+  });
 
   it('keeps the GraphQL response on the rethrown error', async () => {
     const error = graphQLError('Resource not found', 'ResourceNotFoundException');
@@ -43,13 +40,5 @@ describe('MoveItemToGroupTool', () => {
     await expect(tool.execute({ itemId: 123, groupId: 'group_stale' }, undefined as any)).rejects.toMatchObject({
       response: (error as any).response,
     });
-  });
-
-  it('does not add the not-found hint to other errors', async () => {
-    mocks.setError(graphQLError('Access denied', 'USER_UNAUTHORIZED'));
-
-    await expect(tool.execute({ itemId: 123, groupId: 'topics' }, undefined as any)).rejects.toThrow(
-      /^Failed to move item to group: Access denied/,
-    );
   });
 });

@@ -4,7 +4,6 @@ import {
   MoveItemToGroupMutationVariables,
 } from 'src/monday-graphql/generated/graphql/graphql';
 import { moveItemToGroup } from 'src/monday-graphql/queries.graphql';
-import { GraphQLErrorResponse } from 'src/utils/graphql-error.types';
 import { rethrowWithContext } from '../../../utils';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
@@ -48,24 +47,11 @@ export class MoveItemToGroupTool extends BaseMondayApiTool<typeof moveItemToGrou
     try {
       res = await this.mondayApi.request<MoveItemToGroupMutation>(moveItemToGroup, variables);
     } catch (error) {
-      rethrowWithContext(
-        error,
-        isNotFoundError(error)
-          ? "move item to group (the item or group isn't on the item's board; read its group ids with get_board_info and do not retry the same ids)"
-          : 'move item to group',
-      );
+      rethrowWithContext(error, 'move item to group');
     }
 
     return {
       content: `Item ${res.move_item_to_group?.id} successfully moved to group ${input.groupId}`,
     };
   }
-}
-
-const NOT_FOUND_CODES = new Set(['ResourceNotFoundException', 'InvalidItemIdException', 'InvalidGroupIdException']);
-
-function isNotFoundError(error: unknown): boolean {
-  return !!(error as GraphQLErrorResponse)?.response?.errors?.some((e) =>
-    NOT_FOUND_CODES.has(e.extensions?.code as string),
-  );
 }
