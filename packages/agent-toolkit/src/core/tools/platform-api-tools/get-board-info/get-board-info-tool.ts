@@ -24,6 +24,12 @@ const BOARD_KNOWLEDGE_TIMEOUT_MS = 1_000;
 
 export const getBoardInfoToolSchema = {
   boardId: z.number().describe('The id of the board to get information for'),
+  includeKnowledge: z
+    .boolean()
+    .optional()
+    .describe(
+      'Optional. Set to true only when you need generated business context beyond the board structure, such as workflow and status meanings, column purposes, people roles, or related boards. This adds a slower, more expensive request and may return null while knowledge is unavailable or still being generated. Defaults to false.',
+    ),
   filters: z
     .object({
       views: z
@@ -85,8 +91,8 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
   }
 
   getDescription(): string {
-    const knowledgeDescription = this.shouldIncludeKnowledge()
-      ? 'Also returns generated board knowledge when available, including human-readable business context, workflow and status meanings, column purposes, people roles, and related boards. Knowledge is best-effort and may be null while it is unavailable or still being generated. '
+    const knowledgeDescription = this.isKnowledgeEnabled()
+      ? 'Set includeKnowledge to true only when generated business context is needed beyond the board structure, including workflow and status meanings, column purposes, people roles, and related boards. This adds a slower, more expensive request, and knowledge may be null while unavailable or still being generated. '
       : '';
 
     return (
@@ -127,8 +133,9 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
     };
 
     const boardRequest = this.mondayApi.request<GetBoardInfoQuery>(getBoardInfo, variables);
-    const includeKnowledge = this.shouldIncludeKnowledge();
-    const knowledgeRequest = includeKnowledge
+    const knowledgeRequested = input.includeKnowledge === true;
+    const shouldFetchKnowledge = knowledgeRequested && this.isKnowledgeEnabled();
+    const knowledgeRequest = shouldFetchKnowledge
       ? this.mondayApi
           .request<GetBoardKnowledgeQuery>(
             getBoardKnowledge,
@@ -162,12 +169,12 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
         subItemsBoard,
         unmatchedViewNames,
         knowledgeRes?.entity_knowledge ?? null,
-        includeKnowledge,
+        knowledgeRequested,
       ),
     };
   }
 
-  private shouldIncludeKnowledge(): boolean {
+  private isKnowledgeEnabled(): boolean {
     return this.context?.deps?.flagChecker?.(GET_BOARD_INFO_ENTITY_KNOWLEDGE_FLAG) ?? true;
   }
 
