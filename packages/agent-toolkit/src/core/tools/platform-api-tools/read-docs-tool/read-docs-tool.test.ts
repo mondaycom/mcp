@@ -4,6 +4,8 @@ import { ReadDocsTool } from './read-docs-tool';
 
 const TOOL_NAME = 'read_docs';
 const DOC_ID = 'doc_123';
+const BOARD_ID = '18429976879';
+const VIEW_ID = '279510271';
 
 // --- shared mocks ---
 
@@ -122,6 +124,86 @@ describe('ReadDocsTool', () => {
 
       expect(result.content[0].text).toContain('Error reading documents');
       expect(result.content[0].text).toContain('Network error');
+    });
+  });
+
+  // ─── docs that live as a board view ─────────────────────────────────────────
+
+  describe('board view docs', () => {
+    it('should read the doc of a board view without going through docs()', async () => {
+      mocks.mockRequest
+        .mockResolvedValueOnce({ board_view_docs: [mockDoc] })
+        .mockResolvedValueOnce(mockMarkdownResponse);
+
+      const result = await callToolByNameAsync(TOOL_NAME, { board_id: BOARD_ID, view_id: VIEW_ID });
+
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].id).toBe(DOC_ID);
+      expect(mocks.getMockRequest()).toHaveBeenNthCalledWith(
+        1,
+        expect.anything(),
+        expect.objectContaining({ boardId: BOARD_ID, viewId: VIEW_ID }),
+        // board_view_docs is absent from the default version, so it must be requested explicitly.
+        { versionOverride: '2027-01' },
+      );
+    });
+
+    it('should read every doc view of the board when view_id is omitted', async () => {
+      const secondDoc = { ...mockDoc, id: 'doc_456', name: 'Second Doc' };
+      mocks.mockRequest
+        .mockResolvedValueOnce({ board_view_docs: [mockDoc, secondDoc] })
+        .mockResolvedValue(mockMarkdownResponse);
+
+      const result = await callToolByNameAsync(TOOL_NAME, { board_id: BOARD_ID });
+
+      expect(result.data).toHaveLength(2);
+      expect(mocks.getMockRequest()).toHaveBeenNthCalledWith(
+        1,
+        expect.anything(),
+        expect.objectContaining({ boardId: BOARD_ID, viewId: undefined }),
+        { versionOverride: '2027-01' },
+      );
+    });
+
+    it('should not require type and ids when board_id is provided', async () => {
+      mocks.mockRequest
+        .mockResolvedValueOnce({ board_view_docs: [mockDoc] })
+        .mockResolvedValueOnce(mockMarkdownResponse);
+
+      const result = await callToolByNameRawAsync(TOOL_NAME, { board_id: BOARD_ID, view_id: VIEW_ID });
+
+      expect(result.content[0].text).not.toContain('type and ids are required');
+    });
+
+    it('should explain when the view holds no doc', async () => {
+      mocks.mockRequest.mockResolvedValueOnce({ board_view_docs: [] });
+
+      const result = await callToolByNameRawAsync(TOOL_NAME, { board_id: BOARD_ID, view_id: VIEW_ID });
+
+      expect(result.content[0].text).toContain(`No doc found for view ${VIEW_ID} on board ${BOARD_ID}`);
+    });
+
+    it('should report when the board has no doc views', async () => {
+      mocks.mockRequest.mockResolvedValueOnce({ board_view_docs: [] });
+
+      const result = await callToolByNameRawAsync(TOOL_NAME, { board_id: BOARD_ID });
+
+      expect(result.content[0].text).toContain(`Board ${BOARD_ID} has no doc views`);
+    });
+
+    it('should request blocks when include_blocks is set', async () => {
+      mocks.mockRequest
+        .mockResolvedValueOnce({ board_view_docs: [{ ...mockDoc, blocks: [] }] })
+        .mockResolvedValueOnce(mockMarkdownResponse);
+
+      await callToolByNameAsync(TOOL_NAME, { board_id: BOARD_ID, view_id: VIEW_ID, include_blocks: true });
+
+      expect(mocks.getMockRequest()).toHaveBeenNthCalledWith(
+        1,
+        expect.anything(),
+        expect.objectContaining({ includeBlocks: true }),
+        { versionOverride: '2027-01' },
+      );
     });
   });
 
