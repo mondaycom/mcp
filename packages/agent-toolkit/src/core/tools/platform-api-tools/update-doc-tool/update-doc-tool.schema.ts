@@ -272,7 +272,7 @@ const AddCommentOperation = z.object({
     .string()
     .optional()
     .describe(
-      'Optional JSON array of mentions: [{"id": "123", "type": "User"}, {"id": "456", "type": "Team"}]. Valid types: User, Team, Board, Project.',
+      'Optional JSON array of mentions: [{"id": "123", "type": "User"}, {"id": "456", "type": "Team"}]. Valid types: User, Team, Board, Project. To mention an AI agent, use type User with the agent\'s user id from list_users_and_teams. Type Agent adds no mention.',
     ),
   block_id: z
     .union([z.string(), z.array(z.string()).min(1)])

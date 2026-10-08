@@ -14,7 +14,9 @@ import { rethrowWithContext } from '../../../../utils';
 
 export const mentionSchema = z.object({
   id: z.string().describe('The ID of the entity to mention'),
-  type: z.nativeEnum(MentionType).describe('The type of mention: User, Team, Board, or Project'),
+  type: z
+    .nativeEnum(MentionType)
+    .describe('The type of mention: User, Team, Board, or Project. Mention an AI agent as User, not Agent'),
 });
 
 export const mentionsListSchema = z.array(mentionSchema);
@@ -30,7 +32,7 @@ export const createUpdateToolSchema = {
     .string()
     .optional()
     .describe(
-      'Optional JSON array of mentions in the format: [{"id": "123", "type": "User"}, {"id": "456", "type": "Team"}]. Valid types are: User, Team, Board, Project',
+      'Optional JSON array of mentions in the format: [{"id": "123", "type": "User"}, {"id": "456", "type": "Team"}]. Valid types are: User, Team, Board, Project. To mention an AI agent, use type User with the agent\'s user id from list_users_and_teams. Type Agent adds no mention',
     ),
   parentId: z
     .number()
