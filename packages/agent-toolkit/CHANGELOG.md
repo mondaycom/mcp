@@ -9,6 +9,13 @@
 - Update and reply bodies over 2000 characters are truncated and flagged with `text_body_truncated: true`. The new `includeFullText` returns them in full.
 - The description suggests a date range for Board queries that include item updates.
 
+## 5.72.1
+
+### Agent mentions and agent assignment in people columns
+
+- `create_update`, `create_updates`, `create_update_in_monday` and `update_doc` comments: mention an AI agent with type `User` and the agent's user id. Type `Agent` creates the update without a mention.
+- The people column format guide used by `change_item_column_values`, `update_items`, `create_item` and `create_items` now lists kind `"agent"`, with the agent's user id. Kind `"person"` with an agent's user id is rejected.
+
 ## 5.72.0
 
 ### Add `create_updates` and resolve reply-to-reply in `create_update`
