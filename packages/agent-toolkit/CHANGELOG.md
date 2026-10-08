@@ -1,5 +1,14 @@
 # Changelog
 
+## 5.73.0
+
+### Read several items in one `get_updates` call, and fix date-only ranges
+
+- New optional `objectIds` (up to 25 item ids, Item objectType only) fetches updates for several items in one request, instead of `objectId`. Exactly one of the two must be set, so `objectId` is now optional. Results are grouped per item (`item_id`, `url`, `updates`, `count`). Requested ids the API doesn't return are listed in `not_found`. `limit` and `page` apply to each item, and `limit` defaults to 10 per item with `objectIds`.
+- A date-only `toDate` now means the end of that day (`T23:59:59Z`). It used to mean the start of the day, so the last day of a range was left out and a same-day range was empty.
+- Update and reply bodies over 2000 characters are truncated and flagged with `text_body_truncated: true`. The new `includeFullText` returns them in full.
+- The description suggests a date range for Board queries that include item updates.
+
 ## 5.72.1
 
 ### Agent mentions and agent assignment in people columns
