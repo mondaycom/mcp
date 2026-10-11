@@ -25,7 +25,9 @@ describe('ListAutomationsTool', () => {
     template_reference_id: null,
   };
 
-  const expectedWorkflow = {
+  const expectedAutomation = {
+    entity_type: 'board_automation',
+    editable: true,
     id: mockBoardAutomation.id,
     user_id: 42,
     is_active: true,
@@ -41,14 +43,15 @@ describe('ListAutomationsTool', () => {
     template_reference_id: mockBoardAutomation.template_reference_id,
   };
 
-  it('should return live workflows for the board', async () => {
+  it('should return automations for the board', async () => {
     mocks.setResponseOnce({ board_automations: { cursor: null, items: [mockBoardAutomation] } });
 
     const result = await callToolByNameRawAsync('list_automations', { boardId: '1234567890' });
     const parsed = parseToolResult(result);
 
-    expect(parsed.workflows).toEqual([expectedWorkflow]);
-    expect(parsed.message).toContain('1');
+    expect(parsed.automations).toEqual([expectedAutomation]);
+    expect(parsed).not.toHaveProperty('workflows');
+    expect(parsed.message).toContain('Found 1 automation(s)');
     expect(parsed.message).toContain('1234567890');
   });
 
@@ -87,13 +90,13 @@ describe('ListAutomationsTool', () => {
     });
   });
 
-  it('should default workflows to an empty array when board_automations items are null', async () => {
+  it('should default automations to an empty array when board_automations items are null', async () => {
     mocks.setResponseOnce({ board_automations: { cursor: null, items: null } });
 
     const result = await callToolByNameRawAsync('list_automations', { boardId: '1234567890' });
     const parsed = parseToolResult(result);
 
-    expect(parsed.workflows).toEqual([]);
+    expect(parsed.automations).toEqual([]);
     expect(parsed.message).toContain('0');
   });
 
@@ -106,7 +109,7 @@ describe('ListAutomationsTool', () => {
     const result = await callToolByNameRawAsync('list_automations', { boardId: '1234567890' });
     const parsed = parseToolResult(result);
 
-    expect(parsed.legacyAutomations).toEqual(legacy);
+    expect(parsed.legacyAutomations).toEqual({ entity_type: 'board_automation', editable: false, ...legacy });
   });
 
   it('should request legacy automations only when no cursor is provided', async () => {
@@ -133,7 +136,7 @@ describe('ListAutomationsTool', () => {
     const parsed = parseToolResult(result);
 
     expect(parsed).not.toHaveProperty('legacyAutomations');
-    expect(parsed.workflows).toEqual([expectedWorkflow]);
+    expect(parsed.automations).toEqual([expectedAutomation]);
   });
 
   it('should omit legacyAutomations from output when none are returned', async () => {
@@ -150,7 +153,7 @@ describe('ListAutomationsTool', () => {
 
     const result = await callToolByNameRawAsync('list_automations', { boardId: '1234567890' });
 
-    expect(result.content[0].text).toContain('Failed to list live workflows');
+    expect(result.content[0].text).toContain('Failed to list automations');
   });
 
   it('should reject whitespace-only boardId', async () => {
