@@ -478,6 +478,7 @@ describe('GetBoardInfoTool filtering', () => {
       viewIds: ['view_1'],
       includeColumns: true,
       includeViews: true,
+      includeSubscribers: false,
     });
   });
 
@@ -511,6 +512,7 @@ describe('GetBoardInfoTool filtering', () => {
       viewIds: ['view_1'],
       includeColumns: true,
       includeViews: true,
+      includeSubscribers: false,
     });
 
     const parsed = parseToolResult(result);
@@ -560,6 +562,7 @@ describe('GetBoardInfoTool filtering', () => {
       viewIds: undefined,
       includeColumns: true,
       includeViews: false,
+      includeSubscribers: false,
     });
   });
 
@@ -579,7 +582,38 @@ describe('GetBoardInfoTool filtering', () => {
       viewIds: ['view_1'],
       includeColumns: false,
       includeViews: true,
+      includeSubscribers: false,
     });
+  });
+
+  it('fetches subscribers and team subscribers when includeSubscribers is true', async () => {
+    mocks.setResponse({
+      boards: [
+        {
+          ...boardPayload,
+          subscribers: [{ id: '1', name: 'Alice' }],
+          team_subscribers: [{ id: '10', name: 'Team A' }],
+        },
+      ],
+    });
+
+    const result = await callToolByNameRawAsync('get_board_info', { boardId: 123, includeSubscribers: true });
+
+    expect(mocks.getMockRequest().mock.calls[0][1]).toMatchObject({ includeSubscribers: true });
+    const parsed = parseToolResult(result);
+    expect(parsed.board.subscribers).toEqual([{ id: '1', name: 'Alice' }]);
+    expect(parsed.board.team_subscribers).toEqual([{ id: '10', name: 'Team A' }]);
+  });
+
+  it('does not fetch subscribers unless requested', async () => {
+    mocks.setResponse({ boards: [boardPayload] });
+
+    const result = await callToolByNameRawAsync('get_board_info', { boardId: 123 });
+
+    expect(mocks.getMockRequest().mock.calls[0][1]).toMatchObject({ includeSubscribers: false });
+    const parsed = parseToolResult(result);
+    expect(parsed.board).not.toHaveProperty('subscribers');
+    expect(parsed.board).not.toHaveProperty('team_subscribers');
   });
 
   it('fetches board knowledge in parallel with board info', async () => {

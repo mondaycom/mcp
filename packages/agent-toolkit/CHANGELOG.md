@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.74.0
+
+### Opt-in board subscribers in `get_board_info`
+
+- New optional `includeSubscribers` returns the board's `subscribers` and `team_subscribers` (id and name). `subscribers` includes both people and AI agents subscribed to the board, with agents listed by their agent user id. It defaults to false, so the default payload is unchanged.
+
 ## 5.73.0
 
 ### Read several items in one `get_updates` call, and fix date-only ranges
