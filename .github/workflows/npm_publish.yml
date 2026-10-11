@@ -53,6 +53,6 @@ jobs:
           PACKAGES=$(echo '${{ steps.changed.outputs.packages }}' | jq -r '.[]')
           for PKG in $PACKAGES; do
             cd packages/$PKG
-            npm publish --access public --provenance
+            npm publish --access public --provenance --tag msft
             cd ../..
           done
