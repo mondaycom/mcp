@@ -28,7 +28,7 @@ export const getBoardInfoToolSchema = {
     .boolean()
     .optional()
     .describe(
-      'Optional. Set to true only when you need generated business context beyond the board structure, such as workflow and status meanings, column purposes, people roles, or related boards. This adds a slower, more expensive request and may return null while knowledge is unavailable or still being generated. Defaults to false.',
+      "Optional. Returns generated business context: workflow and status meanings, column purposes, people roles, related boards. Set it when you must interpret the board, e.g. pick a status from the user's intent rather than an exact label name. Leave it off for structural lookups. Adds latency and may be null while being generated. Defaults to false.",
     ),
   includeSubscribers: z
     .boolean()
@@ -98,7 +98,7 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
 
   getDescription(): string {
     const knowledgeDescription = this.isKnowledgeEnabled()
-      ? 'Set includeKnowledge to true only when generated business context is needed beyond the board structure, including workflow and status meanings, column purposes, people roles, and related boards. This adds a slower, more expensive request, and knowledge may be null while unavailable or still being generated. '
+      ? "Set includeKnowledge to true when you need to interpret the board rather than just read its configuration: for example, choosing a status, label or column value from the user's intent instead of an exact name they gave, or explaining what statuses, columns or roles mean. Not needed for structural work such as column ids, types, revisions or views. Adds latency and may be null while knowledge is still being generated. "
       : '';
 
     return (

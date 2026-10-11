@@ -724,6 +724,16 @@ describe('GetBoardInfoTool filtering', () => {
     });
 
     expect(tool.getInputSchema()).toHaveProperty('includeKnowledge');
-    expect(tool.getDescription()).not.toContain('generated board knowledge');
+    expect(tool.getDescription()).not.toContain('includeKnowledge');
+  });
+
+  it('advertises includeKnowledge for interpreting the board when the feature flag is enabled', () => {
+    const tool = new GetBoardInfoTool(mocks.mockApiClient, 'test-token', {
+      deps: { flagChecker: () => true },
+    });
+
+    expect(tool.getDescription()).toContain(
+      'Set includeKnowledge to true when you need to interpret the board rather than just read its configuration',
+    );
   });
 });
