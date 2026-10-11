@@ -162,5 +162,16 @@ describe('GetAutomationStatisticsTool', () => {
 
       expect(result.content[0].text).toContain('Invalid boardId');
     });
+
+    it('should return a clear error for board ids above the GraphQL Int range', async () => {
+      const result = await callToolByNameRawAsync('get_automation_statistics', {
+        breakdown: 'totals',
+        boardId: '2147483648',
+      });
+
+      expect(result.content[0].text).toContain("aren't available for board 2147483648 via the API yet");
+      expect(result.structuredContent).toMatchObject({ errors: [{ code: 'INVALID_TOOL_ARGS' }] });
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
   });
 });

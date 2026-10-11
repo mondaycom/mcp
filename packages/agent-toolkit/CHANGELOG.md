@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.74.3
+
+### Automation tools name automations as automations and discourage delete-and-recreate edits
+
+- `list_automations` returns its items under `automations` instead of `workflows`, with `entity_type: "board_automation"` and `editable: true` on each item. `legacyAutomations` carries `entity_type: "board_automation"` and `editable: false`. The message reads "Found N automation(s)". The description no longer tells the agent to hide that legacy automations are read-only: when the user asks to change one, the agent says it can't change it.
+- `manage_automations` accepts `automationId`. `workflowId` stays as a deprecated alias, and exactly one of them is required. Responses include `automationId` alongside `workflowId`. The description says there is no in-place edit, that the agent must not delete and recreate an automation to change it unless the user explicitly agrees (and then create the replacement first, confirm it's active, then delete the old one), and that automation ids are not workflow-builder workflow ids.
+- `get_automation_statistics` returns a clear error for board ids above 2147483647 instead of an opaque GraphQL validation error, because the statistics filter only accepts 32-bit integers.
+
 ## 5.74.1
 
 ### Clearer trigger for `get_board_info`'s `includeKnowledge`

@@ -1,13 +1,15 @@
 import { z } from 'zod';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../../base-monday-api-tool';
-import { rethrowWithContext } from '../../../../../utils';
+import { INVALID_TOOL_ARGS_CODE, rethrowWithContext, ToolValidationError } from '../../../../../utils';
 import {
   getAccountTriggerStatisticsQuery,
   getAccountTriggersByEntityQuery,
   AccountTriggerStatisticsQueryResult,
   AccountTriggersByEntityQueryResult,
 } from './automation-statistics-queries';
+
+const MAX_GRAPHQL_INT = 2147483647;
 
 const TOOL_DESCRIPTION = `Aggregate automation run statistics. Read-only.
 
@@ -137,6 +139,12 @@ function toBoardIdInt(boardId: string): number {
   const parsed = Number(boardId.trim());
   if (!Number.isInteger(parsed) || parsed <= 0) {
     throw new Error(`Invalid boardId: '${boardId}' is not a positive integer.`);
+  }
+  if (parsed > MAX_GRAPHQL_INT) {
+    throw new ToolValidationError(
+      `Automation statistics aren't available for board ${boardId} via the API yet. Board ids above ${MAX_GRAPHQL_INT} aren't supported.`,
+      INVALID_TOOL_ARGS_CODE,
+    );
   }
   return parsed;
 }
