@@ -7,6 +7,7 @@ export const getBoardInfo = gql`
     $viewIds: [ID!]
     $includeColumns: Boolean!
     $includeViews: Boolean!
+    $includeSubscribers: Boolean!
   ) {
     boards(ids: [$boardId], limit: 1) {
       # Basic Board Metadata
@@ -71,6 +72,18 @@ export const getBoardInfo = gql`
         id
         name
         picture_url
+      }
+
+      # Board Subscribers (opt-in; omitted entirely when includeSubscribers is false)
+      subscribers @include(if: $includeSubscribers) {
+        id
+        name
+      }
+
+      # Team Subscribers (opt-in; omitted entirely when includeSubscribers is false)
+      team_subscribers @include(if: $includeSubscribers) {
+        id
+        name
       }
 
       # Board Tags

@@ -1,10 +1,16 @@
 # Changelog
 
-## 5.73.1
+## 5.74.1
 
 ### Clearer trigger for `get_board_info`'s `includeKnowledge`
 
 - The description of `includeKnowledge`, in the tool description and the parameter, now names when to set it: when the agent has to interpret the board, for example to choose a status, label or column value from the user's intent rather than an exact name they gave, or to explain what statuses, columns or roles mean. It stays off for structural work such as column ids, types, revisions or views. The previous wording described only what knowledge contains, so agents rarely set it, even when the answer depended on the board's workflow.
+
+## 5.74.0
+
+### Opt-in board subscribers in `get_board_info`
+
+- New optional `includeSubscribers` returns the board's `subscribers` and `team_subscribers` (id and name). `subscribers` includes both people and AI agents subscribed to the board, with agents listed by their agent user id. It defaults to false, so the default payload is unchanged.
 
 ## 5.73.0
 
