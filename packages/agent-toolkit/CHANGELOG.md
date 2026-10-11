@@ -4,7 +4,7 @@
 
 ### Opt-in board subscribers in `get_board_info`
 
-- New optional `includeSubscribers` returns the board's `subscribers` (users) and `team_subscribers` (id and name). It defaults to false, so the default payload is unchanged.
+- New optional `includeSubscribers` returns the board's `subscribers` and `team_subscribers` (id and name). `subscribers` includes both people and AI agents subscribed to the board, with agents listed by their agent user id. It defaults to false, so the default payload is unchanged.
 
 ## 5.73.0
 

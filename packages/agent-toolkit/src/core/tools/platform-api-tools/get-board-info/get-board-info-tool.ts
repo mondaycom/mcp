@@ -34,7 +34,7 @@ export const getBoardInfoToolSchema = {
     .boolean()
     .optional()
     .describe(
-      'Optional. Set to true to also return the board subscribers (users) and team subscribers (id and name). Omitted by default because the subscriber list can be long on large boards. Defaults to false.',
+      'Optional. Set to true to also return the board subscribers and team subscribers (id and name). Subscribers include both people and AI agents subscribed to the board (agents appear with their agent user id). Omitted by default because the subscriber list can be long on large boards. Defaults to false.',
     ),
   filters: z
     .object({
@@ -104,7 +104,7 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
     return (
       'Get comprehensive board information including metadata, structure, owners, and configuration. ' +
       knowledgeDescription +
-      'Set includeSubscribers to true to also return the board\'s subscribers and team subscribers. ' +
+      'Set includeSubscribers to true to also return the board\'s subscribers (people and AI agents) and team subscribers. ' +
       'Also returns the board\'s views (e.g. table views, filter views) — each view includes its id, name, type, and a structured filter object. ' +
       'On large boards, ALWAYS narrow the response: use filters.views.names or filters.views.ids when you only need specific views, and/or filters.columns.ids when you only need specific columns. Set filters.views.only or filters.columns.only when you want just that section — full views[].settings across many views can be multi-MB. ' +
       'The response includes hierarchy_type which indicates if the board is a multi-level board ("multi_level") where items can have nested subitems up to 5 levels deep on the same board. On multi-level boards, subitems share the same columns as parent items and subItemColumns will be null. ' +
