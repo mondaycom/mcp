@@ -6,6 +6,8 @@ import { rethrowWithContext, ToolValidationError, UPSTREAM_HTTP_ERROR_CODE } fro
 import { LITE_BUILDER_AGENT_PATH, PLATFORM_AGENT_SERVICE_NAME, resolveMondayFetch } from '../../ai-agent.utils';
 
 const REQUEST_TIMEOUT_MS = 180_000;
+const NEEDS_CLARIFICATION_MESSAGE =
+  'The automation was not created. Resolve each unresolved field: pick a candidate yourself when exactly one clearly fits the request, and ask the user only when it is genuinely ambiguous. Then call create_automation again with the full description including the resolved values.';
 
 export const createAutomationToolSchema = {
   userPrompt: z
@@ -40,17 +42,31 @@ export class CreateAutomationTool extends BaseMondayApiTool<typeof createAutomat
     return `
     Creates an automation on a monday board from a structured natural-language description.
 
+An automation is exactly ONE trigger, optional conditions (all must be true, AND only), then one or more actions that run in order. Actions can only use values from the trigger, such as the item, its column values, its creator or its group. Automations have no branching, waits, lookups or loops.
+
+Use a workflow instead of this tool when the request needs any of:
+- if/else or more than one path
+- one step using the output of another step
+- searching or looking up items on other boards
+- looping over items
+- waits or delays
+- more than one trigger
+- AI steps
+- a trigger or action that isn't available as an automation
+
+If this tool reports that the request can't be built as an automation, build it as a workflow instead of asking the user to rephrase.
+
 Use this tool only when you know:
 - boardId
 - the user's intended trigger
 - at least one intended action
 - any details the user provided that are relevant to the trigger, conditions, or actions
 
-The caller does not need to know the exact available automation blocks or their required fields. Describe the user's intent clearly — the tool will translate that intent into supported blocks and values.
+Call get_board_info first and name the exact column, group and status label titles from the board in userPrompt.
 
 If a required detail is missing from the user's request, ask for clarification before calling the tool.
 
-If the tool returns status: "needs_clarification", present the unresolved fields to the user, gather answers, then call the tool again.
+If the tool returns status: "needs_clarification", nothing was created. The unresolved fields may include candidate values from the board. When exactly one candidate clearly fits the user's request, pick it yourself. Ask the user only when it's genuinely ambiguous. Then call the tool again with the full description, including the resolved values.
 
 Describe the automation in this format:
 
@@ -132,6 +148,18 @@ Actions:
       }
 
       const body = (await response.json()) as Record<string, unknown>;
+      if (body.status === 'needs_clarification') {
+        return {
+          content: {
+            status: body.status,
+            unresolvedFields: body.unresolvedFields,
+            message: NEEDS_CLARIFICATION_MESSAGE,
+          },
+        };
+      }
+      if (body.status === 'activated') {
+        return { content: { ...body, automationId: body.workflowId } };
+      }
       return { content: body };
     } catch (error) {
       rethrowWithContext(error, 'create automation');

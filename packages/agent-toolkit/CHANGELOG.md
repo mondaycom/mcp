@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.74.2
+
+### `create_automation` says when to use a workflow instead, and returns only what needs resolving
+
+- The description now states what an automation can do: exactly one trigger, optional AND-only conditions, then actions in order that can only use values from the trigger. It lists when to build a workflow instead (if/else or several paths, steps using another step's output, lookups on other boards, loops, waits, several triggers, AI steps, or a trigger or action that isn't available as an automation), and tells the agent to build a workflow rather than ask the user to rephrase when the request can't be an automation. The line implying any intent can be mapped to automation blocks is removed.
+- The description tells the agent to name exact column, group and label titles from the board, to pick a candidate value itself when exactly one clearly fits, and to ask the user only when it's genuinely ambiguous.
+- A `needs_clarification` response now returns only `status`, `unresolvedFields` and a `message`, without the partial workflow. A successful response adds `automationId` alongside `workflowId`.
+
 ## 5.74.1
 
 ### Clearer trigger for `get_board_info`'s `includeKnowledge`
