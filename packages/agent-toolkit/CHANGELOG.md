@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.73.1
+
+### Clearer trigger for `get_board_info`'s `includeKnowledge`
+
+- The description of `includeKnowledge`, in the tool description and the parameter, now names when to set it: when the agent has to interpret the board, for example to choose a status, label or column value from the user's intent rather than an exact name they gave, or to explain what statuses, columns or roles mean. It stays off for structural work such as column ids, types, revisions or views. The previous wording described only what knowledge contains, so agents rarely set it, even when the answer depended on the board's workflow.
+
 ## 5.73.0
 
 ### Read several items in one `get_updates` call, and fix date-only ranges
