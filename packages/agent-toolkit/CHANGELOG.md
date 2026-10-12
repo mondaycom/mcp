@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.74.2
+
+### Narrower guidance for `get_updates`' `includeFullText`
+
+- `includeFullText` is now described as off by default and only for re-reading one item whose body came back with `text_body_truncated`. The tool description says to call again for that item only. Agents were setting it on their first call, which skipped truncation and returned very large responses, especially with `objectIds`.
+
 ## 5.74.1
 
 ### Clearer trigger for `get_board_info`'s `includeKnowledge`
