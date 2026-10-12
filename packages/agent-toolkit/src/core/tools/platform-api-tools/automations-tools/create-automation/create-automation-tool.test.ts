@@ -94,10 +94,12 @@ describe('CreateAutomationTool', () => {
 
     expect(parsed.status).toBe('activated');
     expect(parsed.workflowId).toBe(7);
+    expect(parsed.automationId).toBe(7);
     expect(parsed.boardId).toBe(12345);
+    expect(parsed.workflow).toEqual({ title: 'Notify me' });
   });
 
-  it('passes through a "needs_clarification" outcome', async () => {
+  it('returns only the unresolved fields on a "needs_clarification" outcome', async () => {
     fetchSpy.mockResolvedValue(
       mockFetchResponse({
         body: {
@@ -115,7 +117,9 @@ describe('CreateAutomationTool', () => {
     const parsed = parseToolResult(result);
 
     expect(parsed.status).toBe('needs_clarification');
-    expect(parsed.unresolvedFields).toHaveLength(1);
+    expect(parsed.unresolvedFields).toEqual([{ blockReferenceId: 1, fieldKey: 'columnId' }]);
+    expect(parsed.message).toContain('not created');
+    expect(parsed.partialWorkflow).toBeUndefined();
   });
 
   it('surfaces the lite-builder error envelope on 4xx', async () => {

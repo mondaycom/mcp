@@ -1,5 +1,19 @@
 # Changelog
 
+## 5.74.3
+
+### `create_automation` says when to use a workflow instead, and returns only what needs resolving
+
+- The description now states what an automation can do: exactly one trigger, optional AND-only conditions, then actions in order that can only use values from the trigger. It lists when to build a workflow instead (if/else or several paths, steps using another step's output, lookups on other boards, loops, waits, several triggers, AI steps, or a trigger or action that isn't available as an automation), and tells the agent to build a workflow rather than ask the user to rephrase when the request can't be an automation. The line implying any intent can be mapped to automation blocks is removed.
+- The description tells the agent to name exact column, group and label titles from the board, to pick a candidate value itself when exactly one clearly fits, and to ask the user only when it's genuinely ambiguous.
+- A `needs_clarification` response now returns only `status`, `unresolvedFields` and a `message`, without the partial workflow. A successful response adds `automationId` alongside `workflowId`.
+
+### Automation tools name automations as automations and discourage delete-and-recreate edits
+
+- `list_automations` returns its items under `automations` instead of `workflows`, with `entity_type: "board_automation"` and `editable: true` on each item. `legacyAutomations` carries `entity_type: "board_automation"` and `editable: false`. The message reads "Found N automation(s)". The description no longer tells the agent to hide that legacy automations are read-only: when the user asks to change one, the agent says it can't change it.
+- `manage_automations` accepts `automationId`. `workflowId` stays as a deprecated alias, and exactly one of them is required. Responses include `automationId` alongside `workflowId`. The description says there is no in-place edit, that the agent must not delete and recreate an automation to change it unless the user explicitly agrees (and then create the replacement first, confirm it's active, then delete the old one), and that automation ids are not workflow-builder workflow ids.
+- `get_automation_statistics` returns a clear error for board ids above 2147483647 instead of an opaque GraphQL validation error, because the statistics filter only accepts 32-bit integers.
+
 ## 5.74.2
 
 ### Narrower guidance for `get_updates`' `includeFullText`

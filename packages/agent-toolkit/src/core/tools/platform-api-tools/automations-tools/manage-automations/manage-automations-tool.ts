@@ -14,7 +14,7 @@ import {
 } from './workflow-mutations.graphql.dev';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../../base-monday-api-tool';
-import { rethrowWithContext } from '../../../../../utils';
+import { INVALID_TOOL_ARGS_CODE, rethrowWithContext, ToolValidationError } from '../../../../../utils';
 
 export const manageAutomationsToolSchema = {
   action: z
@@ -25,29 +25,19 @@ export const manageAutomationsToolSchema = {
         'deactivate: pauses an automation without deleting it. ' +
         'delete: permanently removes an automation (irreversible).',
     ),
+  automationId: z
+    .string()
+    .trim()
+    .min(1, 'automationId must be a non-empty string')
+    .optional()
+    .describe('The automation ID to operate on. Obtain from list_automations.'),
   workflowId: z
     .string()
     .trim()
     .min(1, 'workflowId must be a non-empty string')
-    .describe('The automation ID to operate on. Obtain from list_automations.'),
+    .optional()
+    .describe('Deprecated alias of automationId. Use automationId instead.'),
 };
-
-interface ActivateWorkflowInput {
-  action: 'activate';
-  workflowId: string;
-}
-
-interface DeactivateWorkflowInput {
-  action: 'deactivate';
-  workflowId: string;
-}
-
-interface DeleteWorkflowInput {
-  action: 'delete';
-  workflowId: string;
-}
-
-type ManageAutomationsInput = ActivateWorkflowInput | DeactivateWorkflowInput | DeleteWorkflowInput;
 
 export class ManageAutomationsTool extends BaseMondayApiTool<typeof manageAutomationsToolSchema> {
   name = 'manage_automations';
@@ -69,7 +59,11 @@ Actions:
 - deactivate: pauses an automation while preserving its definition.
 - delete: permanently removes an automation — irreversible.
 
-When intent is ambiguous ("stop", "turn off", "pause"), prefer deactivate over delete.`;
+When intent is ambiguous ("stop", "turn off", "pause"), prefer deactivate over delete.
+
+There is no in-place edit. Never delete and recreate an automation to change it unless the user explicitly agrees. If they do, create the replacement first, confirm it's active, then delete the old one.
+
+Automation ids are not workflow-builder workflow ids. Never pass them to workflow tools.`;
   }
 
   getInputSchema() {
@@ -79,45 +73,49 @@ When intent is ambiguous ("stop", "turn off", "pause"), prefer deactivate over d
   protected async executeInternal(
     input: ToolInputType<typeof manageAutomationsToolSchema>,
   ): Promise<ToolOutputType<never>> {
-    const typedInput = input as ManageAutomationsInput;
+    if (!input.automationId === !input.workflowId) {
+      throw new ToolValidationError('Provide exactly one of automationId or workflowId.', INVALID_TOOL_ARGS_CODE);
+    }
+    const id = (input.automationId ?? input.workflowId) as string;
 
-    switch (typedInput.action) {
+    switch (input.action) {
       case 'activate':
-        return this.activateWorkflow(typedInput);
+        return this.activateAutomation(id);
       case 'deactivate':
-        return this.deactivateWorkflow(typedInput);
+        return this.deactivateAutomation(id);
       case 'delete':
-        return this.deleteWorkflow(typedInput);
+        return this.deleteAutomation(id);
     }
   }
 
-  private async activateWorkflow(input: ActivateWorkflowInput): Promise<ToolOutputType<never>> {
+  private async activateAutomation(id: string): Promise<ToolOutputType<never>> {
     try {
-      const variables: ActivateLiveWorkflowMutationVariables = { id: input.workflowId };
+      const variables: ActivateLiveWorkflowMutationVariables = { id };
 
       const res = await this.mondayApi.request<ActivateLiveWorkflowMutation>(activateLiveWorkflowMutation, variables, {
         versionOverride: 'dev',
       });
 
       if (!res.activate_live_workflow?.is_success) {
-        throw new Error(`Workflow ${input.workflowId} activation did not report success`);
+        throw new Error(`Automation ${id} activation did not report success`);
       }
 
       return {
         content: {
-          message: `Workflow ${input.workflowId} activated`,
-          workflowId: input.workflowId,
+          message: `Automation ${id} activated`,
+          automationId: id,
+          workflowId: id,
           isActive: true,
         },
       };
     } catch (error) {
-      rethrowWithContext(error, 'activate workflow');
+      rethrowWithContext(error, 'activate automation');
     }
   }
 
-  private async deactivateWorkflow(input: DeactivateWorkflowInput): Promise<ToolOutputType<never>> {
+  private async deactivateAutomation(id: string): Promise<ToolOutputType<never>> {
     try {
-      const variables: DeactivateLiveWorkflowMutationVariables = { id: input.workflowId };
+      const variables: DeactivateLiveWorkflowMutationVariables = { id };
 
       const res = await this.mondayApi.request<DeactivateLiveWorkflowMutation>(
         deactivateLiveWorkflowMutation,
@@ -126,41 +124,43 @@ When intent is ambiguous ("stop", "turn off", "pause"), prefer deactivate over d
       );
 
       if (!res.deactivate_live_workflow?.is_success) {
-        throw new Error(`Workflow ${input.workflowId} deactivation did not report success`);
+        throw new Error(`Automation ${id} deactivation did not report success`);
       }
 
       return {
         content: {
-          message: `Workflow ${input.workflowId} deactivated`,
-          workflowId: input.workflowId,
+          message: `Automation ${id} deactivated`,
+          automationId: id,
+          workflowId: id,
           isActive: false,
         },
       };
     } catch (error) {
-      rethrowWithContext(error, 'deactivate workflow');
+      rethrowWithContext(error, 'deactivate automation');
     }
   }
 
-  private async deleteWorkflow(input: DeleteWorkflowInput): Promise<ToolOutputType<never>> {
+  private async deleteAutomation(id: string): Promise<ToolOutputType<never>> {
     try {
-      const variables: DeleteLiveWorkflowMutationVariables = { id: input.workflowId };
+      const variables: DeleteLiveWorkflowMutationVariables = { id };
 
       const res = await this.mondayApi.request<DeleteLiveWorkflowMutation>(deleteLiveWorkflowMutation, variables, {
         versionOverride: 'dev',
       });
 
       if (!res.delete_live_workflow?.is_success) {
-        throw new Error(`Workflow ${input.workflowId} deletion did not report success`);
+        throw new Error(`Automation ${id} deletion did not report success`);
       }
 
       return {
         content: {
-          message: `Workflow ${input.workflowId} deleted`,
-          workflowId: input.workflowId,
+          message: `Automation ${id} deleted`,
+          automationId: id,
+          workflowId: id,
         },
       };
     } catch (error) {
-      rethrowWithContext(error, 'delete workflow');
+      rethrowWithContext(error, 'delete automation');
     }
   }
 }

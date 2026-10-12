@@ -11,7 +11,11 @@ import {
 
 const DEFAULT_LIMIT = 100;
 
-type WorkflowOutput = Omit<BoardAutomation, 'active' | 'user_id'> & {
+const ENTITY_TYPE = 'board_automation';
+
+type AutomationOutput = Omit<BoardAutomation, 'active' | 'user_id'> & {
+  readonly entity_type: typeof ENTITY_TYPE;
+  readonly editable: true;
   readonly user_id: BoardAutomation['user_id'];
   readonly is_active: boolean;
 };
@@ -34,14 +38,19 @@ function extractLegacyAutomations(legacy: unknown): unknown {
   if (typeof legacy === 'object' && 'error' in legacy) {
     return null;
   }
+  if (typeof legacy === 'object' && !Array.isArray(legacy)) {
+    return { entity_type: ENTITY_TYPE, editable: false, ...legacy };
+  }
   return legacy;
 }
 
-function mapBoardAutomationToWorkflow(automation: BoardAutomation): WorkflowOutput {
-  const { active, user_id: userId, ...workflow } = automation;
+function mapBoardAutomation(automation: BoardAutomation): AutomationOutput {
+  const { active, user_id: userId, ...rest } = automation;
 
   return {
-    ...workflow,
+    entity_type: ENTITY_TYPE,
+    editable: true,
+    ...rest,
     user_id: normalizeUserId(userId),
     is_active: active ?? false,
   };
@@ -68,9 +77,11 @@ export class ListAutomationsTool extends BaseMondayApiTool<typeof listAutomation
 
   getDescription(): string {
     return `List all automations on a specific monday.com board, including their ids, titles, active state, and configuration.
-Returns two groups: "workflows" (fully manageable, supports pagination via limit/cursor) and "legacyAutomations" (READ-ONLY automations set up in an older way — returned on the first page only, when no cursor is given).
-Always present BOTH groups to the user together as one list of board automations — never omit or hide "legacyAutomations". The split and the read-only limitation are internal context for you only: don't volunteer them and don't label any automation "legacy" or "read-only". Only if the user asks to act on a legacy one, briefly explain it can't be changed (e.g. "This one was set up in an older way and can't be modified here").
-Call this FIRST before manage_automations — it is the only way to resolve an automation id from a name or description. Never guess an automation id.
+Returns two groups: "automations" (editable: true, supports pagination via limit/cursor) and "legacyAutomations" (editable: false, automations set up in an older way, returned on the first page only, when no cursor is given).
+Always present BOTH groups to the user together as one list of board automations. Never omit or hide "legacyAutomations".
+Legacy automations are read-only here. When the user asks to activate, deactivate, delete or change one, tell them it can't be changed by the agent and that they can change it themselves in monday.com.
+Call this FIRST before manage_automations. It is the only way to resolve an automation id from a name or description. Never guess an automation id.
+Automation ids are not workflow-builder workflow ids. Never pass them to workflow tools.
 When NOT to use: Do not call this tool to get general board information unrelated to automations.
 `;
   }
@@ -94,7 +105,7 @@ When NOT to use: Do not call this tool to get general board information unrelate
 
       const res = await this.mondayApi.request<BoardAutomationsQuery>(getBoardAutomationsQuery, variables);
 
-      const workflows = (res.board_automations?.items ?? []).map(mapBoardAutomationToWorkflow);
+      const automations = (res.board_automations?.items ?? []).map(mapBoardAutomation);
       const nextCursor = res.board_automations?.cursor ?? null;
       // legacy_automations is best-effort on the provider: on failure it returns an { error }
       // marker rather than throwing. Drop that so the model never renders an error as an
@@ -105,8 +116,8 @@ When NOT to use: Do not call this tool to get general board information unrelate
 
       return {
         content: {
-          message: `Found ${workflows.length} live workflow(s) on board ${input.boardId}`,
-          workflows,
+          message: `Found ${automations.length} automation(s) on board ${input.boardId}`,
+          automations,
           ...(legacyAutomations != null ? { legacyAutomations } : {}),
           pagination: {
             nextCursor,
@@ -115,7 +126,7 @@ When NOT to use: Do not call this tool to get general board information unrelate
         },
       };
     } catch (error) {
-      rethrowWithContext(error, 'list live workflows');
+      rethrowWithContext(error, 'list automations');
     }
   }
 }
