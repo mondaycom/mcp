@@ -1,6 +1,6 @@
 # Changelog
 
-## 5.74.2
+## 5.74.3
 
 ### `create_automation` says when to use a workflow instead, and returns only what needs resolving
 
@@ -13,6 +13,12 @@
 - `list_automations` returns its items under `automations` instead of `workflows`, with `entity_type: "board_automation"` and `editable: true` on each item. `legacyAutomations` carries `entity_type: "board_automation"` and `editable: false`. The message reads "Found N automation(s)". The description no longer tells the agent to hide that legacy automations are read-only: when the user asks to change one, the agent says it can't change it.
 - `manage_automations` accepts `automationId`. `workflowId` stays as a deprecated alias, and exactly one of them is required. Responses include `automationId` alongside `workflowId`. The description says there is no in-place edit, that the agent must not delete and recreate an automation to change it unless the user explicitly agrees (and then create the replacement first, confirm it's active, then delete the old one), and that automation ids are not workflow-builder workflow ids.
 - `get_automation_statistics` returns a clear error for board ids above 2147483647 instead of an opaque GraphQL validation error, because the statistics filter only accepts 32-bit integers.
+
+## 5.74.2
+
+### Narrower guidance for `get_updates`' `includeFullText`
+
+- `includeFullText` is now described as off by default and only for re-reading one item whose body came back with `text_body_truncated`. The tool description says to call again for that item only. Agents were setting it on their first call, which skipped truncation and returned very large responses, especially with `objectIds`.
 
 ## 5.74.1
 

@@ -57,7 +57,7 @@ export const getUpdatesToolSchema = {
     .optional()
     .default(false)
     .describe(
-      `Return update and reply bodies in full instead of truncating them at ${MAX_TEXT_BODY_LENGTH} characters. Use it when a body came back with text_body_truncated and you need the rest.`,
+      `Leave this off by default. Set it only to re-read one item whose update came back with text_body_truncated and whose full body you need. It returns every update and reply body in full, which can make the response very large, so do not combine it with objectIds.`,
     ),
   fromDate: z
     .string()
@@ -115,7 +115,7 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
       `To read several items, pass up to ${MAX_OBJECT_IDS} item IDs in objectIds in one call instead of calling once per item. ` +
       'For Board queries, you can filter by date range using fromDate and toDate (both required together, ISO8601 format). ' +
       'By default, Board queries return only board discussion. Set includeItemUpdates to true to also include updates on individual items, and add a date range to keep the response small. ' +
-      `Returns update text (bodies over ${MAX_TEXT_BODY_LENGTH} characters are truncated and flagged with text_body_truncated, and includeFullText returns them in full), creator info, timestamps, and optionally replies and assets.`
+      `Returns update text (bodies over ${MAX_TEXT_BODY_LENGTH} characters are truncated and flagged with text_body_truncated. To read one in full, call again for that item only with includeFullText), creator info, timestamps, and optionally replies and assets.`
     );
   }
 
