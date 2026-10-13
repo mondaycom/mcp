@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { callToolByNameAsync, callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
 import { ColumnType } from '../../../../monday-graphql/generated/graphql/graphql';
 import { ZodTypeAny } from 'zod';
-import { FullBoardDataToolSchema } from './full-board-data-tool';
+import { FullBoardDataTool, FullBoardDataToolSchema } from './full-board-data-tool';
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
 
 export type inputType = z.objectInputType<FullBoardDataToolSchema, ZodTypeAny>;
@@ -109,6 +109,15 @@ describe('Full Board Data Tool', () => {
       },
     ],
   };
+
+  it('describes when agents should use the full board data helper', () => {
+    const tool = new FullBoardDataTool(mocks.mockApiClient);
+    const description = tool.getDescription();
+
+    expect(description).toContain('another monday.com tool explicitly asks');
+    expect(description).toContain('prefer narrower board or item tools');
+    expect(description).not.toContain('DO NOT CALL THIS TOOL DIRECTLY');
+  });
 
   it('Successfully fetches board data with items, updates, and enriches with user info', async () => {
     // Setup mock to return different responses for each query
