@@ -1,7 +1,0 @@
-namespace: teleport
-deployments:
-  teleport-kube-agent-updater:
-    deploymentType: deployment
-    script: yarn run start
-    sqsQueueEndpoints: []
-
