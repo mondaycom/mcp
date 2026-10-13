@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.74.3
+
+### Make `update_items` work in Copilot Studio
+
+- Update rows no longer declare `required` fields in the JSON Schema. Copilot Studio never sent calls whose array rows had required fields, and asked the user for values the model had already filled (#499).
+- `itemId` is still required: updates without one are rejected before any API request, with one `MISSING_REQUIRED_PARAMETER` entry per update in `structuredContent.errors[]`.
+- `columnValues` now defaults to `"{}"`.
+
 ## 5.74.2
 
 ### Narrower guidance for `get_updates`' `includeFullText`
