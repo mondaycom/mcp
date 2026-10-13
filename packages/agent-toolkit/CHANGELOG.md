@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.76.0
+
+### `update_items` looks up the board when no `boardId` is given
+
+- When an update has no `boardId`, and there's no batch `boardId` or board in context, the tool looks up the board of those items in one query and then applies the updates. Before, the whole call was rejected with "Missing boardId".
+- An item the lookup can't find fails as its own entry (`MISSING_REQUIRED_PARAMETER`), and the other entries still apply.
+- There's no extra query when a `boardId` is available.
+
 ## 5.75.0
 
 ### `get_updates` takes ids only in `objectIds`
