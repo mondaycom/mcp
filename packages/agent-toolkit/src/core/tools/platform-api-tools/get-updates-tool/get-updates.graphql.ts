@@ -1,43 +1,5 @@
 import { gql } from 'graphql-request';
 
-export const getItemUpdates = gql`
-  query GetItemUpdates($itemId: ID!, $limit: Int, $page: Int, $includeReplies: Boolean!, $includeAssets: Boolean!) {
-    items(ids: [$itemId], limit: 1) {
-      id
-      url
-      updates(limit: $limit, page: $page) {
-        id
-        text_body
-        created_at
-        updated_at
-        item_id
-        creator {
-          id
-          name
-        }
-        replies @include(if: $includeReplies) {
-          id
-          text_body
-          created_at
-          updated_at
-          creator {
-            id
-            name
-          }
-        }
-        assets @include(if: $includeAssets) {
-          id
-          name
-          url
-          file_extension
-          file_size
-          created_at
-        }
-      }
-    }
-  }
-`;
-
 export const getItemsUpdates = gql`
   query GetItemsUpdates($itemIds: [ID!]!, $itemsLimit: Int, $limit: Int, $page: Int, $includeReplies: Boolean!, $includeAssets: Boolean!) {
     items(ids: $itemIds, limit: $itemsLimit) {
