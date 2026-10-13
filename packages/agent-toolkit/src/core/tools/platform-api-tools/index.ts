@@ -33,6 +33,7 @@ import { CreateItemTool } from './create-item-tool/create-item-tool';
 import { CreateItemsTool } from './create-items-tool/create-items-tool';
 import { CreateTimelineItemTool } from './create-timeline-item-tool';
 import { CreateUpdateTool } from './create-update-tool/create-update-tool';
+import { CreateUpdatesTool } from './create-updates-tool/create-updates-tool';
 import { DeleteUpdateTool } from './delete-update-tool/delete-update-tool';
 import { GetUpdatesTool } from './get-updates-tool/get-updates-tool';
 import { DeleteColumnTool } from './delete-column-tool';
@@ -94,6 +95,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   CreateItemTool,
   CreateItemsTool,
   CreateUpdateTool,
+  CreateUpdatesTool,
   DeleteUpdateTool,
   GetUpdatesTool,
   CreateUpdateInMondayTool,
@@ -214,6 +216,7 @@ export * from './create-item-tool/create-item-tool';
 export * from './create-items-tool/create-items-tool';
 export * from './create-timeline-item-tool';
 export * from './create-update-tool/create-update-tool';
+export * from './create-updates-tool/create-updates-tool';
 export * from './delete-update-tool/delete-update-tool';
 export * from './get-updates-tool/get-updates-tool';
 export * from './create-view-tool/create-view-tool';

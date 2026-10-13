@@ -1,5 +1,83 @@
 # Changelog
 
+## 5.75.0
+
+### `get_updates` takes ids only in `objectIds`
+
+- **Breaking for callers:** `objectId` is removed. `objectIds` is now required: up to 25 item IDs for Item, or exactly one board ID for Board. With `objectId` optional, models sent Board queries with no ID at all and got "Provide exactly one of objectId or objectIds".
+- Item queries always return the per-item shape (`items[]` with `item_id`, `url`, `updates`, `count`, plus `not_found`), for one item or many.
+- `fromDate` / `toDate` now work for Item queries too. They filter the fetched page by each update's `created_at`.
+- Invalid input (a half date range, more than one board ID) throws a `ToolValidationError` with code `INVALID_TOOL_ARGS` instead of a generic execution failure.
+
+## 5.74.3
+
+### Make `update_items` work in Copilot Studio
+
+- Update rows no longer declare `required` fields in the JSON Schema. Copilot Studio never sent calls whose array rows had required fields, and asked the user for values the model had already filled (#499).
+- `itemId` is still required: updates without one are rejected before any API request, with one `MISSING_REQUIRED_PARAMETER` entry per update in `structuredContent.errors[]`.
+- `columnValues` now defaults to `"{}"`.
+
+## 5.74.2
+
+### Narrower guidance for `get_updates`' `includeFullText`
+
+- `includeFullText` is now described as off by default and only for re-reading one item whose body came back with `text_body_truncated`. The tool description says to call again for that item only. Agents were setting it on their first call, which skipped truncation and returned very large responses, especially with `objectIds`.
+
+## 5.74.1
+
+### Clearer trigger for `get_board_info`'s `includeKnowledge`
+
+- The description of `includeKnowledge`, in the tool description and the parameter, now names when to set it: when the agent has to interpret the board, for example to choose a status, label or column value from the user's intent rather than an exact name they gave, or to explain what statuses, columns or roles mean. It stays off for structural work such as column ids, types, revisions or views. The previous wording described only what knowledge contains, so agents rarely set it, even when the answer depended on the board's workflow.
+
+## 5.74.0
+
+### Opt-in board subscribers in `get_board_info`
+
+- New optional `includeSubscribers` returns the board's `subscribers` and `team_subscribers` (id and name). `subscribers` includes both people and AI agents subscribed to the board, with agents listed by their agent user id. It defaults to false, so the default payload is unchanged.
+
+## 5.73.0
+
+### Read several items in one `get_updates` call, and fix date-only ranges
+
+- New optional `objectIds` (up to 25 item ids, Item objectType only) fetches updates for several items in one request, instead of `objectId`. Exactly one of the two must be set, so `objectId` is now optional. Results are grouped per item (`item_id`, `url`, `updates`, `count`). Requested ids the API doesn't return are listed in `not_found`. `limit` and `page` apply to each item, and `limit` defaults to 10 per item with `objectIds`.
+- A date-only `toDate` now means the end of that day (`T23:59:59Z`). It used to mean the start of the day, so the last day of a range was left out and a same-day range was empty.
+- Update and reply bodies over 2000 characters are truncated and flagged with `text_body_truncated: true`. The new `includeFullText` returns them in full.
+- The description suggests a date range for Board queries that include item updates.
+
+## 5.72.1
+
+### Agent mentions and agent assignment in people columns
+
+- `create_update`, `create_updates`, `create_update_in_monday` and `update_doc` comments: mention an AI agent with type `User` and the agent's user id. Type `Agent` creates the update without a mention.
+- The people column format guide used by `change_item_column_values`, `update_items`, `create_item` and `create_items` now lists kind `"agent"`, with the agent's user id. Kind `"person"` with an agent's user id is rejected.
+
+## 5.72.0
+
+### Add `create_updates` and resolve reply-to-reply in `create_update`
+
+- New `create_updates` tool posts up to 40 updates per call, 10 at a time, with per-entry results like `update_items`. Each entry uses the `create_update` schema.
+- `create_update` with a `parentId` that is itself a reply (`REPLY_TO_REPLY_NOT_ALLOWED`) now posts on the top-level update that contains it.
+
+## 5.71.9
+
+### Clearer `move_item_to_group` description and error context
+
+- Failed moves now report as `Failed to move item to group: ...` and keep the API error code and `error_data`.
+- Fixed the `itemId` description, which was copied from `create_update`, and stated that the tool cannot move items between boards.
+
+## 5.71.8
+
+### Default omitted GraphQL variables
+
+- `all_monday_api`, `all_api_read`, and `all_api_write` now default omitted `variables` to `"{}"`.
+
+## 5.71.7
+
+### Make board knowledge opt-in
+
+- `get_board_info` now fetches generated board knowledge only when `includeKnowledge` is true.
+- The optional input remains in the tool schema during gradual rollout so cached schemas stay stable.
+
 ## 5.71.5
 
 ### Reuse the `create_items` per-item error shape for missing names

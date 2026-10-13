@@ -18,7 +18,7 @@ import { withPublicSchemaHeader } from './utils/api-client.utils';
 
 export const allMondayApiToolSchema = {
   query: z.string().describe('Custom GraphQL query/mutation. you need to provide the full query / mutation'),
-  variables: z.string().describe('JSON string containing the variables for the GraphQL operation'),
+  variables: z.string().default('{}').describe('JSON string containing the variables for the GraphQL operation'),
 };
 
 interface GraphQLResponse {

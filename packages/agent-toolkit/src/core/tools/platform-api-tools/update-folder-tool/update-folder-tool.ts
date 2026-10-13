@@ -72,9 +72,9 @@ export class UpdateFolderTool extends BaseMondayApiTool<UpdateFolderToolInput> {
       position: !position_object_id
         ? undefined
         : {
-            position_is_after,
-            position_object_id,
-            position_object_type,
+            is_after: position_is_after,
+            object_id: position_object_id,
+            object_type: position_object_type,
           },
     };
 

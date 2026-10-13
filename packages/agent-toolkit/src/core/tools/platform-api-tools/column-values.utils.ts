@@ -5,7 +5,7 @@ export const COLUMN_VALUES_FORMAT_GUIDE =
   'status: {"label": "Done"} or {"index": 1}, and the label must already exist unless createLabelsIfMissing is true. ' +
   'dropdown: {"labels": ["A"]} or {"ids": [1]} — always an array, even for one value. ' +
   'date: {"date": "YYYY-MM-DD"}. timeline: {"from": "YYYY-MM-DD", "to": "YYYY-MM-DD"}. ' +
-  'people: {"personsAndTeams": [{"id": 123, "kind": "person"}]}, where kind is "person" or "team". ' +
+  'people: {"personsAndTeams": [{"id": 123, "kind": "person"}]}, where kind is "person", "team" or "agent". An AI agent takes kind "agent" with its user id from list_users_and_teams, never "person". ' +
   'board_relation: {"item_ids": [123]}. tags: {"tag_ids": [123]}. checkbox: {"checked": "true"}. ' +
   'link: {"url": "https://...", "text": "..."}. location: {"lat": "40.7", "lng": "-74.0", "address": "..."}, lat and lng are required strings, an address alone fails. ' +
   'email: {"email": "a@b.com", "text": "a@b.com"}. phone: {"phone": "+12125551234", "countryShortName": "US"}, digits only with an optional leading + and no spaces or dashes, uppercase ISO-2 country code. ' +

@@ -471,15 +471,15 @@ describe('GetBoardInfoTool filtering', () => {
       },
     });
 
-    expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
+    expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
     expect(mocks.getMockRequest().mock.calls[0][1]).toEqual({
       boardId: '123',
       columnIds: ['status'],
       viewIds: ['view_1'],
       includeColumns: true,
       includeViews: true,
+      includeSubscribers: false,
     });
-    expect(mocks.getMockRequest().mock.calls[1][2]).toEqual({ versionOverride: 'dev', timeout: 1_000 });
   });
 
   it('resolves filters.views.names via a lean index query then fetches by id', async () => {
@@ -496,7 +496,6 @@ describe('GetBoardInfoTool filtering', () => {
         ],
       },
       { boards: [boardPayload] },
-      { entity_knowledge: null },
     ]);
 
     const result = await callToolByNameRawAsync('get_board_info', {
@@ -506,13 +505,14 @@ describe('GetBoardInfoTool filtering', () => {
       },
     });
 
-    expect(mocks.getMockRequest()).toHaveBeenCalledTimes(3);
+    expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
     expect(mocks.getMockRequest().mock.calls[1][1]).toEqual({
       boardId: '123',
       columnIds: undefined,
       viewIds: ['view_1'],
       includeColumns: true,
       includeViews: true,
+      includeSubscribers: false,
     });
 
     const parsed = parseToolResult(result);
@@ -562,6 +562,7 @@ describe('GetBoardInfoTool filtering', () => {
       viewIds: undefined,
       includeColumns: true,
       includeViews: false,
+      includeSubscribers: false,
     });
   });
 
@@ -581,7 +582,38 @@ describe('GetBoardInfoTool filtering', () => {
       viewIds: ['view_1'],
       includeColumns: false,
       includeViews: true,
+      includeSubscribers: false,
     });
+  });
+
+  it('fetches subscribers and team subscribers when includeSubscribers is true', async () => {
+    mocks.setResponse({
+      boards: [
+        {
+          ...boardPayload,
+          subscribers: [{ id: '1', name: 'Alice' }],
+          team_subscribers: [{ id: '10', name: 'Team A' }],
+        },
+      ],
+    });
+
+    const result = await callToolByNameRawAsync('get_board_info', { boardId: 123, includeSubscribers: true });
+
+    expect(mocks.getMockRequest().mock.calls[0][1]).toMatchObject({ includeSubscribers: true });
+    const parsed = parseToolResult(result);
+    expect(parsed.board.subscribers).toEqual([{ id: '1', name: 'Alice' }]);
+    expect(parsed.board.team_subscribers).toEqual([{ id: '10', name: 'Team A' }]);
+  });
+
+  it('does not fetch subscribers unless requested', async () => {
+    mocks.setResponse({ boards: [boardPayload] });
+
+    const result = await callToolByNameRawAsync('get_board_info', { boardId: 123 });
+
+    expect(mocks.getMockRequest().mock.calls[0][1]).toMatchObject({ includeSubscribers: false });
+    const parsed = parseToolResult(result);
+    expect(parsed.board).not.toHaveProperty('subscribers');
+    expect(parsed.board).not.toHaveProperty('team_subscribers');
   });
 
   it('fetches board knowledge in parallel with board info', async () => {
@@ -595,7 +627,7 @@ describe('GetBoardInfoTool filtering', () => {
     });
     mocks.getMockRequest().mockReturnValueOnce(boardResponse).mockReturnValueOnce(knowledgeResponse);
 
-    const resultPromise = callToolByNameRawAsync('get_board_info', { boardId: 123 });
+    const resultPromise = callToolByNameRawAsync('get_board_info', { boardId: 123, includeKnowledge: true });
     await new Promise<void>((resolve) => setImmediate(resolve));
 
     expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
@@ -647,7 +679,7 @@ describe('GetBoardInfoTool filtering', () => {
 
     const result = await callToolByNameRawAsync(
       'get_board_info',
-      { boardId: 123 },
+      { boardId: 123, includeKnowledge: true },
       { mondayApiToken: 'test-token', deps: { logger } },
     );
     const parsed = parseToolResult(result);
@@ -660,27 +692,48 @@ describe('GetBoardInfoTool filtering', () => {
     );
   });
 
-  it('skips and omits board knowledge when the feature flag is disabled', async () => {
+  it('does not fetch board knowledge unless requested', async () => {
+    mocks.setResponse({ boards: [boardPayload] });
+
+    const result = await callToolByNameRawAsync('get_board_info', { boardId: 123 });
+    const parsed = parseToolResult(result);
+
+    expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+    expect(parsed).not.toHaveProperty('knowledge');
+  });
+
+  it('returns null without fetching board knowledge when the feature flag is disabled', async () => {
     const flagChecker = jest.fn().mockReturnValue(false);
     mocks.setResponse({ boards: [boardPayload] });
 
     const result = await callToolByNameRawAsync(
       'get_board_info',
-      { boardId: 123 },
+      { boardId: 123, includeKnowledge: true },
       { mondayApiToken: 'test-token', deps: { flagChecker } },
     );
     const parsed = parseToolResult(result);
 
     expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
-    expect(parsed).not.toHaveProperty('knowledge');
+    expect(parsed.knowledge).toBeNull();
     expect(flagChecker).toHaveBeenCalledWith(GET_BOARD_INFO_ENTITY_KNOWLEDGE_FLAG);
   });
 
-  it('does not advertise board knowledge when the feature flag is disabled', () => {
+  it('keeps the stable input schema but does not advertise board knowledge when the feature flag is disabled', () => {
     const tool = new GetBoardInfoTool(mocks.mockApiClient, 'test-token', {
       deps: { flagChecker: () => false },
     });
 
-    expect(tool.getDescription()).not.toContain('generated board knowledge');
+    expect(tool.getInputSchema()).toHaveProperty('includeKnowledge');
+    expect(tool.getDescription()).not.toContain('includeKnowledge');
+  });
+
+  it('advertises includeKnowledge for interpreting the board when the feature flag is enabled', () => {
+    const tool = new GetBoardInfoTool(mocks.mockApiClient, 'test-token', {
+      deps: { flagChecker: () => true },
+    });
+
+    expect(tool.getDescription()).toContain(
+      'Set includeKnowledge to true when you need to interpret the board rather than just read its configuration',
+    );
   });
 });

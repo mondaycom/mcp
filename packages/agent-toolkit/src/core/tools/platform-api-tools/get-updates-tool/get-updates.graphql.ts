@@ -1,8 +1,8 @@
 import { gql } from 'graphql-request';
 
-export const getItemUpdates = gql`
-  query GetItemUpdates($itemId: ID!, $limit: Int, $page: Int, $includeReplies: Boolean!, $includeAssets: Boolean!) {
-    items(ids: [$itemId], limit: 1) {
+export const getItemsUpdates = gql`
+  query GetItemsUpdates($itemIds: [ID!]!, $itemsLimit: Int, $limit: Int, $page: Int, $includeReplies: Boolean!, $includeAssets: Boolean!) {
+    items(ids: $itemIds, limit: $itemsLimit) {
       id
       url
       updates(limit: $limit, page: $page) {

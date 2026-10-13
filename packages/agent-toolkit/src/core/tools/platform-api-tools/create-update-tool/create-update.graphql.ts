@@ -12,3 +12,16 @@ export const createUpdate = gql`
     }
   }
 `;
+
+export const getItemUpdateReplyIds = gql`
+  query getItemUpdateReplyIds($itemId: ID!) {
+    items(ids: [$itemId], limit: 1) {
+      updates(limit: 100) {
+        id
+        replies {
+          id
+        }
+      }
+    }
+  }
+`;

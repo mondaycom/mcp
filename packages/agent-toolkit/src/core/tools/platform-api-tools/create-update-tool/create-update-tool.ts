@@ -2,17 +2,21 @@ import { z } from 'zod';
 import {
   CreateUpdateMutation,
   CreateUpdateMutationVariables,
+  GetItemUpdateReplyIdsQuery,
   MentionType,
   UpdateMention,
 } from '../../../../monday-graphql/generated/graphql/graphql';
-import { createUpdate } from './create-update.graphql';
+import { createUpdate, getItemUpdateReplyIds } from './create-update.graphql';
+import { GraphQLErrorResponse } from '../../../../utils/graphql-error.types';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { rethrowWithContext } from '../../../../utils';
 
 export const mentionSchema = z.object({
   id: z.string().describe('The ID of the entity to mention'),
-  type: z.nativeEnum(MentionType).describe('The type of mention: User, Team, Board, or Project'),
+  type: z
+    .nativeEnum(MentionType)
+    .describe('The type of mention: User, Team, Board, or Project. Mention an AI agent as User, not Agent'),
 });
 
 export const mentionsListSchema = z.array(mentionSchema);
@@ -28,12 +32,14 @@ export const createUpdateToolSchema = {
     .string()
     .optional()
     .describe(
-      'Optional JSON array of mentions in the format: [{"id": "123", "type": "User"}, {"id": "456", "type": "Team"}]. Valid types are: User, Team, Board, Project',
+      'Optional JSON array of mentions in the format: [{"id": "123", "type": "User"}, {"id": "456", "type": "Team"}]. Valid types are: User, Team, Board, Project. To mention an AI agent, use type User with the agent\'s user id from list_users_and_teams. Type Agent adds no mention',
     ),
   parentId: z
     .number()
     .optional()
-    .describe('The ID of the update to reply to. Use this parameter when you want to reply on an existing update leave it empty if you want to create a new update'),
+    .describe(
+      'The ID of the update to reply to. Use this parameter when you want to reply on an existing update leave it empty if you want to create a new update. Replies cannot be nested: if this is the ID of a reply, the reply is posted on its parent update instead.',
+    ),
 };
 
 export class CreateUpdateTool extends BaseMondayApiTool<typeof createUpdateToolSchema> {
@@ -80,7 +86,7 @@ export class CreateUpdateTool extends BaseMondayApiTool<typeof createUpdateToolS
         parentId: input.parentId?.toString(),
       };
 
-      const res = await this.mondayApi.request<CreateUpdateMutation>(createUpdate, variables);
+      const res = await this.createUpdate(variables);
 
       if (!res.create_update?.id) {
         throw new Error('Failed to create update: no update created');
@@ -93,4 +99,30 @@ export class CreateUpdateTool extends BaseMondayApiTool<typeof createUpdateToolS
       rethrowWithContext(error, 'create update');
     }
   }
+
+  private async createUpdate(variables: CreateUpdateMutationVariables): Promise<CreateUpdateMutation> {
+    try {
+      return await this.mondayApi.request<CreateUpdateMutation>(createUpdate, variables);
+    } catch (error) {
+      if (!variables.parentId || !isReplyToReplyError(error)) {
+        throw error;
+      }
+      const parentUpdateId = await this.findParentUpdateId(variables.itemId, variables.parentId);
+      if (!parentUpdateId) {
+        throw error;
+      }
+      return this.mondayApi.request<CreateUpdateMutation>(createUpdate, { ...variables, parentId: parentUpdateId });
+    }
+  }
+
+  private async findParentUpdateId(itemId: string, replyId: string): Promise<string | undefined> {
+    const res = await this.mondayApi.request<GetItemUpdateReplyIdsQuery>(getItemUpdateReplyIds, { itemId });
+    return res.items?.[0]?.updates?.find((update) => update.replies?.some((reply) => reply.id === replyId))?.id;
+  }
+}
+
+function isReplyToReplyError(error: unknown): boolean {
+  return !!(error as GraphQLErrorResponse)?.response?.errors?.some(
+    (e) => e.extensions?.code === 'REPLY_TO_REPLY_NOT_ALLOWED',
+  );
 }

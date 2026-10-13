@@ -1,9 +1,20 @@
 import { parse } from 'graphql';
-import { AllMondayApiTool } from './all-monday-api-tool';
+import { z } from 'zod';
+import { zodToJsonSchema } from 'zod-to-json-schema';
+import { AllMondayApiTool, allMondayApiToolSchema } from './all-monday-api-tool';
 import type { ApiClient } from '@mondaydotcomorg/api';
 
 describe('AllMondayApiTool', () => {
   const mockMondayApi = {} as ApiClient;
+
+  it('defaults omitted variables to an empty object without requiring them in the JSON Schema', () => {
+    const schema = z.object(allMondayApiToolSchema);
+    const jsonSchema = zodToJsonSchema(schema) as any;
+
+    expect(schema.parse({ query: 'query { boards { id } }' }).variables).toBe('{}');
+    expect(jsonSchema.required).toEqual(['query']);
+    expect(jsonSchema.properties.variables.default).toBe('{}');
+  });
 
   it('throws on invalid variables JSON', async () => {
     const tool = new AllMondayApiTool(mockMondayApi);
