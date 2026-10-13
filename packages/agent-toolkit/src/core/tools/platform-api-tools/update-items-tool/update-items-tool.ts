@@ -3,7 +3,12 @@ import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { ChangeItemColumnValuesTool } from '../change-item-column-values-tool';
 import { COLUMN_VALUES_FORMAT_GUIDE } from '../column-values.utils';
-import { runWithRateLimitCircuit, ToolValidationError, GRAPHQL_ERROR_CODE } from '../../../../utils';
+import {
+  runWithRateLimitCircuit,
+  ToolValidationError,
+  GRAPHQL_ERROR_CODE,
+  MISSING_REQUIRED_PARAMETER_CODE,
+} from '../../../../utils';
 import { MAX_UPDATES_PER_CALL, CONCURRENCY_LIMIT, RATE_LIMIT_SKIPPED_CODE } from './constants';
 
 type PerUpdateResult =
@@ -11,11 +16,16 @@ type PerUpdateResult =
   | { index: number; [k: string]: unknown };
 
 const updateSchema = z.object({
-  itemId: z.number().describe('The id of the item to update.'),
+  itemId: z
+    .number()
+    // Optional in the schema only: Copilot Studio never sends calls whose array rows have required fields (#499).
+    .optional()
+    .describe('Required. The id of the item to update.'),
   columnValues: z
     .string()
+    .default('{}')
     .describe(
-      `The new column values for this item, keyed by column id. To change the item name include a "name" key. ${COLUMN_VALUES_FORMAT_GUIDE}`,
+      `The new column values for this item, keyed by column id. Defaults to "{}" (no column values). To change the item name include a "name" key. ${COLUMN_VALUES_FORMAT_GUIDE}`,
     ),
   boardId: z
     .number()
@@ -83,6 +93,19 @@ export class UpdateItemsTool extends BaseMondayApiTool<UpdateItemsToolInput> {
   protected async executeInternal(
     input: ToolInputType<UpdateItemsToolInput>,
   ): Promise<ToolOutputType<never>> {
+    const missingItemIds = input.updates.flatMap((update, index) =>
+      update.itemId === undefined
+        ? [extractErrorEntry(new ToolValidationError('Item id is required', MISSING_REQUIRED_PARAMETER_CODE), index)]
+        : [],
+    );
+    if (missingItemIds.length) {
+      throw new ToolValidationError(
+        `${missingItemIds.length} of ${input.updates.length} updates are missing the required itemId field`,
+        MISSING_REQUIRED_PARAMETER_CODE,
+        missingItemIds,
+      );
+    }
+
     this.sessionContext.metadata ??= {};
     this.sessionContext.metadata.items_count = input.updates.length;
 
@@ -97,7 +120,7 @@ export class UpdateItemsTool extends BaseMondayApiTool<UpdateItemsToolInput> {
     if (missingBoardIndexes.length > 0) {
       throw new ToolValidationError(
         `Missing boardId for update(s) at index ${missingBoardIndexes.join(', ')}. Set a boardId on each update or provide a batch-level boardId.`,
-        'MISSING_REQUIRED_PARAMETER',
+        MISSING_REQUIRED_PARAMETER_CODE,
       );
     }
 
@@ -108,7 +131,7 @@ export class UpdateItemsTool extends BaseMondayApiTool<UpdateItemsToolInput> {
       const boardId = resolvedBoardIds[index] as number;
       const result = await singleTool.execute({
         boardId,
-        itemId: update.itemId,
+        itemId: update.itemId as number,
         columnValues: update.columnValues,
         createLabelsIfMissing: update.createLabelsIfMissing,
       });

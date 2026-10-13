@@ -1,8 +1,11 @@
 import { z } from 'zod';
+import { zodToJsonSchema } from 'zod-to-json-schema';
+import { buildToolErrorStructuredContent, ToolValidationError } from '../../../../utils';
 import { createMockApiClient } from '../test-utils/mock-api-client';
 import {
   UpdateItemsTool,
   updateItemsInBoardToolSchema,
+  updateItemsToolSchema,
 } from './update-items-tool';
 import { CONCURRENCY_LIMIT, MAX_UPDATES_PER_CALL } from './constants';
 
@@ -289,6 +292,30 @@ describe('Update Items Tool Behaviour', () => {
     });
   });
 
+  describe('Handler validation', () => {
+    it('rejects updates without an itemId before any API request', async () => {
+      const tool = new UpdateItemsTool(mocks.mockApiClient, { boardId: 456 });
+
+      const error = await tool
+        .execute({
+          updates: [
+            { itemId: 1, columnValues: '{}' },
+            { columnValues: '{}' },
+            { columnValues: '{}' },
+          ],
+        })
+        .catch((e) => e);
+
+      expect(error).toBeInstanceOf(ToolValidationError);
+      expect(error.message).toBe('2 of 3 updates are missing the required itemId field');
+      expect(buildToolErrorStructuredContent(error, { toolName: 'update_items' }).errors).toEqual([
+        { code: 'MISSING_REQUIRED_PARAMETER', message: 'Item id is required', path: ['results', 1] },
+        { code: 'MISSING_REQUIRED_PARAMETER', message: 'Item id is required', path: ['results', 2] },
+      ]);
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+  });
+
   describe('Rate limit abort', () => {
     const rateLimit429 = () => {
       const err = new Error('GraphQL Error');
@@ -407,9 +434,24 @@ describe('Update Items Tool Behaviour', () => {
   describe('Schema validation', () => {
     const schema = z.object(updateItemsInBoardToolSchema);
 
-    it('rejects an update without columnValues', () => {
+    it('defaults columnValues to "{}" when omitted', () => {
       const result = schema.safeParse({ boardId: 456, updates: [{ itemId: 1 }] });
-      expect(result.success).toBe(false);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.updates[0].columnValues).toBe('{}');
+      }
+    });
+
+    it.each([
+      ['with a board in context', updateItemsToolSchema],
+      ['without a board in context', updateItemsInBoardToolSchema],
+    ])('emits update rows without required fields %s, so Copilot Studio sends the call (#499)', (_, shape) => {
+      const jsonSchema = zodToJsonSchema(z.object(shape) as any) as any;
+      const row = jsonSchema.properties.updates.items;
+
+      expect(row.required).toBeUndefined();
+      expect(row.properties.columnValues.default).toBe('{}');
+      expect(jsonSchema.required).toEqual(['updates']);
     });
 
     it('rejects an empty updates array', () => {
