@@ -1,5 +1,14 @@
 # Changelog
 
+## 5.75.0
+
+### `get_updates` takes ids only in `objectIds`
+
+- **Breaking for callers:** `objectId` is removed. `objectIds` is now required: up to 25 item IDs for Item, or exactly one board ID for Board. With `objectId` optional, models sent Board queries with no ID at all and got "Provide exactly one of objectId or objectIds".
+- Item queries always return the per-item shape (`items[]` with `item_id`, `url`, `updates`, `count`, plus `not_found`), for one item or many.
+- `fromDate` / `toDate` now work for Item queries too. They filter the fetched page by each update's `created_at`.
+- Invalid input (a half date range, more than one board ID) throws a `ToolValidationError` with code `INVALID_TOOL_ARGS` instead of a generic execution failure.
+
 ## 5.74.3
 
 ### Make `update_items` work in Copilot Studio
