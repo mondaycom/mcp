@@ -8,7 +8,6 @@ import {
   ToolValidationError,
   MISSING_REQUIRED_PARAMETER_CODE,
 } from '../../../../utils';
-import { getBulkOperationOutcome } from '../../../../utils/bulk-operation.utils';
 import {
   MAX_ITEMS_PER_CALL,
   CONCURRENCY_LIMIT,
@@ -117,6 +116,8 @@ export class CreateItemsTool extends BaseMondayApiTool<CreateItemsToolInput> {
     }
 
     const boardId = this.context?.boardId ?? (input as ToolInputType<typeof createItemsInBoardToolSchema>).boardId;
+    this.sessionContext.metadata ??= {};
+    this.sessionContext.metadata.items_count = input.items.length;
     const singleTool = new CreateItemTool(this.mondayApi, { boardId });
     const skipMessage = 'Skipped: a previous item hit the minute rate limit; this item was not attempted';
 
@@ -157,8 +158,7 @@ export class CreateItemsTool extends BaseMondayApiTool<CreateItemsToolInput> {
     const results = raw.map(({ _errorEntry, ...rest }) => rest);
     const total = raw.length;
     const failed = errors.length;
-    const { metadata, isPartialSuccess, isError } = getBulkOperationOutcome(total, failed);
-    this.sessionContext.metadata = { ...this.sessionContext.metadata, ...metadata };
+    const isPartialSuccess = failed > 0 && failed < total;
 
     const content: Record<string, unknown> = {
       board_id: boardId,
@@ -171,7 +171,7 @@ export class CreateItemsTool extends BaseMondayApiTool<CreateItemsToolInput> {
       content.errors = errors;
     }
 
-    return { content, ...(isError ? { isError: true } : {}) };
+    return { content, ...(failed === total ? { isError: true } : {}) };
   }
 }
 

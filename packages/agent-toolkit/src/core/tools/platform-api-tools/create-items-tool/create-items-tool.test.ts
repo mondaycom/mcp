@@ -567,11 +567,7 @@ describe('Create Items Tool Behaviour', () => {
         sessionContext,
       );
 
-      expect(sessionContext.metadata).toEqual({
-        items_count: 3,
-        items_failed: 0,
-        outcome: 'success',
-      });
+      expect(sessionContext.metadata).toEqual({ items_count: 3 });
     });
 
     it('records items_count even when some items fail', async () => {
@@ -595,11 +591,7 @@ describe('Create Items Tool Behaviour', () => {
         sessionContext,
       );
 
-      expect(sessionContext.metadata).toEqual({
-        items_count: 2,
-        items_failed: 1,
-        outcome: 'partial',
-      });
+      expect(sessionContext.metadata).toEqual({ items_count: 2 });
     });
   });
 

@@ -387,11 +387,7 @@ describe('Update Items Tool Behaviour', () => {
         sessionContext,
       );
 
-      expect(sessionContext.metadata).toEqual({
-        items_count: 2,
-        items_failed: 0,
-        outcome: 'success',
-      });
+      expect(sessionContext.metadata).toEqual({ items_count: 2 });
     });
 
     it('records is_partial_success=true when some updates fail', async () => {
@@ -415,11 +411,7 @@ describe('Update Items Tool Behaviour', () => {
         sessionContext,
       );
 
-      expect(sessionContext.metadata).toEqual({
-        items_count: 2,
-        items_failed: 1,
-        outcome: 'partial',
-      });
+      expect(sessionContext.metadata).toEqual({ items_count: 2 });
     });
 
     it('records is_partial_success=false when all updates fail (total failure)', async () => {
@@ -436,11 +428,7 @@ describe('Update Items Tool Behaviour', () => {
       expect(c.summary).toEqual({ total: 1, updated: 0, failed: 1 });
       expect(c.is_partial_success).toBe(false);
       expect(result.isError).toBe(true);
-      expect(sessionContext.metadata).toEqual({
-        items_count: 1,
-        items_failed: 1,
-        outcome: 'failed',
-      });
+      expect(sessionContext.metadata).toEqual({ items_count: 1 });
     });
   });
 
