@@ -1,4 +1,7 @@
-import { CreateFormMutation, CreateFormMutationVariables } from '../../../../../monday-graphql/generated/graphql';
+import {
+  CreateFormMutation,
+  CreateFormMutationVariables,
+} from '../../../../../monday-graphql/generated/graphql/graphql';
 import { createForm } from '../workforms.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../../base-monday-api-tool';
@@ -15,7 +18,7 @@ export class CreateFormTool extends BaseMondayApiTool<typeof createFormToolSchem
   });
 
   getDescription(): string {
-    return 'Create a monday.com form. This will create a new form as well as a new board for which the form’s responses will be stored. The returned board_id is the ID of the board that was created while the returned formToken can be used for all future queries and mutations to continue editing the form.';
+    return 'Create a monday.com form. Also creates a backing board to store responses. Returns the formToken for future mutations.';
   }
 
   getInputSchema(): typeof createFormToolSchema {
@@ -38,7 +41,11 @@ export class CreateFormTool extends BaseMondayApiTool<typeof createFormToolSchem
     const res = await this.mondayApi.request<CreateFormMutation>(createForm, variables);
 
     return {
-      content: `Form created successfully. Board ID: ${res.create_form?.boardId}, Token: ${res.create_form?.token}`,
+      content: {
+        message: 'Form created successfully',
+        board_id: res.create_form?.boardId,
+        form_token: res.create_form?.token,
+      },
     };
   }
 }

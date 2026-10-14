@@ -3,8 +3,6 @@ import { BaseMondayApiTool, createMondayApiAnnotations } from '../../base-monday
 import { FormQuestionActions } from '../workforms.types';
 import { formQuestionsEditorToolSchema } from './schema';
 import { FormQuestionsEditorToolHelpers } from '../utils/form-questions-editor-tool-helpers';
-import { fallbackToStringifiedVersionIfNull } from 'src/utils/microsoft-copilot.utils';
-
 export class FormQuestionsEditorTool extends BaseMondayApiTool<typeof formQuestionsEditorToolSchema, never> {
   name = 'form_questions_editor';
   type = ToolType.WRITE;
@@ -15,7 +13,7 @@ export class FormQuestionsEditorTool extends BaseMondayApiTool<typeof formQuesti
     idempotentHint: false,
   });
 
-  private helpers = new FormQuestionsEditorToolHelpers(this.mondayApi);
+  private helpers = new FormQuestionsEditorToolHelpers(() => this.mondayApi);
 
   private readonly actionHandlers = new Map<
     FormQuestionActions,
@@ -27,7 +25,7 @@ export class FormQuestionsEditorTool extends BaseMondayApiTool<typeof formQuesti
   ]);
 
   getDescription(): string {
-    return 'Create, update, or delete a question in a monday.com form';
+    return 'Create, update, or delete a question in a monday.com form. [REQUIRED PRECONDITION]: For update and delete, call get_form first to resolve the exact question id and see its current type and settings — never guess a question id. For create, get_form shows the existing questions so you do not duplicate one.';
   }
 
   getInputSchema(): typeof formQuestionsEditorToolSchema {
@@ -44,8 +42,7 @@ export class FormQuestionsEditorTool extends BaseMondayApiTool<typeof formQuesti
         content: `Unknown action: ${input.action}`,
       };
     }
-    
-    fallbackToStringifiedVersionIfNull(input, 'question', formQuestionsEditorToolSchema.question);
+
     return await handler(input);
   }
 }

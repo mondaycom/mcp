@@ -1,16 +1,8 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
-import { callToolByNameRawAsync, createMockApiClient } from '../../test-utils/mock-api-client';
+import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '../../test-utils/mock-api-client';
 import { updateFormToolSchema, FormActions } from './schema';
 import { z, ZodTypeAny } from 'zod';
-import {
-  BackgroundType,
-  Direction,
-  Format,
-  Alignment,
-  LogoPosition,
-  LogoSize,
-  FontSize,
-} from '../workforms.types';
+import { BackgroundType, Direction, Format, Alignment, LogoPosition, LogoSize, FontSize } from '../workforms.types';
 
 export type inputType = z.objectInputType<typeof updateFormToolSchema, ZodTypeAny>;
 
@@ -48,7 +40,7 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toBe('Form successfully activated.');
+        expect(result.structuredContent.message).toContain('Form successfully activated');
         expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -97,7 +89,8 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toBe('Form successfully deactivated.');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Form successfully deactivated');
         expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -144,7 +137,8 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toBe('Form URL successfully shortened.');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Form URL successfully shortened');
         expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -194,7 +188,8 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toBe('Form password successfully set.');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Form password successfully set');
         expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -226,7 +221,8 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toBe('Form password successfully set.');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Form password successfully set');
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].input.password).toBe('newPassword456');
@@ -244,7 +240,7 @@ describe('UpdateFormTool', () => {
         const result = await callToolByNameRawAsync('update_form', args);
 
         expect(result.content[0].text).toBe(
-          'formPassword is required for the action "setFormPassword" in the update form tool.'
+          'formPassword is required for the action "setFormPassword" in the update form tool.',
         );
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
@@ -271,12 +267,11 @@ describe('UpdateFormTool', () => {
 
   describe('Create Tag Action', () => {
     describe('Success Cases', () => {
-      it('should create a tag with name and value', async () => {
+      it('should create a tag with a name', async () => {
         const createTagResponse = {
           create_form_tag: {
             id: 'tag_123',
             name: 'utm_source',
-            value: 'google',
             columnId: 'column_456',
           },
         };
@@ -288,15 +283,15 @@ describe('UpdateFormTool', () => {
           formToken: 'token_123',
           tag: {
             name: 'utm_source',
-            value: 'google',
           },
         };
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Tag successfully added:');
-        expect(result.content[0].text).toContain('tag_123');
-        expect(result.content[0].text).toContain('utm_source');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Tag successfully added');
+        expect(parsed.data.id).toBe('tag_123');
+        expect(parsed.data.name).toBe('utm_source');
         expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -305,71 +300,8 @@ describe('UpdateFormTool', () => {
           formToken: 'token_123',
           tag: {
             name: 'utm_source',
-            value: 'google',
           },
         });
-      });
-
-      it('should create a tag with name only (no value)', async () => {
-        const createTagResponse = {
-          create_form_tag: {
-            id: 'tag_456',
-            name: 'campaign',
-            value: undefined,
-            columnId: 'column_789',
-          },
-        };
-
-        mocks.setResponse(createTagResponse);
-
-        const args: inputType = {
-          action: FormActions.createTag,
-          formToken: 'token_123',
-          tag: {
-            name: 'campaign',
-          },
-        };
-
-        const result = await callToolByNameRawAsync('update_form', args);
-
-        expect(result.content[0].text).toContain('Tag successfully added:');
-        expect(result.content[0].text).toContain('campaign');
-
-        const mockCall = mocks.getMockRequest().mock.calls[0];
-        expect(mockCall[1].tag.name).toBe('campaign');
-        expect(mockCall[1].tag.value).toBeUndefined();
-      });
-
-      it('should handle tagStringified parameter for Microsoft Copilot', async () => {
-        const createTagResponse = {
-          create_form_tag: {
-            id: 'tag_stringified',
-            name: 'utm_medium',
-            value: 'email',
-            columnId: 'column_999',
-          },
-        };
-
-        mocks.setResponse(createTagResponse);
-
-        const tagObject = {
-          name: 'utm_medium',
-          value: 'email',
-        };
-
-        const args: inputType = {
-          action: FormActions.createTag,
-          formToken: 'token_123',
-          tagStringified: JSON.stringify(tagObject),
-          // tag is omitted, fallback will use tagStringified
-        };
-
-        const result = await callToolByNameRawAsync('update_form', args);
-
-        expect(result.content[0].text).toContain('Tag successfully added:');
-
-        const mockCall = mocks.getMockRequest().mock.calls[0];
-        expect(mockCall[1].tag).toEqual(tagObject);
       });
     });
 
@@ -392,16 +324,14 @@ describe('UpdateFormTool', () => {
           action: FormActions.createTag,
           formToken: 'token_123',
           tag: {
-            value: 'test_value',
             // name is missing
-          }
+            columnId: 'column_456',
+          },
         };
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toBe(
-          'Tag name is required for the action "createTag" in the update form tool.'
-        );
+        expect(result.content[0].text).toBe('Tag name is required for the action "createTag" in the update form tool.');
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
     });
@@ -416,7 +346,6 @@ describe('UpdateFormTool', () => {
           formToken: 'token_123',
           tag: {
             name: 'existing_tag',
-            value: 'value',
           },
         };
 
@@ -447,7 +376,8 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toBe('Tag with id: tag_to_delete successfully deleted.');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Tag deleted');
         expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -475,36 +405,11 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toBe('Tag with id: another_tag_id successfully deleted.');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Tag deleted');
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].tagId).toBe('another_tag_id');
-      });
-
-      it('should handle tagStringified parameter for Microsoft Copilot', async () => {
-        const deleteTagResponse = {
-          delete_form_tag: true,
-        };
-
-        mocks.setResponse(deleteTagResponse);
-
-        const tagObject = {
-          id: 'tag_stringified',
-        };
-
-        const args: inputType = {
-          action: FormActions.deleteTag,
-          formToken: 'token_123',
-          tagStringified: JSON.stringify(tagObject),
-          // tag is omitted, fallback will use tagStringified
-        };
-
-        const result = await callToolByNameRawAsync('update_form', args);
-
-        expect(result.content[0].text).toBe('Tag with id: tag_stringified successfully deleted.');
-
-        const mockCall = mocks.getMockRequest().mock.calls[0];
-        expect(mockCall[1].tagId).toBe('tag_stringified');
       });
     });
 
@@ -528,7 +433,7 @@ describe('UpdateFormTool', () => {
           formToken: 'token_123',
           tag: {
             // id is missing
-          }
+          },
         };
 
         const result = await callToolByNameRawAsync('update_form', args);
@@ -555,203 +460,6 @@ describe('UpdateFormTool', () => {
 
         expect(result.content[0].text).toContain('Failed to execute tool update_form');
         expect(result.content[0].text).toContain(errorMessage);
-      });
-    });
-  });
-
-  describe('Update Tag Action', () => {
-    describe('Success Cases', () => {
-      it('should update a tag successfully', async () => {
-        const updateTagResponse = {
-          update_form_tag: {
-            id: 'tag_123',
-            name: 'utm_source',
-            value: 'updated_value',
-            columnId: 'column_456',
-          },
-        };
-
-        mocks.setResponse(updateTagResponse);
-
-        const args: inputType = {
-          action: FormActions.updateTag,
-          formToken: 'token_123',
-          tag: {
-            id: 'tag_123',
-            value: 'updated_value',
-          },
-        };
-
-        const result = await callToolByNameRawAsync('update_form', args);
-
-        expect(result.content[0].text).toBe('Tag with id: tag_123 successfully updated to value: updated_value.');
-        expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
-
-        const mockCall = mocks.getMockRequest().mock.calls[0];
-        expect(mockCall[0]).toContain('mutation updateFormTag');
-        expect(mockCall[1]).toEqual({
-          formToken: 'token_123',
-          tagId: 'tag_123',
-          tag: {
-            value: 'updated_value',
-          },
-        });
-      });
-
-      it('should update a tag with different value', async () => {
-        const updateTagResponse = {
-          update_form_tag: {
-            id: 'tag_456',
-            name: 'campaign',
-            value: 'summer_2024',
-            columnId: 'column_789',
-          },
-        };
-
-        mocks.setResponse(updateTagResponse);
-
-        const args: inputType = {
-          action: FormActions.updateTag,
-          formToken: 'token_456',
-          tag: {
-            id: 'tag_456',
-            value: 'summer_2024',
-          },
-        };
-
-        const result = await callToolByNameRawAsync('update_form', args);
-
-        expect(result.content[0].text).toBe('Tag with id: tag_456 successfully updated to value: summer_2024.');
-
-        const mockCall = mocks.getMockRequest().mock.calls[0];
-        expect(mockCall[1].tagId).toBe('tag_456');
-        expect(mockCall[1].tag.value).toBe('summer_2024');
-      });
-
-      it('should handle tagStringified parameter for Microsoft Copilot', async () => {
-        const updateTagResponse = {
-          update_form_tag: {
-            id: 'tag_stringified',
-            name: 'utm_medium',
-            value: 'copilot_value',
-            columnId: 'column_999',
-          },
-        };
-
-        mocks.setResponse(updateTagResponse);
-
-        const tagObject = {
-          id: 'tag_stringified',
-          value: 'copilot_value',
-        };
-
-        const args: inputType = {
-          action: FormActions.updateTag,
-          formToken: 'token_123',
-          tagStringified: JSON.stringify(tagObject),
-          // tag is omitted, fallback will use tagStringified
-        };
-
-        const result = await callToolByNameRawAsync('update_form', args);
-
-        expect(result.content[0].text).toBe('Tag with id: tag_stringified successfully updated to value: copilot_value.');
-
-        const mockCall = mocks.getMockRequest().mock.calls[0];
-        expect(mockCall[1].tagId).toBe('tag_stringified');
-        expect(mockCall[1].tag.value).toBe('copilot_value');
-      });
-    });
-
-    describe('Validation Errors', () => {
-      it('should return error when tag is missing', async () => {
-        const args: inputType = {
-          action: FormActions.updateTag,
-          formToken: 'token_123',
-          // tag is missing
-        };
-
-        const result = await callToolByNameRawAsync('update_form', args);
-
-        expect(result.content[0].text).toBe('Tag is required for the action "updateTag" in the update form tool.');
-        expect(mocks.getMockRequest()).not.toHaveBeenCalled();
-      });
-
-      it('should return error when tag id is missing', async () => {
-        const args: inputType = {
-          action: FormActions.updateTag,
-          formToken: 'token_123',
-          tag: {
-            value: 'test_value',
-            // id is missing
-          },
-        };
-
-        const result = await callToolByNameRawAsync('update_form', args);
-
-        expect(result.content[0].text).toBe(
-          'Tag id and value are required for the action "updateTag" in the update form tool.'
-        );
-        expect(mocks.getMockRequest()).not.toHaveBeenCalled();
-      });
-
-      it('should return error when tag value is missing', async () => {
-        const args: inputType = {
-          action: FormActions.updateTag,
-          formToken: 'token_123',
-          tag: {
-            id: 'tag_123',
-            // value is missing
-          }
-        };
-
-        const result = await callToolByNameRawAsync('update_form', args);
-
-        expect(result.content[0].text).toBe(
-          'Tag id and value are required for the action "updateTag" in the update form tool.'
-        );
-        expect(mocks.getMockRequest()).not.toHaveBeenCalled();
-      });
-    });
-
-    describe('GraphQL Errors', () => {
-      it('should handle GraphQL request exception', async () => {
-        const errorMessage = 'Tag not found';
-        mocks.setError(errorMessage);
-
-        const args: inputType = {
-          action: FormActions.updateTag,
-          formToken: 'token_123',
-          tag: {
-            id: 'nonexistent_tag',
-            value: 'new_value',
-          },
-        };
-
-        const result = await callToolByNameRawAsync('update_form', args);
-
-        expect(result.content[0].text).toContain('Failed to execute tool update_form');
-        expect(result.content[0].text).toContain(errorMessage);
-      });
-
-      it('should handle GraphQL mutation returning null', async () => {
-        const updateTagResponse = {
-          update_form_tag: null,
-        };
-
-        mocks.setResponse(updateTagResponse);
-
-        const args: inputType = {
-          action: FormActions.updateTag,
-          formToken: 'token_123',
-          tag: {
-            id: 'tag_123',
-            value: 'new_value',
-          },
-        };
-
-        const result = await callToolByNameRawAsync('update_form', args);
-
-        expect(result.content[0].text).toBe('Unable to update tag with id: tag_123.');
       });
     });
   });
@@ -827,8 +535,9 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Appearance successfully updated:');
-        expect(result.content[0].text).toContain('#ffffff');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Appearance successfully updated');
+        expect(parsed.data.background.value).toBe('#ffffff');
         expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -862,7 +571,8 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Appearance successfully updated:');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Appearance successfully updated');
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].appearance.primaryColor).toBe('#ff0000');
@@ -898,43 +608,12 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Appearance successfully updated:');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Appearance successfully updated');
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].appearance.background.type).toBe(BackgroundType.Image);
         expect(mockCall[1].appearance.background.value).toBe('https://example.com/image.jpg');
-      });
-
-      it('should handle formStringified parameter for Microsoft Copilot', async () => {
-        const updateAppearanceResponse = {
-          update_form_settings: {
-            appearance: {
-              primaryColor: '#00ff00',
-            },
-          },
-        };
-
-        mocks.setResponse(updateAppearanceResponse);
-
-        const formObject = {
-          appearance: {
-            primaryColor: '#00ff00',
-          },
-        };
-
-        const args: inputType = {
-          action: FormActions.updateAppearance,
-          formToken: 'token_123',
-          formStringified: JSON.stringify(formObject),
-          // form is omitted, fallback will use formStringified
-        };
-
-        const result = await callToolByNameRawAsync('update_form', args);
-
-        expect(result.content[0].text).toContain('Appearance successfully updated:');
-
-        const mockCall = mocks.getMockRequest().mock.calls[0];
-        expect(mockCall[1].appearance.primaryColor).toBe('#00ff00');
       });
     });
 
@@ -951,7 +630,7 @@ describe('UpdateFormTool', () => {
         const result = await callToolByNameRawAsync('update_form', args);
 
         expect(result.content[0].text).toBe(
-          'Appearance is required for the action "updateAppearance" in the update form tool.'
+          'Appearance is required for the action "updateAppearance" in the update form tool.',
         );
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
@@ -966,7 +645,7 @@ describe('UpdateFormTool', () => {
         const result = await callToolByNameRawAsync('update_form', args);
 
         expect(result.content[0].text).toBe(
-          'Appearance is required for the action "updateAppearance" in the update form tool.'
+          'Appearance is required for the action "updateAppearance" in the update form tool.',
         );
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
@@ -1022,8 +701,9 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Accessibility successfully updated:');
-        expect(result.content[0].text).toContain('Company Logo');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Accessibility successfully updated');
+        expect(parsed.data.logoAltText).toBe('Company Logo');
         expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -1060,45 +740,11 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Accessibility successfully updated:');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Accessibility successfully updated');
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].accessibility.language).toBe('es');
-      });
-
-      it('should handle formStringified parameter for Microsoft Copilot', async () => {
-        const updateAccessibilityResponse = {
-          update_form_settings: {
-            accessibility: {
-              language: 'fr',
-              logoAltText: 'Logo de la société',
-            },
-          },
-        };
-
-        mocks.setResponse(updateAccessibilityResponse);
-
-        const formObject = {
-          accessibility: {
-            language: 'fr',
-            logoAltText: 'Logo de la société',
-          },
-        };
-
-        const args: inputType = {
-          action: FormActions.updateAccessibility,
-          formToken: 'token_123',
-          formStringified: JSON.stringify(formObject),
-          // form is omitted, fallback will use formStringified
-        };
-
-        const result = await callToolByNameRawAsync('update_form', args);
-
-        expect(result.content[0].text).toContain('Accessibility successfully updated:');
-
-        const mockCall = mocks.getMockRequest().mock.calls[0];
-        expect(mockCall[1].accessibility.language).toBe('fr');
-        expect(mockCall[1].accessibility.logoAltText).toBe('Logo de la société');
       });
     });
 
@@ -1115,7 +761,7 @@ describe('UpdateFormTool', () => {
         const result = await callToolByNameRawAsync('update_form', args);
 
         expect(result.content[0].text).toBe(
-          'Accessibility is required for the action "updateAccessibility" in the update form tool.'
+          'Accessibility is required for the action "updateAccessibility" in the update form tool.',
         );
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
@@ -1130,7 +776,7 @@ describe('UpdateFormTool', () => {
         const result = await callToolByNameRawAsync('update_form', args);
 
         expect(result.content[0].text).toBe(
-          'Accessibility is required for the action "updateAccessibility" in the update form tool.'
+          'Accessibility is required for the action "updateAccessibility" in the update form tool.',
         );
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
@@ -1205,7 +851,8 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Features successfully updated:');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Features successfully updated');
         expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -1242,7 +889,7 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Features successfully updated:');
+        expect(parseToolResult(result).message).toContain('Features successfully updated');
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].features.closeDate.enabled).toBe(true);
@@ -1276,7 +923,7 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Features successfully updated:');
+        expect(parseToolResult(result).message).toContain('Features successfully updated');
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].features.password.enabled).toBe(false);
@@ -1311,7 +958,7 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Features successfully updated:');
+        expect(parseToolResult(result).message).toContain('Features successfully updated');
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].features.requireLogin.enabled).toBe(true);
@@ -1347,7 +994,7 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Features successfully updated:');
+        expect(parseToolResult(result).message).toContain('Features successfully updated');
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].features.responseLimit.enabled).toBe(true);
@@ -1391,7 +1038,7 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Features successfully updated:');
+        expect(parseToolResult(result).message).toContain('Features successfully updated');
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].features.preSubmissionView.enabled).toBe(true);
@@ -1431,7 +1078,7 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Features successfully updated:');
+        expect(parseToolResult(result).message).toContain('Features successfully updated');
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].features.monday.itemGroupId).toBe('group_123');
@@ -1461,42 +1108,125 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Features successfully updated:');
+        expect(parseToolResult(result).message).toContain('Features successfully updated');
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].features.reCaptchaChallenge).toBe(true);
       });
 
-      it('should handle formStringified parameter for Microsoft Copilot', async () => {
+      it('should update features with ai_translate', async () => {
         const updateFeaturesResponse = {
           update_form_settings: {
             features: {
-              reCaptchaChallenge: false,
+              ai_translate: { enabled: true },
             },
           },
         };
 
         mocks.setResponse(updateFeaturesResponse);
 
-        const formObject = {
-          features: {
-            reCaptchaChallenge: false,
-          },
-        };
-
         const args: inputType = {
           action: FormActions.updateFeatures,
           formToken: 'token_123',
-          formStringified: JSON.stringify(formObject),
-          // form is omitted, fallback will use formStringified
+          form: {
+            features: {
+              ai_translate: { enabled: true },
+            },
+          },
         };
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Features successfully updated:');
+        expect(parseToolResult(result).message).toContain('Features successfully updated');
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
+        expect(mockCall[1].features.ai_translate.enabled).toBe(true);
+      });
+
+      it('should update features with monday allow_create_item', async () => {
+        const updateFeaturesResponse = {
+          update_form_settings: {
+            features: {
+              monday: { allow_create_item: true },
+            },
+          },
+        };
+
+        mocks.setResponse(updateFeaturesResponse);
+
+        const args: inputType = {
+          action: FormActions.updateFeatures,
+          formToken: 'token_123',
+          form: {
+            features: {
+              monday: { allow_create_item: true },
+            },
+          },
+        };
+
+        const result = await callToolByNameRawAsync('update_form', args);
+
+        expect(parseToolResult(result).message).toContain('Features successfully updated');
+
+        const mockCall = mocks.getMockRequest().mock.calls[0];
+        expect(mockCall[1].features.monday.allow_create_item).toBe(true);
+      });
+
+      it('should extract is_anonymous from features and pass at settings root', async () => {
+        const updateFeaturesResponse = {
+          update_form_settings: {
+            features: {},
+          },
+        };
+
+        mocks.setResponse(updateFeaturesResponse);
+
+        const args: inputType = {
+          action: FormActions.updateFeatures,
+          formToken: 'token_123',
+          form: {
+            features: {
+              is_anonymous: true,
+              reCaptchaChallenge: false,
+            },
+          },
+        };
+
+        const result = await callToolByNameRawAsync('update_form', args);
+
+        expect(parseToolResult(result).message).toContain('Features successfully updated');
+
+        const mockCall = mocks.getMockRequest().mock.calls[0];
+        expect(mockCall[1].is_anonymous).toBe(true);
         expect(mockCall[1].features.reCaptchaChallenge).toBe(false);
+        expect(mockCall[1].features.is_anonymous).toBeUndefined();
+      });
+
+      it('should pass is_anonymous alone inside features', async () => {
+        const updateFeaturesResponse = {
+          update_form_settings: {
+            features: {},
+          },
+        };
+
+        mocks.setResponse(updateFeaturesResponse);
+
+        const args: inputType = {
+          action: FormActions.updateFeatures,
+          formToken: 'token_123',
+          form: {
+            features: {
+              is_anonymous: false,
+            },
+          },
+        };
+
+        const result = await callToolByNameRawAsync('update_form', args);
+
+        expect(parseToolResult(result).message).toContain('Features successfully updated');
+
+        const mockCall = mocks.getMockRequest().mock.calls[0];
+        expect(mockCall[1].is_anonymous).toBe(false);
       });
     });
 
@@ -1513,7 +1243,7 @@ describe('UpdateFormTool', () => {
         const result = await callToolByNameRawAsync('update_form', args);
 
         expect(result.content[0].text).toBe(
-          'Features is required for the action "updateFeatures" in the update form tool.'
+          'Features is required for the action "updateFeatures" in the update form tool.',
         );
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
@@ -1528,7 +1258,7 @@ describe('UpdateFormTool', () => {
         const result = await callToolByNameRawAsync('update_form', args);
 
         expect(result.content[0].text).toBe(
-          'Features is required for the action "updateFeatures" in the update form tool.'
+          'Features is required for the action "updateFeatures" in the update form tool.',
         );
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
@@ -1565,11 +1295,7 @@ describe('UpdateFormTool', () => {
       it('should update question order successfully', async () => {
         const updateQuestionOrderResponse = {
           update_form: {
-            questions: [
-              { id: 'question_3' },
-              { id: 'question_1' },
-              { id: 'question_2' },
-            ],
+            questions: [{ id: 'question_3' }, { id: 'question_1' }, { id: 'question_2' }],
           },
         };
 
@@ -1579,41 +1305,29 @@ describe('UpdateFormTool', () => {
           action: FormActions.updateQuestionOrder,
           formToken: 'token_123',
           form: {
-            questions: [
-              { id: 'question_3' },
-              { id: 'question_1' },
-              { id: 'question_2' },
-            ],
+            questions: [{ id: 'question_3' }, { id: 'question_1' }, { id: 'question_2' }],
           },
         };
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Question order successfully updated:');
-        expect(result.content[0].text).toContain('question_3');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Question order successfully updated');
+        expect(parsed.data).toEqual(expect.arrayContaining([expect.objectContaining({ id: 'question_3' })]));
         expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[0]).toContain('mutation updateFormQuestionOrder');
         expect(mockCall[1]).toEqual({
           formToken: 'token_123',
-          questions: [
-            { id: 'question_3' },
-            { id: 'question_1' },
-            { id: 'question_2' },
-          ],
+          questions: [{ id: 'question_3' }, { id: 'question_1' }, { id: 'question_2' }],
         });
       });
 
       it('should update question order with different set of questions', async () => {
         const updateQuestionOrderResponse = {
           update_form: {
-            questions: [
-              { id: 'q_a' },
-              { id: 'q_b' },
-              { id: 'q_c' },
-              { id: 'q_d' },
-            ],
+            questions: [{ id: 'q_a' }, { id: 'q_b' }, { id: 'q_c' }, { id: 'q_d' }],
           },
         };
 
@@ -1623,57 +1337,17 @@ describe('UpdateFormTool', () => {
           action: FormActions.updateQuestionOrder,
           formToken: 'token_456',
           form: {
-            questions: [
-              { id: 'q_a' },
-              { id: 'q_b' },
-              { id: 'q_c' },
-              { id: 'q_d' },
-            ],
+            questions: [{ id: 'q_a' }, { id: 'q_b' }, { id: 'q_c' }, { id: 'q_d' }],
           },
         };
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Question order successfully updated:');
+        expect(parseToolResult(result).message).toContain('Question order successfully updated');
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].questions).toHaveLength(4);
         expect(mockCall[1].questions[0].id).toBe('q_a');
-      });
-
-      it('should handle formStringified parameter for Microsoft Copilot', async () => {
-        const updateQuestionOrderResponse = {
-          update_form: {
-            questions: [
-              { id: 'question_x' },
-              { id: 'question_y' },
-            ],
-          },
-        };
-
-        mocks.setResponse(updateQuestionOrderResponse);
-
-        const formObject = {
-          questions: [
-            { id: 'question_x' },
-            { id: 'question_y' },
-          ],
-        };
-
-        const args: inputType = {
-          action: FormActions.updateQuestionOrder,
-          formToken: 'token_123',
-          formStringified: JSON.stringify(formObject),
-          // form is omitted, fallback will use formStringified
-        };
-
-        const result = await callToolByNameRawAsync('update_form', args);
-
-        expect(result.content[0].text).toContain('Question order successfully updated:');
-
-        const mockCall = mocks.getMockRequest().mock.calls[0];
-        expect(mockCall[1].questions).toHaveLength(2);
-        expect(mockCall[1].questions[0].id).toBe('question_x');
       });
     });
 
@@ -1690,7 +1364,7 @@ describe('UpdateFormTool', () => {
         const result = await callToolByNameRawAsync('update_form', args);
 
         expect(result.content[0].text).toBe(
-          'List of dehydrated questions is required for the action "updateQuestionOrder" in the update form tool.'
+          'List of dehydrated questions is required for the action "updateQuestionOrder" in the update form tool.',
         );
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
@@ -1705,7 +1379,7 @@ describe('UpdateFormTool', () => {
         const result = await callToolByNameRawAsync('update_form', args);
 
         expect(result.content[0].text).toBe(
-          'List of dehydrated questions is required for the action "updateQuestionOrder" in the update form tool.'
+          'List of dehydrated questions is required for the action "updateQuestionOrder" in the update form tool.',
         );
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
@@ -1720,9 +1394,7 @@ describe('UpdateFormTool', () => {
           action: FormActions.updateQuestionOrder,
           formToken: 'token_123',
           form: {
-            questions: [
-              { id: 'nonexistent_question' },
-            ],
+            questions: [{ id: 'nonexistent_question' }],
           },
         };
 
@@ -1759,8 +1431,9 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Form header content successfully updated:');
-        expect(result.content[0].text).toContain('New Form Title');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Form header updated');
+        expect(parsed.data.title).toBe('New Form Title');
         expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
@@ -1794,7 +1467,7 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Form header content successfully updated:');
+        expect(parseToolResult(result).message).toContain('Form header updated');
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].title).toBe('Updated Title');
@@ -1823,44 +1496,11 @@ describe('UpdateFormTool', () => {
 
         const result = await callToolByNameRawAsync('update_form', args);
 
-        expect(result.content[0].text).toContain('Form header content successfully updated:');
+        expect(parseToolResult(result).message).toContain('Form header updated');
 
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].title).toBeUndefined();
         expect(mockCall[1].description).toBe('Updated Description');
-      });
-
-      it('should handle formStringified parameter for Microsoft Copilot', async () => {
-        const updateFormHeaderResponse = {
-          update_form: {
-            id: 'form_stringified',
-            token: 'token_stringified',
-            title: 'Copilot Title',
-            description: 'Copilot Description',
-          },
-        };
-
-        mocks.setResponse(updateFormHeaderResponse);
-
-        const formObject = {
-          title: 'Copilot Title',
-          description: 'Copilot Description',
-        };
-
-        const args: inputType = {
-          action: FormActions.updateFormHeader,
-          formToken: 'token_123',
-          formStringified: JSON.stringify(formObject),
-          // form is omitted, fallback will use formStringified
-        };
-
-        const result = await callToolByNameRawAsync('update_form', args);
-
-        expect(result.content[0].text).toContain('Form header content successfully updated:');
-
-        const mockCall = mocks.getMockRequest().mock.calls[0];
-        expect(mockCall[1].title).toBe('Copilot Title');
-        expect(mockCall[1].description).toBe('Copilot Description');
       });
     });
 
@@ -1877,7 +1517,7 @@ describe('UpdateFormTool', () => {
         const result = await callToolByNameRawAsync('update_form', args);
 
         expect(result.content[0].text).toBe(
-          'Title or description is required for the action "updateFormHeader" in the update form tool.'
+          'Title or description is required for the action "updateFormHeader" in the update form tool.',
         );
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
@@ -1892,7 +1532,7 @@ describe('UpdateFormTool', () => {
         const result = await callToolByNameRawAsync('update_form', args);
 
         expect(result.content[0].text).toBe(
-          'Title or description is required for the action "updateFormHeader" in the update form tool.'
+          'Title or description is required for the action "updateFormHeader" in the update form tool.',
         );
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
@@ -1990,7 +1630,7 @@ describe('UpdateFormTool', () => {
 
       // Empty string is falsy in JavaScript, so validation should fail
       expect(result.content[0].text).toBe(
-        'formPassword is required for the action "setFormPassword" in the update form tool.'
+        'formPassword is required for the action "setFormPassword" in the update form tool.',
       );
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
@@ -2018,7 +1658,7 @@ describe('UpdateFormTool', () => {
       const result = await callToolByNameRawAsync('update_form', args);
 
       expect(result.content[0].text).toBe(
-        'Appearance is required for the action "updateAppearance" in the update form tool.'
+        'Appearance is required for the action "updateAppearance" in the update form tool.',
       );
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
@@ -2048,9 +1688,8 @@ describe('UpdateFormTool', () => {
 
       const result = await callToolByNameRawAsync('update_form', args);
 
-      expect(result.content[0].text).toContain('Appearance successfully updated:');
+      expect(parseToolResult(result).message).toContain('Appearance successfully updated');
       expect(mocks.getMockRequest()).toHaveBeenCalled();
     });
   });
 });
-

@@ -5,14 +5,13 @@ import {
   GetSprintsBoardItemsWithColumnsQueryVariables,
   GetBoardSchemaQuery,
   GetBoardSchemaQueryVariables,
-} from '../../../../monday-graphql/generated/graphql';
+} from '../../../../monday-graphql/generated/graphql/graphql';
 import { getBoardSchema } from '../../../../monday-graphql/queries.graphql';
 import { getSprintsBoardItemsWithColumns } from './get-sprints-metadata-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../../platform-api-tools/base-monday-api-tool';
 import {
   ALL_SPRINT_COLUMNS,
-  validateSprintsBoardSchemaFromColumns,
   getCheckboxValue,
   getDateValue,
   getTimelineValue,
@@ -20,6 +19,10 @@ import {
   SPRINT_STATUS,
   ERROR_PREFIXES,
   Sprint,
+  REQUIRED_SPRINT_COLUMNS,
+  validateItemColumns,
+  getSprintColumnDisplayName,
+  SPRINT_COLUMN_DISPLAY_NAMES,
 } from '../shared';
 
 const DEFAULT_LIMIT = 25;
@@ -48,7 +51,9 @@ export class GetSprintsMetadataTool extends BaseMondayApiTool<typeof getSprintsM
   });
 
   getDescription(): string {
-    return `Get comprehensive sprint metadata from a monday-dev sprints board including:
+    return `List the sprints of a monday-dev sprints board with their metadata.
+
+Returns comprehensive sprint metadata including:
 
 ## Data Retrieved:
 A table of sprints with the following information:
@@ -64,7 +69,10 @@ A table of sprints with the following information:
 ## Parameters:
 - **limit**: Number of sprints to retrieve (default: ${DEFAULT_LIMIT}, max: ${MAX_LIMIT})
 
-Requires the Main Sprints board ID of the monday-dev containing your sprints.`;
+Requires the Main Sprints board ID of the monday-dev containing your sprints. If you do not already have it, call get_monday_dev_sprints_boards first to discover it.
+
+## Call this before:
+- get_sprint_summary — this tool returns the Sprint IDs that get_sprint_summary requires. Never guess a sprint ID.`;
   }
 
   getInputSchema(): typeof getSprintsMetadataToolSchema {
@@ -97,11 +105,16 @@ Requires the Main Sprints board ID of the monday-dev containing your sprints.`;
       const board = res.boards?.[0];
       const sprints = board?.items_page?.items || [];
 
-      // Step 3: Generate comprehensive sprints metadata report
-      const report = this.generateSprintsMetadataReport(sprints);
+      // Step 3: Build structured sprints metadata
+      const sprintsData = this.buildSprintsMetadata(sprints);
 
       return {
-        content: report,
+        content: {
+          message: 'Sprints metadata retrieved',
+          board_id: input.sprintsBoardId,
+          total: sprints.length,
+          data: sprintsData,
+        },
       };
     } catch (error) {
       return {
@@ -130,7 +143,7 @@ Requires the Main Sprints board ID of the monday-dev containing your sprints.`;
       }
 
       const columns = board.columns || [];
-      const schemaValidation = validateSprintsBoardSchemaFromColumns(columns as Column[]);
+      const schemaValidation = this.validateSprintsBoardSchemaFromColumns(columns as Column[]);
 
       if (!schemaValidation.isValid) {
         return {
@@ -148,17 +161,30 @@ Requires the Main Sprints board ID of the monday-dev containing your sprints.`;
     }
   }
 
-  private generateSprintsMetadataReport(sprints: Sprint[]): string {
-    let report = `# Sprints Metadata Report\n\n`;
-    report += `**Total Sprints:** ${sprints.length}\n\n`;
-    report += `| Sprint Name | Sprint ID | Status | Timeline (Planned) | Start Date (Actual) | End Date (Actual) | Completion | Summary Document ObjectID |\n`;
-    report += `|-------------|-----------|--------|--------------------|---------------------|-------------------|------------|---------------------------|\n`;
+  private validateSprintsBoardSchemaFromColumns(boardColumns: Column[]): { isValid: boolean; errorMessage: string } {
+    const existingColumnIds = new Set(
+      boardColumns.filter((col): col is NonNullable<Column> => col !== null).map((col) => col.id),
+    );
 
-    sprints.forEach((sprint) => {
-      const sprintName = sprint.name || 'Unknown';
-      const sprintId = sprint.id;
+    const requiredColumns = Object.values(REQUIRED_SPRINT_COLUMNS);
+    const validation = validateItemColumns(existingColumnIds, requiredColumns);
 
-      // Get typed column values using helpers
+    if (!validation.isValid) {
+      let errorMessage = `BoardID provided is not a valid sprints board. Missing required columns:\n\n`;
+
+      validation.missingColumns.forEach((columnId) => {
+        const columnDisplayName = getSprintColumnDisplayName(columnId as keyof typeof SPRINT_COLUMN_DISPLAY_NAMES);
+        errorMessage += `- ${columnDisplayName}\n`;
+      });
+
+      return { isValid: false, errorMessage };
+    }
+
+    return { isValid: true, errorMessage: '' };
+  }
+
+  private buildSprintsMetadata(sprints: Sprint[]): Array<Record<string, unknown>> {
+    return sprints.map((sprint) => {
       const isActivated = getCheckboxValue(sprint, ALL_SPRINT_COLUMNS.SPRINT_ACTIVATION);
       const isCompleted = getCheckboxValue(sprint, ALL_SPRINT_COLUMNS.SPRINT_COMPLETION);
       const startDate = getDateValue(sprint, ALL_SPRINT_COLUMNS.SPRINT_START_DATE);
@@ -166,7 +192,6 @@ Requires the Main Sprints board ID of the monday-dev containing your sprints.`;
       const timeline = getTimelineValue(sprint, ALL_SPRINT_COLUMNS.SPRINT_TIMELINE);
       const documentObjectId = getDocValue(sprint, ALL_SPRINT_COLUMNS.SPRINT_SUMMARY);
 
-      // Determine status
       let status: string = SPRINT_STATUS.Planned;
       if (isCompleted) {
         status = SPRINT_STATUS.Completed;
@@ -174,23 +199,16 @@ Requires the Main Sprints board ID of the monday-dev containing your sprints.`;
         status = SPRINT_STATUS.Active;
       }
 
-      // Format timeline
-      const timelineText = timeline ? `${timeline.from} to ${timeline.to}` : 'Not set';
-
-      // Format dates
-      const startDateText = startDate || 'Not started';
-      const endDateText = endDate || 'Not ended';
-      const completionText = isCompleted ? 'Yes' : 'No';
-      const documentObjectIdText = documentObjectId || 'No document';
-
-      report += `| ${sprintName} | ${sprintId} | ${status} | ${timelineText} | ${startDateText} | ${endDateText} | ${completionText} | ${documentObjectIdText} |\n`;
+      return {
+        id: sprint.id,
+        name: sprint.name || 'Unknown',
+        status,
+        timeline: timeline ? { from: timeline.from, to: timeline.to } : null,
+        start_date: startDate || null,
+        end_date: endDate || null,
+        is_completed: isCompleted,
+        document_object_id: documentObjectId || null,
+      };
     });
-
-    report += `\n## Status Definitions:\n`;
-    report += `- **${SPRINT_STATUS.Planned}**: Sprint not yet started (no activation, no start date)\n`;
-    report += `- **${SPRINT_STATUS.Active}**: Sprint is active (activated but not completed)\n`;
-    report += `- **${SPRINT_STATUS.Completed}**: Sprint is finished\n\n`;
-
-    return report;
   }
 }

@@ -1,8 +1,9 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
-import { callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
+import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '../test-utils/mock-api-client';
 import { createDocToolSchema } from './create-doc-tool';
-import { BoardKind, ColumnType } from 'src/monday-graphql';
+import { BoardKind } from 'src/monday-graphql/generated/graphql/graphql';
 import { z, ZodTypeAny } from 'zod';
+import { NonDeprecatedColumnType } from 'src/utils/types';
 
 export type inputType = z.objectInputType<typeof createDocToolSchema, ZodTypeAny>;
 
@@ -26,7 +27,8 @@ describe('CreateDocTool', () => {
         const createDocResponse = {
           create_doc: {
             id: 'doc_123',
-            url: 'https://monday.com/docs/doc_123',
+            object_id: 'obj_123',
+            url: 'https://monday.com/docs/obj_123',
             name: 'Test Document',
           },
         };
@@ -60,9 +62,10 @@ describe('CreateDocTool', () => {
 
         const result = await callToolByNameRawAsync('create_doc', args);
 
-        expect(result.content[0].text).toContain('✅ Document successfully created');
-        expect(result.content[0].text).toContain('doc_123');
-        expect(result.content[0].text).toContain('https://monday.com/docs/doc_123');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Document successfully created');
+        expect(parsed.doc_id).toBe('doc_123');
+        expect(parsed.doc_url).toBe('https://monday.com/docs/obj_123');
 
         const mockCalls = mocks.getMockRequest().mock.calls;
         const createDocCall = mockCalls.find((call) => call[0].includes('mutation createDoc'));
@@ -90,7 +93,8 @@ describe('CreateDocTool', () => {
         const createDocResponse = {
           create_doc: {
             id: 'doc_456',
-            url: 'https://monday.com/docs/doc_456',
+            object_id: 'obj_456',
+            url: 'https://monday.com/docs/obj_456',
             name: 'Minimal Doc',
           },
         };
@@ -122,8 +126,9 @@ describe('CreateDocTool', () => {
 
         const result = await callToolByNameRawAsync('create_doc', args);
 
-        expect(result.content[0].text).toContain('✅ Document successfully created');
-        expect(result.content[0].text).toContain('doc_456');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Document successfully created');
+        expect(parsed.doc_id).toBe('doc_456');
 
         const mockCalls = mocks.getMockRequest().mock.calls;
         const createDocCall = mockCalls.find((call) => call[0].includes('mutation createDoc'));
@@ -141,7 +146,8 @@ describe('CreateDocTool', () => {
           const createDocResponse = {
             create_doc: {
               id: `doc_${kind}`,
-              url: `https://monday.com/docs/doc_${kind}`,
+              object_id: `obj_${kind}`,
+              url: `https://monday.com/docs/obj_${kind}`,
               name: `Doc ${kind}`,
             },
           };
@@ -174,12 +180,82 @@ describe('CreateDocTool', () => {
 
           const result = await callToolByNameRawAsync('create_doc', args);
 
-          expect(result.content[0].text).toContain('✅ Document successfully created');
+          const parsed = parseToolResult(result);
+          expect(parsed.message).toContain('Document successfully created');
 
           const mockCalls = mocks.getMockRequest().mock.calls;
           const createDocCall = mockCalls.find((call) => call[0].includes('mutation createDoc'));
           expect(createDocCall[1].location.workspace.kind).toBe(kind);
         }
+      });
+    });
+
+    describe('docOwnerIds', () => {
+      it('includes docOwnerIds in variables when provided', async () => {
+        const createDocResponse = {
+          create_doc: { id: 'doc_owners', object_id: 'obj_owners', url: 'https://monday.com/docs/obj_owners', name: 'Owners Doc' },
+        };
+        const addContentResponse = { add_content_to_doc_from_markdown: { success: true, block_ids: [] } };
+
+        jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+          if (query.includes('mutation createDoc')) return Promise.resolve(createDocResponse);
+          if (query.includes('mutation addContentToDocFromMarkdown')) return Promise.resolve(addContentResponse);
+          return Promise.resolve({});
+        });
+
+        const args: inputType = {
+          location: 'workspace',
+          workspace_id: 12345,
+          doc_name: 'Owners Doc',
+          markdown: '# Test',
+          docOwnerIds: ['111', '222'],
+        };
+
+        await callToolByNameRawAsync('create_doc', args);
+
+        const createDocCall = mocks.getMockRequest().mock.calls.find((c) => c[0].includes('mutation createDoc'));
+        expect(createDocCall).toBeDefined();
+        expect(createDocCall[1]).toEqual(expect.objectContaining({ docOwnerIds: ['111', '222'] }));
+      });
+
+      it('does not include docOwnerIds in variables when not provided', async () => {
+        const createDocResponse = {
+          create_doc: { id: 'doc_no_owners', object_id: 'obj_no_owners', url: 'https://monday.com/docs/obj_no_owners', name: 'No Owners Doc' },
+        };
+        const addContentResponse = { add_content_to_doc_from_markdown: { success: true, block_ids: [] } };
+
+        jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+          if (query.includes('mutation createDoc')) return Promise.resolve(createDocResponse);
+          if (query.includes('mutation addContentToDocFromMarkdown')) return Promise.resolve(addContentResponse);
+          return Promise.resolve({});
+        });
+
+        const args: inputType = {
+          location: 'workspace',
+          workspace_id: 12345,
+          doc_name: 'No Owners Doc',
+          markdown: '# Test',
+        };
+
+        await callToolByNameRawAsync('create_doc', args);
+
+        const createDocCall = mocks.getMockRequest().mock.calls.find((c) => c[0].includes('mutation createDoc'));
+        expect(createDocCall).toBeDefined();
+        expect(createDocCall[1]).not.toHaveProperty('docOwnerIds');
+      });
+
+      it('rejects docOwnerIds as empty array (min 1 required)', async () => {
+        const args = {
+          location: 'workspace',
+          workspace_id: 12345,
+          doc_name: 'Empty Owners Doc',
+          markdown: '# Test',
+          docOwnerIds: [],
+        };
+
+        const result = await callToolByNameRawAsync('create_doc', args);
+        expect(result.content[0].text).toContain('Invalid arguments');
+        expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
     });
 
@@ -194,7 +270,9 @@ describe('CreateDocTool', () => {
 
         const result = await callToolByNameRawAsync('create_doc', args);
 
-        expect(result.content[0].text).toContain('Required parameters were not provided for location parameter of workspace');
+        expect(result.content[0].text).toContain(
+          'Required parameters were not provided for location parameter of workspace',
+        );
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
 
@@ -259,7 +337,8 @@ describe('CreateDocTool', () => {
         const createDocResponse = {
           create_doc: {
             id: 'doc_789',
-            url: 'https://monday.com/docs/doc_789',
+            object_id: 'obj_789',
+            url: 'https://monday.com/docs/obj_789',
             name: 'Test Document',
           },
         };
@@ -325,8 +404,8 @@ describe('CreateDocTool', () => {
               board: {
                 id: 'board_456',
                 columns: [
-                  { id: 'doc_col_1', type: ColumnType.Doc },
-                  { id: 'text_col_1', type: ColumnType.Text },
+                  { id: 'doc_col_1', type: NonDeprecatedColumnType.Doc },
+                  { id: 'text_col_1', type: NonDeprecatedColumnType.Text },
                 ],
               },
             },
@@ -336,7 +415,8 @@ describe('CreateDocTool', () => {
         const createDocResponse = {
           create_doc: {
             id: 'doc_item_123',
-            url: 'https://monday.com/docs/doc_item_123',
+            object_id: 'obj_item_123',
+            url: 'https://monday.com/docs/obj_item_123',
             name: null,
           },
         };
@@ -377,8 +457,9 @@ describe('CreateDocTool', () => {
 
         const result = await callToolByNameRawAsync('create_doc', args);
 
-        expect(result.content[0].text).toContain('✅ Document successfully created');
-        expect(result.content[0].text).toContain('doc_item_123');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Document successfully created');
+        expect(parsed.doc_id).toBe('doc_item_123');
 
         const mockCalls = mocks.getMockRequest().mock.calls;
 
@@ -416,8 +497,8 @@ describe('CreateDocTool', () => {
               board: {
                 id: 'board_789',
                 columns: [
-                  { id: 'existing_doc_col', type: ColumnType.Doc },
-                  { id: 'text_col_1', type: ColumnType.Text },
+                  { id: 'existing_doc_col', type: NonDeprecatedColumnType.Doc },
+                  { id: 'text_col_1', type: NonDeprecatedColumnType.Text },
                 ],
               },
             },
@@ -427,7 +508,8 @@ describe('CreateDocTool', () => {
         const createDocResponse = {
           create_doc: {
             id: 'doc_item_456',
-            url: 'https://monday.com/docs/doc_item_456',
+            object_id: 'obj_item_456',
+            url: 'https://monday.com/docs/obj_item_456',
             name: null,
           },
         };
@@ -468,7 +550,8 @@ describe('CreateDocTool', () => {
 
         const result = await callToolByNameRawAsync('create_doc', args);
 
-        expect(result.content[0].text).toContain('✅ Document successfully created');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Document successfully created');
 
         const mockCalls = mocks.getMockRequest().mock.calls;
         const createDocCall = mockCalls.find((call) => call[0].includes('mutation createDoc'));
@@ -487,8 +570,8 @@ describe('CreateDocTool', () => {
               board: {
                 id: 'board_111',
                 columns: [
-                  { id: 'text_col_1', type: ColumnType.Text },
-                  { id: 'status_col_1', type: ColumnType.Status },
+                  { id: 'text_col_1', type: NonDeprecatedColumnType.Text },
+                  { id: 'status_col_1', type: NonDeprecatedColumnType.Status },
                 ],
               },
             },
@@ -504,7 +587,8 @@ describe('CreateDocTool', () => {
         const createDocResponse = {
           create_doc: {
             id: 'doc_item_789',
-            url: 'https://monday.com/docs/doc_item_789',
+            object_id: 'obj_item_789',
+            url: 'https://monday.com/docs/obj_item_789',
             name: null,
           },
         };
@@ -548,7 +632,8 @@ describe('CreateDocTool', () => {
 
         const result = await callToolByNameRawAsync('create_doc', args);
 
-        expect(result.content[0].text).toContain('✅ Document successfully created');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Document successfully created');
 
         const mockCalls = mocks.getMockRequest().mock.calls;
 
@@ -557,13 +642,76 @@ describe('CreateDocTool', () => {
         expect(createColumnCall).toBeDefined();
         expect(createColumnCall[1]).toEqual({
           boardId: 'board_111',
-          columnType: ColumnType.Doc,
+          columnType: NonDeprecatedColumnType.Doc,
           columnTitle: 'Doc',
         });
 
         // Verify the new column ID was used
         const createDocCall = mockCalls.find((call) => call[0].includes('mutation createDoc'));
         expect(createDocCall[1].location.board.column_id).toBe('new_doc_col');
+      });
+    });
+
+    describe('docOwnerIds', () => {
+      it('includes docOwnerIds in item doc variables when provided', async () => {
+        const getItemBoardResponse = {
+          items: [{ id: 'item_99', board: { id: 'board_99', columns: [{ id: 'doc_col_99', type: NonDeprecatedColumnType.Doc }] } }],
+        };
+        const createDocResponse = { create_doc: { id: 'doc_owners_item', object_id: 'obj_owners_item', url: 'https://monday.com/docs/obj_owners_item', name: null } };
+        const addContentResponse = { add_content_to_doc_from_markdown: { success: true, block_ids: [] } };
+
+        jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+          if (query.includes('query getItemBoard')) return Promise.resolve(getItemBoardResponse);
+          if (query.includes('mutation createDoc')) return Promise.resolve(createDocResponse);
+          if (query.includes('mutation updateDocName')) return Promise.resolve({ update_doc_name: true });
+          if (query.includes('mutation addContentToDocFromMarkdown')) return Promise.resolve(addContentResponse);
+          return Promise.resolve({});
+        });
+
+        const args: inputType = {
+          location: 'item',
+          item_id: 99,
+          column_id: 'doc_col_99',
+          doc_name: 'Owners Item Doc',
+          markdown: '# Test',
+          docOwnerIds: ['555', '666'],
+        };
+
+        await callToolByNameRawAsync('create_doc', args);
+
+        const createDocCall = mocks.getMockRequest().mock.calls.find((c) => c[0].includes('mutation createDoc'));
+        expect(createDocCall).toBeDefined();
+        expect(createDocCall[1]).toEqual(expect.objectContaining({ docOwnerIds: ['555', '666'] }));
+      });
+
+      it('does not include docOwnerIds in item doc variables when not provided', async () => {
+        const getItemBoardResponse = {
+          items: [{ id: 'item_77', board: { id: 'board_77', columns: [{ id: 'doc_col_77', type: NonDeprecatedColumnType.Doc }] } }],
+        };
+        const createDocResponse = { create_doc: { id: 'doc_no_owners_item', object_id: 'obj_no_owners_item', url: 'https://monday.com/docs/obj_no_owners_item', name: null } };
+        const addContentResponse = { add_content_to_doc_from_markdown: { success: true, block_ids: [] } };
+
+        jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+          if (query.includes('query getItemBoard')) return Promise.resolve(getItemBoardResponse);
+          if (query.includes('mutation createDoc')) return Promise.resolve(createDocResponse);
+          if (query.includes('mutation updateDocName')) return Promise.resolve({ update_doc_name: true });
+          if (query.includes('mutation addContentToDocFromMarkdown')) return Promise.resolve(addContentResponse);
+          return Promise.resolve({});
+        });
+
+        const args: inputType = {
+          location: 'item',
+          item_id: 77,
+          column_id: 'doc_col_77',
+          doc_name: 'No Owners Item Doc',
+          markdown: '# Test',
+        };
+
+        await callToolByNameRawAsync('create_doc', args);
+
+        const createDocCall = mocks.getMockRequest().mock.calls.find((c) => c[0].includes('mutation createDoc'));
+        expect(createDocCall).toBeDefined();
+        expect(createDocCall[1]).not.toHaveProperty('docOwnerIds');
       });
     });
 
@@ -578,7 +726,9 @@ describe('CreateDocTool', () => {
 
         const result = await callToolByNameRawAsync('create_doc', args);
 
-        expect(result.content[0].text).toContain('Required parameters were not provided for location parameter of item');
+        expect(result.content[0].text).toContain(
+          'Required parameters were not provided for location parameter of item',
+        );
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
     });
@@ -616,7 +766,7 @@ describe('CreateDocTool', () => {
               id: 'item_999',
               board: {
                 id: 'board_999',
-                columns: [{ id: 'text_col', type: ColumnType.Text }],
+                columns: [{ id: 'text_col', type: NonDeprecatedColumnType.Text }],
               },
             },
           ],
@@ -655,7 +805,7 @@ describe('CreateDocTool', () => {
               id: 'item_111',
               board: {
                 id: 'board_111',
-                columns: [{ id: 'doc_col_1', type: ColumnType.Doc }],
+                columns: [{ id: 'doc_col_1', type: NonDeprecatedColumnType.Doc }],
               },
             },
           ],
@@ -664,7 +814,8 @@ describe('CreateDocTool', () => {
         const createDocResponse = {
           create_doc: {
             id: 'doc_item_111',
-            url: 'https://monday.com/docs/doc_item_111',
+            object_id: 'obj_item_111',
+            url: 'https://monday.com/docs/obj_item_111',
             name: null,
           },
         };
@@ -704,8 +855,9 @@ describe('CreateDocTool', () => {
         const result = await callToolByNameRawAsync('create_doc', args);
 
         // Document should still be created successfully
-        expect(result.content[0].text).toContain('✅ Document successfully created');
-        expect(result.content[0].text).toContain('doc_item_111');
+        const parsed = parseToolResult(result);
+        expect(parsed.message).toContain('Document successfully created');
+        expect(parsed.doc_id).toBe('doc_item_111');
 
         // Verify console.warn was called
         expect(console.warn).toHaveBeenCalledWith('Failed to update doc name:', expect.any(Error));
@@ -718,7 +870,7 @@ describe('CreateDocTool', () => {
               id: 'item_222',
               board: {
                 id: 'board_222',
-                columns: [{ id: 'doc_col_1', type: ColumnType.Doc }],
+                columns: [{ id: 'doc_col_1', type: NonDeprecatedColumnType.Doc }],
               },
             },
           ],
@@ -758,7 +910,7 @@ describe('CreateDocTool', () => {
               id: 'item_333',
               board: {
                 id: 'board_333',
-                columns: [{ id: 'doc_col_1', type: ColumnType.Doc }],
+                columns: [{ id: 'doc_col_1', type: NonDeprecatedColumnType.Doc }],
               },
             },
           ],
@@ -767,7 +919,8 @@ describe('CreateDocTool', () => {
         const createDocResponse = {
           create_doc: {
             id: 'doc_item_333',
-            url: 'https://monday.com/docs/doc_item_333',
+            object_id: 'obj_item_333',
+            url: 'https://monday.com/docs/obj_item_333',
             name: null,
           },
         };
@@ -814,6 +967,4 @@ describe('CreateDocTool', () => {
       });
     });
   });
-
 });
-

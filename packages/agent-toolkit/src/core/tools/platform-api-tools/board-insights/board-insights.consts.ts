@@ -1,4 +1,4 @@
-import { AggregateSelectFunctionName } from 'src/monday-graphql/generated/graphql';
+import { AggregateSelectFunctionName } from 'src/monday-graphql/generated/graphql/graphql';
 
 export const DEFAULT_LIMIT = 1000;
 export const MAX_LIMIT = 1000;

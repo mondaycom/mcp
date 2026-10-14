@@ -1,14 +1,30 @@
 import { z } from 'zod';
-import { ColumnType } from '../../../../monday-graphql/generated/graphql';
 import { getColumnTypeSchema } from './get-column-type-schema.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+import { NonDeprecatedColumnType } from 'src/utils/types';
+import { API_REFERENCE_URL } from '../utils/constants';
+import {
+  buildFilterGuidelinesForColumnType,
+  getColumnAggregationGuidelines,
+} from '../utils/column-filter-aggregation-guidelines';
+import { ColumnTypeInfoFetchMode } from './get-column-type-info-fetch-mode';
 
-export const getColumnTypeInfoToolSchema = {
-  columnType: z.nativeEnum(ColumnType).describe('The column type to retrieve information for (e.g., "text", "status", "date", "numbers")'),
+export const getNonDeprecatedColumnTypeInfoToolSchema = {
+  columnType: z
+    .nativeEnum(NonDeprecatedColumnType)
+    .describe('The column type to retrieve information for (e.g., "text", "status", "date", "numbers")'),
+  fetchMode: z
+    .nativeEnum(ColumnTypeInfoFetchMode)
+    .optional()
+    .default(ColumnTypeInfoFetchMode.Schema)
+    .describe(
+      `fetchMode "${ColumnTypeInfoFetchMode.Schema}": JSON settings schema only (GraphQL). ` +
+      `fetchMode "${ColumnTypeInfoFetchMode.Guidelines}": guidelines.filter and guidelines.aggregation only — no GraphQL round-trip.`,
+    ),
 };
 
-export class GetColumnTypeInfoTool extends BaseMondayApiTool<typeof getColumnTypeInfoToolSchema> {
+export class GetColumnTypeInfoTool extends BaseMondayApiTool<typeof getNonDeprecatedColumnTypeInfoToolSchema> {
   name = 'get_column_type_info';
   type = ToolType.READ;
   annotations = createMondayApiAnnotations({
@@ -19,14 +35,35 @@ export class GetColumnTypeInfoTool extends BaseMondayApiTool<typeof getColumnTyp
   });
 
   getDescription(): string {
-    return 'Retrieves comprehensive information about a specific column type, including JSON schema definition and other metadata. Use this before creating columns with the create_column tool to understand the structure, validation rules, and available properties for column settings.';
+    return (
+      'Retrieves comprehensive information about a specific column type. ' +
+      `Use fetchMode "${ColumnTypeInfoFetchMode.Schema}" (default) to get the JSON schema definition from the API — to understand structure, validation rules, and available properties for column settings. Call this BEFORE any tool that writes column settings: create_column, update_column, and manage_object_schema_columns. ` +
+      `Use fetchMode "${ColumnTypeInfoFetchMode.Guidelines}" to get only guidelines.filter and guidelines.aggregation (no schema, no GraphQL round-trip). Call this before building any filter rule that uses compare_value/operator for that column type — e.g. get_board_items_page, board_insights, or a view's filters (create_view, create_view_table, update_view, update_view_table) — and before building board insights aggregation counts. `
+    );
   }
 
-  getInputSchema(): typeof getColumnTypeInfoToolSchema {
-    return getColumnTypeInfoToolSchema;
+  getInputSchema(): typeof getNonDeprecatedColumnTypeInfoToolSchema {
+    return getNonDeprecatedColumnTypeInfoToolSchema;
   }
 
-  protected async executeInternal(input: ToolInputType<typeof getColumnTypeInfoToolSchema>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(
+    input: ToolInputType<typeof getNonDeprecatedColumnTypeInfoToolSchema>,
+  ): Promise<ToolOutputType<never>> {
+    if (input.fetchMode === ColumnTypeInfoFetchMode.Guidelines) {
+      return {
+        content: {
+          message: `Column type guidelines for ${input.columnType}`,
+          data: {
+            guidelines: {
+              filter: buildFilterGuidelinesForColumnType(input.columnType),
+              aggregation: getColumnAggregationGuidelines(),
+            },
+          },
+          url: API_REFERENCE_URL,
+        },
+      };
+    }
+
     const variables = {
       type: input.columnType,
     };
@@ -39,12 +76,12 @@ export class GetColumnTypeInfoTool extends BaseMondayApiTool<typeof getColumnTyp
       };
     }
 
-    const columnTypeInfo = {
-      schema: res.get_column_type_schema,
-    };
-
     return {
-      content: `Column Type Information for "${input.columnType}":\n\n${JSON.stringify(columnTypeInfo, null, 2)}`,
+      content: {
+        message: `Column type schema for ${input.columnType}`,
+        data: { schema: res.get_column_type_schema },
+        url: API_REFERENCE_URL,
+      },
     };
   }
-} 
+}

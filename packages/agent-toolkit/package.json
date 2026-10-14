@@ -1,6 +1,6 @@
 {
   "name": "@mondaydotcomorg/agent-toolkit",
-  "version": "2.22.0",
+  "version": "5.75.0",
   "description": "monday.com agent toolkit",
   "exports": {
     "./mcp": {
@@ -30,13 +30,13 @@
     "test": "jest -c",
     "watch": "rollup -c -w",
     "fetch:schema": "bash fetch-schema.sh",
-    "codegen": "graphql-codegen",
-    "fetch:generate": "yarn fetch:schema && yarn codegen"
+    "codegen": "bash codegen.sh",
+    "fetch:generate": "bash fetch-and-generate.sh"
   },
   "engines": {
     "node": ">= 16.20.0"
   },
-  "author": "monday.com AI Team",
+  "author": "monday.com",
   "license": "MIT",
   "keywords": [
     "monday",
@@ -45,12 +45,15 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/mondaycom/monday-ai/tree/master/packages/agent-toolkit"
+    "url": "https://github.com/mondaycom/mcp/tree/master/packages/agent-toolkit"
   },
   "dependencies": {
-    "@mondaydotcomorg/api": "^10.0.5",
+    "@mondaydotcomorg/api": "^13.0.0",
     "axios": "^1.10.0",
+    "exceljs": "^4.4.0",
     "jsonwebtoken": "^9.0.2",
+    "mammoth": "^1.12.0",
+    "unpdf": "^1.6.0",
     "zod": "^3.24.2",
     "zod-to-json-schema": "^3.24.5"
   },

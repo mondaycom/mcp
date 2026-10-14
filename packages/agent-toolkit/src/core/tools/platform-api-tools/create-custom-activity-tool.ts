@@ -4,7 +4,7 @@ import {
   CreateCustomActivityMutationVariables,
   CustomActivityColor,
   CustomActivityIcon,
-} from '../../../monday-graphql/generated/graphql';
+} from '../../../monday-graphql/generated/graphql/graphql';
 import { createCustomActivity } from '../../../monday-graphql/queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
@@ -42,10 +42,15 @@ export class CreateCustomActivityTool extends BaseMondayApiTool<typeof createCus
       name: input.name,
     };
 
-    const res = await this.mondayApi.request<CreateCustomActivityMutation>(createCustomActivity, variables);
+    await this.mondayApi.request<CreateCustomActivityMutation>(createCustomActivity, variables);
 
     return {
-      content: `Custom activity '${input.name}' with color ${input.color} and icon ${input.icon_id} successfully created`,
+      content: {
+        message: `Custom activity '${input.name}' with color ${input.color} and icon ${input.icon_id} successfully created`,
+        name: input.name,
+        color: input.color,
+        icon_id: input.icon_id,
+      },
     };
   }
 }

@@ -11,7 +11,7 @@ import {
   AggregateSelectFunctionName,
   ItemsQuery,
   ItemsQueryOrderBy,
-} from 'src/monday-graphql/generated/graphql';
+} from 'src/monday-graphql/generated/graphql/graphql';
 import { transformativeFunctions } from './board-insights.consts';
 
 export function handleFrom(input: ToolInputType<typeof boardInsightsToolSchema>): AggregateFromTableInput {
@@ -49,7 +49,7 @@ function handleSelectColumnElement(columnId: string): AggregateSelectColumnInput
 
 function handleSelectFunctionElement(
   functionName: AggregateSelectFunctionName,
-  columnId: string,
+  columnId: string | undefined,
 ): AggregateSelectFunctionInput {
   // special case: count items has no params
   return {
@@ -60,8 +60,8 @@ function handleSelectFunctionElement(
         : [
             {
               type: AggregateSelectElementType.Column,
-              column: handleSelectColumnElement(columnId),
-              as: columnId,
+              column: handleSelectColumnElement(columnId!),
+              as: columnId!,
             },
           ],
   };
@@ -85,11 +85,28 @@ export function handleSelectAndGroupByElements(input: ToolInputType<typeof board
       column_id: columnId,
     })) || [];
 
-  const selectElements = input.aggregations!.map((aggregation) => {
+  const columnsWithLabelFunction = new Set<string>(
+    input
+      .aggregations!.filter((aggregation) => aggregation.function === AggregateSelectFunctionName.Label)
+      .map((aggregation) => aggregation.columnId!),
+  );
+
+  // select human-friendly label if not specified
+  const labelAggregations =
+    input.groupBy
+      ?.filter((columnId) => !columnsWithLabelFunction.has(columnId))
+      .map((columnId) => ({
+        function: AggregateSelectFunctionName.Label,
+        columnId: columnId,
+      })) ?? [];
+
+  const aggregationsToBuild = input.aggregations!.concat(labelAggregations);
+
+  const selectElements = aggregationsToBuild.map((aggregation) => {
     // handle a function
     if (aggregation.function) {
       // create a unique alias for the select element
-      const elementKey = `${aggregation.function}_${aggregation.columnId}`;
+      const elementKey = aggregation.columnId ? `${aggregation.function}_${aggregation.columnId}` : aggregation.function;
       const aliasKeyIndex = aliasKeyMap[elementKey] || 0;
       aliasKeyMap[elementKey] = aliasKeyIndex + 1;
       const alias = `${elementKey}_${aliasKeyIndex}`;
@@ -115,15 +132,16 @@ export function handleSelectAndGroupByElements(input: ToolInputType<typeof board
     // handle a column
     const selectElement: AggregateSelectElementInput = {
       type: AggregateSelectElementType.Column,
-      column: handleSelectColumnElement(aggregation.columnId),
-      as: aggregation.columnId,
+      column: handleSelectColumnElement(aggregation.columnId!),
+      as: aggregation.columnId!,
     };
     // plain columns must be in group by. add if not already in group by
     if (!groupByElements.some((groupByElement) => groupByElement.column_id === aggregation.columnId)) {
       groupByElements.push({
-        column_id: aggregation.columnId,
+        column_id: aggregation.columnId!,
       });
     }
+
     return selectElement;
   });
 

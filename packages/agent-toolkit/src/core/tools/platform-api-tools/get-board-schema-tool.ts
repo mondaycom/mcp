@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { GetBoardSchemaQuery, GetBoardSchemaQueryVariables } from '../../../monday-graphql/generated/graphql';
+import { GetBoardSchemaQuery, GetBoardSchemaQueryVariables } from 'src/monday-graphql/generated/graphql/graphql';
 import { getBoardSchema } from '../../../monday-graphql/queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
@@ -19,7 +19,11 @@ export class GetBoardSchemaTool extends BaseMondayApiTool<typeof getBoardSchemaT
   });
 
   getDescription(): string {
-    return 'Get board schema (columns and groups) by board id';
+    return (
+      'Get board schema (columns and groups) by board id. Returns each column id, title, type, and revision, plus each group id and title. ' +
+      'Call this before tools that need a column id, type, and revision resolved from schema: update_column (which also needs the revision returned here), delete_column, configure_ai_column, and remove_ai_from_column — get_board_info returns the same column id/type/revision fields and also satisfies this precondition, but prefer this tool when you only need columns and groups, not the rest of the board. ' +
+      'For broader board metadata (owners, views, and their filters) use get_board_info instead — pass filters.views.ids / filters.views.names and/or filters.columns.ids there when you only need a subset.'
+    );
   }
 
   getInputSchema(): typeof getBoardSchemaToolSchema | undefined {
@@ -41,9 +45,18 @@ export class GetBoardSchemaTool extends BaseMondayApiTool<typeof getBoardSchemaT
     const res = await this.mondayApi.request<GetBoardSchemaQuery>(getBoardSchema, variables);
 
     return {
-      content: `The current schema of the board ${boardId} is: 
-    \n\nColumns:\n ${res.boards?.[0]?.columns?.map((column) => `Id - ${column?.id}\n Title - ${column?.title}\n Type - ${column?.type}`).join('\n')}
-    \n\nGroups:\n ${res.boards?.[0]?.groups?.map((group) => `Id - ${group?.id}\n Title - ${group?.title}`).join('\n')}`,
+      content: {
+        message: 'Board schema retrieved',
+        board_id: boardId,
+        columns:
+          res.boards?.[0]?.columns?.map((column) => ({
+            id: column?.id,
+            title: column?.title,
+            type: column?.type,
+            revision: column?.revision,
+          })) ?? [],
+        groups: res.boards?.[0]?.groups?.map((group) => ({ id: group?.id, title: group?.title })) ?? [],
+      },
     };
   }
 }

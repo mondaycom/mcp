@@ -1,0 +1,58 @@
+import { gql } from 'graphql-request';
+
+export const getBoardDataQuery = gql`
+  query getBoardData($boardId: ID!, $itemsLimit: Int!, $queryParams: ItemsQuery) {
+    boards(ids: [$boardId], limit: 1) {
+      id
+      name
+      items_page(limit: $itemsLimit, query_params: $queryParams) {
+        items {
+          id
+          name
+          column_values {
+            id
+            text
+            type
+            value
+            ... on PeopleValue {
+              persons_and_teams {
+                id
+                kind
+              }
+            }
+          }
+          updates {
+            id
+            creator_id
+            text_body
+            created_at
+            replies {
+              id
+              text_body
+              created_at
+              creator_id
+            }
+          }
+        }
+      }
+      columns {
+        id
+        title
+        type
+        settings
+      }
+    }
+  }
+`;
+
+export const getUsersByIdsQuery = gql`
+  query getUsersByIds($userIds: [ID!]!) {
+    users(ids: $userIds) {
+      id
+      name
+      photo_url {
+        tiny
+      }
+    }
+  }
+`;

@@ -25,9 +25,7 @@ import {
   UpdateFormHeaderMutationVariables,
   UpdateFormQuestionOrderMutation,
   UpdateFormQuestionOrderMutationVariables,
-  UpdateFormTagMutation,
-  UpdateFormTagMutationVariables,
-} from '../../../../../monday-graphql/generated/graphql';
+} from '../../../../../monday-graphql/generated/graphql/graphql';
 import {
   activateForm,
   createFormTag,
@@ -40,14 +38,13 @@ import {
   updateFormFeatures,
   updateFormHeader,
   updateFormQuestionOrder,
-  updateFormTag,
 } from '../workforms.graphql';
 import { ToolInputType, ToolOutputType } from '../../../../tool';
 import { ApiClient } from '@mondaydotcomorg/api';
 import { updateFormToolSchema } from '../update-form-tool/schema';
 
 export class UpdateFormToolHelpers {
-  constructor(private mondayApi: ApiClient) {}
+  constructor(private readonly getMondayApi: () => ApiClient) {}
 
   async setFormPassword(input: ToolInputType<typeof updateFormToolSchema>): Promise<ToolOutputType<never>> {
     if (!input.formPassword) {
@@ -63,10 +60,14 @@ export class UpdateFormToolHelpers {
       },
     };
 
-    await this.mondayApi.request<SetFormPasswordMutation>(setFormPassword, variables);
+    await this.getMondayApi().request<SetFormPasswordMutation>(setFormPassword, variables);
 
     return {
-      content: 'Form password successfully set.',
+      content: {
+        message: 'Form password successfully set',
+        form_token: input.formToken,
+        action_name: 'setFormPassword',
+      },
     };
   }
 
@@ -75,10 +76,14 @@ export class UpdateFormToolHelpers {
       formToken: input.formToken,
     };
 
-    await this.mondayApi.request<ShortenFormUrlMutation>(shortenFormUrl, variables);
+    await this.getMondayApi().request<ShortenFormUrlMutation>(shortenFormUrl, variables);
 
     return {
-      content: 'Form URL successfully shortened.',
+      content: {
+        message: 'Form URL successfully shortened',
+        form_token: input.formToken,
+        action_name: 'shortenFormUrl',
+      },
     };
   }
 
@@ -87,10 +92,10 @@ export class UpdateFormToolHelpers {
       formToken: input.formToken,
     };
 
-    await this.mondayApi.request<DeactivateFormMutation>(deactivateForm, variables);
+    await this.getMondayApi().request<DeactivateFormMutation>(deactivateForm, variables);
 
     return {
-      content: 'Form successfully deactivated.',
+      content: { message: 'Form successfully deactivated', form_token: input.formToken, action_name: 'deactivateForm' },
     };
   }
 
@@ -99,10 +104,10 @@ export class UpdateFormToolHelpers {
       formToken: input.formToken,
     };
 
-    await this.mondayApi.request<ActivateFormMutation>(activateForm, variables);
+    await this.getMondayApi().request<ActivateFormMutation>(activateForm, variables);
 
     return {
-      content: 'Form successfully activated.',
+      content: { message: 'Form successfully activated', form_token: input.formToken, action_name: 'activateForm' },
     };
   }
 
@@ -123,14 +128,18 @@ export class UpdateFormToolHelpers {
       formToken: input.formToken,
       tag: {
         name: input.tag.name,
-        value: input.tag.value,
       },
     };
 
-    const res = await this.mondayApi.request<CreateFormTagMutation>(createFormTag, variables);
+    const res = await this.getMondayApi().request<CreateFormTagMutation>(createFormTag, variables);
 
     return {
-      content: `Tag successfully added: ${JSON.stringify(res.create_form_tag, null, 2)}`,
+      content: {
+        message: 'Tag successfully added',
+        form_token: input.formToken,
+        action_name: 'createTag',
+        data: res.create_form_tag,
+      },
     };
   }
 
@@ -152,44 +161,10 @@ export class UpdateFormToolHelpers {
       tagId: input.tag.id,
     };
 
-    await this.mondayApi.request<DeleteFormTagMutation>(deleteFormTag, variables);
+    await this.getMondayApi().request<DeleteFormTagMutation>(deleteFormTag, variables);
 
     return {
-      content: `Tag with id: ${input.tag.id} successfully deleted.`,
-    };
-  }
-
-  async updateTag(input: ToolInputType<typeof updateFormToolSchema>): Promise<ToolOutputType<never>> {
-    if (!input.tag) {
-      return {
-        content: 'Tag is required for the action "updateTag" in the update form tool.',
-      };
-    }
-
-    if (!input.tag.id || !input.tag.value) {
-      return {
-        content: 'Tag id and value are required for the action "updateTag" in the update form tool.',
-      };
-    }
-
-    const variables: UpdateFormTagMutationVariables = {
-      formToken: input.formToken,
-      tagId: input.tag.id,
-      tag: {
-        value: input.tag.value,
-      },
-    };
-
-    const res = await this.mondayApi.request<UpdateFormTagMutation>(updateFormTag, variables);
-
-    if (!res.update_form_tag) {
-      return {
-        content: `Unable to update tag with id: ${input.tag.id}.`,
-      };
-    }
-
-    return {
-      content: `Tag with id: ${input.tag.id} successfully updated to value: ${input.tag.value}.`,
+      content: { message: 'Tag deleted', form_token: input.formToken, tag_id: input.tag.id, action_name: 'deleteTag' },
     };
   }
 
@@ -205,10 +180,15 @@ export class UpdateFormToolHelpers {
       appearance: input.form.appearance as FormAppearanceInput,
     };
 
-    const res = await this.mondayApi.request<UpdateFormAppearanceMutation>(updateFormAppearance, variables);
+    const res = await this.getMondayApi().request<UpdateFormAppearanceMutation>(updateFormAppearance, variables);
 
     return {
-      content: `Appearance successfully updated: ${JSON.stringify(res.update_form_settings?.appearance, null, 2)}`,
+      content: {
+        message: 'Appearance successfully updated',
+        form_token: input.formToken,
+        action_name: 'updateAppearance',
+        data: res.update_form_settings?.appearance,
+      },
     };
   }
 
@@ -224,10 +204,15 @@ export class UpdateFormToolHelpers {
       accessibility: input.form.accessibility as FormAccessibilityInput,
     };
 
-    const res = await this.mondayApi.request<UpdateFormAccessibilityMutation>(updateFormAccessibility, variables);
+    const res = await this.getMondayApi().request<UpdateFormAccessibilityMutation>(updateFormAccessibility, variables);
 
     return {
-      content: `Accessibility successfully updated: ${JSON.stringify(res.update_form_settings?.accessibility, null, 2)}`,
+      content: {
+        message: 'Accessibility successfully updated',
+        form_token: input.formToken,
+        action_name: 'updateAccessibility',
+        data: res.update_form_settings?.accessibility,
+      },
     };
   }
 
@@ -238,15 +223,23 @@ export class UpdateFormToolHelpers {
       };
     }
 
+    const { is_anonymous, ...features } = input.form.features;
+
     const variables: UpdateFormFeaturesMutationVariables = {
       formToken: input.formToken,
-      features: input.form.features as FormFeaturesInput,
+      features: features as FormFeaturesInput,
+      is_anonymous,
     };
 
-    const res = await this.mondayApi.request<UpdateFormFeaturesMutation>(updateFormFeatures, variables);
+    const res = await this.getMondayApi().request<UpdateFormFeaturesMutation>(updateFormFeatures, variables);
 
     return {
-      content: `Features successfully updated: ${JSON.stringify(res.update_form_settings?.features, null, 2)}`,
+      content: {
+        message: 'Features successfully updated',
+        form_token: input.formToken,
+        action_name: 'updateFeatures',
+        data: res.update_form_settings?.features,
+      },
     };
   }
 
@@ -263,10 +256,15 @@ export class UpdateFormToolHelpers {
       questions: input.form.questions as QuestionOrderInput[],
     };
 
-    const res = await this.mondayApi.request<UpdateFormQuestionOrderMutation>(updateFormQuestionOrder, variables);
+    const res = await this.getMondayApi().request<UpdateFormQuestionOrderMutation>(updateFormQuestionOrder, variables);
 
     return {
-      content: `Question order successfully updated: ${JSON.stringify(res.update_form?.questions, null, 2)}`,
+      content: {
+        message: 'Question order successfully updated',
+        form_token: input.formToken,
+        action_name: 'updateQuestionOrder',
+        data: res.update_form?.questions,
+      },
     };
   }
 
@@ -283,10 +281,15 @@ export class UpdateFormToolHelpers {
       description: input.form.description,
     };
 
-    const res = await this.mondayApi.request<UpdateFormHeaderMutation>(updateFormHeader, variables);
+    const res = await this.getMondayApi().request<UpdateFormHeaderMutation>(updateFormHeader, variables);
 
     return {
-      content: `Form header content successfully updated: ${JSON.stringify(res.update_form, null, 2)}`,
+      content: {
+        message: 'Form header updated',
+        form_token: input.formToken,
+        action_name: 'updateFormHeader',
+        data: res.update_form,
+      },
     };
   }
 }

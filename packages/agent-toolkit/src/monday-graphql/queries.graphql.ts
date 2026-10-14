@@ -9,25 +9,29 @@ export const deleteItem = gql`
 `;
 
 export const createItem = gql`
-  mutation createItem($boardId: ID!, $itemName: String!, $groupId: String, $columnValues: JSON) {
-    create_item(board_id: $boardId, item_name: $itemName, group_id: $groupId, column_values: $columnValues) {
+  mutation createItem(
+    $boardId: ID!
+    $itemName: String!
+    $groupId: String
+    $columnValues: JSON
+    $createLabelsIfMissing: Boolean
+  ) {
+    create_item(
+      board_id: $boardId
+      item_name: $itemName
+      group_id: $groupId
+      column_values: $columnValues
+      create_labels_if_missing: $createLabelsIfMissing
+    ) {
       id
       name
+      url
     }
   }
 `;
-
-export const createUpdate = gql`
-  mutation createUpdate($itemId: ID!, $body: String!, $mentionsList: [UpdateMention]) {
-    create_update(item_id: $itemId, body: $body, mentions_list: $mentionsList) {
-      id
-    }
-  }
-`;
-
 export const getBoardSchema = gql`
   query getBoardSchema($boardId: ID!) {
-    boards(ids: [$boardId]) {
+    boards(ids: [$boardId], limit: 1) {
       groups {
         id
         title
@@ -36,15 +40,33 @@ export const getBoardSchema = gql`
         id
         type
         title
+        revision
       }
     }
   }
 `;
 
 export const changeItemColumnValues = gql`
-  mutation changeItemColumnValues($boardId: ID!, $itemId: ID!, $columnValues: JSON!) {
-    change_multiple_column_values(board_id: $boardId, item_id: $itemId, column_values: $columnValues) {
+  mutation changeItemColumnValues(
+    $boardId: ID!
+    $itemId: ID!
+    $columnValues: JSON!
+    $createLabelsIfMissing: Boolean
+    $columnIds: [String!]
+  ) {
+    change_multiple_column_values(
+      board_id: $boardId
+      item_id: $itemId
+      column_values: $columnValues
+      create_labels_if_missing: $createLabelsIfMissing
+    ) {
       id
+      name
+      url
+      column_values(ids: $columnIds) {
+        id
+        value
+      }
     }
   }
 `;
@@ -58,15 +80,28 @@ export const moveItemToGroup = gql`
 `;
 
 export const createBoard = gql`
-  mutation createBoard($boardKind: BoardKind!, $boardName: String!, $boardDescription: String, $workspaceId: ID) {
+  mutation createBoard(
+    $boardKind: BoardKind!
+    $boardName: String!
+    $boardDescription: String
+    $workspaceId: ID
+    $boardOwnerIds: [ID!]
+    $useMlsTemplate: Boolean
+    $useDatasetTemplate: Boolean
+  ) {
     create_board(
       board_kind: $boardKind
       board_name: $boardName
       description: $boardDescription
       workspace_id: $workspaceId
+      board_owner_ids: $boardOwnerIds
+      use_mls_template: $useMlsTemplate
+      use_dataset_template: $useDatasetTemplate
       empty: true
     ) {
       id
+      name
+      url
     }
   }
 `;
@@ -87,6 +122,7 @@ export const createColumn = gql`
       defaults: $columnSettings
     ) {
       id
+      title
     }
   }
 `;
@@ -95,6 +131,32 @@ export const deleteColumn = gql`
   mutation deleteColumn($boardId: ID!, $columnId: String!) {
     delete_column(board_id: $boardId, column_id: $columnId) {
       id
+    }
+  }
+`;
+
+export const updateColumn = gql`
+  mutation updateColumn(
+    $boardId: ID!
+    $columnId: String!
+    $columnType: ColumnType!
+    $revision: String!
+    $columnTitle: String
+    $columnDescription: String
+    $columnSettings: JSON
+  ) {
+    update_column(
+      board_id: $boardId
+      id: $columnId
+      column_type: $columnType
+      revision: $revision
+      title: $columnTitle
+      description: $columnDescription
+      settings: $columnSettings
+    ) {
+      id
+      title
+      revision
     }
   }
 `;
@@ -410,44 +472,7 @@ export const fetchCustomActivity = gql`
 // Documents (Docs) Operations
 // -----------------------------
 
-export const readDocs = gql`
-  query readDocs(
-    $ids: [ID!]
-    $object_ids: [ID!]
-    $limit: Int
-    $order_by: DocsOrderBy
-    $page: Int
-    $workspace_ids: [ID]
-  ) {
-    docs(
-      ids: $ids
-      object_ids: $object_ids
-      limit: $limit
-      order_by: $order_by
-      page: $page
-      workspace_ids: $workspace_ids
-    ) {
-      id
-      object_id
-      name
-      doc_kind
-      created_at
-      created_by {
-        id
-        name
-      }
-      settings
-      url
-      relative_url
-      workspace {
-        id
-        name
-      }
-      workspace_id
-      doc_folder_id
-    }
-  }
-`;
+export { readDocs } from '../core/tools/platform-api-tools/read-docs-tool/read-docs-tool.graphql';
 
 export const exportMarkdownFromDoc = gql`
   query exportMarkdownFromDoc($docId: ID!, $blockIds: [String!]) {
@@ -461,7 +486,7 @@ export const exportMarkdownFromDoc = gql`
 
 export const getWorkspaceInfo = gql`
   query getWorkspaceInfo($workspace_id: ID!) {
-    workspaces(ids: [$workspace_id]) {
+    workspaces(ids: [$workspace_id], limit: 1) {
       id
       name
       description
@@ -488,6 +513,38 @@ export const getWorkspaceInfo = gql`
     folders(workspace_ids: [$workspace_id], limit: 100) {
       id
       name
+    }
+  }
+`;
+
+export const useTemplate = gql`
+  mutation useTemplate(
+    $templateId: Int!
+    $destinationWorkspaceId: Int
+    $destinationName: String
+    $boardKind: BoardKind
+  ) {
+    use_template(
+      template_id: $templateId
+      destination_workspace_id: $destinationWorkspaceId
+      destination_name: $destinationName
+      board_kind: $boardKind
+    ) {
+      process_id
+    }
+  }
+`;
+
+export const useTemplateStatus = gql`
+  query useTemplateStatus($processId: ID!) {
+    template_installation_status(process_id: $processId) {
+      process_id
+      status
+      board_ids
+      board_ids_map {
+        source_board_id
+        created_board_id
+      }
     }
   }
 `;

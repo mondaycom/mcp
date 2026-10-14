@@ -13,7 +13,7 @@ import {
   ListUsersOnlyQueryVariables,
   ListTeamsOnlyQuery,
   ListTeamsOnlyQueryVariables,
-} from '../../../../monday-graphql/generated/graphql';
+} from '../../../../monday-graphql/generated/graphql/graphql';
 import {
   listUsersAndTeams,
   listUsersWithTeams,
@@ -25,9 +25,10 @@ import {
 } from './list-users-and-teams.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { formatUsersAndTeams } from './helpers';
+import { formatUsersAndTeams } from './list-users-and-teams.utils';
 import { FormattedResponse } from './types';
 import { MAX_USER_IDS, MAX_TEAM_IDS, DEFAULT_USER_LIMIT } from './constants';
+import { fetchAccountSlug } from '../utils/account-slug.utils';
 
 export const listUsersAndTeamsToolSchema = {
   userIds: z
@@ -49,8 +50,8 @@ export const listUsersAndTeamsToolSchema = {
     .string()
     .optional()
     .describe(
-      `Name-based user search. STANDALONE parameter - cannot be combined with others. PREFERRED method for finding users when you know names. Performs fuzzy matching.
-      This parameter CONFLICTS with all others.`,
+      `Name-based USER search ONLY. STANDALONE parameter - cannot be combined with others. PREFERRED method for finding users when you know names. Performs fuzzy matching.
+      CRITICAL: This parameter searches for USERS ONLY, NOT teams. To search for teams, use teamIds parameter instead.`,
     ),
   getMe: z
     .boolean()
@@ -90,20 +91,21 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
 
       MANDATORY BEST PRACTICES:
       1. ALWAYS use specific IDs or names when available
-      2. If no ids available, use name search if possible
+      2. If no ids available, use name search if possible (USERS ONLY)
       3. Use 'getMe: true' to get current user information
       4. AVOID broad queries (no parameters) - use only as last resort
 
       REQUIRED PARAMETER PRIORITY (use in this order):
       1. getMe - STANDALONE
       2. userIds
-      3. name - STANDALONE  
+      3. name - STANDALONE (USERS ONLY, NOT for teams)
       4. teamIds + teamsOnly
       5. No parameters - LAST RESORT
 
       CRITICAL USAGE RULES:
       • userIds + teamIds requires explicit includeTeams: true flag
-      • includeTeams: true fetches both users and teams, do not use this to fetch a specific user's teams rather fetch that user by id and you will get their team memberships.`;
+      • includeTeams: true fetches both users and teams, do not use this to fetch a specific user's teams rather fetch that user by id and you will get their team memberships.
+      • name parameter is for USER search ONLY - it cannot be used to search for teams. Use teamIds to fetch specific teams.`;
   }
 
   getInputSchema(): typeof listUsersAndTeamsToolSchema {
@@ -144,7 +146,14 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
       };
 
       const content = formatUsersAndTeams(formattedRes);
-      return { content };
+      const slug = await fetchAccountSlug(this.mondayApi);
+      return {
+        content: {
+          data: content,
+          action_name: "Users and teams",
+          url: slug ? `https://${slug}.monday.com/teams/all` : undefined,
+        },
+      };
     }
 
     // Handle name parameter (standalone search operation)
@@ -174,8 +183,15 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
         .map((user) => `• **${user!.name}** (ID: ${user!.id})${user!.title ? ` - ${user!.title}` : ''}`)
         .join('\n');
 
-      const content = `Found ${res.users.length} user(s) matching "${input.name}":\n\n${userList}`;
-      return { content };
+      const contentStr = `Found ${res.users.length} user(s) matching "${input.name}":\n\n${userList}`;
+      const slug = await fetchAccountSlug(this.mondayApi);
+      return {
+        content: {
+          data: contentStr,
+          action_name: "Users and teams",
+          url: slug ? `https://${slug}.monday.com/teams/all` : undefined,
+        },
+      };
     }
 
     // Validate conflicting flags for regular operations
@@ -245,9 +261,13 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
     }
 
     const content = formatUsersAndTeams(res);
-
+    const slug = await fetchAccountSlug(this.mondayApi);
     return {
-      content,
+      content: {
+        data: content,
+        action_name: "Users and teams",
+        url: slug ? `https://${slug}.monday.com/teams/all` : undefined,
+      },
     };
   }
 }

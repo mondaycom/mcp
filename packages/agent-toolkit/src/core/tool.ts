@@ -7,7 +7,7 @@ export type ToolInputType<Input extends ZodRawShape | undefined> = Input extends
   : undefined;
 
 export type ToolOutputType<T extends Record<string, unknown>> = {
-  content: string;
+  content: string | Record<string, any>;
   metadata?: T;
 };
 
@@ -24,6 +24,8 @@ export interface Tool<Input extends ZodRawShape | undefined, Output extends Reco
   annotations: ToolAnnotations;
   /** Whether the tool is enabled by default. Defaults to true if not specified. */
   enabledByDefault?: boolean;
+  /** Discovery/filtering tags surfaced on the MCP tool (e.g. `'crm'`, `'automations'`). */
+  tags?: string[];
 
   getDescription(): string;
   getInputSchema(): Input;

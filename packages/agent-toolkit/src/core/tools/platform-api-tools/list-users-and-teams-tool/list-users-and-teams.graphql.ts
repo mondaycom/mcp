@@ -12,24 +12,27 @@ const userDetailsFragment = gql`
     name
     title
     email
-    enabled
+    status
 
     # User Status & Permissions
-    is_admin
-    is_guest
-    is_pending
-    is_verified
-    is_view_only
+    kind
+    is_email_confirmed
 
     # Timestamps
-    join_date
+    became_active_at
     last_activity
 
     # Contact Information
     location
     mobile_phone
     phone
-    photo_thumb
+
+    #Photo url
+    photo_url {
+      thumb
+    }
+
+    #Timezone details
     time_zone_identifier
     utc_hours_diff
   }
@@ -78,17 +81,17 @@ const teamMemberFragment = gql`
     name
     email
     title
-    is_admin
-    is_guest
-    is_pending
-    is_verified
-    is_view_only
-    join_date
+    kind
+    status
+    is_email_confirmed
+    became_active_at
     last_activity
     location
     mobile_phone
     phone
-    photo_thumb
+    photo_url {
+      thumb
+    }
     time_zone_identifier
     utc_hours_diff
   }
@@ -101,8 +104,7 @@ const teamMemberSimplifiedFragment = gql`
     name
     email
     title
-    is_admin
-    is_guest
+    kind
   }
 `;
 
@@ -135,19 +137,13 @@ export const listUsersWithTeams = gql`
   }
 `;
 
-// Query for fetching users only (when we don't want teams in response)
+// Query for fetching users only (no team membership data)
 export const listUsersOnly = gql`
   ${userDetailsFragment}
-  ${userTeamMembershipFragment}
 
   query listUsersOnly($userIds: [ID!], $limit: Int = 1000) {
     users(ids: $userIds, limit: $limit) {
       ...UserDetails
-
-      # Team Memberships
-      teams {
-        ...UserTeamMembership
-      }
     }
   }
 `;
@@ -224,7 +220,7 @@ export const listTeamsWithMembers = gql`
   }
 `;
 
-// Query for fetching user by name 
+// Query for fetching user by name
 // This one doesn't use user limits so can be static
 export const getUserByName = gql`
   ${userDetailsFragment}
@@ -249,9 +245,11 @@ export const getCurrentUser = gql`
       id
       name
       title
-      enabled
-      is_admin
-      is_guest
+      status
+      kind
+      photo_url {
+        thumb
+      }
     }
   }
 `;

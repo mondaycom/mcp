@@ -1,5 +1,5 @@
 import { organizeWorkspaceInfoHierarchy } from './helpers';
-import { WorkspaceKind, State } from '../../../../monday-graphql/generated/graphql';
+import { WorkspaceKind, State } from '../../../../monday-graphql/generated/graphql/graphql';
 
 describe('WorkspaceInfoTool', () => {
   describe('organizeWorkspaceInfoHierarchy', () => {
@@ -59,7 +59,7 @@ describe('WorkspaceInfoTool', () => {
         ],
       };
 
-      const result = organizeWorkspaceInfoHierarchy(rawResponse);
+      const result = organizeWorkspaceInfoHierarchy(rawResponse, null);
 
       expect(result).toEqual({
         workspace: {
@@ -143,7 +143,7 @@ describe('WorkspaceInfoTool', () => {
         ],
       };
 
-      const result = organizeWorkspaceInfoHierarchy(rawResponse);
+      const result = organizeWorkspaceInfoHierarchy(rawResponse, null);
 
       expect(result.folders).toEqual([
         {

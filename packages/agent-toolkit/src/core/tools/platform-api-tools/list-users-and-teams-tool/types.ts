@@ -25,17 +25,15 @@ export interface ExtendedTeam extends BaseTeam {
     name: string;
     email: string;
     title?: string | null;
-    is_admin?: boolean | null;
-    is_guest?: boolean | null;
-    is_pending?: boolean | null;
-    is_verified?: boolean | null;
-    is_view_only?: boolean | null;
-    join_date?: any | null;
+    kind?: string | null;
+    status?: string | null;
+    is_email_confirmed?: boolean | null;
+    became_active_at?: any | null;
     last_activity?: any | null;
     location?: string | null;
     mobile_phone?: string | null;
     phone?: string | null;
-    photo_thumb?: string | null;
+    photo_url?: { thumb?: string | null } | null;
     time_zone_identifier?: string | null;
     utc_hours_diff?: number | null;
   } | null> | null;
@@ -50,25 +48,22 @@ export interface UserTeam {
   picture_url?: string | null;
 }
 
-// User structure 
+// User structure
 export interface User {
   __typename?: 'User';
   id: string;
   name: string;
   title?: string | null;
   email: string;
-  enabled: boolean;
-  is_admin?: boolean | null;
-  is_guest?: boolean | null;
-  is_pending?: boolean | null;
-  is_verified?: boolean | null;
-  is_view_only?: boolean | null;
-  join_date?: any | null;
+  status?: string | null;
+  kind?: string | null;
+  is_email_confirmed?: boolean | null;
+  became_active_at?: any | null;
   last_activity?: any | null;
   location?: string | null;
   mobile_phone?: string | null;
   phone?: string | null;
-  photo_thumb?: string | null;
+  photo_url?: { thumb?: string | null } | null;
   time_zone_identifier?: string | null;
   utc_hours_diff?: number | null;
   teams?: Array<UserTeam | null> | null;
@@ -92,10 +87,7 @@ export interface UsersAndTeamsResponse {
 }
 
 // Union type for all possible responses
-export type FormattedResponse = 
-  | UsersOnlyResponse 
-  | TeamsResponse 
-  | UsersAndTeamsResponse;
+export type FormattedResponse = UsersOnlyResponse | TeamsResponse | UsersAndTeamsResponse;
 
 // Type guards
 export function isUsersOnlyResponse(data: FormattedResponse): data is UsersOnlyResponse {

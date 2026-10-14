@@ -3,16 +3,15 @@ import {
   DashboardKind,
   CreateDashboardMutation,
   CreateDashboardMutationVariables,
-} from '../../../../monday-graphql/generated/graphql';
+} from '../../../../monday-graphql/generated/graphql/graphql';
 import { createDashboard } from './dashboard-queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+import { rethrowWithContext, ToolValidationError, EMPTY_API_RESPONSE_CODE } from '../../../../utils';
 
 export const createDashboardToolSchema = {
   name: z.string().min(1, 'Dashboard name is required').describe('Human-readable dashboard title (UTF-8 chars)'),
-  workspace_id: z
-    .string()
-    .describe('ID of the workspace that will own the dashboard'),
+  workspace_id: z.string().describe('ID of the workspace that will own the dashboard'),
   board_ids: z
     .array(z.string())
     .min(1, 'At least one board ID is required')
@@ -69,38 +68,16 @@ export class CreateDashboardTool extends BaseMondayApiTool<typeof createDashboar
 
       // Check if the dashboard was created successfully
       if (!res.create_dashboard) {
-        throw new Error('Failed to create dashboard');
+        throw new ToolValidationError('Failed to create dashboard', EMPTY_API_RESPONSE_CODE);
       }
 
       const dashboard = res.create_dashboard;
 
-      // Format success response with dashboard details
-      const folderInfo = dashboard.board_folder_id ? ` in folder ${dashboard.board_folder_id}` : ' in workspace root';
-
-      const visibilityInfo =
-        dashboard.kind === DashboardKind.Public
-          ? '(visible to all workspace members)'
-          : '(private - visible only to invited users)';
-
       return {
-        content: `✅ Dashboard "${dashboard.name}" successfully created!
-
-Dashboard Details:
-• ID: ${dashboard.id}
-• Name: ${dashboard.name}
-• Workspace ID: ${dashboard.workspace_id}${folderInfo}
-• Visibility: ${dashboard.kind} ${visibilityInfo}
-• Connected Boards: ${input.board_ids.length} board(s)
-
-Next Steps:
-1. Use 'all_widgets_schema' to understand available widget types
-2. Understand the connected boards structure, columns, and metadata. Map board ids to column ids
-3. Plan Domain-Beneficial Widgets - Strategic widget planning based on real data analysis
-4. Use 'create_widget' to add widgets to the dashboard`,
+        content: { message: `Dashboard ${dashboard.id} successfully created`, dashboard_id: dashboard.id, dashboard_name: dashboard.name },
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      throw new Error(`Failed to create dashboard: ${errorMessage}`);
+      rethrowWithContext(error, 'create dashboard');
     }
   }
 }

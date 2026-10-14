@@ -11,7 +11,6 @@ import { createColumn as createColumnMutation } from '../../../../monday-graphql
 
 import {
   BoardKind,
-  ColumnType,
   CreateColumnMutation,
   CreateColumnMutationVariables,
   CreateDocMutation,
@@ -22,9 +21,10 @@ import {
   UpdateDocNameMutationVariables,
   AddContentToDocFromMarkdownMutation,
   AddContentToDocFromMarkdownMutationVariables,
-} from '../../../../monday-graphql/generated/graphql';
+} from '../../../../monday-graphql/generated/graphql/graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+import { NonDeprecatedColumnType } from 'src/utils/types';
 
 const DocType = z.enum(['workspace', 'item']);
 
@@ -51,15 +51,43 @@ const CreateDocLocationSchema = z.discriminatedUnion('type', [
 export const createDocToolSchema = {
   doc_name: z.string().describe('Name for the new document.'),
   markdown: z.string().describe('Markdown content that will be imported into the newly created document as blocks.'),
-  location: z.enum(['workspace', 'item']).describe('Location where the document should be created - either in a workspace or attached to an item'),
-  
-  workspace_id: z.number().optional().describe('[REQUIRED - use only when location="workspace"] Workspace ID under which to create the new document'),
-  doc_kind: z.nativeEnum(BoardKind).optional().describe('[OPTIONAL - use only when location="workspace"] Document kind (public/private/share). Defaults to public.'),
-  folder_id: z.number().optional().describe('[OPTIONAL - use only when location="workspace"] Optional folder ID to place the document inside a specific folder'),
+  location: z
+    .enum(['workspace', 'item'])
+    .describe('Location where the document should be created - either in a workspace or attached to an item'),
+  docOwnerIds: z
+    .array(z.string())
+    .min(1)
+    .optional()
+    .describe(
+      'Optional list of user IDs to set as document owners at creation time. Use this to add the agent owner so they retain access to the document. Ownership is set inside the creation mutation itself, bypassing the permission checks that would block a subsequent add_subscribers_to_object call.',
+    ),
+  workspace_id: z
+    .number()
+    .optional()
+    .describe('[REQUIRED - use only when location="workspace"] Workspace ID under which to create the new document'),
+  doc_kind: z
+    .nativeEnum(BoardKind)
+    .optional()
+    .describe(
+      '[OPTIONAL - use only when location="workspace"] Document kind (public/private/share). Defaults to public.',
+    ),
+  folder_id: z
+    .number()
+    .optional()
+    .describe(
+      '[OPTIONAL - use only when location="workspace"] Optional folder ID to place the document inside a specific folder',
+    ),
 
-  item_id: z.number().optional().describe('[REQUIRED - use only when location="item"] Item ID to attach the new document to'),
-  column_id: z.string().optional().describe('[OPTIONAL - use only when location="item"] ID of an existing "doc" column on the board which contains the item. If not provided, the tool will create a new doc column automatically when creating a doc on an item.',),
-
+  item_id: z
+    .number()
+    .optional()
+    .describe('[REQUIRED - use only when location="item"] Item ID to attach the new document to'),
+  column_id: z
+    .string()
+    .optional()
+    .describe(
+      '[OPTIONAL - use only when location="item"] ID of an existing "doc" column on the board which contains the item. If not provided, the tool will create a new doc column automatically when creating a doc on an item.',
+    ),
 };
 
 export class CreateDocTool extends BaseMondayApiTool<typeof createDocToolSchema> {
@@ -76,13 +104,14 @@ export class CreateDocTool extends BaseMondayApiTool<typeof createDocToolSchema>
     return `Create a new monday.com doc either inside a workspace or attached to an item (via a doc column). After creation, the provided markdown will be appended to the document.
 
 LOCATION TYPES:
-- workspace: Creates a document in a workspace (requires workspace_id, optional doc_kind, optional folder_id)
-- item: Creates a document attached to an item (requires item_id, optional column_id)
+- workspace: Creates a document in a workspace (requires workspace_id, optional doc_kind, optional folder_id, optional docOwnerIds)
+- item: Creates a document attached to an item (requires item_id, optional column_id, optional docOwnerIds)
 
 USAGE EXAMPLES:
-- Workspace doc: { location: "workspace", workspace_id: 123, doc_kind: "private" , markdown: "..." }
-- Workspace doc in folder: { location: "workspace", workspace_id: 123, folder_id: 17264196 , markdown: "..." }
-- Item doc: { location: "item", item_id: 456, column_id: "doc_col_1" , markdown: "..." }`;
+- Workspace doc: { location: "workspace", workspace_id: 123, doc_name: "My Doc", doc_kind: "private" , markdown: "..." }
+- Workspace doc in folder: { location: "workspace", workspace_id: 123, doc_name: "My Doc", folder_id: 17264196 , markdown: "..." }
+- Item doc: { location: "item", item_id: 456, doc_name: "My Doc", column_id: "doc_col_1" , markdown: "..." }
+- Workspace doc with agent owner: { location: "workspace", workspace_id: 123, doc_name: "My Doc", markdown: "...", docOwnerIds: ["<agent_owner_user_id>"] }`;
   }
 
   getInputSchema(): typeof createDocToolSchema {
@@ -92,17 +121,18 @@ USAGE EXAMPLES:
   protected async executeInternal(input: ToolInputType<typeof createDocToolSchema>): Promise<ToolOutputType<never>> {
     const inputParsingResult = CreateDocLocationSchema.safeParse({
       ...input,
-      type: input.location
+      type: input.location,
     });
 
-    if(!inputParsingResult.success) {
+    if (!inputParsingResult.success) {
       return { content: `Required parameters were not provided for location parameter of ${input.location}` };
     }
-    
+
     const parsedInput = inputParsingResult.data;
 
     try {
       let docId: string | undefined;
+      let docObjectId: string | undefined;
       let docUrl: string | undefined;
 
       if (parsedInput.type === DocType.enum.workspace) {
@@ -116,10 +146,12 @@ USAGE EXAMPLES:
               folder_id: parsedInput.folder_id?.toString(),
             },
           },
+          ...(input.docOwnerIds !== undefined ? { docOwnerIds: input.docOwnerIds } : {}),
         };
 
         const res: CreateDocMutation = await this.mondayApi.request(createDocMutation, variables);
         docId = res?.create_doc?.id ?? undefined;
+        docObjectId = res?.create_doc?.object_id ?? undefined;
         docUrl = res?.create_doc?.url ?? undefined;
       } else if (parsedInput.type === DocType.enum.item) {
         // Item-attached document creation
@@ -135,7 +167,7 @@ USAGE EXAMPLES:
         }
 
         const boardId = item.board?.id;
-        const existingDocColumn = item.board?.columns?.find((c) => c && c.type === ColumnType.Doc);
+        const existingDocColumn = item.board?.columns?.find((c) => c && c.type === NonDeprecatedColumnType.Doc);
 
         let columnId = parsedInput.column_id;
 
@@ -146,7 +178,7 @@ USAGE EXAMPLES:
             // Create new doc column on the board
             const columnVariables: CreateColumnMutationVariables = {
               boardId: boardId!.toString(),
-              columnType: ColumnType.Doc,
+              columnType: NonDeprecatedColumnType.Doc,
               columnTitle: 'Doc',
             };
             const columnRes: CreateColumnMutation = await this.mondayApi.request(createColumnMutation, columnVariables);
@@ -166,10 +198,12 @@ USAGE EXAMPLES:
               column_id: columnId,
             },
           },
+          ...(input.docOwnerIds !== undefined ? { docOwnerIds: input.docOwnerIds } : {}),
         };
 
         const res: CreateDocMutation = await this.mondayApi.request(createDocMutation, itemVariables);
         docId = res.create_doc?.id ?? undefined;
+        docObjectId = res.create_doc?.object_id ?? undefined;
         docUrl = res.create_doc?.url ?? undefined;
 
         // Step 3: Update doc name if provided (item-attached docs don't support name in creation)
@@ -210,8 +244,15 @@ USAGE EXAMPLES:
         };
       }
 
+      this.sessionContext.metadata = {
+        ...this.sessionContext.metadata,
+        location: input.location,
+        ...(docId && { doc_id: docId }),
+        ...(docObjectId && { object_id: docObjectId }),
+      };
+
       return {
-        content: `✅ Document successfully created (id: ${docId}). ${docUrl ? `\n\nURL: ${docUrl}` : ''}`,
+        content: { message: "Document successfully created", doc_id: docId, object_id: docObjectId, doc_url: docUrl, doc_name: input.doc_name },
       };
     } catch (error) {
       return {

@@ -1,0 +1,3 @@
+export const MAX_UPDATES_PER_CALL = 40;
+export const CONCURRENCY_LIMIT = 15;
+export const RATE_LIMIT_SKIPPED_CODE = 'RATE_LIMIT_SKIPPED';

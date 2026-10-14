@@ -1,0 +1,519 @@
+import { ToolInputType, ToolOutputType, ToolType } from 'src/core/tool';
+import { z } from 'zod';
+import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+import {
+  getFolders,
+  searchBoards,
+  searchDocs,
+  searchItems,
+  searchWorkspaces,
+  searchUpdates,
+  searchTimelineItems,
+} from './search-tool.graphql';
+import { searchItemsByCreatorDev, searchOverviewsDev } from './search-tool.graphql.dev';
+import {
+  GetFoldersQuery,
+  GetFoldersQueryVariables,
+  SearchBoardsQuery,
+  SearchBoardsQueryVariables,
+  SearchDocsQuery,
+  SearchDocsQueryVariables,
+  SearchItemsQuery,
+  SearchItemsQueryVariables,
+  SearchWorkspacesQuery,
+  SearchWorkspacesQueryVariables,
+  SearchUpdatesQuery,
+  SearchUpdatesQueryVariables,
+  SearchTimelineItemsQuery,
+  SearchTimelineItemsQueryVariables,
+} from 'src/monday-graphql/generated/graphql/graphql';
+import {
+  SearchItemsByCreatorDevQuery,
+  SearchItemsByCreatorDevQueryVariables,
+  SearchOverviewsDevQuery,
+  SearchOverviewsDevQueryVariables,
+} from 'src/monday-graphql/generated/graphql.dev/graphql';
+import { normalizeString } from 'src/utils/string.utils';
+import { GlobalSearchType, SearchHighlightEntry, SearchResult } from './search-tool.types';
+import {
+  MAX_FOLDERS_LIMIT,
+  MISSING_SEARCH_TERM_TEXT,
+  SEARCH_LIMIT,
+  SEARCH_TYPE_ALIASES,
+  SEARCH_TYPE_REDIRECTS,
+  SUPPORTED_SEARCH_TYPES_TEXT,
+  normalizeSearchType,
+} from './search-tool.consts';
+import { SEARCH_TIMEOUT } from 'src/utils/time.utils';
+import {
+  throwIfSearchTimeoutError,
+  ToolValidationError,
+  TOOL_EXECUTION_FAILED_CODE,
+  MISSING_REQUIRED_PARAMETER_CODE,
+} from 'src/utils/error.utils';
+
+const SUPPORTED_SEARCH_TYPES = new Set<string>(Object.values(GlobalSearchType));
+
+/**
+ * Map an alias/case/plural variant to a supported searchType. Only resolved
+ * (valid) values are normalized; anything that doesn't resolve is passed through
+ * untouched so the raw input reaches the enum's errorMap as `received` and the
+ * validation message can echo exactly what the caller sent (e.g. "board item"),
+ * rather than the internal normalized form ("BOARD_ITEM").
+ */
+function preprocessSearchType(val: unknown): unknown {
+  if (typeof val !== 'string') {
+    return val;
+  }
+  const normalized = normalizeSearchType(val);
+  const resolved = SEARCH_TYPE_ALIASES[normalized] ?? normalized;
+  return SUPPORTED_SEARCH_TYPES.has(resolved) ? resolved : val;
+}
+
+/**
+ * Produce an actionable message for invalid searchType values: list the valid
+ * options, and when the value maps to a known intent (e.g. USERS, BOARD_ITEMS),
+ * point the caller at the right tool so it can self-correct on retry.
+ */
+function searchTypeErrorMap(issue: z.ZodIssueOptionalMessage, ctx: { defaultError: string }): { message: string } {
+  // Missing/null searchType surfaces as invalid_type with a type-name `received`.
+  if (issue.code === z.ZodIssueCode.invalid_type) {
+    if (issue.received === 'undefined' || issue.received === 'null') {
+      return { message: `searchType is required. Valid values: ${SUPPORTED_SEARCH_TYPES_TEXT}.` };
+    }
+    return { message: `searchType must be a string. Valid values: ${SUPPORTED_SEARCH_TYPES_TEXT}.` };
+  }
+
+  // A concrete-but-unsupported value surfaces as invalid_enum_value. `received`
+  // is the caller's raw input (preprocessSearchType passes unresolved values
+  // through), so it's echoed verbatim in the message; the redirect lookup
+  // re-normalizes it to match a known intent.
+  if (issue.code === z.ZodIssueCode.invalid_enum_value) {
+    const received = String(issue.received);
+    const redirect = SEARCH_TYPE_REDIRECTS[normalizeSearchType(received)];
+    const base = `Invalid searchType "${received}". Valid values: ${SUPPORTED_SEARCH_TYPES_TEXT}.`;
+    return { message: redirect ? `${base} ${redirect}` : base };
+  }
+
+  return { message: ctx.defaultError };
+}
+
+/**
+ * Reshape a scalar or array of ids into an array, treating null/undefined as
+ * omitted. Per-entry numeric coercion and validation (numeric strings, finite
+ * check) is handled by z.coerce.number().finite() in the array's element
+ * schema below, so this only normalizes the outer shape.
+ */
+function toIdArray(val: unknown): unknown {
+  if (val === null || val === undefined) {
+    return undefined;
+  }
+  return Array.isArray(val) ? val : [val];
+}
+
+/**
+ * `null`/`undefined` resolve directly to SEARCH_LIMIT (rather than passing
+ * `undefined` through) so a caller-supplied `null` behaves identically to an
+ * omitted field instead of failing validation. Numeric coercion, finiteness,
+ * and clamping happen in limitSchema below via z.coerce.number().finite().
+ */
+function preprocessLimit(val: unknown): unknown {
+  return val === null || val === undefined ? SEARCH_LIMIT : val;
+}
+
+/**
+ * Optional array-of-numbers id field that also accepts a scalar or numeric
+ * strings; entries are coerced via z.coerce.number() and Infinity/NaN are
+ * rejected via .finite(). Typed explicitly so the wrapping ZodEffects doesn't
+ * blow TypeScript's inference depth in zodToJsonSchema.
+ */
+function optionalIdArray(description: string): z.ZodType<number[] | undefined, z.ZodTypeDef, unknown> {
+  const schema = z.preprocess(toIdArray, z.array(z.coerce.number().finite()).optional()) as z.ZodType<
+    number[] | undefined,
+    z.ZodTypeDef,
+    unknown
+  >;
+  return schema.describe(description);
+}
+
+/** Normalize an empty id-string array to undefined so "no ids" consistently means "no filter" across search types. */
+function toFilterIds(ids?: string[]): string[] | undefined {
+  return ids && ids.length > 0 ? ids : undefined;
+}
+
+/**
+ * Flatten the per-field highlights object (one optional fragments array per searchable
+ * field, e.g. { name, content }) into a { field, fragments }[] the tool exposes, dropping
+ * fields with no fragments. Returns undefined when there's no lexical match at all.
+ */
+function toHighlightEntries(
+  highlights: SearchDocsQuery['search']['docs']['results'][number]['indexed_data']['highlights'],
+): SearchHighlightEntry[] | undefined {
+  if (!highlights) {
+    return undefined;
+  }
+  const entries = Object.entries(highlights)
+    .filter(([, fragments]) => fragments && fragments.length > 0)
+    .map(([field, fragments]) => ({ field, fragments: [...(fragments as string[])] }));
+  return entries.length > 0 ? entries : undefined;
+}
+
+// searchType/limit use preprocess wrappers; annotate them explicitly so the
+// combined shape's ZodEffects don't push zodToJsonSchema past TS's inference depth.
+const searchTypeSchema: z.ZodType<GlobalSearchType, z.ZodTypeDef, unknown> = z
+  .preprocess(preprocessSearchType, z.nativeEnum(GlobalSearchType, { errorMap: searchTypeErrorMap }))
+  .describe(`The type of search to perform. Valid values: ${SUPPORTED_SEARCH_TYPES_TEXT}.`) as z.ZodType<
+  GlobalSearchType,
+  z.ZodTypeDef,
+  unknown
+>;
+
+const limitSchema: z.ZodType<number, z.ZodTypeDef, unknown> = z
+  .preprocess(
+    preprocessLimit,
+    z.coerce
+      .number()
+      .finite()
+      .transform((num) => Math.min(Math.max(Math.trunc(num), 1), SEARCH_LIMIT)),
+  )
+  .optional()
+  .default(SEARCH_LIMIT)
+  .describe(`The number of items to get. Maximum is ${SEARCH_LIMIT}.`) as z.ZodType<number, z.ZodTypeDef, unknown>;
+
+export const searchSchema = {
+  // Optional at the schema level (rather than a required field) so a genuinely
+  // absent searchTerm is handled in executeInternal with the actionable,
+  // browse-oriented MISSING_SEARCH_TERM_TEXT instead of Zod's bare "Required".
+  // When searchTerm IS provided, .min(1) still rejects empty/whitespace with the
+  // original actionable message.
+  searchTerm: z
+    .string()
+    .trim()
+    .min(1, { message: 'searchTerm must be a non-empty search string.' })
+    .optional()
+    .describe(
+      'The search phrase — the text the search matches results against (e.g. a board name, item title, or keywords). ' +
+        'Required and must be non-empty. This is NOT a filter or an id — pass the words to look for.',
+    ),
+  searchType: searchTypeSchema,
+  limit: limitSchema,
+
+  // for items, boards, docs, dashboards, folders, updates, and timeline items
+  workspaceIds: optionalIdArray(
+    'Array of workspace IDs (numbers) to search in. Optional for FOLDERS search (searches all accessible workspaces when omitted). For ITEMS, BOARD, DOCUMENTS, DASHBOARDS, UPDATES, and TIMELINE_ITEMS search, only pass this if the user explicitly asked to search within specific workspaces. Example: [12345, 67890].',
+  ),
+
+  // for boards, items, updates, and timeline items
+  boardIds: optionalIdArray(
+    'Array of board IDs (numbers) to scope the search to. Applies to BOARD, ITEMS, UPDATES, and TIMELINE_ITEMS search. Only pass it if the user explicitly asked to search within specific boards. Example: [12345, 67890].',
+  ),
+  creatorIds: optionalIdArray(
+    'Array of user IDs (numbers) to filter by creator. Applies to ITEMS (filters by item creator), UPDATES (filters by update author), and DASHBOARDS (filters by dashboard creator). Only pass it if the user explicitly asked to filter by specific creators. Example: [12345, 67890].',
+  ),
+
+  // for docs
+  docIds: optionalIdArray(
+    'Array of document IDs (numbers), as they appear in document URLs, to scope the search to. Applies to DOCUMENTS search, with at most 512 ids. Use it to search within a known set of documents, for example to find which of them mention a term. Only pass it if the user explicitly asked to search within specific documents. Example: [12345, 67890].',
+  ),
+};
+
+export type SearchToolInput = typeof searchSchema;
+
+export class SearchTool extends BaseMondayApiTool<SearchToolInput> {
+  name = 'search';
+  type = ToolType.READ;
+  annotations = createMondayApiAnnotations({
+    title: 'Search',
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+  });
+
+  getDescription(): string {
+    return `Search within monday.com platform. Supported searchType values: ${SUPPORTED_SEARCH_TYPES_TEXT}.
+searchTerm is the phrase the search matches against — the text/keywords to look for (e.g. a board name, item title, or a word from an update). It is required and must be non-empty. This tool has no "list everything" mode: to browse or list without a search phrase, use workspace_info (boards/docs/folders in a workspace) or get_board_items_page (items in a board) instead of calling search with an empty searchTerm.
+For searching/listing specific users and teams, use list_users_and_teams tool.
+For account-level info (plan, member count, products), use get_user_context tool.
+For browsing all boards, docs, or folders within a workspace without a search term, use workspace_info tool.
+For groups, use get_board_info tool.
+For listing items within a specific board, use get_board_items_page tool. ITEMS search here queries items across the account.
+BOARD search returns id, title, url, and workspaceId. Optionally scope it with boardIds.
+DOCUMENTS search returns id, title, workspaceId, and highlights. highlights is an array of { field, fragments } entries (field is "name" or "content") where fragments contain matched text snippets with <em> tags around matched terms. highlights is omitted when no lexical match was made. Optionally scope it with workspaceIds and/or docIds.
+ITEMS search returns id, title, url, boardId, and workspaceId. Optionally scope it with workspaceIds, boardIds, and/or creatorIds.
+WORKSPACES search returns id, title, and description.
+UPDATES search returns id, title (the update body), itemId, boardId, and creatorId. Optionally scope it with workspaceIds, boardIds, and/or creatorIds.
+TIMELINE_ITEMS search returns id, title, summary, content, itemId, and boardId. Optionally scope it with workspaceIds and/or boardIds.
+DASHBOARDS search (also called "overviews") returns id, title, and workspaceId. Optionally scope it with workspaceIds and/or creatorIds.
+FOLDERS search returns id and title. Optionally scope it with workspaceIds, which searches all accessible workspaces when omitted. Pass workspaceIds to narrow the search if results may be truncated.
+  `;
+  }
+
+  getInputSchema(): SearchToolInput {
+    return searchSchema;
+  }
+
+  protected async executeInternal(input: ToolInputType<SearchToolInput>): Promise<ToolOutputType<never>> {
+    // searchTerm is optional at the schema level so a missing term produces an
+    // actionable, browse-oriented error here rather than Zod's bare "Required".
+    // (An empty/whitespace term that IS present is already rejected by the schema.)
+    const { searchTerm } = input;
+    if (!searchTerm) {
+      throw new ToolValidationError(MISSING_SEARCH_TERM_TEXT, MISSING_REQUIRED_PARAMETER_CODE);
+    }
+
+    try {
+      if (input.searchType === GlobalSearchType.FOLDERS) {
+        const { results, truncated } = await this.searchFoldersAsync(input, searchTerm);
+        const message = truncated
+          ? `Search results (truncated: only the first ${MAX_FOLDERS_LIMIT} folders across the searched workspaces were scanned. Narrow with workspaceIds for complete results.)`
+          : 'Search results';
+        return { content: { message, data: results } };
+      }
+
+      const data = await this.runSmartSearchAsync(input, searchTerm);
+      return { content: { message: 'Search results', data } };
+    } catch (error) {
+      throwIfSearchTimeoutError(error);
+      throw error;
+    }
+  }
+
+  private async runSmartSearchAsync(
+    input: ToolInputType<SearchToolInput>,
+    searchTerm: string,
+  ): Promise<SearchResult[]> {
+    const workspaceIds = toFilterIds(input.workspaceIds?.map((id) => id.toString()));
+
+    if (input.searchType === GlobalSearchType.BOARD) {
+      const boardIds = toFilterIds(input.boardIds?.map((id) => id.toString()));
+      return this.searchBoardsAsync(searchTerm, input.limit, workspaceIds, boardIds);
+    }
+
+    if (input.searchType === GlobalSearchType.DOCUMENTS) {
+      const docIds = toFilterIds(input.docIds?.map((id) => id.toString()));
+      return this.searchDocsAsync(searchTerm, input.limit, workspaceIds, docIds);
+    }
+
+    if (input.searchType === GlobalSearchType.WORKSPACES) {
+      return this.searchWorkspacesAsync(searchTerm, input.limit);
+    }
+
+    if (input.searchType === GlobalSearchType.UPDATES) {
+      const boardIds = toFilterIds(input.boardIds?.map((id) => id.toString()));
+      const creatorIds = toFilterIds(input.creatorIds?.map((id) => id.toString()));
+      return this.searchUpdatesAsync(searchTerm, input.limit, workspaceIds, boardIds, creatorIds);
+    }
+
+    if (input.searchType === GlobalSearchType.ITEMS) {
+      const boardIds = toFilterIds(input.boardIds?.map((id) => id.toString()));
+      const creatorIds = toFilterIds(input.creatorIds?.map((id) => id.toString()));
+      return this.searchItemsAsync(searchTerm, input.limit, workspaceIds, boardIds, creatorIds);
+    }
+
+    if (input.searchType === GlobalSearchType.TIMELINE_ITEMS) {
+      const boardIds = toFilterIds(input.boardIds?.map((id) => id.toString()));
+      return this.searchTimelineItemsAsync(searchTerm, input.limit, workspaceIds, boardIds);
+    }
+
+    if (input.searchType === GlobalSearchType.DASHBOARDS) {
+      const creatorIds = input.creatorIds?.map((id) => id.toString());
+      return this.searchOverviewsAsync(searchTerm, input.limit, workspaceIds, creatorIds);
+    }
+
+    throw new ToolValidationError(
+      `Unsupported search type for smart search: ${input.searchType}`,
+      TOOL_EXECUTION_FAILED_CODE,
+    );
+  }
+
+  private async searchBoardsAsync(
+    query: string,
+    limit: number,
+    workspaceIds?: string[],
+    boardIds?: string[],
+  ): Promise<SearchResult[]> {
+    const variables: SearchBoardsQueryVariables = { query, limit, workspaceIds, boardIds };
+
+    const response = await this.mondayApi.request<SearchBoardsQuery>(searchBoards, variables, {
+      timeout: SEARCH_TIMEOUT,
+    });
+
+    return response.search.boards.results.map((result) => ({
+      id: result.indexed_data.id,
+      title: result.indexed_data.name,
+      url: result.indexed_data.url,
+      workspaceId: result.indexed_data.workspace_id ?? undefined,
+    }));
+  }
+
+  private async searchDocsAsync(
+    query: string,
+    limit: number,
+    workspaceIds?: string[],
+    docIds?: string[],
+  ): Promise<SearchResult[]> {
+    const variables: SearchDocsQueryVariables = { query, limit, workspaceIds, docIds };
+
+    const response = await this.mondayApi.request<SearchDocsQuery>(searchDocs, variables, {
+      timeout: SEARCH_TIMEOUT,
+    });
+
+    return response.search.docs.results.map((result) => ({
+      id: result.indexed_data.id,
+      title: result.indexed_data.name,
+      workspaceId: result.indexed_data.workspace_id ?? undefined,
+      highlights: toHighlightEntries(result.indexed_data.highlights),
+    }));
+  }
+
+  private async searchWorkspacesAsync(query: string, limit: number): Promise<SearchResult[]> {
+    const variables: SearchWorkspacesQueryVariables = { query, limit };
+
+    const response = await this.mondayApi.request<SearchWorkspacesQuery>(searchWorkspaces, variables, {
+      timeout: SEARCH_TIMEOUT,
+    });
+
+    return response.search.workspaces.results.map((result) => ({
+      id: result.indexed_data.id,
+      title: result.indexed_data.name,
+      description: result.indexed_data.description || undefined,
+    }));
+  }
+
+  private async searchUpdatesAsync(
+    query: string,
+    limit: number,
+    workspaceIds?: string[],
+    boardIds?: string[],
+    creatorIds?: string[],
+  ): Promise<SearchResult[]> {
+    const variables: SearchUpdatesQueryVariables = { query, limit, workspaceIds, boardIds, creatorIds };
+
+    const response = await this.mondayApi.request<SearchUpdatesQuery>(searchUpdates, variables, {
+      timeout: SEARCH_TIMEOUT,
+    });
+
+    return response.search.updates.results.map((result) => ({
+      id: result.indexed_data.id,
+      title: result.indexed_data.body,
+      itemId: result.indexed_data.item_id,
+      boardId: result.indexed_data.board_id,
+      creatorId: result.indexed_data.creator_id,
+    }));
+  }
+
+  private async searchItemsAsync(
+    query: string,
+    limit: number,
+    workspaceIds?: string[],
+    boardIds?: string[],
+    creatorIds?: string[],
+  ): Promise<SearchResult[]> {
+    // search.items(creator_ids:) is only available from the dev API version, so a creator-filtered
+    // search has to run against dev. Unfiltered searches stay on the stable version rather than
+    // moving every ITEMS search onto dev for the sake of one optional filter.
+    const response = creatorIds
+      ? await this.mondayApi.request<SearchItemsByCreatorDevQuery>(
+          searchItemsByCreatorDev,
+          { query, limit, workspaceIds, boardIds, creatorIds } satisfies SearchItemsByCreatorDevQueryVariables,
+          { versionOverride: 'dev', timeout: SEARCH_TIMEOUT },
+        )
+      : await this.mondayApi.request<SearchItemsQuery>(
+          searchItems,
+          { query, limit, workspaceIds, boardIds } satisfies SearchItemsQueryVariables,
+          { timeout: SEARCH_TIMEOUT },
+        );
+
+    return response.search.items.results.map((result) => ({
+      id: result.indexed_data.id,
+      title: result.indexed_data.name,
+      url: result.indexed_data.url,
+      boardId: result.indexed_data.board_id ?? undefined,
+      workspaceId: result.indexed_data.workspace_id ?? undefined,
+    }));
+  }
+
+  private async searchTimelineItemsAsync(
+    query: string,
+    limit: number,
+    workspaceIds?: string[],
+    boardIds?: string[],
+  ): Promise<SearchResult[]> {
+    const variables: SearchTimelineItemsQueryVariables = { query, limit, workspaceIds, boardIds };
+
+    const response = await this.mondayApi.request<SearchTimelineItemsQuery>(searchTimelineItems, variables, {
+      timeout: SEARCH_TIMEOUT,
+    });
+
+    return response.search.timeline_items.results.map((result) => ({
+      id: result.indexed_data.id,
+      title: result.indexed_data.title,
+      summary: result.indexed_data.summary || undefined,
+      content: result.indexed_data.content || undefined,
+      itemId: result.indexed_data.item_id,
+      boardId: result.indexed_data.board_id ?? undefined,
+    }));
+  }
+
+  private async searchOverviewsAsync(
+    query: string,
+    limit: number,
+    workspaceIds?: string[],
+    creatorIds?: string[],
+  ): Promise<SearchResult[]> {
+    const variables: SearchOverviewsDevQueryVariables = { query, limit, workspaceIds, creatorIds };
+
+    // search.overviews is only available in the dev schema; drop versionOverride once promoted to stable.
+    const response = await this.mondayApi.request<SearchOverviewsDevQuery>(searchOverviewsDev, variables, {
+      versionOverride: 'dev',
+      timeout: SEARCH_TIMEOUT,
+    });
+
+    return response.search.overviews.results.map((result) => ({
+      id: result.indexed_data.id,
+      title: result.indexed_data.name,
+      workspaceId: result.indexed_data.workspace_id ?? undefined,
+    }));
+  }
+
+  private async searchFoldersAsync(
+    input: ToolInputType<SearchToolInput>,
+    searchTerm: string,
+  ): Promise<{ results: SearchResult[]; truncated: boolean }> {
+    const normalizedSearchTerm = normalizeString(searchTerm);
+    // A searchTerm made only of characters normalizeString strips (e.g. "###" or
+    // emoji) would otherwise normalize to '', and every string includes(''),
+    // turning the filter below into a no-op that returns unrelated folders.
+    if (!normalizedSearchTerm) {
+      return { results: [], truncated: false };
+    }
+
+    const workspaceIds = toFilterIds(input.workspaceIds?.map((id) => id.toString()));
+
+    // When no workspaceIds are provided, search folders across all accessible
+    // workspaces rather than failing — the folders query treats workspace_ids as
+    // an optional filter.
+    const variables: GetFoldersQueryVariables = {
+      page: 1,
+      limit: MAX_FOLDERS_LIMIT,
+      workspace_ids: workspaceIds,
+    };
+
+    const response = await this.mondayApi.request<GetFoldersQuery>(getFolders, variables);
+    const folders = response.folders || [];
+
+    const filteredFolders = folders.filter(
+      (folder) => folder?.name && normalizeString(folder.name).includes(normalizedSearchTerm),
+    );
+
+    const results = filteredFolders
+      .filter((folder) => folder?.id)
+      .slice(0, input.limit)
+      .map((folder) => ({
+        id: folder!.id,
+        title: folder!.name,
+      }));
+
+    return { results, truncated: folders.length === MAX_FOLDERS_LIMIT };
+  }
+}

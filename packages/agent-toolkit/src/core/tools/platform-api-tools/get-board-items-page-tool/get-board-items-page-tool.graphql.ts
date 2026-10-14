@@ -4,19 +4,70 @@ export const getBoardItemsPage = gql`
   fragment ItemDataFragment on Item {
     id
     name
+    url
     created_at
     updated_at
-    column_values(ids: $columnIds) @include(if: $includeColumns) {
+    parent_item {
       id
+    }
+    group @include(if: $includeGroup) {
+      id
+      title
+    }
+    column_values(ids: $columnIds, capabilities: [CALCULATED]) @include(if: $includeColumns) {
+      id
+      type
       text
       value
+      is_leaf
+
+      ... on FormulaValue {
+        display_value
+      }
+
+      ... on BoardRelationValue {
+        linked_items {
+          id
+          name
+          board {
+            id
+            name
+          }
+        }
+      }
+
+      ... on BatteryValue {
+        battery_value {
+          key
+          count
+        }
+      }
+    }
+    description @include(if: $includeDescription) {
+      id
+      blocks {
+        id
+        type
+        content
+      }
     }
   }
-  
-  query GetBoardItemsPage($boardId: ID!, $limit: Int, $cursor: String, $includeColumns: Boolean!, $columnIds: [String!], $queryParams: ItemsQuery, $includeSubItems: Boolean!) {
-    boards(ids: [$boardId]) {
+
+  query GetBoardItemsPage(
+    $boardId: ID!
+    $limit: Int
+    $cursor: String
+    $includeColumns: Boolean!
+    $columnIds: [String!]
+    $queryParams: ItemsQuery
+    $includeSubItems: Boolean!
+    $includeDescription: Boolean!
+    $includeGroup: Boolean!
+  ) {
+    boards(ids: [$boardId], limit: 1) {
       id
       name
+      hierarchy_type
       items_page(limit: $limit, cursor: $cursor, query_params: $queryParams) {
         items {
           ...ItemDataFragment
@@ -26,18 +77,6 @@ export const getBoardItemsPage = gql`
           }
         }
         cursor
-      }
-    }
-  }
-`;
-
-export const smartSearchGetBoardItemIds = gql`
-  query SmartSearchBoardItemIds($searchTerm: String!, $boardId: ID!) {
-    search_items(boardId: $boardId, query: $searchTerm, searchType: LEXICAL, size: 100) {
-      results {
-        data {
-          id
-        }
       }
     }
   }

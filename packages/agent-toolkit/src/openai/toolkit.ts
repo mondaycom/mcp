@@ -9,19 +9,21 @@ import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { Tool } from '../core/tool';
 import { MondayAgentToolkitConfig } from '../core/monday-agent-toolkit';
+import { API_VERSION } from 'src/utils/version.utils';
+import { stringifyIfObject } from 'src/utils/object.utils';
 
 export class MondayAgentToolkit {
-  private readonly mondayApi: ApiClient;
-  private readonly mondayApiToken: string;
+  private readonly mondayApiToken: string | (() => string);
+  private readonly context?: MondayAgentToolkitConfig['context'];
   tools: Tool<any, any>[];
 
   constructor(config: MondayAgentToolkitConfig) {
-    this.mondayApi = new ApiClient({
-      token: config.mondayApiToken,
-      apiVersion: config.mondayApiVersion,
-      requestConfig: config.mondayApiRequestConfig,
-    });
     this.mondayApiToken = config.mondayApiToken;
+    this.context = {
+      ...config.context,
+      apiVersion: config.mondayApiVersion ?? API_VERSION,
+      ...(config.deps ? { deps: { ...config.context?.deps, ...config.deps } } : {}),
+    };
 
     this.tools = this.initializeTools(config);
   }
@@ -31,9 +33,25 @@ export class MondayAgentToolkit {
    */
   private initializeTools(config: MondayAgentToolkitConfig): Tool<any, any>[] {
     const tools: Tool<any, any>[] = [];
+    const apiClient: ApiClient | (() => ApiClient) =
+      typeof config.mondayApiToken === 'function'
+        ? () =>
+            new ApiClient({
+              token: (config.mondayApiToken as () => string)(),
+              apiVersion: config.mondayApiVersion ?? API_VERSION,
+              endpoint: config.mondayApiEndpoint,
+              requestConfig: config.mondayApiRequestConfig,
+            })
+        : new ApiClient({
+            token: config.mondayApiToken as string,
+            apiVersion: config.mondayApiVersion ?? API_VERSION,
+            endpoint: config.mondayApiEndpoint,
+            requestConfig: config.mondayApiRequestConfig,
+          });
     const instanceOptions = {
-      apiClient: this.mondayApi,
+      apiClient,
       apiToken: this.mondayApiToken,
+      context: this.context,
     };
 
     const filteredToolInstances = getFilteredToolInstances(instanceOptions, config.toolsConfiguration);
@@ -88,7 +106,7 @@ export class MondayAgentToolkit {
       return {
         role: 'tool',
         tool_call_id: toolCall.id,
-        content: result.content,
+        content: stringifyIfObject(result.content),
       } as ChatCompletionToolMessageParam;
     } else {
       // Handle tools without input schema
@@ -96,7 +114,7 @@ export class MondayAgentToolkit {
       return {
         role: 'tool',
         tool_call_id: toolCall.id,
-        content: result.content,
+        content: stringifyIfObject(result.content),
       } as ChatCompletionToolMessageParam;
     }
   }

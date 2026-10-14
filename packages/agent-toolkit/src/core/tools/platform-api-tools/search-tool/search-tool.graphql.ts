@@ -1,0 +1,136 @@
+import { gql } from 'graphql-request';
+
+export const getFolders = gql`
+  query GetFolders($page: Int!, $limit: Int!, $workspace_ids: [ID]) {
+    folders(page: $page, limit: $limit, workspace_ids: $workspace_ids) {
+      id
+      name
+    }
+  }
+`;
+
+export const searchItems = gql`
+  query SearchItems($query: String!, $limit: Int, $workspaceIds: [ID!], $boardIds: [ID!]) {
+    search {
+      items(query: $query, limit: $limit, workspace_ids: $workspaceIds, board_ids: $boardIds) {
+        results {
+          id
+          indexed_data {
+            id
+            name
+            url
+            board_id
+            workspace_id
+          }
+        }
+      }
+    }
+  }
+`;
+
+export const searchBoards = gql`
+  query SearchBoards($query: String!, $limit: Int, $workspaceIds: [ID!], $boardIds: [ID!]) {
+    search {
+      boards(query: $query, limit: $limit, workspace_ids: $workspaceIds, board_ids: $boardIds) {
+        results {
+          id
+          indexed_data {
+            id
+            name
+            url
+            workspace_id
+          }
+        }
+      }
+    }
+  }
+`;
+
+export const searchDocs = gql`
+  query SearchDocs($query: String!, $limit: Int, $workspaceIds: [ID!], $docIds: [ID!]) {
+    search {
+      docs(query: $query, limit: $limit, workspace_ids: $workspaceIds, ids: $docIds) {
+        results {
+          id
+          indexed_data {
+            id
+            name
+            workspace_id
+            highlights {
+              name
+              content
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+export const searchWorkspaces = gql`
+  query SearchWorkspaces($query: String!, $limit: Int) {
+    search {
+      workspaces(query: $query, limit: $limit) {
+        results {
+          id
+          indexed_data {
+            id
+            name
+            description
+          }
+        }
+      }
+    }
+  }
+`;
+
+export const searchUpdates = gql`
+  query SearchUpdates(
+    $query: String!
+    $limit: Int
+    $workspaceIds: [ID!]
+    $boardIds: [ID!]
+    $creatorIds: [ID!]
+  ) {
+    search {
+      updates(
+        query: $query
+        limit: $limit
+        workspace_ids: $workspaceIds
+        board_ids: $boardIds
+        creator_ids: $creatorIds
+      ) {
+        results {
+          id
+          indexed_data {
+            id
+            body
+            creator_id
+            item_id
+            board_id
+          }
+        }
+      }
+    }
+  }
+`;
+
+export const searchTimelineItems = gql`
+  query SearchTimelineItems($query: String!, $limit: Int, $workspaceIds: [ID!], $boardIds: [ID!]) {
+    search {
+      timeline_items(query: $query, limit: $limit, workspace_ids: $workspaceIds, board_ids: $boardIds) {
+        results {
+          id
+          indexed_data {
+            id
+            title
+            summary
+            content
+            item_id
+            board_id
+          }
+        }
+      }
+    }
+  }
+`;

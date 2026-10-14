@@ -3,7 +3,7 @@ import { gql } from 'graphql-request';
 // Get item board and its columns (used to discover or create a doc column for item-attached docs)
 export const getItemBoard = gql`
   query getItemBoard($itemId: ID!) {
-    items(ids: [$itemId]) {
+    items(ids: [$itemId], limit: 1) {
       id
       board {
         id
@@ -18,9 +18,10 @@ export const getItemBoard = gql`
 
 // Create a new monday doc (works for both workspace and board/item locations via CreateDocInput)
 export const createDoc = gql`
-  mutation createDoc($location: CreateDocInput!) {
-    create_doc(location: $location) {
+  mutation createDoc($location: CreateDocInput!, $docOwnerIds: [ID!]) {
+    create_doc(location: $location, doc_owner_ids: $docOwnerIds) {
       id
+      object_id
       url
       name
     }
@@ -44,4 +45,3 @@ export const updateDocName = gql`
     update_doc_name(docId: $docId, name: $name)
   }
 `;
-

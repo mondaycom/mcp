@@ -24,6 +24,7 @@ export const updateFolder = gql`
       position: $position
     ) {
       id
+      name
     }
   }
 `;

@@ -1,7 +1,11 @@
 import { gql } from 'graphql-request';
 
 export const boardInsights = gql`
-  query aggregateBoardInsights($query: AggregateQueryInput!) {
+  query aggregateBoardInsights($query: AggregateQueryInput!, $boardId: ID!) {
+    boards(ids: [$boardId], limit: 1) {
+      name
+      url
+    }
     aggregate(query: $query) {
       results {
         entries {
@@ -11,10 +15,7 @@ export const boardInsights = gql`
               result
             }
             ... on AggregateGroupByResult {
-              value_string
-              value_int
-              value_float
-              value_boolean
+              value
             }
           }
         }

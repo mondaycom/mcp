@@ -8,7 +8,7 @@ import {
   AggregateFromElementType,
   AggregateSelectElementType,
   ItemsOrderByDirection,
-} from 'src/monday-graphql/generated/graphql';
+} from 'src/monday-graphql/generated/graphql/graphql';
 import { DEFAULT_LIMIT } from './board-insights.consts';
 
 describe('Board Insights Tool', () => {
@@ -350,7 +350,7 @@ describe('Board Insights Tool', () => {
         expect(result.groupByElements).toEqual([{ column_id: 'LABEL_status_0' }]);
       });
 
-      it('should handle mixed aggregations with group by', () => {
+      it('should handle mixed aggregations with group by and add label function', () => {
         const input = {
           boardId: 123,
           aggregations: [
@@ -365,14 +365,16 @@ describe('Board Insights Tool', () => {
 
         const result = handleSelectAndGroupByElements(input as any);
 
-        expect(result.selectElements).toHaveLength(2);
+        expect(result.selectElements).toHaveLength(3);
         expect(result.selectElements[0]).toEqual({
           type: AggregateSelectElementType.Column,
           column: { column_id: 'status' },
           as: 'status',
         });
         expect(result.selectElements[1].type).toBe(AggregateSelectElementType.Function);
-        expect(result.groupByElements).toEqual([{ column_id: 'status' }]);
+        expect(result.selectElements[2].function?.function).toEqual(AggregateSelectFunctionName.Label);
+        expect(result.selectElements[2].function?.params?.[0].column?.column_id).toEqual('status');
+        expect(result.groupByElements).toEqual([{ column_id: 'status' }, { column_id: 'LABEL_status_0' }]);
       });
 
       it('should add select elements for group by columns not in aggregations', () => {
@@ -389,8 +391,14 @@ describe('Board Insights Tool', () => {
 
         const result = handleSelectAndGroupByElements(input as any);
 
-        expect(result.selectElements).toHaveLength(3);
-        expect(result.groupByElements).toEqual([{ column_id: 'status' }, { column_id: 'priority' }]);
+        // COUNT + LABEL for status + LABEL for priority + column select for status + column select for priority
+        expect(result.selectElements).toHaveLength(5);
+        expect(result.groupByElements).toEqual([
+          { column_id: 'status' },
+          { column_id: 'priority' },
+          { column_id: 'LABEL_status_0' },
+          { column_id: 'LABEL_priority_0' },
+        ]);
 
         // Should have added column selects for status and priority
         expect(
@@ -398,6 +406,17 @@ describe('Board Insights Tool', () => {
         ).toBe(true);
         expect(
           result.selectElements.some((el) => el.type === AggregateSelectElementType.Column && el.as === 'priority'),
+        ).toBe(true);
+        // Should have added LABEL functions for status and priority
+        expect(
+          result.selectElements.some(
+            (el) => el.type === AggregateSelectElementType.Function && el.as === 'LABEL_status_0',
+          ),
+        ).toBe(true);
+        expect(
+          result.selectElements.some(
+            (el) => el.type === AggregateSelectElementType.Function && el.as === 'LABEL_priority_0',
+          ),
         ).toBe(true);
       });
 
@@ -449,6 +468,65 @@ describe('Board Insights Tool', () => {
         expect(result.selectElements[0].as).toBe('SUM_numbers_0');
         expect(result.selectElements[1].as).toBe('SUM_numbers_1');
       });
+
+      it('should create LABEL select element for people columns in groupBy', () => {
+        const input = {
+          boardId: 123,
+          aggregations: [
+            {
+              columnId: 'item_id',
+              function: AggregateSelectFunctionName.Count,
+            },
+          ],
+          groupBy: ['person'],
+        };
+
+        const result = handleSelectAndGroupByElements(input as any);
+
+        expect(result.selectElements).toHaveLength(3);
+
+        // Should have the COUNT aggregation
+        expect(result.selectElements[0]).toEqual({
+          type: AggregateSelectElementType.Function,
+          function: {
+            function: AggregateSelectFunctionName.Count,
+            params: [
+              {
+                type: AggregateSelectElementType.Column,
+                column: { column_id: 'item_id' },
+                as: 'item_id',
+              },
+            ],
+          },
+          as: 'COUNT_item_id_0',
+        });
+
+        // Should have added a LABEL function for the people column
+        expect(result.selectElements[1]).toEqual({
+          type: AggregateSelectElementType.Function,
+          function: {
+            function: AggregateSelectFunctionName.Label,
+            params: [
+              {
+                type: AggregateSelectElementType.Column,
+                column: { column_id: 'person' },
+                as: 'person',
+              },
+            ],
+          },
+          as: 'LABEL_person_0',
+        });
+
+        // Should have added a column select for person (from groupBy)
+        expect(result.selectElements[2]).toEqual({
+          type: AggregateSelectElementType.Column,
+          column: { column_id: 'person' },
+          as: 'person',
+        });
+
+        // GroupBy should contain both person and the LABEL_person_0
+        expect(result.groupByElements).toEqual([{ column_id: 'person' }, { column_id: 'LABEL_person_0' }]);
+      });
     });
   });
 
@@ -462,13 +540,14 @@ describe('Board Insights Tool', () => {
 
     it('should successfully get basic board insights', async () => {
       const mockResponse = {
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
         aggregate: {
           results: [
             {
               entries: [
                 {
                   alias: 'status',
-                  value: { value_string: 'Done' },
+                  value: { value: 'Done' },
                 },
                 {
                   alias: 'COUNT_item_id_0',
@@ -480,7 +559,7 @@ describe('Board Insights Tool', () => {
               entries: [
                 {
                   alias: 'status',
-                  value: { value_string: 'Working on it' },
+                  value: { value: 'Working on it' },
                 },
                 {
                   alias: 'COUNT_item_id_0',
@@ -492,9 +571,9 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       const result = await tool.execute({
         boardId: 123456,
@@ -504,11 +583,13 @@ describe('Board Insights Tool', () => {
         limit: DEFAULT_LIMIT,
       });
 
-      expect(result.content).toContain('Board insights result (2 rows)');
-      expect(result.content).toContain('"status": "Done"');
-      expect(result.content).toContain('"COUNT_item_id_0": 5');
-      expect(result.content).toContain('"status": "Working on it"');
-      expect(result.content).toContain('"COUNT_item_id_0": 3');
+      const parsed = result.content as any;
+      expect(parsed.message).toBe('Board insights retrieved');
+      expect(parsed.data.length).toBe(2);
+      expect(parsed.data[0].status).toBe('Done');
+      expect(parsed.data[0].COUNT_item_id_0).toBe(5);
+      expect(parsed.data[1].status).toBe('Working on it');
+      expect(parsed.data[1].COUNT_item_id_0).toBe(3);
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.stringContaining('query aggregateBoardInsights'),
@@ -522,6 +603,7 @@ describe('Board Insights Tool', () => {
 
     it('should handle insights with filters', async () => {
       const mockResponse = {
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
         aggregate: {
           results: [
             {
@@ -536,9 +618,9 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       const result = await tool.execute({
         boardId: 123456,
@@ -554,8 +636,10 @@ describe('Board Insights Tool', () => {
         limit: DEFAULT_LIMIT,
       });
 
-      expect(result.content).toContain('Board insights result (1 rows)');
-      expect(result.content).toContain('"COUNT_item_id_0": 10');
+      const parsed = result.content as any;
+      expect(parsed.message).toBe('Board insights retrieved');
+      expect(parsed.data.length).toBe(1);
+      expect(parsed.data[0].COUNT_item_id_0).toBe(10);
 
       const mockCall = mocks.getMockRequest().mock.calls[0];
       expect(mockCall[1].query.query).toEqual({
@@ -573,13 +657,14 @@ describe('Board Insights Tool', () => {
 
     it('should handle insights with limit', async () => {
       const mockResponse = {
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
         aggregate: {
           results: [
             {
               entries: [
                 {
                   alias: 'status',
-                  value: { value_string: 'Done' },
+                  value: { value: 'Done' },
                 },
               ],
             },
@@ -587,9 +672,9 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       await tool.execute({
         boardId: 123456,
@@ -604,14 +689,15 @@ describe('Board Insights Tool', () => {
 
     it('should handle empty results', async () => {
       const mockResponse = {
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
         aggregate: {
           results: [],
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       const result = await tool.execute({
         boardId: 123456,
@@ -625,12 +711,13 @@ describe('Board Insights Tool', () => {
 
     it('should handle null aggregate response', async () => {
       const mockResponse = {
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
         aggregate: null,
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       const result = await tool.execute({
         boardId: 123456,
@@ -644,25 +731,26 @@ describe('Board Insights Tool', () => {
 
     it('should handle different value types in results', async () => {
       const mockResponse = {
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
         aggregate: {
           results: [
             {
               entries: [
                 {
                   alias: 'string_col',
-                  value: { value_string: 'text value' },
+                  value: { value: 'text value' },
                 },
                 {
                   alias: 'int_col',
-                  value: { value_int: 42 },
+                  value: { value: 42 },
                 },
                 {
                   alias: 'float_col',
-                  value: { value_float: 3.14 },
+                  value: { value: 3.14 },
                 },
                 {
                   alias: 'bool_col',
-                  value: { value_boolean: true },
+                  value: { value: true },
                 },
                 {
                   alias: 'result_col',
@@ -674,9 +762,9 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       const result = await tool.execute({
         boardId: 123456,
@@ -691,15 +779,17 @@ describe('Board Insights Tool', () => {
         limit: DEFAULT_LIMIT,
       });
 
-      expect(result.content).toContain('"string_col": "text value"');
-      expect(result.content).toContain('"int_col": 42');
-      expect(result.content).toContain('"float_col": 3.14');
-      expect(result.content).toContain('"bool_col": true');
-      expect(result.content).toContain('"result_col": 100');
+      const parsed = result.content as any;
+      expect(parsed.data[0].string_col).toBe('text value');
+      expect(parsed.data[0].int_col).toBe(42);
+      expect(parsed.data[0].float_col).toBe(3.14);
+      expect(parsed.data[0].bool_col).toBe(true);
+      expect(parsed.data[0].result_col).toBe(100);
     });
 
     it('should handle null values in results', async () => {
       const mockResponse = {
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
         aggregate: {
           results: [
             {
@@ -718,9 +808,9 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       const result = await tool.execute({
         boardId: 123456,
@@ -729,23 +819,25 @@ describe('Board Insights Tool', () => {
         limit: DEFAULT_LIMIT,
       });
 
-      expect(result.content).toContain('"status": null');
-      expect(result.content).toContain('"count": 5');
+      const parsed = result.content as any;
+      expect(parsed.data[0].status).toBeNull();
+      expect(parsed.data[0].count).toBe(5);
     });
 
     it('should handle entries with no alias', async () => {
       const mockResponse = {
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
         aggregate: {
           results: [
             {
               entries: [
                 {
                   alias: '',
-                  value: { value_string: 'should be ignored' },
+                  value: { value: 'should be ignored' },
                 },
                 {
                   alias: 'status',
-                  value: { value_string: 'Done' },
+                  value: { value: 'Done' },
                 },
               ],
             },
@@ -753,9 +845,9 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       const result = await tool.execute({
         boardId: 123456,
@@ -764,7 +856,7 @@ describe('Board Insights Tool', () => {
         limit: DEFAULT_LIMIT,
       });
 
-      const parsedResult = JSON.parse(result.content.split(':\n')[1]);
+      const parsedResult = (result.content as any).data;
       expect(parsedResult[0]).toEqual({ status: 'Done' });
       expect(parsedResult[0]).not.toHaveProperty('');
     });
@@ -772,7 +864,7 @@ describe('Board Insights Tool', () => {
     it('should handle API errors', async () => {
       mocks.setError('Board not found');
 
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       await expect(
         tool.execute({
@@ -791,7 +883,7 @@ describe('Board Insights Tool', () => {
       };
       mocks.setError(graphqlError);
 
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       await expect(
         tool.execute({
@@ -805,20 +897,21 @@ describe('Board Insights Tool', () => {
 
     it('should handle complex aggregation with multiple group by columns', async () => {
       const mockResponse = {
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
         aggregate: {
           results: [
             {
               entries: [
-                { alias: 'status', value: { value_string: 'Done' } },
-                { alias: 'priority', value: { value_string: 'High' } },
+                { alias: 'status', value: { value: 'Done' } },
+                { alias: 'priority', value: { value: 'High' } },
                 { alias: 'SUM_numbers_0', value: { result: 150 } },
                 { alias: 'AVERAGE_numbers_0', value: { result: 30 } },
               ],
             },
             {
               entries: [
-                { alias: 'status', value: { value_string: 'Done' } },
-                { alias: 'priority', value: { value_string: 'Low' } },
+                { alias: 'status', value: { value: 'Done' } },
+                { alias: 'priority', value: { value: 'Low' } },
                 { alias: 'SUM_numbers_0', value: { result: 80 } },
                 { alias: 'AVERAGE_numbers_0', value: { result: 20 } },
               ],
@@ -827,9 +920,9 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       const result = await tool.execute({
         boardId: 123456,
@@ -844,29 +937,32 @@ describe('Board Insights Tool', () => {
         limit: DEFAULT_LIMIT,
       });
 
-      expect(result.content).toContain('Board insights result (2 rows)');
-      expect(result.content).toContain('"status": "Done"');
-      expect(result.content).toContain('"priority": "High"');
-      expect(result.content).toContain('"SUM_numbers_0": 150');
-      expect(result.content).toContain('"AVERAGE_numbers_0": 30');
-      expect(result.content).toContain('"priority": "Low"');
-      expect(result.content).toContain('"SUM_numbers_0": 80');
-      expect(result.content).toContain('"AVERAGE_numbers_0": 20');
+      const parsed = result.content as any;
+      expect(parsed.message).toBe('Board insights retrieved');
+      expect(parsed.data.length).toBe(2);
+      expect(parsed.data[0].status).toBe('Done');
+      expect(parsed.data[0].priority).toBe('High');
+      expect(parsed.data[0].SUM_numbers_0).toBe(150);
+      expect(parsed.data[0].AVERAGE_numbers_0).toBe(30);
+      expect(parsed.data[1].priority).toBe('Low');
+      expect(parsed.data[1].SUM_numbers_0).toBe(80);
+      expect(parsed.data[1].AVERAGE_numbers_0).toBe(20);
     });
 
     it('should handle insights with single column orderBy', async () => {
       const mockResponse = {
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
         aggregate: {
           results: [
             {
               entries: [
-                { alias: 'status', value: { value_string: 'Done' } },
+                { alias: 'status', value: { value: 'Done' } },
                 { alias: 'COUNT_item_id_0', value: { result: 5 } },
               ],
             },
             {
               entries: [
-                { alias: 'status', value: { value_string: 'Working on it' } },
+                { alias: 'status', value: { value: 'Working on it' } },
                 { alias: 'COUNT_item_id_0', value: { result: 3 } },
               ],
             },
@@ -874,9 +970,9 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       await tool.execute({
         boardId: 123456,
@@ -905,12 +1001,13 @@ describe('Board Insights Tool', () => {
 
     it('should handle insights with multiple column orderBy', async () => {
       const mockResponse = {
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
         aggregate: {
           results: [
             {
               entries: [
-                { alias: 'status', value: { value_string: 'Done' } },
-                { alias: 'priority', value: { value_string: 'High' } },
+                { alias: 'status', value: { value: 'Done' } },
+                { alias: 'priority', value: { value: 'High' } },
                 { alias: 'COUNT_item_id_0', value: { result: 2 } },
               ],
             },
@@ -918,9 +1015,9 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       await tool.execute({
         boardId: 123456,
@@ -961,11 +1058,12 @@ describe('Board Insights Tool', () => {
 
     it('should handle insights with filters and orderBy combined', async () => {
       const mockResponse = {
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
         aggregate: {
           results: [
             {
               entries: [
-                { alias: 'status', value: { value_string: 'Done' } },
+                { alias: 'status', value: { value: 'Done' } },
                 { alias: 'COUNT_item_id_0', value: { result: 8 } },
               ],
             },
@@ -973,9 +1071,9 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       await tool.execute({
         boardId: 123456,
@@ -1020,11 +1118,12 @@ describe('Board Insights Tool', () => {
 
     it('should handle orderBy with DESC direction', async () => {
       const mockResponse = {
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
         aggregate: {
           results: [
             {
               entries: [
-                { alias: 'created_at', value: { value_string: '2024-01-15' } },
+                { alias: 'created_at', value: { value: '2024-01-15' } },
                 { alias: 'COUNT_item_id_0', value: { result: 10 } },
               ],
             },
@@ -1032,9 +1131,9 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       await tool.execute({
         boardId: 123456,
@@ -1059,6 +1158,7 @@ describe('Board Insights Tool', () => {
 
     it('should count items using COUNT_ITEMS function', async () => {
       const mockResponse = {
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
         aggregate: {
           results: [
             {
@@ -1073,9 +1173,9 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       const result = await tool.execute({
         boardId: 123456,
@@ -1089,8 +1189,10 @@ describe('Board Insights Tool', () => {
         limit: DEFAULT_LIMIT,
       });
 
-      expect(result.content).toContain('Board insights result (1 rows)');
-      expect(result.content).toContain('"COUNT_ITEMS_item_id_0": 42');
+      const parsed = result.content as any;
+      expect(parsed.message).toBe('Board insights retrieved');
+      expect(parsed.data.length).toBe(1);
+      expect(parsed.data[0].COUNT_ITEMS_item_id_0).toBe(42);
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.stringContaining('query aggregateBoardInsights'),
@@ -1110,8 +1212,49 @@ describe('Board Insights Tool', () => {
       );
     });
 
+    it('should count items without a columnId', async () => {
+      mocks.setResponseOnce({
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
+        aggregate: { results: [{ entries: [{ alias: 'COUNT_ITEMS_0', value: { result: 7 } }] }] },
+      });
+
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
+
+      const result = await tool.execute({
+        boardId: 123456,
+        aggregations: [{ function: AggregateSelectFunctionName.CountItems }],
+        filtersOperator: ItemsQueryOperator.And,
+        limit: DEFAULT_LIMIT,
+      });
+
+      expect((result.content as any).data[0].COUNT_ITEMS_0).toBe(7);
+      const select = mocks.getMockRequest().mock.calls[0][1].query.select;
+      expect(select).toEqual([
+        {
+          type: AggregateSelectElementType.Function,
+          function: { function: AggregateSelectFunctionName.CountItems, params: [] },
+          as: 'COUNT_ITEMS_0',
+        },
+      ]);
+    });
+
+    it('should reject a non-COUNT_ITEMS aggregation without a columnId', async () => {
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
+
+      const result = await tool.execute({
+        boardId: 123456,
+        aggregations: [{ function: AggregateSelectFunctionName.Sum }],
+        filtersOperator: ItemsQueryOperator.And,
+        limit: DEFAULT_LIMIT,
+      });
+
+      expect(result.content).toContain('must have a "columnId"');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+
     it('should count items with filters applied', async () => {
       const mockResponse = {
+        boards: [{ name: 'Test Board', url: 'https://test.monday.com/boards/123456' }],
         aggregate: {
           results: [
             {
@@ -1126,9 +1269,9 @@ describe('Board Insights Tool', () => {
         },
       };
 
-      mocks.setResponse(mockResponse);
+      mocks.setResponseOnce(mockResponse);
 
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       const result = await tool.execute({
         boardId: 123456,
@@ -1149,8 +1292,10 @@ describe('Board Insights Tool', () => {
         limit: DEFAULT_LIMIT,
       });
 
-      expect(result.content).toContain('Board insights result (1 rows)');
-      expect(result.content).toContain('"COUNT_ITEMS_item_id_0": 15');
+      const parsed = result.content as any;
+      expect(parsed.message).toBe('Board insights retrieved');
+      expect(parsed.data.length).toBe(1);
+      expect(parsed.data[0].COUNT_ITEMS_item_id_0).toBe(15);
 
       const mockCall = mocks.getMockRequest().mock.calls[0];
       expect(mockCall[1].query.query).toEqual({
@@ -1167,14 +1312,15 @@ describe('Board Insights Tool', () => {
     });
 
     it('should have correct metadata', () => {
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       expect(tool.name).toBe('board_insights');
       expect(tool.type).toBe('read');
       expect(tool.getDescription()).toBe(
         "This tool allows you to calculate insights about board's data by filtering, grouping and aggregating columns. For example, you can get the total number of items in a board, the number of items in each status, the number of items in each column, etc. " +
           "Use this tool when you need to get a summary of the board's data, for example, you want to know the total number of items in a board, the number of items in each status, the number of items in each column, etc." +
-          "[REQUIRED PRECONDITION]: Before using this tool, if you are not familiar with the board's structure (column IDs, column types, status labels, etc.), first use get_board_info to understand the board metadata. This is essential for constructing proper filters and knowing which columns are available.",
+          "[REQUIRED PRECONDITION]: Before using this tool, if new columns were added to the board or if you are not familiar with the board's structure (column IDs, column types, status labels, etc.), first use get_board_info with filters.columns.only to get column metadata without fetching views. This is essential for constructing proper filters and knowing which columns are available." +
+          "[IMPORTANT]: For some columns, human-friendly label is returned inside 'LABEL_<column_id' field. E.g. for column with id 'status_123' the label is returned inside 'LABEL_status_123' field.",
       );
       expect(tool.annotations.title).toBe('Get Board Insights');
       expect(tool.annotations.readOnlyHint).toBe(true);
@@ -1183,239 +1329,10 @@ describe('Board Insights Tool', () => {
     });
   });
 
-  describe('Stringified Fields (Microsoft Copilot compatibility)', () => {
-    let mocks: ReturnType<typeof createMockApiClient>;
-
-    beforeEach(() => {
-      mocks = createMockApiClient();
-      jest.clearAllMocks();
-    });
-
-    it('should handle aggregationsStringified field', async () => {
-      const mockResponse = {
-        aggregate: {
-          results: [
-            {
-              entries: [
-                {
-                  alias: 'status',
-                  value: { value_string: 'Done' },
-                },
-                {
-                  alias: 'COUNT_item_id_0',
-                  value: { result: 5 },
-                },
-              ],
-            },
-          ],
-        },
-      };
-
-      mocks.setResponse(mockResponse);
-
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
-
-      const aggregations = [
-        { columnId: 'status' },
-        { columnId: 'item_id', function: AggregateSelectFunctionName.Count },
-      ];
-
-      const result = await tool.execute({
-        boardId: 123456,
-        aggregationsStringified: JSON.stringify(aggregations),
-        groupBy: ['status'],
-        filtersOperator: ItemsQueryOperator.And,
-        limit: DEFAULT_LIMIT,
-      });
-
-      expect(result.content).toContain('Board insights result (1 rows)');
-      expect(result.content).toContain('"status": "Done"');
-      expect(result.content).toContain('"COUNT_item_id_0": 5');
-
-      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-        expect.stringContaining('query aggregateBoardInsights'),
-        expect.objectContaining({
-          query: expect.objectContaining({
-            from: { id: '123456', type: AggregateFromElementType.Table },
-          }),
-        }),
-      );
-    });
-
-    it('should handle filtersStringified field', async () => {
-      const mockResponse = {
-        aggregate: {
-          results: [
-            {
-              entries: [
-                {
-                  alias: 'COUNT_item_id_0',
-                  value: { result: 10 },
-                },
-              ],
-            },
-          ],
-        },
-      };
-
-      mocks.setResponse(mockResponse);
-
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
-
-      const filters = [
-        {
-          columnId: 'status',
-          compareValue: 'Done',
-          operator: ItemsQueryRuleOperator.AnyOf,
-        },
-      ];
-
-      const result = await tool.execute({
-        boardId: 123456,
-        aggregations: [{ columnId: 'item_id', function: AggregateSelectFunctionName.Count }],
-        filtersStringified: JSON.stringify(filters),
-        filtersOperator: ItemsQueryOperator.And,
-        limit: DEFAULT_LIMIT,
-      });
-
-      expect(result.content).toContain('Board insights result (1 rows)');
-      expect(result.content).toContain('"COUNT_item_id_0": 10');
-
-      const mockCall = mocks.getMockRequest().mock.calls[0];
-      expect(mockCall[1].query.query).toEqual({
-        rules: [
-          {
-            column_id: 'status',
-            compare_value: 'Done',
-            operator: ItemsQueryRuleOperator.AnyOf,
-            compare_attribute: undefined,
-          },
-        ],
-        operator: ItemsQueryOperator.And,
-      });
-    });
-
-    it('should handle orderByStringified field', async () => {
-      const mockResponse = {
-        aggregate: {
-          results: [
-            {
-              entries: [
-                { alias: 'status', value: { value_string: 'Done' } },
-                { alias: 'COUNT_item_id_0', value: { result: 5 } },
-              ],
-            },
-          ],
-        },
-      };
-
-      mocks.setResponse(mockResponse);
-
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
-
-      const orderBy = [
-        {
-          columnId: 'status',
-          direction: ItemsOrderByDirection.Asc,
-        },
-      ];
-
-      const result = await tool.execute({
-        boardId: 123456,
-        aggregations: [{ columnId: 'status' }, { columnId: 'item_id', function: AggregateSelectFunctionName.Count }],
-        groupBy: ['status'],
-        orderByStringified: JSON.stringify(orderBy),
-        filtersOperator: ItemsQueryOperator.And,
-        limit: DEFAULT_LIMIT,
-      });
-
-      expect(result.content).toContain('Board insights result (1 rows)');
-
-      const mockCall = mocks.getMockRequest().mock.calls[0];
-      expect(mockCall[1].query.query).toEqual({
-        order_by: [
-          {
-            column_id: 'status',
-            direction: ItemsOrderByDirection.Asc,
-          },
-        ],
-      });
-    });
-
-    it('should handle all stringified fields together', async () => {
-      const mockResponse = {
-        aggregate: {
-          results: [
-            {
-              entries: [
-                { alias: 'status', value: { value_string: 'Done' } },
-                { alias: 'COUNT_item_id_0', value: { result: 8 } },
-              ],
-            },
-          ],
-        },
-      };
-
-      mocks.setResponse(mockResponse);
-
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
-
-      const aggregations = [
-        { columnId: 'status' },
-        { columnId: 'item_id', function: AggregateSelectFunctionName.Count },
-      ];
-
-      const filters = [
-        {
-          columnId: 'priority',
-          compareValue: 'High',
-          operator: ItemsQueryRuleOperator.AnyOf,
-        },
-      ];
-
-      const orderBy = [
-        {
-          columnId: 'COUNT_item_id_0',
-          direction: ItemsOrderByDirection.Desc,
-        },
-      ];
-
-      const result = await tool.execute({
-        boardId: 123456,
-        aggregationsStringified: JSON.stringify(aggregations),
-        groupBy: ['status'],
-        filtersStringified: JSON.stringify(filters),
-        filtersOperator: ItemsQueryOperator.And,
-        orderByStringified: JSON.stringify(orderBy),
-        limit: DEFAULT_LIMIT,
-      });
-
-      expect(result.content).toContain('Board insights result (1 rows)');
-      expect(result.content).toContain('"status": "Done"');
-      expect(result.content).toContain('"COUNT_item_id_0": 8');
-
-      const mockCall = mocks.getMockRequest().mock.calls[0];
-      expect(mockCall[1].query.query).toEqual({
-        rules: [
-          {
-            column_id: 'priority',
-            compare_value: 'High',
-            operator: ItemsQueryRuleOperator.AnyOf,
-            compare_attribute: undefined,
-          },
-        ],
-        operator: ItemsQueryOperator.And,
-        order_by: [
-          {
-            column_id: 'COUNT_item_id_0',
-            direction: ItemsOrderByDirection.Desc,
-          },
-        ],
-      });
-    });
-
-    it('should return error when neither aggregations nor aggregationsStringified is provided', async () => {
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
+  describe('Missing aggregations', () => {
+    it('should return error when aggregations is not provided', async () => {
+      const mocks = createMockApiClient();
+      const tool = new BoardInsightsTool(mocks.mockApiClient);
 
       const result = await tool.execute({
         boardId: 123456,
@@ -1423,57 +1340,7 @@ describe('Board Insights Tool', () => {
         limit: DEFAULT_LIMIT,
       });
 
-      expect(result.content).toBe(
-        'Input must contain either the "aggregations" field or the "aggregationsStringified" field.',
-      );
-    });
-
-    it('should prefer non-stringified field over stringified when both provided', async () => {
-      const mockResponse = {
-        aggregate: {
-          results: [
-            {
-              entries: [
-                {
-                  alias: 'priority',
-                  value: { value_string: 'High' },
-                },
-              ],
-            },
-          ],
-        },
-      };
-
-      mocks.setResponse(mockResponse);
-
-      const tool = new BoardInsightsTool(mocks.mockApiClient, 'fake_token');
-
-      // Non-stringified has priority
-      const correctAggregations = [{ columnId: 'priority' }];
-
-      // Stringified should be ignored
-      const wrongAggregations = [{ columnId: 'status' }];
-
-      const result = await tool.execute({
-        boardId: 123456,
-        aggregations: correctAggregations,
-        aggregationsStringified: JSON.stringify(wrongAggregations),
-        filtersOperator: ItemsQueryOperator.And,
-        limit: DEFAULT_LIMIT,
-      });
-
-      expect(result.content).toContain('Board insights result (1 rows)');
-      expect(result.content).toContain('"priority": "High"');
-
-      // Should use priority, not status
-      const mockCall = mocks.getMockRequest().mock.calls[0];
-      expect(mockCall[1].query.select).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            column: { column_id: 'priority' },
-          }),
-        ]),
-      );
+      expect(result.content).toBe('Input must contain the "aggregations" field.');
     });
   });
 });

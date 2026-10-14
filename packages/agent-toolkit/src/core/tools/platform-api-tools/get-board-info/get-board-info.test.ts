@@ -1,8 +1,23 @@
-import { formatBoardInfo, BoardInfoData } from './helpers';
-import { State, BoardKind, WorkspaceKind, ColumnType } from '../../../../monday-graphql/generated/graphql';
+import {
+  formatBoardInfoAsJson,
+  BoardInfoData,
+  BoardKnowledgeData,
+  normalizeViewName,
+  resolveViewIdsByName,
+} from './helpers';
+import { BoardViewAccessLevel, State, BoardKind, WorkspaceKind } from '../../../../monday-graphql/generated/graphql/graphql';
+import {
+  EntityKnowledgeSectionKey,
+  EntityKnowledgeSectionKind,
+  EntityKnowledgeStatus,
+} from '../../../../monday-graphql/generated/graphql.dev/graphql';
+import { NonDeprecatedColumnType } from 'src/utils/types';
+import { MondayAgentToolkit } from 'src/mcp/toolkit';
+import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '../test-utils/mock-api-client';
+import { GET_BOARD_INFO_ENTITY_KNOWLEDGE_FLAG, GetBoardInfoTool } from './get-board-info-tool';
 
-describe('formatBoardInfo - Simple Tests', () => {
-  it('should format basic board information correctly', () => {
+describe('formatBoardInfoAsJson - board structure', () => {
+  it('should include core board fields and nested relations', () => {
     const mockBoard: BoardInfoData = {
       id: '123456789',
       name: 'Test Board',
@@ -44,15 +59,15 @@ describe('formatBoardInfo - Simple Tests', () => {
           id: 'col_1',
           title: 'Task Name',
           description: 'The name of the task',
-          type: ColumnType.Text,
+          type: NonDeprecatedColumnType.Text,
           settings: { width: 200 },
         },
         {
           id: 'col_2',
           title: 'Status',
           description: undefined,
-          type: ColumnType.Status,
-          settings: {labels: ["Not Started", "In Progress", "Done"]},
+          type: NonDeprecatedColumnType.Status,
+          settings: { labels: ['Not Started', 'In Progress', 'Done'] },
         },
       ],
       tags: [
@@ -61,77 +76,19 @@ describe('formatBoardInfo - Simple Tests', () => {
       ],
     } as BoardInfoData;
 
-    const result = formatBoardInfo(mockBoard, null);
+    const result = formatBoardInfoAsJson(mockBoard, null);
 
-    // Test basic information section
-    expect(result).toContain('# Board Information');
-    expect(result).toContain('**Name:** Test Board');
-    expect(result).toContain('**ID:** 123456789');
-    expect(result).toContain('**Description:** A test board for unit testing');
-    expect(result).toContain('**State:** active');
-    expect(result).toContain('**Kind:** public');
-    expect(result).toContain('**URL:** https://monday.com/boards/123456789');
-    expect(result).toContain('**Updated:** 2024-01-15T10:30:00Z');
-    expect(result).toContain('**Item Terminology:** tasks');
-    expect(result).toContain('**Items Count:** 25');
-    expect(result).toContain('**Items Limit:** 100');
-    expect(result).toContain('**Board Folder ID:** folder_123');
-
-    // Test creator section
-    expect(result).toContain('## Creator');
-    expect(result).toContain('**Name:** John Doe');
-    expect(result).toContain('**ID:** creator_1');
-    expect(result).toContain('**Email:** john.doe@example.com');
-
-    // Test workspace section
-    expect(result).toContain('## Workspace');
-    expect(result).toContain('**Name:** Development Team');
-    expect(result).toContain('**ID:** workspace_1');
-    expect(result).toContain('**Kind:** open');
-    expect(result).toContain('**Description:** Main development workspace');
-
-    // Test owners section
-    expect(result).toContain('## Board Owners');
-    expect(result).toContain('1. **Alice Smith** (ID: owner_1)');
-    expect(result).toContain('2. **Bob Johnson** (ID: owner_2)');
-
-    // Test team owners section
-    expect(result).toContain('## Team Owners');
-    expect(result).toContain('1. **Frontend Team** (ID: team_1)');
-
-    // Test groups section
-    expect(result).toContain('## Groups');
-    expect(result).toContain('1. **To Do** (ID: group_1)');
-    expect(result).toContain('2. **In Progress** (ID: group_2)');
-
-    // Test top group section
-    expect(result).toContain('## Top Group');
-    expect(result).toContain('**ID:** top_group_1');
-
-    // Test columns section
-    expect(result).toContain('## Columns');
-    expect(result).toContain('1. **Task Name** (text)');
-    expect(result).toContain('   - **ID:** col_1');
-    expect(result).toContain('   - **Description:** The name of the task');
-    expect(result).toContain('   - **Settings:** {"width":200}');
-
-    expect(result).not.toContain('## Sub Items Columns');
-
-    expect(result).toContain('2. **Status** (status)');
-    expect(result).toContain('   - **ID:** col_2');
-    expect(result).toContain('   - **Settings:** {"labels":["Not Started","In Progress","Done"]}');
-
-    // Test tags section
-    expect(result).toContain('## Tags');
-    expect(result).toContain('1. **urgent** (ID: tag_1)');
-    expect(result).toContain('2. **bug-fix** (ID: tag_2)');
-
-    // Test permissions section
-    expect(result).toContain('## Permissions');
-    expect(result).toContain('write');
+    expect(result.board.name).toBe('Test Board');
+    expect(result.board.id).toBe('123456789');
+    expect(result.board.creator?.name).toBe('John Doe');
+    expect(result.board.workspace?.name).toBe('Development Team');
+    expect(result.board.columns).toHaveLength(2);
+    expect(result.board.subItemColumns).toBeUndefined();
+    expect(Object.keys(result)).toEqual(['board', 'knowledge']);
+    expect(result.knowledge).toBeNull();
   });
 
-  it('should handle minimal board data gracefully', () => {
+  it('should handle minimal board data', () => {
     const minimalBoard = {
       id: '123',
       name: 'Minimal Board',
@@ -155,82 +112,15 @@ describe('formatBoardInfo - Simple Tests', () => {
       tags: undefined,
     } as any;
 
-    const result = formatBoardInfo(minimalBoard, null);
+    const result = formatBoardInfoAsJson(minimalBoard, null);
 
-    expect(result).toContain('# Board Information');
-    expect(result).toContain('**Name:** Minimal Board');
-    expect(result).toContain('**ID:** 123');
-    expect(result).toContain('**Description:** No description');
-    expect(result).toContain('**State:** active');
-    expect(result).toContain('**Kind:** private');
-    expect(result).toContain('**Item Terminology:** items');
-    expect(result).toContain('**Items Count:** 0');
-    expect(result).toContain('**Items Limit:** No limit');
-    expect(result).toContain('**Board Folder ID:** None');
-
-    // Should not contain optional sections
-    expect(result).not.toContain('## Creator');
-    expect(result).not.toContain('## Workspace');
-    expect(result).not.toContain('## Board Owners');
-    expect(result).not.toContain('## Team Owners');
-    expect(result).not.toContain('## Groups');
-    expect(result).not.toContain('## Top Group');
-    expect(result).not.toContain('## Columns');
-    expect(result).not.toContain('## Tags');
-
-    // Should contain permissions
-    expect(result).toContain('## Permissions');
-    expect(result).toContain('read');
+    expect(result.board.name).toBe('Minimal Board');
+    expect(result.board.columns).toEqual([]);
+    expect(Object.keys(result)).toEqual(['board', 'knowledge']);
+    expect(result.knowledge).toBeNull();
   });
 
-  it('should maintain proper section order', () => {
-    const board: BoardInfoData = {
-      id: '123',
-      name: 'Test Board',
-      description: 'Test',
-      state: State.Active,
-      board_kind: BoardKind.Public,
-      permissions: 'write',
-      url: 'https://test.com',
-      updated_at: '2024-01-01',
-      item_terminology: 'items',
-      items_count: 1,
-      items_limit: 10,
-      board_folder_id: 'folder',
-      creator: { id: '1', name: 'Creator', email: 'test@test.com' },
-      workspace: { id: '1', name: 'Workspace', kind: WorkspaceKind.Open, description: 'Test workspace' },
-      owners: [{ id: '1', name: 'Owner' }],
-      team_owners: [{ id: '1', name: 'Team', picture_url: 'pic.jpg' }],
-      groups: [{ id: '1', title: 'Group' }],
-      top_group: { id: '1' },
-      columns: [{ id: '1', title: 'Column', description: 'Test', type: ColumnType.Text, settings: {} }],
-      tags: [{ id: '1', name: 'tag' }],
-    } as BoardInfoData;
-
-    const result = formatBoardInfo(board, null);
-
-    const sections = [
-      '# Board Information',
-      '## Creator',
-      '## Workspace',
-      '## Board Owners',
-      '## Team Owners',
-      '## Groups',
-      '## Top Group',
-      '## Columns',
-      '## Tags',
-      '## Permissions',
-    ];
-
-    let lastIndex = -1;
-    sections.forEach((section) => {
-      const currentIndex = result.indexOf(section);
-      expect(currentIndex).toBeGreaterThan(lastIndex);
-      lastIndex = currentIndex;
-    });
-  });
-
-  it('should include sub items columns when subItemBoard is provided', () => {
+  it('should attach subItemColumns when sub-items board is provided', () => {
     const mockBoard = {
       id: '123456789',
       name: 'Main Board',
@@ -255,15 +145,8 @@ describe('formatBoardInfo - Simple Tests', () => {
           id: 'main_col_1',
           title: 'Main Task Name',
           description: 'The name of the main task',
-          type: ColumnType.Text,
+          type: NonDeprecatedColumnType.Text,
           settings: { width: 200 },
-        },
-        {
-          id: 'main_col_2',
-          title: 'Main Status',
-          description: undefined,
-          type: ColumnType.Status,
-          settings: { labels: ['Not Started', 'In Progress', 'Done'] },
         },
       ],
       tags: undefined,
@@ -277,44 +160,580 @@ describe('formatBoardInfo - Simple Tests', () => {
           id: 'sub_col_1',
           title: 'Sub Task Name',
           description: 'The name of the sub task',
-          type: ColumnType.Text,
+          type: NonDeprecatedColumnType.Text,
           settings: { width: 150 },
-        },
-        {
-          id: 'sub_col_2',
-          title: 'Sub Priority',
-          description: undefined,
-          type: ColumnType.Status,
-          settings: { labels: ['Low', 'Medium', 'High'] },
         },
       ],
     } as any;
 
-    const result = formatBoardInfo(mockBoard, mockSubItemBoard);
+    const result = formatBoardInfoAsJson(mockBoard, mockSubItemBoard);
 
-    // Test that main columns section exists
-    expect(result).toContain('## Columns');
-    expect(result).toContain('1. **Main Task Name** (text)');
-    expect(result).toContain('   - **ID:** main_col_1');
-    expect(result).toContain('   - **Description:** The name of the main task');
-    expect(result).toContain('   - **Settings:** {"width":200}');
-    expect(result).toContain('2. **Main Status** (status)');
-    expect(result).toContain('   - **ID:** main_col_2');
-    expect(result).toContain('   - **Settings:** {"labels":["Not Started","In Progress","Done"]}');
+    expect(result.board.columns).toHaveLength(1);
+    expect(result.board.subItemColumns).toHaveLength(1);
+    expect(result.board.subItemColumns?.[0]?.id).toBe('sub_col_1');
+  });
+});
 
-    // Test that sub items columns section exists
-    expect(result).toContain('## Sub Items Columns');
-    expect(result).toContain('1. **Sub Task Name** (text)');
-    expect(result).toContain('   - **ID:** sub_col_1');
-    expect(result).toContain('   - **Description:** The name of the sub task');
-    expect(result).toContain('   - **Settings:** {"width":150}');
-    expect(result).toContain('2. **Sub Priority** (status)');
-    expect(result).toContain('   - **ID:** sub_col_2');
-    expect(result).toContain('   - **Settings:** {"labels":["Low","Medium","High"]}');
+describe('formatBoardInfoAsJson - knowledge', () => {
+  const board = {
+    id: '123',
+    name: 'Test Board',
+    columns: [],
+    views: [],
+  } as unknown as BoardInfoData;
 
-    // Test that both sections appear in order (Columns before Sub Items Columns)
-    const columnsIndex = result.indexOf('## Columns');
-    const subItemsColumnsIndex = result.indexOf('## Sub Items Columns');
-    expect(columnsIndex).toBeLessThan(subItemsColumnsIndex);
+  it('returns structured knowledge as JSON', () => {
+    const knowledge: BoardKnowledgeData = {
+      summary: 'Engineering; primary workflow: Status',
+      status: EntityKnowledgeStatus.Fresh,
+      age_seconds: 120,
+      sections: [
+        {
+          key: EntityKnowledgeSectionKey.BusinessContext,
+          title: 'Business Context',
+          kind: EntityKnowledgeSectionKind.Structured,
+          confidence: 0.9,
+          body_markdown: null,
+          data: {
+            vertical: 'Engineering',
+            goal: 'Track product delivery',
+          },
+        },
+        {
+          key: EntityKnowledgeSectionKey.ColumnDictionary,
+          title: 'Column Dictionary',
+          kind: EntityKnowledgeSectionKind.Structured,
+          confidence: 0.8,
+          body_markdown: null,
+          data: {
+            status: {
+              title: 'Status',
+              type: 'status',
+              semanticRole: 'Tracks the delivery stage.',
+            },
+          },
+        },
+      ],
+    };
+
+    const result = formatBoardInfoAsJson(board, null, undefined, knowledge);
+
+    expect(result.knowledge).toEqual(knowledge);
+  });
+
+  it('preserves Markdown section bodies', () => {
+    const knowledge: BoardKnowledgeData = {
+      summary: null,
+      status: EntityKnowledgeStatus.Stale,
+      age_seconds: null,
+      sections: [
+        {
+          key: EntityKnowledgeSectionKey.BusinessContext,
+          title: 'Business Context',
+          kind: EntityKnowledgeSectionKind.Markdown,
+          confidence: 0.5,
+          body_markdown: 'Tracks engineering delivery.',
+          data: null,
+        },
+      ],
+    };
+
+    const result = formatBoardInfoAsJson(board, null, undefined, knowledge);
+
+    expect(result.knowledge?.sections?.[0]).toEqual(knowledge.sections?.[0]);
+  });
+
+  it('omits knowledge when it is disabled', () => {
+    const result = formatBoardInfoAsJson(board, null, undefined, null, false);
+
+    expect(result).not.toHaveProperty('knowledge');
+  });
+});
+
+describe('formatBoardInfoAsJson - views', () => {
+  const baseBoard: BoardInfoData = {
+    id: '123',
+    name: 'Test Board',
+    description: 'desc',
+    state: State.Active,
+    board_kind: BoardKind.Public,
+    permissions: 'write',
+    url: 'https://monday.com/boards/123',
+    updated_at: '2024-01-01',
+    item_terminology: 'items',
+    items_count: 0,
+    items_limit: null,
+    board_folder_id: null,
+    creator: null,
+    workspace: null,
+    owners: [],
+    team_owners: [],
+    groups: [],
+    top_group: null,
+    columns: [],
+    tags: [],
+    views: [],
+  } as unknown as BoardInfoData;
+
+  it('should include views in the JSON response', () => {
+    const board: BoardInfoData = {
+      ...baseBoard,
+      views: [
+        {
+          id: 'view_1',
+          name: 'My Tasks',
+          type: 'TableBoardView',
+          settings: {},
+          filter: {
+            operator: 'AND',
+            groups: [{ operator: 'AND', rules: [{ column_id: 'person', compare_value: ['assigned_to_me'], operator: 'ANY_OF' }] }],
+          },
+          sort: [],
+          access_level: BoardViewAccessLevel.Edit,
+        },
+      ],
+    } as unknown as BoardInfoData;
+
+    const result = formatBoardInfoAsJson(board, null) as any;
+
+    expect(result.board.views).toHaveLength(1);
+  });
+
+  it('should include view id and name', () => {
+    const board: BoardInfoData = {
+      ...baseBoard,
+      views: [
+        {
+          id: 'view_1',
+          name: 'My Tasks',
+          type: 'TableBoardView',
+          settings: {},
+          filter: null,
+          sort: [],
+          access_level: BoardViewAccessLevel.Edit,
+        },
+      ],
+    } as unknown as BoardInfoData;
+
+    const result = formatBoardInfoAsJson(board, null) as any;
+
+    expect(result.board.views[0].id).toBe('view_1');
+    expect(result.board.views[0].name).toBe('My Tasks');
+  });
+
+  it('should include the structured filter object from the view', () => {
+    const filter = {
+      operator: 'AND',
+      groups: [{ operator: 'AND', rules: [{ column_id: 'person', compare_value: ['assigned_to_me'], operator: 'ANY_OF' }] }],
+    };
+    const board: BoardInfoData = {
+      ...baseBoard,
+      views: [
+        {
+          id: 'view_1',
+          name: 'Assigned to Me',
+          type: 'TableBoardView',
+          settings: {},
+          filter,
+          sort: [],
+          access_level: BoardViewAccessLevel.Edit,
+        },
+      ],
+    } as unknown as BoardInfoData;
+
+    const result = formatBoardInfoAsJson(board, null) as any;
+
+    expect(result.board.views[0].filter).toEqual(filter);
+  });
+
+  it('should return null filter for views with no filters applied', () => {
+    const board: BoardInfoData = {
+      ...baseBoard,
+      views: [
+        {
+          id: 'view_2',
+          name: 'All Items',
+          type: 'TableBoardView',
+          settings: {},
+          filter: null,
+          sort: [],
+          access_level: BoardViewAccessLevel.Edit,
+        },
+      ],
+    } as unknown as BoardInfoData;
+
+    const result = formatBoardInfoAsJson(board, null) as any;
+
+    expect(result.board.views[0].filter).toBeNull();
+  });
+
+  it('should return an empty views array when board has no views', () => {
+    const result = formatBoardInfoAsJson(baseBoard, null) as any;
+
+    expect(result.board.views).toEqual([]);
+  });
+
+  it('should return multiple views', () => {
+    const board: BoardInfoData = {
+      ...baseBoard,
+      views: [
+        { id: 'view_1', name: 'View A', type: 'TableBoardView', settings: {}, filter: null, sort: [], access_level: BoardViewAccessLevel.Edit },
+        { id: 'view_2', name: 'View B', type: 'TableBoardView', settings: {}, filter: null, sort: [], access_level: BoardViewAccessLevel.Edit },
+      ],
+    } as unknown as BoardInfoData;
+
+    const result = formatBoardInfoAsJson(board, null) as any;
+
+    expect(result.board.views).toHaveLength(2);
+  });
+
+  it('should include unmatchedViewNames when provided', () => {
+    const result = formatBoardInfoAsJson(baseBoard, null, ['Missing View']) as any;
+
+    expect(result.unmatchedViewNames).toEqual(['Missing View']);
+  });
+});
+
+describe('normalizeViewName / resolveViewIdsByName', () => {
+  it('normalizes case, trim, and escaped ampersands', () => {
+    expect(normalizeViewName('  P\\&C Shopping  ')).toBe('p&c shopping');
+  });
+
+  it('resolves view names case-insensitively and reports unmatched', () => {
+    const { viewIds, unmatchedViewNames } = resolveViewIdsByName(
+      [
+        { id: '1', name: 'P&C Shopping' },
+        { id: '2', name: 'P&C Lost' },
+      ],
+      ['p\\&c shopping', 'Missing'],
+    );
+
+    expect(viewIds).toEqual(['1']);
+    expect(unmatchedViewNames).toEqual(['Missing']);
+  });
+});
+
+describe('GetBoardInfoTool filtering', () => {
+  let mocks: ReturnType<typeof createMockApiClient>;
+
+  const boardPayload = {
+    id: '123',
+    name: 'Test Board',
+    description: null,
+    state: 'active',
+    board_kind: 'public',
+    permissions: 'everyone',
+    url: 'https://monday.com/boards/123',
+    updated_at: '2024-01-01',
+    hierarchy_type: null,
+    item_terminology: 'item',
+    items_count: 1,
+    items_limit: 100,
+    creator: null,
+    workspace: null,
+    board_folder_id: null,
+    columns: [{ id: 'status', title: 'Status', description: null, type: 'status', settings: {}, revision: 'r1' }],
+    groups: [],
+    owners: [],
+    team_owners: [],
+    tags: [],
+    top_group: null,
+    views: [
+      {
+        id: 'view_1',
+        name: 'P&C Shopping',
+        type: 'TableBoardView',
+        settings: { huge: true },
+        filter: { operator: 'AND' },
+        sort: [],
+      },
+    ],
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mocks = createMockApiClient();
+    jest.spyOn(MondayAgentToolkit.prototype as any, 'createApiClient').mockReturnValue(mocks.mockApiClient);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('passes nested column and view ids through to the GraphQL query', async () => {
+    mocks.setResponse({ boards: [boardPayload] });
+
+    await callToolByNameRawAsync('get_board_info', {
+      boardId: 123,
+      filters: {
+        columns: { ids: ['status'] },
+        views: { ids: ['view_1'] },
+      },
+    });
+
+    expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+    expect(mocks.getMockRequest().mock.calls[0][1]).toEqual({
+      boardId: '123',
+      columnIds: ['status'],
+      viewIds: ['view_1'],
+      includeColumns: true,
+      includeViews: true,
+      includeSubscribers: false,
+    });
+  });
+
+  it('resolves filters.views.names via a lean index query then fetches by id', async () => {
+    mocks.setResponses([
+      {
+        boards: [
+          {
+            id: '123',
+            views: [
+              { id: 'view_1', name: 'P&C Shopping' },
+              { id: 'view_2', name: 'Other' },
+            ],
+          },
+        ],
+      },
+      { boards: [boardPayload] },
+    ]);
+
+    const result = await callToolByNameRawAsync('get_board_info', {
+      boardId: 123,
+      filters: {
+        views: { names: ['P\\&C Shopping'] },
+      },
+    });
+
+    expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
+    expect(mocks.getMockRequest().mock.calls[1][1]).toEqual({
+      boardId: '123',
+      columnIds: undefined,
+      viewIds: ['view_1'],
+      includeColumns: true,
+      includeViews: true,
+      includeSubscribers: false,
+    });
+
+    const parsed = parseToolResult(result);
+    expect(parsed.board.views).toHaveLength(1);
+    expect(parsed.board.views[0].name).toBe('P&C Shopping');
+  });
+
+  it('returns an error listing available views when no filters.views.names match', async () => {
+    mocks.setResponse({
+      boards: [
+        {
+          id: '123',
+          views: [
+            { id: 'view_1', name: 'P&C Shopping' },
+            { id: 'view_2', name: 'P&C Lost' },
+          ],
+        },
+      ],
+    });
+
+    const result = await callToolByNameRawAsync('get_board_info', {
+      boardId: 123,
+      filters: {
+        views: { names: ['Does Not Exist'] },
+      },
+    });
+
+    expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+    expect(result.content[0].text).toContain('None of the requested view names matched');
+    expect(result.content[0].text).toContain('P&C Shopping');
+    expect(result.content[0].text).toContain('P&C Lost');
+  });
+
+  it('skips the views selection when filters.columns.only is true', async () => {
+    mocks.setResponse({ boards: [{ ...boardPayload, views: undefined }] });
+
+    await callToolByNameRawAsync('get_board_info', {
+      boardId: 123,
+      filters: {
+        columns: { ids: ['status'], only: true },
+      },
+    });
+
+    expect(mocks.getMockRequest().mock.calls[0][1]).toEqual({
+      boardId: '123',
+      columnIds: ['status'],
+      viewIds: undefined,
+      includeColumns: true,
+      includeViews: false,
+      includeSubscribers: false,
+    });
+  });
+
+  it('skips the columns selection when filters.views.only is true', async () => {
+    mocks.setResponse({ boards: [{ ...boardPayload, columns: undefined }] });
+
+    await callToolByNameRawAsync('get_board_info', {
+      boardId: 123,
+      filters: {
+        views: { ids: ['view_1'], only: true },
+      },
+    });
+
+    expect(mocks.getMockRequest().mock.calls[0][1]).toEqual({
+      boardId: '123',
+      columnIds: undefined,
+      viewIds: ['view_1'],
+      includeColumns: false,
+      includeViews: true,
+      includeSubscribers: false,
+    });
+  });
+
+  it('fetches subscribers and team subscribers when includeSubscribers is true', async () => {
+    mocks.setResponse({
+      boards: [
+        {
+          ...boardPayload,
+          subscribers: [{ id: '1', name: 'Alice' }],
+          team_subscribers: [{ id: '10', name: 'Team A' }],
+        },
+      ],
+    });
+
+    const result = await callToolByNameRawAsync('get_board_info', { boardId: 123, includeSubscribers: true });
+
+    expect(mocks.getMockRequest().mock.calls[0][1]).toMatchObject({ includeSubscribers: true });
+    const parsed = parseToolResult(result);
+    expect(parsed.board.subscribers).toEqual([{ id: '1', name: 'Alice' }]);
+    expect(parsed.board.team_subscribers).toEqual([{ id: '10', name: 'Team A' }]);
+  });
+
+  it('does not fetch subscribers unless requested', async () => {
+    mocks.setResponse({ boards: [boardPayload] });
+
+    const result = await callToolByNameRawAsync('get_board_info', { boardId: 123 });
+
+    expect(mocks.getMockRequest().mock.calls[0][1]).toMatchObject({ includeSubscribers: false });
+    const parsed = parseToolResult(result);
+    expect(parsed.board).not.toHaveProperty('subscribers');
+    expect(parsed.board).not.toHaveProperty('team_subscribers');
+  });
+
+  it('fetches board knowledge in parallel with board info', async () => {
+    let resolveBoard: (value: unknown) => void;
+    let resolveKnowledge: (value: unknown) => void;
+    const boardResponse = new Promise((resolve) => {
+      resolveBoard = resolve;
+    });
+    const knowledgeResponse = new Promise((resolve) => {
+      resolveKnowledge = resolve;
+    });
+    mocks.getMockRequest().mockReturnValueOnce(boardResponse).mockReturnValueOnce(knowledgeResponse);
+
+    const resultPromise = callToolByNameRawAsync('get_board_info', { boardId: 123, includeKnowledge: true });
+    await new Promise<void>((resolve) => setImmediate(resolve));
+
+    expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
+
+    resolveBoard!({ boards: [boardPayload] });
+    resolveKnowledge!({
+      entity_knowledge: {
+        summary: 'Engineering delivery',
+        status: EntityKnowledgeStatus.Fresh,
+        age_seconds: 30,
+        sections: [
+          {
+            key: EntityKnowledgeSectionKey.BusinessContext,
+            title: 'Business Context',
+            kind: EntityKnowledgeSectionKind.Structured,
+            confidence: 0.9,
+            body_markdown: null,
+            data: { goal: 'Ship product work' },
+          },
+        ],
+      },
+    });
+
+    const parsed = parseToolResult(await resultPromise);
+    expect(parsed.knowledge).toEqual({
+      summary: 'Engineering delivery',
+      status: EntityKnowledgeStatus.Fresh,
+      age_seconds: 30,
+      sections: [
+        {
+          key: EntityKnowledgeSectionKey.BusinessContext,
+          title: 'Business Context',
+          kind: EntityKnowledgeSectionKind.Structured,
+          confidence: 0.9,
+          body_markdown: null,
+          data: { goal: 'Ship product work' },
+        },
+      ],
+    });
+  });
+
+  it('returns board info when the knowledge request fails', async () => {
+    const error = new Error('Knowledge unavailable');
+    const logger = { warn: jest.fn() };
+    mocks
+      .getMockRequest()
+      .mockResolvedValueOnce({ boards: [boardPayload] })
+      .mockRejectedValueOnce(error);
+
+    const result = await callToolByNameRawAsync(
+      'get_board_info',
+      { boardId: 123, includeKnowledge: true },
+      { mondayApiToken: 'test-token', deps: { logger } },
+    );
+    const parsed = parseToolResult(result);
+
+    expect(parsed.board.id).toBe('123');
+    expect(parsed.knowledge).toBeNull();
+    expect(logger.warn).toHaveBeenCalledWith(
+      { err: error, boardId: 123, timeoutMs: 1_000 },
+      'Failed to fetch board knowledge',
+    );
+  });
+
+  it('does not fetch board knowledge unless requested', async () => {
+    mocks.setResponse({ boards: [boardPayload] });
+
+    const result = await callToolByNameRawAsync('get_board_info', { boardId: 123 });
+    const parsed = parseToolResult(result);
+
+    expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+    expect(parsed).not.toHaveProperty('knowledge');
+  });
+
+  it('returns null without fetching board knowledge when the feature flag is disabled', async () => {
+    const flagChecker = jest.fn().mockReturnValue(false);
+    mocks.setResponse({ boards: [boardPayload] });
+
+    const result = await callToolByNameRawAsync(
+      'get_board_info',
+      { boardId: 123, includeKnowledge: true },
+      { mondayApiToken: 'test-token', deps: { flagChecker } },
+    );
+    const parsed = parseToolResult(result);
+
+    expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+    expect(parsed.knowledge).toBeNull();
+    expect(flagChecker).toHaveBeenCalledWith(GET_BOARD_INFO_ENTITY_KNOWLEDGE_FLAG);
+  });
+
+  it('keeps the stable input schema but does not advertise board knowledge when the feature flag is disabled', () => {
+    const tool = new GetBoardInfoTool(mocks.mockApiClient, 'test-token', {
+      deps: { flagChecker: () => false },
+    });
+
+    expect(tool.getInputSchema()).toHaveProperty('includeKnowledge');
+    expect(tool.getDescription()).not.toContain('includeKnowledge');
+  });
+
+  it('advertises includeKnowledge for interpreting the board when the feature flag is enabled', () => {
+    const tool = new GetBoardInfoTool(mocks.mockApiClient, 'test-token', {
+      deps: { flagChecker: () => true },
+    });
+
+    expect(tool.getDescription()).toContain(
+      'Set includeKnowledge to true when you need to interpret the board rather than just read its configuration',
+    );
   });
 });

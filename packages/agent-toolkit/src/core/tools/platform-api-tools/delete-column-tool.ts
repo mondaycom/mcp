@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { DeleteColumnMutation, DeleteColumnMutationVariables } from '../../../monday-graphql/generated/graphql';
-import { deleteColumn } from '../../../monday-graphql/queries.graphql';
+import { DeleteColumnMutation, DeleteColumnMutationVariables } from 'src/monday-graphql/generated/graphql/graphql';
+import { deleteColumn } from 'src/monday-graphql/queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
 
@@ -26,7 +26,10 @@ export class DeleteColumnTool extends BaseMondayApiTool<DeleteColumnToolInput> {
   });
 
   getDescription(): string {
-    return 'Delete a column from a monday.com board';
+    return (
+      'Delete a column from a monday.com board. This is irreversible — the column and all of its values are removed. ' +
+      '[REQUIRED PRECONDITION]: Call get_board_schema or get_board_info first to resolve the exact columnId and confirm you are deleting the intended column. Never guess a column id.'
+    );
   }
 
   getInputSchema(): DeleteColumnToolInput {
@@ -48,7 +51,10 @@ export class DeleteColumnTool extends BaseMondayApiTool<DeleteColumnToolInput> {
     const res = await this.mondayApi.request<DeleteColumnMutation>(deleteColumn, variables);
 
     return {
-      content: `Column ${res.delete_column?.id} successfully deleted`,
+      content: {
+        message: `Column ${res.delete_column?.id} successfully deleted`,
+        column_id: res.delete_column?.id,
+      },
     };
   }
 }

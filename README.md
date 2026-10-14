@@ -21,6 +21,8 @@
 
 This repository, maintained by the monday.com AI team, provides a comprehensive set of tools for AI agent developers who want to integrate with monday.com. Whether you're building AI assistants, automations, or custom integrations, our tools make it easy to connect to the monday.com platform.
 
+**👉 New to monday MCP? Start here: [monday.com/w/mcp](https://monday.com/w/mcp)**
+
 <https://github.com/user-attachments/assets/ed8d24e1-256b-4f6b-9d84-38e54a8703fd>
 
 ## 🔑 What is monday.com?
@@ -43,7 +45,57 @@ The `@mondaydotcomorg/monday-api-mcp` package provides a plug-and-play server im
 
 The `@mondaydotcomorg/agent-toolkit` package provides a powerful set of tools and utilities for building AI agents that interact with the monday.com API, supporting both OpenAI and Model Context Protocol (MCP) implementations.
 
-## 🏁 Complete Installation Guide
+## 🚀 Quick Start: Hosted MCP (Recommended)
+
+**The fastest, most robust, and reliable way to connect to monday.com.** Our hosted MCP service handles all the infrastructure for you - no local setup, automatic updates, and improved performance.
+
+### 📚 Integration Guides
+
+Get started with your favorite AI platform:
+
+- **[Get Started Guide](https://support.monday.com/hc/en-us/articles/28515034903314-Get-started-with-monday-MCP)** - First time using monday MCP?
+- **[Claude Integration](https://support.monday.com/hc/en-us/articles/28515704603666-Connect-monday-MCP-with-Claude)** - Connect with Claude Desktop
+- **[Cursor Integration](https://support.monday.com/hc/en-us/articles/28583658774034-Connect-monday-MCP-with-Cursor)** - Integrate with Cursor IDE
+- **[ChatGPT Integration](https://support.monday.com/hc/en-us/articles/29491695661458-Connect-monday-MCP-with-ChatGPT)** - Connect with ChatGPT
+- **[MS Copilot Integration](https://support.monday.com/hc/en-us/articles/28584426338322-Connect-monday-MCP-with-Microsoft-Copilot-Studio)** - Integrate with Microsoft Copilot Studio
+- **[Mistral Integration](https://support.monday.com/hc/en-us/articles/29643990370066-Connect-monday-MCP-with-Mistral-AI-s-le-Chat)** - Connect with Mistral AI's le Chat
+- **[Ready-to-Use Prompts](https://support.monday.com/hc/en-us/articles/28608471371410-Ready-to-use-monday-MCP-prompts)** - Example prompts to get started
+
+### Quick Setup with Hosted MCP
+
+#### For Cursor
+
+Simply add this to your MCP settings:
+
+```json
+{
+  "mcpServers": {
+    "monday-mcp": {
+      "url": "https://mcp.monday.com/mcp"
+    }
+  }
+}
+```
+
+### Why Use the Hosted MCP?
+
+- ✅ **No local installation** - Works immediately without setup
+- ✅ **Automatic updates** - Always get the latest features
+- ✅ **Better performance** - Optimized infrastructure
+- ✅ **OAuth authentication** - Secure token management
+- ✅ **Workspace controls** - Limit access to specific workspaces
+- ✅ **Higher reliability** - Enterprise-grade uptime
+
+### When to Use This Repository Instead
+
+You might want to run the MCP locally or use the agent toolkit if you need to:
+
+- 🔧 **Customize the MCP server** - Modify the source code for specific needs
+- 🛠️ **Build custom agents** - Use the agent toolkit for OpenAI or custom implementations
+- 🔌 **Work offline** - Develop without internet connectivity
+- 🧪 **Contribute to development** - Help improve the MCP server or toolkit
+
+## 🏁 Local Installation Guide
 
 ### Step 1: Create a monday.com Account
 
@@ -76,10 +128,11 @@ To interact with monday.com's API, you'll need an API token:
     "monday-api-mcp": {
       "command": "npx",
       "args": [
-        "@mondaydotcomorg/monday-api-mcp@latest",
-        "-t",
-        "your_monday_api_token"
-      ]
+        "@mondaydotcomorg/monday-api-mcp@latest"
+      ],
+      "env": {
+        "MONDAY_TOKEN": "your_monday_api_token"
+      }
     }
   }
 }
@@ -131,7 +184,7 @@ A few custom command to try out for the extension:
 - `/monday:create-item` create item in board 123 for "Update the UI"
 - `/monday:sprint-summary` sprint summary for sprint 853
 
-#### For Cursor or Other MCP Clients
+#### For Cursor or Other MCP Clients (Local Setup)
 
 Add to your settings:
 
@@ -141,11 +194,11 @@ Add to your settings:
     "monday-api-mcp": {
       "command": "npx",
       "args": [
-        "@mondaydotcomorg/monday-api-mcp@latest",
-        "-t",
-        "your_monday_api_token"
+        "@mondaydotcomorg/monday-api-mcp@latest"
       ],
-      "env": {}
+      "env": {
+        "MONDAY_TOKEN": "your_monday_api_token"
+      }
     }
   }
 }
@@ -159,22 +212,11 @@ Add to your settings:
 
 2. Your assistant should now be able to interact with your monday.com account!
 
-## 🌩️ Using the Hosted MCP Service
+## ⚙️ Advanced Hosted MCP Configuration
 
-### Option 1: Using OAuth
+### Using Authorization Headers
 
-Instead of running the MCP server locally, you can use monday.com's hosted MCP service for a simpler setup.
-
-#### Step 1: Install the Monday MCP App
-
-Before using the hosted service, you need to install the Monday MCP app from the marketplace:
-
-1. Visit [monday MCP app in the marketplace](https://monday.com/marketplace/listing/10000806/monday-mcp)
-2. Click "Install" and follow the instructions to add it to your account
-
-#### Step 2: Configure Your MCP Client for the Hosted Service
-
-Add this configuration to your MCP client settings:
+To specify a custom authorization header and API version with the hosted MCP:
 
 ```json
 {
@@ -182,42 +224,24 @@ Add this configuration to your MCP client settings:
     "monday-api-mcp-hosted": {
       "command": "npx",
       "args": [
-        "mcp-remote",
-        "https://mcp.monday.com/sse",
-      ],
-    }
-  }
-}
-```
-
-### Option 2: Using Authorization header
-
-To specify an authorization header and API version:
-
-```json
-{
-  "mcpServers": {
-    "monday-api-mcp-hosted-dev": {
-      "command": "npx",
-      "args": [
         "-p",
         "node@20",
         "mcp-remote",
-        "https://mcp.monday.com/sse",
+        "https://mcp.monday.com/mcp",
         "--header",
-        "Authorization:${AUTH_HEADER}",
+        "Authorization:${AUTH_HEADER}"
       ],
       "env": {
-        "AUTH_HEADER": "Bearer <your_token>",
+        "AUTH_HEADER": "Bearer <your_token>"
       }
     }
   }
 }
 ```
 
-### Additional Configuration for Hosted MCP
+### Specifying API Version
 
-You can specify the Api version you want to use using the **--header** param:
+You can specify the API version you want to use with the **--header** parameter:
 
 ```json
 {
@@ -226,7 +250,7 @@ You can specify the Api version you want to use using the **--header** param:
       "command": "npx",
       "args": [
         "mcp-remote",
-        "https://mcp.monday.com/sse",
+        "https://mcp.monday.com/mcp",
         "--header",
         "Api-Version:${API_VERSION}"
       ],
@@ -238,13 +262,12 @@ You can specify the Api version you want to use using the **--header** param:
 }
 ```
 
-### Benefits of the Hosted Service
+### Installing the Monday MCP App
 
-- No need to manage your own server
-- Automatic updates with the latest features
-- Improved reliability and performance
-- Instead of adding the token yourself, our OAuth mechanism takes control of it
-- You can limit the mcp to work on specific workspaces
+For OAuth authentication and workspace controls, install the Monday MCP app from the marketplace:
+
+1. Visit [monday MCP app in the marketplace](https://monday.com/marketplace/listing/10000806/monday-mcp)
+2. Click "Install" and follow the instructions to add it to your account
 
 ## 🧰 Available Tools
 
@@ -266,6 +289,12 @@ Our MCP server provides a rich set of tools that give AI assistants the ability 
 | **Account Operations** | list_users_and_teams | Retrieve user or team's details by id, name or by searching the account |
 | **WorkForms Operations** | create_form | Create a new monday.com form |
 | | get_form | Get a form by its token |
+
+## 🎨 monday.com Apps Framework Tools
+
+Looking to build custom monday.com apps with AI assistance? The Apps Framework Tools provide AI agents with complete access to monday.com's app development platform, enabling you to create, manage, and deploy custom apps directly through AI assistants.
+
+**📖 [View Full Apps Framework Tools Documentation](./packages/agent-toolkit/src/core/tools/monday-apps-tools/README.md)**
 
 ## 🔮 Dynamic API Tools (Beta)
 
@@ -301,13 +330,13 @@ With Dynamic API Tools, your AI assistants can:
 Dynamic API Tools are in beta and disabled by default. Enable them with:
 
 ```bash
-npx @mondaydotcomorg/monday-api-mcp@latest -t your_token --enable-dynamic-api-tools true
+MONDAY_TOKEN=your_monday_api_token npx @mondaydotcomorg/monday-api-mcp@latest --enable-dynamic-api-tools true
 ```
 
 You can also use the 'only' mode to exclusively enable Dynamic API Tools:
 
 ```bash
-npx @mondaydotcomorg/monday-api-mcp@latest -t your_token --enable-dynamic-api-tools only
+MONDAY_TOKEN=your_monday_api_token npx @mondaydotcomorg/monday-api-mcp@latest --enable-dynamic-api-tools only
 ```
 
 When 'only' mode is enabled, the server will provide just the Dynamic API Tools, filtering out all other standard tools. This is useful for advanced users who want to work directly with the GraphQL API.
@@ -320,6 +349,7 @@ When 'only' mode is enabled, the server will provide just the Dynamic API Tools,
 |----------|-------|-------------|----------|---------|
 | monday.com API Token | `--token`, `-t` | monday.com API token | Yes | - |
 | API Version | `--version`, `-v` | monday.com API version | No | `current` |
+| Mode | `--mode`, `-m` | Tool mode: `default` for standard platform tools, `apps` for Apps Framework tools | No | `default` |
 | Read Only Mode | `--read-only`, `-ro` | Enable read-only mode | No | `false` |
 | Dynamic API Tools | `--enable-dynamic-api-tools`, `-edat` | Enable dynamic API tools | No | `false` |
 
@@ -327,8 +357,8 @@ When 'only' mode is enabled, the server will provide just the Dynamic API Tools,
 
 The server requires a monday.com API token to authenticate with the monday.com API. You can provide this token in two ways:
 
-1. Command line argument: `-t your_monday_api_token`
-2. Environment variable: `monday_token=your_monday_api_token`
+1. Environment variable: `MONDAY_TOKEN=your_monday_api_token`
+2. Command line argument: `-t your_monday_api_token`
 
 ### Security Best Practices
 
@@ -387,12 +417,12 @@ To develop for the repo:
       "command": "node",
       "args": [
         "<your_full_path_to_the_package>/dist/index.js",
-        "-t",
-        "123",
         "--enable-dynamic-api-tools",
         "true"
       ],
-      "env": {}
+      "env": {
+        "MONDAY_TOKEN": "your_monday_api_token"
+      }
     }
 ```
 

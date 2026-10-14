@@ -1,13 +1,14 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
-import { callToolByNameRawAsync, createMockApiClient } from '../../test-utils/mock-api-client';
+import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '../../test-utils/mock-api-client';
 import { formQuestionsEditorToolSchema } from './schema';
 import { FormQuestionActions } from '../workforms.types';
 import {
+  ConditionOperator,
   FormQuestionType,
   FormQuestionPrefillSources,
   FormQuestionSelectDisplay,
   FormQuestionSelectOrderByOptions,
-} from 'src/monday-graphql/generated/graphql';
+} from 'src/monday-graphql/generated/graphql/graphql';
 import { z, ZodTypeAny } from 'zod';
 
 export type inputType = z.objectInputType<typeof formQuestionsEditorToolSchema, ZodTypeAny>;
@@ -55,9 +56,13 @@ describe('FormQuestionsEditorTool', () => {
 
         const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-        expect(result.content[0].text).toBe('Form question created successfully. ID: question_123');
+        expect(parseToolResult(result)).toEqual({
+          message: 'Question created',
+          question_id: 'question_123',
+          action_name: 'create',
+        });
         expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
-        
+
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[0]).toContain('mutation createFormQuestion');
         expect(mockCall[1]).toEqual({
@@ -112,9 +117,13 @@ describe('FormQuestionsEditorTool', () => {
 
         const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-        expect(result.content[0].text).toBe('Form question created successfully. ID: question_456');
+        expect(parseToolResult(result)).toEqual({
+          message: 'Question created',
+          question_id: 'question_456',
+          action_name: 'create',
+        });
         expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
-        
+
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].question).toEqual({
           type: FormQuestionType.Email,
@@ -141,11 +150,7 @@ describe('FormQuestionsEditorTool', () => {
             description: null,
             visible: true,
             required: false,
-            options: [
-              { label: 'Red' },
-              { label: 'Blue' },
-              { label: 'Green' },
-            ],
+            options: [{ label: 'Red' }, { label: 'Blue' }, { label: 'Green' }],
             settings: {
               display: 'Dropdown',
               optionsOrder: 'Custom',
@@ -161,11 +166,7 @@ describe('FormQuestionsEditorTool', () => {
           question: {
             type: FormQuestionType.SingleSelect,
             title: 'Choose your favorite color',
-            options: [
-              { label: 'Red' },
-              { label: 'Blue' },
-              { label: 'Green' },
-            ],
+            options: [{ label: 'Red' }, { label: 'Blue' }, { label: 'Green' }],
             settings: {
               display: FormQuestionSelectDisplay.Dropdown,
               optionsOrder: FormQuestionSelectOrderByOptions.Custom,
@@ -175,8 +176,12 @@ describe('FormQuestionsEditorTool', () => {
 
         const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-        expect(result.content[0].text).toBe('Form question created successfully. ID: question_789');
-        
+        expect(parseToolResult(result)).toEqual({
+          message: 'Question created',
+          question_id: 'question_789',
+          action_name: 'create',
+        });
+
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].question.options).toHaveLength(3);
         expect(mockCall[1].question.options[0].label).toBe('Red');
@@ -217,8 +222,12 @@ describe('FormQuestionsEditorTool', () => {
 
         const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-        expect(result.content[0].text).toBe('Form question created successfully. ID: question_date');
-        
+        expect(parseToolResult(result)).toEqual({
+          message: 'Question created',
+          question_id: 'question_date',
+          action_name: 'create',
+        });
+
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].question.settings.defaultCurrentDate).toBe(true);
         expect(mockCall[1].question.settings.includeTime).toBe(true);
@@ -264,47 +273,15 @@ describe('FormQuestionsEditorTool', () => {
 
         const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-        expect(result.content[0].text).toBe('Form question created successfully. ID: question_phone');
-        
+        expect(parseToolResult(result)).toEqual({
+          message: 'Question created',
+          question_id: 'question_phone',
+          action_name: 'create',
+        });
+
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].question.settings.prefixPredefined.enabled).toBe(true);
         expect(mockCall[1].question.settings.prefixPredefined.prefix).toBe('US');
-      });
-
-      it('should handle questionStringified parameter for Microsoft Copilot', async () => {
-        const createQuestionResponse = {
-          create_form_question: {
-            id: 'question_stringified',
-            type: FormQuestionType.ShortText,
-            title: 'Test Question',
-            description: null,
-            visible: true,
-            required: false,
-            options: null,
-            settings: null,
-          },
-        };
-
-        mocks.setResponse(createQuestionResponse);
-
-        const questionObject = {
-          type: FormQuestionType.ShortText,
-          title: 'Test Question',
-        };
-
-        const args: inputType = {
-          action: FormQuestionActions.Create,
-          formToken: 'form_token_123',
-          questionStringified: JSON.stringify(questionObject),
-          // question is omitted, fallback will use questionStringified
-        };
-
-        const result = await callToolByNameRawAsync('form_questions_editor', args);
-
-        expect(result.content[0].text).toBe('Form question created successfully. ID: question_stringified');
-        
-        const mockCall = mocks.getMockRequest().mock.calls[0];
-        expect(mockCall[1].question).toEqual(questionObject);
       });
     });
 
@@ -413,7 +390,7 @@ describe('FormQuestionsEditorTool', () => {
 
         const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-        expect(result.content[0].text).toBe('Form question created successfully. ID: undefined');
+        expect(parseToolResult(result)).toEqual({ message: 'Question created', action_name: 'create' });
       });
     });
   });
@@ -451,9 +428,13 @@ describe('FormQuestionsEditorTool', () => {
 
         const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-        expect(result.content[0].text).toBe('Form question with id question_123 updated successfully.');
+        expect(parseToolResult(result)).toEqual({
+          message: 'Question updated',
+          question_id: 'question_123',
+          action_name: 'update',
+        });
         expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
-        
+
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[0]).toContain('mutation updateFormQuestion');
         expect(mockCall[1]).toEqual({
@@ -497,8 +478,12 @@ describe('FormQuestionsEditorTool', () => {
 
         const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-        expect(result.content[0].text).toBe('Form question with id question_456 updated successfully.');
-        
+        expect(parseToolResult(result)).toEqual({
+          message: 'Question updated',
+          question_id: 'question_456',
+          action_name: 'update',
+        });
+
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].question).toEqual({
           type: FormQuestionType.Email,
@@ -540,8 +525,12 @@ describe('FormQuestionsEditorTool', () => {
 
         const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-        expect(result.content[0].text).toBe('Form question with id question_789 updated successfully.');
-        
+        expect(parseToolResult(result)).toEqual({
+          message: 'Question updated',
+          question_id: 'question_789',
+          action_name: 'update',
+        });
+
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].question.settings).toEqual({
           defaultCurrentDate: false,
@@ -578,48 +567,15 @@ describe('FormQuestionsEditorTool', () => {
 
         const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-        expect(result.content[0].text).toBe('Form question with id question_visible updated successfully.');
-        
+        expect(parseToolResult(result)).toEqual({
+          message: 'Question updated',
+          question_id: 'question_visible',
+          action_name: 'update',
+        });
+
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].question.visible).toBe(false);
         expect(mockCall[1].question.required).toBe(true);
-      });
-
-      it('should handle questionStringified parameter for Microsoft Copilot', async () => {
-        const updateQuestionResponse = {
-          update_form_question: {
-            id: 'question_stringified',
-            type: FormQuestionType.ShortText,
-            title: 'Stringified Update',
-            description: null,
-            visible: true,
-            required: false,
-            options: null,
-            settings: null,
-          },
-        };
-
-        mocks.setResponse(updateQuestionResponse);
-
-        const questionObject = {
-          type: FormQuestionType.ShortText,
-          title: 'Stringified Update',
-        };
-
-        const args: inputType = {
-          action: FormQuestionActions.Update,
-          formToken: 'form_token_123',
-          questionId: 'question_stringified',
-          questionStringified: JSON.stringify(questionObject),
-          // question is omitted, fallback will use questionStringified
-        };
-
-        const result = await callToolByNameRawAsync('form_questions_editor', args);
-
-        expect(result.content[0].text).toBe('Form question with id question_stringified updated successfully.');
-        
-        const mockCall = mocks.getMockRequest().mock.calls[0];
-        expect(mockCall[1].question).toEqual(questionObject);
       });
     });
 
@@ -697,7 +653,11 @@ describe('FormQuestionsEditorTool', () => {
         const result = await callToolByNameRawAsync('form_questions_editor', args);
 
         // The tool should still return success even if the mutation returns null
-        expect(result.content[0].text).toBe('Form question with id question_123 updated successfully.');
+        expect(parseToolResult(result)).toEqual({
+          message: 'Question updated',
+          question_id: 'question_123',
+          action_name: 'update',
+        });
       });
     });
   });
@@ -719,9 +679,13 @@ describe('FormQuestionsEditorTool', () => {
 
         const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-        expect(result.content[0].text).toBe('Form question with id question_to_delete deleted successfully.');
+        expect(parseToolResult(result)).toEqual({
+          message: 'Question deleted',
+          question_id: 'question_to_delete',
+          action_name: 'delete',
+        });
         expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
-        
+
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[0]).toContain('mutation deleteFormQuestion');
         expect(mockCall[1]).toEqual({
@@ -745,8 +709,12 @@ describe('FormQuestionsEditorTool', () => {
 
         const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-        expect(result.content[0].text).toBe('Form question with id another_question_id deleted successfully.');
-        
+        expect(parseToolResult(result)).toEqual({
+          message: 'Question deleted',
+          question_id: 'another_question_id',
+          action_name: 'delete',
+        });
+
         const mockCall = mocks.getMockRequest().mock.calls[0];
         expect(mockCall[1].questionId).toBe('another_question_id');
       });
@@ -816,7 +784,11 @@ describe('FormQuestionsEditorTool', () => {
         const result = await callToolByNameRawAsync('form_questions_editor', args);
 
         // The tool should still return success even if the mutation returns false
-        expect(result.content[0].text).toBe('Form question with id question_to_delete deleted successfully.');
+        expect(parseToolResult(result)).toEqual({
+          message: 'Question deleted',
+          question_id: 'question_to_delete',
+          action_name: 'delete',
+        });
       });
     });
   });
@@ -845,11 +817,7 @@ describe('FormQuestionsEditorTool', () => {
           description: null,
           visible: true,
           required: false,
-          options: [
-            { label: 'Option 1' },
-            { label: 'Option 2' },
-            { label: 'Option 3' },
-          ],
+          options: [{ label: 'Option 1' }, { label: 'Option 2' }, { label: 'Option 3' }],
           settings: {
             display: FormQuestionSelectDisplay.Vertical,
             optionsOrder: FormQuestionSelectOrderByOptions.Alphabetical,
@@ -865,11 +833,7 @@ describe('FormQuestionsEditorTool', () => {
         question: {
           type: FormQuestionType.MultiSelect,
           title: 'Select multiple options',
-          options: [
-            { label: 'Option 1' },
-            { label: 'Option 2' },
-            { label: 'Option 3' },
-          ],
+          options: [{ label: 'Option 1' }, { label: 'Option 2' }, { label: 'Option 3' }],
           settings: {
             display: FormQuestionSelectDisplay.Vertical,
             optionsOrder: FormQuestionSelectOrderByOptions.Alphabetical,
@@ -879,8 +843,12 @@ describe('FormQuestionsEditorTool', () => {
 
       const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-      expect(result.content[0].text).toBe('Form question created successfully. ID: question_multi');
-      
+      expect(parseToolResult(result)).toEqual({
+        message: 'Question created',
+        question_id: 'question_multi',
+        action_name: 'create',
+      });
+
       const mockCall = mocks.getMockRequest().mock.calls[0];
       expect(mockCall[1].question.type).toBe(FormQuestionType.MultiSelect);
       expect(mockCall[1].question.options).toHaveLength(3);
@@ -919,8 +887,12 @@ describe('FormQuestionsEditorTool', () => {
 
       const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-      expect(result.content[0].text).toBe('Form question created successfully. ID: question_bool');
-      
+      expect(parseToolResult(result)).toEqual({
+        message: 'Question created',
+        question_id: 'question_bool',
+        action_name: 'create',
+      });
+
       const mockCall = mocks.getMockRequest().mock.calls[0];
       expect(mockCall[1].question.type).toBe(FormQuestionType.Boolean);
       expect(mockCall[1].question.settings.checkedByDefault).toBe(true);
@@ -958,8 +930,12 @@ describe('FormQuestionsEditorTool', () => {
 
       const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-      expect(result.content[0].text).toBe('Form question created successfully. ID: question_location');
-      
+      expect(parseToolResult(result)).toEqual({
+        message: 'Question created',
+        question_id: 'question_location',
+        action_name: 'create',
+      });
+
       const mockCall = mocks.getMockRequest().mock.calls[0];
       expect(mockCall[1].question.type).toBe(FormQuestionType.Location);
       expect(mockCall[1].question.settings.locationAutofilled).toBe(true);
@@ -997,8 +973,12 @@ describe('FormQuestionsEditorTool', () => {
 
       const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-      expect(result.content[0].text).toBe('Form question created successfully. ID: question_link');
-      
+      expect(parseToolResult(result)).toEqual({
+        message: 'Question created',
+        question_id: 'question_link',
+        action_name: 'create',
+      });
+
       const mockCall = mocks.getMockRequest().mock.calls[0];
       expect(mockCall[1].question.type).toBe(FormQuestionType.Link);
       expect(mockCall[1].question.settings.skipValidation).toBe(true);
@@ -1033,8 +1013,12 @@ describe('FormQuestionsEditorTool', () => {
 
       const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-      expect(result.content[0].text).toBe('Form question created successfully. ID: question_longtext');
-      
+      expect(parseToolResult(result)).toEqual({
+        message: 'Question created',
+        question_id: 'question_longtext',
+        action_name: 'create',
+      });
+
       const mockCall = mocks.getMockRequest().mock.calls[0];
       expect(mockCall[1].question.type).toBe(FormQuestionType.LongText);
     });
@@ -1066,10 +1050,163 @@ describe('FormQuestionsEditorTool', () => {
 
       const result = await callToolByNameRawAsync('form_questions_editor', args);
 
-      expect(result.content[0].text).toBe('Form question created successfully. ID: question_number');
-      
+      expect(parseToolResult(result)).toEqual({
+        message: 'Question created',
+        question_id: 'question_number',
+        action_name: 'create',
+      });
+
       const mockCall = mocks.getMockRequest().mock.calls[0];
       expect(mockCall[1].question.type).toBe(FormQuestionType.Number);
+    });
+  });
+
+  describe('Show If Rules (Conditional Logic)', () => {
+    it('should create a question with show_if_rules', async () => {
+      const createQuestionResponse = {
+        create_form_question: {
+          id: 'question_conditional',
+          type: FormQuestionType.ShortText,
+          title: 'Other details',
+          visible: true,
+          required: false,
+        },
+      };
+
+      mocks.setResponse(createQuestionResponse);
+
+      const args: inputType = {
+        action: FormQuestionActions.Create,
+        formToken: 'form_token_123',
+        question: {
+          type: FormQuestionType.ShortText,
+          title: 'Other details',
+          show_if_rules: {
+            operator: ConditionOperator.Or,
+            rules: [
+              {
+                operator: ConditionOperator.Or,
+                conditions: [
+                  {
+                    building_block_id: 'source_question_id',
+                    operator: ConditionOperator.Or,
+                    values: ['Other'],
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      };
+
+      const result = await callToolByNameRawAsync('form_questions_editor', args);
+
+      expect(parseToolResult(result).message).toBe('Question created');
+      expect(parseToolResult(result).question_id).toBe('question_conditional');
+
+      const mockCall = mocks.getMockRequest().mock.calls[0];
+      expect(mockCall[1].question.show_if_rules.operator).toBe('OR');
+      expect(mockCall[1].question.show_if_rules.rules[0].conditions[0].building_block_id).toBe('source_question_id');
+      expect(mockCall[1].question.show_if_rules.rules[0].conditions[0].values).toEqual(['Other']);
+    });
+
+    it('should update a question with show_if_rules', async () => {
+      const updateQuestionResponse = {
+        update_form_question: {
+          id: 'question_123',
+          type: FormQuestionType.LongText,
+          title: 'Tell us more',
+          visible: true,
+          required: false,
+        },
+      };
+
+      mocks.setResponse(updateQuestionResponse);
+
+      const args: inputType = {
+        action: FormQuestionActions.Update,
+        formToken: 'form_token_123',
+        questionId: 'question_123',
+        question: {
+          type: FormQuestionType.LongText,
+          show_if_rules: {
+            operator: ConditionOperator.Or,
+            rules: [
+              {
+                operator: ConditionOperator.Or,
+                conditions: [
+                  {
+                    building_block_id: 'dropdown_q_id',
+                    operator: ConditionOperator.Or,
+                    values: ['Forms', 'Automations'],
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      };
+
+      const result = await callToolByNameRawAsync('form_questions_editor', args);
+
+      expect(parseToolResult(result).message).toBe('Question updated');
+
+      const mockCall = mocks.getMockRequest().mock.calls[0];
+      expect(mockCall[1].question.show_if_rules.operator).toBe('OR');
+      expect(mockCall[1].question.show_if_rules.rules[0].conditions[0].values).toEqual(['Forms', 'Automations']);
+    });
+
+    it('should create a question with multiple conditions in show_if_rules', async () => {
+      const createQuestionResponse = {
+        create_form_question: {
+          id: 'question_multi_cond',
+          type: FormQuestionType.ShortText,
+          title: 'Conditional question',
+          visible: true,
+          required: false,
+        },
+      };
+
+      mocks.setResponse(createQuestionResponse);
+
+      const args: inputType = {
+        action: FormQuestionActions.Create,
+        formToken: 'form_token_123',
+        question: {
+          type: FormQuestionType.ShortText,
+          title: 'Conditional question',
+          show_if_rules: {
+            operator: ConditionOperator.Or,
+            rules: [
+              {
+                operator: ConditionOperator.Or,
+                conditions: [
+                  {
+                    building_block_id: 'q1',
+                    operator: ConditionOperator.Or,
+                    values: ['Yes'],
+                  },
+                  {
+                    building_block_id: 'q2',
+                    operator: ConditionOperator.Or,
+                    values: ['Option A', 'Option B'],
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      };
+
+      const result = await callToolByNameRawAsync('form_questions_editor', args);
+
+      expect(parseToolResult(result).message).toBe('Question created');
+
+      const mockCall = mocks.getMockRequest().mock.calls[0];
+      const conditions = mockCall[1].question.show_if_rules.rules[0].conditions;
+      expect(conditions).toHaveLength(2);
+      expect(conditions[0].building_block_id).toBe('q1');
+      expect(conditions[1].values).toEqual(['Option A', 'Option B']);
     });
   });
 
@@ -1140,4 +1277,3 @@ describe('FormQuestionsEditorTool', () => {
     });
   });
 });
-

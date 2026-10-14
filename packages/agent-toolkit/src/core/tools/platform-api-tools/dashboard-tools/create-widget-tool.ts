@@ -4,16 +4,13 @@ import {
   WidgetParentKind,
   CreateWidgetMutation,
   CreateWidgetMutationVariables,
-} from '../../../../monday-graphql/generated/graphql';
+} from '../../../../monday-graphql/generated/graphql/graphql';
 import { createWidget } from './dashboard-queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { fallbackToStringifiedVersionIfNull } from '../../../../utils/microsoft-copilot.utils';
-
+import { rethrowWithContext, ToolValidationError, EMPTY_API_RESPONSE_CODE, MISSING_REQUIRED_PARAMETER_CODE } from '../../../../utils';
 export const createWidgetToolSchema = {
-  parent_container_id: z
-    .string()
-    .describe('ID of the parent container (dashboard ID or board view ID)'),
+  parent_container_id: z.string().describe('ID of the parent container (dashboard ID or board view ID)'),
   parent_container_type: z.nativeEnum(WidgetParentKind).describe('Type of parent container: DASHBOARD or BOARD_VIEW'),
   widget_kind: z.nativeEnum(ExternalWidget).describe('Type of widget to create: i.e CHART, NUMBER, BATTERY'),
   widget_name: z
@@ -27,7 +24,6 @@ export const createWidgetToolSchema = {
     .describe(
       'Widget-specific settings as JSON object conforming to widget schema. Use all_widgets_schema tool to get the required schema for each widget type.',
     ),
-  settingsStringified: z.string().optional().describe('**ONLY FOR MICROSOFT COPILOT**: The settings object. Send this as a stringified JSON of "settings" field. Read "settings" field description for details how to use it.')
 };
 
 export class CreateWidgetTool extends BaseMondayApiTool<typeof createWidgetToolSchema, never> {
@@ -64,11 +60,10 @@ export class CreateWidgetTool extends BaseMondayApiTool<typeof createWidgetToolS
   }
 
   protected async executeInternal(input: ToolInputType<typeof createWidgetToolSchema>): Promise<ToolOutputType<never>> {
-    fallbackToStringifiedVersionIfNull(input, 'settings', createWidgetToolSchema.settings);
-    if(!input.settings) {
-      throw new Error('You must pass either settings or settingsStringified parameter');
+    if (!input.settings) {
+      throw new ToolValidationError('You must pass the settings parameter', MISSING_REQUIRED_PARAMETER_CODE);
     }
-    
+
     try {
       // Prepare GraphQL variables
       const variables: CreateWidgetMutationVariables = {
@@ -86,7 +81,7 @@ export class CreateWidgetTool extends BaseMondayApiTool<typeof createWidgetToolS
 
       // Check if the widget was created successfully
       if (!res.create_widget) {
-        throw new Error('Failed to create widget');
+        throw new ToolValidationError('Failed to create widget', EMPTY_API_RESPONSE_CODE);
       }
 
       const widget = res.create_widget;
@@ -98,20 +93,10 @@ export class CreateWidgetTool extends BaseMondayApiTool<typeof createWidgetToolS
           : `board view ${widget.parent?.id}`;
 
       return {
-        content: `✅ Widget "${widget.name}" successfully created!
-
-**Widget Details:**
-• **ID**: ${widget.id}
-• **Name**: ${widget.name}
-• **Type**: ${widget.kind}
-• **Location**: Placed in ${parentInfo}
-
-**Widget Configuration:**
-• **Settings Applied**: ${JSON.stringify(input.settings, null, 2)}`,
+        content: { message: `Widget ${widget.id} created`, widget_id: widget.id, widget_name: widget.name, dashboard_id: widget.parent?.id },
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      throw new Error(`Failed to create ${input.widget_kind} widget: ${errorMessage}`);
+      rethrowWithContext(error, `create ${input.widget_kind} widget`);
     }
   }
 }

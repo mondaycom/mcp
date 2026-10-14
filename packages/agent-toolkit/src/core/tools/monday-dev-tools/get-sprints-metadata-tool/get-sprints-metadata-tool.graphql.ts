@@ -2,7 +2,7 @@ import { gql } from 'graphql-request';
 
 export const getSprintsBoardItemsWithColumns = gql`
   query GetSprintsBoardItemsWithColumns($boardId: ID!, $limit: Int) {
-    boards(ids: [$boardId]) {
+    boards(ids: [$boardId], limit: 1) {
       items_page(limit: $limit) {
         items {
           id

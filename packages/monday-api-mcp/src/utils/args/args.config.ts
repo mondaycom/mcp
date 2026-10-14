@@ -25,7 +25,7 @@ export const ARG_CONFIGS: ArgConfig[] = [
     name: 'mode',
     flags: ['--mode', '-m'],
     description:
-      'Set the mode for tool selection: "api" (API tools only), "apps" (Monday Apps tools only), or "all" (all tools)',
+      'Set the mode for tool selection: "api" - API tools only, "apps" - (Beta) Monday Apps tools only, "atp" - ATP server mode with GraphQL exploration',
     required: false,
     defaultValue: 'api',
   },

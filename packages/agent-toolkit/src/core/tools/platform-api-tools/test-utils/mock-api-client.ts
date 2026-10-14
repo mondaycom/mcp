@@ -1,6 +1,6 @@
-import { ApiClient } from "@mondaydotcomorg/api";
-import { MondayAgentToolkitConfig, ToolMode } from "src/core/monday-agent-toolkit";
-import { MondayAgentToolkit } from "src/mcp/toolkit";
+import { ApiClient } from '@mondaydotcomorg/api';
+import { MondayAgentToolkitConfig, ToolMode } from 'src/core/monday-agent-toolkit';
+import { MondayAgentToolkit } from 'src/mcp/toolkit';
 
 export interface MockApiResponse<T = any> {
   data?: T;
@@ -17,15 +17,20 @@ export interface MockApiResponse<T = any> {
 export function createMockApiClient() {
   const mockRequest = jest.fn();
   const mockApiClient = {
-    request: mockRequest
+    request: mockRequest,
   } as any;
 
   return {
     mockApiClient,
     mockRequest,
 
-    setResponse: (data: any) => {
-      mockRequest.mockResolvedValue(data);
+    setResponse: (data: any) => mockRequest.mockResolvedValue(data),
+    setResponseOnce: (data: any) => mockRequest.mockResolvedValueOnce(data),
+
+    setResponses: (responses: any[]) => {
+      responses.forEach((response, index) => {
+        mockRequest.mockResolvedValueOnce(response);
+      });
     },
 
     setError: (messageOrError: string | Error, path: string[] = []) => {
@@ -37,14 +42,23 @@ export function createMockApiClient() {
         mockRequest.mockRejectedValue(messageOrError);
       }
     },
- 
 
     reset: () => {
       mockRequest.mockReset();
     },
 
-    getMockRequest: () => mockRequest
+    getMockRequest: () => mockRequest,
   };
+}
+
+/**
+ * Extracts and parses the content from a raw tool result, supporting both legacy string content and structured content formats.
+ */
+export function parseToolResult(result: any): any {
+  if (result.structuredContent !== undefined) {
+    return result.structuredContent;
+  }
+  return JSON.parse(result.content[0].text);
 }
 
 /**
@@ -53,11 +67,14 @@ export function createMockApiClient() {
  * @param args - The arguments to pass to the tool
  * @returns The parsed result of the tool ca  ll
  */
-export async function callToolByNameAsync(toolName: string, args: any, config?: MondayAgentToolkitConfig): Promise<any> {
+export async function callToolByNameAsync(
+  toolName: string,
+  args: any,
+  config?: MondayAgentToolkitConfig,
+): Promise<any> {
   const result = await callToolByNameRawAsync(toolName, args, config);
 
-  const parsedResult = JSON.parse(result.content[0].text);
-  return parsedResult;
+  return parseToolResult(result);
 }
 
 /**
@@ -66,8 +83,12 @@ export async function callToolByNameAsync(toolName: string, args: any, config?: 
  * @param args - The arguments to pass to the tool
  * @returns The raw result of the tool call
  */
-export async function callToolByNameRawAsync(toolName: string, args: any, config?: MondayAgentToolkitConfig): Promise<any> {
-  config ??= {mondayApiToken: 'test-token', toolsConfiguration: { mode: ToolMode.API } };
+export async function callToolByNameRawAsync(
+  toolName: string,
+  args: any,
+  config?: MondayAgentToolkitConfig,
+): Promise<any> {
+  config ??= { mondayApiToken: 'test-token', toolsConfiguration: { mode: ToolMode.API } };
   const toolkit = new MondayAgentToolkit(config);
 
   const toolNames = toolkit.getDynamicToolNames();
@@ -77,7 +98,7 @@ export async function callToolByNameRawAsync(toolName: string, args: any, config
   // Get the registered MCP tool handler
   const server = toolkit.getServer();
   const tool = (server as any)._registeredTools[toolName];
-  
+
   expect(tool).toBeDefined();
 
   // Call the tool through the MCP interface

@@ -1,27 +1,39 @@
 import { z } from 'zod';
-import { CreateItemMutation, CreateItemMutationVariables, DuplicateItemMutation, CreateSubitemMutation } from '../../../../monday-graphql/generated/graphql';
+import {
+  CreateItemMutation,
+  CreateItemMutationVariables,
+  DuplicateItemMutation,
+  CreateSubitemMutation,
+} from '../../../../monday-graphql/generated/graphql/graphql';
 import { createItem } from '../../../../monday-graphql/queries.graphql';
 import { duplicateItem } from './duplicate-item.graphql';
 import { createSubitem } from './create-subitem.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { ChangeItemColumnValuesTool } from '../change-item-column-values-tool';
+import { COLUMN_VALUES_FORMAT_GUIDE, unwrapDoubleEncodedColumnValues } from '../column-values.utils';
+import { ToolValidationError, rethrowWithContext } from '../../../../utils';
 
 export const createItemToolSchema = {
-  name: z.string().describe("The name of the new item to be created, must be relevant to the user's request"),
+  name: z
+    .string()
+    .min(1, 'Item name cannot be empty')
+    .max(255, 'Item name must be 255 characters or fewer')
+    .describe("The name of the new item to be created, must be relevant to the user's request. 1–255 characters."),
   groupId: z
     .string()
     .optional()
     .describe('The id of the group id to which the new item will be added, if its not clearly specified, leave empty'),
-  columnValues: z
-    .string()
-    .describe(
-      `A string containing the new column values for the item following this structure: {\\"column_id\\": \\"value\\",... you can change multiple columns at once, note that for status column you must use nested value with 'label' as a key and for date column use 'date' as key} - example: "{\\"text_column_id\\":\\"New text\\", \\"status_column_id\\":{\\"label\\":\\"Done\\"}, \\"date_column_id\\":{\\"date\\":\\"2023-05-25\\"},\\"dropdown_id\\":\\"value\\", \\"phone_id\\":\\"123-456-7890\\", \\"email_id\\":\\"test@example.com\\"}"`,
-    ),
-    parentItemId: z.number()
+  columnValues: z.string().describe(COLUMN_VALUES_FORMAT_GUIDE),
+  createLabelsIfMissing: z
+    .boolean()
     .optional()
-    .describe('The id of the parent item under which the new subitem will be created'),
-    duplicateFromItemId: z.number()
+    .describe(
+      'When true, missing status/dropdown labels referenced in columnValues will be auto-created on the board instead of erroring with ColumnValueException. Requires permission to change board structure. Use when the caller specifies label names that may not yet exist on the board.',
+    ),
+  parentItemId: z.number().optional().describe('The id of the parent item under which the new subitem will be created'),
+  duplicateFromItemId: z
+    .number()
     .optional()
     .describe('The id of existing item to duplicate and update with new values (only provide when duplicating)'),
 };
@@ -44,8 +56,12 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
   });
 
   getDescription(): string {
-    return 'Create a new item with provided values, create a subitem under a parent item, or duplicate an existing item and update it with new values. Use parentItemId when creating a subitem under an existing item. Use duplicateFromItemId when copying an existing item with modifications.' 
-      + `[REQUIRED PRECONDITION]: Before using this tool, if you are not familiar with the board's structure (column IDs, column types, status labels, etc.), first use get_board_info to understand the board metadata. This is essential for constructing proper column values and knowing which columns are available.`;
+    return (
+      'Create a single item or subitem on a monday.com board, or duplicate an existing item. ' +
+      '[IMPORTANT] If you need to create multiple items in one call, use create_items instead of calling this tool in a loop. ' +
+      'Otherwise: create a new item with provided values, create a subitem under a parent item, or duplicate an existing item and update it with new values. Use parentItemId when creating a subitem under an existing item. Use duplicateFromItemId when copying an existing item with modifications. ' +
+      `[REQUIRED PRECONDITION]: Before using this tool, if new columns were added to the board or if you are not familiar with the board's structure (column IDs, column types, status labels, etc.), first use get_board_info with filters.columns.only to get column metadata without fetching views. This is essential for constructing proper column values and knowing which columns are available.`
+    );
   }
 
   getInputSchema(): CreateItemToolInput {
@@ -55,11 +71,15 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
     return createItemInBoardToolSchema;
   }
 
-  protected async executeInternal(input: ToolInputType<CreateItemToolInput>): Promise<ToolOutputType<never>> {
+  protected async executeInternal(rawInput: ToolInputType<CreateItemToolInput>): Promise<ToolOutputType<never>> {
+    const input = { ...rawInput, columnValues: unwrapDoubleEncodedColumnValues(rawInput.columnValues) };
     const boardId = this.context?.boardId ?? (input as ToolInputType<typeof createItemInBoardToolSchema>).boardId;
 
     if (input.duplicateFromItemId && input.parentItemId) {
-      throw new Error('Cannot specify both parentItemId and duplicateFromItemId. Please provide only one of these parameters.');
+      throw new ToolValidationError(
+        'Cannot specify both parentItemId and duplicateFromItemId. Please provide only one of these parameters.',
+        'INVALID_ARGUMENTS_COMBINATION',
+      );
     }
 
     if (input.duplicateFromItemId) {
@@ -71,101 +91,114 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
     }
   }
 
-  private async duplicateAndUpdateItem(input: ToolInputType<CreateItemToolInput>, boardId: number): Promise<ToolOutputType<never>> {
+  private async duplicateAndUpdateItem(
+    input: ToolInputType<CreateItemToolInput>,
+    boardId: number,
+  ): Promise<ToolOutputType<never>> {
     try {
       const duplicateVariables = {
         boardId: boardId.toString(),
-        itemId: input.duplicateFromItemId!.toString()
+        itemId: input.duplicateFromItemId!.toString(),
       };
-      
+
       const duplicateRes = await this.mondayApi.request<DuplicateItemMutation>(duplicateItem, duplicateVariables);
-      
+
       if (!duplicateRes.duplicate_item?.id) {
-        throw new Error('Failed to duplicate item: no item duplicated');
+        throw new ToolValidationError('Failed to duplicate item: no item duplicated', 'EMPTY_API_RESPONSE');
       }
 
       let columnValuesParsed;
       try {
         columnValuesParsed = JSON.parse(input.columnValues);
       } catch (error) {
-        throw new Error('Invalid JSON in columnValues');
+        throw new ToolValidationError(
+          'Invalid columnValues JSON: expected a JSON object keyed by column id',
+          'INVALID_COLUMN_VALUES_JSON',
+        );
       }
-      
+
       const columnValuesAndName = {
         ...columnValuesParsed,
         name: input.name,
       };
 
-      const changeColumnValuesTool = new ChangeItemColumnValuesTool(this.mondayApi, this.apiToken, { boardId: boardId });
-      const updateRes = await changeColumnValuesTool.execute({
-        itemId: parseInt(duplicateRes.duplicate_item.id),
-        columnValues: JSON.stringify(columnValuesAndName),
+      const changeColumnValuesTool = new ChangeItemColumnValuesTool(this.mondayApi, {
+        boardId: boardId,
       });
 
-      if (updateRes.content.includes('Error')) {
-        throw new Error('Failed to update duplicated item: ' + updateRes.content);
-      }
+      await changeColumnValuesTool.execute({
+        itemId: parseInt(duplicateRes.duplicate_item.id),
+        columnValues: JSON.stringify(columnValuesAndName),
+        createLabelsIfMissing: input.createLabelsIfMissing,
+      });
 
       return {
-        content: `Item ${duplicateRes.duplicate_item.id} successfully duplicated from ${input.duplicateFromItemId} and updated`,
+        content: {
+          message: `Item ${duplicateRes.duplicate_item.id} duplicated from ${input.duplicateFromItemId}`,
+          item_id: duplicateRes.duplicate_item.id,
+          item_name: duplicateRes.duplicate_item.name,
+          item_url: duplicateRes.duplicate_item.url,
+          board_id: boardId,
+        },
       };
     } catch (error) {
-      this.rethrowWrapped(error, 'duplicate item');
+      rethrowWithContext(error, 'duplicate item');
     }
   }
 
   private async createSubitem(input: ToolInputType<CreateItemToolInput>): Promise<ToolOutputType<never>> {
-
-      const variables = {
-        parentItemId: input.parentItemId!.toString(),
-        itemName: input.name,
-        columnValues: input.columnValues,
-      };
-      try {
-        const res = await this.mondayApi.request<CreateSubitemMutation>(createSubitem, variables);
+    const variables = {
+      parentItemId: input.parentItemId!.toString(),
+      itemName: input.name,
+      columnValues: input.columnValues,
+      createLabelsIfMissing: input.createLabelsIfMissing,
+    };
+    try {
+      const res = await this.mondayApi.request<CreateSubitemMutation>(createSubitem, variables);
 
       if (!res.create_subitem?.id) {
-        throw new Error('Failed to create subitem: no subitem created');
+        throw new ToolValidationError('Failed to create subitem: no subitem created', 'EMPTY_API_RESPONSE');
       }
 
       return {
-        content: `Subitem ${res.create_subitem.id} successfully created under parent item ${input.parentItemId}`,
+        content: {
+          message: `Subitem ${res.create_subitem.id} created under ${input.parentItemId}`,
+          item_id: res.create_subitem.id,
+          item_name: res.create_subitem.name,
+          item_url: res.create_subitem.url,
+        },
       };
     } catch (error) {
-      this.rethrowWrapped(error, 'create subitem');
+      rethrowWithContext(error, 'create subitem');
     }
   }
 
-  private async createNewItem(input: ToolInputType<CreateItemToolInput>, boardId: number): Promise<ToolOutputType<never>> {
+  private async createNewItem(
+    input: ToolInputType<CreateItemToolInput>,
+    boardId: number,
+  ): Promise<ToolOutputType<never>> {
     try {
       const variables: CreateItemMutationVariables = {
         boardId: boardId.toString(),
         itemName: input.name,
         groupId: input.groupId,
         columnValues: input.columnValues,
+        createLabelsIfMissing: input.createLabelsIfMissing,
       };
 
       const res = await this.mondayApi.request<CreateItemMutation>(createItem, variables);
 
       return {
-        content: `Item ${res.create_item?.id} successfully created`,
+        content: {
+          message: `Item ${res.create_item?.id} successfully created`,
+          item_id: res.create_item?.id,
+          item_name: res.create_item?.name,
+          item_url: res.create_item?.url,
+          board_id: boardId,
+        },
       };
     } catch (error) {
-      this.rethrowWrapped(error, 'create item');
+      rethrowWithContext(error, 'create item');
     }
-    
-  }
-
-  private rethrowWrapped(error: unknown, operation: string): never {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
-    if (error instanceof Error && 'response' in error) {
-      const clientError = error as any;
-      if (clientError.response?.errors) {
-        throw new Error(`Failed to ${operation}: ${clientError.response.errors.map((e: any) => e.message).join(', ')}`);
-      }
-    }
-    
-    throw new Error(`Failed to ${operation}: ${errorMessage}`);
   }
 }

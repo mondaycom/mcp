@@ -13,6 +13,7 @@ const QuestionBasicFragment = gql`
     description
     visible
     required
+    page_block_id
   }
 `;
 
@@ -21,6 +22,9 @@ const QuestionOptionsFragment = gql`
   fragment QuestionOptions on FormQuestion {
     options {
       label
+      value
+      visible
+      active
     }
   }
 `;
@@ -47,6 +51,9 @@ const QuestionSettingsFragment = gql`
       locationAutofilled
       limit
       skipValidation
+      label_limit_count
+      label_limit_count_enabled
+      default_answer
     }
   }
 `;
@@ -57,7 +64,7 @@ const QuestionCompleteFragment = gql`
     ...QuestionBasic
     ...QuestionOptions
     ...QuestionSettings
-    showIfRules
+    show_if_rules
   }
   ${QuestionBasicFragment}
   ${QuestionOptionsFragment}
@@ -117,6 +124,9 @@ const FormFeaturesFragment = gql`
       includeUpdateQuestion
       syncQuestionAndColumnsTitles
     }
+    ai_translate {
+      enabled
+    }
   }
 `;
 
@@ -127,7 +137,7 @@ const FormAppearanceFragment = gql`
     showProgressBar
     primaryColor
     layout {
-      format
+      type
       alignment
       direction
     }
@@ -164,7 +174,6 @@ const FormTagFragment = gql`
   fragment FormTag on FormTag {
     id
     name
-    value
     columnId
   }
 `;
@@ -173,7 +182,7 @@ const FormTagFragment = gql`
 // QUERIES AND MUTATIONS
 // ============================================================================
 
-// Create a new monday form (API version 2025-10)
+// Create a new monday form (API version 2026-07)
 export const createForm = gql`
   mutation createForm(
     $destination_workspace_id: ID!
@@ -347,12 +356,6 @@ export const createFormTag = gql`
   ${FormTagFragment}
 `;
 
-export const updateFormTag = gql`
-  mutation updateFormTag($formToken: String!, $tagId: String!, $tag: UpdateFormTagInput!) {
-    update_form_tag(formToken: $formToken, tagId: $tagId, tag: $tag)
-  }
-`;
-
 export const updateFormAppearance = gql`
   mutation updateFormAppearance($formToken: String!, $appearance: FormAppearanceInput!) {
     update_form_settings(formToken: $formToken, settings: { appearance: $appearance }) {
@@ -376,8 +379,8 @@ export const updateFormAccessibility = gql`
 `;
 
 export const updateFormFeatures = gql`
-  mutation updateFormFeatures($formToken: String!, $features: FormFeaturesInput!) {
-    update_form_settings(formToken: $formToken, settings: { features: $features }) {
+  mutation updateFormFeatures($formToken: String!, $features: FormFeaturesInput!, $is_anonymous: Boolean) {
+    update_form_settings(formToken: $formToken, settings: { features: $features, is_anonymous: $is_anonymous }) {
       features {
         ...FormFeatures
       }
@@ -391,6 +394,7 @@ export const updateFormQuestionOrder = gql`
     update_form(formToken: $formToken, input: { questions: $questions }) {
       questions {
         id
+        page_block_id
       }
     }
   }

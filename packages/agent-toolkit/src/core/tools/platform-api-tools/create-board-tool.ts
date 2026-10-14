@@ -3,7 +3,7 @@ import {
   BoardKind,
   CreateBoardMutation,
   CreateBoardMutationVariables,
-} from '../../../monday-graphql/generated/graphql';
+} from '../../../monday-graphql/generated/graphql/graphql';
 import { createBoard } from '../../../monday-graphql/queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
@@ -13,6 +13,9 @@ export const createBoardToolSchema = {
   boardKind: z.nativeEnum(BoardKind).default(BoardKind.Public).describe('The kind of board to create'),
   boardDescription: z.string().optional().describe('The description of the board to create'),
   workspaceId: z.string().optional().describe('The ID of the workspace to create the board in'),
+  boardOwnerIds: z.array(z.string()).optional().describe('Optional list of user IDs to set as board owners'),
+  useMlsTemplate: z.boolean().optional().describe('Set to true to create a multi-level board using the MLS template'),
+  useDatasetTemplate: z.boolean().optional().describe('Set to true to create a board from the dataset template'),
 };
 
 export class CreateBoardTool extends BaseMondayApiTool<typeof createBoardToolSchema, never> {
@@ -39,12 +42,15 @@ export class CreateBoardTool extends BaseMondayApiTool<typeof createBoardToolSch
       boardKind: input.boardKind,
       boardDescription: input.boardDescription,
       workspaceId: input.workspaceId,
+      ...(input.boardOwnerIds !== undefined ? { boardOwnerIds: input.boardOwnerIds } : {}),
+      ...(input.useMlsTemplate !== undefined ? { useMlsTemplate: input.useMlsTemplate } : {}),
+      ...(input.useDatasetTemplate !== undefined ? { useDatasetTemplate: input.useDatasetTemplate } : {}),
     };
 
     const res = await this.mondayApi.request<CreateBoardMutation>(createBoard, variables);
 
     return {
-      content: `Board ${res.create_board?.id} successfully created`,
+      content: { message: `Board ${res.create_board?.id} successfully created`, board_id: res.create_board?.id, board_name: res.create_board?.name, board_url: res.create_board?.url },
     };
   }
 }

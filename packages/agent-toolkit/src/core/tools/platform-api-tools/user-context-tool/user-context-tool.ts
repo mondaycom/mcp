@@ -1,0 +1,169 @@
+import { ToolOutputType, ToolType } from '../../../tool';
+import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+import { getUserContextQuery } from './user-context.graphql.dev';
+import { getFavoriteDetailsQuery } from './user-context.graphql';
+import { GetUserContextQuery } from '../../../../monday-graphql/generated/graphql.dev/graphql';
+import { GetFavoriteDetailsQuery, GraphqlMondayObject } from '../../../../monday-graphql/generated/graphql/graphql';
+import { Favorite, RelevantBoard, RelevantDoc, RelevantPerson } from './user-context-tool.types';
+import { TYPE_TO_QUERY_VAR, TYPE_TO_RESPONSE_KEY } from './user-context-tool.consts';
+
+export class UserContextTool extends BaseMondayApiTool<undefined> {
+  name = 'get_user_context';
+  type = ToolType.READ;
+  annotations = createMondayApiAnnotations({
+    title: 'Get User Context',
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+  });
+
+  getDescription(): string {
+    return `Fetch current user information, account information, and their relevant items (boards, docs, folders, workspaces, dashboards).
+
+    Use this tool to:
+    - Get context about who the current user is (id, name, title)
+    - Get account info: plan tier, active member count, trial status, and active products
+    - Get the number of active members in the account (returns active_members_count)
+    - Discover user's favorite boards, folders, workspaces, and dashboards
+    - Get user's most relevant boards based on visit frequency and recency
+    - Get user's most relevant docs based on load frequency and recency
+    - Get user's most relevant people based on interaction frequency and recency
+    - Reduce the need for search requests by knowing user's commonly accessed items
+    `;
+  }
+
+  getInputSchema(): undefined {
+    return undefined;
+  }
+
+  protected async executeInternal(): Promise<ToolOutputType<never>> {
+    const { me, favorites, intelligence } = await this.mondayApi.request<GetUserContextQuery>(
+      getUserContextQuery,
+      {},
+      { versionOverride: 'dev' },
+    );
+
+    if (!me) {
+      return {
+        content: 'AUTHENTICATION_ERROR: Unable to fetch current user. Verify API token and user permissions.',
+      };
+    }
+
+    const enrichedFavorites = await this.fetchFavorites(favorites || []);
+    const relevantBoards = this.extractRelevantBoards(intelligence);
+    const relevantDocs = this.extractRelevantDocs(intelligence);
+    const relevantPeople = this.extractRelevantPeople(intelligence);
+
+    const { account, ...user } = me;
+    const accountContext = account
+      ? {
+          tier: account.tier,
+          active_members_count: account.active_members_count,
+          is_during_trial: account.is_during_trial,
+          products: account.products?.filter(Boolean).map((p) => ({ kind: p!.kind, tier: p!.tier })) ?? [],
+        }
+      : null;
+
+    const output = {
+      user,
+      account: accountContext,
+      favorites: enrichedFavorites,
+      relevantBoards,
+      relevantDocs,
+      relevantPeople,
+    };
+    return { content: { message: 'User context', ...output } };
+  }
+
+  private async fetchFavorites(favorites: NonNullable<GetUserContextQuery['favorites']>): Promise<Favorite[]> {
+    const idsByType = this.groupByType(favorites);
+    const types = Object.keys(idsByType) as GraphqlMondayObject[];
+
+    if (types.length === 0) {
+      return [];
+    }
+
+    const queryVariables: Record<string, string[]> = {};
+    for (const type of types) {
+      queryVariables[TYPE_TO_QUERY_VAR[type]] = idsByType[type]!;
+    }
+
+    const response = await this.mondayApi.request<GetFavoriteDetailsQuery>(getFavoriteDetailsQuery, queryVariables);
+
+    const result: Favorite[] = [];
+    for (const type of types) {
+      const responseKey = TYPE_TO_RESPONSE_KEY[type];
+
+      for (const item of response[responseKey] ?? []) {
+        if (item?.id) {
+          result.push({ id: item.id, name: item.name, type });
+        }
+      }
+    }
+
+    return result;
+  }
+
+  private extractRelevantBoards(intelligence: GetUserContextQuery['intelligence']): RelevantBoard[] {
+    if (!intelligence?.relevant_boards) {
+      return [];
+    }
+
+    const result: RelevantBoard[] = [];
+
+    for (const rb of intelligence.relevant_boards) {
+      if (rb?.id && rb?.board?.name) {
+        result.push({ id: rb.id, name: rb.board.name });
+      }
+    }
+
+    return result;
+  }
+
+  private extractRelevantDocs(intelligence: GetUserContextQuery['intelligence']): RelevantDoc[] {
+    if (!intelligence?.relevant_docs) {
+      return [];
+    }
+
+    const result: RelevantDoc[] = [];
+
+    for (const rd of intelligence.relevant_docs) {
+      if (rd?.id && rd?.document?.name) {
+        result.push({ id: rd.id, name: rd.document.name, objectId: rd.object_id });
+      }
+    }
+
+    return result;
+  }
+
+  private extractRelevantPeople(intelligence: GetUserContextQuery['intelligence']): RelevantPerson[] {
+    if (!intelligence?.relevant_people) {
+      return [];
+    }
+
+    const result: RelevantPerson[] = [];
+
+    for (const rp of intelligence.relevant_people) {
+      if (rp?.id && rp?.user?.name) {
+        result.push({ id: rp.id, name: rp.user.name });
+      }
+    }
+
+    return result;
+  }
+
+  private groupByType(
+    favorites: NonNullable<GetUserContextQuery['favorites']>,
+  ): Partial<Record<GraphqlMondayObject, string[]>> {
+    const result: Partial<Record<GraphqlMondayObject, string[]>> = {};
+
+    for (const favorite of favorites) {
+      const obj = favorite?.object;
+      if (obj?.id && obj?.type) {
+        (result[obj.type] ??= []).push(obj.id);
+      }
+    }
+
+    return result;
+  }
+}

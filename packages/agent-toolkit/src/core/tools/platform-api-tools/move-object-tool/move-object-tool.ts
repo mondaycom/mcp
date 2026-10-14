@@ -3,14 +3,24 @@ import { updateFolder } from '../update-folder-tool/update-folder-tool.graphql';
 import { updateBoardHierarchy, updateOverviewHierarchy } from './move-object-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
-import { ObjectType, UpdateOverviewHierarchyMutation } from 'src/monday-graphql/generated/graphql';
-import { UpdateBoardHierarchyMutation, UpdateFolderMutation } from 'src/monday-graphql/generated/graphql';
+import { ObjectType, UpdateOverviewHierarchyMutation } from 'src/monday-graphql/generated/graphql/graphql';
+import { UpdateBoardHierarchyMutation, UpdateFolderMutation } from 'src/monday-graphql/generated/graphql/graphql';
 
 export const moveObjectToolSchema = {
   objectType: z.nativeEnum(ObjectType).describe('The type of object to move'),
   id: z.string().describe('The ID of the object to move'),
-  position_object_id: z.string().optional().describe('The ID of the object to position the object relative to. If this parameter is provided, position_object_type must be also provided.'),
-  position_object_type: z.nativeEnum(ObjectType).optional().describe('The type of object to position the object relative to. If this parameter is provided, position_object_id must be also provided.'),
+  position_object_id: z
+    .string()
+    .optional()
+    .describe(
+      'The ID of the object to position the object relative to. If this parameter is provided, position_object_type must be also provided.',
+    ),
+  position_object_type: z
+    .nativeEnum(ObjectType)
+    .optional()
+    .describe(
+      'The type of object to position the object relative to. If this parameter is provided, position_object_id must be also provided.',
+    ),
   position_is_after: z.boolean().optional().describe('Whether to position the object after the object'),
   parentFolderId: z
     .string()
@@ -41,7 +51,7 @@ export class MoveObjectTool extends BaseMondayApiTool<MoveObjectToolInput> {
   });
 
   getDescription(): string {
-    return 'Move a folder, board, or overview in monday.com. Use `position` for relative placement based on another object, `parentFolderId` for folder changes, `workspaceId` for workspace moves, and `accountProductId` for account product changes.';
+    return 'Move a folder, board, or overview in monday.com. Use position for relative placement based on another object, parentFolderId for folder changes, workspaceId for workspace moves, and accountProductId for account product changes.';
   }
 
   getInputSchema(): MoveObjectToolInput {
@@ -49,31 +59,49 @@ export class MoveObjectTool extends BaseMondayApiTool<MoveObjectToolInput> {
   }
 
   private async executeUpdateFolder(input: ToolInputType<MoveObjectToolInput>): Promise<ToolOutputType<never>> {
-    const { id, position_object_id, position_object_type, position_is_after, parentFolderId, workspaceId, accountProductId } = input;
+    const {
+      id,
+      position_object_id,
+      position_object_type,
+      position_is_after,
+      parentFolderId,
+      workspaceId,
+      accountProductId,
+    } = input;
     if (!!position_object_id !== !!position_object_type) {
       throw new Error('position_object_id and position_object_type must be provided together');
     }
-    const variables = { 
-      folderId: id, 
-      position: !position_object_id ? undefined : {
-        position_is_after,
-        position_object_id,
-        position_object_type
-      }, 
-      parentFolderId, 
-      workspaceId, 
-      accountProductId 
+    const variables = {
+      folderId: id,
+      position: !position_object_id
+        ? undefined
+        : {
+            is_after: position_is_after,
+            object_id: position_object_id,
+            object_type: position_object_type,
+          },
+      parentFolderId,
+      workspaceId,
+      accountProductId,
     };
 
     const res = await this.mondayApi.request<UpdateFolderMutation>(updateFolder, variables);
 
     return {
-      content: `Object ${res.update_folder?.id} successfully moved`,
+      content: { message: "Object moved", object_id: res.update_folder?.id},
     };
   }
 
   private async executeUpdateBoardHierarchy(input: ToolInputType<MoveObjectToolInput>): Promise<ToolOutputType<never>> {
-    const { id, position_object_id, position_object_type, position_is_after, parentFolderId, workspaceId, accountProductId } = input;
+    const {
+      id,
+      position_object_id,
+      position_object_type,
+      position_is_after,
+      parentFolderId,
+      workspaceId,
+      accountProductId,
+    } = input;
 
     if (!!position_object_id !== !!position_object_type) {
       throw new Error('position_object_id and position_object_type must be provided together');
@@ -82,11 +110,13 @@ export class MoveObjectTool extends BaseMondayApiTool<MoveObjectToolInput> {
     const variables = {
       boardId: id,
       attributes: {
-        position: !position_object_id ? undefined : {
-          position_is_after,
-          position_object_id,
-          position_object_type
-        },
+        position: !position_object_id
+          ? undefined
+          : {
+              is_after: position_is_after,
+              object_id: position_object_id,
+              object_type: position_object_type,
+            },
         folder_id: parentFolderId,
         workspace_id: workspaceId,
         account_product_id: accountProductId,
@@ -97,17 +127,25 @@ export class MoveObjectTool extends BaseMondayApiTool<MoveObjectToolInput> {
 
     return res.update_board_hierarchy?.success
       ? {
-          content: `Board ${res.update_board_hierarchy?.board?.id} position updated successfully`,
+          content: { message: "Board position updated", object_id: res.update_board_hierarchy?.board?.id, action_name: "move_board" },
         }
       : {
-          content: `Board position updated failed: ${res.update_board_hierarchy?.message}`,
+          content: `Board position update failed: ${res.update_board_hierarchy?.message}`,
         };
   }
 
   private async executeUpdateOverviewHierarchy(
     input: ToolInputType<MoveObjectToolInput>,
   ): Promise<ToolOutputType<never>> {
-    const { id, position_object_id, position_object_type, position_is_after, parentFolderId, workspaceId, accountProductId } = input;
+    const {
+      id,
+      position_object_id,
+      position_object_type,
+      position_is_after,
+      parentFolderId,
+      workspaceId,
+      accountProductId,
+    } = input;
 
     if (!!position_object_id !== !!position_object_type) {
       throw new Error('position_object_id and position_object_type must be provided together');
@@ -116,11 +154,13 @@ export class MoveObjectTool extends BaseMondayApiTool<MoveObjectToolInput> {
     const variables = {
       overviewId: id,
       attributes: {
-        position: !position_object_id ? undefined : {
-          position_is_after,
-          position_object_id,
-          position_object_type
-        },
+        position: !position_object_id
+          ? undefined
+          : {
+              is_after: position_is_after,
+              object_id: position_object_id,
+              object_type: position_object_type,
+            },
         folder_id: parentFolderId,
         workspace_id: workspaceId,
         account_product_id: accountProductId,
@@ -131,10 +171,10 @@ export class MoveObjectTool extends BaseMondayApiTool<MoveObjectToolInput> {
 
     return res.update_overview_hierarchy?.success
       ? {
-          content: `Overview ${res.update_overview_hierarchy?.overview?.id} position updated successfully`,
+          content: { message: "Overview position updated", object_id: res.update_overview_hierarchy?.overview?.id },
         }
       : {
-          content: `Overview position updated failed: ${res.update_overview_hierarchy?.message}`,
+          content: `Overview position update failed: ${res.update_overview_hierarchy?.message}`,
         };
   }
 

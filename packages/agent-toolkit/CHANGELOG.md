@@ -1,0 +1,562 @@
+# Changelog
+
+## 5.75.0
+
+### `get_updates` takes ids only in `objectIds`
+
+- **Breaking for callers:** `objectId` is removed. `objectIds` is now required: up to 25 item IDs for Item, or exactly one board ID for Board. With `objectId` optional, models sent Board queries with no ID at all and got "Provide exactly one of objectId or objectIds".
+- Item queries always return the per-item shape (`items[]` with `item_id`, `url`, `updates`, `count`, plus `not_found`), for one item or many.
+- `fromDate` / `toDate` now work for Item queries too. They filter the fetched page by each update's `created_at`.
+- Invalid input (a half date range, more than one board ID) throws a `ToolValidationError` with code `INVALID_TOOL_ARGS` instead of a generic execution failure.
+
+## 5.74.3
+
+### Make `update_items` work in Copilot Studio
+
+- Update rows no longer declare `required` fields in the JSON Schema. Copilot Studio never sent calls whose array rows had required fields, and asked the user for values the model had already filled (#499).
+- `itemId` is still required: updates without one are rejected before any API request, with one `MISSING_REQUIRED_PARAMETER` entry per update in `structuredContent.errors[]`.
+- `columnValues` now defaults to `"{}"`.
+
+## 5.74.2
+
+### Narrower guidance for `get_updates`' `includeFullText`
+
+- `includeFullText` is now described as off by default and only for re-reading one item whose body came back with `text_body_truncated`. The tool description says to call again for that item only. Agents were setting it on their first call, which skipped truncation and returned very large responses, especially with `objectIds`.
+
+## 5.74.1
+
+### Clearer trigger for `get_board_info`'s `includeKnowledge`
+
+- The description of `includeKnowledge`, in the tool description and the parameter, now names when to set it: when the agent has to interpret the board, for example to choose a status, label or column value from the user's intent rather than an exact name they gave, or to explain what statuses, columns or roles mean. It stays off for structural work such as column ids, types, revisions or views. The previous wording described only what knowledge contains, so agents rarely set it, even when the answer depended on the board's workflow.
+
+## 5.74.0
+
+### Opt-in board subscribers in `get_board_info`
+
+- New optional `includeSubscribers` returns the board's `subscribers` and `team_subscribers` (id and name). `subscribers` includes both people and AI agents subscribed to the board, with agents listed by their agent user id. It defaults to false, so the default payload is unchanged.
+
+## 5.73.0
+
+### Read several items in one `get_updates` call, and fix date-only ranges
+
+- New optional `objectIds` (up to 25 item ids, Item objectType only) fetches updates for several items in one request, instead of `objectId`. Exactly one of the two must be set, so `objectId` is now optional. Results are grouped per item (`item_id`, `url`, `updates`, `count`). Requested ids the API doesn't return are listed in `not_found`. `limit` and `page` apply to each item, and `limit` defaults to 10 per item with `objectIds`.
+- A date-only `toDate` now means the end of that day (`T23:59:59Z`). It used to mean the start of the day, so the last day of a range was left out and a same-day range was empty.
+- Update and reply bodies over 2000 characters are truncated and flagged with `text_body_truncated: true`. The new `includeFullText` returns them in full.
+- The description suggests a date range for Board queries that include item updates.
+
+## 5.72.1
+
+### Agent mentions and agent assignment in people columns
+
+- `create_update`, `create_updates`, `create_update_in_monday` and `update_doc` comments: mention an AI agent with type `User` and the agent's user id. Type `Agent` creates the update without a mention.
+- The people column format guide used by `change_item_column_values`, `update_items`, `create_item` and `create_items` now lists kind `"agent"`, with the agent's user id. Kind `"person"` with an agent's user id is rejected.
+
+## 5.72.0
+
+### Add `create_updates` and resolve reply-to-reply in `create_update`
+
+- New `create_updates` tool posts up to 40 updates per call, 10 at a time, with per-entry results like `update_items`. Each entry uses the `create_update` schema.
+- `create_update` with a `parentId` that is itself a reply (`REPLY_TO_REPLY_NOT_ALLOWED`) now posts on the top-level update that contains it.
+
+## 5.71.9
+
+### Clearer `move_item_to_group` description and error context
+
+- Failed moves now report as `Failed to move item to group: ...` and keep the API error code and `error_data`.
+- Fixed the `itemId` description, which was copied from `create_update`, and stated that the tool cannot move items between boards.
+
+## 5.71.8
+
+### Default omitted GraphQL variables
+
+- `all_monday_api`, `all_api_read`, and `all_api_write` now default omitted `variables` to `"{}"`.
+
+## 5.71.7
+
+### Make board knowledge opt-in
+
+- `get_board_info` now fetches generated board knowledge only when `includeKnowledge` is true.
+- The optional input remains in the tool schema during gradual rollout so cached schemas stay stable.
+
+## 5.71.5
+
+### Reuse the `create_items` per-item error shape for missing names
+
+- Missing-name errors in `create_items` now use path `["results", <index>]`, the same shape as the tool's other per-item errors, instead of `["items", <index>, "name"]`.
+- Per-item `ToolValidationError`s in `create_items` (for example, both `parentItemId` and `duplicateFromItemId` set) now include their `code` in `errors[]`.
+
+## 5.71.4
+
+### Make `create_items` work in Copilot Studio
+
+- Item rows no longer declare `required` fields in the JSON Schema. Copilot Studio never sent calls whose array rows had required fields, and asked the user for values the model had already filled (#499).
+- `name` is still required: items without one are rejected before any API request, with one `MISSING_REQUIRED_PARAMETER` entry per item in `structuredContent.errors[]`, at path `["items", <index>, "name"]`.
+- `ToolValidationError` takes optional per-field error entries.
+- `columnValues` now defaults to `"{}"`.
+
+## 5.71.3
+
+### Fix column-value failures in `change_item_column_values`, `update_items`, `create_item` and `create_items`
+
+- Unwrap double-encoded `columnValues` (a JSON string whose content is itself a JSON string) before sending it to the API. These calls previously never succeeded.
+- Share one column-value format guide across the four tools. Dropdowns use `{"labels": [...]}` even for one value; the old `update_items`, `create_item` and `create_items` text said `{"label": "..."}`, which the API rejects.
+- Document the people, board_relation, tags, long_text, timeline, checkbox, link, location, email and phone formats, status `index` and dropdown `ids`, and clearing with `null`. Column ids and labels must come from `get_board_info`, and people ids from `list_users_and_teams`.
+- `create_item` now reports invalid JSON as `Invalid columnValues JSON`, the same text as `change_item_column_values`.
+- Replace the escaped-quote example, which encouraged double encoding, with a plain JSON object.
+
+### Clarify `move_item_to_group.groupId` and `read_docs.type`
+
+- `groupId` must be a group on the item's board, read from `get_board_info`.
+- `read_docs` defaults to `object_ids`, the number in a doc URL.
+
+### Make `board_insights.aggregations[].columnId` optional for `COUNT_ITEMS`
+
+- A plain item count no longer needs a column. Every other function still requires `columnId`, and the tool rejects the call before any API request if it is missing.
+
+## 5.71.2
+
+### Validate `appVersionId` in `monday_apps_get_deployment_status`
+
+- Require a positive integer, so invalid IDs are rejected before any API request is made.
+- Emit `type: integer` with `minimum: 1` rather than `exclusiveMinimum`, keeping the schema Copilot Studio compatible.
+
+## 5.71.1
+
+### Make `get_asset_upload_url` compatible with Copilot Studio
+
+- Emit `minimum: 1` for `fileSize` instead of the unsupported numeric `exclusiveMinimum`.
+
+## 5.71.0
+
+### Add generated board knowledge to `get_board_info`
+
+- Fetches `entity_knowledge` in parallel with the existing board query.
+- Returns available business context, workflow meanings, column purposes, people roles, and related boards as structured JSON.
+- Treats missing or failed knowledge reads as optional so board metadata remains available.
+- Supports optional toolkit dependencies for rollout flag checks and structured logging of failed knowledge reads.
+
+## 5.70.2
+
+### Document supported board filter operators
+
+- Added filter guidelines for timeline, location, connect boards and subitems columns.
+- Documented the date-range format and compare attributes for date, timeline, creation log and last-updated
+  filters.
+- Expanded the date guidelines with the supported range and empty-value operators.
+- Clarified board-specific column ids and the virtual ids available for filtering and sorting.
+
+## 5.70.1
+
+Re-publish: `5.70.0` never reached the npm registry due to a CI publishing pipeline issue (npm trusted-publishing/2FA-bypass token migration, then a stale `repository.url` failing provenance verification). No functional changes from `5.70.0`.
+
+## 5.70.0
+
+### search — scope DOCUMENTS search to specific documents with `docIds`
+
+`search` accepts a new optional `docIds` argument, forwarded to `search.docs(ids:)`. It scopes a DOCUMENTS search to the given documents (ids as they appear in document URLs, at most 512), which lets a caller ask which of a known set of documents mention a term instead of searching the whole account. It combines with `workspaceIds`, and like the other id filters an empty array or `null` means "no filter".
+
+`search.docs(ids:)` exists from API version `2026-10`, which is the version the toolkit pins.
+
+## 5.69.1
+
+### Default `retrieval_only` to `true` for `get_monday_knowledge` developer docs queries
+
+`ask_developer_docs` now defaults to `retrieval_only: true`, returning the most relevant documentation content directly instead of a summarized AI answer.
+
+## 5.69.0
+
+### Document the virtual column ids and the [UNIT, AMOUNT] rolling window
+
+Descriptions only, no schema or behavior change.
+
+- `filters[].columnId` and `orderBy[].columnId` name the virtual column ids `__creation_log__`, `__last_updated__`, `__item_id__` and `group`, which `get_board_info` does not return.
+- `get_column_type_info` gains filter guidelines for `creation_log` and `item_id`, and the `last_updated` examples now use `__last_updated__` instead of the bare enum name.
+- The operator guidelines state the `[UNIT, AMOUNT]` contract for `within_the_last` and `within_the_next`, with UNIT one of `DAYS`, `WORKDAYS`, `WEEKS`, `MONTHS`. Both operators were documented nowhere before, so models invented shapes like a bare `7`, which returns `INTERNAL_SERVER_ERROR`.
+- `date`, `creation_log` and `last_updated` list the two window operators and show one example each.
+- The `get_board_items_page` description replaces its GROUP FILTERING paragraph with a shorter VIRTUAL COLUMNS line pointing at `get_column_type_info`.
+- `LAST_WEEK` and `LAST_MONTH` are no longer listed as valid `compareValue` keywords for `creation_log` and `last_updated`. Verified against production: both return zero items on boards that do have matching items, while `TODAY`, `YESTERDAY`, `THIS_WEEK` and `THIS_MONTH` return the right ones. Models are pointed at `within_the_last` with `["WEEKS", 1]` or `["MONTHS", 1]` instead, which does work.
+- `compareAttribute` is no longer described as required on those two types. Omitting it returns the same correct results, so the guidelines now present it as optional and say what it selects.
+- The VIRTUAL COLUMNS line said "the latter three are also valid in orderBy", which wrongly excluded `group`. All four are valid in `orderBy` - confirmed in `sort_settings_service.rb` and against production.
+
+## 5.68.0
+
+### Make the "group" filter column discoverable
+
+Filtering items by board group has always worked - `filters: [{"columnId": "group", "compareValue": ["group_mm6wsvcc"]}]` - but it was documented nowhere: not in the tool description, not in the input schema, and `get_board_info` does not return `group` among a board's columns. Models could only get it right from prior knowledge of the monday API.
+
+This produced 21% of `get_board_items_page`'s `ResourceNotFoundException` errors across 191 accounts: `includeGroup` hands the model each item's `group.id`, and with no documented way to filter on it, models put the group id in `filters[].columnId` and got "Column not found". In 81% of those cases the model then abandoned filtering and paged through the whole board.
+
+Descriptions only, no filtering behavior or schema-shape change:
+
+- `get_board_items_page` description gains a GROUP FILTERING section with the exact filter rule to use, and states that a group id is never a valid `columnId`.
+- `filters[].columnId` states that `group` is accepted alongside real board column ids.
+- `get_column_type_info` returns filter guidelines for `columnType: "group"`, which previously returned `filter: null` even though `group` is a member of the column-type enum.
+
+## 5.67.0
+
+### get_user_context — include relevant docs
+
+`get_user_context` now returns `relevantDocs` alongside `relevantBoards` and `relevantPeople`: the user's most loaded docs ranked by frequency and recency. Each entry includes `id` (document ID for API calls), `name`, and `objectId` (the identifier in the doc URL).
+
+## 5.66.0
+
+### search — expose highlights on DOCUMENTS results
+
+DOCUMENTS search now returns `highlights`: an array of `{ field, fragments }` entries, where `fragments` contain matched text snippets with `<em>` tags around matched terms. `field` is one of `name` or `content`. `highlights` is omitted when there's no lexical match.
+
+## 5.65.1
+
+### create_notification — report failures instead of swallowing them
+
+`create_notification` caught every error and returned the plain string `Failed to send notification to user <id>` as its result. Because the MCP layer only marks a call as an error when the tool *throws*, that string was delivered as a **success** — callers could not distinguish a delivered notification from a failed one, and the underlying cause was discarded entirely.
+
+- Errors now go through `rethrowWithContext(error, 'send notification to user <id>')`, the same path already used by `create_update` and `delete_update`. GraphQL failures surface their real messages plus `extensions.code` / `error_data`, and reach the client as `isError: true` with JSON `structuredContent`: `{ message, tool, status, errors: [{ code, message, path }] }`
+- Added an empty-response guard — the API can return `create_notification: null` with no GraphQL error, which previously reported success. It now throws a `ToolValidationError` coded `EMPTY_API_RESPONSE` naming the likely cause: a `target_id` / `target_type` mismatch (`Post` expects an update/reply id, `Project` expects an item/board id)
+- Success output is a JSON object with `notification_id`, `user_id`, `target_id`, `target_type`, and `text` (previously only `message`, `user_id`, `text`). The mutation now selects `id` so the created notification can be identified
+- No input schema changes. Callers that treated the old failure string as a soft failure will now see a thrown error
+
+### all_api_read — drop get_graphql_schema from the stated prerequisites
+
+- `all_api_read` no longer names `get_graphql_schema` as a prerequisite, leaving `get_type_details` as the single lookup to call before crafting a query (and fixing the plural "tools" left behind by the removal). `all_api_write` and `all_monday_api` still name both tools
+
+## 5.65.0
+
+### Short, self-explaining first sentence for every monday tool description
+
+Deferred-tool listings show only the first sentence of a tool's description, so that sentence has to say what the tool does on its own. Audited every monday tool description (platform API + monday-dev; app tools untouched) and fixed the ones that opened with something else:
+
+- `create_item` — was `[IMPORTANT] use create_items instead…`; now leads with what the tool creates
+- `change_item_column_values` — was `[IMPORTANT] use update_items instead…`; now leads with what it changes
+- `get_asset_upload_url` — was a capability precondition; the presigned-URL summary moved to the front
+- `link_board_items_workflow` — was `When to use: …`; now leads with a one-line statement of what it returns
+- `get_sprints_metadata` — was one long sentence running into a markdown section list; now a one-line summary followed by the details
+
+No behavior changes — descriptions only; all the original guidance is kept, just reordered.
+
+## 5.64.7
+
+### get_board_info — nested filters to shrink large responses
+
+On boards with hundreds of columns or views, a full `get_board_info` payload can be multi-MB (mostly `views[].settings`). Callers can now shape the response with nested filters:
+
+- `filters.columns.ids` — return only those columns
+- `filters.columns.only` — omit views and return only columns (`@include` skips the views selection in GraphQL)
+- `filters.views.ids` — return only those views
+- `filters.views.names` — resolve names via a lean id/name index query, then fetch only matching views (avoids downloading every view's settings)
+- `filters.views.only` — omit columns and return only views (`@include` skips the columns selection in GraphQL)
+- Unmatched view names are reported; if none match, the tool lists available view names
+
+Related tool descriptions now tell the model to pass `filters.views.names` when the user named specific views (`update_view`, `update_view_table`, `get_board_items_page`) and to use `filters.columns.only` when they only need columns (`create_view`, `create_view_table`, `board_insights`, `create_item`, `create_items`, `update_items`, `change_item_column_values`, `update_column`, `get_board_schema`).
+
+## 5.64.6
+
+### Spell out prerequisite tool ordering for board, view, and column tools
+
+Discovery tools (schema/id/revision lookups) and the write tools that depend on them often didn't state the ordering between them, so callers guessed column ids, revisions, and settings shapes instead of fetching them first. Prerequisites are now stated on both sides of each pair — the upstream tool says what it should be called before, the downstream tool says what to call first. No input schemas or behavior changed.
+
+- `get_column_type_info` — now names all three settings writers it precedes (`create_column`, `update_column`, `manage_object_schema_columns`) instead of only `create_column`
+- `create_column` / `update_column` — call `get_column_type_info` before populating `columnSettings` (previously only stated on the field description). `update_column` keeps the existing revision precondition
+- `get_board_schema` / `delete_column` — `get_board_schema` documents the column id + revision it supplies to `update_column`, `delete_column`, `configure_ai_column`, and `remove_ai_from_column`, and points to `get_board_info` for broader metadata. `delete_column` now requires resolving the id first and notes the deletion is irreversible
+- `get_board_info` — states it is the required precondition already declared by `get_board_items_page`, `board_insights`, `create_item`, `create_items`, `update_items`, and `change_item_column_values`, and that its views are the source of view ids
+- `get_board_info` — also warns that a column's returned `settings` value is the raw API shape for that existing column and must not be copied verbatim into the `columnSettings` parameter of `create_column` / `update_column`, which was producing doubly-nested `{"settings": {...}}` payloads and schema validation failures
+- `create_view` / `create_view_table` / `update_view` / `update_view_table` — call `get_board_info` first for column ids, status label indexes, and (for updates) the `viewId`
+- `create_view` — fetch filter guidelines via `get_column_type_info` with `fetchMode: "guidelines"` (`data.guidelines.filter`) before sending filter rules, matching the precondition already stated on `get_board_items_page` and `board_insights`
+
+## 5.64.5
+
+### Spell out prerequisite tool ordering for object schema, form, automation, sprint, and dynamic API tools
+
+Discovery tools (schema/id/revision lookups) and the write tools that depend on them often didn't state the ordering between them, so callers guessed schema ids, column ids, revisions, question ids, tag ids, automation ids, and sprint ids instead of fetching them first. Prerequisites are now stated on both sides of each pair — the upstream tool says what it should be called before, the downstream tool says what to call first. No input schemas or behavior changed.
+
+- `get_object_schemas` — listed as the resolver for schema ids, column ids, and revisions ahead of `update_object_schema`, `manage_object_schema_columns`, `set_object_schema_column_active_state`, `delete_object_schema_columns`, `delete_object_schema`, and `manage_object_schema_board_connection`. The matching precondition was added to `manage_object_schema_columns` (update), `set_object_schema_column_active_state`, and `delete_object_schema_columns`
+- `create_object_schema` — resolve `parentId` via `get_object_schemas`, and notes columns/boards are added afterwards
+- `get_form` / `update_form` / `form_questions_editor` — `get_form` states it precedes `create_form_submission`, `form_questions_editor`, and `update_form`, and the two writers now require it for question ids, tag ids, and current settings
+- `get_type_details` — documents that it returns fields, input fields, and enum values, and that it should be used to confirm a type's shape before referencing that type in an operation for `all_monday_api`, `all_api_read`, or `all_api_write`. It takes a known type name and is not gated on any other lookup. `get_graphql_schema` is unchanged
+- `list_automations` — stated as the only way to resolve an automation id before `manage_automations`
+- `get_board_activity` — call with `includeData=true` before `undo_action` to get the `action_record_uuid`
+- `get_sprints_metadata` / `get_sprint_summary` — `get_sprints_metadata` points back to `get_monday_dev_sprints_boards` for the board id and forward to `get_sprint_summary` for the sprint ids it supplies. `get_sprint_summary` now requires resolving `sprintId` there
+
+## 5.64.4
+
+### search — scope UPDATES and TIMELINE_ITEMS search by workspaceIds
+
+- UPDATES and TIMELINE_ITEMS search now accept `workspaceIds` to scope results to specific workspaces (the corresponding GraphQL queries already supported `workspace_ids`)
+- Updated the `workspaceIds` field description to list UPDATES and TIMELINE_ITEMS alongside the existing entity types
+- Updated the UPDATES and TIMELINE_ITEMS lines in the tool description to mention optional `workspaceIds` scoping
+
+## 5.64.2
+
+### get_board_items_page — return BatteryValue rollup status on MLS parent items
+
+- Status columns that roll up from subitems on MLS boards are returned as `BatteryValue` (`battery_value: [{ key, count }, ...]`), not flattened to text or raw JSON
+- The query now requests `column_values` with `capabilities: [CALCULATED]`, plus `is_leaf` and the `BatteryValue` fragment
+- Leaf/subitem status columns are unchanged and still resolve via `text`
+
+## 5.64.1
+
+### search — scope BOARD and TIMELINE_ITEMS search by boardIds
+
+- BOARD and TIMELINE_ITEMS search now accept `boardIds` to scope results to specific boards (the corresponding GraphQL queries already supported `board_ids`)
+- Updated the `boardIds` field description to list BOARD, ITEMS, UPDATES, and TIMELINE_ITEMS
+- Updated the BOARD and TIMELINE_ITEMS lines in the tool description to mention optional `boardIds` scoping
+
+## 5.64.0
+
+### send_feedback renamed to submit_bug_or_feature_request (breaking)
+
+- **Breaking:** the `send_feedback` tool is now `submit_bug_or_feature_request`. The name leads with the two intents callers most often have, so it is picked up more reliably than the vaguer "send feedback"
+- Renamed to match across the codebase: `SendFeedbackTool` → `SubmitBugOrFeatureRequestTool`, `sendFeedbackToolSchema` → `submitBugOrFeatureRequestToolSchema`, annotation title `Send Feedback` → `Submit Bug or Feature Request`, and the directory/files `send-feedback-tool/` → `submit-bug-or-feature-request-tool/`
+- Rewrote the tool description: it now covers the monday.com product as well as this integration, leads the proactive-call signals with tool errors and capability gaps (frustration and retry signals moved last), spells out the parameters inline, and folds the non-monday.com and PII restrictions into a single closing line
+- Input schema and behavior are unchanged — `kind` still accepts `feedback`, `feature_request`, and `bug`
+
+## 5.62.1
+
+### get_asset_upload_url — require capability check before calling
+
+- Prepended a precondition to the tool description: only call `get_asset_upload_url` if the caller can execute a direct HTTP PUT with binary data and read response headers; otherwise it should tell the user direct file upload isn't supported instead of calling the tool
+- Addresses a metrics gap where `get_asset_upload_url` was called far more often than `finalize_asset_upload` completed, consistent with callers (e.g. plain conversational chat agents without shell/HTTP execution) generating presigned URLs they have no way to actually use
+
+## 5.62.0
+
+### search — filter ITEMS search by creatorIds
+
+- ITEMS search now accepts `creatorIds` to filter results to items created by specific users, alongside the existing `workspaceIds` and `boardIds` scoping
+- `creatorIds` now applies to ITEMS, UPDATES, and DASHBOARDS (field description updated accordingly)
+- `search.items(creator_ids:)` is only available from the `dev` API version, so a creator-filtered ITEMS search uses a dev-only `SearchItemsByCreatorDev` operation with `versionOverride: 'dev'`; unfiltered ITEMS searches stay on the stable version. Fold this back into `searchItems` and drop the override once the arg reaches a dated version
+- Requires DaPulse/search#2707, which removes the `public-internal` tag that kept `creator_ids` out of the public schema
+
+## 5.61.7
+
+### search — scope ITEMS search by boardIds; accurate scoping docs
+
+- ITEMS search now accepts `boardIds` to scope results to specific boards (the `search.items` GraphQL query already supported `board_ids`); pass alongside or instead of `workspaceIds`
+- Fixed the `workspaceIds` field description, which omitted ITEMS even though ITEMS search already honored it — it now lists ITEMS alongside BOARD, DOCUMENTS, and DASHBOARDS
+- Updated the `boardIds` field description (now ITEMS and UPDATES) and the ITEMS line in the tool description to mention `workspaceIds`/`boardIds` scoping
+
+## 5.61.5
+
+### update_doc — bulk-only delete via delete_blocks (breaking)
+
+- **Breaking:** `update_doc` operation `delete_block` renamed to `delete_blocks` and always takes `block_ids: string[]` (1–100)
+- All public delete operations now use the `delete_doc_blocks` GraphQL mutation (single-block deletes included)
+- `replace_block` internally still uses `delete_doc_block` (no external impact)
+
+## 5.61.4
+
+### search — clearer searchTerm guidance and an actionable missing-searchTerm error
+
+- Strengthened the tool description and the `searchTerm` field description to define `searchTerm` as the phrase the search matches against (the text/keywords to look for), state that it is required and non-empty, and clarify it is not a filter or an id. Directly targets the largest residual validation-error bucket: callers omitting the term or sending the wrong field
+- A missing `searchTerm` now returns an actionable, browse-oriented message pointing callers at `workspace_info` (boards/docs/folders) and `get_board_items_page` (items) instead of the generic "Required", so callers trying to list rather than search can self-correct. An empty/whitespace `searchTerm` keeps its existing non-empty message
+- Both the description and the error name the browse alternatives, so a caller with browse intent (no search phrase) is steered to the right tool
+
+## 5.61.3
+
+### search — propagate location ids (board/workspace/item) across entities
+
+- ITEMS search now returns `boardId` and `workspaceId` for each result, so callers can locate an item's board and workspace without a follow-up lookup
+- BOARD, DOCUMENTS, and DASHBOARDS search now return `workspaceId`
+- TIMELINE_ITEMS search now returns `itemId` and `boardId`
+- All added ids come from the search index (`board_id`/`workspace_id`/`item_id`); the nullable ones are optional and omitted when the index has no value for them
+- Updated the tool description to list the fields each search type returns
+
+## 5.58.1
+
+### search — reduce validation failures (actionable errors, folder fallback, input coercion)
+
+- `searchType` rejections now return an actionable message that lists the valid values and, when the value maps to a known intent, redirects to the right tool (e.g. `USERS` → `list_users_and_teams`, `BOARD_ITEMS` → `get_board_items_page`, `FORMS` → not searchable) so callers can self-correct on retry
+- `searchType` normalization now also collapses separators/casing (e.g. `"board item"`, `"BOARD-ITEM"`) and adds `DOCUMENT`, `PULSE`/`PULSES` aliases
+- FOLDERS search no longer errors when `workspaceIds` is omitted — it searches across all accessible workspaces
+- `limit` accepts numeric strings (coerced then clamped); `workspaceIds`/`boardIds`/`creatorIds` accept a scalar or numeric strings and treat `null` as omitted
+- Targets the top post-deploy validation-error buckets observed in production search logs
+- Fixed: a `searchTerm` that normalizes to an empty string (e.g. punctuation/emoji-only) no longer returns unfiltered folders
+- Fixed: FOLDERS search now reports when its 100-folder scan was truncated instead of silently dropping matches
+- Fixed: `limit` now enforces a lower bound (clamped to at least 1) and `null` correctly defaults instead of failing validation
+- Fixed: `limit`/`workspaceIds`/`boardIds`/`creatorIds` no longer accept `Infinity` (as a string or a raw numeric literal) — numeric coercion now goes through `z.coerce.number().finite()` instead of hand-rolled regex/`Number.isFinite` checks, so both forms are rejected consistently. Hex-like strings (e.g. `"0x1A"`) are still accepted and coerced to their numeric value, same as any other numeric string — no special-casing
+- Fixed: `searchType` normalization only collapses separators, so garbage input (e.g. `"board!!!"`) is rejected instead of silently matching a valid value
+- Empty `workspaceIds`/`boardIds`/`creatorIds` arrays are now treated as "no filter" consistently across all search types, matching FOLDERS
+- `searchTerm` is trimmed and validated as non-empty for every search type, including BOARD
+
+## 5.58.0
+
+### search — add DASHBOARDS (overviews) search type
+
+- Adds `DASHBOARDS` as a search type in the unified `search` tool (aliases: `dashboard`, `overview`, `overviews`), backed by the platform's `search { overviews }` endpoint
+- Returns `id` and `title`; optionally scoped by `workspaceIds` and/or `creatorIds`
+- `search.overviews` is only exposed in the `dev` API version, so the query lives in `search-tool.graphql.dev.ts` and pins `versionOverride: 'dev'` (same approach previously used for boards/docs). Move the query to `search-tool.graphql.ts` and drop the override once the field is promoted to a stable API version
+
+## 5.56.1
+
+### search — actionable error and whitespace handling for searchTerm
+
+- `searchTerm` validation now returns an actionable message (`searchTerm must be a non-empty search string.`) instead of the generic Zod `String must contain at least 1 character(s)`, helping agents recover from empty-term calls
+- `searchTerm` is now trimmed before validation, so whitespace-only values (e.g. `"   "`) are correctly rejected and surrounding whitespace is stripped from valid terms before querying
+
+## 5.54.1
+
+### publish_workflow — restrict to explicit user request
+
+- Added "When to use" guidance to the tool description instructing the LLM to only call `publish_workflow` when the user explicitly asks to publish
+- After workflow creation/update, the LLM will suggest publishing and wait for user confirmation before proceeding
+
+## 5.54.0
+
+### create_items — report items_count on sessionContext metadata
+
+- `create_items` now sets `sessionContext.metadata.items_count` to the number of items in the request, so BigBrain mcp-request events can track how many items agents send per call
+- Mirrors the observability pattern introduced for `all_monday_api`
+
+## 5.49.0
+
+### search — normalize searchType and limit inputs
+
+- `searchType` now accepts lowercase and plural variants (e.g. `"boards"`, `"docs"`, `"workspace"`) and normalizes them to the canonical enum value via `z.preprocess()`
+- `limit` values exceeding the maximum (20) are clamped instead of rejected, preventing unnecessary validation errors
+- These two normalizations address ~12k weekly validation errors caused by LLMs passing non-canonical input values
+
+## 5.46.0
+
+### search — remove fallback, make searchTerm required, and promote boards/docs to stable API
+
+- `searchTerm` is now required (`z.string().min(1)`) for all search types — agents that previously omitted it to browse must use `workspace_info` instead
+- Removed the legacy `getBoards`/`getDocs` listing queries and the fallback path that activated when the dev search endpoint failed; all results now come directly from the search endpoint
+- Removed the `page` parameter and virtual pagination logic; removed `LOAD_INTO_MEMORY_LIMIT` constant and `DataWithFilterInfo` type
+- Boards and docs search GraphQL queries promoted from `versionOverride: 'dev'` to the stable default schema endpoint; `search-tool.graphql.dev.ts` deleted
+- IDs in search results are now returned as raw values — the `ObjectPrefixes` type and all prefixing logic removed since cross-entity search no longer exists
+
+## 5.42.0
+
+### search — add TIMELINE_ITEMS search type
+
+- Adds `TIMELINE_ITEMS` as a search type in the unified `search` tool, backed by the platform's `search { timeline_items }` endpoint
+- Only available from API version `2026-10`; query pins `versionOverride: '2026-10'` with hand-written types (same approach as `UPDATES`)
+- Requires a `searchTerm`; returns `id` (prefixed `timeline-item-`), `title`, `summary`, and `content`
+- No listing fallback — errors propagate, and `page > 1` is rejected, matching `ITEMS`/`WORKSPACES`/`UPDATES`
+
+## 5.41.1
+
+### search — improve field descriptions to reduce incorrect tool usage
+
+- Clarified required vs optional fields per search type
+- Listed exact valid enum values for `searchType`
+- Added format guidance for array parameters
+- Removed misleading pagination hint from `page` description
+
+## 5.37.0
+
+### search — add UPDATES search type
+
+- Added `UPDATES` as a search type in the unified `search` tool, backed by the server-side `search { updates }` endpoint
+- `UPDATES` results return `id`, `title` (the update body), `itemId`, `boardId`, and `creatorId`, with optional `boardIds` and `creatorIds` filters to scope the search
+- Requires a `searchTerm` and has no listing fallback (errors propagate, like `ITEMS`)
+- This field is only available from API version `2026-10`, so the query pins `versionOverride: '2026-10'` with hand-written types (same approach as `list_automations`) until it is promoted to the codegen schema snapshot
+
+## 5.24.0
+
+### manage_automations — rename from manage_workflows
+
+- Renamed `manage_workflows` tool to `manage_automations` for consistency with `list_automations` and `create_automation`
+- Updated tool title and description accordingly; removed the now-unnecessary "Terminology: workflows = automations" note
+- No functional changes — activate, deactivate, and delete behaviour is unchanged
+
+### automations-tools — directory restructure
+
+- Renamed `workflows-tools/` → `automations-tools/` and `list-workflows/` → `list-automations/` to align directory names with tool naming convention
+- Removed stale note from `publish_workflow` description that incorrectly referenced `manage_automations` as a way to retrieve draft IDs
+
+## 5.22.0
+
+### plan_workflow — new tool
+
+- Adds `plan_workflow` MCP tool that calls the `workflow-planner` platform-agent proxy (`/platform-ai-gateway/agents/workflow-planner`)
+- Takes a single `prompt` (max 2000 chars) describing a process and returns a structured markdown plan: workflow breakdowns, block IDs, Mermaid diagrams, resource definitions, and assumption/gap notes
+- Use before `create_workflow` to understand how to decompose a complex process into individual workflows and which resources to create first
+- Adds `WORKFLOW_PLANNER_AGENT_URL` constant to `workflow-builder-tools/constants.ts`
+
+## 5.21.0
+
+### get_board_activity — add user_ids filter
+
+- Added optional `userIds` parameter to filter activity logs to actions performed by specific users
+- Updated GraphQL query (`GetBoardActivity`) to pass `user_ids` argument to `activity_logs`
+- Updated `getDescription()` to reflect the new filtering capabilities
+
+## 5.20.0
+
+### Add agent management tools
+
+Five new tools enabling agents to create and manage monday.com platform agents end-to-end:
+
+- `manage_agent` — full lifecycle management: `create` (AI mode via prompt), `create_blank` (manual mode), `get`, `update`, `delete`, `activate`, `deactivate`, `run`
+- `manage_agent_triggers` — manage per-agent triggers (when it runs): `list`, `add`, `remove`
+- `manage_agent_skills` — full skill lifecycle: `create` a new skill in the catalog, `add` to agent, `remove` from agent
+- `manage_agent_knowledge` — grant, update, or revoke an agent's access to boards and docs
+- `agent_catalog` (READ) — browse the account-wide catalog of available trigger types and skills before wiring them to an agent
+
+## 5.19.0
+
+### publish_workflow — surface validation error details
+
+- `rethrowWithContext` now includes GraphQL `extensions` data in the error message when present, so structured errors like `WORKFLOW_VALIDATION_FAILED` (with step-level issue details) are passed through to the LLM instead of being dropped
+
+## 5.11.0
+
+### Asset upload MCP tools
+
+- Added `get_asset_upload_url` — requests a presigned S3 upload URL for a file. Returns `upload_id`, `upload_url`, and expiry. Includes inline `curl` example for the upload step and ETag capture guidance.
+- Added `finalize_asset_upload` — finalizes the upload via `complete_upload` and attaches the asset to a file column on a board item using `change_column_value` (append semantics). Returns `asset_id`, `filename`, `content_type`, `file_size`, `url`, and `filelink`.
+- Both tools use `versionOverride: 'dev'` as `create_upload` / `complete_upload` are currently dev-schema-only.
+
+## 5.7.1
+
+### form_questions_editor — fix ConditionOperator and remove existing_column_id
+
+- Removed `existing_column_id` from the tool schema — this field caused 38% of all tool errors (ColumnNotFound / QuestionTypeIncompatibleWithColumnType) because agents passed arbitrary board column IDs not linked to the form
+- Fixed misleading `show_if_rules` description that incorrectly stated AND was used between conditions — all operators must be OR per the GraphQL schema
+- Removed `And` from the local `ConditionOperator` enum to align with the GraphQL schema constraint
+
+## 5.7.0
+
+### Add account context to get_user_context tool
+
+- Extended `get_user_context` to include account-level data: plan tier, active member count, trial status, and active products
+- Added account fields to the getUserContext GraphQL query (dev API version)
+- Updated search tool routing hints to direct account-level queries to `get_user_context`
+- Removed standalone `get_account_context` tool (functionality merged into `get_user_context`)
+
+## 5.3.3
+
+### Workforms tools — trim MCP tool descriptions by ~79% to reduce token cost
+
+- Removed descriptions that restate the field name, type, or enum values
+- Removed container object descriptions (`"Object containing X configuration"`)
+- Rewrote remaining descriptions to be terse and actionable
+- Added non-obvious constraints: type immutability on update, safe option update workflow (call `get_form` first), `page_block_id` null vs omit distinction, `existing_column_id` usage guidance
+- `update_form` action description now explains each action requires different fields — check field descriptions
+- Net result: ~4,591 → ~963 tokens per request across all 4 form tools
+
+## 5.3.1
+
+### Workforms tools — return full option data from GraphQL queries
+
+- Added `value`, `visible`, and `active` fields to the `QuestionOptionsFragment` GraphQL fragment
+- `get_form`, `create_form_question`, and `update_form_question` now return complete option data
+- Previously only `label` was returned, preventing safe updates on questions with existing submissions
+
+## 5.1.1
+
+### Workforms tools — options schema and description updates
+
+**`form_questions_editor` options schema:**
+
+- `value` (optional) — internal option identifier. Required when updating options already assigned to board items.
+- `visible` (optional) — whether the option is visible to respondents.
+
+**`update-form-tool` schema:**
+
+- `page_block_id` on question order entries — assign questions to page blocks during reorder.
+
+**Description improvements:**
+
+- `selectOptions`: added max limits (SingleSelect: 40, MultiSelect: 500) and PUT semantics clarification.
+- `pageBlockId`: clarified that passing `null` removes the page block association.
+- Added descriptions for `selectOptionsValue`, `selectOptionsVisible`, `blockType`, `insertAfterQuestionId`, `existingColumnId`, `labelLimitCount`, `labelLimitCountEnabled`, `defaultAnswer`.

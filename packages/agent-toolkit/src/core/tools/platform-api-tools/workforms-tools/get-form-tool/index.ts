@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { GetFormQuery, GetFormQueryVariables } from '../../../../../monday-graphql/generated/graphql';
+import { GetFormQuery, GetFormQueryVariables } from '../../../../../monday-graphql/generated/graphql/graphql';
 import { getForm } from '../workforms.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../../base-monday-api-tool';
@@ -15,7 +15,10 @@ export class GetFormTool extends BaseMondayApiTool<typeof getFormToolSchema, nev
   });
 
   getDescription(): string {
-    return 'Get a monday.com form by its form token. Form tokens can be extracted from the form’s url. Given a form url, such as https://forms.monday.com/forms/abc123def456ghi789?r=use1, the token is the alphanumeric string that appears right after /forms/ and before the ?. In the example, the token is abc123def456ghi789.';
+    return (
+      "Get a monday.com form by its form token, including its pages, questions, question ids, settings, and conditional showIfRules. Form tokens can be extracted from the form's url. Given a form url, such as https://forms.monday.com/forms/abc123def456ghi789?r=use1, the formToken is the alphanumeric string that appears right after /forms/ and before the ?. In the example, the formToken is abc123def456ghi789. " +
+      'Call this FIRST before any tool that acts on an existing form: create_form_submission (to know the questions and their constraints), form_questions_editor (to resolve question ids and current structure), and update_form (to see the current settings before changing them).'
+    );
   }
 
   getInputSchema(): typeof getFormToolSchema {
@@ -36,7 +39,7 @@ export class GetFormTool extends BaseMondayApiTool<typeof getFormToolSchema, nev
     }
 
     return {
-      content: `The form with the token ${input.formToken} is: ${JSON.stringify(res.form, null, 2)}`,
+      content: { message: 'Form retrieved', form_token: input.formToken, data: res.form },
     };
   }
 }

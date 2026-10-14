@@ -3,17 +3,26 @@ import { CallToolResult, ServerCapabilities } from '@modelcontextprotocol/sdk/ty
 import { ApiClient } from '@mondaydotcomorg/api';
 import { getFilteredToolInstances } from '../utils/tools/tools-filtering.utils';
 import { z } from 'zod';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 import { Tool } from '../core/tool';
 import { MondayAgentToolkitConfig } from '../core/monday-agent-toolkit';
 import { ManageToolsTool } from '../core/tools/platform-api-tools/manage-tools-tool';
 import { DynamicToolManager } from './dynamic-tool-manager';
+import { API_VERSION } from 'src/utils/version.utils';
+import { formatToolError, INVALID_TOOL_ARGS_CODE, ToolValidationError } from '../utils/error.utils';
+
+export interface GetToolsOptions {
+  schemaFormat?: 'zod' | 'json';
+}
 
 /**
  * Monday Agent Toolkit providing an MCP server with monday.com tools
  */
 export class MondayAgentToolkit extends McpServer {
   private readonly mondayApiClient: ApiClient;
-  private readonly mondayApiToken: string;
+  private readonly mondayApiToken: string | (() => string);
+  private readonly context?: MondayAgentToolkitConfig['context'];
+  private readonly toolkitConfig: MondayAgentToolkitConfig;
   private readonly dynamicToolManager: DynamicToolManager = new DynamicToolManager();
   private toolInstances: Tool<any, any>[] = [];
   private managementTool: Tool<any, any> | null = null;
@@ -37,19 +46,33 @@ export class MondayAgentToolkit extends McpServer {
       },
     );
 
-    this.mondayApiClient = this.createApiClient(config);
     this.mondayApiToken = config.mondayApiToken;
+    this.toolkitConfig = config;
+    const resolvedToken = typeof config.mondayApiToken === 'function' ? config.mondayApiToken() : config.mondayApiToken;
+    this.mondayApiClient = this.createApiClient(resolvedToken, config);
+
+    this.context = {
+      ...config.context,
+      apiVersion: config.mondayApiVersion ?? API_VERSION,
+      fetchConfig: config.fetchConfig ?? config.context?.fetchConfig,
+      ...(config.deps ? { deps: { ...config.context?.deps, ...config.deps } } : {}),
+    };
 
     this.registerTools(config);
+  }
+
+  private createApiClientFromToken(): ApiClient {
+    return this.createApiClient((this.mondayApiToken as () => string)(), this.toolkitConfig);
   }
 
   /**
    * Create and configure the Monday API client
    */
-  private createApiClient(config: MondayAgentToolkitConfig): ApiClient {
+  private createApiClient(token: string, config: MondayAgentToolkitConfig): ApiClient {
     return new ApiClient({
-      token: config.mondayApiToken,
-      apiVersion: config.mondayApiVersion,
+      token,
+      apiVersion: config.mondayApiVersion ?? API_VERSION,
+      endpoint: config.mondayApiEndpoint,
       requestConfig: {
         ...config.mondayApiRequestConfig,
         headers: {
@@ -94,8 +117,9 @@ export class MondayAgentToolkit extends McpServer {
    */
   private initializeTools(config: MondayAgentToolkitConfig): Tool<any, any>[] {
     const instanceOptions = {
-      apiClient: this.mondayApiClient,
+      apiClient: typeof this.mondayApiToken === 'function' ? () => this.createApiClientFromToken() : this.mondayApiClient,
       apiToken: this.mondayApiToken,
+      context: this.context,
     };
 
     const filteredTools = getFilteredToolInstances(instanceOptions, config.toolsConfiguration);
@@ -115,6 +139,7 @@ export class MondayAgentToolkit extends McpServer {
         title: tool.annotations?.title,
         description: tool.getDescription(),
         inputSchema,
+        annotations: tool.annotations,
       },
       async (args: any, _extra: any) => {
         try {
@@ -122,7 +147,10 @@ export class MondayAgentToolkit extends McpServer {
           if (inputSchema) {
             const parsedArgs = z.object(inputSchema).safeParse(args);
             if (!parsedArgs.success) {
-              throw new Error(`Invalid arguments: ${parsedArgs.error.message}`);
+              throw new ToolValidationError(
+                `Invalid arguments: ${parsedArgs.error.message}`,
+                INVALID_TOOL_ARGS_CODE,
+              );
             }
             result = await tool.execute(parsedArgs.data);
           } else {
@@ -180,13 +208,15 @@ export class MondayAgentToolkit extends McpServer {
 
   /**
    * Get all tools as an array of tool objects that can be registered individually
-   * Each tool includes name, description, schema, and handler for external registration
+   * Each tool includes name, description, schema, annotations, and handler for external registration
+   * @param options Options for schema format control
    * @returns Array of tool objects ready for individual registration
    */
-  public getTools(): Array<{
+  public getTools(options?: GetToolsOptions): Array<{
     name: string;
     description: string;
     schema: any;
+    annotations: any;
     handler: (params: any) => Promise<any>;
   }> {
     const allTools = [...this.toolInstances];
@@ -199,7 +229,8 @@ export class MondayAgentToolkit extends McpServer {
     return allTools.map((tool) => ({
       name: tool.name,
       description: tool.getDescription(),
-      schema: tool.getInputSchema(),
+      schema: this.getSchemaForTool(tool, options),
+      annotations: tool.annotations,
       handler: this.createToolHandler(tool),
     }));
   }
@@ -207,12 +238,15 @@ export class MondayAgentToolkit extends McpServer {
   /**
    * Get all tools with MCP-formatted handlers for direct registration with MCP servers
    * This method wraps the handlers to return the proper CallToolResult format
+   * @param options Options for schema format control
    * @returns Array of tool objects with MCP-compatible handlers
    */
-  public getToolsForMcp(): Array<{
+  public getToolsForMcp(options?: GetToolsOptions): Array<{
     name: string;
     description: string;
     schema: any;
+    annotations: any;
+    tags?: string[];
     handler: (params: any, extra?: any) => Promise<CallToolResult>;
   }> {
     const allTools = [...this.toolInstances];
@@ -225,7 +259,9 @@ export class MondayAgentToolkit extends McpServer {
     return allTools.map((tool) => ({
       name: tool.name,
       description: tool.getDescription(),
-      schema: tool.getInputSchema(),
+      schema: this.getSchemaForTool(tool, options),
+      annotations: tool.annotations,
+      tags: tool.tags,
       handler: this.createMcpToolHandler(tool),
     }));
   }
@@ -243,7 +279,10 @@ export class MondayAgentToolkit extends McpServer {
         // inputSchema is already a Zod schema object definition, so we wrap it with z.object()
         const parsedArgs = z.object(inputSchema).safeParse(params);
         if (!parsedArgs.success) {
-          throw new Error(`Invalid arguments: ${parsedArgs.error.message}`);
+          throw new ToolValidationError(
+            `Invalid arguments: ${parsedArgs.error.message}`,
+            INVALID_TOOL_ARGS_CODE,
+          );
         }
         const result = await tool.execute(parsedArgs.data);
         return result.content;
@@ -268,34 +307,56 @@ export class MondayAgentToolkit extends McpServer {
           // inputSchema is already a Zod schema object definition, so we wrap it with z.object()
           const parsedArgs = z.object(inputSchema).safeParse(params);
           if (!parsedArgs.success) {
-            throw new Error(`Invalid arguments: ${parsedArgs.error.message}`);
+            throw new ToolValidationError(
+              `Invalid arguments: ${parsedArgs.error.message}`,
+              INVALID_TOOL_ARGS_CODE,
+            );
           }
-          const result = await tool.execute(parsedArgs.data);
-          return {
-            content: [{ type: 'text', text: String(result.content) }],
-          };
+          const result = await tool.execute(parsedArgs.data, extra);
+          return this.formatToolResult(result.content);
         } else {
-          const result = await tool.execute();
-          return {
-            content: [{ type: 'text', text: String(result.content) }],
-          };
+          const result = await tool.execute(undefined, extra);
+          return this.formatToolResult(result.content);
         }
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        return {
-          content: [{ type: 'text', text: `Error: ${errorMessage}` }],
-          isError: true,
-        };
+        return formatToolError(error, { toolName: tool.name });
       }
     };
   }
 
   /**
+   * Get the schema for a tool in the requested format
+   * @param tool The tool instance
+   * @param options Options for schema format control
+   * @returns Schema in the requested format (Zod shape or JSON Schema)
+   */
+  private getSchemaForTool(tool: Tool<any, any>, options?: GetToolsOptions): any {
+    const inputSchema = tool.getInputSchema();
+
+    if (!inputSchema) {
+      return undefined;
+    }
+
+    if (options?.schemaFormat === 'json') {
+      return zodToJsonSchema(z.object(inputSchema));
+    }
+
+    return inputSchema;
+  }
+
+  /**
    * Format the tool result into the expected MCP format
    */
-  private formatToolResult(content: string): CallToolResult {
+  private formatToolResult(content: string | Record<string, any>): CallToolResult {
+    if (typeof content === 'string') {
+      return {
+        content: [{ type: 'text', text: content }],
+      };
+    }
+
     return {
-      content: [{ type: 'text', text: content }],
+      structuredContent: content,
+      content: [{ type: 'text', text: JSON.stringify(content) }],
     };
   }
 
@@ -303,16 +364,9 @@ export class MondayAgentToolkit extends McpServer {
    * Handle tool execution errors
    */
   private handleToolError(error: unknown, toolName: string): CallToolResult {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Failed to execute tool ${toolName}: ${errorMessage}`,
-        },
-      ],
-      isError: true,
-    };
+    return formatToolError(error, {
+      toolName,
+      errorPrefix: `Failed to execute tool ${toolName}: `,
+    });
   }
 }

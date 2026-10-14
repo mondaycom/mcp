@@ -2,7 +2,6 @@ import { z } from 'zod';
 import { GraphQLDescriptions } from '../workforms.consts';
 import { Alignment, BackgroundType, Direction, FontSize, Format, LogoPosition, LogoSize } from '../workforms.types';
 
-
 export enum FormActions {
   activate = 'activate',
   deactivate = 'deactivate',
@@ -10,7 +9,6 @@ export enum FormActions {
   setFormPassword = 'setFormPassword',
   createTag = 'createTag',
   deleteTag = 'deleteTag',
-  updateTag = 'updateTag',
   updateAppearance = 'updateAppearance',
   updateAccessibility = 'updateAccessibility',
   updateFeatures = 'updateFeatures',
@@ -21,64 +19,61 @@ export enum FormActions {
 const tagSchema = z.object({
   id: z.string().describe(GraphQLDescriptions.form.properties.tags.id).optional(),
   name: z.string().describe(GraphQLDescriptions.form.properties.tags.name).optional(),
-  value: z.string().describe(GraphQLDescriptions.form.properties.tags.value).optional(),
   columnId: z.string().describe(GraphQLDescriptions.form.properties.tags.columnId).optional(),
 });
 
 const backgroundSchema = z.object({
-  type: z.nativeEnum(BackgroundType).describe(GraphQLDescriptions.formSettings.properties.backgroundType).optional(),
+  type: z.nativeEnum(BackgroundType).optional(),
   value: z.string().describe(GraphQLDescriptions.formSettings.properties.backgroundValue).optional(),
 });
 
 const layoutSchema = z.object({
-  format: z.nativeEnum(Format).describe(GraphQLDescriptions.formSettings.properties.format).optional(),
-  alignment: z.nativeEnum(Alignment).describe(GraphQLDescriptions.formSettings.properties.alignment).optional(),
-  direction: z.nativeEnum(Direction).describe(GraphQLDescriptions.formSettings.properties.direction).optional(),
+  format: z.nativeEnum(Format).optional(),
+  alignment: z.nativeEnum(Alignment).optional(),
+  direction: z.nativeEnum(Direction).optional(),
 });
 
 const logoSchema = z.object({
-  position: z.nativeEnum(LogoPosition).describe(GraphQLDescriptions.formSettings.properties.logoPosition).optional(),
+  position: z.nativeEnum(LogoPosition).optional(),
   size: z.nativeEnum(LogoSize).describe(GraphQLDescriptions.formSettings.properties.logoSize).optional(),
 });
 
 const submitButtonSchema = z.object({
-  text: z.string().describe(GraphQLDescriptions.formSettings.properties.submitButtonText).optional(),
+  text: z.string().optional(),
 });
 
 const textSchema = z.object({
-  font: z.string().describe(GraphQLDescriptions.formSettings.properties.font).optional(),
-  color: z.string().describe(GraphQLDescriptions.formSettings.properties.textColor).optional(),
-  size: z.nativeEnum(FontSize).describe(GraphQLDescriptions.formSettings.properties.fontSize).optional(),
+  font: z.string().optional(),
+  color: z.string().optional(),
+  size: z.nativeEnum(FontSize).optional(),
 });
 
 const redirectAfterSubmissionSchema = z.object({
-  enabled: z.boolean().describe(GraphQLDescriptions.formSettings.properties.redirectAfterSubmissionEnabled).optional(),
-  redirectUrl: z.string().describe(GraphQLDescriptions.formSettings.properties.redirectUrl).optional(),
+  enabled: z.boolean().optional(),
+  redirectUrl: z.string().optional(),
 });
 
 const afterSubmissionViewSchema = z.object({
-  allowEditSubmission: z.boolean().describe(GraphQLDescriptions.formSettings.properties.allowEditSubmission).optional(),
-  allowResubmit: z.boolean().describe(GraphQLDescriptions.formSettings.properties.allowResubmit).optional(),
-  allowViewSubmission: z.boolean().describe(GraphQLDescriptions.formSettings.properties.allowViewSubmission).optional(),
-  description: z.string().describe(GraphQLDescriptions.formSettings.properties.postSubmissionDescription).optional(),
-  redirectAfterSubmission: redirectAfterSubmissionSchema
-    .describe(GraphQLDescriptions.formSettings.properties.redirectAfterSubmission)
-    .optional(),
-  showSuccessImage: z.boolean().describe(GraphQLDescriptions.formSettings.properties.showSuccessImage).optional(),
-  title: z.string().describe(GraphQLDescriptions.formSettings.properties.postSubmissionTitle).optional(),
+  allowEditSubmission: z.boolean().optional(),
+  allowResubmit: z.boolean().optional(),
+  allowViewSubmission: z.boolean().optional(),
+  description: z.string().optional(),
+  redirectAfterSubmission: redirectAfterSubmissionSchema.optional(),
+  showSuccessImage: z.boolean().optional(),
+  title: z.string().optional(),
 });
 
 const closeDateSchema = z.object({
-  enabled: z.boolean().describe(GraphQLDescriptions.formSettings.properties.closeDateEnabled).optional(),
+  enabled: z.boolean().optional(),
   date: z.string().describe(GraphQLDescriptions.formSettings.properties.closeDateValue).optional(),
 });
 
 const draftSubmissionSchema = z.object({
-  enabled: z.boolean().describe(GraphQLDescriptions.formSettings.properties.draftSubmissionEnabled).optional(),
+  enabled: z.boolean().optional(),
 });
 
 const mondaySchema = z.object({
-  itemGroupId: z.string().describe(GraphQLDescriptions.formSettings.properties.itemGroupId).optional(),
+  itemGroupId: z.string().optional(),
   includeNameQuestion: z.boolean().describe(GraphQLDescriptions.formSettings.properties.includeNameQuestion).optional(),
   includeUpdateQuestion: z
     .boolean()
@@ -88,6 +83,7 @@ const mondaySchema = z.object({
     .boolean()
     .describe(GraphQLDescriptions.formSettings.properties.syncQuestionAndColumnsTitles)
     .optional(),
+  allow_create_item: z.boolean().describe(GraphQLDescriptions.formSettings.properties.allowCreateItem).optional(),
 });
 
 const passwordSchema = z.object({
@@ -95,62 +91,63 @@ const passwordSchema = z.object({
 });
 
 const startButtonSchema = z.object({
-  text: z.string().describe(GraphQLDescriptions.formSettings.properties.startButtonText).optional(),
+  text: z.string().optional(),
 });
 
 const preSubmissionViewSchema = z.object({
-  enabled: z.boolean().describe(GraphQLDescriptions.formSettings.properties.preSubmissionEnabled).optional(),
-  title: z.string().describe(GraphQLDescriptions.formSettings.properties.preSubmissionTitle).optional(),
-  description: z.string().describe(GraphQLDescriptions.formSettings.properties.preSubmissionDescription).optional(),
-  startButton: startButtonSchema.describe(GraphQLDescriptions.formSettings.properties.startButton).optional(),
+  enabled: z.boolean().optional(),
+  title: z.string().optional(),
+  description: z.string().optional(),
+  startButton: startButtonSchema.optional(),
 });
 
 const requireLoginSchema = z.object({
-  enabled: z.boolean().describe(GraphQLDescriptions.formSettings.properties.requireLoginEnabled).optional(),
-  redirectToLogin: z.boolean().describe(GraphQLDescriptions.formSettings.properties.redirectToLogin).optional(),
+  enabled: z.boolean().optional(),
+  redirectToLogin: z.boolean().optional(),
 });
 
 const responseLimitSchema = z.object({
-  enabled: z.boolean().describe(GraphQLDescriptions.formSettings.properties.responseLimitEnabled).optional(),
-  limit: z.number().describe(GraphQLDescriptions.formSettings.properties.responseLimitValue).optional(),
+  enabled: z.boolean().optional(),
+  limit: z.number().optional(),
 });
 
 const appearanceSchema = z.object({
-  background: backgroundSchema.describe(GraphQLDescriptions.formSettings.properties.background).optional(),
-  hideBranding: z.boolean().describe(GraphQLDescriptions.formSettings.properties.hideBranding).optional(),
-  layout: layoutSchema.describe(GraphQLDescriptions.formSettings.properties.layout).optional(),
-  logo: logoSchema.describe(GraphQLDescriptions.formSettings.properties.logo).optional(),
-  primaryColor: z.string().describe(GraphQLDescriptions.formSettings.properties.primaryColor).optional(),
-  showProgressBar: z.boolean().describe(GraphQLDescriptions.formSettings.properties.showProgressBar).optional(),
-  submitButton: submitButtonSchema.describe(GraphQLDescriptions.formSettings.properties.submitButton).optional(),
-  text: textSchema.describe(GraphQLDescriptions.formSettings.properties.text).optional(),
+  background: backgroundSchema.optional(),
+  hideBranding: z.boolean().optional(),
+  layout: layoutSchema.optional(),
+  logo: logoSchema.optional(),
+  primaryColor: z.string().optional(),
+  showProgressBar: z.boolean().optional(),
+  submitButton: submitButtonSchema.optional(),
+  text: textSchema.optional(),
 });
 
 const accessibilitySchema = z.object({
   language: z.string().describe(GraphQLDescriptions.formSettings.properties.language).optional(),
-  logoAltText: z.string().describe(GraphQLDescriptions.formSettings.properties.logoAltText).optional(),
+  logoAltText: z.string().optional(),
+});
+
+const aiTranslateSchema = z.object({
+  enabled: z.boolean().optional(),
 });
 
 const featuresSchema = z.object({
-  afterSubmissionView: afterSubmissionViewSchema
-    .describe(GraphQLDescriptions.formSettings.properties.afterSubmissionView)
-    .optional(),
-  closeDate: closeDateSchema.describe(GraphQLDescriptions.formSettings.properties.closeDate).optional(),
-  draftSubmission: draftSubmissionSchema
-    .describe(GraphQLDescriptions.formSettings.properties.draftSubmission)
-    .optional(),
-  monday: mondaySchema.describe(GraphQLDescriptions.formSettings.properties.monday).optional(),
-  password: passwordSchema.describe(GraphQLDescriptions.formSettings.properties.password).optional(),
-  preSubmissionView: preSubmissionViewSchema
-    .describe(GraphQLDescriptions.formSettings.properties.preSubmissionView)
-    .optional(),
-  reCaptchaChallenge: z.boolean().describe(GraphQLDescriptions.formSettings.properties.reCaptchaChallenge).optional(),
-  requireLogin: requireLoginSchema.describe(GraphQLDescriptions.formSettings.properties.requireLogin).optional(),
-  responseLimit: responseLimitSchema.describe(GraphQLDescriptions.formSettings.properties.responseLimit).optional(),
+  afterSubmissionView: afterSubmissionViewSchema.optional(),
+  ai_translate: aiTranslateSchema.optional(),
+  closeDate: closeDateSchema.optional(),
+  draftSubmission: draftSubmissionSchema.optional(),
+  monday: mondaySchema.optional(),
+  password: passwordSchema.optional(),
+  preSubmissionView: preSubmissionViewSchema.optional(),
+  reCaptchaChallenge: z.boolean().optional(),
+  requireLogin: requireLoginSchema.optional(),
+  responseLimit: responseLimitSchema.optional(),
+  is_anonymous: z.boolean().describe(GraphQLDescriptions.form.properties.isAnonymous).optional(),
 });
 
 const dehydratedQuestionSchema = z.object({
   id: z.string().describe(GraphQLDescriptions.form.inputs.questionId),
+  page_block_id: z.string().describe(GraphQLDescriptions.question.properties.pageBlockId).optional(),
 });
 
 const formSchema = z.object({
@@ -163,11 +160,9 @@ const formSchema = z.object({
 });
 
 export const updateFormToolSchema = {
-  formToken: z.string().describe(GraphQLDescriptions.commonArgs.formToken),
+  formToken: z.string(),
   action: z.nativeEnum(FormActions).describe(GraphQLDescriptions.form.operations.updateForm.action),
   formPassword: z.string().describe(GraphQLDescriptions.formSettings.operations.setFormPassword).optional(),
   tag: tagSchema.describe(GraphQLDescriptions.form.inputs.tag).optional(),
-  tagStringified: z.string().optional().describe('**ONLY FOR MICROSOFT COPILOT**: The tag data. Send this as a stringified JSON of "tag" field. Read "tag" field description for details how to use it.'),
   form: formSchema.describe(GraphQLDescriptions.form.inputs.form.describe).optional(),
-  formStringified: z.string().optional().describe('**ONLY FOR MICROSOFT COPILOT**: The form data. Send this as a stringified JSON of "form" field. Read "form" field description for details how to use it.'),
 };

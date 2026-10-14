@@ -2,7 +2,7 @@ import { z } from 'zod';
 import {
   CreateTimelineItemMutation,
   CreateTimelineItemMutationVariables,
-} from '../../../monday-graphql/generated/graphql';
+} from '../../../monday-graphql/generated/graphql/graphql';
 import { createTimelineItem } from '../../../monday-graphql/queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
@@ -66,7 +66,12 @@ export class CreateTimelineItemTool extends BaseMondayApiTool<typeof createTimel
     const res = await this.mondayApi.request<CreateTimelineItemMutation>(createTimelineItem, variables);
 
     return {
-      content: `Timeline item '${input.title}' with ID ${res.create_timeline_item?.id} successfully created on item ${input.item_id}`,
+      content: {
+        message: `Timeline item '${input.title}' with ID ${res.create_timeline_item?.id} successfully created on item ${input.item_id}`,
+        timeline_item_id: res.create_timeline_item?.id,
+        item_id: input.item_id,
+        title: input.title,
+      },
     };
   }
 }

@@ -5,7 +5,7 @@ import {
   FolderCustomIcon,
   CreateFolderMutation,
   CreateFolderMutationVariables,
-} from '../../../../monday-graphql/generated/graphql';
+} from '../../../../monday-graphql/generated/graphql/graphql';
 import { createFolderTool } from './create-folder-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
@@ -52,7 +52,7 @@ export class CreateFolderTool extends BaseMondayApiTool<CreateFolderToolInput> {
     const res = await this.mondayApi.request<CreateFolderMutation>(createFolderTool, variables);
 
     return {
-      content: `Folder ${res.create_folder?.id} successfully created`,
+      content: { message: `Folder ${res.create_folder?.id} successfully created`, folder_id: res.create_folder?.id, folder_name: res.create_folder?.name },
     };
   }
 }
