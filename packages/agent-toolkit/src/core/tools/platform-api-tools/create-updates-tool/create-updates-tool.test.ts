@@ -81,6 +81,24 @@ describe('Create Updates Tool', () => {
       error: expect.stringContaining('Item exceeded number of allowed updates'),
     });
     expect(c.errors).toEqual([expect.objectContaining({ code: 'MAX_UPDATES_REACHED', path: ['results', 1] })]);
+    expect(result.isError).toBeUndefined();
+  });
+
+  it('marks an all-failed batch as an error', async () => {
+    const err = Object.assign(new Error('GraphQL Error'), {
+      response: {
+        errors: [{ message: 'Item not found', extensions: { code: 'ResourceNotFoundException' } }],
+        status: 200,
+      },
+    });
+    mocks.setError(err);
+    const tool = new CreateUpdatesTool(mocks.mockApiClient);
+    const result = await tool.execute({ updates: [{ itemId: 1, body: 'fails' }] });
+
+    expect(result.isError).toBe(true);
+    expect(result.content).toMatchObject({
+      errors: [expect.objectContaining({ code: 'ResourceNotFoundException', path: ['results', 0] })],
+    });
   });
 
   it('fails only the entry with an invalid mentionsList', async () => {

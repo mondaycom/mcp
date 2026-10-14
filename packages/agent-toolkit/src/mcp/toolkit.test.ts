@@ -1011,6 +1011,35 @@ describe('MondayAgentToolkit', () => {
       });
     });
 
+    it('should preserve a tool-reported error with its structured content', async () => {
+      const content = {
+        summary: { total: 1, created: 0, failed: 1 },
+        errors: [{ code: 'TEST_ERROR', message: 'failed', path: ['results', 0] }],
+      };
+      const mockTool = {
+        name: 'mcp-reported-error-tool',
+        type: ToolType.WRITE,
+        annotations: { audience: [] },
+        enabledByDefault: true,
+        getDescription: jest.fn().mockReturnValue('MCP reported error tool'),
+        getInputSchema: jest.fn().mockReturnValue({ input: z.string() }),
+        execute: jest.fn().mockResolvedValue({ content, isError: true }),
+      };
+
+      mockGetFilteredToolInstances.mockReturnValue([mockTool]);
+
+      const toolkit = new MondayAgentToolkit({
+        mondayApiToken: 'test-token',
+      });
+      const result = await toolkit.getToolsForMcp()[0].handler({ input: 'test' });
+
+      expect(result).toEqual({
+        structuredContent: content,
+        content: [{ type: 'text', text: JSON.stringify(content) }],
+        isError: true,
+      });
+    });
+
     it('should handle errors in MCP format', async () => {
       const mockTool = {
         name: 'mcp-error-tool',

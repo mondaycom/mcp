@@ -168,7 +168,7 @@ export class UpdateItemsTool extends BaseMondayApiTool<UpdateItemsToolInput> {
       content.errors = errors;
     }
 
-    return { content };
+    return { content, ...(failed === total ? { isError: true } : {}) };
   }
 }
 

@@ -1,5 +1,16 @@
 # Changelog
 
+## 5.75.1
+
+### Reduce subitem lock contention
+
+- `create_items` now keeps at most five subitem creates in flight per parent while retaining the overall concurrency limit of 15 across different parents and regular items.
+- Item-link concurrency failures tell callers to wait and retry only the failed items. The tool description directs callers to batch each parent's subitems in groups of up to 20 and finish one batch before starting the next for that parent.
+
+### Report all-failed bulk operations as errors
+
+- `create_items`, `create_updates`, and `update_items` now return a batch where every entry fails as an MCP error while preserving its summary, per-entry results, and structured errors. Partial successes remain successful MCP responses to avoid encouraging a retry of entries that were already created or updated.
+
 ## 5.75.0
 
 ### `get_updates` takes ids only in `objectIds`

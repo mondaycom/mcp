@@ -83,7 +83,7 @@ export class CreateUpdatesTool extends BaseMondayApiTool<typeof createUpdatesToo
       content.errors = errors;
     }
 
-    return { content };
+    return { content, ...(failed === total ? { isError: true } : {}) };
   }
 }
 
