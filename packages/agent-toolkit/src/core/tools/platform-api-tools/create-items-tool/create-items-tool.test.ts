@@ -614,11 +614,11 @@ describe('Create Items Tool Behaviour', () => {
   });
 
   describe('Description', () => {
-    it('tells callers to keep one parent in one non-parallel call', () => {
+    it('explains how to batch subitems by parent', () => {
       const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
 
       expect(tool.getDescription()).toContain(
-        'include all of them in one create_items call and do not run parallel create_items calls for that parent',
+        "Batch each parent's subitems into groups of up to 20. Wait for one batch to finish before starting the next batch for that parent.",
       );
     });
   });

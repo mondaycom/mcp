@@ -89,7 +89,7 @@ export class CreateItemsTool extends BaseMondayApiTool<CreateItemsToolInput> {
   getDescription(): string {
     return (
       `Create up to ${MAX_ITEMS_PER_CALL} new items in a single call. Each item is fully independent - it chooses its own groupId, parentItemId (for subitems), duplicateFromItemId (for bulk templating from an existing item), and createLabelsIfMissing. A single call can therefore span multiple groups, mix regular items with subitems under different parents, and mix fresh creates with duplicates of existing items. Each item returns its own item_id and item_url on success, or a raw error message on failure. ` +
-      'When creating multiple subitems under one parent, include all of them in one create_items call and do not run parallel create_items calls for that parent. ' +
+      `Batch each parent's subitems into groups of up to ${MAX_ITEMS_PER_CALL}. Wait for one batch to finish before starting the next batch for that parent. ` +
       "[REQUIRED PRECONDITION]: Before using this tool, if new columns were added to the board or if you are not familiar with the board's structure (column IDs, column types, status labels, etc.), first use get_board_info with filters.columns.only to get column metadata without fetching views. This is essential for constructing proper column values and knowing which columns are available."
     );
   }
@@ -146,7 +146,7 @@ export class CreateItemsTool extends BaseMondayApiTool<CreateItemsToolInput> {
       }),
       onError: (error, index) => ({
         index,
-        error: formatPerItemError(error, input.items[index].parentItemId),
+        error: formatPerItemErrorMessage(error, input.items[index].parentItemId),
         _errorEntry: extractErrorEntry(error, index),
       }),
     });
@@ -190,7 +190,7 @@ function getGraphQLErrorEntry(error: unknown): GraphQLErrorEntry | undefined {
   )?.response?.errors?.[0];
 }
 
-function formatPerItemError(error: unknown, parentItemId?: number): string {
+function formatPerItemErrorMessage(error: unknown, parentItemId?: number): string {
   const message = error instanceof Error ? error.message : String(error);
   if (parentItemId === undefined || !isParentSubitemLockError(error, parentItemId)) {
     return message;
