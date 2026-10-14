@@ -3,7 +3,12 @@ import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { CreateItemTool } from '../create-item-tool/create-item-tool';
 import { COLUMN_VALUES_FORMAT_GUIDE } from '../column-values.utils';
-import { runWithRateLimitCircuit, ToolValidationError, MISSING_REQUIRED_PARAMETER_CODE } from '../../../../utils';
+import {
+  runWithRateLimitCircuit,
+  ToolValidationError,
+  MISSING_REQUIRED_PARAMETER_CODE,
+  recordBulkOperationOutcome,
+} from '../../../../utils';
 import { MAX_ITEMS_PER_CALL, CONCURRENCY_LIMIT, RATE_LIMIT_SKIPPED_CODE } from './constants';
 
 type PerItemResult =
@@ -106,8 +111,6 @@ export class CreateItemsTool extends BaseMondayApiTool<CreateItemsToolInput> {
     }
 
     const boardId = this.context?.boardId ?? (input as ToolInputType<typeof createItemsInBoardToolSchema>).boardId;
-    this.sessionContext.metadata ??= {};
-    this.sessionContext.metadata.items_count = input.items.length;
     const singleTool = new CreateItemTool(this.mondayApi, { boardId });
     const skipMessage = 'Skipped: a previous item hit the minute rate limit; this item was not attempted';
 
@@ -144,7 +147,7 @@ export class CreateItemsTool extends BaseMondayApiTool<CreateItemsToolInput> {
     const results = raw.map(({ _errorEntry, ...rest }) => rest);
     const total = raw.length;
     const failed = errors.length;
-    const isPartialSuccess = failed > 0 && failed < total;
+    const { isPartialSuccess, isError } = recordBulkOperationOutcome(this.sessionContext, total, failed);
 
     const content: Record<string, unknown> = {
       board_id: boardId,
@@ -157,7 +160,7 @@ export class CreateItemsTool extends BaseMondayApiTool<CreateItemsToolInput> {
       content.errors = errors;
     }
 
-    return { content };
+    return { content, ...(isError ? { isError: true } : {}) };
   }
 }
 

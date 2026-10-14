@@ -104,6 +104,7 @@ describe('Create Items Tool Behaviour', () => {
       const c = result.content as any;
       expect(c.summary).toEqual({ total: 3, created: 2, failed: 1 });
       expect(c.is_partial_success).toBe(true);
+      expect(result.isError).toBeUndefined();
       expect(c.results).toHaveLength(3);
       expect(c.results[0]).toMatchObject({ index: 0, item_id: '1' });
       expect(c.results[1]).toMatchObject({ index: 1 });
@@ -234,6 +235,7 @@ describe('Create Items Tool Behaviour', () => {
       const result = await tool.execute({ items: [{ name: 'A', groupId: 'topics', columnValues: '{}' }] });
       const c = result.content as any;
 
+      expect(result.isError).toBe(true);
       expect(typeof c.results[0].error).toBe('string');
       expect(c.results[0].error).toContain('Invalid column values');
     });
@@ -448,7 +450,11 @@ describe('Create Items Tool Behaviour', () => {
         sessionContext,
       );
 
-      expect(sessionContext.metadata).toEqual({ items_count: 3 });
+      expect(sessionContext.metadata).toEqual({
+        items_count: 3,
+        items_failed: 0,
+        outcome: 'success',
+      });
     });
 
     it('records items_count even when some items fail', async () => {
@@ -472,7 +478,11 @@ describe('Create Items Tool Behaviour', () => {
         sessionContext,
       );
 
-      expect(sessionContext.metadata).toEqual({ items_count: 2 });
+      expect(sessionContext.metadata).toEqual({
+        items_count: 2,
+        items_failed: 1,
+        outcome: 'partial',
+      });
     });
   });
 

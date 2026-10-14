@@ -2,7 +2,12 @@ import { z } from 'zod';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { CreateUpdateTool, createUpdateToolSchema } from '../create-update-tool/create-update-tool';
-import { runWithRateLimitCircuit, ToolValidationError, GRAPHQL_ERROR_CODE } from '../../../../utils';
+import {
+  runWithRateLimitCircuit,
+  ToolValidationError,
+  GRAPHQL_ERROR_CODE,
+  recordBulkOperationOutcome,
+} from '../../../../utils';
 import { MAX_UPDATES_PER_CALL, CONCURRENCY_LIMIT, RATE_LIMIT_SKIPPED_CODE } from './constants';
 
 type PerUpdateResult =
@@ -43,9 +48,6 @@ export class CreateUpdatesTool extends BaseMondayApiTool<typeof createUpdatesToo
   protected async executeInternal(
     input: ToolInputType<typeof createUpdatesToolSchema>,
   ): Promise<ToolOutputType<never>> {
-    this.sessionContext.metadata ??= {};
-    this.sessionContext.metadata.items_count = input.updates.length;
-
     const skipMessage = 'Skipped: a previous update hit the minute rate limit, this update was not attempted';
 
     const singleTool = new CreateUpdateTool(this.mondayApi);
@@ -72,10 +74,11 @@ export class CreateUpdatesTool extends BaseMondayApiTool<typeof createUpdatesToo
     const results = raw.map(({ _errorEntry, ...rest }) => rest);
     const total = raw.length;
     const failed = errors.length;
+    const { isPartialSuccess, isError } = recordBulkOperationOutcome(this.sessionContext, total, failed);
 
     const content: Record<string, unknown> = {
       summary: { total, created: total - failed, failed },
-      is_partial_success: failed > 0 && failed < total,
+      is_partial_success: isPartialSuccess,
       results,
     };
 
@@ -83,7 +86,7 @@ export class CreateUpdatesTool extends BaseMondayApiTool<typeof createUpdatesToo
       content.errors = errors;
     }
 
-    return { content };
+    return { content, ...(isError ? { isError: true } : {}) };
   }
 }
 

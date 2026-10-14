@@ -9,6 +9,7 @@ export type ToolInputType<Input extends ZodRawShape | undefined> = Input extends
 export type ToolOutputType<T extends Record<string, unknown>> = {
   content: string | Record<string, any>;
   metadata?: T;
+  isError?: boolean;
 };
 
 export enum ToolType {

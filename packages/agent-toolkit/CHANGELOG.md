@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.75.1
+
+### Report bulk operation outcomes consistently
+
+- `create_items`, `create_updates`, and `update_items` now record `items_failed` and `outcome` alongside `items_count` in session metadata.
+- A batch where every entry fails is returned as an MCP error while preserving its summary, per-entry results, and structured errors. Partial successes remain successful MCP responses to avoid encouraging a retry of entries that were already created or updated.
+
 ## 5.75.0
 
 ### `get_updates` takes ids only in `objectIds`

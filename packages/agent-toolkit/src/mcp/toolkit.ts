@@ -156,7 +156,7 @@ export class MondayAgentToolkit extends McpServer {
           } else {
             result = await tool.execute();
           }
-          return this.formatToolResult(result.content);
+          return this.formatToolResult(result.content, result.isError);
         } catch (error) {
           return this.handleToolError(error, tool.name);
         }
@@ -313,10 +313,10 @@ export class MondayAgentToolkit extends McpServer {
             );
           }
           const result = await tool.execute(parsedArgs.data, extra);
-          return this.formatToolResult(result.content);
+          return this.formatToolResult(result.content, result.isError);
         } else {
           const result = await tool.execute(undefined, extra);
-          return this.formatToolResult(result.content);
+          return this.formatToolResult(result.content, result.isError);
         }
       } catch (error) {
         return formatToolError(error, { toolName: tool.name });
@@ -347,16 +347,18 @@ export class MondayAgentToolkit extends McpServer {
   /**
    * Format the tool result into the expected MCP format
    */
-  private formatToolResult(content: string | Record<string, any>): CallToolResult {
+  private formatToolResult(content: string | Record<string, any>, isError?: boolean): CallToolResult {
     if (typeof content === 'string') {
       return {
         content: [{ type: 'text', text: content }],
+        ...(isError ? { isError: true } : {}),
       };
     }
 
     return {
       structuredContent: content,
       content: [{ type: 'text', text: JSON.stringify(content) }],
+      ...(isError ? { isError: true } : {}),
     };
   }
 

@@ -8,6 +8,7 @@ import {
   ToolValidationError,
   GRAPHQL_ERROR_CODE,
   MISSING_REQUIRED_PARAMETER_CODE,
+  recordBulkOperationOutcome,
 } from '../../../../utils';
 import { MAX_UPDATES_PER_CALL, CONCURRENCY_LIMIT, RATE_LIMIT_SKIPPED_CODE } from './constants';
 
@@ -106,9 +107,6 @@ export class UpdateItemsTool extends BaseMondayApiTool<UpdateItemsToolInput> {
       );
     }
 
-    this.sessionContext.metadata ??= {};
-    this.sessionContext.metadata.items_count = input.updates.length;
-
     const defaultBoardId =
       this.context?.boardId ?? (input as ToolInputType<typeof updateItemsInBoardToolSchema>).boardId;
 
@@ -156,7 +154,7 @@ export class UpdateItemsTool extends BaseMondayApiTool<UpdateItemsToolInput> {
     const results = raw.map(({ _errorEntry, ...rest }) => rest);
     const total = raw.length;
     const failed = errors.length;
-    const isPartialSuccess = failed > 0 && failed < total;
+    const { isPartialSuccess, isError } = recordBulkOperationOutcome(this.sessionContext, total, failed);
 
     const content: Record<string, unknown> = {
       summary: { total, updated: total - failed, failed },
@@ -168,7 +166,7 @@ export class UpdateItemsTool extends BaseMondayApiTool<UpdateItemsToolInput> {
       content.errors = errors;
     }
 
-    return { content };
+    return { content, ...(isError ? { isError: true } : {}) };
   }
 }
 
