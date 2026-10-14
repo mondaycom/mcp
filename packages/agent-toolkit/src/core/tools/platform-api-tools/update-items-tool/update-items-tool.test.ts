@@ -281,14 +281,80 @@ describe('Update Items Tool Behaviour', () => {
   });
 
   describe('Missing board resolution', () => {
-    it('rejects the whole call when an update has no resolvable boardId', async () => {
+    // Answers the per-item board lookup from a map, and every column change with its item.
+    const respondWithBoards = (boards: Record<string, string>) =>
+      mocks.getMockRequest().mockImplementation(async (query: string, variables: any) =>
+        query.includes('GetItemBoardId')
+          ? { items: boards[variables.itemId] ? [{ board: { id: boards[variables.itemId] } }] : [] }
+          : changeResponse(variables.itemId),
+      );
+    const lookups = () =>
+      mocks.getMockRequest().mock.calls.filter((call: any[]) => call[0].includes('GetItemBoardId'));
+    const changes = () =>
+      mocks.getMockRequest().mock.calls.filter((call: any[]) => !call[0].includes('GetItemBoardId'));
+
+    it('looks up the board of each item that has no boardId', async () => {
+      respondWithBoards({ '1': '321', '2': '654' });
       const tool = new UpdateItemsTool(mocks.mockApiClient);
 
-      await expect(
-        tool.execute({ updates: [{ itemId: 1, columnValues: '{"text":"a"}' }] }),
-      ).rejects.toThrow('Missing boardId');
+      const result = await tool.execute({
+        updates: [
+          { itemId: 1, columnValues: '{"text":"a"}' },
+          { itemId: 2, columnValues: '{"text":"b"}' },
+        ],
+      });
 
-      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+      expect(lookups().map((call: any[]) => call[1].itemId).sort()).toEqual(['1', '2']);
+      expect(changes().map((call: any[]) => [call[1].itemId, call[1].boardId]).sort()).toEqual([
+        ['1', '321'],
+        ['2', '654'],
+      ]);
+      expect((result.content as any).summary).toEqual({ total: 2, updated: 2, failed: 0 });
+    });
+
+    it('looks up only the entries without a boardId', async () => {
+      respondWithBoards({ '2': '654' });
+      const tool = new UpdateItemsTool(mocks.mockApiClient);
+
+      await tool.execute({
+        updates: [
+          { itemId: 1, boardId: 123, columnValues: '{"text":"a"}' },
+          { itemId: 2, columnValues: '{"text":"b"}' },
+        ],
+      });
+
+      expect(lookups().map((call: any[]) => call[1].itemId)).toEqual(['2']);
+      expect(changes().map((call: any[]) => call[1].boardId).sort()).toEqual(['123', '654']);
+    });
+
+    it('fails only the entry whose item the lookup cannot find', async () => {
+      respondWithBoards({ '1': '321' });
+      const tool = new UpdateItemsTool(mocks.mockApiClient);
+
+      const result = await tool.execute({
+        updates: [
+          { itemId: 1, columnValues: '{"text":"a"}' },
+          { itemId: 404, columnValues: '{"text":"b"}' },
+        ],
+      });
+
+      const c = result.content as any;
+      expect(c.summary).toEqual({ total: 2, updated: 1, failed: 1 });
+      expect(c.results[1].error).toBe('Could not find the board of item 404. Set boardId.');
+      expect(c.errors).toEqual([
+        expect.objectContaining({ code: 'MISSING_REQUIRED_PARAMETER', path: ['results', 1] }),
+      ]);
+      expect(changes().map((call: any[]) => call[1].itemId)).toEqual(['1']);
+    });
+
+    it('does not look up boards when the board is in context', async () => {
+      respondWithBoards({});
+      const tool = new UpdateItemsTool(mocks.mockApiClient, { boardId: 456 });
+
+      await tool.execute({ updates: [{ itemId: 1, columnValues: '{"text":"a"}' }] });
+
+      expect(lookups()).toHaveLength(0);
+      expect(changes()[0][1]).toMatchObject({ boardId: '456', itemId: '1' });
     });
   });
 

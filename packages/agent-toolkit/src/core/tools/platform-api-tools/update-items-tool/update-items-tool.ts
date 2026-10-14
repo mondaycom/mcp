@@ -31,7 +31,7 @@ const updateSchema = z.object({
     .number()
     .optional()
     .describe(
-      'Optional. The id of the board that contains this item. Provide it when this update targets a board other than the batch default or the board in context. When omitted, the batch boardId or the board in context is used.',
+      'Optional. The id of the board that contains this item. Provide it when this update targets a board other than the batch default or the board in context. When omitted, the batch boardId or the board in context is used, and if there is neither, the board is looked up from the item.',
     ),
   createLabelsIfMissing: z
     .boolean()
@@ -56,7 +56,7 @@ export const updateItemsInBoardToolSchema = {
     .number()
     .optional()
     .describe(
-      'Optional default board id used for any update that does not set its own boardId. Each update can override it with its own boardId, so a single call can span multiple boards.',
+      'Optional default board id used for any update that does not set its own boardId. Each update can override it with its own boardId, so a single call can span multiple boards. When neither is set, each item\'s board is looked up from the item.',
     ),
   ...updateItemsToolSchema,
 };
@@ -112,23 +112,12 @@ export class UpdateItemsTool extends BaseMondayApiTool<UpdateItemsToolInput> {
     const defaultBoardId =
       this.context?.boardId ?? (input as ToolInputType<typeof updateItemsInBoardToolSchema>).boardId;
 
-    const resolvedBoardIds = input.updates.map((update) => update.boardId ?? defaultBoardId);
-    const missingBoardIndexes = resolvedBoardIds
-      .map((boardId, index) => (boardId == null ? index : -1))
-      .filter((index) => index >= 0);
-
-    if (missingBoardIndexes.length > 0) {
-      throw new ToolValidationError(
-        `Missing boardId for update(s) at index ${missingBoardIndexes.join(', ')}. Set a boardId on each update or provide a batch-level boardId.`,
-        MISSING_REQUIRED_PARAMETER_CODE,
-      );
-    }
 
     const skipMessage = 'Skipped: a previous update hit the minute rate limit, this update was not attempted';
 
     const singleTool = new ChangeItemColumnValuesTool(this.mondayApi);
     const tasks = input.updates.map((update, index) => async (): Promise<PerUpdateResult> => {
-      const boardId = resolvedBoardIds[index] as number;
+      const boardId = update.boardId ?? defaultBoardId;
       const result = await singleTool.execute({
         boardId,
         itemId: update.itemId as number,

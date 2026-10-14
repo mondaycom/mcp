@@ -46,6 +46,16 @@ export const getBoardSchema = gql`
   }
 `;
 
+export const getItemBoardId = gql`
+  query GetItemBoardId($itemId: ID!) {
+    items(ids: [$itemId], limit: 1) {
+      board {
+        id
+      }
+    }
+  }
+`;
+
 export const changeItemColumnValues = gql`
   mutation changeItemColumnValues(
     $boardId: ID!
