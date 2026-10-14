@@ -10,7 +10,7 @@ Shows: Proactive mode approved upfront, 2 new contacts auto-created (with one co
 **Claude (step 0 — connector + NoteTaker check):**
 *[calls `mcp__monday__get_user_context` → `user: { id: 203911, name: "Priya Nair", email: "priya@monday.com" }`]*
 *[internal_domain = "monday.com"]*
-*[calls `mcp__monday__get_notetaker_meetings({ limit: 1 })` → OK]*
+*[calls `mcp__monday__explore_meetings({ limit: 1 })` → OK]*
 
 **Claude (step 1 — mode):**
 
@@ -30,7 +30,7 @@ Shows: Proactive mode approved upfront, 2 new contacts auto-created (with one co
 No argument → last 24h. *(Default-window echo suppressed — not first run and meetings were found.)*
 
 **Claude (step 3 — pull meetings):**
-*[calls `get_notetaker_meetings(...)` → 3 meetings]*
+*[calls `explore_meetings(...)` → 3 meetings; then `get_meetings_content(...)`]*
 
 1. "Luminary Health — demo" (attendees: carlos@luminaryhealth.com, anita@luminaryhealth.com, priya@monday.com · 45m)
 2. "Redwood Fintech — procurement review" (attendees: lena@redwoodfintech.com, priya@monday.com · 30m)

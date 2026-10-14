@@ -3,6 +3,22 @@
 All notable changes to the `monday-crm` Claude plugin are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.5.1] — 2026-10-14
+
+### Fixed
+- `run-sequence`: removed `get-connected-email-accounts` (removed from the connector Oct 4). The `connections_not_specified` gate on `create-sequence` now returns the user's mailboxes; the skill passes the chosen `connectionId` + `provider` as `sender`. When no mailbox is connected it offers `show_connect_integration` and confirms with `check-integration-connection-status`. Handles `sender_not_found` / `sender_not_ready`.
+- `log-activity`: removed `update-timeline-item` (hidden from all MCP clients since Aug 17). "Update" requests now append a correction note via `create-timeline-note`; the original entry is edited in the monday CRM UI. Corrected tool arguments to the server schema (`item_id`, `custom_activity_id`, `title`, `summary`, `content`, `timestamp`).
+- `daily-briefing`, `meeting-to-deal`: replaced `get_notetaker_meetings` (removed from the connector Jul 6, mondaycom/mcp#421) with `explore_meetings` + `get_meetings_content`.
+- Cross-skill handoffs pointed at pre-0.3.0 names (`board-diagnosis`, `forecast-dashboard`, `morning-briefing`, `meeting-to-opportunity`); now `data-cleanup`, `forecast`, `daily-briefing`, `meeting-to-deal`.
+- `workspace-builder`: automations hand off to `automate-crm` instead of citing an unshipped tool.
+
+### Changed
+- `marketplace.json`: plugin entry version (was 0.3.0), description, and keywords now match `plugin.json`; marketplace description lists nine skills.
+- README: nine skills in the table and diagram; "Try asking" covers sequences, activities, insights, and automations.
+- Note: the `get-board-sequences` error rate flagged in 0.4.0 was fixed server-side on Jul 13.
+
+---
+
 ## [0.5.0] — 2026-08-05
 
 ### Added

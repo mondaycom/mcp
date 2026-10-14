@@ -10,7 +10,7 @@ Shows: skill invoked, connector check passes, NoteTaker probe returns auth/permi
 **Claude (step 0 — connector check):**
 *[calls `mcp__monday__get_user_context` → `user: { id: 912044, name: "Sarah Levi", email: "sarah@monday.com" }` — OK]*
 *[internal_domain = "monday.com"]*
-*[calls `mcp__monday__get_notetaker_meetings({ limit: 1 })` → error: `{ "error": "NoteTaker not enabled for this account" }`]*
+*[calls `mcp__monday__explore_meetings({ limit: 1 })` → error: `{ "error": "NoteTaker not enabled for this account" }`]*
 
 > NoteTaker isn't connected for this account, or you don't have meetings recorded yet. Set up NoteTaker at the monday.com app (monday NoteTaker), then re-run `/monday-crm:meeting-to-deal`.
 >
