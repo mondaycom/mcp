@@ -3,7 +3,7 @@ name: run-sequence
 description: Manage CRM sequences end-to-end — list, create, enroll contacts, activate/deactivate, duplicate, and track performance. Use when someone says "what sequences do I have", "create a welcome sequence", "enroll this contact in a sequence", "add these leads to my nurture sequence", "deactivate the cold outreach sequence", "activate my new sequence", "how is my nurture sequence doing", "show me sequence analytics", "create a drip campaign", "who is enrolled in", "duplicate this sequence", "set up a new outreach flow", "check this contact's sequence history", or "what sequences is this lead in".
 argument-hint: "[optional: action + target — 'list sequences on Leads board', 'enroll Acme in welcome sequence', 'analytics for Q2 nurture', 'duplicate cold outreach']"
 user-invocable: true
-allowed-tools: [Read, AskUserQuestion, mcp__monday__get_user_context, mcp__monday__list_workspaces, mcp__monday__search, mcp__monday__get_board_info, mcp__monday__get_board_items_page, mcp__monday__get-board-sequences, mcp__monday__get-sequence-analytics, mcp__monday__get-contact-journey, mcp__monday__enroll-item-in-sequence, mcp__monday__activate-sequence, mcp__monday__deactivate-sequence, mcp__monday__duplicate-sequence, mcp__monday__create-sequence, mcp__monday__get-connected-email-accounts, mcp__monday__all_monday_api]
+allowed-tools: [Read, AskUserQuestion, mcp__monday__get_user_context, mcp__monday__list_workspaces, mcp__monday__search, mcp__monday__get_board_info, mcp__monday__get_board_items_page, mcp__monday__get-board-sequences, mcp__monday__get-sequence-analytics, mcp__monday__get-contact-journey, mcp__monday__enroll-item-in-sequence, mcp__monday__activate-sequence, mcp__monday__deactivate-sequence, mcp__monday__duplicate-sequence, mcp__monday__create-sequence, mcp__monday__show_connect_integration, mcp__monday__check-integration-connection-status, mcp__monday__all_monday_api]
 ---
 
 # Run Sequence
@@ -40,13 +40,14 @@ Flow: **Trigger → Detect intent → Resolve board/sequence/contact → Execute
 - `deactivate-sequence` — ACTIVE → INACTIVE (existing enrollments continue).
 - `duplicate-sequence` — copy a sequence; new copy starts INACTIVE.
 - `create-sequence` — create a new sequence; call directly with whatever args you have.
-- `get-connected-email-accounts` — list linked Gmail/Outlook accounts; used when `create-sequence` gate requires a sender.
+- `show_connect_integration` — renders a connect button for Gmail/Outlook when the user has no mailbox to send from.
+- `check-integration-connection-status` — confirms the mailbox connected before retrying `create-sequence`.
 - `get_user_context` — user identity + account.
 - `search` / `get_board_info` / `get_board_items_page` — resolve boards and items by name.
 
 ## Cross-skill handoffs
 - **From daily-briefing:** brief can surface sequences with low engagement → suggest `/monday-crm:run-sequence analytics for <name>`.
-- **From meeting-to-opportunity:** after logging a new lead, suggest enrolling them in an onboarding sequence.
+- **From meeting-to-deal:** after logging a new lead, suggest enrolling them in an onboarding sequence.
 - **To log-activity:** after enrolling a contact in a sequence whose first step is a manual call, suggest logging the call outcome.
 
 ---
@@ -116,7 +117,8 @@ Call `mcp__monday__create-sequence` directly with whatever you have from the use
 
 - **`board_not_specified`** gate → follow the returned instructions verbatim: use `search` to list boards, present as-is, ask user to pick, retry.
 - **`steps_not_specified`** gate → follow the returned instructions verbatim: ask user to build steps one at a time or create empty. Never invent steps.
-- **`connections_not_specified`** gate (triggered when `automatic_email` steps need sender/emailColumnId) → resolve via `get-connected-email-accounts` for sender and `get_board_info` for the email column, then retry.
+- **`connections_not_specified`** gate (triggered when `automatic_email` steps need `sender`/`emailColumnId`) → the gate returns the user's `mailboxes`. Ask which one to send from and pass its `connectionId` + `provider` as `sender`; resolve `emailColumnId` via `get_board_info`; retry. If the gate says there is no connected mailbox, call `show_connect_integration`, wait for the user to connect, confirm with `check-integration-connection-status`, then retry.
+- **`sender_not_found` / `sender_not_ready`** → follow the returned instructions verbatim (pick another mailbox, or ask the user to reconnect).
 
 On success: *"Sequence '<name>' created (INACTIVE). Activate it? (yes / later)"*. If yes → `activate-sequence`.
 

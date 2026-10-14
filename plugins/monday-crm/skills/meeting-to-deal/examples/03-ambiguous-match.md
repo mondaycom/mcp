@@ -10,7 +10,7 @@ Shows: one meeting matches two deals at near-equal scores; skill flags ambiguity
 **Claude (step 0 — connector + NoteTaker check):**
 *[calls `mcp__monday__get_user_context` → `user: { id: 714088, name: "Rohan Mehta", email: "rohan@monday.com" }`]*
 *[internal_domain = "monday.com"]*
-*[calls `mcp__monday__get_notetaker_meetings({ limit: 1 })` → OK]*
+*[calls `mcp__monday__explore_meetings({ limit: 1 })` → OK]*
 
 **Claude (step 1 — mode):**
 No explicit mode → Default.
@@ -19,7 +19,7 @@ No explicit mode → Default.
 "Today" → `since: 2026-06-11T00:00:00Z`, `until: 2026-06-12T00:00:00Z`.
 
 **Claude (step 3 — pull meetings):**
-*[calls `get_notetaker_meetings({ since: "...", until: "...", limit: 50 })` → 2 meetings]*
+*[calls `explore_meetings({ start_time_from: "...", start_time_to: "...", limit: 20 })` → 2 meetings; then `get_meetings_content(...)`]*
 
 1. "Vertex Capital — follow-up" (attendees: jessica@vertexcap.io, rohan@monday.com · 35m)
 2. "Vertex Capital — partner call" (attendees: jessica@vertexcap.io, marcus@vertexcap.io, rohan@monday.com · 50m)
