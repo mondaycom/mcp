@@ -7,6 +7,85 @@ export type ConcurrencyGroupOptions = {
   limitPerGroup: number;
 };
 
+class ConcurrencyScheduler<T> {
+  private readonly output: T[];
+  private readonly pending: number[];
+  private readonly groups: Array<ConcurrencyGroup | undefined>;
+  private readonly activeByGroup = new Map<ConcurrencyGroup, number>();
+  private activeCount = 0;
+  private resolve!: (output: T[]) => void;
+
+  constructor(
+    private readonly tasks: Array<() => Promise<T>>,
+    private readonly limit: number,
+    private readonly groupOptions?: ConcurrencyGroupOptions,
+  ) {
+    this.output = new Array(tasks.length);
+    this.pending = tasks.map((_, index) => index);
+    this.groups = tasks.map((_, index) => groupOptions?.getGroup(index));
+  }
+
+  run(): Promise<T[]> {
+    return new Promise((resolve) => {
+      this.resolve = resolve;
+      this.schedule();
+    });
+  }
+
+  private schedule(): void {
+    while (this.activeCount < this.limit) {
+      const pendingIndex = this.pending.findIndex((index) => this.canStart(index));
+      if (pendingIndex === -1) {
+        break;
+      }
+      this.startTask(pendingIndex);
+    }
+
+    if (this.pending.length === 0 && this.activeCount === 0) {
+      this.resolve(this.output);
+    }
+  }
+
+  private canStart(index: number): boolean {
+    const group = this.groups[index];
+    return (
+      group === undefined ||
+      this.groupOptions === undefined ||
+      (this.activeByGroup.get(group) ?? 0) < this.groupOptions.limitPerGroup
+    );
+  }
+
+  private startTask(pendingIndex: number): void {
+    const [taskIndex] = this.pending.splice(pendingIndex, 1);
+    const group = this.groups[taskIndex];
+    if (group !== undefined) {
+      this.activeByGroup.set(group, (this.activeByGroup.get(group) ?? 0) + 1);
+    }
+    this.activeCount++;
+
+    void Promise.resolve()
+      .then(this.tasks[taskIndex])
+      .then((result) => {
+        this.output[taskIndex] = result;
+      })
+      .catch(() => undefined)
+      .then(() => this.completeTask(group));
+  }
+
+  private completeTask(group?: ConcurrencyGroup): void {
+    this.activeCount--;
+    if (group !== undefined) {
+      const remaining = (this.activeByGroup.get(group) ?? 1) - 1;
+      if (remaining === 0) {
+        this.activeByGroup.delete(group);
+      } else {
+        this.activeByGroup.set(group, remaining);
+      }
+    }
+    this.schedule();
+  }
+}
+
 export async function runWithConcurrency<T>(
   tasks: Array<() => Promise<T>>,
   limit: number,
@@ -19,61 +98,7 @@ export async function runWithConcurrency<T>(
     throw new RangeError('limitPerGroup must be at least 1');
   }
 
-  const out: T[] = new Array(tasks.length);
-  const pending = tasks.map((_, index) => index);
-  const groups = tasks.map((_, index) => groupOptions?.getGroup(index));
-  const activeByGroup = new Map<ConcurrencyGroup, number>();
-  let activeCount = 0;
-
-  const canStart = (index: number): boolean => {
-    const group = groups[index];
-    return (
-      group === undefined || groupOptions === undefined || (activeByGroup.get(group) ?? 0) < groupOptions.limitPerGroup
-    );
-  };
-
-  return new Promise((resolve) => {
-    const schedule = () => {
-      while (activeCount < limit) {
-        const pendingIndex = pending.findIndex(canStart);
-        if (pendingIndex === -1) {
-          break;
-        }
-
-        const [taskIndex] = pending.splice(pendingIndex, 1);
-        const group = groups[taskIndex];
-        if (group !== undefined) {
-          activeByGroup.set(group, (activeByGroup.get(group) ?? 0) + 1);
-        }
-        activeCount++;
-
-        void Promise.resolve()
-          .then(tasks[taskIndex])
-          .then((result) => {
-            out[taskIndex] = result;
-          })
-          .catch(() => undefined)
-          .then(() => {
-            activeCount--;
-            if (group !== undefined) {
-              const remaining = (activeByGroup.get(group) ?? 1) - 1;
-              if (remaining === 0) {
-                activeByGroup.delete(group);
-              } else {
-                activeByGroup.set(group, remaining);
-              }
-            }
-            schedule();
-          });
-      }
-
-      if (pending.length === 0 && activeCount === 0) {
-        resolve(out);
-      }
-    };
-
-    schedule();
-  });
+  return new ConcurrencyScheduler(tasks, limit, groupOptions).run();
 }
 
 export type RateLimitCircuitOptions<T> = {
