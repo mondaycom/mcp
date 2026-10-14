@@ -119,9 +119,9 @@ describe('Create Updates Tool', () => {
     );
 
     expect(result.isError).toBe(true);
-    expect((result.content as any).errors).toEqual([
-      expect.objectContaining({ code: 'ResourceNotFoundException', path: ['results', 0] }),
-    ]);
+    expect(result.content).toMatchObject({
+      errors: [expect.objectContaining({ code: 'ResourceNotFoundException', path: ['results', 0] })],
+    });
     expect(sessionContext.metadata).toEqual({
       items_count: 1,
       items_failed: 1,
