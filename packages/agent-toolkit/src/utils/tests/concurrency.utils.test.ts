@@ -27,6 +27,55 @@ describe('runWithConcurrency', () => {
     expect(peak).toBeLessThanOrEqual(3);
   });
 
+  it('limits each group while scheduling work from other groups', async () => {
+    const groups = ['parent-a', 'parent-a', 'parent-a', 'parent-b', 'parent-b', 'parent-b'];
+    const started: string[] = [];
+    let releaseGate!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      releaseGate = resolve;
+    });
+    const tasks = groups.map((group, index) => async () => {
+      started.push(group);
+      await gate;
+      return index;
+    });
+
+    const resultPromise = runWithConcurrency(tasks, 4, {
+      getGroup: (index) => groups[index],
+      limitPerGroup: 2,
+    });
+
+    await Promise.resolve();
+    expect(started).toEqual(['parent-a', 'parent-a', 'parent-b', 'parent-b']);
+
+    releaseGate();
+    await expect(resultPromise).resolves.toEqual([0, 1, 2, 3, 4, 5]);
+  });
+
+  it('does not apply the per-group limit to ungrouped tasks', async () => {
+    const started: number[] = [];
+    let releaseGate!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      releaseGate = resolve;
+    });
+    const tasks = [0, 1, 2].map((index) => async () => {
+      started.push(index);
+      await gate;
+      return index;
+    });
+
+    const resultPromise = runWithConcurrency(tasks, 3, {
+      getGroup: () => undefined,
+      limitPerGroup: 1,
+    });
+
+    await Promise.resolve();
+    expect(started).toEqual([0, 1, 2]);
+
+    releaseGate();
+    await expect(resultPromise).resolves.toEqual([0, 1, 2]);
+  });
+
   it('lets sibling workers finish their tasks even when a task throws, and returns partial results', async () => {
     const completed: number[] = [];
     const tasks: Array<() => Promise<number>> = [

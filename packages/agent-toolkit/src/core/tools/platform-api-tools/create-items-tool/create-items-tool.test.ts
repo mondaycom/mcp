@@ -3,7 +3,7 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
 import { buildToolErrorStructuredContent, ToolValidationError } from '../../../../utils';
 import { createMockApiClient } from '../test-utils/mock-api-client';
 import { CreateItemsTool, createItemsInBoardToolSchema } from './create-items-tool';
-import { CONCURRENCY_LIMIT, MAX_ITEMS_PER_CALL } from './constants';
+import { CONCURRENCY_LIMIT, MAX_ITEMS_PER_CALL, PER_PARENT_CONCURRENCY_LIMIT } from './constants';
 
 describe('Create Items Tool Behaviour', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
@@ -28,6 +28,23 @@ describe('Create Items Tool Behaviour', () => {
   const changeColumnValuesResponse = (id: string) => ({
     change_multiple_column_values: { id },
   });
+
+  const columnValueError = (message: string, errorData: Record<string, unknown>) =>
+    Object.assign(new Error('GraphQL Error'), {
+      response: {
+        errors: [
+          {
+            message,
+            extensions: {
+              code: 'ColumnValueException',
+              status_code: 200,
+              error_data: errorData,
+            },
+          },
+        ],
+        status: 200,
+      },
+    });
 
   describe('Happy path — create items on a board', () => {
     it('creates all items and returns per-item results with correct index', async () => {
@@ -222,6 +239,50 @@ describe('Create Items Tool Behaviour', () => {
     });
   });
 
+  describe('Subitem concurrency', () => {
+    it('caps each parent independently while allowing different parents to run together', async () => {
+      const activeByParent = new Map<string, number>();
+      const peakByParent = new Map<string, number>();
+      let active = 0;
+      let peak = 0;
+
+      mocks
+        .getMockRequest()
+        .mockImplementation(async (_query: unknown, variables: { parentItemId: string; itemName: string }) => {
+          const parentActive = (activeByParent.get(variables.parentItemId) ?? 0) + 1;
+          activeByParent.set(variables.parentItemId, parentActive);
+          peakByParent.set(
+            variables.parentItemId,
+            Math.max(peakByParent.get(variables.parentItemId) ?? 0, parentActive),
+          );
+          active++;
+          peak = Math.max(peak, active);
+
+          await new Promise((resolve) => setTimeout(resolve, 5));
+
+          active--;
+          activeByParent.set(variables.parentItemId, parentActive - 1);
+          return subitemResponse(variables.itemName, variables.itemName, variables.parentItemId);
+        });
+
+      const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
+      const items = Array.from({ length: 20 }, (_, index) => ({
+        name: `subitem-${index}`,
+        parentItemId: index < 10 ? 901 : 902,
+        columnValues: '{}',
+      }));
+
+      const result = await tool.execute({ items });
+
+      expect(peakByParent.get('901')).toBe(PER_PARENT_CONCURRENCY_LIMIT);
+      expect(peakByParent.get('902')).toBe(PER_PARENT_CONCURRENCY_LIMIT);
+      expect(peak).toBe(PER_PARENT_CONCURRENCY_LIMIT * 2);
+      expect(result.content).toMatchObject({
+        summary: { total: 20, created: 20, failed: 0 },
+      });
+    });
+  });
+
   describe('Error passthrough', () => {
     it('passes through the underlying error message verbatim in results[i].error', async () => {
       const graphqlError = new Error('GraphQL Error');
@@ -291,6 +352,62 @@ describe('Create Items Tool Behaviour', () => {
           message:
             'Cannot specify both parentItemId and duplicateFromItemId. Please provide only one of these parameters.',
           path: ['results', 1],
+        },
+      ]);
+    });
+
+    it('adds retry guidance for the item-link counter limit without changing error details', async () => {
+      mocks.setError(
+        columnValueError('Item link max locks exceeded', {
+          column_validation_error_code: 'itemLinkMaxLocksExceeded',
+        }),
+      );
+
+      const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
+      const result = await tool.execute({
+        items: [{ name: 'A', parentItemId: 901, columnValues: '{}' }],
+      });
+      const content = result.content as {
+        results: Array<{ error: string }>;
+        errors: Array<Record<string, unknown>>;
+      };
+
+      expect(content.results[0].error).toContain(
+        'Wait a few seconds, then retry only the failed items in one create_items call.',
+      );
+      expect(content.errors).toEqual([
+        {
+          code: 'ColumnValueException',
+          status_code: 200,
+          error_data: { column_validation_error_code: 'itemLinkMaxLocksExceeded' },
+          message: 'Item link max locks exceeded',
+          path: ['results', 0],
+        },
+      ]);
+    });
+
+    it('adds retry guidance for the current parent subitems lock without changing error details', async () => {
+      mocks.setError(columnValueError("failed to acquire lock on '901|subitems__1'", {}));
+
+      const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
+      const result = await tool.execute({
+        items: [{ name: 'A', parentItemId: 901, columnValues: '{}' }],
+      });
+      const content = result.content as {
+        results: Array<{ error: string }>;
+        errors: Array<Record<string, unknown>>;
+      };
+
+      expect(content.results[0].error).toContain(
+        'Wait a few seconds, then retry only the failed items in one create_items call.',
+      );
+      expect(content.errors).toEqual([
+        {
+          code: 'ColumnValueException',
+          status_code: 200,
+          error_data: {},
+          message: "failed to acquire lock on '901|subitems__1'",
+          path: ['results', 0],
         },
       ]);
     });
@@ -501,6 +618,16 @@ describe('Create Items Tool Behaviour', () => {
         { code: 'MISSING_REQUIRED_PARAMETER', message: 'Item name is required', path: ['results', 2] },
       ]);
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Description', () => {
+    it('tells callers to keep one parent in one non-parallel call', () => {
+      const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
+
+      expect(tool.getDescription()).toContain(
+        'include all of them in one create_items call and do not run parallel create_items calls for that parent',
+      );
     });
   });
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.75.2
+
+### Reduce subitem lock contention
+
+- `create_items` now keeps at most five subitem creates in flight per parent while retaining the overall concurrency limit of 15 across different parents and regular items.
+- Parent lock failures tell callers to wait and retry only the failed items. The tool description also directs callers to keep one parent's subitems in one non-parallel call.
+
 ## 5.75.1
 
 ### Report bulk operation outcomes consistently

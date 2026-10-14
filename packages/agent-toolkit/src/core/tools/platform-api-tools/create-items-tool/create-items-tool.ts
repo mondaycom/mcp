@@ -9,7 +9,12 @@ import {
   MISSING_REQUIRED_PARAMETER_CODE,
 } from '../../../../utils';
 import { getBulkOperationOutcome } from '../../../../utils/bulk-operation.utils';
-import { MAX_ITEMS_PER_CALL, CONCURRENCY_LIMIT, RATE_LIMIT_SKIPPED_CODE } from './constants';
+import {
+  MAX_ITEMS_PER_CALL,
+  CONCURRENCY_LIMIT,
+  PER_PARENT_CONCURRENCY_LIMIT,
+  RATE_LIMIT_SKIPPED_CODE,
+} from './constants';
 
 type PerItemResult =
   | { index: number; error: string; _errorEntry: Record<string, unknown>; [k: string]: unknown }
@@ -85,6 +90,7 @@ export class CreateItemsTool extends BaseMondayApiTool<CreateItemsToolInput> {
   getDescription(): string {
     return (
       `Create up to ${MAX_ITEMS_PER_CALL} new items in a single call. Each item is fully independent - it chooses its own groupId, parentItemId (for subitems), duplicateFromItemId (for bulk templating from an existing item), and createLabelsIfMissing. A single call can therefore span multiple groups, mix regular items with subitems under different parents, and mix fresh creates with duplicates of existing items. Each item returns its own item_id and item_url on success, or a raw error message on failure. ` +
+      'When creating multiple subitems under one parent, include all of them in one create_items call and do not run parallel create_items calls for that parent. ' +
       "[REQUIRED PRECONDITION]: Before using this tool, if new columns were added to the board or if you are not familiar with the board's structure (column IDs, column types, status labels, etc.), first use get_board_info with filters.columns.only to get column metadata without fetching views. This is essential for constructing proper column values and knowing which columns are available."
     );
   }
@@ -128,6 +134,10 @@ export class CreateItemsTool extends BaseMondayApiTool<CreateItemsToolInput> {
 
     const raw = await runWithRateLimitCircuit(tasks, {
       limit: CONCURRENCY_LIMIT,
+      concurrencyGroups: {
+        getGroup: (index) => input.items[index].parentItemId,
+        limitPerGroup: PER_PARENT_CONCURRENCY_LIMIT,
+      },
       onSkipped: (index) => ({
         index,
         error: skipMessage,
@@ -135,7 +145,7 @@ export class CreateItemsTool extends BaseMondayApiTool<CreateItemsToolInput> {
       }),
       onError: (error, index) => ({
         index,
-        error: error instanceof Error ? error.message : String(error),
+        error: formatPerItemError(error, input.items[index].parentItemId),
         _errorEntry: extractErrorEntry(error, index),
       }),
     });
@@ -165,14 +175,51 @@ export class CreateItemsTool extends BaseMondayApiTool<CreateItemsToolInput> {
   }
 }
 
-function extractErrorEntry(error: unknown, index: number): Record<string, unknown> {
-  const gqlEntry = (
+type GraphQLErrorEntry = {
+  message?: string;
+  extensions?: Record<string, unknown>;
+};
+
+function getGraphQLErrorEntry(error: unknown): GraphQLErrorEntry | undefined {
+  return (
     error as {
       response?: {
-        errors?: Array<{ message?: string; extensions?: Record<string, unknown> }>;
+        errors?: GraphQLErrorEntry[];
       };
     }
   )?.response?.errors?.[0];
+}
+
+function formatPerItemError(error: unknown, parentItemId?: number): string {
+  const message = error instanceof Error ? error.message : String(error);
+  if (parentItemId === undefined || !isParentSubitemLockError(error, parentItemId)) {
+    return message;
+  }
+
+  return `${message}\nToo many subitems are being created under this parent at once. Wait a few seconds, then retry only the failed items in one create_items call.`;
+}
+
+function isParentSubitemLockError(error: unknown, parentItemId: number): boolean {
+  const gqlEntry = getGraphQLErrorEntry(error);
+  const errorData = gqlEntry?.extensions?.error_data;
+  if (
+    typeof errorData === 'object' &&
+    errorData !== null &&
+    'column_validation_error_code' in errorData &&
+    errorData.column_validation_error_code === 'itemLinkMaxLocksExceeded'
+  ) {
+    return true;
+  }
+
+  const expectedPrefix = `failed to acquire lock on '${parentItemId}|subitems__`;
+  return (
+    gqlEntry?.extensions?.code === 'ColumnValueException' &&
+    gqlEntry.message?.toLowerCase().startsWith(expectedPrefix.toLowerCase()) === true
+  );
+}
+
+function extractErrorEntry(error: unknown, index: number): Record<string, unknown> {
+  const gqlEntry = getGraphQLErrorEntry(error);
   const rawMessage = error instanceof Error ? error.message : String(error);
   return {
     ...(error instanceof ToolValidationError ? { code: error.code } : {}),
