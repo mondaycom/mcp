@@ -88,12 +88,14 @@ export const readDocsToolSchema = {
   ),
   board_id: z
     .string()
+    .min(1)
     .optional()
     .describe(
       'For docs that live as a board view: the <board_id> in https://<slug>.monday.com/boards/<board_id>/views/<view_id>. Use this instead of type/ids when all you have is a board view URL. Only used in content mode.',
     ),
   view_id: z
     .string()
+    .min(1)
     .optional()
     .describe(
       'For a doc that lives as a board view: the <view_id> in https://<slug>.monday.com/boards/<board_id>/views/<view_id>. Requires board_id. Omit to read every doc view of the board.',
