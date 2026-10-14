@@ -373,7 +373,7 @@ describe('Create Items Tool Behaviour', () => {
       };
 
       expect(content.results[0].error).toContain(
-        'Wait a few seconds, then retry only the failed items in one create_items call.',
+        'An item-link update hit a temporary concurrency limit. Wait a few seconds, then retry only the failed items in one create_items call.',
       );
       expect(content.errors).toEqual([
         {
@@ -399,7 +399,7 @@ describe('Create Items Tool Behaviour', () => {
       };
 
       expect(content.results[0].error).toContain(
-        'Wait a few seconds, then retry only the failed items in one create_items call.',
+        'An item-link update hit a temporary concurrency limit. Wait a few seconds, then retry only the failed items in one create_items call.',
       );
       expect(content.errors).toEqual([
         {

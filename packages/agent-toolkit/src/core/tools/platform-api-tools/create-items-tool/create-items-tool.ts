@@ -196,7 +196,7 @@ function formatPerItemErrorMessage(error: unknown, parentItemId?: number): strin
     return message;
   }
 
-  return `${message}\nToo many subitems are being created under this parent at once. Wait a few seconds, then retry only the failed items in one create_items call.`;
+  return `${message}\nAn item-link update hit a temporary concurrency limit. Wait a few seconds, then retry only the failed items in one create_items call.`;
 }
 
 function isParentSubitemLockError(error: unknown, parentItemId: number): boolean {
