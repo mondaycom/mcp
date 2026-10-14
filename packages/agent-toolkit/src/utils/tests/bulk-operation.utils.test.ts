@@ -1,6 +1,6 @@
-import { recordBulkOperationOutcome } from '../bulk-operation.utils';
+import { getBulkOperationOutcome } from '../bulk-operation.utils';
 
-describe('recordBulkOperationOutcome', () => {
+describe('getBulkOperationOutcome', () => {
   it.each([
     [0, 'success', false, false],
     [1, 'partial', true, false],
@@ -8,18 +8,14 @@ describe('recordBulkOperationOutcome', () => {
   ] as const)(
     'records failed=%i as %s',
     (failed, outcome, isPartialSuccess, isError) => {
-      const sessionContext = { metadata: { existing: true } };
-
-      expect(recordBulkOperationOutcome(sessionContext, 3, failed)).toEqual({
-        outcome,
+      expect(getBulkOperationOutcome(3, failed)).toEqual({
+        metadata: {
+          items_count: 3,
+          items_failed: failed,
+          outcome,
+        },
         isPartialSuccess,
         isError,
-      });
-      expect(sessionContext.metadata).toEqual({
-        existing: true,
-        items_count: 3,
-        items_failed: failed,
-        outcome,
       });
     },
   );

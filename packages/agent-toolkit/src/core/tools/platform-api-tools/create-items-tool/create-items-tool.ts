@@ -7,8 +7,8 @@ import {
   runWithRateLimitCircuit,
   ToolValidationError,
   MISSING_REQUIRED_PARAMETER_CODE,
-  recordBulkOperationOutcome,
 } from '../../../../utils';
+import { getBulkOperationOutcome } from '../../../../utils/bulk-operation.utils';
 import { MAX_ITEMS_PER_CALL, CONCURRENCY_LIMIT, RATE_LIMIT_SKIPPED_CODE } from './constants';
 
 type PerItemResult =
@@ -147,7 +147,8 @@ export class CreateItemsTool extends BaseMondayApiTool<CreateItemsToolInput> {
     const results = raw.map(({ _errorEntry, ...rest }) => rest);
     const total = raw.length;
     const failed = errors.length;
-    const { isPartialSuccess, isError } = recordBulkOperationOutcome(this.sessionContext, total, failed);
+    const { metadata, isPartialSuccess, isError } = getBulkOperationOutcome(total, failed);
+    this.sessionContext.metadata = { ...this.sessionContext.metadata, ...metadata };
 
     const content: Record<string, unknown> = {
       board_id: boardId,

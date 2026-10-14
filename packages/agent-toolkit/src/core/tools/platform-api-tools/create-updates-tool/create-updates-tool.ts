@@ -6,8 +6,8 @@ import {
   runWithRateLimitCircuit,
   ToolValidationError,
   GRAPHQL_ERROR_CODE,
-  recordBulkOperationOutcome,
 } from '../../../../utils';
+import { getBulkOperationOutcome } from '../../../../utils/bulk-operation.utils';
 import { MAX_UPDATES_PER_CALL, CONCURRENCY_LIMIT, RATE_LIMIT_SKIPPED_CODE } from './constants';
 
 type PerUpdateResult =
@@ -74,7 +74,8 @@ export class CreateUpdatesTool extends BaseMondayApiTool<typeof createUpdatesToo
     const results = raw.map(({ _errorEntry, ...rest }) => rest);
     const total = raw.length;
     const failed = errors.length;
-    const { isPartialSuccess, isError } = recordBulkOperationOutcome(this.sessionContext, total, failed);
+    const { metadata, isPartialSuccess, isError } = getBulkOperationOutcome(total, failed);
+    this.sessionContext.metadata = { ...this.sessionContext.metadata, ...metadata };
 
     const content: Record<string, unknown> = {
       summary: { total, created: total - failed, failed },

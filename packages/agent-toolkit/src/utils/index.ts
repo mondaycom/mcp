@@ -25,5 +25,3 @@ export {
 } from './error.utils';
 export { runWithConcurrency, runWithRateLimitCircuit } from './concurrency.utils';
 export type { RateLimitCircuitOptions } from './concurrency.utils';
-export { recordBulkOperationOutcome } from './bulk-operation.utils';
-export type { BulkOperationOutcome } from './bulk-operation.utils';

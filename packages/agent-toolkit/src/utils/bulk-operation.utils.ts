@@ -1,21 +1,21 @@
-import type { SessionContext } from '../core/executable';
-
 export type BulkOperationOutcome = 'success' | 'partial' | 'failed';
 
-export function recordBulkOperationOutcome(
-  sessionContext: SessionContext,
+export function getBulkOperationOutcome(
   total: number,
   failed: number,
-): { outcome: BulkOperationOutcome; isPartialSuccess: boolean; isError: boolean } {
+): {
+  metadata: { items_count: number; items_failed: number; outcome: BulkOperationOutcome };
+  isPartialSuccess: boolean;
+  isError: boolean;
+} {
   const outcome: BulkOperationOutcome = failed === 0 ? 'success' : failed === total ? 'failed' : 'partial';
 
-  sessionContext.metadata ??= {};
-  sessionContext.metadata.items_count = total;
-  sessionContext.metadata.items_failed = failed;
-  sessionContext.metadata.outcome = outcome;
-
   return {
-    outcome,
+    metadata: {
+      items_count: total,
+      items_failed: failed,
+      outcome,
+    },
     isPartialSuccess: outcome === 'partial',
     isError: outcome === 'failed',
   };
