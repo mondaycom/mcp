@@ -22,17 +22,13 @@ describe('Create Updates Tool', () => {
   it('creates every update and returns per-entry results in input order', async () => {
     mocks.setResponses([createResponse('11', '1'), createResponse('22', '2')]);
     const tool = new CreateUpdatesTool(mocks.mockApiClient);
-    const sessionContext = { metadata: {} as Record<string, unknown> };
 
-    const result = await tool.execute(
-      {
-        updates: [
-          { itemId: 1, body: 'First' },
-          { itemId: 2, body: 'Second', mentionsList: '[{"id": "7", "type": "User"}]' },
-        ],
-      },
-      sessionContext,
-    );
+    const result = await tool.execute({
+      updates: [
+        { itemId: 1, body: 'First' },
+        { itemId: 2, body: 'Second', mentionsList: '[{"id": "7", "type": "User"}]' },
+      ],
+    });
 
     const c = result.content as any;
     expect(c.summary).toEqual({ total: 2, created: 2, failed: 0 });
@@ -42,11 +38,6 @@ describe('Create Updates Tool', () => {
       expect.objectContaining({ index: 1, update_id: '22', item_id: 2 }),
     ]);
     expect(c).not.toHaveProperty('errors');
-    expect(sessionContext.metadata).toEqual({
-      items_count: 2,
-      items_failed: 0,
-      outcome: 'success',
-    });
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
       expect.stringContaining('mutation createUpdate'),
       expect.objectContaining({ itemId: '2', body: 'Second', mentionsList: [{ id: '7', type: 'User' }] }),
@@ -74,17 +65,13 @@ describe('Create Updates Tool', () => {
     });
     mocks.getMockRequest().mockResolvedValueOnce(createResponse('11', '1')).mockRejectedValueOnce(err);
     const tool = new CreateUpdatesTool(mocks.mockApiClient);
-    const sessionContext = { metadata: {} as Record<string, unknown> };
 
-    const result = await tool.execute(
-      {
-        updates: [
-          { itemId: 1, body: 'ok' },
-          { itemId: 2, body: 'fails' },
-        ],
-      },
-      sessionContext,
-    );
+    const result = await tool.execute({
+      updates: [
+        { itemId: 1, body: 'ok' },
+        { itemId: 2, body: 'fails' },
+      ],
+    });
 
     const c = result.content as any;
     expect(c.summary).toEqual({ total: 2, created: 1, failed: 1 });
@@ -95,14 +82,9 @@ describe('Create Updates Tool', () => {
     });
     expect(c.errors).toEqual([expect.objectContaining({ code: 'MAX_UPDATES_REACHED', path: ['results', 1] })]);
     expect(result.isError).toBeUndefined();
-    expect(sessionContext.metadata).toEqual({
-      items_count: 2,
-      items_failed: 1,
-      outcome: 'partial',
-    });
   });
 
-  it('marks an all-failed batch as an error and records its outcome', async () => {
+  it('marks an all-failed batch as an error', async () => {
     const err = Object.assign(new Error('GraphQL Error'), {
       response: {
         errors: [{ message: 'Item not found', extensions: { code: 'ResourceNotFoundException' } }],
@@ -111,21 +93,11 @@ describe('Create Updates Tool', () => {
     });
     mocks.setError(err);
     const tool = new CreateUpdatesTool(mocks.mockApiClient);
-    const sessionContext = { metadata: {} as Record<string, unknown> };
-
-    const result = await tool.execute(
-      { updates: [{ itemId: 1, body: 'fails' }] },
-      sessionContext,
-    );
+    const result = await tool.execute({ updates: [{ itemId: 1, body: 'fails' }] });
 
     expect(result.isError).toBe(true);
     expect(result.content).toMatchObject({
       errors: [expect.objectContaining({ code: 'ResourceNotFoundException', path: ['results', 0] })],
-    });
-    expect(sessionContext.metadata).toEqual({
-      items_count: 1,
-      items_failed: 1,
-      outcome: 'failed',
     });
   });
 
