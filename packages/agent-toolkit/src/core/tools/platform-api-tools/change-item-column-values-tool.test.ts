@@ -106,4 +106,41 @@ describe('ChangeItemColumnValuesTool', () => {
       });
     });
   });
+
+  describe('board lookup', () => {
+    it('looks up the item board when no boardId is given', async () => {
+      mocks.getMockRequest().mockImplementation(async (query: string, variables: any) =>
+        query.includes('GetItemBoardId')
+          ? { items: [{ board: { id: '777' } }] }
+          : { change_multiple_column_values: { id: variables.itemId, name: 'Item', url: 'u', column_values: [] } },
+      );
+      const tool = new ChangeItemColumnValuesTool(mocks.mockApiClient);
+
+      await tool.execute({ itemId: 5, columnValues: '{"text":"a"}' } as any);
+
+      const calls = mocks.getMockRequest().mock.calls;
+      expect(calls[0][0]).toContain('query GetItemBoardId');
+      expect(calls[0][1]).toEqual({ itemId: '5' });
+      expect(calls[1][1]).toMatchObject({ boardId: '777', itemId: '5' });
+    });
+
+    it('fails with a missing-parameter error when the item has no board', async () => {
+      mocks.setResponse({ items: [] });
+      const tool = new ChangeItemColumnValuesTool(mocks.mockApiClient);
+
+      await expect(tool.execute({ itemId: 5, columnValues: '{"text":"a"}' } as any)).rejects.toMatchObject({
+        code: 'MISSING_REQUIRED_PARAMETER',
+        message: 'Could not find the board of item 5. Set boardId.',
+      });
+    });
+
+    it('does not look up the board when boardId is given', async () => {
+      mocks.setResponse({ change_multiple_column_values: { id: '5', name: 'Item', url: 'u', column_values: [] } });
+      const tool = new ChangeItemColumnValuesTool(mocks.mockApiClient);
+
+      await tool.execute({ boardId: 9, itemId: 5, columnValues: '{"text":"a"}' } as any);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+    });
+  });
 });

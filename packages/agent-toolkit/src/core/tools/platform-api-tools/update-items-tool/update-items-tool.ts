@@ -10,8 +10,6 @@ import {
   MISSING_REQUIRED_PARAMETER_CODE,
 } from '../../../../utils';
 import { MAX_UPDATES_PER_CALL, CONCURRENCY_LIMIT, RATE_LIMIT_SKIPPED_CODE } from './constants';
-import { getItemsBoardIds } from './update-items.graphql';
-import { GetItemsBoardIdsQuery } from '../../../../monday-graphql/generated/graphql/graphql';
 
 type PerUpdateResult =
   | { index: number; error: string; _errorEntry: Record<string, unknown>; [k: string]: unknown }
@@ -114,29 +112,12 @@ export class UpdateItemsTool extends BaseMondayApiTool<UpdateItemsToolInput> {
     const defaultBoardId =
       this.context?.boardId ?? (input as ToolInputType<typeof updateItemsInBoardToolSchema>).boardId;
 
-    const resolvedBoardIds: Array<number | undefined> = input.updates.map(
-      (update) => update.boardId ?? defaultBoardId,
-    );
-    const unresolvedItemIds = input.updates
-      .filter((_, index) => resolvedBoardIds[index] == null)
-      .map((update) => update.itemId as number);
-    const boardIdsByItemId =
-      unresolvedItemIds.length > 0 ? await this.lookUpBoardIds(unresolvedItemIds) : new Map<number, number>();
-    input.updates.forEach((update, index) => {
-      resolvedBoardIds[index] ??= boardIdsByItemId.get(update.itemId as number);
-    });
 
     const skipMessage = 'Skipped: a previous update hit the minute rate limit, this update was not attempted';
 
     const singleTool = new ChangeItemColumnValuesTool(this.mondayApi);
     const tasks = input.updates.map((update, index) => async (): Promise<PerUpdateResult> => {
-      const boardId = resolvedBoardIds[index];
-      if (boardId == null) {
-        throw new ToolValidationError(
-          `Could not find the board of item ${update.itemId}. Set boardId on this update.`,
-          MISSING_REQUIRED_PARAMETER_CODE,
-        );
-      }
+      const boardId = update.boardId ?? defaultBoardId;
       const result = await singleTool.execute({
         boardId,
         itemId: update.itemId as number,
@@ -177,21 +158,6 @@ export class UpdateItemsTool extends BaseMondayApiTool<UpdateItemsToolInput> {
     }
 
     return { content };
-  }
-
-  private async lookUpBoardIds(itemIds: number[]): Promise<Map<number, number>> {
-    const uniqueItemIds = [...new Set(itemIds)];
-    const res = await this.mondayApi.request<GetItemsBoardIdsQuery>(getItemsBoardIds, {
-      itemIds: uniqueItemIds.map(String),
-      limit: uniqueItemIds.length,
-    });
-    const boardIdsByItemId = new Map<number, number>();
-    for (const item of res.items ?? []) {
-      if (item?.board?.id) {
-        boardIdsByItemId.set(Number(item.id), Number(item.board.id));
-      }
-    }
-    return boardIdsByItemId;
   }
 }
 

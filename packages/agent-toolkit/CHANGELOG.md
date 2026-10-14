@@ -2,10 +2,11 @@
 
 ## 5.76.0
 
-### `update_items` looks up the board when no `boardId` is given
+### `change_item_column_values` and `update_items` look up the board when no `boardId` is given
 
-- When an update has no `boardId`, and there's no batch `boardId` or board in context, the tool looks up the board of those items in one query and then applies the updates. Before, the whole call was rejected with "Missing boardId".
-- An item the lookup can't find fails as its own entry (`MISSING_REQUIRED_PARAMETER`), and the other entries still apply.
+- `change_item_column_values` looks up the item's board when it gets no `boardId` and there's no board in context, then makes the change. The API mutation requires `board_id`.
+- `update_items` sends every entry through that tool, so an update with no `boardId` (and no batch `boardId` or board in context) now gets its board the same way. Before, the whole `update_items` call was rejected with "Missing boardId".
+- An item whose board can't be found fails as its own entry (`MISSING_REQUIRED_PARAMETER`), and the other entries still apply.
 - There's no extra query when a `boardId` is available.
 
 ## 5.75.0

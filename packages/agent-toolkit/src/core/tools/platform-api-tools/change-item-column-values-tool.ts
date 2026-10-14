@@ -2,11 +2,12 @@ import { z } from 'zod';
 import {
   ChangeItemColumnValuesMutation,
   ChangeItemColumnValuesMutationVariables,
+  GetItemBoardIdQuery,
 } from 'src/monday-graphql/generated/graphql/graphql';
-import { changeItemColumnValues } from '../../../monday-graphql/queries.graphql';
+import { changeItemColumnValues, getItemBoardId } from '../../../monday-graphql/queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
-import { ToolValidationError, rethrowWithContext } from '../../../utils';
+import { MISSING_REQUIRED_PARAMETER_CODE, ToolValidationError, rethrowWithContext } from '../../../utils';
 import { COLUMN_VALUES_FORMAT_GUIDE, unwrapDoubleEncodedColumnValues } from './column-values.utils';
 
 export const changeItemColumnValuesToolSchema = {
@@ -65,7 +66,9 @@ export class ChangeItemColumnValuesTool extends BaseMondayApiTool<ChangeItemColu
     input: ToolInputType<ChangeItemColumnValuesToolInput>,
   ): Promise<ToolOutputType<never>> {
     const boardId =
-      this.context?.boardId ?? (input as ToolInputType<typeof changeItemColumnValuesInBoardToolSchema>).boardId;
+      this.context?.boardId ??
+      (input as ToolInputType<typeof changeItemColumnValuesInBoardToolSchema>).boardId ??
+      (await this.lookUpBoardId(input.itemId));
     const columnValues = unwrapDoubleEncodedColumnValues(input.columnValues);
     const variables: ChangeItemColumnValuesMutationVariables = {
       boardId: boardId.toString(),
@@ -122,5 +125,18 @@ export class ChangeItemColumnValuesTool extends BaseMondayApiTool<ChangeItemColu
         column_values: updatedColumnValues,
       },
     };
+  }
+
+  // The mutation requires board_id, so a caller that only knows the item gets its board looked up.
+  private async lookUpBoardId(itemId: number): Promise<number> {
+    const res = await this.mondayApi.request<GetItemBoardIdQuery>(getItemBoardId, { itemId: itemId.toString() });
+    const boardId = res.items?.[0]?.board?.id;
+    if (!boardId) {
+      throw new ToolValidationError(
+        `Could not find the board of item ${itemId}. Set boardId.`,
+        MISSING_REQUIRED_PARAMETER_CODE,
+      );
+    }
+    return Number(boardId);
   }
 }
