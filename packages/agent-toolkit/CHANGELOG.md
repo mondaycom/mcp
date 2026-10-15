@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.75.2
+
+### `get_updates` accepts `objectId` again
+
+- `objectId` is back as an optional alias: a single ID, treated as `objectIds: [objectId]`. Clients that cache tool schemas kept sending `objectId` after 5.75.0 removed it, and those calls were rejected before reaching the tool.
+- `objectIds` is optional again. Both can be sent and are merged, up to 25 IDs. A call with neither gets an `INVALID_TOOL_ARGS` validation error.
+
 ## 5.75.1
 
 ### `fetch_file_content` reads .xlsx files without stalling
