@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.75.1
+
+### `fetch_file_content` parses Excel files in a worker thread
+
+- `.xlsx` files are parsed in a worker thread with a 30 second timeout and a 512 MB heap limit. ExcelJS parses synchronously, and some workbooks under the 10 MB download limit took minutes, blocking the host's event loop and every other request it was serving. A file that hits either limit returns `Failed to fetch file content: ...` instead.
+
 ## 5.75.0
 
 ### `get_updates` takes ids only in `objectIds`

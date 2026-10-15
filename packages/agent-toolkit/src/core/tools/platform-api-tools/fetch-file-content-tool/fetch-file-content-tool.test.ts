@@ -298,6 +298,40 @@ describe('FetchFileContentTool', () => {
     expect(String(firstFile(result.content).text)).toContain('col_a');
   });
 
+  it('extracts dates, formula results, rich text and hyperlinks from Excel cells', async () => {
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('Mixed');
+    sheet.addRow([
+      new Date(Date.UTC(2026, 0, 2)),
+      { formula: '1+1', result: 2 },
+      { richText: [{ text: 'a' }, { font: { bold: true }, text: 'b' }] },
+      { text: 'site', hyperlink: 'https://example.com' },
+      true,
+    ]);
+    const xlsxBuf = Buffer.from(await workbook.xlsx.writeBuffer());
+    mocks.setResponse(
+      assetsGraphqlResponse([{ public_url: 'https://x/m.xlsx', name: 'm.xlsx', file_extension: 'xlsx' }]),
+    );
+    fetchMock.mockResolvedValue(createMockFetchResponse({ body: xlsxBuf, contentLength: String(xlsxBuf.length) }));
+
+    const tool = new FetchFileContentTool(mocks.mockApiClient);
+    const result = await tool.execute({ item_id: '1', column_id: 'files' });
+
+    expect(firstFile(result.content).text).toBe('=== Sheet: Mixed ===\n2026-01-02T00:00:00.000Z,2,ab,site,true');
+  });
+
+  it('returns an error message when the Excel file cannot be parsed', async () => {
+    mocks.setResponse(
+      assetsGraphqlResponse([{ public_url: 'https://x/bad.xlsx', name: 'bad.xlsx', file_extension: 'xlsx' }]),
+    );
+    fetchMock.mockResolvedValue(createMockFetchResponse({ body: 'not a zip', contentLength: '9' }));
+
+    const tool = new FetchFileContentTool(mocks.mockApiClient);
+    const result = await tool.execute({ item_id: '1', column_id: 'files' });
+
+    expect(String(firstFile(result.content).message)).toMatch(/^Failed to fetch file content: /);
+  });
+
   it('treats unknown extensions as utf-8 with content_type unknown', async () => {
     mocks.setResponse(
       assetsGraphqlResponse([{ public_url: 'https://x/f.xyz', name: 'f.xyz', file_extension: 'xyz' }]),

@@ -1,6 +1,6 @@
+import { Worker } from 'worker_threads';
 import { z } from 'zod';
 import mammoth from 'mammoth';
-import ExcelJS from 'exceljs';
 import { getDocumentProxy, extractText } from 'unpdf';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
@@ -8,6 +8,8 @@ import { getItemAssets } from './fetch-file-content-tool.graphql';
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 const MAX_TEXT_LENGTH = 50_000;
+const EXCEL_PARSE_TIMEOUT_MS = 30_000;
+const EXCEL_PARSE_MAX_HEAP_MB = 512;
 
 const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.ico']);
 const PDF_EXTENSIONS = new Set(['.pdf']);
@@ -118,31 +120,64 @@ async function extractTextFromWord(buffer: Buffer): Promise<string> {
   return result.value;
 }
 
-function cellToString(value: ExcelJS.CellValue): string {
+// ExcelJS parses synchronously, and some workbooks take minutes. In a worker it can be terminated
+// and cannot block the event loop or exhaust the host's heap.
+const EXCEL_WORKER_SOURCE = `
+const { parentPort, workerData } = require('worker_threads');
+const ExcelJS = require(workerData.exceljsPath);
+
+function cellToString(value) {
   if (value === null || value === undefined) return '';
   if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'string') return String(value);
   if (value instanceof Date) return value.toISOString();
   if (typeof value === 'object') {
-    if ('result' in value) return cellToString((value as ExcelJS.CellFormulaValue).result as ExcelJS.CellValue);
-    if ('richText' in value) return (value as ExcelJS.CellRichTextValue).richText.map((r) => r.text).join('');
-    if ('hyperlink' in value) return (value as ExcelJS.CellHyperlinkValue).text ?? '';
+    if ('result' in value) return cellToString(value.result);
+    if ('richText' in value) return value.richText.map((r) => r.text).join('');
+    if ('hyperlink' in value) return value.text ?? '';
   }
   return '';
 }
 
-async function extractTextFromExcel(buffer: Buffer): Promise<string> {
+(async () => {
   const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.load(buffer);
-  const parts: string[] = [];
+  await workbook.xlsx.load(workerData.buffer);
+  const parts = [];
   workbook.eachSheet((sheet) => {
-    const rows: string[] = [];
+    const rows = [];
     sheet.eachRow((row) => {
-      const values = (row.values as ExcelJS.CellValue[]).slice(1);
-      rows.push(values.map(cellToString).join(','));
+      rows.push(row.values.slice(1).map(cellToString).join(','));
     });
-    parts.push(`=== Sheet: ${sheet.name} ===\n${rows.join('\n')}`);
+    parts.push('=== Sheet: ' + sheet.name + ' ===\\n' + rows.join('\\n'));
   });
-  return parts.join('\n\n');
+  parentPort.postMessage(parts.join('\\n\\n'));
+})();
+`;
+
+function extractTextFromExcel(buffer: Buffer): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(EXCEL_WORKER_SOURCE, {
+      eval: true,
+      workerData: { buffer, exceljsPath: require.resolve('exceljs') },
+      resourceLimits: { maxOldGenerationSizeMb: EXCEL_PARSE_MAX_HEAP_MB },
+    });
+    const timer = setTimeout(() => {
+      void worker.terminate();
+      reject(new Error(`Excel parsing timed out after ${EXCEL_PARSE_TIMEOUT_MS / 1000}s`));
+    }, EXCEL_PARSE_TIMEOUT_MS);
+    worker.once('message', (text: string) => {
+      clearTimeout(timer);
+      void worker.terminate();
+      resolve(text);
+    });
+    worker.once('error', (err) => {
+      clearTimeout(timer);
+      reject(err);
+    });
+    worker.once('exit', (code) => {
+      clearTimeout(timer);
+      reject(new Error(`Excel parser exited with code ${code}`));
+    });
+  });
 }
 
 async function processAsset(asset: Asset, offset: number, fileNameHint?: string): Promise<Record<string, unknown>> {
