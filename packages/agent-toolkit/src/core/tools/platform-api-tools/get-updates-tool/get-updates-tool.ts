@@ -16,10 +16,12 @@ export const DEFAULT_LIMIT = 25;
 export const DEFAULT_LIMIT_PER_ITEM = 10;
 
 export const getUpdatesToolSchema = {
+  objectId: z.string().optional().describe('Deprecated: use objectIds instead.'),
   objectIds: z
     .array(z.string())
     .min(1)
     .max(MAX_OBJECT_IDS)
+    .optional()
     .describe(
       `The IDs to get updates from. For Item, up to ${MAX_OBJECT_IDS} item IDs in one call, with limit and page applied to each item. For Board, exactly one board ID.`,
     ),
@@ -69,6 +71,19 @@ export const getUpdatesToolSchema = {
     ),
 };
 
+function resolveObjectIds(input: ToolInputType<typeof getUpdatesToolSchema>): string[] {
+  if (input.objectId !== undefined && input.objectIds !== undefined) {
+    throw new ToolValidationError('Pass the IDs in objectIds only; objectId is deprecated', INVALID_TOOL_ARGS_CODE);
+  }
+  if (input.objectIds !== undefined) {
+    return input.objectIds;
+  }
+  if (input.objectId !== undefined) {
+    return [input.objectId];
+  }
+  throw new ToolValidationError('objectIds is required: pass the IDs to get updates from', INVALID_TOOL_ARGS_CODE);
+}
+
 function normalizeToISO8601DateTime(date: string, endOfDay = false): string {
   if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     return endOfDay ? `${date}T23:59:59Z` : `${date}T00:00:00Z`;
@@ -115,6 +130,7 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
 
   protected async executeInternal(input: ToolInputType<typeof getUpdatesToolSchema>): Promise<ToolOutputType<never>> {
     try {
+      const objectIds = resolveObjectIds(input);
       const hasFromDate = input.fromDate !== undefined;
       const hasToDate = input.toDate !== undefined;
 
@@ -125,7 +141,7 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
         );
       }
 
-      if (input.objectType === UpdateObjectType.Board && input.objectIds.length !== 1) {
+      if (input.objectType === UpdateObjectType.Board && objectIds.length !== 1) {
         throw new ToolValidationError('Board queries take exactly one board ID in objectIds', INVALID_TOOL_ARGS_CODE);
       }
 
@@ -138,16 +154,16 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
       };
 
       if (input.objectType === UpdateObjectType.Item) {
-        const limit = input.limit ?? (input.objectIds.length > 1 ? DEFAULT_LIMIT_PER_ITEM : DEFAULT_LIMIT);
+        const limit = input.limit ?? (objectIds.length > 1 ? DEFAULT_LIMIT_PER_ITEM : DEFAULT_LIMIT);
         const res = await this.mondayApi.request<GetItemsUpdatesQuery>(getItemsUpdates, {
           ...variables,
           limit,
-          itemIds: input.objectIds,
-          itemsLimit: input.objectIds.length,
+          itemIds: objectIds,
+          itemsLimit: objectIds.length,
         });
         const items = (res.items ?? []).filter((item): item is NonNullable<typeof item> => !!item);
         const returnedIds = new Set(items.map((item) => item.id));
-        const notFound = input.objectIds.filter((id) => !returnedIds.has(id));
+        const notFound = objectIds.filter((id) => !returnedIds.has(id));
         return {
           content: {
             message: 'Updates retrieved',
@@ -163,7 +179,7 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
         };
       }
 
-      const [boardId] = input.objectIds;
+      const [boardId] = objectIds;
       const limit = input.limit ?? DEFAULT_LIMIT;
       const res = await this.mondayApi.request<GetBoardUpdatesQuery>(getBoardUpdates, {
         ...variables,

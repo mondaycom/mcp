@@ -235,9 +235,10 @@ describe('Get Updates Tool', () => {
     expect(tool.getDescription()).toContain('items');
     expect(tool.getDescription()).toContain('board');
 
-    expect(schema).not.toHaveProperty('objectId');
+    expect(() => schema.objectId.parse('123')).not.toThrow();
+    expect(() => schema.objectId.parse(undefined)).not.toThrow();
     expect(() => schema.objectIds.parse(['123'])).not.toThrow();
-    expect(() => schema.objectIds.parse(undefined)).toThrow();
+    expect(() => schema.objectIds.parse(undefined)).not.toThrow();
     expect(() => schema.objectType.parse('Item')).not.toThrow();
     expect(() => schema.objectType.parse('Board')).not.toThrow();
     expect(() => schema.limit.parse(50)).not.toThrow();
@@ -442,6 +443,70 @@ describe('Get Updates Tool', () => {
     const update = (result.content as any).items[0].updates[0];
     expect(update.text_body).toBe(longText);
     expect(update).not.toHaveProperty('text_body_truncated');
+  });
+
+  describe('deprecated objectId alias', () => {
+    it('Treats objectId alone as a one-item objectIds for an Item query', async () => {
+      mocks.setResponse(mockItemUpdatesResponse);
+      const tool = new GetUpdatesTool(mocks.mockApiClient);
+
+      const result = await tool.execute({ objectId: '123', objectType: 'Item' } as any);
+
+      const content = result.content as any;
+      expect(content.items).toHaveLength(1);
+      expect(content.items[0]).toMatchObject({ item_id: '123', url: 'https://monday.com/items/123', count: 2 });
+      expect(content.pagination).toEqual({ page: 1, limit: 25 });
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query GetItemsUpdates'),
+        expect.objectContaining({ itemIds: ['123'], itemsLimit: 1, limit: 25, page: 1 }),
+      );
+    });
+
+    it('Treats objectId alone as the board ID for a Board query', async () => {
+      mocks.setResponse(mockBoardUpdatesResponse);
+      const tool = new GetUpdatesTool(mocks.mockApiClient);
+
+      const result = await tool.execute({ objectId: '456', objectType: 'Board' } as any);
+
+      const content = result.content as any;
+      expect(content.board_id).toBe('456');
+      expect(content.updates).toHaveLength(1);
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('query GetBoardUpdates'),
+        expect.objectContaining({ boardId: '456', limit: 25, boardUpdatesOnly: true }),
+      );
+    });
+
+    it('Rejects objectId together with objectIds with an INVALID_TOOL_ARGS validation error', async () => {
+      const tool = new GetUpdatesTool(mocks.mockApiClient);
+
+      await expect(
+        tool.execute({ objectId: '123', objectIds: ['123'], objectType: 'Item' } as any),
+      ).rejects.toMatchObject({
+        name: 'ToolValidationError',
+        code: 'INVALID_TOOL_ARGS',
+        message: 'Pass the IDs in objectIds only; objectId is deprecated',
+      });
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+
+    it('Rejects a call with neither objectId nor objectIds with an INVALID_TOOL_ARGS validation error', async () => {
+      const tool = new GetUpdatesTool(mocks.mockApiClient);
+
+      await expect(tool.execute({ objectType: 'Item' } as any)).rejects.toMatchObject({
+        name: 'ToolValidationError',
+        code: 'INVALID_TOOL_ARGS',
+        message: 'objectIds is required: pass the IDs to get updates from',
+      });
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+
+    it('Does not mention objectId in the tool description', () => {
+      const tool = new GetUpdatesTool(mocks.mockApiClient);
+
+      expect(tool.getDescription()).toContain('objectIds');
+      expect(tool.getDescription()).not.toMatch(/objectId(?!s)/);
+    });
   });
 
   it('Does not flag bodies within the limit', async () => {

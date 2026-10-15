@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.75.1
+
+### `get_updates` accepts `objectId` again
+
+- `objectId` is back as an optional, deprecated alias for a single ID. A call with only `objectId` runs as `objectIds: [objectId]`. Clients that still sent `objectId` failed on every call since 5.75.0.
+- `objectIds` is optional in the schema so those calls pass validation, and stays the documented parameter. The tool description does not mention `objectId`.
+- A call with both `objectId` and `objectIds`, or with neither, throws a `ToolValidationError` with code `INVALID_TOOL_ARGS`.
+
 ## 5.75.0
 
 ### `get_updates` takes ids only in `objectIds`
