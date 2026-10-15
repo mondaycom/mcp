@@ -5,7 +5,7 @@
 ### `fetch_file_content` reads .xlsx files without stalling
 
 - Full-column data validations and large merged ranges in a workbook made the full-workbook loader expand them into millions of cells, so a small .xlsx could block the server for minutes. `.xlsx` files are now read with a streaming reader that skips those parts and only reads cell values, with the same cell text as before.
-- Sheets are read straight from the file, without temporary copies on disk.
+- Sheets are read straight from the file, without temporary copies on disk. Workbooks with more than 5,000 zip entries are refused.
 - Reading rows stops at 5,000,000 characters or after 20 seconds of reading, whichever comes first. Trailing empty cells in a row no longer add commas, and rows that only carry formatting are skipped.
 - When extraction stops early, the file result has `extraction_truncated: true` and a `message` saying why; `total_length`, `has_more` and `next_offset` paging work on the text that was read.
 - The streaming reader is behind the `mcp-fetch-file-content-xlsx-streaming` flag, checked through `deps.flagChecker`. When the flag is off, `.xlsx` files use the old full-workbook loader. Hosts that pass no `flagChecker` get the streaming reader.
