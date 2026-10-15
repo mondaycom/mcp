@@ -4,7 +4,7 @@ import ExcelJS from 'exceljs';
 const MAX_EXCEL_TEXT_LENGTH = 5_000_000;
 export const EXCEL_PARSE_DEADLINE_MS = 20_000;
 
-function cellToString(value: ExcelJS.CellValue): string {
+export function cellToString(value: ExcelJS.CellValue): string {
   if (value === null || value === undefined) return '';
   if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'string') return String(value);
   if (value instanceof Date) return value.toISOString();

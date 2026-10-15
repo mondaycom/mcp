@@ -5,6 +5,13 @@ import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { getItemAssets } from './fetch-file-content-tool.graphql';
 import { EXCEL_PARSE_DEADLINE_MS, ExcelExtractionResult, extractTextFromExcel } from './excel-text-extractor';
+import { extractTextFromExcelLegacy } from './legacy-excel-text-extractor';
+
+// When this flag is off, .xlsx files go through the old full-workbook loader.
+// Hosts that pass no flagChecker get the streaming reader.
+export const FETCH_FILE_CONTENT_XLSX_STREAMING_FLAG = 'mcp-fetch-file-content-xlsx-streaming';
+
+type ExcelExtractor = (buffer: Buffer) => Promise<ExcelExtractionResult>;
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 const MAX_TEXT_LENGTH = 50_000;
@@ -118,7 +125,12 @@ async function extractTextFromWord(buffer: Buffer): Promise<string> {
   return result.value;
 }
 
-async function processAsset(asset: Asset, offset: number, fileNameHint?: string): Promise<Record<string, unknown>> {
+async function processAsset(
+  asset: Asset,
+  offset: number,
+  extractExcel: ExcelExtractor,
+  fileNameHint?: string,
+): Promise<Record<string, unknown>> {
   const ext = resolveExtension(asset, fileNameHint);
   try {
     if (IMAGE_EXTENSIONS.has(ext)) {
@@ -152,7 +164,7 @@ async function processAsset(asset: Asset, offset: number, fileNameHint?: string)
       text = await extractTextFromWord(buffer);
       contentType = 'word';
     } else if (EXCEL_EXTENSIONS.has(ext)) {
-      ({ text, truncatedBy: excelTruncatedBy } = await extractTextFromExcel(buffer));
+      ({ text, truncatedBy: excelTruncatedBy } = await extractExcel(buffer));
       contentType = 'excel';
     } else if (TEXT_EXTENSIONS.has(ext)) {
       text = buffer.toString('utf-8');
@@ -250,8 +262,13 @@ When NOT to use:
       };
     }
 
-    const files = await Promise.all(assets.map((asset) => processAsset(asset, offset, file_name)));
+    const extractExcel = this.isXlsxStreamingEnabled() ? extractTextFromExcel : extractTextFromExcelLegacy;
+    const files = await Promise.all(assets.map((asset) => processAsset(asset, offset, extractExcel, file_name)));
 
     return { content: { files } };
+  }
+
+  private isXlsxStreamingEnabled(): boolean {
+    return this.context?.deps?.flagChecker?.(FETCH_FILE_CONTENT_XLSX_STREAMING_FLAG) ?? true;
   }
 }

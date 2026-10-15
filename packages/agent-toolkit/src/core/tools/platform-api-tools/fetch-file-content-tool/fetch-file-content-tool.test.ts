@@ -4,7 +4,7 @@ import ExcelJS from 'exceljs';
 import mammoth from 'mammoth';
 import { getDocumentProxy, extractText } from 'unpdf';
 import { createMockApiClient } from '../test-utils/mock-api-client';
-import { FetchFileContentTool } from './fetch-file-content-tool';
+import { FETCH_FILE_CONTENT_XLSX_STREAMING_FLAG, FetchFileContentTool } from './fetch-file-content-tool';
 import { extractTextFromExcel } from './excel-text-extractor';
 
 jest.mock('unpdf', () => ({
@@ -518,6 +518,47 @@ describe('FetchFileContentTool', () => {
       });
       expect(file.message).toContain('5000000 characters');
     }, 60_000);
+
+    describe('xlsx streaming flag', () => {
+      // A trailing empty-string formula: the streaming reader drops it, the legacy loader keeps its commas.
+      async function workbookWithTrailingEmptyCell(): Promise<Buffer> {
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet('Flag');
+        sheet.addRow(['a', 'b']);
+        sheet.getCell('D1').value = { formula: '""', result: '' };
+        return toBuffer(workbook);
+      }
+
+      async function runToolWithFlag(xlsxBuf: Buffer, flagChecker?: (flagKey: string) => boolean) {
+        mocks.setResponse(
+          assetsGraphqlResponse([{ public_url: 'https://x/t.xlsx', name: 't.xlsx', file_extension: 'xlsx' }]),
+        );
+        fetchMock.mockResolvedValue(createMockFetchResponse({ body: xlsxBuf, contentLength: String(xlsxBuf.length) }));
+        const tool = new FetchFileContentTool(mocks.mockApiClient, flagChecker && { deps: { flagChecker } });
+        return firstFile((await tool.execute({ item_id: '1', column_id: 'files' })).content);
+      }
+
+      it('uses the streaming reader when the flag is on', async () => {
+        const flagChecker = jest.fn().mockReturnValue(true);
+
+        const file = await runToolWithFlag(await workbookWithTrailingEmptyCell(), flagChecker);
+
+        expect(flagChecker).toHaveBeenCalledWith(FETCH_FILE_CONTENT_XLSX_STREAMING_FLAG);
+        expect(file.text).toBe('=== Sheet: Flag ===\na,b');
+      });
+
+      it('uses the legacy loader when the flag is off', async () => {
+        const file = await runToolWithFlag(await workbookWithTrailingEmptyCell(), () => false);
+
+        expect(file.text).toBe('=== Sheet: Flag ===\na,b,,');
+      });
+
+      it('uses the streaming reader when the host passes no flag checker', async () => {
+        const file = await runToolWithFlag(await workbookWithTrailingEmptyCell());
+
+        expect(file.text).toBe('=== Sheet: Flag ===\na,b');
+      });
+    });
   });
 
   it('treats unknown extensions as utf-8 with content_type unknown', async () => {
