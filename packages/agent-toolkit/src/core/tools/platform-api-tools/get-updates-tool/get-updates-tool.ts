@@ -20,9 +20,14 @@ export const getUpdatesToolSchema = {
     .array(z.string())
     .min(1)
     .max(MAX_OBJECT_IDS)
+    .optional()
     .describe(
       `The IDs to get updates from. For Item, up to ${MAX_OBJECT_IDS} item IDs in one call, with limit and page applied to each item. For Board, exactly one board ID.`,
     ),
+  objectId: z
+    .string()
+    .optional()
+    .describe('A single item or board ID. Same as passing it alone in objectIds, which is preferred.'),
   objectType: z.enum([UpdateObjectType.Item, UpdateObjectType.Board]).describe('Type of object the IDs in objectIds belong to'),
   limit: z
     .number()
@@ -125,7 +130,16 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
         );
       }
 
-      if (input.objectType === UpdateObjectType.Board && input.objectIds.length !== 1) {
+      const objectIds = [...new Set([...(input.objectIds ?? []), ...(input.objectId ? [input.objectId] : [])])];
+      if (objectIds.length === 0) {
+        throw new ToolValidationError('Provide the IDs to read in objectIds', INVALID_TOOL_ARGS_CODE);
+      }
+
+      if (objectIds.length > MAX_OBJECT_IDS) {
+        throw new ToolValidationError(`objectIds takes up to ${MAX_OBJECT_IDS} IDs`, INVALID_TOOL_ARGS_CODE);
+      }
+
+      if (input.objectType === UpdateObjectType.Board && objectIds.length !== 1) {
         throw new ToolValidationError('Board queries take exactly one board ID in objectIds', INVALID_TOOL_ARGS_CODE);
       }
 
@@ -138,16 +152,16 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
       };
 
       if (input.objectType === UpdateObjectType.Item) {
-        const limit = input.limit ?? (input.objectIds.length > 1 ? DEFAULT_LIMIT_PER_ITEM : DEFAULT_LIMIT);
+        const limit = input.limit ?? (objectIds.length > 1 ? DEFAULT_LIMIT_PER_ITEM : DEFAULT_LIMIT);
         const res = await this.mondayApi.request<GetItemsUpdatesQuery>(getItemsUpdates, {
           ...variables,
           limit,
-          itemIds: input.objectIds,
-          itemsLimit: input.objectIds.length,
+          itemIds: objectIds,
+          itemsLimit: objectIds.length,
         });
         const items = (res.items ?? []).filter((item): item is NonNullable<typeof item> => !!item);
         const returnedIds = new Set(items.map((item) => item.id));
-        const notFound = input.objectIds.filter((id) => !returnedIds.has(id));
+        const notFound = objectIds.filter((id) => !returnedIds.has(id));
         return {
           content: {
             message: 'Updates retrieved',
@@ -163,7 +177,7 @@ export class GetUpdatesTool extends BaseMondayApiTool<typeof getUpdatesToolSchem
         };
       }
 
-      const [boardId] = input.objectIds;
+      const [boardId] = objectIds;
       const limit = input.limit ?? DEFAULT_LIMIT;
       const res = await this.mondayApi.request<GetBoardUpdatesQuery>(getBoardUpdates, {
         ...variables,
