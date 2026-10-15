@@ -480,6 +480,17 @@ describe('FetchFileContentTool', () => {
       });
     });
 
+    it('separates sheets with a blank line, including empty ones', async () => {
+      const workbook = new ExcelJS.Workbook();
+      workbook.addWorksheet('First').addRow(['a']);
+      workbook.addWorksheet('Empty');
+      workbook.addWorksheet('Last').addRow(['b']);
+
+      const result = await extractTextFromExcel(await toBuffer(workbook));
+
+      expect(result.text).toBe('=== Sheet: First ===\na\n\n=== Sheet: Empty ===\n\n=== Sheet: Last ===\nb');
+    });
+
     it('skips rows that only carry formatting', async () => {
       const workbook = new ExcelJS.Workbook();
       const sheet = workbook.addWorksheet('Styled');
