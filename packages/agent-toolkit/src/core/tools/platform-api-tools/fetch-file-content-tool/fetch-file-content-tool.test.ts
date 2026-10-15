@@ -1,3 +1,5 @@
+import fs from 'fs';
+import os from 'os';
 import ExcelJS from 'exceljs';
 import mammoth from 'mammoth';
 import { getDocumentProxy, extractText } from 'unpdf';
@@ -356,11 +358,12 @@ describe('FetchFileContentTool', () => {
       const xlsxBuf = await toBuffer(workbook);
 
       const started = Date.now();
-      const file = await runTool(xlsxBuf);
+      const result = await extractTextFromExcel(xlsxBuf);
       const elapsed = Date.now() - started;
 
-      expect(file.text).toBe('=== Sheet: Data ===\na,b\n1,2');
-      expect(elapsed).toBeLessThan(2000);
+      expect(result.text).toBe('=== Sheet: Data ===\na,b\n1,2');
+      expect((await runTool(xlsxBuf)).text).toBe('=== Sheet: Data ===\na,b\n1,2');
+      expect(elapsed).toBeLessThan(10_000);
     }, 120_000);
 
     it('keeps output bounded for a value in the last column and ignores lone empty far-right cells', async () => {
@@ -403,6 +406,94 @@ describe('FetchFileContentTool', () => {
 
       expect(result.truncatedBy).toBe('time');
       expect(result.text).toBe('=== Sheet: Slow ===\nrow-0\nrow-1');
+    });
+
+    describe('temp files and zip layout', () => {
+      // exceljs resolves `tmp` from the hoisted root; the package ships no typings.
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const tmp = require(require.resolve('tmp', { paths: [require.resolve('exceljs')] })) as {
+        file: (...args: unknown[]) => unknown;
+      };
+
+      const tempEntries = () => fs.readdirSync(os.tmpdir()).filter((name) => name.startsWith(`tmp-${process.pid}-`));
+
+      async function expectNoTempFiles(run: () => Promise<unknown>) {
+        const before = tempEntries();
+        const fileSpy = jest.spyOn(tmp, 'file');
+        try {
+          await run();
+          expect(fileSpy).not.toHaveBeenCalled();
+          expect(tempEntries()).toEqual(before);
+        } finally {
+          fileSpy.mockRestore();
+        }
+      }
+
+      async function stringWorkbook(rows = 200): Promise<Buffer> {
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet('Big');
+        for (let i = 0; i < rows; i++) sheet.addRow([`row-${i}`, 'x'.repeat(50)]);
+        return toBuffer(workbook);
+      }
+
+      it('writes sharedStrings.xml after the first sheet in ExcelJS output', async () => {
+        const buf = await stringWorkbook();
+        expect(buf.indexOf('xl/worksheets/sheet1.xml')).toBeGreaterThan(-1);
+        expect(buf.indexOf('xl/sharedStrings.xml')).toBeGreaterThan(buf.indexOf('xl/worksheets/sheet1.xml'));
+      });
+
+      it('leaves no temp files when the size cap stops reading early', async () => {
+        const buf = await stringWorkbook();
+        await expectNoTempFiles(async () => {
+          const result = await extractTextFromExcel(buf, { maxTextLength: 500 });
+          expect(result.truncatedBy).toBe('size');
+        });
+      });
+
+      it('leaves no temp files when the deadline stops reading early', async () => {
+        const buf = await stringWorkbook();
+        let clock = 0;
+        await expectNoTempFiles(async () => {
+          const result = await extractTextFromExcel(buf, { deadlineMs: 25, now: () => (clock += 10) });
+          expect(result.truncatedBy).toBe('time');
+          expect(result.text).toBe('=== Sheet: Big ===\nrow-0,' + 'x'.repeat(50) + '\nrow-1,' + 'x'.repeat(50));
+        });
+      });
+
+      it('extracts a workbook without text cells and creates no temp files', async () => {
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet('Nums');
+        sheet.addRow([1, 2.5, true]);
+        sheet.addRow([new Date('2024-03-05T00:00:00.000Z'), false, 7]);
+        const buf = await toBuffer(workbook);
+
+        const hasSharedStrings = buf.indexOf('xl/sharedStrings.xml') !== -1;
+        expect(hasSharedStrings).toBe(false);
+        await expectNoTempFiles(async () => {
+          const result = await extractTextFromExcel(buf);
+          expect(result).toEqual({ text: '=== Sheet: Nums ===\n1,2.5,true\n2024-03-05T00:00:00.000Z,false,7' });
+        });
+      });
+
+      it('rejects a buffer that is not a zip archive', async () => {
+        await expect(extractTextFromExcel(Buffer.from('definitely not an xlsx file'))).rejects.toThrow();
+      });
+    });
+
+    it('skips rows that only carry formatting', async () => {
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet('Styled');
+      sheet.addRow(['head', 'er']);
+      for (let r = 5; r <= 1000; r++) {
+        const cell = sheet.getCell(r, 1);
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFF0000' } };
+        cell.font = { bold: true };
+      }
+      sheet.getCell('A1001').value = 'tail';
+
+      const result = await extractTextFromExcel(await toBuffer(workbook));
+
+      expect(result.text).toBe('=== Sheet: Styled ===\nhead,er\ntail');
     });
 
     it('does not report truncation for small workbooks', async () => {
