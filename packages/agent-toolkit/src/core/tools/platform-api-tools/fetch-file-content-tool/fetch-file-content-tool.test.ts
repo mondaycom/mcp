@@ -332,6 +332,25 @@ describe('FetchFileContentTool', () => {
     expect(String(firstFile(result.content).message)).toMatch(/^Failed to fetch file content: /);
   });
 
+  it('parses every Excel file when an item has more files than concurrent parse slots', async () => {
+    const xlsxBuf = await makeXlsxBuffer();
+    mocks.setResponse(
+      assetsGraphqlResponse(
+        ['a', 'b', 'c'].map((n) => ({ public_url: `https://x/${n}.xlsx`, name: `${n}.xlsx`, file_extension: 'xlsx' })),
+      ),
+    );
+    fetchMock.mockResolvedValue(createMockFetchResponse({ body: xlsxBuf, contentLength: String(xlsxBuf.length) }));
+
+    const tool = new FetchFileContentTool(mocks.mockApiClient);
+    const result = await tool.execute({ item_id: '1', column_id: 'files' });
+
+    const files = toolContentObject(result.content).files;
+    expect(files).toHaveLength(3);
+    for (const file of files) {
+      expect(String(file.text)).toContain('=== Sheet: Sheet1 ===');
+    }
+  });
+
   it('treats unknown extensions as utf-8 with content_type unknown', async () => {
     mocks.setResponse(
       assetsGraphqlResponse([{ public_url: 'https://x/f.xyz', name: 'f.xyz', file_extension: 'xyz' }]),

@@ -10,6 +10,7 @@ const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 const MAX_TEXT_LENGTH = 50_000;
 const EXCEL_PARSE_TIMEOUT_MS = 30_000;
 const EXCEL_PARSE_MAX_HEAP_MB = 512;
+const EXCEL_MAX_CONCURRENT_PARSES = 2;
 
 const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.ico']);
 const PDF_EXTENSIONS = new Set(['.pdf']);
@@ -153,29 +154,56 @@ function cellToString(value) {
 })();
 `;
 
-function extractTextFromExcel(buffer: Buffer): Promise<string> {
+let activeExcelParses = 0;
+const queuedExcelParses: Array<() => void> = [];
+
+async function extractTextFromExcel(buffer: Buffer): Promise<string> {
+  if (activeExcelParses < EXCEL_MAX_CONCURRENT_PARSES) {
+    activeExcelParses++;
+  } else {
+    await new Promise<void>((resolve) => queuedExcelParses.push(resolve));
+  }
+  try {
+    return await parseExcelInWorker(buffer);
+  } finally {
+    // Hand the slot straight to the next waiter, so the count only drops when nobody is queued.
+    const next = queuedExcelParses.shift();
+    if (next) {
+      next();
+    } else {
+      activeExcelParses--;
+    }
+  }
+}
+
+function parseExcelInWorker(buffer: Buffer): Promise<string> {
   return new Promise((resolve, reject) => {
     const worker = new Worker(EXCEL_WORKER_SOURCE, {
       eval: true,
       workerData: { buffer, exceljsPath: require.resolve('exceljs') },
       resourceLimits: { maxOldGenerationSizeMb: EXCEL_PARSE_MAX_HEAP_MB },
     });
+    let text: string | undefined;
+    let error: Error | undefined;
     const timer = setTimeout(() => {
+      error = new Error(`Excel parsing timed out after ${EXCEL_PARSE_TIMEOUT_MS / 1000}s`);
       void worker.terminate();
-      reject(new Error(`Excel parsing timed out after ${EXCEL_PARSE_TIMEOUT_MS / 1000}s`));
     }, EXCEL_PARSE_TIMEOUT_MS);
-    worker.once('message', (text: string) => {
-      clearTimeout(timer);
+    worker.once('message', (result: string) => {
+      text = result;
       void worker.terminate();
-      resolve(text);
     });
     worker.once('error', (err) => {
-      clearTimeout(timer);
-      reject(err);
+      error = err;
     });
+    // Settle only once the worker is gone, so its heap is released before the next parse starts.
     worker.once('exit', (code) => {
       clearTimeout(timer);
-      reject(new Error(`Excel parser exited with code ${code}`));
+      if (text !== undefined) {
+        resolve(text);
+      } else {
+        reject(error ?? new Error(`Excel parser exited with code ${code}`));
+      }
     });
   });
 }
