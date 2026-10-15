@@ -77,6 +77,13 @@ claude plugin marketplace add ./path/to/plugin
 claude plugin install monday-crm@<local-marketplace-name>
 ```
 
+### From Neotask Construct
+
+```bash
+# Install the plugin
+neotask construct install monday-crm
+```
+
 ## Getting started
 
 After installing, just ask for what you need (e.g. "give me my CRM deal
