@@ -3,6 +3,7 @@ import mammoth from 'mammoth';
 import { getDocumentProxy, extractText } from 'unpdf';
 import { createMockApiClient } from '../test-utils/mock-api-client';
 import { FetchFileContentTool } from './fetch-file-content-tool';
+import { extractTextFromExcel } from './excel-text-extractor';
 
 jest.mock('unpdf', () => ({
   getDocumentProxy: jest.fn(),
@@ -296,6 +297,136 @@ describe('FetchFileContentTool', () => {
     });
     expect(String(firstFile(result.content).text)).toContain('=== Sheet: Sheet1 ===');
     expect(String(firstFile(result.content).text)).toContain('col_a');
+  });
+
+  describe('Excel extraction', () => {
+    async function toBuffer(workbook: ExcelJS.Workbook): Promise<Buffer> {
+      return Buffer.from(await workbook.xlsx.writeBuffer());
+    }
+
+    async function runTool(xlsxBuf: Buffer) {
+      mocks.setResponse(
+        assetsGraphqlResponse([{ public_url: 'https://x/t.xlsx', name: 't.xlsx', file_extension: 'xlsx' }]),
+      );
+      fetchMock.mockResolvedValue(createMockFetchResponse({ body: xlsxBuf, contentLength: String(xlsxBuf.length) }));
+      const tool = new FetchFileContentTool(mocks.mockApiClient);
+      return firstFile((await tool.execute({ item_id: '1', column_id: 'files' })).content);
+    }
+
+    it('renders every sheet, dates, formula results and rich text', async () => {
+      const workbook = new ExcelJS.Workbook();
+      const first = workbook.addWorksheet('First');
+      first.addRow(['name', 'when', 'sum', 'note']);
+      first.addRow([
+        'a',
+        new Date('2024-03-05T00:00:00.000Z'),
+        { formula: 'B2*0+1+1', result: 2 },
+        { richText: [{ text: 'rich ' }, { text: 'text', font: { bold: true } }] },
+      ]);
+      const second = workbook.addWorksheet('Second');
+      second.addRow(['x', true, 3.5]);
+
+      const file = await runTool(await toBuffer(workbook));
+
+      expect(file.text).toBe(
+        [
+          '=== Sheet: First ===',
+          'name,when,sum,note',
+          'a,2024-03-05T00:00:00.000Z,2,rich text',
+          '',
+          '=== Sheet: Second ===',
+          'x,true,3.5',
+        ].join('\n'),
+      );
+      expect(file.extraction_truncated).toBeUndefined();
+    });
+
+    it('is not slowed down by full-column data validations', async () => {
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet('Data');
+      sheet.addRow(['a', 'b']);
+      sheet.addRow([1, 2]);
+      // Worksheet typings omit `dataValidations`, which ExcelJS writes as a range `sqref`.
+      const { dataValidations } = sheet as unknown as {
+        dataValidations: { add(address: string, validation: ExcelJS.DataValidation): void };
+      };
+      for (const col of ['E', 'F', 'G', 'H', 'I', 'J', 'K', 'L']) {
+        dataValidations.add(`${col}1:${col}1048576`, { type: 'list', allowBlank: true, formulae: ['"x,y"'] });
+      }
+      const xlsxBuf = await toBuffer(workbook);
+
+      const started = Date.now();
+      const file = await runTool(xlsxBuf);
+      const elapsed = Date.now() - started;
+
+      expect(file.text).toBe('=== Sheet: Data ===\na,b\n1,2');
+      expect(elapsed).toBeLessThan(2000);
+    }, 120_000);
+
+    it('keeps output bounded for a value in the last column and ignores lone empty far-right cells', async () => {
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet('Wide');
+      sheet.addRow(['a', 'b']);
+      sheet.addRow(['c', 'd']);
+      sheet.getCell('XFD2').value = { formula: '""', result: '' };
+      sheet.getCell('XFD3').value = 'far';
+      const file = await runTool(await toBuffer(workbook));
+
+      const lines = String(file.text).split('\n');
+      expect(lines.slice(0, 3)).toEqual(['=== Sheet: Wide ===', 'a,b', 'c,d']);
+      expect(lines[3].endsWith(',far')).toBe(true);
+      expect(String(file.text).length).toBeLessThan(20_000);
+    });
+
+    it('stops at the text cap and reports truncation', async () => {
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet('Big');
+      for (let i = 0; i < 200; i++) sheet.addRow([`row-${i}`, 'x'.repeat(50)]);
+
+      const result = await extractTextFromExcel(await toBuffer(workbook), { maxTextLength: 500 });
+
+      expect(result.truncatedBy).toBe('size');
+      expect(result.text.length).toBe(500);
+      expect(result.text.startsWith('=== Sheet: Big ===\nrow-0,')).toBe(true);
+    });
+
+    it('stops at the deadline and returns what was read so far', async () => {
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet('Slow');
+      for (let i = 0; i < 50; i++) sheet.addRow([`row-${i}`]);
+      let clock = 0;
+
+      const result = await extractTextFromExcel(await toBuffer(workbook), {
+        deadlineMs: 25,
+        now: () => (clock += 10),
+      });
+
+      expect(result.truncatedBy).toBe('time');
+      expect(result.text).toBe('=== Sheet: Slow ===\nrow-0\nrow-1');
+    });
+
+    it('does not report truncation for small workbooks', async () => {
+      const result = await extractTextFromExcel(await makeXlsxBuffer());
+      expect(result).toEqual({ text: '=== Sheet: Sheet1 ===\ncol_a,col_b\n1,2' });
+    });
+
+    it('surfaces truncation on the returned file object', async () => {
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet('Huge');
+      const line = 'y'.repeat(1000);
+      for (let i = 0; i < 6000; i++) sheet.addRow([line]);
+
+      const file = await runTool(await toBuffer(workbook));
+
+      expect(file).toMatchObject({
+        content_type: 'excel',
+        extraction_truncated: true,
+        has_more: true,
+        next_offset: 50_000,
+        total_length: 5_000_000,
+      });
+      expect(file.message).toContain('5000000 characters');
+    }, 60_000);
   });
 
   it('treats unknown extensions as utf-8 with content_type unknown', async () => {

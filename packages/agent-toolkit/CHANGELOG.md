@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.75.1
+
+### `fetch_file_content` reads .xlsx files without stalling
+
+- Full-column data validations and large merged ranges in a workbook made the full-workbook loader expand them into millions of cells, so a small .xlsx could block the server for minutes. `.xlsx` files are now read with a streaming reader that skips those parts and only reads cell values, with the same text output as before.
+- Extraction stops at 5,000,000 characters or after 20 seconds, whichever comes first, and trailing empty cells in a row no longer add commas.
+- When extraction stops early, the file result has `extraction_truncated: true` and a `message` saying why; `total_length`, `has_more` and `next_offset` paging work on the text that was read.
+
 ## 5.75.0
 
 ### `get_updates` takes ids only in `objectIds`

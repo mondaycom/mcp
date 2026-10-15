@@ -1,10 +1,10 @@
 import { z } from 'zod';
 import mammoth from 'mammoth';
-import ExcelJS from 'exceljs';
 import { getDocumentProxy, extractText } from 'unpdf';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { getItemAssets } from './fetch-file-content-tool.graphql';
+import { EXCEL_PARSE_DEADLINE_MS, ExcelExtractionResult, extractTextFromExcel } from './excel-text-extractor';
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 const MAX_TEXT_LENGTH = 50_000;
@@ -118,33 +118,6 @@ async function extractTextFromWord(buffer: Buffer): Promise<string> {
   return result.value;
 }
 
-function cellToString(value: ExcelJS.CellValue): string {
-  if (value === null || value === undefined) return '';
-  if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'string') return String(value);
-  if (value instanceof Date) return value.toISOString();
-  if (typeof value === 'object') {
-    if ('result' in value) return cellToString((value as ExcelJS.CellFormulaValue).result as ExcelJS.CellValue);
-    if ('richText' in value) return (value as ExcelJS.CellRichTextValue).richText.map((r) => r.text).join('');
-    if ('hyperlink' in value) return (value as ExcelJS.CellHyperlinkValue).text ?? '';
-  }
-  return '';
-}
-
-async function extractTextFromExcel(buffer: Buffer): Promise<string> {
-  const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.load(buffer);
-  const parts: string[] = [];
-  workbook.eachSheet((sheet) => {
-    const rows: string[] = [];
-    sheet.eachRow((row) => {
-      const values = (row.values as ExcelJS.CellValue[]).slice(1);
-      rows.push(values.map(cellToString).join(','));
-    });
-    parts.push(`=== Sheet: ${sheet.name} ===\n${rows.join('\n')}`);
-  });
-  return parts.join('\n\n');
-}
-
 async function processAsset(asset: Asset, offset: number, fileNameHint?: string): Promise<Record<string, unknown>> {
   const ext = resolveExtension(asset, fileNameHint);
   try {
@@ -170,6 +143,7 @@ async function processAsset(asset: Asset, offset: number, fileNameHint?: string)
 
     let text: string;
     let contentType: string;
+    let excelTruncatedBy: ExcelExtractionResult['truncatedBy'];
 
     if (PDF_EXTENSIONS.has(ext)) {
       text = await extractTextFromPdf(buffer);
@@ -178,7 +152,7 @@ async function processAsset(asset: Asset, offset: number, fileNameHint?: string)
       text = await extractTextFromWord(buffer);
       contentType = 'word';
     } else if (EXCEL_EXTENSIONS.has(ext)) {
-      text = await extractTextFromExcel(buffer);
+      ({ text, truncatedBy: excelTruncatedBy } = await extractTextFromExcel(buffer));
       contentType = 'excel';
     } else if (TEXT_EXTENSIONS.has(ext)) {
       text = buffer.toString('utf-8');
@@ -198,6 +172,13 @@ async function processAsset(asset: Asset, offset: number, fileNameHint?: string)
       text: chunk,
       total_length: text.length,
       ...(PDF_EXTENSIONS.has(ext) && { public_url: asset.public_url }),
+      ...(excelTruncatedBy && {
+        extraction_truncated: true,
+        message:
+          excelTruncatedBy === 'size'
+            ? `Workbook is too large to extract fully; text was cut at ${text.length} characters.`
+            : `Workbook extraction stopped after the ${EXCEL_PARSE_DEADLINE_MS / 1000}-second time limit; text was cut at ${text.length} characters.`,
+      }),
       ...(hasMore && { has_more: true, next_offset: offset + MAX_TEXT_LENGTH }),
     };
   } catch (err) {
@@ -234,7 +215,7 @@ Supported file types and what is returned:
 - Excel files (.xlsx, .xls): extracted text content per sheet
 - Images (.png, .jpg, .gif, .webp, .svg, .bmp, .ico): returns the public URL so you can view or analyze the image directly
 
-Text responses include a total_length field. If has_more is true, the content was truncated — you can call this tool again with next_offset if you need the remaining content.
+Text responses include a total_length field. If has_more is true, the content was truncated — you can call this tool again with next_offset if you need the remaining content. For very large Excel workbooks, extraction_truncated: true means the text was cut short and the rest of the workbook is not available.
 
 When to use:
 - User asks to summarize, read, or analyze the content of a file in a files column
