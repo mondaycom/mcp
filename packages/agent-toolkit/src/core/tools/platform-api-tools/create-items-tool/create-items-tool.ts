@@ -119,7 +119,7 @@ export class CreateItemsTool extends BaseMondayApiTool<CreateItemsToolInput> {
     this.sessionContext.metadata ??= {};
     this.sessionContext.metadata.items_count = input.items.length;
     const singleTool = new CreateItemTool(this.mondayApi, { boardId });
-    const skipMessage = 'Skipped: a previous item hit the minute rate limit; this item was not attempted';
+    const skipMessage = 'Skipped: a previous item hit a rate limit; this item was not attempted';
 
     const tasks = input.items.map((item, index) => async (): Promise<PerItemResult> => {
       const result = await singleTool.execute({
@@ -192,25 +192,15 @@ function getGraphQLErrorEntry(error: unknown): GraphQLErrorEntry | undefined {
 
 function formatPerItemErrorMessage(error: unknown, parentItemId?: number): string {
   const message = error instanceof Error ? error.message : String(error);
-  if (parentItemId === undefined || !isParentSubitemLockError(error, parentItemId)) {
+  if (parentItemId === undefined || !isParentSubitemRedlockError(error, parentItemId)) {
     return message;
   }
 
   return `${message}\nAn item-link update hit a temporary concurrency limit. Wait a few seconds, then retry only the failed items in one create_items call.`;
 }
 
-function isParentSubitemLockError(error: unknown, parentItemId: number): boolean {
+function isParentSubitemRedlockError(error: unknown, parentItemId: number): boolean {
   const gqlEntry = getGraphQLErrorEntry(error);
-  const errorData = gqlEntry?.extensions?.error_data;
-  if (
-    typeof errorData === 'object' &&
-    errorData !== null &&
-    'column_validation_error_code' in errorData &&
-    errorData.column_validation_error_code === 'itemLinkMaxLocksExceeded'
-  ) {
-    return true;
-  }
-
   const expectedPrefix = `failed to acquire lock on '${parentItemId}|subitems__`;
   return (
     gqlEntry?.extensions?.code === 'ColumnValueException' &&

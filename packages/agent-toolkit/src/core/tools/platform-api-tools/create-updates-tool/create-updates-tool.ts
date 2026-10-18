@@ -46,7 +46,7 @@ export class CreateUpdatesTool extends BaseMondayApiTool<typeof createUpdatesToo
     this.sessionContext.metadata ??= {};
     this.sessionContext.metadata.items_count = input.updates.length;
 
-    const skipMessage = 'Skipped: a previous update hit the minute rate limit, this update was not attempted';
+    const skipMessage = 'Skipped: a previous update hit a rate limit; this update was not attempted';
 
     const singleTool = new CreateUpdateTool(this.mondayApi);
     const tasks = input.updates.map((update, index) => async (): Promise<PerUpdateResult> => {

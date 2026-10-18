@@ -46,6 +46,27 @@ describe('Create Items Tool Behaviour', () => {
       },
     });
 
+  const fieldLimitError = (itemId: number) =>
+    Object.assign(new Error('Item link max locks exceeded'), {
+      response: {
+        errors: [
+          {
+            message: 'Item link max locks exceeded',
+            extensions: {
+              code: 'FIELD_LIMIT_EXCEEDED',
+              status_code: 429,
+              retry_in_seconds: 10,
+              error_data: {
+                item_id: itemId,
+                column_validation_error_code: 'itemLinkMaxLocksExceeded',
+              },
+            },
+          },
+        ],
+        status: 429,
+      },
+    });
+
   describe('Happy path — create items on a board', () => {
     it('creates all items and returns per-item results with correct index', async () => {
       mocks.setResponses([itemResponse('1', 'A'), itemResponse('2', 'B'), itemResponse('3', 'C')]);
@@ -356,36 +377,6 @@ describe('Create Items Tool Behaviour', () => {
       ]);
     });
 
-    it('adds retry guidance for the item-link counter limit without changing error details', async () => {
-      mocks.setError(
-        columnValueError('Item link max locks exceeded', {
-          column_validation_error_code: 'itemLinkMaxLocksExceeded',
-        }),
-      );
-
-      const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
-      const result = await tool.execute({
-        items: [{ name: 'A', parentItemId: 901, columnValues: '{}' }],
-      });
-      const content = result.content as {
-        results: Array<{ error: string }>;
-        errors: Array<Record<string, unknown>>;
-      };
-
-      expect(content.results[0].error).toContain(
-        'An item-link update hit a temporary concurrency limit. Wait a few seconds, then retry only the failed items in one create_items call.',
-      );
-      expect(content.errors).toEqual([
-        {
-          code: 'ColumnValueException',
-          status_code: 200,
-          error_data: { column_validation_error_code: 'itemLinkMaxLocksExceeded' },
-          message: 'Item link max locks exceeded',
-          path: ['results', 0],
-        },
-      ]);
-    });
-
     it('adds retry guidance for the current parent subitems lock without changing error details', async () => {
       mocks.setError(columnValueError("failed to acquire lock on '901|subitems__1'", {}));
 
@@ -457,6 +448,48 @@ describe('Create Items Tool Behaviour', () => {
       expect(skipped.length).toBeGreaterThan(0);
       expect(c.errors).toEqual(
         expect.arrayContaining([expect.objectContaining({ code: 'RATE_LIMIT_SKIPPED' })]),
+      );
+    });
+
+    it('handles FIELD_LIMIT_EXCEEDED through the standard 429 circuit and preserves retry data', async () => {
+      mocks.getMockRequest().mockRejectedValue(fieldLimitError(901));
+
+      const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
+      const total = PER_PARENT_CONCURRENCY_LIMIT + 1;
+      const items = Array.from({ length: total }, (_, index) => ({
+        name: `subitem-${index}`,
+        parentItemId: 901,
+        columnValues: '{}',
+      }));
+
+      const result = await tool.execute({ items });
+      const content = result.content as {
+        errors: Array<Record<string, unknown>>;
+        results: Array<{ error: string }>;
+      };
+
+      expect(result.isError).toBe(true);
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(PER_PARENT_CONCURRENCY_LIMIT);
+      expect(content.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            code: 'FIELD_LIMIT_EXCEEDED',
+            status_code: 429,
+            retry_in_seconds: 10,
+            error_data: {
+              item_id: 901,
+              column_validation_error_code: 'itemLinkMaxLocksExceeded',
+            },
+          }),
+          {
+            code: 'RATE_LIMIT_SKIPPED',
+            message: 'Skipped: a previous item hit a rate limit; this item was not attempted',
+            path: ['results', PER_PARENT_CONCURRENCY_LIMIT],
+          },
+        ]),
+      );
+      expect(content.results[PER_PARENT_CONCURRENCY_LIMIT].error).toBe(
+        'Skipped: a previous item hit a rate limit; this item was not attempted',
       );
     });
 
