@@ -6,6 +6,7 @@
 
 - `create_items` now keeps at most five subitem creates in flight per parent while retaining the overall concurrency limit of 15 across different parents and regular items.
 - Item-link concurrency failures tell callers to wait and retry only the failed items. The tool description directs callers to batch each parent's subitems in groups of up to 20 and finish one batch before starting the next for that parent.
+- A retryable `FIELD_LIMIT_EXCEEDED` response for `itemLinkMaxLocksExceeded` remains scoped to its failed item instead of stopping unrelated queued items.
 
 ### Report all-failed bulk operations as errors
 
