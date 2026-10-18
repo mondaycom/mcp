@@ -46,6 +46,27 @@ describe('Create Items Tool Behaviour', () => {
       },
     });
 
+  const itemLinkMaxLocksExceededError = (itemId: number) =>
+    Object.assign(new Error('GraphQL Error'), {
+      response: {
+        errors: [
+          {
+            message: 'Item link max locks exceeded',
+            extensions: {
+              code: 'FIELD_LIMIT_EXCEEDED',
+              status_code: 429,
+              retry_in_seconds: 10,
+              error_data: {
+                item_id: itemId,
+                column_validation_error_code: 'itemLinkMaxLocksExceeded',
+              },
+            },
+          },
+        ],
+        status: 429,
+      },
+    });
+
   describe('Happy path — create items on a board', () => {
     it('creates all items and returns per-item results with correct index', async () => {
       mocks.setResponses([itemResponse('1', 'A'), itemResponse('2', 'B'), itemResponse('3', 'C')]);
@@ -547,6 +568,41 @@ describe('Create Items Tool Behaviour', () => {
 
       const c = result.content as any;
       expect(c.results[1]).toMatchObject({ index: 1, item_id: '2' });
+    });
+
+    it('does not skip queued items after an item-link max-lock 429', async () => {
+      mocks.getMockRequest().mockRejectedValueOnce(itemLinkMaxLocksExceededError(901));
+      mocks.getMockRequest().mockResolvedValue(subitemResponse('2', 'B', '901'));
+
+      const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
+      const items = Array.from({ length: PER_PARENT_CONCURRENCY_LIMIT + 1 }, (_, index) => ({
+        name: `subitem-${index}`,
+        parentItemId: 901,
+        columnValues: '{}',
+      }));
+
+      const result = await tool.execute({ items });
+      const content = result.content as {
+        results: Array<{ error?: string }>;
+        errors: Array<Record<string, unknown>>;
+      };
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(items.length);
+      expect(content.results.filter(({ error }) => error?.includes('Skipped'))).toHaveLength(0);
+      expect(content.results[0].error).toContain(
+        'An item-link update hit a temporary concurrency limit. Wait a few seconds, then retry only the failed items in one create_items call.',
+      );
+      expect(content.errors).toEqual([
+        expect.objectContaining({
+          code: 'FIELD_LIMIT_EXCEEDED',
+          status_code: 429,
+          retry_in_seconds: 10,
+          error_data: {
+            item_id: 901,
+            column_validation_error_code: 'itemLinkMaxLocksExceeded',
+          },
+        }),
+      ]);
     });
   });
 

@@ -4,6 +4,7 @@ import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-ap
 import { CreateItemTool } from '../create-item-tool/create-item-tool';
 import { COLUMN_VALUES_FORMAT_GUIDE } from '../column-values.utils';
 import {
+  isRateLimitError,
   runWithRateLimitCircuit,
   ToolValidationError,
   MISSING_REQUIRED_PARAMETER_CODE,
@@ -139,6 +140,7 @@ export class CreateItemsTool extends BaseMondayApiTool<CreateItemsToolInput> {
         getGroup: (index) => input.items[index].parentItemId,
         limitPerGroup: PER_PARENT_CONCURRENCY_LIMIT,
       },
+      isRateLimitError: (error) => isRateLimitError(error) && !isItemLinkMaxLocksExceeded(error),
       onSkipped: (index) => ({
         index,
         error: skipMessage,
@@ -180,6 +182,8 @@ type GraphQLErrorEntry = {
   extensions?: Record<string, unknown>;
 };
 
+const ITEM_LINK_MAX_LOCKS_EXCEEDED_REASON = 'itemLinkMaxLocksExceeded';
+
 function getGraphQLErrorEntry(error: unknown): GraphQLErrorEntry | undefined {
   return (
     error as {
@@ -200,21 +204,26 @@ function formatPerItemErrorMessage(error: unknown, parentItemId?: number): strin
 }
 
 function isParentSubitemLockError(error: unknown, parentItemId: number): boolean {
-  const gqlEntry = getGraphQLErrorEntry(error);
-  const errorData = gqlEntry?.extensions?.error_data;
-  if (
-    typeof errorData === 'object' &&
-    errorData !== null &&
-    'column_validation_error_code' in errorData &&
-    errorData.column_validation_error_code === 'itemLinkMaxLocksExceeded'
-  ) {
+  if (isItemLinkMaxLocksExceeded(error)) {
     return true;
   }
 
+  const gqlEntry = getGraphQLErrorEntry(error);
   const expectedPrefix = `failed to acquire lock on '${parentItemId}|subitems__`;
   return (
     gqlEntry?.extensions?.code === 'ColumnValueException' &&
     gqlEntry.message?.toLowerCase().startsWith(expectedPrefix.toLowerCase()) === true
+  );
+}
+
+function isItemLinkMaxLocksExceeded(error: unknown): boolean {
+  const extensions = getGraphQLErrorEntry(error)?.extensions;
+  const errorData = extensions?.error_data;
+  return (
+    typeof errorData === 'object' &&
+    errorData !== null &&
+    'column_validation_error_code' in errorData &&
+    errorData.column_validation_error_code === ITEM_LINK_MAX_LOCKS_EXCEEDED_REASON
   );
 }
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.75.2
+
+### Keep item-link limits scoped to the failed item
+
+- `create_items` no longer stops unrelated queued items when one subitem receives the retryable `FIELD_LIMIT_EXCEEDED` response for `itemLinkMaxLocksExceeded`. The failed entry retains its retry hint for callers to handle.
+
 ## 5.75.1
 
 ### Reduce subitem lock contention
