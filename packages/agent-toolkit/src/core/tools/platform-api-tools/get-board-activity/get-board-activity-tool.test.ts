@@ -4,11 +4,14 @@ import { GetBoardActivityTool } from './get-board-activity-tool';
 const mockBoard = {
   name: 'Test Board',
   url: 'https://monday.com/boards/1',
-  activity_logs: [
-    { created_at: '2024-01-01T00:00:00Z', event: 'create_pulse', entity: 'pulse', user_id: '123', data: '{"key":"value"}' },
-    null,
-    { created_at: '2024-01-02T00:00:00Z', event: 'update_pulse', entity: 'pulse', user_id: '456', data: '{"foo":"bar"}' },
-  ],
+  activity_logs: {
+    logs: [
+      { created_at: '2024-01-01T00:00:00Z', event: 'create_pulse', entity: 'pulse', user_id: '123', data: '{"key":"value"}' },
+      null,
+      { created_at: '2024-01-02T00:00:00Z', event: 'update_pulse', entity: 'pulse', user_id: '456', data: '{"foo":"bar"}' },
+    ],
+    cursor: null,
+  },
 };
 
 describe('GetBoardActivityTool', () => {
@@ -56,7 +59,7 @@ describe('GetBoardActivityTool', () => {
   });
 
   it('returns message when no activity found', async () => {
-    mocks.setResponse({ boards: [{ ...mockBoard, activity_logs: [] }] });
+    mocks.setResponse({ boards: [{ ...mockBoard, activity_logs: { logs: [], cursor: null } }] });
     const tool = new GetBoardActivityTool(mocks.mockApiClient);
 
     const result = await tool.execute({ boardId: 42, includeData: false });
@@ -86,7 +89,6 @@ describe('GetBoardActivityTool', () => {
         fromDate: '2024-01-01T00:00:00Z',
         toDate: '2024-02-01T00:00:00Z',
         limit: 1000,
-        page: 1,
         includeData: true,
       },
     );

@@ -72,13 +72,12 @@ export class GetBoardActivityTool extends BaseMondayApiTool<typeof getBoardActiv
       fromDate,
       toDate,
       limit: this.defaultLimit,
-      page: 1,
       includeData: input.includeData ?? false,
     };
 
     const res = await this.mondayApi.request<GetBoardActivityQuery>(getBoardActivity, variables);
 
-    const activityLogs = res.boards?.[0]?.activity_logs;
+    const activityLogs = res.boards?.[0]?.activity_logs?.logs;
 
     if (!activityLogs || activityLogs.length === 0) {
       return {
