@@ -235,9 +235,9 @@ describe('Get Updates Tool', () => {
     expect(tool.getDescription()).toContain('items');
     expect(tool.getDescription()).toContain('board');
 
-    expect(schema).not.toHaveProperty('objectId');
+    expect(() => schema.objectId.parse('123')).not.toThrow();
     expect(() => schema.objectIds.parse(['123'])).not.toThrow();
-    expect(() => schema.objectIds.parse(undefined)).toThrow();
+    expect(() => schema.objectIds.parse(undefined)).not.toThrow();
     expect(() => schema.objectType.parse('Item')).not.toThrow();
     expect(() => schema.objectType.parse('Board')).not.toThrow();
     expect(() => schema.limit.parse(50)).not.toThrow();
@@ -260,6 +260,62 @@ describe('Get Updates Tool', () => {
 
     expect(() => schema.objectIds.parse([])).toThrow();
     expect(() => schema.objectIds.parse(Array.from({ length: 26 }, (_, i) => String(i)))).toThrow();
+  });
+
+  it('Accepts objectId alone for an item', async () => {
+    mocks.setResponse(mockItemUpdatesResponse);
+    const tool = new GetUpdatesTool(mocks.mockApiClient);
+
+    const result = await tool.execute({ objectId: '123', objectType: 'Item' } as any);
+
+    expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+      expect.stringContaining('query GetItemsUpdates'),
+      expect.objectContaining({ itemIds: ['123'], limit: 25 }),
+    );
+    expect((result.content as any).items[0]).toMatchObject({ item_id: '123', count: 2 });
+  });
+
+  it('Accepts objectId alone for a board', async () => {
+    mocks.setResponse(mockBoardUpdatesResponse);
+    const tool = new GetUpdatesTool(mocks.mockApiClient);
+
+    await tool.execute({ objectId: '456', objectType: 'Board' } as any);
+
+    expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+      expect.stringContaining('query GetBoardUpdates'),
+      expect.objectContaining({ boardId: '456' }),
+    );
+  });
+
+  it('Merges objectId into objectIds without duplicates', async () => {
+    mocks.setResponse({ items: [] });
+    const tool = new GetUpdatesTool(mocks.mockApiClient);
+
+    await tool.execute({ objectId: '123', objectIds: ['123', '789'], objectType: 'Item' } as any);
+
+    expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ itemIds: ['123', '789'], itemsLimit: 2 }),
+    );
+  });
+
+  it('Rejects a call with no ID with an INVALID_TOOL_ARGS validation error', async () => {
+    const tool = new GetUpdatesTool(mocks.mockApiClient);
+
+    await expect(tool.execute({ objectType: 'Board' } as any)).rejects.toMatchObject({
+      name: 'ToolValidationError',
+      code: 'INVALID_TOOL_ARGS',
+      message: 'Provide the IDs to read in objectIds',
+    });
+  });
+
+  it('Rejects more IDs than the per-call maximum once objectId is merged in', async () => {
+    const tool = new GetUpdatesTool(mocks.mockApiClient);
+    const objectIds = Array.from({ length: 25 }, (_, i) => String(i));
+
+    await expect(tool.execute({ objectId: '99', objectIds, objectType: 'Item' } as any)).rejects.toMatchObject({
+      code: 'INVALID_TOOL_ARGS',
+    });
   });
 
   it('Rejects more than one board id with an INVALID_TOOL_ARGS validation error', async () => {

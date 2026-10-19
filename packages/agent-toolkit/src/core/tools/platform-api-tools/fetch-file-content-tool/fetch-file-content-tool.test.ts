@@ -1,8 +1,11 @@
+import fs from 'fs';
+import os from 'os';
 import ExcelJS from 'exceljs';
 import mammoth from 'mammoth';
 import { getDocumentProxy, extractText } from 'unpdf';
 import { createMockApiClient } from '../test-utils/mock-api-client';
-import { FetchFileContentTool } from './fetch-file-content-tool';
+import { FETCH_FILE_CONTENT_XLSX_STREAMING_FLAG, FetchFileContentTool } from './fetch-file-content-tool';
+import { extractTextFromExcel } from './excel-text-extractor';
 
 jest.mock('unpdf', () => ({
   getDocumentProxy: jest.fn(),
@@ -296,6 +299,277 @@ describe('FetchFileContentTool', () => {
     });
     expect(String(firstFile(result.content).text)).toContain('=== Sheet: Sheet1 ===');
     expect(String(firstFile(result.content).text)).toContain('col_a');
+  });
+
+  describe('Excel extraction', () => {
+    async function toBuffer(workbook: ExcelJS.Workbook): Promise<Buffer> {
+      return Buffer.from(await workbook.xlsx.writeBuffer());
+    }
+
+    async function runTool(xlsxBuf: Buffer) {
+      mocks.setResponse(
+        assetsGraphqlResponse([{ public_url: 'https://x/t.xlsx', name: 't.xlsx', file_extension: 'xlsx' }]),
+      );
+      fetchMock.mockResolvedValue(createMockFetchResponse({ body: xlsxBuf, contentLength: String(xlsxBuf.length) }));
+      const tool = new FetchFileContentTool(mocks.mockApiClient);
+      return firstFile((await tool.execute({ item_id: '1', column_id: 'files' })).content);
+    }
+
+    it('renders every sheet, dates, formula results and rich text', async () => {
+      const workbook = new ExcelJS.Workbook();
+      const first = workbook.addWorksheet('First');
+      first.addRow(['name', 'when', 'sum', 'note']);
+      first.addRow([
+        'a',
+        new Date('2024-03-05T00:00:00.000Z'),
+        { formula: 'B2*0+1+1', result: 2 },
+        { richText: [{ text: 'rich ' }, { text: 'text', font: { bold: true } }] },
+      ]);
+      const second = workbook.addWorksheet('Second');
+      second.addRow(['x', true, 3.5]);
+
+      const file = await runTool(await toBuffer(workbook));
+
+      expect(file.text).toBe(
+        [
+          '=== Sheet: First ===',
+          'name,when,sum,note',
+          'a,2024-03-05T00:00:00.000Z,2,rich text',
+          '',
+          '=== Sheet: Second ===',
+          'x,true,3.5',
+        ].join('\n'),
+      );
+      expect(file.extraction_truncated).toBeUndefined();
+    });
+
+    it('is not slowed down by full-column data validations', async () => {
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet('Data');
+      sheet.addRow(['a', 'b']);
+      sheet.addRow([1, 2]);
+      // Worksheet typings omit `dataValidations`, which ExcelJS writes as a range `sqref`.
+      const { dataValidations } = sheet as unknown as {
+        dataValidations: { add(address: string, validation: ExcelJS.DataValidation): void };
+      };
+      for (const col of ['E', 'F', 'G', 'H', 'I', 'J', 'K', 'L']) {
+        dataValidations.add(`${col}1:${col}1048576`, { type: 'list', allowBlank: true, formulae: ['"x,y"'] });
+      }
+      const xlsxBuf = await toBuffer(workbook);
+
+      const started = Date.now();
+      const result = await extractTextFromExcel(xlsxBuf);
+      const elapsed = Date.now() - started;
+
+      expect(result.text).toBe('=== Sheet: Data ===\na,b\n1,2');
+      expect((await runTool(xlsxBuf)).text).toBe('=== Sheet: Data ===\na,b\n1,2');
+      expect(elapsed).toBeLessThan(10_000);
+    }, 120_000);
+
+    it('keeps output bounded for a value in the last column and ignores lone empty far-right cells', async () => {
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet('Wide');
+      sheet.addRow(['a', 'b']);
+      sheet.addRow(['c', 'd']);
+      sheet.getCell('XFD2').value = { formula: '""', result: '' };
+      sheet.getCell('XFD3').value = 'far';
+      const file = await runTool(await toBuffer(workbook));
+
+      const lines = String(file.text).split('\n');
+      expect(lines.slice(0, 3)).toEqual(['=== Sheet: Wide ===', 'a,b', 'c,d']);
+      expect(lines[3].endsWith(',far')).toBe(true);
+      expect(String(file.text).length).toBeLessThan(20_000);
+    });
+
+    it('stops at the text cap and reports truncation', async () => {
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet('Big');
+      for (let i = 0; i < 200; i++) sheet.addRow([`row-${i}`, 'x'.repeat(50)]);
+
+      const result = await extractTextFromExcel(await toBuffer(workbook), { maxTextLength: 500 });
+
+      expect(result.truncatedBy).toBe('size');
+      expect(result.text.length).toBe(500);
+      expect(result.text.startsWith('=== Sheet: Big ===\nrow-0,')).toBe(true);
+    });
+
+    it('stops at the deadline and returns what was read so far', async () => {
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet('Slow');
+      for (let i = 0; i < 50; i++) sheet.addRow([`row-${i}`]);
+      let clock = 0;
+
+      const result = await extractTextFromExcel(await toBuffer(workbook), {
+        deadlineMs: 25,
+        now: () => (clock += 10),
+      });
+
+      expect(result.truncatedBy).toBe('time');
+      expect(result.text).toBe('=== Sheet: Slow ===\nrow-0\nrow-1');
+    });
+
+    describe('temp files and zip layout', () => {
+      // exceljs resolves `tmp` from the hoisted root; the package ships no typings.
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const tmp = require(require.resolve('tmp', { paths: [require.resolve('exceljs')] })) as {
+        file: (...args: unknown[]) => unknown;
+      };
+
+      const tempEntries = () => fs.readdirSync(os.tmpdir()).filter((name) => name.startsWith(`tmp-${process.pid}-`));
+
+      async function expectNoTempFiles(run: () => Promise<unknown>) {
+        const before = tempEntries();
+        const fileSpy = jest.spyOn(tmp, 'file');
+        try {
+          await run();
+          expect(fileSpy).not.toHaveBeenCalled();
+          expect(tempEntries()).toEqual(before);
+        } finally {
+          fileSpy.mockRestore();
+        }
+      }
+
+      async function stringWorkbook(rows = 200): Promise<Buffer> {
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet('Big');
+        for (let i = 0; i < rows; i++) sheet.addRow([`row-${i}`, 'x'.repeat(50)]);
+        return toBuffer(workbook);
+      }
+
+      it('writes sharedStrings.xml after the first sheet in ExcelJS output', async () => {
+        const buf = await stringWorkbook();
+        expect(buf.indexOf('xl/worksheets/sheet1.xml')).toBeGreaterThan(-1);
+        expect(buf.indexOf('xl/sharedStrings.xml')).toBeGreaterThan(buf.indexOf('xl/worksheets/sheet1.xml'));
+      });
+
+      it('leaves no temp files when the size cap stops reading early', async () => {
+        const buf = await stringWorkbook();
+        await expectNoTempFiles(async () => {
+          const result = await extractTextFromExcel(buf, { maxTextLength: 500 });
+          expect(result.truncatedBy).toBe('size');
+        });
+      });
+
+      it('leaves no temp files when the deadline stops reading early', async () => {
+        const buf = await stringWorkbook();
+        let clock = 0;
+        await expectNoTempFiles(async () => {
+          const result = await extractTextFromExcel(buf, { deadlineMs: 25, now: () => (clock += 10) });
+          expect(result.truncatedBy).toBe('time');
+          expect(result.text).toBe('=== Sheet: Big ===\nrow-0,' + 'x'.repeat(50) + '\nrow-1,' + 'x'.repeat(50));
+        });
+      });
+
+      it('extracts a workbook without text cells and creates no temp files', async () => {
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet('Nums');
+        sheet.addRow([1, 2.5, true]);
+        sheet.addRow([new Date('2024-03-05T00:00:00.000Z'), false, 7]);
+        const buf = await toBuffer(workbook);
+
+        const hasSharedStrings = buf.indexOf('xl/sharedStrings.xml') !== -1;
+        expect(hasSharedStrings).toBe(false);
+        await expectNoTempFiles(async () => {
+          const result = await extractTextFromExcel(buf);
+          expect(result).toEqual({ text: '=== Sheet: Nums ===\n1,2.5,true\n2024-03-05T00:00:00.000Z,false,7' });
+        });
+      });
+
+      it('rejects a buffer that is not a zip archive', async () => {
+        await expect(extractTextFromExcel(Buffer.from('definitely not an xlsx file'))).rejects.toThrow();
+      });
+    });
+
+    it('separates sheets with a blank line, including empty ones', async () => {
+      const workbook = new ExcelJS.Workbook();
+      workbook.addWorksheet('First').addRow(['a']);
+      workbook.addWorksheet('Empty');
+      workbook.addWorksheet('Last').addRow(['b']);
+
+      const result = await extractTextFromExcel(await toBuffer(workbook));
+
+      expect(result.text).toBe('=== Sheet: First ===\na\n\n=== Sheet: Empty ===\n\n=== Sheet: Last ===\nb');
+    });
+
+    it('skips rows that only carry formatting', async () => {
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet('Styled');
+      sheet.addRow(['head', 'er']);
+      for (let r = 5; r <= 1000; r++) {
+        const cell = sheet.getCell(r, 1);
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFF0000' } };
+        cell.font = { bold: true };
+      }
+      sheet.getCell('A1001').value = 'tail';
+
+      const result = await extractTextFromExcel(await toBuffer(workbook));
+
+      expect(result.text).toBe('=== Sheet: Styled ===\nhead,er\ntail');
+    });
+
+    it('does not report truncation for small workbooks', async () => {
+      const result = await extractTextFromExcel(await makeXlsxBuffer());
+      expect(result).toEqual({ text: '=== Sheet: Sheet1 ===\ncol_a,col_b\n1,2' });
+    });
+
+    it('surfaces truncation on the returned file object', async () => {
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet('Huge');
+      const line = 'y'.repeat(1000);
+      for (let i = 0; i < 6000; i++) sheet.addRow([line]);
+
+      const file = await runTool(await toBuffer(workbook));
+
+      expect(file).toMatchObject({
+        content_type: 'excel',
+        extraction_truncated: true,
+        has_more: true,
+        next_offset: 50_000,
+        total_length: 5_000_000,
+      });
+      expect(file.message).toContain('5000000 characters');
+    }, 60_000);
+
+    describe('xlsx streaming flag', () => {
+      // A trailing empty-string formula: the streaming reader drops it, the legacy loader keeps its commas.
+      async function workbookWithTrailingEmptyCell(): Promise<Buffer> {
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet('Flag');
+        sheet.addRow(['a', 'b']);
+        sheet.getCell('D1').value = { formula: '""', result: '' };
+        return toBuffer(workbook);
+      }
+
+      async function runToolWithFlag(xlsxBuf: Buffer, flagChecker?: (flagKey: string) => boolean) {
+        mocks.setResponse(
+          assetsGraphqlResponse([{ public_url: 'https://x/t.xlsx', name: 't.xlsx', file_extension: 'xlsx' }]),
+        );
+        fetchMock.mockResolvedValue(createMockFetchResponse({ body: xlsxBuf, contentLength: String(xlsxBuf.length) }));
+        const tool = new FetchFileContentTool(mocks.mockApiClient, flagChecker && { deps: { flagChecker } });
+        return firstFile((await tool.execute({ item_id: '1', column_id: 'files' })).content);
+      }
+
+      it('uses the streaming reader when the flag is on', async () => {
+        const flagChecker = jest.fn().mockReturnValue(true);
+
+        const file = await runToolWithFlag(await workbookWithTrailingEmptyCell(), flagChecker);
+
+        expect(flagChecker).toHaveBeenCalledWith(FETCH_FILE_CONTENT_XLSX_STREAMING_FLAG);
+        expect(file.text).toBe('=== Sheet: Flag ===\na,b');
+      });
+
+      it('uses the legacy loader when the flag is off', async () => {
+        const file = await runToolWithFlag(await workbookWithTrailingEmptyCell(), () => false);
+
+        expect(file.text).toBe('=== Sheet: Flag ===\na,b,,');
+      });
+
+      it('uses the streaming reader when the host passes no flag checker', async () => {
+        const file = await runToolWithFlag(await workbookWithTrailingEmptyCell());
+
+        expect(file.text).toBe('=== Sheet: Flag ===\na,b');
+      });
+    });
   });
 
   it('treats unknown extensions as utf-8 with content_type unknown', async () => {

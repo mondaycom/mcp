@@ -1,6 +1,6 @@
 # Changelog
 
-## 5.75.1
+## 5.75.3
 
 ### Reduce subitem lock contention
 
@@ -11,6 +11,23 @@
 ### Report all-failed bulk operations as errors
 
 - `create_items`, `create_updates`, and `update_items` now return a batch where every entry fails as an MCP error while preserving its summary, per-entry results, and structured errors. Partial successes remain successful MCP responses to avoid encouraging a retry of entries that were already created or updated.
+
+## 5.75.2
+
+### `get_updates` accepts `objectId` again
+
+- `objectId` is back as an optional alias: a single ID, treated as `objectIds: [objectId]`. Clients that cache tool schemas kept sending `objectId` after 5.75.0 removed it, and those calls were rejected before reaching the tool.
+- `objectIds` is optional again. Both can be sent and are merged, up to 25 IDs. A call with neither gets an `INVALID_TOOL_ARGS` validation error.
+
+## 5.75.1
+
+### `fetch_file_content` reads .xlsx files without stalling
+
+- Full-column data validations and large merged ranges in a workbook made the full-workbook loader expand them into millions of cells, so a small .xlsx could block the server for minutes. `.xlsx` files are now read with a streaming reader that skips those parts and only reads cell values, with the same cell text as before.
+- Sheets are read straight from the file, without temporary copies on disk. Workbooks with more than 5,000 zip entries are refused.
+- Reading rows stops at 5,000,000 characters or after 20 seconds of reading, whichever comes first. Trailing empty cells in a row no longer add commas, and rows that only carry formatting are skipped.
+- When extraction stops early, the file result has `extraction_truncated: true` and a `message` saying why; `total_length`, `has_more` and `next_offset` paging work on the text that was read.
+- The streaming reader is behind the `mcp-fetch-file-content-xlsx-streaming` flag, checked through `deps.flagChecker`. When the flag is off, `.xlsx` files use the old full-workbook loader. Hosts that pass no `flagChecker` get the streaming reader.
 
 ## 5.75.0
 
