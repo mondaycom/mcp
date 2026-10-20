@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.76.0
+
+### `update_column` can turn rollup on and off
+
+- New optional `rollupFunction` input, mapped to `capabilities: { calculated: ... }` on the GraphQL `update_column` mutation. A function (`MIN`, `MAX`, `SUM`, `MIN_MAX`, `COUNT_KEYS`, `NONE`) turns rollup on, `null` turns it off, and omitting it leaves rollup unchanged.
+
 ## 5.75.3
 
 ### Reduce subitem lock contention

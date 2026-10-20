@@ -144,6 +144,7 @@ export const updateColumn = gql`
     $columnTitle: String
     $columnDescription: String
     $columnSettings: JSON
+    $capabilities: ColumnCapabilitiesInput
   ) {
     update_column(
       board_id: $boardId
@@ -153,6 +154,7 @@ export const updateColumn = gql`
       title: $columnTitle
       description: $columnDescription
       settings: $columnSettings
+      capabilities: $capabilities
     ) {
       id
       title
