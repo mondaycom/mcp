@@ -74,11 +74,6 @@ import { GetAssetUploadUrlTool } from './get-asset-upload-url-tool/get-asset-upl
 import { FinalizeAssetUploadTool } from './finalize-asset-upload-tool/finalize-asset-upload-tool';
 import { LinkBoardItemsWorkflowTool } from './link-board-items-workflow-tool/link-board-items-workflow-tool';
 import { FetchFileContentTool } from './fetch-file-content-tool/fetch-file-content-tool';
-import { ManageAgentTool } from './agents-tools/manage-agent/manage-agent-tool';
-import { ManageAgentTriggersTool } from './agents-tools/manage-agent-triggers/manage-agent-triggers-tool';
-import { ManageAgentSkillsTool } from './agents-tools/manage-agent-skills/manage-agent-skills-tool';
-import { ManageAgentKnowledgeTool } from './agents-tools/manage-agent-knowledge/manage-agent-knowledge-tool';
-import { AgentCatalogTool } from './agents-tools/agent-catalog/agent-catalog-tool';
 import { ListAutomationsTool } from './automations-tools/list-automations/list-automations-tool';
 import { ManageAutomationsTool } from './automations-tools/manage-automations/manage-automations-tool';
 import { CreateAutomationTool } from './automations-tools/create-automation/create-automation-tool';
@@ -166,12 +161,6 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   FinalizeAssetUploadTool,
   LinkBoardItemsWorkflowTool,
   FetchFileContentTool,
-  // monday Platform Agents (subgraph still on dev API version)
-  ManageAgentTool,
-  ManageAgentTriggersTool,
-  ManageAgentSkillsTool,
-  ManageAgentKnowledgeTool,
-  AgentCatalogTool,
   // Automations (subgraph still on dev API version)
   ListAutomationsTool,
   ManageAutomationsTool,
@@ -258,8 +247,6 @@ export * from './get-assets-tool/get-assets-tool';
 export * from './get-asset-upload-url-tool/get-asset-upload-url-tool';
 export * from './finalize-asset-upload-tool/finalize-asset-upload-tool';
 export * from './fetch-file-content-tool/fetch-file-content-tool';
-// monday Platform Agents
-export * from './agents-tools';
 // Automations
 export * from './automations-tools';
 // Dashboard Tools

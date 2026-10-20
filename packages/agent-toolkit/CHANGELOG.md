@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.76.0
+
+### Agent management tools removed
+
+- Agent management tools removed from the toolkit. `manage_agent`, `manage_agent_triggers`, `manage_agent_skills`, `manage_agent_knowledge` and `agent_catalog` are no longer registered or exported. The hosted monday MCP still serves them. Local monday-api-mcp users lose these 5 tools.
+
 ## 5.75.3
 
 ### Reduce subitem lock contention
