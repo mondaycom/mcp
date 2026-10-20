@@ -4,7 +4,7 @@ import { ApiClient } from '@mondaydotcomorg/api';
 import { getFilteredToolInstances } from '../utils/tools/tools-filtering.utils';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import { Tool } from '../core/tool';
+import { Tool, ToolOutputType } from '../core/tool';
 import { MondayAgentToolkitConfig } from '../core/monday-agent-toolkit';
 import { ManageToolsTool } from '../core/tools/platform-api-tools/manage-tools-tool';
 import { DynamicToolManager } from './dynamic-tool-manager';
@@ -156,7 +156,7 @@ export class MondayAgentToolkit extends McpServer {
           } else {
             result = await tool.execute();
           }
-          return this.formatToolResult(result.content);
+          return this.formatToolResult(result);
         } catch (error) {
           return this.handleToolError(error, tool.name);
         }
@@ -313,10 +313,10 @@ export class MondayAgentToolkit extends McpServer {
             );
           }
           const result = await tool.execute(parsedArgs.data, extra);
-          return this.formatToolResult(result.content);
+          return this.formatToolResult(result);
         } else {
           const result = await tool.execute(undefined, extra);
-          return this.formatToolResult(result.content);
+          return this.formatToolResult(result);
         }
       } catch (error) {
         return formatToolError(error, { toolName: tool.name });
@@ -347,16 +347,22 @@ export class MondayAgentToolkit extends McpServer {
   /**
    * Format the tool result into the expected MCP format
    */
-  private formatToolResult(content: string | Record<string, any>): CallToolResult {
+  private formatToolResult(
+    result: Pick<ToolOutputType<Record<string, unknown>>, 'content' | 'isError'>,
+  ): CallToolResult {
+    const { content, isError } = result;
+
     if (typeof content === 'string') {
       return {
         content: [{ type: 'text', text: content }],
+        ...(isError ? { isError: true } : {}),
       };
     }
 
     return {
       structuredContent: content,
       content: [{ type: 'text', text: JSON.stringify(content) }],
+      ...(isError ? { isError: true } : {}),
     };
   }
 

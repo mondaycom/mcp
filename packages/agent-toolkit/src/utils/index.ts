@@ -24,4 +24,4 @@ export {
   throwIfSearchTimeoutError,
 } from './error.utils';
 export { runWithConcurrency, runWithRateLimitCircuit } from './concurrency.utils';
-export type { RateLimitCircuitOptions } from './concurrency.utils';
+export type { ConcurrencyGroupOptions, RateLimitCircuitOptions } from './concurrency.utils';

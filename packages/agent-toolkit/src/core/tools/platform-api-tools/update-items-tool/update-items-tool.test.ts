@@ -427,6 +427,7 @@ describe('Update Items Tool Behaviour', () => {
       const c = result.content as any;
       expect(c.summary).toEqual({ total: 1, updated: 0, failed: 1 });
       expect(c.is_partial_success).toBe(false);
+      expect(result.isError).toBe(true);
       expect(sessionContext.metadata).toEqual({ items_count: 1 });
     });
   });

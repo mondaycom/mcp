@@ -3,7 +3,7 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
 import { buildToolErrorStructuredContent, ToolValidationError } from '../../../../utils';
 import { createMockApiClient } from '../test-utils/mock-api-client';
 import { CreateItemsTool, createItemsInBoardToolSchema } from './create-items-tool';
-import { CONCURRENCY_LIMIT, MAX_ITEMS_PER_CALL } from './constants';
+import { CONCURRENCY_LIMIT, MAX_ITEMS_PER_CALL, PER_PARENT_CONCURRENCY_LIMIT } from './constants';
 
 describe('Create Items Tool Behaviour', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
@@ -28,6 +28,44 @@ describe('Create Items Tool Behaviour', () => {
   const changeColumnValuesResponse = (id: string) => ({
     change_multiple_column_values: { id },
   });
+
+  const columnValueError = (message: string, errorData: Record<string, unknown>) =>
+    Object.assign(new Error('GraphQL Error'), {
+      response: {
+        errors: [
+          {
+            message,
+            extensions: {
+              code: 'ColumnValueException',
+              status_code: 200,
+              error_data: errorData,
+            },
+          },
+        ],
+        status: 200,
+      },
+    });
+
+  const fieldLimitError = (itemId: number) =>
+    Object.assign(new Error('Item link max locks exceeded'), {
+      response: {
+        errors: [
+          {
+            message: 'Item link max locks exceeded',
+            extensions: {
+              code: 'FIELD_LIMIT_EXCEEDED',
+              status_code: 429,
+              retry_in_seconds: 10,
+              error_data: {
+                item_id: itemId,
+                column_validation_error_code: 'itemLinkMaxLocksExceeded',
+              },
+            },
+          },
+        ],
+        status: 429,
+      },
+    });
 
   describe('Happy path — create items on a board', () => {
     it('creates all items and returns per-item results with correct index', async () => {
@@ -104,6 +142,7 @@ describe('Create Items Tool Behaviour', () => {
       const c = result.content as any;
       expect(c.summary).toEqual({ total: 3, created: 2, failed: 1 });
       expect(c.is_partial_success).toBe(true);
+      expect(result.isError).toBeUndefined();
       expect(c.results).toHaveLength(3);
       expect(c.results[0]).toMatchObject({ index: 0, item_id: '1' });
       expect(c.results[1]).toMatchObject({ index: 1 });
@@ -221,6 +260,50 @@ describe('Create Items Tool Behaviour', () => {
     });
   });
 
+  describe('Subitem concurrency', () => {
+    it('caps each parent independently while allowing different parents to run together', async () => {
+      const activeByParent = new Map<string, number>();
+      const peakByParent = new Map<string, number>();
+      let active = 0;
+      let peak = 0;
+
+      mocks
+        .getMockRequest()
+        .mockImplementation(async (_query: unknown, variables: { parentItemId: string; itemName: string }) => {
+          const parentActive = (activeByParent.get(variables.parentItemId) ?? 0) + 1;
+          activeByParent.set(variables.parentItemId, parentActive);
+          peakByParent.set(
+            variables.parentItemId,
+            Math.max(peakByParent.get(variables.parentItemId) ?? 0, parentActive),
+          );
+          active++;
+          peak = Math.max(peak, active);
+
+          await new Promise((resolve) => setTimeout(resolve, 5));
+
+          active--;
+          activeByParent.set(variables.parentItemId, parentActive - 1);
+          return subitemResponse(variables.itemName, variables.itemName, variables.parentItemId);
+        });
+
+      const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
+      const items = Array.from({ length: 20 }, (_, index) => ({
+        name: `subitem-${index}`,
+        parentItemId: index < 10 ? 901 : 902,
+        columnValues: '{}',
+      }));
+
+      const result = await tool.execute({ items });
+
+      expect(peakByParent.get('901')).toBe(PER_PARENT_CONCURRENCY_LIMIT);
+      expect(peakByParent.get('902')).toBe(PER_PARENT_CONCURRENCY_LIMIT);
+      expect(peak).toBe(PER_PARENT_CONCURRENCY_LIMIT * 2);
+      expect(result.content).toMatchObject({
+        summary: { total: 20, created: 20, failed: 0 },
+      });
+    });
+  });
+
   describe('Error passthrough', () => {
     it('passes through the underlying error message verbatim in results[i].error', async () => {
       const graphqlError = new Error('GraphQL Error');
@@ -234,6 +317,7 @@ describe('Create Items Tool Behaviour', () => {
       const result = await tool.execute({ items: [{ name: 'A', groupId: 'topics', columnValues: '{}' }] });
       const c = result.content as any;
 
+      expect(result.isError).toBe(true);
       expect(typeof c.results[0].error).toBe('string');
       expect(c.results[0].error).toContain('Invalid column values');
     });
@@ -293,6 +377,32 @@ describe('Create Items Tool Behaviour', () => {
       ]);
     });
 
+    it('adds retry guidance for the current parent subitems lock without changing error details', async () => {
+      mocks.setError(columnValueError("failed to acquire lock on '901|subitems__1'", {}));
+
+      const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
+      const result = await tool.execute({
+        items: [{ name: 'A', parentItemId: 901, columnValues: '{}' }],
+      });
+      const content = result.content as {
+        results: Array<{ error: string }>;
+        errors: Array<Record<string, unknown>>;
+      };
+
+      expect(content.results[0].error).toContain(
+        'An item-link update hit a temporary concurrency limit. Wait a few seconds, then retry only the failed items in one create_items call.',
+      );
+      expect(content.errors).toEqual([
+        {
+          code: 'ColumnValueException',
+          status_code: 200,
+          error_data: {},
+          message: "failed to acquire lock on '901|subitems__1'",
+          path: ['results', 0],
+        },
+      ]);
+    });
+
     it('omits errors[] entirely on full success', async () => {
       mocks.setResponses([itemResponse('1', 'A'), itemResponse('2', 'B')]);
       const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
@@ -338,6 +448,48 @@ describe('Create Items Tool Behaviour', () => {
       expect(skipped.length).toBeGreaterThan(0);
       expect(c.errors).toEqual(
         expect.arrayContaining([expect.objectContaining({ code: 'RATE_LIMIT_SKIPPED' })]),
+      );
+    });
+
+    it('handles FIELD_LIMIT_EXCEEDED through the standard 429 circuit and preserves retry data', async () => {
+      mocks.getMockRequest().mockRejectedValue(fieldLimitError(901));
+
+      const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
+      const total = PER_PARENT_CONCURRENCY_LIMIT + 1;
+      const items = Array.from({ length: total }, (_, index) => ({
+        name: `subitem-${index}`,
+        parentItemId: 901,
+        columnValues: '{}',
+      }));
+
+      const result = await tool.execute({ items });
+      const content = result.content as {
+        errors: Array<Record<string, unknown>>;
+        results: Array<{ error: string }>;
+      };
+
+      expect(result.isError).toBe(true);
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(PER_PARENT_CONCURRENCY_LIMIT);
+      expect(content.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            code: 'FIELD_LIMIT_EXCEEDED',
+            status_code: 429,
+            retry_in_seconds: 10,
+            error_data: {
+              item_id: 901,
+              column_validation_error_code: 'itemLinkMaxLocksExceeded',
+            },
+          }),
+          {
+            code: 'RATE_LIMIT_SKIPPED',
+            message: 'Skipped: a previous item hit a rate limit; this item was not attempted',
+            path: ['results', PER_PARENT_CONCURRENCY_LIMIT],
+          },
+        ]),
+      );
+      expect(content.results[PER_PARENT_CONCURRENCY_LIMIT].error).toBe(
+        'Skipped: a previous item hit a rate limit; this item was not attempted',
       );
     });
 
@@ -491,6 +643,16 @@ describe('Create Items Tool Behaviour', () => {
         { code: 'MISSING_REQUIRED_PARAMETER', message: 'Item name is required', path: ['results', 2] },
       ]);
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Description', () => {
+    it('explains how to batch subitems by parent', () => {
+      const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
+
+      expect(tool.getDescription()).toContain(
+        "Batch each parent's subitems into groups of up to 20. Wait for one batch to finish before starting the next batch for that parent.",
+      );
     });
   });
 

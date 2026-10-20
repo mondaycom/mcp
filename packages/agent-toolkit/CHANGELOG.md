@@ -6,6 +6,18 @@
 
 - Agent management tools removed from the toolkit. `manage_agent`, `manage_agent_triggers`, `manage_agent_skills`, `manage_agent_knowledge` and `agent_catalog` are no longer registered or exported. The hosted monday MCP serves them from the monday-agents service. Local monday-api-mcp users lose these 5 tools.
 
+## 5.75.3
+
+### Reduce subitem lock contention
+
+- `create_items` now keeps at most five subitem creates in flight per parent while retaining the overall concurrency limit of 15 across different parents and regular items.
+- Item-link `FIELD_LIMIT_EXCEEDED` responses use the standard 429 circuit and preserve `retry_in_seconds`. Parent subitems Redlock failures tell callers to wait and retry only the failed items.
+- The tool description directs callers to batch each parent's subitems in groups of up to 20 and finish one batch before starting the next for that parent.
+
+### Report all-failed bulk operations as errors
+
+- `create_items`, `create_updates`, and `update_items` now return a batch where every entry fails as an MCP error while preserving its summary, per-entry results, and structured errors. Partial successes remain successful MCP responses to avoid encouraging a retry of entries that were already created or updated.
+
 ## 5.75.2
 
 ### `get_updates` accepts `objectId` again
