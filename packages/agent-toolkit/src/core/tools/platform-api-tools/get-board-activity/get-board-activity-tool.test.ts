@@ -6,9 +6,21 @@ const mockBoard = {
   url: 'https://monday.com/boards/1',
   activity_logs: {
     logs: [
-      { created_at: '2024-01-01T00:00:00Z', event: 'create_pulse', entity: 'pulse', user_id: '123', data: '{"key":"value"}' },
+      {
+        created_at: '2024-01-01T00:00:00Z',
+        event: 'create_pulse',
+        entity: 'pulse',
+        user_id: '123',
+        data: '{"key":"value"}',
+      },
       null,
-      { created_at: '2024-01-02T00:00:00Z', event: 'update_pulse', entity: 'pulse', user_id: '456', data: '{"foo":"bar"}' },
+      {
+        created_at: '2024-01-02T00:00:00Z',
+        event: 'update_pulse',
+        entity: 'pulse',
+        user_id: '456',
+        data: '{"foo":"bar"}',
+      },
     ],
     cursor: null,
   },
@@ -20,6 +32,10 @@ describe('GetBoardActivityTool', () => {
   beforeEach(() => {
     mocks = createMockApiClient();
     jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it('maps response to correct shape with board metadata and filtered nulls', async () => {
@@ -52,8 +68,20 @@ describe('GetBoardActivityTool', () => {
       board_name: 'Test Board',
       board_url: 'https://monday.com/boards/1',
       data: [
-        { created_at: '2024-01-01T00:00:00Z', event: 'create_pulse', entity: 'pulse', user_id: '123', data: '{"key":"value"}' },
-        { created_at: '2024-01-02T00:00:00Z', event: 'update_pulse', entity: 'pulse', user_id: '456', data: '{"foo":"bar"}' },
+        {
+          created_at: '2024-01-01T00:00:00Z',
+          event: 'create_pulse',
+          entity: 'pulse',
+          user_id: '123',
+          data: '{"key":"value"}',
+        },
+        {
+          created_at: '2024-01-02T00:00:00Z',
+          event: 'update_pulse',
+          entity: 'pulse',
+          user_id: '456',
+          data: '{"foo":"bar"}',
+        },
       ],
     });
   });
@@ -68,6 +96,7 @@ describe('GetBoardActivityTool', () => {
   });
 
   it('passes all filters to GraphQL with correct type conversions', async () => {
+    jest.useFakeTimers({ now: new Date('2024-02-10T00:00:00Z') });
     mocks.setResponse({ boards: [mockBoard] });
     const tool = new GetBoardActivityTool(mocks.mockApiClient);
 
@@ -80,18 +109,15 @@ describe('GetBoardActivityTool', () => {
       includeData: true,
     });
 
-    expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-      expect.stringContaining('query GetBoardActivity'),
-      {
-        boardId: '42',
-        itemIds: ['101', '202'],
-        userIds: ['300', '400'],
-        fromDate: '2024-01-01T00:00:00Z',
-        toDate: '2024-02-01T00:00:00Z',
-        limit: 1000,
-        includeData: true,
-      },
-    );
+    expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetBoardActivity'), {
+      boardId: '42',
+      itemIds: ['101', '202'],
+      userIds: ['300', '400'],
+      fromDate: '2024-01-01T00:00:00Z',
+      toDate: '2024-02-01T00:00:00Z',
+      limit: 1000,
+      includeData: true,
+    });
   });
 
   it('passes undefined for omitted filters — not empty arrays', async () => {
@@ -122,6 +148,34 @@ describe('GetBoardActivityTool', () => {
         userIds: [],
       }),
     );
+  });
+
+  it('clamps fromDate older than 90 days and mentions it in the message', async () => {
+    jest.useFakeTimers({ now: new Date('2024-06-01T00:00:00Z') });
+    mocks.setResponse({ boards: [mockBoard] });
+    const tool = new GetBoardActivityTool(mocks.mockApiClient);
+
+    const result = await tool.execute({ boardId: 1, fromDate: '2023-01-01T00:00:00Z', includeData: false });
+
+    expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+      expect.stringContaining('query GetBoardActivity'),
+      expect.objectContaining({ fromDate: '2024-03-03T00:00:00.000Z' }),
+    );
+    expect((result.content as { message: string }).message).toContain('limited to the last 90 days');
+  });
+
+  it('does not clamp fromDate within the last 90 days', async () => {
+    jest.useFakeTimers({ now: new Date('2024-06-01T00:00:00Z') });
+    mocks.setResponse({ boards: [mockBoard] });
+    const tool = new GetBoardActivityTool(mocks.mockApiClient);
+
+    const result = await tool.execute({ boardId: 1, fromDate: '2024-05-01T00:00:00Z', includeData: false });
+
+    expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+      expect.stringContaining('query GetBoardActivity'),
+      expect.objectContaining({ fromDate: '2024-05-01T00:00:00Z' }),
+    );
+    expect((result.content as { message: string }).message).toBe('Board activity retrieved');
   });
 
   it('propagates API errors', async () => {
