@@ -19,7 +19,7 @@ export const createItemToolSchema = {
     .string()
     .min(1, 'Item name cannot be empty')
     .max(255, 'Item name must be 255 characters or fewer')
-    .describe("The name of the new item to be created, must be relevant to the user's request. 1–255 characters."),
+    .describe("Required. The item name, sent as name, relevant to the user's request. 1–255 characters."),
   groupId: z
     .string()
     .optional()

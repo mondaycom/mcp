@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.77.1
+
+### `create_item` says `name` is required
+
+- The `name` input's description now opens with "Required" and says the item name is sent as `name`. About 0.25% of calls sent the name as `itemName` and failed validation.
+
 ## 5.77.0
 
 ### `update_column` can turn rollup on and off
