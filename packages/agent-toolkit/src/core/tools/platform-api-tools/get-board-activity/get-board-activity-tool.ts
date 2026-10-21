@@ -19,7 +19,7 @@ export const getBoardActivityToolSchema = {
     .string()
     .optional()
     .describe(
-      'Start date for activity range (ISO8601DateTime format). Defaults to 30 days ago. Limited to the last 90 days; older dates are clamped to 90 days ago',
+      'Start date for activity range (ISO8601DateTime format). Defaults to 30 days ago. Limited to the last 90 days. Older dates are clamped to 90 days ago',
     ),
   toDate: z.string().optional().describe('End date for activity range (ISO8601DateTime format). Defaults to now'),
   includeData: z
