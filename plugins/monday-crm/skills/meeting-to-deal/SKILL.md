@@ -3,7 +3,7 @@ name: meeting-to-deal
 description: Turn meeting transcripts into deal updates — key points, commitments, and next steps posted to matching CRM deals automatically. Auto-creates contacts for new attendees. Use when someone says "log my meetings to deals", "update CRM from calls", "what did I commit to in meetings", "sync notetaker", "log this meeting", "I just had a call with [company]", "what did I promise in that meeting", "add notes from today's calls", or "update the deal after my call".
 argument-hint: "[optional: time window — 'today', 'yesterday', 'last 7 days', or 'since 2026-05-20']"
 user-invocable: true
-allowed-tools: [Read, AskUserQuestion, mcp__monday__get_user_context, mcp__monday__list_workspaces, mcp__monday__search, mcp__monday__get_board_info, mcp__monday__get_column_type_info, mcp__monday__get_board_items_page, mcp__monday__get_notetaker_meetings, mcp__monday__create_update, mcp__monday__create_item, mcp__monday__change_item_column_values, mcp__monday__create_doc, mcp__monday__create_notification, mcp__monday__list_users_and_teams, mcp__monday__all_monday_api]
+allowed-tools: [Read, AskUserQuestion, mcp__monday__get_user_context, mcp__monday__list_workspaces, mcp__monday__search, mcp__monday__get_board_info, mcp__monday__get_column_type_info, mcp__monday__get_board_items_page, mcp__monday__explore_meetings, mcp__monday__get_meetings_content, mcp__monday__create_update, mcp__monday__create_item, mcp__monday__change_item_column_values, mcp__monday__create_doc, mcp__monday__create_notification, mcp__monday__list_users_and_teams, mcp__monday__all_monday_api]
 ---
 
 # Meeting to Opportunity
@@ -26,7 +26,8 @@ Flow: **Trigger → Pull meetings → Match → Synthesize → Publish (α) → 
 
 ## Tools (MCP)
 - `get_user_context` — user identity + email domain for filtering meetings and extracting `internal_domain`.
-- `get_notetaker_meetings` — recent meetings + transcripts.
+- `explore_meetings` — list the user's NoteTaker meetings in a date window (ids, titles, dates, short gist). Up to 20 per call.
+- `get_meetings_content` — fetch summary, action items, and transcript for meeting ids from `explore_meetings`.
 - `search` / `list_workspaces` / `get_board_info` — locate Deals + Contacts boards.
 - `get_board_items_page` — fetch active deals to match against.
 - `get_column_type_info` — resolve email/company columns by type.
@@ -50,7 +51,7 @@ Flow: **Trigger → Pull meetings → Match → Synthesize → Publish (α) → 
 
 1. Try `mcp__monday__get_user_context`. On error → standard install prompt, stop.
 2. Extract `internal_domain` from the user's email (e.g. `"kevin@monday.com"` → `"monday.com"`). Store for Steps 4–5. If email is absent from the response, `internal_domain` = `"monday.com"` (safe default).
-3. Try `mcp__monday__get_notetaker_meetings({ limit: 1 })`.
+3. Try `mcp__monday__explore_meetings({ limit: 1 })`.
 4. If NoteTaker returns results → set `notetaker_available: true`. Continue to Step 1.
 5. If NoteTaker returns auth error, permission error, or empty-by-permission → set `notetaker_available: false`. **Do not stop.** The skill will collect meeting content from the user directly in Step 3.
 
@@ -83,11 +84,12 @@ Hard safety rail regardless of mode: **no deletes, no amount-column writes, no c
 
 ### 3a — NoteTaker path (`notetaker_available: true`)
 
-`mcp__monday__get_notetaker_meetings({ since: <ISO>, until: <ISO>, limit: 50 })`. Cache transcripts + attendees + meeting metadata.
+1. `mcp__monday__explore_meetings({ start_time_from: <ISO>, start_time_to: <ISO>, limit: 20 })` — no `query`, so results are newest first. Collect meeting ids.
+2. `mcp__monday__get_meetings_content({ ids: [<ids>], include_summary: true, include_action_items: true, include_transcript: true })`. Cache summaries, action items, transcripts, participants, and meeting metadata. Ids listed as not returned (no completed recording, not accessible) are skipped and noted in the sync doc. If a meeting's content was dropped for size, request it again on its own.
 
 Edge cases:
 - **0 meetings in window:** don't stop — fall through to Step 3b to let the user provide meeting content manually. Print: *"No NoteTaker meetings found in `<window>`. You can paste meeting notes or describe what happened instead."*
-- **>50 meetings:** paginate up to 200, then cap and surface sampling note.
+- **20 meetings returned (the per-call cap):** split the window into smaller date ranges and repeat, up to 200 meetings total, then cap and surface a sampling note.
 - **Tool 429:** backoff 3x; on third failure fall through to Step 3b.
 
 ### 3b — Manual input path (`notetaker_available: false`, OR NoteTaker returned 0 meetings)
@@ -359,7 +361,7 @@ Synced 2 meetings to 2 deals. 1 skipped (internal). 1 contact created. Doc: [url
 | No Deals board | Step 4 degrades — sync doc only, suggest `workspace-builder`. |
 | Ambiguous match (≥2 candidates within 2 points) | Skip the write; log to sync doc as "ambiguous". |
 | Idempotency hit (same meeting-id in update) | Update existing content, don't duplicate. |
-| 429 on `get_notetaker_meetings` or `create_update` | Backoff 3x; halt on third with retry message. |
+| 429 on `explore_meetings` / `get_meetings_content` or `create_update` | Backoff 3x; halt on third with retry message. |
 | Contacts board missing (β approved, Proactive mode) | Surface chat message before sync doc: "Auto-contact was approved but I couldn't find a Contacts board. Contacts not created. Run `/monday-crm:workspace-builder` to set one up." Continue with α recap. |
 | Contacts board missing (β not triggered) | Skip β; log "no Contacts board" once in sync doc. |
 | connect-boards write via `all_monday_api` fails | Skip link; log in sync doc as "contact created, deal link pending — set manually". |

@@ -9,7 +9,7 @@ Shows: yesterday's meetings pulled from NoteTaker, matched to deals by attendee 
 
 **Claude (step 0 — connector + NoteTaker check):**
 *[calls `mcp__monday__get_user_context` → `user: { id: 487214, name: "Kevin Cheng" }`]*
-*[calls `mcp__monday__get_notetaker_meetings({ since: "2026-06-02T00:00:00Z", until: "2026-06-03T00:00:00Z", limit: 50 })` → 4 meetings returned]*
+*[calls `mcp__monday__explore_meetings({ start_time_from: "2026-06-02T00:00:00Z", start_time_to: "2026-06-03T00:00:00Z", limit: 20 })` → 4 meetings; then `get_meetings_content({ ids: [...4 ids], include_summary: true, include_action_items: true, include_transcript: true })`]*
 
 **Claude (step 1 — mode):**
 No explicit mode → Default. Will bundle all writes into a single batched confirm.

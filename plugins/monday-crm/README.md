@@ -1,6 +1,6 @@
 # monday CRM — Claude plugin
 
-Run your sales pipeline in monday CRM from plain language. Five skills read
+Run your sales pipeline in monday CRM from plain language. Nine skills read
 your live monday boards via the official monday MCP connector, synthesize
 insights, and write the result straight back into monday as a real board,
 dashboard, or doc — so work stays inside monday.
@@ -13,6 +13,10 @@ dashboard, or doc — so work stays inside monday.
 - "Set up a CRM pipeline from scratch"
 - "Run a health check on my CRM board"
 - "Find and clean up duplicate deals in my CRM"
+- "Create a 3-step follow-up sequence and enroll my new leads"
+- "Log my call with Acme: they want pricing by Friday"
+- "How many calls did each rep log last week?"
+- "When a deal moves to Won, notify the account owner"
 
 ## Skills
 
@@ -23,13 +27,17 @@ dashboard, or doc — so work stays inside monday.
 | `meeting-to-deal` | Meeting transcripts → deal updates + stage signals | "log my meetings to deals", "sync notetaker", "update CRM from calls" |
 | `workspace-builder` | CRM workspace from scratch → boards + columns + stages | "build me a CRM from scratch", "create CRM boards for me", "set up my pipeline" |
 | `data-cleanup` | Board health check (report) + bulk data fixes → doc + writes | "run a board health check", "clean my CRM", "fix my data", "what's broken in my CRM" |
+| `run-sequence` | Create, enroll, activate, and track email sequences | "create a sequence", "enroll this lead", "how is my sequence performing" |
+| `log-activity` | Log calls, meetings, and notes to item timelines; read activity history | "log my call with", "add a note to the deal", "what happened on this account" |
+| `activity-insights` | Team activity analytics: volume by rep and type, rep comparisons | "how many calls did my team make", "compare reps", "activity this week" |
+| `automate-crm` | Create and manage board automations in plain language | "when a deal is won, notify", "automate my follow-ups", "list my automations" |
 
 ## How it works
 
 ```
 ┌─────────────────┐     OAuth      ┌─────────────────┐
 │   Claude Code   │ ──────────────▶│  monday MCP     │
-│  (5 skills)     │                │  mcp.monday.com │
+│  (9 skills)     │                │  mcp.monday.com │
 └─────────────────┘                └────────┬────────┘
                                             │
                                    ┌────────▼────────┐
