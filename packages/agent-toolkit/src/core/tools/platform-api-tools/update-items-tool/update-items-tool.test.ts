@@ -281,14 +281,90 @@ describe('Update Items Tool Behaviour', () => {
   });
 
   describe('Missing board resolution', () => {
-    it('rejects the whole call when an update has no resolvable boardId', async () => {
+    const itemsBoardsResponse = (pairs: Array<[string, string]>) => ({
+      items: pairs.map(([id, boardId]) => ({ id, board: { id: boardId } })),
+    });
+
+    it('looks up the board of updates without a boardId and records how many were resolved', async () => {
+      mocks.setResponses([itemsBoardsResponse([['1', '789']]), changeResponse('1')]);
+      const tool = new UpdateItemsTool(mocks.mockApiClient);
+      const sessionContext = { metadata: {} as Record<string, unknown> };
+
+      const result = await tool.execute({ updates: [{ itemId: 1, columnValues: '{"text":"a"}' }] }, sessionContext);
+
+      expect(mocks.getMockRequest()).toHaveBeenNthCalledWith(1, expect.stringContaining('query GetItemsBoardIds'), {
+        itemIds: ['1'],
+        limit: 1,
+      });
+      expect(mocks.getMockRequest()).toHaveBeenNthCalledWith(
+        2,
+        expect.stringContaining('mutation changeItemColumnValues'),
+        expect.objectContaining({ boardId: '789', itemId: '1' }),
+      );
+      expect((result.content as any).results).toEqual([expect.objectContaining({ index: 0, board_id: 789 })]);
+      expect(sessionContext.metadata).toEqual({ items_count: 1, board_ids_resolved_from_items: 1 });
+    });
+
+    it('only looks up items whose board is missing, once per item, and keeps given boardIds', async () => {
+      mocks.setResponses([
+        itemsBoardsResponse([['2', '900']]),
+        changeResponse('1'),
+        changeResponse('2'),
+        changeResponse('2'),
+      ]);
+      const tool = new UpdateItemsTool(mocks.mockApiClient);
+
+      await tool.execute({
+        updates: [
+          { itemId: 1, boardId: 111, columnValues: '{"text":"a"}' },
+          { itemId: 2, columnValues: '{"text":"b"}' },
+          { itemId: 2, columnValues: '{"status":{"index":1}}' },
+        ],
+      });
+
+      const calls = mocks.getMockRequest().mock.calls;
+      expect(calls.filter(([query]) => query.includes('query GetItemsBoardIds'))).toEqual([
+        [expect.any(String), { itemIds: ['2'], limit: 1 }],
+      ]);
+      const mutationBoards = calls.slice(1).map(([, variables]) => [variables.itemId, variables.boardId]);
+      expect(mutationBoards).toEqual(
+        expect.arrayContaining([
+          ['1', '111'],
+          ['2', '900'],
+          ['2', '900'],
+        ]),
+      );
+    });
+
+    it('does not look anything up when every update has a board', async () => {
+      mocks.setResponse(changeResponse('1'));
+      const tool = new UpdateItemsTool(mocks.mockApiClient);
+      const sessionContext = { metadata: {} as Record<string, unknown> };
+
+      await tool.execute({ boardId: 456, updates: [{ itemId: 1, columnValues: '{}' }] }, sessionContext);
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('mutation changeItemColumnValues'),
+        expect.anything(),
+      );
+      expect(sessionContext.metadata).not.toHaveProperty('board_ids_resolved_from_items');
+    });
+
+    it('rejects the whole call when a board cannot be found from the itemId', async () => {
+      mocks.setResponses([itemsBoardsResponse([['1', '789']])]);
       const tool = new UpdateItemsTool(mocks.mockApiClient);
 
       await expect(
-        tool.execute({ updates: [{ itemId: 1, columnValues: '{"text":"a"}' }] }),
-      ).rejects.toThrow('Missing boardId');
+        tool.execute({
+          updates: [
+            { itemId: 1, columnValues: '{"text":"a"}' },
+            { itemId: 2, columnValues: '{"text":"b"}' },
+          ],
+        }),
+      ).rejects.toThrow('Missing boardId for update(s) at index 1, and their board could not be found from the itemId');
 
-      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
     });
   });
 

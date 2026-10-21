@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.77.1
+
+### `update_items` finds a missing board from the item
+
+- When an update has no `boardId` (neither on the update nor at batch level), the tool now looks up the item's board in one batched query instead of failing with "Missing boardId". This also covers subitems, whose board is the subitems board rather than the parent item's board. Calls that pass a board are unchanged.
+- Each lookup records `board_ids_resolved_from_items` in the tool's session metadata, so the rate of calls that omit the board stays measurable.
+- The `boardId` descriptions now say the board is required (batch-level or per update) and explain where to find a subitem's board. The schema still marks both fields optional so Copilot Studio keeps sending the call (#499).
+
 ## 5.77.0
 
 ### `update_column` can turn rollup on and off
