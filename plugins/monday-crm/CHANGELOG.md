@@ -3,6 +3,13 @@
 All notable changes to the `monday-crm` Claude plugin are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+- **`crm-signals`** — surface structured signals extracted from CRM item communication history (emails, meetings, activities). Works on deals, accounts, contacts, and plain items. Returns typed signals: health summary, commitments, blockers, buying signals, objections, strategic outlook, open questions, stakeholders, decisions, and task resolutions. Correctly handles pipeline scans (batch mode with E&A not yet connected) without spiraling into per-item on-demand extraction. Feature-gated on `enable-crm-context-gateway-plat-mcp`.
+
+---
+
 ## [0.5.0] — 2026-08-05
 
 ### Added
@@ -76,11 +83,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [0.1.0] — 2026-06-03
 
 ### Added
-- **daily-briefing** — daily pipeline digest published as a monday update.
-- **forecast** — commit / best-case / pipeline dashboard by close month.
-- **board-diagnosis** — five-strand data-quality audit with fix-task generation.
-- **data-cleanup** — phone, email, country-code normalization + bulk-set fixes.
-- **workspace-builder** — CRM board setup from a business description.
-- **meeting-to-deal** — NoteTaker meeting transcripts → deal recaps + stage signals.
+- **`daily-briefing`** — daily pipeline digest published as a monday update.
+- **`forecast`** — commit / best-case / pipeline dashboard by close month.
+- **`board-diagnosis`** — five-strand data-quality audit with fix-task generation.
+- **`data-cleanup`** — phone, email, country-code normalization + bulk-set fixes.
+- **`workspace-builder`** — CRM board setup from a business description.
+- **`meeting-to-deal`** — NoteTaker meeting transcripts → deal recaps + stage signals.
 - Bundled monday MCP connector (`.mcp.json` → `https://mcp.monday.com/mcp`, OAuth).
 - `defaultEnabled: false` — user opts in after connecting the monday MCP.
