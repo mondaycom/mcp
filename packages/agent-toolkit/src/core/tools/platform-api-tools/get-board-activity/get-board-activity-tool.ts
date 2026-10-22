@@ -14,14 +14,13 @@ export const getBoardActivityToolSchema = {
     .array(z.number())
     .optional()
     .describe('Filter activity to specific item ids. Omit to get activity for the whole board.'),
-  userIds: z
-    .array(z.number())
-    .optional()
-    .describe('Filter activity to actions performed by specific user ids.'),
+  userIds: z.array(z.number()).optional().describe('Filter activity to actions performed by specific user ids.'),
   fromDate: z
     .string()
     .optional()
-    .describe('Start date for activity range (ISO8601DateTime format). Defaults to 30 days ago'),
+    .describe(
+      'Start date for activity range (ISO8601DateTime format). Defaults to 30 days ago. Limited to the last 90 days. Older dates are clamped to 90 days ago',
+    ),
   toDate: z.string().optional().describe('End date for activity range (ISO8601DateTime format). Defaults to now'),
   includeData: z
     .boolean()
@@ -43,10 +42,11 @@ export class GetBoardActivityTool extends BaseMondayApiTool<typeof getBoardActiv
   });
 
   private defaultLimit = 1000;
+  private maxLookbackDays = 90;
 
   getDescription(): string {
     return (
-      'Get board activity logs for a specified time range (defaults to last 30 days). Optionally filter by item ids or user ids to avoid fetching activity for the entire board. ' +
+      'Get board activity logs for a specified time range (defaults to last 30 days, up to the last 90 days). Optionally filter by item ids or user ids to avoid fetching activity for the entire board. ' +
       '[REQUIRED PRECONDITION]: Call this with includeData=true before undo_action — it is the source of the action_record_uuid that identifies the action to undo.'
     );
   }
@@ -62,7 +62,17 @@ export class GetBoardActivityTool extends BaseMondayApiTool<typeof getBoardActiv
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getTime() - TIME_IN_MILLISECONDS.MONTH30Days);
 
-    const fromDate = input?.fromDate || thirtyDaysAgo.toISOString();
+    const earliestAllowed = new Date(now.getTime() - this.maxLookbackDays * TIME_IN_MILLISECONDS.DAY);
+
+    let fromDate = input?.fromDate || thirtyDaysAgo.toISOString();
+    // The API rejects activity_logs queries with a fromDate older than 90 days
+    const wasClamped = new Date(fromDate).getTime() < earliestAllowed.getTime();
+    if (wasClamped) {
+      fromDate = earliestAllowed.toISOString();
+    }
+    const clampNote = wasClamped
+      ? `. Note: fromDate was limited to the last ${this.maxLookbackDays} days, so the range starts at ${fromDate}`
+      : '';
     const toDate = input?.toDate || now.toISOString();
 
     const variables: GetBoardActivityQueryVariables = {
@@ -72,17 +82,16 @@ export class GetBoardActivityTool extends BaseMondayApiTool<typeof getBoardActiv
       fromDate,
       toDate,
       limit: this.defaultLimit,
-      page: 1,
       includeData: input.includeData ?? false,
     };
 
     const res = await this.mondayApi.request<GetBoardActivityQuery>(getBoardActivity, variables);
 
-    const activityLogs = res.boards?.[0]?.activity_logs;
+    const activityLogs = res.boards?.[0]?.activity_logs?.logs;
 
     if (!activityLogs || activityLogs.length === 0) {
       return {
-        content: `No activity found for board ${input.boardId} in the specified time range (${fromDate} to ${toDate}).`,
+        content: `No activity found for board ${input.boardId} in the specified time range (${fromDate} to ${toDate})${clampNote}.`,
       };
     }
 
@@ -91,7 +100,7 @@ export class GetBoardActivityTool extends BaseMondayApiTool<typeof getBoardActiv
 
     return {
       content: {
-        message: "Board activity retrieved",
+        message: `Board activity retrieved${clampNote}`,
         board_id: input.boardId,
         board_name: board?.name,
         board_url: board?.url,

@@ -1,10 +1,16 @@
 import { z } from 'zod';
-import { UpdateColumnMutation, UpdateColumnMutationVariables } from 'src/monday-graphql/generated/graphql/graphql';
+import {
+  CalculatedFunction,
+  UpdateColumnMutation,
+  UpdateColumnMutationVariables,
+} from 'src/monday-graphql/generated/graphql/graphql';
 import { updateColumn } from '../../../monday-graphql/queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
 import { ColumnTypeInfoFetchMode } from './get-column-type-info/get-column-type-info-fetch-mode';
 import { NonDeprecatedColumnType } from 'src/utils/types';
+
+const ROLLUP_FUNCTIONS = ['MIN', 'MAX', 'SUM', 'MIN_MAX', 'COUNT_KEYS', 'NONE'] as const;
 
 export const updateColumnToolSchema = {
   columnId: z.string().describe('The id of the column to update'),
@@ -26,6 +32,13 @@ export const updateColumnToolSchema = {
     .optional()
     .describe(
       'Type-specific configuration as a JSON string. If omitted, settings are unchanged. Shape depends on columnType — see tool description for how to obtain it.',
+    ),
+  rollupFunction: z
+    .enum(ROLLUP_FUNCTIONS)
+    .nullable()
+    .optional()
+    .describe(
+      'Controls the column rollup (calculated capability), which applies to columns on multi-level boards. Omit to leave it unchanged. Pass a function to turn rollup on or change it, or null to turn it off. Allowed functions per columnType: numbers MIN/MAX/SUM/NONE, date MIN/MAX, timeline MIN_MAX, status COUNT_KEYS, dropdown rollup is not supported by this tool. NONE (numbers only) keeps the capability without calculating anything.',
     ),
 };
 
@@ -51,7 +64,8 @@ export class UpdateColumnTool extends BaseMondayApiTool<UpdateColumnToolInput> {
       'Update properties of an existing monday.com column (title, description, settings). ' +
       '[REQUIRED PRECONDITION]: Uses optimistic concurrency control via the revision field — fetch the column id, type, and current revision via get_board_schema first (preferred), or get_board_info if you already have it, then call this tool. If the update fails because the revision is stale, re-fetch and try again. After a successful update, use the new revision returned in the response for any further update to this column, not the one you started with. ' +
       `[REQUIRED PRECONDITION]: If you are changing columnSettings, also call get_column_type_info with fetchMode "${ColumnTypeInfoFetchMode.Schema}" for that column type first to learn the valid settings structure. columnSettings is the flat payload for that column type (e.g. {"labels": [...]}) — not get_board_info's column.settings object copied as-is, and not wrapped again as {"settings": {"labels": [...]}}. ` +
-      'To edit existing status or dropdown labels (rename, recolor, or reorder): first call get_board_info with filters.columns.ids for that column (or filters.columns.only) to read its current settings.labels, where each existing label\'s id lives. Editing an existing label requires sending its id in that label\'s entry — omitting it fails validation, since only a brand-new label can omit id. Status labels need the full label shape (id, label, color, index, and so on), not just a renamed string. Never invent an id — reuse the ids from get_board_info and add new labels without one. Flow: get_board_info for the revision and current settings.labels with ids, get_column_type_info (schema mode) for the valid shape, then build columnSettings.labels reusing existing ids and adding new labels without id.'
+      "To edit existing status or dropdown labels (rename, recolor, or reorder): first call get_board_info with filters.columns.ids for that column (or filters.columns.only) to read its current settings.labels, where each existing label's id lives. Editing an existing label requires sending its id in that label's entry — omitting it fails validation, since only a brand-new label can omit id. Status labels need the full label shape (id, label, color, index, and so on), not just a renamed string. Never invent an id — reuse the ids from get_board_info and add new labels without one. Flow: get_board_info for the revision and current settings.labels with ids, get_column_type_info (schema mode) for the valid shape, then build columnSettings.labels reusing existing ids and adding new labels without id. " +
+      'To turn on or change the column rollup (calculated capability, for columns on multi-level boards), set rollupFunction: numbers MIN/MAX/SUM/NONE, date MIN/MAX, timeline MIN_MAX, status COUNT_KEYS. To turn rollup off, pass rollupFunction: null (omitting it leaves rollup unchanged). rollupFunction is independent of columnSettings and can be sent alone or together with it.'
     );
   }
 
@@ -76,6 +90,12 @@ export class UpdateColumnTool extends BaseMondayApiTool<UpdateColumnToolInput> {
       columnSettings:
         typeof input.columnSettings === 'string' ? JSON.parse(input.columnSettings) : input.columnSettings,
     };
+
+    if (input.rollupFunction !== undefined) {
+      variables.capabilities = {
+        calculated: input.rollupFunction === null ? null : { function: input.rollupFunction as CalculatedFunction },
+      };
+    }
 
     const res = await this.mondayApi.request<UpdateColumnMutation>(updateColumn, variables);
 

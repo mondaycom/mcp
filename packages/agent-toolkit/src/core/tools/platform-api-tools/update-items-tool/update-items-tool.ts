@@ -124,7 +124,7 @@ export class UpdateItemsTool extends BaseMondayApiTool<UpdateItemsToolInput> {
       );
     }
 
-    const skipMessage = 'Skipped: a previous update hit the minute rate limit, this update was not attempted';
+    const skipMessage = 'Skipped: a previous update hit a rate limit; this update was not attempted';
 
     const singleTool = new ChangeItemColumnValuesTool(this.mondayApi);
     const tasks = input.updates.map((update, index) => async (): Promise<PerUpdateResult> => {
@@ -168,7 +168,7 @@ export class UpdateItemsTool extends BaseMondayApiTool<UpdateItemsToolInput> {
       content.errors = errors;
     }
 
-    return { content };
+    return { content, ...(failed === total ? { isError: true } : {}) };
   }
 }
 

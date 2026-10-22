@@ -1,3 +1,4 @@
 export const MAX_ITEMS_PER_CALL = 20;
 export const CONCURRENCY_LIMIT = 15;
+export const PER_PARENT_CONCURRENCY_LIMIT = 5;
 export const RATE_LIMIT_SKIPPED_CODE = 'RATE_LIMIT_SKIPPED';

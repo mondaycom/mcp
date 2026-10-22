@@ -387,6 +387,18 @@ export type Agent = {
   __typename?: 'Agent';
   /** The ID of the agent. */
   id?: Maybe<Scalars['ID']['output']>;
+  /** The users and teams subscribed to this agent. */
+  subscribers: Array<AgentSubscriber>;
+  /** The agent's user data. */
+  user: User;
+};
+
+
+/** A monday.com agent. */
+export type AgentSubscribersArgs = {
+  entity?: InputMaybe<Array<AgentSubscriberKind>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  roles?: InputMaybe<Array<AgentMembershipRole>>;
 };
 
 /** A single execution of an agent. */
@@ -472,6 +484,7 @@ export type AggregateBasicAggregationResult = {
 };
 
 export enum AggregateFromElementType {
+  DataView = 'DATA_VIEW',
   Table = 'TABLE'
 }
 
@@ -1162,6 +1175,11 @@ export type AppAudit = {
 
 /** The type of app audit action */
 export enum AppAuditKind {
+  ExternalAccessDisabled = 'EXTERNAL_ACCESS_DISABLED',
+  ExternalAccessEnabled = 'EXTERNAL_ACCESS_ENABLED',
+  ExternalAccessKilledByAdmin = 'EXTERNAL_ACCESS_KILLED_BY_ADMIN',
+  ExternalUserInvited = 'EXTERNAL_USER_INVITED',
+  ExternalUserRevoked = 'EXTERNAL_USER_REVOKED',
   Unpublish = 'UNPUBLISH'
 }
 
@@ -1240,7 +1258,7 @@ export type AppFeatureType = {
   /** The app feature app id */
   app_id?: Maybe<Scalars['ID']['output']>;
   created_at?: Maybe<Scalars['Date']['output']>;
-  /** The data of the app feature */
+  /** The data of the app feature. Icon/logo fields (iconUrl, logoUrl, etc., including nested headerConfig.*.iconUrl) must be HTTPS URLs or Vibe icon names. */
   data?: Maybe<Scalars['JSON']['output']>;
   /** The deployment information for the app feature */
   deployment?: Maybe<Scalars['JSON']['output']>;
@@ -1293,6 +1311,7 @@ export enum AppFeatureTypeE {
   ItemBatchAction = 'ITEM_BATCH_ACTION',
   ItemMenuAction = 'ITEM_MENU_ACTION',
   ItemView = 'ITEM_VIEW',
+  McpServer = 'MCP_SERVER',
   Modal = 'MODAL',
   NotificationKind = 'NOTIFICATION_KIND',
   NotificationSettingKind = 'NOTIFICATION_SETTING_KIND',
@@ -1699,6 +1718,7 @@ export type ArtifactRun = {
 /** Lifecycle state of an artifact */
 export enum ArtifactState {
   Active = 'ACTIVE',
+  Archive = 'ARCHIVE',
   Deleted = 'DELETED'
 }
 
@@ -1965,6 +1985,19 @@ export type AsyncJobStatus = {
   updated_at?: Maybe<Scalars['String']['output']>;
 };
 
+/** The outcome of attaching one board within a bulk attach request. Boards are independent, so a request can return a mix of successes and failures and the successes are not undone. */
+export type AttachBoardToObjectSchemaResult = {
+  __typename?: 'AttachBoardToObjectSchemaResult';
+  /** The board this result describes. */
+  board_id?: Maybe<Scalars['ID']['output']>;
+  /** Human readable reason the board was not attached. For display fallback and logs, not branching. */
+  error?: Maybe<Scalars['String']['output']>;
+  /** Stable code for the refusal, for example templateTopologyMismatch or templateBoardAlreadyAttached. This is what clients should classify on to pick a message. */
+  error_code?: Maybe<Scalars['String']['output']>;
+  /** Whether this board (and its classic subitems board, if any) now follows the object schema. */
+  success?: Maybe<Scalars['Boolean']['output']>;
+};
+
 /** Represents a single attribute type option for a resource */
 export type Attribute = {
   __typename?: 'Attribute';
@@ -2102,6 +2135,8 @@ export type BaseFieldType = FieldType & {
 /** The role of the user. */
 export enum BaseRoleName {
   Admin = 'ADMIN',
+  ExternalAgentDetachedMember = 'EXTERNAL_AGENT_DETACHED_MEMBER',
+  ExternalAgentMember = 'EXTERNAL_AGENT_MEMBER',
   Guest = 'GUEST',
   Member = 'MEMBER',
   ViewOnly = 'VIEW_ONLY'
@@ -2311,9 +2346,7 @@ export type Board = {
   /** The user's permission level for this board (view / edit). */
   access_level: BoardAccessLevel;
   /** Activity log entries for this board with enhanced filtering and pagination (last 90 days only). Requests for data older than 90 days will return a validation error. */
-  activity_log?: Maybe<BoardActivityLogsPage>;
-  /** The board log events. */
-  activity_logs?: Maybe<Array<Maybe<ActivityLogType>>>;
+  activity_logs?: Maybe<BoardActivityLogsPage>;
   /** The board's folder unique identifier. */
   board_folder_id?: Maybe<Scalars['ID']['output']>;
   /** The board's kind (public / private / share). */
@@ -2397,7 +2430,7 @@ export type Board = {
 
 
 /** A monday.com board. */
-export type BoardActivity_LogArgs = {
+export type BoardActivity_LogsArgs = {
   column_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   correlation_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   cursor?: InputMaybe<Scalars['String']['input']>;
@@ -2406,20 +2439,8 @@ export type BoardActivity_LogArgs = {
   group_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   item_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   limit?: InputMaybe<Scalars['Int']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
   to?: InputMaybe<Scalars['String']['input']>;
-  user_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
-};
-
-
-/** A monday.com board. */
-export type BoardActivity_LogsArgs = {
-  column_ids?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
-  from?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
-  group_ids?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
-  item_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  page?: InputMaybe<Scalars['Int']['input']>;
-  to?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
   user_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
 };
 
@@ -3579,6 +3600,8 @@ export type ChatMessage = {
   code_version_id?: Maybe<Scalars['String']['output']>;
   /** UI element references attached to this message */
   component_references: Array<ChatMessageComponentReference>;
+  /** Context sources (e.g. a monday Doc) the user started the app from — metadata only */
+  context_sources: Array<ChatMessageContextSource>;
   /** The date and time the object was created */
   created_at?: Maybe<Scalars['Date']['output']>;
   /** AI credits charged for generating the response to this user message. */
@@ -3658,6 +3681,17 @@ export type ChatMessageComponentReferenceInput = {
   title: Scalars['String']['input'];
 };
 
+/** A context source (e.g. a monday Doc) the user started the app from. Metadata only, never the content */
+export type ChatMessageContextSource = {
+  __typename?: 'ChatMessageContextSource';
+  /** The entity id (for DOC: the id in the doc URL) */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Display name shown in the message chip */
+  name?: Maybe<Scalars['String']['output']>;
+  /** The kind of entity */
+  type?: Maybe<ContextSourceType>;
+};
+
 /** A file attached to a chat message */
 export type ChatMessageFile = {
   __typename?: 'ChatMessageFile';
@@ -3700,6 +3734,7 @@ export enum ChatMessageKind {
   Cta = 'CTA',
   Error = 'ERROR',
   Indication = 'INDICATION',
+  Process = 'PROCESS',
   Processing = 'PROCESSING',
   Reasoning = 'REASONING',
   Text = 'TEXT',
@@ -4041,6 +4076,15 @@ export type Complexity = {
   reset_in_x_seconds: Scalars['Int']['output'];
 };
 
+/** A primitive type an operator can compare, as classified by the conditions engine. */
+export enum ConditionOperandPrimitiveType {
+  Boolean = 'boolean',
+  Date = 'date',
+  Numeric = 'numeric',
+  Text = 'text',
+  TextArray = 'text_array'
+}
+
 /** Logical operator for combining rules or conditions. Must be OR — the question is shown if any rule or condition is satisfied. */
 export enum ConditionOperator {
   Or = 'OR'
@@ -4357,6 +4401,19 @@ export type Connection = {
   userId?: Maybe<Scalars['Int']['output']>;
 };
 
+/** Reference content the app is started from. Its content is read once and given to the agent as context; it is not a data source and is not stored on the app */
+export type ContextSourceInput = {
+  /** The entity id (for DOC: the id in the doc URL) */
+  id: Scalars['ID']['input'];
+  /** The kind of entity */
+  type: ContextSourceType;
+};
+
+/** The kind of monday entity used as per-message context for an app */
+export enum ContextSourceType {
+  Doc = 'DOC'
+}
+
 export type ConvertBoardToProjectInput = {
   board_id: Scalars['ID']['input'];
   callback_url?: InputMaybe<Scalars['String']['input']>;
@@ -4505,6 +4562,24 @@ export type CreateBlockInput = {
   text_block?: InputMaybe<TextBlockInput>;
   /** Create a video block */
   video_block?: InputMaybe<VideoBlockInput>;
+};
+
+/** Options for board export */
+export type CreateBoardExportOptionsInput = {
+  /** Column IDs in desired display order */
+  columns_order?: InputMaybe<Array<Scalars['String']['input']>>;
+  /** Output format for connected items (Connect Boards) column values in CSV exports. NAME (the default) uses the linked items' display names; ID uses their IDs instead. Ignored for non-CSV formats. */
+  connected_item_column_format?: InputMaybe<ConnectedItemColumnFormat>;
+  /** Header row format for CSV exports. Ignored for other formats. */
+  header_row?: InputMaybe<HeaderFormat>;
+  /** Include item_id (and parent_item_id when subitems are enabled) columns at the end of CSV exports. */
+  include_item_identifiers?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Add a trailing `Project Board` column with the board ID of the project board connected to each row through its portfolio project-link column (`portfolio_project_link`). Resolves to the first linked project's board ID; blank when the row has no linked project. Ignored for non-CSV formats, and only emitted when the export-cross-board-project-board-link release flag is enabled. */
+  include_project_board_link?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Include subitems in the export */
+  include_subitems?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Output format for people column values in CSV exports. When set to NAME, display names are used instead of IDs (e.g. "Alice Smith" instead of "user:123"). Ignored for non-CSV formats. */
+  people_column_format?: InputMaybe<PeopleColumnFormat>;
 };
 
 /** Result of creating a board view instance for a pre-built vibe */
@@ -4687,6 +4762,16 @@ export type CreateObjectSchemaColumnInput = {
 export type CreateObjectSchemaColumnsActionInput = {
   /** Array of columns to create. */
   columns: Array<CreateObjectSchemaColumnInput>;
+};
+
+/** Input for creating an account object schema from a board. */
+export type CreateObjectSchemaFromBoardInput = {
+  /** The board whose columns seed the schema. It is attached to the result. */
+  board_id: Scalars['ID']['input'];
+  /** An optional description. */
+  description?: InputMaybe<Scalars['String']['input']>;
+  /** A unique object schema name. */
+  name: Scalars['String']['input'];
 };
 
 export type CreatePortfolioResult = {
@@ -4957,15 +5042,15 @@ export type CredentialsCreatedResult = {
   variable_key?: Maybe<Scalars['Int']['output']>;
 };
 
-/** Date range filter applied globally across all entity types in cross-entity search. */
+/** Filter: creation and last-update time window. All provided bounds must be satisfied (AND). */
 export type CrossEntityDateRangeInput = {
-  /** Filter results created after this date. */
+  /** Filter: created at or after this date-time (inclusive). */
   created_after?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
-  /** Filter results created before this date. */
+  /** Filter: created at or before this date-time (inclusive). */
   created_before?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
-  /** Filter results updated after this date. */
+  /** Filter: last updated at or after this date-time (inclusive). */
   updated_after?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
-  /** Filter results updated before this date. */
+  /** Filter: last updated at or before this date-time (inclusive). */
   updated_before?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
 };
 
@@ -5261,6 +5346,24 @@ export type DataView = {
   updated_at?: Maybe<Scalars['Date']['output']>;
 };
 
+/** The added target column plus the per-source mappings that were auto-created for it. */
+export type DataViewAddTargetColumnResult = {
+  __typename?: 'DataViewAddTargetColumnResult';
+  /** The column that was added to the target. */
+  column?: Maybe<DataViewColumn>;
+  /** One entry per standalone source that the new column could be auto-mapped to. Sources with no matching column are omitted. */
+  sources?: Maybe<Array<DataViewAddTargetColumnSourceMapping>>;
+};
+
+/** A mapping auto-created for one source when the target column was added. */
+export type DataViewAddTargetColumnSourceMapping = {
+  __typename?: 'DataViewAddTargetColumnSourceMapping';
+  /** The mapping created between the source column and the new target column. */
+  mapping?: Maybe<DataViewColumnMapping>;
+  /** The source the mapping was created for. */
+  source_id?: Maybe<DataViewSourceId>;
+};
+
 /** The kind of object that authorizes access to a data view. */
 export enum DataViewAuthorizationKind {
   Board = 'BOARD',
@@ -5352,8 +5455,8 @@ export type DataViewColumnInput = {
   labels_positions_v2?: InputMaybe<Scalars['JSON']['input']>;
   /** The column settings. */
   settings?: InputMaybe<Scalars['JSON']['input']>;
-  /** For mirror/lookup columns, the type of the column being displayed. */
-  sub_type?: InputMaybe<ColumnType>;
+  /** For mirror/lookup columns, the type of the column being displayed; `resource` for a resource connect-boards column. */
+  sub_type?: InputMaybe<DataViewColumnSubType>;
   /** The display title of the column. */
   title?: InputMaybe<Scalars['String']['input']>;
   /** The column type. */
@@ -5390,6 +5493,84 @@ export type DataViewColumnMappingInput = {
   target_column_id: Scalars['ID']['input'];
 };
 
+/** The sub type of a data view column: for mirror/lookup columns, the type of the column being displayed; `resource` for a resource connect-boards column. */
+export enum DataViewColumnSubType {
+  AutoNumber = 'auto_number',
+  BoardRelation = 'board_relation',
+  Button = 'button',
+  Checkbox = 'checkbox',
+  ColorPicker = 'color_picker',
+  Country = 'country',
+  CreationLog = 'creation_log',
+  Date = 'date',
+  Dependency = 'dependency',
+  DirectDoc = 'direct_doc',
+  Doc = 'doc',
+  Dropdown = 'dropdown',
+  Email = 'email',
+  File = 'file',
+  Formula = 'formula',
+  Group = 'group',
+  Hour = 'hour',
+  Integration = 'integration',
+  ItemAssignees = 'item_assignees',
+  ItemId = 'item_id',
+  LastUpdated = 'last_updated',
+  Link = 'link',
+  Location = 'location',
+  LongText = 'long_text',
+  Mirror = 'mirror',
+  Name = 'name',
+  Numbers = 'numbers',
+  People = 'people',
+  Person = 'person',
+  Phone = 'phone',
+  Progress = 'progress',
+  Rating = 'rating',
+  Resource = 'resource',
+  Status = 'status',
+  Subtasks = 'subtasks',
+  Tags = 'tags',
+  Team = 'team',
+  Text = 'text',
+  TimeTracking = 'time_tracking',
+  Timeline = 'timeline',
+  Unsupported = 'unsupported',
+  Vote = 'vote',
+  Week = 'week',
+  WorldClock = 'world_clock'
+}
+
+/** A column to add to a data view target. Unlike DataViewColumnInput, `id` is optional: when omitted the server generates one from the column type. */
+export type DataViewNewTargetColumnInput = {
+  /** Whether the column is archived. */
+  archived?: InputMaybe<Scalars['Boolean']['input']>;
+  /** The column model identifier. */
+  column_model_id?: InputMaybe<Scalars['ID']['input']>;
+  /** The column model strategy. */
+  column_model_strategy?: InputMaybe<Scalars['String']['input']>;
+  /** The column description. */
+  description?: InputMaybe<Scalars['String']['input']>;
+  /** The global column identifier. */
+  global_column_id?: InputMaybe<Scalars['ID']['input']>;
+  /** The column identifier. Generated by the server when omitted. */
+  id?: InputMaybe<Scalars['ID']['input']>;
+  /** The column labels. */
+  labels?: InputMaybe<Scalars['JSON']['input']>;
+  /** The column label positions. */
+  labels_positions_v2?: InputMaybe<Scalars['JSON']['input']>;
+  /** The column settings. */
+  settings?: InputMaybe<Scalars['JSON']['input']>;
+  /** For mirror/lookup columns, the type of the column being displayed; `resource` for a resource connect-boards column. */
+  sub_type?: InputMaybe<DataViewColumnSubType>;
+  /** The display title of the column. */
+  title?: InputMaybe<Scalars['String']['input']>;
+  /** The column type. */
+  type?: InputMaybe<Scalars['String']['input']>;
+  /** The numeric column unit settings. */
+  unit?: InputMaybe<Scalars['JSON']['input']>;
+};
+
 /** A paginated list of data view sources. */
 export type DataViewPaginatedSources = {
   __typename?: 'DataViewPaginatedSources';
@@ -5412,6 +5593,41 @@ export type DataViewPaginationMetadata = {
   total_pages?: Maybe<Scalars['Int']['output']>;
 };
 
+/** Why a source was not restored with its data view. */
+export enum DataViewRestoreDroppedReason {
+  NotIncluded = 'NOT_INCLUDED',
+  ProjectDeleted = 'PROJECT_DELETED'
+}
+
+/** A source that was on the deleted data view but was not restored with it. */
+export type DataViewRestoreDroppedSource = {
+  __typename?: 'DataViewRestoreDroppedSource';
+  /** Why the source was dropped. */
+  reason?: Maybe<DataViewRestoreDroppedReason>;
+  /** The identifier of the source that was dropped. */
+  source_id?: Maybe<DataViewSourceId>;
+};
+
+/** A mapping that could not be re-established on restore. */
+export type DataViewRestoreMappingError = {
+  __typename?: 'DataViewRestoreMappingError';
+  /** The target column the mapping pointed at. */
+  column_id?: Maybe<Scalars['ID']['output']>;
+  /** The source whose mapping could not be restored. */
+  source_id?: Maybe<DataViewSourceId>;
+};
+
+/** The outcome of restoring a deleted data view. */
+export type DataViewRestoreResult = {
+  __typename?: 'DataViewRestoreResult';
+  /** The restored data view. */
+  data_view?: Maybe<DataView>;
+  /** The sources that were not restored, and why. Empty when everything was restored. */
+  dropped?: Maybe<Array<DataViewRestoreDroppedSource>>;
+  /** The mappings that could not be re-established. Empty when every mapping was restored. */
+  mapping_errors?: Maybe<Array<DataViewRestoreMappingError>>;
+};
+
 /** A union of possible data view source types. */
 export type DataViewSource = ChildBoardDataViewSource | EntityDataViewSource | StandaloneBoardDataViewSource;
 
@@ -5420,11 +5636,35 @@ export type DataViewSourceColumn = {
   __typename?: 'DataViewSourceColumn';
   /** The column identifier. */
   id?: Maybe<Scalars['ID']['output']>;
+  /** For a mirror column, the column type it displays (e.g. color, numeric, date, timerange, multiple-person). Null for every other column type. */
+  sub_type?: Maybe<Scalars['String']['output']>;
   /** The column title. */
   title?: Maybe<Scalars['String']['output']>;
   /** The column type. */
   type?: Maybe<Scalars['String']['output']>;
+  /** Set when the column is listed for context but cannot be mapped. Null when it can. */
+  unavailable?: Maybe<DataViewSourceColumnUnavailable>;
 };
+
+/** Why a source column is listed but cannot be chosen for mapping. */
+export type DataViewSourceColumnUnavailable = {
+  __typename?: 'DataViewSourceColumnUnavailable';
+  /** Why the column cannot be chosen. Clients should key off this, not the reason. */
+  code?: Maybe<DataViewSourceColumnUnavailableCode>;
+  /** A human-readable detail of why. Not localized; clients should key off the code. */
+  reason?: Maybe<Scalars['String']['output']>;
+};
+
+/** Why a source column is listed but cannot be chosen for mapping. */
+export enum DataViewSourceColumnUnavailableCode {
+  ColumnDeleted = 'COLUMN_DELETED',
+  FormulaInvalid = 'FORMULA_INVALID',
+  FormulaMaxDepthExceeded = 'FORMULA_MAX_DEPTH_EXCEEDED',
+  FormulaMissingColumn = 'FORMULA_MISSING_COLUMN',
+  FormulaUnsupportedColumnType = 'FORMULA_UNSUPPORTED_COLUMN_TYPE',
+  FormulaUnsupportedFunction = 'FORMULA_UNSUPPORTED_FUNCTION',
+  FormulaUnsupportedReference = 'FORMULA_UNSUPPORTED_REFERENCE'
+}
 
 /** A union of possible source errors. */
 export type DataViewSourceError = DataViewColumnLevelError;
@@ -5476,6 +5716,34 @@ export type DataViewSourceUpdateInput = {
   source_id: DataViewSourceIdInput;
 };
 
+/** The structure of a data view: per source, the mapped columns and — for entities — the boards behind it. Deleted and archived boards are omitted. */
+export type DataViewStructure = {
+  __typename?: 'DataViewStructure';
+  /** The sources of the data view, in the data view’s own order. */
+  sources?: Maybe<Array<DataViewStructureSource>>;
+};
+
+/** The resolved structure of a single data view source. */
+export type DataViewStructureSource = {
+  __typename?: 'DataViewStructureSource';
+  /** Only the source columns that are mapped into the target. Fields the structure lookup does not resolve — such as archived, description and the column model fields — are always null here. */
+  columns?: Maybe<Array<DataViewColumn>>;
+  /** The boards implementing this entity. Present only when source_kind is ENTITY. */
+  managed_board_ids?: Maybe<Array<Scalars['ID']['output']>>;
+  /** The column mappings for this source. */
+  mappings?: Maybe<Array<DataViewColumnMapping>>;
+  /** The source identifier. */
+  source_id?: Maybe<DataViewSourceId>;
+  /** How this source is grouped. */
+  source_kind?: Maybe<DataViewStructureSourceKind>;
+};
+
+/** How the structure endpoint groups a data view source. */
+export enum DataViewStructureSourceKind {
+  Entity = 'ENTITY',
+  StandaloneBoard = 'STANDALONE_BOARD'
+}
+
 /** The target schema of a data view, defining the unified column structure. */
 export type DataViewTarget = {
   __typename?: 'DataViewTarget';
@@ -5485,12 +5753,51 @@ export type DataViewTarget = {
   columns?: Maybe<Array<DataViewColumn>>;
 };
 
+/** The editable properties of an existing data view target column. */
+export type DataViewTargetColumnChangesInput = {
+  /** The new description. Pass null to clear it. */
+  description?: InputMaybe<Scalars['String']['input']>;
+  /** The new display title. */
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
 /** The target schema of a data view, defining the unified column structure. */
 export type DataViewTargetInput = {
   /** The column configurations for the target, keyed by column id. */
   column_configurations?: InputMaybe<Scalars['JSON']['input']>;
   /** The columns in the target schema. */
   columns: Array<DataViewColumnInput>;
+};
+
+/** Details of why a validation check did not pass. */
+export type DataViewValidationFailure = {
+  __typename?: 'DataViewValidationFailure';
+  /** The input field the failure relates to. */
+  field?: Maybe<Scalars['String']['output']>;
+  /** Present only when the failure is a sources limit breach. */
+  limit_details?: Maybe<DataViewValidationLimitDetails>;
+  /** A human readable explanation of the failure. */
+  reason?: Maybe<Scalars['String']['output']>;
+};
+
+/** The counts behind a sources limit failure. */
+export type DataViewValidationLimitDetails = {
+  __typename?: 'DataViewValidationLimitDetails';
+  /** The number of sources already on the data view. */
+  current?: Maybe<Scalars['Int']['output']>;
+  /** The maximum number of sources allowed for this account. */
+  limit?: Maybe<Scalars['Int']['output']>;
+  /** The number of sources the caller asked to add. */
+  requested?: Maybe<Scalars['Int']['output']>;
+};
+
+/** The outcome of a data view validation check. */
+export type DataViewValidationResult = {
+  __typename?: 'DataViewValidationResult';
+  /** Present only when `valid` is false. */
+  invalid_result?: Maybe<DataViewValidationFailure>;
+  /** Whether the validation passed. */
+  valid?: Maybe<Scalars['Boolean']['output']>;
 };
 
 /** Answer for a date question. */
@@ -5945,6 +6252,13 @@ export type DisabledReasonInput = {
   edit_settings?: InputMaybe<Scalars['String']['input']>;
   /** Reason why the column title cannot be edited */
   edit_title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type DiscardObjectSchemaBoardChangesInput = {
+  /** The template's board. */
+  editor_board_id: Scalars['ID']['input'];
+  /** The object schema the board follows. */
+  object_schema_id: Scalars['ID']['input'];
 };
 
 /** Payload returned after disconnecting an external agent */
@@ -6573,8 +6887,6 @@ export type ExportOptionsInput = {
   include_item_identifiers?: InputMaybe<Scalars['Boolean']['input']>;
   /** Include subitems in the export */
   include_subitems?: InputMaybe<Scalars['Boolean']['input']>;
-  /** Include updates/comments in the export */
-  include_updates?: InputMaybe<Scalars['Boolean']['input']>;
   /** Behavior for columns with no codec support in CSV exports. Ignored for other formats. */
   non_importable_columns?: InputMaybe<NonImportableColumns>;
   /** Output format for people column values in CSV exports. When set to NAME, display names are used instead of IDs (e.g. "Alice Smith" instead of "user:123"). Ignored for non-CSV formats. */
@@ -6594,6 +6906,61 @@ export type ExtendTrialPeriod = {
   /** Result of a single operation */
   success: Scalars['Boolean']['output'];
 };
+
+/** Result of checking eligibility to enable Invite Users mode on a vibe app */
+export type ExternalAccessEligibility = {
+  __typename?: 'ExternalAccessEligibility';
+  /** Blockers preventing Invite Users mode; empty when ok is true */
+  blockers?: Maybe<Array<ExternalAccessEligibilityBlocker>>;
+  /** Whether the caller may enable Invite Users mode on this app */
+  ok?: Maybe<Scalars['Boolean']['output']>;
+};
+
+/** Why the caller may not enable Invite Users mode on a vibe app */
+export enum ExternalAccessEligibilityBlocker {
+  AppDisabled = 'APP_DISABLED',
+  AppNotFound = 'APP_NOT_FOUND',
+  FeatureNotAvailable = 'FEATURE_NOT_AVAILABLE',
+  NotAppOwner = 'NOT_APP_OWNER',
+  NotOnCloudflare = 'NOT_ON_CLOUDFLARE',
+  NoPermission = 'NO_PERMISSION',
+  PasswordProtected = 'PASSWORD_PROTECTED'
+}
+
+/** An external user invited to access a vibe app */
+export type ExternalMember = {
+  __typename?: 'ExternalMember';
+  /** Display name of the external user */
+  display_name?: Maybe<Scalars['String']['output']>;
+  /** Email address of the external user */
+  email: Scalars['String']['output'];
+  /** ID of the external user. Pass it as `external_user_id` to `remove_external_member`. */
+  external_user_id: Scalars['ID']['output'];
+  /** Membership ID */
+  id: Scalars['ID']['output'];
+  /** User ID of the person who invited this external user */
+  invited_by_user_id: Scalars['ID']['output'];
+  /** When the last invitation was sent */
+  last_invitation_sent_at: Scalars['Date']['output'];
+  /** Current membership status */
+  status: ExternalMembershipStatus;
+};
+
+/** A page of external members with a cursor for the next page */
+export type ExternalMembersPage = {
+  __typename?: 'ExternalMembersPage';
+  /** The external members on this page */
+  items: Array<ExternalMember>;
+  /** Pass this as `cursor` to fetch the next page. Null when there are no more results. */
+  next_cursor?: Maybe<Scalars['String']['output']>;
+};
+
+/** Status of an external user membership on an app */
+export enum ExternalMembershipStatus {
+  Active = 'ACTIVE',
+  Pending = 'PENDING',
+  Revoked = 'REVOKED'
+}
 
 /** The type of external agent provider */
 export enum ExternalProvider {
@@ -8544,6 +8911,12 @@ export type ItemIdValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
+/** Item metadata that can be added as extra columns in CSV exports. */
+export enum ItemMetadataField {
+  CreatedAt = 'CREATED_AT',
+  LastUpdatedAt = 'LAST_UPDATED_AT'
+}
+
 /** Input type for item nickname configuration */
 export type ItemNicknameInput = {
   /** The plural form of the item nickname */
@@ -8552,6 +8925,43 @@ export type ItemNicknameInput = {
   preset_type?: InputMaybe<Scalars['String']['input']>;
   /** The singular form of the item nickname */
   singular?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** A single item returned by the items_page query */
+export type ItemResult = {
+  __typename?: 'ItemResult';
+  /** The ID of the board this item belongs to. Populated only for data-view queries. */
+  board_id?: Maybe<Scalars['ID']['output']>;
+  /** Structured column values */
+  column_values?: Maybe<Array<ItemsPageColumnValue>>;
+  /** ISO 8601 timestamp of when the item was created */
+  created_at?: Maybe<Scalars['String']['output']>;
+  /** The item's creator */
+  creator?: Maybe<User>;
+  /** The user ID of the item creator */
+  creator_id?: Maybe<Scalars['ID']['output']>;
+  /** The group this item belongs to (id, title, color). */
+  group?: Maybe<ItemsPageGroup>;
+  /** The unique identifier of the item */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** The name of the item */
+  name?: Maybe<Scalars['String']['output']>;
+  /** The parent item when this item is a subitem within the result set. Null for top-level items. */
+  parent_item?: Maybe<ItemResult>;
+  /** The state of the item (active, deleted, etc.) */
+  state?: Maybe<Scalars['String']['output']>;
+  /** Subitems of this item */
+  subitems?: Maybe<Array<ItemResult>>;
+  /** ISO 8601 timestamp of when the item was last updated */
+  updated_at?: Maybe<Scalars['String']['output']>;
+};
+
+
+/** A single item returned by the items_page query */
+export type ItemResultColumn_ValuesArgs = {
+  capabilities?: InputMaybe<Array<ItemsPageColumnCapability>>;
+  ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  types?: InputMaybe<Array<ItemsPageColumnTypeFilter>>;
 };
 
 /** The raw value of a column for a historical item. */
@@ -8802,11 +9212,1310 @@ export enum ItemsOrderByDirection {
   Desc = 'desc'
 }
 
+/** The rollup value of a status column on a multi-level board: a distribution of status counts. */
+export type ItemsPageBatteryValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageBatteryValue';
+  /** Per-status counts aggregated across the item and its subitems. */
+  battery_value: Array<ItemsPageBatteryValueItem>;
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** A single status-count entry in a battery (status rollup) value. */
+export type ItemsPageBatteryValueItem = {
+  __typename?: 'ItemsPageBatteryValueItem';
+  /** Number of items with this status. */
+  count?: Maybe<Scalars['Int']['output']>;
+  /** The status label index/key. */
+  key?: Maybe<Scalars['ID']['output']>;
+};
+
+/** The value of a board relation column. */
+export type ItemsPageBoardRelationValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageBoardRelationValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Comma-separated display text of linked item names */
+  display_value?: Maybe<Scalars['String']['output']>;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** IDs of linked items */
+  linked_item_ids: Array<Scalars['ID']['output']>;
+  /** Linked items with id and name */
+  linked_items: Array<ItemsPageLinkedItem>;
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** A mirrored board entity (the linked item's board). */
+export type ItemsPageBoardValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageBoardValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** The board name. */
+  name?: Maybe<Scalars['String']['output']>;
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** The value of a button column. */
+export type ItemsPageButtonValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageButtonValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
 export type ItemsPageByColumnValuesQuery = {
   /** The column's unique identifier. */
   column_id: Scalars['String']['input'];
   /** The column values to search items by. */
   column_values: Array<InputMaybe<Scalars['String']['input']>>;
+};
+
+/** The calculated (rollup) capability configuration of a column. */
+export type ItemsPageCalculatedCapability = {
+  __typename?: 'ItemsPageCalculatedCapability';
+  /** The resolved value type of the calculation, when applicable. */
+  calculated_type?: Maybe<Scalars['String']['output']>;
+  /** The aggregation function applied to child values. */
+  function?: Maybe<ItemsPageCalculatedFunction>;
+};
+
+/** Aggregation function used by a calculated (rollup) column on a multi-level board. */
+export enum ItemsPageCalculatedFunction {
+  CountKeys = 'COUNT_KEYS',
+  Max = 'MAX',
+  Min = 'MIN',
+  MinMax = 'MIN_MAX',
+  None = 'NONE',
+  Sum = 'SUM'
+}
+
+/** The value of a checkbox column. */
+export type ItemsPageCheckboxValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageCheckboxValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Whether the checkbox is checked */
+  checked?: Maybe<Scalars['Boolean']['output']>;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** The value of a color picker column. */
+export type ItemsPageColorPickerValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageColorPickerValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** Board-level metadata of the column this value belongs to. */
+export type ItemsPageColumn = {
+  __typename?: 'ItemsPageColumn';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Column ID */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** The column's settings object, reshaped to match the legacy items_page shape. Status columns fold `labels`/`color_mapping`/`labels_positions_v2`/`done_colors`/`labels_colors` into an enriched `labels` array (`{id, label, color, index, is_done, is_deactivated, hex}`); dropdown columns return `labels` as `{id, label, is_deactivated}`; mirror columns return `displayed_linked_columns` as an array of `{board_id, column_ids}`. All other column types pass the raw data-structure settings through unchanged. Columns with no settings return `{}` (matching the legacy API). */
+  settings: Scalars['JSON']['output'];
+  /** The column title. */
+  title?: Maybe<Scalars['String']['output']>;
+  /** The column type. */
+  type?: Maybe<Scalars['String']['output']>;
+};
+
+/** Capabilities of a column (e.g. calculated/rollup metadata on multi-level boards). */
+export type ItemsPageColumnCapabilities = {
+  __typename?: 'ItemsPageColumnCapabilities';
+  /** Calculated/rollup capability, present only on rollup columns. */
+  calculated?: Maybe<ItemsPageCalculatedCapability>;
+  /** Visibility capability setting of the column, when present. */
+  visibility?: Maybe<Scalars['String']['output']>;
+};
+
+/** Column capability flags accepted by the column_values capabilities filter. */
+export enum ItemsPageColumnCapability {
+  Calculated = 'CALCULATED',
+  Visibility = 'VISIBILITY'
+}
+
+/** Column type values accepted by the column_values types filter. */
+export enum ItemsPageColumnTypeFilter {
+  AutoNumber = 'auto_number',
+  BoardRelation = 'board_relation',
+  Button = 'button',
+  Checkbox = 'checkbox',
+  ColorPicker = 'color_picker',
+  Country = 'country',
+  CreationLog = 'creation_log',
+  Date = 'date',
+  Dependency = 'dependency',
+  DirectDoc = 'direct_doc',
+  Doc = 'doc',
+  Dropdown = 'dropdown',
+  Email = 'email',
+  File = 'file',
+  Formula = 'formula',
+  Hour = 'hour',
+  ItemId = 'item_id',
+  LastUpdated = 'last_updated',
+  Link = 'link',
+  Location = 'location',
+  LongText = 'long_text',
+  Mirror = 'mirror',
+  Numbers = 'numbers',
+  People = 'people',
+  Phone = 'phone',
+  Progress = 'progress',
+  Rating = 'rating',
+  Status = 'status',
+  Subtasks = 'subtasks',
+  Tags = 'tags',
+  Text = 'text',
+  TimeTracking = 'time_tracking',
+  Timeline = 'timeline',
+  Unsupported = 'unsupported',
+  Vote = 'vote',
+  Week = 'week',
+  WorldClock = 'world_clock'
+}
+
+/** A column value for an item returned by items_page */
+export type ItemsPageColumnValue = {
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** The value of a country column. */
+export type ItemsPageCountryValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageCountryValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Full country name */
+  country_name?: Maybe<Scalars['String']['output']>;
+  /** ISO 2-letter country code */
+  country_short_name?: Maybe<Scalars['String']['output']>;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** The value of a creation log column. */
+export type ItemsPageCreationLogValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageCreationLogValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** ISO timestamp of item creation */
+  created_at?: Maybe<Scalars['String']['output']>;
+  /** The user who created the item */
+  creator?: Maybe<User>;
+  /** ID of the user who created the item */
+  creator_id?: Maybe<Scalars['ID']['output']>;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** The value of a date column. */
+export type ItemsPageDateValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageDateValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Date portion (YYYY-MM-DD) */
+  date?: Maybe<Scalars['String']['output']>;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Time portion (HH:MM:SS) */
+  time?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** The value of a dependency column. */
+export type ItemsPageDependencyValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageDependencyValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Comma-separated display text of dependency item names */
+  display_value?: Maybe<Scalars['String']['output']>;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** IDs of dependency items */
+  linked_item_ids: Array<Scalars['ID']['output']>;
+  /** Dependency items with id and name */
+  linked_items: Array<ItemsPageLinkedItem>;
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** The value of a direct doc column (the item page's item-description doc). */
+export type ItemsPageDirectDocValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageDirectDocValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** The value of a document column. */
+export type ItemsPageDocValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageDocValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** The monday doc attached to the column. */
+  file?: Maybe<ItemsPageFileDocValue>;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** The value of a dropdown column. */
+export type ItemsPageDropdownValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageDropdownValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+  /** Selected dropdown options with resolved labels */
+  values: Array<ItemsPageDropdownValueOption>;
+};
+
+/** A dropdown option selected in a dropdown column. */
+export type ItemsPageDropdownValueOption = {
+  __typename?: 'ItemsPageDropdownValueOption';
+  /** The dropdown item's unique identifier. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** The dropdown item's label. */
+  label?: Maybe<Scalars['String']['output']>;
+};
+
+/** The value of an email column. */
+export type ItemsPageEmailValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageEmailValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Email address */
+  email?: Maybe<Scalars['String']['output']>;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** An uploaded asset attached to a file column. */
+export type ItemsPageFileAssetValue = {
+  __typename?: 'ItemsPageFileAssetValue';
+  /** The asset associated with the file. */
+  asset?: Maybe<Asset>;
+  /** The asset's id. */
+  asset_id?: Maybe<Scalars['ID']['output']>;
+  /** ISO timestamp of the file's creation. */
+  created_at?: Maybe<Scalars['String']['output']>;
+  /** The user who created the file. */
+  creator?: Maybe<User>;
+  /** The ID of the user who created the file. */
+  creator_id?: Maybe<Scalars['ID']['output']>;
+  /** Whether the file is an image. */
+  is_image?: Maybe<Scalars['Boolean']['output']>;
+  /** The file's name. */
+  name?: Maybe<Scalars['String']['output']>;
+};
+
+/** A monday doc attached to a file column. */
+export type ItemsPageFileDocValue = {
+  __typename?: 'ItemsPageFileDocValue';
+  /** ISO timestamp of the file's creation. */
+  created_at?: Maybe<Scalars['String']['output']>;
+  /** The user who created the file. */
+  creator?: Maybe<User>;
+  /** The ID of the user who created the file. */
+  creator_id?: Maybe<Scalars['ID']['output']>;
+  /** The doc associated with the file. */
+  doc?: Maybe<Document>;
+  /** The file's unique identifier. */
+  file_id?: Maybe<Scalars['ID']['output']>;
+  /** The associated board or object's unique identifier. */
+  object_id?: Maybe<Scalars['ID']['output']>;
+  /** The file's url. */
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+/** An external link (Google Drive, Dropbox, Box, OneDrive, or generic link) attached to a file column. */
+export type ItemsPageFileLinkValue = {
+  __typename?: 'ItemsPageFileLinkValue';
+  /** ISO timestamp of the file's creation. */
+  created_at?: Maybe<Scalars['String']['output']>;
+  /** The user who created the file. */
+  creator?: Maybe<User>;
+  /** The ID of the user who created the file. */
+  creator_id?: Maybe<Scalars['ID']['output']>;
+  /** The file's id. */
+  file_id?: Maybe<Scalars['ID']['output']>;
+  /** The link's kind. */
+  kind?: Maybe<ItemsPageFileLinkValueKind>;
+  /** The file's name. */
+  name?: Maybe<Scalars['String']['output']>;
+  /** The file's url. */
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+/** The type of an external link stored inside a file column. */
+export enum ItemsPageFileLinkValueKind {
+  Box = 'box',
+  Dropbox = 'dropbox',
+  GoogleDrive = 'google_drive',
+  Link = 'link',
+  Onedrive = 'onedrive'
+}
+
+/** The value of a file column. */
+export type ItemsPageFileValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageFileValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** The files attached to the column. */
+  files: Array<Maybe<ItemsPageFileValueItem>>;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** A single file attached to a file column: an uploaded asset, an external link, or a monday doc. */
+export type ItemsPageFileValueItem = ItemsPageFileAssetValue | ItemsPageFileDocValue | ItemsPageFileLinkValue;
+
+/** The value of a formula column. */
+export type ItemsPageFormulaValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageFormulaValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** The computed formula result as a display string */
+  display_value?: Maybe<Scalars['String']['output']>;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** The group an item belongs to. */
+export type ItemsPageGroup = {
+  __typename?: 'ItemsPageGroup';
+  /** The group color. */
+  color?: Maybe<Scalars['String']['output']>;
+  /** The group ID. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** The group title. */
+  title?: Maybe<Scalars['String']['output']>;
+};
+
+/** A mirrored group entity (the linked item's group). */
+export type ItemsPageGroupValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageGroupValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** The group color. */
+  color?: Maybe<Scalars['String']['output']>;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** The group title. */
+  title?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** The value of an hour column. */
+export type ItemsPageHourValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageHourValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Hour (0-23) */
+  hour?: Maybe<Scalars['Int']['output']>;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Minute (0-59) */
+  minute?: Maybe<Scalars['Int']['output']>;
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** Input arguments for the items_page query */
+export type ItemsPageInput = {
+  /** The board to query. Provide either board_id or data_view_id, not both. */
+  board_id?: InputMaybe<Scalars['ID']['input']>;
+  /** The data view UUID to query. Provide either data_view_id or board_id, not both. */
+  data_view_id?: InputMaybe<Scalars['ID']['input']>;
+  /** Optional group ID to scope the query to a specific group */
+  group_id?: InputMaybe<Scalars['String']['input']>;
+  /** For multi-level boards: controls how filters apply across the item hierarchy. Use "allItems" to evaluate filters against parents and subitems and return matches at every level. Accepted values: allItems, parentItems. */
+  hierarchy_scope_config?: InputMaybe<Scalars['String']['input']>;
+  /** Page size (default 25, max 2000) */
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  /** Optional filter and sort configuration */
+  query?: InputMaybe<ItemsQuery>;
+};
+
+/** The value of an item ID column. */
+export type ItemsPageItemIdValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageItemIdValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** The item ID */
+  item_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** The value of a last updated column. */
+export type ItemsPageLastUpdatedValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageLastUpdatedValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** ISO timestamp of last update */
+  updated_at?: Maybe<Scalars['String']['output']>;
+  /** The user who last updated the item */
+  updater?: Maybe<User>;
+  /** ID of the user who last updated the item */
+  updater_id?: Maybe<Scalars['ID']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** The value of a link column. */
+export type ItemsPageLinkValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageLinkValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Display text for the link */
+  link_text?: Maybe<Scalars['String']['output']>;
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** URL */
+  url?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** The board a linked item lives on. */
+export type ItemsPageLinkedBoard = {
+  __typename?: 'ItemsPageLinkedBoard';
+  /** The board ID. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** The board name. */
+  name?: Maybe<Scalars['String']['output']>;
+};
+
+/** A linked item referenced by a relation column. */
+export type ItemsPageLinkedItem = {
+  __typename?: 'ItemsPageLinkedItem';
+  /** The board the linked item belongs to (id and name). */
+  board?: Maybe<ItemsPageLinkedBoard>;
+  /** The linked item ID. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** The linked item name. */
+  name?: Maybe<Scalars['String']['output']>;
+};
+
+/** The value of a location column. */
+export type ItemsPageLocationValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageLocationValue';
+  /** Human-readable address */
+  address?: Maybe<Scalars['String']['output']>;
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Latitude */
+  lat?: Maybe<Scalars['String']['output']>;
+  /** Longitude */
+  lng?: Maybe<Scalars['String']['output']>;
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** The value of a long text column. */
+export type ItemsPageLongTextValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageLongTextValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** The value of a mirror (connected boards) column. */
+export type ItemsPageMirrorValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageMirrorValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Comma-separated display text of mirrored values */
+  display_value?: Maybe<Scalars['String']['output']>;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Mirrored column values from linked items */
+  mirrored_items: Array<ItemsPageMirroredItem>;
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** A mirrored item: the mirrored column value plus the linked item/board it came from. */
+export type ItemsPageMirroredItem = {
+  __typename?: 'ItemsPageMirroredItem';
+  /** The ID of the board the mirrored value came from. */
+  linked_board_id?: Maybe<Scalars['ID']['output']>;
+  /** The linked item the mirrored value came from. */
+  linked_item?: Maybe<ItemResult>;
+  /** The mirrored column value from the linked item. */
+  mirrored_value?: Maybe<ItemsPageColumnValue>;
+};
+
+/** The value of a numbers column. */
+export type ItemsPageNumbersValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageNumbersValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Numeric value */
+  number?: Maybe<Scalars['Float']['output']>;
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** A person or team entity assigned to a people column. */
+export type ItemsPagePeopleEntity = {
+  __typename?: 'ItemsPagePeopleEntity';
+  /** Id of the entity: a person or a team. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Type of entity. */
+  kind?: Maybe<Scalars['String']['output']>;
+};
+
+/** The value of a people column. */
+export type ItemsPagePeopleValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPagePeopleValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** People and teams assigned */
+  persons_and_teams: Array<ItemsPagePeopleEntity>;
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** The value of a phone column. */
+export type ItemsPagePhoneValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPagePhoneValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** ISO country short name */
+  country_short_name?: Maybe<Scalars['String']['output']>;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Phone number */
+  phone?: Maybe<Scalars['String']['output']>;
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** The value of a progress (battery) column. */
+export type ItemsPageProgressValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageProgressValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** The value of a rating column. */
+export type ItemsPageRatingValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageRatingValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Rating value */
+  rating?: Maybe<Scalars['Int']['output']>;
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** Paginated result set returned by the items_page query */
+export type ItemsPageResult = {
+  __typename?: 'ItemsPageResult';
+  /** Opaque pagination token, null if no more pages */
+  cursor?: Maybe<Scalars['String']['output']>;
+  /** The items in this page of results */
+  items?: Maybe<Array<ItemResult>>;
+  /** Linked items (relations, dependencies, subitems from other boards) */
+  linked_items?: Maybe<Array<ItemResult>>;
+};
+
+/** The value of a status column. */
+export type ItemsPageStatusValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageStatusValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Status label index */
+  index?: Maybe<Scalars['Int']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Resolved status label text */
+  label?: Maybe<Scalars['String']['output']>;
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** A subitem referenced by a subtasks column. */
+export type ItemsPageSubitem = {
+  __typename?: 'ItemsPageSubitem';
+  /** The subitem ID. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** The subitem name. */
+  name?: Maybe<Scalars['String']['output']>;
+};
+
+/** The value of a subtasks (subitems) column. */
+export type ItemsPageSubtasksValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageSubtasksValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Comma-separated display text of subitem names */
+  display_value?: Maybe<Scalars['String']['output']>;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Subitems with id and name */
+  subitems: Array<ItemsPageSubitem>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** The value of a tags column. */
+export type ItemsPageTagsValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageTagsValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** List of tag IDs */
+  tag_ids: Array<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** The value of a text column. */
+export type ItemsPageTextValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageTextValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** The value of a time tracking column. */
+export type ItemsPageTimeTrackingValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageTimeTrackingValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Total tracked duration in seconds */
+  duration?: Maybe<Scalars['Float']['output']>;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Whether the time tracker is currently running */
+  running?: Maybe<Scalars['Boolean']['output']>;
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** ISO timestamp of when the running session started */
+  started_at?: Maybe<Scalars['String']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** ISO timestamp of when the column value was last updated */
+  updated_at?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** The value of a timeline column. */
+export type ItemsPageTimelineValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageTimelineValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Start date (YYYY-MM-DD) */
+  from_date?: Maybe<Scalars['String']['output']>;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** End date (YYYY-MM-DD) */
+  to_date?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** A column value of an unsupported or unrecognized column type. */
+export type ItemsPageUnknownValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageUnknownValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** The value of a vote column. */
+export type ItemsPageVoteValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageVoteValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+  /** Number of votes */
+  vote_count?: Maybe<Scalars['Int']['output']>;
+  /** IDs of users who voted */
+  voter_ids: Array<Scalars['ID']['output']>;
+  /** The users who voted */
+  voters: Array<Maybe<User>>;
+};
+
+/** The value of a week column. */
+export type ItemsPageWeekValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageWeekValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Week end date (YYYY-MM-DD) */
+  end_date?: Maybe<Scalars['String']['output']>;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Week start date (YYYY-MM-DD) */
+  start_date?: Maybe<Scalars['String']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** The value of a world clock column. */
+export type ItemsPageWorldClockValue = ItemsPageColumnValue & {
+  __typename?: 'ItemsPageWorldClockValue';
+  /** Column capabilities (calculated/rollup metadata on multi-level boards). */
+  capabilities: ItemsPageColumnCapabilities;
+  /** Board-level metadata of this value's column (id, title, type, capabilities, settings). Not recommended: resolving column metadata per value is redundant across items — prefer querying it once per board via `boards { columns { ... } }` and joining client-side. */
+  column: ItemsPageColumn;
+  /** Column ID. On the data view path this is the target column id. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Multi-level boards: whether this item is a leaf (has no subitems). */
+  is_leaf: Scalars['Boolean']['output'];
+  /** Data views only: the id this column has on the source board the item came from. Null for board queries, and for items whose board the view does not map this column on. */
+  source_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Data views only: the column's id on the view's target schema. Null for board queries. */
+  target_column_id?: Maybe<Scalars['ID']['output']>;
+  /** Stringified text representation */
+  text?: Maybe<Scalars['String']['output']>;
+  /** Timezone string (e.g. "America/New_York") */
+  timezone?: Maybe<Scalars['String']['output']>;
+  /** Column type */
+  type?: Maybe<Scalars['String']['output']>;
+  /** JSON string value matching old API format */
+  value?: Maybe<Scalars['String']['output']>;
 };
 
 export type ItemsQuery = {
@@ -8922,17 +10631,30 @@ export enum LlmModelInput {
   ClaudeHaiku_4_5 = 'CLAUDE_HAIKU_4_5',
   ClaudeOpus_4_6 = 'CLAUDE_OPUS_4_6',
   ClaudeOpus_5 = 'CLAUDE_OPUS_5',
+  ClaudeOpus_5_5 = 'CLAUDE_OPUS_5_5',
   Gemini_3_1FlashLite = 'GEMINI_3_1_FLASH_LITE',
-  Gemini_3_1Pro = 'GEMINI_3_1_PRO',
   Gemini_3_5Flash = 'GEMINI_3_5_FLASH',
   Gemini_3_5FlashLite = 'GEMINI_3_5_FLASH_LITE',
   Gemini_3_6Flash = 'GEMINI_3_6_FLASH',
   Gemini_3_7Flash = 'GEMINI_3_7_FLASH',
-  Gpt_5 = 'GPT_5',
-  Gpt_5_1 = 'GPT_5_1',
-  Gpt_5_2 = 'GPT_5_2',
-  Gpt_5Mini = 'GPT_5_MINI',
-  Gpt_5Nano = 'GPT_5_NANO'
+  Gemini_3_8Flash = 'GEMINI_3_8_FLASH',
+  Gemini_4Argon = 'GEMINI_4_ARGON',
+  Gpt_6_1Sol = 'GPT_6_1_SOL'
+}
+
+/** The vendor family a model belongs to, as restricted by account AI policies */
+export enum LlmModelVendor {
+  Anthropic = 'ANTHROPIC',
+  Google = 'GOOGLE',
+  Openai = 'OPENAI',
+  Opensource = 'OPENSOURCE'
+}
+
+/** How much the code-generation model reasons before it answers */
+export enum LlmThinkingEffort {
+  High = 'HIGH',
+  Low = 'LOW',
+  Medium = 'MEDIUM'
 }
 
 export type LastUpdatedValue = ColumnValue & {
@@ -9764,6 +11486,10 @@ export type Mutation = {
   assign_department_owner?: Maybe<AssignDepartmentOwnerResult>;
   /** Assigns the specified users as owners of the specified team. */
   assign_team_owners?: Maybe<AssignTeamOwnersResult>;
+  /** Assign a time off schedule to multiple users and/or teams. Returns per-resource outcomes split by resource kind, allowing partial success. Pass the account default time off ID to revert resources to the account default. Maximum 100 user IDs and 100 team IDs per call. */
+  assign_time_off?: Maybe<AssignTimeOffResult>;
+  /** Assign a work schedule to multiple users and/or teams. Returns per-resource outcomes split by resource kind, allowing partial success. Pass the account default schedule ID to revert resources to the account default. Maximum 100 user IDs and 100 team IDs per call. */
+  assign_work_schedule?: Maybe<AssignWorkScheduleResult>;
   /** Creates a new dropdown column in a board that is linked to a managed column. The column data and settings are controlled by the managed column. Title, description, and dropdown-specific settings (limit_select, label_limit_count) can be overridden locally. */
   attach_dropdown_managed_column?: Maybe<Column>;
   /** Creates a new status column in a board that is linked to a managed column. The column data and settings are controlled by the managed column. Only title and description can be overridden locally. */
@@ -9830,7 +11556,7 @@ export type Mutation = {
   create_article?: Maybe<ArticleMetadata>;
   /** Create a new board. */
   create_board?: Maybe<Board>;
-  /** Export a board. Returns ExportFile (sync) or ExportAsyncJob (async) based on board size and server conditions. The server chooses which branch to return; the choice is not part of the contract and may be retuned without notice. Callers MUST handle both branches. Sync: use download_url directly. Async: poll export_job_status until COMPLETED, FAILED, or CANCELLED. The exported file is always CSV. */
+  /** Export a board. Returns ExportFile (sync) or ExportAsyncJob (async) based on board size and server conditions. The server chooses which branch to return; the choice is not part of the contract and may be retuned without notice. Callers MUST handle both branches. Sync: use download_url directly. Async: poll export_job_status until COMPLETED, FAILED, or CANCELLED. The exported file is always CSV. Available to enterprise accounts only; other accounts receive FORBIDDEN_EXCEPTION. */
   create_board_export?: Maybe<ExportResult>;
   /** Generic mutation for creating any column type with validation. Supports creating column with properties like title, description, and type-specific defaults/settings. The mutation validates input against the column type's schema before applying changes. Use get_column_type_schema query to understand available properties for each column type. */
   create_column?: Maybe<Column>;
@@ -9881,6 +11607,8 @@ export type Mutation = {
   create_portfolio?: Maybe<CreatePortfolioResult>;
   /** Create a new project in monday.com from scratch. This mutation initiates asynchronous project creation with comprehensive customization options including: privacy settings (private/public - share is currently not supported), optional companions like Resource Planner for enhanced project management capabilities, workspace assignment for organizational structure, folder placement for better organization, and template selection for predefined project structures. Since project creation is asynchronous, you can optionally provide a callback_url where the project ID will be sent via POST request once creation completes. The callback will receive: { is_success: boolean, process_id: string, project_id?: number }. Returns a process_id for tracking the creation request. */
   create_project?: Maybe<CreateProjectResult>;
+  /** Create one or more PTO entries for users; maximum 100 inputs per call */
+  create_pto_entry?: Maybe<Array<TimeOffEntryResult>>;
   /** Creates a new service user. */
   create_service_user?: Maybe<CreateServiceUserResult>;
   /** Creates a new status column with strongly typed settings. Status columns allow users to track item progress through customizable labels (e.g., "Working on it", "Done", "Stuck"). This mutation is specifically for status/color columns and provides type-safe creation with label configuration. */
@@ -9891,6 +11619,10 @@ export type Mutation = {
   create_subitem?: Maybe<Item>;
   /** Creates a new team. */
   create_team?: Maybe<Team>;
+  /** Create one or more named time off schedules for the account; maximum 100 inputs per call */
+  create_time_off?: Maybe<Array<TimeOffResult>>;
+  /** Add one or more non-working date entries to a time off schedule; maximum 100 inputs per call */
+  create_time_off_entry?: Maybe<Array<TimeOffEntryResult>>;
   create_timeline_item?: Maybe<TimelineItem>;
   create_update?: Maybe<Update>;
   /** Create a validation rule */
@@ -9903,6 +11635,8 @@ export type Mutation = {
   create_webhook?: Maybe<Webhook>;
   /** Create a new widget. */
   create_widget?: Maybe<Widget>;
+  /** Create one or more named work schedules for the account; maximum 100 inputs per call */
+  create_work_schedule?: Maybe<Array<WorkScheduleResult>>;
   /** Create a new workspace. */
   create_workspace?: Maybe<Workspace>;
   /** Deactivate a form to hide it from users and stop accepting submissions. Form data is preserved. */
@@ -9951,6 +11685,8 @@ export type Mutation = {
   delete_object_relation?: Maybe<Scalars['Int']['output']>;
   /** Delete an account object schema. Can only delete if there are no boards attached to the object schema. Object schemas define the structure and columns of boards. */
   delete_object_schema?: Maybe<ObjectSchema>;
+  /** Soft-delete one or more PTO entries; maximum 100 IDs per call */
+  delete_pto_entry?: Maybe<Array<TimeOffEntryDeleteResult>>;
   /** Permanently remove a question from a form. This action cannot be undone. */
   delete_question?: Maybe<Scalars['Boolean']['output']>;
   /** Remove subscribers from the board. */
@@ -9961,6 +11697,10 @@ export type Mutation = {
   delete_teams_from_board?: Maybe<Array<Maybe<Team>>>;
   /** Delete teams from a workspace. */
   delete_teams_from_workspace?: Maybe<Array<Maybe<Team>>>;
+  /** Soft-delete one or more time off schedules; maximum 100 IDs per call */
+  delete_time_off?: Maybe<Array<TimeOffDeleteResult>>;
+  /** Soft-delete one or more time off entries; maximum 100 IDs per call */
+  delete_time_off_entry?: Maybe<Array<TimeOffEntryDeleteResult>>;
   delete_timeline_item?: Maybe<TimelineItem>;
   delete_update?: Maybe<Update>;
   /** Delete users from a workspace. */
@@ -9973,6 +11713,8 @@ export type Mutation = {
   delete_webhook?: Maybe<Webhook>;
   /** Delete an existing widget. */
   delete_widget?: Maybe<Scalars['Boolean']['output']>;
+  /** Soft-delete one or more work schedules; maximum 100 IDs per call */
+  delete_work_schedule?: Maybe<Array<WorkScheduleDeleteResult>>;
   /** Delete workspace. */
   delete_workspace?: Maybe<Workspace>;
   /** Detach boards from their object schemas. */
@@ -9999,8 +11741,6 @@ export type Mutation = {
   increase_app_subscription_operations?: Maybe<AppSubscriptionOperationsCounter>;
   /** Initialize an ingest job for a board and group. Designed for ongoing integrations with full side effects and a 10k row limit. Returns job ID and upload URL to begin the process. */
   ingest_items?: Maybe<UploadJobInit>;
-  /** Installs an app on the current account. Requires account admin permission. */
-  install_app?: Maybe<InstallAppResponse>;
   /** Invite users to the account. */
   invite_users?: Maybe<InviteUsersResult>;
   like_update?: Maybe<Update>;
@@ -10048,16 +11788,22 @@ export type Mutation = {
   set_object_schema_column_active_state?: Maybe<ObjectSchema>;
   /** Shorten a URL for a form and store it in the form settings. Returns the shortened link object. */
   shorten_form_url?: Maybe<FormShortenedLink>;
+  /** Subscribes a batch of users to an agent with the given role. */
+  subscribe_users_to_agent?: Maybe<SubscribeUsersToAgentResult>;
   /** Unassigns owners from a department. */
   unassign_department_owners?: Maybe<UnassignDepartmentOwnerResult>;
+  /** Remove explicit time off assignments from multiple users and/or teams. Returns per-resource outcomes split by resource kind, allowing partial success. Maximum 100 user IDs and 100 team IDs per call. */
+  unassign_time_off: AssignTimeOffResult;
+  /** Remove explicit work schedule assignments from multiple users and/or teams. Returns per-resource outcomes split by resource kind, allowing partial success. Maximum 100 user IDs and 100 team IDs per call. */
+  unassign_work_schedule?: Maybe<AssignWorkScheduleResult>;
   /** Undo a previously completed action, or cancel one still in flight */
   undo_action?: Maybe<UndoResult>;
-  /** Uninstalls an app from the current account. Requires account admin permission. */
-  uninstall_app?: Maybe<AppDeletionResponse>;
   unlike_update: Update;
   unpin_from_top: Update;
   /** Unpublishes object from public state back to draft state. Returns {success: true} on success, {success: false} on failure. */
   unpublish_object?: Maybe<ObjectOperationResponse>;
+  /** Unsubscribes a batch of users from an agent. Succeeds even if the memberships did not exist. A user may remove themselves without manage_agent; removing other users requires manage_agent. */
+  unsubscribe_users_from_agent?: Maybe<UnsubscribeUsersFromAgentResult>;
   /** Updates an existing app. If the app latest version is live, a new draft version is automatically created and updated. */
   update_app?: Maybe<AppType>;
   /** Update an app feature. */
@@ -10118,12 +11864,18 @@ export type Mutation = {
   update_object_schema_columns?: Maybe<ObjectSchema>;
   /** Update the position of a dashboard. */
   update_overview_hierarchy?: Maybe<UpdateOverviewHierarchy>;
+  /** Update the name or date range of existing PTO entries; maximum 100 inputs per call */
+  update_pto_entry?: Maybe<Array<TimeOffEntryResult>>;
   /** Updates a status column's properties including title, description, and status label settings. Status columns allow users to track item progress through customizable labels (e.g., "Working on it", "Done", "Stuck"). This mutation is specifically for status/color columns and provides type-safe updates. */
   update_status_column?: Maybe<Column>;
   /** Update managed column of type status mutation. */
   update_status_managed_column?: Maybe<StatusManagedColumn>;
   /** Update board roles for multiple teams. */
   update_teams_board_role?: Maybe<UpdateTeamsBoardRoleResponse>;
+  /** Update the name of a time off schedule */
+  update_time_off?: Maybe<TimeOffResult>;
+  /** Update the name or date range of one or more existing time off entries; maximum 100 inputs per call */
+  update_time_off_entry?: Maybe<Array<TimeOffEntryResult>>;
   /** Update board roles for multiple users. */
   update_users_board_role?: Maybe<UpdateUsersBoardRoleResponse>;
   /** Updates the role of the specified users. */
@@ -10134,6 +11886,8 @@ export type Mutation = {
   update_view?: Maybe<BoardView>;
   /** Update an existing board table view */
   update_view_table?: Maybe<BoardView>;
+  /** Update the name and/or working hours of an existing work schedule */
+  update_work_schedule: WorkScheduleResult;
   /** Update an existing workspace. */
   update_workspace?: Maybe<Workspace>;
   /** Use a template */
@@ -10288,6 +12042,18 @@ export type MutationAssign_Department_OwnerArgs = {
 export type MutationAssign_Team_OwnersArgs = {
   team_id: Scalars['ID']['input'];
   user_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationAssign_Time_OffArgs = {
+  input: AssignTimeOffInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationAssign_Work_ScheduleArgs = {
+  input: AssignWorkScheduleInput;
 };
 
 
@@ -10594,8 +12360,7 @@ export type MutationCreate_BoardArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationCreate_Board_ExportArgs = {
   board_id: Scalars['ID']['input'];
-  columns_order?: InputMaybe<Array<Scalars['String']['input']>>;
-  export_options?: InputMaybe<ExportOptionsInput>;
+  export_options?: InputMaybe<CreateBoardExportOptionsInput>;
   time_zone?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -10829,6 +12594,12 @@ export type MutationCreate_ProjectArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationCreate_Pto_EntryArgs = {
+  inputs: Array<CreatePtoEntryInput>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_Service_UserArgs = {
   name: Scalars['String']['input'];
   title?: InputMaybe<Scalars['String']['input']>;
@@ -10872,6 +12643,18 @@ export type MutationCreate_TeamArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationCreate_Time_OffArgs = {
+  inputs: Array<CreateTimeOffInput>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationCreate_Time_Off_EntryArgs = {
+  inputs: Array<CreateTimeOffEntryInput>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationCreate_Timeline_ItemArgs = {
   content?: InputMaybe<Scalars['String']['input']>;
   custom_activity_id: Scalars['String']['input'];
@@ -10909,6 +12692,8 @@ export type MutationCreate_Validation_RuleArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationCreate_ViewArgs = {
   board_id: Scalars['ID']['input'];
+  conditional_formatting_settings?: InputMaybe<Array<ConditionalFormattingConditionInput>>;
+  context?: InputMaybe<ViewContext>;
   filter?: InputMaybe<ItemsQueryGroup>;
   filter_team_id?: InputMaybe<Scalars['ID']['input']>;
   filter_user_id?: InputMaybe<Scalars['ID']['input']>;
@@ -10923,6 +12708,8 @@ export type MutationCreate_ViewArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationCreate_View_TableArgs = {
   board_id: Scalars['ID']['input'];
+  conditional_formatting_settings?: InputMaybe<Array<ConditionalFormattingConditionInput>>;
+  context?: InputMaybe<ViewContext>;
   filter?: InputMaybe<ItemsQueryGroup>;
   filter_team_id?: InputMaybe<Scalars['ID']['input']>;
   filter_user_id?: InputMaybe<Scalars['ID']['input']>;
@@ -10949,6 +12736,12 @@ export type MutationCreate_WidgetArgs = {
   name: Scalars['String']['input'];
   parent: WidgetParentInput;
   settings: Scalars['JSON']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationCreate_Work_ScheduleArgs = {
+  inputs: Array<CreateWorkScheduleInput>;
 };
 
 
@@ -11115,6 +12908,12 @@ export type MutationDelete_Object_SchemaArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationDelete_Pto_EntryArgs = {
+  ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationDelete_QuestionArgs = {
   formToken: Scalars['String']['input'];
   questionId: Scalars['String']['input'];
@@ -11145,6 +12944,18 @@ export type MutationDelete_Teams_From_BoardArgs = {
 export type MutationDelete_Teams_From_WorkspaceArgs = {
   team_ids: Array<Scalars['ID']['input']>;
   workspace_id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationDelete_Time_OffArgs = {
+  ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationDelete_Time_Off_EntryArgs = {
+  ids: Array<Scalars['ID']['input']>;
 };
 
 
@@ -11191,6 +13002,12 @@ export type MutationDelete_WebhookArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationDelete_WidgetArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationDelete_Work_ScheduleArgs = {
+  ids: Array<Scalars['ID']['input']>;
 };
 
 
@@ -11298,12 +13115,6 @@ export type MutationIngest_ItemsArgs = {
   board_id: Scalars['ID']['input'];
   group_id: Scalars['ID']['input'];
   on_match?: InputMaybe<OnMatchInput>;
-};
-
-
-/** Root mutation type for the Dependencies service */
-export type MutationInstall_AppArgs = {
-  input: InstallAppInput;
 };
 
 
@@ -11484,6 +13295,14 @@ export type MutationShorten_Form_UrlArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationSubscribe_Users_To_AgentArgs = {
+  agent_id: Scalars['ID']['input'];
+  role: AgentMembershipRole;
+  user_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationUnassign_Department_OwnersArgs = {
   department_id: Scalars['ID']['input'];
   user_ids: Array<Scalars['ID']['input']>;
@@ -11491,14 +13310,22 @@ export type MutationUnassign_Department_OwnersArgs = {
 
 
 /** Root mutation type for the Dependencies service */
-export type MutationUndo_ActionArgs = {
-  job_id: Scalars['ID']['input'];
+export type MutationUnassign_Time_OffArgs = {
+  team_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  user_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
 };
 
 
 /** Root mutation type for the Dependencies service */
-export type MutationUninstall_AppArgs = {
-  app_identifier: Scalars['ID']['input'];
+export type MutationUnassign_Work_ScheduleArgs = {
+  team_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  user_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUndo_ActionArgs = {
+  job_id: Scalars['ID']['input'];
 };
 
 
@@ -11518,6 +13345,13 @@ export type MutationUnpin_From_TopArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationUnpublish_ObjectArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUnsubscribe_Users_From_AgentArgs = {
+  agent_id: Scalars['ID']['input'];
+  user_ids: Array<Scalars['ID']['input']>;
 };
 
 
@@ -11774,6 +13608,12 @@ export type MutationUpdate_Overview_HierarchyArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationUpdate_Pto_EntryArgs = {
+  inputs: Array<UpdatePtoEntryInput>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Status_ColumnArgs = {
   board_id: Scalars['ID']['input'];
   capabilities?: InputMaybe<StatusColumnCapabilitiesInput>;
@@ -11805,6 +13645,19 @@ export type MutationUpdate_Teams_Board_RoleArgs = {
 
 
 /** Root mutation type for the Dependencies service */
+export type MutationUpdate_Time_OffArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdateTimeOffInput;
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUpdate_Time_Off_EntryArgs = {
+  inputs: Array<UpdateTimeOffEntryInput>;
+};
+
+
+/** Root mutation type for the Dependencies service */
 export type MutationUpdate_Users_Board_RoleArgs = {
   board_id: Scalars['ID']['input'];
   role_name: BoardBasicRoleName;
@@ -11832,6 +13685,8 @@ export type MutationUpdate_Validation_RuleArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationUpdate_ViewArgs = {
   board_id: Scalars['ID']['input'];
+  conditional_formatting_settings?: InputMaybe<Array<ConditionalFormattingConditionInput>>;
+  context?: InputMaybe<ViewContext>;
   filter?: InputMaybe<ItemsQueryGroup>;
   filter_team_id?: InputMaybe<Scalars['ID']['input']>;
   filter_user_id?: InputMaybe<Scalars['ID']['input']>;
@@ -11847,6 +13702,8 @@ export type MutationUpdate_ViewArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationUpdate_View_TableArgs = {
   board_id: Scalars['ID']['input'];
+  conditional_formatting_settings?: InputMaybe<Array<ConditionalFormattingConditionInput>>;
+  context?: InputMaybe<ViewContext>;
   filter?: InputMaybe<ItemsQueryGroup>;
   filter_team_id?: InputMaybe<Scalars['ID']['input']>;
   filter_user_id?: InputMaybe<Scalars['ID']['input']>;
@@ -11855,6 +13712,13 @@ export type MutationUpdate_View_TableArgs = {
   sort?: InputMaybe<Array<ItemsQueryOrderBy>>;
   tags?: InputMaybe<Array<Scalars['String']['input']>>;
   view_id: Scalars['ID']['input'];
+};
+
+
+/** Root mutation type for the Dependencies service */
+export type MutationUpdate_Work_ScheduleArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdateWorkScheduleInput;
 };
 
 
@@ -12232,6 +14096,16 @@ export type ObjectSchemaActionResult = {
   object_schema?: Maybe<ObjectSchema>;
 };
 
+/** A board's pending column changes against the object schema it follows, per surface. */
+export type ObjectSchemaBoardChangesPreview = {
+  __typename?: 'ObjectSchemaBoardChangesPreview';
+  /** Whether any surface has a publishable change. */
+  has_changes: Scalars['Boolean']['output'];
+  /** True when the board has a classic subitems board that follows no schema. Publish covers the root only; create_object_schema_companion completes the setup. */
+  subitems_surface_unavailable: Scalars['Boolean']['output'];
+  surfaces: Array<ObjectSchemaSurfacePreview>;
+};
+
 /** A column definition within an object schema. */
 export type ObjectSchemaColumn = {
   __typename?: 'ObjectSchemaColumn';
@@ -12252,6 +14126,28 @@ export type ObjectSchemaColumn = {
   /** The column's type. */
   type?: Maybe<ColumnType>;
 };
+
+/** A column-level difference between the board and the schema. */
+export type ObjectSchemaColumnChange = {
+  __typename?: 'ObjectSchemaColumnChange';
+  /** The operation Publish will apply, or MISSING_FROM_BOARD for a schema column the board lacks. */
+  change_type: ObjectSchemaColumnChangeType;
+  /** The affected column ID. */
+  column_id: Scalars['ID']['output'];
+  /** The affected column type, when available. */
+  column_type?: Maybe<Scalars['String']['output']>;
+  /** Whether Publish applies this change. Schema columns missing from the board are never removed by Publish. */
+  publishable: Scalars['Boolean']['output'];
+  /** The affected column title, when available. */
+  title?: Maybe<Scalars['String']['output']>;
+};
+
+/** A publishable operation or informational difference between a board and the object schema it follows. */
+export enum ObjectSchemaColumnChangeType {
+  Create = 'CREATE',
+  MissingFromBoard = 'MISSING_FROM_BOARD',
+  Update = 'UPDATE'
+}
 
 /** Policy rules governing how an object schema column can be modified. */
 export type ObjectSchemaColumnPolicy = {
@@ -12275,6 +14171,64 @@ export type ObjectSchemaColumnTags = {
   inherited?: Maybe<Scalars['Boolean']['output']>;
   /** Opt-in by default info with an optional end timestamp. */
   opt_in_by_default?: Maybe<Scalars['JSON']['output']>;
+};
+
+/** A board that follows an object schema. */
+export type ObjectSchemaConnectedBoard = {
+  __typename?: 'ObjectSchemaConnectedBoard';
+  /** The board ID. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** True for the template's own board (and its subitems board), which clients exclude from instance lists and may link to as "the template". */
+  is_template_editor?: Maybe<Scalars['Boolean']['output']>;
+  /** The object schema the board follows. */
+  object_schema_id?: Maybe<Scalars['ID']['output']>;
+};
+
+/** A page of the boards that follow an object schema, ordered by board ID. */
+export type ObjectSchemaConnectedBoards = {
+  __typename?: 'ObjectSchemaConnectedBoards';
+  items: Array<ObjectSchemaConnectedBoard>;
+  pagination: ObjectSchemaConnectedBoardsPagination;
+};
+
+export type ObjectSchemaConnectedBoardsPagination = {
+  __typename?: 'ObjectSchemaConnectedBoardsPagination';
+  /** Whether another page exists. */
+  has_more?: Maybe<Scalars['Boolean']['output']>;
+  /** The page size that was applied. */
+  limit?: Maybe<Scalars['Int']['output']>;
+  /** Opaque cursor for the next page, or null on the last page. */
+  next_cursor?: Maybe<Scalars['String']['output']>;
+  /** How many boards follow the schema in total, after exclusions. */
+  total_count?: Maybe<Scalars['Int']['output']>;
+};
+
+/** Which board ↔ schema pair a surface describes: the root board or its classic subitems board. */
+export enum ObjectSchemaSurfaceKind {
+  ClassicSubitems = 'CLASSIC_SUBITEMS',
+  Root = 'ROOT'
+}
+
+/** Changes and current schema revision for one board ↔ object-schema pair. */
+export type ObjectSchemaSurfacePreview = {
+  __typename?: 'ObjectSchemaSurfacePreview';
+  /** The board for this surface. */
+  board_id: Scalars['ID']['output'];
+  changes: Array<ObjectSchemaColumnChange>;
+  kind: ObjectSchemaSurfaceKind;
+  /** The object schema this board follows. */
+  object_schema_id: Scalars['ID']['output'];
+  /** The schema revision the changes were computed against. Pass it back as the expected revision on publish. */
+  object_schema_revision: Scalars['Int']['output'];
+};
+
+/** The object schemas created from a board: the root schema and, for classic subitems, its companion. */
+export type ObjectSchemasFromBoard = {
+  __typename?: 'ObjectSchemasFromBoard';
+  /** The object schema created from the root board, which is now attached to it. */
+  root_object_schema: ObjectSchema;
+  /** The companion object schema created from the classic subitems board, attached to it. Null when the board has no subitems board. */
+  subitems_object_schema?: Maybe<ObjectSchema>;
 };
 
 /** The state of the object. */
@@ -12989,6 +14943,7 @@ export type PromptSuggestion = {
 /** The type of context for generating prompt suggestions */
 export enum PromptSuggestionFor {
   Board = 'BOARD',
+  ContextSource = 'CONTEXT_SOURCE',
   Item = 'ITEM',
   Object = 'OBJECT',
   SearchQuery = 'SEARCH_QUERY',
@@ -13049,6 +15004,18 @@ export type PublicTemplateLinkPreviewResult = {
   variant?: Maybe<Scalars['String']['output']>;
 };
 
+/** Input for publishing a board's column changes to the object schema it follows. */
+export type PublishObjectSchemaFromBoardInput = {
+  /** The template's board. */
+  editor_board_id: Scalars['ID']['input'];
+  /** The root schema revision from object_schema_board_changes. Publish is refused if the schema moved. */
+  expected_revision: Scalars['Int']['input'];
+  /** The companion schema revision from the preview. Required when the preview had a CLASSIC_SUBITEMS surface. */
+  expected_subitems_revision?: InputMaybe<Scalars['Int']['input']>;
+  /** The object schema the board follows. */
+  object_schema_id: Scalars['ID']['input'];
+};
+
 /** Paginated result for published community apps */
 export type PublishedCommunityAppsResult = {
   __typename?: 'PublishedCommunityAppsResult';
@@ -13069,6 +15036,8 @@ export type Query = {
   __typename?: 'Query';
   /** Get the connected account's information. */
   account?: Maybe<Account>;
+  /** Returns the account-level default work schedule and time off schedule */
+  account_availability_defaults?: Maybe<AccountAvailabilityDefaults>;
   /** Returns all connections for the account. Requires admin privileges. */
   account_connections?: Maybe<Array<Connection>>;
   /** Get all roles for the account */
@@ -13077,6 +15046,8 @@ export type Query = {
   account_trigger_statistics?: Maybe<AccountTriggerStatistics>;
   /** Get aggregated automation runs statistics grouped by entity Ids */
   account_triggers_statistics_by_entity_id?: Maybe<AccountTriggersByEntityId>;
+  /** Retrieves agent users and their subscriber memberships. */
+  agents?: Maybe<Array<Agent>>;
   /** Performs aggregation operations on board data */
   aggregate?: Maybe<AggregateQueryResult>;
   /** Retrieve aggregated board data at specific historical dates for point-in-time analysis. When the query references a date column, results are only available from when date column history began for that board; earlier timestamps are rejected. */
@@ -13213,7 +15184,7 @@ export type Query = {
   export_events?: Maybe<EventsExport>;
   /** Export the dependency graph for a specific board */
   export_graph?: Maybe<BoardGraphExport>;
-  /** Fetch the status of an async board export job. Returns null for unknown or cross-account job IDs (a foreign-account job is indistinguishable from a missing one). Poll until status is COMPLETED (use download_url), FAILED (read failure_reason), or CANCELLED. */
+  /** Fetch the status of an async board export job. Returns null for unknown or cross-account job IDs (a foreign-account job is indistinguishable from a missing one). Poll until status is COMPLETED (use download_url), FAILED (read failure_reason), or CANCELLED. Available to enterprise accounts only; other accounts receive FORBIDDEN_EXCEPTION. */
   export_job_status?: Maybe<ExportJobStatusInfo>;
   /** Converts document content into standard markdown format for external use, backup, or processing. Exports the entire document by default, or specific blocks if block IDs are provided. Use this to extract content for integration with other systems, create backups, generate reports, or process document content with external tools. The output is clean, portable markdown that preserves formatting and structure. */
   export_markdown_from_doc?: Maybe<ExportMarkdownResult>;
@@ -13249,6 +15220,8 @@ export type Query = {
   items?: Maybe<Array<Maybe<Item>>>;
   /** Retrieve historical item data from a board at a specific point in time. When the query references a date column, results are only available from when date column history began for that board; earlier timestamps are rejected. */
   items_history?: Maybe<ItemsHistoryResultSet>;
+  /** Retrieves a paginated page of items from a board. Provide input for the first page, or cursor for subsequent pages. */
+  items_page?: Maybe<ItemsPageResult>;
   /** Search items by multiple columns and values. */
   items_page_by_column_values: ItemsResponse;
   /** Get the status of an async job by its external ID */
@@ -13279,6 +15252,8 @@ export type Query = {
   platform_api?: Maybe<PlatformApi>;
   /** Get a collection of replies filtered by board IDs and date range. */
   replies?: Maybe<Array<Reply>>;
+  /** Returns resources availability: work schedule and time offs schedule for users and teams */
+  resources_availability?: Maybe<ResourcesAvailability>;
   /** Search API. Each field searches a single entity type with tailored filters. */
   search: SearchNamespace;
   /** Get a single audience segment by ID */
@@ -13299,6 +15274,8 @@ export type Query = {
   teams?: Maybe<Array<Maybe<Team>>>;
   /** Get the status of a use_template async operation. Returns null if the process_id is invalid, expired, or unauthorized. */
   template_installation_status?: Maybe<TemplateInstallationStatusResult>;
+  /** Returns active time off schedules for the caller's account */
+  time_offs?: Maybe<TimesOffPage>;
   /** Fetches timeline items for a given item */
   timeline?: Maybe<TimelineResponse>;
   timeline_item?: Maybe<TimelineItem>;
@@ -13315,6 +15292,8 @@ export type Query = {
   user_configs?: Maybe<Array<UserConfig>>;
   /** Returns connections that belong to the authenticated user. */
   user_connections?: Maybe<Array<Connection>>;
+  /** Returns personal PTO collections for the requested users; maximum 100 user IDs per call */
+  user_pto?: Maybe<Array<UserPto>>;
   /** Get users. */
   users?: Maybe<Array<User>>;
   /** Get validations configuration for a board */
@@ -13325,6 +15304,8 @@ export type Query = {
   versions?: Maybe<Array<Version>>;
   /** Get a collection of webhooks for the board */
   webhooks?: Maybe<Array<Maybe<Webhook>>>;
+  /** Returns active work schedules for the caller's account */
+  work_schedules?: Maybe<WorkSchedulePage>;
   /** Get a collection of workspaces. */
   workspaces?: Maybe<Array<Maybe<Workspace>>>;
   /** Returns true if connecting source_item_id -> target_item_id would create an MLS rollup cycle */
@@ -13353,6 +15334,14 @@ export type QueryAccount_Trigger_StatisticsArgs = {
 export type QueryAccount_Triggers_Statistics_By_Entity_IdArgs = {
   filters?: InputMaybe<AccountTriggersByEntityIdFiltersInput>;
   run_status: TriggerEventState;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryAgentsArgs = {
+  after_id?: InputMaybe<Scalars['ID']['input']>;
+  ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 
@@ -13724,6 +15713,14 @@ export type QueryItems_HistoryArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QueryItems_PageArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  input?: InputMaybe<ItemsPageInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryItems_Page_By_Column_ValuesArgs = {
   board_id: Scalars['ID']['input'];
   columns?: InputMaybe<Array<ItemsPageByColumnValuesQuery>>;
@@ -13822,6 +15819,13 @@ export type QueryRepliesArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QueryResources_AvailabilityArgs = {
+  team_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  user_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+};
+
+
+/** Root query type for the Dependencies service */
 export type QuerySegmentArgs = {
   id: Scalars['ID']['input'];
 };
@@ -13860,6 +15864,15 @@ export type QueryTeamsArgs = {
 /** Root query type for the Dependencies service */
 export type QueryTemplate_Installation_StatusArgs = {
   process_id: Scalars['ID']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryTime_OffsArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -13926,6 +15939,12 @@ export type QueryUser_ConnectionsArgs = {
 
 
 /** Root query type for the Dependencies service */
+export type QueryUser_PtoArgs = {
+  user_ids: Array<Scalars['ID']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
 export type QueryUsersArgs = {
   emails?: InputMaybe<Array<Scalars['String']['input']>>;
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
@@ -13953,6 +15972,15 @@ export type QueryValidationsArgs = {
 export type QueryWebhooksArgs = {
   app_webhooks_only?: InputMaybe<Scalars['Boolean']['input']>;
   board_id: Scalars['ID']['input'];
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryWork_SchedulesArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -14311,6 +16339,15 @@ export enum ResourceAttributeTypeKey {
   Teams = 'TEAMS'
 }
 
+/** Resource directory boards of the account, available to internal services only */
+export type ResourceDirectoryInfo = {
+  __typename?: 'ResourceDirectoryInfo';
+  /** ID of the job role attribute board, null when the account has none */
+  job_role_id?: Maybe<Scalars['ID']['output']>;
+  /** ID of the resource (user) directory board, null when the account has none */
+  resource_directory_id?: Maybe<Scalars['ID']['output']>;
+};
+
 export enum ResourceType {
   Asset = 'ASSET',
   Board = 'BOARD',
@@ -14443,6 +16480,42 @@ export type RollbackSnapshotMutationResult = {
   status: SnapshotStatus;
 };
 
+/** The route-condition operators available to build conditions, with their capabilities. */
+export type RouteConditionCapabilities = {
+  __typename?: 'RouteConditionCapabilities';
+  /** One entry per supported operator. */
+  operators: Array<RouteConditionOperatorCapability>;
+};
+
+/** A route-condition operator, identified by its operator id. */
+export enum RouteConditionOperator {
+  Contains = 'contains',
+  Equals = 'equals',
+  GreaterThan = 'greater_than',
+  GreaterThanEquals = 'greater_than_equals',
+  Includes = 'includes',
+  Is = 'is',
+  IsEmpty = 'is_empty',
+  IsNot = 'is_not',
+  IsNotEmpty = 'is_not_empty',
+  LessThan = 'less_than',
+  LessThanEquals = 'less_than_equals',
+  NotContains = 'not_contains',
+  NotEquals = 'not_equals',
+  NotIncludes = 'not_includes'
+}
+
+/** What one route-condition operator accepts: its arity and supported operand types. */
+export type RouteConditionOperatorCapability = {
+  __typename?: 'RouteConditionOperatorCapability';
+  /** The operator this capability describes. */
+  operator: RouteConditionOperator;
+  /** Whether the operator takes a second operand. False for single-operand operators (is_empty, is_not_empty). */
+  require_multiple_operands: Scalars['Boolean']['output'];
+  /** The operand primitive types the operator can compare. */
+  supported_primitive_types: Array<ConditionOperandPrimitiveType>;
+};
+
 /** Input for a single validation rule constraint with operator and definition */
 export type RuleConstraintInput = {
   /** The column ID */
@@ -14523,14 +16596,14 @@ export type SaveWorkspaceAsTemplateResponse = {
   template_id?: Maybe<Scalars['Int']['output']>;
 };
 
-/** A detected schedule conflict between a task timeline and a resource availability. */
+/** A detected conflict where resource availability cannot meet the task duration within its timeline. */
 export type ScheduleConflict = {
   __typename?: 'ScheduleConflict';
   /** The task with the conflict. */
   pulse_id: Scalars['ID']['output'];
   /** The resource whose schedule conflicts with the task timeline. */
   resource_id: Scalars['ID']['output'];
-  /** Whether the resource is fully or partially unavailable within the task timeline. */
+  /** Whether the resource has no working days or too few working days to meet the task duration within the timeline. */
   severity?: Maybe<ConflictSeverity>;
 };
 
@@ -14725,6 +16798,44 @@ export type SearchIndexedMeeting = {
   title?: Maybe<Scalars['String']['output']>;
 };
 
+/** Action-item data stored in the search index. */
+export type SearchIndexedMeetingActionItem = {
+  __typename?: 'SearchIndexedMeetingActionItem';
+  /** The action item. */
+  content: Scalars['String']['output'];
+  /** When the action item is due. */
+  due_date?: Maybe<Scalars['ISO8601DateTime']['output']>;
+  /** Matched text snippets. Null when the action item was returned by filters alone. */
+  highlights?: Maybe<SearchMeetingActionItemHighlights>;
+  /** ID of the meeting the artifact belongs to. */
+  meeting_id: Scalars['ID']['output'];
+  /** When the meeting started. */
+  meeting_start_time?: Maybe<Scalars['ISO8601DateTime']['output']>;
+  /** Title of the meeting. */
+  meeting_title?: Maybe<Scalars['String']['output']>;
+  /** Owner of the action item as the notetaker names them — free text, not a monday user ID. */
+  owner_name?: Maybe<Scalars['String']['output']>;
+};
+
+/** Talking-point data stored in the search index. */
+export type SearchIndexedMeetingTalkingPoint = {
+  __typename?: 'SearchIndexedMeetingTalkingPoint';
+  /** The talking point. */
+  content: Scalars['String']['output'];
+  /** Matched text snippets. Null when the talking point was returned by filters alone. */
+  highlights?: Maybe<SearchMeetingTalkingPointHighlights>;
+  /** ID of the meeting the artifact belongs to. */
+  meeting_id: Scalars['ID']['output'];
+  /** When the meeting started. */
+  meeting_start_time?: Maybe<Scalars['ISO8601DateTime']['output']>;
+  /** Title of the meeting. */
+  meeting_title?: Maybe<Scalars['String']['output']>;
+  /** Where in the meeting the talking point was raised, as the notetaker reports it. */
+  timestamp_seconds?: Maybe<Scalars['Float']['output']>;
+  /** Title of the topic the talking point belongs to. */
+  topic_title?: Maybe<Scalars['String']['output']>;
+};
+
 /** Overview (dashboard) data stored in the search index. */
 export type SearchIndexedOverview = {
   __typename?: 'SearchIndexedOverview';
@@ -14836,6 +16947,29 @@ export type SearchItemResults = {
   results: Array<SearchItemResult>;
 };
 
+/** Matched text snippets per searchable action-item field. */
+export type SearchMeetingActionItemHighlights = {
+  __typename?: 'SearchMeetingActionItemHighlights';
+  /** Fragments from the action-item content. Null when the field did not match lexically, an empty list for a semantic match, otherwise the matched fragments with <em> tags around matched terms. */
+  content?: Maybe<Array<Scalars['String']['output']>>;
+};
+
+/** A single action item search result, citable without fetching its meeting. */
+export type SearchMeetingActionItemResult = {
+  __typename?: 'SearchMeetingActionItemResult';
+  /** Unique identifier of the action item. Opaque — do not parse. */
+  id: Scalars['ID']['output'];
+  /** The action item data from the search index. */
+  indexed_data: SearchIndexedMeetingActionItem;
+};
+
+/** Wrapper for a list of action item search results. */
+export type SearchMeetingActionItemResults = {
+  __typename?: 'SearchMeetingActionItemResults';
+  /** List of action item search results. */
+  results: Array<SearchMeetingActionItemResult>;
+};
+
 /** A single meeting search result with indexed and live data. */
 export type SearchMeetingResult = {
   __typename?: 'SearchMeetingResult';
@@ -14854,6 +16988,31 @@ export type SearchMeetingResults = {
   total_count?: Maybe<Scalars['Int']['output']>;
 };
 
+/** Matched text snippets per searchable talking-point field. */
+export type SearchMeetingTalkingPointHighlights = {
+  __typename?: 'SearchMeetingTalkingPointHighlights';
+  /** Fragments from the talking-point content. Null when the field did not match lexically, an empty list for a semantic match, otherwise the matched fragments with <em> tags around matched terms. */
+  content?: Maybe<Array<Scalars['String']['output']>>;
+  /** Fragments from the topic title. Null when the field did not match lexically, an empty list for a semantic match, otherwise the matched fragments with <em> tags around matched terms. */
+  topic_title?: Maybe<Array<Scalars['String']['output']>>;
+};
+
+/** A single talking point search result, citable without fetching its meeting. */
+export type SearchMeetingTalkingPointResult = {
+  __typename?: 'SearchMeetingTalkingPointResult';
+  /** Unique identifier of the talking point. Opaque — do not parse. */
+  id: Scalars['ID']['output'];
+  /** The talking point data from the search index. */
+  indexed_data: SearchIndexedMeetingTalkingPoint;
+};
+
+/** Wrapper for a list of talking point search results. */
+export type SearchMeetingTalkingPointResults = {
+  __typename?: 'SearchMeetingTalkingPointResults';
+  /** List of talking point search results. */
+  results: Array<SearchMeetingTalkingPointResult>;
+};
+
 /** Per-entity search namespace. Each field searches a single entity type. */
 export type SearchNamespace = {
   __typename?: 'SearchNamespace';
@@ -14861,7 +17020,7 @@ export type SearchNamespace = {
   boards: SearchBoardResults;
   /** Search for documents. */
   docs: SearchDocResults;
-  /** Search for items. */
+  /** Search for items. All provided filters must be satisfied (AND). */
   items: SearchItemResults;
   /** Search for overviews (dashboards). */
   overviews: SearchOverviewResults;
@@ -15834,6 +17993,17 @@ export type SuggestedTrigger = {
   field_values?: Maybe<Scalars['String']['output']>;
 };
 
+/** Result of re-syncing a vibe app install permitted workspaces */
+export type SyncWorkspacePermissionsResponse = {
+  __typename?: 'SyncWorkspacePermissionsResponse';
+  /** Human-readable description of the result */
+  message?: Maybe<Scalars['String']['output']>;
+  /** Why the permitted workspaces were or were not updated */
+  reason?: Maybe<WorkspacePermissionsSyncReason>;
+  /** Whether the permitted workspaces were updated */
+  success?: Maybe<Scalars['Boolean']['output']>;
+};
+
 /**
  * Input for creating table blocks.
  * ⚠️  RECOMMENDATION: Use add_content_to_doc_from_markdown with markdown tables instead for simpler table creation.
@@ -16306,8 +18476,8 @@ export type TimeOffEntryDeleteResult = {
 export type TimeOffEntryInput = {
   /** End date of the non-working period in YYYY-MM-DD format; must be within 1 year in the past and 20 years in the future */
   end: Scalars['String']['input'];
-  /** Optional display name for this time off entry */
-  name?: InputMaybe<Scalars['String']['input']>;
+  /** Display name for this time off entry */
+  name: Scalars['String']['input'];
   /** Start date of the non-working period in YYYY-MM-DD format; must be within 1 year in the past and 20 years in the future */
   start: Scalars['String']['input'];
   /** Type of the time off entry. Defaults to CUSTOM when omitted. */
@@ -16941,7 +19111,7 @@ export type UpdateAllocationResult = {
 
 /** Input for updating an app feature with its associated data and release information. */
 export type UpdateAppFeatureInput = {
-  /** The app feature data to update. This structure is dynamic and depends on the different app feature types. */
+  /** The app feature data to update. Structure is dynamic per feature type. Any iconUrl/logoUrl/thumbnailUrl (including nested under headerConfig) must be an HTTPS URL or Vibe icon name. */
   data?: InputMaybe<Scalars['JSON']['input']>;
   /** The deployment data to update. https://developer.monday.com/apps/docs/deploy-your-app */
   deployment?: InputMaybe<AppFeatureReleaseInput>;
@@ -17801,6 +19971,7 @@ export enum UserKindFilter {
   Basic = 'BASIC',
   CampaignsApiUser = 'CAMPAIGNS_API_USER',
   CrmCommerceApiUser = 'CRM_COMMERCE_API_USER',
+  CrmUserAgentMember = 'CRM_USER_AGENT_MEMBER',
   DataRetentionApiUser = 'DATA_RETENTION_API_USER',
   DependenciesApiUser = 'DEPENDENCIES_API_USER',
   EntityKnowledgeApiUser = 'ENTITY_KNOWLEDGE_API_USER',
@@ -17844,6 +20015,7 @@ export enum UserKindValue {
   AiPlatformAgentApiUser = 'AI_PLATFORM_AGENT_API_USER',
   CampaignsApiUser = 'CAMPAIGNS_API_USER',
   CrmCommerceApiUser = 'CRM_COMMERCE_API_USER',
+  CrmUserAgentMember = 'CRM_USER_AGENT_MEMBER',
   DataRetentionApiUser = 'DATA_RETENTION_API_USER',
   DependenciesApiUser = 'DEPENDENCIES_API_USER',
   EntityKnowledgeApiUser = 'ENTITY_KNOWLEDGE_API_USER',
@@ -17951,12 +20123,18 @@ export type UserRequest = {
   __typename?: 'UserRequest';
   /** The account ID associated with the request */
   account_id: Scalars['Int']['output'];
+  /** The vibe app ID the request refers to, for app-scoped request types */
+  app_id?: Maybe<Scalars['ID']['output']>;
+  /** The name of the app the request refers to, when the request is app-scoped (batch-enriched) */
+  app_name?: Maybe<Scalars['String']['output']>;
   /** The date and time the object was created */
   created_at?: Maybe<Scalars['Date']['output']>;
   /** The date and time the object was deleted */
   deleted_at?: Maybe<Scalars['Date']['output']>;
   /** Unique identifier for the request */
   id: Scalars['ID']['output'];
+  /** The status of the request */
+  status?: Maybe<UserRequestStatusKind>;
   /** The type of request */
   type?: Maybe<UserRequestKind>;
   /** The date and time the object was last updated */
@@ -17968,12 +20146,21 @@ export type UserRequest = {
 /** The type of user request */
 export enum UserRequestKind {
   NotifyPlanCloseToLimit = 'notify_plan_close_to_limit',
+  RequestExternalAccess = 'request_external_access',
   RequestToMakeAppPublic = 'request_to_make_app_public',
   RequestToPublishApp = 'request_to_publish_app',
   RequestToUpgradeBeforeAppsUnpublish = 'request_to_upgrade_before_apps_unpublish',
   RequestToUpgradeBoardConnection = 'request_to_upgrade_board_connection',
   RequestToUpgradePlan = 'request_to_upgrade_plan',
-  RequestToUpgradeVibePackage = 'request_to_upgrade_vibe_package'
+  RequestToUpgradeVibePackage = 'request_to_upgrade_vibe_package',
+  RequestToUpgradeVibePackageForAppPreviews = 'request_to_upgrade_vibe_package_for_app_previews'
+}
+
+/** The status of a user request */
+export enum UserRequestStatusKind {
+  Approved = 'approved',
+  Declined = 'declined',
+  Pending = 'pending'
 }
 
 /** The role of the user. */
@@ -18210,12 +20397,14 @@ export type VibeApp = {
   chat_messages: Array<ChatMessage>;
   /** All current code files for this app. Returns code files if a build exists, or the plan file if one exists, otherwise empty. */
   code_files: Array<CodeFile>;
-  /** All active code versions for this vibe app, ordered by version number descending */
+  /** Recent code versions for this vibe app (version_number DESC). A capped slice for dialog/preview — not full history or pointer identity. Prefer current_code_version / live_code_version and versions_history for those. */
   code_versions: Array<VibeCodeVersion>;
   /** Configuration settings for the vibe app */
   config: VibeAppConfig;
   /** The date and time the object was created */
   created_at?: Maybe<Scalars['Date']['output']>;
+  /** The product current version pointer (latest DRAFT by created_at, else LIVE, else most recently deployed non-RETIRED). Not derived from a version_number DESC limit slice. */
+  current_code_version?: Maybe<VibeCodeVersion>;
   /** The draft deployment URL for the frontend */
   deployment_draft_url?: Maybe<Scalars['String']['output']>;
   /** The live frontend deployment URL */
@@ -18230,6 +20419,8 @@ export type VibeApp = {
   is_preview_mode: Scalars['Boolean']['output'];
   /** Whether the current app version is published to live */
   is_published: Scalars['Boolean']['output'];
+  /** The LIVE (published) code version, or null if unpublished. Strict LIVE — no deployed_at fallback. */
+  live_code_version?: Maybe<VibeCodeVersion>;
   /** The memory the AI applies when building this app (app, current user, and account scopes). Null when the memory feature is off or tenancy is unavailable. */
   memory?: Maybe<VibeMemory>;
   /** The name of the vibe app */
@@ -18254,6 +20445,8 @@ export type VibeApp = {
   user_id?: Maybe<Scalars['Int']['output']>;
   /** The variant of the vibe app (GraphQL wire key, e.g. VIBE_ITEM_VIEW) */
   variant?: Maybe<Scalars['String']['output']>;
+  /** Paginated display-eligible version history for the linear version history panel. Always applies history eligibility on the server (checkpoint, INTERRUPTED, current, and LIVE). */
+  versions_history: VibeVersionsHistory;
   /** Number of distinct viewers over the last 30 days. Only populated when search_apps results are sorted by VIEW_COUNT; null otherwise. */
   view_count?: Maybe<Scalars['Int']['output']>;
 };
@@ -18285,6 +20478,13 @@ export type VibeAppInstancesArgs = {
   account_level?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
+
+/** A vibe app created by the AI app builder */
+export type VibeAppVersions_HistoryArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
 /** Public access info for a vibe app, keyed by the app's mapped vibe user id (the board member id). */
 export type VibeAppAccess = {
   __typename?: 'VibeAppAccess';
@@ -18294,6 +20494,8 @@ export type VibeAppAccess = {
   name?: Maybe<Scalars['String']['output']>;
   /** The public deployment URL of the app, if deployed. */
   public_link?: Maybe<Scalars['String']['output']>;
+  /** The lifecycle state of the app. Only EXTERNAL apps are reachable from the public web. */
+  state?: Maybe<VibeAppState>;
   /** The vibe user id this app is mapped to (the board member id). */
   vibe_user_id?: Maybe<Scalars['ID']['output']>;
 };
@@ -18419,8 +20621,10 @@ export type VibeAppSortInput = {
 
 /** The lifecycle state of a vibe app */
 export enum VibeAppState {
+  Disabled = 'DISABLED',
   External = 'EXTERNAL',
   Internal = 'INTERNAL',
+  OldDisabled = 'OLD_DISABLED',
   OldInternal = 'OLD_INTERNAL',
   OldPrivate = 'OLD_PRIVATE',
   Private = 'PRIVATE'
@@ -18464,6 +20668,8 @@ export type VibeAppUiMetadata = {
   __typename?: 'VibeAppUIMetadata';
   /** The color of the app card */
   app_card_color?: Maybe<Scalars['String']['output']>;
+  /** Custom app icon CDN URL (single 60×60px PNG) */
+  icon_url?: Maybe<Scalars['String']['output']>;
   /** The source of the app creation */
   source?: Maybe<Scalars['String']['output']>;
 };
@@ -18638,6 +20844,8 @@ export type VibeConnectedIntegrationDetail = {
   block_reference_id?: Maybe<Scalars['ID']['output']>;
   /** The credentials ID for building CredentialsValues for remote options fetching */
   credentials_id?: Maybe<Scalars['ID']['output']>;
+  /** The credentials slot on the instance, needed to reconnect it */
+  credentials_key?: Maybe<Scalars['String']['output']>;
   /** Credentials reference ID for grouping instances by integration */
   credentials_reference_id?: Maybe<Scalars['ID']['output']>;
   /** JSON-encoded configured remote options (channels, boards, triggers) for this tool */
@@ -18652,6 +20860,8 @@ export type VibeConnectedIntegrationDetail = {
   tool_description?: Maybe<Scalars['String']['output']>;
   /** Human-readable tool name */
   tool_name?: Maybe<Scalars['String']['output']>;
+  /** The variable currently wired into that slot, so a reconnect updates it in place */
+  variable_key?: Maybe<Scalars['Int']['output']>;
 };
 
 /** One App DO document. `data` is the opaque app-defined JSON payload. */
@@ -18901,8 +21111,14 @@ export type VibeQueries = {
   inspirations?: Maybe<Array<InspirationItem>>;
   /** Check if a vibe app is published by appFeatureReferenceId */
   is_app_published?: Maybe<Scalars['Boolean']['output']>;
+  /** Get a page of pending "request to publish app" requests for the account (admin-only) */
+  pending_publish_requests?: Maybe<Array<UserRequest>>;
+  /** Total count of pending "request to publish app" requests for the account (admin-only) */
+  pending_publish_requests_count?: Maybe<Scalars['Int']['output']>;
   /** Permissions for vibe related actions */
   permissions?: Maybe<VibePermissions>;
+  /** Get the vibe app for a "request to publish app" review, regardless of published state (admin-only) */
+  publish_request_review_app?: Maybe<VibeApp>;
   /** Get published community apps, optionally filtered by tags */
   published_community_apps?: Maybe<PublishedCommunityAppsResult>;
   /** Get published community apps filtered by unique IDs */
@@ -18935,6 +21151,7 @@ export type VibeQueriesApp_Publish_StatusArgs = {
 
 /** Namespace for all vibe-related queries */
 export type VibeQueriesAppsArgs = {
+  app_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   as_admin?: InputMaybe<Scalars['Boolean']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
@@ -18998,6 +21215,19 @@ export type VibeQueriesIs_App_PublishedArgs = {
 
 
 /** Namespace for all vibe-related queries */
+export type VibeQueriesPending_Publish_RequestsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  page?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** Namespace for all vibe-related queries */
+export type VibeQueriesPublish_Request_Review_AppArgs = {
+  request_id: Scalars['ID']['input'];
+};
+
+
+/** Namespace for all vibe-related queries */
 export type VibeQueriesPublished_Community_AppsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
@@ -19022,6 +21252,7 @@ export type VibeQueriesUser_Feedback_By_UserArgs = {
 
 /** Namespace for all vibe-related queries */
 export type VibeQueriesUser_RequestsArgs = {
+  app_id?: InputMaybe<Scalars['ID']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
   type?: InputMaybe<UserRequestKind>;
@@ -19036,6 +21267,8 @@ export enum VibeSortDir {
 /** A number of currently published apps and the maximum allowed limit */
 export type VibeSubscription = {
   __typename?: 'VibeSubscription';
+  /** Whether the account is on the top-tier Vibe apps package. Accounts on a Vibe trial are never top-tier */
+  has_top_tier_vibe_apps_package?: Maybe<Scalars['Boolean']['output']>;
   /** Maximum number of published apps */
   maxPublishedApps?: Maybe<Scalars['Int']['output']>;
   /** Current number of published apps */
@@ -19050,6 +21283,17 @@ export enum VibeVariant {
   ObjectFullstack = 'OBJECT_FULLSTACK',
   VibeItemView = 'VIBE_ITEM_VIEW'
 }
+
+/** A page of display-eligible vibe code versions for the version history panel. */
+export type VibeVersionsHistory = {
+  __typename?: 'VibeVersionsHistory';
+  /** Opaque cursor for the next page; pass as cursor on the following request. Null when empty. */
+  end_cursor?: Maybe<Scalars['String']['output']>;
+  /** Whether another page exists after this one. */
+  has_next_page: Scalars['Boolean']['output'];
+  /** Display-eligible versions in this page, ordered by version_number descending. */
+  versions: Array<VibeCodeVersion>;
+};
 
 /** Input for creating video blocks */
 export type VideoBlockInput = {
@@ -19867,6 +22111,14 @@ export enum WorkspaceMembershipKind {
   Member = 'member'
 }
 
+/** Why a vibe app install workspace permissions sync did or did not update the permitted workspaces */
+export enum WorkspacePermissionsSyncReason {
+  NoPlatformApp = 'NO_PLATFORM_APP',
+  NoWorkspaces = 'NO_WORKSPACES',
+  Synced = 'SYNCED',
+  Unpublished = 'UNPUBLISHED'
+}
+
 /** The workspace's settings. */
 export type WorkspaceSettings = {
   __typename?: 'WorkspaceSettings';
@@ -20388,15 +22640,14 @@ export type GetBoardActivityQueryVariables = Exact<{
   boardId: Scalars['ID']['input'];
   itemIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
   userIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
-  fromDate: Scalars['ISO8601DateTime']['input'];
-  toDate: Scalars['ISO8601DateTime']['input'];
+  fromDate: Scalars['String']['input'];
+  toDate: Scalars['String']['input'];
   limit?: InputMaybe<Scalars['Int']['input']>;
-  page?: InputMaybe<Scalars['Int']['input']>;
   includeData: Scalars['Boolean']['input'];
 }>;
 
 
-export type GetBoardActivityQuery = { __typename?: 'Query', boards?: Array<{ __typename?: 'Board', name: string, url: string, activity_logs?: Array<{ __typename?: 'ActivityLogType', user_id: string, entity: string, event: string, data?: string, created_at: string } | null> | null } | null> | null };
+export type GetBoardActivityQuery = { __typename?: 'Query', boards?: Array<{ __typename?: 'Board', name: string, url: string, activity_logs?: { __typename?: 'BoardActivityLogsPage', cursor?: string | null, logs?: Array<{ __typename?: 'ActivityLog', user_id?: string | null, entity?: string | null, event?: string | null, data?: string | null, created_at?: string | null }> | null } | null } | null> | null };
 
 export type GetBoardInfoQueryVariables = Exact<{
   boardId: Scalars['ID']['input'];
@@ -21150,6 +23401,7 @@ export type UpdateColumnMutationVariables = Exact<{
   columnTitle?: InputMaybe<Scalars['String']['input']>;
   columnDescription?: InputMaybe<Scalars['String']['input']>;
   columnSettings?: InputMaybe<Scalars['JSON']['input']>;
+  capabilities?: InputMaybe<ColumnCapabilitiesInput>;
 }>;
 
 
@@ -21289,7 +23541,7 @@ export const ChangeColumnValueDocument = {"kind":"Document","definitions":[{"kin
 export const GetBoardDataDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getBoardData"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"itemsLimit"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"queryParams"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ItemsQuery"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"boards"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"ListValue","values":[{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}]}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"1"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"items_page"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"itemsLimit"}}},{"kind":"Argument","name":{"kind":"Name","value":"query_params"},"value":{"kind":"Variable","name":{"kind":"Name","value":"queryParams"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"column_values"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"text"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PeopleValue"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"persons_and_teams"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"updates"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"creator_id"}},{"kind":"Field","name":{"kind":"Name","value":"text_body"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"replies"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"text_body"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"creator_id"}}]}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"columns"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"settings"}}]}}]}}]}}]} as unknown as DocumentNode<GetBoardDataQuery, GetBoardDataQueryVariables>;
 export const GetUsersByIdsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getUsersByIds"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"userIds"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"users"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"userIds"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"photo_url"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"tiny"}}]}}]}}]}}]} as unknown as DocumentNode<GetUsersByIdsQuery, GetUsersByIdsQueryVariables>;
 export const GetAssetsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getAssets"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"ids"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"assets"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"ids"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"file_extension"}},{"kind":"Field","name":{"kind":"Name","value":"file_size"}},{"kind":"Field","name":{"kind":"Name","value":"public_url"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"url_thumbnail"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"original_geometry"}},{"kind":"Field","name":{"kind":"Name","value":"uploaded_by"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]} as unknown as DocumentNode<GetAssetsQuery, GetAssetsQueryVariables>;
-export const GetBoardActivityDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetBoardActivity"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"itemIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"userIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"fromDate"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ISO8601DateTime"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"toDate"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ISO8601DateTime"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}},"defaultValue":{"kind":"IntValue","value":"1000"}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"page"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}},"defaultValue":{"kind":"IntValue","value":"1"}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"includeData"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"boards"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"ListValue","values":[{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}]}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"1"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"activity_logs"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"item_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"itemIds"}}},{"kind":"Argument","name":{"kind":"Name","value":"user_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"userIds"}}},{"kind":"Argument","name":{"kind":"Name","value":"from"},"value":{"kind":"Variable","name":{"kind":"Name","value":"fromDate"}}},{"kind":"Argument","name":{"kind":"Name","value":"to"},"value":{"kind":"Variable","name":{"kind":"Name","value":"toDate"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"page"},"value":{"kind":"Variable","name":{"kind":"Name","value":"page"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"user_id"}},{"kind":"Field","name":{"kind":"Name","value":"entity"}},{"kind":"Field","name":{"kind":"Name","value":"event"}},{"kind":"Field","name":{"kind":"Name","value":"data"},"directives":[{"kind":"Directive","name":{"kind":"Name","value":"include"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"if"},"value":{"kind":"Variable","name":{"kind":"Name","value":"includeData"}}}]}]},{"kind":"Field","name":{"kind":"Name","value":"created_at"}}]}}]}}]}}]} as unknown as DocumentNode<GetBoardActivityQuery, GetBoardActivityQueryVariables>;
+export const GetBoardActivityDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetBoardActivity"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"itemIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"userIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"fromDate"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"toDate"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}},"defaultValue":{"kind":"IntValue","value":"1000"}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"includeData"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"boards"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"ListValue","values":[{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}]}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"1"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"activity_logs"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"item_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"itemIds"}}},{"kind":"Argument","name":{"kind":"Name","value":"user_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"userIds"}}},{"kind":"Argument","name":{"kind":"Name","value":"from"},"value":{"kind":"Variable","name":{"kind":"Name","value":"fromDate"}}},{"kind":"Argument","name":{"kind":"Name","value":"to"},"value":{"kind":"Variable","name":{"kind":"Name","value":"toDate"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"logs"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"user_id"}},{"kind":"Field","name":{"kind":"Name","value":"entity"}},{"kind":"Field","name":{"kind":"Name","value":"event"}},{"kind":"Field","name":{"kind":"Name","value":"data"},"directives":[{"kind":"Directive","name":{"kind":"Name","value":"include"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"if"},"value":{"kind":"Variable","name":{"kind":"Name","value":"includeData"}}}]}]},{"kind":"Field","name":{"kind":"Name","value":"created_at"}}]}},{"kind":"Field","name":{"kind":"Name","value":"cursor"}}]}}]}}]}}]} as unknown as DocumentNode<GetBoardActivityQuery, GetBoardActivityQueryVariables>;
 export const GetBoardInfoDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetBoardInfo"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnIds"}},"type":{"kind":"ListType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"viewIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"includeColumns"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"includeViews"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"includeSubscribers"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"boards"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"ListValue","values":[{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}]}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"1"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"board_kind"}},{"kind":"Field","name":{"kind":"Name","value":"permissions"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}},{"kind":"Field","name":{"kind":"Name","value":"hierarchy_type"}},{"kind":"Field","name":{"kind":"Name","value":"item_terminology"}},{"kind":"Field","name":{"kind":"Name","value":"items_count"}},{"kind":"Field","name":{"kind":"Name","value":"items_limit"}},{"kind":"Field","name":{"kind":"Name","value":"creator"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"email"}}]}},{"kind":"Field","name":{"kind":"Name","value":"workspace"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}},{"kind":"Field","name":{"kind":"Name","value":"board_folder_id"}},{"kind":"Field","name":{"kind":"Name","value":"columns"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnIds"}}}],"directives":[{"kind":"Directive","name":{"kind":"Name","value":"include"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"if"},"value":{"kind":"Variable","name":{"kind":"Name","value":"includeColumns"}}}]}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"settings"}},{"kind":"Field","name":{"kind":"Name","value":"revision"}}]}},{"kind":"Field","name":{"kind":"Name","value":"groups"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}},{"kind":"Field","name":{"kind":"Name","value":"owners"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"team_owners"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"picture_url"}}]}},{"kind":"Field","name":{"kind":"Name","value":"subscribers"},"directives":[{"kind":"Directive","name":{"kind":"Name","value":"include"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"if"},"value":{"kind":"Variable","name":{"kind":"Name","value":"includeSubscribers"}}}]}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"team_subscribers"},"directives":[{"kind":"Directive","name":{"kind":"Name","value":"include"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"if"},"value":{"kind":"Variable","name":{"kind":"Name","value":"includeSubscribers"}}}]}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"tags"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"top_group"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}},{"kind":"Field","name":{"kind":"Name","value":"views"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"viewIds"}}}],"directives":[{"kind":"Directive","name":{"kind":"Name","value":"include"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"if"},"value":{"kind":"Variable","name":{"kind":"Name","value":"includeViews"}}}]}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"settings"}},{"kind":"Field","name":{"kind":"Name","value":"filter"}},{"kind":"Field","name":{"kind":"Name","value":"sort"}}]}}]}}]}}]} as unknown as DocumentNode<GetBoardInfoQuery, GetBoardInfoQueryVariables>;
 export const GetBoardInfoViewIndexDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetBoardInfoViewIndex"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"boards"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"ListValue","values":[{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}]}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"1"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"views"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]} as unknown as DocumentNode<GetBoardInfoViewIndexQuery, GetBoardInfoViewIndexQueryVariables>;
 export const GetBoardInfoJustColumnsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetBoardInfoJustColumns"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"boards"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"ids"},"value":{"kind":"ListValue","values":[{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}]}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"1"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"columns"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"settings"}},{"kind":"Field","name":{"kind":"Name","value":"revision"}}]}}]}}]}}]} as unknown as DocumentNode<GetBoardInfoJustColumnsQuery, GetBoardInfoJustColumnsQueryVariables>;
@@ -21369,7 +23621,7 @@ export const MoveItemToGroupDocument = {"kind":"Document","definitions":[{"kind"
 export const CreateBoardDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"createBoard"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardKind"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"BoardKind"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardName"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardDescription"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardOwnerIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"useMlsTemplate"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"useDatasetTemplate"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"create_board"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"board_kind"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardKind"}}},{"kind":"Argument","name":{"kind":"Name","value":"board_name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardName"}}},{"kind":"Argument","name":{"kind":"Name","value":"description"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardDescription"}}},{"kind":"Argument","name":{"kind":"Name","value":"workspace_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"workspaceId"}}},{"kind":"Argument","name":{"kind":"Name","value":"board_owner_ids"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardOwnerIds"}}},{"kind":"Argument","name":{"kind":"Name","value":"use_mls_template"},"value":{"kind":"Variable","name":{"kind":"Name","value":"useMlsTemplate"}}},{"kind":"Argument","name":{"kind":"Name","value":"use_dataset_template"},"value":{"kind":"Variable","name":{"kind":"Name","value":"useDatasetTemplate"}}},{"kind":"Argument","name":{"kind":"Name","value":"empty"},"value":{"kind":"BooleanValue","value":true}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"url"}}]}}]}}]} as unknown as DocumentNode<CreateBoardMutation, CreateBoardMutationVariables>;
 export const CreateColumnDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"createColumn"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnType"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ColumnType"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnTitle"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnDescription"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnSettings"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"JSON"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"create_column"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"board_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}},{"kind":"Argument","name":{"kind":"Name","value":"column_type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnType"}}},{"kind":"Argument","name":{"kind":"Name","value":"title"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnTitle"}}},{"kind":"Argument","name":{"kind":"Name","value":"description"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnDescription"}}},{"kind":"Argument","name":{"kind":"Name","value":"defaults"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnSettings"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}}]}}]}}]} as unknown as DocumentNode<CreateColumnMutation, CreateColumnMutationVariables>;
 export const DeleteColumnDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"deleteColumn"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"delete_column"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"board_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}},{"kind":"Argument","name":{"kind":"Name","value":"column_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<DeleteColumnMutation, DeleteColumnMutationVariables>;
-export const UpdateColumnDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"updateColumn"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnType"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ColumnType"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"revision"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnTitle"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnDescription"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnSettings"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"JSON"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"update_column"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"board_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}},{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}}},{"kind":"Argument","name":{"kind":"Name","value":"column_type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnType"}}},{"kind":"Argument","name":{"kind":"Name","value":"revision"},"value":{"kind":"Variable","name":{"kind":"Name","value":"revision"}}},{"kind":"Argument","name":{"kind":"Name","value":"title"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnTitle"}}},{"kind":"Argument","name":{"kind":"Name","value":"description"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnDescription"}}},{"kind":"Argument","name":{"kind":"Name","value":"settings"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnSettings"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"revision"}}]}}]}}]} as unknown as DocumentNode<UpdateColumnMutation, UpdateColumnMutationVariables>;
+export const UpdateColumnDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"updateColumn"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnType"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ColumnType"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"revision"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnTitle"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnDescription"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columnSettings"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"JSON"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"capabilities"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ColumnCapabilitiesInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"update_column"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"board_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"boardId"}}},{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnId"}}},{"kind":"Argument","name":{"kind":"Name","value":"column_type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnType"}}},{"kind":"Argument","name":{"kind":"Name","value":"revision"},"value":{"kind":"Variable","name":{"kind":"Name","value":"revision"}}},{"kind":"Argument","name":{"kind":"Name","value":"title"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnTitle"}}},{"kind":"Argument","name":{"kind":"Name","value":"description"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnDescription"}}},{"kind":"Argument","name":{"kind":"Name","value":"settings"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columnSettings"}}},{"kind":"Argument","name":{"kind":"Name","value":"capabilities"},"value":{"kind":"Variable","name":{"kind":"Name","value":"capabilities"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"revision"}}]}}]}}]} as unknown as DocumentNode<UpdateColumnMutation, UpdateColumnMutationVariables>;
 export const GetGraphQlSchemaDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getGraphQLSchema"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__schema"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"queryType"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"mutationType"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"types"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}}]}}]}},{"kind":"Field","alias":{"kind":"Name","value":"queryType"},"name":{"kind":"Name","value":"__type"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"StringValue","value":"Query","block":false}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"fields"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"type"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"ofType"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"ofType"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}}]}}]}}]}}]}}]}},{"kind":"Field","alias":{"kind":"Name","value":"mutationType"},"name":{"kind":"Name","value":"__type"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"StringValue","value":"Mutation","block":false}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"fields"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"type"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"ofType"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"ofType"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}}]}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetGraphQlSchemaQuery, GetGraphQlSchemaQueryVariables>;
 export const IntrospectionQueryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"IntrospectionQuery"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__schema"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"queryType"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"mutationType"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"subscriptionType"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"types"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"FullType"}}]}},{"kind":"Field","name":{"kind":"Name","value":"directives"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"locations"}},{"kind":"Field","name":{"kind":"Name","value":"args"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"includeDeprecated"},"value":{"kind":"BooleanValue","value":true}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"InputValue"}}]}}]}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"TypeRef"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"__Type"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"ofType"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"ofType"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"ofType"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"ofType"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"ofType"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"ofType"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"ofType"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]}}]}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"InputValue"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"__InputValue"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"type"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"TypeRef"}}]}},{"kind":"Field","name":{"kind":"Name","value":"defaultValue"}},{"kind":"Field","name":{"kind":"Name","value":"isDeprecated"}},{"kind":"Field","name":{"kind":"Name","value":"deprecationReason"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"FullType"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"__Type"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"fields"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"includeDeprecated"},"value":{"kind":"BooleanValue","value":true}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"args"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"includeDeprecated"},"value":{"kind":"BooleanValue","value":true}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"InputValue"}}]}},{"kind":"Field","name":{"kind":"Name","value":"type"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"TypeRef"}}]}},{"kind":"Field","name":{"kind":"Name","value":"isDeprecated"}},{"kind":"Field","name":{"kind":"Name","value":"deprecationReason"}}]}},{"kind":"Field","name":{"kind":"Name","value":"inputFields"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"includeDeprecated"},"value":{"kind":"BooleanValue","value":true}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"InputValue"}}]}},{"kind":"Field","name":{"kind":"Name","value":"interfaces"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"TypeRef"}}]}},{"kind":"Field","name":{"kind":"Name","value":"enumValues"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"includeDeprecated"},"value":{"kind":"BooleanValue","value":true}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"isDeprecated"}},{"kind":"Field","name":{"kind":"Name","value":"deprecationReason"}}]}},{"kind":"Field","name":{"kind":"Name","value":"possibleTypes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"TypeRef"}}]}}]}}]} as unknown as DocumentNode<IntrospectionQueryQuery, IntrospectionQueryQueryVariables>;
 export const GetTypeDetailsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getTypeDetails"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__type"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"StringValue","value":"","block":false}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"fields"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"type"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"ofType"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"ofType"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"ofType"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"ofType"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}}]}}]}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"args"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"type"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"ofType"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"ofType"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"ofType"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}}]}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"defaultValue"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"inputFields"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"type"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"ofType"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"ofType"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"ofType"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}},{"kind":"Field","name":{"kind":"Name","value":"ofType"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"kind"}}]}}]}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"defaultValue"}}]}},{"kind":"Field","name":{"kind":"Name","value":"interfaces"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"enumValues"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}},{"kind":"Field","name":{"kind":"Name","value":"possibleTypes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]} as unknown as DocumentNode<GetTypeDetailsQuery, GetTypeDetailsQueryVariables>;
