@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.77.2
+
+### `read_docs`, `update_doc` and `add_content_to_doc` resolve docs that live as a board view
+
+- The three tools now accept `board_id` and `view_id`, taken straight out of a board view URL (`boards/<board_id>/views/<view_id>`), for docs created from a board via `+ → Doc` that have no usable `doc_id`/`object_id`.
+- `read_docs` with `board_id` and no `view_id` returns every doc view on the board; the write tools require a single match and error naming the candidates when a board has several.
+- `doc_id` and `object_id` still take priority when provided, so nothing existing changes (#500).
+
 ## 5.77.1
 
 ### `update_items` finds a missing board from the item
