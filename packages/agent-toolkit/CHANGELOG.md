@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.77.2
+
+### `get_board_info` handles a subitems column with no linked board
+
+- A subitems column whose settings have no `boardIds`, an empty list, or no settings at all no longer fails the call. The tool returns the board without subitem columns instead of throwing a `TypeError` or sending the subitems query with a null board id.
+
 ## 5.77.1
 
 ### `update_items` finds a missing board from the item
