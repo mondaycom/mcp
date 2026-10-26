@@ -1,10 +1,18 @@
 # Changelog
 
-## 5.77.2
+## 5.77.3
 
 ### `get_board_info` handles a subitems column with no linked board
 
 - A subitems column whose settings have no `boardIds`, an empty list, or no settings at all no longer fails the call. The tool returns the board without subitem columns instead of throwing a `TypeError` or sending the subitems query with a null board id.
+
+## 5.77.2
+
+### `read_docs`, `update_doc` and `add_content_to_doc` resolve docs that live as a board view
+
+- The three tools now accept `board_id` and `view_id`, taken straight out of a board view URL (`boards/<board_id>/views/<view_id>`), for docs created from a board via `+ → Doc` that have no usable `doc_id`/`object_id`.
+- `read_docs` with `board_id` and no `view_id` returns every doc view on the board; the write tools require a single match and error naming the candidates when a board has several.
+- `doc_id` and `object_id` still take priority when provided, so nothing existing changes (#500).
 
 ## 5.77.1
 
