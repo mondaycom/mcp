@@ -266,11 +266,11 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
       return null;
     }
 
-    const subItemsBoardId = subTasksColumn.settings.boardIds[0];
+    const subItemsBoardId = subTasksColumn.settings?.boardIds?.[0];
 
     // On MLS boards, boardIds[0] is the board's own ID (self-reference) —
     // subitems live on the same board, so no separate query is needed.
-    if (subItemsBoardId === board.id) {
+    if (!subItemsBoardId || subItemsBoardId === board.id) {
       return null;
     }
 

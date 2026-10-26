@@ -736,4 +736,26 @@ describe('GetBoardInfoTool filtering', () => {
       'Set includeKnowledge to true when you need to interpret the board rather than just read its configuration',
     );
   });
+
+  it.each([
+    ['settings without boardIds', { allowMultipleItems: true, displayType: 'BOARD_INLINE' }],
+    ['an empty boardIds list', { boardIds: [] }],
+    ['null settings', null],
+  ])('returns the board without a subitems query when the subitems column has %s', async (_, settings) => {
+    const subtasksColumn = {
+      id: 'subitems',
+      title: 'Subitems',
+      description: null,
+      type: NonDeprecatedColumnType.Subtasks,
+      settings,
+      revision: 'r1',
+    };
+    mocks.setResponse({ boards: [{ ...boardPayload, columns: [...boardPayload.columns, subtasksColumn] }] });
+
+    const result = await callToolByNameRawAsync('get_board_info', { boardId: 123 });
+    const parsed = parseToolResult(result);
+
+    expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+    expect(parsed.board.id).toBe('123');
+  });
 });
