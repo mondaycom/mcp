@@ -33,6 +33,7 @@ import { buildUpdateBlockContent, buildCreateBlockInput, applyCommentToDelta } f
 import { updateDocToolSchema, UpdateBlockContent, CreateBlock } from './update-doc-tool.schema';
 import { resolveBoardViewDoc } from '../utils/board-view-doc.utils';
 import { mentionsListSchema } from '../create-update-tool/create-update-tool';
+import { getDocBlockLimitError } from '../utils/doc-write-error.utils';
 
 export { updateDocToolSchema };
 
@@ -159,6 +160,7 @@ COMMENTS:
       }
 
       const results: string[] = [];
+      const errors: Array<{ code: string; message: string; path: Array<string | number> }> = [];
       let failedAt: number | null = null;
 
       for (let i = 0; i < input.operations.length; i++) {
@@ -167,8 +169,16 @@ COMMENTS:
           const result = await this.executeOperation(docId, op, objectId);
           results.push(`- [OK] ${op.operation_type}${result ? `: ${result}` : ''}`);
         } catch (err) {
-          const errMsg = err instanceof Error ? err.message : 'Unknown error';
+          const blockLimitError = getDocBlockLimitError(err);
+          const errMsg = blockLimitError?.message ?? (err instanceof Error ? err.message : 'Unknown error');
           results.push(`- [FAILED] ${op.operation_type}: ${errMsg}`);
+          if (blockLimitError) {
+            errors.push({
+              code: blockLimitError.code,
+              message: blockLimitError.message,
+              path: ['operations', i],
+            });
+          }
           failedAt = i;
           break;
         }
@@ -182,6 +192,19 @@ COMMENTS:
         ...this.sessionContext.metadata,
         doc_id: docId,
       };
+
+      if (errors.length) {
+        return {
+          content: {
+            message: summary,
+            results,
+            is_partial_success: completed > 0,
+            errors,
+            doc_id: docId,
+          },
+          ...(completed === 0 ? { isError: true } : {}),
+        };
+      }
 
       return {
         content: `${summary}\n\nResults:\n${results.join('\n')}\n\nDoc ID: ${docId}`,
@@ -257,6 +280,10 @@ COMMENTS:
 
     const result = res?.add_content_to_doc_from_markdown;
     if (!result?.success) {
+      const blockLimitError = getDocBlockLimitError(result?.error);
+      if (blockLimitError) {
+        throw blockLimitError;
+      }
       throw new Error(result?.error || 'Failed to add markdown content');
     }
     const count = result.block_ids?.length ?? 0;

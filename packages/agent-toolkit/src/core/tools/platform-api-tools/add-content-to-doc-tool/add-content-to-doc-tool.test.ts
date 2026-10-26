@@ -332,6 +332,42 @@ describe('AddContentToDocTool', () => {
       expect(result.content[0].text).toContain('Invalid markdown format');
     });
 
+    it('returns a structured error when the document is at the block limit', async () => {
+      jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+        if (query.includes('query getDocById')) {
+          return Promise.resolve({
+            docs: [{ id: 'doc_123', name: 'Test Doc', url: 'https://example.com/doc' }],
+          });
+        }
+        if (query.includes('mutation addContentToDocFromMarkdown')) {
+          return Promise.resolve({
+            add_content_to_doc_from_markdown: {
+              success: false,
+              block_ids: null,
+              error: 'Document cannot grow beyond 12000 active blocks',
+            },
+          });
+        }
+        return Promise.resolve({});
+      });
+
+      const result = await callToolByNameRawAsync('add_content_to_doc', {
+        doc_id: 'doc_123',
+        markdown: 'Content',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.structuredContent).toEqual(
+        expect.objectContaining({
+          errors: [
+            expect.objectContaining({
+              code: 'DOC_BLOCK_LIMIT_EXCEEDED',
+            }),
+          ],
+        }),
+      );
+    });
+
     it('should return error with unknown error fallback when mutation returns success=false without error', async () => {
       const getDocByIdResponse = {
         docs: [{ id: 'doc_123', name: 'Test Doc', url: 'https://example.com/doc' }],
@@ -492,9 +528,7 @@ describe('AddContentToDocTool', () => {
         markdown: 'Content',
       });
 
-      expect(result.content[0].text).toContain(
-        'Either doc_id, object_id, or board_id (with view_id) must be provided',
-      );
+      expect(result.content[0].text).toContain('Either doc_id, object_id, or board_id (with view_id) must be provided');
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
 

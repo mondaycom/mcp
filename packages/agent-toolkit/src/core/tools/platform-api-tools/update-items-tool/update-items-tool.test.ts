@@ -2,12 +2,9 @@ import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { buildToolErrorStructuredContent, ToolValidationError } from '../../../../utils';
 import { createMockApiClient } from '../test-utils/mock-api-client';
-import {
-  UpdateItemsTool,
-  updateItemsInBoardToolSchema,
-  updateItemsToolSchema,
-} from './update-items-tool';
+import { UpdateItemsTool, updateItemsInBoardToolSchema, updateItemsToolSchema } from './update-items-tool';
 import { CONCURRENCY_LIMIT, MAX_UPDATES_PER_CALL } from './constants';
+import { NonDeprecatedColumnType } from 'src/utils/types';
 
 describe('Update Items Tool Behaviour', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
@@ -67,6 +64,35 @@ describe('Update Items Tool Behaviour', () => {
           columnIds: ['status'],
         }),
       );
+    });
+
+    it('returns structured board relation values from each update', async () => {
+      mocks.setResponse({
+        change_multiple_column_values: {
+          id: '1',
+          name: 'Item 1',
+          url: 'https://monday.com/boards/456/pulses/1',
+          column_values: [
+            {
+              id: 'board_relation',
+              type: NonDeprecatedColumnType.BoardRelation,
+              value: null,
+              linked_item_ids: ['2'],
+              linked_items: [{ id: '2', name: 'Item 2', board: { id: '456', name: 'Board' } }],
+            },
+          ],
+        },
+      });
+
+      const tool = new UpdateItemsTool(mocks.mockApiClient, { boardId: 456 });
+      const result = await tool.execute({
+        updates: [{ itemId: 1, columnValues: '{"board_relation":{"item_ids":[2]}}' }],
+      });
+
+      expect((result.content as any).results[0].column_values.board_relation).toEqual({
+        linked_item_ids: ['2'],
+        linked_items: [{ id: '2', name: 'Item 2', board: { id: '456', name: 'Board' } }],
+      });
     });
   });
 
@@ -219,9 +245,7 @@ describe('Update Items Tool Behaviour', () => {
       const c = result.content as any;
 
       expect(c.results[0].error).toContain('Invalid columnValues JSON');
-      expect(c.errors).toEqual([
-        expect.objectContaining({ code: 'INVALID_COLUMN_VALUES_JSON', path: ['results', 0] }),
-      ]);
+      expect(c.errors).toEqual([expect.objectContaining({ code: 'INVALID_COLUMN_VALUES_JSON', path: ['results', 0] })]);
     });
   });
 
@@ -261,9 +285,7 @@ describe('Update Items Tool Behaviour', () => {
       const result = await tool.execute({ updates: [{ itemId: 1, columnValues: '{"text":"a"}' }] });
       const c = result.content as any;
 
-      expect(c.errors).toEqual([
-        expect.objectContaining({ code: 'GRAPHQL_ERROR', path: ['results', 0] }),
-      ]);
+      expect(c.errors).toEqual([expect.objectContaining({ code: 'GRAPHQL_ERROR', path: ['results', 0] })]);
     });
 
     it('omits errors[] entirely on full success', async () => {
@@ -374,11 +396,7 @@ describe('Update Items Tool Behaviour', () => {
 
       const error = await tool
         .execute({
-          updates: [
-            { itemId: 1, columnValues: '{}' },
-            { columnValues: '{}' },
-            { columnValues: '{}' },
-          ],
+          updates: [{ itemId: 1, columnValues: '{}' }, { columnValues: '{}' }, { columnValues: '{}' }],
         })
         .catch((e) => e);
 
@@ -420,9 +438,7 @@ describe('Update Items Tool Behaviour', () => {
 
       const skipped = c.results.filter((r: any) => typeof r.error === 'string' && r.error.includes('Skipped'));
       expect(skipped.length).toBeGreaterThan(0);
-      expect(c.errors).toEqual(
-        expect.arrayContaining([expect.objectContaining({ code: 'RATE_LIMIT_SKIPPED' })]),
-      );
+      expect(c.errors).toEqual(expect.arrayContaining([expect.objectContaining({ code: 'RATE_LIMIT_SKIPPED' })]));
     });
 
     it('does not trip on non-rate-limit errors (status != 429)', async () => {
@@ -495,10 +511,7 @@ describe('Update Items Tool Behaviour', () => {
       const tool = new UpdateItemsTool(mocks.mockApiClient, { boardId: 456 });
       const sessionContext = { metadata: {} as Record<string, unknown> };
 
-      const result = await tool.execute(
-        { updates: [{ itemId: 1, columnValues: '{"text":"a"}' }] },
-        sessionContext,
-      );
+      const result = await tool.execute({ updates: [{ itemId: 1, columnValues: '{"text":"a"}' }] }, sessionContext);
 
       const c = result.content as any;
       expect(c.summary).toEqual({ total: 1, updated: 0, failed: 1 });

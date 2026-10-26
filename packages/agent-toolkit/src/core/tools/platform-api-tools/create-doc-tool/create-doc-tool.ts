@@ -4,6 +4,7 @@ import {
   createDoc as createDocMutation,
   addContentToDocFromMarkdown,
   getItemBoard,
+  getItemDocColumnValue,
   updateDocName,
 } from './create-doc-tool.graphql';
 
@@ -17,6 +18,8 @@ import {
   CreateDocMutationVariables,
   GetItemBoardQuery,
   GetItemBoardQueryVariables,
+  GetItemDocColumnValueQuery,
+  GetItemDocColumnValueQueryVariables,
   UpdateDocNameMutation,
   UpdateDocNameMutationVariables,
   AddContentToDocFromMarkdownMutation,
@@ -25,8 +28,17 @@ import {
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { NonDeprecatedColumnType } from 'src/utils/types';
+import { GraphQLErrorResponse } from '../../../../utils/graphql-error.types';
+import { getDocBlockLimitError } from '../utils/doc-write-error.utils';
 
 const DocType = z.enum(['workspace', 'item']);
+
+type ItemDoc = {
+  id: string;
+  object_id: string;
+  url?: string | null;
+  name: string;
+};
 
 // Create discriminated union for document location
 const CreateDocLocationSchema = z.discriminatedUnion('type', [
@@ -129,12 +141,11 @@ USAGE EXAMPLES:
     }
 
     const parsedInput = inputParsingResult.data;
+    let docId: string | undefined;
+    let docObjectId: string | undefined;
+    let docUrl: string | undefined;
 
     try {
-      let docId: string | undefined;
-      let docObjectId: string | undefined;
-      let docUrl: string | undefined;
-
       if (parsedInput.type === DocType.enum.workspace) {
         // Workspace document creation
         const variables: CreateDocMutationVariables = {
@@ -170,6 +181,7 @@ USAGE EXAMPLES:
         const existingDocColumn = item.board?.columns?.find((c) => c && c.type === NonDeprecatedColumnType.Doc);
 
         let columnId = parsedInput.column_id;
+        let createdDocColumn = false;
 
         if (!columnId) {
           if (existingDocColumn) {
@@ -187,6 +199,19 @@ USAGE EXAMPLES:
             if (!columnId) {
               return { content: 'Error: Failed to create doc column.' };
             }
+            createdDocColumn = true;
+          }
+        } else {
+          const selectedColumn = item.board?.columns?.find((column) => column?.id === columnId);
+          if (!selectedColumn || selectedColumn.type !== NonDeprecatedColumnType.Doc) {
+            return { content: `Error: Column ${columnId} is not a doc column on board ${boardId}.` };
+          }
+        }
+
+        if (!createdDocColumn) {
+          const existingDoc = await this.getExistingItemDoc(parsedInput.item_id, columnId);
+          if (existingDoc) {
+            return this.existingItemDocResult(existingDoc, input.location);
           }
         }
 
@@ -201,7 +226,18 @@ USAGE EXAMPLES:
           ...(input.docOwnerIds !== undefined ? { docOwnerIds: input.docOwnerIds } : {}),
         };
 
-        const res: CreateDocMutation = await this.mondayApi.request(createDocMutation, itemVariables);
+        let res: CreateDocMutation;
+        try {
+          res = await this.mondayApi.request(createDocMutation, itemVariables);
+        } catch (error) {
+          if (this.hasGraphQLErrorCode(error, 'CellLimitExceeded')) {
+            const existingDoc = await this.getExistingItemDoc(parsedInput.item_id, columnId).catch(() => undefined);
+            if (existingDoc) {
+              return this.existingItemDocResult(existingDoc, input.location);
+            }
+          }
+          throw error;
+        }
         docId = res.create_doc?.id ?? undefined;
         docObjectId = res.create_doc?.object_id ?? undefined;
         docUrl = res.create_doc?.url ?? undefined;
@@ -239,6 +275,10 @@ USAGE EXAMPLES:
       const errorMsg = contentRes?.add_content_to_doc_from_markdown?.error;
 
       if (!success) {
+        const blockLimitError = getDocBlockLimitError(errorMsg);
+        if (blockLimitError) {
+          return this.createdDocContentFailureResult(blockLimitError, docId, docObjectId, docUrl, input.doc_name);
+        }
         return {
           content: `Document ${docId} created, but failed to add markdown content: ${errorMsg || 'Unknown error'}`,
         };
@@ -252,12 +292,79 @@ USAGE EXAMPLES:
       };
 
       return {
-        content: { message: "Document successfully created", doc_id: docId, object_id: docObjectId, doc_url: docUrl, doc_name: input.doc_name },
+        content: {
+          message: 'Document successfully created',
+          doc_id: docId,
+          object_id: docObjectId,
+          doc_url: docUrl,
+          doc_name: input.doc_name,
+        },
       };
     } catch (error) {
+      const blockLimitError = getDocBlockLimitError(error);
+      if (blockLimitError) {
+        if (docId) {
+          return this.createdDocContentFailureResult(blockLimitError, docId, docObjectId, docUrl, input.doc_name);
+        }
+        throw blockLimitError;
+      }
       return {
         content: `Error creating document: ${error instanceof Error ? error.message : 'Unknown error'}`,
       };
     }
+  }
+
+  private async getExistingItemDoc(itemId: number, columnId: string): Promise<ItemDoc | undefined> {
+    const variables: GetItemDocColumnValueQueryVariables = {
+      itemId: itemId.toString(),
+      columnId,
+    };
+    const res: GetItemDocColumnValueQuery = await this.mondayApi.request(getItemDocColumnValue, variables);
+    const columnValue = res.items?.[0]?.column_values?.find((value) => value?.id === columnId);
+    return columnValue?.__typename === 'DocValue' ? columnValue.file?.doc : undefined;
+  }
+
+  private existingItemDocResult(doc: ItemDoc, location: string): ToolOutputType<never> {
+    this.sessionContext.metadata = {
+      ...this.sessionContext.metadata,
+      location,
+      doc_id: doc.id,
+      object_id: doc.object_id,
+    };
+
+    return {
+      content: {
+        message: 'The item already has a document in this column. The existing document was returned unchanged.',
+        doc_id: doc.id,
+        object_id: doc.object_id,
+        doc_url: doc.url,
+        doc_name: doc.name,
+        existing_doc_found: true,
+      },
+    };
+  }
+
+  private createdDocContentFailureResult(
+    error: { code: string; message: string },
+    docId: string,
+    objectId: string | undefined,
+    docUrl: string | undefined,
+    docName: string,
+  ): ToolOutputType<never> {
+    return {
+      content: {
+        message: `Document ${docId} was created, but its content could not be added: ${error.message}`,
+        doc_id: docId,
+        object_id: objectId,
+        doc_url: docUrl,
+        doc_name: docName,
+        is_partial_success: true,
+        errors: [{ code: error.code, message: error.message, path: ['markdown'] }],
+      },
+    };
+  }
+
+  private hasGraphQLErrorCode(error: unknown, code: string): boolean {
+    return (error as GraphQLErrorResponse)?.response?.errors?.some((entry) => entry.extensions?.code === code) === true;
   }
 }

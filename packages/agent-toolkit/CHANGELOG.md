@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.78.0
+
+### Write tools return complete relation and document outcomes
+
+- `change_item_column_values` and `update_items` return linked item IDs and item details for board-relation columns, plus linked item IDs and dependency details for dependency columns.
+- Document write tools classify the 12,000-active-block limit as `DOC_BLOCK_LIMIT_EXCEEDED` and preserve partial-success details when a document was created before content failed.
+- `create_doc` returns an existing item-attached document unchanged when its target doc column is occupied, including when concurrent creation produces `CellLimitExceeded`.
+
 ## 5.77.3
 
 ### `get_board_info` handles a subitems column with no linked board

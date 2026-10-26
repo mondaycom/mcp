@@ -1,13 +1,16 @@
 import { z } from 'zod';
 import {
+  BoardRelationValue,
   ChangeItemColumnValuesMutation,
   ChangeItemColumnValuesMutationVariables,
+  DependencyValue,
 } from 'src/monday-graphql/generated/graphql/graphql';
 import { changeItemColumnValues } from '../../../monday-graphql/queries.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './base-monday-api-tool';
 import { ToolValidationError, rethrowWithContext } from '../../../utils';
 import { COLUMN_VALUES_FORMAT_GUIDE, unwrapDoubleEncodedColumnValues } from './column-values.utils';
+import { NonDeprecatedColumnType } from 'src/utils/types';
 
 export const changeItemColumnValuesToolSchema = {
   itemId: z.number().describe('The ID of the item to be updated'),
@@ -80,10 +83,7 @@ export class ChangeItemColumnValuesTool extends BaseMondayApiTool<ChangeItemColu
     try {
       parsedColumnValues = JSON.parse(columnValues);
     } catch (e) {
-      throw new ToolValidationError(
-        `Invalid columnValues JSON: ${(e as Error).message}`,
-        'INVALID_COLUMN_VALUES_JSON',
-      );
+      throw new ToolValidationError(`Invalid columnValues JSON: ${(e as Error).message}`, 'INVALID_COLUMN_VALUES_JSON');
     }
 
     if (parsedColumnValues === null || typeof parsedColumnValues !== 'object' || Array.isArray(parsedColumnValues)) {
@@ -106,8 +106,27 @@ export class ChangeItemColumnValuesTool extends BaseMondayApiTool<ChangeItemColu
     }
 
     const updatedColumnValues = res.change_multiple_column_values?.column_values?.reduce(
-      (acc: Record<string, string | null>, cv) => {
-        acc[cv.id] = cv.value ?? null;
+      (acc: Record<string, unknown>, cv) => {
+        switch (cv.type) {
+          case NonDeprecatedColumnType.BoardRelation: {
+            const relation = cv as BoardRelationValue;
+            acc[cv.id] = {
+              linked_item_ids: relation.linked_item_ids,
+              linked_items: relation.linked_items,
+            };
+            break;
+          }
+          case NonDeprecatedColumnType.Dependency: {
+            const dependency = cv as DependencyValue;
+            acc[cv.id] = {
+              linked_item_ids: dependency.linked_item_ids,
+              dependency_links: dependency.dependency_links,
+            };
+            break;
+          }
+          default:
+            acc[cv.id] = cv.value ?? null;
+        }
         return acc;
       },
       {},

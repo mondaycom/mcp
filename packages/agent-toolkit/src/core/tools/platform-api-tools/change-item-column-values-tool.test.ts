@@ -1,5 +1,6 @@
 import { createMockApiClient } from './test-utils/mock-api-client';
 import { ChangeItemColumnValuesTool } from './change-item-column-values-tool';
+import { NonDeprecatedColumnType } from 'src/utils/types';
 
 describe('ChangeItemColumnValuesTool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
@@ -45,6 +46,74 @@ describe('ChangeItemColumnValuesTool', () => {
       });
     });
 
+    it('returns linked item ids and items for board relation columns', async () => {
+      mocks.setResponse({
+        change_multiple_column_values: {
+          ...mockMutationResponse.change_multiple_column_values,
+          column_values: [
+            {
+              id: 'board_relation',
+              type: NonDeprecatedColumnType.BoardRelation,
+              value: null,
+              linked_item_ids: ['123'],
+              linked_items: [{ id: '123', name: 'Linked item', board: { id: '456', name: 'Linked board' } }],
+            },
+          ],
+        },
+      });
+
+      const result = await tool.execute({
+        boardId: 18414630189,
+        itemId: 12093604112,
+        columnValues: '{"board_relation":{"item_ids":[123]}}',
+      });
+
+      expect(result.content).toEqual(
+        expect.objectContaining({
+          column_values: {
+            board_relation: {
+              linked_item_ids: ['123'],
+              linked_items: [{ id: '123', name: 'Linked item', board: { id: '456', name: 'Linked board' } }],
+            },
+          },
+        }),
+      );
+    });
+
+    it('returns linked item ids and dependency metadata for dependency columns', async () => {
+      mocks.setResponse({
+        change_multiple_column_values: {
+          ...mockMutationResponse.change_multiple_column_values,
+          column_values: [
+            {
+              id: 'dependency',
+              type: NonDeprecatedColumnType.Dependency,
+              value: null,
+              linked_item_ids: ['789'],
+              dependency_links: [{ linked_item_id: '789', dependency_type: 0, lag: 2 }],
+            },
+          ],
+        },
+      });
+
+      const result = await tool.execute({
+        boardId: 18414630189,
+        itemId: 12093604112,
+        columnValues: '{"dependency":{"item_ids":[789]}}',
+      });
+
+      expect(result.content).toEqual(
+        expect.objectContaining({
+          column_values: {
+            dependency: {
+              linked_item_ids: ['789'],
+              dependency_links: [{ linked_item_id: '789', dependency_type: 0, lag: 2 }],
+            },
+          },
+        }),
+      );
+    });
+
     it('passes columnIds to the GraphQL query for pre-filtering', async () => {
       mocks.setResponse(mockMutationResponse);
 
@@ -82,10 +151,7 @@ describe('ChangeItemColumnValuesTool', () => {
 
     it('throws meaningful error for invalid columnValues JSON', async () => {
       await expect(
-        tool.execute(
-          { boardId: 18414630189, itemId: 12093604112, columnValues: 'not valid json' },
-          undefined as any,
-        ),
+        tool.execute({ boardId: 18414630189, itemId: 12093604112, columnValues: 'not valid json' }, undefined as any),
       ).rejects.toThrow('Invalid columnValues JSON');
     });
 
