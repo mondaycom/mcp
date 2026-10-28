@@ -328,8 +328,55 @@ describe('AddContentToDocTool', () => {
         markdown: 'Bad content',
       });
 
-      expect(result.content[0].text).toContain('Error adding content to document');
+      expect(result.isError).toBe(true);
+      expect(result.structuredContent).toEqual(
+        expect.objectContaining({
+          errors: [expect.objectContaining({ code: 'TOOL_EXECUTION_FAILED' })],
+        }),
+      );
+      expect(result.content[0].text).toContain('Failed to add content to document');
       expect(result.content[0].text).toContain('Invalid markdown format');
+    });
+
+    it('returns a structured error when the document is at the block limit', async () => {
+      jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+        if (query.includes('query getDocById')) {
+          return Promise.resolve({
+            docs: [{ id: 'doc_123', name: 'Test Doc', url: 'https://example.com/doc' }],
+          });
+        }
+        if (query.includes('mutation addContentToDocFromMarkdown')) {
+          return Promise.reject(
+            Object.assign(new Error('Document cannot grow beyond 12000 active blocks'), {
+              response: {
+                errors: [
+                  {
+                    message: 'Document cannot grow beyond 12000 active blocks',
+                    extensions: { code: 'ACTIVE_BLOCKS_PER_DOC' },
+                  },
+                ],
+              },
+            }),
+          );
+        }
+        return Promise.resolve({});
+      });
+
+      const result = await callToolByNameRawAsync('add_content_to_doc', {
+        doc_id: 'doc_123',
+        markdown: 'Content',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.structuredContent).toEqual(
+        expect.objectContaining({
+          errors: [
+            expect.objectContaining({
+              code: 'ACTIVE_BLOCKS_PER_DOC',
+            }),
+          ],
+        }),
+      );
     });
 
     it('should return error with unknown error fallback when mutation returns success=false without error', async () => {
@@ -360,7 +407,7 @@ describe('AddContentToDocTool', () => {
         markdown: 'Content',
       });
 
-      expect(result.content[0].text).toContain('Error adding content to document');
+      expect(result.content[0].text).toContain('Failed to add content to document');
       expect(result.content[0].text).toContain('Unknown error');
     });
 
@@ -388,7 +435,7 @@ describe('AddContentToDocTool', () => {
         markdown: 'Content',
       });
 
-      expect(result.content[0].text).toContain('Error: Failed to add content to document');
+      expect(result.content[0].text).toContain('Failed to add content to document');
       expect(result.content[0].text).toContain('no response from API');
     });
 
@@ -409,7 +456,7 @@ describe('AddContentToDocTool', () => {
         markdown: 'Content',
       });
 
-      expect(result.content[0].text).toContain('Error: No document found for object_id nonexistent_obj');
+      expect(result.content[0].text).toContain('No document found for object_id nonexistent_obj');
 
       // Mutation should not have been called
       const mockCalls = mocks.getMockRequest().mock.calls;
@@ -430,7 +477,7 @@ describe('AddContentToDocTool', () => {
         markdown: 'Content',
       });
 
-      expect(result.content[0].text).toContain('Error: No document found for object_id obj_null_docs');
+      expect(result.content[0].text).toContain('No document found for object_id obj_null_docs');
     });
 
     it('should return error when doc_id resolution finds no documents', async () => {
@@ -446,7 +493,7 @@ describe('AddContentToDocTool', () => {
         markdown: 'Content',
       });
 
-      expect(result.content[0].text).toContain('Error: No document found for doc_id nonexistent_doc');
+      expect(result.content[0].text).toContain('No document found for doc_id nonexistent_doc');
 
       // Mutation should not have been called
       const mockCalls = mocks.getMockRequest().mock.calls;
@@ -467,7 +514,7 @@ describe('AddContentToDocTool', () => {
         markdown: 'Content',
       });
 
-      expect(result.content[0].text).toContain('Error: No document found for doc_id doc_null_docs');
+      expect(result.content[0].text).toContain('No document found for doc_id doc_null_docs');
     });
 
     it('should handle exception during object_id resolution', async () => {
@@ -483,7 +530,7 @@ describe('AddContentToDocTool', () => {
         markdown: 'Content',
       });
 
-      expect(result.content[0].text).toContain('Error adding content to document');
+      expect(result.content[0].text).toContain('Failed to add content to document');
       expect(result.content[0].text).toContain('Resolution service unavailable');
     });
 
@@ -565,7 +612,7 @@ describe('AddContentToDocTool', () => {
         markdown: 'Content',
       });
 
-      expect(result.content[0].text).toContain('Error adding content to document');
+      expect(result.content[0].text).toContain('Failed to add content to document');
       expect(result.content[0].text).toContain(errorMessage);
     });
   });

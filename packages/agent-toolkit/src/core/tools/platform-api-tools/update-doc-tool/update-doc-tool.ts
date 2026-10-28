@@ -33,6 +33,8 @@ import { buildUpdateBlockContent, buildCreateBlockInput, applyCommentToDelta } f
 import { updateDocToolSchema, UpdateBlockContent, CreateBlock } from './update-doc-tool.schema';
 import { resolveBoardViewDoc } from '../utils/board-view-doc.utils';
 import { mentionsListSchema } from '../create-update-tool/create-update-tool';
+import { buildToolErrorStructuredContent } from '../../../../utils';
+import { ToolErrorEntry } from '../../../../utils/graphql-error.types';
 
 export { updateDocToolSchema };
 
@@ -159,6 +161,7 @@ COMMENTS:
       }
 
       const results: string[] = [];
+      const errors: ToolErrorEntry[] = [];
       let failedAt: number | null = null;
 
       for (let i = 0; i < input.operations.length; i++) {
@@ -167,8 +170,15 @@ COMMENTS:
           const result = await this.executeOperation(docId, op, objectId);
           results.push(`- [OK] ${op.operation_type}${result ? `: ${result}` : ''}`);
         } catch (err) {
-          const errMsg = err instanceof Error ? err.message : 'Unknown error';
+          const structuredError = buildToolErrorStructuredContent(err);
+          const errMsg = structuredError.message;
           results.push(`- [FAILED] ${op.operation_type}: ${errMsg}`);
+          errors.push(
+            ...(structuredError.errors ?? []).map((entry) => ({
+              ...entry,
+              path: ['operations', i, ...(entry.path ?? [])],
+            })),
+          );
           failedAt = i;
           break;
         }
@@ -182,6 +192,19 @@ COMMENTS:
         ...this.sessionContext.metadata,
         doc_id: docId,
       };
+
+      if (failedAt !== null) {
+        return {
+          content: {
+            message: summary,
+            results,
+            is_partial_success: completed > 0,
+            errors,
+            doc_id: docId,
+          },
+          ...(completed === 0 ? { isError: true } : {}),
+        };
+      }
 
       return {
         content: `${summary}\n\nResults:\n${results.join('\n')}\n\nDoc ID: ${docId}`,
