@@ -270,13 +270,18 @@ describe('UpdateDocTool', () => {
   it('returns a structured failure when add_markdown_content reaches the document block limit', async () => {
     jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
       if (query.includes('mutation addContentToDocFromMarkdown')) {
-        return Promise.resolve({
-          add_content_to_doc_from_markdown: {
-            success: false,
-            block_ids: null,
-            error: 'Document cannot grow beyond 12,000 active blocks',
-          },
-        });
+        return Promise.reject(
+          Object.assign(new Error('Document cannot grow beyond 12,000 active blocks'), {
+            response: {
+              errors: [
+                {
+                  message: 'Document cannot grow beyond 12,000 active blocks',
+                  extensions: { code: 'ACTIVE_BLOCKS_PER_DOC' },
+                },
+              ],
+            },
+          }),
+        );
       }
       return Promise.resolve({});
     });
@@ -292,7 +297,7 @@ describe('UpdateDocTool', () => {
         is_partial_success: false,
         errors: [
           expect.objectContaining({
-            code: 'DOC_BLOCK_LIMIT_EXCEEDED',
+            code: 'ACTIVE_BLOCKS_PER_DOC',
             path: ['operations', 0],
           }),
         ],

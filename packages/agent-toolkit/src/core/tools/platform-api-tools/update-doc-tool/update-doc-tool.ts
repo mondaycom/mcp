@@ -33,7 +33,6 @@ import { buildUpdateBlockContent, buildCreateBlockInput, applyCommentToDelta } f
 import { updateDocToolSchema, UpdateBlockContent, CreateBlock } from './update-doc-tool.schema';
 import { resolveBoardViewDoc } from '../utils/board-view-doc.utils';
 import { mentionsListSchema } from '../create-update-tool/create-update-tool';
-import { getDocBlockLimitError } from '../utils/doc-write-error.utils';
 import { buildToolErrorStructuredContent } from '../../../../utils';
 import { ToolErrorEntry } from '../../../../utils/graphql-error.types';
 
@@ -171,8 +170,7 @@ COMMENTS:
           const result = await this.executeOperation(docId, op, objectId);
           results.push(`- [OK] ${op.operation_type}${result ? `: ${result}` : ''}`);
         } catch (err) {
-          const blockLimitError = getDocBlockLimitError(err);
-          const structuredError = buildToolErrorStructuredContent(blockLimitError ?? err);
+          const structuredError = buildToolErrorStructuredContent(err);
           const errMsg = structuredError.message;
           results.push(`- [FAILED] ${op.operation_type}: ${errMsg}`);
           errors.push(
@@ -282,10 +280,6 @@ COMMENTS:
 
     const result = res?.add_content_to_doc_from_markdown;
     if (!result?.success) {
-      const blockLimitError = getDocBlockLimitError(result?.error);
-      if (blockLimitError) {
-        throw blockLimitError;
-      }
       throw new Error(result?.error || 'Failed to add markdown content');
     }
     const count = result.block_ids?.length ?? 0;

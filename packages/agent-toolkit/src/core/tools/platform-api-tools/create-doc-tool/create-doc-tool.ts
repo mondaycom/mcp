@@ -29,7 +29,6 @@ import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { NonDeprecatedColumnType } from 'src/utils/types';
 import { GraphQLErrorResponse } from '../../../../utils/graphql-error.types';
-import { getDocBlockLimitError } from '../utils/doc-write-error.utils';
 import {
   EMPTY_API_RESPONSE_CODE,
   INVALID_TOOL_ARGS_CODE,
@@ -295,12 +294,10 @@ USAGE EXAMPLES:
       const errorMsg = contentRes?.add_content_to_doc_from_markdown?.error;
 
       if (!success) {
-        const error =
-          getDocBlockLimitError(errorMsg) ??
-          new ToolValidationError(
-            `Failed to add markdown content: ${errorMsg || 'Unknown error'}`,
-            TOOL_EXECUTION_FAILED_CODE,
-          );
+        const error = new ToolValidationError(
+          `Failed to add markdown content: ${errorMsg || 'Unknown error'}`,
+          TOOL_EXECUTION_FAILED_CODE,
+        );
         return this.createdDocContentFailureResult(error, docId, docObjectId, docUrl, input.doc_name);
       }
 
@@ -315,10 +312,6 @@ USAGE EXAMPLES:
         content: { message: "Document successfully created", doc_id: docId, object_id: docObjectId, doc_url: docUrl, doc_name: input.doc_name },
       };
     } catch (error) {
-      const blockLimitError = getDocBlockLimitError(error);
-      if (blockLimitError) {
-        throw blockLimitError;
-      }
       rethrowWithContext(error, 'create document');
     }
   }
@@ -360,7 +353,7 @@ USAGE EXAMPLES:
     docUrl: string | undefined,
     docName: string,
   ): ToolOutputType<never> {
-    const structuredError = buildToolErrorStructuredContent(getDocBlockLimitError(error) ?? error);
+    const structuredError = buildToolErrorStructuredContent(error);
     return {
       content: {
         message: `Document ${docId} was created, but its content could not be added: ${structuredError.message}`,

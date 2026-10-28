@@ -11,7 +11,6 @@ import {
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { resolveBoardViewDoc } from '../utils/board-view-doc.utils';
-import { getDocBlockLimitError } from '../utils/doc-write-error.utils';
 import {
   EMPTY_API_RESPONSE_CODE,
   MISSING_REQUIRED_PARAMETER_CODE,
@@ -157,10 +156,6 @@ USAGE EXAMPLES:
       const { success, block_ids, error } = result.add_content_to_doc_from_markdown;
 
       if (!success) {
-        const blockLimitError = getDocBlockLimitError(error);
-        if (blockLimitError) {
-          throw blockLimitError;
-        }
         throw new ToolValidationError(
           `Failed to add content to document: ${error || 'Unknown error'}`,
           TOOL_EXECUTION_FAILED_CODE,
@@ -178,10 +173,6 @@ USAGE EXAMPLES:
         },
       };
     } catch (error) {
-      const blockLimitError = getDocBlockLimitError(error);
-      if (blockLimitError) {
-        throw blockLimitError;
-      }
       rethrowWithContext(error, 'add content to document');
     }
   }

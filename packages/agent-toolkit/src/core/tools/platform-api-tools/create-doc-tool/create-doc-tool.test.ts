@@ -399,13 +399,18 @@ describe('CreateDocTool', () => {
             });
           }
           if (query.includes('mutation addContentToDocFromMarkdown')) {
-            return Promise.resolve({
-              add_content_to_doc_from_markdown: {
-                success: false,
-                block_ids: null,
-                error: 'Document cannot grow beyond 12000 active blocks',
-              },
-            });
+            return Promise.reject(
+              Object.assign(new Error('Document cannot grow beyond 12000 active blocks'), {
+                response: {
+                  errors: [
+                    {
+                      message: 'Document cannot grow beyond 12000 active blocks',
+                      extensions: { code: 'ACTIVE_BLOCKS_PER_DOC' },
+                    },
+                  ],
+                },
+              }),
+            );
           }
           return Promise.resolve({});
         });
@@ -424,7 +429,7 @@ describe('CreateDocTool', () => {
             is_partial_success: true,
             errors: [
               expect.objectContaining({
-                code: 'DOC_BLOCK_LIMIT_EXCEEDED',
+                code: 'ACTIVE_BLOCKS_PER_DOC',
                 path: ['markdown'],
               }),
             ],
