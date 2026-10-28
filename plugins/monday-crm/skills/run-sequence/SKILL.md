@@ -27,12 +27,13 @@ Flow: **Trigger → Detect intent → Resolve board/sequence/contact → Execute
 - Sequence states: ACTIVE (enrolling + running), INACTIVE (not enrolling; existing runs continue), `missing_config` (setup incomplete, usually no sender mailbox or step content; it can't be activated or enrolled until finished in Tools → Sequences). Status may come back in lowercase; show it to the user as written above.
 - `deactivate-sequence` ≠ pause — enrolled contacts keep progressing; only new enrollments are blocked.
 - No sequence editing tool exists — steps cannot be added/modified via MCP. Direct users to Tools → Sequences in the UI.
-- `get-board-sequences` takes an optional `board_id`. Without it, it returns the user's sequences across all boards — use that to find a sequence by name. Pass `board_id` only when the user names a board.
+- `get-board-sequences` takes an optional `board_id`. Without it, it returns only **your** sequences (ones you created), across boards — not every sequence on a board. With `board_id` it returns all sequences on that board, including teammates'. To find a sequence by name, try without `board_id` first; if it isn't there, resolve the board (ask if needed) and retry with `board_id`.
+- `create-sequence` documents no personalization placeholders: a `{{name}}` in an `automatic_email` body was sent literally in a live test. Never add `{{...}}` variables to step bodies yourself.
 - `create-sequence` has a built-in gate system: call it with what you have; if anything's missing the tool returns `CONFIRMATION_REQUIRED` with exact instructions — follow them verbatim, never pre-empt the gates.
 - `enroll-item-in-sequence` takes `board_id`, `sequenceId`, and `itemIds` (array of string IDs).
 
 ## Tools (MCP)
-- `get-board-sequences` — list sequences on a board, or all of the user's sequences when `board_id` is omitted.
+- `get-board-sequences` — list all sequences on a board, or only the user's own sequences when `board_id` is omitted.
 - `get-sequence-analytics` — per-run, level, and step analytics for one sequence.
 - `get-contact-journey` — all sequences a contact/item is enrolled in (needs `board_id` + `item_id`).
 - `enroll-item-in-sequence` — enroll one or more items in a sequence.
@@ -79,11 +80,11 @@ If ambiguous, ask once:
 
 ## Step 2: Resolve board
 
-**Required for:** enroll, contact-journey. Optional for list and for finding a sequence by name (omit `board_id` to search all the user's sequences). Optional for create (let the gate handle it).
+**Required for:** enroll, contact-journey. Optional for listing your own sequences and for a first try at finding one by name (omit `board_id`); needed to see teammates' sequences. Optional for create (let the gate handle it).
 
 1. If user named a board → `mcp__monday__search` or `get_board_info` to resolve it. On ambiguity, present top results and ask.
 2. If no board named:
-   - For **list**: call `get-board-sequences` without `board_id` and show all the user's sequences, with the board name for each.
+   - For **list**: call `get-board-sequences` without `board_id`, show the result with the board name for each, and say *"These are the sequences you created. Name a board to see every sequence on it, including your teammates'."*
    - For **create**: proceed to Step 4 and let the tool's gate request it.
    - For **enroll**: ask *"Which board is this contact/lead on?"*
    - For **contact-journey**: ask *"Which board is this contact on?"*
@@ -118,6 +119,8 @@ Call `mcp__monday__create-sequence` directly with whatever you have from the use
 - **`connections_not_specified`** gate (triggered when `automatic_email` steps need `sender`/`emailColumnId`) → the gate returns the user's `mailboxes`. Ask which one to send from and pass its `connectionId` + `provider` as `sender`; resolve `emailColumnId` via `get_board_info`; retry. If the gate says there is no connected mailbox, call `show_connect_integration`, wait for the user to connect, confirm with `check-integration-connection-status`, then retry.
 - **`sender_not_found` / `sender_not_ready`** → follow the returned instructions verbatim (pick another mailbox, or ask the user to reconnect).
 
+If the user's email copy contains `{{...}}` placeholders, say before creating: *"Personalization placeholders like {{name}} may be sent exactly as typed — the sequence tool doesn't document any. Keep them, or rewrite without?"*
+
 On success: *"Sequence '<name>' created (INACTIVE). Activate it? (yes / later)"*. If yes → `activate-sequence`.
 
 > **Important:** Never pre-empt the gates by asking all questions upfront. Call the tool first.
@@ -126,7 +129,7 @@ On success: *"Sequence '<name>' created (INACTIVE). Activate it? (yes / later)"*
 
 ## Step 5: Execute — Enroll
 
-1. Resolve the sequence: `mcp__monday__get-board-sequences({ board_id })` (or without `board_id` to find it by name) → present list, ask which sequence if not named.
+1. Resolve the sequence: `mcp__monday__get-board-sequences({ board_id })`, or without `board_id` to find it by name — if the name isn't among your own sequences, retry with the board's `board_id` → present list, ask which sequence if not named.
 2. Resolve the items: extract from the argument (company/contact names) or ask *"Which contacts or leads do you want to enroll?"*. Use `search` or `get_board_items_page` to get `item_id`s.
 3. Confirm sequence is ACTIVE. If INACTIVE: *"'<name>' is currently inactive — new enrollments are blocked. Activate it first? (yes / cancel)"*
 
@@ -206,6 +209,7 @@ Sequence history for Acme Corp:
 ```
 
 4. If empty: *"<item name> isn't enrolled in any sequences."*
+5. If the call errors (the connector currently fails its own output validation for some journeys, e.g. `startStepId must be string`), say *"I couldn't read the sequence history for <item name> right now. You can see it on the item in monday."* Don't retry in a loop.
 
 ---
 
@@ -228,6 +232,8 @@ Sequence history for Acme Corp:
 | Sequence not found | List all on board; ask user to pick. |
 | Enroll — sequence INACTIVE | Offer to activate first. |
 | Enroll — partial failure | Report succeeded and failed item IDs. |
+| Named sequence not in your own list | Retry `get-board-sequences` with the board's `board_id` (it may belong to a teammate). |
+| `get-contact-journey` errors | Say the history couldn't be read and point to the item in monday; no retry loop. |
 | Analytics empty | Inform no sends yet. |
 | Tool unavailable on connector | *"Sequence tools aren't on the connector yet — check back or use the monday UI."* |
 | Edit/add-step request | Redirect to UI; no MCP tool exists for this. |
