@@ -78,7 +78,7 @@ describe('ChangeItemColumnValuesTool', () => {
       );
     });
 
-    it('returns linked item ids and dependency metadata for dependency columns', async () => {
+    it('returns linked item ids for dependency columns', async () => {
       mocks.setResponse({
         change_multiple_column_values: {
           ...mockMutationResponse.change_multiple_column_values,
@@ -88,7 +88,6 @@ describe('ChangeItemColumnValuesTool', () => {
               type: NonDeprecatedColumnType.Dependency,
               value: null,
               linked_item_ids: ['789'],
-              dependency_links: [{ linked_item_id: '789', dependency_type: 0, lag: 2 }],
             },
           ],
         },
@@ -105,7 +104,6 @@ describe('ChangeItemColumnValuesTool', () => {
           column_values: {
             dependency: {
               linked_item_ids: ['789'],
-              dependency_links: [{ linked_item_id: '789', dependency_type: 0, lag: 2 }],
             },
           },
         }),

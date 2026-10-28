@@ -72,11 +72,6 @@ export const changeItemColumnValues = gql`
         }
         ... on DependencyValue {
           linked_item_ids
-          dependency_links {
-            linked_item_id
-            dependency_type
-            lag
-          }
         }
       }
     }

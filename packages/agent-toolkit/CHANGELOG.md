@@ -4,7 +4,7 @@
 
 ### Item write tools return relation details
 
-- `change_item_column_values` and `update_items` return linked item IDs for board-relation columns, plus linked item IDs and dependency details for dependency columns.
+- `change_item_column_values` and `update_items` return linked item IDs for board-relation and dependency columns.
 
 ## 5.77.3
 

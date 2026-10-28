@@ -122,7 +122,6 @@ export class ChangeItemColumnValuesTool extends BaseMondayApiTool<ChangeItemColu
             const dependency = cv as DependencyValue;
             acc[cv.id] = {
               linked_item_ids: dependency.linked_item_ids,
-              dependency_links: dependency.dependency_links,
             };
             break;
           }
