@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.78.1
+
+### Document writes return structured failures and existing item docs
+
+- Document write failures use structured MCP errors with stable codes. The confirmed 12,000-active-block limit is reported as `DOC_BLOCK_LIMIT_EXCEEDED`, while partial writes retain completed document or operation details.
+- `create_doc` returns an existing item-attached document unchanged when its target doc column is occupied, including when concurrent creation produces `CellLimitExceeded`.
+
 ## 5.77.3
 
 ### `get_board_info` handles a subitems column with no linked board

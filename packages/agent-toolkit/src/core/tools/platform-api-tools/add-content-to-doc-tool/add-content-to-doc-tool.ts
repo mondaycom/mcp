@@ -11,6 +11,14 @@ import {
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { resolveBoardViewDoc } from '../utils/board-view-doc.utils';
+import { getDocBlockLimitError } from '../utils/doc-write-error.utils';
+import {
+  EMPTY_API_RESPONSE_CODE,
+  MISSING_REQUIRED_PARAMETER_CODE,
+  TOOL_EXECUTION_FAILED_CODE,
+  ToolValidationError,
+  rethrowWithContext,
+} from '../../../../utils';
 
 interface Document {
   id: string;
@@ -85,7 +93,10 @@ USAGE EXAMPLES:
     input: ToolInputType<typeof addContentToDocToolSchema>,
   ): Promise<ToolOutputType<never>> {
     if (!input.doc_id && !input.object_id && !input.board_id) {
-      return { content: 'Error: Either doc_id, object_id, or board_id (with view_id) must be provided.' };
+      throw new ToolValidationError(
+        'Either doc_id, object_id, or board_id (with view_id) must be provided.',
+        MISSING_REQUIRED_PARAMETER_CODE,
+      );
     }
 
     try {
@@ -95,7 +106,7 @@ USAGE EXAMPLES:
       if (!input.doc_id && !input.object_id && input.board_id) {
         const resolved = await resolveBoardViewDoc(this.mondayApi, input.board_id, input.view_id);
         if (!resolved.ok) {
-          return { content: `Error: ${resolved.error}` };
+          throw new ToolValidationError(resolved.error, TOOL_EXECUTION_FAILED_CODE);
         }
         doc = resolved.doc;
       } else if (!input.doc_id) {
@@ -115,7 +126,7 @@ USAGE EXAMPLES:
 
       if (!doc) {
         const identifier = input.doc_id ? `doc_id ${input.doc_id}` : `object_id ${input.object_id}`;
-        return { content: `Error: No document found for ${identifier}.` };
+        throw new ToolValidationError(`No document found for ${identifier}.`, EMPTY_API_RESPONSE_CODE);
       }
 
       this.sessionContext.metadata = {
@@ -137,13 +148,23 @@ USAGE EXAMPLES:
       );
 
       if (!result?.add_content_to_doc_from_markdown) {
-        return { content: 'Error: Failed to add content to document — no response from API.' };
+        throw new ToolValidationError(
+          'Failed to add content to document — no response from API.',
+          EMPTY_API_RESPONSE_CODE,
+        );
       }
 
       const { success, block_ids, error } = result.add_content_to_doc_from_markdown;
 
       if (!success) {
-        return { content: `Error adding content to document: ${error || 'Unknown error'}` };
+        const blockLimitError = getDocBlockLimitError(error);
+        if (blockLimitError) {
+          throw blockLimitError;
+        }
+        throw new ToolValidationError(
+          `Failed to add content to document: ${error || 'Unknown error'}`,
+          TOOL_EXECUTION_FAILED_CODE,
+        );
       }
 
       const blockCount = block_ids?.length ?? 0;
@@ -157,9 +178,11 @@ USAGE EXAMPLES:
         },
       };
     } catch (error) {
-      return {
-        content: `Error adding content to document: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      };
+      const blockLimitError = getDocBlockLimitError(error);
+      if (blockLimitError) {
+        throw blockLimitError;
+      }
+      rethrowWithContext(error, 'add content to document');
     }
   }
 }

@@ -16,6 +16,27 @@ export const getItemBoard = gql`
   }
 `;
 
+export const getItemDocColumnValue = gql`
+  query getItemDocColumnValue($itemId: ID!, $columnId: String!) {
+    items(ids: [$itemId], limit: 1) {
+      column_values(ids: [$columnId]) {
+        id
+        type
+        ... on DocValue {
+          file {
+            doc {
+              id
+              object_id
+              url
+              name
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
 // Create a new monday doc (works for both workspace and board/item locations via CreateDocInput)
 export const createDoc = gql`
   mutation createDoc($location: CreateDocInput!, $docOwnerIds: [ID!]) {

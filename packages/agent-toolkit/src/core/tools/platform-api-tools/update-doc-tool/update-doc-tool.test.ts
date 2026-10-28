@@ -252,8 +252,52 @@ describe('UpdateDocTool', () => {
       operations: [{ operation_type: 'add_markdown_content', markdown: 'bad' }],
     });
 
+    expect(result.isError).toBe(true);
+    expect(result.structuredContent).toEqual(
+      expect.objectContaining({
+        errors: [
+          expect.objectContaining({
+            code: 'TOOL_EXECUTION_FAILED',
+            path: ['operations', 0],
+          }),
+        ],
+      }),
+    );
     expect(result.content[0].text).toContain('[FAILED] add_markdown_content');
     expect(result.content[0].text).toContain('Bad markdown');
+  });
+
+  it('returns a structured failure when add_markdown_content reaches the document block limit', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('mutation addContentToDocFromMarkdown')) {
+        return Promise.resolve({
+          add_content_to_doc_from_markdown: {
+            success: false,
+            block_ids: null,
+            error: 'Document cannot grow beyond 12,000 active blocks',
+          },
+        });
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [{ operation_type: 'add_markdown_content', markdown: 'content' }],
+    });
+
+    expect(result.isError).toBe(true);
+    expect(result.structuredContent).toEqual(
+      expect.objectContaining({
+        is_partial_success: false,
+        errors: [
+          expect.objectContaining({
+            code: 'DOC_BLOCK_LIMIT_EXCEEDED',
+            path: ['operations', 0],
+          }),
+        ],
+      }),
+    );
   });
 
   // ─── update_block ────────────────────────────────────────────────────────
