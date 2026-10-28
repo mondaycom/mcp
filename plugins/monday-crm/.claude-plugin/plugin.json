@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "monday-crm",
   "displayName": "monday CRM",
-  "description": "Run your sales pipeline in monday CRM from plain language. Start the day with a ranked deal briefing, build a forecast, turn meeting notes into deal updates, set up a CRM workspace from scratch, keep your data clean, manage sequences end-to-end, log calls and meetings to timelines, analyze team activity and rep performance, read the signals in a deal's emails and meetings, review why closed deals were won or lost, and set up automations — every result written straight back into monday. Built on the official monday MCP connector.",
+  "description": "Run your sales pipeline in monday CRM from plain language. Start the day with a ranked deal briefing, build a forecast, turn meeting notes into deal updates, set up a CRM workspace from scratch, keep your data clean, manage sequences end-to-end, log calls and meetings to timelines, analyze team activity and rep performance, review why closed deals were won or lost, and set up automations — every result written straight back into monday. Built on the official monday MCP connector.",
   "version": "0.6.0",
   "defaultEnabled": false,
   "author": {
@@ -30,7 +30,6 @@
     "activity",
     "timeline",
     "activity-insights",
-    "signals",
     "win-loss"
   ]
 }

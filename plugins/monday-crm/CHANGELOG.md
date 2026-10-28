@@ -6,11 +6,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [0.6.0] — 2026-10-28
 
 ### Added
-- **`crm-signals`** — reads the emails, meetings, calls, and logged activities on one deal, account, contact, or lead with `extract_signals` and presents typed signals: health summary, commitments, blockers, buying signals, objections, decisions, stakeholders, open questions, and a recommended next move. Batch mode scans up to 50 items from stored signals and does not fall back to per-item extraction when signals are not indexed yet. Requests with no specific item ("top signals", "what needs my attention") show the account-wide AI Suggestions widget via `get_account_task_rollup`. Originally proposed in mondaycom/mcp#451; updated to the current connector schema (`query_items` → `search` / `get_board_items_page`, explicit `resourceTypes` incl. `phone_call`, no internal flag names in user-facing copy).
-- **`win-loss-review`** — explains why one closed deal was won or lost from its stage history, Emails & Activities timeline, signals, notes and meetings, benchmarked against other closed deals on the same board. Short or deep mode; optionally saves the result on the deal item after explicit confirmation. Contributed by Dana Porat.
+- **`win-loss-review`** — explains why one closed deal was won or lost from its stage history, Emails & Activities timeline, signals, notes and meetings, benchmarked against other closed deals on the same board. Uses `extract_signals` for customer and rep voice where the account has it, and falls back to the timeline otherwise. Short or deep mode; optionally saves the result on the deal item after explicit confirmation. Contributed by Dana Porat.
 
 ### Changed
-- `plugin.json` / `marketplace.json` descriptions and README list eleven skills; added `signals` and `win-loss` keywords.
+- `plugin.json` / `marketplace.json` descriptions and README list ten skills; added `win-loss` keyword.
 - `plugin.json`: added `privacyPolicyUrl` (monday.com privacy policy), flagged by the plugin directory check.
 
 ---

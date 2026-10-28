@@ -1,7 +1,7 @@
 ---
 name: win-loss-review
 description: >
-  Explain why a closed monday CRM deal was won or lost. Reads the deal's stage history, Emails & Activities timeline, notes and column changes, compares it with other closed deals on the same board, and writes a short evidence-based review. Use when someone asks "why did we win/lose Acme", "win-loss review for this deal", "closed-lost analysis", "what was the loss reason really", "what went wrong with this deal", "post-mortem on this opportunity" or "what can we learn from this closed deal". Works on one closed deal at a time. Not for open deals (use crm-signals for a live deal-health read).
+  Explain why a closed monday CRM deal was won or lost. Reads the deal's stage history, Emails & Activities timeline, notes and column changes, compares it with other closed deals on the same board, and writes a short evidence-based review. Use when someone asks "why did we win/lose Acme", "win-loss review for this deal", "closed-lost analysis", "what was the loss reason really", "what went wrong with this deal", "post-mortem on this opportunity" or "what can we learn from this closed deal". Works on one closed deal at a time. Not for open deals (those need a pipeline or deal-health check, not a post-mortem).
 argument-hint: "[closed deal name or link — 'why did we lose Acme', 'win-loss review for this deal']"
 user-invocable: true
 allowed-tools: [Read, AskUserQuestion, mcp__monday__get_user_context, mcp__monday__search, mcp__monday__get_board_info, mcp__monday__get_column_type_info, mcp__monday__get_board_items_page, mcp__monday__get_board_activity, mcp__monday__get-timeline-items, mcp__monday__extract_signals, mcp__monday__get_updates, mcp__monday__search_meetings_content, mcp__monday__get_meetings_content, mcp__monday__change_item_column_values, mcp__monday__update_items, mcp__monday__create_column, mcp__monday__create_doc, mcp__monday__get_asset_upload_url, mcp__monday__finalize_asset_upload]
@@ -41,7 +41,7 @@ If the user is unsure, recommend yes and short. The deal can be identified (step
    - Activities timeline: a column of type `unsupported`. It cannot be read as a column value. Use the timeline tool.
    - A long text column, if the user wants to write there (step 7c).
 3. Confirm the outcome: current stage label (Won or Lost) and group (for example "Closed Won"). Classify unusual endings explicitly: "no decision" or "went dark" is a loss, a deal that was reopened is judged by its latest close, and a deal won and later churned is judged on the win only (mention the churn).
-4. If the deal is not closed, stop and tell the user a post-mortem needs a closed deal. Offer to review it once it closes, or to read its current health with `crm-signals` instead.
+4. If the deal is not closed, stop and tell the user a post-mortem needs a closed deal. Offer to review it once it closes, or to look at its current health instead.
 
 ## 3. Read the stage history
 

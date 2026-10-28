@@ -1,6 +1,6 @@
 # monday CRM — Claude plugin
 
-Run your sales pipeline in monday CRM from plain language. Eleven skills read
+Run your sales pipeline in monday CRM from plain language. Ten skills read
 your live monday boards via the official monday MCP connector, synthesize
 insights, and write the result straight back into monday as a real board,
 dashboard, or doc — so work stays inside monday.
@@ -16,7 +16,6 @@ dashboard, or doc — so work stays inside monday.
 - "Create a 3-step follow-up sequence and enroll my new leads"
 - "Log my call with Acme: they want pricing by Friday"
 - "How many calls did each rep log last week?"
-- "Any blockers or open commitments on the Acme deal?"
 - "Why did we lose the Globex deal?"
 - "When a deal moves to Won, notify the account owner"
 
@@ -32,7 +31,6 @@ dashboard, or doc — so work stays inside monday.
 | `run-sequence` | Create, enroll, activate, and track email sequences | "create a sequence", "enroll this lead", "how is my sequence performing" |
 | `log-activity` | Log calls, meetings, and notes to item timelines; read activity history | "log my call with", "add a note to the deal", "what happened on this account" |
 | `activity-insights` | Team activity analytics: volume by rep and type, rep comparisons | "how many calls did my team make", "compare reps", "activity this week" |
-| `crm-signals` | Signals from one item's emails, meetings, and calls: health, blockers, commitments, objections, next move | "what's happening with Acme", "any blockers on this deal", "top signals today" |
 | `win-loss-review` | Post-mortem on one closed deal: stage history, activity timeline, comparison with other closed deals | "why did we lose Acme", "win-loss review for this deal" |
 | `automate-crm` | Create and manage board automations in plain language | "when a deal is won, notify", "automate my follow-ups", "list my automations" |
 
@@ -41,7 +39,7 @@ dashboard, or doc — so work stays inside monday.
 ```
 ┌─────────────────┐     OAuth      ┌─────────────────┐
 │   Claude Code   │ ──────────────▶│  monday MCP     │
-│  (11 skills)    │                │  mcp.monday.com │
+│  (10 skills)    │                │  mcp.monday.com │
 └─────────────────┘                └────────┬────────┘
                                             │
                                    ┌────────▼────────┐
