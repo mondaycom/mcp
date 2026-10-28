@@ -1,5 +1,5 @@
 import { createMockApiClient } from './test-utils/mock-api-client';
-import { ChangeItemColumnValuesTool } from './change-item-column-values-tool';
+import { ChangeItemColumnValuesTool, LINKED_ITEM_IDS_RESPONSE_LIMIT } from './change-item-column-values-tool';
 import { NonDeprecatedColumnType } from 'src/utils/types';
 
 describe('ChangeItemColumnValuesTool', () => {
@@ -108,6 +108,43 @@ describe('ChangeItemColumnValuesTool', () => {
           },
         }),
       );
+    });
+
+    it('omits linked item ids above the response limit without marking the update as failed', async () => {
+      const linkedItemIds = Array.from({ length: LINKED_ITEM_IDS_RESPONSE_LIMIT + 1 }, (_, index) => String(index + 1));
+      mocks.setResponse({
+        change_multiple_column_values: {
+          ...mockMutationResponse.change_multiple_column_values,
+          column_values: [
+            {
+              id: 'board_relation',
+              type: NonDeprecatedColumnType.BoardRelation,
+              value: null,
+              linked_item_ids: linkedItemIds,
+            },
+          ],
+        },
+      });
+
+      const result = await tool.execute({
+        boardId: 18414630189,
+        itemId: 12093604112,
+        columnValues: '{"board_relation":{"item_ids":[123]}}',
+      });
+
+      expect(result).not.toHaveProperty('isError');
+      expect(result.content).toEqual(
+        expect.objectContaining({
+          column_values: {
+            board_relation: {
+              linked_item_count: LINKED_ITEM_IDS_RESPONSE_LIMIT + 1,
+              linked_item_ids_omitted: true,
+              message: expect.stringContaining('Update succeeded'),
+            },
+          },
+        }),
+      );
+      expect((result.content as any).column_values.board_relation).not.toHaveProperty('linked_item_ids');
     });
 
     it('passes columnIds to the GraphQL query for pre-filtering', async () => {

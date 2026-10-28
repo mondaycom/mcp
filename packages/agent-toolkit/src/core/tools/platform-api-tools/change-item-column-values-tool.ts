@@ -12,6 +12,8 @@ import { ToolValidationError, rethrowWithContext } from '../../../utils';
 import { COLUMN_VALUES_FORMAT_GUIDE, unwrapDoubleEncodedColumnValues } from './column-values.utils';
 import { NonDeprecatedColumnType } from 'src/utils/types';
 
+export const LINKED_ITEM_IDS_RESPONSE_LIMIT = 1_000;
+
 export const changeItemColumnValuesToolSchema = {
   itemId: z.number().describe('The ID of the item to be updated'),
   columnValues: z
@@ -52,7 +54,8 @@ export class ChangeItemColumnValuesTool extends BaseMondayApiTool<ChangeItemColu
       '[IMPORTANT] If you need to update multiple items in one call, use update_items instead of calling this tool in a loop. ' +
       'Otherwise: change the column values of a single item in a monday.com board. ' +
       "[REQUIRED PRECONDITION]: Before using this tool, if new columns were added to the board or if you are not familiar with the board's structure (column IDs, column types, status labels, etc.), first use get_board_info with filters.columns.only to get column metadata without fetching views. This is essential for constructing valid column values. " +
-      'For board-relation linking tasks, call link_board_items_workflow before using this tool.'
+      'For board-relation linking tasks, call link_board_items_workflow before using this tool. ' +
+      `Board-relation and dependency responses include linked item IDs up to ${LINKED_ITEM_IDS_RESPONSE_LIMIT}; larger lists are omitted with a count and a message confirming the update succeeded.`
     );
   }
 
@@ -114,9 +117,15 @@ export class ChangeItemColumnValuesTool extends BaseMondayApiTool<ChangeItemColu
           cv.type === NonDeprecatedColumnType.BoardRelation ||
           cv.type === NonDeprecatedColumnType.Dependency
         ) {
-          acc[cv.id] = {
-            linked_item_ids: (cv as BoardRelationValue | DependencyValue).linked_item_ids,
-          };
+          const linkedItemIds = (cv as BoardRelationValue | DependencyValue).linked_item_ids;
+          acc[cv.id] =
+            linkedItemIds.length <= LINKED_ITEM_IDS_RESPONSE_LIMIT
+              ? { linked_item_ids: linkedItemIds }
+              : {
+                  linked_item_count: linkedItemIds.length,
+                  linked_item_ids_omitted: true,
+                  message: `Update succeeded, but ${linkedItemIds.length} linked item IDs were omitted because the response limit is ${LINKED_ITEM_IDS_RESPONSE_LIMIT}. Fetch the item to retrieve its current linked items.`,
+                };
         } else {
           acc[cv.id] = cv.value ?? null;
         }
