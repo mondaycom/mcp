@@ -110,23 +110,15 @@ export class ChangeItemColumnValuesTool extends BaseMondayApiTool<ChangeItemColu
 
     const updatedColumnValues = res.change_multiple_column_values?.column_values?.reduce(
       (acc: Record<string, unknown>, cv) => {
-        switch (cv.type) {
-          case NonDeprecatedColumnType.BoardRelation: {
-            const relation = cv as BoardRelationValue;
-            acc[cv.id] = {
-              linked_item_ids: relation.linked_item_ids,
-            };
-            break;
-          }
-          case NonDeprecatedColumnType.Dependency: {
-            const dependency = cv as DependencyValue;
-            acc[cv.id] = {
-              linked_item_ids: dependency.linked_item_ids,
-            };
-            break;
-          }
-          default:
-            acc[cv.id] = cv.value ?? null;
+        if (
+          cv.type === NonDeprecatedColumnType.BoardRelation ||
+          cv.type === NonDeprecatedColumnType.Dependency
+        ) {
+          acc[cv.id] = {
+            linked_item_ids: (cv as BoardRelationValue | DependencyValue).linked_item_ids,
+          };
+        } else {
+          acc[cv.id] = cv.value ?? null;
         }
         return acc;
       },
