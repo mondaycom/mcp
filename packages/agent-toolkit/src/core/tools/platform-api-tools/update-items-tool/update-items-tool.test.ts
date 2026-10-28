@@ -8,6 +8,7 @@ import {
   updateItemsToolSchema,
 } from './update-items-tool';
 import { CONCURRENCY_LIMIT, MAX_UPDATES_PER_CALL } from './constants';
+import { NonDeprecatedColumnType } from 'src/utils/types';
 
 describe('Update Items Tool Behaviour', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
@@ -67,6 +68,35 @@ describe('Update Items Tool Behaviour', () => {
           columnIds: ['status'],
         }),
       );
+    });
+
+    it('returns structured board relation values from each update', async () => {
+      mocks.setResponse({
+        change_multiple_column_values: {
+          id: '1',
+          name: 'Item 1',
+          url: 'https://monday.com/boards/456/pulses/1',
+          column_values: [
+            {
+              id: 'board_relation',
+              type: NonDeprecatedColumnType.BoardRelation,
+              value: null,
+              linked_item_ids: ['2'],
+              linked_items: [{ id: '2', name: 'Item 2', board: { id: '456', name: 'Board' } }],
+            },
+          ],
+        },
+      });
+
+      const tool = new UpdateItemsTool(mocks.mockApiClient, { boardId: 456 });
+      const result = await tool.execute({
+        updates: [{ itemId: 1, columnValues: '{"board_relation":{"item_ids":[2]}}' }],
+      });
+
+      expect((result.content as any).results[0].column_values.board_relation).toEqual({
+        linked_item_ids: ['2'],
+        linked_items: [{ id: '2', name: 'Item 2', board: { id: '456', name: 'Board' } }],
+      });
     });
   });
 
