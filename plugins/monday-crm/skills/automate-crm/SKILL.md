@@ -1,6 +1,6 @@
 ---
 name: automate-crm
-description: Set up, view, and manage automations on monday CRM boards using natural language — no block IDs or technical knowledge required. Use when someone says "set up an automation", "automate this", "when a deal is won notify me", "remind me when a date passes", "move deals automatically", "what automations do I have", "turn off automation", "create a workflow", "automate my pipeline", or "set up a rule".
+description: Set up, view, and manage automations on monday CRM boards using natural language — no block IDs or technical knowledge required. Use when someone says "set up an automation", "automate this", "when a deal is won notify me", "remind me when a date passes", "move deals automatically", "what automations do I have", "turn off automation", "create a workflow", "automate my pipeline", or "set up a rule". Not for multi-step email or outreach sequences (use run-sequence).
 argument-hint: "[automation description — 'notify owner when deal is won and move to Closed Won group', 'remind me 3 days before close date', 'what automations are on my deals board']"
 user-invocable: true
 allowed-tools: [Read, AskUserQuestion, mcp__monday__get_user_context, mcp__monday__get_board_info, mcp__monday__search, mcp__monday__get_board_items_page, mcp__monday__create_automation, mcp__monday__list_automations, mcp__monday__manage_automations]
@@ -130,7 +130,6 @@ On `status: "activated"`:
 ## Cross-skill handoffs
 
 - **From workspace-builder:** after building a workspace, suggest top-3 automations.
-- **From meeting-to-deal:** after converting a meeting to a deal, suggest a follow-up automation.
 - **From log-activity:** if a user mentions repeating a notification manually, suggest automating it.
 
 ---
