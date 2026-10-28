@@ -46,7 +46,7 @@ describe('ChangeItemColumnValuesTool', () => {
       });
     });
 
-    it('returns linked item ids and items for board relation columns', async () => {
+    it('returns linked item ids for board relation columns', async () => {
       mocks.setResponse({
         change_multiple_column_values: {
           ...mockMutationResponse.change_multiple_column_values,
@@ -56,7 +56,6 @@ describe('ChangeItemColumnValuesTool', () => {
               type: NonDeprecatedColumnType.BoardRelation,
               value: null,
               linked_item_ids: ['123'],
-              linked_items: [{ id: '123', name: 'Linked item', board: { id: '456', name: 'Linked board' } }],
             },
           ],
         },
@@ -73,7 +72,6 @@ describe('ChangeItemColumnValuesTool', () => {
           column_values: {
             board_relation: {
               linked_item_ids: ['123'],
-              linked_items: [{ id: '123', name: 'Linked item', board: { id: '456', name: 'Linked board' } }],
             },
           },
         }),

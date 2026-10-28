@@ -115,7 +115,6 @@ export class ChangeItemColumnValuesTool extends BaseMondayApiTool<ChangeItemColu
             const relation = cv as BoardRelationValue;
             acc[cv.id] = {
               linked_item_ids: relation.linked_item_ids,
-              linked_items: relation.linked_items,
             };
             break;
           }

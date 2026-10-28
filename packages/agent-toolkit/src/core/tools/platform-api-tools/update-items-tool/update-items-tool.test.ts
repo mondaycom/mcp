@@ -82,7 +82,6 @@ describe('Update Items Tool Behaviour', () => {
               type: NonDeprecatedColumnType.BoardRelation,
               value: null,
               linked_item_ids: ['2'],
-              linked_items: [{ id: '2', name: 'Item 2', board: { id: '456', name: 'Board' } }],
             },
           ],
         },
@@ -95,7 +94,6 @@ describe('Update Items Tool Behaviour', () => {
 
       expect((result.content as any).results[0].column_values.board_relation).toEqual({
         linked_item_ids: ['2'],
-        linked_items: [{ id: '2', name: 'Item 2', board: { id: '456', name: 'Board' } }],
       });
     });
   });

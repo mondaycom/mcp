@@ -69,14 +69,6 @@ export const changeItemColumnValues = gql`
         value
         ... on BoardRelationValue {
           linked_item_ids
-          linked_items {
-            id
-            name
-            board {
-              id
-              name
-            }
-          }
         }
         ... on DependencyValue {
           linked_item_ids
