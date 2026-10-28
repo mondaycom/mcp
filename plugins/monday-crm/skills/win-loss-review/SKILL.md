@@ -4,7 +4,7 @@ description: >
   Explain why a closed monday CRM deal was won or lost. Reads the deal's stage history, Emails & Activities timeline, notes and column changes, compares it with other closed deals on the same board, and writes a short evidence-based review. Use when someone asks "why did we win/lose Acme", "win-loss review for this deal", "closed-lost analysis", "what was the loss reason really", "what went wrong with this deal", "post-mortem on this opportunity" or "what can we learn from this closed deal". Works on one closed deal at a time. Not for open deals (offer daily-briefing on the board instead).
 argument-hint: "[closed deal name or link — 'why did we lose Acme', 'win-loss review for this deal']"
 user-invocable: true
-allowed-tools: [Read, Write, AskUserQuestion, mcp__monday__get_user_context, mcp__monday__search, mcp__monday__get_board_info, mcp__monday__get_column_type_info, mcp__monday__get_board_items_page, mcp__monday__get_board_activity, mcp__monday__get-timeline-items, mcp__monday__extract_signals, mcp__monday__get_updates, mcp__monday__search_meetings_content, mcp__monday__get_meetings_content, mcp__monday__change_item_column_values, mcp__monday__update_items, mcp__monday__create_column, mcp__monday__create_doc, mcp__monday__get_asset_upload_url, mcp__monday__finalize_asset_upload]
+allowed-tools: [Read, Write, AskUserQuestion, mcp__monday__get_user_context, mcp__monday__search, mcp__monday__get_board_info, mcp__monday__get_column_type_info, mcp__monday__get_board_items_page, mcp__monday__get_board_activity, mcp__monday__get-timeline-items, mcp__monday__get-custom-activities, mcp__monday__extract_signals, mcp__monday__get_updates, mcp__monday__search_meetings_content, mcp__monday__get_meetings_content, mcp__monday__change_item_column_values, mcp__monday__update_items, mcp__monday__create_column, mcp__monday__create_doc, mcp__monday__get_asset_upload_url, mcp__monday__finalize_asset_upload]
 ---
 
 # Win / loss review
@@ -75,7 +75,7 @@ Compute:
 
 Call `get-timeline-items` for the deal id and page through the results with the cursor, up to about 200 items. If there are more, work from the most recent 200 plus the first 20 and say the timeline is truncated. Do not use the "count timeline events" column.
 
-Classify each item by `type`: email, meeting, phoneCall, note, aiSummary, sequencesEmail, custom and others. Content may be HTML; strip tags before reading.
+Classify each item by `type`: email, meeting, phoneCall, note, aiSummary, sequencesEmail, custom and others. Many accounts log emails, meetings and calls as custom activity types, so items come back as `type: "custom"`: call `get-custom-activities` once and classify those by the name of their `custom_activity_id` (for example "Email", "Meeting"). Results come newest first. Content may be HTML; strip tags before reading.
 
 Compute:
 

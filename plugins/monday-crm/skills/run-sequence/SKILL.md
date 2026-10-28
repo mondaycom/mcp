@@ -24,7 +24,7 @@ Flow: **Trigger → Detect intent → Resolve board/sequence/contact → Execute
 - **Contact journey:** all sequences a contact is enrolled in, sorted by most recent.
 
 ## Knowledge
-- Sequence states: ACTIVE (enrolling + running), INACTIVE (not enrolling; existing runs continue).
+- Sequence states: ACTIVE (enrolling + running), INACTIVE (not enrolling; existing runs continue), `missing_config` (setup incomplete, usually no sender mailbox or step content; it can't be activated or enrolled until finished in Tools → Sequences). Status may come back in lowercase; show it to the user as written above.
 - `deactivate-sequence` ≠ pause — enrolled contacts keep progressing; only new enrollments are blocked.
 - No sequence editing tool exists — steps cannot be added/modified via MCP. Direct users to Tools → Sequences in the UI.
 - `get-board-sequences` takes an optional `board_id`. Without it, it returns the user's sequences across all boards — use that to find a sequence by name. Pass `board_id` only when the user names a board.

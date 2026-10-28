@@ -14,6 +14,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `meeting-to-deal`: a company-domain match now scores enough to match on its own (with normalization, public mail domains ignored); ties ask the user instead of posting to both deals; 1:1s with external attendees are in scope; transcripts are fetched only for matched meetings. Examples recomputed to the rules.
 - `run-sequence`: `get-board-sequences` is called without `board_id` to list or find sequences; the enroll confirmation says emails will go out and checks large batches.
 - `win-loss-review`: signals window counted back from today; no paging assumption on `get_board_activity`; one confirmation for all board writes; questions asked after the deal is confirmed closed; HTML/doc fallback for deep mode; cross-skill handoffs.
+- `win-loss-review`: classifies `custom` timeline entries by their activity type name, since many accounts log emails and meetings as custom activities. `run-sequence`: handles the `missing_config` sequence status.
 - Removed cross-skill handoffs that pointed to behavior other skills don't have; removed internal planning references from `daily-briefing`.
 
 ### Changed
