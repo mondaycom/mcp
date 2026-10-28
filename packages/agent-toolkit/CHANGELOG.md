@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.78.0
+
+### Item write tools return relation details
+
+- `change_item_column_values` and `update_items` return linked item IDs for board-relation and dependency columns.
+
 ## 5.77.3
 
 ### `get_board_info` handles a subitems column with no linked board
