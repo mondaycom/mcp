@@ -11,6 +11,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 - `plugin.json` / `marketplace.json` descriptions and README list ten skills; added `win-loss` keyword.
 - `plugin.json`: added `privacyPolicyUrl` (monday.com privacy policy), flagged by the plugin directory check.
+- Added `.claude-plugin/icon.png` (1024×1024), the monday CRM app icon from monday.com's CDN, flagged by the plugin directory check.
 
 ---
 
