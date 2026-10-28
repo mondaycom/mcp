@@ -40,7 +40,7 @@ No argument → last 24h. *(Default-window echo suppressed — not first run and
 *[Deals board: `10046221612`. Contacts board: `10082334477`. Columns resolved on both.]*
 
 **Claude (step 5 — match):**
-- Meeting 1 → `luminaryhealth.com` domain → deal "Luminary Health" · score 8 → **matched**
+- Meeting 1 → `luminaryhealth.com` domain → deal "Luminary Health" · score 5 → **matched**
 - Meeting 2 → `lena@redwoodfintech.com` email → deal "Redwood Fintech" email column exact match · score 5 → **matched** + stage transition: Discovery → Procurement signal (high confidence)
 - Meeting 3 → all `@monday.com` (internal_domain) + no deal-name match → **skipped** (internal-only)
 
@@ -115,8 +115,8 @@ Commitments due within 7 days:
 - Priya to send onboarding guide to Luminary Health (due 2026-06-12 — "by tomorrow")
 - Lena (external) sending PO (due 2026-06-14 — "by Friday") — note: notification goes to deal owner Priya, not to Lena
 
-*[`create_notification({ userId: 203911, itemId: doc_s001, text: "Commitment due 2026-06-12 on Luminary Health: send onboarding guide to Carlos and Anita" })` — OK. Pinned to sync doc item (doc_s001) — not to an arbitrary deal item.]*
-*[`create_notification({ userId: 203911, itemId: doc_s001, text: "Commitment due 2026-06-14 on Redwood Fintech: Lena to send PO — follow up if not received" })` — OK.]*
+*[`create_notification({ user_id: 203911, target_id: <Luminary Health recap update id>, target_type: "Post", text: "Commitment due 2026-06-12 on Luminary Health: send onboarding guide to Carlos and Anita" })` — OK. Pinned to the recap update on that deal.]*
+*[`create_notification({ user_id: 203911, target_id: <Redwood Fintech recap update id>, target_type: "Post", text: "Commitment due 2026-06-14 on Redwood Fintech: Lena to send PO — follow up if not received" })` — OK.]*
 
 ---
 

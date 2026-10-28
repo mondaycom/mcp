@@ -30,12 +30,12 @@ No explicit mode → Default.
 **Claude (step 5 — match):**
 
 Meeting 1: `jessica@vertexcap.io` → domain `vertexcap.io` matches two deals:
-- "Vertex Capital — Series B" (company column: "Vertex Capital") · score 8
-- "Vertex Capital — Series C" (company column: "Vertex Capital") · score 8
+- "Vertex Capital — Series B" (company column: "Vertex Capital") · score 5
+- "Vertex Capital — Series C" (company column: "Vertex Capital") · score 5
 
-→ Top score = 8, second-best = 8, gap = 0 → **ambiguous**. Neither deal scores ≥3 higher than the other.
+→ Top score = 5, second-best = 5, gap = 0 → **ambiguous**. Neither deal scores ≥3 higher than the other.
 
-Meeting 2: same attendees → same two deals · score 11 each (2 emails + domain) → **ambiguous**.
+Meeting 2: same attendees → same two deals · score 15 each (2 emails + domain) → **ambiguous**.
 
 **Claude (Step 5 — ask user):**
 

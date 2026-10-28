@@ -27,12 +27,12 @@ Flow: **Trigger → Detect intent → Resolve board/sequence/contact → Execute
 - Sequence states: ACTIVE (enrolling + running), INACTIVE (not enrolling; existing runs continue).
 - `deactivate-sequence` ≠ pause — enrolled contacts keep progressing; only new enrollments are blocked.
 - No sequence editing tool exists — steps cannot be added/modified via MCP. Direct users to Tools → Sequences in the UI.
-- `get-board-sequences` requires a `board_id` — always resolve the board first.
+- `get-board-sequences` takes an optional `board_id`. Without it, it returns the user's sequences across all boards — use that to find a sequence by name. Pass `board_id` only when the user names a board.
 - `create-sequence` has a built-in gate system: call it with what you have; if anything's missing the tool returns `CONFIRMATION_REQUIRED` with exact instructions — follow them verbatim, never pre-empt the gates.
 - `enroll-item-in-sequence` takes `board_id`, `sequenceId`, and `itemIds` (array of string IDs).
 
 ## Tools (MCP)
-- `get-board-sequences` — list sequences on a board (needs `board_id`).
+- `get-board-sequences` — list sequences on a board, or all of the user's sequences when `board_id` is omitted.
 - `get-sequence-analytics` — per-run, level, and step analytics for one sequence.
 - `get-contact-journey` — all sequences a contact/item is enrolled in (needs `board_id` + `item_id`).
 - `enroll-item-in-sequence` — enroll one or more items in a sequence.
@@ -46,8 +46,6 @@ Flow: **Trigger → Detect intent → Resolve board/sequence/contact → Execute
 - `search` / `get_board_info` / `get_board_items_page` — resolve boards and items by name.
 
 ## Cross-skill handoffs
-- **From daily-briefing:** brief can surface sequences with low engagement → suggest `/monday-crm:run-sequence analytics for <name>`.
-- **From meeting-to-deal:** after logging a new lead, suggest enrolling them in an onboarding sequence.
 - **To log-activity:** after enrolling a contact in a sequence whose first step is a manual call, suggest logging the call outcome.
 
 ---
@@ -81,11 +79,11 @@ If ambiguous, ask once:
 
 ## Step 2: Resolve board
 
-**Required for:** list, enroll, contact-journey. Optional for create (let the gate handle it).
+**Required for:** enroll, contact-journey. Optional for list and for finding a sequence by name (omit `board_id` to search all the user's sequences). Optional for create (let the gate handle it).
 
 1. If user named a board → `mcp__monday__search` or `get_board_info` to resolve it. On ambiguity, present top results and ask.
 2. If no board named:
-   - For **list**: ask *"Which board's sequences do you want to see?"*
+   - For **list**: call `get-board-sequences` without `board_id` and show all the user's sequences, with the board name for each.
    - For **create**: proceed to Step 4 and let the tool's gate request it.
    - For **enroll**: ask *"Which board is this contact/lead on?"*
    - For **contact-journey**: ask *"Which board is this contact on?"*
@@ -94,7 +92,7 @@ If ambiguous, ask once:
 
 ## Step 3: Execute — List
 
-`mcp__monday__get-board-sequences({ board_id })`.
+`mcp__monday__get-board-sequences({ board_id })` — or `get-board-sequences({})` when no board was named.
 
 Format as table:
 
@@ -128,14 +126,14 @@ On success: *"Sequence '<name>' created (INACTIVE). Activate it? (yes / later)"*
 
 ## Step 5: Execute — Enroll
 
-1. Resolve the sequence: `mcp__monday__get-board-sequences({ board_id })` → present list, ask which sequence if not named.
+1. Resolve the sequence: `mcp__monday__get-board-sequences({ board_id })` (or without `board_id` to find it by name) → present list, ask which sequence if not named.
 2. Resolve the items: extract from the argument (company/contact names) or ask *"Which contacts or leads do you want to enroll?"*. Use `search` or `get_board_items_page` to get `item_id`s.
 3. Confirm sequence is ACTIVE. If INACTIVE: *"'<name>' is currently inactive — new enrollments are blocked. Activate it first? (yes / cancel)"*
 
-> **HITL GATE:** *"Enroll <N> item(s) in '<sequence name>'?"* List the items by name. *(yes / cancel)*
+> **HITL GATE:** *"Enroll <N> item(s) in '<sequence name>'? The sequence is active, so its first email goes out from <sender mailbox> <timing of step 1>."* List the items by name. For more than 25 items, say the count first and confirm the user really means all of them. *(yes / cancel)*
 
 4. `mcp__monday__enroll-item-in-sequence({ board_id, sequenceId, itemIds: ["<id>", ...] })`.
-5. Report: *"Enrolled <N> items. Succeeded: <list>. Failed: <list if any>."*
+5. Report: *"Enrolled <N> items. Succeeded: <list>. Failed: <list if any>."* Items already enrolled may be rejected — list them under Failed with the reason the tool gives.
 
 ---
 
@@ -213,9 +211,9 @@ Sequence history for Acme Corp:
 
 ## Shared patterns
 
-- **HITL gates on all writes** (create, enroll, activate, deactivate, duplicate).
+- **HITL gates on all writes** (enroll, activate, deactivate, duplicate). `create-sequence` always creates the sequence INACTIVE, so nothing is sent until the user confirms activation.
 - **No sequence editing via MCP.** If asked to add/edit/remove steps, say: *"Step editing isn't available through MCP yet — go to Tools → Sequences in the monday CRM UI."*
-- **Board-first for list/enroll/journey.** Always resolve the board before calling tools that need `board_id`.
+- **Board-first for enroll/journey.** Resolve the board before calling tools that need `board_id`. Listing and finding a sequence by name don't need one.
 - **Follow create-sequence gates verbatim.** Call first, handle gates as they come.
 
 ---
@@ -240,8 +238,8 @@ Sequence history for Acme Corp:
 
 - [ ] Step 0 connector check passed.
 - [ ] Intent correctly classified and executed.
-- [ ] Board resolved before any `board_id`-requiring tool call.
-- [ ] All writes (create, enroll, activate, deactivate, duplicate) went through HITL confirmation.
+- [ ] Board resolved before enroll and contact-journey calls.
+- [ ] Enroll, activate, deactivate and duplicate went through HITL confirmation; new sequences were left INACTIVE until the user confirmed activation.
 - [ ] `create-sequence` gates followed verbatim; no pre-emption.
 - [ ] No sequence editing attempted (hard rail — redirect to UI).
 - [ ] Analytics formatted with level + per-step breakdown and drop-off flags.

@@ -130,7 +130,7 @@ On `status: "activated"`:
 ## Cross-skill handoffs
 
 - **From workspace-builder:** after building a workspace, suggest top-3 automations.
-- **From meeting-to-opportunity:** after converting a meeting to a deal, suggest a follow-up automation.
+- **From meeting-to-deal:** after converting a meeting to a deal, suggest a follow-up automation.
 - **From log-activity:** if a user mentions repeating a notification manually, suggest automating it.
 
 ---

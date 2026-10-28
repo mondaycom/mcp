@@ -39,7 +39,6 @@ Flow: **Trigger → Pull meetings → Match → Synthesize → Publish (α) → 
 - `all_monday_api` — escape hatch for connect-board column writes (linking contact ↔ deal). Note: connect-board writes via `all_monday_api` may fail silently — see Error handling reference.
 
 ## Cross-skill handoffs
-- **From workspace-builder / daily-briefing:** suggested as a way to keep deals fresh after a meeting-heavy day.
 - **To data-cleanup:** if >30% of attendees couldn't be matched, suggest running `data-cleanup` to clean contact data.
 - **To daily-briefing:** the synced updates feed tomorrow's brief.
 
@@ -85,7 +84,7 @@ Hard safety rail regardless of mode: **no deletes, no amount-column writes, no c
 ### 3a — NoteTaker path (`notetaker_available: true`)
 
 1. `mcp__monday__explore_meetings({ start_time_from: <ISO>, start_time_to: <ISO>, limit: 20 })` — no `query`, so results are newest first. Collect meeting ids.
-2. `mcp__monday__get_meetings_content({ ids: [<ids>], include_summary: true, include_action_items: true, include_transcript: true })`. Cache summaries, action items, transcripts, participants, and meeting metadata. Ids listed as not returned (no completed recording, not accessible) are skipped and noted in the sync doc. If a meeting's content was dropped for size, request it again on its own.
+2. `mcp__monday__get_meetings_content({ ids: [<ids>], include_summary: true, include_action_items: true })`. Cache summaries, action items, participants, and meeting metadata. Transcripts can be very large: fetch them later (`include_transcript: true`, one meeting at a time) only for meetings that matched a deal and need verbatim evidence for a stage change or commitment. Ids listed as not returned (no completed recording, not accessible) are skipped and noted in the sync doc. If a meeting's content was dropped for size, request it again on its own.
 
 Edge cases:
 - **0 meetings in window:** don't stop — fall through to Step 3b to let the user provide meeting content manually. Print: *"No NoteTaker meetings found in `<window>`. You can paste meeting notes or describe what happened instead."*
@@ -118,7 +117,7 @@ Cache as one entry in `meetings[]` with `source: "manual"` and continue to Step 
 
 Resolve the boards directly — this skill is self-contained:
 
-1. **Deals board:** `get_user_context` → scan `favorites` + `relevantBoards` for names matching `deals|opportunities|pipeline|sales`. One candidate → use it; multiple → `AskUserQuestion`; zero → `list_workspaces` → `search("deal", BOARD)`. Still zero → degrade per step 4 below.
+1. **Deals board:** `get_user_context` → scan `favorites` + `relevantBoards` for names matching `deals|opportunities|pipeline|sales`. One candidate → use it; multiple → `AskUserQuestion`; zero → `list_workspaces` → `search(searchType: "BOARD", searchTerm: "deal")`. Still zero → degrade per step 4 below.
 2. **Contacts board:** same pass for `contacts|people|leads` (only if β auto-contact may run). If Contacts board is missing and mode = Proactive and β was approved, surface a chat-level message **before** writing the sync doc: *"Auto-contact was approved but I couldn't find a Contacts board. Contacts not created. Run `/monday-crm:workspace-builder` to set one up."* Then continue with α recap only.
 3. `get_board_info` on each. Resolve columns by type:
    - On Deals: `email` (if present), `text` company-name, `people` owner, `status` stage, `numbers` value, `date` last-touch.
@@ -138,16 +137,16 @@ For each meeting:
 1. **Extract signals:** attendee emails (excluding `@<internal_domain>` addresses), company names from email domains, meeting title keywords.
 2. **Pull active deals** (Pass A from daily-briefing — non-Won/Lost), `limit: 500`.
 3. **Score candidates:**
-   - +5 per attendee email matching a deal's email column.
-   - +3 per attendee email *domain* matching a deal's company-name column (case-insensitive substring).
+   - +5 per attendee email matching a deal's email column (exact, case-insensitive).
+   - +5 once per deal if any attendee email *domain* matches the deal's company-name column. Normalize both sides first: drop the TLD and `www.`, lowercase, remove spaces and punctuation (`helixbio.com` → `helixbio`, "Helix Bio" → `helixbio`). Match when one contains the other. Skip public mail domains (gmail, outlook, hotmail, yahoo, icloud and similar) — they say nothing about the company.
    - +2 if meeting title contains a deal name (≥3 contiguous chars match).
    - **+1 if deal owner is a meeting attendee — only when ALL non-internal attendees are from `@<internal_domain>` (i.e. purely internal meeting).** This signal is intentionally narrow: a deal owner being on an external sales call is expected and not a reliable match signal; it only carries weight for internal deal-review meetings where ownership is the strongest available signal.
-4. **Pick the top score** if it's ≥5 AND beats the second-best by ≥3. Otherwise flag as **ambiguous** (multiple candidates) or **unmatched** (no candidate ≥5).
-5. **Multi-deal meetings:** if top two candidates are within 2 points and both ≥5, flag as multi-match — write the recap to *both* deals with a header line "*Meeting also discussed: <other deal>*".
+4. **Pick the top score** if it's ≥5 AND beats the second-best by ≥3. If no candidate reaches 5 → **unmatched**. If two or more candidates are ≥5 and within 2 points of each other → **ambiguous**: never guess and never write to both. Ask the user with `AskUserQuestion` (list the candidate deals with owner and stage, plus "skip this meeting"), then continue with their choice. In Silent mode, skip the write and log the meeting as "ambiguous" in the sync doc.
+5. **Multi-deal meetings:** only when the meeting clearly covered several deals — two or more deal names appear in the title, summary or transcript — write the recap to each named deal with a header line "*Meeting also discussed: <other deal>*". A score tie alone is not a multi-deal meeting.
 
 Edge cases:
 - Internal-only meetings (all attendees `@<internal_domain>`) and no deal-name title match: skip (likely standup), log to summary doc as "skipped: internal-only".
-- Personal-meetings filter: skip meetings tagged 1:1 (no transcript content of CRM relevance).
+- 1:1 meetings: classify by attendee domains, not by meeting type. A 1:1 with an external attendee is a normal sales call and is in scope; a 1:1 between two internal attendees is skipped like any internal-only meeting.
 
 ---
 
@@ -176,7 +175,7 @@ For each matched meeting + deal pair:
    
    > **Note:** `mcp__monday__search` cannot search update bodies — always use `all_monday_api` items_by_id for this check.
 
-2. `create_update({ itemId: <dealId>, body: <recap markdown> })`.
+2. `create_update({ itemId: <dealId>, body: <recap as HTML> })`. `create_update` renders HTML, not Markdown: convert the template's headings, bold and bullets to `<h3>`, `<b>`, `<ul><li>` before posting.
 3. Update body shape:
 
 ```markdown
@@ -237,8 +236,7 @@ Cap at 25 contacts per run. Above that, batch into a review-list doc rather than
 Only runs if mode = Proactive AND session-level approval was given.
 
 For commitments parsed in Step 6 with a parseable due-date within next 7 days:
-- `create_notification({ userId: <deal owner>, text: "Commitment due <date> on <deal>: <commitment>" })`.
-- If `create_notification` requires an `itemId`: use the **sync doc's item ID** (from Step 10's `create_doc` return value). Do **not** pin the notification to an arbitrary deal item when the doc covers cross-deal commitments.
+- `create_notification({ user_id: <deal owner>, target_id: <id of the recap update posted on that deal in Step 7>, target_type: "Post", text: "Commitment due <date> on <deal>: <commitment>" })`. Pinning to the recap update keeps each commitment on its own deal.
 
 Hard rail: never write commitments to amount columns. Notifications only for proactive nudges (stage edits already handled in Step 7's batched plan, not here).
 
@@ -359,7 +357,7 @@ Synced 2 meetings to 2 deals. 1 skipped (internal). 1 contact created. Doc: [url
 | NoteTaker unavailable | Step 3b: ask user for manual input — paste, file, or free-text description. |
 | 0 meetings in window (NoteTaker worked) | Step 3b fallback — prompt for manual input. |
 | No Deals board | Step 4 degrades — sync doc only, suggest `workspace-builder`. |
-| Ambiguous match (≥2 candidates within 2 points) | Skip the write; log to sync doc as "ambiguous". |
+| Ambiguous match (≥2 candidates ≥5 within 2 points) | Ask the user which deal (or skip); in Silent mode skip the write and log to sync doc as "ambiguous". |
 | Idempotency hit (same meeting-id in update) | Update existing content, don't duplicate. |
 | 429 on `explore_meetings` / `get_meetings_content` or `create_update` | Backoff 3x; halt on third with retry message. |
 | Contacts board missing (β approved, Proactive mode) | Surface chat message before sync doc: "Auto-contact was approved but I couldn't find a Contacts board. Contacts not created. Run `/monday-crm:workspace-builder` to set one up." Continue with α recap. |

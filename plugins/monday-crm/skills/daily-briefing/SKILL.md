@@ -19,7 +19,7 @@ When monday CRM features are in use, the brief automatically gets richer:
 | **Notetaker** | Recent meeting notes matched to open deals or contacts | `explore_meetings` + `get_meetings_content` |
 | **Activity log** | Logged calls, emails, and meetings on deals/contacts (last 48h) | `get_board_activity` + `get_updates` |
 | **Tasks / follow-ups** | Items with a date column = today across deals or contacts board | `get_board_items_page` with date filter |
-| **Calendar sync** (Outlook/Google) | Today's CRM-linked meetings | Not yet in MCP — skipped; wired when available (see workset status.md) |
+| **Calendar sync** (Outlook/Google) | Today's CRM-linked meetings | Not yet in MCP — skipped; wired when available |
 | **Email sync** (Gmail/Outlook) | Tracked email threads on deals/contacts | Not yet in MCP — skipped; logged emails accessible today via `get_updates` on contacts/deals |
 
 > monday CRM's calendar and email sync features exist in the product but are not fully exposed via the MCP connector yet. The skill attempts to reach them via `all_monday_api` raw GraphQL. If the data isn't there, it notes the gap in the brief and skips the section — it does not error out.
@@ -145,9 +145,9 @@ Try each source silently — don't stop if one fails:
 
 1. **Notetaker meetings** — call `explore_meetings({ start_time_from: <24h ago, ISO>, limit: 20 })`. If it returns meetings, fetch them with `get_meetings_content({ ids: [...], include_summary: true, include_action_items: true })` and cache the results. If either call errors or returns empty, mark `notetaker: false`.
 
-2. **Calendar sync** — not yet available via monday MCP. Mark `calendar: false`. Skip. Will be wired when monday exposes `calendar_events` in the MCP connector (tracked in workset status.md).
+2. **Calendar sync** — not yet available via monday MCP. Mark `calendar: false`. Skip. Will be wired when monday exposes `calendar_events` in the MCP connector.
 
-3. **Email sync** — not yet available via monday MCP. Mark `email: false`. Skip. Will be wired when monday exposes `crm_emails` in the MCP connector (tracked in workset status.md). Note: logged emails stored as item updates on contacts/deals *are* accessible today via `get_updates` — those are handled in Step 5d.
+3. **Email sync** — not yet available via monday MCP. Mark `email: false`. Skip. Will be wired when monday exposes `crm_emails` in the MCP connector. Note: logged emails stored as item updates on contacts/deals *are* accessible today via `get_updates` — those are handled in Step 5d.
 
 4. **Tasks board** — search `get_user_context` → `relevantBoards` for a board named `tasks|to-do|actions|follow-up`. If found, mark `tasks_board: <boardId>`. If not found, skip — tasks will be inferred from deal/contact items with date columns = today.
 
@@ -306,8 +306,8 @@ Two passes:
 This is the primary way to get logged emails, calls, and activities from monday CRM today. When users log a call, send an email (via monday email sync), or add a note on a contact or deal, it's stored as an **update thread** on that item. `get_updates` surfaces all of it.
 
 For each resolved board:
-1. `get_board_activity(boardId, from: <48h ago>)` — structural changes: stage moves, owner assignments, column edits. Tells you what changed on which items.
-2. `get_updates(boardId, limit: 100)` — update threads: logged calls, tracked emails, meeting notes, manual notes added by reps. This is the activity log.
+1. `get_board_activity({ boardId, fromDate: <48h ago, ISO 8601> })` — structural changes: stage moves, owner assignments, column edits. Tells you what changed on which items.
+2. `get_updates({ objectType: "Board", objectIds: ["<boardId>"], includeItemUpdates: true, fromDate: <48h ago>, toDate: <now>, limit: 100 })` — update threads: logged calls, tracked emails, meeting notes, manual notes added by reps. This is the activity log.
 
 If either call returns a permission error (403 or similar): note in the brief's Data hygiene section — *"Activity log unavailable — the MCP connector lacks read access to this board's activity feed. A board admin can grant it under Board Settings → Permissions → View board."* Do not stop or retry; proceed without activity data.
 
@@ -343,11 +343,11 @@ Cache as `tasks_today[]` with item name, assigned owner, linked board.
 
 ### 5g — Calendar events (future)
 
-Not available via monday MCP today. Skip. When monday exposes `calendar_events` on the connector: pull today's events, cross-reference with open deals/contacts by `crm_item` link or attendee domain match, cache as `crm_meetings_today[]` for synthesis Step 6a. See workset status.md for tracking.
+Not available via monday MCP today. Skip. When monday exposes `calendar_events` on the connector: pull today's events, cross-reference with open deals/contacts by `crm_item` link or attendee domain match, cache as `crm_meetings_today[]` for synthesis Step 6a.
 
 ### 5h — Email sync (future)
 
-Not available via monday MCP today. Skip. Logged emails stored as item updates on contacts/deals are covered by Step 5d (`get_updates`). When monday exposes `crm_emails` on the connector: pull unread emails + `awaiting_reply` threads, cross-reference with CRM items, surface in the brief under "Email priorities". See workset status.md for tracking.
+Not available via monday MCP today. Skip. Logged emails stored as item updates on contacts/deals are covered by Step 5d (`get_updates`). When monday exposes `crm_emails` on the connector: pull unread emails + `awaiting_reply` threads, cross-reference with CRM items, surface in the brief under "Email priorities".
 
 ### Rate limit handling (all types)
 
@@ -427,7 +427,7 @@ Respect the `destination` config from Step 1:
 - `doc` → skip "My Morning" search; go directly to `create_doc`.
 - `monday` or `monday+chat` (default) → follow steps below.
 
-1. Call `search(searchType: "ITEM", searchTerm: "My Morning")`. Filter results to boards the user owns or is a member of (to avoid false matches on shared workspaces). If exactly one match → `create_update` on that item. If multiple → take the one in the user's personal workspace (from `get_user_context` → `personal_workspace_id`). If none → proceed to step 2.
+1. Call `search(searchType: "ITEMS", searchTerm: "My Morning")`. Filter results to boards the user owns or is a member of (to avoid false matches on shared workspaces). If exactly one match → `create_update` on that item (convert the brief to HTML first — `create_update` renders `<h3>`, `<b>`, `<ul><li>`, not Markdown). If multiple → take the one in the user's personal workspace (from `get_user_context` → `personal_workspace_id`). If none → proceed to step 2.
 2. Else: `create_doc` in personal workspace with title `Morning Briefing — <weekday>, <Mon DD>, <YYYY>`.
 3. **Idempotency:** before creating, search by exact title. If found, update in place. If search returns ambiguous results, add a suffix (`— v2`). Never duplicate.
 
@@ -590,7 +590,7 @@ Print before any `create_*`: *"I'll publish this as `<target>`. OK to post? (yes
 Runs only if user explicitly asked ("share with my manager", "post to the team", or Proactive mode selected Share).
 
 1. `list_users_and_teams` → resolve recipient. Default to declared manager if present; else `AskUserQuestion` with top-5 linked teammates.
-2. `create_notification({ userId, itemId: <artifact>, text: "Morning briefing for <Mon DD>" })`.
+2. `create_notification({ user_id: <recipient>, target_id: <id of the item the brief was posted on>, target_type: "Project", text: "Morning briefing for <Mon DD>" })`.
 3. Optional: `create_update` on a team-rollup board (resolve by `search` / `AskUserQuestion` — don't assume a fixed name). Same footer + skill-id-comment convention.
 
 ---
@@ -600,10 +600,10 @@ Runs only if user explicitly asked ("share with my manager", "post to the team",
 Runs only if mode = Proactive AND session decision was "approve all" or "review each".
 
 For each item in **Stale / Going cold** bucket:
-- `create_update(itemId, "*Claude nudge:* No activity in <X> days. What's the next step?")`.
+- `create_update({ itemId, body: "<b>Claude nudge:</b> No activity in <X> days. What's the next step?" })`.
 
 For each item in **Commit-today / Overdue follow-up** bucket:
-- `create_notification({ userId: <owner>, itemId, text: "Action due today on <name>" })`.
+- `create_notification({ user_id: <owner>, target_id: <item id>, target_type: "Project", text: "Action due today on <name>" })`.
 
 **"Review each" flow:** print a one-line proposal per item before writing. `yes` → execute; `no` → skip; `stop` → halt.
 

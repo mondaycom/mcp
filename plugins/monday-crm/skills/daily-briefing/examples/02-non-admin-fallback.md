@@ -58,7 +58,7 @@ Falling back: creating a doc in Jaisy's personal workspace.
 Safety rail: Jaisy is a member, not admin. Only acts on deals where `owner = 551003`. The other 6 stale deals and 4 slipping deals go into the brief but get **no** proactive writes.
 
 *[for 5 Jaisy-owned stale deals: create_update with "[Claude nudge] No activity in <X> days. What's the next step?"]*
-*[for 1 commitment-today: create_notification({ userId: 551003, itemId, text: "Commitment due today on Iberia Foods — €45K" })]*
+*[for 1 commitment-today: create_notification({ user_id: 551003, target_id: <item id>, target_type: "Project", text: "Commitment due today on Iberia Foods — €45K" })]*
 
 6 writes queued (under the 20-item threshold, no batch doc needed).
 

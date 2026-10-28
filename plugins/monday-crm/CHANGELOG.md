@@ -8,9 +8,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 - **`win-loss-review`** — explains why one closed deal was won or lost from its stage history, Emails & Activities timeline, signals, notes and meetings, benchmarked against other closed deals on the same board. Uses `extract_signals` for customer and rep voice where the account has it, and falls back to the timeline otherwise. Short or deep mode; optionally saves the result on the deal item after explicit confirmation. Contributed by Dana Porat.
 
+### Fixed
+- Tool arguments that didn't match the connector schema: `search` in `log-activity`, `activity-insights`, `forecast`, `meeting-to-deal`, `daily-briefing` (`searchType` / `searchTerm`, `ITEMS`); `create_notification` in `daily-briefing`, `forecast`, `meeting-to-deal` and examples (`user_id`, `target_id`, `target_type`); `get_board_activity` / `get_updates` in `daily-briefing`.
+- `create_update` bodies in `daily-briefing` and `meeting-to-deal` are posted as HTML (the tool doesn't render Markdown).
+- `meeting-to-deal`: a company-domain match now scores enough to match on its own (with normalization, public mail domains ignored); ties ask the user instead of posting to both deals; 1:1s with external attendees are in scope; transcripts are fetched only for matched meetings. Examples recomputed to the rules.
+- `run-sequence`: `get-board-sequences` is called without `board_id` to list or find sequences; the enroll confirmation says emails will go out and checks large batches.
+- `win-loss-review`: signals window counted back from today; no paging assumption on `get_board_activity`; one confirmation for all board writes; questions asked after the deal is confirmed closed; HTML/doc fallback for deep mode; cross-skill handoffs.
+- Removed cross-skill handoffs that pointed to behavior other skills don't have; removed internal planning references from `daily-briefing`.
+
 ### Changed
 - `plugin.json` / `marketplace.json` descriptions and README list ten skills; added `win-loss` keyword.
 - `plugin.json`: added `privacyPolicyUrl` (monday.com privacy policy), flagged by the plugin directory check.
+- README: concrete install commands (`mondaycom/mcp`, `monday-crm@monday-mcp`), correct local-install path, enable step; modes and safety rails scoped to the skills that implement them.
+- `automate-crm`, `data-cleanup`: last pre-0.3.0 skill names replaced; internal wording removed from `data-cleanup`.
 - Added `.claude-plugin/icon.png` (1024×1024), the monday CRM app icon from monday.com's CDN, flagged by the plugin directory check.
 
 ---
@@ -34,10 +44,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [0.5.0] — 2026-08-05
 
 ### Added
-- **`activity-insights`** — analyze CRM activity data across the team: rep performance, call/email/meeting volume, per-type breakdowns, and rep comparisons. Uses `get-activity-insights` (now available on the external connector after `DaPulse/crm-mcp` PR #287) to return aggregated counts server-side. Synthesizes results as natural language; redirects item-level content questions to `get-timeline-items`.
+- **`activity-insights`** — analyze CRM activity data across the team: rep performance, call/email/meeting volume, per-type breakdowns, and rep comparisons. Uses `get-activity-insights` (now available on the public connector) to return aggregated counts server-side. Synthesizes results as natural language; redirects item-level content questions to `get-timeline-items`.
 
 ### Changed
-- `log-activity`: removed "Sidekick-only" guard on `get-activity-insights`; the tool is now available on the public connector. Step 4 (Read) now routes aggregate/team queries to the `activity-insights` skill. Added `activity-insights` to cross-skill handoffs.
+- `log-activity`: removed the internal-only guard on `get-activity-insights`; the tool is now available on the public connector. Step 4 (Read) now routes aggregate/team queries to the `activity-insights` skill. Added `activity-insights` to cross-skill handoffs.
 
 ---
 
@@ -46,7 +56,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 - **`run-sequence`** — manage CRM sequences end-to-end: list, create, enroll contacts, activate/deactivate, duplicate, and track analytics. Requires `get-board-sequences` to be healthy on the connector (currently under investigation — 100% error rate on external connector as of Jul 7–11).
 - **`log-activity`** — log calls, meetings, and notes to CRM item timelines; read activity history; update existing entries. Degrades gracefully to free-text notes if structured activity tools are unavailable.
-- **`automate-crm`** — create and manage board automations in natural language; no block IDs or technical knowledge required. Uses real Kremer account usage data to surface the most common CRM automation patterns.
+- **`automate-crm`** — create and manage board automations in natural language; no block IDs or technical knowledge required. Uses aggregate account usage to surface the most common CRM automation patterns.
 
 ### Changed
 - Plugin description updated to mention sequences, activities, and automations.

@@ -68,7 +68,7 @@ Flow: **Trigger → Gather → Synthesize → Publish (α, default) → Share (�
 
 ## Step 2: Resolve the deals board (Gather)
 
-**Goal:** Land on one (or user-confirmed multi) board. Same resolution path as daily-briefing Step 2. Use `mcp__monday__get_user_context` → `list_workspaces` → `search("deal")`.
+**Goal:** Land on one (or user-confirmed multi) board. Same resolution path as daily-briefing Step 2. Use `mcp__monday__get_user_context` → `list_workspaces` → `search(searchType: "BOARD", searchTerm: "deal")`.
 
 ---
 
@@ -169,7 +169,7 @@ Route to `create_doc` on option (a).
 1. `list_users_and_teams` → resolve sales leader.
 2. Before granting access, ask: "Share this dashboard with [name]? They'll get a notification and viewer access. (yes / no)"
 3. On confirmation: `all_monday_api` GraphQL mutation to grant viewer permission on the dashboard.
-4. `create_notification({ userId, itemId: <dashboard ref>, text: "Forecast dashboard for <period>" })`.
+4. `create_notification({ user_id: <recipient>, target_id: <dashboard board id>, target_type: "Project", text: "Forecast dashboard for <period>" })`.
 
 ---
 

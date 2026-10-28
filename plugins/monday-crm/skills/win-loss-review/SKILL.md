@@ -1,10 +1,10 @@
 ---
 name: win-loss-review
 description: >
-  Explain why a closed monday CRM deal was won or lost. Reads the deal's stage history, Emails & Activities timeline, notes and column changes, compares it with other closed deals on the same board, and writes a short evidence-based review. Use when someone asks "why did we win/lose Acme", "win-loss review for this deal", "closed-lost analysis", "what was the loss reason really", "what went wrong with this deal", "post-mortem on this opportunity" or "what can we learn from this closed deal". Works on one closed deal at a time. Not for open deals (those need a pipeline or deal-health check, not a post-mortem).
+  Explain why a closed monday CRM deal was won or lost. Reads the deal's stage history, Emails & Activities timeline, notes and column changes, compares it with other closed deals on the same board, and writes a short evidence-based review. Use when someone asks "why did we win/lose Acme", "win-loss review for this deal", "closed-lost analysis", "what was the loss reason really", "what went wrong with this deal", "post-mortem on this opportunity" or "what can we learn from this closed deal". Works on one closed deal at a time. Not for open deals (offer daily-briefing on the board instead).
 argument-hint: "[closed deal name or link — 'why did we lose Acme', 'win-loss review for this deal']"
 user-invocable: true
-allowed-tools: [Read, AskUserQuestion, mcp__monday__get_user_context, mcp__monday__search, mcp__monday__get_board_info, mcp__monday__get_column_type_info, mcp__monday__get_board_items_page, mcp__monday__get_board_activity, mcp__monday__get-timeline-items, mcp__monday__extract_signals, mcp__monday__get_updates, mcp__monday__search_meetings_content, mcp__monday__get_meetings_content, mcp__monday__change_item_column_values, mcp__monday__update_items, mcp__monday__create_column, mcp__monday__create_doc, mcp__monday__get_asset_upload_url, mcp__monday__finalize_asset_upload]
+allowed-tools: [Read, Write, AskUserQuestion, mcp__monday__get_user_context, mcp__monday__search, mcp__monday__get_board_info, mcp__monday__get_column_type_info, mcp__monday__get_board_items_page, mcp__monday__get_board_activity, mcp__monday__get-timeline-items, mcp__monday__extract_signals, mcp__monday__get_updates, mcp__monday__search_meetings_content, mcp__monday__get_meetings_content, mcp__monday__change_item_column_values, mcp__monday__update_items, mcp__monday__create_column, mcp__monday__create_doc, mcp__monday__get_asset_upload_url, mcp__monday__finalize_asset_upload]
 ---
 
 # Win / loss review
@@ -13,23 +13,23 @@ Produce an evidence-based explanation of why one closed deal was won or lost. Ev
 
 ## 0. Rules
 
-- Reading is free. Writing (board columns, new columns, files, docs, timeline notes) happens only after the user confirms the exact values (step 7c). The recommended path is to save the result on the deal item, so offer it once, clearly, and do not nag.
+- Connector check first: call `get_user_context`. On error, tell the user to install and connect the monday MCP connector, and stop.
+- Reading is free. Writing (board columns, new columns, files, docs) happens only after the user confirms the exact values (step 7c). The recommended path is to save the result on the deal item, so offer it once, clearly, and do not nag.
 - Never assume board, column or label names. Discover them (step 2).
 - Never invent a reason. People act on these reviews, so a finding needs at least one cited data point (a stage change, an email, a note, a number).
 - Mark the deal outcome from the data, not from the user's wording, and tell the user if they differ.
 - One deal per run. If the user asks for several, run them one after another and keep each result separate. Do not write one deal's data into another item.
-- Connector check first: call `get_user_context`. On error, tell the user to install and connect the monday MCP connector, and stop.
 
-## 1. Ask the first-run questions (once per conversation, before any analysis)
+## 1. Ask the first-run questions (once per conversation, after the deal is confirmed closed)
 
-Skip any question the user already answered or said "always" or "never" about. Ask both in one message and remember the answers.
+First run step 2 (find the deal and confirm it is Won or Lost). Then ask both questions in one message with `AskUserQuestion`, skipping any the user already answered or said "always" or "never" about, and remember the answers.
 
 1. **Depth:** "Short analysis or deep analysis?"
    - **Short (default):** bottom line, key facts, do-next-time.
    - **Deep:** adds the full stage timeline, week-by-week activity, ranked drivers with dated evidence and a full comparison with other closed deals.
 2. **Board update (recommended):** "Should I save the result on the deal item in monday, so the review stays with the deal and your team can see and report on it?" Options: yes (recommended), or no (chat and artifact only).
 
-If the user is unsure, recommend yes and short. The deal can be identified (step 2.1) while waiting, but do not start the heavy reads (steps 3 to 5) until depth is answered.
+If the user is unsure, recommend yes and short. Do not start the heavy reads (steps 3 to 5) until depth is answered.
 
 ## 2. Find the deal and the board structure
 
@@ -41,11 +41,11 @@ If the user is unsure, recommend yes and short. The deal can be identified (step
    - Activities timeline: a column of type `unsupported`. It cannot be read as a column value. Use the timeline tool.
    - A long text column, if the user wants to write there (step 7c).
 3. Confirm the outcome: current stage label (Won or Lost) and group (for example "Closed Won"). Classify unusual endings explicitly: "no decision" or "went dark" is a loss, a deal that was reopened is judged by its latest close, and a deal won and later churned is judged on the win only (mention the churn).
-4. If the deal is not closed, stop and tell the user a post-mortem needs a closed deal. Offer to review it once it closes, or to look at its current health instead.
+4. If the deal is not closed, stop and tell the user a post-mortem needs a closed deal. Offer to review it once it closes, or to run `daily-briefing` on the board instead.
 
 ## 3. Read the stage history
 
-Call `get_board_activity` with the board id, `itemIds` set to the deal, `includeData: true` and a `fromDate` early enough to cover the deal's creation (use the item's `created_at`, or one year back). Page through the results, up to about 300 events; if there are more, say the history is truncated.
+Call `get_board_activity` with the board id, `itemIds` set to the deal, `includeData: true` and a `fromDate` early enough to cover the deal's creation (use the item's `created_at`, or one year back). `get_board_activity` has no paging: if the response looks cut off, split the range into smaller `fromDate` / `toDate` windows. Stop at about 300 events; if there are more, say the history is truncated.
 
 From the events, build an ordered list of stage changes:
 
@@ -90,7 +90,7 @@ Compute:
 | Customer voice | Objections, budget, timing, competitors, champions, blockers (see the privacy note below) |
 | Rep voice | Commitments, promised follow-ups, whether they were done |
 
-For customer and rep voice, also call `extract_signals` with `itemId` set to the deal, `resourceTypes: ["email_thread", "video_meeting", "phone_call", "activity"]`, `signalTypes: ["blocker", "objection", "buying_signal", "commitment", "stakeholder", "decision"]` and `timeWindowDays` covering the full cycle (close date minus first stage change, plus a week). Each signal cites its `communicationEventsIds`, so it counts as evidence. Use it to find objections, competitors, champions and promised follow-ups faster, and check the strongest ones against the timeline items. If it errors or returns nothing, carry on from the timeline alone.
+For customer and rep voice, also call `extract_signals` with `itemId` set to the deal, `resourceTypes: ["email_thread", "video_meeting", "phone_call", "activity"]`, `signalTypes: ["blocker", "objection", "buying_signal", "commitment", "stakeholder", "decision"]` `timeWindowDays` set to the days from the first stage change (or item creation) to today, plus 7 — the window counts back from today, not from the close date — and `maxCommunicationEvents: 200`. Signals cover only the most recent events in that window, so say so if the cycle was long. Each signal cites its `communicationEventsIds`, so it counts as evidence. Use it to find objections, competitors, champions and promised follow-ups faster, and check the strongest ones against the timeline items. If it errors or returns nothing, carry on from the timeline alone.
 
 If the item has meeting recordings or summaries, read them with `search_meetings_content` / `get_meetings_content`. Prefer these over guessing from titles.
 
@@ -104,6 +104,7 @@ On the same board, read closed deals with the same outcome and the opposite outc
 
 Keep the cost in check, because each deal needs its own history and timeline calls:
 
+- Read stage history for all comparison deals in one `get_board_activity` call with their ids in `itemIds` (split by date window if it comes back cut off), not one call per deal.
 - **Short mode:** about 8 deals per side. Prefer what the board already gives you (created and close dates, value) and only pull the timeline for the counts you actually quote.
 - **Deep mode:** about 20 deals per side.
 
@@ -162,13 +163,13 @@ The bottom line comes first and fits in one sentence. Every number comes from th
 
 Create a single-deal page with the bottom line, metric tiles (cycle vs median, stage changes, longest silence, contacts, close-date slips), the stage-path bar, touches per week, ranked drivers with strength and dated evidence, what to repeat, what to do differently, data gaps and sources. In short mode, build the compact version: bottom line, key facts and do-next-time.
 
-Use the artifact tool if this environment has one. If not, write the same content as a self-contained HTML file and tell the user where it is, or if that is not possible, say the chat summary is the only output. Never show invented numbers. Label missing data clearly.
+Use the artifact tool if this environment has one. If not, write the same content as a self-contained HTML file and tell the user where it is. If neither is possible, offer to put the deep analysis in a monday doc on the deal (`create_doc`, after confirmation in 7c), or say the chat summary is the only output. Never show invented numbers. Label missing data clearly.
 
 ### 7c. Update the board (only if the user chose yes in step 1)
 
-If the user chose no, skip to 7e. This is the only place where you ask for write confirmation, so make it count.
+If the user chose no, skip to 7e. Ask for confirmation once: a single plan with the columns to create, the exact value for each column and how the artifact is attached. Do not ask again per column or per file.
 
-**Step 1: find the columns.** Use the column list from step 2. Match by column type and by meaning of the title, not exact names:
+**7c-i: find the columns.** Use the column list from step 2. Match by column type and by meaning of the title, not exact names:
 
 | Field | Best column type | Notes |
 |---|---|---|
@@ -181,9 +182,9 @@ If the user chose no, skip to 7e. This is the only place where you ask for write
 
 Do not overwrite a column that already has content without showing the old value and asking.
 
-**Step 2: if columns are missing, offer to build them.** Adding columns changes a shared board, so list what is missing with the column type and a name, for example: "I couldn't find a place for the analysis. I suggest adding: Win/Loss Analysis (long text), Win/Loss Reason (dropdown), Cycle Days (numbers), Review Artifact (link). Want me to create these?" On a yes, create them with `create_column` (check `get_column_type_info` for the right settings). If the user declines, write only to the columns that exist and say what was left out.
+**7c-ii: if columns are missing, include them in the plan.** Adding columns changes a shared board, so list what is missing with the column type and a name, for example: "I couldn't find a place for the analysis. I suggest adding: Win/Loss Analysis (long text), Win/Loss Reason (dropdown), Cycle Days (numbers), Review Artifact (link). Want me to create these?" On a yes, create them with `create_column` (check `get_column_type_info` for the right settings). If the user declines, write only to the columns that exist and say what was left out.
 
-**Step 3: show and confirm.** Show the exact values per column and wait for a yes. Then write with `change_item_column_values` (or `update_items`). After writing, confirm in one line per column.
+**7c-iii: show and confirm.** Show the whole plan — new columns, the exact value per column, and the artifact attachment choice — and wait for one yes. Then write with `change_item_column_values` (or `update_items`). After writing, confirm in one line per column.
 
 ### Saving the artifact on the deal
 
@@ -193,11 +194,11 @@ After the artifact is created, suggest keeping it on the deal:
 - **Files column:** attach the artifact as a file so it travels with the deal. Suggest creating a files column if missing. Use the asset upload tools (`get_asset_upload_url`, then `finalize_asset_upload`). If the artifact cannot be exported as a file here, fall back to the link.
 - **monday doc column:** create a monday doc on the item with the review text and the artifact link at the top, and place it in a doc column. Use `create_doc` and attach it to the item.
 
-Ask which one the user prefers, name your recommendation (link plus doc), and wait for a yes before creating columns or files.
+Put the choice in the 7c-iii plan with your recommendation (link plus doc), so the user confirms it together with the column values.
 
 ### 7d. Optional document
 
-If the user asks for a document, create one as a Google Doc, Word document or another format they name, using the matching skill or connector. Include the deep analysis if it was run. Show what will be created and wait for a yes.
+If the user asks for a separate document, create a monday doc with `create_doc`. Use another format (Google Doc, Word) only if this environment has a connector for it. Include the deep analysis if it was run. Show what will be created and wait for a yes.
 
 ### 7e. Closing
 
@@ -206,3 +207,10 @@ State in one line each where the result now lives: chat, artifact, board columns
 ## 8. After the run
 
 In one line, tell the user what was read (stage events, timeline items, comparison deals, and anything truncated) and what was saved where. Offer one follow-up: run the same review on another closed deal.
+
+## Cross-skill handoffs
+
+- **To log-activity:** the review finds calls or meetings that were never logged → offer to log them on the deal.
+- **To activity-insights:** the review points to a rep-level pattern (for example, slow replies) → offer team activity numbers.
+- **To data-cleanup:** the loss-reason column is empty on most closed deals → offer a board health check.
+- **To daily-briefing:** the user asks about an open deal → offer the daily briefing for the board instead.

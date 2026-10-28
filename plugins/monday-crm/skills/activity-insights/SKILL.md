@@ -59,7 +59,7 @@ A synthesized summary with specific numbers and rep-level breakdowns. Never raw 
 
 1. If a board name is clear from the argument → `mcp__monday__search` or `mcp__monday__get_board_info` to resolve the ID.
 2. If multiple CRM boards exist → ask: *"Which board should I analyze — Deals, Contacts, or Leads?"*
-3. No board context → `mcp__monday__search({ query: "deals" })` to find the most likely CRM board. Still ambiguous → ask.
+3. No board context → `mcp__monday__search({ searchType: "BOARD", searchTerm: "deals" })` to find the most likely CRM board. Still ambiguous → ask.
 
 ---
 

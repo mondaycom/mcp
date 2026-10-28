@@ -8,7 +8,7 @@ allowed-tools: [Read, AskUserQuestion, mcp__monday__get_user_context, mcp__monda
 
 # Data Cleanup
 
-Two jobs in one skill for the recurring "my CRM is messy" pain (Sidekick's #1 negative-sentiment JTBD):
+Two jobs in one skill for the recurring "my CRM is messy" pain:
 - **Health check (report-only):** a scored structural audit of a CRM board — missing-data patterns, stalled groups, abandoned columns, automation gaps, and a 0–100 data-quality score — published as a diagnosis doc. No writes.
 - **Cleanup (fix):** audit the board for data gaps, let the user pick which to fix, then run a bounded, idempotent write loop.
 
@@ -279,7 +279,7 @@ Board Diagnosis — Sales Pipeline — Jun 15
 | Structure | 90 | Board structure looks sound |
 
 **P0 fixes (2)**
-- [P0] Owner blank on 12 active deals → batch-assign in bulk-data-hygiene
+- [P0] Owner blank on 12 active deals → batch-assign in fix mode
 - [P0] 8 deals stalled in "Discovery" >30d → review + advance or lose
 
 **P1 fixes (1)**

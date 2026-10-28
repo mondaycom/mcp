@@ -34,9 +34,7 @@ Flow: **Trigger → Detect intent (log / read / correct) → Resolve CRM item �
 - `search` / `get_board_info` / `get_board_items_page` — resolve CRM items by name or company.
 
 ## Cross-skill handoffs
-- **From meeting-to-deal:** after a meeting recap, suggest logging the meeting as a structured activity on the deal.
 - **From run-sequence:** when a sequence triggers a manual call step, suggest logging the call outcome.
-- **To daily-briefing:** logged activities feed the daily brief's "recent activity" section.
 - **From daily-briefing:** brief surfaces items with no activity in N days → suggest logging.
 - **To activity-insights:** when the user asks about team totals or rep comparisons rather than a specific item's history.
 
@@ -78,7 +76,7 @@ If ambiguous and no CRM item mentioned, ask:
    - Deal name ("Q2 renewal", "enterprise upgrade")
    - Item ID (if explicitly given)
 
-2. If name extracted → `mcp__monday__search({ query: "<name>", objectTypes: ["ITEM"] })`.
+2. If name extracted → `mcp__monday__search({ searchType: "ITEMS", searchTerm: "<name>", strategy: "SPEED" })` (retry with `strategy: "BALANCED"` if nothing comes back).
    - Single result → use it.
    - Multiple results → present top 5 with board context: *"Found multiple matches: (1) Acme Corp [Deals board] (2) Acme Inc [Leads board] (3) Acme - renewal [Deals board]. Which one?"*
    - Zero results → broaden: try partial name, try `get_board_items_page` on likely boards (Deals, Contacts, Leads). Still zero → ask user.

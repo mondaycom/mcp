@@ -67,29 +67,30 @@ claude plugin marketplace add anthropics/claude-plugins-community
 claude plugin install monday-crm@claude-community
 ```
 
-### From a marketplace (GitHub)
+### From the monday marketplace (GitHub)
 
 ```bash
 # Add the marketplace (one-time)
-claude plugin marketplace add https://github.com/<org>/<repo>
+claude plugin marketplace add mondaycom/mcp
 
 # Install the plugin
-claude plugin install monday-crm@<marketplace-name>
+claude plugin install monday-crm@monday-mcp
 ```
 
 ### From a local directory (development)
 
 ```bash
-# Add a local marketplace pointing at the plugin directory
-claude plugin marketplace add ./path/to/plugin
+# From a clone of mondaycom/mcp, add the repo root as a local marketplace
+claude plugin marketplace add /path/to/mcp
 
 # Install
-claude plugin install monday-crm@<local-marketplace-name>
+claude plugin install monday-crm@monday-mcp
 ```
 
 ## Getting started
 
-After installing, just ask for what you need (e.g. "give me my CRM deal
+The plugin installs disabled. Enable it with
+`claude plugin enable monday-crm@monday-mcp` (or from `/plugin`), then ask for what you need (e.g. "give me my CRM deal
 briefing"). On first use, Claude prompts for OAuth to connect the bundled
 `monday` MCP server via your browser — no API tokens to manage. Each skill
 verifies the connection (`get_user_context`) and, if you don't have a CRM
@@ -106,7 +107,8 @@ board yet, routes you to `workspace-builder` to build one.
 
 ## Modes
 
-Every skill supports three interaction modes:
+The pipeline skills (`daily-briefing`, `forecast`, `meeting-to-deal`,
+`data-cleanup`, `workspace-builder`) support three interaction modes:
 
 | Mode | Behavior |
 |---|---|
@@ -119,9 +121,12 @@ applies when unspecified.
 
 ## Safety rails
 
-All skills enforce:
+The pipeline skills enforce the rails below. The other skills confirm
+before every write, as described in each skill.
 
-- **No deletes** — never removes items, columns, boards, or groups.
+- **No deletes** — never removes items, columns, or boards.
+  (`workspace-builder` may remove the empty default group on a board it
+  just created, after you confirm.)
 - **No amount-column writes** — forecast integrity; amounts are flag-only.
 - **No cross-workspace moves** — items stay in their workspace.
 - **Batched confirm** — record-level writes are bundled into a single
