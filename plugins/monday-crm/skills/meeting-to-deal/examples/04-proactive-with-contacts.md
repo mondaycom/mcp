@@ -1,135 +1,90 @@
-# Example 4 — Proactive mode with β auto-contacts + notifications
+# Example 4 — Proactive mode with new contacts and commitment nudges
 
-Shows: Proactive mode approved upfront, 2 new contacts auto-created (with one connect-board link failure), notifications batched to sync doc item, 1 commitment nudge fired.
+Shows: Proactive approval captured once, recaps and a stage edit written without a further prompt, two contacts created (one deal link fails and is retried without it), nudges pinned to the recap updates, sync doc written last.
 
 ---
 
 **User:**
 > sync notetaker — proactive
 
-**Claude (step 0 — connector + NoteTaker check):**
-*[calls `mcp__monday__get_user_context` → `user: { id: 203911, name: "Priya Nair", email: "priya@monday.com" }`]*
-*[internal_domain = "monday.com"]*
-*[calls `mcp__monday__get_notetaker_meetings({ limit: 1 })` → OK]*
+**Step 0**
+*[`get_user_context` → `{ id: 203911, name: "Priya Nair" }` (no email); the Deals board's `get_board_info` shows `creator: { id: 203911, email: "priya@northwind.io" }` → `internal_domain = northwind.io`]*
+*[`explore_meetings({ limit: 1 })` → OK]*
 
-**Claude (step 1 — mode):**
-
-> Proactive mode will:
-> (a) write recaps to matched deals
-> (b) auto-create missing contacts on your Contacts board
-> (c) apply stage/last-touch edits when transcripts are unambiguous
-> (d) notify deal owners for commitments due this week
->
-> Amount columns stay untouched.
->
-> Approve all / review each batch / deny stage edits only?
+**Step 1 — Proactive approval (asked once)**
+> Proactive mode will (a) write recaps to matched deals, (b) create missing contacts, (c) apply high-confidence stage and last-touch edits, (d) notify deal owners about commitments due this week. Amount columns stay untouched. Approve all / approve all except stage edits / switch to Default?
 
 **User:** approve all
 
-**Claude (step 2 — time window):**
-No argument → last 24h. *(Default-window echo suppressed — not first run and meetings were found.)*
+**Step 2–3** — last 24h; *[`explore_meetings(…)` → 3 meetings; `get_meetings_content({ ids: [8811, 8812, 8813], include_summary: true, include_action_items: true })`]*
 
-**Claude (step 3 — pull meetings):**
-*[calls `get_notetaker_meetings(...)` → 3 meetings]*
+1. "Luminary Health — demo" (carlos@luminaryhealth.com, anita@luminaryhealth.com, priya@northwind.io)
+2. "Redwood Fintech — legal sign-off" (lena@redwoodfintech.com, priya@northwind.io)
+3. "Internal retro — Q2 planning" (priya@, daniel@, ori@northwind.io)
 
-1. "Luminary Health — demo" (attendees: carlos@luminaryhealth.com, anita@luminaryhealth.com, priya@monday.com · 45m)
-2. "Redwood Fintech — procurement review" (attendees: lena@redwoodfintech.com, priya@monday.com · 30m)
-3. "Internal retro — Q2 planning" (attendees: priya@monday.com, daniel@monday.com, ori@monday.com · 60m)
+**Step 4** — Deals `10046221612` (stage label ids: Discovery 0, Legal 1, Procurement 2, Won 3, Lost 4; last-touch `date_touch`). Contacts `10082334477` (email `email`, company `text_co`, relation `deal_link` → Deals, source `status_src` with label "Claude").
 
-**Claude (step 4 — resolve boards):**
-*[Deals board: `10046221612`. Contacts board: `10082334477`. Columns resolved on both.]*
+**Step 5 — match**
+- Meeting 1 → `luminaryhealth` ↔ "Luminary Health" → 5 → **matched** (deal 220100)
+- Meeting 2 → lena@redwoodfintech.com equals the deal's email column (+5) and domain matches (+5) → 10 → **matched** (deal 220101)
+- Meeting 3 → no external attendees → **skipped: internal-only**
 
-**Claude (step 5 — match):**
-- Meeting 1 → `luminaryhealth.com` domain → deal "Luminary Health" · score 8 → **matched**
-- Meeting 2 → `lena@redwoodfintech.com` email → deal "Redwood Fintech" email column exact match · score 5 → **matched** + stage transition: Discovery → Procurement signal (high confidence)
-- Meeting 3 → all `@monday.com` (internal_domain) + no deal-name match → **skipped** (internal-only)
+**Step 6 — synthesize**
+- Redwood Fintech: "we've cleared legal, I'm moving this to procurement today" → Legal → Procurement, **high** (explicit, maps to the existing "Procurement" label).
+- Commitments due within 7 days: Priya → send onboarding guide to Luminary (due Jun 12); Lena → send PO to Redwood (due Jun 14).
 
-**Claude (step 5 — β: check Contacts board):**
-*[`get_board_items_page(boardId: 10082334477)` → existing contacts: lena@redwoodfintech.com found (linked to Redwood Fintech deal). carlos@luminaryhealth.com: NOT found. anita@luminaryhealth.com: NOT found.]*
+**Step 7a — idempotency**
+*[`get_updates({ objectType: "Item", objectIds: ["220100", "220101"], limit: 100 })` → no `ref meeting-to-deal/8811|8812`]*
+*[contacts lookup: `get_board_items_page({ boardId: 10082334477, searchTerm: "carlos@luminaryhealth.com" })` → none; same for anita@ → none; lena@ is already a contact → 2 missing]*
 
-2 new contacts to create: carlos@luminaryhealth.com, anita@luminaryhealth.com.
+**Step 7c — write (no prompt: Proactive approved)**
+*[`change_item_column_values({ boardId: 10046221612, itemId: 220100, columnValues: "{\"date_touch\": {\"date\": \"2026-06-11\"}}" })`]*
+*[`create_update({ itemId: 220100, body: "<h3>Meeting recap — Luminary Health — demo</h3>…ref meeting-to-deal/8811…" })` → update 31001]*
+*[`change_item_column_values({ boardId: 10046221612, itemId: 220101, columnValues: "{\"status\": {\"label\": \"Procurement\"}, \"date_touch\": {\"date\": \"2026-06-11\"}}" })`]*
+*[`create_update({ itemId: 220101, body: "…ref meeting-to-deal/8812…<p>Applied: Legal → Procurement</p>…" })` → update 31002]*
 
-**Claude (step 6 — synthesize recaps):**
+**Step 8 — contacts**
+*[`create_item({ boardId: 10082334477, name: "Carlos Reyes", columnValues: "{\"email\": {\"email\": \"carlos@luminaryhealth.com\", \"text\": \"carlos@luminaryhealth.com\"}, \"text_co\": \"Luminary Health\", \"deal_link\": {\"item_ids\": [220100]}, \"status_src\": {\"label\": \"Claude\"}}" })` → error on `deal_link`]*
+*[retry once without `deal_link` → item 330501 — listed as "pending manual link"]*
+*[`create_item({ boardId: 10082334477, name: "Anita Shah", columnValues: "{…, \"deal_link\": {\"item_ids\": [220100]}, …}" })` → item 330502]*
 
-Meeting 1 (Luminary Health):
-- Key points: Live demo of CRM board + automations; team excited about Notetaker integration
-- Commitments: Priya to share onboarding guide by tomorrow; Carlos to loop in IT by end of week
-- Open questions: HIPAA compliance checklist — Carlos flagged need to confirm
+**Step 9 — nudges** (deal owner of both deals: Priya, 203911)
+*[`create_notification({ user_id: "203911", target_id: "31001", target_type: "Post", text: "Commitment due 2026-06-12 on Luminary Health: send onboarding guide to Carlos and Anita" })`]*
+*[`create_notification({ user_id: "203911", target_id: "31002", target_type: "Post", text: "Commitment due 2026-06-14 on Redwood Fintech: Lena to send the PO — follow up if it hasn't arrived" })`]*
 
-Meeting 2 (Redwood Fintech):
-- Key points: Procurement review call; Lena confirmed all legal items cleared
-- Commitments: Lena to send PO by Friday
-- Stage transition: Discovery → Procurement (Lena: "we've cleared legal, moving this to procurement now") — confidence: high
-
-**Claude (step 7 — Proactive: no batched confirm prompt; writes immediately):**
-
-*[Idempotency check — Meeting 1 (Luminary Health):]*
-*[`all_monday_api` → `{ items_by_id(ids: [220100]) { updates(limit: 50) { body } } }` → no existing update with `<!-- meeting-id: nm_8811 -->` found → proceed with new update]*
-
-*[`create_update(itemId: "luminary_001", body: "<recap>")` — OK]*
-*[`change_item_column_values(itemId: "luminary_001", { last_touch: "2026-06-11" })` — OK]*
-
-*[Idempotency check — Meeting 2 (Redwood Fintech):]*
-*[`all_monday_api` → no existing update with `<!-- meeting-id: nm_8812 -->` → proceed]*
-
-*[`create_update(itemId: "redwood_001", body: "<recap>")` — OK]*
-*[`change_item_column_values(itemId: "redwood_001", { last_touch: "2026-06-11", stage: "Procurement" })` — OK]*
-
-**Claude (step 8 — β: auto-create contacts):**
-
-*[`create_item(boardId: 10082334477, itemName: "Carlos Reyes", groupId: "new")` → itemId: contact_c001 — OK]*
-*[`change_item_column_values(itemId: contact_c001, { email: "carlos@luminaryhealth.com", company: "Luminary Health", source: "Claude" })` — OK]*
-*[`all_monday_api` connect-board link carlos → luminary_001 → error: `{ "error_code": "ColumnValueException", "message": "connect_boards column write failed" }` → skip link, will log as pending]*
-
-*[`create_item(boardId: 10082334477, itemName: "Anita Shah", groupId: "new")` → itemId: contact_a001 — OK]*
-*[`change_item_column_values(itemId: contact_a001, { email: "anita@luminaryhealth.com", company: "Luminary Health", source: "Claude" })` — OK]*
-*[`all_monday_api` connect-board link anita → luminary_001 → OK]*
-
-**Claude (step 10 — sync doc):**
-
-*[`create_doc(workspaceId, title: "Meeting sync — Wed, Jun 11", body: <sync summary>)` → itemId: doc_s001 — OK]*
+**Step 10 — sync doc** *[`create_doc({ location: "workspace", workspace_id: 4401, doc_kind: "private", doc_name: "Meeting sync — Jun 11, 2026", markdown: … })`]*
 
 ```markdown
-# Meeting sync — Wed, Jun 11
+# Meeting sync — Jun 11, 2026
 
-## Matched (2/3)
-- "Luminary Health — demo" → Luminary Health (deal url)
-- "Redwood Fintech — procurement review" → Redwood Fintech (deal url) (stage → Procurement)
+## Matched (2)
+- Luminary Health — demo → Luminary Health (https://…)
+- Redwood Fintech — legal sign-off → Redwood Fintech (https://…) · stage → Procurement
 
 ## Skipped (1)
-- "Internal retro — Q2 planning" — internal-only, no CRM relevance
+- Internal retro — Q2 planning — internal-only
 
-## Contacts created (2)
-- Carlos Reyes (carlos@luminaryhealth.com) — contact created, deal link pending — set manually
+## Contacts created (1)
 - Anita Shah (anita@luminaryhealth.com) → linked to Luminary Health
 
 ## Contacts pending manual link (1)
-- Carlos Reyes (carlos@luminaryhealth.com) — contact created, deal link pending — set manually
+- Carlos Reyes (carlos@luminaryhealth.com) — contact created, deal link failed — set it on the Contacts board
 
-Generated by Claude · 2026-06-11T09:14:00Z
-```
-
-**Claude (step 9 — notifications):**
-
-Commitments due within 7 days:
-- Priya to send onboarding guide to Luminary Health (due 2026-06-12 — "by tomorrow")
-- Lena (external) sending PO (due 2026-06-14 — "by Friday") — note: notification goes to deal owner Priya, not to Lena
-
-*[`create_notification({ userId: 203911, itemId: doc_s001, text: "Commitment due 2026-06-12 on Luminary Health: send onboarding guide to Carlos and Anita" })` — OK. Pinned to sync doc item (doc_s001) — not to an arbitrary deal item.]*
-*[`create_notification({ userId: 203911, itemId: doc_s001, text: "Commitment due 2026-06-14 on Redwood Fintech: Lena to send PO — follow up if not received" })` — OK.]*
+## Commitments due this week (2)
+- Luminary Health — Priya → send onboarding guide (due Jun 12)
+- Redwood Fintech — Lena → send PO (due Jun 14)
 
 ---
+Generated by Claude · meeting-to-deal · 2026-06-11T09:14:00Z
+```
 
-Synced 2 meetings to 2 deals. 1 skipped (internal). 2 contacts created (1 link pending). 2 commitment nudges sent. Doc: https://your-account.monday.com/docs/meeting-sync-wed-jun-11
+Synced 3 meetings to 2 deals (1 skipped as internal). 0 unmatched, 0 ambiguous, 2 contacts created (1 link pending). Doc: https://your-account.monday.com/docs/…
 
 ---
 
 ## What this example demonstrates
 
-- Proactive mode approval is captured once at Step 1 and cached for the full run — no per-step re-prompting.
-- `internal_domain` ("monday.com") used in Step 5 to identify and skip the all-internal retro meeting.
-- β auto-contact: Contacts board found → contacts created inline (no chat prompt to find the board).
-- connect-board link failure handled gracefully: contact still created, failure logged in sync doc as "pending — set manually" rather than halting the run.
-- Notifications pinned to the sync doc item ID (`doc_s001`), not to individual deal items — correct behavior for cross-deal commitment batches.
-- `all_monday_api` items_by_id idempotency check shown explicitly (Meeting 1 example, pre-write).
-- Default-window echo suppressed because meetings were found (not first run / not zero-result case).
+- Proactive approval is asked once in Step 1; no further prompts.
+- Item ids are numeric; every write uses the live tool arguments (`create_item.name` + `columnValues`, `create_notification.user_id / target_id / target_type`).
+- Contacts are linked to the deal in the same `create_item` call; a failed link is retried once without it and listed once, under "pending manual link".
+- Nudges point at the recap update on each deal (`target_type: "Post"`), so each commitment opens on its own deal. They run before the sync doc.

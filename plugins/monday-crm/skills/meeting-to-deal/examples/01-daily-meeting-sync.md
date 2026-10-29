@@ -1,106 +1,86 @@
 # Example 1 — Default mode, daily meeting sync, 3 meetings matched to deals
 
-Shows: yesterday's meetings pulled from NoteTaker, matched to deals by attendee email + company name, recaps posted as updates on matched deals, one unmatched meeting flagged in summary doc.
+Shows: yesterday's Notetaker meetings matched to deals by attendee domain, recaps posted as HTML updates, one stage edit and three last-touch dates applied after a single batched confirmation, one internal meeting skipped.
 
 ---
 
 **User:**
-> update CRM from yesterday's calls
+> update CRM from my recorded calls yesterday
 
-**Claude (step 0 — connector + NoteTaker check):**
-*[calls `mcp__monday__get_user_context` → `user: { id: 487214, name: "Kevin Cheng" }`]*
-*[calls `mcp__monday__get_notetaker_meetings({ since: "2026-06-02T00:00:00Z", until: "2026-06-03T00:00:00Z", limit: 50 })` → 4 meetings returned]*
+**Step 0 — connector, Notetaker, internal domain**
+*[`get_user_context` → `{ id: 487214, name: "Kevin Cheng" }` (no email); the Deals board's `get_board_info` shows `creator: { id: 487214, email: "kevin@northwind.io" }` → `internal_domain = northwind.io`]*
+*[`explore_meetings({ limit: 1 })` → OK → `notetaker_available: true`]*
 
-**Claude (step 1 — mode):**
-No explicit mode → Default. Will bundle all writes into a single batched confirm.
+**Step 1 — mode:** not declared → Default.
 
-**Claude (step 2 — time window):**
-User said "yesterday's" → `since: 2026-06-02T00:00:00Z`, `until: 2026-06-03T00:00:00Z`.
+**Step 2 — window:** "yesterday" → `2026-06-02T00:00:00Z` to `2026-06-03T00:00:00Z`.
 
-**Claude (step 3 — pull meetings):**
-4 meetings:
-1. "Helix Bio — renewal review" (attendees: sarah@helixbio.com, kevin@monday.com)
-2. "Gradient AI onboarding" (attendees: mike@gradientai.io, kevin@monday.com)
-3. "Weekly team standup" (attendees: kevin@monday.com, dana@monday.com, ravi@monday.com)
-4. "Spindrift Labs — contract negotiation" (attendees: tom@spindriftlabs.com, legal@spindriftlabs.com, kevin@monday.com)
+**Step 3 — pull meetings**
+*[`explore_meetings({ start_time_from: "2026-06-02T00:00:00Z", start_time_to: "2026-06-03T00:00:00Z", limit: 20 })` → 4 meetings]*
+*[`get_meetings_content({ ids: [7701, 7702, 7703, 7704], include_summary: true, include_action_items: true })`]*
 
-**Claude (step 4 — resolve boards):**
-*[favorites contain `Deals` (10046221612) → using as Deals board]*
-*[`get_board_info` → columns resolved: email, company, owner, stage, value, last-touch]*
+1. "Helix Bio — renewal review" (sarah@helixbio.com, kevin@northwind.io)
+2. "Gradient AI onboarding" (mike@gradientai.io, kevin@northwind.io)
+3. "Weekly team standup" (kevin@, dana@, ravi@northwind.io)
+4. "Spindrift Labs — contract call" (tom@spindriftlabs.com, legal@spindriftlabs.com, kevin@northwind.io)
 
-**Claude (step 5 — match):**
-- Meeting 1 → `sarah@helixbio.com` domain matches deal "Helix Bio" company column → score 8 → **matched**
-- Meeting 2 → `mike@gradientai.io` domain matches "Gradient AI" → score 8 → **matched**
-- Meeting 3 → all internal (`@monday.com`) + no deal-name match → **skipped** (internal-only)
-- Meeting 4 → `@spindriftlabs.com` matches "Spindrift Labs" + transcript contains "we agreed to move to procurement review" → score 8 → **matched** + stage transition signal (high confidence)
+**Step 4 — boards**
+*[favorites → `Deals` (10046221612); `get_board_info({ boardId: 10046221612, filters: { columns: { only: true } } })` → company `text_company`, stage `status` (label ids: Discovery 0, Proposal 1, Negotiation 2, Won 3 `is_done`, Lost 4), last-touch `date_touch`]*
+*[`get_board_items_page({ boardId: 10046221612, includeColumns: true, filters: [{ columnId: "status", operator: "not_any_of", compareValue: [3, 4] }], limit: 500 })` → 64 active deals, `has_more: false`]*
 
-**Claude (step 6 — synthesize recaps):**
+**Step 5 — match**
+- Meeting 1 → `helixbio` matches company "Helix Bio" → 5; runner-up 0 → **matched** (deal 5512001)
+- Meeting 2 → `gradientai` matches "Gradient AI" → 5 → **matched** (deal 5512002)
+- Meeting 3 → no external attendees, no deal name in title → **skipped: internal-only**
+- Meeting 4 → `spindriftlabs` matches "Spindrift Labs" → 5, title contains "Spindrift Labs" → +2 = 7 → **matched** (deal 5512003)
 
-Meeting 1 recap:
-- Key points: Discussed renewal timeline, pricing for additional seats
-- Commitments: Kevin to send updated proposal by Friday
-- Open questions: Whether to bundle AI credits with renewal
+**Step 6 — synthesize**
+*[Meeting 4's summary mentions signing; transcript fetched for that meeting only: `get_meetings_content({ ids: [7704], include_transcript: true })` → "We countersigned the order form this morning."]*
+- Spindrift Labs: stage signal Negotiation → Won, **high** (explicit signature, maps to the `is_done` label).
+- Helix Bio: "they want to move to procurement review next week" → Proposal → Negotiation suggested, **low** (future intent) → text only.
 
-Meeting 2 recap:
-- Key points: Kicked off onboarding, walked through board setup
-- Commitments: Mike to invite 3 team members by next week
-- Open questions: Integration with their existing Jira setup
+**Step 7a — idempotency**
+*[`get_updates({ objectType: "Item", objectIds: ["5512001", "5512002", "5512003"], limit: 50 })` → no `ref meeting-to-deal/7701|7702|7704` found]*
 
-Meeting 4 recap:
-- Key points: Contract terms reviewed, legal cleared standard MSA
-- Commitments: Tom to send redline by Wednesday, Kevin to prepare SOW
-- Stage transition: Negotiation → Won signal ("agreed to move to procurement review") — confidence: high
-
-**Claude (step 7 — publish α, batched confirm):**
-
-> I'll post these updates to your Deals board:
->
-> 1. **Helix Bio** — meeting recap (renewal review) + last-touch update
-> 2. **Gradient AI** — meeting recap (onboarding) + last-touch update
-> 3. **Spindrift Labs** — meeting recap (contract negotiation) + last-touch update + stage transition: Negotiation → Won
->
-> 1 meeting skipped (internal standup). 3 `create_update` + 3 `change_item_column_values` (last-touch) + 1 stage edit.
->
-> Apply all? (yes / review each / skip stage edits)
+**Step 7b — batched confirmation**
+> I'll write 3 recaps · 1 stage edit (Spindrift Labs: Negotiation → Won) · 3 last-touch dates. 1 suggested stage change stays as text (Helix Bio). 0 unmatched, 0 already logged, 1 internal meeting skipped. Proceed? (yes / show details / skip column edits / no)
 
 **User:** yes
 
-**Claude:**
-*[for Helix Bio: `create_update(itemId: "helix_001", body: "<recap>")` + `change_item_column_values(itemId: "helix_001", columnValues: { last_touch: "2026-06-02" })`]*
-*[for Gradient AI: `create_update(itemId: "gradient_001", body: "<recap>")` + `change_item_column_values(...)`]*
-*[for Spindrift Labs: `create_update(itemId: "spindrift_001", body: "<recap>")` + `change_item_column_values(itemId: "spindrift_001", columnValues: { last_touch: "2026-06-02", stage: "Won" })`]*
+**Step 7c — write**
+*[`create_update({ itemId: 5512001, body: "<h3>Meeting recap — Helix Bio — renewal review</h3><p><i>Jun 2, 2026 · 30m · 2 attendees · ref meeting-to-deal/7701</i></p>…" })` → update 90001]*
+*[`change_item_column_values({ boardId: 10046221612, itemId: 5512001, columnValues: "{\"date_touch\": {\"date\": \"2026-06-02\"}}" })`]*
+*[same for Gradient AI → update 90002 + last-touch]*
+*[`change_item_column_values({ boardId: 10046221612, itemId: 5512003, columnValues: "{\"status\": {\"label\": \"Won\"}, \"date_touch\": {\"date\": \"2026-06-02\"}}" })` → OK, so the recap can say "Applied"]*
+*[`create_update({ itemId: 5512003, body: "…ref meeting-to-deal/7704…<p>Applied: Negotiation → Won</p>…" })` → update 90003]*
 
-*[`create_doc(workspaceId, title: "Meeting sync — Tue, Jun 3", body: <sync summary with `<!-- claude-skill-id: meeting-to-deal -->` + `Generated by Claude` footer>)`]*
+**Step 10 — sync doc**
+*[`read_docs({ type: "workspace_ids", ids: ["4401"], order_by: "created_at", limit: 25 })` → no doc titled `Meeting sync — Jun 3, 2026`]*
+*[`create_doc({ location: "workspace", workspace_id: 4401, doc_kind: "private", doc_name: "Meeting sync — Jun 3, 2026", markdown: … })`]*
 
 ```markdown
-# Meeting sync — Tue, Jun 3
+# Meeting sync — Jun 3, 2026
 
-## Matched (3/4)
-- Helix Bio ← "Helix Bio — renewal review" (1 attendee matched)
-- Gradient AI ← "Gradient AI onboarding" (1 attendee matched)
-- Spindrift Labs ← "Spindrift Labs — contract negotiation" (2 attendees matched, stage → Won)
+## Matched (3)
+- Helix Bio — renewal review → Helix Bio (https://…)
+- Gradient AI onboarding → Gradient AI (https://…)
+- Spindrift Labs — contract call → Spindrift Labs (https://…) · stage → Won
 
 ## Skipped (1)
-- "Weekly team standup" — internal-only, no external attendees
+- Weekly team standup — internal-only
 
-## Unmatched (0)
-No unresolved attendees.
-
-Generated by Claude · 2026-06-03T08:30:00Z
+---
+Generated by Claude · meeting-to-deal · 2026-06-03T08:30:00Z
 ```
 
-Posted: https://your-account.monday.com/docs/meeting-sync-tue-jun-3
+Synced 4 meetings to 3 deals (1 skipped as internal). 0 unmatched, 0 ambiguous, 0 contacts created (0 link pending). Doc: https://your-account.monday.com/docs/…
 
 ---
 
 ## What this example demonstrates
 
-- NoteTaker availability checked at Step 0 alongside connector.
-- Time window parsed from natural language ("yesterday's calls").
-- Internal-only meetings auto-skipped (no external attendees, no deal-name match).
-- Matching by attendee email domain → company name column on Deals board.
-- Stage transition signal extracted from transcript ("agreed to move to procurement review"), flagged as high-confidence, included in batched plan.
-- Default mode: single batched confirm for all writes (3 recaps + 3 last-touch updates + 1 stage edit).
-- Safety rail held: no deletes, no amount-column writes, no cross-workspace moves. Stage edit explicitly shown in confirm plan.
-- `Generated by Claude` footer + `<!-- claude-skill-id: meeting-to-deal --><!-- meeting-id: <id> -->` for idempotency.
-- Sync summary doc lists matched, skipped, and unmatched meetings.
+- `internal_domain` comes from the user's own email; the standup is skipped because it has no external attendees.
+- Domain-only matches score 5 and pass the threshold after normalization (`helixbio.com` ↔ "Helix Bio").
+- Transcripts are fetched only for the one meeting whose stage signal needed verbatim evidence.
+- "Moving to procurement next week" is intent, not an outcome: it stays as a text suggestion; only the signed order form becomes a stage edit.
+- One confirmation covers recaps, the stage edit and last-touch dates; stage and last-touch for a deal go in one `change_item_column_values` call using an existing label.

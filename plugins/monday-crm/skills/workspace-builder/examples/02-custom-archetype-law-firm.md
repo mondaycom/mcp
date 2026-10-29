@@ -95,7 +95,7 @@ Adding example items to `Matters`...
 - Created `Park Family — green card` (Pending Decision, Source = Claude)
 - Created `Torres — case closed` (Closed, Won, Source = Claude)
 
-**[Internal: Step 7 — create_doc. Search for same-day doc with skill-id comment → none found. Create.]**
+**[Internal: Step 7 — create_doc. `read_docs` by workspace, exact same-day title → none found. Create.]**
 
 **[Internal: Step 9 summary.]**
 
