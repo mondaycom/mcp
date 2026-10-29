@@ -517,7 +517,7 @@ describe('GetBoardItemsPageTool', () => {
       });
     });
 
-    it('keeps resolved status labels and describes an unresolved status index', async () => {
+    it('returns a status label or null when the label is missing', async () => {
       mocks.setResponse({
         boards: [
           {
@@ -535,40 +535,30 @@ describe('GetBoardItemsPageTool', () => {
                       id: 'status',
                       type: NonDeprecatedColumnType.Status,
                       text: 'Done',
-                      label: 'Done',
-                      index: 1,
                       value: '{"index":1}',
                     },
                     {
                       id: 'status_blank',
                       type: NonDeprecatedColumnType.Status,
                       text: '',
-                      label: '',
-                      index: 7,
                       value: '{"index":7}',
                     },
                     {
                       id: 'status_empty',
                       type: NonDeprecatedColumnType.Status,
                       text: null,
-                      label: null,
-                      index: 5,
                       value: '{"index":5}',
                     },
                     {
                       id: 'status_unresolved',
                       type: NonDeprecatedColumnType.Status,
                       text: null,
-                      label: null,
-                      index: 9,
                       value: '{"index":9}',
                     },
                     {
                       id: 'status_missing',
                       type: NonDeprecatedColumnType.Status,
                       text: null,
-                      label: null,
-                      index: null,
                       value: null,
                     },
                     { id: 'text', type: NonDeprecatedColumnType.Text, text: '', value: '{"raw":"kept"}' },
@@ -589,8 +579,8 @@ describe('GetBoardItemsPageTool', () => {
       expect(parsedResult.items[0].column_values).toEqual({
         status: 'Done',
         status_blank: '',
-        status_empty: { index: 5, label: null, is_empty: true },
-        status_unresolved: { index: 9, label: null, is_empty: false },
+        status_empty: null,
+        status_unresolved: null,
         status_missing: null,
         text: { raw: 'kept' },
       });
@@ -614,8 +604,6 @@ describe('GetBoardItemsPageTool', () => {
                       id: 'status',
                       type: NonDeprecatedColumnType.Status,
                       text: '',
-                      label: null,
-                      index: 5,
                       value: null,
                       battery_value: [{ key: '1', count: 2 }],
                     },
