@@ -14,7 +14,11 @@ import {
 import { NonDeprecatedColumnType } from 'src/utils/types';
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '../test-utils/mock-api-client';
-import { GET_BOARD_INFO_ENTITY_KNOWLEDGE_FLAG, GetBoardInfoTool } from './get-board-info-tool';
+import {
+  GET_BOARD_INFO_API_VERSION,
+  GET_BOARD_INFO_ENTITY_KNOWLEDGE_FLAG,
+  GetBoardInfoTool,
+} from './get-board-info-tool';
 
 describe('formatBoardInfoAsJson - board structure', () => {
   it('should include core board fields and nested relations', () => {
@@ -458,6 +462,15 @@ describe('GetBoardInfoTool filtering', () => {
 
   afterEach(() => {
     jest.restoreAllMocks();
+  });
+
+  it('requests board info on the API version where an unresolved creator stays null', async () => {
+    mocks.setResponse({ boards: [boardPayload] });
+
+    const result = await callToolByNameRawAsync('get_board_info', { boardId: 123 });
+
+    expect(mocks.getMockRequest().mock.calls[0][2]).toEqual({ versionOverride: GET_BOARD_INFO_API_VERSION });
+    expect(parseToolResult(result).board.creator).toBeNull();
   });
 
   it('passes nested column and view ids through to the GraphQL query', async () => {
