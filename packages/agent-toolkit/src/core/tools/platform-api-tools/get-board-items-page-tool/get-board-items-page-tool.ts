@@ -330,7 +330,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
     }
 
     if (cv.type === NonDeprecatedColumnType.Status) {
-      return typeof cv.text === 'string' ? cv.text : null;
+      return cv.text ?? null;
     }
 
     // fallback logic for most column types
