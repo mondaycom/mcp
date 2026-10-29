@@ -9,7 +9,7 @@ Shows: one Deals board, the three activity reads (board activity, updates, timel
 
 **Step 0–1** — *[`get_user_context` → `{ id: 487214, name: "Kevin Cheng" }`]* Mode Default; destination `monday` (asked); verbosity `full`.
 
-**Step 2–4** — favorites contain one pipeline board, `Deals` (10046221612). *[`get_board_info({ boardId: 10046221612, filters: { columns: { only: true } } })` → stage `status` (Discovery 0, Proposal 1, Negotiation 2, Won 3 `is_done`, Lost 4), owner `person`, value `numbers` ($), probability `numbers` (%), close `date_close`, last touch `date_touch`]*
+**Step 2–4** — favorites contain one pipeline board, `Deals` (10046221612). *[`get_board_info({ boardId: 10046221612, filters: { columns: { only: true } } })` → stage `status` (label ids: Discovery 0, Proposal 1, Negotiation 2, Won 3 `is_done`, Lost 4), owner `person`, value `numbers` ($), probability `numbers` (%), close `date_close`, last touch `date_touch`]*
 
 **Step 5 — pull** (Tue 2026-05-05, window = last 24h)
 *[5a `get_board_items_page({ boardId: 10046221612, includeColumns: true, filters: [{ columnId: "status", operator: "not_any_of", compareValue: [3, 4] }], limit: 500 })` → 38 active deals]*

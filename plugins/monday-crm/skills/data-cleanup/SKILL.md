@@ -208,7 +208,7 @@ Compute `oldValue == newValue` per cell — never write a no-op (avoids audit-lo
 
 ## Step 6: Publish summary doc (Publish)
 
-`create_doc` (idempotent — first `read_docs({ type: "workspace_ids", ids: ["<workspace id>"], order_by: "created_at", limit: 25 })` and look for the exact title (DOCUMENTS search can miss a doc created minutes ago); if the same-day doc exists, append to it instead of creating a second one), title `Hygiene fix — <Mon DD>`. Body:
+`create_doc` (idempotent — first `read_docs({ type: "workspace_ids", ids: ["<workspace id>"], order_by: "created_at", limit: 5 })` and look for the exact title — results are newest first and carry each doc's full body, so keep the page small; DOCUMENTS search can miss a doc created minutes ago; if the same-day doc exists, append to it instead of creating a second one), title `Hygiene fix — <Mon DD>`. Body:
 
 ```markdown
 # Hygiene fix — <board name> · <Mon DD>

@@ -40,7 +40,7 @@ Recap and sync-doc templates live in `references/templates.md`. Worked runs: `ex
 ## Step 0: Connector check, Notetaker, internal domain
 
 1. `get_user_context`. On error print *"I don't see the monday connector active on this session. Install it from https://monday.com/mcp, then run this skill again."* and stop.
-2. **Internal domain:** take the domain of the user's email. If the email is missing, or the domain is a public mail provider (gmail.com, googlemail.com, outlook.com, hotmail.com, live.com, yahoo.com, icloud.com, me.com, aol.com, proton.me, protonmail.com, gmx.com and similar), set `internal_domain = none`. Never fall back to a vendor domain. With `internal_domain = none`, only the user's own address counts as internal.
+2. **Internal domain:** `get_user_context` does not return the user's email. Take it from `get_board_info` on the Deals board (Step 4) when `creator.id` equals the user's id (`creator.email`); otherwise ask once: *"Which email domain does your company use?"*. If the domain is a public mail provider (gmail.com, googlemail.com, outlook.com, hotmail.com, live.com, yahoo.com, icloud.com, me.com, aol.com, proton.me, protonmail.com, gmx.com and similar), or the user can't say, set `internal_domain = none`. Never fall back to a vendor domain. With `internal_domain = none`, only addresses the user confirms as theirs count as internal.
 3. `explore_meetings({ limit: 1 })`. Results → `notetaker_available: true`. Auth, permission or not-enabled error → `notetaker_available: false` and continue (Step 3b collects notes from the user). Do not stop.
 
 No write happens before Step 7.
@@ -90,8 +90,8 @@ Build one meeting entry: `title` (first line, or ask), `date` (today unless stat
 3. `get_board_info({ boardId, filters: { columns: { only: true } } })` on each. Resolve columns by type, not title:
    - Deals: keep the board's workspace id (for the Step 10 doc), `email` (optional), company — a `text` column, or a `mirror` column showing the linked account or company (use its displayed text); many boards have neither, so the deal name is also used for company matching — owner `people`, stage `status`, last-touch `date` (title hint touch / contact / interaction; skip if none), value `numbers` (read only), and any `board_relation` column pointing at Contacts.
    - Contacts: `email`, company `text`, `phone`, owner `people`, a `board_relation` column pointing at the Deals board (optional), a source `status` column (optional).
-4. **Stage labels:** from the stage column's labels, Won = labels with `is_done: true`; Lost = label text containing lost / perdido / verloren / perdu. No `is_done` label → ask which label means Won. Keep every label's `index` and text — Step 6 may only propose, and Step 7c only write, labels from this list.
-5. **Active deals:** `get_board_items_page({ boardId, includeColumns: true, filters: [{ columnId: <stage>, operator: "not_any_of", compareValue: [<won idx>, <lost idx>] }], limit: 500 })`; follow `nextCursor` while `has_more`, up to 2,000 deals (above that, add a sampling note). Check the filter shape with `get_column_type_info({ columnType: "status", fetchMode: "guidelines" })` if the call is rejected.
+4. **Stage labels:** from the stage column's labels, Won = labels with `is_done: true`; Lost = label text containing lost / perdido / verloren / perdu. No `is_done` label → ask which label means Won. Keep every label's `id` and text — Step 6 may only propose, and Step 7c only write, labels from this list. Status filters compare against each label's `id` from `get_board_info`, not its `index` (the `index` is display order; filtering on it silently returns the wrong items).
+5. **Active deals:** `get_board_items_page({ boardId, includeColumns: true, filters: [{ columnId: <stage>, operator: "not_any_of", compareValue: [<Won label id>, <Lost label id>] }], limit: 500 })`; follow `nextCursor` while `has_more`, up to 2,000 deals (above that, add a sampling note). Check the filter shape with `get_column_type_info({ columnType: "status", fetchMode: "guidelines" })` if the call is rejected.
 
 ## Step 5: Match meetings to deals
 
@@ -168,7 +168,7 @@ More than 20 nudges → send none; list them under "Commitments due this week" i
 
 ## Step 10: Sync doc and chat summary
 
-1. `read_docs({ type: "workspace_ids", ids: ["<workspace id>"], order_by: "created_at", limit: 25 })` and look for the exact title (DOCUMENTS search can miss a doc created minutes ago). If a doc titled exactly `Meeting sync — <Mon DD, YYYY>` exists, append to it with `update_doc` (see `references/templates.md`).
+1. `read_docs({ type: "workspace_ids", ids: ["<workspace id>"], order_by: "created_at", limit: 5 })` and look for the exact title — results are newest first and carry each doc's full body, so keep the page small; DOCUMENTS search can miss a doc created minutes ago. If a doc titled exactly `Meeting sync — <Mon DD, YYYY>` exists, append to it with `update_doc` (see `references/templates.md`).
 2. Otherwise `create_doc({ location: "workspace", workspace_id: <workspace id from the Deals board's get_board_info>, doc_kind: "private", doc_name: "Meeting sync — <Mon DD, YYYY>", markdown: <sync doc> })`.
 3. No Deals board (Step 4), or both calls fail → print the sync doc in chat instead.
 4. Last line: the chat summary from `references/templates.md`. If more than 30% of external attendees matched no deal and no contact, add the data-cleanup suggestion.

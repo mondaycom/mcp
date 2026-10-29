@@ -107,25 +107,25 @@ Columns are resolved by type, with titles only as hints (boards are often not in
 
 ## Step 4: Terminal labels (pipeline and leads)
 
-From the stage column's labels: Won = `is_done: true`; Lost = text containing lost / perdido / verloren / perdu; for leads also Disqualified / Converted. No `is_done` label on a pipeline board → ask which label means Won. Cache the label indexes.
+From the stage column's labels: Won = `is_done: true`; Lost = text containing lost / perdido / verloren / perdu; for leads also Disqualified / Converted. No `is_done` label on a pipeline board → ask which label means Won. Cache the label `id`s. Status filters compare against each label's `id` from `get_board_info`, not its `index` (the `index` is display order; filtering on it silently returns the wrong items).
 
 ## Step 5: Pull data
 
 Window for "recent" = the last 24h (72h on Mondays, so the weekend is covered).
 
 ### 5a — Items
-- **Pipeline:** `get_board_items_page({ boardId, includeColumns: true, filters: [{ columnId: <stage>, operator: "not_any_of", compareValue: [<terminal idx>] }], limit: 500 })`; follow `nextCursor` while `has_more`, up to 2,000 items (above that, add a sampling note). Use `board_insights` for totals when the board has more active items than you pulled.
+- **Pipeline:** `get_board_items_page({ boardId, includeColumns: true, filters: [{ columnId: <stage>, operator: "not_any_of", compareValue: [<terminal label ids>] }], limit: 500 })`; follow `nextCursor` while `has_more`, up to 2,000 items (above that, add a sampling note). Use `board_insights` for totals when the board has more active items than you pulled.
 - **Contacts / accounts:** same call without the stage filter.
 - **Leads:** same as pipeline with the leads terminal labels; order by `__creation_log__` desc for recent additions.
 
 ### 5b — Board activity
-`get_board_activity({ boardId, fromDate: <window start ISO>, toDate: <now ISO> })` — stage moves and other column changes. **Yesterday's movements** = stage changes into a Won or Lost label inside the window (not "updated in the last 24h", which also catches edits to old deals). For leads boards use a 7-day `fromDate` instead, so Going stale (no status change in 7 days) can be computed; movements still use only the recent window.
+`get_board_activity({ boardId, fromDate: <window start ISO>, toDate: <now ISO>, includeData: true })` — stage moves and other column changes. Without `includeData` the entries carry no item, column or value, so they can't be read; on busy boards pass `itemIds` for the active items to keep the payload small. **Yesterday's movements** = stage changes into a Won or Lost label inside the window (not "updated in the last 24h", which also catches edits to old deals). For leads boards use a 7-day `fromDate` instead, so Going stale (no status change in 7 days) can be computed; movements still use only the recent window.
 
 ### 5c — Updates feed
 `get_updates({ objectType: "Board", objectIds: ["<boardId>"], includeItemUpdates: true, fromDate: <window start>, toDate: <now>, limit: 100 })` — team comments and meeting recaps (recognize meeting-to-deal recaps by their `ref meeting-to-deal/` line).
 
 ### 5d — Timeline for the items that matter
-After a first synthesis pass (Step 6) has picked the items in **Needs you today**, call `get-timeline-items({ item_id: <id>, limit: 10 })` for up to 10 of them, Going cold, Follow-up and Slipping candidates first (those are the buckets a newer touch can change). Entries come newest first, so one page is enough. Emails, meetings and calls often come back with type `custom` and a `custom_activity_id`: call `get-custom-activities` once and map ids to names (Email, Meeting, Call, …) to classify them. Use the entries to:
+After a first synthesis pass (Step 6) has picked the items in **Needs you today**, call `get-timeline-items({ item_id: <id>, limit: 10 })` for up to 10 of them, Going cold, Follow-up and Slipping candidates first (those are the buckets a newer touch can change). Entries come newest first, so one page is enough. A deal's timeline also shows activity from its linked contact on other deals: count it as a relationship touch, and say "last contact touch" when the newest entry isn't about this deal. Emails, meetings and calls often come back with type `custom` and a `custom_activity_id`: call `get-custom-activities` once and map ids to names (Email, Meeting, Call, …) to classify them. Use the entries to:
 - correct "last touch" when the timeline is newer than the date column (a call logged yesterday means the deal is not going cold), and
 - count calls, emails, meetings and notes in the window for the activity line, labelled "among the <N> items checked".
 A meeting-to-deal recap from 5c (an update with `ref meeting-to-deal/`) also counts as a touch on its deal, dated by the meeting date in its second line. Items not checked keep their date-column value and get `(timeline not checked)` when they land in Going cold.
@@ -182,7 +182,7 @@ Apply verbosity, sections and style from Step 1, then fill the matching template
    - `doc`, or the fallback: a private doc in the CRM board's workspace.
 2. **Idempotency (one brief per day per target):**
    - Item: `get_updates({ objectType: "Item", objectIds: ["<item id>"], limit: 25 })`; if an update contains `daily-briefing · <today YYYY-MM-DD>`, post the new brief as a reply (`create_update` with `parentId` of that update) instead of a new top-level update.
-   - Doc: `read_docs({ type: "workspace_ids", ids: ["<workspace id>"], order_by: "created_at", limit: 25 })` and look for the exact title (DOCUMENTS search can miss a doc created minutes ago); if today's exact title exists, append with `update_doc` (`add_markdown_content`, starting with `## Refreshed at <HH:MM>`).
+   - Doc: `read_docs({ type: "workspace_ids", ids: ["<workspace id>"], order_by: "created_at", limit: 5 })` and look for the exact title — results are newest first and carry each doc's full body, so keep the page small; DOCUMENTS search can miss a doc created minutes ago; if today's exact title exists, append with `update_doc` (`add_markdown_content`, starting with `## Refreshed at <HH:MM>`).
 3. **Confirm (Default mode):** *"I'll post this brief as <an update on 'My Morning' | a private doc 'Morning Briefing — …'>. OK? (yes / no)"*. Silent and Proactive skip it.
 4. **Write:**
    - Item: `create_update({ itemId, body: <brief as HTML> })`.
