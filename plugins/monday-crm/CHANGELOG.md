@@ -3,6 +3,35 @@
 All notable changes to the `monday-crm` Claude plugin are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.6.1] — 2026-10-28
+
+### Changed
+- **One skill per phrase.** Descriptions now say which skill owns overlapping requests: `log-activity` records one call, meeting or note you describe; `meeting-to-deal` turns Notetaker recordings or pasted transcripts into deal recaps; `daily-briefing` is about today, `forecast` about periods ("pipeline summary" moved to `forecast`); `run-sequence` phrases say "sequence" and `automate-crm` points sequence requests there; `activity-insights` is for team and rep totals, not one item's history.
+- **Activity data model, documented in the skills.** Single activities go to the item timeline (`log-activity`); meeting recaps go to the deal's updates feed (`meeting-to-deal`); `daily-briefing` now reads both, plus `get-timeline-items` for the items in "Needs you today", so activity logged on the CRM timeline counts as a touch.
+- **`daily-briefing` shows the brief in chat by default.** Posting to monday (update on "My Morning" or a private doc) happens only when you ask ("post my briefing to monday"). Output config and templates moved to `references/`; SKILL.md is about 60% shorter. Synthesis buckets and template sections now match one-to-one; calendar and email "future" stubs removed; closing message reflects what actually happened.
+- **`meeting-to-deal` restructured.** Silent mode writes recaps and the sync doc only; stage edits, last-touch dates, contacts and nudges need Default or Proactive. New step that writes confirmed stage and last-touch edits (existing labels only). Active deals defined inline with paging. Read-only branch for "what did I commit to". Templates moved to `references/templates.md`; duplicate output-template section removed.
+- `meeting-to-deal` writes contacts with one `create_item` call (`name` + `columnValues`, deal link included, no hard-coded group), the sync doc as a private doc in the Deals board's workspace, and appends to the same-day doc with `update_doc`.
+
+### Fixed
+- `meeting-to-deal` internal domain: never defaults to a vendor domain; public mail providers (gmail.com, outlook.com and similar) are not treated as a company domain.
+- `meeting-to-deal` idempotency uses a visible `ref meeting-to-deal/<meeting>` line near the top of each recap (HTML comments may be stripped and long bodies are truncated), checked with `get_updates`; recaps from older versions are recognized by title and date. One skill id throughout.
+- `meeting-to-deal` no longer prompts to add a column it has no tool for; `all_monday_api` and `list_users_and_teams` removed from its allowed tools. `log-activity` drops unused `all_monday_api` and `list_workspaces`.
+- `log-activity` maps calls and meetings to the account's real activity types and, when none fits, says before the write that it will log a prefixed note; the preview shows the title and timezone.
+- `daily-briefing` no longer claims it can edit stage, owner or last-touch columns; "yesterday's movements" come from stage changes, not "updated in the last 24h"; one brief per target per day (reply or append on re-runs); all step references corrected.
+- `meeting-to-deal` examples rewritten to the current rules (Notetaker-missing example continues to manual input instead of stopping; numeric ids; live tool arguments); `02-noteTaker-missing.md` renamed to `02-notetaker-missing.md`.
+- Examples are now linked from every SKILL.md that has them.
+- `meeting-to-deal` writes a deal's stage and last-touch edits before its recap, so a recap only says "Applied" for an edit that succeeded. Contacts are looked up before the confirmation, so the contact count shown there is real. Company matching uses explicit normalization and prefix rules, plus a mirrored account name or the deal name when there is no company column, and linked contacts' emails. Manual notes confirm the deal by name. Several meetings on one deal merge their column edits.
+- `log-activity` resolves board names for search results and drops activity-log board rows; reads the timeline with a page size and cursor.
+- `daily-briefing` maps `custom` timeline entries through `get-custom-activities`, checks Going cold / Follow-up / Slipping first and marks unchecked items, counts meeting-to-deal recaps as touches, matches meetings to their recaps, filters before de-duplicating buckets (tasks survive `quick`), widens the window to 7 days for stale leads, and skips a Proactive nudge on any deal nudged in the last 7 days. `daily-briefing` examples rewritten to the current steps.
+- `list_workspaces` removed from `meeting-to-deal` and `daily-briefing` (unused).
+- **Idempotency markers are now visible text.** A live write test showed monday strips `<!-- claude-skill-id -->` HTML comments from update bodies, so re-runs could not find earlier output and posted duplicates. `daily-briefing`, `meeting-to-deal`, `forecast`, `data-cleanup` and `workspace-builder` (and their examples) now use a visible `Generated by Claude · <skill>` footer (plus `ref meeting-to-deal/<id>` on recaps). Artifacts from earlier versions are matched by title. Verified live: the visible `ref` line and footer come back intact in `get_updates`; HTML comments are also dropped from `create_doc` markdown.
+- `create_update` bodies are sent as one line of HTML: monday turns newlines between tags into extra `<br>` blank lines.
+- Same-day doc checks (`meeting-to-deal`, `daily-briefing`, `data-cleanup`, `workspace-builder`) use `read_docs` by workspace, ordered by creation, with an exact-title match. A live test showed DOCUMENTS search misses a doc created minutes earlier, which would have created duplicate docs on re-runs.
+- `run-sequence` (live test): `get-board-sequences` without `board_id` returns only your own sequences, so list output says so and find-by-name retries with the board; never adds `{{...}}` placeholders to email steps (a live test sent `{{name}}` literally) and warns when the user's copy has them; reports a failed `get-contact-journey` read instead of retrying.
+- `forecast`: `create_dashboard` has no description field, so the skill no longer writes a marker there; an existing dashboard is found by exact name and creator (`search` DASHBOARDS); calls use the live arguments (`name`, `workspace_id`, `board_ids`).
+
+---
+
 ## [0.6.0] — 2026-10-28
 
 ### Added

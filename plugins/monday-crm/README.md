@@ -23,13 +23,13 @@ dashboard, or doc — so work stays inside monday.
 
 | Skill | What it does | Trigger phrases |
 |---|---|---|
-| `daily-briefing` | Prioritized daily deal briefing → monday update | "morning briefing", "what should I focus on today", "pipeline summary" |
+| `daily-briefing` | Prioritized briefing for today, in chat (posted to monday on request) | "morning briefing", "what should I focus on today", "what needs my attention" |
 | `forecast` | Commit / best-case / pipeline → monday dashboard | "build me a forecast", "show me Q2 pipeline", "commit vs best-case" |
-| `meeting-to-deal` | Meeting transcripts → deal updates + stage signals | "log my meetings to deals", "sync notetaker", "update CRM from calls" |
+| `meeting-to-deal` | Notetaker meetings or pasted transcripts → deal recaps + stage signals | "log my meetings to deals", "sync notetaker", "update CRM from my recorded calls" |
 | `workspace-builder` | CRM workspace from scratch → boards + columns + stages | "build me a CRM from scratch", "create CRM boards for me", "set up my pipeline" |
 | `data-cleanup` | Board health check (report) + bulk data fixes → doc + writes | "run a board health check", "clean my CRM", "fix my data", "what's broken in my CRM" |
 | `run-sequence` | Create, enroll, activate, and track email sequences | "create a sequence", "enroll this lead", "how is my sequence performing" |
-| `log-activity` | Log calls, meetings, and notes to item timelines; read activity history | "log my call with", "add a note to the deal", "what happened on this account" |
+| `log-activity` | Log one call, meeting or note to an item's timeline; read its activity history | "log my call with", "add a note to the deal", "what activities happened on this deal" |
 | `activity-insights` | Team activity analytics: volume by rep and type, rep comparisons | "how many calls did my team make", "compare reps", "activity this week" |
 | `win-loss-review` | Post-mortem on one closed deal: stage history, activity timeline, comparison with other closed deals | "why did we lose Acme", "win-loss review for this deal" |
 | `automate-crm` | Create and manage board automations in plain language | "when a deal is won, notify", "automate my follow-ups", "list my automations" |
@@ -113,7 +113,7 @@ The pipeline skills (`daily-briefing`, `forecast`, `meeting-to-deal`,
 | Mode | Behavior |
 |---|---|
 | **Default** | Confirm before every write. Safe for first-time use. |
-| **Silent** | Skip confirmations for the skill's primary output. Extended actions (stage edits, contact creation) still ask. |
+| **Silent** | Skip confirmations for the skill's primary output. Extended actions (stage edits, contact creation, nudges) are not run. |
 | **Proactive** | Session-level approval for writes + extended actions (stage edits, contact creation, fix-tasks). |
 
 Set mode by saying e.g. "morning briefing in proactive mode". Default

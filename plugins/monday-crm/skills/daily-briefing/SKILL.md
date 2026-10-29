@@ -1,635 +1,211 @@
 ---
 name: daily-briefing
-description: "Start your day with a prioritized CRM briefing — works for any monday CRM setup: pipeline, contacts, accounts, leads, or no board at all. Use when someone says 'morning briefing', 'daily brief', 'what's on my plate today', 'catch me up on my deals', 'what needs attention', 'what needs my attention', 'anything urgent in my deals', 'what's hot in my pipeline', 'pipeline summary', 'start my day', or 'daily standup prep'."
+description: "Prioritized CRM briefing for today — what needs attention now across deals, contacts, accounts or leads, with tasks due today, deals closing or slipping, contacts going cold, and a summary of recent meetings and activity. Works on any monday CRM setup, or with no board at all. Use when someone says 'morning briefing', 'daily brief', 'what's on my plate today', 'catch me up on my deals', 'what needs my attention', 'anything urgent in my deals', 'what should I focus on today', 'start my day', or 'daily standup prep'. Not for period forecasts or commit-vs-best-case views (use forecast)."
 argument-hint: "[optional: board name or ID, e.g. 'Deals', 'Contacts', or '12345678']"
 user-invocable: true
-allowed-tools: [Read, AskUserQuestion, mcp__monday__get_user_context, mcp__monday__list_workspaces, mcp__monday__search, mcp__monday__get_board_info, mcp__monday__get_column_type_info, mcp__monday__get_board_items_page, mcp__monday__board_insights, mcp__monday__explore_meetings, mcp__monday__get_meetings_content, mcp__monday__get_board_activity, mcp__monday__get_updates, mcp__monday__create_update, mcp__monday__create_doc, mcp__monday__create_notification, mcp__monday__list_users_and_teams, mcp__monday__all_monday_api]
+allowed-tools: [Read, AskUserQuestion, mcp__monday__get_user_context, mcp__monday__search, mcp__monday__get_board_info, mcp__monday__get_column_type_info, mcp__monday__get_board_items_page, mcp__monday__board_insights, mcp__monday__explore_meetings, mcp__monday__get_meetings_content, mcp__monday__get_board_activity, mcp__monday__get_updates, mcp__monday__get-timeline-items, mcp__monday__get-custom-activities, mcp__monday__create_update, mcp__monday__create_doc, mcp__monday__read_docs, mcp__monday__update_doc, mcp__monday__create_notification, mcp__monday__list_users_and_teams]
 ---
 
-# Morning Briefing
+# Daily Briefing
 
-Produces a daily prioritized briefing over the user's monday CRM data and **publishes it as a monday artifact** — so the brief lives inside monday, not just in the chat.
+Builds a prioritized brief over the user's monday CRM data. By default the brief is shown **in chat only**; it is posted to monday only when the user asks.
 
-Works for **any monday CRM setup**: pipeline users get deal buckets and pipeline totals; contacts/accounts users get relationship health and follow-up queues; lead managers get inbound lead status. If the user has no monday CRM board at all, the skill runs in standalone mode — ask for context, produce a useful brief from what they tell you.
+Board type drives the content: pipeline boards get deal buckets and totals, contacts/accounts boards get follow-up queues and relationship health, leads boards get inbound status. With no CRM board, the skill asks a couple of questions and builds a brief from the answers.
 
-When monday CRM features are in use, the brief automatically gets richer:
+Reference files (read when the step says so):
+- `references/output-config.md` — destination, verbosity, sections, style, saved preferences.
+- `references/templates.md` — brief templates per board type.
+- Worked runs: `examples/01-default-mode-admin.md`, `examples/02-non-admin-fallback.md`.
 
-| monday CRM feature | What it adds | MCP access |
-|---|---|---|
-| **Notetaker** | Recent meeting notes matched to open deals or contacts | `explore_meetings` + `get_meetings_content` |
-| **Activity log** | Logged calls, emails, and meetings on deals/contacts (last 48h) | `get_board_activity` + `get_updates` |
-| **Tasks / follow-ups** | Items with a date column = today across deals or contacts board | `get_board_items_page` with date filter |
-| **Calendar sync** (Outlook/Google) | Today's CRM-linked meetings | Not yet in MCP — skipped; wired when available |
-| **Email sync** (Gmail/Outlook) | Tracked email threads on deals/contacts | Not yet in MCP — skipped; logged emails accessible today via `get_updates` on contacts/deals |
-
-> monday CRM's calendar and email sync features exist in the product but are not fully exposed via the MCP connector yet. The skill attempts to reach them via `all_monday_api` raw GraphQL. If the data isn't there, it notes the gap in the brief and skips the section — it does not error out.
-
-Flow: **Connector check → Mode → Connector discovery → Board detection → Board type → Data pull → Synthesize → Publish → Share (opt-in) → Proactive (opt-in)**.
+Flow: **Connector check → Mode + config → Boards → Board type → Schema → Pull → Synthesize → Render → Publish (opt-in) → Share (opt-in) → Proactive (opt-in) → Close**.
 
 ## Input
-- Optional: board name or ID via argument.
-- Optional: mode override (Default / Silent / Proactive) via project instructions or one-shot prompt.
+- Optional: board name or ID.
+- Optional: mode (Default / Silent / Proactive) and output config in the prompt or saved preferences.
 
 ## Output
-- **α (default):** A monday update on a pinned "My Morning" item OR a new doc in the user's personal workspace, titled `Morning Briefing — <weekday>, <Mon DD>`. Body carries the `Generated by Claude` footer + an HTML comment `<!-- claude-skill-id: daily-briefing -->` for idempotency. Markdown brief printed in chat as a mirror.
-- **β (Share mode, opt-in):** Notification to manager + update on team-rollup board.
-- **Proactive extension (opt-in):** Per-item `create_update` on stalled records; `create_notification` for commitments due today.
-- **Standalone mode (no board):** Brief printed in chat only — no monday artifact (nothing to publish to).
+- **Chat brief (default):** rendered from `references/templates.md`.
+- **monday artifact (opt-in):** an update on the user's "My Morning" item, or a private doc `Morning Briefing — <weekday>, <Mon DD>, <YYYY>`.
+- **Share (opt-in):** notification to a teammate pointing at the posted brief.
+- **Proactive (opt-in):** nudge updates on going-cold records and notifications for items due today.
 
-## Knowledge
-- Board type detection + synthesis buckets per type (§ Steps 2b and 6).
-- Shared artifact conventions (§ Shared patterns).
-
-## Tools (MCP)
-- `get_user_context` — resolve user + favorite boards.
-- `list_workspaces` — enumerate workspaces when search is ambiguous.
-- `search` — find CRM boards by broad search terms.
-- `get_board_info` — board schema + column IDs + labels.
-- `get_column_type_info` — resolve columns by type when names aren't English.
-- `get_board_items_page` — pull active records, recently closed, recent activity.
-- `board_insights` — aggregate fallback when >200 items.
-- `create_update` — publish α to pinned item; proactive nudges on stalled records.
-- `create_doc` — publish α as a doc when no pinned item exists.
-- `create_notification` — β share; proactive alert for commitments due today.
-- `list_users_and_teams` — resolve recipient for β share.
-- `all_monday_api` — escape hatch for doc updates / metadata lookups not in wrapped tools.
+## Where activity lives (what this skill reads)
+- **Timeline** (`get-timeline-items`) — calls, meetings, emails and notes logged on the CRM item, including everything log-activity writes and synced emails.
+- **Updates feed** (`get_updates`) — team comments and the meeting recaps meeting-to-deal posts.
+- **Board activity** (`get_board_activity`) — column changes such as stage moves.
+The brief reads all three; none of them alone gives the full picture.
 
 ## Cross-skill handoffs
-- **To forecast:** If briefing surfaces forecast hygiene issues, suggest `/monday-crm:forecast`.
-- **To data-cleanup:** If >30% of records are unowned, or core fields missing on most items, suggest `/monday-crm:data-cleanup` (health check).
+- **To forecast:** for period views (this quarter, by close month, commit vs best case), suggest `/monday-crm:forecast`.
+- **To data-cleanup:** if more than 30% of records are unowned or core fields are missing on most items, suggest `/monday-crm:data-cleanup`.
+- **To log-activity:** for a record in Going cold, offer `/monday-crm:log-activity` to log the latest touch.
+- **To meeting-to-deal:** if recent Notetaker meetings are not linked to any deal, suggest `/monday-crm:meeting-to-deal`.
 
 ---
 
 ## Step 0: Connector check
 
-**Goal:** Fail fast if the user has no monday MCP connection.
+`get_user_context`. If the tool is missing, errors with an auth error, or the user has no workspace: print *"I don't see the monday connector active on this session. Install it from https://monday.com/mcp, then run this skill again."* and stop. Otherwise cache the user id and name.
 
-1. Try `mcp__monday__get_user_context`.
-2. If the tool is missing, returns auth-style error, or the user has no accessible workspace:
-   - Print: *"I don't see the monday connector active on this session. Install it from https://monday.com/mcp, then run this skill again."*
-   - Stop. Do not proceed.
-3. If connector works, cache `user.id` and `user.name`.
+No write happens before Step 8. With the default `chat` destination nothing is written to monday except Share (Step 9) or Proactive (Step 10) actions the user explicitly approved.
 
-> **PAUSE**: do not write any `create_*` call before Step 6, and never before Step 0 passes.
+## Step 1: Mode and output config
 
----
+**Output config:** read `references/output-config.md` and resolve destination (default `chat`), verbosity, sections and style.
 
-## Step 1: Detect mode and output config
+**Write mode** (only matters when something will be written):
+- **Default** — one confirmation before each publish, share or proactive batch.
+- **Silent** — no confirmations; only the brief itself is posted (when the destination asks for it). No shares, no proactive writes.
+- **Proactive** — ask once: *"Proactive mode will post a nudge update on going-cold records and notify owners about items due today. Approve all / review each / deny?"* Cache the answer. Triggers: "morning briefing proactive", "mode: proactive".
 
-**Goal:** Know write behavior and output preferences before doing anything else.
-
-### Write mode
-
-- **Default** — confirm every `create_*` or `change_*` call in chat before executing.
-- **Silent** — skip confirmations, stay on α scope.
-- **Proactive** — ask **once** at the top of the session: *"Proactive mode will post per-item updates on stalled records and notify you on commitments due today. (a) Approve all, (b) Review each, (c) Deny all?"* Store the choice for the session.
-
-If no mode declared, assume **Default**. Trigger: `morning briefing silent` / `morning briefing proactive` / `mode: proactive` in project instructions.
-
-Hard safety rail regardless of mode: **no deletes, no amount-column writes, no cross-workspace moves**. Stage, owner, last-touch, and source column edits are allowed when bundled in a batched-confirm plan (Default) or session-level approval (Proactive).
-
-### Output config
-
-Read from project instructions or per-run prompt. All fields are optional — defaults apply when absent.
-
-**Verbosity** (default: `full`)
-- `full` — all sections, per-deal detail, pipeline totals
-- `quick` — headline numbers + top 3 action items only (fits in ~20 lines)
-- `tldr` — single paragraph: one priority, one number, one action
-
-Trigger phrases: `quick brief` / `quick morning briefing` → `quick`; `tldr` / `tldr my day` → `tldr`.
-
-**Sections** (default: all on)
-
-Set per-run with natural language ("skip yesterday's movements", "only show what needs attention") or in project instructions:
-```
-output:
-  sections:
-    pipeline_totals: true      # "Pipeline at a glance"
-    yesterday_movements: true  # won/lost since last run
-    meeting_today: true        # deals with a meeting today (requires notetaker or calendar)
-    tasks_today: true          # tasks/follow-ups due today
-    needs_action: true         # slipping, stale, follow-up buckets
-    on_track: true             # hot deals
-    activity_summary: true     # logged calls/emails/notes count
-    new_this_week: false       # new deals added (off by default — low urgency)
-    data_hygiene: true         # missing fields, unowned items
-```
-
-Any section with no items is automatically omitted regardless of config (don't print empty headers).
-
-**Style** (default: `bullets`)
-- `bullets` — markdown bullets and headers (default, renders well in monday docs and chat)
-- `tables` — key data in markdown tables (better for scanning many deals)
-- `prose` — short paragraph per section (better for sharing / pasting into email)
-
-Trigger: `morning briefing table format` → `tables`; `morning briefing prose` → `prose`.
-
-**Destination** (default: `monday+chat`)
-- `monday+chat` — publish artifact to monday AND mirror in chat
-- `monday` — publish to monday only, no chat mirror
-- `chat` — chat only, no monday artifact (useful for quick checks without cluttering monday)
-- `doc` — force a new monday doc even if a "My Morning" pinned item exists
-
-Trigger: `morning briefing chat only` → `chat`; `morning briefing doc` → `doc`.
-
-> **Config precedence:** per-run prompt overrides project instructions, which overrides defaults. A per-run phrase like "quick brief" applies to this run only — it does not change stored config.
-
----
-
-## Step 1b: Discover monday CRM enrichment sources *(MUST RUN — not optional)*
-
-**Goal:** Know which monday-native data sources are live before pulling CRM data. Run in parallel with Step 2.
-
-Try each source silently — don't stop if one fails:
-
-1. **Notetaker meetings** — call `explore_meetings({ start_time_from: <24h ago, ISO>, limit: 20 })`. If it returns meetings, fetch them with `get_meetings_content({ ids: [...], include_summary: true, include_action_items: true })` and cache the results. If either call errors or returns empty, mark `notetaker: false`.
-
-2. **Calendar sync** — not yet available via monday MCP. Mark `calendar: false`. Skip. Will be wired when monday exposes `calendar_events` in the MCP connector.
-
-3. **Email sync** — not yet available via monday MCP. Mark `email: false`. Skip. Will be wired when monday exposes `crm_emails` in the MCP connector. Note: logged emails stored as item updates on contacts/deals *are* accessible today via `get_updates` — those are handled in Step 5d.
-
-4. **Tasks board** — search `get_user_context` → `relevantBoards` for a board named `tasks|to-do|actions|follow-up`. If found, mark `tasks_board: <boardId>`. If not found, skip — tasks will be inferred from deal/contact items with date columns = today.
-
-> None of these failing should block the rest of the skill. Calendar and email sync are product features not yet fully exposed in the MCP — the attempt is best-effort. Notetaker and tasks are available today.
-
----
+Hard rail in every mode: no deletes, no column-value edits of any kind (this skill only posts briefs, updates and notifications), no cross-workspace moves.
 
 ## Step 2: Resolve board(s)
 
-**Goal:** Find the user's CRM board(s), or confirm there are none and fall back to standalone.
+1. Argument given: numeric → board id; text → `search({ searchType: "BOARD", searchTerm: <arg>, strategy: "SPEED" })`. One match → use it; several → `AskUserQuestion`.
+2. No argument: scan `get_user_context` favorites and relevant boards for names matching
+   - pipeline: `deal|opportunit|pipeline|sales`
+   - contacts/accounts: `contact|account|client|customer`
+   - leads: `lead|prospect|inbound`
+   - relationships: `partner|renewal|relationship`
+   - tasks (kept for Step 5f): `task|to-do|action|follow-up`
+3. Nothing found → `search` for `"crm"`, then `"deals"`, then `"contacts"`.
+4. Still nothing → **standalone** (Step 2c).
+5. Several boards of the **same** type → `AskUserQuestion` with the board names plus "all of them". Remember the choice for the session.
+6. Boards of **different** types (e.g. a pipeline and a contacts board) → brief both in one output, one section group per board.
 
-**Broad search — cast the net wide:**
+## Step 2b: Classify board type
 
-1. If the user passed a board via argument:
-   - Numeric → use as `boardId` directly.
-   - String → `mcp__monday__search(searchType: "BOARD", searchTerm: <arg>)`. One match → use it. Multiple → `AskUserQuestion`.
-
-2. If no argument, scan `get_user_context` → `relevantBoards` + `favorites` for names matching any of:
-   - **Pipeline signals:** `deal|deals|opportunity|opportunities|pipeline|sales`
-   - **Contact/account signals:** `contact|contacts|account|accounts|client|clients|customer|customers`
-   - **Lead signals:** `lead|leads|prospect|prospects|inbound`
-   - **Relationship signals:** `partner|partners|renewal|renewals|relationship`
-
-3. If no matches in context, run `search` with `searchTerm: "crm"` then `"contacts"` then `"deals"`. Collect all candidates.
-
-4. If still zero matches → **Standalone fallback** (see Step 2c below). Do not stop the skill.
-
-5. If multiple candidates of the **same type** (e.g., two pipeline boards):
-   - Auto-select the one with the most recent `updated_at` on its items — this is the board the user is actively working in. Note the selection in the brief's Data hygiene section: *"Briefing on [Board Name]. To brief a different board, pass its name as an argument."*
-   - If `updated_at` is the same day or indeterminate: `AskUserQuestion` with board names + "all of them" option.
-
-6. If candidates are of **different types** (e.g., one pipeline + one contacts board): run both paths and combine into one brief — no disambiguation question needed.
-
-**If the user explicitly picks "all":** run Steps 3–7 per board and publish one combined α artifact.
-
----
-
-## Step 2b: Classify board type *(MUST RUN — execute immediately after Step 2)*
-
-**Goal:** Tailor the data pull and synthesis to what the user actually has.
-
-After resolving the board, call `get_board_info` and classify as one of:
+`get_board_info({ boardId, filters: { columns: { only: true } } })`, then:
 
 | Type | Signals |
 |---|---|
-| `pipeline` | `status` column with `is_done: true` labels (Won) + `numbers` column with `$` unit (value) |
-| `leads` | `status` column without `is_done: true` (no Won state) + lead-sounding labels (e.g. "New", "Contacted", "Qualified", "Disqualified") |
-| `contacts` | Majority `text` / `email` / `phone` columns; few or no `numbers` columns; no Won/Lost pattern |
-| `accounts` | Mix of `text`, `numbers` (revenue/ARR), `status` columns; company-centric item names |
-| `general` | CRM board that doesn't fit above — treat like `accounts` |
+| `pipeline` | a `status` column with stage-like labels (an `is_done: true` or Won/Lost label) + a `numbers` column with a currency unit |
+| `leads` | a `status` column without `is_done` and lead-like labels (New, Contacted, Qualified, Disqualified) |
+| `contacts` | mostly `text` / `email` / `phone` columns, no Won/Lost pattern |
+| `accounts` | company-named items with `numbers` (revenue/ARR) and `status` columns |
+| `general` | anything else — treat as `accounts` |
 
-Cache the detected `boardType` for Steps 3–6.
+## Step 2c: Standalone (no board)
 
-If a user has **both** a pipeline board and a contacts/accounts board, run both paths and combine into one brief under separate sections.
+Ask in one `AskUserQuestion` call: *"What meetings or calls do you have today?"* and *"Which deals, accounts or relationships need your attention this week?"*. Build the Standalone template from the answers (Step 6d), print it in chat, and skip Steps 3–10 except the Step 10 chat line.
 
----
+## Step 3: Resolve columns by type
 
-## Step 2c: Standalone fallback (no board) *(MUST RUN when Step 2 finds zero boards)*
+Columns are resolved by type, with titles only as hints (boards are often not in English). Use `get_column_type_info` when a column is ambiguous; a missing concept is skipped and noted under Data hygiene.
 
-**Goal:** Still produce a useful briefing even without a monday board connected.
-
-Run this path if Step 2 found zero boards OR the user says "I don't have a CRM set up yet."
-
-Ask the user two questions (one `AskUserQuestion` call, both together):
-1. *"What meetings or calls do you have today?"*
-2. *"What deals, accounts, or relationships need your attention this week?"*
-
-Work with whatever they provide. Produce a briefing using the Standalone template (§ Step 6c). Skip Steps 3–5 and Steps 7–9 (nothing to publish). Print the brief in chat only.
-
----
-
-## Step 3: Read board schema
-
-**Goal:** Resolve column IDs by type — global teams have non-English column titles.
-
-1. `get_board_info(boardId)`. Cache columns.
-2. Classify columns by type:
-
-**Pipeline columns:**
-| Concept | Type | Title hint | Fallback |
+| Concept | Type | Title hints | Board types |
 |---|---|---|---|
-| Stage | `status` | stage, status | first `status` with `is_done` labels |
-| Owner | `people` | owner, rep, person | first `people` column |
-| Value | `numbers` | value, amount, revenue, size | first `numbers` with `$` unit |
-| Close probability | `numbers` | probability, % | first `numbers` with `%` unit |
-| Expected close date | `date` | close, expected, target | first date-type column matching |
-| Last interaction | `date` | interaction, activity, touch, contacted | second date-type column |
-| Forecast value | `formula` | forecast, weighted | optional; computed from value × prob if absent |
+| Stage / status | `status` | stage, status | all |
+| Owner | `people` | owner, rep, assigned | all |
+| Value | `numbers` (currency) | value, amount, revenue | pipeline, accounts |
+| Probability | `numbers` (%) | probability, % | pipeline |
+| Close date | `date` | close, expected, target | pipeline |
+| Last touch | `date` | touch, interaction, contacted | all |
+| Next follow-up | `date` | follow-up, next step | contacts, accounts |
+| Company | `text` | company, account, organization | contacts, leads |
 
-**Contacts/accounts columns (additional):**
-| Concept | Type | Title hint |
-|---|---|---|
-| Company | `text` | company, account, organization |
-| Email | `email` | email |
-| Phone | `phone` | phone |
-| Last contacted | `date` | last contacted, last touch, last interaction |
-| Next follow-up | `date` | follow-up, next contact, next step |
-| Owner | `people` | owner, rep, assigned |
-| Status | `status` | status, stage, health |
-| Tags | `tags` | tags, segment, type |
+## Step 4: Terminal labels (pipeline and leads)
 
-3. For ambiguous columns call `get_column_type_info`.
-4. If a column type is missing entirely, continue without it and note in the brief under "Data hygiene".
-
----
-
-## Step 4: Identify terminal labels (pipeline only)
-
-**Goal:** Distinguish closed records from active — without hardcoding English.
-
-Skip this step for `contacts`, `accounts`, `general` board types.
-
-From the stage column's `settings.labels`:
-- **Won** = labels with `is_done: true`.
-- **Lost** = labels where text (lowercased) contains `lost|closed lost|cerrado perdido|verloren|perdu`.
-- If no `is_done: true` label exists, ask the user which label means "won".
-
-Cache label `index` values.
-
----
+From the stage column's labels: Won = `is_done: true`; Lost = text containing lost / perdido / verloren / perdu; for leads also Disqualified / Converted. No `is_done` label on a pipeline board → ask which label means Won. Cache the label indexes.
 
 ## Step 5: Pull data
 
-**Goal:** Get the items needed to build the brief. Adapt the queries to the board type.
+Window for "recent" = the last 24h (72h on Mondays, so the weekend is covered).
 
-### 5a — Pipeline boards
+### 5a — Items
+- **Pipeline:** `get_board_items_page({ boardId, includeColumns: true, filters: [{ columnId: <stage>, operator: "not_any_of", compareValue: [<terminal idx>] }], limit: 500 })`; follow `nextCursor` while `has_more`, up to 2,000 items (above that, add a sampling note). Use `board_insights` for totals when the board has more active items than you pulled.
+- **Contacts / accounts:** same call without the stage filter.
+- **Leads:** same as pipeline with the leads terminal labels; order by `__creation_log__` desc for recent additions.
 
-Three passes:
+### 5b — Board activity
+`get_board_activity({ boardId, fromDate: <window start ISO>, toDate: <now ISO> })` — stage moves and other column changes. **Yesterday's movements** = stage changes into a Won or Lost label inside the window (not "updated in the last 24h", which also catches edits to old deals). For leads boards use a 7-day `fromDate` instead, so Going stale (no status change in 7 days) can be computed; movements still use only the recent window.
 
-**Pass A — Active:** `get_board_items_page` with stage `not_any_of [won_idx, lost_idx]`, limit 200.
-**Pass B — Recent closures:** stage `any_of [won_idx, lost_idx]`, ordered by `updated_at` desc, limit 50; in-memory filter to items with `updated_at` within last 24h.
-**Pass C — Recent activity:** reuse Pass A; sort by `updated_at desc`; last 24h.
+### 5c — Updates feed
+`get_updates({ objectType: "Board", objectIds: ["<boardId>"], includeItemUpdates: true, fromDate: <window start>, toDate: <now>, limit: 100 })` — team comments and meeting recaps (recognize meeting-to-deal recaps by their `ref meeting-to-deal/` line).
 
-Volume edges:
-- Pagination: pull until cursor is null or 2,000 items. Flag sampling if capped.
-- >10K items: stop at 2,000, surface sampling note.
-- `board_insights` fallback if >200 active items for aggregate-only view.
-
-### 5b — Contacts / accounts boards
-
-Two passes:
-
-**Pass A — All active contacts/accounts:** `get_board_items_page`, no status filter (include all non-archived), limit 200. Include: owner, last-contacted date, next-follow-up date, status, company.
-
-**Pass B — Recent activity:** sort Pass A by `updated_at desc`; last 48h.
-
-### 5c — Leads boards
-
-Two passes:
-
-**Pass A — Open leads:** `get_board_items_page`, filter out terminal labels (e.g., "Disqualified", "Converted"), limit 200.
-**Pass B — Recent additions:** sort by `created_at desc`, last 48h.
-
-### 5d — Activities / updates (all board types)
-
-This is the primary way to get logged emails, calls, and activities from monday CRM today. When users log a call, send an email (via monday email sync), or add a note on a contact or deal, it's stored as an **update thread** on that item. `get_updates` surfaces all of it.
-
-For each resolved board:
-1. `get_board_activity({ boardId, fromDate: <48h ago, ISO 8601> })` — structural changes: stage moves, owner assignments, column edits. Tells you what changed on which items.
-2. `get_updates({ objectType: "Board", objectIds: ["<boardId>"], includeItemUpdates: true, fromDate: <48h ago>, toDate: <now>, limit: 100 })` — update threads: logged calls, tracked emails, meeting notes, manual notes added by reps. This is the activity log.
-
-If either call returns a permission error (403 or similar): note in the brief's Data hygiene section — *"Activity log unavailable — the MCP connector lacks read access to this board's activity feed. A board admin can grant it under Board Settings → Permissions → View board."* Do not stop or retry; proceed without activity data.
-
-Classify each update body by content signals:
-- Contains "called", "spoke", "phone call", "left voicemail" → **logged call**
-- Contains "email", "sent", "replied", "re:", "subject:" → **logged email** (may be auto-logged by monday email sync, or manually added)
-- Contains "meeting", "met with", "visited", "demo", "call recording" → **logged meeting**
-- monday Notetaker auto-posts meeting summaries as updates on the linked item — detect by checking for notetaker-style formatting (bullet summary, attendee list)
-- Anything else → **note**
-
-For the contacts board specifically: this is where email/activity history lives. Pull updates for all contacts that appear in your deals or that you own — not the full board. Filter by `updated_at` within last 48h to stay relevant.
-
-Cache per item: `{itemId, activityType, summary (first 100 chars), timestamp, author}[]`. Group by deal/contact for synthesis.
+### 5d — Timeline for the items that matter
+After a first synthesis pass (Step 6) has picked the items in **Needs you today**, call `get-timeline-items({ item_id: <id>, limit: 10 })` for up to 10 of them, Going cold, Follow-up and Slipping candidates first (those are the buckets a newer touch can change). Entries come newest first, so one page is enough. Emails, meetings and calls often come back with type `custom` and a `custom_activity_id`: call `get-custom-activities` once and map ids to names (Email, Meeting, Call, …) to classify them. Use the entries to:
+- correct "last touch" when the timeline is newer than the date column (a call logged yesterday means the deal is not going cold), and
+- count calls, emails, meetings and notes in the window for the activity line, labelled "among the <N> items checked".
+A meeting-to-deal recap from 5c (an update with `ref meeting-to-deal/`) also counts as a touch on its deal, dated by the meeting date in its second line. Items not checked keep their date-column value and get `(timeline not checked)` when they land in Going cold.
+Skip this step in `tldr` verbosity.
 
 ### 5e — Notetaker meetings
-
-If `notetaker: true` from Step 1b: the cached `get_meetings_content` results contain recent meeting summaries and action items. 
-
-For each notetaker entry:
-- Match to a deal or contact in the boards via item name or ID.
-- Extract: meeting title, date, attendees (if present), matched item.
-- Cache: `matched_meeting_notes[]` for synthesis.
-
-Unmatched meetings (no CRM item linked): surface separately in the brief under "Meetings not linked to a deal" — they're an upsell opportunity.
+Only if `recent_meetings` or `activity_summary` is on: `explore_meetings({ start_time_from: <window start>, start_time_to: <now>, limit: 20 })`, then `get_meetings_content({ ids: [...], include_summary: true, include_action_items: true })`. Match each meeting first by an existing recap in 5c whose ref line carries the meeting id (reuse its first key point as the takeaway), then by attendee domain or item name; keep unmatched meetings for the "not linked to a deal" line. Any error → leave the section out.
 
 ### 5f — Tasks due today
+If a tasks board was found in Step 2: its items whose due date is today (filter on its date column). Otherwise: pulled items with a `date` column other than the close date equal to today.
 
-If `tasks_board` was found in Step 1b: call `get_board_items_page` on that board filtered by due date = today.
-
-If no tasks board: scan Pass A results (deals/contacts) for items where any `date` column = today that isn't the close date (treat as a follow-up or task date).
-
-Cache as `tasks_today[]` with item name, assigned owner, linked board.
-
-### 5g — Calendar events (future)
-
-Not available via monday MCP today. Skip. When monday exposes `calendar_events` on the connector: pull today's events, cross-reference with open deals/contacts by `crm_item` link or attendee domain match, cache as `crm_meetings_today[]` for synthesis Step 6a.
-
-### 5h — Email sync (future)
-
-Not available via monday MCP today. Skip. Logged emails stored as item updates on contacts/deals are covered by Step 5d (`get_updates`). When monday exposes `crm_emails` on the connector: pull unread emails + `awaiting_reply` threads, cross-reference with CRM items, surface in the brief under "Email priorities".
-
-### Rate limit handling (all types)
-
-429 → exponential backoff 3x (1s, 2s, 4s). On third failure: *"monday is rate-limiting right now. Retry in 60 seconds, or narrow to fewer boards."* Stop.
-
----
+### Permissions and rate limits
+- A 403 on 5b or 5c → add to Data hygiene: *"Activity log unavailable — your monday account can't read this board's activity. A board owner can check your access."* and continue.
+- 429 → back off 3 times (1s, 2s, 4s); then *"monday is rate-limiting right now. Retry in a minute, or narrow to one board."* and stop.
 
 ## Step 6: Synthesize
 
-**Goal:** Rank items by what needs action today.
+Each bucket below maps to the section of the same name in `references/templates.md`. Apply verbosity and section filters first, then de-duplicate: a record shows in its highest-priority **printed** bucket only; other signals are added as text (`— also going cold (19 days)`). Header counts are the counts actually printed.
 
-### 6a — Pipeline synthesis
+### 6a — Pipeline
+Priority: **Tasks due today > Closing today > Slipping > Going cold > Follow-up > On track > New this week**.
 
-| Bucket | Criteria |
+| Section | Rule |
 |---|---|
-| Meeting today | deal has a `crm_meetings_today` entry — always surface, regardless of other signals |
-| Task due today | deal appears in `tasks_today` — surface with task description |
-| Commit-today | close_date = today AND stage ≠ Won/Lost |
-| Slipping | close_date in past AND stage ≠ Won/Lost |
-| Stale | last_interaction > 14d ago AND stage in non-closed |
-| Follow-up | last_interaction > 7d ago AND probability ≥ 50% |
-| Hot | probability ≥ 70% AND last_interaction ≤ 7d AND close_date ≤ 30d |
-| New | created within last 7d AND stage = earliest-index label |
-
-Priority order: **Meeting today > Task due today > Commit-today > Slipping > Stale > Follow-up > Hot > New**.
-
-A deal can appear in multiple buckets — display in the highest-priority one only, but annotate lower-priority signals inline (e.g., a Stale deal that also has a meeting today → show under "Meeting today" with a 🔴 stale flag).
-
-Totals: active pipeline Σ value; forecast Σ (value × prob/100); closing this week count + Σ value; yesterday wins Σ value; yesterday losses count.
-
-**Section header counts must match body item counts exactly.** Count the items in each bucket after applying verbosity limits, then write `### Slipping (N)` where N is the actual number of lines that follow. Never use a pre-limit count in the header.
-
-**Activity summary:** count of logged calls, emails, meetings, and notes in the last 24h across all active deals. Surface as a one-liner in the brief (e.g., "5 activities logged yesterday — 2 calls, 2 emails, 1 note").
-
-### 6b — Contacts / accounts synthesis
-
-| Bucket | Criteria |
-|---|---|
-| Overdue follow-up | next_follow_up date in past |
-| Going cold | last_contacted > 21d ago AND no upcoming follow-up |
-| Follow-up today | next_follow_up = today |
-| Recently active | updated_at within last 24h |
-| New this week | created_at within last 7d |
-
-Priority order: **Overdue > Follow-up today > Going cold > Recently active > New**.
-
-No pipeline totals for contacts boards. Instead surface: total contacts, unowned contacts (%), contacts with no follow-up date set.
-
-### 6c — Leads synthesis
-
-| Bucket | Criteria |
-|---|---|
-| Hot leads | status in early/qualified stages AND created within last 7d |
-| Unassigned | owner column empty |
-| Stale | created > 14d ago AND no status change in 7d |
-| Recent additions | created_at within last 48h |
-
-Surface: total open leads, unassigned count, conversion rate (if terminal labels detected).
-
-### 6d — Standalone (no board)
-
-Prioritize from user-provided input:
-1. Meetings today with a deal/account at stake
-2. Items the user flagged as urgent
-3. Deals/relationships the user mentioned as needing action
-
----
-
-## Step 7: Publish α
-
-**Goal:** Put the brief inside monday. Skip for standalone mode (nothing to publish to).
-
-### Target selection
-
-Respect the `destination` config from Step 1:
-- `chat` → skip this step entirely; print to chat only.
-- `doc` → skip "My Morning" search; go directly to `create_doc`.
-- `monday` or `monday+chat` (default) → follow steps below.
-
-1. Call `search(searchType: "ITEMS", searchTerm: "My Morning")`. Filter results to boards the user owns or is a member of (to avoid false matches on shared workspaces). If exactly one match → `create_update` on that item (convert the brief to HTML first — `create_update` renders `<h3>`, `<b>`, `<ul><li>`, not Markdown). If multiple → take the one in the user's personal workspace (from `get_user_context` → `personal_workspace_id`). If none → proceed to step 2.
-2. Else: `create_doc` in personal workspace with title `Morning Briefing — <weekday>, <Mon DD>, <YYYY>`.
-3. **Idempotency:** before creating, search by exact title. If found, update in place. If search returns ambiguous results, add a suffix (`— v2`). Never duplicate.
-
-### Apply verbosity and section config before writing
-
-Before assembling the brief body, apply the config from Step 1:
-
-- **`tldr` verbosity:** replace the full template with: one sentence on top priority, one pipeline number, one suggested action. Skip all sections.
-- **`quick` verbosity:** include only `pipeline_totals` + `needs_action` (top 2 items max per bucket, 1-line each). Skip `yesterday_movements`, `on_track`, `new_this_week`, `activity_summary`, `data_hygiene`. Hard cap: 25 lines total including headers and footer. (~20 is achievable when fewer buckets are populated; top 2 per bucket keeps within cap even when all three action buckets are full.)
-- **`full` verbosity (default):** all sections per config.
-- **Section overrides:** suppress any section the user turned off. Never print a section header with no content.
-- **`tables` style:** render deal lists as markdown tables (`| Deal | Stage | Value | Alert |`) instead of bullets.
-- **`prose` style:** write each section as 1–2 sentences, no headers. Use plain paragraph breaks.
-
-> If a section is configured `on` but has zero items, omit it silently — don't print "(none)".
-
-### Brief templates
-
-**Pipeline template:**
-```markdown
-# CRM Morning Briefing — <weekday>, <Mon DD>
-
-<!-- claude-skill-id: daily-briefing -->
-
-## Pipeline at a glance
-- Active pipeline: $<total>K across <N> deals
-- Forecast: $<forecast>K (weighted)
-- Closing this week: <N> deals, $<value>K
-
-## Yesterday's movements
-- Won: <deal> ($<value>K, <owner>)
-- Lost: <deal> ($<value>K, <owner>)
-
-## Needs you today
-
-### Closing today (<N>)
-- <deal> — <stage>, $<value>K, owner <name>, last touch <X days ago>
-
-### Slipping (<N>)
-- <deal> — <stage>, $<value>K, expected <date> (<X> days overdue), owner <name>
-
-### Going cold (<N>)
-- <deal> — <stage>, no touch in <X> days, owner <name>
-
-### Follow-up (<N>)
-- <deal> — <stage>, <probability>%, last touch <X days ago>
-
-## On track
-- <deal> — <stage>, <probability>%, closing in <X> days
-
-## Data hygiene
-- <N> deals missing owner · <N> missing close date · <N> missing amount
-
----
-Generated by Claude · <ISO timestamp> · run `/monday-crm:daily-briefing` to refresh.
-```
-
-**Contacts / accounts template:**
-```markdown
-# CRM Morning Briefing — <weekday>, <Mon DD>
-
-<!-- claude-skill-id: daily-briefing -->
-
-## Relationships at a glance
-- <N> contacts/accounts total · <N> owned by you · <N> unowned
-
-## Needs you today
-
-### Overdue follow-ups (<N>)
-- <name> (<company>) — follow-up was due <date>, owner <name>
-
-### Follow up today (<N>)
-- <name> (<company>) — scheduled for today, last touched <X days ago>
-
-### Going cold (<N>)
-- <name> (<company>) — no contact in <X> days, no follow-up scheduled
-
-## Recently active
-- <name> — updated <X hours ago>
-
-## New this week
-- <name> (<company>) — added <date>
-
-## Data hygiene
-- <N> contacts missing owner · <N> with no follow-up date set
-- (Run `/monday-crm:data-cleanup` health check for a full audit.)
-
----
-Generated by Claude · <ISO timestamp> · run `/monday-crm:daily-briefing` to refresh.
-```
-
-**Leads template:**
-```markdown
-# CRM Morning Briefing — <weekday>, <Mon DD>
-
-<!-- claude-skill-id: daily-briefing -->
-
-## Leads at a glance
-- <N> open leads · <N> unassigned · <N> added this week
-
-## Needs you today
-
-### Unassigned leads (<N>)
-- <lead name> — <stage>, added <date>
-
-### Hot leads (<N>)
-- <lead name> — <stage>, <X> days old, owner <name>
-
-### Going stale (<N>)
-- <lead name> — <stage>, no activity in <X> days
-
-## Recent additions
-- <lead name> — added <X hours ago>, source <source>
-
-## Data hygiene
-- <N> leads unassigned · <N> with no status change in 7+ days
-- (Run `/monday-crm:data-cleanup` health check for a full audit.)
-
----
-Generated by Claude · <ISO timestamp> · run `/monday-crm:daily-briefing` to refresh.
-```
-
-**Standalone template (chat-only, no artifact):**
-```markdown
-# Morning Brief — <weekday>, <Mon DD>
-
-## #1 Priority
-**[Most important thing from what you told me]**
-[Why it matters]
-
-## Today's meetings
-- [Time / Company / What's at stake]
-
-## Needs attention
-- [Item 1 — why]
-- [Item 2 — why]
-
-## Suggested next actions
-1. [Action] — [why now]
-2. [Action] — [why now]
-3. [Action] — [why now]
-```
-
-### Confirm-before-write (Default mode)
-Print before any `create_*`: *"I'll publish this as `<target>`. OK to post? (yes / no / show first)."* Silent and Proactive modes skip this.
-
-### Print to chat
-- `monday+chat` (default): print the brief in chat as a mirror + artifact URL on last line: `Posted: <url>`.
-- `monday`: print one-liner only: `Posted: <url>` — no full mirror.
-- `chat`: print the full brief in chat. No artifact URL.
-- `doc`: same as `monday+chat`.
-
-### Publish errors
-- Perms failure: degrade `create_update` → `create_doc` → print-only with banner *"Couldn't publish to monday (permission error). Brief below."*
-
----
-
-## Step 8: Share β (opt-in)
-
-Runs only if user explicitly asked ("share with my manager", "post to the team", or Proactive mode selected Share).
-
-1. `list_users_and_teams` → resolve recipient. Default to declared manager if present; else `AskUserQuestion` with top-5 linked teammates.
-2. `create_notification({ user_id: <recipient>, target_id: <id of the item the brief was posted on>, target_type: "Project", text: "Morning briefing for <Mon DD>" })`.
-3. Optional: `create_update` on a team-rollup board (resolve by `search` / `AskUserQuestion` — don't assume a fixed name). Same footer + skill-id-comment convention.
-
----
-
-## Step 9: Proactive extension (opt-in)
-
-Runs only if mode = Proactive AND session decision was "approve all" or "review each".
-
-For each item in **Stale / Going cold** bucket:
-- `create_update({ itemId, body: "<b>Claude nudge:</b> No activity in <X> days. What's the next step?" })`.
-
-For each item in **Commit-today / Overdue follow-up** bucket:
-- `create_notification({ user_id: <owner>, target_id: <item id>, target_type: "Project", text: "Action due today on <name>" })`.
-
-**"Review each" flow:** print a one-line proposal per item before writing. `yes` → execute; `no` → skip; `stop` → halt.
-
-**Guard rails:**
-- If total actions > 20: batch into one review-list doc (`Proactive actions — <date>`) with a single prompt.
-- Never post on items the user doesn't own unless they're board admin AND gave Proactive approval this session.
-- Safety rail holds: no deletes, no amount-column writes, no cross-workspace moves.
-
----
-
-## Step 10: Close the loop
-
-Print: `Published Morning Briefing — <date>. <N> items scanned, <N> actions posted, <N> pending.`
-
-If any write failed mid-run: list written items in chat for manual cleanup. Do not attempt compensating deletes.
-
----
-
-## Shared patterns
-
-- **No title prefix.** Discoverability via `Generated by Claude · <timestamp>` footer + `<!-- claude-skill-id: daily-briefing -->` HTML comment.
-- **Idempotency before create.** Search same-day artifact first. Update, don't duplicate.
-- **Safety rail.** No deletes, no amount-column writes, no cross-workspace moves. Stage/owner/last-touch/source edits OK in batched-confirm plan.
-- **Type-based column resolution**, not name-based — global teams have non-English columns.
-- **Ask once per session** when entering Proactive mode.
-- **Board type drives output** — don't show pipeline totals to a contacts user; don't show follow-up queues to a pipeline user unless they also have a contacts board.
+| Tasks due today | in the Step 5f list |
+| Closing today | close date = today, not terminal |
+| Slipping | close date in the past, not terminal |
+| Going cold | last touch (after the 5d correction) more than 14 days ago |
+| Follow-up | last touch more than 7 days ago and probability ≥ 50% |
+| On track | probability ≥ 70%, last touch within 7 days, close date within 30 days |
+| New this week | created in the last 7 days |
+| Recent meetings | Step 5e meetings, matched first |
+| Yesterday's movements | Step 5b stage changes into Won / Lost |
+
+Totals: active pipeline Σ value; weighted Σ value × probability; closing this week count and Σ value. Activity line: counts from 5d (and 5c recaps) in the window.
+
+### 6b — Contacts / accounts
+Priority: **Tasks due today > Overdue follow-ups > Follow up today > Going cold > Recently active > New this week**. Overdue = next follow-up in the past; Follow up today = next follow-up today; Going cold = last touch more than 21 days ago and no follow-up date; Recently active = updated in the window. No money totals; show counts, unowned share and records without a follow-up date.
+
+### 6c — Leads
+**Unassigned** (owner empty), **Hot leads** (early or qualified status, created in the last 7 days), **Going stale** (created more than 14 days ago and no status change in 7 days), **Recent additions** (created in the window). Totals: open, unassigned, conversion rate if terminal labels exist.
+
+### 6d — Standalone
+1. Meetings today with something at stake. 2. Items the user called urgent. 3. Other deals or relationships the user mentioned.
+
+## Step 7: Render
+
+Apply verbosity, sections and style from Step 1, then fill the matching template in `references/templates.md`. Always print the brief in chat.
+
+## Step 8: Publish (when the destination is `monday` or `doc`, or Step 9 needs a posted brief)
+
+1. **Target:**
+   - `monday` (or a Share request): `search({ searchType: "ITEMS", searchTerm: "My Morning", strategy: "SPEED" })`, keeping items whose board (`get_board_info`) lists the user as owner or subscriber. One → post there. None or several → fall back to a doc.
+   - `doc`, or the fallback: a private doc in the CRM board's workspace.
+2. **Idempotency (one brief per day per target):**
+   - Item: `get_updates({ objectType: "Item", objectIds: ["<item id>"], limit: 25 })`; if an update contains `daily-briefing · <today YYYY-MM-DD>`, post the new brief as a reply (`create_update` with `parentId` of that update) instead of a new top-level update.
+   - Doc: `read_docs({ type: "workspace_ids", ids: ["<workspace id>"], order_by: "created_at", limit: 25 })` and look for the exact title (DOCUMENTS search can miss a doc created minutes ago); if today's exact title exists, append with `update_doc` (`add_markdown_content`, starting with `## Refreshed at <HH:MM>`).
+3. **Confirm (Default mode):** *"I'll post this brief as <an update on 'My Morning' | a private doc 'Morning Briefing — …'>. OK? (yes / no)"*. Silent and Proactive skip it.
+4. **Write:**
+   - Item: `create_update({ itemId, body: <brief as HTML> })`.
+   - Doc: `create_doc({ location: "workspace", workspace_id: <board's workspace id>, doc_kind: "private", doc_name: "Morning Briefing — <weekday>, <Mon DD>, <YYYY>", markdown: <brief> })`.
+5. Permission error → try the doc; if that fails too, say *"Couldn't post to monday (permission error). The brief above is complete."*
+
+## Step 9: Share (opt-in)
+
+Only when the user asked ("share with my manager", "post to the team") and a brief was posted in Step 8 (post it first if needed, with its confirmation).
+1. Resolve the recipient: `list_users_and_teams({ name: "<name>" })`; if no name was given, ask.
+2. Confirm in Default mode, then `create_notification({ user_id: "<recipient>", target_id: "<item id of the 'My Morning' item, or the update id>", target_type: <"Project" for the item | "Post" for the update>, text: "Morning briefing for <Mon DD>" })`. A doc has no notification target: share the doc link in chat instead.
+
+## Step 10: Proactive (opt-in) and close
+
+**Proactive** (approved in Step 1): first `get_updates({ objectType: "Item", objectIds: [<candidate ids, up to 25>], limit: 25 })` and skip any record that already has a `Claude nudge:` update from the last 7 days. Then, for **Going cold** records, `create_update({ itemId, body: "<b>Claude nudge:</b> No activity in <X> days. What's the next step?" })`; for **Closing today** and **Overdue follow-ups**, `create_notification({ user_id: "<owner>", target_id: "<item id>", target_type: "Project", text: "Action due today on <name>" })`.
+- "Review each" → one line per action; yes / no / stop.
+- More than 20 actions → list them in chat and ask once whether to run all.
+- Only items the user owns, unless they are a board owner and approved Proactive this session.
+
+**Close** — print one line that matches what happened:
+- chat only: `Brief for <date>: <N> items scanned, <M> need attention.`
+- posted: `Posted Morning Briefing — <date>: <url>. <K> proactive actions, <P> pending.`
+If any write failed, list what was written. Never attempt compensating deletes.
 
 ---
 
@@ -637,29 +213,23 @@ If any write failed mid-run: list written items in chat for manual cleanup. Do n
 
 | Failure | Behavior |
 |---|---|
-| Connector not installed | Step 0 stops; print install link |
-| No CRM board found | Standalone fallback (Step 2c) — don't stop |
-| Board >10K items | Cap at 2K most-recent, flag sampling |
-| MCP tool error (retryable) | Backoff 3x; skip that strand; surface partial brief |
-| Same-day artifact exists | Update in place |
-| User halts mid-session | List written items in chat; no compensating deletes |
-| 429 rate limit | Backoff 3x, then stop with retry message |
-| Publish perms failure | Degrade to doc → print-only |
-| Multiple CRM boards | AskUserQuestion with "all of them" option |
-| Non-English columns | Resolve by type via `get_column_type_info` |
-| Proactive writes >20 | Batch into one review-list doc |
-
----
+| Connector missing | Step 0 stops with the install message |
+| No CRM board | Standalone brief (Step 2c) |
+| Board over 2,000 active items | Cap, note the sampling, totals from `board_insights` |
+| Activity / updates 403 | Note in Data hygiene; continue |
+| Timeline call fails for an item | Use the date column for that item |
+| Notetaker unavailable | Leave out Recent meetings |
+| 429 | Back off 3 times, then stop with a retry message |
+| Publish permission error | Doc, then chat only |
+| Same-day brief already posted | Reply (item) or append (doc); never a second copy |
 
 ## Completion criteria
 
-- [ ] Step 0 (connector check) ran and passed.
-- [ ] Board type detected and synthesis path matched (pipeline / contacts / accounts / leads / standalone).
-- [ ] If board found: exactly one α artifact created or updated (no duplicate — verified via skill-id HTML comment).
-- [ ] If standalone: brief printed in chat only.
-- [ ] Artifact body carries `Generated by Claude` footer + `<!-- claude-skill-id: daily-briefing -->` comment.
-- [ ] Chat mirror includes artifact URL on last line (non-standalone only).
-- [ ] Any failed writes listed in final summary.
-- [ ] Safety rail held: no deletes, no amount-column writes, no cross-workspace moves.
-- [ ] Stage/owner/last-touch edits (if any) ran inside batched-confirm plan.
-- [ ] If Proactive mode: single session-level decision captured, not per-item.
+- [ ] Step 0 passed; board type detected (or standalone).
+- [ ] Brief printed in chat; nothing written to monday unless the destination was `monday` / `doc` or the user asked.
+- [ ] Every section in the output exists in the template, and every header count equals its line count.
+- [ ] Up to 10 Needs-you-today items (Going cold / Follow-up / Slipping first) had their last touch checked against the timeline (except `tldr`); unchecked ones are marked.
+- [ ] No record got a second Claude nudge within 7 days.
+- [ ] At most one brief per target per day (reply or append on re-runs).
+- [ ] Notifications used `user_id`, `target_id`, `target_type`; no column values were changed.
+- [ ] Failed writes listed in the closing message.
