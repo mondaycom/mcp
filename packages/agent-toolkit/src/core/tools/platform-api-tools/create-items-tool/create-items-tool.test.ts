@@ -256,7 +256,8 @@ describe('Create Items Tool Behaviour', () => {
     it('returns the confirmed renamed name instead of the pre-rename duplicate name', async () => {
       mocks.getMockRequest().mockImplementation(async (query: string) => {
         if (query.includes('duplicate_item')) return duplicateResponse('101', 'Template (copy)');
-        if (query.includes('change_multiple_column_values')) return changeColumnValuesResponse('101', 'dummy show test');
+        if (query.includes('change_multiple_column_values'))
+          return changeColumnValuesResponse('101', 'dummy show test');
         throw new Error(`unexpected query: ${query}`);
       });
       const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
@@ -478,9 +479,7 @@ describe('Create Items Tool Behaviour', () => {
 
       const skipped = c.results.filter((r: any) => typeof r.error === 'string' && r.error.includes('Skipped'));
       expect(skipped.length).toBeGreaterThan(0);
-      expect(c.errors).toEqual(
-        expect.arrayContaining([expect.objectContaining({ code: 'RATE_LIMIT_SKIPPED' })]),
-      );
+      expect(c.errors).toEqual(expect.arrayContaining([expect.objectContaining({ code: 'RATE_LIMIT_SKIPPED' })]));
     });
 
     it('handles FIELD_LIMIT_EXCEEDED through the standard 429 circuit and preserves retry data', async () => {

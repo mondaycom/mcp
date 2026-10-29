@@ -3,11 +3,7 @@ import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { CreateItemTool } from '../create-item-tool/create-item-tool';
 import { COLUMN_VALUES_FORMAT_GUIDE } from '../column-values.utils';
-import {
-  runWithRateLimitCircuit,
-  ToolValidationError,
-  MISSING_REQUIRED_PARAMETER_CODE,
-} from '../../../../utils';
+import { runWithRateLimitCircuit, ToolValidationError, MISSING_REQUIRED_PARAMETER_CODE } from '../../../../utils';
 import {
   MAX_ITEMS_PER_CALL,
   CONCURRENCY_LIMIT,
@@ -151,9 +147,7 @@ export class CreateItemsTool extends BaseMondayApiTool<CreateItemsToolInput> {
       }),
     });
 
-    const errors = raw
-      .filter(r => 'error' in r)
-      .map((r) => r._errorEntry);
+    const errors = raw.filter((r) => 'error' in r).map((r) => r._errorEntry);
 
     const results = raw.map(({ _errorEntry, ...rest }) => rest);
     const total = raw.length;

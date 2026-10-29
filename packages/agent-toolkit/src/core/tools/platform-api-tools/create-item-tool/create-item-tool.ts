@@ -24,7 +24,7 @@ export const createItemToolSchema = {
     .string()
     .optional()
     .describe(
-      "The id of the group to which a newly created item will be added. Leave empty when the group is not clearly specified. Cannot be combined with duplicateFromItemId.",
+      'The id of the group to which a newly created item will be added. Leave empty when the group is not clearly specified. Cannot be combined with duplicateFromItemId.',
     ),
   columnValues: z.string().describe(COLUMN_VALUES_FORMAT_GUIDE),
   createLabelsIfMissing: z
@@ -88,7 +88,7 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
 
     if (input.duplicateFromItemId && input.groupId) {
       throw new ToolValidationError(
-        "groupId cannot be combined with duplicateFromItemId. duplicate_item copies the source item into its current group and cannot place the copy in another group.",
+        'groupId cannot be combined with duplicateFromItemId. duplicate_item copies the source item into its current group and cannot place the copy in another group.',
         'INVALID_ARGUMENTS_COMBINATION',
       );
     }
