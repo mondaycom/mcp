@@ -8,7 +8,7 @@ Shows: yesterday's Notetaker meetings matched to deals by attendee domain, recap
 > update CRM from my recorded calls yesterday
 
 **Step 0 — connector, Notetaker, internal domain**
-*[`get_user_context` → `{ id: 487214, name: "Kevin Cheng", email: "kevin@northwind.io" }` → `internal_domain = northwind.io`]*
+*[`get_user_context` → `{ id: 487214, name: "Kevin Cheng" }` (no email); the Deals board's `get_board_info` shows `creator: { id: 487214, email: "kevin@northwind.io" }` → `internal_domain = northwind.io`]*
 *[`explore_meetings({ limit: 1 })` → OK → `notetaker_available: true`]*
 
 **Step 1 — mode:** not declared → Default.
@@ -25,7 +25,7 @@ Shows: yesterday's Notetaker meetings matched to deals by attendee domain, recap
 4. "Spindrift Labs — contract call" (tom@spindriftlabs.com, legal@spindriftlabs.com, kevin@northwind.io)
 
 **Step 4 — boards**
-*[favorites → `Deals` (10046221612); `get_board_info({ boardId: 10046221612, filters: { columns: { only: true } } })` → company `text_company`, stage `status` (labels: Discovery 0, Proposal 1, Negotiation 2, Won 3 `is_done`, Lost 4), last-touch `date_touch`]*
+*[favorites → `Deals` (10046221612); `get_board_info({ boardId: 10046221612, filters: { columns: { only: true } } })` → company `text_company`, stage `status` (label ids: Discovery 0, Proposal 1, Negotiation 2, Won 3 `is_done`, Lost 4), last-touch `date_touch`]*
 *[`get_board_items_page({ boardId: 10046221612, includeColumns: true, filters: [{ columnId: "status", operator: "not_any_of", compareValue: [3, 4] }], limit: 500 })` → 64 active deals, `has_more: false`]*
 
 **Step 5 — match**

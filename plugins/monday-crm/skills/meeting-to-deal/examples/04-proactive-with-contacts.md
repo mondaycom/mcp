@@ -8,7 +8,7 @@ Shows: Proactive approval captured once, recaps and a stage edit written without
 > sync notetaker — proactive
 
 **Step 0**
-*[`get_user_context` → `{ id: 203911, name: "Priya Nair", email: "priya@northwind.io" }` → `internal_domain = northwind.io`]*
+*[`get_user_context` → `{ id: 203911, name: "Priya Nair" }` (no email); the Deals board's `get_board_info` shows `creator: { id: 203911, email: "priya@northwind.io" }` → `internal_domain = northwind.io`]*
 *[`explore_meetings({ limit: 1 })` → OK]*
 
 **Step 1 — Proactive approval (asked once)**
@@ -22,7 +22,7 @@ Shows: Proactive approval captured once, recaps and a stage edit written without
 2. "Redwood Fintech — legal sign-off" (lena@redwoodfintech.com, priya@northwind.io)
 3. "Internal retro — Q2 planning" (priya@, daniel@, ori@northwind.io)
 
-**Step 4** — Deals `10046221612` (stage labels: Discovery 0, Legal 1, Procurement 2, Won 3, Lost 4; last-touch `date_touch`). Contacts `10082334477` (email `email`, company `text_co`, relation `deal_link` → Deals, source `status_src` with label "Claude").
+**Step 4** — Deals `10046221612` (stage label ids: Discovery 0, Legal 1, Procurement 2, Won 3, Lost 4; last-touch `date_touch`). Contacts `10082334477` (email `email`, company `text_co`, relation `deal_link` → Deals, source `status_src` with label "Claude").
 
 **Step 5 — match**
 - Meeting 1 → `luminaryhealth` ↔ "Luminary Health" → 5 → **matched** (deal 220100)
