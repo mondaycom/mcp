@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.78.1
+
+### `list_users_and_teams` name search also finds teams
+
+- `name` now matches team names as well as users. The public `teams` query filters by id only, so the tool fetches the teams-only list (id and name, no members) and keeps teams whose name contains the search term, case-insensitive.
+- A completed search returns `NAME_SEARCH_EMPTY` only when neither users nor teams match. If the team lookup fails, the result says `TEAM_LOOKUP_INCOMPLETE` and does not claim that the team is missing.
+- Each name search sends one extra GraphQL request, run in parallel with the user search.
+
 ## 5.78.0
 
 ### Item write tools return relation details
