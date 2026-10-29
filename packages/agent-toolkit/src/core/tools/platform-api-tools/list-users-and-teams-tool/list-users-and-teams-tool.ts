@@ -50,8 +50,8 @@ export const listUsersAndTeamsToolSchema = {
     .string()
     .optional()
     .describe(
-      `Name-based USER search ONLY. STANDALONE parameter - cannot be combined with others. PREFERRED method for finding users when you know names. Performs fuzzy matching.
-      CRITICAL: This parameter searches for USERS ONLY, NOT teams. To search for teams, use teamIds parameter instead.`,
+      `Name-based search over USERS and TEAM NAMES. STANDALONE parameter - cannot be combined with others. PREFERRED method for finding users or teams when you know a name.
+      Users use the API's fuzzy name search. Teams are matched by a case-insensitive substring of the team name and returned with id and name only. Fetch members with teamIds, teamsOnly: true, and includeTeamMembers: true.`,
     ),
   getMe: z
     .boolean()
@@ -91,21 +91,21 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
 
       MANDATORY BEST PRACTICES:
       1. ALWAYS use specific IDs or names when available
-      2. If no ids available, use name search if possible (USERS ONLY)
+      2. If no ids available, use name search if possible (users and team names)
       3. Use 'getMe: true' to get current user information
       4. AVOID broad queries (no parameters) - use only as last resort
 
       REQUIRED PARAMETER PRIORITY (use in this order):
       1. getMe - STANDALONE
       2. userIds
-      3. name - STANDALONE (USERS ONLY, NOT for teams)
+      3. name - STANDALONE (searches users and team names)
       4. teamIds + teamsOnly
       5. No parameters - LAST RESORT
 
       CRITICAL USAGE RULES:
       • userIds + teamIds requires explicit includeTeams: true flag
       • includeTeams: true fetches both users and teams, do not use this to fetch a specific user's teams rather fetch that user by id and you will get their team memberships.
-      • name parameter is for USER search ONLY - it cannot be used to search for teams. Use teamIds to fetch specific teams.`;
+      • name searches users and team names. A team found by name is returned with id and name only; use teamIds, teamsOnly: true, and includeTeamMembers: true for its members.`;
   }
 
   getInputSchema(): typeof listUsersAndTeamsToolSchema {
@@ -165,33 +165,7 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
         };
       }
 
-      const variables: GetUserByNameQueryVariables = {
-        name: input.name,
-      };
-
-      const res = await this.mondayApi.request<GetUserByNameQuery>(getUserByName, variables);
-
-      if (!res.users || res.users.length === 0) {
-        return {
-          content: `NAME_SEARCH_EMPTY: No users found matching "${input.name}". Try broader search terms or verify user exists in account.`,
-        };
-      }
-
-      // Convert basic user search response to simplified format
-      const userList = res.users
-        .filter((user) => user !== null)
-        .map((user) => `• **${user!.name}** (ID: ${user!.id})${user!.title ? ` - ${user!.title}` : ''}`)
-        .join('\n');
-
-      const contentStr = `Found ${res.users.length} user(s) matching "${input.name}":\n\n${userList}`;
-      const slug = await fetchAccountSlug(this.mondayApi);
-      return {
-        content: {
-          data: contentStr,
-          action_name: "Users and teams",
-          url: slug ? `https://${slug}.monday.com/teams/all` : undefined,
-        },
-      };
+      return this.searchByName(input.name!);
     }
 
     // Validate conflicting flags for regular operations
@@ -265,6 +239,70 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
     return {
       content: {
         data: content,
+        action_name: "Users and teams",
+        url: slug ? `https://${slug}.monday.com/teams/all` : undefined,
+      },
+    };
+  }
+
+  private async searchByName(name: string): Promise<ToolOutputType<never>> {
+    const userVariables: GetUserByNameQueryVariables = { name };
+    const teamVariables: ListTeamsOnlyQueryVariables = { teamIds: undefined };
+    const [usersResult, teamsResult] = await Promise.allSettled([
+      this.mondayApi.request<GetUserByNameQuery>(getUserByName, userVariables),
+      this.mondayApi.request<ListTeamsOnlyQuery>(listTeamsOnly, teamVariables),
+    ]);
+
+    if (usersResult.status === 'rejected') {
+      throw usersResult.reason;
+    }
+
+    const searchTerm = name.toLowerCase();
+    const users = (usersResult.value.users ?? []).filter((user) => user !== null);
+    const teamLookupFailed = teamsResult.status === 'rejected';
+    const teams = teamLookupFailed
+      ? []
+      : (teamsResult.value.teams ?? []).filter(
+          (team) => team !== null && !!team.name && team.name.toLowerCase().includes(searchTerm),
+        );
+
+    if (users.length === 0 && teamLookupFailed) {
+      return {
+        content: `TEAM_LOOKUP_INCOMPLETE: No users found matching "${name}". Team name search failed, so this does not mean the team does not exist.`,
+      };
+    }
+
+    if (users.length === 0 && teams.length === 0) {
+      return {
+        content: `NAME_SEARCH_EMPTY: No users or teams found matching "${name}". Try broader search terms or verify the user or team exists in the account.`,
+      };
+    }
+
+    const sections: string[] = [];
+    if (users.length > 0) {
+      const userList = users
+        .map((user) => `• **${user!.name}** (ID: ${user!.id})${user!.title ? ` - ${user!.title}` : ''}`)
+        .join('\n');
+      sections.push(`Found ${users.length} user(s) matching "${name}":\n\n${userList}`);
+    } else {
+      sections.push(`No users found matching "${name}".`);
+    }
+
+    if (teams.length > 0) {
+      const teamList = teams.map((team) => `• **${team!.name}** (ID: ${team!.id})`).join('\n');
+      sections.push(
+        `Team(s) matching "${name}" (${teams.length}):\n\n${teamList}\n\nTo get team members, call again with teamIds, teamsOnly: true and includeTeamMembers: true.`,
+      );
+    } else if (teamLookupFailed) {
+      sections.push(
+        'TEAM_LOOKUP_INCOMPLETE: Team name search failed, so this result does not show whether a matching team exists.',
+      );
+    }
+
+    const slug = await fetchAccountSlug(this.mondayApi);
+    return {
+      content: {
+        data: sections.join('\n\n'),
         action_name: "Users and teams",
         url: slug ? `https://${slug}.monday.com/teams/all` : undefined,
       },

@@ -1,5 +1,7 @@
 import { formatUsersAndTeams } from './list-users-and-teams.utils';
 import { FormattedResponse } from './types';
+import { createMockApiClient } from '../test-utils/mock-api-client';
+import { ListUsersAndTeamsTool } from './list-users-and-teams-tool';
 
 describe('ListUsersAndTeamsTool - Helper Functions', () => {
   describe('formatUsersAndTeams', () => {
@@ -572,5 +574,108 @@ describe('ListUsersAndTeamsTool - Helper Functions', () => {
       expect(result).toContain('Timezone: America/New_York');
       expect(result).toContain('UTC Hours Diff: -5');
     });
+  });
+});
+
+describe('ListUsersAndTeamsTool - name search', () => {
+  let mocks: ReturnType<typeof createMockApiClient>;
+  let tool: ListUsersAndTeamsTool;
+
+  const account = { me: { account: { slug: 'acme' } } };
+
+  const respond = (
+    users: Array<{ id: string; name: string; title?: string | null }> | null,
+    teams: Array<{ id: string; name: string } | null> | null,
+  ) => {
+    mocks.getMockRequest().mockImplementation(async (query: string) => {
+      if (query.includes('getUserByName')) return { users };
+      if (query.includes('listTeamsOnly')) return { teams };
+      return account;
+    });
+  };
+
+  beforeEach(() => {
+    mocks = createMockApiClient();
+    tool = new ListUsersAndTeamsTool(mocks.mockApiClient);
+  });
+
+  it('returns matching teams alongside matching users', async () => {
+    respond(
+      [{ id: '1', name: 'Dana Cohen', title: 'HR Analytics Lead' }],
+      [
+        { id: '77', name: 'HR Analytics' },
+        { id: '78', name: 'Finance' },
+      ],
+    );
+
+    const result = await tool.execute({ name: 'hr analytics' });
+    const data = (result.content as { data: string }).data;
+
+    expect(data).toContain('Found 1 user(s) matching "hr analytics"');
+    expect(data).toContain('**Dana Cohen** (ID: 1) - HR Analytics Lead');
+    expect(data).toContain('Team(s) matching "hr analytics" (1)');
+    expect(data).toContain('**HR Analytics** (ID: 77)');
+    expect(data).not.toContain('Finance');
+  });
+
+  it('returns matching teams when no user matches', async () => {
+    respond([], [{ id: '77', name: 'HR Analytics Team' }]);
+
+    const result = await tool.execute({ name: 'Analytics' });
+    const data = (result.content as { data: string }).data;
+
+    expect(data).toContain('No users found matching "Analytics".');
+    expect(data).toContain('**HR Analytics Team** (ID: 77)');
+    expect(data).toContain('teamsOnly: true');
+  });
+
+  it('fetches teams with the teams-only query and no member data', async () => {
+    respond([], [{ id: '77', name: 'HR Analytics' }]);
+
+    await tool.execute({ name: 'HR' });
+
+    const teamsCall = mocks.getMockRequest().mock.calls.find(([query]: [string]) => query.includes('listTeamsOnly'));
+    expect(teamsCall).toBeDefined();
+    expect(teamsCall![1]).toEqual({ teamIds: undefined });
+    expect(teamsCall![0]).not.toContain('users');
+  });
+
+  it('returns users and says the team lookup is incomplete when it fails', async () => {
+    mocks.getMockRequest().mockImplementation(async (query: string) => {
+      if (query.includes('getUserByName')) return { users: [{ id: '1', name: 'Dana Cohen', title: null }] };
+      if (query.includes('listTeamsOnly')) throw new Error('teams unavailable');
+      return account;
+    });
+
+    const result = await tool.execute({ name: 'Dana' });
+    const data = (result.content as { data: string }).data;
+
+    expect(data).toContain('**Dana Cohen** (ID: 1)');
+    expect(data).toContain('TEAM_LOOKUP_INCOMPLETE');
+    expect(data).not.toContain('NAME_SEARCH_EMPTY');
+  });
+
+  it('does not report that a team is missing when the team lookup fails and no user matches', async () => {
+    mocks.getMockRequest().mockImplementation(async (query: string) => {
+      if (query.includes('getUserByName')) return { users: [] };
+      if (query.includes('listTeamsOnly')) throw new Error('teams unavailable');
+      return account;
+    });
+
+    const result = await tool.execute({ name: 'HR Analytics' });
+
+    expect(result.content).toBe(
+      'TEAM_LOOKUP_INCOMPLETE: No users found matching "HR Analytics". Team name search failed, so this does not mean the team does not exist.',
+    );
+  });
+
+  it('returns NAME_SEARCH_EMPTY only when both lookups finish without matches', async () => {
+    respond(null, [{ id: '78', name: 'Finance' }, null]);
+
+    const result = await tool.execute({ name: 'HR Analytics' });
+
+    expect(result.content).toBe(
+      'NAME_SEARCH_EMPTY: No users or teams found matching "HR Analytics". Try broader search terms or verify the user or team exists in the account.',
+    );
   });
 });
