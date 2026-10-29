@@ -21,6 +21,7 @@ import { throwIfSearchTimeoutError } from 'src/utils/error.utils';
 import { SEARCH_LIMIT } from '../search-tool/search-tool.consts';
 
 const COLUMN_VALUE_NOT_SUPPORTED_MESSAGE = 'Column value type is not supported';
+const EMPTY_STATUS_INDEX = 5;
 
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 500;
@@ -188,7 +189,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
             content: `No items found matching the specified searchTerm`,
           };
         }
-      } catch(error) {
+      } catch (error) {
         throwIfSearchTimeoutError(error);
         input.filters = this.rebuildFiltersWithManualSearch(input.searchTerm, input.filters);
       }
@@ -226,7 +227,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
     const result = this.mapResult(res, input);
 
     return {
-      content: result
+      content: result,
     };
   }
 
@@ -329,6 +330,10 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
       return (cv as BatteryValue).battery_value;
     }
 
+    if (cv.type === NonDeprecatedColumnType.Status) {
+      return this.getStatusColumnValue(cv);
+    }
+
     // fallback logic for most column types
     if (cv.text) {
       return cv.text;
@@ -339,6 +344,24 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
     } catch {
       return cv.value || null;
     }
+  }
+
+  private getStatusColumnValue(cv: ColumnValue): string | { index: number; label: null; is_empty: boolean } | null {
+    const status = cv as ColumnValue & { label?: string | null; index?: number | null };
+    if (typeof status.label === 'string') {
+      return status.label;
+    }
+    if (typeof status.index === 'number') {
+      return {
+        index: status.index,
+        label: null,
+        is_empty: status.index === EMPTY_STATUS_INDEX,
+      };
+    }
+    if (typeof cv.text === 'string' && cv.text.length > 0) {
+      return cv.text;
+    }
+    return null;
   }
 
   private async getItemIdsFromSmartSearchAsync(input: ToolInputType<GetBoardItemsPageToolInput>): Promise<number[]> {

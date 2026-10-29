@@ -42,6 +42,11 @@ export const getBoardItemsPage = gql`
           count
         }
       }
+
+      ... on StatusValue {
+        index
+        label
+      }
     }
     description @include(if: $includeDescription) {
       id

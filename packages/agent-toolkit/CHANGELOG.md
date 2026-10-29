@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.78.1
+
+### `get_board_items_page` keeps unresolved status indexes explicit
+
+- Status cells now request the API `label` and `index` fields. A resolved label, including a blank label, is still returned as that string.
+- A status with no label keeps its real index instead of a raw value that can be mistaken for a label position: `{ index, label: null, is_empty }`. `is_empty` is true for the reserved empty index `5`. A status with neither label nor index returns `null`.
+- Rollup `BatteryValue` cells and other column types are unchanged.
+
 ## 5.78.0
 
 ### Item write tools return relation details
