@@ -150,7 +150,7 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
       return {
         content: {
           data: content,
-          action_name: "Users and teams",
+          action_name: 'Users and teams',
           url: slug ? `https://${slug}.monday.com/teams/all` : undefined,
         },
       };
@@ -239,7 +239,7 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
     return {
       content: {
         data: content,
-        action_name: "Users and teams",
+        action_name: 'Users and teams',
         url: slug ? `https://${slug}.monday.com/teams/all` : undefined,
       },
     };
@@ -303,7 +303,7 @@ export class ListUsersAndTeamsTool extends BaseMondayApiTool<typeof listUsersAnd
     return {
       content: {
         data: sections.join('\n\n'),
-        action_name: "Users and teams",
+        action_name: 'Users and teams',
         url: slug ? `https://${slug}.monday.com/teams/all` : undefined,
       },
     };
