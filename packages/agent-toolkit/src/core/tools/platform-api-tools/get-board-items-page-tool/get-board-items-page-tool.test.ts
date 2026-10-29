@@ -1,9 +1,6 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameAsync, callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
-import {
-  GetBoardItemsPageTool,
-  GetBoardItemsPageToolInput
-} from './get-board-items-page-tool';
+import { GetBoardItemsPageTool, GetBoardItemsPageToolInput } from './get-board-items-page-tool';
 import { z, ZodTypeAny } from 'zod';
 import {
   GetBoardItemsPageQuery,
@@ -517,6 +514,115 @@ describe('GetBoardItemsPageTool', () => {
           status: null,
           priority: null,
         },
+      });
+    });
+
+    it('returns a status label or null when the label is missing', async () => {
+      mocks.setResponse({
+        boards: [
+          {
+            id: '123456789',
+            name: 'Test Board',
+            items_page: {
+              items: [
+                {
+                  id: 'item1',
+                  name: 'Item with status labels',
+                  created_at: '2024-01-15T10:30:00Z',
+                  updated_at: '2024-01-16T14:20:00Z',
+                  column_values: [
+                    {
+                      id: 'status',
+                      type: NonDeprecatedColumnType.Status,
+                      text: 'Done',
+                      value: '{"index":1}',
+                    },
+                    {
+                      id: 'status_blank',
+                      type: NonDeprecatedColumnType.Status,
+                      text: '',
+                      value: '{"index":7}',
+                    },
+                    {
+                      id: 'status_empty',
+                      type: NonDeprecatedColumnType.Status,
+                      text: null,
+                      value: '{"index":5}',
+                    },
+                    {
+                      id: 'status_unresolved',
+                      type: NonDeprecatedColumnType.Status,
+                      text: null,
+                      value: '{"index":9}',
+                    },
+                    {
+                      id: 'status_missing',
+                      type: NonDeprecatedColumnType.Status,
+                      text: null,
+                      value: null,
+                    },
+                    { id: 'text', type: NonDeprecatedColumnType.Text, text: '', value: '{"raw":"kept"}' },
+                  ],
+                },
+              ],
+              cursor: null,
+            },
+          },
+        ],
+      });
+
+      const parsedResult = await callToolByNameAsync('get_board_items_page', {
+        boardId: 123456789,
+        includeColumns: true,
+      });
+
+      expect(parsedResult.items[0].column_values).toEqual({
+        status: 'Done',
+        status_blank: '',
+        status_empty: null,
+        status_unresolved: null,
+        status_missing: null,
+        text: { raw: 'kept' },
+      });
+    });
+
+    it('keeps rollup battery values ahead of status label handling', async () => {
+      mocks.setResponse({
+        boards: [
+          {
+            id: '123456789',
+            name: 'Test Board',
+            items_page: {
+              items: [
+                {
+                  id: 'item1',
+                  name: 'Rollup status',
+                  created_at: '2024-01-15T10:30:00Z',
+                  updated_at: '2024-01-16T14:20:00Z',
+                  column_values: [
+                    {
+                      id: 'status',
+                      type: NonDeprecatedColumnType.Status,
+                      text: '',
+                      value: null,
+                      battery_value: [{ key: '1', count: 2 }],
+                    },
+                  ],
+                },
+              ],
+              cursor: null,
+            },
+          },
+        ],
+      });
+
+      const parsedResult = await callToolByNameAsync('get_board_items_page', {
+        boardId: 123456789,
+        includeColumns: true,
+      });
+
+      expect(parsedResult.items[0].column_values).toEqual({
+        status: [{ key: '1', count: 2 }],
       });
     });
 

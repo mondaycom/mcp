@@ -65,7 +65,14 @@ export const changeItemColumnValues = gql`
       url
       column_values(ids: $columnIds) {
         id
+        type
         value
+        ... on BoardRelationValue {
+          linked_item_ids
+        }
+        ... on DependencyValue {
+          linked_item_ids
+        }
       }
     }
   }
