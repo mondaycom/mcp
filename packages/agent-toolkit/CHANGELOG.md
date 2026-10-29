@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.78.1
+
+### `create_item` and `create_items` duplicates keep their source group and return the confirmed name
+
+- `groupId` combined with `duplicateFromItemId` is now rejected before any item is copied. `duplicate_item` has no target group and always copies the source item's group. `groupId` still applies to a normal create, and the schema still accepts the old combination so cached clients get a runtime error instead of a dropped field.
+- A successful duplicate returns `item_name` from the rename response. It no longer returns the pre-rename name from `duplicate_item`, such as "X (copy)".
+
 ## 5.78.0
 
 ### Item write tools return relation details

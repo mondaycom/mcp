@@ -25,8 +25,8 @@ describe('Create Items Tool Behaviour', () => {
     duplicate_item: { id, name, url: `https://monday.com/boards/456/pulses/${id}` },
   });
 
-  const changeColumnValuesResponse = (id: string) => ({
-    change_multiple_column_values: { id },
+  const changeColumnValuesResponse = (id: string, name = 'Renamed') => ({
+    change_multiple_column_values: { id, name, url: `https://monday.com/boards/456/pulses/${id}` },
   });
 
   const columnValueError = (message: string, errorData: Record<string, unknown>) =>
@@ -237,6 +237,38 @@ describe('Create Items Tool Behaviour', () => {
       const dupCalls = allCalls.filter((c: any[]) => String(c[0]).includes('duplicate_item'));
       expect(dupCalls).toHaveLength(2);
       expect(dupCalls.map((c: any[]) => c[1].itemId).sort()).toEqual(['42', '43']);
+    });
+
+    it('rejects a duplicate that also sets groupId before creating a copy', async () => {
+      const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
+
+      const result = await tool.execute({
+        items: [{ name: 'Copy', groupId: 'group_mm8a9g0r', duplicateFromItemId: 42, columnValues: '{}' }],
+      });
+
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+      expect((result.content as { results: Array<{ error?: string }> }).results[0].error).toContain(
+        'groupId cannot be combined with duplicateFromItemId',
+      );
+      expect(result.isError).toBe(true);
+    });
+
+    it('returns the confirmed renamed name instead of the pre-rename duplicate name', async () => {
+      mocks.getMockRequest().mockImplementation(async (query: string) => {
+        if (query.includes('duplicate_item')) return duplicateResponse('101', 'Template (copy)');
+        if (query.includes('change_multiple_column_values')) return changeColumnValuesResponse('101', 'dummy show test');
+        throw new Error(`unexpected query: ${query}`);
+      });
+      const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
+
+      const result = await tool.execute({
+        items: [{ name: 'dummy show test', duplicateFromItemId: 13387280478, columnValues: '{}' }],
+      });
+
+      expect((result.content as { results: Array<Record<string, unknown>> }).results[0]).toMatchObject({
+        item_id: '101',
+        item_name: 'dummy show test',
+      });
     });
 
     it('mixes fresh creates and duplicates in one batch', async () => {

@@ -40,7 +40,7 @@ export const createItemsToolSchema = {
           .string()
           .optional()
           .describe(
-            'The id of the group to add this item to. Ignored when parentItemId is set (subitems inherit their parent group). If neither is set, the board default group is used.',
+            "The id of the group to add this item to. Ignored when parentItemId is set (subitems inherit their parent group). Cannot be combined with duplicateFromItemId, because duplication keeps the source item's group. If neither parent nor duplicate is set, an empty groupId uses the board default group.",
           ),
         parentItemId: z
           .number()
@@ -52,7 +52,7 @@ export const createItemsToolSchema = {
           .number()
           .optional()
           .describe(
-            'The id of an existing item to duplicate and then patch with this item name and columnValues. Use for bulk templating (e.g., duplicate a template item N times with different overrides). Mutually exclusive with parentItemId.',
+            "The id of an existing item to duplicate and then patch with this item name and columnValues. Use for bulk templating (e.g., duplicate a template item N times with different overrides). Mutually exclusive with parentItemId and groupId, because duplication keeps the source item's group.",
           ),
         createLabelsIfMissing: z
           .boolean()
@@ -88,7 +88,7 @@ export class CreateItemsTool extends BaseMondayApiTool<CreateItemsToolInput> {
 
   getDescription(): string {
     return (
-      `Create up to ${MAX_ITEMS_PER_CALL} new items in a single call. Each item is fully independent - it chooses its own groupId, parentItemId (for subitems), duplicateFromItemId (for bulk templating from an existing item), and createLabelsIfMissing. A single call can therefore span multiple groups, mix regular items with subitems under different parents, and mix fresh creates with duplicates of existing items. Each item returns its own item_id and item_url on success, or a raw error message on failure. ` +
+      `Create up to ${MAX_ITEMS_PER_CALL} new items in a single call. Each item is fully independent - it chooses its own groupId, parentItemId (for subitems), duplicateFromItemId (for bulk templating from an existing item), and createLabelsIfMissing. Do not set groupId on an item that also sets duplicateFromItemId; the copy stays in the source item's group. A single call can therefore span multiple groups, mix regular items with subitems under different parents, and mix fresh creates with duplicates of existing items. Each item returns its own item_id and item_url on success, or a raw error message on failure. ` +
       `Batch each parent's subitems into groups of up to ${MAX_ITEMS_PER_CALL}. Wait for one batch to finish before starting the next batch for that parent. ` +
       "[REQUIRED PRECONDITION]: Before using this tool, if new columns were added to the board or if you are not familiar with the board's structure (column IDs, column types, status labels, etc.), first use get_board_info with filters.columns.only to get column metadata without fetching views. This is essential for constructing proper column values and knowing which columns are available."
     );
