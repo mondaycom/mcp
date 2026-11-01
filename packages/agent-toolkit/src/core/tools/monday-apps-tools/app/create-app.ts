@@ -39,6 +39,7 @@ export class CreateAppTool extends BaseMondayAppsTool<typeof createPlainAppSchem
       const errorMessage = error instanceof Error ? error.message : String(error);
       return {
         content: `Failed to create app: ${errorMessage}`,
+        isError: true,
         metadata: {
           statusCode: 500,
           error: errorMessage,
