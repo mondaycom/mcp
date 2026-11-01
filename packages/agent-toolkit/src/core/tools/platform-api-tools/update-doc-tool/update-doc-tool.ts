@@ -129,7 +129,7 @@ COMMENTS:
     this.sessionContext.metadata = {
       ...this.sessionContext.metadata,
       operation_types: input.operations?.map((op) => op.operation_type),
-      operation_count: input.operations?.length ?? 0,
+      items_count: input.operations?.length ?? 0,
       ...(input.object_id && { object_id: input.object_id }),
       ...(input.board_id && { board_id: input.board_id, view_id: input.view_id }),
     };

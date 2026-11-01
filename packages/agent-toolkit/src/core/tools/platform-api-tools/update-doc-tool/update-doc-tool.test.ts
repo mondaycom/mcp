@@ -1,5 +1,6 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
+import { UpdateDocTool } from './update-doc-tool';
 
 const DELTA = [{ insert: { text: 'Hello' } }, { insert: { text: '\n' } }];
 
@@ -41,6 +42,29 @@ describe('UpdateDocTool', () => {
     });
     expect(result.content[0].text).toContain('Invalid arguments');
     expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+  });
+
+  it('records bulk operation metadata', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockResolvedValue({ update_doc_name: true });
+    const tool = new UpdateDocTool(mocks.mockApiClient);
+    const sessionContext = { metadata: {} as Record<string, unknown> };
+
+    await tool.execute(
+      {
+        doc_id: 'doc_123',
+        operations: [
+          { operation_type: 'set_name', name: 'First name' },
+          { operation_type: 'set_name', name: 'Final name' },
+        ],
+      },
+      sessionContext,
+    );
+
+    expect(sessionContext.metadata).toEqual({
+      operation_types: ['set_name', 'set_name'],
+      items_count: 2,
+      doc_id: 'doc_123',
+    });
   });
 
   // ─── Object ID resolution ─────────────────────────────────────────────────
