@@ -20,6 +20,7 @@ export const getItemDocColumnValue = gql`
   query getItemDocColumnValue($itemId: ID!, $columnId: String!) {
     items(ids: [$itemId], limit: 1) {
       column_values(ids: [$columnId]) {
+        __typename
         id
         type
         ... on DocValue {
