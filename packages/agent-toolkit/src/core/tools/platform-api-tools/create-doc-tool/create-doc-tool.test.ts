@@ -552,74 +552,7 @@ describe('CreateDocTool', () => {
         expect(addContentCall).toBeDefined();
       });
 
-      it('returns an existing item doc unchanged when the selected doc column is occupied', async () => {
-        jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
-          if (query.includes('query getItemBoard')) {
-            return Promise.resolve({
-              items: [
-                {
-                  id: 'item_123',
-                  board: {
-                    id: 'board_456',
-                    columns: [{ id: 'doc_col_1', type: NonDeprecatedColumnType.Doc }],
-                  },
-                },
-              ],
-            });
-          }
-          if (query.includes('query getItemDocColumnValue')) {
-            return Promise.resolve({
-              items: [
-                {
-                  column_values: [
-                    {
-                      __typename: 'DocValue',
-                      id: 'doc_col_1',
-                      type: NonDeprecatedColumnType.Doc,
-                      file: {
-                        doc: {
-                          id: 'existing_doc',
-                          object_id: 'existing_object',
-                          url: 'https://monday.com/docs/existing_object',
-                          name: 'Existing doc',
-                        },
-                      },
-                    },
-                  ],
-                },
-              ],
-            });
-          }
-          return Promise.resolve({});
-        });
-
-        const result = await callToolByNameRawAsync('create_doc', {
-          location: 'item',
-          item_id: 123,
-          column_id: 'doc_col_1',
-          doc_name: 'Requested name',
-          markdown: 'Requested content',
-        });
-
-        expect(result.structuredContent).toEqual({
-          message: 'The item already has a document in this column. The existing document was returned unchanged.',
-          doc_id: 'existing_doc',
-          object_id: 'existing_object',
-          doc_url: 'https://monday.com/docs/existing_object',
-          doc_name: 'Existing doc',
-          existing_doc_found: true,
-        });
-        expect(mocks.getMockRequest()).not.toHaveBeenCalledWith(
-          expect.stringContaining('mutation createDoc'),
-          expect.anything(),
-        );
-        expect(mocks.getMockRequest()).not.toHaveBeenCalledWith(
-          expect.stringContaining('mutation addContentToDocFromMarkdown'),
-          expect.anything(),
-        );
-      });
-
-      it('returns an existing item doc after a CellLimitExceeded creation race', async () => {
+      it('returns an existing item doc when creation fails with CellLimitExceeded', async () => {
         let docReads = 0;
         jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
           if (query.includes('query getItemBoard')) {
@@ -640,24 +573,21 @@ describe('CreateDocTool', () => {
             return Promise.resolve({
               items: [
                 {
-                  column_values:
-                    docReads === 1
-                      ? []
-                      : [
-                          {
-                            __typename: 'DocValue',
-                            id: 'doc_col_1',
-                            type: NonDeprecatedColumnType.Doc,
-                            file: {
-                              doc: {
-                                id: 'racing_doc',
-                                object_id: 'racing_object',
-                                url: 'https://monday.com/docs/racing_object',
-                                name: 'Racing doc',
-                              },
-                            },
-                          },
-                        ],
+                  column_values: [
+                    {
+                      __typename: 'DocValue',
+                      id: 'doc_col_1',
+                      type: NonDeprecatedColumnType.Doc,
+                      file: {
+                        doc: {
+                          id: 'existing_doc',
+                          object_id: 'existing_object',
+                          url: 'https://monday.com/docs/existing_object',
+                          name: 'Existing doc',
+                        },
+                      },
+                    },
+                  ],
                 },
               ],
             });
@@ -682,13 +612,23 @@ describe('CreateDocTool', () => {
           markdown: 'Requested content',
         });
 
-        expect(result.structuredContent).toEqual(
-          expect.objectContaining({
-            doc_id: 'racing_doc',
-            existing_doc_found: true,
-          }),
+        expect(result.structuredContent).toEqual({
+          message: 'The item already has a document in this column. The existing document was returned unchanged.',
+          doc_id: 'existing_doc',
+          object_id: 'existing_object',
+          doc_url: 'https://monday.com/docs/existing_object',
+          doc_name: 'Existing doc',
+          existing_doc_found: true,
+        });
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('mutation createDoc'),
+          expect.anything(),
         );
-        expect(docReads).toBe(2);
+        expect(mocks.getMockRequest()).not.toHaveBeenCalledWith(
+          expect.stringContaining('mutation addContentToDocFromMarkdown'),
+          expect.anything(),
+        );
+        expect(docReads).toBe(1);
       });
 
       it('preserves CellLimitExceeded when the item doc cell is still empty', async () => {

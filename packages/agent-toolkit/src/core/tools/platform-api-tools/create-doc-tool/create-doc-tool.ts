@@ -195,7 +195,6 @@ USAGE EXAMPLES:
         const existingDocColumn = item.board?.columns?.find((c) => c && c.type === NonDeprecatedColumnType.Doc);
 
         let columnId = parsedInput.column_id;
-        let createdDocColumn = false;
 
         if (!columnId) {
           if (existingDocColumn) {
@@ -213,7 +212,6 @@ USAGE EXAMPLES:
             if (!columnId) {
               throw new ToolValidationError('Failed to create doc column.', EMPTY_API_RESPONSE_CODE);
             }
-            createdDocColumn = true;
           }
         } else {
           const selectedColumn = item.board?.columns?.find((column) => column?.id === columnId);
@@ -222,13 +220,6 @@ USAGE EXAMPLES:
               `Column ${columnId} is not a doc column on board ${boardId}.`,
               INVALID_TOOL_ARGS_CODE,
             );
-          }
-        }
-
-        if (!createdDocColumn) {
-          const existingDoc = await this.getExistingItemDoc(parsedInput.item_id, columnId);
-          if (existingDoc) {
-            return this.existingItemDocResult(existingDoc, input.location);
           }
         }
 
