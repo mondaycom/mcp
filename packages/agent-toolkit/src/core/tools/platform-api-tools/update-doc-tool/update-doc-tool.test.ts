@@ -62,6 +62,7 @@ describe('UpdateDocTool', () => {
 
     expect(sessionContext.metadata).toEqual({
       operation_types: ['set_name', 'set_name'],
+      operation_count: 2,
       items_count: 2,
       doc_id: 'doc_123',
     });
