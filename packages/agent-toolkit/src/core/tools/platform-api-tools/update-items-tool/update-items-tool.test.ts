@@ -8,6 +8,8 @@ import {
   updateItemsToolSchema,
 } from './update-items-tool';
 import { CONCURRENCY_LIMIT, MAX_UPDATES_PER_CALL } from './constants';
+import { NonDeprecatedColumnType } from 'src/utils/types';
+import { LINKED_ITEM_IDS_RESPONSE_LIMIT } from '../change-item-column-values-tool';
 
 describe('Update Items Tool Behaviour', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
@@ -67,6 +69,67 @@ describe('Update Items Tool Behaviour', () => {
           columnIds: ['status'],
         }),
       );
+    });
+
+    it('returns structured board relation values from each update', async () => {
+      mocks.setResponse({
+        change_multiple_column_values: {
+          id: '1',
+          name: 'Item 1',
+          url: 'https://monday.com/boards/456/pulses/1',
+          column_values: [
+            {
+              id: 'board_relation',
+              type: NonDeprecatedColumnType.BoardRelation,
+              value: null,
+              linked_item_ids: ['2'],
+            },
+          ],
+        },
+      });
+
+      const tool = new UpdateItemsTool(mocks.mockApiClient, { boardId: 456 });
+      const result = await tool.execute({
+        updates: [{ itemId: 1, columnValues: '{"board_relation":{"item_ids":[2]}}' }],
+      });
+
+      expect((result.content as any).results[0].column_values.board_relation).toEqual({
+        linked_item_ids: ['2'],
+      });
+    });
+
+    it('reports successful relation updates without returning oversized linked item lists', async () => {
+      mocks.setResponse({
+        change_multiple_column_values: {
+          id: '1',
+          name: 'Item 1',
+          url: 'https://monday.com/boards/456/pulses/1',
+          column_values: [
+            {
+              id: 'board_relation',
+              type: NonDeprecatedColumnType.BoardRelation,
+              value: null,
+              linked_item_ids: Array.from({ length: LINKED_ITEM_IDS_RESPONSE_LIMIT + 1 }, (_, index) =>
+                String(index + 1),
+              ),
+            },
+          ],
+        },
+      });
+
+      const tool = new UpdateItemsTool(mocks.mockApiClient, { boardId: 456 });
+      const result = await tool.execute({
+        updates: [{ itemId: 1, columnValues: '{"board_relation":{"item_ids":[2]}}' }],
+      });
+      const content = result.content as any;
+
+      expect(content.summary).toEqual({ total: 1, updated: 1, failed: 0 });
+      expect(content.results[0].column_values.board_relation).toEqual({
+        linked_item_count: LINKED_ITEM_IDS_RESPONSE_LIMIT + 1,
+        linked_item_ids_omitted: true,
+        message: expect.stringContaining('Update succeeded'),
+      });
+      expect(content.results[0].column_values.board_relation).not.toHaveProperty('linked_item_ids');
     });
   });
 

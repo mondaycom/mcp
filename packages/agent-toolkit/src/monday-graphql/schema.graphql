@@ -1814,6 +1814,10 @@ kind: String = "global"): AppSubscriptionOperationsCounter
   "Get a collection of assets by ids."
   assets(  "Ids of the assets/files you want to get"
 ids: [ID!]!): [Asset]
+  "Get the docs that are rendered as views of a board."
+  board_view_docs(  "The unique identifier of the board that holds the doc views."
+board_id: ID!,   "The unique identifier of a single doc board view. When omitted, every doc view of the board is returned."
+view_id: ID): [Document]
   "Get a collection of boards."
   boards(  "The board's kind (public / private / share)"
 board_kind: BoardKind,   "A list of hierarchy types"

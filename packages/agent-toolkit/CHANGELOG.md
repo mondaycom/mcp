@@ -1,11 +1,24 @@
 # Changelog
 
-## 5.78.1
+## 5.78.2
 
 ### Document writes return structured failures and existing item docs
 
 - Document block-limit failures preserve the API's `ACTIVE_BLOCKS_PER_DOC` code, while partial writes retain completed document or operation details.
 - `create_doc` returns an existing item-attached document unchanged when its target doc column is occupied, including when concurrent creation produces `CellLimitExceeded`.
+
+## 5.78.1
+
+### `get_board_items_page` returns a status label or null
+
+- A status cell returns its label, including a blank label. A status with no label returns `null` instead of the raw index payload.
+- Rollup `BatteryValue` cells and other column types are unchanged.
+
+## 5.78.0
+
+### Item write tools return relation details
+
+- `change_item_column_values` and `update_items` return linked item IDs for board-relation and dependency columns.
 
 ## 5.77.3
 
