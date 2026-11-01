@@ -33,7 +33,14 @@ import { buildUpdateBlockContent, buildCreateBlockInput, applyCommentToDelta } f
 import { updateDocToolSchema, UpdateBlockContent, CreateBlock } from './update-doc-tool.schema';
 import { resolveBoardViewDoc } from '../utils/board-view-doc.utils';
 import { mentionsListSchema } from '../create-update-tool/create-update-tool';
-import { buildToolErrorStructuredContent } from '../../../../utils';
+import {
+  buildToolErrorStructuredContent,
+  EMPTY_API_RESPONSE_CODE,
+  MISSING_REQUIRED_PARAMETER_CODE,
+  rethrowWithContext,
+  TOOL_EXECUTION_FAILED_CODE,
+  ToolValidationError,
+} from '../../../../utils';
 import { ToolErrorEntry } from '../../../../utils/graphql-error.types';
 
 export { updateDocToolSchema };
@@ -123,7 +130,10 @@ COMMENTS:
 
   protected async executeInternal(input: ToolInputType<typeof updateDocToolSchema>): Promise<ToolOutputType<never>> {
     if (!input.doc_id && !input.object_id && !input.board_id) {
-      return { content: 'Error: Either doc_id, object_id, or board_id (with view_id) must be provided.' };
+      throw new ToolValidationError(
+        'Either doc_id, object_id, or board_id (with view_id) must be provided.',
+        MISSING_REQUIRED_PARAMETER_CODE,
+      );
     }
 
     this.sessionContext.metadata = {
@@ -143,7 +153,7 @@ COMMENTS:
       if (!docId && !objectId && input.board_id) {
         const resolved = await resolveBoardViewDoc(this.mondayApi, input.board_id, input.view_id);
         if (!resolved.ok) {
-          return { content: `Error: ${resolved.error}` };
+          throw new ToolValidationError(resolved.error, TOOL_EXECUTION_FAILED_CODE);
         }
         docId = resolved.doc.id;
         objectId = resolved.doc.object_id;
@@ -156,7 +166,10 @@ COMMENTS:
         });
         const doc = res.docs?.[0];
         if (!doc) {
-          return { content: `Error: No document found for object_id ${objectId}.` };
+          throw new ToolValidationError(
+            `No document found for object_id ${objectId}.`,
+            EMPTY_API_RESPONSE_CODE,
+          );
         }
         docId = doc.id;
       }
@@ -211,10 +224,7 @@ COMMENTS:
         content: `${summary}\n\nResults:\n${results.join('\n')}\n\nDoc ID: ${docId}`,
       };
     } catch (error) {
-      const errMsg = error instanceof Error ? error.message : String(error);
-      return {
-        content: `Error: ${errMsg}`,
-      };
+      rethrowWithContext(error, 'update document');
     }
   }
 

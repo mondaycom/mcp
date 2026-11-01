@@ -94,7 +94,13 @@ describe('ReadDocsTool', () => {
     it('should return error when type or ids are missing in content mode', async () => {
       const result = await callToolByNameRawAsync(TOOL_NAME, { mode: 'content' });
 
+      expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('type and ids are required');
+      expect(result.structuredContent).toEqual(
+        expect.objectContaining({
+          errors: [expect.objectContaining({ code: 'MISSING_REQUIRED_PARAMETER' })],
+        }),
+      );
     });
 
     it('should fall back to object_ids when ids returns no results', async () => {
@@ -122,8 +128,14 @@ describe('ReadDocsTool', () => {
 
       const result = await callToolByNameRawAsync(TOOL_NAME, { type: 'ids', ids: [DOC_ID] });
 
-      expect(result.content[0].text).toContain('Error reading documents');
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Failed to read documents');
       expect(result.content[0].text).toContain('Network error');
+      expect(result.structuredContent).toEqual(
+        expect.objectContaining({
+          errors: [expect.objectContaining({ code: 'TOOL_EXECUTION_FAILED' })],
+        }),
+      );
     });
   });
 
@@ -232,7 +244,13 @@ describe('ReadDocsTool', () => {
     it('should return error when doc_id is missing in version_history mode', async () => {
       const result = await callToolByNameRawAsync(TOOL_NAME, { mode: 'version_history' });
 
+      expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('ids is required');
+      expect(result.structuredContent).toEqual(
+        expect.objectContaining({
+          errors: [expect.objectContaining({ code: 'MISSING_REQUIRED_PARAMETER' })],
+        }),
+      );
     });
 
     it('should return no history message when no restoring points found', async () => {
@@ -370,8 +388,14 @@ describe('ReadDocsTool', () => {
 
       const result = await callToolByNameRawAsync(TOOL_NAME, { mode: 'version_history', ids: [DOC_ID] });
 
-      expect(result.content[0].text).toContain('Error fetching version history');
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Failed to fetch version history');
       expect(result.content[0].text).toContain('Network error');
+      expect(result.structuredContent).toEqual(
+        expect.objectContaining({
+          errors: [expect.objectContaining({ code: 'TOOL_EXECUTION_FAILED' })],
+        }),
+      );
     });
   });
 

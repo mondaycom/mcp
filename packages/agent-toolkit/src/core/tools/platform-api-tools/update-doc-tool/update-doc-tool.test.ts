@@ -31,7 +31,13 @@ describe('UpdateDocTool', () => {
     const result = await callToolByNameRawAsync('update_doc', {
       operations: [{ operation_type: 'set_name', name: 'New Name' }],
     });
+    expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('Either doc_id, object_id, or board_id (with view_id) must be provided');
+    expect(result.structuredContent).toEqual(
+      expect.objectContaining({
+        errors: [expect.objectContaining({ code: 'MISSING_REQUIRED_PARAMETER' })],
+      }),
+    );
     expect(mocks.getMockRequest()).not.toHaveBeenCalled();
   });
 
@@ -107,7 +113,13 @@ describe('UpdateDocTool', () => {
       operations: [{ operation_type: 'set_name', name: 'X' }],
     });
 
+    expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('No document found for object_id missing_obj');
+    expect(result.structuredContent).toEqual(
+      expect.objectContaining({
+        errors: [expect.objectContaining({ code: 'EMPTY_API_RESPONSE' })],
+      }),
+    );
   });
 
   // ─── Board view resolution ────────────────────────────────────────────────
@@ -146,7 +158,13 @@ describe('UpdateDocTool', () => {
       operations: [{ operation_type: 'set_name', name: 'X' }],
     });
 
+    expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('No doc found for view 222 on board 111');
+    expect(result.structuredContent).toEqual(
+      expect.objectContaining({
+        errors: [expect.objectContaining({ code: 'TOOL_EXECUTION_FAILED' })],
+      }),
+    );
   });
 
   it('asks for a view_id when the board has more than one doc view', async () => {
@@ -167,8 +185,14 @@ describe('UpdateDocTool', () => {
       operations: [{ operation_type: 'set_name', name: 'X' }],
     });
 
+    expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('has 2 doc views (Specs, Retro)');
     expect(result.content[0].text).toContain('Pass view_id');
+    expect(result.structuredContent).toEqual(
+      expect.objectContaining({
+        errors: [expect.objectContaining({ code: 'TOOL_EXECUTION_FAILED' })],
+      }),
+    );
   });
 
   it('prefers doc_id over board_id when both are provided', async () => {
