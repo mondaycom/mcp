@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.78.4
+
+### `update_form` layout uses `type` (CARD/FLAT), matching the API
+
+- `form.appearance.layout` now takes `type` (`CARD` or `FLAT`), the field `FormLayoutInput` defines and `get_form` returns.
+- The old `format` field (`OneByOne`/`Classic`) is removed. The API rejected it on every call with `Field "format" is not defined by type "FormLayoutInput"`, and the schema rejected the `type` value that `get_form` returns.
+- A cached schema that still sends `format` has that field ignored. It is not mapped to `type`: `OneByOne` and `Classic` are not `CARD` or `FLAT`.
+
 ## 5.78.3
 
 ### `get_board_info` keeps the board when the creator cannot be resolved

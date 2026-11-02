@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { GraphQLDescriptions } from '../workforms.consts';
-import { Alignment, BackgroundType, Direction, FontSize, Format, LogoPosition, LogoSize } from '../workforms.types';
+import { Alignment, BackgroundType, Direction, FontSize, LayoutType, LogoPosition, LogoSize } from '../workforms.types';
 
 export enum FormActions {
   activate = 'activate',
@@ -28,7 +28,7 @@ const backgroundSchema = z.object({
 });
 
 const layoutSchema = z.object({
-  format: z.nativeEnum(Format).optional(),
+  type: z.nativeEnum(LayoutType).optional(),
   alignment: z.nativeEnum(Alignment).optional(),
   direction: z.nativeEnum(Direction).optional(),
 });

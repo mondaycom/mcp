@@ -45,9 +45,9 @@ export enum Direction {
   Rtl = 'Rtl',
 }
 
-export enum Format {
-  OneByOne = 'OneByOne',
-  Classic = 'Classic',
+export enum LayoutType {
+  Card = 'CARD',
+  Flat = 'FLAT',
 }
 
 export enum Alignment {
@@ -428,7 +428,7 @@ export interface Form {
     showProgressBar: boolean;
     primaryColor: string | null;
     layout: {
-      format: Format;
+      type: LayoutType;
       alignment: Alignment;
       direction: Direction;
     };
