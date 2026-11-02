@@ -24,7 +24,7 @@ export const createItemToolSchema = {
     .string()
     .optional()
     .describe(
-      'The id of the group a new item is added to, or the group a duplicated item is placed in. Leave empty when the group is not clearly specified. Duplicating a subitem does not accept a groupId.',
+      'The id of the group id to which the new item will be added, if its not clearly specified, leave empty. Not supported when duplicateFromItemId is a subitem.',
     ),
   columnValues: z.string().describe(COLUMN_VALUES_FORMAT_GUIDE),
   createLabelsIfMissing: z
@@ -37,9 +37,7 @@ export const createItemToolSchema = {
   duplicateFromItemId: z
     .number()
     .optional()
-    .describe(
-      'The id of an existing item to duplicate. The copy is created with this name and, when groupId is set, in that group. A name different from the source item is used as given. The source name still gets the (copy) suffix. Column values are applied afterwards.',
-    ),
+    .describe('The id of existing item to duplicate and update with new values (only provide when duplicating)'),
 };
 
 export const createItemInBoardToolSchema = {
@@ -63,7 +61,7 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
     return (
       'Create a single item or subitem on a monday.com board, or duplicate an existing item. ' +
       '[IMPORTANT] If you need to create multiple items in one call, use create_items instead of calling this tool in a loop. ' +
-      'Otherwise: create a new item with provided values, create a subitem under a parent item, or duplicate an existing item and update it with new values. Use parentItemId when creating a subitem under an existing item. Use duplicateFromItemId when copying an existing item with modifications. Pass groupId to place the copy in that group. ' +
+      'Otherwise: create a new item with provided values, create a subitem under a parent item, or duplicate an existing item and update it with new values. Use parentItemId when creating a subitem under an existing item. Use duplicateFromItemId when copying an existing item with modifications. ' +
       `[REQUIRED PRECONDITION]: Before using this tool, if new columns were added to the board or if you are not familiar with the board's structure (column IDs, column types, status labels, etc.), first use get_board_info with filters.columns.only to get column metadata without fetching views. This is essential for constructing proper column values and knowing which columns are available.`
     );
   }
