@@ -1,11 +1,18 @@
 # Changelog
 
-## 5.78.2
+## 5.78.3
 
 ### `get_board_info` keeps the board when the creator cannot be resolved
 
 - The board request uses API version `2027-04`, where `Board.creator` is nullable. An unresolved creator comes back as `null` instead of failing the whole board.
 - This takes effect once that API version is deployed.
+
+## 5.78.2
+
+### Document writes return structured failures and existing item docs
+
+- Document block-limit failures preserve the API's `ACTIVE_BLOCKS_PER_DOC` code, while partial writes retain completed document or operation details.
+- `create_doc` returns an existing item-attached document unchanged when its target doc column is occupied, including when concurrent creation produces `CellLimitExceeded`.
 
 ## 5.78.1
 

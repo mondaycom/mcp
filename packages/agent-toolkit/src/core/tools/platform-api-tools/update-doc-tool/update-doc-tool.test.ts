@@ -1,5 +1,6 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameRawAsync, createMockApiClient } from '../test-utils/mock-api-client';
+import { UpdateDocTool } from './update-doc-tool';
 
 const DELTA = [{ insert: { text: 'Hello' } }, { insert: { text: '\n' } }];
 
@@ -30,7 +31,13 @@ describe('UpdateDocTool', () => {
     const result = await callToolByNameRawAsync('update_doc', {
       operations: [{ operation_type: 'set_name', name: 'New Name' }],
     });
+    expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('Either doc_id, object_id, or board_id (with view_id) must be provided');
+    expect(result.structuredContent).toEqual(
+      expect.objectContaining({
+        errors: [expect.objectContaining({ code: 'MISSING_REQUIRED_PARAMETER' })],
+      }),
+    );
     expect(mocks.getMockRequest()).not.toHaveBeenCalled();
   });
 
@@ -41,6 +48,30 @@ describe('UpdateDocTool', () => {
     });
     expect(result.content[0].text).toContain('Invalid arguments');
     expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+  });
+
+  it('records bulk operation metadata', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockResolvedValue({ update_doc_name: true });
+    const tool = new UpdateDocTool(mocks.mockApiClient);
+    const sessionContext = { metadata: {} as Record<string, unknown> };
+
+    await tool.execute(
+      {
+        doc_id: 'doc_123',
+        operations: [
+          { operation_type: 'set_name', name: 'First name' },
+          { operation_type: 'set_name', name: 'Final name' },
+        ],
+      },
+      sessionContext,
+    );
+
+    expect(sessionContext.metadata).toEqual({
+      operation_types: ['set_name', 'set_name'],
+      operation_count: 2,
+      items_count: 2,
+      doc_id: 'doc_123',
+    });
   });
 
   // ─── Object ID resolution ─────────────────────────────────────────────────
@@ -82,7 +113,13 @@ describe('UpdateDocTool', () => {
       operations: [{ operation_type: 'set_name', name: 'X' }],
     });
 
+    expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('No document found for object_id missing_obj');
+    expect(result.structuredContent).toEqual(
+      expect.objectContaining({
+        errors: [expect.objectContaining({ code: 'EMPTY_API_RESPONSE' })],
+      }),
+    );
   });
 
   // ─── Board view resolution ────────────────────────────────────────────────
@@ -121,7 +158,13 @@ describe('UpdateDocTool', () => {
       operations: [{ operation_type: 'set_name', name: 'X' }],
     });
 
+    expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('No doc found for view 222 on board 111');
+    expect(result.structuredContent).toEqual(
+      expect.objectContaining({
+        errors: [expect.objectContaining({ code: 'TOOL_EXECUTION_FAILED' })],
+      }),
+    );
   });
 
   it('asks for a view_id when the board has more than one doc view', async () => {
@@ -142,8 +185,14 @@ describe('UpdateDocTool', () => {
       operations: [{ operation_type: 'set_name', name: 'X' }],
     });
 
+    expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('has 2 doc views (Specs, Retro)');
     expect(result.content[0].text).toContain('Pass view_id');
+    expect(result.structuredContent).toEqual(
+      expect.objectContaining({
+        errors: [expect.objectContaining({ code: 'TOOL_EXECUTION_FAILED' })],
+      }),
+    );
   });
 
   it('prefers doc_id over board_id when both are provided', async () => {
@@ -252,8 +301,57 @@ describe('UpdateDocTool', () => {
       operations: [{ operation_type: 'add_markdown_content', markdown: 'bad' }],
     });
 
+    expect(result.isError).toBe(true);
+    expect(result.structuredContent).toEqual(
+      expect.objectContaining({
+        errors: [
+          expect.objectContaining({
+            code: 'TOOL_EXECUTION_FAILED',
+            path: ['operations', 0],
+          }),
+        ],
+      }),
+    );
     expect(result.content[0].text).toContain('[FAILED] add_markdown_content');
     expect(result.content[0].text).toContain('Bad markdown');
+  });
+
+  it('returns a structured failure when add_markdown_content reaches the document block limit', async () => {
+    jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+      if (query.includes('mutation addContentToDocFromMarkdown')) {
+        return Promise.reject(
+          Object.assign(new Error('Document cannot grow beyond 12,000 active blocks'), {
+            response: {
+              errors: [
+                {
+                  message: 'Document cannot grow beyond 12,000 active blocks',
+                  extensions: { code: 'ACTIVE_BLOCKS_PER_DOC' },
+                },
+              ],
+            },
+          }),
+        );
+      }
+      return Promise.resolve({});
+    });
+
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [{ operation_type: 'add_markdown_content', markdown: 'content' }],
+    });
+
+    expect(result.isError).toBe(true);
+    expect(result.structuredContent).toEqual(
+      expect.objectContaining({
+        is_partial_success: false,
+        errors: [
+          expect.objectContaining({
+            code: 'ACTIVE_BLOCKS_PER_DOC',
+            path: ['operations', 0],
+          }),
+        ],
+      }),
+    );
   });
 
   // ─── update_block ────────────────────────────────────────────────────────

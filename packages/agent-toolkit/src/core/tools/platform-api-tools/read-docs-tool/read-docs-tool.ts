@@ -14,6 +14,7 @@ import { getDocBlockContent } from '../update-doc-tool/update-doc-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { fetchBoardViewDocs, noDocsFoundMessage } from '../utils/board-view-doc.utils';
+import { MISSING_REQUIRED_PARAMETER_CODE, rethrowWithContext, ToolValidationError } from '../../../../utils';
 
 // Types for the GetDocComments query (manually defined as codegen has a pre-existing conflict)
 type GetDocCommentsQueryVariables = {
@@ -221,9 +222,10 @@ MODE: "version_history" — Fetch the edit history of a single document.
   private async executeContent(input: ToolInputType<typeof readDocsToolSchema>): Promise<ToolOutputType<never>> {
     try {
       if (!input.board_id && (!input.type || !input.ids || input.ids.length === 0)) {
-        return {
-          content: 'Error: type and ids are required when mode is "content", unless board_id is provided.',
-        };
+        throw new ToolValidationError(
+          'type and ids are required when mode is "content", unless board_id is provided.',
+          MISSING_REQUIRED_PARAMETER_CODE,
+        );
       }
 
       this.sessionContext.metadata = {
@@ -339,9 +341,7 @@ MODE: "version_history" — Fetch the edit history of a single document.
         input.blocks_page,
       );
     } catch (error) {
-      return {
-        content: `Error reading documents: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
-      };
+      rethrowWithContext(error, 'read documents');
     }
   }
 
@@ -350,7 +350,10 @@ MODE: "version_history" — Fetch the edit history of a single document.
     const objectId = input.ids?.[0];
 
     if (!objectId) {
-      return { content: 'Error: ids is required when mode is "version_history". Provide the document object_id.' };
+      throw new ToolValidationError(
+        'ids is required when mode is "version_history". Provide the document object_id.',
+        MISSING_REQUIRED_PARAMETER_CODE,
+      );
     }
 
     this.sessionContext.metadata = {
@@ -420,9 +423,7 @@ MODE: "version_history" — Fetch the edit history of a single document.
         },
       };
     } catch (error) {
-      return {
-        content: `Error fetching version history for document ${objectId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      };
+      rethrowWithContext(error, `fetch version history for document ${objectId}`);
     }
   }
 

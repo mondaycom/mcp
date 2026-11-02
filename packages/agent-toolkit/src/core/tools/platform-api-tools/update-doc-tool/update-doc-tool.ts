@@ -33,6 +33,15 @@ import { buildUpdateBlockContent, buildCreateBlockInput, applyCommentToDelta } f
 import { updateDocToolSchema, UpdateBlockContent, CreateBlock } from './update-doc-tool.schema';
 import { resolveBoardViewDoc } from '../utils/board-view-doc.utils';
 import { mentionsListSchema } from '../create-update-tool/create-update-tool';
+import {
+  buildToolErrorStructuredContent,
+  EMPTY_API_RESPONSE_CODE,
+  MISSING_REQUIRED_PARAMETER_CODE,
+  rethrowWithContext,
+  TOOL_EXECUTION_FAILED_CODE,
+  ToolValidationError,
+} from '../../../../utils';
+import { ToolErrorEntry } from '../../../../utils/graphql-error.types';
 
 export { updateDocToolSchema };
 
@@ -121,13 +130,17 @@ COMMENTS:
 
   protected async executeInternal(input: ToolInputType<typeof updateDocToolSchema>): Promise<ToolOutputType<never>> {
     if (!input.doc_id && !input.object_id && !input.board_id) {
-      return { content: 'Error: Either doc_id, object_id, or board_id (with view_id) must be provided.' };
+      throw new ToolValidationError(
+        'Either doc_id, object_id, or board_id (with view_id) must be provided.',
+        MISSING_REQUIRED_PARAMETER_CODE,
+      );
     }
 
     this.sessionContext.metadata = {
       ...this.sessionContext.metadata,
       operation_types: input.operations?.map((op) => op.operation_type),
       operation_count: input.operations?.length ?? 0,
+      items_count: input.operations?.length ?? 0,
       ...(input.object_id && { object_id: input.object_id }),
       ...(input.board_id && { board_id: input.board_id, view_id: input.view_id }),
     };
@@ -140,7 +153,7 @@ COMMENTS:
       if (!docId && !objectId && input.board_id) {
         const resolved = await resolveBoardViewDoc(this.mondayApi, input.board_id, input.view_id);
         if (!resolved.ok) {
-          return { content: `Error: ${resolved.error}` };
+          throw new ToolValidationError(resolved.error, TOOL_EXECUTION_FAILED_CODE);
         }
         docId = resolved.doc.id;
         objectId = resolved.doc.object_id;
@@ -153,12 +166,16 @@ COMMENTS:
         });
         const doc = res.docs?.[0];
         if (!doc) {
-          return { content: `Error: No document found for object_id ${objectId}.` };
+          throw new ToolValidationError(
+            `No document found for object_id ${objectId}.`,
+            EMPTY_API_RESPONSE_CODE,
+          );
         }
         docId = doc.id;
       }
 
       const results: string[] = [];
+      const errors: ToolErrorEntry[] = [];
       let failedAt: number | null = null;
 
       for (let i = 0; i < input.operations.length; i++) {
@@ -167,8 +184,15 @@ COMMENTS:
           const result = await this.executeOperation(docId, op, objectId);
           results.push(`- [OK] ${op.operation_type}${result ? `: ${result}` : ''}`);
         } catch (err) {
-          const errMsg = err instanceof Error ? err.message : 'Unknown error';
+          const structuredError = buildToolErrorStructuredContent(err);
+          const errMsg = structuredError.message;
           results.push(`- [FAILED] ${op.operation_type}: ${errMsg}`);
+          errors.push(
+            ...(structuredError.errors ?? []).map((entry) => ({
+              ...entry,
+              path: ['operations', i, ...(entry.path ?? [])],
+            })),
+          );
           failedAt = i;
           break;
         }
@@ -183,14 +207,24 @@ COMMENTS:
         doc_id: docId,
       };
 
+      if (failedAt !== null) {
+        return {
+          content: {
+            message: summary,
+            results,
+            is_partial_success: completed > 0,
+            errors,
+            doc_id: docId,
+          },
+          ...(completed === 0 ? { isError: true } : {}),
+        };
+      }
+
       return {
         content: `${summary}\n\nResults:\n${results.join('\n')}\n\nDoc ID: ${docId}`,
       };
     } catch (error) {
-      const errMsg = error instanceof Error ? error.message : String(error);
-      return {
-        content: `Error: ${errMsg}`,
-      };
+      rethrowWithContext(error, 'update document');
     }
   }
 
