@@ -6,7 +6,7 @@ import {
   CreateSubitemMutation,
 } from '../../../../monday-graphql/generated/graphql/graphql';
 import { createItem } from '../../../../monday-graphql/queries.graphql';
-import { duplicateItem } from './duplicate-item.graphql';
+import { DUPLICATE_ITEM_API_VERSION, duplicateItem } from './duplicate-item.graphql';
 import { createSubitem } from './create-subitem.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
@@ -24,7 +24,7 @@ export const createItemToolSchema = {
     .string()
     .optional()
     .describe(
-      'The id of the group to which a newly created item will be added. Leave empty when the group is not clearly specified. Cannot be combined with duplicateFromItemId.',
+      'The id of the group a new item is added to, or the group a duplicated item is placed in. Leave empty when the group is not clearly specified. Duplicating a subitem does not accept a groupId.',
     ),
   columnValues: z.string().describe(COLUMN_VALUES_FORMAT_GUIDE),
   createLabelsIfMissing: z
@@ -38,7 +38,7 @@ export const createItemToolSchema = {
     .number()
     .optional()
     .describe(
-      "The id of an existing item to duplicate and update with new values. Provide this only when duplicating. Cannot be combined with groupId, because duplicate_item keeps the source item's group.",
+      'The id of an existing item to duplicate. The copy is created with this name and, when groupId is set, in that group. A name different from the source item is used as given. The source name still gets the (copy) suffix. Column values are applied afterwards.',
     ),
 };
 
@@ -63,7 +63,7 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
     return (
       'Create a single item or subitem on a monday.com board, or duplicate an existing item. ' +
       '[IMPORTANT] If you need to create multiple items in one call, use create_items instead of calling this tool in a loop. ' +
-      "Otherwise: create a new item with provided values, create a subitem under a parent item, or duplicate an existing item and update it with new values. Use parentItemId when creating a subitem under an existing item. Use duplicateFromItemId when copying an existing item with modifications. Do not pass groupId with duplicateFromItemId; the copy stays in the source item's group. " +
+      'Otherwise: create a new item with provided values, create a subitem under a parent item, or duplicate an existing item and update it with new values. Use parentItemId when creating a subitem under an existing item. Use duplicateFromItemId when copying an existing item with modifications. Pass groupId to place the copy in that group. ' +
       `[REQUIRED PRECONDITION]: Before using this tool, if new columns were added to the board or if you are not familiar with the board's structure (column IDs, column types, status labels, etc.), first use get_board_info with filters.columns.only to get column metadata without fetching views. This is essential for constructing proper column values and knowing which columns are available.`
     );
   }
@@ -86,13 +86,6 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
       );
     }
 
-    if (input.duplicateFromItemId && input.groupId) {
-      throw new ToolValidationError(
-        'groupId cannot be combined with duplicateFromItemId. duplicate_item copies the source item into its current group and cannot place the copy in another group.',
-        'INVALID_ARGUMENTS_COMBINATION',
-      );
-    }
-
     if (input.duplicateFromItemId) {
       return await this.duplicateAndUpdateItem(input, boardId);
     } else if (input.parentItemId) {
@@ -110,9 +103,13 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
       const duplicateVariables = {
         boardId: boardId.toString(),
         itemId: input.duplicateFromItemId!.toString(),
+        itemName: input.name,
+        ...(input.groupId ? { groupId: input.groupId } : {}),
       };
 
-      const duplicateRes = await this.mondayApi.request<DuplicateItemMutation>(duplicateItem, duplicateVariables);
+      const duplicateRes = await this.mondayApi.request<DuplicateItemMutation>(duplicateItem, duplicateVariables, {
+        versionOverride: DUPLICATE_ITEM_API_VERSION,
+      });
 
       if (!duplicateRes.duplicate_item?.id) {
         throw new ToolValidationError('Failed to duplicate item: no item duplicated', 'EMPTY_API_RESPONSE');
@@ -128,33 +125,29 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
         );
       }
 
-      const columnValuesAndName = {
-        ...columnValuesParsed,
-        name: input.name,
-      };
+      const hasColumnValues =
+        columnValuesParsed !== null &&
+        typeof columnValuesParsed === 'object' &&
+        !Array.isArray(columnValuesParsed) &&
+        Object.keys(columnValuesParsed).length > 0;
 
-      const changeColumnValuesTool = new ChangeItemColumnValuesTool(this.mondayApi, {
-        boardId: boardId,
-      });
+      if (hasColumnValues) {
+        const changeColumnValuesTool = new ChangeItemColumnValuesTool(this.mondayApi, {
+          boardId: boardId,
+        });
 
-      const updateRes = await changeColumnValuesTool.execute({
-        itemId: parseInt(duplicateRes.duplicate_item.id),
-        columnValues: JSON.stringify(columnValuesAndName),
-        createLabelsIfMissing: input.createLabelsIfMissing,
-      });
-      const confirmedName = confirmedItemName(updateRes.content);
-      if (!confirmedName) {
-        throw new ToolValidationError(
-          `Item ${duplicateRes.duplicate_item.id} was duplicated, but its new name was not confirmed`,
-          'DUPLICATE_RENAME_UNCONFIRMED',
-        );
+        await changeColumnValuesTool.execute({
+          itemId: parseInt(duplicateRes.duplicate_item.id),
+          columnValues: JSON.stringify(columnValuesParsed),
+          createLabelsIfMissing: input.createLabelsIfMissing,
+        });
       }
 
       return {
         content: {
           message: `Item ${duplicateRes.duplicate_item.id} duplicated from ${input.duplicateFromItemId}`,
           item_id: duplicateRes.duplicate_item.id,
-          item_name: confirmedName,
+          item_name: duplicateRes.duplicate_item.name,
           item_url: duplicateRes.duplicate_item.url,
           board_id: boardId,
         },
@@ -219,12 +212,4 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
       rethrowWithContext(error, 'create item');
     }
   }
-}
-
-function confirmedItemName(content: unknown): string | undefined {
-  if (!content || typeof content !== 'object' || !('item_name' in content)) {
-    return undefined;
-  }
-  const itemName = (content as { item_name?: unknown }).item_name;
-  return typeof itemName === 'string' && itemName.length > 0 ? itemName : undefined;
 }

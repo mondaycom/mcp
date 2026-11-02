@@ -15166,7 +15166,9 @@ export type MutationDuplicate_GroupArgs = {
 /** Root mutation type for the Dependencies service */
 export type MutationDuplicate_ItemArgs = {
   board_id: Scalars['ID']['input'];
+  group_id?: InputMaybe<Scalars['ID']['input']>;
   item_id?: InputMaybe<Scalars['ID']['input']>;
+  item_name?: InputMaybe<Scalars['String']['input']>;
   with_updates?: InputMaybe<Scalars['Boolean']['input']>;
 };
 

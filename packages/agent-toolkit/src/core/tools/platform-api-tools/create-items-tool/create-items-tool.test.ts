@@ -239,27 +239,28 @@ describe('Create Items Tool Behaviour', () => {
       expect(dupCalls.map((c: any[]) => c[1].itemId).sort()).toEqual(['42', '43']);
     });
 
-    it('rejects a duplicate that also sets groupId before creating a copy', async () => {
+    it('passes groupId and itemName to duplicate_item', async () => {
+      mocks.setResponse(duplicateResponse('101', 'Copy'));
       const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
 
       const result = await tool.execute({
         items: [{ name: 'Copy', groupId: 'group_mm8a9g0r', duplicateFromItemId: 42, columnValues: '{}' }],
       });
 
-      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
-      expect((result.content as { results: Array<{ error?: string }> }).results[0].error).toContain(
-        'groupId cannot be combined with duplicateFromItemId',
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('duplicate_item'),
+        expect.objectContaining({ itemId: '42', itemName: 'Copy', groupId: 'group_mm8a9g0r' }),
+        { versionOverride: '2027-04' },
       );
-      expect(result.isError).toBe(true);
+      expect((result.content as { results: Array<Record<string, unknown>> }).results[0]).toMatchObject({
+        item_id: '101',
+        item_name: 'Copy',
+      });
+      expect(result.isError).toBeUndefined();
     });
 
-    it('returns the confirmed renamed name instead of the pre-rename duplicate name', async () => {
-      mocks.getMockRequest().mockImplementation(async (query: string) => {
-        if (query.includes('duplicate_item')) return duplicateResponse('101', 'Template (copy)');
-        if (query.includes('change_multiple_column_values'))
-          return changeColumnValuesResponse('101', 'dummy show test');
-        throw new Error(`unexpected query: ${query}`);
-      });
+    it('returns the name duplicate_item created', async () => {
+      mocks.setResponse(duplicateResponse('101', 'dummy show test'));
       const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
 
       const result = await tool.execute({
@@ -270,14 +271,11 @@ describe('Create Items Tool Behaviour', () => {
         item_id: '101',
         item_name: 'dummy show test',
       });
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
     });
 
     it('mixes fresh creates and duplicates in one batch', async () => {
-      mocks.setResponses([
-        itemResponse('1', 'Fresh'),
-        duplicateResponse('101', 'Cloned'),
-        changeColumnValuesResponse('101'),
-      ]);
+      mocks.setResponses([itemResponse('1', 'Fresh'), duplicateResponse('101', 'Cloned')]);
       const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
 
       await tool.execute({

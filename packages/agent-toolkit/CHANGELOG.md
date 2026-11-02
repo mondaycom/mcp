@@ -2,10 +2,11 @@
 
 ## 5.78.1
 
-### `create_item` and `create_items` duplicates keep their source group and return the confirmed name
+### `create_item` and `create_items` duplicates set the name and group in one call
 
-- `groupId` combined with `duplicateFromItemId` is now rejected before any item is copied. `duplicate_item` has no target group and always copies the source item's group. `groupId` still applies to a normal create, and the schema still accepts the old combination so cached clients get a runtime error instead of a dropped field.
-- A successful duplicate returns `item_name` from the rename response. It no longer returns the pre-rename name from `duplicate_item`, such as "X (copy)".
+- A duplicate sends `item_name` and `group_id` to `duplicate_item` on API version 2027-04. The copy is created with that name and in that group, instead of being renamed or moved afterwards.
+- A name different from the source item is used as given. The source name still gets " (copy)".
+- Column values are still applied in a follow-up call, without changing the name again.
 
 ## 5.78.0
 
