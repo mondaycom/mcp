@@ -188,7 +188,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
             content: `No items found matching the specified searchTerm`,
           };
         }
-      } catch(error) {
+      } catch (error) {
         throwIfSearchTimeoutError(error);
         input.filters = this.rebuildFiltersWithManualSearch(input.searchTerm, input.filters);
       }
@@ -226,7 +226,7 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
     const result = this.mapResult(res, input);
 
     return {
-      content: result
+      content: result,
     };
   }
 
@@ -327,6 +327,10 @@ export class GetBoardItemsPageTool extends BaseMondayApiTool<GetBoardItemsPageTo
     // BatteryValue is a rollup Status column on MLS boards — its __typename differs from StatusValue
     if ('battery_value' in cv) {
       return (cv as BatteryValue).battery_value;
+    }
+
+    if (cv.type === NonDeprecatedColumnType.Status) {
+      return cv.text ?? null;
     }
 
     // fallback logic for most column types

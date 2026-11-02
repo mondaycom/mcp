@@ -1,12 +1,26 @@
 # Changelog
 
-## 5.78.1
+## 5.78.3
 
 ### `create_item` and `create_items` duplicates set the name and group in one call
 
 - A duplicate sends `item_name` and `group_id` to `duplicate_item` on API version 2027-04. The copy is created with that name and in that group, instead of being renamed or moved afterwards.
 - A name different from the source item is used as given. The source name still gets " (copy)".
 - Column values are still applied in a follow-up call, without changing the name again.
+
+## 5.78.2
+
+### Document writes return structured failures and existing item docs
+
+- Document block-limit failures preserve the API's `ACTIVE_BLOCKS_PER_DOC` code, while partial writes retain completed document or operation details.
+- `create_doc` returns an existing item-attached document unchanged when its target doc column is occupied, including when concurrent creation produces `CellLimitExceeded`.
+
+## 5.78.1
+
+### `get_board_items_page` returns a status label or null
+
+- A status cell returns its label, including a blank label. A status with no label returns `null` instead of the raw index payload.
+- Rollup `BatteryValue` cells and other column types are unchanged.
 
 ## 5.78.0
 
