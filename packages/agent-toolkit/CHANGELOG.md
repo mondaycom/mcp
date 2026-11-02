@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.78.3
+
+### `get_board_info` keeps the board when the creator cannot be resolved
+
+- The board request uses API version `2027-04`, where `Board.creator` is nullable. An unresolved creator comes back as `null` instead of failing the whole board.
+- This takes effect once that API version is deployed.
+
 ## 5.78.2
 
 ### Document writes return structured failures and existing item docs
