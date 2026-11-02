@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.78.2
+
+### Document writes return structured failures and existing item docs
+
+- Document block-limit failures preserve the API's `ACTIVE_BLOCKS_PER_DOC` code, while partial writes retain completed document or operation details.
+- `create_doc` returns an existing item-attached document unchanged when its target doc column is occupied, including when concurrent creation produces `CellLimitExceeded`.
+
 ## 5.78.1
 
 ### `get_board_items_page` returns a status label or null
