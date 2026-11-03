@@ -350,6 +350,25 @@ describe('Create Item Tool Behaviour', () => {
         expect(mockChangeColumnValuesTool.execute).not.toHaveBeenCalled();
       });
 
+      it('renames the copy when duplicate_item appends the copy suffix', async () => {
+        mocks.setResponse({ duplicate_item: { id: '987654321', name: 'Updated Item (copy)' } });
+        mockChangeColumnValuesTool.execute.mockResolvedValue(successfulUpdateResponse);
+        const tool = new CreateItemTool(mocks.mockApiClient, { boardId: 456 });
+
+        const result = await tool.execute({
+          name: 'Updated Item',
+          columnValues: '{}',
+          duplicateFromItemId: 123,
+        });
+
+        expect(mockChangeColumnValuesTool.execute).toHaveBeenCalledWith({
+          itemId: 987654321,
+          columnValues: '{"name":"Updated Item"}',
+          createLabelsIfMissing: undefined,
+        });
+        expect((result.content as { item_name?: string }).item_name).toBe('Updated Item');
+      });
+
       it('skips the column update when name is the only column value', async () => {
         mocks.setResponse(successfulDuplicateItemResponse);
         const tool = new CreateItemTool(mocks.mockApiClient, { boardId: 456 });

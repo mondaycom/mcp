@@ -131,6 +131,12 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
         throw new ToolValidationError('Failed to duplicate item: no item duplicated', 'EMPTY_API_RESPONSE');
       }
 
+      const createdName = duplicateRes.duplicate_item.name;
+      const nameWasSuffixed = createdName === `${input.name} (copy)`;
+      if (nameWasSuffixed) {
+        columnValuesToUpdate.name = input.name;
+      }
+
       if (Object.keys(columnValuesToUpdate).length > 0) {
         const changeColumnValuesTool = new ChangeItemColumnValuesTool(this.mondayApi, {
           boardId: boardId,
@@ -147,7 +153,7 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
         content: {
           message: `Item ${duplicateRes.duplicate_item.id} duplicated from ${input.duplicateFromItemId}`,
           item_id: duplicateRes.duplicate_item.id,
-          item_name: duplicateRes.duplicate_item.name,
+          item_name: nameWasSuffixed ? input.name : createdName,
           item_url: duplicateRes.duplicate_item.url,
           board_id: boardId,
         },
