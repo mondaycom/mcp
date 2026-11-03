@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.79.0
+
+### `create_items` uses the batch create endpoint when compatible
+
+- When `batch-create-items-enable-endpoint` is enabled, a homogeneous group of regular items or subitems under one parent is created in one batch request.
+- Calls that use different groups or parents, duplication, `createLabelsIfMissing`, or invalid column-value JSON keep the existing GraphQL path.
+- The input and output shapes are unchanged, while the maximum items per call increases from 20 to 100.
+
 ## 5.78.5
 
 ### `create_item` and `create_items` duplicates set the name and group in one call

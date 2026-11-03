@@ -3,7 +3,34 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
 import { buildToolErrorStructuredContent, ToolValidationError } from '../../../../utils';
 import { createMockApiClient } from '../test-utils/mock-api-client';
 import { CreateItemsTool, createItemsInBoardToolSchema } from './create-items-tool';
-import { CONCURRENCY_LIMIT, MAX_ITEMS_PER_CALL, PER_PARENT_CONCURRENCY_LIMIT } from './constants';
+import {
+  BATCH_CREATE_ITEMS_FLAG,
+  CONCURRENCY_LIMIT,
+  MAX_ITEMS_PER_CALL,
+  PER_PARENT_CONCURRENCY_LIMIT,
+} from './constants';
+
+function mockFetchResponse({
+  ok = true,
+  status = 200,
+  body = {},
+  retryAfter,
+}: {
+  ok?: boolean;
+  status?: number;
+  body?: unknown;
+  retryAfter?: string;
+} = {}): Response {
+  return {
+    ok,
+    status,
+    headers: {
+      get: (name: string) => (name.toLowerCase() === 'retry-after' ? (retryAfter ?? null) : null),
+    },
+    json: async () => body,
+    text: async () => (typeof body === 'string' ? body : JSON.stringify(body)),
+  } as unknown as Response;
+}
 
 describe('Create Items Tool Behaviour', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
@@ -148,6 +175,226 @@ describe('Create Items Tool Behaviour', () => {
       expect(c.results[1]).toMatchObject({ index: 1 });
       expect(c.results[1].error).toContain('Invalid column values');
       expect(c.results[2]).toMatchObject({ index: 2, item_id: '3' });
+    });
+  });
+
+  describe('Batch endpoint', () => {
+    const createBatchTool = (mondayFetch: jest.Mock, flagEnabled = true) => {
+      const flagChecker = jest.fn().mockReturnValue(flagEnabled);
+      const tool = new CreateItemsTool(mocks.mockApiClient, 'signed-token', {
+        boardId: 456,
+        deps: { flagChecker },
+        fetchConfig: { fetch: mondayFetch },
+      });
+      return { tool, flagChecker };
+    };
+
+    it('uses one batch request for compatible regular items when the flag is enabled', async () => {
+      const mondayFetch = jest.fn().mockResolvedValue(
+        mockFetchResponse({
+          body: {
+            createdItems: [
+              { serialNo: 0, itemId: 11 },
+              { serialNo: 1, itemId: 12 },
+            ],
+            failedItems: [],
+            invalidItems: [],
+          },
+        }),
+      );
+      const { tool, flagChecker } = createBatchTool(mondayFetch);
+
+      const result = await tool.execute({
+        items: [
+          { name: 'A', groupId: 'topics', columnValues: '{"text":"a"}' },
+          { name: 'B', groupId: 'topics', columnValues: '{"text":"b"}' },
+        ],
+      });
+
+      expect(flagChecker).toHaveBeenCalledWith(BATCH_CREATE_ITEMS_FLAG);
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+      expect(mondayFetch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          serviceName: 'monday-api',
+          path: '/internal/create-items',
+          method: 'POST',
+        }),
+      );
+      expect(JSON.parse(mondayFetch.mock.calls[0][0].body)).toEqual({
+        boardId: 456,
+        groupId: 'topics',
+        items: [
+          { name: 'A', columnValues: { text: 'a' } },
+          { name: 'B', columnValues: { text: 'b' } },
+        ],
+      });
+      expect(result.content).toMatchObject({
+        board_id: 456,
+        summary: { total: 2, created: 2, failed: 0 },
+        results: [
+          {
+            index: 0,
+            item_id: '11',
+            item_name: 'A',
+            item_url: 'https://monday.com/boards/456/pulses/11',
+            board_id: 456,
+          },
+          {
+            index: 1,
+            item_id: '12',
+            item_name: 'B',
+            item_url: 'https://monday.com/boards/456/pulses/12',
+            board_id: 456,
+          },
+        ],
+      });
+    });
+
+    it('uses parentPulseId for a compatible subitem batch', async () => {
+      const mondayFetch = jest.fn().mockResolvedValue(
+        mockFetchResponse({
+          body: {
+            createdItems: [
+              { serialNo: 0, itemId: 21 },
+              { serialNo: 1, itemId: 22 },
+            ],
+          },
+        }),
+      );
+      const { tool } = createBatchTool(mondayFetch);
+
+      const result = await tool.execute({
+        items: [
+          { name: 'A', parentItemId: 901, columnValues: '{}' },
+          { name: 'B', parentItemId: 901, columnValues: '{}' },
+        ],
+      });
+
+      expect(JSON.parse(mondayFetch.mock.calls[0][0].body)).toEqual({
+        boardId: 456,
+        parentPulseId: 901,
+        items: [
+          { name: 'A', columnValues: {} },
+          { name: 'B', columnValues: {} },
+        ],
+      });
+      expect((result.content as any).results[0]).toMatchObject({
+        index: 0,
+        item_id: '21',
+        message: 'Subitem 21 created under 901',
+      });
+      expect((result.content as any).results[0]).not.toHaveProperty('board_id');
+    });
+
+    it('maps invalid and failed items into the existing partial-success response', async () => {
+      const mondayFetch = jest.fn().mockResolvedValue(
+        mockFetchResponse({
+          body: {
+            createdItems: [{ serialNo: 0, itemId: 11 }],
+            invalidItems: [{ serialNo: 1, errors: [{ message: 'Unknown label', type: 'COLUMN_VALUE_INVALID' }] }],
+            failedItems: [{ serialNo: 2, reason: 'Temporary failure', code: 'TEMPORARY', retryAfter: 4 }],
+          },
+        }),
+      );
+      const { tool } = createBatchTool(mondayFetch);
+
+      const result = await tool.execute({
+        items: [
+          { name: 'A', columnValues: '{}' },
+          { name: 'B', columnValues: '{}' },
+          { name: 'C', columnValues: '{}' },
+        ],
+      });
+
+      expect(result.isError).toBeUndefined();
+      expect(result.content).toMatchObject({
+        summary: { total: 3, created: 1, failed: 2 },
+        is_partial_success: true,
+        results: [
+          { index: 0, item_id: '11' },
+          { index: 1, error: 'Unknown label' },
+          { index: 2, error: 'Temporary failure' },
+        ],
+        errors: [
+          { code: 'COLUMN_VALUE_INVALID', message: 'Unknown label', path: ['results', 1] },
+          { code: 'TEMPORARY', retry_after: 4, message: 'Temporary failure', path: ['results', 2] },
+        ],
+      });
+    });
+
+    it.each([
+      {
+        name: 'the flag is disabled',
+        flagEnabled: false,
+        items: [
+          { name: 'A', groupId: 'topics', columnValues: '{}' },
+          { name: 'B', groupId: 'topics', columnValues: '{}' },
+        ],
+      },
+      {
+        name: 'items use different groups',
+        flagEnabled: true,
+        items: [
+          { name: 'A', groupId: 'one', columnValues: '{}' },
+          { name: 'B', groupId: 'two', columnValues: '{}' },
+        ],
+      },
+      {
+        name: 'an item creates labels',
+        flagEnabled: true,
+        items: [
+          { name: 'A', groupId: 'topics', columnValues: '{}', createLabelsIfMissing: true },
+          { name: 'B', groupId: 'topics', columnValues: '{}' },
+        ],
+      },
+    ])('keeps the GraphQL path when $name', async ({ flagEnabled, items }) => {
+      mocks.setResponses([itemResponse('1', 'A'), itemResponse('2', 'B')]);
+      const mondayFetch = jest.fn();
+      const { tool } = createBatchTool(mondayFetch, flagEnabled);
+
+      await tool.execute({ items });
+
+      expect(mondayFetch).not.toHaveBeenCalled();
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
+    });
+
+    it('falls back to GraphQL when the endpoint is disabled', async () => {
+      mocks.setResponses([itemResponse('1', 'A'), itemResponse('2', 'B')]);
+      const mondayFetch = jest.fn().mockResolvedValue(mockFetchResponse({ ok: false, status: 403 }));
+      const { tool } = createBatchTool(mondayFetch);
+
+      const result = await tool.execute({
+        items: [
+          { name: 'A', groupId: 'topics', columnValues: '{}' },
+          { name: 'B', groupId: 'topics', columnValues: '{}' },
+        ],
+      });
+
+      expect(mondayFetch).toHaveBeenCalledTimes(1);
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
+      expect(result.content).toMatchObject({ summary: { total: 2, created: 2, failed: 0 } });
+    });
+
+    it('returns Retry-After details without retrying a rejected batch', async () => {
+      const mondayFetch = jest
+        .fn()
+        .mockResolvedValue(mockFetchResponse({ ok: false, status: 429, body: 'Rate limit exceeded', retryAfter: '3' }));
+      const { tool } = createBatchTool(mondayFetch);
+
+      const result = await tool.execute({
+        items: [
+          { name: 'A', groupId: 'topics', columnValues: '{}' },
+          { name: 'B', groupId: 'topics', columnValues: '{}' },
+        ],
+      });
+
+      expect(result.isError).toBe(true);
+      expect(mondayFetch).toHaveBeenCalledTimes(1);
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+      expect((result.content as any).errors).toEqual([
+        expect.objectContaining({ code: 'HTTP_429', status_code: 429, retry_after: '3' }),
+        expect.objectContaining({ code: 'HTTP_429', status_code: 429, retry_after: '3' }),
+      ]);
     });
   });
 
@@ -680,7 +927,7 @@ describe('Create Items Tool Behaviour', () => {
       const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
 
       expect(tool.getDescription()).toContain(
-        "Batch each parent's subitems into groups of up to 20. Wait for one batch to finish before starting the next batch for that parent.",
+        `Batch each parent's subitems into groups of up to ${MAX_ITEMS_PER_CALL}. Wait for one batch to finish before starting the next batch for that parent.`,
       );
     });
   });
