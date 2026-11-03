@@ -20,6 +20,8 @@ import { BaseMondayApiTool, createMondayApiAnnotations, MondayApiToolContext } f
 import { NonDeprecatedColumnType } from 'src/utils/types';
 
 export const GET_BOARD_INFO_ENTITY_KNOWLEDGE_FLAG = 'mcp-get-board-info-entity-knowledge';
+// Board.creator is nullable from this version. Earlier versions null the whole board when it can't be resolved.
+export const GET_BOARD_INFO_API_VERSION = '2027-04';
 const BOARD_KNOWLEDGE_TIMEOUT_MS = 1_000;
 
 export const getBoardInfoToolSchema = {
@@ -140,7 +142,9 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
       includeSubscribers: input.includeSubscribers === true,
     };
 
-    const boardRequest = this.mondayApi.request<GetBoardInfoQuery>(getBoardInfo, variables);
+    const boardRequest = this.mondayApi.request<GetBoardInfoQuery>(getBoardInfo, variables, {
+      versionOverride: GET_BOARD_INFO_API_VERSION,
+    });
     const knowledgeRequested = input.includeKnowledge === true;
     const shouldFetchKnowledge = knowledgeRequested && this.isKnowledgeEnabled();
     const knowledgeRequest = shouldFetchKnowledge

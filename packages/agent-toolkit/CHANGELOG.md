@@ -1,12 +1,27 @@
 # Changelog
 
-## 5.78.3
+## 5.78.5
 
 ### `create_item` and `create_items` duplicates set the name and group in one call
 
 - A duplicate sends `item_name` and `group_id` to `duplicate_item` on API version 2027-04. The copy is created with that name and in that group, instead of being renamed or moved afterwards.
-- An explicitly provided name is used as given. When omitted at the API level, the source name still gets " (copy)".
-- Column values are still applied in a follow-up call, without changing the name again.
+- If that call returns the requested name plus " (copy)", a follow-up rename restores the requested name. Column values are included in that follow-up when present.
+- When the returned name already matches, column values are applied only if they contain values other than the name.
+
+## 5.78.4
+
+### `update_form` layout uses `type` (CARD/FLAT), matching the API
+
+- `form.appearance.layout` now takes `type` (`CARD` or `FLAT`), the field `FormLayoutInput` defines and `get_form` returns.
+- The old `format` field (`OneByOne`/`Classic`) is removed. The API rejected it on every call with `Field "format" is not defined by type "FormLayoutInput"`, and the schema rejected the `type` value that `get_form` returns.
+- A cached schema that still sends `format` has that field ignored. It is not mapped to `type`: `OneByOne` and `Classic` are not `CARD` or `FLAT`.
+
+## 5.78.3
+
+### `get_board_info` keeps the board when the creator cannot be resolved
+
+- The board request uses API version `2027-04`, where `Board.creator` is nullable. An unresolved creator comes back as `null` instead of failing the whole board.
+- This takes effect once that API version is deployed.
 
 ## 5.78.2
 

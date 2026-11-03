@@ -2,7 +2,8 @@ import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '../../test-utils/mock-api-client';
 import { updateFormToolSchema, FormActions } from './schema';
 import { z, ZodTypeAny } from 'zod';
-import { BackgroundType, Direction, Format, Alignment, LogoPosition, LogoSize, FontSize } from '../workforms.types';
+import { zodToJsonSchema } from 'zod-to-json-schema';
+import { BackgroundType, Direction, LayoutType, Alignment, LogoPosition, LogoSize, FontSize } from '../workforms.types';
 
 export type inputType = z.objectInputType<typeof updateFormToolSchema, ZodTypeAny>;
 
@@ -476,7 +477,7 @@ describe('UpdateFormTool', () => {
               },
               hideBranding: true,
               layout: {
-                format: Format.OneByOne,
+                type: LayoutType.Card,
                 alignment: Alignment.Center,
                 direction: Direction.LtR,
               },
@@ -511,7 +512,7 @@ describe('UpdateFormTool', () => {
               },
               hideBranding: true,
               layout: {
-                format: Format.OneByOne,
+                type: LayoutType.Card,
                 alignment: Alignment.Center,
                 direction: Direction.LtR,
               },
@@ -544,6 +545,19 @@ describe('UpdateFormTool', () => {
         expect(mockCall[0]).toContain('mutation updateFormAppearance');
         expect(mockCall[1].formToken).toBe('token_123');
         expect(mockCall[1].appearance.primaryColor).toBe('#007bff');
+        expect(mockCall[1].appearance.layout).toEqual({
+          type: 'CARD',
+          alignment: Alignment.Center,
+          direction: Direction.LtR,
+        });
+      });
+
+      it('advertises layout.type (CARD/FLAT) and not the removed layout.format', () => {
+        const jsonSchema = zodToJsonSchema(z.object(updateFormToolSchema)) as any;
+        const layout = jsonSchema.properties.form.properties.appearance.properties.layout;
+
+        expect(layout.properties.type.enum).toEqual(['CARD', 'FLAT']);
+        expect(layout.properties.format).toBeUndefined();
       });
 
       it('should update appearance with partial fields', async () => {
