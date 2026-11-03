@@ -339,6 +339,37 @@ describe('Create Item Tool Behaviour', () => {
         expect(mockChangeColumnValuesTool.execute).not.toHaveBeenCalled();
       });
 
+      it('skips the column update when name is the only column value', async () => {
+        mocks.setResponse(successfulDuplicateItemResponse);
+        const tool = new CreateItemTool(mocks.mockApiClient, { boardId: 456 });
+
+        await tool.execute({
+          name: 'Updated Item',
+          columnValues: '{"name":"Ignored name"}',
+          duplicateFromItemId: 123,
+        });
+
+        expect(mockChangeColumnValuesTool.execute).not.toHaveBeenCalled();
+      });
+
+      it('removes name before applying other column values', async () => {
+        mocks.setResponse(successfulDuplicateItemResponse);
+        mockChangeColumnValuesTool.execute.mockResolvedValue(successfulUpdateResponse);
+        const tool = new CreateItemTool(mocks.mockApiClient, { boardId: 456 });
+
+        await tool.execute({
+          name: 'Updated Item',
+          columnValues: '{"name":"Ignored name","text_column":"Updated Value"}',
+          duplicateFromItemId: 123,
+        });
+
+        expect(mockChangeColumnValuesTool.execute).toHaveBeenCalledWith({
+          itemId: 987654321,
+          columnValues: '{"text_column":"Updated Value"}',
+          createLabelsIfMissing: undefined,
+        });
+      });
+
       it('Successfully duplicates and updates with boardId in input', async () => {
         mocks.setResponse(successfulDuplicateItemResponse);
         mockChangeColumnValuesTool.execute.mockResolvedValue(successfulUpdateResponse);

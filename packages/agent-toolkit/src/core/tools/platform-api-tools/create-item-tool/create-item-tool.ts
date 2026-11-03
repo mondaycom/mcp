@@ -123,20 +123,22 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
         );
       }
 
-      const hasColumnValues =
-        columnValuesParsed !== null &&
-        typeof columnValuesParsed === 'object' &&
-        !Array.isArray(columnValuesParsed) &&
-        Object.keys(columnValuesParsed).length > 0;
+      const columnValuesToUpdate =
+        columnValuesParsed !== null && typeof columnValuesParsed === 'object' && !Array.isArray(columnValuesParsed)
+          ? { ...columnValuesParsed }
+          : undefined;
+      if (columnValuesToUpdate) {
+        delete columnValuesToUpdate.name;
+      }
 
-      if (hasColumnValues) {
+      if (columnValuesToUpdate && Object.keys(columnValuesToUpdate).length > 0) {
         const changeColumnValuesTool = new ChangeItemColumnValuesTool(this.mondayApi, {
           boardId: boardId,
         });
 
         await changeColumnValuesTool.execute({
           itemId: parseInt(duplicateRes.duplicate_item.id),
-          columnValues: JSON.stringify(columnValuesParsed),
+          columnValues: JSON.stringify(columnValuesToUpdate),
           createLabelsIfMissing: input.createLabelsIfMissing,
         });
       }
