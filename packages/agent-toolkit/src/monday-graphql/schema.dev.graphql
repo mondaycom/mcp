@@ -2478,7 +2478,7 @@ group_title: String): Group
   duplicate_item(  "The board's unique identifier."
 board_id: ID!,   "The group the new item is added to. Defaults to the original item's group. Not supported for subitems."
 group_id: ID,   "The item's unique identifier. *Required"
-item_id: ID,   "The new item's name. A different name is used as given. The original name, or no name, still gets the (copy) suffix."
+item_id: ID,   "The new item's name. When omitted, the original name gets the (copy) suffix."
 item_name: String,   "Duplicate with the item's updates."
 with_updates: Boolean): Item
   "Increase operations counter"

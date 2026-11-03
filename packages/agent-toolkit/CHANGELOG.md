@@ -5,7 +5,7 @@
 ### `create_item` and `create_items` duplicates set the name and group in one call
 
 - A duplicate sends `item_name` and `group_id` to `duplicate_item` on API version 2027-04. The copy is created with that name and in that group, instead of being renamed or moved afterwards.
-- A name different from the source item is used as given. The source name still gets " (copy)".
+- An explicitly provided name is used as given. When omitted at the API level, the source name still gets " (copy)".
 - Column values are still applied in a follow-up call, without changing the name again.
 
 ## 5.78.2

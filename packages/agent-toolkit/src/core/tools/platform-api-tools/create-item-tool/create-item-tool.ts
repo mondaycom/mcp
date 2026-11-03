@@ -98,6 +98,24 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
     boardId: number,
   ): Promise<ToolOutputType<never>> {
     try {
+      let columnValuesParsed: unknown;
+      try {
+        columnValuesParsed = JSON.parse(input.columnValues);
+      } catch (error) {
+        throw new ToolValidationError(
+          'Invalid columnValues JSON: expected a JSON object keyed by column id',
+          'INVALID_COLUMN_VALUES_JSON',
+        );
+      }
+      if (columnValuesParsed === null || typeof columnValuesParsed !== 'object' || Array.isArray(columnValuesParsed)) {
+        throw new ToolValidationError(
+          'Invalid columnValues JSON: expected a JSON object keyed by column id',
+          'INVALID_COLUMN_VALUES_JSON',
+        );
+      }
+      const columnValuesToUpdate = { ...(columnValuesParsed as Record<string, unknown>) };
+      delete columnValuesToUpdate.name;
+
       const duplicateVariables = {
         boardId: boardId.toString(),
         itemId: input.duplicateFromItemId!.toString(),
@@ -113,25 +131,7 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
         throw new ToolValidationError('Failed to duplicate item: no item duplicated', 'EMPTY_API_RESPONSE');
       }
 
-      let columnValuesParsed;
-      try {
-        columnValuesParsed = JSON.parse(input.columnValues);
-      } catch (error) {
-        throw new ToolValidationError(
-          'Invalid columnValues JSON: expected a JSON object keyed by column id',
-          'INVALID_COLUMN_VALUES_JSON',
-        );
-      }
-
-      const columnValuesToUpdate =
-        columnValuesParsed !== null && typeof columnValuesParsed === 'object' && !Array.isArray(columnValuesParsed)
-          ? { ...columnValuesParsed }
-          : undefined;
-      if (columnValuesToUpdate) {
-        delete columnValuesToUpdate.name;
-      }
-
-      if (columnValuesToUpdate && Object.keys(columnValuesToUpdate).length > 0) {
+      if (Object.keys(columnValuesToUpdate).length > 0) {
         const changeColumnValuesTool = new ChangeItemColumnValuesTool(this.mondayApi, {
           boardId: boardId,
         });

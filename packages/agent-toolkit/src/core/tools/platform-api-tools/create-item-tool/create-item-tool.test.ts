@@ -264,9 +264,6 @@ describe('Create Item Tool Behaviour', () => {
       });
 
       it('Handles invalid JSON in columnValues for duplicate path', async () => {
-        // Set up a successful duplicate response so the API call succeeds, but JSON parsing fails
-        mocks.setResponse(successfulDuplicateItemResponse);
-
         const tool = new CreateItemTool(mocks.mockApiClient, { boardId: 456 });
 
         await expect(
@@ -276,6 +273,20 @@ describe('Create Item Tool Behaviour', () => {
             duplicateFromItemId: 123,
           }),
         ).rejects.toThrow('Invalid columnValues JSON');
+        expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+      });
+
+      it('rejects non-object columnValues before duplicating', async () => {
+        const tool = new CreateItemTool(mocks.mockApiClient, { boardId: 456 });
+
+        await expect(
+          tool.execute({
+            name: 'Updated Item',
+            columnValues: '[]',
+            duplicateFromItemId: 123,
+          }),
+        ).rejects.toThrow('Invalid columnValues JSON');
+        expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
 
       it('Throws error when duplicate item returns no item', async () => {
