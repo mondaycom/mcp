@@ -11,6 +11,7 @@ export const getNotetakerStatusQuery = gql`
         has_access
         reason
         calendar_connected
+        setup_url
         auto_join {
           self_hosted
           invited
@@ -34,6 +35,7 @@ export interface NotetakerStatus {
   has_access: boolean;
   reason: string | null;
   calendar_connected: boolean | null;
+  setup_url: string | null;
   auto_join: {
     self_hosted: string;
     invited: string;
