@@ -6,6 +6,13 @@ import { GetUserContextQuery } from '../../../../monday-graphql/generated/graphq
 import { GetFavoriteDetailsQuery, GraphqlMondayObject } from '../../../../monday-graphql/generated/graphql/graphql';
 import { Favorite, RelevantBoard, RelevantDoc, RelevantPerson } from './user-context-tool.types';
 import { TYPE_TO_QUERY_VAR, TYPE_TO_RESPONSE_KEY } from './user-context-tool.consts';
+import {
+  GetNotetakerStatusQuery,
+  getNotetakerStatusQuery,
+  NOTETAKER_STATUS_API_VERSION,
+  NOTETAKER_STATUS_TIMEOUT_MS,
+  NotetakerStatus,
+} from './user-context-notetaker';
 
 export class UserContextTool extends BaseMondayApiTool<undefined> {
   name = 'get_user_context';
@@ -28,6 +35,7 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
     - Get user's most relevant boards based on visit frequency and recency
     - Get user's most relevant docs based on load frequency and recency
     - Get user's most relevant people based on interaction frequency and recency
+    - Get the user's Notetaker setup (notetaker.status, access, calendar connection, auto-join settings) when available, to decide whether Notetaker still needs setting up
     - Reduce the need for search requests by knowing user's commonly accessed items
     `;
   }
@@ -49,7 +57,10 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
       };
     }
 
-    const enrichedFavorites = await this.fetchFavorites(favorites || []);
+    const [enrichedFavorites, notetaker] = await Promise.all([
+      this.fetchFavorites(favorites || []),
+      this.fetchNotetakerStatus(),
+    ]);
     const relevantBoards = this.extractRelevantBoards(intelligence);
     const relevantDocs = this.extractRelevantDocs(intelligence);
     const relevantPeople = this.extractRelevantPeople(intelligence);
@@ -71,6 +82,7 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
       relevantBoards,
       relevantDocs,
       relevantPeople,
+      ...(notetaker && { notetaker }),
     };
     return { content: { message: 'User context', ...output } };
   }
@@ -102,6 +114,23 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
     }
 
     return result;
+  }
+
+  /**
+   * Optional block: omitted on any failure (timeout, error, field not in the API version yet, feature off for the
+   * account) so the rest of the user context is unaffected.
+   */
+  private async fetchNotetakerStatus(): Promise<NotetakerStatus | null> {
+    try {
+      const response = await this.mondayApi.request<GetNotetakerStatusQuery>(
+        getNotetakerStatusQuery,
+        {},
+        { versionOverride: NOTETAKER_STATUS_API_VERSION, timeout: NOTETAKER_STATUS_TIMEOUT_MS },
+      );
+      return response?.notetaker?.settings ?? null;
+    } catch {
+      return null;
+    }
   }
 
   private extractRelevantBoards(intelligence: GetUserContextQuery['intelligence']): RelevantBoard[] {
