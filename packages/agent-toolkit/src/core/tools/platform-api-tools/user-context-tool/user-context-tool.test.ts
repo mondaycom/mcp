@@ -250,6 +250,7 @@ describe('UserContextTool', () => {
       has_access: true,
       reason: null,
       calendar_connected: true,
+      setup_url: null,
       auto_join: { self_hosted: 'OFF', invited: 'OFF', locked: { self_hosted: false, invited: true } },
     };
 
