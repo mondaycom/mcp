@@ -5,5 +5,6 @@ export const PER_PARENT_CONCURRENCY_LIMIT = 5;
 export const RATE_LIMIT_SKIPPED_CODE = 'RATE_LIMIT_SKIPPED';
 export const BATCH_CREATE_ITEMS_FLAG = 'mcp-create-items-batch-endpoint';
 export const BATCH_CREATE_ITEMS_PATH = '/internal/create-items';
-export const BATCH_CREATE_ITEMS_SERVICE_NAME = 'monday-api';
+export const BATCH_CREATE_ITEMS_SERVICE_NAME = 'mdb-data';
 export const BATCH_CREATE_ITEMS_TIMEOUT_MS = 30_000;
+export const BATCH_ENDPOINT_UNAVAILABLE_STATUSES: readonly number[] = [401, 403, 404];

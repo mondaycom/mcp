@@ -1,3 +1,8 @@
+import { ApiClient } from '@mondaydotcomorg/api';
+import { GetBatchCreateColumnsQuery } from '../../../../monday-graphql/generated/graphql/graphql';
+import { getBatchCreateColumns } from './batch-create-columns.graphql';
+import { BatchCreateItem } from './batch-items-creator.types';
+
 export type BatchColumn = { id: string; type: string; settings?: unknown };
 
 export type BatchColumnValuesAdaptation = { columnValues: Record<string, unknown> } | { fallbackReason: string };
@@ -12,6 +17,45 @@ export const BATCH_FALLBACK_REASONS = {
   unsupportedLinkedItems: 'unsupported_linked_items',
   unsupportedLabelValue: 'unsupported_label_value',
 } as const;
+
+export type BatchItemsAdaptation = {
+  batchItems: BatchCreateItem[];
+  batchIndexes: number[];
+  graphqlIndexes: number[];
+  graphqlReasons: Record<string, number>;
+  columnLookup: boolean;
+};
+
+export async function adaptItemsForBatch(
+  mondayApi: ApiClient,
+  boardId: number,
+  items: BatchCreateItem[],
+): Promise<BatchItemsAdaptation | undefined> {
+  const columnIds = getColumnIdsNeedingLookup(items);
+  const columns = await fetchColumns(mondayApi, boardId, columnIds);
+  if (!columns) {
+    return undefined;
+  }
+
+  const adaptation: BatchItemsAdaptation = {
+    batchItems: [],
+    batchIndexes: [],
+    graphqlIndexes: [],
+    graphqlReasons: {},
+    columnLookup: columnIds.length > 0,
+  };
+  items.forEach((item, index) => {
+    const adapted = adaptColumnValuesForBatch(item.columnValues, columns);
+    if ('fallbackReason' in adapted) {
+      adaptation.graphqlIndexes.push(index);
+      adaptation.graphqlReasons[adapted.fallbackReason] = (adaptation.graphqlReasons[adapted.fallbackReason] ?? 0) + 1;
+      return;
+    }
+    adaptation.batchItems.push({ ...item, columnValues: adapted.columnValues });
+    adaptation.batchIndexes.push(index);
+  });
+  return adaptation;
+}
 
 export function getColumnIdsNeedingLookup(items: Array<{ columnValues: Record<string, unknown> }>): string[] {
   const columnIds = new Set<string>();
@@ -38,6 +82,28 @@ export function adaptColumnValuesForBatch(
     adapted[columnId] = result.value;
   }
   return { columnValues: adapted };
+}
+
+async function fetchColumns(
+  mondayApi: ApiClient,
+  boardId: number,
+  columnIds: string[],
+): Promise<Map<string, BatchColumn> | undefined> {
+  if (!columnIds.length) {
+    return new Map();
+  }
+  try {
+    const response = await mondayApi.request<GetBatchCreateColumnsQuery>(getBatchCreateColumns, {
+      boardId: String(boardId),
+      columnIds,
+    });
+    const columns = (response.boards?.[0]?.columns ?? []).flatMap((column) =>
+      column ? [{ id: column.id, type: String(column.type), settings: column.settings }] : [],
+    );
+    return new Map(columns.map((column) => [column.id, column]));
+  } catch {
+    return undefined;
+  }
 }
 
 function adaptColumnValue(value: unknown, column: BatchColumn | undefined): ColumnValueAdaptation {

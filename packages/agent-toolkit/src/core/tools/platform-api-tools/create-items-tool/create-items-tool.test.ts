@@ -180,14 +180,22 @@ describe('Create Items Tool Behaviour', () => {
   });
 
   describe('Batch endpoint', () => {
-    const createBatchTool = (mondayFetch: jest.Mock, flagEnabled = true) => {
+    const createBatchTool = (
+      mondayFetch: jest.Mock,
+      flagEnabled = true,
+      slugRequest = jest.fn().mockResolvedValue({ me: { account: { slug: 'acme' } } }),
+    ) => {
       const flagChecker = jest.fn().mockReturnValue(flagEnabled);
-      const tool = new CreateItemsTool(mocks.mockApiClient, 'signed-token', {
+      const apiClient = {
+        request: (query: string, variables?: unknown) =>
+          query.includes('query getAccountSlug') ? slugRequest(query) : mocks.mockApiClient.request(query, variables),
+      } as any;
+      const tool = new CreateItemsTool(apiClient, 'signed-token', {
         boardId: 456,
         deps: { flagChecker },
         fetchConfig: { fetch: mondayFetch },
       });
-      return { tool, flagChecker };
+      return { tool, flagChecker, slugRequest };
     };
 
     it('uses one batch request for compatible regular items when the flag is enabled', async () => {
@@ -216,9 +224,10 @@ describe('Create Items Tool Behaviour', () => {
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       expect(mondayFetch).toHaveBeenCalledWith(
         expect.objectContaining({
-          serviceName: 'monday-api',
+          serviceName: 'mdb-data',
           path: '/internal/create-items',
           method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
         }),
       );
       expect(JSON.parse(mondayFetch.mock.calls[0][0].body)).toEqual({
@@ -237,18 +246,31 @@ describe('Create Items Tool Behaviour', () => {
             index: 0,
             item_id: '11',
             item_name: 'A',
-            item_url: 'https://monday.com/boards/456/pulses/11',
+            item_url: 'https://acme.monday.com/boards/456/pulses/11',
             board_id: 456,
           },
           {
             index: 1,
             item_id: '12',
             item_name: 'B',
-            item_url: 'https://monday.com/boards/456/pulses/12',
+            item_url: 'https://acme.monday.com/boards/456/pulses/12',
             board_id: 456,
           },
         ],
       });
+    });
+
+    it('omits item_url when the account slug cannot be read', async () => {
+      const mondayFetch = jest
+        .fn()
+        .mockResolvedValue(mockFetchResponse({ body: { createdItems: [{ serialNo: 0, itemId: 11 }] } }));
+      const { tool } = createBatchTool(mondayFetch, true, jest.fn().mockRejectedValue(new Error('no access')));
+
+      const result = await tool.execute({ items: [{ name: 'A', columnValues: '{}' }] });
+
+      const [created] = (result.content as any).results;
+      expect(created).toMatchObject({ index: 0, item_id: '11', board_id: 456 });
+      expect(created).not.toHaveProperty('item_url');
     });
 
     it('sends an empty groupId so the server uses the top group when no item sets one', async () => {
@@ -602,21 +624,30 @@ describe('Create Items Tool Behaviour', () => {
       expect(sessionContext.metadata).toEqual(metadata);
     });
 
-    it('falls back to GraphQL when the endpoint is disabled', async () => {
+    it.each([401, 403, 404])('falls back to GraphQL when the endpoint answers %s', async (status) => {
       mocks.setResponses([itemResponse('1', 'A'), itemResponse('2', 'B')]);
-      const mondayFetch = jest.fn().mockResolvedValue(mockFetchResponse({ ok: false, status: 403 }));
+      const mondayFetch = jest.fn().mockResolvedValue(mockFetchResponse({ ok: false, status }));
       const { tool } = createBatchTool(mondayFetch);
+      const sessionContext: { metadata?: Record<string, unknown> } = {};
 
-      const result = await tool.execute({
-        items: [
-          { name: 'A', groupId: 'topics', columnValues: '{}' },
-          { name: 'B', groupId: 'topics', columnValues: '{}' },
-        ],
-      });
+      const result = await tool.execute(
+        {
+          items: [
+            { name: 'A', groupId: 'topics', columnValues: '{}' },
+            { name: 'B', groupId: 'topics', columnValues: '{}' },
+          ],
+        },
+        sessionContext,
+      );
 
       expect(mondayFetch).toHaveBeenCalledTimes(1);
       expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
       expect(result.content).toMatchObject({ summary: { total: 2, created: 2, failed: 0 } });
+      expect(sessionContext.metadata).toMatchObject({
+        create_path: 'graphql',
+        batch_fallback_reason: 'endpoint_unavailable',
+        batch_endpoint_status: status,
+      });
     });
 
     it('returns Retry-After details without retrying a rejected batch', async () => {
@@ -1153,15 +1184,11 @@ describe('Create Items Tool Behaviour', () => {
   });
 
   describe('Batch limit', () => {
-    const createTool = (flagEnabled: boolean) =>
-      new CreateItemsTool(mocks.mockApiClient, 'signed-token', {
-        deps: { flagChecker: jest.fn().mockReturnValue(flagEnabled) },
-      });
     const buildItems = (count: number) =>
       Array.from({ length: count }, (_, i) => ({ name: `Item ${i}`, columnValues: '{}' }));
 
-    it(`raises the limit to ${BATCH_MAX_ITEMS_PER_CALL} when the batch endpoint is enabled`, () => {
-      const tool = createTool(true);
+    it(`raises the limit to ${BATCH_MAX_ITEMS_PER_CALL} when the flag checker enables the batch endpoint`, () => {
+      const tool = new CreateItemsTool(mocks.mockApiClient, { deps: { flagChecker: jest.fn().mockReturnValue(true) } });
       const schema = z.object(tool.getInputSchema());
 
       expect(tool.getDescription()).toContain(`Create up to ${BATCH_MAX_ITEMS_PER_CALL} new items`);
@@ -1169,8 +1196,11 @@ describe('Create Items Tool Behaviour', () => {
       expect(schema.safeParse({ boardId: 1, items: buildItems(BATCH_MAX_ITEMS_PER_CALL + 1) }).success).toBe(false);
     });
 
-    it(`keeps the limit at ${MAX_ITEMS_PER_CALL} when the batch endpoint is disabled`, () => {
-      const tool = createTool(false);
+    it.each([
+      { name: 'the flag is off', context: { deps: { flagChecker: jest.fn().mockReturnValue(false) } } },
+      { name: 'no flag checker is passed', context: { fetchConfig: { fetch: jest.fn() } } },
+    ])(`keeps the limit at ${MAX_ITEMS_PER_CALL} when $name`, ({ context }) => {
+      const tool = new CreateItemsTool(mocks.mockApiClient, 'signed-token', context);
       const schema = z.object(tool.getInputSchema());
 
       expect(tool.getDescription()).toContain(`Create up to ${MAX_ITEMS_PER_CALL} new items`);
