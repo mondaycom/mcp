@@ -248,6 +248,7 @@ describe('UserContextTool', () => {
     const notetakerSettings = {
       status: 'AUTO_JOIN_OFF',
       has_access: true,
+      reason: null,
       calendar_connected: true,
       auto_join: { self_hosted: 'OFF', invited: 'OFF', locked: { self_hosted: false, invited: true } },
     };
