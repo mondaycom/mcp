@@ -5,10 +5,14 @@ import { BaseMondayApiTool, createMondayApiAnnotations, MondayApiToolContext } f
 import { CreateItemTool } from '../create-item-tool/create-item-tool';
 import { COLUMN_VALUES_FORMAT_GUIDE, unwrapDoubleEncodedColumnValues } from '../column-values.utils';
 import { resolveMondayFetch } from '../ai-agent.utils';
+import { GetBatchCreateColumnsQuery } from '../../../../monday-graphql/generated/graphql/graphql';
+import { getBatchCreateColumns } from './batch-create-columns.graphql';
+import { adaptColumnValuesForBatch, BatchColumn, getColumnIdsNeedingLookup } from './batch-workarounds';
 import { runWithRateLimitCircuit, ToolValidationError, MISSING_REQUIRED_PARAMETER_CODE } from '../../../../utils';
 import {
   BATCH_CREATE_ITEMS_FLAG,
   BATCH_CREATE_ITEMS_PATH,
+  BATCH_MAX_ITEMS_PER_CALL,
   BATCH_CREATE_ITEMS_SERVICE_NAME,
   BATCH_CREATE_ITEMS_TIMEOUT_MS,
   MAX_ITEMS_PER_CALL,
@@ -23,8 +27,7 @@ type PerItemResult =
 
 type BatchCreateRequest = {
   boardId: number;
-  groupId?: string;
-  parentPulseId?: number;
+  groupId: string;
   items: Array<{ name: string; columnValues: Record<string, unknown> }>;
 };
 
@@ -45,13 +48,20 @@ type BatchFailedItem = {
   retryAfter?: number;
 };
 
+type BatchOutcome = {
+  results: PerItemResult[];
+  invalidIndexes: number[];
+};
+
+type BatchPlan = { request: BatchCreateRequest } | { fallbackReason: string };
+
 type BatchCreateResponse = {
   createdItems?: BatchCreatedItem[];
   failedItems?: BatchFailedItem[];
   invalidItems?: BatchInvalidItem[];
 };
 
-export const createItemsToolSchema = {
+const buildCreateItemsToolSchema = (maxItems: number) => ({
   items: z
     .array(
       z.object({
@@ -95,16 +105,21 @@ export const createItemsToolSchema = {
       }),
     )
     .min(1, 'items must not be empty')
-    .max(MAX_ITEMS_PER_CALL, `items must not exceed ${MAX_ITEMS_PER_CALL} per call`)
+    .max(maxItems, `items must not exceed ${maxItems} per call`)
     .describe(
-      `The items to create, up to ${MAX_ITEMS_PER_CALL} per call. Each item returns its own item_id and item_url on success, or a raw error message on failure. Each item independently chooses its groupId, parentItemId, and createLabelsIfMissing.`,
+      `The items to create, up to ${maxItems} per call. Each item returns its own item_id and item_url on success, or a raw error message on failure. Each item independently chooses its groupId, parentItemId, and createLabelsIfMissing.`,
     ),
-};
+});
 
-export const createItemsInBoardToolSchema = {
+const buildCreateItemsInBoardToolSchema = (maxItems: number) => ({
   boardId: z.number().describe('The id of the board to which the new items will be added'),
-  ...createItemsToolSchema,
-};
+  ...buildCreateItemsToolSchema(maxItems),
+});
+
+export const createItemsToolSchema = buildCreateItemsToolSchema(MAX_ITEMS_PER_CALL);
+export const createItemsInBoardToolSchema = buildCreateItemsInBoardToolSchema(MAX_ITEMS_PER_CALL);
+const batchCreateItemsToolSchema = buildCreateItemsToolSchema(BATCH_MAX_ITEMS_PER_CALL);
+const batchCreateItemsInBoardToolSchema = buildCreateItemsInBoardToolSchema(BATCH_MAX_ITEMS_PER_CALL);
 
 export type CreateItemsToolInput = typeof createItemsToolSchema | typeof createItemsInBoardToolSchema;
 
@@ -131,18 +146,24 @@ export class CreateItemsTool extends BaseMondayApiTool<CreateItemsToolInput> {
   }
 
   getDescription(): string {
+    const maxItems = this.getMaxItemsPerCall();
     return (
-      `Create up to ${MAX_ITEMS_PER_CALL} new items in a single call. Each item is fully independent - it chooses its own groupId, parentItemId (for subitems), duplicateFromItemId (for bulk templating from an existing item), and createLabelsIfMissing. A single call can therefore span multiple groups, mix regular items with subitems under different parents, and mix fresh creates with duplicates of existing items. Each item returns its own item_id and item_url on success, or a raw error message on failure. ` +
-      `Batch each parent's subitems into groups of up to ${MAX_ITEMS_PER_CALL}. Wait for one batch to finish before starting the next batch for that parent. ` +
+      `Create up to ${maxItems} new items in a single call. Each item is fully independent - it chooses its own groupId, parentItemId (for subitems), duplicateFromItemId (for bulk templating from an existing item), and createLabelsIfMissing. A single call can therefore span multiple groups, mix regular items with subitems under different parents, and mix fresh creates with duplicates of existing items. Each item returns its own item_id and item_url on success, or a raw error message on failure. ` +
+      `Batch each parent's subitems into groups of up to ${maxItems}. Wait for one batch to finish before starting the next batch for that parent. ` +
       "[REQUIRED PRECONDITION]: Before using this tool, if new columns were added to the board or if you are not familiar with the board's structure (column IDs, column types, status labels, etc.), first use get_board_info with filters.columns.only to get column metadata without fetching views. This is essential for constructing proper column values and knowing which columns are available."
     );
   }
 
   getInputSchema(): CreateItemsToolInput {
+    const isBatchCreateEnabled = this.isBatchCreateEnabled();
     if (this.context?.boardId) {
-      return createItemsToolSchema;
+      return isBatchCreateEnabled ? batchCreateItemsToolSchema : createItemsToolSchema;
     }
-    return createItemsInBoardToolSchema;
+    return isBatchCreateEnabled ? batchCreateItemsInBoardToolSchema : createItemsInBoardToolSchema;
+  }
+
+  private getMaxItemsPerCall(): number {
+    return this.isBatchCreateEnabled() ? BATCH_MAX_ITEMS_PER_CALL : MAX_ITEMS_PER_CALL;
   }
 
   protected async executeInternal(input: ToolInputType<CreateItemsToolInput>): Promise<ToolOutputType<never>> {
@@ -163,47 +184,112 @@ export class CreateItemsTool extends BaseMondayApiTool<CreateItemsToolInput> {
     this.sessionContext.metadata ??= {};
     this.sessionContext.metadata.items_count = input.items.length;
 
-    const batchRequest = this.getBatchRequest(input, boardId);
-    const batchResults = batchRequest ? await this.executeBatchRequest(input, batchRequest) : undefined;
-    const raw = batchResults ?? (await this.executeWithSingleItemCalls(input, boardId));
+    const raw =
+      (await this.executeBatchCreate(input, boardId)) ??
+      (await this.executeWithSingleItemCalls(
+        input.items.map((item, index) => ({ item, index })),
+        boardId,
+      ));
 
     return buildCreateItemsResult(raw, boardId);
   }
 
-  private getBatchRequest(input: ToolInputType<CreateItemsToolInput>, boardId: number): BatchCreateRequest | undefined {
+  private async executeBatchCreate(
+    input: ToolInputType<CreateItemsToolInput>,
+    boardId: number,
+  ): Promise<PerItemResult[] | undefined> {
     if (!this.isBatchCreateEnabled()) {
       return undefined;
     }
+    const plan = getBatchPlan(input, boardId);
+    if ('fallbackReason' in plan) {
+      this.recordBatchMetadata({ create_path: 'graphql', batch_fallback_reason: plan.fallbackReason });
+      return undefined;
+    }
+    return this.createWithBatchWorkarounds(input, plan.request);
+  }
 
-    if (input.items.some((item) => item.duplicateFromItemId !== undefined || item.createLabelsIfMissing === true)) {
+  private async createWithBatchWorkarounds(
+    input: ToolInputType<CreateItemsToolInput>,
+    request: BatchCreateRequest,
+  ): Promise<PerItemResult[] | undefined> {
+    const lookupColumnIds = getColumnIdsNeedingLookup(request.items);
+    const columns = await this.fetchBatchColumns(request.boardId, lookupColumnIds);
+    if (!columns) {
+      this.recordBatchMetadata({ create_path: 'graphql', batch_fallback_reason: 'column_lookup_failed' });
       return undefined;
     }
 
-    const parentItemId = input.items[0].parentItemId;
-    const isSubitemBatch =
-      parentItemId !== undefined && input.items.every((item) => item.parentItemId === parentItemId);
-    const isRegularItemBatch = input.items.every((item) => item.parentItemId === undefined);
+    const batchItems: BatchCreateRequest['items'] = [];
+    const batchIndexes: number[] = [];
+    const untranslatedIndexes: number[] = [];
+    const untranslatedReasons: Record<string, number> = {};
+    request.items.forEach((item, index) => {
+      const adapted = adaptColumnValuesForBatch(item.columnValues, columns);
+      if ('fallbackReason' in adapted) {
+        untranslatedIndexes.push(index);
+        untranslatedReasons[adapted.fallbackReason] = (untranslatedReasons[adapted.fallbackReason] ?? 0) + 1;
+        return;
+      }
+      batchItems.push({ ...item, columnValues: adapted.columnValues });
+      batchIndexes.push(index);
+    });
 
-    if (!isSubitemBatch && !isRegularItemBatch) {
-      return undefined;
+    let batchOutcome: BatchOutcome = { results: [], invalidIndexes: [] };
+    let batchDurationMs = 0;
+    if (batchItems.length) {
+      const startedAt = Date.now();
+      const outcome = await this.executeBatchRequest({ ...request, items: batchItems }, batchIndexes);
+      batchDurationMs = Date.now() - startedAt;
+      if (!outcome) {
+        this.recordBatchMetadata({ create_path: 'graphql', batch_fallback_reason: 'endpoint_forbidden' });
+        return undefined;
+      }
+      batchOutcome = outcome;
     }
 
-    const groupId = input.items[0].groupId;
-    if (isRegularItemBatch && !input.items.every((item) => item.groupId === groupId)) {
+    const graphqlIndexes = [...untranslatedIndexes, ...batchOutcome.invalidIndexes].sort((a, b) => a - b);
+    const graphqlResults = graphqlIndexes.length
+      ? await this.executeWithSingleItemCalls(
+          graphqlIndexes.map((index) => ({ item: input.items[index], index })),
+          request.boardId,
+        )
+      : [];
+
+    this.recordBatchMetadata({
+      create_path: graphqlIndexes.length ? (batchItems.length ? 'batch_with_graphql' : 'graphql') : 'batch',
+      batch_items_count: batchItems.length,
+      batch_duration_ms: batchDurationMs,
+      batch_column_lookup: lookupColumnIds.length > 0,
+      graphql_items_count: graphqlIndexes.length,
+      batch_untranslated_reasons: untranslatedReasons,
+      batch_invalid_retried_count: batchOutcome.invalidIndexes.length,
+      batch_invalid_types: countInvalidTypes(batchOutcome),
+    });
+
+    return mergeResults(input.items.length, batchOutcome.results, graphqlResults);
+  }
+
+  private async fetchBatchColumns(boardId: number, columnIds: string[]): Promise<Map<string, BatchColumn> | undefined> {
+    if (!columnIds.length) {
+      return new Map();
+    }
+    try {
+      const response = await this.mondayApi.request<GetBatchCreateColumnsQuery>(getBatchCreateColumns, {
+        boardId: String(boardId),
+        columnIds,
+      });
+      const columns = (response.boards?.[0]?.columns ?? []).flatMap((column) =>
+        column ? [{ id: column.id, type: String(column.type), settings: column.settings }] : [],
+      );
+      return new Map(columns.map((column) => [column.id, column]));
+    } catch {
       return undefined;
     }
+  }
 
-    const items = parseBatchItems(input.items);
-    if (!items) {
-      return undefined;
-    }
-
-    return {
-      boardId,
-      ...(isRegularItemBatch && groupId !== undefined ? { groupId } : {}),
-      ...(isSubitemBatch ? { parentPulseId: parentItemId } : {}),
-      items,
-    };
+  private recordBatchMetadata(metadata: Record<string, unknown>): void {
+    Object.assign((this.sessionContext.metadata ??= {}), metadata);
   }
 
   private isBatchCreateEnabled(): boolean {
@@ -211,55 +297,63 @@ export class CreateItemsTool extends BaseMondayApiTool<CreateItemsToolInput> {
     return hasAuthentication && (this.context?.deps?.flagChecker?.(BATCH_CREATE_ITEMS_FLAG) ?? false);
   }
 
-  private async executeBatchRequest(
-    input: ToolInputType<CreateItemsToolInput>,
-    request: BatchCreateRequest,
-  ): Promise<PerItemResult[] | undefined> {
+  private async executeBatchRequest(request: BatchCreateRequest, indexes: number[]): Promise<BatchOutcome | undefined> {
     const apiToken = typeof this.apiToken === 'function' ? this.apiToken() : this.apiToken;
     const mondayFetch = resolveMondayFetch(this.context);
-    const response = await mondayFetch({
-      serviceName: BATCH_CREATE_ITEMS_SERVICE_NAME,
-      path: BATCH_CREATE_ITEMS_PATH,
-      method: 'POST',
-      headers: {
-        ...(this.context?.fetchConfig?.fetch || !apiToken ? {} : { Authorization: apiToken }),
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(request),
-      signal: AbortSignal.timeout(BATCH_CREATE_ITEMS_TIMEOUT_MS),
-    });
+    let response: Response;
+    try {
+      response = await mondayFetch({
+        serviceName: BATCH_CREATE_ITEMS_SERVICE_NAME,
+        path: BATCH_CREATE_ITEMS_PATH,
+        method: 'POST',
+        headers: {
+          ...(this.context?.fetchConfig?.fetch || !apiToken ? {} : { Authorization: apiToken }),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+        signal: AbortSignal.timeout(BATCH_CREATE_ITEMS_TIMEOUT_MS),
+      });
+    } catch {
+      return { results: createUnknownOutcomeResults(indexes), invalidIndexes: [] };
+    }
 
     if (response.status === 403) {
       return undefined;
     }
 
     if (!response.ok) {
-      const responseBody = await response.text().catch(() => '');
-      const retryAfter = response.headers.get('Retry-After') ?? undefined;
+      const serverMessage = response.status < 500 ? await readErrorMessage(response) : undefined;
+      const retryInSeconds = parseRetryAfterSeconds(response.headers.get('Retry-After'));
       const message = `Batch create items request failed with HTTP ${response.status}${
-        responseBody ? `: ${responseBody}` : ''
+        serverMessage ? `: ${serverMessage}` : ''
       }`;
-      return input.items.map((_, index) =>
+      const results = indexes.map((index) =>
         createBatchErrorResult(index, message, {
           code: `HTTP_${response.status}`,
           status_code: response.status,
-          ...(retryAfter ? { retry_after: retryAfter } : {}),
+          ...(retryInSeconds !== undefined ? { retry_in_seconds: retryInSeconds } : {}),
         }),
       );
+      return { results, invalidIndexes: [] };
     }
 
-    const responseBody = (await response.json()) as BatchCreateResponse;
-    return mapBatchResponse(input, request.boardId, responseBody);
+    let responseBody: BatchCreateResponse;
+    try {
+      responseBody = (await response.json()) as BatchCreateResponse;
+    } catch {
+      return { results: createUnknownOutcomeResults(indexes), invalidIndexes: [] };
+    }
+    return mapBatchResponse(request, indexes, responseBody);
   }
 
   private async executeWithSingleItemCalls(
-    input: ToolInputType<CreateItemsToolInput>,
+    entries: Array<{ item: ToolInputType<CreateItemsToolInput>['items'][number]; index: number }>,
     boardId: number,
   ): Promise<PerItemResult[]> {
     const singleTool = new CreateItemTool(this.mondayApi, { boardId });
     const skipMessage = 'Skipped: a previous item hit a rate limit; this item was not attempted';
 
-    const tasks = input.items.map((item, index) => async (): Promise<PerItemResult> => {
+    const tasks = entries.map(({ item, index }) => async (): Promise<PerItemResult> => {
       const result = await singleTool.execute({
         name: item.name as string,
         columnValues: item.columnValues,
@@ -274,23 +368,74 @@ export class CreateItemsTool extends BaseMondayApiTool<CreateItemsToolInput> {
     const raw = await runWithRateLimitCircuit(tasks, {
       limit: CONCURRENCY_LIMIT,
       concurrencyGroups: {
-        getGroup: (index) => input.items[index].parentItemId,
+        getGroup: (position) => entries[position].item.parentItemId,
         limitPerGroup: PER_PARENT_CONCURRENCY_LIMIT,
       },
-      onSkipped: (index) => ({
-        index,
-        error: skipMessage,
-        _errorEntry: { code: RATE_LIMIT_SKIPPED_CODE, message: skipMessage, path: ['results', index] },
-      }),
-      onError: (error, index) => ({
-        index,
-        error: formatPerItemErrorMessage(error, input.items[index].parentItemId),
-        _errorEntry: extractErrorEntry(error, index),
-      }),
+      onSkipped: (position) => {
+        const index = entries[position].index;
+        return {
+          index,
+          error: skipMessage,
+          _errorEntry: { code: RATE_LIMIT_SKIPPED_CODE, message: skipMessage, path: ['results', index] },
+        };
+      },
+      onError: (error, position) => {
+        const { item, index } = entries[position];
+        return {
+          index,
+          error: formatPerItemErrorMessage(error, item.parentItemId),
+          _errorEntry: extractErrorEntry(error, index),
+        };
+      },
     });
 
     return raw;
   }
+}
+
+function getBatchPlan(input: ToolInputType<CreateItemsToolInput>, boardId: number): BatchPlan {
+  if (input.items.some((item) => item.parentItemId !== undefined)) {
+    return { fallbackReason: 'subitems' };
+  }
+  if (input.items.some((item) => item.duplicateFromItemId !== undefined)) {
+    return { fallbackReason: 'duplicates' };
+  }
+  if (input.items.some((item) => item.createLabelsIfMissing === true)) {
+    return { fallbackReason: 'create_labels_if_missing' };
+  }
+  const groupId = input.items[0].groupId;
+  if (!input.items.every((item) => item.groupId === groupId)) {
+    return { fallbackReason: 'mixed_groups' };
+  }
+  const items = parseBatchItems(input.items);
+  if (!items) {
+    return { fallbackReason: 'invalid_column_values_json' };
+  }
+  return { request: { boardId, groupId: groupId ?? '', items } };
+}
+
+function mergeResults(itemCount: number, ...resultSets: PerItemResult[][]): PerItemResult[] {
+  const merged: PerItemResult[] = new Array(itemCount);
+  for (const results of resultSets) {
+    for (const result of results) {
+      merged[result.index] = result;
+    }
+  }
+  return merged;
+}
+
+function countInvalidTypes(outcome: BatchOutcome): Record<string, number> {
+  const invalidIndexes = new Set(outcome.invalidIndexes);
+  const counts: Record<string, number> = {};
+  for (const result of outcome.results) {
+    if (!invalidIndexes.has(result.index)) {
+      continue;
+    }
+    const code = (result as { _errorEntry?: { code?: unknown } })._errorEntry?.code;
+    const type = typeof code === 'string' ? code : 'unknown';
+    counts[type] = (counts[type] ?? 0) + 1;
+  }
+  return counts;
 }
 
 function parseBatchItems(items: ToolInputType<CreateItemsToolInput>['items']): BatchCreateRequest['items'] | undefined {
@@ -307,60 +452,92 @@ function parseBatchItems(items: ToolInputType<CreateItemsToolInput>['items']): B
   }
 }
 
-function mapBatchResponse(
-  input: ToolInputType<CreateItemsToolInput>,
-  boardId: number,
-  response: BatchCreateResponse,
-): PerItemResult[] {
-  const results: Array<PerItemResult | undefined> = new Array(input.items.length);
+function mapBatchResponse(request: BatchCreateRequest, indexes: number[], response: BatchCreateResponse): BatchOutcome {
+  const results: Array<PerItemResult | undefined> = new Array(indexes.length);
+  const invalidSerialNos = new Set<number>();
 
   for (const item of response.createdItems ?? []) {
-    if (!isValidSerialNo(item.serialNo, input.items.length)) {
+    if (!isValidSerialNo(item.serialNo, indexes.length)) {
       continue;
     }
-    const sourceItem = input.items[item.serialNo];
     const itemId = String(item.itemId);
-    const isSubitem = sourceItem.parentItemId !== undefined;
     results[item.serialNo] = {
-      index: item.serialNo,
-      message: isSubitem
-        ? `Subitem ${itemId} created under ${sourceItem.parentItemId}`
-        : `Item ${itemId} successfully created`,
+      index: indexes[item.serialNo],
+      message: `Item ${itemId} successfully created`,
       item_id: itemId,
-      item_name: sourceItem.name,
-      item_url: `https://monday.com/boards/${boardId}/pulses/${itemId}`,
-      ...(!isSubitem ? { board_id: boardId } : {}),
+      item_name: request.items[item.serialNo].name,
+      item_url: `https://monday.com/boards/${request.boardId}/pulses/${itemId}`,
+      board_id: request.boardId,
     };
   }
 
   for (const item of response.invalidItems ?? []) {
-    if (!isValidSerialNo(item.serialNo, input.items.length)) {
+    if (!isValidSerialNo(item.serialNo, indexes.length)) {
       continue;
     }
     const messages = (item.errors ?? []).flatMap((error) => (error.message ? [error.message] : []));
     const message = messages.join('; ') || 'Invalid item';
     const code = item.errors?.find((error) => error.type)?.type;
-    results[item.serialNo] = createBatchErrorResult(item.serialNo, message, code ? { code } : {});
+    results[item.serialNo] = createBatchErrorResult(indexes[item.serialNo], message, code ? { code } : {});
+    invalidSerialNos.add(item.serialNo);
   }
 
   for (const item of response.failedItems ?? []) {
-    if (!isValidSerialNo(item.serialNo, input.items.length)) {
+    if (!isValidSerialNo(item.serialNo, indexes.length)) {
       continue;
     }
     const message = item.reason || 'Item creation failed';
-    results[item.serialNo] = createBatchErrorResult(item.serialNo, message, {
+    results[item.serialNo] = createBatchErrorResult(indexes[item.serialNo], message, {
       ...(item.code ? { code: item.code } : {}),
-      ...(item.retryAfter !== undefined ? { retry_after: item.retryAfter } : {}),
+      ...(item.retryAfter !== undefined ? { retry_in_seconds: item.retryAfter } : {}),
     });
+    invalidSerialNos.delete(item.serialNo);
   }
 
-  return results.map(
-    (result, index) =>
-      result ??
-      createBatchErrorResult(index, 'Batch create items response did not include a result for this item', {
-        code: 'MISSING_BATCH_RESULT',
-      }),
-  );
+  return {
+    results: results.map(
+      (result, serialNo) =>
+        result ??
+        createBatchErrorResult(
+          indexes[serialNo],
+          'Batch create items response did not include a result for this item',
+          {
+            code: 'MISSING_BATCH_RESULT',
+          },
+        ),
+    ),
+    invalidIndexes: [...invalidSerialNos].map((serialNo) => indexes[serialNo]),
+  };
+}
+
+function createUnknownOutcomeResults(indexes: number[]): PerItemResult[] {
+  const message =
+    'The batch create request did not complete, so some items may have been created. Check the board before retrying.';
+  return indexes.map((index) => createBatchErrorResult(index, message, { code: 'BATCH_OUTCOME_UNKNOWN' }));
+}
+
+async function readErrorMessage(response: Response): Promise<string | undefined> {
+  try {
+    const body = (await response.json()) as { message?: unknown };
+    return typeof body?.message === 'string' && body.message ? body.message : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function parseRetryAfterSeconds(header: string | null): number | undefined {
+  if (!header) {
+    return undefined;
+  }
+  const seconds = Number(header);
+  if (Number.isFinite(seconds) && seconds >= 0) {
+    return seconds;
+  }
+  const date = Date.parse(header);
+  if (Number.isNaN(date)) {
+    return undefined;
+  }
+  return Math.max(0, Math.ceil((date - Date.now()) / 1000));
 }
 
 function isValidSerialNo(serialNo: number, itemCount: number): boolean {

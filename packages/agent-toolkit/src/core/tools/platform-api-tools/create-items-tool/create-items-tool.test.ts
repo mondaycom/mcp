@@ -5,6 +5,7 @@ import { createMockApiClient } from '../test-utils/mock-api-client';
 import { CreateItemsTool, createItemsInBoardToolSchema } from './create-items-tool';
 import {
   BATCH_CREATE_ITEMS_FLAG,
+  BATCH_MAX_ITEMS_PER_CALL,
   CONCURRENCY_LIMIT,
   MAX_ITEMS_PER_CALL,
   PER_PARENT_CONCURRENCY_LIMIT,
@@ -250,43 +251,54 @@ describe('Create Items Tool Behaviour', () => {
       });
     });
 
-    it('uses parentPulseId for a compatible subitem batch', async () => {
-      const mondayFetch = jest.fn().mockResolvedValue(
-        mockFetchResponse({
-          body: {
-            createdItems: [
-              { serialNo: 0, itemId: 21 },
-              { serialNo: 1, itemId: 22 },
-            ],
-          },
-        }),
-      );
+    it('sends an empty groupId so the server uses the top group when no item sets one', async () => {
+      const mondayFetch = jest
+        .fn()
+        .mockResolvedValue(mockFetchResponse({ body: { createdItems: [{ serialNo: 0, itemId: 11 }] } }));
       const { tool } = createBatchTool(mondayFetch);
 
-      const result = await tool.execute({
-        items: [
-          { name: 'A', parentItemId: 901, columnValues: '{}' },
-          { name: 'B', parentItemId: 901, columnValues: '{}' },
-        ],
-      });
+      await tool.execute({ items: [{ name: 'A', columnValues: '{}' }] });
 
       expect(JSON.parse(mondayFetch.mock.calls[0][0].body)).toEqual({
         boardId: 456,
-        parentPulseId: 901,
-        items: [
-          { name: 'A', columnValues: {} },
-          { name: 'B', columnValues: {} },
-        ],
+        groupId: '',
+        items: [{ name: 'A', columnValues: {} }],
       });
-      expect((result.content as any).results[0]).toMatchObject({
-        index: 0,
-        item_id: '21',
-        message: 'Subitem 21 created under 901',
-      });
-      expect((result.content as any).results[0]).not.toHaveProperty('board_id');
     });
 
-    it('maps invalid and failed items into the existing partial-success response', async () => {
+    it.each([
+      { name: 'a fetch error', mondayFetch: () => jest.fn().mockRejectedValue(new Error('socket hang up')) },
+      {
+        name: 'a non-JSON success body',
+        mondayFetch: () =>
+          jest.fn().mockResolvedValue({
+            ...mockFetchResponse(),
+            json: async () => {
+              throw new SyntaxError('Unexpected token');
+            },
+          }),
+      },
+    ])('reports an unknown outcome without falling back after $name', async ({ mondayFetch }) => {
+      const fetchMock = mondayFetch();
+      const { tool } = createBatchTool(fetchMock);
+
+      const result = await tool.execute({
+        items: [
+          { name: 'A', columnValues: '{}' },
+          { name: 'B', columnValues: '{}' },
+        ],
+      });
+
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+      expect(result.isError).toBe(true);
+      expect((result.content as any).errors).toEqual([
+        expect.objectContaining({ code: 'BATCH_OUTCOME_UNKNOWN', path: ['results', 0] }),
+        expect.objectContaining({ code: 'BATCH_OUTCOME_UNKNOWN', path: ['results', 1] }),
+      ]);
+    });
+
+    it('retries invalid items through GraphQL and keeps failed items as batch errors', async () => {
+      mocks.setResponses([itemResponse('21', 'B')]);
       const mondayFetch = jest.fn().mockResolvedValue(
         mockFetchResponse({
           body: {
@@ -297,28 +309,246 @@ describe('Create Items Tool Behaviour', () => {
         }),
       );
       const { tool } = createBatchTool(mondayFetch);
+      const sessionContext = { metadata: {} as Record<string, unknown> };
+
+      const result = await tool.execute(
+        {
+          items: [
+            { name: 'A', columnValues: '{}' },
+            { name: 'B', columnValues: '{"date":"2024-01-01"}' },
+            { name: 'C', columnValues: '{}' },
+          ],
+        },
+        sessionContext,
+      );
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('mutation createItem'), {
+        boardId: '456',
+        itemName: 'B',
+        columnValues: '{"date":"2024-01-01"}',
+      });
+      expect(result.isError).toBeUndefined();
+      expect(result.content).toMatchObject({
+        summary: { total: 3, created: 2, failed: 1 },
+        is_partial_success: true,
+        results: [
+          { index: 0, item_id: '11' },
+          { index: 1, item_id: '21' },
+          { index: 2, error: 'Temporary failure' },
+        ],
+        errors: [{ code: 'TEMPORARY', retry_in_seconds: 4, message: 'Temporary failure', path: ['results', 2] }],
+      });
+      expect(sessionContext.metadata).toMatchObject({
+        create_path: 'batch_with_graphql',
+        batch_items_count: 3,
+        graphql_items_count: 1,
+        batch_invalid_retried_count: 1,
+        batch_invalid_types: { COLUMN_VALUE_INVALID: 1 },
+        batch_untranslated_reasons: {},
+        batch_column_lookup: false,
+      });
+    });
+
+    it('reports the GraphQL error when a retried invalid item also fails there', async () => {
+      mocks.getMockRequest().mockRejectedValueOnce(columnValueError('Invalid date', {}));
+      const mondayFetch = jest.fn().mockResolvedValue(
+        mockFetchResponse({
+          body: {
+            createdItems: [{ serialNo: 0, itemId: 11 }],
+            invalidItems: [{ serialNo: 1, errors: [{ message: 'Bad date', type: 'COLUMN_VALUE_INVALID' }] }],
+          },
+        }),
+      );
+      const { tool } = createBatchTool(mondayFetch);
 
       const result = await tool.execute({
         items: [
           { name: 'A', columnValues: '{}' },
-          { name: 'B', columnValues: '{}' },
-          { name: 'C', columnValues: '{}' },
+          { name: 'B', columnValues: '{"date":"bad"}' },
         ],
       });
 
-      expect(result.isError).toBeUndefined();
       expect(result.content).toMatchObject({
-        summary: { total: 3, created: 1, failed: 2 },
-        is_partial_success: true,
+        summary: { total: 2, created: 1, failed: 1 },
+        errors: [{ code: 'ColumnValueException', message: 'Invalid date', path: ['results', 1] }],
+      });
+    });
+
+    it('translates label and linked-item formats before sending them to the batch endpoint', async () => {
+      mocks.setResponses([
+        {
+          boards: [
+            {
+              columns: [
+                {
+                  id: 'status',
+                  type: 'status',
+                  settings: {
+                    labels: [
+                      { id: 0, label: 'Working on it', is_deactivated: false },
+                      { id: 1, label: 'Done', is_deactivated: false },
+                    ],
+                  },
+                },
+                {
+                  id: 'dropdown',
+                  type: 'dropdown',
+                  settings: {
+                    labels: [
+                      { id: 3, label: 'A', is_deactivated: false },
+                      { id: 4, label: 'B', is_deactivated: false },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ]);
+      const mondayFetch = jest
+        .fn()
+        .mockResolvedValue(mockFetchResponse({ body: { createdItems: [{ serialNo: 0, itemId: 11 }] } }));
+      const { tool } = createBatchTool(mondayFetch);
+      const sessionContext = { metadata: {} as Record<string, unknown> };
+
+      await tool.execute(
+        {
+          items: [
+            {
+              name: 'A',
+              columnValues: JSON.stringify({
+                text: 'a',
+                status: { label: 'Done' },
+                dropdown: { labels: ['B', 'A'] },
+                connect: { item_ids: [7, '8'] },
+              }),
+            },
+          ],
+        },
+        sessionContext,
+      );
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query getBatchCreateColumns'), {
+        boardId: '456',
+        columnIds: ['status', 'dropdown'],
+      });
+      expect(JSON.parse(mondayFetch.mock.calls[0][0].body).items).toEqual([
+        {
+          name: 'A',
+          columnValues: {
+            text: 'a',
+            status: { index: 1 },
+            dropdown: { ids: [4, 3] },
+            connect: { linkedPulseIds: [{ linkedPulseId: 7 }, { linkedPulseId: 8 }] },
+          },
+        },
+      ]);
+      expect(sessionContext.metadata).toMatchObject({
+        create_path: 'batch',
+        batch_items_count: 1,
+        graphql_items_count: 0,
+        batch_column_lookup: true,
+      });
+    });
+
+    it('sends items with labels the board does not have straight to GraphQL', async () => {
+      mocks.setResponses([
+        {
+          boards: [
+            {
+              columns: [
+                {
+                  id: 'status',
+                  type: 'status',
+                  settings: {
+                    labels: [
+                      { id: 1, label: 'Done', is_deactivated: false },
+                      { id: 2, label: 'Stuck', is_deactivated: true },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+        itemResponse('22', 'B'),
+      ]);
+      const mondayFetch = jest
+        .fn()
+        .mockResolvedValue(mockFetchResponse({ body: { createdItems: [{ serialNo: 0, itemId: 11 }] } }));
+      const { tool } = createBatchTool(mondayFetch);
+      const sessionContext = { metadata: {} as Record<string, unknown> };
+
+      const result = await tool.execute(
+        {
+          items: [
+            { name: 'A', columnValues: '{"status":{"label":"Done"}}' },
+            { name: 'B', columnValues: '{"status":{"label":"Stuck"}}' },
+          ],
+        },
+        sessionContext,
+      );
+
+      expect(JSON.parse(mondayFetch.mock.calls[0][0].body).items).toEqual([
+        { name: 'A', columnValues: { status: { index: 1 } } },
+      ]);
+      expect(mocks.getMockRequest()).toHaveBeenLastCalledWith(expect.stringContaining('mutation createItem'), {
+        boardId: '456',
+        itemName: 'B',
+        columnValues: '{"status":{"label":"Stuck"}}',
+      });
+      expect(result.content).toMatchObject({
+        summary: { total: 2, created: 2, failed: 0 },
         results: [
           { index: 0, item_id: '11' },
-          { index: 1, error: 'Unknown label' },
-          { index: 2, error: 'Temporary failure' },
+          { index: 1, item_id: '22' },
         ],
-        errors: [
-          { code: 'COLUMN_VALUE_INVALID', message: 'Unknown label', path: ['results', 1] },
-          { code: 'TEMPORARY', retry_after: 4, message: 'Temporary failure', path: ['results', 2] },
-        ],
+      });
+      expect(sessionContext.metadata).toMatchObject({
+        create_path: 'batch_with_graphql',
+        batch_items_count: 1,
+        graphql_items_count: 1,
+        batch_untranslated_reasons: { status_label_not_found: 1 },
+      });
+    });
+
+    it('skips the batch request when no item can be translated', async () => {
+      mocks.setResponses([{ boards: [{ columns: [] }] }, itemResponse('1', 'A')]);
+      const mondayFetch = jest.fn();
+      const { tool } = createBatchTool(mondayFetch);
+      const sessionContext = { metadata: {} as Record<string, unknown> };
+
+      await tool.execute({ items: [{ name: 'A', columnValues: '{"status":{"label":"Done"}}' }] }, sessionContext);
+
+      expect(mondayFetch).not.toHaveBeenCalled();
+      expect(sessionContext.metadata).toMatchObject({
+        create_path: 'graphql',
+        batch_items_count: 0,
+        graphql_items_count: 1,
+        batch_column_lookup: true,
+        batch_untranslated_reasons: { unsupported_label_value: 1 },
+      });
+    });
+
+    it('falls back to GraphQL for the whole call when the column lookup fails', async () => {
+      mocks.getMockRequest().mockRejectedValueOnce(new Error('lookup failed'));
+      mocks.setResponses([itemResponse('1', 'A')]);
+      const mondayFetch = jest.fn();
+      const { tool } = createBatchTool(mondayFetch);
+      const sessionContext = { metadata: {} as Record<string, unknown> };
+
+      const result = await tool.execute(
+        { items: [{ name: 'A', columnValues: '{"status":{"label":"Done"}}' }] },
+        sessionContext,
+      );
+
+      expect(mondayFetch).not.toHaveBeenCalled();
+      expect(result.content).toMatchObject({ summary: { total: 1, created: 1, failed: 0 } });
+      expect(sessionContext.metadata).toMatchObject({
+        create_path: 'graphql',
+        batch_fallback_reason: 'column_lookup_failed',
       });
     });
 
@@ -330,6 +560,7 @@ describe('Create Items Tool Behaviour', () => {
           { name: 'A', groupId: 'topics', columnValues: '{}' },
           { name: 'B', groupId: 'topics', columnValues: '{}' },
         ],
+        metadata: { items_count: 2 },
       },
       {
         name: 'items use different groups',
@@ -338,6 +569,16 @@ describe('Create Items Tool Behaviour', () => {
           { name: 'A', groupId: 'one', columnValues: '{}' },
           { name: 'B', groupId: 'two', columnValues: '{}' },
         ],
+        metadata: { items_count: 2, create_path: 'graphql', batch_fallback_reason: 'mixed_groups' },
+      },
+      {
+        name: 'items are subitems',
+        flagEnabled: true,
+        items: [
+          { name: 'A', parentItemId: 901, columnValues: '{}' },
+          { name: 'B', parentItemId: 901, columnValues: '{}' },
+        ],
+        metadata: { items_count: 2, create_path: 'graphql', batch_fallback_reason: 'subitems' },
       },
       {
         name: 'an item creates labels',
@@ -346,16 +587,19 @@ describe('Create Items Tool Behaviour', () => {
           { name: 'A', groupId: 'topics', columnValues: '{}', createLabelsIfMissing: true },
           { name: 'B', groupId: 'topics', columnValues: '{}' },
         ],
+        metadata: { items_count: 2, create_path: 'graphql', batch_fallback_reason: 'create_labels_if_missing' },
       },
-    ])('keeps the GraphQL path when $name', async ({ flagEnabled, items }) => {
+    ])('keeps the GraphQL path when $name', async ({ flagEnabled, items, metadata }) => {
       mocks.setResponses([itemResponse('1', 'A'), itemResponse('2', 'B')]);
       const mondayFetch = jest.fn();
       const { tool } = createBatchTool(mondayFetch, flagEnabled);
+      const sessionContext = { metadata: {} as Record<string, unknown> };
 
-      await tool.execute({ items });
+      await tool.execute({ items }, sessionContext);
 
       expect(mondayFetch).not.toHaveBeenCalled();
       expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
+      expect(sessionContext.metadata).toEqual(metadata);
     });
 
     it('falls back to GraphQL when the endpoint is disabled', async () => {
@@ -378,7 +622,9 @@ describe('Create Items Tool Behaviour', () => {
     it('returns Retry-After details without retrying a rejected batch', async () => {
       const mondayFetch = jest
         .fn()
-        .mockResolvedValue(mockFetchResponse({ ok: false, status: 429, body: 'Rate limit exceeded', retryAfter: '3' }));
+        .mockResolvedValue(
+          mockFetchResponse({ ok: false, status: 429, body: { message: 'Rate limit exceeded' }, retryAfter: '3' }),
+        );
       const { tool } = createBatchTool(mondayFetch);
 
       const result = await tool.execute({
@@ -392,8 +638,13 @@ describe('Create Items Tool Behaviour', () => {
       expect(mondayFetch).toHaveBeenCalledTimes(1);
       expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       expect((result.content as any).errors).toEqual([
-        expect.objectContaining({ code: 'HTTP_429', status_code: 429, retry_after: '3' }),
-        expect.objectContaining({ code: 'HTTP_429', status_code: 429, retry_after: '3' }),
+        expect.objectContaining({
+          code: 'HTTP_429',
+          status_code: 429,
+          retry_in_seconds: 3,
+          message: 'Batch create items request failed with HTTP 429: Rate limit exceeded',
+        }),
+        expect.objectContaining({ code: 'HTTP_429', status_code: 429, retry_in_seconds: 3 }),
       ]);
     });
   });
@@ -898,6 +1149,32 @@ describe('Create Items Tool Behaviour', () => {
       expect(tool.getDescription()).toContain(
         `Batch each parent's subitems into groups of up to ${MAX_ITEMS_PER_CALL}. Wait for one batch to finish before starting the next batch for that parent.`,
       );
+    });
+  });
+
+  describe('Batch limit', () => {
+    const createTool = (flagEnabled: boolean) =>
+      new CreateItemsTool(mocks.mockApiClient, 'signed-token', {
+        deps: { flagChecker: jest.fn().mockReturnValue(flagEnabled) },
+      });
+    const buildItems = (count: number) =>
+      Array.from({ length: count }, (_, i) => ({ name: `Item ${i}`, columnValues: '{}' }));
+
+    it(`raises the limit to ${BATCH_MAX_ITEMS_PER_CALL} when the batch endpoint is enabled`, () => {
+      const tool = createTool(true);
+      const schema = z.object(tool.getInputSchema());
+
+      expect(tool.getDescription()).toContain(`Create up to ${BATCH_MAX_ITEMS_PER_CALL} new items`);
+      expect(schema.safeParse({ boardId: 1, items: buildItems(BATCH_MAX_ITEMS_PER_CALL) }).success).toBe(true);
+      expect(schema.safeParse({ boardId: 1, items: buildItems(BATCH_MAX_ITEMS_PER_CALL + 1) }).success).toBe(false);
+    });
+
+    it(`keeps the limit at ${MAX_ITEMS_PER_CALL} when the batch endpoint is disabled`, () => {
+      const tool = createTool(false);
+      const schema = z.object(tool.getInputSchema());
+
+      expect(tool.getDescription()).toContain(`Create up to ${MAX_ITEMS_PER_CALL} new items`);
+      expect(schema.safeParse({ boardId: 1, items: buildItems(MAX_ITEMS_PER_CALL + 1) }).success).toBe(false);
     });
   });
 

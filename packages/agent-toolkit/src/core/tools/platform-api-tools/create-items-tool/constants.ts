@@ -1,8 +1,9 @@
-export const MAX_ITEMS_PER_CALL = 100;
+export const MAX_ITEMS_PER_CALL = 20;
+export const BATCH_MAX_ITEMS_PER_CALL = 100;
 export const CONCURRENCY_LIMIT = 15;
 export const PER_PARENT_CONCURRENCY_LIMIT = 5;
 export const RATE_LIMIT_SKIPPED_CODE = 'RATE_LIMIT_SKIPPED';
-export const BATCH_CREATE_ITEMS_FLAG = 'batch-create-items-enable-endpoint';
+export const BATCH_CREATE_ITEMS_FLAG = 'mcp-create-items-batch-endpoint';
 export const BATCH_CREATE_ITEMS_PATH = '/internal/create-items';
 export const BATCH_CREATE_ITEMS_SERVICE_NAME = 'monday-api';
 export const BATCH_CREATE_ITEMS_TIMEOUT_MS = 30_000;

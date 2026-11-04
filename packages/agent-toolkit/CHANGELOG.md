@@ -4,9 +4,12 @@
 
 ### `create_items` uses the batch create endpoint when compatible
 
-- When `batch-create-items-enable-endpoint` is enabled, a homogeneous group of regular items or subitems under one parent is created in one batch request.
-- Calls that use different groups or parents, duplication, `createLabelsIfMissing`, or invalid column-value JSON keep the existing GraphQL path.
-- The input and output shapes are unchanged, while the maximum items per call increases from 20 to 100.
+- When `mcp-create-items-batch-endpoint` is enabled, regular items that all target the same group are created in one batch request.
+- Calls that include subitems, use different groups, duplication, `createLabelsIfMissing`, or invalid column-value JSON keep the existing GraphQL path.
+- Status `{"label"}`, dropdown `{"labels"}` and linked-item `{"item_ids"}` values are converted to the ids the batch endpoint accepts, using one column lookup per call. An item whose labels the board does not have is created through GraphQL instead.
+- Items the batch endpoint rejects as invalid are retried through GraphQL, so they get the same result as before.
+- Session metadata records which path ran (`create_path`) and why items left the batch path.
+- The input and output shapes are unchanged. With the flag enabled, the maximum items per call increases from 20 to 100; without it, the limit stays at 20.
 
 ## 5.78.4
 
