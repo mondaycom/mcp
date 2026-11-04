@@ -9,6 +9,7 @@ export const getNotetakerStatusQuery = gql`
       settings {
         status
         has_access
+        reason
         calendar_connected
         auto_join {
           self_hosted
@@ -31,6 +32,7 @@ export const NOTETAKER_STATUS_TIMEOUT_MS = 1500;
 export interface NotetakerStatus {
   status: string;
   has_access: boolean;
+  reason: string | null;
   calendar_connected: boolean | null;
   auto_join: {
     self_hosted: string;
