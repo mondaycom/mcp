@@ -1,25 +1,21 @@
+import { ApiClient } from '@mondaydotcomorg/api';
 import { z } from 'zod';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
-import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
+import { BaseMondayApiTool, createMondayApiAnnotations, MondayApiToolContext } from '../base-monday-api-tool';
 import { CreateItemTool } from '../create-item-tool/create-item-tool';
 import { COLUMN_VALUES_FORMAT_GUIDE } from '../column-values.utils';
+import { runWithRateLimitCircuit, ToolValidationError, MISSING_REQUIRED_PARAMETER_CODE } from '../../../../utils';
+import { BatchItemsCreator, isBatchCreateFlagEnabled } from './batch-items-creator';
+import { PerItemResult } from './batch-items-creator.types';
 import {
-  runWithRateLimitCircuit,
-  ToolValidationError,
-  MISSING_REQUIRED_PARAMETER_CODE,
-} from '../../../../utils';
-import {
+  BATCH_MAX_ITEMS_PER_CALL,
   MAX_ITEMS_PER_CALL,
   CONCURRENCY_LIMIT,
   PER_PARENT_CONCURRENCY_LIMIT,
   RATE_LIMIT_SKIPPED_CODE,
 } from './constants';
 
-type PerItemResult =
-  | { index: number; error: string; _errorEntry: Record<string, unknown>; [k: string]: unknown }
-  | { index: number; [k: string]: unknown };
-
-export const createItemsToolSchema = {
+const buildCreateItemsToolSchema = (maxItems: number) => ({
   items: z
     .array(
       z.object({
@@ -63,19 +59,23 @@ export const createItemsToolSchema = {
       }),
     )
     .min(1, 'items must not be empty')
-    .max(MAX_ITEMS_PER_CALL, `items must not exceed ${MAX_ITEMS_PER_CALL} per call`)
+    .max(maxItems, `items must not exceed ${maxItems} per call`)
     .describe(
-      `The items to create, up to ${MAX_ITEMS_PER_CALL} per call. Each item returns its own item_id and item_url on success, or a raw error message on failure. Each item independently chooses its groupId, parentItemId, and createLabelsIfMissing.`,
+      `The items to create, up to ${maxItems} per call. Each item returns its own item_id and item_url on success, or a raw error message on failure. Each item independently chooses its groupId, parentItemId, and createLabelsIfMissing.`,
     ),
-};
+});
 
-export const createItemsInBoardToolSchema = {
+const buildCreateItemsInBoardToolSchema = (maxItems: number) => ({
   boardId: z.number().describe('The id of the board to which the new items will be added'),
-  ...createItemsToolSchema,
-};
+  ...buildCreateItemsToolSchema(maxItems),
+});
+
+export const createItemsToolSchema = buildCreateItemsToolSchema(MAX_ITEMS_PER_CALL);
+export const createItemsInBoardToolSchema = buildCreateItemsInBoardToolSchema(MAX_ITEMS_PER_CALL);
+const batchCreateItemsToolSchema = buildCreateItemsToolSchema(BATCH_MAX_ITEMS_PER_CALL);
+const batchCreateItemsInBoardToolSchema = buildCreateItemsInBoardToolSchema(BATCH_MAX_ITEMS_PER_CALL);
 
 export type CreateItemsToolInput = typeof createItemsToolSchema | typeof createItemsInBoardToolSchema;
-
 export class CreateItemsTool extends BaseMondayApiTool<CreateItemsToolInput> {
   name = 'create_items';
   type = ToolType.WRITE;
@@ -86,19 +86,33 @@ export class CreateItemsTool extends BaseMondayApiTool<CreateItemsToolInput> {
     idempotentHint: false,
   });
 
+  constructor(
+    mondayApi: ApiClient | (() => ApiClient),
+    apiTokenOrContext?: string | (() => string) | MondayApiToolContext,
+    context?: MondayApiToolContext,
+  ) {
+    super(mondayApi, typeof apiTokenOrContext === 'object' ? apiTokenOrContext : context);
+  }
+
   getDescription(): string {
+    const maxItems = this.getMaxItemsPerCall();
     return (
-      `Create up to ${MAX_ITEMS_PER_CALL} new items in a single call. Each item is fully independent - it chooses its own groupId, parentItemId (for subitems), duplicateFromItemId (for bulk templating from an existing item), and createLabelsIfMissing. A single call can therefore span multiple groups, mix regular items with subitems under different parents, and mix fresh creates with duplicates of existing items. Each item returns its own item_id and item_url on success, or a raw error message on failure. ` +
-      `Batch each parent's subitems into groups of up to ${MAX_ITEMS_PER_CALL}. Wait for one batch to finish before starting the next batch for that parent. ` +
+      `Create up to ${maxItems} new items in a single call. Each item is fully independent - it chooses its own groupId, parentItemId (for subitems), duplicateFromItemId (for bulk templating from an existing item), and createLabelsIfMissing. A single call can therefore span multiple groups, mix regular items with subitems under different parents, and mix fresh creates with duplicates of existing items. Each item returns its own item_id and item_url on success, or a raw error message on failure. ` +
+      `Batch each parent's subitems into groups of up to ${maxItems}. Wait for one batch to finish before starting the next batch for that parent. ` +
       "[REQUIRED PRECONDITION]: Before using this tool, if new columns were added to the board or if you are not familiar with the board's structure (column IDs, column types, status labels, etc.), first use get_board_info with filters.columns.only to get column metadata without fetching views. This is essential for constructing proper column values and knowing which columns are available."
     );
   }
 
   getInputSchema(): CreateItemsToolInput {
+    const isBatchCreateEnabled = isBatchCreateFlagEnabled(this.context);
     if (this.context?.boardId) {
-      return createItemsToolSchema;
+      return isBatchCreateEnabled ? batchCreateItemsToolSchema : createItemsToolSchema;
     }
-    return createItemsInBoardToolSchema;
+    return isBatchCreateEnabled ? batchCreateItemsInBoardToolSchema : createItemsInBoardToolSchema;
+  }
+
+  private getMaxItemsPerCall(): number {
+    return isBatchCreateFlagEnabled(this.context) ? BATCH_MAX_ITEMS_PER_CALL : MAX_ITEMS_PER_CALL;
   }
 
   protected async executeInternal(input: ToolInputType<CreateItemsToolInput>): Promise<ToolOutputType<never>> {
@@ -116,12 +130,30 @@ export class CreateItemsTool extends BaseMondayApiTool<CreateItemsToolInput> {
     }
 
     const boardId = this.context?.boardId ?? (input as ToolInputType<typeof createItemsInBoardToolSchema>).boardId;
-    this.sessionContext.metadata ??= {};
-    this.sessionContext.metadata.items_count = input.items.length;
+    const metadata = (this.sessionContext.metadata ??= {});
+    metadata.items_count = input.items.length;
+
+    const createWithGraphql = (indexes: number[]) =>
+      this.executeWithSingleItemCalls(
+        indexes.map((index) => ({ item: input.items[index], index })),
+        boardId,
+      );
+    const batchCreator = new BatchItemsCreator({ mondayApi: this.mondayApi, context: this.context, metadata });
+    const raw = batchCreator.isEnabled(input.items)
+      ? await batchCreator.create(input.items, boardId, createWithGraphql)
+      : await createWithGraphql(input.items.map((_, index) => index));
+
+    return buildCreateItemsResult(raw, boardId);
+  }
+
+  private async executeWithSingleItemCalls(
+    entries: Array<{ item: ToolInputType<CreateItemsToolInput>['items'][number]; index: number }>,
+    boardId: number,
+  ): Promise<PerItemResult[]> {
     const singleTool = new CreateItemTool(this.mondayApi, { boardId });
     const skipMessage = 'Skipped: a previous item hit a rate limit; this item was not attempted';
 
-    const tasks = input.items.map((item, index) => async (): Promise<PerItemResult> => {
+    const tasks = entries.map(({ item, index }) => async (): Promise<PerItemResult> => {
       const result = await singleTool.execute({
         name: item.name as string,
         columnValues: item.columnValues,
@@ -136,43 +168,48 @@ export class CreateItemsTool extends BaseMondayApiTool<CreateItemsToolInput> {
     const raw = await runWithRateLimitCircuit(tasks, {
       limit: CONCURRENCY_LIMIT,
       concurrencyGroups: {
-        getGroup: (index) => input.items[index].parentItemId,
+        getGroup: (position) => entries[position].item.parentItemId,
         limitPerGroup: PER_PARENT_CONCURRENCY_LIMIT,
       },
-      onSkipped: (index) => ({
-        index,
-        error: skipMessage,
-        _errorEntry: { code: RATE_LIMIT_SKIPPED_CODE, message: skipMessage, path: ['results', index] },
-      }),
-      onError: (error, index) => ({
-        index,
-        error: formatPerItemErrorMessage(error, input.items[index].parentItemId),
-        _errorEntry: extractErrorEntry(error, index),
-      }),
+      onSkipped: (position) => {
+        const index = entries[position].index;
+        return {
+          index,
+          error: skipMessage,
+          _errorEntry: { code: RATE_LIMIT_SKIPPED_CODE, message: skipMessage, path: ['results', index] },
+        };
+      },
+      onError: (error, position) => {
+        const { item, index } = entries[position];
+        return {
+          index,
+          error: formatPerItemErrorMessage(error, item.parentItemId),
+          _errorEntry: extractErrorEntry(error, index),
+        };
+      },
     });
 
-    const errors = raw
-      .filter(r => 'error' in r)
-      .map((r) => r._errorEntry);
-
-    const results = raw.map(({ _errorEntry, ...rest }) => rest);
-    const total = raw.length;
-    const failed = errors.length;
-    const isPartialSuccess = failed > 0 && failed < total;
-
-    const content: Record<string, unknown> = {
-      board_id: boardId,
-      summary: { total, created: total - failed, failed },
-      is_partial_success: isPartialSuccess,
-      results,
-    };
-
-    if (errors.length) {
-      content.errors = errors;
-    }
-
-    return { content, ...(failed === total ? { isError: true } : {}) };
+    return raw;
   }
+}
+
+function buildCreateItemsResult(raw: PerItemResult[], boardId: number): ToolOutputType<never> {
+  const errors = raw.filter((result) => 'error' in result).map((result) => result._errorEntry);
+  const results = raw.map(({ _errorEntry, ...rest }) => rest);
+  const total = raw.length;
+  const failed = errors.length;
+  const content: Record<string, unknown> = {
+    board_id: boardId,
+    summary: { total, created: total - failed, failed },
+    is_partial_success: failed > 0 && failed < total,
+    results,
+  };
+
+  if (errors.length) {
+    content.errors = errors;
+  }
+
+  return { content, ...(failed === total ? { isError: true } : {}) };
 }
 
 type GraphQLErrorEntry = {

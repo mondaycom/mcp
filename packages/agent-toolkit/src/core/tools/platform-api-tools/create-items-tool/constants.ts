@@ -1,4 +1,10 @@
 export const MAX_ITEMS_PER_CALL = 20;
+export const BATCH_MAX_ITEMS_PER_CALL = 100;
 export const CONCURRENCY_LIMIT = 15;
 export const PER_PARENT_CONCURRENCY_LIMIT = 5;
 export const RATE_LIMIT_SKIPPED_CODE = 'RATE_LIMIT_SKIPPED';
+export const BATCH_CREATE_ITEMS_FLAG = 'mcp-create-items-batch-endpoint';
+export const BATCH_CREATE_ITEMS_PATH = '/internal/create-items';
+export const BATCH_CREATE_ITEMS_SERVICE_NAME = 'mdb-data';
+export const BATCH_CREATE_ITEMS_TIMEOUT_MS = 30_000;
+export const BATCH_ENDPOINT_UNAVAILABLE_STATUSES: readonly number[] = [401, 403, 404];
