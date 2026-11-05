@@ -188,7 +188,10 @@ A doc column holds one document. When it is already filled, this tool returns th
 
         const item = itemRes.items?.[0];
         if (!item) {
-          throw new ToolValidationError(`Item with id ${parsedInput.item_id} not found.`, EMPTY_API_RESPONSE_CODE);
+          throw new ToolValidationError(
+            `Item with id ${parsedInput.item_id} not found.`,
+            EMPTY_API_RESPONSE_CODE,
+          );
         }
 
         const boardId = item.board?.id;
@@ -300,13 +303,7 @@ A doc column holds one document. When it is already filled, this tool returns th
       };
 
       return {
-        content: {
-          message: 'Document successfully created',
-          doc_id: docId,
-          object_id: docObjectId,
-          doc_url: docUrl,
-          doc_name: input.doc_name,
-        },
+        content: { message: "Document successfully created", doc_id: docId, object_id: docObjectId, doc_url: docUrl, doc_name: input.doc_name },
       };
     } catch (error) {
       rethrowWithContext(error, 'create document');
