@@ -25,8 +25,8 @@ describe('Create Items Tool Behaviour', () => {
     duplicate_item: { id, name, url: `https://monday.com/boards/456/pulses/${id}` },
   });
 
-  const changeColumnValuesResponse = (id: string) => ({
-    change_multiple_column_values: { id },
+  const changeColumnValuesResponse = (id: string, name = 'Renamed') => ({
+    change_multiple_column_values: { id, name, url: `https://monday.com/boards/456/pulses/${id}` },
   });
 
   const columnValueError = (message: string, errorData: Record<string, unknown>) =>
@@ -239,12 +239,43 @@ describe('Create Items Tool Behaviour', () => {
       expect(dupCalls.map((c: any[]) => c[1].itemId).sort()).toEqual(['42', '43']);
     });
 
+    it('passes groupId and itemName to duplicate_item', async () => {
+      mocks.setResponse(duplicateResponse('101', 'Copy'));
+      const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
+
+      const result = await tool.execute({
+        items: [{ name: 'Copy', groupId: 'group_mm8a9g0r', duplicateFromItemId: 42, columnValues: '{}' }],
+      });
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('duplicate_item'),
+        expect.objectContaining({ itemId: '42', itemName: 'Copy', groupId: 'group_mm8a9g0r' }),
+        { versionOverride: '2027-04' },
+      );
+      expect((result.content as { results: Array<Record<string, unknown>> }).results[0]).toMatchObject({
+        item_id: '101',
+        item_name: 'Copy',
+      });
+      expect(result.isError).toBeUndefined();
+    });
+
+    it('returns the name duplicate_item created', async () => {
+      mocks.setResponse(duplicateResponse('101', 'dummy show test'));
+      const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
+
+      const result = await tool.execute({
+        items: [{ name: 'dummy show test', duplicateFromItemId: 13387280478, columnValues: '{}' }],
+      });
+
+      expect((result.content as { results: Array<Record<string, unknown>> }).results[0]).toMatchObject({
+        item_id: '101',
+        item_name: 'dummy show test',
+      });
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+    });
+
     it('mixes fresh creates and duplicates in one batch', async () => {
-      mocks.setResponses([
-        itemResponse('1', 'Fresh'),
-        duplicateResponse('101', 'Cloned'),
-        changeColumnValuesResponse('101'),
-      ]);
+      mocks.setResponses([itemResponse('1', 'Fresh'), duplicateResponse('101', 'Cloned')]);
       const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
 
       await tool.execute({
@@ -446,9 +477,7 @@ describe('Create Items Tool Behaviour', () => {
 
       const skipped = c.results.filter((r: any) => typeof r.error === 'string' && r.error.includes('Skipped'));
       expect(skipped.length).toBeGreaterThan(0);
-      expect(c.errors).toEqual(
-        expect.arrayContaining([expect.objectContaining({ code: 'RATE_LIMIT_SKIPPED' })]),
-      );
+      expect(c.errors).toEqual(expect.arrayContaining([expect.objectContaining({ code: 'RATE_LIMIT_SKIPPED' })]));
     });
 
     it('handles FIELD_LIMIT_EXCEEDED through the standard 429 circuit and preserves retry data', async () => {

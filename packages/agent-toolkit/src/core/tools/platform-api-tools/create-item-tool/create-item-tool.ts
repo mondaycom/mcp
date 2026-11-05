@@ -6,7 +6,7 @@ import {
   CreateSubitemMutation,
 } from '../../../../monday-graphql/generated/graphql/graphql';
 import { createItem } from '../../../../monday-graphql/queries.graphql';
-import { duplicateItem } from './duplicate-item.graphql';
+import { DUPLICATE_ITEM_API_VERSION, duplicateItem } from './duplicate-item.graphql';
 import { createSubitem } from './create-subitem.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
@@ -23,7 +23,9 @@ export const createItemToolSchema = {
   groupId: z
     .string()
     .optional()
-    .describe('The id of the group id to which the new item will be added, if its not clearly specified, leave empty'),
+    .describe(
+      'The id of the group id to which the new item will be added, if its not clearly specified, leave empty. Not supported when duplicateFromItemId is a subitem.',
+    ),
   columnValues: z.string().describe(COLUMN_VALUES_FORMAT_GUIDE),
   createLabelsIfMissing: z
     .boolean()
@@ -96,18 +98,7 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
     boardId: number,
   ): Promise<ToolOutputType<never>> {
     try {
-      const duplicateVariables = {
-        boardId: boardId.toString(),
-        itemId: input.duplicateFromItemId!.toString(),
-      };
-
-      const duplicateRes = await this.mondayApi.request<DuplicateItemMutation>(duplicateItem, duplicateVariables);
-
-      if (!duplicateRes.duplicate_item?.id) {
-        throw new ToolValidationError('Failed to duplicate item: no item duplicated', 'EMPTY_API_RESPONSE');
-      }
-
-      let columnValuesParsed;
+      let columnValuesParsed: unknown;
       try {
         columnValuesParsed = JSON.parse(input.columnValues);
       } catch (error) {
@@ -116,27 +107,53 @@ export class CreateItemTool extends BaseMondayApiTool<CreateItemToolInput> {
           'INVALID_COLUMN_VALUES_JSON',
         );
       }
+      if (columnValuesParsed === null || typeof columnValuesParsed !== 'object' || Array.isArray(columnValuesParsed)) {
+        throw new ToolValidationError(
+          'Invalid columnValues JSON: expected a JSON object keyed by column id',
+          'INVALID_COLUMN_VALUES_JSON',
+        );
+      }
+      const columnValuesToUpdate = { ...(columnValuesParsed as Record<string, unknown>) };
+      delete columnValuesToUpdate.name;
 
-      const columnValuesAndName = {
-        ...columnValuesParsed,
-        name: input.name,
+      const duplicateVariables = {
+        boardId: boardId.toString(),
+        itemId: input.duplicateFromItemId!.toString(),
+        itemName: input.name,
+        ...(input.groupId ? { groupId: input.groupId } : {}),
       };
 
-      const changeColumnValuesTool = new ChangeItemColumnValuesTool(this.mondayApi, {
-        boardId: boardId,
+      const duplicateRes = await this.mondayApi.request<DuplicateItemMutation>(duplicateItem, duplicateVariables, {
+        versionOverride: DUPLICATE_ITEM_API_VERSION,
       });
 
-      await changeColumnValuesTool.execute({
-        itemId: parseInt(duplicateRes.duplicate_item.id),
-        columnValues: JSON.stringify(columnValuesAndName),
-        createLabelsIfMissing: input.createLabelsIfMissing,
-      });
+      if (!duplicateRes.duplicate_item?.id) {
+        throw new ToolValidationError('Failed to duplicate item: no item duplicated', 'EMPTY_API_RESPONSE');
+      }
+
+      const createdName = duplicateRes.duplicate_item.name;
+      const nameWasSuffixed = createdName === `${input.name} (copy)`;
+      if (nameWasSuffixed) {
+        columnValuesToUpdate.name = input.name;
+      }
+
+      if (Object.keys(columnValuesToUpdate).length > 0) {
+        const changeColumnValuesTool = new ChangeItemColumnValuesTool(this.mondayApi, {
+          boardId: boardId,
+        });
+
+        await changeColumnValuesTool.execute({
+          itemId: parseInt(duplicateRes.duplicate_item.id),
+          columnValues: JSON.stringify(columnValuesToUpdate),
+          createLabelsIfMissing: input.createLabelsIfMissing,
+        });
+      }
 
       return {
         content: {
           message: `Item ${duplicateRes.duplicate_item.id} duplicated from ${input.duplicateFromItemId}`,
           item_id: duplicateRes.duplicate_item.id,
-          item_name: duplicateRes.duplicate_item.name,
+          item_name: nameWasSuffixed ? input.name : createdName,
           item_url: duplicateRes.duplicate_item.url,
           board_id: boardId,
         },

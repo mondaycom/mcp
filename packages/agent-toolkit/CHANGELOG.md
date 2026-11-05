@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.78.5
+
+### `create_item` and `create_items` duplicates set the name and group in one call
+
+- A duplicate sends `item_name` and `group_id` to `duplicate_item` on API version 2027-04. The copy is created with that name and in that group, instead of being renamed or moved afterwards.
+- If that call returns the requested name plus " (copy)", a follow-up rename restores the requested name. Column values are included in that follow-up when present.
+- When the returned name already matches, column values are applied only if they contain values other than the name.
+
 ## 5.78.4
 
 ### `update_form` layout uses `type` (CARD/FLAT), matching the API

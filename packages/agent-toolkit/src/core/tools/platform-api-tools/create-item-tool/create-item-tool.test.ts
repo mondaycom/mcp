@@ -41,7 +41,11 @@ describe('Create Item Tool Behaviour', () => {
     };
 
     const successfulUpdateResponse = {
-      content: 'Item 987654321 successfully updated with the new column values',
+      content: {
+        message: 'Item 987654321 successfully updated',
+        item_id: '987654321',
+        item_name: 'Updated Item',
+      },
     };
 
     describe('Create New Item Path', () => {
@@ -56,7 +60,13 @@ describe('Create Item Tool Behaviour', () => {
           groupId: 'group123',
         });
 
-        expect(result.content).toEqual({ message: 'Item 123456789 successfully created', item_id: '123456789', item_name: 'New Item', item_url: undefined, board_id: 456 });
+        expect(result.content).toEqual({
+          message: 'Item 123456789 successfully created',
+          item_id: '123456789',
+          item_name: 'New Item',
+          item_url: undefined,
+          board_id: 456,
+        });
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('mutation createItem'), {
           boardId: '456',
           itemName: 'Test Item',
@@ -88,7 +98,13 @@ describe('Create Item Tool Behaviour', () => {
           columnValues: '{"text_column": "Test Value"}',
         });
 
-        expect(result.content).toEqual({ message: 'Item 123456789 successfully created', item_id: '123456789', item_name: 'New Item', item_url: undefined, board_id: 456 });
+        expect(result.content).toEqual({
+          message: 'Item 123456789 successfully created',
+          item_id: '123456789',
+          item_name: 'New Item',
+          item_url: undefined,
+          board_id: 456,
+        });
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('mutation createItem'), {
           boardId: '456',
           itemName: 'Test Item',
@@ -108,7 +124,13 @@ describe('Create Item Tool Behaviour', () => {
           columnValues: '{"text_column": "Test Value"}',
         });
 
-        expect(result.content).toEqual({ message: 'Item 123456789 successfully created', item_id: '123456789', item_name: 'New Item', item_url: undefined, board_id: 789 });
+        expect(result.content).toEqual({
+          message: 'Item 123456789 successfully created',
+          item_id: '123456789',
+          item_name: 'New Item',
+          item_url: undefined,
+          board_id: 789,
+        });
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('mutation createItem'), {
           boardId: '789',
           itemName: 'Test Item',
@@ -180,13 +202,24 @@ describe('Create Item Tool Behaviour', () => {
           duplicateFromItemId: 123,
         });
 
-        expect(result.content).toEqual({ message: 'Item 987654321 duplicated from 123', item_id: '987654321', item_name: 'Duplicated Item', item_url: undefined, board_id: 456 });
+        expect(result.content).toEqual({
+          message: 'Item 987654321 duplicated from 123',
+          item_id: '987654321',
+          item_name: 'Duplicated Item',
+          item_url: undefined,
+          board_id: 456,
+        });
 
         // Verify duplicate call
-        expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('mutation duplicateItem'), {
-          boardId: '456',
-          itemId: '123',
-        });
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('mutation duplicateItem'),
+          {
+            boardId: '456',
+            itemId: '123',
+            itemName: 'Updated Item',
+          },
+          { versionOverride: '2027-04' },
+        );
 
         // Verify ChangeItemColumnValuesTool was called correctly
         expect(MockedChangeItemColumnValuesTool).toHaveBeenCalledWith(mocks.mockApiClient, {
@@ -194,7 +227,7 @@ describe('Create Item Tool Behaviour', () => {
         });
         expect(mockChangeColumnValuesTool.execute).toHaveBeenCalledWith({
           itemId: 987654321,
-          columnValues: '{"text_column":"Updated Value","name":"Updated Item"}',
+          columnValues: '{"text_column":"Updated Value"}',
         });
       });
 
@@ -231,9 +264,6 @@ describe('Create Item Tool Behaviour', () => {
       });
 
       it('Handles invalid JSON in columnValues for duplicate path', async () => {
-        // Set up a successful duplicate response so the API call succeeds, but JSON parsing fails
-        mocks.setResponse(successfulDuplicateItemResponse);
-
         const tool = new CreateItemTool(mocks.mockApiClient, { boardId: 456 });
 
         await expect(
@@ -243,6 +273,20 @@ describe('Create Item Tool Behaviour', () => {
             duplicateFromItemId: 123,
           }),
         ).rejects.toThrow('Invalid columnValues JSON');
+        expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+      });
+
+      it('rejects non-object columnValues before duplicating', async () => {
+        const tool = new CreateItemTool(mocks.mockApiClient, { boardId: 456 });
+
+        await expect(
+          tool.execute({
+            name: 'Updated Item',
+            columnValues: '[]',
+            duplicateFromItemId: 123,
+          }),
+        ).rejects.toThrow('Invalid columnValues JSON');
+        expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
 
       it('Throws error when duplicate item returns no item', async () => {
@@ -259,7 +303,7 @@ describe('Create Item Tool Behaviour', () => {
         ).rejects.toThrow('Failed to duplicate item');
       });
 
-      it('Returns duplicate result even when update fails', async () => {
+      it('returns the name from duplicate_item when the column update does not include one', async () => {
         mocks.setResponse(successfulDuplicateItemResponse);
         mockChangeColumnValuesTool.execute.mockResolvedValue({
           content: 'Error: Update failed',
@@ -273,7 +317,87 @@ describe('Create Item Tool Behaviour', () => {
           duplicateFromItemId: 123,
         });
 
-        expect(result.content).toEqual({ message: 'Item 987654321 duplicated from 123', item_id: '987654321', item_name: 'Duplicated Item', item_url: undefined, board_id: 456 });
+        expect(result.content).toEqual({
+          message: 'Item 987654321 duplicated from 123',
+          item_id: '987654321',
+          item_name: 'Duplicated Item',
+          item_url: undefined,
+          board_id: 456,
+        });
+      });
+
+      it('passes groupId to duplicate_item and skips the column update when there are no column values', async () => {
+        mocks.setResponse(successfulDuplicateItemResponse);
+        const tool = new CreateItemTool(mocks.mockApiClient, { boardId: 456 });
+
+        await tool.execute({
+          name: 'Updated Item',
+          columnValues: '{}',
+          groupId: 'group_mm8a9g0r',
+          duplicateFromItemId: 123,
+        });
+
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('mutation duplicateItem'),
+          {
+            boardId: '456',
+            itemId: '123',
+            itemName: 'Updated Item',
+            groupId: 'group_mm8a9g0r',
+          },
+          { versionOverride: '2027-04' },
+        );
+        expect(mockChangeColumnValuesTool.execute).not.toHaveBeenCalled();
+      });
+
+      it('renames the copy when duplicate_item appends the copy suffix', async () => {
+        mocks.setResponse({ duplicate_item: { id: '987654321', name: 'Updated Item (copy)' } });
+        mockChangeColumnValuesTool.execute.mockResolvedValue(successfulUpdateResponse);
+        const tool = new CreateItemTool(mocks.mockApiClient, { boardId: 456 });
+
+        const result = await tool.execute({
+          name: 'Updated Item',
+          columnValues: '{}',
+          duplicateFromItemId: 123,
+        });
+
+        expect(mockChangeColumnValuesTool.execute).toHaveBeenCalledWith({
+          itemId: 987654321,
+          columnValues: '{"name":"Updated Item"}',
+          createLabelsIfMissing: undefined,
+        });
+        expect((result.content as { item_name?: string }).item_name).toBe('Updated Item');
+      });
+
+      it('skips the column update when name is the only column value', async () => {
+        mocks.setResponse(successfulDuplicateItemResponse);
+        const tool = new CreateItemTool(mocks.mockApiClient, { boardId: 456 });
+
+        await tool.execute({
+          name: 'Updated Item',
+          columnValues: '{"name":"Ignored name"}',
+          duplicateFromItemId: 123,
+        });
+
+        expect(mockChangeColumnValuesTool.execute).not.toHaveBeenCalled();
+      });
+
+      it('removes name before applying other column values', async () => {
+        mocks.setResponse(successfulDuplicateItemResponse);
+        mockChangeColumnValuesTool.execute.mockResolvedValue(successfulUpdateResponse);
+        const tool = new CreateItemTool(mocks.mockApiClient, { boardId: 456 });
+
+        await tool.execute({
+          name: 'Updated Item',
+          columnValues: '{"name":"Ignored name","text_column":"Updated Value"}',
+          duplicateFromItemId: 123,
+        });
+
+        expect(mockChangeColumnValuesTool.execute).toHaveBeenCalledWith({
+          itemId: 987654321,
+          columnValues: '{"text_column":"Updated Value"}',
+          createLabelsIfMissing: undefined,
+        });
       });
 
       it('Successfully duplicates and updates with boardId in input', async () => {
@@ -289,13 +413,24 @@ describe('Create Item Tool Behaviour', () => {
           duplicateFromItemId: 123,
         });
 
-        expect(result.content).toEqual({ message: 'Item 987654321 duplicated from 123', item_id: '987654321', item_name: 'Duplicated Item', item_url: undefined, board_id: 789 });
+        expect(result.content).toEqual({
+          message: 'Item 987654321 duplicated from 123',
+          item_id: '987654321',
+          item_name: 'Duplicated Item',
+          item_url: undefined,
+          board_id: 789,
+        });
 
         // Verify duplicate call uses input boardId
-        expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('mutation duplicateItem'), {
-          boardId: '789',
-          itemId: '123',
-        });
+        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+          expect.stringContaining('mutation duplicateItem'),
+          {
+            boardId: '789',
+            itemId: '123',
+            itemName: 'Updated Item',
+          },
+          { versionOverride: '2027-04' },
+        );
 
         // Verify ChangeItemColumnValuesTool was called with input boardId
         expect(MockedChangeItemColumnValuesTool).toHaveBeenCalledWith(mocks.mockApiClient, {
@@ -326,7 +461,12 @@ describe('Create Item Tool Behaviour', () => {
           parentItemId: 123,
         });
 
-        expect(result.content).toEqual({ message: 'Subitem 111222333 created under 123', item_id: '111222333', item_name: 'New Subitem', item_url: undefined });
+        expect(result.content).toEqual({
+          message: 'Subitem 111222333 created under 123',
+          item_id: '111222333',
+          item_name: 'New Subitem',
+          item_url: undefined,
+        });
 
         expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('mutation createSubitem'), {
           parentItemId: '123',
@@ -442,7 +582,9 @@ describe('Create Item Tool Behaviour', () => {
 
       it('forwards createLabelsIfMissing through the duplicate path to change_column_values', async () => {
         mocks.setResponse({ duplicate_item: { id: '987654321', name: 'Duplicated Item' } });
-        mockChangeColumnValuesTool.execute.mockResolvedValue({ content: 'ok' });
+        mockChangeColumnValuesTool.execute.mockResolvedValue({
+          content: { message: 'updated', item_id: '987654321', item_name: 'Dup' },
+        });
 
         const tool = new CreateItemTool(mocks.mockApiClient, { boardId: 456 });
 
@@ -455,7 +597,7 @@ describe('Create Item Tool Behaviour', () => {
 
         expect(mockChangeColumnValuesTool.execute).toHaveBeenCalledWith({
           itemId: 987654321,
-          columnValues: '{"status_col":{"label":"Brand New"},"name":"Dup"}',
+          columnValues: '{"status_col":{"label":"Brand New"}}',
           createLabelsIfMissing: true,
         });
       });
