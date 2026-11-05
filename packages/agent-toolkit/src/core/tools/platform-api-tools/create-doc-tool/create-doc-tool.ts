@@ -130,10 +130,7 @@ USAGE EXAMPLES:
 - Workspace doc: { location: "workspace", workspace_id: 123, doc_name: "My Doc", doc_kind: "private" , markdown: "..." }
 - Workspace doc in folder: { location: "workspace", workspace_id: 123, doc_name: "My Doc", folder_id: 17264196 , markdown: "..." }
 - Item doc: { location: "item", item_id: 456, doc_name: "My Doc", column_id: "doc_col_1" , markdown: "..." }
-- Workspace doc with agent owner: { location: "workspace", workspace_id: 123, doc_name: "My Doc", markdown: "...", docOwnerIds: ["<agent_owner_user_id>"] }
-
-ITEM DOC ALREADY PRESENT:
-A doc column holds one document. When it is already filled, this tool returns that existing document and does not apply doc_name or markdown. Call add_content_to_doc with the returned doc_id to add the markdown, and update_doc to set the name.`;
+- Workspace doc with agent owner: { location: "workspace", workspace_id: 123, doc_name: "My Doc", markdown: "...", docOwnerIds: ["<agent_owner_user_id>"] }`;
   }
 
   getInputSchema(): typeof createDocToolSchema {
