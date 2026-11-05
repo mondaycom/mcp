@@ -552,86 +552,90 @@ describe('CreateDocTool', () => {
         expect(addContentCall).toBeDefined();
       });
 
-      it('returns an existing item doc when creation fails with CellLimitExceeded', async () => {
-        let docReads = 0;
-        jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
-          if (query.includes('query getItemBoard')) {
-            return Promise.resolve({
-              items: [
-                {
-                  id: 'item_123',
-                  board: {
-                    id: 'board_456',
-                    columns: [{ id: 'doc_col_1', type: NonDeprecatedColumnType.Doc }],
+      it.each(['CellLimitExceededException', 'CellLimitExceeded'])(
+        'returns an existing item doc when creation fails with %s',
+        async (code) => {
+          let docReads = 0;
+          jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
+            if (query.includes('query getItemBoard')) {
+              return Promise.resolve({
+                items: [
+                  {
+                    id: 'item_123',
+                    board: {
+                      id: 'board_456',
+                      columns: [{ id: 'doc_col_1', type: NonDeprecatedColumnType.Doc }],
+                    },
                   },
-                },
-              ],
-            });
-          }
-          if (query.includes('query getItemDocColumnValue')) {
-            docReads++;
-            return Promise.resolve({
-              items: [
-                {
-                  column_values: [
-                    {
-                      __typename: 'DocValue',
-                      id: 'doc_col_1',
-                      type: NonDeprecatedColumnType.Doc,
-                      file: {
-                        doc: {
-                          id: 'existing_doc',
-                          object_id: 'existing_object',
-                          url: 'https://monday.com/docs/existing_object',
-                          name: 'Existing doc',
+                ],
+              });
+            }
+            if (query.includes('query getItemDocColumnValue')) {
+              docReads++;
+              return Promise.resolve({
+                items: [
+                  {
+                    column_values: [
+                      {
+                        __typename: 'DocValue',
+                        id: 'doc_col_1',
+                        type: NonDeprecatedColumnType.Doc,
+                        file: {
+                          doc: {
+                            id: 'existing_doc',
+                            object_id: 'existing_object',
+                            url: 'https://monday.com/docs/existing_object',
+                            name: 'Existing doc',
+                          },
                         },
                       },
-                    },
-                  ],
-                },
-              ],
-            });
-          }
-          if (query.includes('mutation createDoc')) {
-            const error = new Error('Cell limit exceeded') as Error & {
-              response: { errors: Array<{ message: string; extensions: { code: string } }> };
-            };
-            error.response = {
-              errors: [{ message: 'Cell limit exceeded', extensions: { code: 'CellLimitExceeded' } }],
-            };
-            return Promise.reject(error);
-          }
-          return Promise.resolve({});
-        });
+                    ],
+                  },
+                ],
+              });
+            }
+            if (query.includes('mutation createDoc')) {
+              const error = new Error('Cell limit exceeded') as Error & {
+                response: { errors: Array<{ message: string; extensions: { code: string } }> };
+              };
+              error.response = {
+                errors: [{ message: 'The cell has reached the doc limit', extensions: { code } }],
+              };
+              return Promise.reject(error);
+            }
+            return Promise.resolve({});
+          });
 
-        const result = await callToolByNameRawAsync('create_doc', {
-          location: 'item',
-          item_id: 123,
-          column_id: 'doc_col_1',
-          doc_name: 'Requested name',
-          markdown: 'Requested content',
-        });
+          const result = await callToolByNameRawAsync('create_doc', {
+            location: 'item',
+            item_id: 123,
+            column_id: 'doc_col_1',
+            doc_name: 'Requested name',
+            markdown: 'Requested content',
+          });
 
-        expect(result.structuredContent).toEqual({
-          message: 'The item already has a document in this column. The existing document was returned unchanged.',
-          doc_id: 'existing_doc',
-          object_id: 'existing_object',
-          doc_url: 'https://monday.com/docs/existing_object',
-          doc_name: 'Existing doc',
-          existing_doc_found: true,
-        });
-        expect(mocks.getMockRequest()).toHaveBeenCalledWith(
-          expect.stringContaining('mutation createDoc'),
-          expect.anything(),
-        );
-        expect(mocks.getMockRequest()).not.toHaveBeenCalledWith(
-          expect.stringContaining('mutation addContentToDocFromMarkdown'),
-          expect.anything(),
-        );
-        expect(docReads).toBe(1);
-      });
+          expect(result.structuredContent).toEqual({
+            message:
+              'The item already has a document in this column. The existing document was returned unchanged. The requested doc_name and markdown were not applied. Call add_content_to_doc with this doc_id to add the markdown, and update_doc to set the name.',
+            doc_id: 'existing_doc',
+            object_id: 'existing_object',
+            doc_url: 'https://monday.com/docs/existing_object',
+            doc_name: 'Existing doc',
+            existing_doc_found: true,
+          });
+          expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+            expect.stringContaining('mutation createDoc'),
+            expect.anything(),
+          );
+          expect(mocks.getMockRequest()).not.toHaveBeenCalledWith(
+            expect.stringContaining('mutation addContentToDocFromMarkdown'),
+            expect.anything(),
+          );
+          expect(docReads).toBe(1);
+        },
+      );
 
-      it('preserves CellLimitExceeded when the item doc cell is still empty', async () => {
+      it('preserves CellLimitExceededException when the item doc cell is still empty', async () => {
         jest.spyOn(mocks, 'mockRequest').mockImplementation((query: string) => {
           if (query.includes('query getItemBoard')) {
             return Promise.resolve({
@@ -650,11 +654,13 @@ describe('CreateDocTool', () => {
             return Promise.resolve({ items: [{ column_values: [] }] });
           }
           if (query.includes('mutation createDoc')) {
-            const error = new Error('CellLimitExceeded') as Error & {
+            const error = new Error('CellLimitExceededException') as Error & {
               response: { errors: Array<{ message: string; extensions: { code: string } }> };
             };
             error.response = {
-              errors: [{ message: 'Cell limit exceeded', extensions: { code: 'CellLimitExceeded' } }],
+              errors: [
+                { message: 'The cell has reached the doc limit', extensions: { code: 'CellLimitExceededException' } },
+              ],
             };
             return Promise.reject(error);
           }
@@ -672,7 +678,7 @@ describe('CreateDocTool', () => {
         expect(result.isError).toBe(true);
         expect(result.structuredContent).toEqual(
           expect.objectContaining({
-            errors: [expect.objectContaining({ code: 'CellLimitExceeded' })],
+            errors: [expect.objectContaining({ code: 'CellLimitExceededException' })],
           }),
         );
       });

@@ -238,7 +238,7 @@ USAGE EXAMPLES:
         try {
           res = await this.mondayApi.request(createDocMutation, itemVariables);
         } catch (error) {
-          if (this.hasGraphQLErrorCode(error, 'CellLimitExceeded')) {
+          if (this.hasCellLimitExceeded(error)) {
             const existingDoc = await this.getExistingItemDoc(parsedInput.item_id, columnId).catch(() => undefined);
             if (existingDoc) {
               return this.existingItemDocResult(existingDoc, input.location);
@@ -327,7 +327,8 @@ USAGE EXAMPLES:
 
     return {
       content: {
-        message: 'The item already has a document in this column. The existing document was returned unchanged.',
+        message:
+          'The item already has a document in this column. The existing document was returned unchanged. The requested doc_name and markdown were not applied. Call add_content_to_doc with this doc_id to add the markdown, and update_doc to set the name.',
         doc_id: doc.id,
         object_id: doc.object_id,
         doc_url: doc.url,
@@ -359,6 +360,10 @@ USAGE EXAMPLES:
         })),
       },
     };
+  }
+
+  private hasCellLimitExceeded(error: unknown): boolean {
+    return ['CellLimitExceededException', 'CellLimitExceeded'].some((code) => this.hasGraphQLErrorCode(error, code));
   }
 
   private hasGraphQLErrorCode(error: unknown, code: string): boolean {

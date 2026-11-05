@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.78.6
+
+### `create_doc` recovers an existing item doc on `CellLimitExceededException`
+
+- The occupied-cell recovery now matches the code the API sends, `CellLimitExceededException`, as well as `CellLimitExceeded`.
+- The returned document is unchanged. The result says the requested `doc_name` and markdown were not applied, and that `add_content_to_doc` with the returned `doc_id` adds the markdown (`update_doc` sets the name).
+
 ## 5.78.5
 
 ### `create_item` and `create_items` duplicates set the name and group in one call
