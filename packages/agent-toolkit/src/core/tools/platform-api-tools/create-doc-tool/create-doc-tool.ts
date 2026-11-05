@@ -130,7 +130,10 @@ USAGE EXAMPLES:
 - Workspace doc: { location: "workspace", workspace_id: 123, doc_name: "My Doc", doc_kind: "private" , markdown: "..." }
 - Workspace doc in folder: { location: "workspace", workspace_id: 123, doc_name: "My Doc", folder_id: 17264196 , markdown: "..." }
 - Item doc: { location: "item", item_id: 456, doc_name: "My Doc", column_id: "doc_col_1" , markdown: "..." }
-- Workspace doc with agent owner: { location: "workspace", workspace_id: 123, doc_name: "My Doc", markdown: "...", docOwnerIds: ["<agent_owner_user_id>"] }`;
+- Workspace doc with agent owner: { location: "workspace", workspace_id: 123, doc_name: "My Doc", markdown: "...", docOwnerIds: ["<agent_owner_user_id>"] }
+
+ITEM DOC ALREADY PRESENT:
+A doc column holds one document. When it is already filled, this tool returns that existing document and does not apply doc_name or markdown. Call add_content_to_doc with the returned doc_id to add the markdown, and update_doc to set the name.`;
   }
 
   getInputSchema(): typeof createDocToolSchema {
@@ -185,10 +188,7 @@ USAGE EXAMPLES:
 
         const item = itemRes.items?.[0];
         if (!item) {
-          throw new ToolValidationError(
-            `Item with id ${parsedInput.item_id} not found.`,
-            EMPTY_API_RESPONSE_CODE,
-          );
+          throw new ToolValidationError(`Item with id ${parsedInput.item_id} not found.`, EMPTY_API_RESPONSE_CODE);
         }
 
         const boardId = item.board?.id;
@@ -238,7 +238,7 @@ USAGE EXAMPLES:
         try {
           res = await this.mondayApi.request(createDocMutation, itemVariables);
         } catch (error) {
-          if (this.hasGraphQLErrorCode(error, 'CellLimitExceeded')) {
+          if (this.hasCellLimitExceeded(error)) {
             const existingDoc = await this.getExistingItemDoc(parsedInput.item_id, columnId).catch(() => undefined);
             if (existingDoc) {
               return this.existingItemDocResult(existingDoc, input.location);
@@ -300,7 +300,13 @@ USAGE EXAMPLES:
       };
 
       return {
-        content: { message: "Document successfully created", doc_id: docId, object_id: docObjectId, doc_url: docUrl, doc_name: input.doc_name },
+        content: {
+          message: 'Document successfully created',
+          doc_id: docId,
+          object_id: docObjectId,
+          doc_url: docUrl,
+          doc_name: input.doc_name,
+        },
       };
     } catch (error) {
       rethrowWithContext(error, 'create document');
@@ -327,7 +333,8 @@ USAGE EXAMPLES:
 
     return {
       content: {
-        message: 'The item already has a document in this column. The existing document was returned unchanged.',
+        message:
+          'The item already has a document in this column. The existing document was returned unchanged. The requested doc_name and markdown were not applied. Call add_content_to_doc with this doc_id to add the markdown, and update_doc to set the name.',
         doc_id: doc.id,
         object_id: doc.object_id,
         doc_url: doc.url,
@@ -359,6 +366,10 @@ USAGE EXAMPLES:
         })),
       },
     };
+  }
+
+  private hasCellLimitExceeded(error: unknown): boolean {
+    return ['CellLimitExceededException', 'CellLimitExceeded'].some((code) => this.hasGraphQLErrorCode(error, code));
   }
 
   private hasGraphQLErrorCode(error: unknown, code: string): boolean {
