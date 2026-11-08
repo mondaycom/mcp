@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.78.7
+
+### `workspace_info` orders docs by `created_at`
+
+- The workspace docs query ordered by `used_at`, which returns an `Internal server error` on `docs` for users with no view history. The whole call failed, losing the boards and folders too.
+- Docs are now ordered by `created_at`. Boards and folders are unchanged.
+
 ## 5.78.6
 
 ### `create_doc` recovers an existing item doc on `CellLimitExceededException`

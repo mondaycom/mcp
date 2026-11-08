@@ -1,7 +1,16 @@
 import { organizeWorkspaceInfoHierarchy } from './helpers';
 import { WorkspaceKind, State } from '../../../../monday-graphql/generated/graphql/graphql';
+import { getWorkspaceInfo } from '../../../../monday-graphql/queries.graphql';
 
 describe('WorkspaceInfoTool', () => {
+  describe('getWorkspaceInfo query', () => {
+    it('orders docs by created_at, since docs ordered by used_at fail for users with no view history', () => {
+      const docsField = getWorkspaceInfo.match(/docs\([^)]*\)/)?.[0];
+      expect(docsField).toContain('order_by: created_at');
+      expect(docsField).not.toContain('used_at');
+    });
+  });
+
   describe('organizeWorkspaceInfoHierarchy', () => {
     it('should organize workspace data with proper hierarchy', () => {
       const rawResponse = {

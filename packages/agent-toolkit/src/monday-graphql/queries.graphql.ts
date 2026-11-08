@@ -514,7 +514,7 @@ export const getWorkspaceInfo = gql`
       name
       board_folder_id
     }
-    docs(workspace_ids: [$workspace_id], limit: 100, order_by: used_at) {
+    docs(workspace_ids: [$workspace_id], limit: 100, order_by: created_at) {
       id
       name
       doc_folder_id
