@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.78.7
+
+### `get_board_activity` sends the `activity_logs` query in its 2026-10 shape
+
+- The request uses the page-based `activity_logs` query (ISO8601DateTime `from`/`to`, `page`, flat list of logs) and is pinned to API version `2026-10`, so it keeps working however the 2027-01 `activity_logs` field changes.
+- The tool input and output are unchanged. The toolkit's default API version stays `2027-01`.
+
 ## 5.78.6
 
 ### `create_doc` recovers an existing item doc on `CellLimitExceededException`
