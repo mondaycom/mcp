@@ -8,7 +8,7 @@ Shows: audit surfaces multiple gap types, user picks phone + email fixes, bounde
 > clean my CRM — the Deals board is a mess
 
 **Claude (step 0 — connector check):**
-*[calls `mcp__monday__get_user_context` → `user: { id: 487214, name: "Kevin Cheng", role: "admin" }`, favorites contain `Deals` (10046221612)]*
+*[calls `mcp__plugin_monday-crm_monday__get_user_context` → `user: { id: 487214, name: "Kevin Cheng", role: "admin" }`, favorites contain `Deals` (10046221612)]*
 
 **Claude (step 1 — mode):**
 No explicit mode → Default. Will confirm before each batch of writes.

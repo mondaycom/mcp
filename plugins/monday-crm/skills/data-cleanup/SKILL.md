@@ -3,7 +3,7 @@ name: data-cleanup
 description: Check your CRM board's health and clean up messy data — run a scored health check (missing fields, stalled deals, abandoned columns, automation gaps) as a report, or fix data in bulk (phone formats, missing emails, country codes, unowned deals, stale dates). Use when someone says "clean my CRM", "fix my data", "normalize my phone numbers", "fill in missing owners", "run a board health check", "audit my CRM board", "what's broken in my CRM", "what are the data gaps on my board", "board is messy", or "clean up before my kickoff call".
 argument-hint: "[optional: board name or ID]"
 user-invocable: true
-allowed-tools: [Read, AskUserQuestion, mcp__monday__get_user_context, mcp__monday__list_workspaces, mcp__monday__search, mcp__monday__get_board_info, mcp__monday__get_column_type_info, mcp__monday__get_board_items_page, mcp__monday__board_insights, mcp__monday__get_board_activity, mcp__monday__change_item_column_values, mcp__monday__create_doc, mcp__monday__read_docs, mcp__monday__update_doc, mcp__monday__create_update, mcp__monday__create_notification, mcp__monday__list_users_and_teams, mcp__monday__all_monday_api]
+allowed-tools: [Read, AskUserQuestion, mcp__plugin_monday-crm_monday__get_user_context, mcp__plugin_monday-crm_monday__list_workspaces, mcp__plugin_monday-crm_monday__search, mcp__plugin_monday-crm_monday__get_board_info, mcp__plugin_monday-crm_monday__get_column_type_info, mcp__plugin_monday-crm_monday__get_board_items_page, mcp__plugin_monday-crm_monday__board_insights, mcp__plugin_monday-crm_monday__get_board_activity, mcp__plugin_monday-crm_monday__change_item_column_values, mcp__plugin_monday-crm_monday__create_doc, mcp__plugin_monday-crm_monday__read_docs, mcp__plugin_monday-crm_monday__update_doc, mcp__plugin_monday-crm_monday__create_update, mcp__plugin_monday-crm_monday__create_notification, mcp__plugin_monday-crm_monday__list_users_and_teams, mcp__plugin_monday-crm_monday__all_monday_api]
 ---
 
 # Data Cleanup
@@ -48,7 +48,7 @@ Flow (fix): **Trigger → Audit → User picks gaps → Plan writes → Execute 
 
 **Goal:** Fail fast if the user has no monday MCP connection — no partial writes, no guessing.
 
-1. Try `mcp__monday__get_user_context`.
+1. Try `mcp__plugin_monday-crm_monday__get_user_context`.
 2. If the tool is missing, returns an auth-style error, or the user has no accessible workspace: print *"I don't see the monday connector active on this session. Install it from https://monday.com/mcp, then run this skill again."* and stop.
 3. If it works, cache `user.id` + `user.name` for artifact metadata.
 
@@ -73,7 +73,7 @@ Hard safety rail regardless of mode: **no deletes, no amount-column writes, no c
 
 **Goal:** Land on a single `boardId` before reading any data.
 
-1. If the user passed a board via argument: numeric → use as `boardId` directly; string → `mcp__monday__search` with `searchType: "BOARD"`. One match → use it; multiple → `AskUserQuestion`.
+1. If the user passed a board via argument: numeric → use as `boardId` directly; string → `mcp__plugin_monday-crm_monday__search` with `searchType: "BOARD"`. One match → use it; multiple → `AskUserQuestion`.
 2. If no argument: `get_user_context` → scan `relevantBoards` + `favorites` for names matching `deals|opportunities|pipeline|leads|sales|contacts|accounts`. One candidate → use it; multiple → `AskUserQuestion`; zero → `list_workspaces` → `search`. Still zero → stop with *"I don't see a CRM-shaped board in your workspaces. Tell me the board name or ID, or run `/monday-crm:workspace-builder` to create one."*
 
 ---

@@ -3,7 +3,7 @@ name: workspace-builder
 description: Build a CRM workspace from scratch — describe your business and get boards, columns, and pipeline stages created in monday. Use when someone says "set up my CRM", "build me a CRM", "create CRM boards for me", "I need a new sales pipeline", "help me get started in monday", "I don't know how to set up my pipeline", or "build me a CRM from scratch". Do not use for questions about an existing board — those belong to daily-briefing or data-cleanup.
 argument-hint: "[optional: business description, e.g. 'window coverings, B2C, ~50 leads/month']"
 user-invocable: true
-allowed-tools: [Read, WebFetch, AskUserQuestion, mcp__monday__get_user_context, mcp__monday__list_workspaces, mcp__monday__workspace_info, mcp__monday__search, mcp__monday__create_workspace, mcp__monday__create_board, mcp__monday__create_group, mcp__monday__create_column, mcp__monday__create_item, mcp__monday__create_doc, mcp__monday__read_docs, mcp__monday__get_board_info, mcp__monday__all_monday_api]
+allowed-tools: [Read, AskUserQuestion, mcp__plugin_monday-crm_monday__get_user_context, mcp__plugin_monday-crm_monday__list_workspaces, mcp__plugin_monday-crm_monday__workspace_info, mcp__plugin_monday-crm_monday__search, mcp__plugin_monday-crm_monday__create_workspace, mcp__plugin_monday-crm_monday__create_board, mcp__plugin_monday-crm_monday__create_group, mcp__plugin_monday-crm_monday__create_column, mcp__plugin_monday-crm_monday__create_item, mcp__plugin_monday-crm_monday__create_doc, mcp__plugin_monday-crm_monday__read_docs, mcp__plugin_monday-crm_monday__get_board_info, mcp__plugin_monday-crm_monday__all_monday_api]
 # all_monday_api scope: group rename (update_group), group delete (delete_group — confirmed Default mode only), status label config, number unit config. No other mutations.
 ---
 
@@ -134,7 +134,7 @@ Never create all 5 boards by default. Blank boards are intimidating and reduce a
 
 **Goal:** Fail fast if the monday MCP connection is missing. Detect the CRM product and cache its numeric ID for workspace creation.
 
-1. Try `mcp__monday__get_user_context`.
+1. Try `mcp__plugin_monday-crm_monday__get_user_context`.
 2. If missing/auth error/no workspace:
    - Print exactly: *"I don't see the monday connector active on this session. Install the monday connector at monday.com/mcp, then run `/monday-crm:workspace-builder` again."*
    - Stop.

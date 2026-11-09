@@ -8,7 +8,7 @@ Shows: open-ended description → archetype match → board proposal → user co
 > set up my CRM — I run a mid-market SaaS company, 3 AEs doing outbound, ~80 active deals at a time
 
 **Claude (step 0 — connector check):**
-*[calls `mcp__monday__get_user_context` → `user: { id: 487214, name: "Kevin Cheng", role: "admin" }`, workspaces: `[{ id: 1001, name: "Sales Ops" }]`]*
+*[calls `mcp__plugin_monday-crm_monday__get_user_context` → `user: { id: 487214, name: "Kevin Cheng", role: "admin" }`, workspaces: `[{ id: 1001, name: "Sales Ops" }]`]*
 
 **Claude (step 1 — mode):**
 No explicit mode → Default. Will confirm every `create_*` call.

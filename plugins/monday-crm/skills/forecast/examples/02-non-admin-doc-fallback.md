@@ -8,7 +8,7 @@ Shows: connector check passes, admin check fails on `create_dashboard`, user pic
 > what's our number this quarter
 
 **Claude (step 0 — connector check):**
-*[calls `mcp__monday__get_user_context` → `user: { id: 502831, name: "Jamie Levi", role: "member" }`, favorites contain `Deals` (10046221612)]*
+*[calls `mcp__plugin_monday-crm_monday__get_user_context` → `user: { id: 502831, name: "Jamie Levi", role: "member" }`, favorites contain `Deals` (10046221612)]*
 
 Connector active. User is `member` (not admin) — note for Step 6.
 

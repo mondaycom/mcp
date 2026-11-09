@@ -1,6 +1,6 @@
 # monday GraphQL Mutations — workspace-builder reference
 
-Use these via `mcp__monday__all_monday_api`. Pass the mutation string as the `query` parameter.
+Use these via `mcp__plugin_monday-crm_monday__all_monday_api`. Pass the mutation string as the `query` parameter.
 
 ---
 

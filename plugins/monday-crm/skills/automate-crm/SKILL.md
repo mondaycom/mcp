@@ -3,7 +3,7 @@ name: automate-crm
 description: Set up, view, and manage automations on monday CRM boards using natural language — no block IDs or technical knowledge required. Use when someone says "set up an automation", "automate this", "when a deal is won notify me", "remind me when a date passes", "move deals automatically", "what automations do I have", "turn off automation", "create a workflow", "automate my pipeline", or "set up a rule". Not for multi-step email or outreach sequences (use run-sequence).
 argument-hint: "[automation description — 'notify owner when deal is won and move to Closed Won group', 'remind me 3 days before close date', 'what automations are on my deals board']"
 user-invocable: true
-allowed-tools: [Read, AskUserQuestion, mcp__monday__get_user_context, mcp__monday__get_board_info, mcp__monday__search, mcp__monday__get_board_items_page, mcp__monday__create_automation, mcp__monday__list_automations, mcp__monday__manage_automations]
+allowed-tools: [Read, AskUserQuestion, mcp__plugin_monday-crm_monday__get_user_context, mcp__plugin_monday-crm_monday__get_board_info, mcp__plugin_monday-crm_monday__search, mcp__plugin_monday-crm_monday__get_board_items_page, mcp__plugin_monday-crm_monday__create_automation, mcp__plugin_monday-crm_monday__list_automations, mcp__plugin_monday-crm_monday__manage_automations]
 ---
 
 # Automate CRM
@@ -52,7 +52,7 @@ When `create_automation` returns `needs_clarification`, present each `unresolved
 
 ## Step 0: Connector check
 
-1. `mcp__monday__get_user_context`. On error → print install prompt, stop.
+1. `mcp__plugin_monday-crm_monday__get_user_context`. On error → print install prompt, stop.
 
 ---
 
@@ -69,7 +69,7 @@ When `create_automation` returns `needs_clarification`, present each `unresolved
 ## Step 2: Resolve board
 
 1. Extract board reference from argument (Deals, Contacts, Leads, or specific name).
-2. If mentioned → `mcp__monday__search` or `get_user_context` favorites.
+2. If mentioned → `mcp__plugin_monday-crm_monday__search` or `get_user_context` favorites.
 3. If not mentioned → ask: *"Which board? (e.g. Deals, Contacts, Leads)"*
 
 ---
@@ -95,7 +95,7 @@ If the user says something generic, present top 3 patterns:
 > ```
 > *(yes / edit / cancel)*
 
-On "yes" → `mcp__monday__create_automation({ boardId, userPrompt })`.
+On "yes" → `mcp__plugin_monday-crm_monday__create_automation({ boardId, userPrompt })`.
 
 ### 3c: Handle `needs_clarification`
 
@@ -111,7 +111,7 @@ On `status: "activated"`:
 
 ## Step 4: List automations
 
-1. `mcp__monday__list_automations({ boardId })`.
+1. `mcp__plugin_monday-crm_monday__list_automations({ boardId })`.
 2. Format as table: Name, Trigger, Status.
 3. Note legacy automations as read-only.
 4. Offer next action: *"Want to turn any off, or set up a new one?"*
@@ -122,7 +122,7 @@ On `status: "activated"`:
 
 1. Resolve ID via `list_automations` if needed.
 2. For **delete**: explicit irreversibility warning: *"Delete '[name]'? This can't be undone. (yes / cancel)"*
-3. `mcp__monday__manage_automations({ workflowId, action })`.
+3. `mcp__plugin_monday-crm_monday__manage_automations({ workflowId, action })`.
 4. Confirm: *"Done. '[name]' is now [state]."*
 
 ---

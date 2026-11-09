@@ -3,7 +3,7 @@ name: run-sequence
 description: Manage CRM sequences end-to-end — list, create, enroll contacts, activate/deactivate, duplicate, and track performance. Use when someone says "what sequences do I have", "create a welcome sequence", "enroll this contact in a sequence", "add these leads to my nurture sequence", "deactivate the cold outreach sequence", "activate my new sequence", "how is my nurture sequence doing", "show me sequence analytics", "create a drip sequence", "who is enrolled in", "duplicate this sequence", "set up an outreach sequence", "check this contact's sequence history", or "what sequences is this lead in". Not for board automations or if-this-then-that rules (use automate-crm).
 argument-hint: "[optional: action + target — 'list sequences on Leads board', 'enroll Acme in welcome sequence', 'analytics for Q2 nurture', 'duplicate cold outreach']"
 user-invocable: true
-allowed-tools: [Read, AskUserQuestion, mcp__monday__get_user_context, mcp__monday__list_workspaces, mcp__monday__search, mcp__monday__get_board_info, mcp__monday__get_board_items_page, mcp__monday__get-board-sequences, mcp__monday__get-sequence-analytics, mcp__monday__get-contact-journey, mcp__monday__enroll-item-in-sequence, mcp__monday__activate-sequence, mcp__monday__deactivate-sequence, mcp__monday__duplicate-sequence, mcp__monday__create-sequence, mcp__monday__show_connect_integration, mcp__monday__check-integration-connection-status, mcp__monday__all_monday_api]
+allowed-tools: [Read, AskUserQuestion, mcp__plugin_monday-crm_monday__get_user_context, mcp__plugin_monday-crm_monday__list_workspaces, mcp__plugin_monday-crm_monday__search, mcp__plugin_monday-crm_monday__get_board_info, mcp__plugin_monday-crm_monday__get_board_items_page, mcp__plugin_monday-crm_monday__get-board-sequences, mcp__plugin_monday-crm_monday__get-sequence-analytics, mcp__plugin_monday-crm_monday__get-contact-journey, mcp__plugin_monday-crm_monday__enroll-item-in-sequence, mcp__plugin_monday-crm_monday__activate-sequence, mcp__plugin_monday-crm_monday__deactivate-sequence, mcp__plugin_monday-crm_monday__duplicate-sequence, mcp__plugin_monday-crm_monday__create-sequence, mcp__plugin_monday-crm_monday__show_connect_integration, mcp__plugin_monday-crm_monday__check-integration-connection-status, mcp__plugin_monday-crm_monday__all_monday_api]
 ---
 
 # Run Sequence
@@ -53,7 +53,7 @@ Flow: **Trigger → Detect intent → Resolve board/sequence/contact → Execute
 
 ## Step 0: Connector check
 
-1. Try `mcp__monday__get_user_context`. On error → print install prompt, stop.
+1. Try `mcp__plugin_monday-crm_monday__get_user_context`. On error → print install prompt, stop.
 2. This skill does not pre-check sequence tools — if a sequence tool fails with a permission error in later steps, print: *"Sequences may not be enabled on your account. Check Tools → Sequences in monday CRM."*
 
 ---
@@ -82,7 +82,7 @@ If ambiguous, ask once:
 
 **Required for:** enroll, contact-journey. Optional for listing your own sequences and for a first try at finding one by name (omit `board_id`); needed to see teammates' sequences. Optional for create (let the gate handle it).
 
-1. If user named a board → `mcp__monday__search` or `get_board_info` to resolve it. On ambiguity, present top results and ask.
+1. If user named a board → `mcp__plugin_monday-crm_monday__search` or `get_board_info` to resolve it. On ambiguity, present top results and ask.
 2. If no board named:
    - For **list**: call `get-board-sequences` without `board_id`, show the result with the board name for each, and say *"These are the sequences you created. Name a board to see every sequence on it, including your teammates'."*
    - For **create**: proceed to Step 4 and let the tool's gate request it.
@@ -93,7 +93,7 @@ If ambiguous, ask once:
 
 ## Step 3: Execute — List
 
-`mcp__monday__get-board-sequences({ board_id })` — or `get-board-sequences({})` when no board was named.
+`mcp__plugin_monday-crm_monday__get-board-sequences({ board_id })` — or `get-board-sequences({})` when no board was named.
 
 Format as table:
 
@@ -112,7 +112,7 @@ If empty: *"No sequences on this board yet."*
 
 ## Step 4: Execute — Create
 
-Call `mcp__monday__create-sequence` directly with whatever you have from the user's message. The tool's built-in gates handle missing fields:
+Call `mcp__plugin_monday-crm_monday__create-sequence` directly with whatever you have from the user's message. The tool's built-in gates handle missing fields:
 
 - **`board_not_specified`** gate → follow the returned instructions verbatim: use `search` to list boards, present as-is, ask user to pick, retry.
 - **`steps_not_specified`** gate → follow the returned instructions verbatim: ask user to build steps one at a time or create empty. Never invent steps.
@@ -129,13 +129,13 @@ On success: *"Sequence '<name>' created (INACTIVE). Activate it? (yes / later)"*
 
 ## Step 5: Execute — Enroll
 
-1. Resolve the sequence: `mcp__monday__get-board-sequences({ board_id })`, or without `board_id` to find it by name — if the name isn't among your own sequences, retry with the board's `board_id` → present list, ask which sequence if not named.
+1. Resolve the sequence: `mcp__plugin_monday-crm_monday__get-board-sequences({ board_id })`, or without `board_id` to find it by name — if the name isn't among your own sequences, retry with the board's `board_id` → present list, ask which sequence if not named.
 2. Resolve the items: extract from the argument (company/contact names) or ask *"Which contacts or leads do you want to enroll?"*. Use `search` or `get_board_items_page` to get `item_id`s.
 3. Confirm sequence is ACTIVE. If INACTIVE: *"'<name>' is currently inactive — new enrollments are blocked. Activate it first? (yes / cancel)"*
 
 > **HITL GATE:** *"Enroll <N> item(s) in '<sequence name>'? The sequence is active, so its first email goes out from <sender mailbox> <timing of step 1>."* List the items by name. For more than 25 items, say the count first and confirm the user really means all of them. *(yes / cancel)*
 
-4. `mcp__monday__enroll-item-in-sequence({ board_id, sequenceId, itemIds: ["<id>", ...] })`.
+4. `mcp__plugin_monday-crm_monday__enroll-item-in-sequence({ board_id, sequenceId, itemIds: ["<id>", ...] })`.
 5. Report: *"Enrolled <N> items. Succeeded: <list>. Failed: <list if any>."* Items already enrolled may be rejected — list them under Failed with the reason the tool gives.
 
 ---
@@ -151,7 +151,7 @@ On success: *"Sequence '<name>' created (INACTIVE). Activate it? (yes / later)"*
 > - Activate: *"Activate '<name>'? This enables new enrollments. (yes / cancel)"*
 > - Deactivate: *"Deactivate '<name>'? New enrollments will be blocked — contacts already enrolled will keep progressing. (yes / cancel)"*
 
-3. `mcp__monday__activate-sequence({ sequenceId })` or `mcp__monday__deactivate-sequence({ sequenceId })`.
+3. `mcp__plugin_monday-crm_monday__activate-sequence({ sequenceId })` or `mcp__plugin_monday-crm_monday__deactivate-sequence({ sequenceId })`.
 4. Report the new state.
 
 ---
@@ -162,7 +162,7 @@ On success: *"Sequence '<name>' created (INACTIVE). Activate it? (yes / later)"*
 
 > **HITL GATE:** *"Duplicate '<name>'? The copy will start as INACTIVE. (yes / cancel)"*
 
-2. `mcp__monday__duplicate-sequence({ sequenceId })`.
+2. `mcp__plugin_monday-crm_monday__duplicate-sequence({ sequenceId })`.
 3. Report: *"Created '<new name>' (INACTIVE). Activate it? (yes / later)"*
 
 ---
@@ -170,7 +170,7 @@ On success: *"Sequence '<name>' created (INACTIVE). Activate it? (yes / later)"*
 ## Step 8: Execute — Analyze
 
 1. Resolve the sequence (board → list → pick).
-2. `mcp__monday__get-sequence-analytics({ sequenceId })`.
+2. `mcp__plugin_monday-crm_monday__get-sequence-analytics({ sequenceId })`.
 3. Format:
 
 ```
@@ -196,7 +196,7 @@ Runs: 12 active · 380 completed · 58 terminated
 ## Step 9: Execute — Contact journey
 
 1. Resolve the contact item (search by name → `item_id`; ask for board if unclear).
-2. `mcp__monday__get-contact-journey({ board_id, item_id })`.
+2. `mcp__plugin_monday-crm_monday__get-contact-journey({ board_id, item_id })`.
 3. Format:
 
 ```
