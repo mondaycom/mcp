@@ -3,6 +3,12 @@
 All notable changes to the `monday-crm` Claude plugin are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.6.2] — 2026-11-09
+
+### Added
+- Plugin icon for the directory listing: `icon` in `plugin.json` points to `assets/icon.png` (the monday CRM icon, 1024×1024 PNG). Moved out of `.claude-plugin/`, which should hold only the manifest.
+- `termsOfServiceUrl` and `supportUrl` in `plugin.json` for the directory listing.
+
 ## [0.6.1] — 2026-10-28
 
 ### Changed
