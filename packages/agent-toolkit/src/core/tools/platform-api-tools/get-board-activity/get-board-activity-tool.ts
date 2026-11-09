@@ -1,9 +1,10 @@
 import { z } from 'zod';
 import {
+  GET_BOARD_ACTIVITY_API_VERSION,
   GetBoardActivityQuery,
   GetBoardActivityQueryVariables,
-} from '../../../../monday-graphql/generated/graphql/graphql';
-import { getBoardActivity } from './get-board-activity.graphql';
+  getBoardActivity,
+} from './get-board-activity.legacy-query';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from './../base-monday-api-tool';
 import { TIME_IN_MILLISECONDS } from '../../../../utils';
@@ -82,12 +83,15 @@ export class GetBoardActivityTool extends BaseMondayApiTool<typeof getBoardActiv
       fromDate,
       toDate,
       limit: this.defaultLimit,
+      page: 1,
       includeData: input.includeData ?? false,
     };
 
-    const res = await this.mondayApi.request<GetBoardActivityQuery>(getBoardActivity, variables);
+    const res = await this.mondayApi.request<GetBoardActivityQuery>(getBoardActivity, variables, {
+      versionOverride: GET_BOARD_ACTIVITY_API_VERSION,
+    });
 
-    const activityLogs = res.boards?.[0]?.activity_logs?.logs;
+    const activityLogs = res.boards?.[0]?.activity_logs;
 
     if (!activityLogs || activityLogs.length === 0) {
       return {
