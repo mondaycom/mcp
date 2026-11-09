@@ -4,26 +4,23 @@ import { GetBoardActivityTool } from './get-board-activity-tool';
 const mockBoard = {
   name: 'Test Board',
   url: 'https://monday.com/boards/1',
-  activity_logs: {
-    logs: [
-      {
-        created_at: '2024-01-01T00:00:00Z',
-        event: 'create_pulse',
-        entity: 'pulse',
-        user_id: '123',
-        data: '{"key":"value"}',
-      },
-      null,
-      {
-        created_at: '2024-01-02T00:00:00Z',
-        event: 'update_pulse',
-        entity: 'pulse',
-        user_id: '456',
-        data: '{"foo":"bar"}',
-      },
-    ],
-    cursor: null,
-  },
+  activity_logs: [
+    {
+      created_at: '2024-01-01T00:00:00Z',
+      event: 'create_pulse',
+      entity: 'pulse',
+      user_id: '123',
+      data: '{"key":"value"}',
+    },
+    null,
+    {
+      created_at: '2024-01-02T00:00:00Z',
+      event: 'update_pulse',
+      entity: 'pulse',
+      user_id: '456',
+      data: '{"foo":"bar"}',
+    },
+  ],
 };
 
 describe('GetBoardActivityTool', () => {
@@ -87,7 +84,7 @@ describe('GetBoardActivityTool', () => {
   });
 
   it('returns message when no activity found', async () => {
-    mocks.setResponse({ boards: [{ ...mockBoard, activity_logs: { logs: [], cursor: null } }] });
+    mocks.setResponse({ boards: [{ ...mockBoard, activity_logs: [] }] });
     const tool = new GetBoardActivityTool(mocks.mockApiClient);
 
     const result = await tool.execute({ boardId: 42, includeData: false });
@@ -109,15 +106,34 @@ describe('GetBoardActivityTool', () => {
       includeData: true,
     });
 
-    expect(mocks.getMockRequest()).toHaveBeenCalledWith(expect.stringContaining('query GetBoardActivity'), {
-      boardId: '42',
-      itemIds: ['101', '202'],
-      userIds: ['300', '400'],
-      fromDate: '2024-01-01T00:00:00Z',
-      toDate: '2024-02-01T00:00:00Z',
-      limit: 1000,
-      includeData: true,
-    });
+    expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+      expect.stringContaining('query GetBoardActivity'),
+      {
+        boardId: '42',
+        itemIds: ['101', '202'],
+        userIds: ['300', '400'],
+        fromDate: '2024-01-01T00:00:00Z',
+        toDate: '2024-02-01T00:00:00Z',
+        limit: 1000,
+        page: 1,
+        includeData: true,
+      },
+      expect.objectContaining({ versionOverride: '2026-10' }),
+    );
+  });
+
+  it('sends the page-based ISO8601DateTime query pinned to API version 2026-10', async () => {
+    mocks.setResponse({ boards: [mockBoard] });
+    const tool = new GetBoardActivityTool(mocks.mockApiClient);
+
+    await tool.execute({ boardId: 1, includeData: false });
+
+    const [query, , options] = mocks.getMockRequest().mock.calls[0];
+    expect(query).toContain('page: $page');
+    expect(query).toContain('$fromDate: ISO8601DateTime!');
+    expect(query).toContain('$toDate: ISO8601DateTime!');
+    expect(query).not.toContain('cursor');
+    expect(options).toEqual(expect.objectContaining({ versionOverride: '2026-10' }));
   });
 
   it('passes undefined for omitted filters — not empty arrays', async () => {
@@ -132,6 +148,7 @@ describe('GetBoardActivityTool', () => {
         itemIds: undefined,
         userIds: undefined,
       }),
+      expect.objectContaining({ versionOverride: '2026-10' }),
     );
   });
 
@@ -147,6 +164,7 @@ describe('GetBoardActivityTool', () => {
         itemIds: [],
         userIds: [],
       }),
+      expect.objectContaining({ versionOverride: '2026-10' }),
     );
   });
 
@@ -160,6 +178,7 @@ describe('GetBoardActivityTool', () => {
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
       expect.stringContaining('query GetBoardActivity'),
       expect.objectContaining({ fromDate: '2024-03-03T00:00:00.000Z' }),
+      expect.objectContaining({ versionOverride: '2026-10' }),
     );
     expect((result.content as { message: string }).message).toContain('limited to the last 90 days');
   });
@@ -174,6 +193,7 @@ describe('GetBoardActivityTool', () => {
     expect(mocks.getMockRequest()).toHaveBeenCalledWith(
       expect.stringContaining('query GetBoardActivity'),
       expect.objectContaining({ fromDate: '2024-05-01T00:00:00Z' }),
+      expect.objectContaining({ versionOverride: '2026-10' }),
     );
     expect((result.content as { message: string }).message).toBe('Board activity retrieved');
   });
