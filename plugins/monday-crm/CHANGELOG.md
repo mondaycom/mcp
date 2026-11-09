@@ -3,10 +3,18 @@
 All notable changes to the `monday-crm` Claude plugin are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.6.3] — 2026-11-09
+
+### Changed
+- Skill `allowed-tools` and tool references now use the plugin-scoped MCP tool names (`mcp__plugin_monday-crm_monday__<tool>`), which is how Claude Code names tools from the plugin's bundled monday server.
+- `win-loss-review`: removed `Write` from `allowed-tools`. The HTML-file fallback still works, and asks for permission first.
+- `workspace-builder`: removed `WebFetch` from `allowed-tools`. Fetching the company homepage now asks for permission first.
+- CHANGELOG: image paths removed from earlier entries.
+
 ## [0.6.2] — 2026-11-09
 
 ### Added
-- Plugin icon for the directory listing: `icon` in `plugin.json` points to `assets/icon.png` (the monday CRM icon, 1024×1024 PNG). Moved out of `.claude-plugin/`, which should hold only the manifest.
+- Plugin icon for the directory listing (the monday CRM icon, 1024×1024 PNG), set through the `icon` field in `plugin.json`. Moved out of the manifest folder, which should hold only the manifest.
 - `termsOfServiceUrl` and `supportUrl` in `plugin.json` for the directory listing.
 
 ## [0.6.1] — 2026-10-28
@@ -64,7 +72,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `plugin.json`: added `privacyPolicyUrl` (monday.com privacy policy), flagged by the plugin directory check.
 - README: concrete install commands (`mondaycom/mcp`, `monday-crm@monday-mcp`), correct local-install path, enable step; modes and safety rails scoped to the skills that implement them.
 - `automate-crm`, `data-cleanup`: last pre-0.3.0 skill names replaced; internal wording removed from `data-cleanup`.
-- Added `.claude-plugin/icon.png` (1024×1024), the monday CRM app icon from monday.com's CDN, flagged by the plugin directory check.
+- Added the monday CRM app icon (1024×1024) from monday.com's CDN, flagged by the plugin directory check.
 
 ---
 

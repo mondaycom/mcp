@@ -3,7 +3,7 @@ name: log-activity
 description: Log one call, meeting or note that the user describes onto a single CRM item's timeline, read that item's activity history, or add a correction. Use when someone says "log my call with", "add a note to the deal", "record this meeting with", "log a meeting with", "track a call with", "I just spoke with", "I just had a call with", "note on the account", "what activities happened on this deal", "what's the activity history for", "correct the activity I logged", or "add to my note on". Not for turning recorded Notetaker meetings or pasted transcripts into deal recaps (use meeting-to-deal), and not for team or rep activity totals (use activity-insights).
 argument-hint: "[activity description — 'call with Acme about renewal', 'note on Globex deal: demo next week', 'activities on TechCorp this week']"
 user-invocable: true
-allowed-tools: [Read, AskUserQuestion, mcp__monday__get_user_context, mcp__monday__search, mcp__monday__get_board_info, mcp__monday__get_board_items_page, mcp__monday__get-custom-activities, mcp__monday__get-timeline-items, mcp__monday__create-timeline-item, mcp__monday__create-timeline-note]
+allowed-tools: [Read, AskUserQuestion, mcp__plugin_monday-crm_monday__get_user_context, mcp__plugin_monday-crm_monday__search, mcp__plugin_monday-crm_monday__get_board_info, mcp__plugin_monday-crm_monday__get_board_items_page, mcp__plugin_monday-crm_monday__get-custom-activities, mcp__plugin_monday-crm_monday__get-timeline-items, mcp__plugin_monday-crm_monday__create-timeline-item, mcp__plugin_monday-crm_monday__create-timeline-note]
 ---
 
 # Log Activity
@@ -46,8 +46,8 @@ Flow: **Trigger → Detect intent (log / read / correct) → Resolve CRM item �
 
 **Goal:** Confirm connector works and cache available activity types.
 
-1. Try `mcp__monday__get_user_context`. On error → print install prompt, stop.
-2. Try `mcp__monday__get-custom-activities`.
+1. Try `mcp__plugin_monday-crm_monday__get_user_context`. On error → print install prompt, stop.
+2. Try `mcp__plugin_monday-crm_monday__get-custom-activities`.
 3. If successful → cache the list of activity types (id, name, icon) for use in Step 3. Set `activities_available: true`.
 4. If permission error or tool unavailable → set `activities_available: false`. The skill can still operate with `create-timeline-note` (free-text notes don't require activity-type resolution), but structured activities (calls, meetings) will degrade to notes. Print: *"Activity types couldn't be loaded — I can still add notes to timelines. Structured call/meeting logging may be limited."*
 
@@ -78,7 +78,7 @@ If ambiguous and no CRM item mentioned, ask:
    - Deal name ("Q2 renewal", "enterprise upgrade")
    - Item ID (if explicitly given)
 
-2. If name extracted → `mcp__monday__search({ searchType: "ITEMS", searchTerm: "<name>", strategy: "SPEED" })` (retry with `strategy: "BALANCED"` if nothing comes back).
+2. If name extracted → `mcp__plugin_monday-crm_monday__search({ searchType: "ITEMS", searchTerm: "<name>", strategy: "SPEED" })` (retry with `strategy: "BALANCED"` if nothing comes back).
    - Single result → use it.
    - `search` returns `boardId` but no board name: resolve names from `get_user_context` relevant boards, or `get_board_info` for unknown ids. Drop results from activity-log boards (boards whose items are named like "<contact> - Email" or "<contact> - Meeting"); keep deals, contacts, accounts and leads.
    - Multiple results → present top 5 with board context: *"Found multiple matches: (1) Acme Corp [Deals board] (2) Acme Inc [Leads board] (3) Acme - renewal [Deals board]. Which one?"*
@@ -143,8 +143,8 @@ Parsing heuristic: extract as much as possible from the original argument before
 > *(yes / edit / cancel)*
 
 On "yes":
-- For structured activities: `mcp__monday__create-timeline-item({ item_id, custom_activity_id, title, summary, content, timestamp })` — `item_id` is numeric; `custom_activity_id` is the `id` from `get-custom-activities` (not the name); `timestamp` is ISO 8601; put attendees and follow-up in `content` as text. For meetings with a duration, add `start_timestamp` + `end_timestamp`.
-- For notes: `mcp__monday__create-timeline-note({ item_id, content: "<note text>" })`.
+- For structured activities: `mcp__plugin_monday-crm_monday__create-timeline-item({ item_id, custom_activity_id, title, summary, content, timestamp })` — `item_id` is numeric; `custom_activity_id` is the `id` from `get-custom-activities` (not the name); `timestamp` is ISO 8601; put attendees and follow-up in `content` as text. For meetings with a duration, add `start_timestamp` + `end_timestamp`.
+- For notes: `mcp__plugin_monday-crm_monday__create-timeline-note({ item_id, content: "<note text>" })`.
 
 Report: *"Logged <type> on <item name>. Timeline updated."*
 
@@ -154,7 +154,7 @@ If the tool call fails, fall back to `create-timeline-note` with the same conten
 
 ## Step 4: Execute — Read
 
-1. `mcp__monday__get-timeline-items({ item_id, limit: 25 })`; entries come newest first, so follow `cursor` only until entries predate the requested window.
+1. `mcp__plugin_monday-crm_monday__get-timeline-items({ item_id, limit: 25 })`; entries come newest first, so follow `cursor` only until entries predate the requested window.
 2. Parse time filter from argument (this week / last 7 days / today / default last 10).
 3. Format output as a table with Date, Type, Summary columns.
 4. If zero activities: *"No activities on <item name> in <window>. Want to log one now?"*
@@ -166,7 +166,7 @@ If the tool call fails, fall back to `create-timeline-note` with the same conten
 
 Editing an existing timeline entry is not available through the connector. Append a correction instead.
 
-1. Retrieve timeline: `mcp__monday__get-timeline-items({ item_id, limit: 25 })`.
+1. Retrieve timeline: `mcp__plugin_monday-crm_monday__get-timeline-items({ item_id, limit: 25 })`.
 2. Present recent entries; resolve which one is being corrected from context or by asking.
 3. Collect the correction.
 
@@ -177,7 +177,7 @@ Editing an existing timeline entry is not available through the connector. Appen
 > ```
 > *(yes / edit / cancel)*
 
-4. `mcp__monday__create-timeline-note({ item_id, content: "Correction to <type> from <date>: <correction>" })`.
+4. `mcp__plugin_monday-crm_monday__create-timeline-note({ item_id, content: "Correction to <type> from <date>: <correction>" })`.
 5. Tell the user the original entry is unchanged and can be edited directly in monday CRM.
 
 ---

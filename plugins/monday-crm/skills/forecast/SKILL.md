@@ -3,7 +3,7 @@ name: forecast
 description: Build a forecast dashboard in monday — committed, best-case, and pipeline views by close month, rendered as real dashboard widgets. Use when someone says "build me a forecast", "show me Q2 pipeline", "Salesforce-style forecast", "forecast dashboard", "commit vs best-case", "what's our number this quarter", "how are we tracking to quota", "weighted pipeline", "deal rollup", "Clari-style", "pipeline by month", "pipeline summary", or "what's in commit". For views by period; not for today's priorities or what needs attention now (use daily-briefing).
 argument-hint: "[optional: board name or ID, e.g. 'Deals' or '12345678'; optionally add period, e.g. 'Q2 2026' or 'next 90 days']"
 user-invocable: true
-allowed-tools: [Read, AskUserQuestion, mcp__monday__get_user_context, mcp__monday__list_workspaces, mcp__monday__search, mcp__monday__get_board_info, mcp__monday__get_column_type_info, mcp__monday__get_board_items_page, mcp__monday__board_insights, mcp__monday__create_dashboard, mcp__monday__create_widget, mcp__monday__create_doc, mcp__monday__create_notification, mcp__monday__create_column, mcp__monday__change_item_column_values, mcp__monday__list_users_and_teams, mcp__monday__all_monday_api]
+allowed-tools: [Read, AskUserQuestion, mcp__plugin_monday-crm_monday__get_user_context, mcp__plugin_monday-crm_monday__list_workspaces, mcp__plugin_monday-crm_monday__search, mcp__plugin_monday-crm_monday__get_board_info, mcp__plugin_monday-crm_monday__get_column_type_info, mcp__plugin_monday-crm_monday__get_board_items_page, mcp__plugin_monday-crm_monday__board_insights, mcp__plugin_monday-crm_monday__create_dashboard, mcp__plugin_monday-crm_monday__create_widget, mcp__plugin_monday-crm_monday__create_doc, mcp__plugin_monday-crm_monday__create_notification, mcp__plugin_monday-crm_monday__create_column, mcp__plugin_monday-crm_monday__change_item_column_values, mcp__plugin_monday-crm_monday__list_users_and_teams, mcp__plugin_monday-crm_monday__all_monday_api]
 ---
 
 # Forecast Dashboard
@@ -48,7 +48,7 @@ Flow: **Trigger → Gather → Synthesize → Publish (α, default) → Share (�
 
 **Goal:** Fail fast if the user has no monday MCP connection.
 
-1. Try `mcp__monday__get_user_context`.
+1. Try `mcp__plugin_monday-crm_monday__get_user_context`.
 2. If the tool is missing, returns auth-style error, or the user has no accessible workspace:
    - Print exactly: *"I don't see the monday connector active on this session. Install it from https://monday.com/mcp, then run this skill again."*
    - Stop. Do not proceed.
@@ -69,7 +69,7 @@ Flow: **Trigger → Gather → Synthesize → Publish (α, default) → Share (�
 
 ## Step 2: Resolve the deals board (Gather)
 
-**Goal:** Land on one (or user-confirmed multi) board. Same resolution path as daily-briefing Step 2. Use `mcp__monday__get_user_context` → `list_workspaces` → `search(searchType: "BOARD", searchTerm: "deal")`.
+**Goal:** Land on one (or user-confirmed multi) board. Same resolution path as daily-briefing Step 2. Use `mcp__plugin_monday-crm_monday__get_user_context` → `list_workspaces` → `search(searchType: "BOARD", searchTerm: "deal")`.
 
 ---
 

@@ -4,7 +4,7 @@ description: >
   Analyze CRM activity data — rep performance, call and email volume, team activity breakdowns, and engagement stats. Use when someone says "how many calls did the team make", "show me rep activity", "who's the most active rep", "activity breakdown this week", "how is the team performing", "what's our outreach volume", "compare rep activity", "call stats", "email volume by rep", "activity report", or "team engagement stats". For team, rep or account-wide totals; not for one item's activity history (use log-activity) or sequence performance (use run-sequence).
 argument-hint: "[team / rep name / date range — 'rep activity this week', 'call breakdown for John', 'team performance last month']"
 user-invocable: true
-allowed-tools: [Read, mcp__monday__get_user_context, mcp__monday__search, mcp__monday__get_board_info, mcp__monday__get_board_items_page, mcp__monday__get-activity-insights, mcp__monday__get-timeline-items, mcp__monday__list_users_and_teams]
+allowed-tools: [Read, mcp__plugin_monday-crm_monday__get_user_context, mcp__plugin_monday-crm_monday__search, mcp__plugin_monday-crm_monday__get_board_info, mcp__plugin_monday-crm_monday__get_board_items_page, mcp__plugin_monday-crm_monday__get-activity-insights, mcp__plugin_monday-crm_monday__get-timeline-items, mcp__plugin_monday-crm_monday__list_users_and_teams]
 ---
 
 # Activity Insights
@@ -49,7 +49,7 @@ A synthesized summary with specific numbers and rep-level breakdowns. Never raw 
 
 ## Step 0: Connector check
 
-1. Call `mcp__monday__get_user_context`. On error → print connector install prompt, stop.
+1. Call `mcp__plugin_monday-crm_monday__get_user_context`. On error → print connector install prompt, stop.
 
 ---
 
@@ -57,9 +57,9 @@ A synthesized summary with specific numbers and rep-level breakdowns. Never raw 
 
 `get-activity-insights` requires a `board_id`.
 
-1. If a board name is clear from the argument → `mcp__monday__search` or `mcp__monday__get_board_info` to resolve the ID.
+1. If a board name is clear from the argument → `mcp__plugin_monday-crm_monday__search` or `mcp__plugin_monday-crm_monday__get_board_info` to resolve the ID.
 2. If multiple CRM boards exist → ask: *"Which board should I analyze — Deals, Contacts, or Leads?"*
-3. No board context → `mcp__monday__search({ searchType: "BOARD", searchTerm: "deals" })` to find the most likely CRM board. Still ambiguous → ask.
+3. No board context → `mcp__plugin_monday-crm_monday__search({ searchType: "BOARD", searchTerm: "deals" })` to find the most likely CRM board. Still ambiguous → ask.
 
 ---
 
@@ -79,7 +79,7 @@ Parse the argument:
 - Explicit dates → parse and pass `fromDate` / `toDate`
 
 **Filters:**
-- Rep name mentioned → resolve via `mcp__monday__list_users_and_teams`, pass `userIds`
+- Rep name mentioned → resolve via `mcp__plugin_monday-crm_monday__list_users_and_teams`, pass `userIds`
 - Item/deal name mentioned → resolve item ID, pass `itemIds` (or redirect to `get-timeline-items` for content)
 
 **aggregationType:** default `count`. Use `sum` / `avg` for duration questions ("how long were the calls").
@@ -88,7 +88,7 @@ Parse the argument:
 
 ## Step 3: Fetch and synthesize
 
-1. Call `mcp__monday__get-activity-insights` with resolved parameters.
+1. Call `mcp__plugin_monday-crm_monday__get-activity-insights` with resolved parameters.
 2. If `total_results === 0`:
    *"No activities found on \<board\> in the last \<window\>. The team may not have logged activities yet, or try a wider date range."*
 3. Synthesize results:

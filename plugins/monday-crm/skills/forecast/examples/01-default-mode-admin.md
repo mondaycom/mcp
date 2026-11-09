@@ -8,7 +8,7 @@ Shows: forecast period prompt, single unambiguous deals board, missing forecast-
 > build me a Q2 forecast
 
 **Claude (step 0 — connector check):**
-*[calls `mcp__monday__get_user_context` → `user: { id: 487214, name: "Dana Park", role: "admin" }`, favorites contain `Deals` (10046221612)]*
+*[calls `mcp__plugin_monday-crm_monday__get_user_context` → `user: { id: 487214, name: "Dana Park", role: "admin" }`, favorites contain `Deals` (10046221612)]*
 
 **Claude (step 1 — mode + period):**
 No explicit mode → Default. Confirms writes.

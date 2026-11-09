@@ -8,9 +8,9 @@ Shows: one meeting matches two deals at near-equal scores; skill flags ambiguity
 > add notes from today's calls
 
 **Claude (step 0 — connector + NoteTaker check):**
-*[calls `mcp__monday__get_user_context` → `user: { id: 714088, name: "Rohan Mehta", email: "rohan@northwind.io" }`]*
+*[calls `mcp__plugin_monday-crm_monday__get_user_context` → `user: { id: 714088, name: "Rohan Mehta", email: "rohan@northwind.io" }`]*
 *[internal_domain = northwind.io]*
-*[calls `mcp__monday__explore_meetings({ limit: 1 })` → OK]*
+*[calls `mcp__plugin_monday-crm_monday__explore_meetings({ limit: 1 })` → OK]*
 
 **Claude (step 1 — mode):**
 No explicit mode → Default.
