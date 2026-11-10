@@ -21,7 +21,7 @@ export type BatchCreateRequest = {
 
 export type BatchCreateResponse = {
   createdItems?: Array<{ serialNo: number; itemId: string | number }>;
-  failedItems?: Array<{ serialNo: number; reason?: string; code?: string; retryAfter?: number }>;
+  failedItems?: Array<{ serialNo: number; reason?: string }>;
   invalidItems?: Array<{ serialNo: number; errors?: Array<{ message?: string; type?: string }> }>;
 };
 

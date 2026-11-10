@@ -326,7 +326,7 @@ describe('Create Items Tool Behaviour', () => {
           body: {
             createdItems: [{ serialNo: 0, itemId: 11 }],
             invalidItems: [{ serialNo: 1, errors: [{ message: 'Unknown label', type: 'COLUMN_VALUE_INVALID' }] }],
-            failedItems: [{ serialNo: 2, reason: 'Temporary failure', code: 'TEMPORARY', retryAfter: 4 }],
+            failedItems: [{ serialNo: 2, reason: 'WAL_THROTTLED' }],
           },
         }),
       );
@@ -357,9 +357,9 @@ describe('Create Items Tool Behaviour', () => {
         results: [
           { index: 0, item_id: '11' },
           { index: 1, item_id: '21' },
-          { index: 2, error: 'Temporary failure' },
+          { index: 2, error: expect.stringContaining('too many writes') },
         ],
-        errors: [{ code: 'TEMPORARY', retry_in_seconds: 4, message: 'Temporary failure', path: ['results', 2] }],
+        errors: [{ code: 'WAL_THROTTLED', message: expect.stringContaining('Retry this item'), path: ['results', 2] }],
       });
       expect(sessionContext.metadata).toMatchObject({
         create_path: 'batch_with_graphql',
@@ -370,6 +370,125 @@ describe('Create Items Tool Behaviour', () => {
         batch_untranslated_reasons: {},
         batch_column_lookup: false,
       });
+    });
+
+    it('keeps a human-readable failure reason as the message under a generic code', async () => {
+      const mondayFetch = jest
+        .fn()
+        .mockResolvedValue(
+          mockFetchResponse({ body: { failedItems: [{ serialNo: 0, reason: 'Column value rejected by storage' }] } }),
+        );
+      const { tool } = createBatchTool(mondayFetch);
+
+      const result = await tool.execute({ items: [{ name: 'A', columnValues: '{}' }] });
+
+      expect(result.content).toMatchObject({
+        errors: [{ code: 'BATCH_ITEM_FAILED', message: 'Column value rejected by storage', path: ['results', 0] }],
+      });
+    });
+
+    it.each([
+      ['an empty object', {}],
+      ['empty lists', { createdItems: [], failedItems: [], invalidItems: [] }],
+      ['non-list fields', { createdItems: {}, failedItems: 'x', invalidItems: 3 }],
+      ['null entries', { createdItems: [null], failedItems: [null], invalidItems: [null] }],
+    ])('reports items missing from %s as possibly created without retrying them', async (_, body) => {
+      const mondayFetch = jest.fn().mockResolvedValue(mockFetchResponse({ body }));
+      const { tool } = createBatchTool(mondayFetch);
+
+      const result = await tool.execute({
+        items: [
+          { name: 'A', columnValues: '{}' },
+          { name: 'B', columnValues: '{}' },
+        ],
+      });
+
+      expect(mocks.getMockRequest()).not.toHaveBeenCalledWith(
+        expect.stringContaining('mutation createItem'),
+        expect.anything(),
+      );
+      expect(result.content).toMatchObject({
+        summary: { total: 2, created: 0, failed: 2 },
+        errors: [
+          {
+            code: 'MISSING_BATCH_RESULT',
+            message: expect.stringContaining('may have been created'),
+            path: ['results', 0],
+          },
+          {
+            code: 'MISSING_BATCH_RESULT',
+            message: expect.stringContaining('may have been created'),
+            path: ['results', 1],
+          },
+        ],
+      });
+    });
+
+    it.each([
+      ['null', null],
+      ['an array', []],
+      ['a string', 'ok'],
+    ])('treats a response body of %s as an unknown outcome', async (_, body) => {
+      const mondayFetch = jest.fn().mockResolvedValue(mockFetchResponse({ body }));
+      const { tool } = createBatchTool(mondayFetch);
+      const sessionContext = { metadata: {} as Record<string, unknown> };
+
+      const result = await tool.execute({ items: [{ name: 'A', columnValues: '{}' }] }, sessionContext);
+
+      expect(result.content).toMatchObject({
+        errors: [{ code: 'BATCH_OUTCOME_UNKNOWN', path: ['results', 0] }],
+      });
+      expect(sessionContext.metadata).toMatchObject({ batch_outcome: 'unknown_outcome' });
+    });
+
+    it('ignores results with invalid serial numbers or item ids', async () => {
+      const mondayFetch = jest.fn().mockResolvedValue(
+        mockFetchResponse({
+          body: {
+            createdItems: [
+              { serialNo: 0, itemId: 11 },
+              { serialNo: 99, itemId: 12 },
+              { serialNo: -1, itemId: 13 },
+              { serialNo: 1.5, itemId: 14 },
+              { serialNo: 1, itemId: null },
+            ],
+          },
+        }),
+      );
+      const { tool } = createBatchTool(mondayFetch);
+
+      const result = await tool.execute({
+        items: [
+          { name: 'A', columnValues: '{}' },
+          { name: 'B', columnValues: '{}' },
+        ],
+      });
+
+      expect(result.content).toMatchObject({
+        summary: { total: 2, created: 1, failed: 1 },
+        results: [{ index: 0, item_id: '11' }, { index: 1 }],
+        errors: [{ code: 'MISSING_BATCH_RESULT', path: ['results', 1] }],
+      });
+    });
+
+    it('does not retry an item reported as both invalid and failed', async () => {
+      const mondayFetch = jest.fn().mockResolvedValue(
+        mockFetchResponse({
+          body: {
+            invalidItems: [{ serialNo: 0, errors: [{ message: 'bad', type: 'COLUMN_VALUE_INVALID' }] }],
+            failedItems: [{ serialNo: 0, reason: 'WAL_THROTTLED' }],
+          },
+        }),
+      );
+      const { tool } = createBatchTool(mondayFetch);
+
+      const result = await tool.execute({ items: [{ name: 'A', columnValues: '{}' }] });
+
+      expect(mocks.getMockRequest()).not.toHaveBeenCalledWith(
+        expect.stringContaining('mutation createItem'),
+        expect.anything(),
+      );
+      expect(result.content).toMatchObject({ errors: [{ code: 'WAL_THROTTLED', path: ['results', 0] }] });
     });
 
     it('reports the GraphQL error when a retried invalid item also fails there', async () => {

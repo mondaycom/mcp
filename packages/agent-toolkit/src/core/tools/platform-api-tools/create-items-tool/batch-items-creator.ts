@@ -3,7 +3,7 @@ import { MondayApiToolContext } from '../base-monday-api-tool';
 import { resolveMondayFetch } from '../ai-agent.utils';
 import { unwrapDoubleEncodedColumnValues } from '../column-values.utils';
 import { fetchAccountSlug } from '../utils/account-slug.utils';
-import { adaptItemsForBatch } from './batch-workarounds';
+import { adaptItemsForBatch, isRecord } from './batch-workarounds';
 import {
   BatchCandidateItem,
   BatchCreateItem,
@@ -18,6 +18,9 @@ import {
   BATCH_CREATE_ITEMS_SERVICE_NAME,
   BATCH_CREATE_ITEMS_TIMEOUT_MS,
   BATCH_ENDPOINT_UNAVAILABLE_STATUSES,
+  BATCH_FAILED_ITEM_CODE,
+  BATCH_FAILED_ITEM_MESSAGES,
+  MISSING_BATCH_RESULT_MESSAGE,
 } from './constants';
 
 type BatchCompatibility = { groupId: string; items: BatchCreateItem[] } | { fallbackReason: string };
@@ -90,12 +93,14 @@ export class BatchItemsCreator {
 
     let outcome: BatchOutcome = { results: [], invalidIndexes: [] };
     let batchDurationMs = 0;
+    let batchOutcomeKind: BatchCallResult['kind'] | undefined;
     if (adaptation.batchItems.length) {
       const request: BatchCreateRequest = { boardId, groupId: compatibility.groupId, items: adaptation.batchItems };
       const startedAt = Date.now();
       const accountSlug = fetchAccountSlug(this.options.mondayApi).catch(() => null);
       const callResult = await this.sendBatchRequest(request);
       batchDurationMs = Date.now() - startedAt;
+      batchOutcomeKind = callResult.kind;
       if (callResult.kind === 'unavailable') {
         return this.fallBackEntirely(allIndexes, fallback, {
           batch_fallback_reason: 'endpoint_unavailable',
@@ -112,6 +117,7 @@ export class BatchItemsCreator {
       create_path: getCreatePath(adaptation.batchItems.length, graphqlIndexes.length),
       batch_items_count: adaptation.batchItems.length,
       batch_duration_ms: batchDurationMs,
+      batch_outcome: batchOutcomeKind,
       batch_column_lookup: adaptation.columnLookup,
       graphql_items_count: graphqlIndexes.length,
       batch_untranslated_reasons: adaptation.graphqlReasons,
@@ -151,11 +157,16 @@ export class BatchItemsCreator {
       };
     }
 
+    let body: unknown;
     try {
-      return { kind: 'completed', body: (await response.json()) as BatchCreateResponse };
+      body = await response.json();
     } catch {
       return { kind: 'unknown_outcome' };
     }
+    if (!isRecord(body)) {
+      return { kind: 'unknown_outcome' };
+    }
+    return { kind: 'completed', body: body as BatchCreateResponse };
   }
 
   private async fallBackEntirely(
@@ -194,11 +205,11 @@ function mapBatchResponse(
   indexes: number[],
   accountSlug: string | null,
 ): BatchOutcome {
-  const results: Array<PerItemResult | undefined> = new Array(indexes.length);
+  const results: Array<PerItemResult | undefined> = [];
   const invalidSerialNos = new Set<number>();
 
-  for (const item of response.createdItems ?? []) {
-    if (!isValidSerialNo(item.serialNo, indexes.length)) {
+  for (const item of listEntries(response.createdItems)) {
+    if (!isValidSerialNo(item.serialNo, indexes.length) || !isItemId(item.itemId)) {
       continue;
     }
     const itemId = String(item.itemId);
@@ -214,43 +225,58 @@ function mapBatchResponse(
     };
   }
 
-  for (const item of response.invalidItems ?? []) {
+  for (const item of listEntries(response.invalidItems)) {
     if (!isValidSerialNo(item.serialNo, indexes.length)) {
       continue;
     }
-    const messages = (item.errors ?? []).flatMap((error) => (error.message ? [error.message] : []));
+    const errors = listEntries(item.errors);
+    const messages = errors.flatMap((error) =>
+      typeof error.message === 'string' && error.message ? [error.message] : [],
+    );
     const message = messages.join('; ') || 'Invalid item';
-    const code = item.errors?.find((error) => error.type)?.type;
+    const code = errors.find((error) => typeof error.type === 'string' && error.type)?.type;
     results[item.serialNo] = createBatchErrorResult(indexes[item.serialNo], message, code ? { code } : {});
     invalidSerialNos.add(item.serialNo);
   }
 
-  for (const item of response.failedItems ?? []) {
+  for (const item of listEntries(response.failedItems)) {
     if (!isValidSerialNo(item.serialNo, indexes.length)) {
       continue;
     }
-    const message = item.reason || 'Item creation failed';
-    results[item.serialNo] = createBatchErrorResult(indexes[item.serialNo], message, {
-      ...(item.code ? { code: item.code } : {}),
-      ...(item.retryAfter !== undefined ? { retry_in_seconds: item.retryAfter } : {}),
+    const reason = typeof item.reason === 'string' && item.reason ? item.reason : undefined;
+    results[item.serialNo] = createBatchErrorResult(indexes[item.serialNo], describeFailedItem(reason), {
+      code: toFailedItemCode(reason),
     });
     invalidSerialNos.delete(item.serialNo);
   }
 
   return {
-    results: results.map(
-      (result, serialNo) =>
-        result ??
-        createBatchErrorResult(
-          indexes[serialNo],
-          'Batch create items response did not include a result for this item',
-          {
-            code: 'MISSING_BATCH_RESULT',
-          },
-        ),
+    results: indexes.map(
+      (index, serialNo) =>
+        results[serialNo] ??
+        createBatchErrorResult(index, MISSING_BATCH_RESULT_MESSAGE, { code: 'MISSING_BATCH_RESULT' }),
     ),
     invalidIndexes: [...invalidSerialNos].map((serialNo) => indexes[serialNo]),
   };
+}
+
+function listEntries<T>(value: T[] | undefined): T[] {
+  return Array.isArray(value) ? value.filter((entry): entry is T => isRecord(entry)) : [];
+}
+
+function isItemId(value: unknown): value is string | number {
+  return (typeof value === 'string' && value !== '') || (typeof value === 'number' && Number.isFinite(value));
+}
+
+function describeFailedItem(reason: string | undefined): string {
+  if (!reason) {
+    return 'Item creation failed';
+  }
+  return BATCH_FAILED_ITEM_MESSAGES[reason] ?? reason;
+}
+
+function toFailedItemCode(reason: string | undefined): string {
+  return reason && /^[A-Z][A-Z0-9_]*$/.test(reason) ? reason : BATCH_FAILED_ITEM_CODE;
 }
 
 function createHttpErrorResults(

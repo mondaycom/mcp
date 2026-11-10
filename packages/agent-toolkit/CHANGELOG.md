@@ -11,6 +11,8 @@
 - If the batch endpoint answers 401, 403 or 404, the whole call is created through GraphQL. Created items include `item_url` when the account slug can be read.
 - The flag checker alone turns the batch path on. Without a flag checker it stays off.
 - Session metadata records which API created the items on every call (`create_path`: `batch`, `graphql` or `batch_with_graphql`) and why items left the batch path.
+- Failed batch items report the endpoint's reason as their `code` (for example `WAL_THROTTLED`, whose message tells the agent to retry shortly) or `BATCH_ITEM_FAILED` when the reason is free text.
+- A malformed batch response never fails the call or retries items that may already exist: a non-object body is reported as `BATCH_OUTCOME_UNKNOWN`, and an item with no usable result as `MISSING_BATCH_RESULT`, both telling the agent to check the board before retrying. `batch_outcome` in session metadata records how the batch request ended.
 - The input and output shapes are unchanged. With the flag enabled, the maximum items per call increases from 20 to 100; without it, the limit stays at 20.
 
 ## 5.78.4
