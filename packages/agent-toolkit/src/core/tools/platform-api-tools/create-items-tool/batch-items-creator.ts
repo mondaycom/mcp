@@ -70,7 +70,7 @@ export class BatchItemsCreator {
     }
     const compatibility = checkBatchCompatibility(items);
     if ('fallbackReason' in compatibility) {
-      this.recordMetadata({ create_path: 'graphql', batch_fallback_reason: compatibility.fallbackReason });
+      this.recordMetadata({ batch_fallback_reason: compatibility.fallbackReason });
       return false;
     }
     return true;
@@ -163,7 +163,7 @@ export class BatchItemsCreator {
     fallback: GraphqlFallback,
     metadata: Record<string, unknown>,
   ): Promise<PerItemResult[]> {
-    this.recordMetadata({ create_path: 'graphql', ...metadata });
+    this.recordMetadata(metadata);
     return fallback(indexes);
   }
 

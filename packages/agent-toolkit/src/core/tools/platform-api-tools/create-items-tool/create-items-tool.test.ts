@@ -582,7 +582,7 @@ describe('Create Items Tool Behaviour', () => {
           { name: 'A', groupId: 'topics', columnValues: '{}' },
           { name: 'B', groupId: 'topics', columnValues: '{}' },
         ],
-        metadata: { items_count: 2 },
+        metadata: { items_count: 2, create_path: 'graphql' },
       },
       {
         name: 'items use different groups',
@@ -1110,7 +1110,7 @@ describe('Create Items Tool Behaviour', () => {
     });
   });
 
-  describe('Observability items count', () => {
+  describe('Observability metadata', () => {
     it('records items_count on sessionContext metadata', async () => {
       mocks.setResponses([itemResponse('1', 'A'), itemResponse('2', 'B'), itemResponse('3', 'C')]);
       const tool = new CreateItemsTool(mocks.mockApiClient, { boardId: 456 });
@@ -1127,7 +1127,7 @@ describe('Create Items Tool Behaviour', () => {
         sessionContext,
       );
 
-      expect(sessionContext.metadata).toEqual({ items_count: 3 });
+      expect(sessionContext.metadata).toEqual({ items_count: 3, create_path: 'graphql' });
     });
 
     it('records items_count even when some items fail', async () => {
@@ -1151,7 +1151,7 @@ describe('Create Items Tool Behaviour', () => {
         sessionContext,
       );
 
-      expect(sessionContext.metadata).toEqual({ items_count: 2 });
+      expect(sessionContext.metadata).toEqual({ items_count: 2, create_path: 'graphql' });
     });
   });
 

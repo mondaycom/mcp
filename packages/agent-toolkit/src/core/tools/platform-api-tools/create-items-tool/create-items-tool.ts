@@ -132,6 +132,7 @@ export class CreateItemsTool extends BaseMondayApiTool<CreateItemsToolInput> {
     const boardId = this.context?.boardId ?? (input as ToolInputType<typeof createItemsInBoardToolSchema>).boardId;
     const metadata = (this.sessionContext.metadata ??= {});
     metadata.items_count = input.items.length;
+    metadata.create_path = 'graphql';
 
     const createWithGraphql = (indexes: number[]) =>
       this.executeWithSingleItemCalls(
