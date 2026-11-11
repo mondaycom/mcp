@@ -11,7 +11,9 @@ import { rethrowWithContext, ToolValidationError, EMPTY_API_RESPONSE_CODE } from
 
 export const createDashboardToolSchema = {
   name: z.string().min(1, 'Dashboard name is required').describe('Human-readable dashboard title (UTF-8 chars)'),
-  workspace_id: z.string().describe('ID of the workspace that will own the dashboard'),
+  workspace_id: z.string().describe(
+    'ID of the workspace that will own the dashboard. The user must be an owner or member of this workspace',
+  ),
   board_ids: z
     .array(z.string())
     .min(1, 'At least one board ID is required')
@@ -37,13 +39,15 @@ export class CreateDashboardTool extends BaseMondayApiTool<typeof createDashboar
   });
 
   getDescription(): string {
-    return `Use this tool to create a new monday.com dashboard that aggregates data from one or more boards. 
+    return `Use this tool to create a new monday.com dashboard that aggregates data from one or more boards.
     Dashboards provide visual representations of board data through widgets and charts.
-    
+
     Use this tool when users want to:
     - Create a dashboard to visualize board data
     - Aggregate information from multiple boards
-    - Set up a data visualization container for widgets`;
+    - Set up a data visualization container for widgets
+
+    Requirements: the user must be an owner or member of the workspace given in workspace_id. This is stricter than creating a board, which some users can do in workspaces they are not members of. If the call fails with a permission or internal error, the cause is usually that the user is not a member of that workspace, not a transient error: do not retry with the same workspace_id. Ask the user for a workspace they belong to, or to be added to this one.`;
   }
 
   getInputSchema(): typeof createDashboardToolSchema {
