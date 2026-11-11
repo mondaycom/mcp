@@ -5,7 +5,12 @@ import {
   normalizeViewName,
   resolveViewIdsByName,
 } from './helpers';
-import { BoardViewAccessLevel, State, BoardKind, WorkspaceKind } from '../../../../monday-graphql/generated/graphql/graphql';
+import {
+  BoardViewAccessLevel,
+  State,
+  BoardKind,
+  WorkspaceKind,
+} from '../../../../monday-graphql/generated/graphql/graphql';
 import {
   EntityKnowledgeSectionKey,
   EntityKnowledgeSectionKind,
@@ -17,6 +22,7 @@ import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '..
 import {
   GET_BOARD_INFO_API_VERSION,
   GET_BOARD_INFO_ENTITY_KNOWLEDGE_FLAG,
+  GET_BOARD_INFO_V2_FLAG,
   GetBoardInfoTool,
 } from './get-board-info-tool';
 
@@ -290,7 +296,12 @@ describe('formatBoardInfoAsJson - views', () => {
           settings: {},
           filter: {
             operator: 'AND',
-            groups: [{ operator: 'AND', rules: [{ column_id: 'person', compare_value: ['assigned_to_me'], operator: 'ANY_OF' }] }],
+            groups: [
+              {
+                operator: 'AND',
+                rules: [{ column_id: 'person', compare_value: ['assigned_to_me'], operator: 'ANY_OF' }],
+              },
+            ],
           },
           sort: [],
           access_level: BoardViewAccessLevel.Edit,
@@ -328,7 +339,9 @@ describe('formatBoardInfoAsJson - views', () => {
   it('should include the structured filter object from the view', () => {
     const filter = {
       operator: 'AND',
-      groups: [{ operator: 'AND', rules: [{ column_id: 'person', compare_value: ['assigned_to_me'], operator: 'ANY_OF' }] }],
+      groups: [
+        { operator: 'AND', rules: [{ column_id: 'person', compare_value: ['assigned_to_me'], operator: 'ANY_OF' }] },
+      ],
     };
     const board: BoardInfoData = {
       ...baseBoard,
@@ -381,8 +394,24 @@ describe('formatBoardInfoAsJson - views', () => {
     const board: BoardInfoData = {
       ...baseBoard,
       views: [
-        { id: 'view_1', name: 'View A', type: 'TableBoardView', settings: {}, filter: null, sort: [], access_level: BoardViewAccessLevel.Edit },
-        { id: 'view_2', name: 'View B', type: 'TableBoardView', settings: {}, filter: null, sort: [], access_level: BoardViewAccessLevel.Edit },
+        {
+          id: 'view_1',
+          name: 'View A',
+          type: 'TableBoardView',
+          settings: {},
+          filter: null,
+          sort: [],
+          access_level: BoardViewAccessLevel.Edit,
+        },
+        {
+          id: 'view_2',
+          name: 'View B',
+          type: 'TableBoardView',
+          settings: {},
+          filter: null,
+          sort: [],
+          access_level: BoardViewAccessLevel.Edit,
+        },
       ],
     } as unknown as BoardInfoData;
 
@@ -770,5 +799,134 @@ describe('GetBoardInfoTool filtering', () => {
 
     expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
     expect(parsed.board.id).toBe('123');
+  });
+});
+
+describe('GetBoardInfoTool v2 flow (feature flag)', () => {
+  let mocks: ReturnType<typeof createMockApiClient>;
+
+  const subtasksColumn = {
+    id: 'subitems',
+    title: 'Subitems',
+    description: null,
+    type: NonDeprecatedColumnType.Subtasks,
+    settings: { boardIds: [999] },
+    revision: 'r1',
+  };
+  const subitemColumns = [
+    { id: 'sub_status', title: 'Status', description: null, type: 'status', settings: {}, revision: 'r2' },
+  ];
+  const boardPayload = {
+    id: '123',
+    name: 'Test Board',
+    columns: [subtasksColumn],
+    subitem_columns: subitemColumns,
+    views: [
+      { id: 'view_1', name: 'P&C Shopping', type: 'TableBoardView', settings: {}, filter: null, sort: [] },
+      { id: 'view_2', name: 'Other', type: 'TableBoardView', settings: {}, filter: null, sort: [] },
+    ],
+  };
+  const v2Deps = (extra: Record<string, boolean> = {}) => ({
+    mondayApiToken: 'test-token',
+    deps: { flagChecker: (flag: string) => flag === GET_BOARD_INFO_V2_FLAG || Boolean(extra[flag]) },
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mocks = createMockApiClient();
+    jest.spyOn(MondayAgentToolkit.prototype as any, 'createApiClient').mockReturnValue(mocks.mockApiClient);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('stays on the v1 flow when the flag is off or no flagChecker is provided', async () => {
+    mocks.setResponse({ boards: [{ ...boardPayload, subitem_columns: undefined }] });
+
+    await callToolByNameRawAsync('get_board_info', { boardId: 123 });
+
+    expect(mocks.getMockRequest().mock.calls[0][2]).toEqual({ versionOverride: GET_BOARD_INFO_API_VERSION });
+    expect(mocks.getMockRequest().mock.calls[0][0]).not.toContain('subitem_columns');
+  });
+
+  it('uses one request and returns subitem columns from subitem_columns', async () => {
+    mocks.setResponse({ boards: [boardPayload] });
+
+    const result = await callToolByNameRawAsync('get_board_info', { boardId: 123 }, v2Deps());
+    const parsed = parseToolResult(result);
+
+    expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+    expect(mocks.getMockRequest().mock.calls[0][0]).toContain('subitem_columns');
+    expect(mocks.getMockRequest().mock.calls[0][2]).toEqual({ versionOverride: '2027-04' });
+    expect(parsed.board.subItemColumns).toEqual(subitemColumns);
+    expect(parsed.board).not.toHaveProperty('subitem_columns');
+  });
+
+  it('omits subItemColumns when the subtasks column self-references the board (multi-level boards)', async () => {
+    const mls = { ...boardPayload, columns: [{ ...subtasksColumn, settings: { boardIds: [123] } }] };
+    mocks.setResponse({ boards: [mls] });
+
+    const parsed = parseToolResult(await callToolByNameRawAsync('get_board_info', { boardId: 123 }, v2Deps()));
+
+    expect(parsed.board.subItemColumns).toBeUndefined();
+  });
+
+  it('resolves view names from a single full views fetch', async () => {
+    mocks.setResponse({ boards: [boardPayload] });
+
+    const parsed = parseToolResult(
+      await callToolByNameRawAsync(
+        'get_board_info',
+        { boardId: 123, filters: { views: { names: ['p&c shopping', 'missing'] } } },
+        v2Deps(),
+      ),
+    );
+
+    expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+    expect(mocks.getMockRequest().mock.calls[0][1].viewIds).toBeUndefined();
+    expect(parsed.board.views.map((v: { id: string }) => v.id)).toEqual(['view_1']);
+    expect(parsed.unmatchedViewNames).toEqual(['missing']);
+  });
+
+  it('reports available views when no requested view name matches', async () => {
+    mocks.setResponse({ boards: [boardPayload] });
+
+    const result = await callToolByNameRawAsync(
+      'get_board_info',
+      { boardId: 123, filters: { views: { names: ['nope'] } } },
+      v2Deps(),
+    );
+
+    expect(JSON.stringify(result)).toContain('Available views: P&C Shopping, Other.');
+  });
+
+  it('returns a not-found message when the board is missing', async () => {
+    mocks.setResponse({ boards: [] });
+
+    const result = await callToolByNameRawAsync('get_board_info', { boardId: 123 }, v2Deps());
+
+    expect(JSON.stringify(result)).toContain('Board with id 123 not found');
+  });
+
+  it('fetches knowledge alongside the board when requested', async () => {
+    mocks
+      .getMockRequest()
+      .mockImplementation(async (query: string) =>
+        query.includes('GetBoardKnowledge') ? { entity_knowledge: null } : { boards: [boardPayload] },
+      );
+
+    const parsed = parseToolResult(
+      await callToolByNameRawAsync(
+        'get_board_info',
+        { boardId: 123, includeKnowledge: true },
+        v2Deps({
+          [GET_BOARD_INFO_ENTITY_KNOWLEDGE_FLAG]: true,
+        }),
+      ),
+    );
+
+    expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
+    expect(parsed.knowledge).toBeNull();
   });
 });
