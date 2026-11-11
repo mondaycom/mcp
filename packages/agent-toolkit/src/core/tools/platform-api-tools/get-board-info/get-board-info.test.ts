@@ -901,6 +901,33 @@ describe('GetBoardInfoTool v2 flow (feature flag)', () => {
     expect(JSON.stringify(result)).toContain('Available views: P&C Shopping, Other.');
   });
 
+  it('returns the board with no views when requested ids do not exist and names match nothing, like v1', async () => {
+    mocks.setResponse({ boards: [boardPayload] });
+
+    const parsed = parseToolResult(
+      await callToolByNameRawAsync(
+        'get_board_info',
+        { boardId: 123, filters: { views: { ids: ['missing_id'], names: ['nope'] } } },
+        v2Deps(),
+      ),
+    );
+
+    expect(parsed.board.id).toBe('123');
+    expect(parsed.board.views).toEqual([]);
+    expect(parsed.unmatchedViewNames).toEqual(['nope']);
+  });
+
+  it('describes views.names by flow: no index query when v2 is on, index query when off', () => {
+    const viewNamesDescription = (flagChecker?: () => boolean) =>
+      (
+        new GetBoardInfoTool(mocks.mockApiClient, 'test-token', { deps: { flagChecker } }).getInputSchema().filters as any
+      )._def.innerType.shape.views._def.innerType.shape.names.description as string;
+
+    expect(viewNamesDescription(() => true)).not.toContain('index query');
+    expect(viewNamesDescription(() => false)).toContain('lean id/name index query');
+    expect(viewNamesDescription()).toContain('lean id/name index query');
+  });
+
   it('returns a not-found message when the board is missing', async () => {
     mocks.setResponse({ boards: [] });
 

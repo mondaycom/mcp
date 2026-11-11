@@ -70,7 +70,9 @@ export const fetchBoardInfoV2 = async (mondayApi: ApiClient, input: BoardInfoV2I
     const { viewIds: namedIds, unmatchedViewNames: unmatched } = resolveViewIdsByName(views, viewNames);
     const selectedIds = new Set([...(viewsFilter?.ids ?? []), ...namedIds]);
     const selected = views.filter((view) => selectedIds.has(view.id));
-    if (selected.length === 0) {
+    // Same as v1: report "no match" only when no requested id or name resolved at all.
+    // Requested ids that don't exist on the board still return the board with an empty views list.
+    if (selectedIds.size === 0) {
       return {
         kind: 'no_matching_views',
         requested: viewNames,
