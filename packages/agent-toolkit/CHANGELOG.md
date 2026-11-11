@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.78.9
+
+### `create_dashboard` says the user must be a member of the target workspace
+
+- The description and the `workspace_id` field say the user must be an owner or member of that workspace, which is stricter than creating a board.
+- A permission or internal error is described as usually a missing membership, not a transient error, so callers ask for another workspace instead of retrying. The tool input, output and error codes are unchanged.
+
 ## 5.78.7
 
 ### `get_board_activity` sends the `activity_logs` query in its 2026-10 shape
